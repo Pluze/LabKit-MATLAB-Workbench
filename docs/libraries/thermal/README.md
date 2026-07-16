@@ -1,118 +1,138 @@
-# Thermal API
+# Thermal Images
 
-[Public API index](../README.md) | [App guide](../../apps/README.md)
+[API reference](../README.md) | [FLIR Thermal app](../../apps/image-measurement/flir-thermal/README.md)
 
-`labkit.thermal.*` is the GUI-free facade for reusable thermal source-file
-parsing, raw thermal matrices, embedded calibration metadata,
-raw-to-temperature conversion, and linear thermal palette rendering. It is
-separate from `labkit.image`: ordinary image IO and filters stay in
-`labkit.image`, while radiometric source formats and thermal calibration
-mechanics live here.
+The `labkit.thermal` functions read FLIR radiometric JPEG files, expose their
+raw sensor data and calibration metadata, convert sensor values to degrees
+Celsius, and create display-ready RGB images. They can be called from MATLAB
+without opening a LabKit app.
 
-`labkit.thermal.version()` returns the thermal facade contract version used by
-app `requirements.m` declarations.
+## Start Here
 
-## Common Calls
+Use this sequence when you want to analyze thermal files in a script:
 
 ```matlab
-filter = labkit.thermal.fileDialogFilter("IncludeAll", true);
-[records, report] = labkit.thermal.readFiles(paths, ...
+files = ["capture-01.rjpg", "capture-02.rjpg"];
+[records, report] = labkit.thermal.readFiles(files, ...
     struct("SkipInvalid", true));
-probe = labkit.thermal.inspectFile(paths(1));
 
-values = records(1).temperatureC;
-if all(isnan(values), "all")
-    values = records(1).raw;
+for k = 1:numel(records)
+    temperatureC = records(k).temperatureC;
+    fprintf("%s: %.1f to %.1f C\n", records(k).name, ...
+        min(temperatureC, [], "all"), max(temperatureC, [], "all"));
 end
 
-rgb = labkit.thermal.renderImage(values, ...
-    struct("Limits", [20 40], "Palette", "iron"));
+fprintf("Loaded %d files; skipped %d.\n", ...
+    report.loaded, report.skipped)
 ```
 
-Current source support is FLIR radiometric JPEG/RJPEG files that contain an
-embedded FFF RawThermalImage record. `readFile` returns a struct with:
+`readFiles` preserves the input order. With `SkipInvalid` set to `true`, it
+returns every readable record and describes unreadable files in
+`report.failures`. Without that option, the first read error stops the call.
 
-- `path`, `name`, and `format`
-- `raw`: the raw thermal signal matrix
-- `temperatureC`: Celsius matrix when embedded calibration is complete, or
-  `NaN` values when conversion is unavailable
-- `units`: `"C"` or `"raw"`
-- `metadata`: reader name, raw image type, byte-order normalization, embedded
-  calibration fields, parsed FFF records, and `temperatureConversion`
-  diagnostics describing correction mode and parameter provenance
-- `message`: short conversion status text
+## Choose a Function
 
-`rawToTemperatureC` supports `"environment"` correction, which uses emissivity,
-distance, reflected/atmospheric/window temperatures, humidity, transmission,
-and Planck constants when available. `"planck-basic"` applies only the embedded
-Planck constants.
+| Task | Function |
+| --- | --- |
+| Read one radiometric image | [`labkit.thermal.readFile`](../../reference/api/labkit/thermal/readFile.html) |
+| Read a list of images | [`labkit.thermal.readFiles`](../../reference/api/labkit/thermal/readFiles.html) |
+| Check a file without throwing a read error | [`labkit.thermal.inspectFile`](../../reference/api/labkit/thermal/inspectFile.html) |
+| Convert raw counts with supplied calibration | [`labkit.thermal.rawToTemperatureC`](../../reference/api/labkit/thermal/rawToTemperatureC.html) |
+| Convert a numeric matrix to RGB colours | [`labkit.thermal.renderImage`](../../reference/api/labkit/thermal/renderImage.html) |
+| Build a file-dialog filter | [`labkit.thermal.fileDialogFilter`](../../reference/api/labkit/thermal/fileDialogFilter.html) |
+| Test or list recognized extensions | [`isSupportedPath`](../../reference/api/labkit/thermal/isSupportedPath.html), [`supportedExtensions`](../../reference/api/labkit/thermal/supportedExtensions.html) |
+| Check the API contract version | [`labkit.thermal.version`](../../reference/api/labkit/thermal/version.html) |
 
-Call `rawToTemperatureC` with two outputs to inspect conversion provenance:
+## Thermal Records
+
+`readFile` returns one structure with these fields:
+
+| Field | Meaning |
+| --- | --- |
+| `path`, `name` | Source location and filename |
+| `format` | Detected radiometric container format |
+| `raw` | Decoded sensor-count matrix |
+| `temperatureC` | Same-size double matrix in degrees Celsius; invalid conversion pixels are `NaN` |
+| `units` | `"C"` when temperature conversion succeeded, otherwise `"raw"` |
+| `metadata` | Parsed FLIR tags, calibration values, record information, and conversion diagnostics |
+| `message` | Short description of the conversion result |
+
+An ordinary JPEG preview is not a temperature matrix. The reader looks for an
+embedded FLIR FFF `RawThermalImage` record and uses that sensor data for the
+conversion. A `.jpg` or `.rjpg` extension therefore indicates only a candidate
+file. Call `inspectFile` when you need to know whether the contents are
+actually readable as thermal data.
+
+## Temperature Correction
+
+The default `"environment"` correction uses the camera's Planck constants and,
+when available, emissivity, object distance, reflected apparent temperature,
+atmospheric temperature, humidity, infrared-window temperature, and
+infrared-window transmission. Missing environmental values receive documented
+defaults so that conversion can continue. The five Planck constants never
+receive fallback values.
+
+Use two outputs from `rawToTemperatureC` to see exactly what happened:
 
 ```matlab
 [temperatureC, diagnostics] = labkit.thermal.rawToTemperatureC( ...
-    raw, calibration);
+    raw, calibration, struct("Correction", "environment"));
+
+if diagnostics.usedDefaults
+    fprintf("Defaults used for: %s\n", ...
+        strjoin(diagnostics.defaultedFields, ", "))
+end
 ```
 
-`diagnostics.usedDefaults` indicates that one or more environmental fields were
-missing or invalid, `defaultedFields` names them, and `parameterSources` maps
-each environmental field to `"calibration"` or `"default"`. Records returned
-by `readFile` expose the same struct as
-`record.metadata.temperatureConversion`. Planck constants are mandatory and
-never receive generic fallback values.
+`diagnostics.parameterSources` records `"calibration"` or `"default"` for
+each environmental input. A conversion that used defaults may be useful for
+previewing data, but the result is not evidence that the assumed emissivity,
+distance, humidity, or temperatures match the experiment. Check those values
+before using the temperatures in quantitative analysis.
 
-Environment mode falls back to defined FLIR-model settings only when necessary,
-including emissivity `1`, object distance `1 m`, reflected and atmospheric
-temperature `20 C`, relative humidity `0.5`, and the standard atmospheric
-transmission coefficients. These values make conversion possible but do not
-establish measurement accuracy for the photographed material or environment.
-Apps should visibly warn users whenever defaults were used. The FLIR Thermal
-app shows that warning in both the file status and detail panel.
+Choose `"planck-basic"` only when you intentionally want the conversion based
+on the five Planck constants alone:
 
-`renderImage` is the reusable facade renderer for linear thermal palette
-mapping over a selected numeric range. App-level display modes such as log or
-gamma color mapping belong to the owning app because they are workflow and UI
-policy: the FLIR Thermal app applies those modes only while converting a
-selected display range into RGB colors. They do not change the raw matrix,
-Celsius matrix, thermal record, or exported temperature CSV values.
+```matlab
+temperatureC = labkit.thermal.rawToTemperatureC(raw, calibration, ...
+    struct("Correction", "planck-basic"));
+```
 
-Use `inspectFile` or `readFiles(..., struct("SkipInvalid", true))` when a
-workflow accepts mixed selections from a file dialog. The facade owns the
-distinction between extension-compatible files and files that actually contain
-readable thermal payloads; apps should present the returned report instead of
-reimplementing that detection with app-local catch blocks.
+## Rendering a Temperature Matrix
 
-## Ownership
+`renderImage` maps a numeric matrix onto a colour palette. It does not change
+the temperatures and does not perform calibration.
 
-The facade may own:
+```matlab
+rgb = labkit.thermal.renderImage(temperatureC, ...
+    struct("Limits", [20 40], "Palette", "iron", "Levels", 256));
+image(rgb)
+axis image off
+```
 
-- thermal source extension lists and file-dialog filters
-- compatibility inspection for deciding whether a file contains readable
-  thermal payloads
-- radiometric container parsing that exposes raw thermal matrices
-- embedded calibration metadata normalization
-- raw thermal signal to Celsius conversion
-- generic linear thermal palette rendering
-- private compatibility code for vendor container variants
+Values outside `Limits` are clipped to the end colours. Supported palettes are
+`"turbo"`, `"parula"`, `"hot"`, `"gray"`, and `"iron"`. The FLIR Thermal app
+also offers display-only log and gamma controls; those controls are app
+features and do not alter exported temperature values.
 
-Apps own:
+## Supported Files and Limitations
 
-- file queues, selected image state, and display-range defaults
-- palette choices, log/gamma display mapping controls, and workflow wording
-- colorbar export placement, manifests, filenames, and failed-row policy
-- overlay-removal workflows, measurements, annotations, alerts, and logs
-- any app-specific decisions about which matrix to show or export
+The current reader supports FLIR radiometric JPEG and RJPEG files with an
+embedded FFF raw-thermal record. Camera models and firmware revisions can
+encode metadata differently. Use `inspectFile` or `readFiles` with
+`SkipInvalid=true` for mixed or uncertain inputs, and retain the returned
+failure messages when reporting an unsupported file.
 
-Use `labkit.thermal.readFiles` when an app needs reusable thermal records. Apps
-may copy returned fields into app-owned item structs. Keep app-owned readers
-when they build workflow state, apply user policy, or combine thermal data with
-other app inputs.
+Do not infer measurement accuracy from successful parsing alone. Quantitative
+temperature accuracy still depends on the camera calibration and on correct
+environmental inputs for the photographed material and scene.
 
-## Compatibility
+## Related Topics
 
-Radiometric files vary by camera family and firmware. The facade should prefer
-structural parsing and defensive metadata checks over hard-coded app behavior.
-When adding compatibility for a new thermal source variant, add synthetic
-fixtures or anonymous structural tests that preserve only format shape and do
-not commit lab sample files, local paths, filenames, serial numbers, timestamps,
-or identifying metadata.
+- [Image functions](../image/README.md) cover ordinary image IO and image
+  processing that does not use radiometric calibration.
+- [FLIR Thermal app](../../apps/image-measurement/flir-thermal/README.md)
+  provides interactive file review, measurements, display controls, and
+  exports.
+- [Project history](../../history/README.md) lists changes to thermal file
+  support and calibration behavior.

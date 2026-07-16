@@ -21,9 +21,8 @@
 <h1><code>labkit.ui.runtime.loadState</code></h1>
 <p class="lead">Load a compatible Runtime V2 project or declared legacy import.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function filepath = loadState(fig, filepath)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">filepath = labkit.ui.runtime.loadState(fig)
-filepath = labkit.ui.runtime.loadState(fig, filepath)</code></pre></section>
+<pre><code class="language-matlab">filepath = labkit.ui.runtime.loadState(fig)
+filepath = labkit.ui.runtime.loadState(fig, filepath)</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>fig</code></dt><dd>LabKit app figure created by labkit.ui.runtime.launch.</dd></div><div class="argument"><dt><code>filepath</code></dt><dd>optional scalar text MAT-file path. When omitted, an open dialog is shown.</dd></div></dl></section>
 <section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>filepath</code></dt><dd>selected or supplied MAT-file path. Empty when the user cancels the open dialog.</dd></div></dl></section>
 <section class="api-section"><h2 id="runtime-behavior">Runtime Behavior</h2><p>Validates and resolves the complete candidate before atomically replacing project/session state. Named legacy imports are read-only.</p></section>

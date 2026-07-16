@@ -21,8 +21,7 @@
 <h1><code>labkit.ui.plot.offsetData</code></h1>
 <p class="lead">Offset data coordinates by normalized axes fractions.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function xy = offsetData(ax, xy, offsetFraction)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">xyOut = labkit.ui.plot.offsetData(ax, xy, offsetFraction)</code></pre></section>
+<pre><code class="language-matlab">xyOut = labkit.ui.plot.offsetData(ax, xy, offsetFraction)</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>ax</code></dt><dd>target MATLAB axes or uiaxes handle.</dd></div><div class="argument"><dt><code>xy</code></dt><dd>N-by-2 numeric data coordinates.</dd></div><div class="argument"><dt><code>offsetFraction</code></dt><dd>1-by-2 or N-by-2 axes-fraction offsets. For example, [0.03 -0.04] moves a label slightly right and down in visual axes space, including on log or reversed axes.</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>xyOut</code></dt><dd>N-by-2 offset data coordinates.</dd></div></dl></section>
 <h2 id="related-apis">Related APIs</h2><ul><li><a href="clampData.html"><code>labkit.ui.plot.clampData</code></a> — Clamp data coordinates inside the visible axes box.</li><li><a href="clear.html"><code>labkit.ui.plot.clear</code></a> — Clear a plot axes before app-owned redraws.</li><li><a href="fit.html"><code>labkit.ui.plot.fit</code></a> — Fit axes limits to finite plotted X/Y data.</li><li><a href="fitCanvas.html"><code>labkit.ui.plot.fitCanvas</code></a> — Fit one previewArea axes into a fixed pixel canvas frame.</li><li><a href="message.html"><code>labkit.ui.plot.message</code></a> — Show a centered empty-state message in an axes.</li></ul>

@@ -21,10 +21,9 @@
 <h1><code>labkit.ui.interaction.scaleBarGeometry</code></h1>
 <p class="lead">Build serializable image scale-bar overlay geometry.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function geometry = scaleBarGeometry(imageSize, calibration, barLength, position, colorName)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">cal = labkit.ui.interaction.scaleBarCalibration(80, 20, &quot;mm&quot;);
+<pre><code class="language-matlab">cal = labkit.ui.interaction.scaleBarCalibration(80, 20, &quot;mm&quot;);
 geometry = labkit.ui.interaction.scaleBarGeometry( ...
-size(imageData), cal, 10, &quot;Bottom right&quot;, &quot;White&quot;);</code></pre></section>
+size(imageData), cal, 10, &quot;Bottom right&quot;, &quot;White&quot;);</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>imageSize</code></dt><dd>source image size; the first two elements are height/width.</dd></div><div class="argument"><dt><code>calibration</code></dt><dd>scaleBarCalibration-compatible struct with positive pixelsPerUnit and a unit label.</dd></div><div class="argument"><dt><code>barLength</code></dt><dd>positive physical length expressed in calibration.unit.</dd></div><div class="argument"><dt><code>position</code></dt><dd>Bottom/Top combined with left/center/right. Default is &quot;Bottom right&quot; when the supplied value has no recognized token.</dd></div><div class="argument"><dt><code>colorName</code></dt><dd>&quot;Black&quot; or &quot;White&quot;; other values fall back to black.</dd></div></dl></section>
 <section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>geometry</code></dt><dd>scalar data struct with line, label, color, labelPosition, verticalAlignment, pixelsPerUnit, unit, barLength, position, and colorName. Apps/renderers own drawing; this function creates no UI.</dd></div></dl></section>
 <h2 id="related-apis">Related APIs</h2><ul><li><a href="anchorPath.html"><code>labkit.ui.interaction.anchorPath</code></a> — Build the visible path used by a managed anchor interaction.</li><li><a href="enablePopout.html"><code>labkit.ui.interaction.enablePopout</code></a> — Add a context-menu action to copy an axes to a figure.</li><li><a href="scaleBarCalibration.html"><code>labkit.ui.interaction.scaleBarCalibration</code></a> — Build a reusable image scale-bar calibration struct.</li></ul>

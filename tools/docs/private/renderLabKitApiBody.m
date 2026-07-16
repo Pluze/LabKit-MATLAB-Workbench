@@ -17,6 +17,7 @@ function html = renderLabKitApiBody(model, item, outputPath)
 
     sourceUrl = model.repositoryUrl + "/blob/main/" + item.source;
     summary = cleanSummary(item.summary);
+    syntax = publicCallSyntax(item.helpText, item.signature);
     contractHtml = renderHelpSections(item.helpText, item.summary);
     relatedHtml = renderRelatedApis(model.api, item, outputPath);
     html = strjoin([ ...
@@ -25,7 +26,7 @@ function html = renderLabKitApiBody(model, item, outputPath)
         "<p class=""lead"">" + htmlEscape(summary) + "</p>"
         "<h2 id=""syntax"">Syntax</h2>"
         "<pre><code class=""language-matlab"">" + ...
-            htmlEscape(item.signature) + "</code></pre>"
+            htmlEscape(syntax) + "</code></pre>"
         contractHtml
         relatedHtml
         "<h2 id=""source"">Source</h2>"
@@ -42,6 +43,9 @@ function html = renderHelpSections(helpText, summaryLine)
     sections = parseSections(lines);
     blocks = strings(0, 1);
     for k = 1:numel(sections)
+        if any(lower(sections(k).name) == ["usage", "app-facing contract"])
+            continue;
+        end
         content = stripEmptyEdges(sections(k).lines);
         if isempty(content)
             continue;
@@ -53,6 +57,35 @@ function html = renderHelpSections(helpText, summaryLine)
             renderSectionContent(title, content) + "</section>";
     end
     html = strjoin(blocks, newline);
+end
+
+function syntax = publicCallSyntax(helpText, fallback)
+    lines = splitlines(string(helpText));
+    syntaxLines = strings(0, 1);
+    collecting = false;
+    for k = 1:numel(lines)
+        line = lines(k);
+        trimmed = strip(line);
+        isHeader = line == trimmed && ~isempty(regexp(char(trimmed), ...
+            '^[A-Za-z][A-Za-z0-9 /&-]+:$', 'once'));
+        if isHeader
+            name = extractBefore(trimmed, strlength(trimmed));
+            if any(lower(name) == ["usage", "app-facing contract"])
+                collecting = true;
+                continue;
+            elseif collecting
+                break;
+            end
+        elseif collecting
+            syntaxLines(end + 1, 1) = line;
+        end
+    end
+    syntaxLines = stripEmptyEdges(syntaxLines);
+    if isempty(syntaxLines)
+        syntax = string(fallback);
+    else
+        syntax = strjoin(strip(syntaxLines), newline);
+    end
 end
 
 function sections = parseSections(lines)

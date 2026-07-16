@@ -21,11 +21,10 @@
 <h1><code>labkit.biosignal.measureSegments</code></h1>
 <p class="lead">Measure generic template-residual segment quality.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function result = measureSegments(segments, template, opts)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">measurements = labkit.biosignal.measureSegments(segments, template);
+<pre><code class="language-matlab">measurements = labkit.biosignal.measureSegments(segments, template);
 opts = struct('signalWindowSec', [-0.05 0.05], ...
 'noiseWindowsSec', [-0.30 -0.20; 0.30 0.40]);
-measurements = labkit.biosignal.measureSegments(segments, template, opts);</code></pre></section>
+measurements = labkit.biosignal.measureSegments(segments, template, opts);</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>segments</code></dt><dd>struct returned by segmentByEvents.</dd></div><div class="argument"><dt><code>template</code></dt><dd>struct returned by buildTemplate.</dd></div><div class="argument"><dt><code>opts</code></dt><dd>optional struct.</dd></div></dl></section>
 <section class="api-section"><h2 id="options">Options</h2><dl class="argument-list"><div class="argument"><dt><code>signalWindowSec</code></dt><dd>[start end] seconds relative to event, default [-0.06 0.06].</dd></div><div class="argument"><dt><code>noiseWindowsSec</code></dt><dd>N-by-2 seconds relative to event, default [-0.30 -0.20; 0.40 0.50].</dd></div></dl></section>
 <section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>result</code></dt><dd>struct with perSegment table, summary table, and metadata.</dd></div></dl></section>

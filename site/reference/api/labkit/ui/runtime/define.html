@@ -21,8 +21,7 @@
 <h1><code>labkit.ui.runtime.define</code></h1>
 <p class="lead">Create a LabKit declarative app runtime definition.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function def = define(varargin)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">def = labkit.ui.runtime.define(&quot;Id&quot;, id, &quot;Title&quot;, title, ...
+<pre><code class="language-matlab">def = labkit.ui.runtime.define(&quot;Id&quot;, id, &quot;Title&quot;, title, ...
 &quot;Project&quot;, projectSpec, &quot;CreateSession&quot;, sessionFcn, ...
 &quot;Layout&quot;, layoutFcn, &quot;Actions&quot;, actions, ...
 &quot;Present&quot;, presentFcn, &quot;Renderers&quot;, renderers, ...
@@ -31,7 +30,8 @@
 Project is a struct with Version, Create, Validate, and optional ordered
 Migrations fields. CreateSession, Renderers, Start, and DebugSample are
 optional. DebugSample receives the runtime debug log and is called only for
-debug launches.</code></pre></section>
+debug launches.</code></pre>
+
 <h2 id="related-apis">Related APIs</h2><ul><li><a href="create.html"><code>labkit.ui.runtime.create</code></a> — Build a LabKit workbench from a declarative layout.</li><li><a href="createPortableFileReference.html"><code>labkit.ui.runtime.createPortableFileReference</code></a> — Describe an external file relative to saved state.</li><li><a href="defaultOutputFolder.html"><code>labkit.ui.runtime.defaultOutputFolder</code></a> — Return a source-adjacent app output folder.</li><li><a href="emptySourceRecords.html"><code>labkit.ui.runtime.emptySourceRecords</code></a> — Create an empty canonical Runtime V2 source array.</li><li><a href="launch.html"><code>labkit.ui.runtime.launch</code></a> — Dispatch requests and launch a LabKit runtime definition.</li><li><a href="loadState.html"><code>labkit.ui.runtime.loadState</code></a> — Load a compatible Runtime V2 project or declared legacy import.</li><li><a href="resolvePortableFileReference.html"><code>labkit.ui.runtime.resolvePortableFileReference</code></a> — Resolve an external file after saved state moves.</li><li><a href="runBusy.html"><code>labkit.ui.runtime.runBusy</code></a> — Run synchronous GUI work while the whole app is busy.</li></ul>
 <h2 id="source">Source</h2>
 <p>This page is generated from the MATLAB help text in <a href="https://github.com/Pluze/LabKit-MATLAB-Workbench/blob/main/+labkit/+ui/+runtime/define.m"><code>+labkit/+ui/+runtime/define.m</code></a>.</p>

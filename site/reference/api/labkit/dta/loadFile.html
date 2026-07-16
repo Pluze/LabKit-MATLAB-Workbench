@@ -21,9 +21,8 @@
 <h1><code>labkit.dta.loadFile</code></h1>
 <p class="lead">Load one supported DTA file without GUI side effects.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function [item, status] = loadFile(filepath, expectedKind, opts)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">[item, status] = labkit.dta.loadFile(filepath);
-[item, status] = labkit.dta.loadFile(filepath, &quot;chrono&quot;);</code></pre></section>
+<pre><code class="language-matlab">[item, status] = labkit.dta.loadFile(filepath);
+[item, status] = labkit.dta.loadFile(filepath, &quot;chrono&quot;);</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>filepath</code></dt><dd>char/string path to one Gamry DTA file.</dd></div><div class="argument"><dt><code>expectedKind</code></dt><dd>&quot;auto&quot; (default), &quot;chrono&quot;, &quot;eis&quot;, or &quot;cvct&quot;.</dd></div><div class="argument"><dt><code>opts</code></dt><dd>optional struct passed to kind-specific item construction.</dd></div></dl></section>
 <section class="api-section"><h2 id="options">Options</h2><p>For chrono files, opts may contain pulse-detection options accepted by labkit.dta.detectPulses through the private chrono item builder.</p></section>
 <section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>item</code></dt><dd>parsed DTA item struct when status.ok is true.</dd></div><div class="argument"><dt><code>status</code></dt><dd>struct with ok, message, kind, expectedKind, and filepath.</dd></div></dl></section>

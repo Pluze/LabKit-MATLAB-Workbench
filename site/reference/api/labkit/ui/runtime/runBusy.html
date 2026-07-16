@@ -21,9 +21,8 @@
 <h1><code>labkit.ui.runtime.runBusy</code></h1>
 <p class="lead">Run synchronous GUI work while the whole app is busy.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function varargout = runBusy(fig, message, workFcn, opts)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">labkit.ui.runtime.runBusy(fig, &quot;Writing outputs...&quot;, @() writeOutputs());
-result = labkit.ui.runtime.runBusy(fig, &quot;Computing result...&quot;, @() compute());</code></pre></section>
+<pre><code class="language-matlab">labkit.ui.runtime.runBusy(fig, &quot;Writing outputs...&quot;, @() writeOutputs());
+result = labkit.ui.runtime.runBusy(fig, &quot;Computing result...&quot;, @() compute());</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>fig</code></dt><dd>owning uifigure or figure. Empty or invalid figures are accepted; the work callback still runs.</dd></div><div class="argument"><dt><code>message</code></dt><dd>short busy message appended to the figure title while work runs.</dd></div><div class="argument"><dt><code>workFcn</code></dt><dd>scalar function handle to run synchronously.</dd></div><div class="argument"><dt><code>opts</code></dt><dd>optional struct. freezeInteractions controls whether figure-level pointer, keyboard, click, motion, scroll, and graphics hit-testing are temporarily disabled. Default true.</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>varargout</code></dt><dd>outputs returned by workFcn. When no outputs are requested, workFcn is called for side effects only.</dd></div></dl></section>
 <section class="api-section"><h2 id="behavior">Behavior</h2><p>The helper marks the app busy, sets the figure pointer to &quot;watch&quot;, and appends a busy message to the window title. When freezeInteractions is true, it also clears app-level pointer, keyboard, click, motion, and scroll callbacks and turns graphics hit testing off where supported. It restores previous state after success or failure and rethrows callback errors.</p></section>

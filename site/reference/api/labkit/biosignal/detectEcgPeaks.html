@@ -21,11 +21,10 @@
 <h1><code>labkit.biosignal.detectEcgPeaks</code></h1>
 <p class="lead">Detect ECG/QRS peaks as event anchors.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function events = detectEcgPeaks(signal, opts)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">events = labkit.biosignal.detectEcgPeaks(signal);
+<pre><code class="language-matlab">events = labkit.biosignal.detectEcgPeaks(signal);
 opts = labkit.biosignal.defaultEcgPeakOptions(&quot;pan-tompkins&quot;);
 opts.minDistanceSec = 0.35;
-events = labkit.biosignal.detectEcgPeaks(signal, opts);</code></pre></section>
+events = labkit.biosignal.detectEcgPeaks(signal, opts);</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>signal</code></dt><dd>biosignal signal struct with time, values, and fs fields.</dd></div><div class="argument"><dt><code>opts</code></dt><dd>optional struct. Start from defaultEcgPeakOptions(method) and override fields rather than hand-writing all options.</dd></div></dl></section>
 <section class="api-section"><h2 id="options">Options</h2><dl class="argument-list"><div class="argument"><dt><code>method</code></dt><dd>&quot;qrs-streaming&quot; (default), &quot;pan-tompkins&quot;, or &quot;local&quot;.</dd></div><div class="argument"><dt><code>polarity</code></dt><dd>&quot;auto&quot; (default), &quot;positive&quot;, &quot;negative&quot;, or &quot;absolute&quot;.</dd></div><div class="argument"><dt><code>minDistanceSec</code></dt><dd>minimum accepted peak spacing in seconds. thresholdStd, smoothSec - local method options. integrationWindowSec, refineSearchSec, rawRefineSearchSec - Pan-Tompkins method options. baselineWindowSec, envelopeWindowSec, lookaheadSec, refineSearchSec, rawRefineSearchSec, minTemplateScore, medianPolarityCorrection,</dd></div><div class="argument"><dt><code>medianReviewPeakCount</code></dt><dd>qrs-streaming method options.</dd></div></dl></section>
 <section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>events</code></dt><dd>struct with index, time, amplitude, score, label, threshold, and metadata.method.</dd></div></dl></section>

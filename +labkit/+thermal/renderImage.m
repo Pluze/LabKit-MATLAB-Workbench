@@ -1,20 +1,44 @@
 function rgb = renderImage(values, opts)
-%RENDERIMAGE Render a thermal matrix as an RGB image.
+%RENDERIMAGE Map a thermal matrix to an RGB image.
 %
-% App-facing contract:
+% Usage:
 %   rgb = labkit.thermal.renderImage(values)
 %   rgb = labkit.thermal.renderImage(values, opts)
 %
+% Description:
+%   Linearly maps numeric values between the selected limits onto a thermal
+%   colour palette. Values below or above the limits are clipped to the first
+%   or last palette colour. NaN and Inf values use the first palette colour.
+%   This function changes only the display representation; it does not modify
+%   the source temperatures or apply a calibration.
+%
 % Inputs:
-%   values - numeric thermal matrix.
-%   opts - optional scalar struct with fields:
-%       Limits - two finite increasing values. Default uses finite min/max.
-%       Palette - "turbo", "parula", "hot", "gray", or "iron", default
-%           "turbo".
-%       Levels - positive integer colormap length, default 256.
+%   values - Numeric M-by-N matrix containing temperatures or raw sensor
+%       values.
+%   opts - Optional scalar structure. See Options.
+%
+% Options:
+%   Limits - Two finite, increasing numeric values [low high]. When omitted,
+%       the finite minimum and maximum of values are used. An all-nonfinite
+%       matrix uses [0 1]. A constant matrix uses [value value+1].
+%   Palette - String scalar naming the colour palette. Allowed values are
+%       "turbo", "parula", "hot", "gray", and "iron". Default: "turbo".
+%   Levels - Finite numeric scalar giving the palette length. Values are
+%       rounded to the nearest integer and must be at least 2. Default: 256.
 %
 % Outputs:
-%   rgb - double MxNx3 image in [0, 1].
+%   rgb - M-by-N-by-3 double array with channel values in the interval [0, 1].
+%
+% Errors:
+%   Throws labkit:thermal:InvalidOptions when Limits, Palette, or Levels is
+%   invalid.
+%
+% Example:
+%   temperatureC = [20 24 28; 32 36 40];
+%   rgb = labkit.thermal.renderImage(temperatureC, ...
+%       struct("Limits", [20 40], "Palette", "iron", "Levels", 256));
+%   image(rgb)
+%   axis image off
 
     if nargin < 2 || isempty(opts)
         opts = struct();

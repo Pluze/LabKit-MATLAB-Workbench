@@ -21,10 +21,9 @@
 <h1><code>labkit.biosignal.filterSignal</code></h1>
 <p class="lead">Apply a zero-phase FFT-domain filter to a biosignal.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function filtered = filterSignal(signal, spec)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">filtered = labkit.biosignal.filterSignal(signal);
+<pre><code class="language-matlab">filtered = labkit.biosignal.filterSignal(signal);
 filtered = labkit.biosignal.filterSignal(signal, ...
-struct('type', 'bandpass', 'cutoffHz', [0.5 40]));</code></pre></section>
+struct('type', 'bandpass', 'cutoffHz', [0.5 40]));</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>signal</code></dt><dd>biosignal signal struct with values and fs fields.</dd></div><div class="argument"><dt><code>spec</code></dt><dd>optional struct.</dd></div></dl></section>
 <section class="api-section"><h2 id="options">Options</h2><dl class="argument-list"><div class="argument"><dt><code>type</code></dt><dd>&quot;bandpass&quot; (default), &quot;lowpass&quot;, &quot;highpass&quot;, &quot;none&quot;, or &quot;off&quot;.</dd></div><div class="argument"><dt><code>cutoffHz</code></dt><dd>scalar for low/high pass or [low high] for bandpass.</dd></div><div class="argument"><dt><code>edgeMode</code></dt><dd>&quot;reflect&quot; (default) or &quot;none&quot;. Reflect mode pads both ends before FFT filtering, then crops back to the original length.</dd></div><div class="argument"><dt><code>edgePadSec</code></dt><dd>positive scalar padding seconds. Default is derived from the low cutoff and capped at 5 seconds.</dd></div><div class="argument"><dt><code>edgeTaperSec</code></dt><dd>positive scalar seconds used to taper only the padded edges toward zero before FFT filtering. Default 1 second.</dd></div></dl></section>
 <section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>filtered</code></dt><dd>signal struct preserving metadata and replacing values.</dd></div></dl></section>

@@ -21,9 +21,8 @@
 <h1><code>labkit.ui.plot.clear</code></h1>
 <p class="lead">Clear a plot axes before app-owned redraws.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function clear(ax, varargin)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">labkit.ui.plot.clear(ax)
-labkit.ui.plot.clear(ax, &quot;ResetScale&quot;, true)</code></pre></section>
+<pre><code class="language-matlab">labkit.ui.plot.clear(ax)
+labkit.ui.plot.clear(ax, &quot;ResetScale&quot;, true)</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>ax</code></dt><dd>target MATLAB axes or uiaxes handle.</dd></div><div class="argument"><dt><code>ResetScale</code></dt><dd>optional logical, default false. When true, XScale/YScale are restored to linear and X/Y tick modes are restored to automatic.</dd></div><div class="argument"><dt><code>ClearLegend</code></dt><dd>optional logical, default true. Turns the axes legend off.</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><p>None.</p></section>
 <section class="api-section"><h2 id="example">Example</h2><pre><code class="language-matlab">labkit.ui.plot.clear(ax, &quot;ResetScale&quot;, true);

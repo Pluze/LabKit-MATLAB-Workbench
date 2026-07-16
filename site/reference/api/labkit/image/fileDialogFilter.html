@@ -21,9 +21,8 @@
 <h1><code>labkit.image.fileDialogFilter</code></h1>
 <p class="lead">Return a file-chooser-compatible image filter.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function filterSpec = fileDialogFilter(varargin)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">filterSpec = labkit.image.fileDialogFilter()
-filterSpec = labkit.image.fileDialogFilter(&quot;IncludeAll&quot;, true)</code></pre></section>
+<pre><code class="language-matlab">filterSpec = labkit.image.fileDialogFilter()
+filterSpec = labkit.image.fileDialogFilter(&quot;IncludeAll&quot;, true)</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>IncludeAll</code></dt><dd>optional logical scalar, default false. When true, append an &quot;All files (*.*)&quot; row after the image-file row.</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>filterSpec</code></dt><dd>cell array accepted by filePanel filters and MATLAB file-chooser filter specs.</dd></div></dl></section>
 <h2 id="related-apis">Related APIs</h2><ul><li><a href="adjustBrightnessContrast.html"><code>labkit.image.adjustBrightnessContrast</code></a> — Apply simple brightness and contrast adjustment.</li><li><a href="adjustHueSaturation.html"><code>labkit.image.adjustHueSaturation</code></a> — Apply HSV hue and saturation adjustment.</li><li><a href="assertSupportedPaths.html"><code>labkit.image.assertSupportedPaths</code></a> — Throw when any path has an unsupported image extension.</li><li><a href="displayName.html"><code>labkit.image.displayName</code></a> — Return a short image-file display name.</li><li><a href="ensureRgb.html"><code>labkit.image.ensureRgb</code></a> — Return image data with exactly three color channels.</li><li><a href="grayWorldWhiteBalance.html"><code>labkit.image.grayWorldWhiteBalance</code></a> — Apply generic gray-world white balance.</li><li><a href="im2double.html"><code>labkit.image.im2double</code></a> — Convert image data to double using MATLAB's im2double contract.</li><li><a href="isSupportedPath.html"><code>labkit.image.isSupportedPath</code></a> — Return true when a path has a supported image extension.</li></ul>

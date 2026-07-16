@@ -21,9 +21,8 @@
 <h1><code>labkit.ui.plot.clampData</code></h1>
 <p class="lead">Clamp data coordinates inside the visible axes box.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function xy = clampData(ax, xy, varargin)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">xyOut = labkit.ui.plot.clampData(ax, xy)
-xyOut = labkit.ui.plot.clampData(ax, xy, &quot;Padding&quot;, 0.04)</code></pre></section>
+<pre><code class="language-matlab">xyOut = labkit.ui.plot.clampData(ax, xy)
+xyOut = labkit.ui.plot.clampData(ax, xy, &quot;Padding&quot;, 0.04)</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>ax</code></dt><dd>target MATLAB axes or uiaxes handle.</dd></div><div class="argument"><dt><code>xy</code></dt><dd>N-by-2 numeric data coordinates.</dd></div><div class="argument"><dt><code>Padding</code></dt><dd>optional normalized axes padding, default 0.04.</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>xyOut</code></dt><dd>N-by-2 clamped data coordinates.</dd></div></dl></section>
 <h2 id="related-apis">Related APIs</h2><ul><li><a href="clear.html"><code>labkit.ui.plot.clear</code></a> — Clear a plot axes before app-owned redraws.</li><li><a href="fit.html"><code>labkit.ui.plot.fit</code></a> — Fit axes limits to finite plotted X/Y data.</li><li><a href="fitCanvas.html"><code>labkit.ui.plot.fitCanvas</code></a> — Fit one previewArea axes into a fixed pixel canvas frame.</li><li><a href="message.html"><code>labkit.ui.plot.message</code></a> — Show a centered empty-state message in an axes.</li><li><a href="offsetData.html"><code>labkit.ui.plot.offsetData</code></a> — Offset data coordinates by normalized axes fractions.</li></ul>

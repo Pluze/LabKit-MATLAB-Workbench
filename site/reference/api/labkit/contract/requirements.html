@@ -21,8 +21,7 @@
 <h1><code>labkit.contract.requirements</code></h1>
 <p class="lead">Build a LabKit facade requirement contract.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function req = requirements(varargin)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">req = labkit.contract.requirements(&quot;ui&quot;, &quot;&gt;=2.0 &lt;3&quot;, ...)</code></pre></section>
+<pre><code class="language-matlab">req = labkit.contract.requirements(&quot;ui&quot;, &quot;&gt;=2.0 &lt;3&quot;, ...)</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><p>Facade/range pairs - facade names such as &quot;ui&quot;, &quot;dta&quot;, &quot;rhs&quot;, &quot;biosignal&quot;, or &quot;image&quot;, followed by simple semantic-version ranges. Ranges use whitespace-separated constraints such as &quot;&gt;=2.0 &lt;3&quot;.</p></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>req</code></dt><dd>struct with type and facades fields. The facades field is a struct array with facade and range fields, suitable for app requirements() functions and labkit.contract.checkRequirements.</dd></div></dl></section>
 <h2 id="related-apis">Related APIs</h2><ul><li><a href="assertRequirements.html"><code>labkit.contract.assertRequirements</code></a> — Require app facade contracts to match current LabKit.</li><li><a href="checkRequirements.html"><code>labkit.contract.checkRequirements</code></a> — Check app facade requirements against LabKit versions.</li><li><a href="versionInfo.html"><code>labkit.contract.versionInfo</code></a> — Build a LabKit facade version contract struct.</li></ul>

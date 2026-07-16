@@ -1,30 +1,81 @@
 function [temperatureC, diagnostics] = rawToTemperatureC(raw, calibration, opts)
-%RAWTOTEMPERATUREC Convert FLIR raw sensor values to Celsius.
+%RAWTOTEMPERATUREC Convert FLIR raw sensor values to degrees Celsius.
 %
-% App-facing contract:
+% Usage:
 %   temperatureC = labkit.thermal.rawToTemperatureC(raw, calibration)
 %   temperatureC = labkit.thermal.rawToTemperatureC(raw, calibration, opts)
 %   [temperatureC, diagnostics] = labkit.thermal.rawToTemperatureC(...)
 %
+% Description:
+%   Applies the FLIR Planck calibration stored in a radiometric image. The
+%   default correction also compensates for emissivity, reflected radiation,
+%   atmospheric transmission, and an infrared window. Select "planck-basic"
+%   when the raw counts have already been corrected or when only the camera's
+%   Planck constants should be applied.
+%
 % Inputs:
-%   raw - numeric raw sensor matrix.
-%   calibration - scalar struct with PlanckR1, PlanckB, PlanckF, PlanckO,
-%       PlanckR2, and optional environmental fields Emissivity,
-%       ObjectDistanceM, ReflectedApparentTemperatureC,
-%       AtmosphericTemperatureC, IRWindowTemperatureC, IRWindowTransmission,
-%       RelativeHumidity, AtmosphericTransAlpha1/2, AtmosphericTransBeta1/2,
-%       and AtmosphericTransX.
-%   opts - optional scalar struct with field Correction: "environment" or
-%       "planck-basic", default "environment".
+%   raw - Numeric array of raw sensor counts. The output has the same size.
+%   calibration - Scalar structure containing the five required Planck fields
+%       and, for environmental correction, the fields described below.
+%   opts - Optional scalar structure. See Options.
+%
+% Calibration Fields:
+%   PlanckR1 - Required finite scalar from the camera metadata.
+%   PlanckB - Required finite scalar from the camera metadata.
+%   PlanckF - Required finite scalar from the camera metadata.
+%   PlanckO - Required finite scalar from the camera metadata.
+%   PlanckR2 - Required finite scalar from the camera metadata.
+%   Emissivity - Object emissivity. Must be positive. Default: 1.
+%   ObjectDistanceM - Camera-to-object distance in metres. Negative values are
+%       treated as zero. Default: 1.
+%   ReflectedApparentTemperatureC - Reflected apparent temperature in degrees
+%       Celsius. Default: 20.
+%   AtmosphericTemperatureC - Atmospheric temperature in degrees Celsius.
+%       Default: 20.
+%   IRWindowTemperatureC - Infrared-window temperature in degrees Celsius.
+%       Defaults to ReflectedApparentTemperatureC.
+%   IRWindowTransmission - Infrared-window transmission. Must be positive.
+%       Default: 1.
+%   RelativeHumidity - Relative humidity as a fraction from 0 to 1 or as a
+%       percentage greater than 2. Default: 0.5.
+%   AtmosphericTransAlpha1 - First atmospheric alpha coefficient. Default:
+%       0.006569.
+%   AtmosphericTransAlpha2 - Second atmospheric alpha coefficient. Default:
+%       0.01262.
+%   AtmosphericTransBeta1 - First atmospheric beta coefficient. Default:
+%       -0.002276.
+%   AtmosphericTransBeta2 - Second atmospheric beta coefficient. Default:
+%       -0.00667.
+%   AtmosphericTransX - Atmospheric mixing coefficient. Default: 1.9.
+%
+% Options:
+%   Correction - String scalar selecting the conversion model. "environment"
+%       uses the environmental fields and records every fallback value.
+%       "planck-basic" uses only the five Planck fields. Default:
+%       "environment".
 %
 % Outputs:
-%   temperatureC - double matrix in degrees Celsius. Invalid conversion pixels
-%       become NaN.
-%   diagnostics - scalar struct with correction, usedDefaults,
-%       defaultedFields, parameterSources, and message. parameterSources maps
-%       environmental field names to "calibration" or "default". Basic mode
-%       does not consume environmental parameters and therefore reports no
-%       defaults.
+%   temperatureC - Double array in degrees Celsius with the same size as raw.
+%       Pixels for which the Planck expression is undefined are NaN.
+%   diagnostics - Scalar structure describing the conversion. correction is
+%       the selected mode; usedDefaults is true if an environmental fallback
+%       was used; defaultedFields lists those fields; parameterSources maps
+%       each environmental field to "calibration" or "default"; and message
+%       provides a readable summary. In "planck-basic" mode, no environmental
+%       fields are consumed and defaultedFields is empty.
+%
+% Errors:
+%   Throws labkit:thermal:MissingCalibration when a required Planck field is
+%   absent or not finite, and labkit:thermal:InvalidOptions when Correction is
+%   not one of the two supported values.
+%
+% Example:
+%   calibration = struct("PlanckR1", 21106.77, "PlanckB", 1501, ...
+%       "PlanckF", 1, "PlanckO", -7340, "PlanckR2", 0.012545258);
+%   raw = [15000 15500; 16000 16500];
+%   [temperatureC, diagnostics] = ...
+%       labkit.thermal.rawToTemperatureC(raw, calibration, ...
+%       struct("Correction", "planck-basic"));
 
     if nargin < 3 || isempty(opts)
         opts = struct();

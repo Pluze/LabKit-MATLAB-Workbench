@@ -21,8 +21,7 @@
 <h1><code>labkit.image.previewBudget</code></h1>
 <p class="lead">Downsample image data to fit a display pixel budget.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function [preview, info] = previewBudget(imageData, varargin)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">[preview, info] = labkit.image.previewBudget(imageData, &quot;MaxPixels&quot;, n)</code></pre></section>
+<pre><code class="language-matlab">[preview, info] = labkit.image.previewBudget(imageData, &quot;MaxPixels&quot;, n)</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>imageData</code></dt><dd>2-D or 3-D image matrix. Class and channel count are preserved.</dd></div><div class="argument"><dt><code>MaxPixels</code></dt><dd>positive scalar display-pixel budget, default 1.2e6.</dd></div><div class="argument"><dt><code>Expansion</code></dt><dd>positive scalar estimated processing-area multiplier before preview rendering, default 1. Use this when a workflow pads or expands the image before display.</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>preview</code></dt><dd>imageData sampled at an integer stride when needed.</dd></div><div class="argument"><dt><code>info</code></dt><dd>struct with scaleFactor, coordinateScale, maxPixels, estimatedPixels, sourceSize, and previewSize.</dd></div></dl></section>
 <section class="api-section"><h2 id="example">Example</h2><pre><code class="language-matlab">[preview, info] = labkit.image.previewBudget(rgb, ...

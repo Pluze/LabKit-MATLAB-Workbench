@@ -21,10 +21,9 @@
 <h1><code>labkit.ui.plot.fit</code></h1>
 <p class="lead">Fit axes limits to finite plotted X/Y data.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function limits = fit(ax, varargin)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">limits = labkit.ui.plot.fit(ax)
+<pre><code class="language-matlab">limits = labkit.ui.plot.fit(ax)
 limits = labkit.ui.plot.fit(ax, graphicsHandles)
-limits = labkit.ui.plot.fit(ax, graphicsHandles, &quot;Padding&quot;, 0.02)</code></pre></section>
+limits = labkit.ui.plot.fit(ax, graphicsHandles, &quot;Padding&quot;, 0.02)</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>ax</code></dt><dd>target MATLAB axes or uiaxes handle.</dd></div><div class="argument"><dt><code>graphicsHandles</code></dt><dd>optional graphics handles whose XData/YData should drive the fitted range. When omitted, finite X/Y data are collected from the axes children.</dd></div><div class="argument"><dt><code>Padding</code></dt><dd>optional fractional padding, default 0.02.</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>limits</code></dt><dd>struct with x and y fields containing the applied limits, or empty arrays when no finite data were available.</dd></div></dl></section>
 <section class="api-section"><h2 id="example">Example</h2><pre><code class="language-matlab">h = plot(ax, t, y);

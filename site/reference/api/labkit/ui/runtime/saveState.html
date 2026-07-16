@@ -21,9 +21,8 @@
 <h1><code>labkit.ui.runtime.saveState</code></h1>
 <p class="lead">Save a Runtime V2 project to a MAT file.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function filepath = saveState(fig, filepath)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">filepath = labkit.ui.runtime.saveState(fig)
-filepath = labkit.ui.runtime.saveState(fig, filepath)</code></pre></section>
+<pre><code class="language-matlab">filepath = labkit.ui.runtime.saveState(fig)
+filepath = labkit.ui.runtime.saveState(fig, filepath)</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>fig</code></dt><dd>LabKit app figure created by labkit.ui.runtime.launch.</dd></div><div class="argument"><dt><code>filepath</code></dt><dd>optional scalar text MAT-file target. When omitted, a save dialog is shown.</dd></div></dl></section>
 <section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>filepath</code></dt><dd>selected or supplied MAT-file path. Empty when the user cancels the save dialog.</dd></div></dl></section>
 <section class="api-section"><h2 id="project-contract">Project Contract</h2><p>Saves one `labkitProject` envelope containing only durable project data.</p></section>

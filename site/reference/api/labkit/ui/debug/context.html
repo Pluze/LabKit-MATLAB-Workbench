@@ -21,14 +21,13 @@
 <h1><code>labkit.ui.debug.context</code></h1>
 <p class="lead">Create an app-neutral debug and trace context.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function debugContext = context(appName, opts)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">debug = labkit.ui.debug.context(&quot;labkit_Example_app&quot;, opts);
+<pre><code class="language-matlab">debug = labkit.ui.debug.context(&quot;labkit_Example_app&quot;, opts);
 debug.append(&quot;Loaded file&quot;);
 debug.trace(&quot;button pressed&quot;);
 debug.trace(&quot;scaleBar&quot;, &quot;reference changed&quot;, &quot;user&quot;);
 debug.reportException(&quot;load&quot;, caughtException);
 debug.attachTextLog(txtLog);
-debug.instrumentFigure(fig);</code></pre></section>
+debug.instrumentFigure(fig);</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>appName</code></dt><dd>app entry-point name stored in debugContext.appName and trace.</dd></div><div class="argument"><dt><code>opts</code></dt><dd>optional struct with fields:</dd></div><div class="argument"><dt><code>enabled</code></dt><dd>logical, default true. Disabled contexts ignore append/trace.</dd></div><div class="argument"><dt><code>traceEnabled</code></dt><dd>logical, default same as enabled.</dd></div><div class="argument"><dt><code>logFile</code></dt><dd>char/string filepath, default ''. Appended and trace lines are mirrored to this file when enabled.</dd></div><div class="argument"><dt><code>logCallback</code></dt><dd>function handle, default []. Called for every captured line as logCallback(line).</dd></div><div class="argument"><dt><code>traceCallback</code></dt><dd>function handle, default []. Called only for trace lines as traceCallback(line).</dd></div><div class="argument"><dt><code>stallTimeoutSeconds</code></dt><dd>positive scalar, default 30. Instrumented callbacks still running after this duration write a crash report.</dd></div><div class="argument"><dt><code>crashReportFile</code></dt><dd>char/string filepath, default derived from logFile.</dd></div><div class="argument"><dt><code>activeOperationFile</code></dt><dd>char/string filepath, default derived from logFile. This file is written at callback start and removed only after callback completion so a process crash leaves the active callback visible on disk. artifactFolder, sampleFolder, outputFolder, manifestFile - char/string debug artifact paths derived from logFile by default.</dd></div></dl></section>
 <section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>debugContext</code></dt><dd>struct with appName, file paths, append/trace/report callbacks, figure instrumentation, recordArtifacts, and getLog. Trace lines include stable app, component, event, and reason fields.</dd></div></dl></section>
 

@@ -21,9 +21,8 @@
 <h1><code>labkit.contract.assertRequirements</code></h1>
 <p class="lead">Require app facade contracts to match current LabKit.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function assertRequirements(appName, req, versions)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">labkit.contract.assertRequirements(appName, req)
-labkit.contract.assertRequirements(appName, req, versions)</code></pre></section>
+<pre><code class="language-matlab">labkit.contract.assertRequirements(appName, req)
+labkit.contract.assertRequirements(appName, req, versions)</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>appName</code></dt><dd>app entry-point name used for the error identifier.</dd></div><div class="argument"><dt><code>req</code></dt><dd>struct returned by labkit.contract.requirements.</dd></div><div class="argument"><dt><code>versions</code></dt><dd>optional facade version struct array for tests or diagnostics.</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><p>None. Throws &lt;appName&gt;:IncompatibleLabKit when a requirement fails.</p></section>
 <h2 id="related-apis">Related APIs</h2><ul><li><a href="checkRequirements.html"><code>labkit.contract.checkRequirements</code></a> — Check app facade requirements against LabKit versions.</li><li><a href="requirements.html"><code>labkit.contract.requirements</code></a> — Build a LabKit facade requirement contract.</li><li><a href="versionInfo.html"><code>labkit.contract.versionInfo</code></a> — Build a LabKit facade version contract struct.</li></ul>

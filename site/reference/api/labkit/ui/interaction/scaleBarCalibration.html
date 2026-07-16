@@ -21,11 +21,10 @@
 <h1><code>labkit.ui.interaction.scaleBarCalibration</code></h1>
 <p class="lead">Build a reusable image scale-bar calibration struct.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function cal = scaleBarCalibration(referencePixels, referenceLength, unitName, opts)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">cal = labkit.ui.interaction.scaleBarCalibration(80, 20, &quot;mm&quot;);
+<pre><code class="language-matlab">cal = labkit.ui.interaction.scaleBarCalibration(80, 20, &quot;mm&quot;);
 if cal.isCalibrated
 physicalLength = pixelLength / cal.pixelsPerUnit;
-end</code></pre></section>
+end</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>referencePixels</code></dt><dd>measured or typed reference length in image pixels. Nonpositive or nonfinite values are treated as missing.</dd></div><div class="argument"><dt><code>referenceLength</code></dt><dd>real reference length in the selected unit. Nonpositive or nonfinite values produce an uncalibrated result.</dd></div><div class="argument"><dt><code>unitName</code></dt><dd>string-like display unit. The default unit set is {'m','cm','mm','um','nm'}; unsupported values use the default unit.</dd></div><div class="argument"><dt><code>opts</code></dt><dd>optional struct.</dd></div></dl></section>
 <section class="api-section"><h2 id="options">Options</h2><dl class="argument-list"><div class="argument"><dt><code>units</code></dt><dd>allowed unit labels, default {'m','cm','mm','um','nm'}.</dd></div><div class="argument"><dt><code>defaultUnit</code></dt><dd>fallback unit, default first allowed unit.</dd></div><div class="argument"><dt><code>referenceLine</code></dt><dd>optional N-by-2 reference endpoint array. When two points are supplied and referencePixels is missing, their pixel distance is used.</dd></div></dl></section>
 <section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>cal</code></dt><dd>struct with fields referencePixels, referenceLength, unit, pixelsPerUnit, isCalibrated, and referenceLine.</dd></div></dl></section>

@@ -21,11 +21,10 @@
 <h1><code>labkit.rhs.readWindow</code></h1>
 <p class="lead">Read selected Intan RHS samples by time window and channel family.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function [window, status] = readWindow(filepath, opts)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">[window, status] = labkit.rhs.readWindow(filepath);
+<pre><code class="language-matlab">[window, status] = labkit.rhs.readWindow(filepath);
 opts = struct(&quot;family&quot;, &quot;stim&quot;, &quot;channels&quot;, &quot;C013&quot;, ...
 &quot;timeRangeSec&quot;, [0.1 0.2]);
-[window, status] = labkit.rhs.readWindow(filepath, opts);</code></pre></section>
+[window, status] = labkit.rhs.readWindow(filepath, opts);</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>filepath</code></dt><dd>char/string path to one .rhs file.</dd></div><div class="argument"><dt><code>opts</code></dt><dd>optional struct with fields:</dd></div><div class="argument"><dt><code>family</code></dt><dd>&quot;amplifier&quot; (default), &quot;stim&quot;, &quot;dcAmplifier&quot;, &quot;boardAdc&quot;, &quot;boardDac&quot;, &quot;boardDigIn&quot;, or &quot;boardDigOut&quot;.</dd></div><div class="argument"><dt><code>channels</code></dt><dd>numeric indices, channel names, string array, cellstr, or [] for all channels in the selected family.</dd></div><div class="argument"><dt><code>timeRangeSec</code></dt><dd>[start end] seconds, default [0 Inf].</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>window</code></dt><dd>struct with timeSec, values, channels, unit, family, and source metadata. Values are samples-by-channels.</dd></div><div class="argument"><dt><code>status</code></dt><dd>struct with ok, message, and filepath.</dd></div></dl></section>
 <h2 id="related-apis">Related APIs</h2><ul><li><a href="findFiles.html"><code>labkit.rhs.findFiles</code></a> — Recursively collect Intan RHS files without GUI side effects.</li><li><a href="indexFile.html"><code>labkit.rhs.indexFile</code></a> — Build an Intan RHS sample/block index for lazy reads.</li><li><a href="inspectFile.html"><code>labkit.rhs.inspectFile</code></a> — Read Intan RHS header metadata without loading waveform data.</li><li><a href="version.html"><code>labkit.rhs.version</code></a> — Return the LabKit RHS facade contract version.</li></ul>

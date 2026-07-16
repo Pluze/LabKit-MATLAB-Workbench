@@ -21,9 +21,8 @@
 <h1><code>labkit.biosignal.buildTemplate</code></h1>
 <p class="lead">Build a representative segment template.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function template = buildTemplate(segments, opts)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">template = labkit.biosignal.buildTemplate(segments);
-template = labkit.biosignal.buildTemplate(segments, struct('topN', 20));</code></pre></section>
+<pre><code class="language-matlab">template = labkit.biosignal.buildTemplate(segments);
+template = labkit.biosignal.buildTemplate(segments, struct('topN', 20));</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>segments</code></dt><dd>struct returned by segmentByEvents.</dd></div><div class="argument"><dt><code>opts</code></dt><dd>optional struct.</dd></div></dl></section>
 <section class="api-section"><h2 id="options">Options</h2><dl class="argument-list"><div class="argument"><dt><code>topN</code></dt><dd>positive integer, default min(30, segment count). The template is the mean of the top-N segments by correlation to a first-pass mean template.</dd></div></dl></section>
 <section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>template</code></dt><dd>struct with values, timeOffset, keptSegmentIndex, score, and metadata.topN.</dd></div></dl></section>

@@ -21,9 +21,8 @@
 <h1><code>labkit.dta.detectPulses</code></h1>
 <p class="lead">Detect chrono pulse windows through the DTA facade.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function [pulse, message] = detectPulses(t, Im, meta, mode)</code></pre>
-<section class="api-section"><h2 id="usage">Usage</h2><pre><code class="language-matlab">[pulse, message] = labkit.dta.detectPulses(t, Im, meta);
-[pulse, message] = labkit.dta.detectPulses(t, Im, meta, &quot;Auto from Im only&quot;);</code></pre></section>
+<pre><code class="language-matlab">[pulse, message] = labkit.dta.detectPulses(t, Im, meta);
+[pulse, message] = labkit.dta.detectPulses(t, Im, meta, &quot;Auto from Im only&quot;);</code></pre>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>t</code></dt><dd>time vector in seconds.</dd></div><div class="argument"><dt><code>Im</code></dt><dd>current vector in amps, same length as t.</dd></div><div class="argument"><dt><code>meta</code></dt><dd>optional chrono metadata struct containing ISTEP/TSTEP fields.</dd></div><div class="argument"><dt><code>mode</code></dt><dd>optional char/string or struct with mode field.</dd></div></dl></section>
 <section class="api-section"><h2 id="mode-values">Mode Values</h2><p>&quot;Metadata first, then auto&quot; / &quot;metadata_first&quot; (default) &quot;Metadata only&quot; / &quot;metadata_only&quot; &quot;Auto from Im only&quot; / &quot;current_only&quot;</p></section>
 <section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>pulse</code></dt><dd>pulse struct with flat compatibility fields and nested cath, anod, and gap fields.</dd></div><div class="argument"><dt><code>message</code></dt><dd>status text describing detection path.</dd></div></dl></section>
