@@ -2,6 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/Pluze/LabKit-MATLAB-Workbench?label=release)](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases)
 [![MATLAB Tests](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml/badge.svg)](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-0969da)](https://pluze.github.io/LabKit-MATLAB-Workbench/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=Pluze/LabKit-MATLAB-Workbench&file=labkit_launcher.m)
 [![GitHub contributors](https://img.shields.io/github/contributors/Pluze/LabKit-MATLAB-Workbench)](https://github.com/Pluze/LabKit-MATLAB-Workbench/graphs/contributors)
@@ -22,6 +23,8 @@ facades.
 ## Start Here
 
 **[Download `labkit_launcher.m`](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest/download/labkit_launcher.m)**
+
+**[Open the complete LabKit documentation](https://pluze.github.io/LabKit-MATLAB-Workbench/)**
 
 You can also open the launcher directly in
 [MATLAB Online](https://matlab.mathworks.com/open/github/v1?repo=Pluze/LabKit-MATLAB-Workbench&file=labkit_launcher.m)
@@ -71,16 +74,17 @@ reviewing implementation details.
 | Wearable biosignal | `labkit_ECGPrint_app` | ECG import, filtering, peak/segment review, and exports. |
 | Neurophysiology | `labkit_RHSPreview_app`, `labkit_NerveResponseAnalysis_app`, `labkit_ResponseReviewStats_app` | Intan RHS inspection, channel protocol drafting, filter records, event-locked nerve response analysis, and aligned response statistics. |
 
-See the [app guide](docs/apps/README.md) for the full app catalog and expected inputs
-and outputs.
+See the [online app guide](https://pluze.github.io/LabKit-MATLAB-Workbench/apps/)
+for the full app catalog, detailed workflows, inputs, outputs, APIs, and
+component history.
 
 ## Find The Right Page
 
 | I want to | Go to |
 | --- | --- |
-| Install or update LabKit | [docs/getting-started/README.md](docs/getting-started/README.md) |
-| Open LabKit or pick an app | [docs/apps/README.md](docs/apps/README.md) |
-| Understand the documentation set | [docs/README.md](docs/README.md) |
+| Browse the complete documentation | [LabKit documentation site](https://pluze.github.io/LabKit-MATLAB-Workbench/) |
+| Install or update LabKit | [Getting Started](https://pluze.github.io/LabKit-MATLAB-Workbench/getting-started/) |
+| Open LabKit or pick an app | [App catalog](https://pluze.github.io/LabKit-MATLAB-Workbench/apps/) |
 | Report a problem or ask for workflow support | [.github/SUPPORT.md](.github/SUPPORT.md) |
 | Call a public LabKit function | [docs/api/README.md](docs/api/README.md) |
 | Change source code or run checks | [docs/development/testing.md](docs/development/testing.md) |

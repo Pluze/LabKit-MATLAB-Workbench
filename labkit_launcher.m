@@ -5,7 +5,7 @@ function varargout = labkit_launcher(varargin)
 %   labkit_launcher
 %   apps = labkit_launcher("list")
 %   info = labkit_launcher("version")
-%   records = labkit_launcher("history", appCommand)
+%   page = labkit_launcher("documentation", appCommand)
 %
 % This launcher intentionally avoids dependencies on other LabKit .m files so
 % it can still restore a damaged zip install when packages, apps, or scripts
@@ -16,7 +16,7 @@ function varargout = labkit_launcher(varargin)
 %   Section: Public entrypoint and version
 %   Section: Path setup
 %   Section: Main launcher window
-%   Section: App version history window
+%   Section: App documentation
 %   Section: Version manager window
 %   Section: Version manager support
 %   Section: Table selection and display helpers
@@ -45,9 +45,9 @@ function varargout = labkit_launcher(varargin)
         varargout = {appCatalogTable(apps)};
         return;
     end
-    if mode == "history"
+    if mode == "documentation"
         root = fileparts(mfilename('fullpath'));
-        varargout = {launcherAppHistory(root, modeArgs(1))};
+        varargout = {launcherAppDocumentation(root, modeArgs(1))};
         return;
     end
     if nargout > 1
@@ -72,20 +72,20 @@ function [mode, modeArgs] = parseMode(args)
         return;
     end
     first = string(args{1});
-    if numel(args) == 2 && isscalar(first) && strcmpi(first, "history")
+    if numel(args) == 2 && isscalar(first) && strcmpi(first, "documentation")
         command = string(args{2});
         if ~isscalar(command) || strlength(strtrim(command)) == 0
             error('labkit_launcher:InvalidInput', ...
-                'History mode requires one nonempty app command.');
+                'Documentation mode requires one nonempty app command.');
         end
-        mode = "history";
+        mode = "documentation";
         modeArgs = command;
         return;
     end
     if numel(args) ~= 1
         error('labkit_launcher:InvalidInput', ...
             ['labkit_launcher accepts no inputs, "list", "version", or ' ...
-            '"history" plus one app command.']);
+            '"documentation" plus one app command.']);
     end
     value = string(args{1});
     if ~isscalar(value)
@@ -199,12 +199,12 @@ function fig = runLauncher(root)
         'ButtonPushedFcn', @onRefreshApps);
     btnRefresh.Layout.Row = 2;
     btnRefresh.Layout.Column = 1;
-    btnHistory = uibutton(runGrid, 'Text', 'Version History', ...
-        'ButtonPushedFcn', @onOpenSelectedHistory);
-    btnHistory.Layout.Row = 2;
-    btnHistory.Layout.Column = 2;
-    if isprop(btnHistory, 'Tooltip')
-        btnHistory.Tooltip = 'Show structured changelog records for the selected app.';
+    btnAppDocs = uibutton(runGrid, 'Text', 'Documentation and History', ...
+        'ButtonPushedFcn', @onOpenSelectedDocumentation);
+    btnAppDocs.Layout.Row = 2;
+    btnAppDocs.Layout.Column = 2;
+    if isprop(btnAppDocs, 'Tooltip')
+        btnAppDocs.Tooltip = 'Open the generated documentation page for the selected app.';
     end
 
     updatePanel = uipanel(controlsGrid, 'Title', 'Versions and Install');
@@ -392,25 +392,22 @@ function fig = runLauncher(root)
         launchSelectedApp(true);
     end
 
-    function onOpenSelectedHistory(varargin)
+    function onOpenSelectedDocumentation(varargin)
         if isempty(state.visibleApps)
-            setStatus('No app is available for version history.');
+            setStatus('No app is available for documentation.');
             return;
         end
         row = min(max(state.selectedRow, 1), numel(state.visibleApps));
         app = state.visibleApps(row);
         try
-            records = launcherAppHistory(root, app.command);
-            if isempty(records)
-                setStatus(sprintf('No structured version history found for %s.', ...
-                    app.command));
-                return;
+            page = launcherAppDocumentation(root, app.command);
+            if launcherGuiTestMode() ~= "hidden"
+                web(page, '-browser');
             end
-            openAppHistoryViewer(fig, app, records);
-            setStatus(sprintf('Opened %d version history record(s) for %s.', ...
-                numel(records), app.command));
+            setStatus(sprintf('Opened documentation for %s: %s', ...
+                app.command, relativePath(root, page)));
         catch err
-            setStatus(sprintf('Version history unavailable for %s: %s', ...
+            setStatus(sprintf('Documentation unavailable for %s: %s', ...
                 app.command, err.message));
         end
     end
@@ -755,7 +752,7 @@ function fig = runLauncher(root)
         stateValue = matlab.lang.OnOffSwitchState(enabled);
         btnOpen.Enable = stateValue;
         btnDebug.Enable = stateValue;
-        btnHistory.Enable = stateValue;
+        btnAppDocs.Enable = stateValue;
         btnProfile.Enable = matlab.lang.OnOffSwitchState(enabled && state.tools.profile);
         btnPackage.Enable = matlab.lang.OnOffSwitchState(enabled && state.tools.package);
         btnPackagePcode.Enable = matlab.lang.OnOffSwitchState(enabled && state.tools.package);
@@ -781,7 +778,7 @@ function fig = runLauncher(root)
         btnVersions.Enable = stateValue;
         btnRefresh.Enable = stateValue;
         btnClean.Enable = stateValue;
-        btnHistory.Enable = stateValue;
+        btnAppDocs.Enable = stateValue;
         if enabled
             setLaunchEnabled(~isempty(state.visibleApps));
         else
@@ -857,150 +854,37 @@ function initializeAppPath(app)
     addPathIfMissing(app.folder, '-end');
 end
 
-%% Section: App version history window
+%% Section: App documentation
 
-function records = launcherAppHistory(root, appCommand)
-    changelogFile = fullfile(root, 'CHANGELOG.md');
-    if exist(changelogFile, 'file') ~= 2
-        error('labkit_launcher:ChangelogUnavailable', ...
-            'CHANGELOG.md is missing. Update or repair the LabKit install.');
+function page = launcherAppDocumentation(root, appCommand)
+    catalogFile = fullfile(root, 'docs', 'catalogs', 'apps.json');
+    if exist(catalogFile, 'file') ~= 2
+        error('labkit_launcher:DocumentationCatalogUnavailable', ...
+            'docs/catalogs/apps.json is missing. Update or repair the LabKit install.');
     end
-    parserFile = matlabCodeFile(fullfile(root, 'tools', 'release', ...
-        'parseLabKitChangelog'));
-    if strlength(string(parserFile)) == 0
-        error('labkit_launcher:ChangelogParserUnavailable', ...
-            ['Changelog parser is missing. Restore tools/release or update ' ...
-            'the LabKit install.']);
+    try
+        catalog = jsondecode(fileread(catalogFile));
+    catch err
+        error('labkit_launcher:DocumentationCatalogInvalid', ...
+            'Could not read the app documentation catalog: %s', err.message);
     end
-    parserFolder = fileparts(parserFile);
-    addedParserPath = ~pathContains(parserFolder);
-    addPathIfMissing(parserFolder);
-    if addedParserPath
-        parserPathCleanup = onCleanup(@() rmpath(parserFolder));
+    if ~isfield(catalog, 'apps')
+        error('labkit_launcher:DocumentationCatalogInvalid', ...
+            'The app documentation catalog has no apps collection.');
     end
-
-    records = parseLabKitChangelog(changelogFile);
-    command = string(appCommand);
-    keep = false(1, numel(records));
-    for k = 1:numel(records)
-        components = records(k).components;
-        if ~isempty(components)
-            keep(k) = any(string({components.name}) == command);
-        end
+    apps = catalog.apps;
+    commands = string({apps.command});
+    match = find(commands == string(appCommand), 1);
+    if isempty(match)
+        error('labkit_launcher:AppDocumentationUnavailable', ...
+            'No documentation page is cataloged for %s.', appCommand);
     end
-    records = records(keep);
-    clear parserPathCleanup;
-end
-
-function viewer = openAppHistoryViewer(parentFig, app, records)
-    % A stable desktop-sized surface keeps five table columns and narrative
-    % details readable without resizing when records change.
-    viewerArgs = {'Name', sprintf('%s Version History', app.displayName), ...
-        'Position', centeredChildPosition(parentFig, [980 640]), ...
-        'Color', [0.97 0.98 0.99]};
-    if launcherGuiTestMode() == "hidden"
-        viewerArgs = [viewerArgs, {'Visible', 'off'}];
+    page = fullfile(root, 'site', char(string(apps(match).output)));
+    if exist(page, 'file') ~= 2
+        error('labkit_launcher:AppDocumentationNotBuilt', ...
+            ['The generated page is missing for %s. Use Update Documentation ' ...
+            'and try again.'], appCommand);
     end
-    viewer = uifigure(viewerArgs{:});
-    applyLauncherGuiTestMode(viewer);
-    grid = uigridlayout(viewer, [4 1]);
-    % Fixed header, table, and command rows leave remaining height to details.
-    grid.RowHeight = {32, 230, '1x', 34};
-    grid.Padding = [8 8 8 8];
-    grid.RowSpacing = 6;
-
-    uilabel(grid, 'Text', sprintf('%s | current version %s | %d record(s)', ...
-        app.displayName, app.version, numel(records)), ...
-        'FontWeight', 'bold', 'FontSize', 14);
-    historyTable = uitable(grid, ...
-        'ColumnName', {'Date', 'Version change', 'Type', 'Compatibility', 'Change'}, ...
-        'ColumnEditable', false(1, 5), 'RowName', {}, ...
-        'Data', appHistoryRows(records, app.command));
-    historyTable.ColumnWidth = {100, 150, 90, 110, '1x'};
-    details = uitextarea(grid, 'Editable', 'off');
-    uibutton(grid, 'Text', 'Close', ...
-        'ButtonPushedFcn', @(~, ~) close(viewer));
-    configureTable(historyTable, @onHistorySelection, @onHistorySelection);
-    selectTableRow(historyTable, 1, records);
-    showRecord(1);
-
-    function onHistorySelection(~, event)
-        row = eventRow(event);
-        if ~isnan(row)
-            showRecord(row);
-        end
-    end
-
-    function showRecord(row)
-        row = min(max(round(row), 1), numel(records));
-        details.Value = cellstr(historyRecordDetails(records(row), app.command));
-    end
-end
-
-function rows = appHistoryRows(records, appCommand)
-    rows = cell(numel(records), 5);
-    for k = 1:numel(records)
-        rows{k, 1} = char(records(k).date);
-        rows{k, 2} = char(appHistoryTransition(records(k), appCommand));
-        rows{k, 3} = char(records(k).type);
-        rows{k, 4} = char(records(k).compatibility);
-        rows{k, 5} = char(records(k).title);
-    end
-end
-
-function transition = appHistoryTransition(record, appCommand)
-    transition = "";
-    components = record.components;
-    if isempty(components)
-        return;
-    end
-    indices = find(string({components.name}) == string(appCommand));
-    values = strings(1, numel(indices));
-    for k = 1:numel(indices)
-        component = components(indices(k));
-        if component.kind == "introduced"
-            values(k) = "Introduced at " + component.toVersion;
-        else
-            values(k) = component.fromVersion + " -> " + component.toVersion;
-        end
-    end
-    transition = strjoin(values, ", ");
-end
-
-function lines = historyRecordDetails(record, appCommand)
-    transition = appHistoryTransition(record, appCommand);
-    sections = record.sections;
-    lines = [ ...
-        record.title
-        "Change ID: " + record.id
-        "Date: " + record.date
-        "Version: " + transition
-        "Type: " + record.type + " | Compatibility: " + record.compatibility
-        ""
-        "Context"
-        string(sections.context)
-        ""
-        "Decision and rationale"
-        string(sections.decisionAndRationale)
-        ""
-        "Changes"
-        string(sections.changes)
-        ""
-        "User and data impact"
-        string(sections.userAndDataImpact)
-        ""
-        "Compatibility and migration"
-        string(sections.compatibilityAndMigration)
-        ""
-        "Validation"
-        string(sections.validation)
-        ""
-        "Evidence"
-        string(sections.evidence)
-        ""
-        "Known limitations and follow-up"
-        string(sections.knownLimitationsAndFollowUp)];
-    lines = splitlines(strjoin(lines, newline));
 end
 
 function position = centeredChildPosition(parentFig, childSize)

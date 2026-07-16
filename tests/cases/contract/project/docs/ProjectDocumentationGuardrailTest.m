@@ -168,6 +168,29 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 "Search should not publish private implementation helpers.");
         end
 
+        function generatedSearchWorksWhenSiteIsOpenedFromDisk(testCase)
+            root = setupLabKitTestPath();
+            assetFolder = fullfile(root, "site", "assets");
+            indexJson = string(fileread(fullfile(assetFolder, "search-index.json")));
+            indexScript = string(fileread(fullfile(assetFolder, "search-index.js")));
+            appScript = string(fileread(fullfile(assetFolder, "app.js")));
+            homePage = string(fileread(fullfile(root, "site", "index.html")));
+
+            testCase.verifyEqual(indexScript, ...
+                "window.LABKIT_SEARCH_INDEX = " + indexJson + ";", ...
+                "The file-safe search script should carry the generated JSON index.");
+            testCase.verifyTrue(contains(appScript, "window.LABKIT_SEARCH_INDEX"));
+            testCase.verifyFalse(contains(appScript, "fetch(") || ...
+                contains(appScript, "XMLHttpRequest"), ...
+                ["Search must not fetch a sibling file because browsers block " ...
+                "that request when generated HTML is opened through file://."]);
+            indexPosition = strfind(homePage, "assets/search-index.js");
+            appPosition = strfind(homePage, "assets/app.js");
+            testCase.verifyTrue(isscalar(indexPosition) && isscalar(appPosition) && ...
+                indexPosition < appPosition, ...
+                "Every page should load the search index before the search behavior.");
+        end
+
         function appApiCatalogIsExplicitAndContainsNoPrivatePaths(testCase)
             root = setupLabKitTestPath();
             catalog = jsondecode(fileread(fullfile(root, "docs", ...

@@ -4,7 +4,7 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
     rootPrefix = siteRootPrefix(outputPath);
     styleUrl = rootPrefix + "assets/style.css";
     scriptUrl = rootPrefix + "assets/app.js";
-    searchUrl = rootPrefix + "assets/search-index.json";
+    searchScriptUrl = rootPrefix + "assets/search-index.js";
     homeUrl = relativeWebPath(outputPath, "index.html");
     navigation = renderNavigation(model, outputPath);
     html = strjoin([ ...
@@ -18,8 +18,7 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
         "<title>" + htmlEscape(title) + " - " + htmlEscape(model.title) + "</title>"
         "<link rel=""stylesheet"" href=""" + styleUrl + """>"
         "</head>"
-        "<body data-search-index=""" + searchUrl + ...
-            """ data-site-root=""" + rootPrefix + """>"
+        "<body data-site-root=""" + rootPrefix + """>"
         "<header class=""topbar"">"
         "<a class=""brand"" href=""" + homeUrl + """>" + ...
             htmlEscape(model.title) + "</a>"
@@ -36,6 +35,7 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
         "<footer>Generated from tracked Markdown and MATLAB source contracts.</footer>"
         "</main>"
         "</div>"
+        "<script src=""" + searchScriptUrl + """></script>"
         "<script src=""" + scriptUrl + """></script>"
         "</body>"
         "</html>"], newline);

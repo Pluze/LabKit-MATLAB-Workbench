@@ -28,8 +28,10 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
     writeDocText(fullfile(stagingRoot, "assets", "app.js"), ...
         labKitDocumentationScript());
     searchEntries = [renderedPages.searchEntries; apiPages.searchEntries];
-    writeDocText(fullfile(stagingRoot, "assets", "search-index.json"), ...
-        jsonencode(searchEntries));
+    searchJson = string(jsonencode(searchEntries));
+    writeDocText(fullfile(stagingRoot, "assets", "search-index.json"), searchJson);
+    writeDocText(fullfile(stagingRoot, "assets", "search-index.js"), ...
+        "window.LABKIT_SEARCH_INDEX = " + searchJson + ";");
     writeDocText(fullfile(stagingRoot, ".nojekyll"), "");
 
     if isfolder(outputRoot)

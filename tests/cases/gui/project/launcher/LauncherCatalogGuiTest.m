@@ -1,5 +1,5 @@
 classdef LauncherCatalogGuiTest < matlab.unittest.TestCase
-    %LAUNCHERCATALOGGUITEST Verify launcher catalog and version history access.
+    %LAUNCHERCATALOGGUITEST Verify launcher catalog and documentation access.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
         function launcher_list_mode_discovers_apps(testCase)
@@ -28,29 +28,18 @@ classdef LauncherCatalogGuiTest < matlab.unittest.TestCase
                 'labkit_launcher list mode should discover app entry points.');
         end
 
-        function launcher_history_mode_returns_structured_app_records(testCase)
+        function launcher_documentation_mode_resolves_selected_app_page(testCase)
             setupLabKitTestPath();
 
-            records = labkit_launcher("history", "labkit_DICPreprocess_app");
+            page = string(labkit_launcher( ...
+                "documentation", "labkit_DICPreprocess_app"));
 
-            testCase.verifyNotEmpty(records);
-            testCase.verifyTrue(all(string({records.schema}) == "1"));
-            testCase.verifyTrue(any(string({records.id}) == ...
-                "LK-20260713-dic-rigid-point-editor"));
-            transitions = strings(1, 0);
-            for k = 1:numel(records)
-                components = records(k).components;
-                index = find(string({components.name}) == ...
-                    "labkit_DICPreprocess_app", 1);
-                if ~isempty(index)
-                    transitions(end + 1) = components(index).fromVersion + ...
-                        " -> " + components(index).toVersion;
-                end
-            end
-            testCase.verifyTrue(any(transitions == "1.3.6 -> 1.4.0"));
+            testCase.verifyTrue(isfile(page));
+            testCase.verifyTrue(endsWith(replace(page, "\", "/"), ...
+                "/site/apps/dic/dic-preprocess.html"));
         end
 
-        function launcher_opens_selected_app_version_history(testCase)
+        function launcher_exposes_selected_app_documentation_action(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
@@ -58,19 +47,12 @@ classdef LauncherCatalogGuiTest < matlab.unittest.TestCase
 
             fig = labkit_launcher();
             drawnow;
-            h.invokeButton(fig, 'Version History');
+            h.invokeButton(fig, 'Documentation and History');
             drawnow;
 
-            viewers = findall(groot, 'Type', 'figure', '-regexp', ...
-                'Name', 'Version History$');
-            testCase.verifyNotEmpty(viewers, ...
-                'Version History should open for the selected launcher app.');
-            tables = findall(viewers(1), 'Type', 'uitable');
-            textAreas = findall(viewers(1), 'Type', 'uitextarea');
-            testCase.verifyNotEmpty(tables);
-            testCase.verifyGreaterThan(size(tables(1).Data, 1), 0);
+            textAreas = findall(fig, 'Type', 'uitextarea');
             testCase.verifyTrue(any(contains(string(textAreas(1).Value), ...
-                'Change ID:')));
+                'Opened documentation for')));
             clear cleanup
         end
     end
