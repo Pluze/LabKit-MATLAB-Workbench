@@ -1,10 +1,15 @@
 % Private UI runtime helper. Expected caller: v2 project storage. Inputs are
-% the current runtime and optional resume data. Output is a validated,
-% serializable labkit.project envelope containing only durable app project data.
-function envelope = createV2ProjectEnvelope(runtime, resume)
-    if nargin < 2
+% the current runtime, optional resume data, and actual destination path.
+% Output is a validated, serializable labkit.project envelope containing only
+% durable app project data with references rebased for that destination.
+function envelope = createV2ProjectEnvelope(runtime, resume, filepath)
+    if nargin < 2 || isempty(resume)
         resume = createResume(runtime);
     end
+    if nargin < 3
+        filepath = "";
+    end
+    project = rebaseProjectSources(runtime.state.project, filepath);
     document = runtime.document;
     document.modifiedAtUtc = utcNow();
     envelope = preservedEnvelope(runtime.document.envelope);
@@ -18,8 +23,8 @@ function envelope = createV2ProjectEnvelope(runtime, resume)
         "modifiedAtUtc", document.modifiedAtUtc, ...
         "revision", document.revision);
     envelope.producer = producer(runtime);
-    envelope.sources = projectSources(runtime.state.project);
-    envelope.payload = runtime.state.project;
+    envelope.sources = projectSources(project);
+    envelope.payload = project;
     envelope.resume = resume;
     if ~isfield(envelope, 'provenance')
         envelope.provenance = struct();

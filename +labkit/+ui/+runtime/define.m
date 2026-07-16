@@ -105,8 +105,9 @@ function def = define(varargin)
 %       defaultOutputFolder path helpers. File and folder selectors return the
 %       selected string path and a logical cancelled flag.
 %   services.project - sourceRecord, upsertSource, and reconcileSources create
-%       external-file records understood by project save/load; saveState saves
-%       a named project, while saveAutosave(state) immediately writes the
+%       external-file records understood by project save/load. Each save
+%       rebases their relative paths from its actual destination; saveState
+%       saves a named project, while saveAutosave(state) immediately writes the
 %       framework-managed recovery copy. saveAutosave(state,filepath) writes
 %       the same recovery envelope to an app-determined path. Neither form
 %       prompts for a path or changes named-project ownership.

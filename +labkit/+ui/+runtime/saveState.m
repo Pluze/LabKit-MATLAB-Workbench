@@ -27,7 +27,9 @@ function filepath = saveState(fig, filepath)
 %   succeeds, so a failure before replacement leaves an existing project file
 %   unchanged. Save without an explicit filepath reuses an opened document's
 %   path, including a migrated old project, and asks for a path only for a new
-%   unsaved document. After a successful save the app records the path, clears
+%   unsaved document. Source relativePath fields are recalculated from the
+%   actual destination before serialization; additive reference fields are
+%   preserved. After a successful save the app records the path, clears
 %   its dirty flag, and updates the window title.
 %
 % Typical Call:
@@ -47,7 +49,7 @@ function filepath = saveState(fig, filepath)
     else
         filepath = string(filepath);
     end
-    labkitProject = createV2ProjectEnvelope(runtime);
+    labkitProject = createV2ProjectEnvelope(runtime, [], filepath);
     beforeReplace = [];
     if isstruct(runtime.request) && ...
             isfield(runtime.request, 'projectBeforeReplace')

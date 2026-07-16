@@ -189,6 +189,13 @@ source = struct( ...
 | `reference.originalPath` | Current resolved path used by app readers after load/relink. |
 | `reference.fileName` | Last path component used in matching and user messages. |
 
+`sourceRecord` intentionally starts with an empty `relativePath`, because an
+App does not yet know where the project, explicit autosave, or recovery file
+will be written. Immediately before each write, Runtime V2 copies the durable
+project and recalculates every relative path from that write's actual MAT-file
+destination. It preserves additive reference fields and does not mutate the
+live project merely to serialize it.
+
 The runtime first tries the saved relative and original locations. When a
 required source cannot be resolved, it identifies the source by app ID, role,
 and filename and lets the user locate a replacement. Cancelling leaves the
@@ -412,10 +419,12 @@ readable while all new writes use the collision-free key.
   leave the named project path and dirty status unchanged. Declared old
   snapshots and legacy
   app variables are import-only and are never written again.
-- Apps whose saved state refers to external source files should store
-  `labkit.ui.runtime.createPortableFileReference(anchorFile, targetFile)` in
-  their app-owned project schema. On load,
-  `resolvePortableFileReference(anchorFile, reference)` checks the path
+- Apps whose saved state refers to external source files store canonical
+  source records created by `services.project.sourceRecord`. The runtime
+  derives their portable relative references at each actual save destination.
+  Its lower-level `createPortableFileReference` and
+  `resolvePortableFileReference` algorithms create and resolve those reference
+  values; resolution checks the path
   relative to the loaded project first, then the original absolute path, then
   the saved filename beside the project. Relative references use `/` inside
   MAT payloads, so a project/source directory tree can move between cloud-drive

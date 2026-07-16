@@ -17,7 +17,7 @@ function filepath = writeV2RecoveryFile(runtime)
                 message);
         end
     end
-    envelope = createV2ProjectEnvelope(runtime);
+    envelope = createV2ProjectEnvelope(runtime, [], filepath);
     writeV2ProjectFile(filepath, envelope);
 end
 

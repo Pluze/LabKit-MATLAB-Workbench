@@ -51,7 +51,10 @@ lifetimes. Project loading resolves portable external sources before session
 creation; when a required source moved, the framework identifies it and lets
 the user locate a replacement without committing a partial project. Migrated
 or relinked documents remain visibly unsaved until **Save State** atomically
-writes the current project format.
+writes the current project format. Each project, explicit autosave, and
+recovery write recalculates source-relative paths from that MAT file's actual
+destination, so moving a saved project tree does not depend on the folder from
+which the source was first imported.
 
 Read [Runtime and lifecycle](runtime.md) for the detailed definition fields,
 state transaction rules, startup/readiness behavior, plot and interaction

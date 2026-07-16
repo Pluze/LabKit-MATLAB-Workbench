@@ -77,24 +77,40 @@ function verifyProjectDocuments()
     assert(~runtime.document.dirty && runtime.document.path == currentPath, ...
         'Successful explicit save should register the path and mark clean.');
 
-    sourcePath = fullfile(folder, "portable-input.dat");
+    portableRoot = fullfile(folder, "portable-root");
+    portableStateFolder = fullfile(portableRoot, "state");
+    portableSourceFolder = fullfile(portableRoot, "source");
+    mkdir(portableStateFolder);
+    mkdir(portableSourceFolder);
+    sourcePath = fullfile(portableSourceFolder, "portable-input.dat");
     writeBytes(sourcePath, uint8([5 6 7]));
-    portable = stored.labkitProject;
     source = struct("id", "requiredInput", "required", true, ...
         "role", "input", "reference", struct( ...
-            "schemaVersion", 1, "relativePath", "portable-input.dat", ...
-            "originalPath", fullfile(folder, "old", "portable-input.dat"), ...
-            "fileName", "portable-input.dat"));
-    portable.sources = source;
-    portable.payload.inputs.sources = source;
-    portablePath = fullfile(folder, "portable.mat");
-    saveProject(portablePath, portable);
-    labkit.ui.runtime.loadState(fig, portablePath);
+            "schemaVersion", 1, "relativePath", "", ...
+            "originalPath", sourcePath, "fileName", "portable-input.dat", ...
+            "futureReferenceField", "preserved"));
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    runtime.state.project.inputs.sources = source;
+    setappdata(fig, 'labkitUiAppRuntime', runtime);
+    portablePath = fullfile(portableStateFolder, "portable.mat");
+    labkit.ui.runtime.saveState(fig, portablePath);
+    portable = load(portablePath, 'labkitProject');
+    savedReference = portable.labkitProject.payload.inputs.sources.reference;
+    assert(savedReference.relativePath == "../source/portable-input.dat" && ...
+        savedReference.futureReferenceField == "preserved", ...
+        ['Saving must derive the relative source path from the actual ' ...
+        'destination and preserve additive reference fields.']);
+    movedRoot = fullfile(folder, "moved-portable-root");
+    movefile(portableRoot, movedRoot);
+    movedPortablePath = fullfile(movedRoot, "state", "portable.mat");
+    movedSourcePath = fullfile(movedRoot, "source", "portable-input.dat");
+    labkit.ui.runtime.loadState(fig, movedPortablePath);
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     assert(runtime.state.project.inputs.sources.reference.originalPath == ...
-        sourcePath && runtime.state.session.cache.sourcePath == sourcePath, ...
-        ['Resolved portable sources must update the durable project before ' ...
-        'the fresh session is constructed.']);
+        movedSourcePath && ...
+        runtime.state.session.cache.sourcePath == movedSourcePath, ...
+        ['A save-generated relative reference must survive moving the ' ...
+        'project/source directory tree before fresh session creation.']);
 
     invoke(ui.controls.increment.button);
     assert(getappdata(fig, 'labkitUiAppRuntime').state.project.parameters.count == 2);

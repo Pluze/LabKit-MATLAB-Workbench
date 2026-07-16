@@ -97,7 +97,8 @@ function filepath = saveAutosaveState(fig, state, filepath)
         if strlength(folder) > 0 && ~isfolder(folder)
             mkdir(folder);
         end
-        writeV2ProjectFile(filepath, createV2ProjectEnvelope(current));
+        writeV2ProjectFile(filepath, ...
+            createV2ProjectEnvelope(current, [], filepath));
     end
     setappdata(fig, 'labkitV2RecoveryFile', string(filepath));
 end

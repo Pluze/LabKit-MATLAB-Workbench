@@ -12,6 +12,6 @@ function info = version()
 %       compatible contract ranges implemented by this code, contract status,
 %       and a short maintainer note.
 
-    info = labkit.contract.versionInfo("ui", "6.0.4", ">=6 <7", ...
-        "stable", "UI 6 Runtime V2 contract with validated stable identities, standard app launch, canonical project/session state, queued semantic events, deterministic presentation, managed interactions and resources, app-targeted and debounced recovery writes, runtime dialog/result services, portable source references, and read-only import of supported legacy projects and snapshots.");
+    info = labkit.contract.versionInfo("ui", "6.0.5", ">=6 <7", ...
+        "stable", "UI 6 Runtime V2 contract with validated stable identities, standard app launch, canonical project/session state, queued semantic events, deterministic presentation, managed interactions and resources, destination-rebased project and recovery source references, runtime dialog/result services, and read-only import of supported legacy projects and snapshots.");
 end
