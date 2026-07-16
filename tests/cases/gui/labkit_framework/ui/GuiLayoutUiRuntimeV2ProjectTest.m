@@ -98,6 +98,12 @@ function verifyProjectDocuments()
         runtime.state.session.cache.resumedGeneration == 1 && ...
         ~runtime.document.dirty, ...
         'Open should replace project, construct a fresh session, and mark clean.');
+    previewAxes = ui.controls.preview.axesById.axis1;
+    cla(previewAxes);
+    labkit.ui.runtime.loadState(fig, currentPath);
+    assert(~isempty(previewAxes.Children), ...
+        ['Opening the same project must repaint previews instead of treating ' ...
+        'the previous document presentation as a current render cache.']);
 
     recoveredFig = labkit.ui.runtime.launch(@definition, @requirements, ...
         @versionInfo, "RequestAdapter", @(args) recoveryRequest( ...
@@ -210,7 +216,8 @@ function def = definition()
         "Layout", @layout, ...
         "Actions", struct("increment", @increment, ...
             "export", @exportResult, "badExport", @badExport), ...
-        "Present", @present);
+        "Present", @present, ...
+        "Renderers", struct("probe", @renderProbe));
 end
 
 function project = createProject()
@@ -318,8 +325,14 @@ function writeBytes(filepath, bytes)
     clear cleanup;
 end
 
-function view = present(~)
-    view = struct();
+function view = present(state)
+    view = struct("previews", struct("preview", struct( ...
+        "Renderer", "probe", "Model", state.project.parameters.count)));
+end
+
+function renderProbe(ax, count)
+    cla(ax);
+    plot(ax, [0 1], [count count + 1]);
 end
 
 function saveProject(filepath, value)

@@ -19,6 +19,6 @@ function info = version()
 %   info = labkit.rhs.version();
 %   fprintf("RHS API %s (%s)\n", info.current, info.status)
 
-    info = labkit.contract.versionInfo("rhs", "1.0.1", ">=1.0 <2", ...
+    info = labkit.contract.versionInfo("rhs", "1.0.2", ">=1.0 <2", ...
         "stable", "RHS discovery, metadata, indexing, and waveform-window facade contract.");
 end

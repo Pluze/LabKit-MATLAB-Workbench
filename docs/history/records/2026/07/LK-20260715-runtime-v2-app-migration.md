@@ -6,28 +6,27 @@ id: LK-20260715-runtime-v2-app-migration
 date: 2026-07-15
 type: refactor
 compatibility: breaking
-component: `labkit.ui` | `5.2.0 -> 6.0.1`
+component: `labkit.ui` | `5.2.0 -> 6.0.0`
 component: `labkit_DICPostprocess_app` | `1.3.6 -> 1.4.0`
 component: `labkit_DICPreprocess_app` | `1.4.0 -> 1.5.0`
 component: `labkit_ChronoOverlay_app` | `1.3.6 -> 1.4.0`
-component: `labkit_CIC_app` | `1.3.8 -> 1.4.1`
+component: `labkit_CIC_app` | `1.3.8 -> 1.4.0`
 component: `labkit_CSC_app` | `1.3.10 -> 1.4.0`
 component: `labkit_EIS_app` | `1.3.4 -> 1.4.0`
-component: `labkit_VTResistance_app` | `1.3.8 -> 1.4.1`
-component: `labkit_GaitAnalysis_app` | `1.0.0 -> 1.1.1`
+component: `labkit_VTResistance_app` | `1.3.8 -> 1.4.0`
+component: `labkit_GaitAnalysis_app` | `1.0.0 -> 1.1.0`
 component: `labkit_BatchImageCrop_app` | `1.6.8 -> 1.7.0`
 component: `labkit_CurvatureMeasurement_app` | `1.3.5 -> 1.4.0`
 component: `labkit_FLIRThermal_app` | `1.3.0 -> 1.4.0`
 component: `labkit_FocusStack_app` | `1.4.9 -> 1.5.0`
 component: `labkit_ImageEnhance_app` | `1.5.8 -> 1.6.0`
 component: `labkit_ImageMatch_app` | `1.5.8 -> 1.6.0`
-component: `labkit_VideoMarker_app` | `1.2.0 -> 1.3.1`
+component: `labkit_VideoMarker_app` | `1.2.0 -> 1.3.0`
 component: `labkit_FigureStudio_app` | `0.1.5 -> 0.2.0`
 component: `labkit_NerveResponseAnalysis_app` | `1.3.5 -> 1.4.0`
 component: `labkit_ResponseReviewStats_app` | `1.3.5 -> 1.4.0`
 component: `labkit_RHSPreview_app` | `1.3.4 -> 1.4.0`
 component: `labkit_ECGPrint_app` | `1.3.5 -> 1.4.0`
-scope: `private_apps`
 scope: `docs/`
 scope: `docs/ui-runtime-redesign.md`
 scope: runtime migration guidance
@@ -57,9 +56,9 @@ the earlier 32-function planning target was not forced through vague APIs.
 
 ## Changes
 
-- Migrated all twenty public apps and the nested private Imager app to Runtime
-  V2 definitions, standard launch, canonical project/session state, semantic
-  events, pure presentation, and managed resources.
+- Migrated all twenty public apps to Runtime V2 definitions, standard launch,
+  canonical project/session state, semantic events, pure presentation, and
+  managed resources.
 - Standardized current project writes and result manifests while retaining
   app-owned payload migrations and existing output files.
 - Retired Runtime V1 writes and removed the public control-registry mutation,
@@ -86,6 +85,9 @@ the earlier 32-function planning target was not forced through vague APIs.
 - Hardened the same scalar-envelope invariant for app-managed Runtime V2
   resources and `runBusy` callback capture, including legitimate cell-form
   MATLAB callbacks and cell-valued resource payloads.
+- Made project replacement invalidate the prior presentation cache before the
+  fresh session is rendered, so opening an unchanged project still rebuilds
+  app-owned preview graphics and other ephemeral visual resources.
 - Corrected shared file-event index decoding for R2025a string results, so CIC
   and the other multi-file V2 apps can select and remove imported items.
 - Stopped presentation commits from rerunning unchanged preview requests, and
@@ -127,20 +129,19 @@ project if continued editing or recovery is required.
 ## Validation
 
 Focused Runtime V2, project, interaction-hub, DIC point-matching, CIC, Figure
-Studio, app-boundary, and public-surface tests passed. The private Imager
-workspace passed 41/41 tests.
+Studio, app-boundary, and public-surface tests passed.
 The latest repair checkpoint additionally passed CIC/VT GUI workflows (2/2),
 Gait/app compatibility tests (21/21), Curvature and Video Marker GUI methods
 (6/6), focused framework menu/interaction tests (8/8), and three targeted
 interaction-hint methods (3/3). A real local legacy Video Marker autosave was
 read successfully without copying it into the repository.
 The documentation hierarchy checkpoint passed relative-link validation and
-44/44 focused documentation, app-structure, build-task, and changelog
+44/44 focused documentation, app-structure, build-task, and history
 guardrails.
 The Phase-6 `buildtool changedFast` checkpoint passed 15 framework GUI tests,
 284 headless tests with one environment-assumption skip, and six representative
-GUI workflows. Final broad gates and manual pointer/visual checks are recorded
-when the branch reaches PR handoff.
+GUI workflows. The final broad gate and any manual pointer or visual checks are
+reported with the merge handoff rather than embedded as mutable history.
 
 Video Marker replacement tests exercise integer and subpixel translation,
 flat-patch fallback, repeated-input determinism, prediction caching, and

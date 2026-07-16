@@ -22,6 +22,6 @@ function info = version()
 %   info = labkit.biosignal.version();
 %   currentVersion = info.current;
 
-    info = labkit.contract.versionInfo("biosignal", "1.0.1", ">=1.0 <2", ...
+    info = labkit.contract.versionInfo("biosignal", "1.0.2", ">=1.0 <2", ...
         "stable", "Biosignal recording, filtering, event, segmentation, and ECG facade contract.");
 end

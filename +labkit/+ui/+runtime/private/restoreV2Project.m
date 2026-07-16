@@ -29,6 +29,9 @@ function restoreV2Project(fig, filepath, asRecovery)
     end
     runtime.document.loading = true;
     try
+        % A replacement project owns a fresh session and must repaint every
+        % preview even when its semantic model equals the prior document.
+        runtime.lastPresentation = struct();
         setappdata(fig, appRuntimeKey(), runtime);
         presentation = commitV2Presentation(runtime, nextState);
         runtime = getAppRuntime(fig);

@@ -10,7 +10,7 @@
 - `docs/api/thermal.md` for `+labkit/+thermal`
 - `docs/api/dta.md` for `+labkit/+dta`
 - `docs/api/rhs.md` for `+labkit/+rhs`
-- `docs/api/biosignal.md` for `+labkit/+biosignal`
+- `docs/libraries/biosignal/README.md` for `+labkit/+biosignal`
 - affected package tests under `tests/cases/unit/labkit/` or `tests/cases/gui/labkit/`
 
 ## Boundary Rules

@@ -6,6 +6,16 @@ classdef PackageDependencyBoundariesTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             verify_package_dependency_boundaries();
         end
+
+        function packageWordChecksUseMatlabTokenBoundaries(testCase)
+            h = architectureTestHelpers();
+            testCase.verifyFalse(h.sourceContainsForbiddenWord( ...
+                "Names are suitable for a list.", "uitable"));
+            testCase.verifyTrue(h.sourceContainsForbiddenWord( ...
+                "tableHandle = uitable(parent);", "uitable"));
+            testCase.verifyTrue(h.sourceContainsForbiddenWord( ...
+                "labkit.ui.runtime.launch", "labkit.ui"));
+        end
     end
 end
 

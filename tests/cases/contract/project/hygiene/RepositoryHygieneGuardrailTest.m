@@ -178,6 +178,8 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
             ];
             contents(char(appFiles(2))) = "buttonText = ""Run current sample"";";
             contents(char(appFiles(3))) = "expected = {'Run current sample'};";
+            contents(char(appFiles(2))) = [contents(char(appFiles(2))); ...
+                "% Help text may document ""Run current sample""."];
 
             findings = duplicatedLabelLiteralsForFiles(appFiles, contents);
             testCase.verifyEqual(numel(findings), 2, ...
@@ -464,6 +466,9 @@ function lineNumbers = linesContainingQuotedLiteral(lines, literal)
     doubleQuoted = """" + literal + """";
     for k = 1:numel(lines)
         line = string(lines(k));
+        if startsWith(strtrim(line), "%")
+            continue;
+        end
         if contains(line, singleQuoted) || contains(line, doubleQuoted)
             lineNumbers(end + 1) = k;
         end

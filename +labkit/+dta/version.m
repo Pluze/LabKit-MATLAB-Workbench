@@ -19,6 +19,6 @@ function info = version()
 %   info = labkit.dta.version();
 %   fprintf("DTA API %s (%s)\n", info.current, info.status)
 
-    info = labkit.contract.versionInfo("dta", "2.0.1", ">=2.0 <3", ...
+    info = labkit.contract.versionInfo("dta", "2.0.2", ">=2.0 <3", ...
         "stable", "DTA parser, file item, pulse, and curve facade contract.");
 end

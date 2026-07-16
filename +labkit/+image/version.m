@@ -20,6 +20,6 @@ function info = version()
 %   info = labkit.image.version();
 %   currentVersion = info.current;
 
-    info = labkit.contract.versionInfo("image", "2.0.0", ">=2.0 <3", ...
+    info = labkit.contract.versionInfo("image", "2.0.1", ">=2.0 <3", ...
         "stable", "GUI-free image file input, basic processing, and preview-budget helpers for responsive image apps.");
 end

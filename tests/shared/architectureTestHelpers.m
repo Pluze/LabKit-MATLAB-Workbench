@@ -6,6 +6,7 @@ function h = architectureTestHelpers()
     h.assertTopLevelMFiles = @assertTopLevelMFiles;
     h.assertPackageMFiles = @assertPackageMFiles;
     h.assertPackageSourcesDoNotContain = @assertPackageSourcesDoNotContain;
+    h.sourceContainsForbiddenWord = @sourceContainsForbiddenWord;
     h.assertAppEntrypoint = @assertAppEntrypoint;
     h.assertSingleFileApp = @assertAppEntrypoint;
     h.assertDTAFacadeUsage = @assertDTAFacadeUsage;
@@ -282,10 +283,21 @@ function assertPackageSourcesDoNotContain(packageDir, forbiddenWords, label)
         source = fileread(fullfile(packageDir, fileEntries(iFile).name));
         for iWord = 1:numel(forbiddenWords)
             word = forbiddenWords{iWord};
-            assert(~contains(source, word), ...
+            assert(~sourceContainsForbiddenWord(source, word), ...
                 sprintf('%s package file %s should not contain app-domain word "%s".', ...
                 label, fileEntries(iFile).name, word));
         end
+    end
+end
+
+function tf = sourceContainsForbiddenWord(source, word)
+    word = char(word);
+    if ~isempty(regexp(word, '^[A-Za-z]\w*$', 'once'))
+        pattern = ['(?<![A-Za-z0-9_])' regexptranslate('escape', word) ...
+            '(?![A-Za-z0-9_])'];
+        tf = ~isempty(regexp(source, pattern, 'once'));
+    else
+        tf = contains(source, word);
     end
 end
 

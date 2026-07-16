@@ -23,7 +23,7 @@ function events = detectEcgPeaksImpl(signal, opts)
 % Notes:
 %   This file owns private algorithm implementations only. Keep public
 %   option documentation in detectEcgPeaks/defaultEcgPeakOptions and
-%   docs/api/biosignal.md.
+%   docs/libraries/biosignal/README.md.
 
     if nargin < 2
         opts = struct();

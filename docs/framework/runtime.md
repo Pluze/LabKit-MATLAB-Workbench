@@ -208,8 +208,11 @@ Use these app-facing rules:
   provenance, optional resume data, and additive extension preservation.
   Loads inventory the MAT file before loading a recognized variable,
   migrate and validate off to the side, resolve required sources, create a
-  fresh session, and then replace live state once. Saves use temporary-file
-  readback plus atomic replacement. Project edits drive the dirty title,
+  fresh session, invalidate the previous document's presentation cache, and
+  then replace live state and repaint every preview once. This repaint also
+  occurs when the loaded project has the same semantic values as the current
+  document, because ephemeral graphics are not durable state. Saves use
+  temporary-file readback plus atomic replacement. Project edits drive the dirty title,
   debounced bounded recovery, and unsaved-close wording; recovery never owns
   or overwrites an explicit project path. Declared old snapshots and legacy
   app variables are import-only and are never written again.
