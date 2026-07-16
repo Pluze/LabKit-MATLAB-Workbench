@@ -18,67 +18,78 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="dic-preprocess">DIC Preprocess</h1>
-<p>Use DIC Preprocess to create geometrically consistent reference/moving image pairs, shared crops, and masks before running a DIC solver.</p>
-<h2 id="launch">Launch</h2>
+<p>DIC Preprocess registers a moving optical image to a reference image, applies repeatable crop operations to the pair, and creates a binary analysis mask. Use it when camera motion or framing differences must be removed before an external DIC solver is run.</p>
+<h2 id="requirements-and-launch">Requirements And Launch</h2>
+<p>The app requires the LabKit UI and Image facades and uses MATLAB-native image IO. No external registration package is installed at run time.</p>
 <pre><code class="language-matlab">labkit_DICPreprocess_app</code></pre>
 <h2 id="inputs">Inputs</h2>
-<ul>
-<li>one reference image;</li>
-<li>one moving image;</li>
-<li>optional additional moving images processed against the reference.</li>
-</ul>
-<p>Supported image formats follow <code>labkit.image.supportedExtensions</code>.</p>
+<p>Choose one reference image and one moving image. Supported extensions are the formats returned by <code>labkit.image.supportedExtensions</code>, including common PNG, JPEG, TIFF, and BMP files. The reference and moving images may initially have different dimensions; alignment produces a moving image on the reference domain.</p>
+<p>Choosing a new reference or moving file clears operations derived from the old pair. Source files are read-only and are not overwritten.</p>
 <h2 id="basic-workflow">Basic Workflow</h2>
 <ol>
 <li>Choose the reference and moving images.</li>
-<li>Select the preview mode needed for comparison.</li>
-<li>Use manual point matching or automatic alignment.</li>
-<li>Review the false-color overlay.</li>
-<li>Define a shared square crop if required.</li>
-<li>Draw or edit the mask boundary.</li>
-<li>Save the current prepared images and mask.</li>
+<li>Select <strong>Current pair</strong> or <strong>False-color overlay</strong> to assess the initial</li>
 </ol>
+<p>displacement.</p>
+<ol>
+<li>Run manual point matching or <strong>Auto align current pair</strong>.</li>
+<li>Inspect the false-color result and undo or reset if necessary.</li>
+<li>Start the crop ROI, drag or resize the square, and apply it to both images.</li>
+<li>Start ROI editing, place a boundary, and add or subtract it from the mask.</li>
+<li>Save the prepared images and ROI mask.</li>
+</ol>
+<p>Alignment and crop actions form an ordered edit history. <strong>Undo align/crop</strong> removes the most recent applied operation. <strong>Reset to originals</strong> discards the derived working pair and replays no edits.</p>
+<h2 id="preview-modes">Preview Modes</h2>
+<div class="table-wrap"><table><thead><tr><th>Mode</th><th>Display</th></tr></thead><tbody><tr><td>Current pair</td><td>current reference above the current moving image</td></tr><tr><td>Current moving image</td><td>moving image in the main comparison view</td></tr><tr><td>False-color overlay</td><td>red/green registration comparison of the current pair</td></tr><tr><td>Original pair</td><td>source images before applied edits</td></tr><tr><td>ROI mask</td><td>current binary mask over the image domain</td></tr></tbody></table></div>
+<p>Changing preview mode does not change project data. Point placement, point dragging, crop editing, mask editing, and applying an operation preserve the current axes zoom. Use the plot <strong>Fit</strong> action when a full-image view is wanted.</p>
 <h2 id="manual-point-matching">Manual Point Matching</h2>
-<p>Press <strong>Start point matching</strong>. Select a feature in the reference image and then the corresponding feature in the moving image. Repeat for at least two complete pairs. Point numbers identify correspondence across the stacked views. Existing points can be dragged for refinement, and <strong>Undo point pair</strong> removes the newest complete pair.</p>
-<p>The canvas subtitle states which image expects the next point. Applying the alignment ends edit mode and shows the false-color result. Canceling discards the pending pairs. Point placement, dragging, or applying the result preserves the current zoom; use the plot Fit command when a full-image view is wanted.</p>
-<h2 id="crop-and-mask-interaction">Crop And Mask Interaction</h2>
-<p>The crop editor uses a draggable and resizable square rectangle constrained to the image. Applying the crop uses the same rectangle for the reference and aligned moving image. The mask editor records a boundary curve and can add to or subtract from the current mask. Its interaction subtitle explains point placement and deletion while edit mode is active.</p>
-<h2 id="registration-semantics">Registration Semantics</h2>
-<p>Manual alignment estimates a 2-D rigid transform: rotation plus translation, with no scale or shear. It solves the least-squares correspondence using all provided point pairs and prevents a reflection solution. Automatic alignment uses app-owned image registration and returns the same aligned-image contract.</p>
+<p>Press <strong>Start point matching</strong>. Click a feature in the reference image, then click the same feature in the moving image. Repeat this reference/moving order for at least two complete pairs. Numbered markers show correspondence and the preview subtitle states which image expects the next point.</p>
+<p>Drag an existing marker to refine it. <strong>Undo point pair</strong> removes the newest complete pair. <strong>Cancel point matching</strong> discards the pending point set without changing the current images. <strong>Apply point alignment</strong> estimates and applies a rigid two-dimensional transform.</p>
+<p>Manual alignment uses all pairs in a least-squares rotation-and-translation fit. It does not estimate scale or shear and prevents a reflected solution. Choose points that are visually unambiguous and spread across the specimen; clustered points provide weak rotational leverage.</p>
+<h2 id="automatic-alignment">Automatic Alignment</h2>
+<p><strong>Auto align current pair</strong> runs the app-owned base-MATLAB registration path. It returns the same aligned-image and transform contract as manual alignment. Automatic alignment is a starting estimate, not a guarantee of DIC-quality correspondence. Always inspect the false-color overlay and prefer manual points when the image has repeated texture, large occlusion, or weak contrast.</p>
+<h2 id="crop-roi">Crop ROI</h2>
+<p><strong>Start/reset crop ROI</strong> creates a square rectangle constrained to the current reference image. Drag the rectangle to move it and use its resize handles to change its size. <strong>Apply ROI crop</strong> uses exactly the same integer image-domain rectangle on the reference and aligned moving image. <strong>Cancel ROI</strong> exits the editor without adding a crop step.</p>
+<p>Applied crops change the coordinate domain for later operations. Undo the crop before reusing point coordinates defined on the larger image.</p>
+<h2 id="mask-roi">Mask ROI</h2>
+<p>Start ROI editing and choose <strong>Curve</strong> or <strong>Straight lines</strong>. Place boundary anchors as instructed by the canvas subtitle; anchors remain draggable while editing. <strong>Undo point</strong> removes the most recent boundary anchor and <strong>Clear boundary</strong> removes the pending boundary only.</p>
+<p><strong>Preview ROI mask</strong> shows the rasterized boundary. <strong>Add to mask</strong> unions the boundary interior with the current mask; <strong>Subtract from mask</strong> removes it. <strong>Undo mask edit</strong> restores the previous mask snapshot. <strong>Clear mask</strong> removes all included pixels. The mask is stored as a logical image in the current reference domain.</p>
 <h2 id="outputs">Outputs</h2>
-<ul>
-<li>aligned moving image;</li>
-<li>reference and moving crop images;</li>
-<li>binary ROI mask;</li>
-<li>recoverable project state containing edit steps and source references.</li>
-</ul>
-<p>Original input files are never overwritten.</p>
+<p><strong>Save current images</strong> writes two images to the selected folder using stable reference and moving result names. <strong>Save ROI mask</strong> writes a binary image to the selected file. Runtime result manifests record source references, parameters, output roles, and generated filenames; the manifest JSON is provenance metadata, not an additional scientific result.</p>
+<p>The durable project state stores portable source references, preview choices, edit steps, crop and mask annotations, and result references. Decoded and working image arrays are session cache and are rebuilt after load.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
 <pre><code class="language-matlab">reference = imread(&quot;reference.png&quot;);
 moving = imread(&quot;moving.png&quot;);
-fixedPoints = [120 80; 360 95; 230 310];
+referencePoints = [120 80; 360 95; 230 310];
 movingPoints = [128 88; 369 101; 239 318];
-[aligned, transform] = dic_preprocess.analysisRun.alignMovingToReference( ...
-    reference, moving, fixedPoints, movingPoints);
-overlay = dic_preprocess.analysisRun.makeFalseColorOverlay(reference, aligned);</code></pre>
-<p>See the API reference for <code>dic_preprocess.analysisRun.alignMovingToReference</code>, <code>dic_preprocess.analysisRun.applyRigidTransform</code>, and <code>dic_preprocess.analysisRun.cropImage</code>.</p>
-<h2 id="troubleshooting">Troubleshooting</h2>
+
+[aligned, transform] = ...
+    dic_preprocess.analysisRun.alignMovingToReference( ...
+        reference, moving, referencePoints, movingPoints);
+overlay = dic_preprocess.analysisRun.makeFalseColorOverlay( ...
+    reference, aligned);
+cropped = dic_preprocess.analysisRun.cropImage(aligned, [80 60 300 300]);</code></pre>
+<p>Use the linked function pages below for exact coordinate, rectangle, return shape, interpolation, and error contracts.</p>
+<h2 id="errors-and-troubleshooting">Errors And Troubleshooting</h2>
 <ul>
-<li>Widely separated, clearly identifiable points give a better rotation fit</li>
+<li>Point alignment remains unavailable until at least two complete pairs exist.</li>
+<li>A strong colored double edge in the overlay indicates residual geometric</li>
 </ul>
-<p>than clustered points.</p>
+<p>mismatch, not a palette defect.</p>
 <ul>
-<li>Two points are the minimum; three or more allow visual detection of a poor</li>
+<li>Automatic alignment can fail on nearly uniform images; use separated manual</li>
 </ul>
-<p>correspondence.</p>
+<p>points or improve the source capture.</p>
 <ul>
-<li>A false-color edge around the specimen indicates remaining misregistration,</li>
+<li>Crop and mask geometry is constrained to the active image domain; an old</li>
 </ul>
-<p>not a display-only color error.</p>
-<h2 id="see-also">See Also</h2>
+<p>project source that changed size cannot safely reuse its prior annotations.</p>
+<h2 id="related-topics">Related Topics</h2>
 <ul>
 <li><a href="dic-postprocess.html">DIC Postprocess</a></li>
+<li><a href="index.html">DIC family</a></li>
 <li><a href="../../libraries/image/index.html">Image Library</a></li>
+<li><a href="../../reference/index.html">API Reference</a></li>
 </ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/dic_preprocess/analysisRun/alignMovingToReference.html"><code>dic_preprocess.analysisRun.alignMovingToReference</code></a></td><td>Rigidly align the moving image to the reference image.</td></tr><tr><td><a href="../../reference/api/dic_preprocess/analysisRun/applyRigidTransform.html"><code>dic_preprocess.analysisRun.applyRigidTransform</code></a></td><td>Expected callers: DIC alignment and durable edit-step replay. Inputs are a</td></tr><tr><td><a href="../../reference/api/dic_preprocess/analysisRun/autoAlignMovingToReference.html"><code>dic_preprocess.analysisRun.autoAlignMovingToReference</code></a></td><td>Automatically align moving image to reference image.</td></tr><tr><td><a href="../../reference/api/dic_preprocess/analysisRun/cropImage.html"><code>dic_preprocess.analysisRun.cropImage</code></a></td><td>Crop an image using base-MATLAB indexing.</td></tr><tr><td><a href="../../reference/api/dic_preprocess/analysisRun/makeFalseColorOverlay.html"><code>dic_preprocess.analysisRun.makeFalseColorOverlay</code></a></td><td>Build DIC preprocess false-color pair preview.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../libraries/image/history/LK-20260713-base-matlab-image-compatibility.html">2026-07-13 - Base-MATLAB image compatibility</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260713-dic-rigid-point-editor.html">2026-07-13 - Single-click DIC rigid point matching</a><small>feat | additive</small></li><li><a href="../../development/launcher/history/LK-20260707-debug-workflows-launcher-tools-and-changelog-governance.html">2026-07-07 - Debug workflows, launcher tools, and changelog governance</a><small>feat | compatible</small></li><li><a href="../../development/launcher/history/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li><li><a href="../../framework/history/LK-20260703-csc-export-and-viewport-policy.html">2026-07-03 - CSC export and viewport policy</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-declarative-app-runtime.html">2026-07-03 - Declarative app runtime</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260703-ui-groups-migration.html">2026-07-03 - UI groups migration</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260701-debug-sample-packs.html">2026-07-01 - Debug sample packs</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-app-alerts-through-ui-facade.html">2026-06-30 - App alerts through UI facade</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-output-folder-prompts.html">2026-06-30 - Output folder prompts</a><small>feat | compatible</small></li><li><a href="../../libraries/dta/history/LK-20260624-file-panel-migration.html">2026-06-24 - File-panel migration</a><small>refactor | breaking</small></li><li><a href="../../libraries/biosignal/history/LK-20260623-facade-contract-baseline-and-release-validation-hardening.html">2026-06-23 - Facade contract baseline and release validation hardening</a><small>ci | compatible</small></li><li><a href="../../development/launcher/history/LK-20260623-version-metadata-baseline.html">2026-06-23 - Version metadata baseline</a><small>feat | compatible</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

@@ -17,27 +17,31 @@
 <aside class="sidebar"><p class="tagline">Apps, framework guides, and MATLAB API reference for laboratory workflows.</p><nav aria-label="Documentation"><a class="nav-link" href="../../index.html">Home</a><section class="nav-group"><h2>API Reference</h2><a class="nav-link" href="../../reference/index.html">API Reference</a></section><section class="nav-group"><h2>App Framework</h2><a class="nav-link" href="../../framework/index.html">App Framework</a><a class="nav-link" href="../../framework/runtime.html">Runtime and Lifecycle</a></section><section class="nav-group"><h2>Apps</h2><a class="nav-link" href="../index.html">Apps</a><a class="nav-link active" href="index.html">DIC</a><a class="nav-link" href="../electrochemistry/index.html">Electrochemistry</a><a class="nav-link" href="../gait/index.html">Gait</a><a class="nav-link" href="../image-measurement/index.html">Image Measurement</a><a class="nav-link" href="../labkit-core/index.html">LabKit Core</a><a class="nav-link" href="../neurophysiology/index.html">Neurophysiology</a><a class="nav-link" href="../wearable/index.html">Wearable</a><a class="nav-link" href="dic-postprocess.html">DIC Postprocess</a><a class="nav-link" href="dic-preprocess.html">DIC Preprocess</a><a class="nav-link" href="../electrochemistry/cic.html">CIC</a><a class="nav-link" href="../electrochemistry/csc.html">CSC</a><a class="nav-link" href="../electrochemistry/chrono-overlay.html">Chrono Overlay</a><a class="nav-link" href="../electrochemistry/eis.html">EIS</a><a class="nav-link" href="../electrochemistry/vt-resistance.html">VT Resistance</a><a class="nav-link" href="../gait/gait-analysis.html">Gait Analysis</a><a class="nav-link" href="../image-measurement/batch-crop.html">Batch Image Crop</a><a class="nav-link" href="../image-measurement/curvature.html">Curvature Measurement</a><a class="nav-link" href="../image-measurement/flir-thermal.html">FLIR Thermal</a><a class="nav-link" href="../image-measurement/focus-stack.html">Focus Stack</a><a class="nav-link" href="../image-measurement/image-enhance.html">Image Enhance</a><a class="nav-link" href="../image-measurement/image-match.html">Image Match</a><a class="nav-link" href="../image-measurement/video-marker.html">Video Marker</a><a class="nav-link" href="../labkit-core/figure-studio.html">Figure Studio</a><a class="nav-link" href="../neurophysiology/nerve-response-analysis.html">Nerve Response Analysis</a><a class="nav-link" href="../neurophysiology/rhs-preview.html">RHS Preview</a><a class="nav-link" href="../neurophysiology/response-review-stats.html">Response Review and Stats</a><a class="nav-link" href="../wearable/ecg-print.html">ECG Print</a></section><section class="nav-group"><h2>Libraries</h2><a class="nav-link" href="../../libraries/contracts/index.html">Contracts</a><a class="nav-link" href="../../libraries/image/index.html">Image Library</a><a class="nav-link" href="../../libraries/thermal/index.html">Thermal Library</a><a class="nav-link" href="../../libraries/dta/index.html">DTA Library</a><a class="nav-link" href="../../libraries/rhs/index.html">RHS Library</a><a class="nav-link" href="../../libraries/biosignal/index.html">Biosignal Library</a></section><section class="nav-group"><h2>Development</h2><a class="nav-link" href="../../development/index.html">Development</a><a class="nav-link" href="../../development/architecture.html">Architecture</a><a class="nav-link" href="../../development/app-development.html">App Development</a><a class="nav-link" href="../../development/private-apps.html">Private Apps</a><a class="nav-link" href="../../development/testing.html">Testing</a><a class="nav-link" href="../../development/documentation.html">Documentation System</a><a class="nav-link" href="../../development/release.html">Release Process</a></section><section class="nav-group"><h2>Getting Started</h2><a class="nav-link" href="../../getting-started/index.html">Getting Started</a></section><section class="nav-group"><h2>How-to Guides</h2><a class="nav-link" href="../../how-to/index.html">How-to Guides</a><a class="nav-link" href="../../how-to/workflow-assets.html">Generate Workflow Assets</a></section><section class="nav-group"><h2>History</h2><a class="nav-link" href="../../history/index.html">Project History</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">app family</p>
-<h1 id="dic-apps">DIC Apps</h1>
-<p>The DIC family prepares image pairs for digital image correlation and turns Ncorr result fields into reviewable strain overlays and tabular summaries.</p>
-<h2 id="choose-an-app">Choose An App</h2>
-<div class="table-wrap"><table><thead><tr><th>Task</th><th>App</th></tr></thead><tbody><tr><td>Register reference and moving images, crop a shared region, or draw a mask</td><td><a href="dic-preprocess.html">DIC Preprocess</a></td></tr><tr><td>Render EXX/EYY fields and calculate statistics from Ncorr MAT output</td><td><a href="dic-postprocess.html">DIC Postprocess</a></td></tr></tbody></table></div>
-<h2 id="shared-workflow">Shared Workflow</h2>
+<h1 id="digital-image-correlation-apps">Digital Image Correlation Apps</h1>
+<p>The DIC family prepares optical image pairs before correlation and turns Ncorr strain results into presentation images and summary measurements afterward. LabKit does not implement the correlation solver itself.</p>
+<h2 id="apps-in-this-family">Apps In This Family</h2>
+<div class="table-wrap"><table><thead><tr><th>Stage</th><th>App</th><th>Use it to</th><th>Main result</th></tr></thead><tbody><tr><td>Before correlation</td><td><a href="dic-preprocess.html">DIC Preprocess</a></td><td>register a moving image to a reference, apply identical crop geometry, and build a mask</td><td>prepared image pair and binary ROI mask</td></tr><tr><td>After correlation</td><td><a href="dic-postprocess.html">DIC Postprocess</a></td><td>map EXX/EYY strain fields onto the reference image and summarize the valid ROI</td><td>overlay PNGs and strain summary CSV</td></tr></tbody></table></div>
+<h2 id="end-to-end-workflow">End-To-End Workflow</h2>
 <ol>
-<li>Keep original image files unchanged outside the LabKit installation.</li>
-<li>Use DIC Preprocess to establish geometric correspondence and a consistent</li>
+<li>Use DIC Preprocess to align each moving image with the reference.</li>
+<li>Apply a shared crop and save the prepared pair.</li>
+<li>Create and save the ROI mask.</li>
+<li>Run correlation in Ncorr using the prepared images and mask.</li>
+<li>Load the Ncorr MAT result, matching reference image, and mask into DIC</li>
 </ol>
-<p>analysis region.</p>
+<p>Postprocess.</p>
 <ol>
-<li>Run the external DIC solver with the prepared images.</li>
-<li>Use DIC Postprocess to combine solver output, the reference image, and mask.</li>
+<li>Generate overlays, inspect valid coverage, and export the summary.</li>
 </ol>
-<p>Registration, crop, and mask edits are project state. Scientific solver output is not silently modified in place; exports are new files with explicit sizes and summary fields.</p>
-<h2 id="programmatic-entry-points">Programmatic Entry Points</h2>
-<p>The cataloged <code>dic_preprocess.analysisRun.*</code> functions provide GUI-free rigid registration, crop, and overlay operations. The cataloged <code>dic_postprocess.analysisRun.*</code> functions prepare strain maps, overlays, and summary statistics. Open their API reference pages for coordinate conventions and array shapes.</p>
-<h2 id="related-libraries">Related Libraries</h2>
+<p>The two apps deliberately exchange ordinary image and MAT files rather than a private in-memory object. This keeps the external solver boundary explicit and makes each stage independently repeatable.</p>
+<h2 id="coordinate-and-image-conventions">Coordinate And Image Conventions</h2>
+<p>Interactive points and rectangles use MATLAB image coordinates: <code>x</code> is the column coordinate and <code>y</code> is the row coordinate. Registration and crop operations preserve array class and color channels where the operation permits. Masks are logical images aligned with the displayed reference domain.</p>
+<p>DIC Preprocess owns geometric edits. DIC Postprocess may resize strain and mask arrays to the reference-image domain for rendering, but it does not alter the original Ncorr MAT file.</p>
+<h2 id="related-modules">Related Modules</h2>
 <ul>
 <li><a href="../../libraries/image/index.html">Image Library</a></li>
-<li><a href="../../framework/index.html">App Framework</a></li>
+<li><a href="../../framework/index.html">App Framework interactions</a></li>
+<li><a href="../index.html">All Apps</a></li>
 </ul>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

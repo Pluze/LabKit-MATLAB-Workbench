@@ -1,9 +1,13 @@
 # DIC Postprocess
 
-Use DIC Postprocess to convert Ncorr MAT output into same-size strain overlays
-and summary tables tied to a reference image and analysis mask.
+DIC Postprocess converts Ncorr strain fields into EXX and EYY overlays on an
+optical reference image and calculates descriptive strain statistics over a
+validated ROI. It is a rendering and summary tool; it does not rerun DIC.
 
-## Launch
+## Requirements And Launch
+
+The app requires the LabKit UI and Image facades. Input MAT files must contain
+the Ncorr result structure recognized by the app loader.
 
 ```matlab
 labkit_DICPostprocess_app
@@ -11,59 +15,108 @@ labkit_DICPostprocess_app
 
 ## Inputs
 
-- an Ncorr-compatible MAT result containing displacement/strain fields;
-- the corresponding reference image;
-- an optional ROI mask from DIC Preprocess or another binary-mask source.
+Three inputs define one analysis:
 
-The app validates array sizes and prepares image, field, and mask arrays before
-rendering. It does not rewrite the Ncorr result.
+- an Ncorr MAT file containing readable EXX and EYY strain fields;
+- the optical reference image used for the displayed specimen domain;
+- a mask image whose nonzero pixels define the requested ROI.
 
-## Workflow
+All three are required before **Generate overlays + summary** can produce a
+result. The loader validates the expected Ncorr structure and reports malformed
+or incomplete MAT files instead of guessing at unrelated arrays.
 
-1. Load the MAT result and reference image.
-2. Load or inspect the analysis mask.
-3. Choose EXX or EYY and display limits.
-4. Review the clean overlay and summary values.
-5. Export the overlay PNG and summary CSV.
+## Basic Workflow
 
-## Scientific Semantics
+1. Choose the DIC MAT file, matching reference image, and mask image.
+2. Set the overlay range and opacity.
+3. Adjust oversampling, smoothing, and edge trimming when justified.
+4. Optionally tune optical-image brightness, contrast, gamma, saturation, and
+   RGB gains.
+5. Generate the EXX/EYY overlays and review the summary table.
+6. Save clean overlay PNGs and export the summary CSV.
 
-Strain fields remain numeric arrays; color mapping is a presentation step.
-Invalid or masked pixels do not contribute to summary statistics. Edge trimming
-and optional smoothing operate through app-owned functions and are recorded in
-the output preparation result so the displayed field and reported statistics
-refer to the same valid domain.
+Changing an option updates the reproducible project parameters. Generate again
+before export when inputs or processing parameters change.
+
+## Overlay Parameters
+
+| Parameter | Default | Meaning |
+| --- | ---: | --- |
+| Alpha | 0.60 | opacity of strain color over the optical image |
+| Color min | -0.15 | lower strain value mapped into the color scale |
+| Color max | 0.15 | upper strain value mapped into the color scale |
+| Oversample | 6 | output-domain refinement factor used during preparation |
+| Smooth sigma | 0.8 | Gaussian smoothing scale applied to valid strain data |
+| Edge trim | 1 | boundary pixels removed from the valid strain support |
+
+Color limits affect rendering, not the stored numeric strain values used for
+the summary. Alpha affects compositing only. Smoothing and edge trimming alter
+the processed field and therefore can affect the summary; record them with any
+reported measurements.
+
+## Optical Image Parameters
+
+Brightness defaults to `0`; contrast, gamma, saturation, and red/green/blue
+gain default to `1`. These controls prepare the visual background. They do not
+modify EXX/EYY values. Extreme settings can hide features or imply contrast
+that is not present in the strain field, so exported figures should retain the
+processing manifest.
+
+## Processing And Scientific Semantics
+
+The app constructs a valid-strain mask from finite Ncorr values, intersects it
+with the requested ROI, trims invalid edges, and maps the result to the optical
+image domain. Linear resizing is used for continuous image/strain data and
+nearest-neighbor resizing for masks. Invalid strain samples remain excluded
+rather than being converted to zero.
+
+Summary statistics are computed independently for EXX and EYY over the final
+valid ROI. The result table reports the metrics returned by
+`dic_postprocess.analysisRun.summarizeStrain`; open its API page for the exact
+table schema and non-finite-value behavior.
 
 ## Outputs
 
-- clean EXX/EYY overlay PNG files sized to the reference image;
-- summary CSV containing valid-pixel statistics;
-- project state with portable references to source files and display choices.
+- a clean EXX overlay PNG;
+- a clean EYY overlay PNG;
+- a CSV table containing the ROI strain summary;
+- a runtime result manifest describing inputs, parameters, and output roles.
+
+The clean PNG exports contain only the composed image, not axes chrome or
+interactive toolbar controls. Input MAT, reference, and mask files are never
+modified.
 
 ## Use Without The GUI
 
 ```matlab
+strain = dic_postprocess.sourceFiles.loadNcorrStrain("ncorr-result.mat");
+reference = imread("reference.png");
+mask = imread("mask.png") ~= 0;
+
+options = struct("alpha", 0.60, "colorMin", -0.15, ...
+    "colorMax", 0.15, "oversample", 6, ...
+    "smoothSigma", 0.8, "edgeTrim", 1);
 prepared = dic_postprocess.analysisRun.prepareOutputs( ...
-    referenceImage, strainField, roiMask, options);
-overlay = dic_postprocess.analysisRun.makeStrainOverlay( ...
-    prepared.referenceImage, prepared.strain, prepared.validMask, options);
-stats = dic_postprocess.analysisRun.summarizeStrain( ...
-    prepared.strain, prepared.validMask);
+    strain, reference, mask, options);
+summary = dic_postprocess.analysisRun.summarizeStrain( ...
+    prepared.exx, prepared.eyy, prepared.validMask);
 ```
 
-Consult each API page for the current struct fields and option names; do not
-infer them from the rendered colorbar.
+The source loader is app-owned; the generated API table below lists only
+operations intentionally supported as public GUI-free calculation APIs.
 
-## Troubleshooting
+## Errors And Limitations
 
-- A size mismatch usually means the reference image is not the one used for
-  the loaded DIC solution.
-- Empty statistics indicate that masking and validity filters left no usable
-  pixels.
-- Change display limits to inspect contrast; this does not change the stored
-  strain values.
+- A MAT file without the recognized Ncorr strain structure is rejected.
+- Reference image, mask, and strain arrays must describe the same specimen
+  domain; resizing resolves array dimensions, not semantic misalignment.
+- A mask with no valid finite strain pixels produces no meaningful summary.
+- Smoothing can suppress local extrema. Choose it as an analysis parameter,
+  not merely a visual preference.
 
-## See Also
+## Related Topics
 
 - [DIC Preprocess](../dic-preprocess/README.md)
 - [DIC family](../README.md)
+- [Image Library](../../../libraries/image/README.md)
+- [API Reference](../../../libraries/README.md)

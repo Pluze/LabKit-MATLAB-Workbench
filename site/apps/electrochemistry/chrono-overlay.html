@@ -18,35 +18,52 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="chrono-overlay">Chrono Overlay</h1>
-<p>Chrono Overlay compares voltage and current traces from one or more Gamry chrono DTA recordings.</p>
-<h2 id="launch">Launch</h2>
+<p>Chrono Overlay compares voltage and current transients from multiple Gamry DTA files on a common pulse-centered time axis and exports the aligned curves.</p>
+<h2 id="requirements-and-launch">Requirements And Launch</h2>
+<p>The app requires the LabKit UI and DTA facades. Each source must contain a readable chrono curve with time, voltage, and current data.</p>
 <pre><code class="language-matlab">labkit_ChronoOverlay_app</code></pre>
 <h2 id="inputs">Inputs</h2>
-<p>Select one or more chrono DTA files from a single folder, or add a folder of supported files. Files are decoded through <code>labkit.dta</code> and remain unchanged.</p>
-<h2 id="workflow">Workflow</h2>
+<p>Use <strong>Add DTA files</strong> to select one or more <code>.DTA</code> files from one directory. The app parses each file as chrono data and reports unreadable items. The file list controls curve order, legend labels, and removal; selection does not discard other loaded curves.</p>
+<h2 id="basic-workflow">Basic Workflow</h2>
 <ol>
-<li>Add DTA files.</li>
-<li>Select the active file for detailed inspection.</li>
-<li>Choose voltage/current display and overlay settings.</li>
-<li>Compare traces and pulse timing.</li>
-<li>Export plot data or CSV output.</li>
+<li>Add the DTA files to compare.</li>
+<li>Inspect the overlaid voltage and current plots.</li>
+<li>Choose seconds, milliseconds, or sample number for the X axis.</li>
+<li>Set line width, legend visibility, and grid visibility.</li>
+<li>Export the aligned curves CSV.</li>
 </ol>
-<p>The file panel selection controls the current preview. Shared display settings apply to the batch overlay without repeatedly asking for confirmation.</p>
-<h2 id="outputs">Outputs</h2>
-<ul>
-<li>overlay plots;</li>
-<li>CSV tables suitable for independent plotting;</li>
-<li>project state containing selected sources and display choices.</li>
-</ul>
+<p>Plot styling does not alter exported values. Removing a file removes its curves from both plots and the next export.</p>
+<h2 id="alignment-algorithm">Alignment Algorithm</h2>
+<p>For each valid transient, the app uses the detected cathodic/anodic blank interval and defines time zero at its center. If pulse detection or the gap center is unavailable, it explicitly falls back to the first recorded sample and reports that fallback in the app log.</p>
+<p>If files use different sample times, export constructs a merged aligned-time axis and interpolates each voltage/current series onto that axis. Missing coverage remains missing; the app does not extrapolate a transient beyond its recorded time range.</p>
+<h2 id="parameters">Parameters</h2>
+<div class="table-wrap"><table><thead><tr><th>Parameter</th><th>Default</th><th>Effect</th></tr></thead><tbody><tr><td>X axis</td><td>Time (s)</td><td>plot coordinate only; alternatives are Time (ms) and Sample #</td></tr><tr><td>Line width</td><td>1.3</td><td>rendered curve width</td></tr><tr><td>Show file-name legend</td><td>on</td><td>legend visibility</td></tr><tr><td>Show grid</td><td>on</td><td>axes grid visibility</td></tr></tbody></table></div>
+<h2 id="output">Output</h2>
+<p><strong>Export curves CSV</strong> writes <code>TimeGapCenterAligned_s</code> followed by paired voltage and current columns for each source. Column names retain a sanitized source identity. The runtime also writes a result manifest containing source references, current parameters, and the CSV output role.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">[items, statuses] = labkit.dta.loadFiles(paths, &quot;chrono&quot;);
-curve = labkit.dta.getMainCurve(items(1).tables);
-t = labkit.dta.getColumn(curve, &quot;T&quot;);
-voltage = labkit.dta.getColumn(curve, &quot;Vf&quot;);
-current = labkit.dta.getColumn(curve, &quot;Im&quot;);
-plot(t, voltage);</code></pre>
-<h2 id="see-also">See Also</h2>
+<pre><code class="language-matlab">[items, status] = labkit.dta.loadFiles([&quot;run01.DTA&quot;, &quot;run02.DTA&quot;], ...
+    &quot;chrono&quot;);
+assert(all([status.ok]), &quot;One or more DTA files could not be read.&quot;);
+
+aligned = arrayfun(@(item) ...
+    chrono_overlay.sourceFiles.alignByPulseGap(item), items);
+tableOut = chrono_overlay.resultFiles.buildOverlayExportTable(aligned);</code></pre>
+<p>These app-owned helpers expose the workflow to scripts but are not currently listed as stable public APIs; reusable DTA reading is supported through <code>labkit.dta</code>.</p>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
+<li>A source without a detectable biphasic gap is aligned to its first sample;</li>
+</ul>
+<p>review the log before comparing it with gap-centered files.</p>
+<ul>
+<li>Interpolation enables a common export table but does not make differently</li>
+</ul>
+<p>sampled instruments scientifically identical.</p>
+<ul>
+<li>Compare only experiments whose control mode, scale, and units are compatible.</li>
+</ul>
+<h2 id="related-topics">Related Topics</h2>
+<ul>
+<li><a href="index.html">Electrochemistry family</a></li>
 <li><a href="../../libraries/dta/index.html">DTA Library</a></li>
 <li><a href="cic.html">CIC</a></li>
 <li><a href="vt-resistance.html">VT Resistance</a></li>

@@ -1,36 +1,43 @@
-# DIC Apps
+# Digital Image Correlation Apps
 
-The DIC family prepares image pairs for digital image correlation and turns
-Ncorr result fields into reviewable strain overlays and tabular summaries.
+The DIC family prepares optical image pairs before correlation and turns Ncorr
+strain results into presentation images and summary measurements afterward.
+LabKit does not implement the correlation solver itself.
 
-## Choose An App
+## Apps In This Family
 
-| Task | App |
-| --- | --- |
-| Register reference and moving images, crop a shared region, or draw a mask | [DIC Preprocess](dic-preprocess/README.md) |
-| Render EXX/EYY fields and calculate statistics from Ncorr MAT output | [DIC Postprocess](dic-postprocess/README.md) |
+| Stage | App | Use it to | Main result |
+| --- | --- | --- | --- |
+| Before correlation | [DIC Preprocess](dic-preprocess/README.md) | register a moving image to a reference, apply identical crop geometry, and build a mask | prepared image pair and binary ROI mask |
+| After correlation | [DIC Postprocess](dic-postprocess/README.md) | map EXX/EYY strain fields onto the reference image and summarize the valid ROI | overlay PNGs and strain summary CSV |
 
-## Shared Workflow
+## End-To-End Workflow
 
-1. Keep original image files unchanged outside the LabKit installation.
-2. Use DIC Preprocess to establish geometric correspondence and a consistent
-   analysis region.
-3. Run the external DIC solver with the prepared images.
-4. Use DIC Postprocess to combine solver output, the reference image, and mask.
+1. Use DIC Preprocess to align each moving image with the reference.
+2. Apply a shared crop and save the prepared pair.
+3. Create and save the ROI mask.
+4. Run correlation in Ncorr using the prepared images and mask.
+5. Load the Ncorr MAT result, matching reference image, and mask into DIC
+   Postprocess.
+6. Generate overlays, inspect valid coverage, and export the summary.
 
-Registration, crop, and mask edits are project state. Scientific solver output
-is not silently modified in place; exports are new files with explicit sizes
-and summary fields.
+The two apps deliberately exchange ordinary image and MAT files rather than a
+private in-memory object. This keeps the external solver boundary explicit and
+makes each stage independently repeatable.
 
-## Programmatic Entry Points
+## Coordinate And Image Conventions
 
-The cataloged `dic_preprocess.analysisRun.*` functions provide GUI-free rigid
-registration, crop, and overlay operations. The cataloged
-`dic_postprocess.analysisRun.*` functions prepare strain maps, overlays, and
-summary statistics. Open their API reference pages for coordinate conventions
-and array shapes.
+Interactive points and rectangles use MATLAB image coordinates: `x` is the
+column coordinate and `y` is the row coordinate. Registration and crop
+operations preserve array class and color channels where the operation permits.
+Masks are logical images aligned with the displayed reference domain.
 
-## Related Libraries
+DIC Preprocess owns geometric edits. DIC Postprocess may resize strain and mask
+arrays to the reference-image domain for rendering, but it does not alter the
+original Ncorr MAT file.
+
+## Related Modules
 
 - [Image Library](../../libraries/image/README.md)
-- [App Framework](../../framework/README.md)
+- [App Framework interactions](../../framework/README.md)
+- [All Apps](../README.md)

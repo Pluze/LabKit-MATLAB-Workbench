@@ -18,37 +18,56 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="vt-resistance">VT Resistance</h1>
-<p>VT Resistance estimates cathodic and anodic steady resistance from pulse voltage-transient recordings.</p>
-<h2 id="launch">Launch</h2>
+<p>VT Resistance estimates cathodic and anodic steady resistance from a biphasic voltage transient and reports the mean of their absolute values.</p>
+<h2 id="requirements-and-launch">Requirements And Launch</h2>
+<p>The app requires the LabKit UI and DTA facades and a chrono DTA curve with valid time, voltage, and current columns.</p>
 <pre><code class="language-matlab">labkit_VTResistance_app</code></pre>
-<h2 id="inputs-and-performance">Inputs And Performance</h2>
-<p>Load chrono DTA files. As in CIC, the app decodes the active file on demand and defers the rest of a large batch until selection or export.</p>
-<h2 id="workflow">Workflow</h2>
+<h2 id="inputs-and-batch-behavior">Inputs And Batch Behavior</h2>
+<p>Add one or more chrono <code>.DTA</code> files. The selected file is decoded and analyzed for preview; exporting applies the current settings to the full source list. No electrode-area normalization is performed because the reported quantity is electrical resistance in ohms.</p>
+<h2 id="basic-workflow">Basic Workflow</h2>
 <ol>
-<li>Add files and inspect pulse detection.</li>
-<li>Choose the steady-window, voltage, and pulse-detection modes.</li>
-<li>Review steady current, steady voltage, baseline, delta voltage, and</li>
+<li>Add files and select a representative transient.</li>
+<li>Choose pulse detection, steady-window policy, and voltage definition.</li>
+<li>Inspect detected phase windows and current/voltage traces.</li>
+<li>Review cathodic, anodic, and average resistance.</li>
+<li>Export the batch result CSV.</li>
 </ol>
-<p>cathodic/anodic resistance.</p>
-<ol>
-<li>Export the complete batch with shared options.</li>
-</ol>
-<h2 id="scientific-semantics">Scientific Semantics</h2>
-<p>The calculation takes medians over selected steady pulse windows. Raw mode uses steady voltage divided by steady current. Delta-voltage mode subtracts a pre/post baseline before division. The reported average resistance is the mean of the absolute cathodic and anodic results.</p>
-<p>Near-zero current, insufficient steady samples, or missing T/Vf/Im data cannot produce a valid resistance and return a failure message.</p>
+<h2 id="analysis-parameters">Analysis Parameters</h2>
+<div class="table-wrap"><table><thead><tr><th>Parameter</th><th>Default</th><th>Alternatives</th></tr></thead><tbody><tr><td>Pulse detection</td><td>Metadata first, then auto</td><td>Metadata only; Auto from Im only</td></tr><tr><td>Steady window</td><td>Full pulse median</td><td>Center 60% median</td></tr><tr><td>Resistance voltage</td><td>Baseline-corrected dV/I</td><td>Raw Vf/I</td></tr></tbody></table></div>
+<p>The center-60% policy uses the interval from 20% to 80% of each detected phase to reduce onset and offset transients. Plot marker and shading choices affect display only.</p>
+<h2 id="calculation-semantics">Calculation Semantics</h2>
+<p>After finite-sample filtering and pulse detection, the app calculates median current and voltage in the chosen cathodic and anodic steady windows. The cathodic baseline is the median pre-pulse voltage and the anodic baseline is the median post-pulse voltage, with explicit finite fallbacks.</p>
+<p>Baseline-corrected mode uses:</p>
+<pre><code class="language-text">R_cath = (V_cath,steady - V_cath,baseline) / I_cath,steady
+R_anod = (V_anod,steady - V_anod,baseline) / I_anod,steady
+R_average = mean(abs(R_cath), abs(R_anod))</code></pre>
+<p>Raw mode replaces each voltage difference with its steady absolute voltage. Division by a missing, non-finite, or effectively zero current returns <code>NaN</code>; the app does not invent a finite resistance.</p>
+<h2 id="output-schema">Output Schema</h2>
+<p>The CSV contains source identity, steady currents and voltages, baseline voltages and windows, raw and baseline-corrected resistance fields, selected resistance values, absolute cathodic/anodic resistance, average resistance, pulse-detection method, and status. A result manifest records the common batch parameters and output role.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">[item, status] = labkit.dta.loadFile(&quot;transient.DTA&quot;, &quot;chrono&quot;);
+<pre><code class="language-matlab">[item, status] = labkit.dta.loadFile(&quot;pulse.DTA&quot;, &quot;chrono&quot;);
 assert(status.ok, status.message);
-opts = struct(&quot;windowMode&quot;, &quot;Middle 50%&quot;, ...
-    &quot;voltageMode&quot;, &quot;Delta V&quot;, &quot;pulseMode&quot;, &quot;Auto&quot;);
-result = vt_resistance.analysisRun.computeResistance(item, opts);
+
+options = struct( ...
+    &quot;pulseMode&quot;, &quot;Metadata first, then auto&quot;, ...
+    &quot;windowMode&quot;, &quot;Full pulse median&quot;, ...
+    &quot;voltageMode&quot;, &quot;Baseline-corrected dV/I&quot;);
+result = vt_resistance.analysisRun.computeResistance(item, options);
 assert(result.ok, result.message);</code></pre>
-<p>Use <code>vt_resistance.userInterface.analysisChoices</code> rather than hard-coding labels when building an automated workflow.</p>
-<h2 id="see-also">See Also</h2>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li><code>vt_resistance.analysisRun.computeResistance</code></li>
-<li><code>labkit.dta.detectPulses</code></li>
+<li>At least five finite <code>T</code>, <code>Vf</code>, and <code>Im</code> samples are required.</li>
+<li>Each selected steady window must contain at least two samples.</li>
+<li>Resistance is invalid when steady current is zero or non-finite.</li>
+<li>The result is a transient-derived estimate and does not replace an impedance</li>
+</ul>
+<p>model or compensate wiring/contact resistance automatically.</p>
+<h2 id="related-topics">Related Topics</h2>
+<ul>
+<li><a href="index.html">Electrochemistry family</a></li>
 <li><a href="cic.html">CIC</a></li>
+<li><a href="../../libraries/dta/index.html">DTA Library</a></li>
+<li><a href="../../reference/index.html">API Reference</a></li>
 </ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/vt_resistance/analysisRun/computeResistance.html"><code>vt_resistance.analysisRun.computeResistance</code></a></td><td>Compute VT resistance metrics for the VT app.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="history/LK-20260713-electrochem-batch-consistency.html">2026-07-13 - Consistent electrochemistry batch analysis</a><small>fix | additive</small></li><li><a href="../../development/launcher/history/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li><li><a href="history/LK-20260703-app-file-selection-and-electrochem-control-fixes.html">2026-07-03 - App file-selection and electrochem control fixes</a><small>fix | compatible</small></li><li><a href="../../framework/history/LK-20260703-csc-export-and-viewport-policy.html">2026-07-03 - CSC export and viewport policy</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-declarative-app-runtime.html">2026-07-03 - Declarative app runtime</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260703-ui-groups-migration.html">2026-07-03 - UI groups migration</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260701-debug-sample-packs.html">2026-07-01 - Debug sample packs</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-app-alerts-through-ui-facade.html">2026-06-30 - App alerts through UI facade</a><small>feat | compatible</small></li><li><a href="../../libraries/dta/history/LK-20260624-file-panel-migration.html">2026-06-24 - File-panel migration</a><small>refactor | breaking</small></li><li><a href="../../development/launcher/history/LK-20260623-version-metadata-baseline.html">2026-06-23 - Version metadata baseline</a><small>feat | compatible</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

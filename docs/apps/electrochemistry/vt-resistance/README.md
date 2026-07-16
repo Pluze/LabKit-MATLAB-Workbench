@@ -1,53 +1,96 @@
 # VT Resistance
 
-VT Resistance estimates cathodic and anodic steady resistance from pulse
-voltage-transient recordings.
+VT Resistance estimates cathodic and anodic steady resistance from a biphasic
+voltage transient and reports the mean of their absolute values.
 
-## Launch
+## Requirements And Launch
+
+The app requires the LabKit UI and DTA facades and a chrono DTA curve with
+valid time, voltage, and current columns.
 
 ```matlab
 labkit_VTResistance_app
 ```
 
-## Inputs And Performance
+## Inputs And Batch Behavior
 
-Load chrono DTA files. As in CIC, the app decodes the active file on demand and
-defers the rest of a large batch until selection or export.
+Add one or more chrono `.DTA` files. The selected file is decoded and analyzed
+for preview; exporting applies the current settings to the full source list.
+No electrode-area normalization is performed because the reported quantity is
+electrical resistance in ohms.
 
-## Workflow
+## Basic Workflow
 
-1. Add files and inspect pulse detection.
-2. Choose the steady-window, voltage, and pulse-detection modes.
-3. Review steady current, steady voltage, baseline, delta voltage, and
-   cathodic/anodic resistance.
-4. Export the complete batch with shared options.
+1. Add files and select a representative transient.
+2. Choose pulse detection, steady-window policy, and voltage definition.
+3. Inspect detected phase windows and current/voltage traces.
+4. Review cathodic, anodic, and average resistance.
+5. Export the batch result CSV.
 
-## Scientific Semantics
+## Analysis Parameters
 
-The calculation takes medians over selected steady pulse windows. Raw mode
-uses steady voltage divided by steady current. Delta-voltage mode subtracts a
-pre/post baseline before division. The reported average resistance is the mean
-of the absolute cathodic and anodic results.
+| Parameter | Default | Alternatives |
+| --- | --- | --- |
+| Pulse detection | Metadata first, then auto | Metadata only; Auto from Im only |
+| Steady window | Full pulse median | Center 60% median |
+| Resistance voltage | Baseline-corrected dV/I | Raw Vf/I |
 
-Near-zero current, insufficient steady samples, or missing T/Vf/Im data cannot
-produce a valid resistance and return a failure message.
+The center-60% policy uses the interval from 20% to 80% of each detected phase
+to reduce onset and offset transients. Plot marker and shading choices affect
+display only.
+
+## Calculation Semantics
+
+After finite-sample filtering and pulse detection, the app calculates median
+current and voltage in the chosen cathodic and anodic steady windows. The
+cathodic baseline is the median pre-pulse voltage and the anodic baseline is
+the median post-pulse voltage, with explicit finite fallbacks.
+
+Baseline-corrected mode uses:
+
+```text
+R_cath = (V_cath,steady - V_cath,baseline) / I_cath,steady
+R_anod = (V_anod,steady - V_anod,baseline) / I_anod,steady
+R_average = mean(abs(R_cath), abs(R_anod))
+```
+
+Raw mode replaces each voltage difference with its steady absolute voltage.
+Division by a missing, non-finite, or effectively zero current returns `NaN`;
+the app does not invent a finite resistance.
+
+## Output Schema
+
+The CSV contains source identity, steady currents and voltages, baseline
+voltages and windows, raw and baseline-corrected resistance fields, selected
+resistance values, absolute cathodic/anodic resistance, average resistance,
+pulse-detection method, and status. A result manifest records the common batch
+parameters and output role.
 
 ## Use Without The GUI
 
 ```matlab
-[item, status] = labkit.dta.loadFile("transient.DTA", "chrono");
+[item, status] = labkit.dta.loadFile("pulse.DTA", "chrono");
 assert(status.ok, status.message);
-opts = struct("windowMode", "Middle 50%", ...
-    "voltageMode", "Delta V", "pulseMode", "Auto");
-result = vt_resistance.analysisRun.computeResistance(item, opts);
+
+options = struct( ...
+    "pulseMode", "Metadata first, then auto", ...
+    "windowMode", "Full pulse median", ...
+    "voltageMode", "Baseline-corrected dV/I");
+result = vt_resistance.analysisRun.computeResistance(item, options);
 assert(result.ok, result.message);
 ```
 
-Use `vt_resistance.userInterface.analysisChoices` rather than hard-coding
-labels when building an automated workflow.
+## Errors And Limitations
 
-## See Also
+- At least five finite `T`, `Vf`, and `Im` samples are required.
+- Each selected steady window must contain at least two samples.
+- Resistance is invalid when steady current is zero or non-finite.
+- The result is a transient-derived estimate and does not replace an impedance
+  model or compensate wiring/contact resistance automatically.
 
-- `vt_resistance.analysisRun.computeResistance`
-- `labkit.dta.detectPulses`
+## Related Topics
+
+- [Electrochemistry family](../README.md)
 - [CIC](../cic/README.md)
+- [DTA Library](../../../libraries/dta/README.md)
+- [API Reference](../../../libraries/README.md)

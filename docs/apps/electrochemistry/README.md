@@ -1,40 +1,54 @@
 # Electrochemistry Apps
 
-The electrochemistry family reads Gamry DTA recordings through `labkit.dta`
-and keeps scientific calculations in app-owned, GUI-free functions.
+The Electrochemistry family reads Gamry DTA files through `labkit.dta` and
+keeps experiment-specific analysis, plotting, defaults, and export schemas in
+the owning app. Source DTA files are never modified.
 
 ## Choose An App
 
-| Measurement | App |
-| --- | --- |
-| Overlay chrono voltage/current traces | [Chrono Overlay](chrono-overlay/README.md) |
-| Charge-injection capacity and voltage transient limits | [CIC](cic/README.md) |
-| Charge-storage capacity from CV and time integration | [CSC](csc/README.md) |
-| Impedance curves and tabular export | [EIS](eis/README.md) |
-| Steady resistance from pulse transients | [VT Resistance](vt-resistance/README.md) |
+| Measurement or task | App | Required DTA content | Main result |
+| --- | --- | --- | --- |
+| Compare voltage and current transients across files | [Chrono Overlay](chrono-overlay/README.md) | chrono curve with `T`, `Vf`, `Im` | aligned overlay and wide CSV |
+| Charge-injection capacity and polarization voltage | [CIC](cic/README.md) | biphasic chrono transient | per-file CIC, charge, and voltage metrics |
+| Charge-storage capacity by time and CV integration | [CSC](csc/README.md) | CV/CT cycles with `T`, `Vf`, `Im` | per-cycle CT/CV CSC comparison |
+| Impedance inspection and export | [EIS](eis/README.md) | `ZCURVE` | configurable Nyquist/Bode-style overlay |
+| Steady pulse resistance | [VT Resistance](vt-resistance/README.md) | biphasic chrono transient | cathodic, anodic, and mean resistance |
 
-## Shared Data Model
+## Shared File Behavior
 
-`labkit.dta.loadFile` and related functions decode a DTA file into an item
-struct with typed curves and status information. Apps own batch selection,
-analysis options, tables, plots, and exports. CIC and VT decode only the active
-file during interactive review and defer the rest of a large batch until
-needed for export.
+File controls accept one or more `.DTA` files from one folder in a single
+selection. A canceled chooser leaves the current project unchanged. CIC, CSC,
+and VT Resistance use the selected row as the active preview while retaining
+the loaded source list for batch export. Invalid items are reported per file;
+one failed item does not silently replace another result.
 
-## Scientific Traceability
+The DTA facade returns structured items, curve tables, headers, units,
+metadata, parser messages, and status. Apps use exact required columns for
+scientific calculations and do not infer missing physical quantities from a
+plot label.
 
-Exports retain the settings that affect normalization or sampling, including
-electrode area, delay, scan rate, cycle choice, and source identity where
-applicable. Invalid sampling ranges fail explicitly instead of extrapolating.
+## Units And Traceability
 
-## Programmatic Entry Points
+Time is seconds, voltage is volts, current is amperes, impedance is ohms,
+charge is coulombs, electrode area is square centimetres, and normalized CIC
+or CSC is reported in the unit shown by the app. UI display conversions do not
+change stored base-unit calculations.
 
-Use `labkit.dta.*` to inspect recordings without a GUI. Cataloged app APIs such
-as `cic.analysisRun.computeCIC`, `csc.analysisRun.computeCSC`, and
-`vt_resistance.analysisRun.computeResistance` reproduce the app calculations
-from decoded data and option structs.
+Export tables include the source identity and analysis settings needed to
+interpret the result. Runtime-generated `.labkit.json` files are provenance
+manifests describing inputs, parameters, and output roles; they are not a
+second numerical result and can be kept with the corresponding CSV.
 
-## Related Libraries
+## Use Without The GUI
+
+Reusable parsing and curve access live in `labkit.dta`. App-specific numeric
+operations such as `cic.analysisRun.computeCIC`,
+`csc.analysisRun.computeCSC`, and
+`vt_resistance.analysisRun.computeResistance` are documented on the owning app
+page and in the generated API reference.
+
+## Related Modules
 
 - [DTA Library](../../libraries/dta/README.md)
-- [Contracts](../../libraries/contracts/README.md)
+- [API Reference](../../libraries/README.md)
+- [All Apps](../README.md)
