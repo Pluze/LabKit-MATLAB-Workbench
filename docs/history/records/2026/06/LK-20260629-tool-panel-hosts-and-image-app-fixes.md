@@ -16,13 +16,15 @@ component: `labkit_ImageMatch_app` | `1.3.0 -> 1.3.1`
 
 ## Context
 
-- Reusable tools gained a real layout host, and image app reports/ROI controls
-  became less surprising.
+Reusable interaction tools were being attached to generic empty sections,
+while several image apps had separate problems with file-entry identity,
+reported output size, and White ROI updates.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Add a semantic `toolPanel` host for composed tools and fix the image-app
+behaviors at their actual data owners. Normalize file entries and regenerate
+ids deterministically so presentation updates do not change source identity.
 
 ## Changes
 
@@ -36,8 +38,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Reusable tools gained a real layout host, and image app reports/ROI controls
-  became less surprising.
+White ROI controls responded to the selected image, Batch Crop reported output
+dimensions consistently, and reusable tools occupied a stable named layout
+area. Existing source and result formats were unchanged.
 
 ## Compatibility and migration
 
@@ -45,9 +48,8 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The listed commits updated file-panel, tool-host, and focused image-app tests.
+Exact historical commands were not recorded.
 
 ## Evidence
 
@@ -55,4 +57,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+The first `toolPanel` API was later replaced by the current semantic layout and
+managed-interaction model.

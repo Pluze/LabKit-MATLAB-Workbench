@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="generator" content="LabKit MATLAB documentation compiler">
-<title>Initial app workbench foundation - LabKit MATLAB Workbench</title>
+<title>Legacy import and first app workbench - LabKit MATLAB Workbench</title>
 <link rel="stylesheet" href="../../../../assets/style.css">
 </head>
 <body data-site-root="../../../../">
@@ -18,10 +18,10 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../../../apps/index.html">Apps</a><a class="product-nav-link" href="../../../../reference/index.html">Functions</a><a class="product-nav-link" href="../../../../framework/index.html">Framework</a><a class="product-nav-link" href="../../../../development/index.html">Development</a><a class="product-nav-link active" href="../../../index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">Initial app workbench foundation</p><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-data-impact">User and data impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">Legacy import and first app workbench</p><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-data-impact">User and data impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">history</p>
-<h1 id="initial-app-workbench-foundation">Initial app workbench foundation</h1>
+<h1 id="legacy-import-and-first-app-workbench">Legacy import and first app workbench</h1>
 <pre><code class="language-labkit-change">schema: 1
 id: LK-20260528-initial-app-workbench-foundation
 date: 2026-05-28
@@ -29,41 +29,45 @@ type: feat
 compatibility: compatible
 scope: historical project evolution</code></pre>
 <h2 id="context">Context</h2>
-<p>LabKit began as a collection of MATLAB scripts and GUI entry points. The first release series established independent apps, a launcher, and reusable code for file parsing and common UI behavior.</p>
+<p>LabKit began with a direct import of older MATLAB analysis and GUI code. The electrochem workflows mixed file parsing, calculations, session state, plots, and exports inside large entry scripts, and several root commands exposed the same legacy implementation through different paths.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>
-<p>Organize the imported workflows as separately launchable apps instead of one monolithic analysis program. Share only mechanics that were useful across apps, while keeping experiment-specific calculations and outputs with their owning workflow.</p>
+<p>Separate the imported code by responsibility before adding new features. Move Gamry parsing and pulse detection into reusable DTA operations; keep CIC, CSC, VT resistance, EIS, and chrono calculations with their workflows; then expose each workflow through one package-backed app command. Extract shared UI pieces only after the app behavior is visible in more than one workflow.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Release tags <code>v1.0</code>, <code>v2.0</code>, legacy <code>2.1</code>, <code>v2.2.0</code>, <code>v2.3.0</code>, <code>v2.3.1</code>,</li>
+<li>Imported the legacy MATLAB tree without rewriting its scientific formulas.</li>
+<li>Extracted chrono, EIS, and CV/CT DTA parsers plus pulse detection and named</li>
 </ul>
-<p><code>v2.3.2</code>, and <code>v2.3.3</code>.</p>
+<p>synthetic fixtures.</p>
 <ul>
-<li>Imported legacy MATLAB code and split it into app entry points.</li>
-<li>Extracted DTA parsers, electrochem calculations, DIC workflows, image</li>
+<li>Separated chrono alignment/export, CIC, CSC, VT resistance, and EIS result</li>
 </ul>
-<p>measurement workflows, biosignal support, and ECG workflows.</p>
+<p>operations from their GUI assembly.</p>
 <ul>
-<li>Replaced root legacy GUI entry points with package-backed runners.</li>
-<li>Added app shell behavior, axes popout, shared UI controls, debug trace</li>
+<li>Added named app entry points and package-backed runners, then removed the</li>
 </ul>
-<p>logging, launcher/project metadata, release updater support, and reproducible release-asset rules.</p>
+<p>duplicate root legacy entry points and legacy GUI directory.</p>
+<ul>
+<li>Introduced the first shared two-pane/tabbed shells, file panels, plot</li>
+</ul>
+<p>controls, log panels, and axes helpers used by the electrochem apps.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
-<p>Users gained named app commands and a launcher instead of opening unrelated legacy scripts manually. Existing laboratory files remained external inputs; the workbench did not convert them into a central LabKit data store.</p>
+<p>Users gained named electrochem app commands instead of opening the old GUI scripts directly. Calculations and exported values were intended to remain unchanged while code ownership moved; laboratory files remained external inputs rather than being copied into a central LabKit database.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <ul>
-<li>Component/app version files did not exist yet, so this era is tracked by</li>
+<li>Component/app version files did not exist yet. Old root GUI entry points were</li>
 </ul>
-<p>release tags, commit ranges, and workflow milestones rather than per-app version numbers.</p>
+<p>removed as package-backed app commands became the supported launch path.</p>
 <h2 id="validation">Validation</h2>
-<p>Historical test commands were not recorded consistently. The commit range and release tags below identify the code that was shipped during this period.</p>
+<p>The first regression evidence included named DTA fixtures, calculation tests, an optional GUI smoke runner, and GUI compatibility checks. A single standard test command had not yet been established.</p>
 <h2 id="evidence">Evidence</h2>
 <ul>
-<li>Main history from <code>5973bde0</code> through <code>a7e7dfb1</code>.</li>
-<li>Release tags: <code>v1.0</code>, <code>v2.0</code>, <code>2.1</code>, <code>v2.2.0</code>, <code>v2.3.0</code>, <code>v2.3.1</code>,</li>
+<li>Initial import <code>5973bde0</code>.</li>
+<li>Parser and calculation extraction from <code>fc70f9b2</code> through <code>9f7c6e4e</code>.</li>
+<li>App entrypoint and package migration from <code>40f46561</code> through <code>4d58066c</code>.</li>
+<li>First shared app-shell work from <code>f05f4a35</code> through <code>61a8cb87</code>.</li>
 </ul>
-<p><code>v2.3.2</code>, <code>v2.3.3</code>.</p>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
-<p>Per-component version files and structured validation records were introduced later, so exact app-by-app changes in this period must be traced through the listed tags and commits.</p>
+<p>This stage improved structure but still contained several broad shared UI helpers and session abstractions that were narrowed during the following DTA facade and app-boundary work.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

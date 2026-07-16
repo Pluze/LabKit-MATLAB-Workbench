@@ -24,13 +24,14 @@ component: `labkit_ECGPrint_app` | `1.2.1 -> 1.2.2`
 
 ## Context
 
-- App error reporting became testable without each app inventing its own alert
-  mechanics.
+Apps opened alerts directly, which made hidden GUI tests unreliable and led to
+small differences in modal behavior across workflows.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Route user-visible alerts through one UI service that can display a modal
+message normally and record it safely during hidden tests. Keep each app
+responsible for the message and the decision that triggers it.
 
 ## Changes
 
@@ -42,8 +43,8 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- App error reporting became testable without each app inventing its own alert
-  mechanics.
+Errors continued to appear as app alerts, but test and debug runs could capture
+them without blocking on an invisible dialog. No saved or exported data changed.
 
 ## Compatibility and migration
 
@@ -51,9 +52,8 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The carrying commit migrated alert call sites and updated hidden workflow tests
+across the listed apps. The exact historical command was not recorded.
 
 ## Evidence
 
@@ -61,4 +61,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+The historical `labkit.ui.app.showAlert` entry point was later replaced by the
+injected `services.dialogs.alert` service in Runtime V2.

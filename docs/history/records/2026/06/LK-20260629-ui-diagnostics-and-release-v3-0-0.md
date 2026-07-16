@@ -12,13 +12,15 @@ component: `labkit.ui` | `3.1.3 -> 3.2.0`
 
 ## Context
 
-- Maintainers got better evidence when app callbacks failed, and users got a
-  clearer release line to roll back to.
+The diagnostic work completed during the 3.x UI cycle needed a stable release
+checkpoint, clearer validation documentation, and CI behavior that would not
+run duplicate workflows for the same change.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Publish the UI diagnostic improvements as `v3.0.0`, document how they are
+validated, and avoid redundant CI triggers. Keep the release compatible with
+the app data produced by the preceding 2.x workbench releases.
 
 ## Changes
 
@@ -32,8 +34,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Maintainers got better evidence when app callbacks failed, and users got a
-  clearer release line to roll back to.
+Users gained a named release to install or restore, while failure reports
+contained better callback context. Project and scientific result formats did
+not change in this release record.
 
 ## Compatibility and migration
 
@@ -41,9 +44,9 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+Commit `21eff4dc` carried the diagnostic and validation changes; tag commit
+`349a7549` published `v3.0.0`. Exact historical local commands were not
+recorded.
 
 ## Evidence
 
@@ -51,4 +54,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+This record marks the release boundary; individual diagnostic mechanics are
+described in their earlier component history records.
