@@ -14,24 +14,24 @@ boundaries and contracts are the important part.
 
 ```text
 apps/example/trace_viewer/
-├── labkit_TraceViewer_app.m
-└── +trace_viewer/
-    ├── definition.m
-    ├── definitionActions.m
-    ├── requirements.m
-    ├── version.m
-    ├── +appLifecycle/
-    │   ├── createProject.m
-    │   ├── createSession.m
-    │   └── validateProject.m
-    ├── +sourceFiles/
-    │   └── readTrace.m
-    ├── +analysisRun/
-    │   └── applyGain.m
-    └── +userInterface/
-        ├── buildWorkbenchLayout.m
-        ├── presentWorkbench.m
-        └── drawTrace.m
+|-- labkit_TraceViewer_app.m
+`-- +trace_viewer/
+    |-- definition.m
+    |-- definitionActions.m
+    |-- requirements.m
+    |-- version.m
+    |-- +appLifecycle/
+    |   |-- createProject.m
+    |   |-- createSession.m
+    |   `-- validateProject.m
+    |-- +sourceFiles/
+    |   `-- readTrace.m
+    |-- +analysisRun/
+    |   `-- applyGain.m
+    `-- +userInterface/
+        |-- buildWorkbenchLayout.m
+        |-- presentWorkbench.m
+        `-- drawTrace.m
 ```
 
 `trace_viewer` is the owning MATLAB package. `sourceFiles` and `analysisRun`

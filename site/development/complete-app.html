@@ -27,24 +27,24 @@
 <p>The example opens one numeric text file, applies a gain, previews the result, and stores a summary table. Its calculation is intentionally simple; the file boundaries and contracts are the important part.</p>
 <h2 id="resulting-file-tree">Resulting File Tree</h2>
 <pre><code class="language-text">apps/example/trace_viewer/
-├── labkit_TraceViewer_app.m
-└── +trace_viewer/
-    ├── definition.m
-    ├── definitionActions.m
-    ├── requirements.m
-    ├── version.m
-    ├── +appLifecycle/
-    │   ├── createProject.m
-    │   ├── createSession.m
-    │   └── validateProject.m
-    ├── +sourceFiles/
-    │   └── readTrace.m
-    ├── +analysisRun/
-    │   └── applyGain.m
-    └── +userInterface/
-        ├── buildWorkbenchLayout.m
-        ├── presentWorkbench.m
-        └── drawTrace.m</code></pre>
+|-- labkit_TraceViewer_app.m
+`-- +trace_viewer/
+    |-- definition.m
+    |-- definitionActions.m
+    |-- requirements.m
+    |-- version.m
+    |-- +appLifecycle/
+    |   |-- createProject.m
+    |   |-- createSession.m
+    |   `-- validateProject.m
+    |-- +sourceFiles/
+    |   `-- readTrace.m
+    |-- +analysisRun/
+    |   `-- applyGain.m
+    `-- +userInterface/
+        |-- buildWorkbenchLayout.m
+        |-- presentWorkbench.m
+        `-- drawTrace.m</code></pre>
 <p><code>trace_viewer</code> is the owning MATLAB package. <code>sourceFiles</code> and <code>analysisRun</code> name concrete workflow capabilities. There is no app-owned runtime, registry, generic <code>helpers</code>, or direct UI-handle layer.</p>
 <h2 id="1-add-the-thin-entrypoint">1. Add The Thin Entrypoint</h2>
 <p><code>labkit_TraceViewer_app.m</code> delegates launch, dependency checks, version metadata, debug mode, and returned outputs to the framework:</p>
