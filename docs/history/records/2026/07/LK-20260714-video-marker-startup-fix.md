@@ -45,13 +45,13 @@ No user migration is required.
 
 The Video Marker hidden GUI test covers the corrected initial preview path.
 The reusable declarative UI GUI test covers startup-failure detection in the
-shared helper. Final changed-file and GUI validation are recorded in the
-carrying commit and CI run.
+shared helper. Both regressions were added in the focused startup repair
+commits below.
 
 ## Evidence
 
-The carrying commit is located by Change ID
-`LK-20260714-video-marker-startup-fix`.
+- Video Marker startup repair `48319203`.
+- Focused GUI startup-lifecycle regression split `c3c6ce06`.
 
 ## Known limitations and follow-up
 

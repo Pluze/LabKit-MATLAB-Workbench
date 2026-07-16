@@ -12,13 +12,17 @@ component: `labkit.ui` | `3.4.2 -> 3.4.4`
 
 ## Context
 
-- Users see responsive windows sooner instead of waiting on discovery and setup
-  work before the GUI appears.
+Profiling showed that a substantial part of perceived startup delay occurred
+after MATLAB had created the window but before it allowed the operating system
+to paint it. Launcher discovery and preview scroll setup also ran before their
+results were needed, leaving users with a blank or apparently frozen window.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Paint the launcher and app shell as soon as their basic structure exists, then
+defer discovery and preview navigation setup until the UI can remain
+responsive. Preserve the same controls and app catalog once initialization
+finishes.
 
 ## Changes
 
@@ -30,18 +34,20 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Users see responsive windows sooner instead of waiting on discovery and setup
-  work before the GUI appears.
+The window appeared and responded earlier, making initialization visible
+instead of presenting a long white-screen interval. App discovery and scroll
+navigation still completed automatically; the change moved their timing rather
+than removing those capabilities.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+App definitions and saved data were unchanged. The launcher and runtime altered
+only when discovery and interaction setup occurred during startup.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+Launcher profiler assertions checked the earlier paint point, while UI axes
+layout tests covered deferred scroll navigation in `7d4ef11e`.
 
 ## Evidence
 
@@ -49,4 +55,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Earlier painting improved perceived responsiveness, but it also made progress
+communication important. Later runtime work introduced explicit startup stages
+and lifecycle-managed readiness reporting.

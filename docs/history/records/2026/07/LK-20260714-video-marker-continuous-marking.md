@@ -74,8 +74,7 @@ preservation. UI framework tests cover dynamic selectable items.
 
 ## Evidence
 
-The carrying commit is located by Change ID
-`LK-20260714-video-marker-continuous-marking`.
+- Continuous-marking and skeleton workflow redesign `bcba1833`.
 
 ## Known limitations and follow-up
 

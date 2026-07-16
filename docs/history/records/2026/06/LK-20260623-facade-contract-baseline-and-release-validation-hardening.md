@@ -51,7 +51,9 @@ and result data were unaffected.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+The contract metadata described the existing public facades and was additive
+for app callers. Apps with an incompatible declared requirement now failed at
+launch with a version diagnostic instead of continuing unpredictably.
 
 ## Validation
 

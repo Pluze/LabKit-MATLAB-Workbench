@@ -76,8 +76,9 @@ and missing-tool behavior tests passed 3/3.
 - `tools/docs/renderLabKitDocs.m` and `docs/site.json` define the deterministic
   build and navigation contract.
 - `docs/catalogs/api.json` defines the supported app-owned public API surface.
-- Stable Change ID `LK-20260715-documentation-site` locates the carrying branch
-  and later mainline record.
+- Initial searchable site and launcher integration `bdeba572`.
+- Per-app documentation publication `82734a47`.
+- Later information-architecture rebuild `8b55e2b9`.
 
 ## Known limitations and follow-up
 

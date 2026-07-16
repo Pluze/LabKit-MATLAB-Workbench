@@ -44,9 +44,8 @@ sensitive to harmless platform layout differences.
 
 ## Validation
 
-The carrying commit updated CI policy tests, declarative UI tests, launcher GUI
-tests, and shared wait behavior. The exact historical local command was not
-recorded.
+Commit `f359518` updated CI policy tests, declarative UI tests, launcher GUI
+tests, and shared wait behavior.
 
 ## Evidence
 

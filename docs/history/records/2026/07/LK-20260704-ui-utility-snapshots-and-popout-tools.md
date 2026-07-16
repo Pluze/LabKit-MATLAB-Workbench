@@ -11,13 +11,17 @@ component: `labkit.ui` | `4.1.0 -> 4.2.0`
 
 ## Context
 
-- Users can preserve UI state and move plot outputs out of the GUI with less
-  manual work.
+Users could tune controls and plots during a session, but restoring that work
+required repeating the settings manually. Popout axes were useful for visual
+inspection, yet copying data or recreating the plot in a script still required
+ad hoc commands.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Give the runtime a serializable snapshot contract for app state and expose save
+and load as workbench utilities. Extend popout axes with explicit styling,
+image copy, data export, and reconstruction-script actions derived from the
+graphics objects already present on the axes.
 
 ## Changes
 
@@ -29,18 +33,21 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Users can preserve UI state and move plot outputs out of the GUI with less
-  manual work.
+Users could save a supported app state and restore it later from the workbench.
+Popout plots could be restyled, copied, exported as visible graphics data, or
+used to generate a MATLAB reconstruction script without changing the original
+app result.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Apps that did not declare serializable state continued to run without snapshot
+support. Existing app data and figure files were not converted automatically.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The commit expanded app-runtime and axes-workbench GUI suites and added package-
+surface checks for the snapshot APIs. The exact historical command was not
+recorded.
 
 ## Evidence
 
@@ -48,4 +55,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Snapshots covered state declared serializable by the app; they were not raw
+MATLAB workspace dumps. Figure Studio later provided a dedicated workflow for
+more extensive figure cleanup and export.

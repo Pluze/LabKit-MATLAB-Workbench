@@ -28,13 +28,17 @@ component: `labkit_ECGPrint_app` | `1.3.3 -> 1.3.4`
 
 ## Context
 
-- Users can export more complete CSC cycle data, and app layouts share the same
-  viewport assumptions.
+CSC could export the selected cycle, but comparing activation and stability
+across a recording required all cycles in one dataset. In parallel, app layouts
+made their own assumptions about minimum window size and scrollable content,
+so the same control panel could behave differently in a small viewport.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Add an explicit all-cycle CSC export without changing the existing selected-
+cycle result. Define viewport behavior in the UI contract so each app declares
+its content needs while the framework decides when scrolling or minimum sizing
+is necessary.
 
 ## Changes
 
@@ -46,18 +50,21 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Users can export more complete CSC cycle data, and app layouts share the same
-  viewport assumptions.
+CSC users could export every cycle for downstream comparison while retaining
+the existing focused export. Across the workbench, small windows followed one
+scrolling and sizing policy instead of clipping controls according to the app
+that happened to create them.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+The selected-cycle CSC export remained available and the all-cycle table was a
+new option. Existing app definitions inherited the default viewport behavior
+until they declared more specific needs.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+Commit `a69829c6` added a dedicated CSC export suite, extended the CSC GUI
+layout test, and added workbench viewport coverage.
 
 ## Evidence
 
@@ -65,4 +72,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+All-cycle CSV output was a separate export choice rather than a new session
+format. Later CSC work refined column naming and voltage/current organization.

@@ -39,7 +39,9 @@ Saved app data did not change.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Existing launcher installations remained usable. Managed installations needed
+the launcher manifest for version replacement; image editors required no saved-
+data conversion after their stale callbacks were released.
 
 ## Validation
 

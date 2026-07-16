@@ -57,7 +57,7 @@ component: `labkit_CurvatureMeasurement_app` | `1.0.0 -&gt; 1.0.1`</code></pre>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>An incompatible app/package combination could fail with a direct requirement message instead of producing a later missing-function error. Existing project and result data were unaffected.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
-<p>No manual migration was recorded for this historical change.</p>
+<p>The contract metadata described the existing public facades and was additive for app callers. Apps with an incompatible declared requirement now failed at launch with a version diagnostic instead of continuing unpredictably.</p>
 <h2 id="validation">Validation</h2>
 <p>The listed commits introduced contract, lifecycle, and CI build-task tests. Release tags <code>v2.4.1</code> and <code>v2.4.2</code> identify the shipped checkpoints; exact local commands were not recorded.</p>
 <h2 id="evidence">Evidence</h2>

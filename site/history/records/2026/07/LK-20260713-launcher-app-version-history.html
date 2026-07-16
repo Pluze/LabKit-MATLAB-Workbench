@@ -50,9 +50,16 @@ component: `labkit_launcher` | `1.3.0 -&gt; 1.4.0`</code></pre>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <p>The launcher command and button are additive. Existing list, version, package, maintenance, and app-launch workflows remain available.</p>
 <h2 id="validation">Validation</h2>
-<p><code>LauncherGuiTest</code> covers programmatic filtering and the hidden GUI viewer; <code>ChangelogGuardrailTest</code> validates complete version chains against current metadata.</p>
+<p><code>LauncherGuiTest</code> covers programmatic filtering and the hidden GUI viewer; <code>ChangelogGuardrailTest</code> validates complete version chains against current metadata. These checks were included in the combined mainline change <code>4a6c41dd</code>.</p>
 <h2 id="evidence">Evidence</h2>
-<p>The carrying commit is located by Change ID <code>LK-20260713-launcher-app-version-history</code>; historical component events were reconstructed from version-file changes on <code>origin/main</code>.</p>
+<ul>
+<li>Component history, launcher viewer, and changelog validation were included in</li>
+</ul>
+<p><code>4a6c41dd</code>.</p>
+<ul>
+<li>Historical component events were reconstructed from version-file changes on</li>
+</ul>
+<p>the then-current <code>origin/main</code> history.</p>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
 <p>History begins when version metadata was first tracked for each component. Behavior before that point can only be inferred from older source commits and is not assigned invented version numbers.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

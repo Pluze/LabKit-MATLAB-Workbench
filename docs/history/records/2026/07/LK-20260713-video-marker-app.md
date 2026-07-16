@@ -52,12 +52,12 @@ public LabKit facades. No existing project files or exports require migration.
 
 `VideoMarkerTest` covers skeleton parsing, frame inheritance, marker CSV
 round trip, coordinate transforms, and project save/load. `GuiLayoutVideoMarkerTest`
-covers the hidden GUI launch and semantic control contract. Final branch
-validation is recorded in the carrying PR.
+covers the hidden GUI launch and semantic control contract. Both accompanied
+the app in commit `b41f5254`.
 
 ## Evidence
 
-The carrying commit is located by Change ID `LK-20260713-video-marker-app`.
+- Initial Video Marker app `b41f5254`.
 
 ## Known limitations and follow-up
 

@@ -36,7 +36,8 @@ file data were unchanged.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+App definitions and selected files required no conversion. The shared panel
+kept the same controls and callbacks with revised row geometry.
 
 ## Validation
 

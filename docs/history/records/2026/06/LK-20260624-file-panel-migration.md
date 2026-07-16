@@ -60,9 +60,8 @@ inputs or DTA session helpers required an update.
 
 ## Validation
 
-The carrying commit migrated app GUI workflows and package compatibility tests
-to the new file-panel and DTA APIs. The exact historical test command was not
-recorded.
+Commit `b145c904` migrated app GUI workflows and package compatibility tests to
+the new file-panel and DTA APIs.
 
 ## Evidence
 

@@ -48,12 +48,13 @@ them without blocking on an invisible dialog. No saved or exported data changed.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+App error conditions and messages remained app-owned. Only the display route
+changed, so user data and app project formats required no conversion.
 
 ## Validation
 
-The carrying commit migrated alert call sites and updated hidden workflow tests
-across the listed apps. The exact historical command was not recorded.
+Commit `8d7c83b1` migrated alert call sites and updated hidden workflow tests
+across the listed apps.
 
 ## Evidence
 

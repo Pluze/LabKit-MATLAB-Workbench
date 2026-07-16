@@ -47,13 +47,15 @@ maintenance, and app-launch workflows remain available.
 
 `LauncherGuiTest` covers programmatic filtering and the hidden GUI viewer;
 `ChangelogGuardrailTest` validates complete version chains against current
-metadata.
+metadata. These checks were included in the combined mainline change
+`4a6c41dd`.
 
 ## Evidence
 
-The carrying commit is located by Change ID
-`LK-20260713-launcher-app-version-history`; historical component events were
-reconstructed from version-file changes on `origin/main`.
+- Component history, launcher viewer, and changelog validation were included in
+  `4a6c41dd`.
+- Historical component events were reconstructed from version-file changes on
+  the then-current `origin/main` history.
 
 ## Known limitations and follow-up
 

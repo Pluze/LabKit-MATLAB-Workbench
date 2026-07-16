@@ -47,14 +47,15 @@ created until the owning app performed its export.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Existing output locations and exported file formats remained valid. Apps moved
+from direct folder dialogs to the shared prompt without changing what they
+wrote after selection.
 
 ## Validation
 
-The carrying commit added `AppHookHelpersTest` coverage for defaults,
+Commit `c5055b98` added `AppHookHelpersTest` coverage for defaults,
 cancellation, successful selection, and chooser injection, then updated the
-affected app compatibility checks. The exact historical command was not
-recorded.
+affected app compatibility checks.
 
 ## Evidence
 

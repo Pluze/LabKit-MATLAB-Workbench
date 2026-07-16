@@ -50,7 +50,9 @@ calculations and exported result schemas were unchanged.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Existing loaded-file and result formats remained valid. Appended selections
+now preserved the active item, and the removed manual plot controls did not
+alter the underlying calculation options.
 
 ## Validation
 

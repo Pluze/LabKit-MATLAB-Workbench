@@ -90,6 +90,12 @@ Common choices:
 packaged copies, or environments without git state, use `headless` or an
 explicit `runLabKitTests` suite selection instead.
 
+Documentation checks cover more than generated-file freshness. They also
+verify local links, search behavior, public API coverage, executable examples,
+component history metadata, and the absence of known empty history-page
+boilerplate. These checks catch structural regressions; a human review is still
+required to decide whether an explanation is accurate, complete, and readable.
+
 Project style and code-quality guardrails normally scan only public repository
 files. A private app workspace can opt in by placing an empty
 `.labkit-accept-main-guardrails` file at the private workspace root. Accepted

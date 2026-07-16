@@ -28,13 +28,17 @@ component: `labkit_ECGPrint_app` | `1.2.2 -> 1.3.0`
 
 ## Context
 
-- Reproducing app failures became a maintained workflow instead of an ad hoc
-  collection of local files.
+Debug reports could identify a failed callback, but reproducing the failure
+still depended on the original laboratory file and the user's exact sequence
+of actions. Those inputs were often unavailable to the person investigating
+the report and were unsuitable as permanent test fixtures.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Let every app create a small, synthetic sample pack that exercises its normal
+loading path without containing laboratory data. Store the generated inputs
+and expected output location beside the debug artifacts so a report can be
+replayed from one self-contained folder.
 
 ## Changes
 
@@ -47,18 +51,20 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Reproducing app failures became a maintained workflow instead of an ad hoc
-  collection of local files.
+Debug mode gained a repeatable demonstration dataset for each supported app.
+These packs were synthetic and intended for diagnosis, not as substitutes for
+real experiment files or as reference scientific results.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+The sample packs were additive debug assets. Existing app inputs and outputs
+were unchanged, and no user file was copied into a pack.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+Commit `279befbc` added coverage tests for every app family, focused tests for
+DIC, electrochem, image, RHS, and wearable sample writers, and layout checks
+that exercised the generated packs.
 
 ## Evidence
 
@@ -66,4 +72,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Sample packs were deliberately app-owned because each workflow knows which
+inputs make a useful reproduction. They do not contain or archive a user's
+original files.

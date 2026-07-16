@@ -55,7 +55,9 @@ discarding work. Scientific results and saved schemas were unchanged.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Existing app state and result files remained valid. Closing an incomplete
+workflow gained an additional confirmation, and debug reports gained exception
+details.
 
 ## Validation
 

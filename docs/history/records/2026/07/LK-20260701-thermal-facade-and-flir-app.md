@@ -13,13 +13,17 @@ introduced: `labkit_FLIRThermal_app` | `1.0.0`
 
 ## Context
 
-- Thermal image parsing and rendering became a reusable LabKit contract instead
-  of app-local logic.
+FLIR radiometric JPEGs contain both a visible preview and embedded thermal data
+plus camera metadata. Treating them as ordinary images loses the temperature
+meaning, while placing all parsing and conversion code inside one GUI would
+make the scientific operations unusable from MATLAB scripts.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Create a thermal library for reading radiometric files, converting raw sensor
+values to temperature, and rendering temperature images. Build the FLIR Thermal
+Postprocess app on those public operations, keeping file lists, range controls,
+measurement state, and export flow in the app.
 
 ## Changes
 
@@ -32,18 +36,22 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Thermal image parsing and rendering became a reusable LabKit contract instead
-  of app-local logic.
+Users gained a FLIR app with file browsing, temperature display, range control,
+summary values, and export-oriented views. The same thermal functions could be
+called without opening the GUI, so scripts could inspect temperature matrices
+and metadata directly.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+The thermal facade and FLIR app were additive. Existing image apps and files
+were unchanged; scripts could begin using `labkit.thermal` without a project-
+file migration.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The change added thermal-facade and app-operation unit suites, a FLIR layout
+suite, package-surface checks, and a synthetic radiometric JPEG writer. No
+laboratory image was committed as a fixture.
 
 ## Evidence
 
@@ -51,4 +59,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Camera-specific metadata support depended on the formats represented by the
+synthetic and available local samples. Later changes refined display ranges,
+preview cost, and point and ROI measurement tools.

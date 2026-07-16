@@ -50,13 +50,13 @@ and exports kept their previous formats.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+The diagnostic files were additive and existing app inputs and saved results
+remained readable. Debug runs began producing more detailed local artifacts.
 
 ## Validation
 
-The carrying commits updated launcher, framework, and affected app workflow
-tests for diagnostic creation and hardened callbacks. Exact historical commands
-were not recorded.
+Commits `e966457b` and `f5bc6f98` updated launcher, framework, and affected app
+workflow tests for diagnostic creation and hardened callbacks.
 
 ## Evidence
 

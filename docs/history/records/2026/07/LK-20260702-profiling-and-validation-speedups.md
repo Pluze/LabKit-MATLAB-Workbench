@@ -16,13 +16,17 @@ component: `labkit_ECGPrint_app` | `1.3.0 -> 1.3.1`
 
 ## Context
 
-- Maintainers get faster diagnosis and faster validation without changing app
-  behavior.
+Startup and file-selection complaints could not be resolved reliably from wall
+clock impressions alone. At the same time, focused changes paid avoidable test
+discovery cost, GUI tests waited longer than the behavior required, and Batch
+Crop read every selected image before the user requested a preview or export.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Add a profiler that records launcher, startup, callback, and close costs with
+source attribution. Use its evidence to remove repeated UI updates and eager
+image reads. Route changed-file validation to the smallest owning suites and
+bound GUI waits without weakening their behavioral assertions.
 
 ## Changes
 
@@ -38,18 +42,24 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Maintainers get faster diagnosis and faster validation without changing app
-  behavior.
+Maintainers could launch a profiled target and receive a summarized report
+instead of interpreting MATLAB's raw profile table. Selecting many Batch Crop
+files returned sooner because images were decoded only for the current preview
+or final export. Routine validation also completed with less discovery and wait
+overhead.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Profiling and test routing were maintainer tools. Batch Crop kept its task and
+export schemas; selected images were simply decoded later in the workflow.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The profiling tool received a dedicated unit suite. Later commits added
+launcher profiler coverage, deferred-read tests, debug-trace mirroring checks,
+routing guardrails, and bounded GUI-wait tests. Commit `25912c54` records
+successful `buildtool changed`, integration validation, and remote MATLAB
+tests.
 
 ## Evidence
 
@@ -57,4 +67,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+These changes reduced measured work but did not eliminate the white window
+shown before all startup setup completed. The following startup pass changed
+when windows were painted and when scroll navigation was installed.

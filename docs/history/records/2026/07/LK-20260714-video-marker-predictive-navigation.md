@@ -82,8 +82,7 @@ paths or pixels.
 
 ## Evidence
 
-The carrying commit is located by Change ID
-`LK-20260714-video-marker-predictive-navigation`.
+- Predictive marking and portable file references `6bfd74c8`.
 
 ## Known limitations and follow-up
 

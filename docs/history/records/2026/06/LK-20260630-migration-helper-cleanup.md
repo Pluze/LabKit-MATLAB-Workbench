@@ -45,12 +45,14 @@ and a small set of DIC/electrochem helpers.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+The consolidated helpers preserved the app-facing state and result structures.
+No project or export format changed as the duplicate implementations were
+removed.
 
 ## Validation
 
-The carrying commits added or updated focused tests for each consolidated
-operation. The exact combined historical test command was not recorded.
+Commits `7f73b71b`, `e3349af6`, `733fb951`, `98a2b02c`, and `391540a7`
+added or updated focused tests for each consolidated operation.
 
 ## Evidence
 

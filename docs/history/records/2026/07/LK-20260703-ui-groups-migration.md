@@ -28,13 +28,16 @@ component: `labkit_ECGPrint_app` | `1.3.2 -> 1.3.3`
 
 ## Context
 
-- This is the point where app action layout became a grouped UI contract instead
-  of a looser action-list convention.
+The declarative runtime described actions as a mostly flat list with optional
+group hints. Apps with several phases could not reliably express which controls
+belonged together, and layout code had to infer more structure than the app had
+actually declared.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Make groups the primary unit of control layout. Each group would carry its
+title and controls, giving the runtime enough structure to render related
+actions together without learning app-specific labels or workflow rules.
 
 ## Changes
 
@@ -46,8 +49,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- This is the point where app action layout became a grouped UI contract instead
-  of a looser action-list convention.
+Apps retained their actions, but related controls appeared in explicit visual
+sections. App definitions became easier to scan because their grouping matched
+the panels users saw.
 
 ## Compatibility and migration
 
@@ -55,9 +59,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The migration updated UI specification tests, basic-control and workbench GUI
+tests, app package structure checks, and all supported app definitions. The
+exact historical command was not recorded.
 
 ## Evidence
 
@@ -65,4 +69,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+This was a breaking definition-format change and established the UI 4.x line.
+UI 5 later renamed facade packages by responsibility but retained explicit
+groups as the layout model.

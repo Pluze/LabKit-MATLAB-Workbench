@@ -11,13 +11,17 @@ component: `labkit_launcher` | `1.2.7 -> 1.3.0`
 
 ## Context
 
-- Related LabKit apps can be distributed together without shipping unrelated
-  apps or manually combining separate packages.
+The deployment tool could package one app, but laboratory workflows often used
+a small related set. Creating one ZIP per app duplicated the shared LabKit
+runtime, while manually merging ZIP files risked inconsistent entry files and
+manifests. The launcher's selected row also could not double as a multi-select
+without making Open and Debug ambiguous.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Add a separate Package checkbox to each launcher row. Keep the ordinary row
+selection for Open and Debug, and let checked rows produce one bundle with one
+entry file per app and a manifest describing the complete package.
 
 ## Changes
 
@@ -34,8 +38,10 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Related LabKit apps can be distributed together without shipping unrelated
-  apps or manually combining separate packages.
+Users could distribute a related group of apps in one source or P-code ZIP
+without including the rest of the workbench. Opening and debugging still acted
+on the highlighted app, so preparing a package did not change normal launcher
+navigation.
 
 ## Compatibility and migration
 
@@ -44,9 +50,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The commit expanded deployment unit tests, launcher packaging GUI coverage,
+selection helpers, changed-file routing, and build-task efficiency checks. The
+exact historical command was not recorded.
 
 ## Evidence
 
@@ -54,4 +60,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Bundles intentionally included selected apps and their LabKit dependencies,
+not tests, full documentation, or unrelated private workspaces. P-code packages
+still required a compatible MATLAB runtime.

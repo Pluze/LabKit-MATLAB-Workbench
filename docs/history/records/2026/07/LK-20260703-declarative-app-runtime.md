@@ -28,13 +28,18 @@ component: `labkit_ECGPrint_app` | `1.3.1 -> 1.3.2`
 
 ## Context
 
-- Maintainers can reason about app wiring through workflow definitions instead
-  of hand-following callback construction.
+Apps had adopted common shells and controls, but each runner still assembled
+callbacks, startup steps, refresh behavior, and debug hooks in its own order.
+Understanding an app meant reading a long construction procedure before
+reaching the scientific workflow.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Describe an app through a definition containing its layout, actions, state,
+startup, and rendering contracts, then let the runtime perform the common
+wiring. Keep action bodies, calculations, and result structures in the app so
+the definition exposes workflow structure without becoming a generic analysis
+language.
 
 ## Changes
 
@@ -45,18 +50,23 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Maintainers can reason about app wiring through workflow definitions instead
-  of hand-following callback construction.
+The visible workflows were intended to remain the same. For maintainers, each
+app gained a recognizable definition and lifecycle, while repeated setup moved
+out of its runner. Debug sample packs and focused app tests continued to call
+the same app-owned operations.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Users kept the same app entry points and data files. App implementations moved
+to definitions and runtime actions; unsupported code that reached into old
+runner construction details needed to adopt the declarative APIs.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The migration changed 545 files and updated the affected app, layout, export,
+calculation, sample-pack, and package-boundary suites in the same commit. The
+commit message records final profiler and debug evidence; the exact local
+command was not preserved in this history.
 
 ## Evidence
 
@@ -64,4 +74,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+The first declarative vocabulary still used the mixed `app`, `spec`, `view`,
+`tool`, and `diag` package names. The UI 4 and UI 5 passes refined how groups,
+plots, interactions, and lifecycle responsibilities were named.

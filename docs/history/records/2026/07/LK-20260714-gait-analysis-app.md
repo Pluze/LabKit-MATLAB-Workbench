@@ -57,12 +57,12 @@ imported when they provide wide coordinate columns or MAT `coords` and
 `GaitAnalysisTest` covers coordinate import, synthetic step detection, metric
 tables, MAT import, coordinate export calibration/origin semantics, coordinate
 CSV readback, and CSV set export. `GuiLayoutGaitAnalysisTest` covers the hidden
-GUI launch and semantic control contract. Final branch validation is recorded
-in the carrying PR.
+GUI launch and semantic control contract. These tests were added with the app
+in commit `49863964`.
 
 ## Evidence
 
-The carrying commit is located by Change ID `LK-20260714-gait-analysis-app`.
+- Initial Gait Analysis app `49863964`.
 
 ## Known limitations and follow-up
 

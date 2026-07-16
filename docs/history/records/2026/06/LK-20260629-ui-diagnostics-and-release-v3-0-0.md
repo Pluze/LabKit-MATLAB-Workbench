@@ -40,7 +40,8 @@ not change in this release record.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+The v3.0.0 release retained the preceding app data formats. Users could update
+or roll back the workbench without converting saved scientific results.
 
 ## Validation
 

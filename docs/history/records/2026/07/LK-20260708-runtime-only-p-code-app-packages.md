@@ -46,9 +46,8 @@ The protected app and its data formats are unchanged.
 
 ## Validation
 
-The carrying commit expanded `PackageLabKitAppToolTest` for runtime-only package
-contents and updated the generated package instructions. The exact historical
-test command was not recorded.
+Commit `75f63f1` expanded `PackageLabKitAppToolTest` for runtime-only package
+contents and updated the generated package instructions.
 
 ## Evidence
 

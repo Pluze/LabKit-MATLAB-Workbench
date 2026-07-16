@@ -53,9 +53,9 @@ component: `labkit_ResponseReviewStats_app` | `1.2.1 -&gt; 1.2.2`</code></pre>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Output dialogs began in a useful folder and cancellation returned cleanly to the app. The selected folder was remembered as a preference; no output was created until the owning app performed its export.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
-<p>No manual migration was recorded for this historical change.</p>
+<p>Existing output locations and exported file formats remained valid. Apps moved from direct folder dialogs to the shared prompt without changing what they wrote after selection.</p>
 <h2 id="validation">Validation</h2>
-<p>The carrying commit added <code>AppHookHelpersTest</code> coverage for defaults, cancellation, successful selection, and chooser injection, then updated the affected app compatibility checks. The exact historical command was not recorded.</p>
+<p>Commit <code>c5055b98</code> added <code>AppHookHelpersTest</code> coverage for defaults, cancellation, successful selection, and chooser injection, then updated the affected app compatibility checks.</p>
 <h2 id="evidence">Evidence</h2>
 <ul>
 <li>Main commit <code>c5055b98</code>.</li>

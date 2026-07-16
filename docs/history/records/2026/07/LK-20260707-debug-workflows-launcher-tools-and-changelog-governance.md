@@ -19,24 +19,27 @@ component: `labkit_FigureStudio_app` | `0.1.4 -> 0.1.5`
 
 ## Context
 
-- The debug sample workflows can be exercised without false crash reports or
-  disabled-looking app paths when the required user action is folder loading,
-  ROI anchor completion, or crop-center confirmation.
-- Code Analyzer cleanup can be reviewed from an interactive local HTML report
-  without making the launcher own a growing maintenance workflow.
-- A single lab workflow can be distributed into a fixed production or offline
-  deployment step without shipping unrelated apps, tests, docs, or repository
-  metadata.
-- Developers can keep private LabKit apps next to a public checkout, use the
-  ordinary launcher to open them, and push that workspace to a separate private
-  repository.
-- Maintainers and agents can understand project direction from the changelog
-  without reconstructing intent from raw git history.
+The first complete debug sample packs exposed several false failures. A modal
+file chooser could be mistaken for a stalled callback, DIC could read an older
+ROI snapshot than the editor displayed, duplicate crops needed confirmation
+before export, and Focus Stack's folder workflow was hard to reach from its
+sample instructions.
+
+The launcher was also becoming a practical maintenance and distribution tool.
+Code Analyzer reports needed a durable home outside launcher source, individual
+apps needed an offline package format, and private app workspaces needed to
+remain discoverable without entering the public repository.
+
+Finally, the growing changelog needed to explain the direction of the project,
+not merely repeat tags and commit subjects.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Use v3.1.0 as a stabilization release for reproducible debug workflows. Treat
+native modal dialogs as active UI, read live editor state when it is newer than
+the stored snapshot, and make required gestures visible in the app. Move code
+analysis and packaging into dedicated tools, let the launcher invoke them, and
+keep private app discovery separate from public release contents.
 
 ## Changes
 
@@ -75,19 +78,15 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- The debug sample workflows can be exercised without false crash reports or
-  disabled-looking app paths when the required user action is folder loading,
-  ROI anchor completion, or crop-center confirmation.
-- Code Analyzer cleanup can be reviewed from an interactive local HTML report
-  without making the launcher own a growing maintenance workflow.
-- A single lab workflow can be distributed into a fixed production or offline
-  deployment step without shipping unrelated apps, tests, docs, or repository
-  metadata.
-- Developers can keep private LabKit apps next to a public checkout, use the
-  ordinary launcher to open them, and push that workspace to a separate private
-  repository.
-- Maintainers and agents can understand project direction from the changelog
-  without reconstructing intent from raw git history.
+The supplied debug packs could be followed without producing a false crash
+report or an apparently disabled workflow. DIC mask export used the anchors
+currently visible in the editor, duplicate crops remained blocked until their
+centers were confirmed, and Focus Stack offered a direct folder action.
+
+Maintainers gained timestamped HTML and JSON Code Analyzer reports. A selected
+app could be packaged for production or offline use without tests, unrelated
+apps, or repository metadata. Private apps could live beside the checkout,
+appear in the ordinary launcher, and retain their own repository and history.
 
 ## Compatibility and migration
 
@@ -103,18 +102,17 @@ evidence changed together to address the stated user or maintainer need.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+PR #34 updated debug sample, ROI, crop, folder-loading, launcher-tool,
+deployment, and private-workspace tests before its squash merge. Tag `v3.1.0`
+points to release commit `9db01952`; the exact local command sequence was not
+recorded in this page.
 
 ## Evidence
 
-- PR #34 squash merge and release tag `v3.1.0`.
+- PR #34 squash merge `9db01952` and release tag `v3.1.0`.
 
 ## Known limitations and follow-up
 
-- Keep debug fixes moving into shared callback and editor contracts when the
-  failure pattern is reusable, but keep app-specific workflow decisions in the
-  owning app.
-- Keep changelog entries organized around evolution themes and release lines,
-  not raw tag rows or issue lists.
+The first deployment tool packaged one app at a time. Multi-app bundles were
+added later. The changelog model introduced here was subsequently replaced by
+component-linked history pages generated with the documentation site.

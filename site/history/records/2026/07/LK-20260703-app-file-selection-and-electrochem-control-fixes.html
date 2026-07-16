@@ -59,7 +59,7 @@ scope: historical project evolution</code></pre>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Users could add another batch without losing files already loaded, across the listed electrochem and image apps. The electrochem workbenches became simpler; calculations and exported result schemas were unchanged.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
-<p>No manual migration was recorded for this historical change.</p>
+<p>Existing loaded-file and result formats remained valid. Appended selections now preserved the active item, and the removed manual plot controls did not alter the underlying calculation options.</p>
 <h2 id="validation">Validation</h2>
 <p>The file-selection commit added GUI regression coverage to every affected app. The control-removal commit updated the three electrochem GUI workflows and shared test helpers. Exact historical commands were not recorded.</p>
 <h2 id="evidence">Evidence</h2>

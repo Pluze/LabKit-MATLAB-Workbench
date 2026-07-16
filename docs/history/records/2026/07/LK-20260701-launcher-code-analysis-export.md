@@ -11,13 +11,15 @@ component: `labkit_launcher` | `1.1.6 -> 1.2.0`
 
 ## Context
 
-- Maintainers can inspect launcher code issues through the workbench tooling
-  without a separate manual MATLAB setup.
+The launcher offered a Code Analyzer action, but its earlier implementation
+carried substantial custom export code. That made a maintenance tool harder to
+maintain than the MATLAB analysis it was exposing.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Use MATLAB's native issue representation and export path, and keep the launcher
+responsible only for choosing the target and destination. This reduced custom
+conversion logic while preserving a launcher-level entry point for the report.
 
 ## Changes
 
@@ -27,18 +29,19 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Maintainers can inspect launcher code issues through the workbench tooling
-  without a separate manual MATLAB setup.
+The launcher could export Code Analyzer findings in a MATLAB-supported form
+without requiring a separate script. This action inspected source code only
+and did not start or modify an app project.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Existing launcher actions remained available. Newly exported issue files used
+MATLAB's native representation rather than the removed custom conversion.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+`LauncherGuiTest` gained coverage for the native issue-export path and the
+implementation in `8fd3ddff` removed more launcher code than it added.
 
 ## Evidence
 
@@ -46,4 +49,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Code analysis remained a maintainer tool. It did not become a prerequisite for
+launching an app or a replacement for the repository's automated checks.

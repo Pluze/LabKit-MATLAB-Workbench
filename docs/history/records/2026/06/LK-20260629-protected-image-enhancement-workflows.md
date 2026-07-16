@@ -41,13 +41,14 @@ methods retained their previous behavior.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Existing enhancement steps and Image Match inputs remained valid. The new
+protected methods were additional choices and did not rewrite saved source
+images.
 
 ## Validation
 
-The carrying commit added focused Image Enhance and Image Match unit tests and
-updated both GUI workflow tests. The exact historical test command was not
-recorded.
+Commit `1768dd57` added focused Image Enhance and Image Match unit tests and
+updated both GUI workflow tests.
 
 ## Evidence
 

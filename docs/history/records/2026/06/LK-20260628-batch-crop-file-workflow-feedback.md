@@ -37,12 +37,13 @@ exported data were unchanged.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Batch Crop tasks and exports kept their existing format. The change affected
+file-selection context and feedback in the window only.
 
 ## Validation
 
-The carrying commit updated shared title-context and Batch Crop GUI workflow
-coverage. The exact historical test command was not recorded.
+Commit `61e8edd3` updated shared title-context and Batch Crop GUI workflow
+coverage.
 
 ## Evidence
 

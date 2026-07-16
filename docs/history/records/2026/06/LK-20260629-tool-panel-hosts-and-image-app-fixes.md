@@ -44,7 +44,8 @@ area. Existing source and result formats were unchanged.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Existing file entries and image results remained readable. Deterministic ids
+were regenerated in memory, and the new layout host did not alter saved data.
 
 ## Validation
 

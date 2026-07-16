@@ -54,9 +54,9 @@ scope: historical project evolution</code></pre>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Supported image selection, display-name handling, preview normalization, and common enhancement primitives became consistent across the migrated apps. Scientific app outputs and source files did not change format.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
-<p>No manual migration was recorded for this historical change.</p>
+<p>Image apps kept their entry points and exports while adopting the shared operations. App code that called the retired local helpers needed to use the image facade or the owning app operation.</p>
 <h2 id="validation">Validation</h2>
-<p>The carrying commit added a dedicated <code>LabKitImageFacadeTest</code> suite and updated app compatibility, package-boundary, public-surface, and focused image-app tests. The exact historical command was not recorded.</p>
+<p>Commit <code>7023e87e</code> added a dedicated <code>LabKitImageFacadeTest</code> suite and updated app compatibility, package-boundary, public-surface, and focused image-app tests.</p>
 <h2 id="evidence">Evidence</h2>
 <ul>
 <li>Main commit <code>7023e87e</code>.</li>

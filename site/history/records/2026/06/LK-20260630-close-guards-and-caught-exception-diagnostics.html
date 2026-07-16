@@ -59,7 +59,7 @@ component: `labkit_ECGPrint_app` | `1.2.0 -&gt; 1.2.1`</code></pre>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>An app could still recover from a failed load, calculation, or export, while its debug report retained the exception evidence. Closing an image workflow with unfinished state produced a consistent warning instead of silently discarding work. Scientific results and saved schemas were unchanged.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
-<p>No manual migration was recorded for this historical change.</p>
+<p>Existing app state and result files remained valid. Closing an incomplete workflow gained an additional confirmation, and debug reports gained exception details.</p>
 <h2 id="validation">Validation</h2>
 <p>The exception-reporting commit expanded app/library compatibility checks across the affected runners. The close-guard commit added public-surface and compatibility coverage for promoted file indices and app close behavior. Exact historical commands were not recorded.</p>
 <h2 id="evidence">Evidence</h2>

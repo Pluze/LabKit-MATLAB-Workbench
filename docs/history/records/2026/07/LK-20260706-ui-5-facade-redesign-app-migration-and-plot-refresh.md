@@ -34,22 +34,30 @@ component: `labkit_ECGPrint_app` | `1.3.4 -> 1.3.5`
 
 ## Context
 
-- App authors now use a smaller set of responsibility-named UI packages instead
-  of learning old mixed app/spec/view/tool/diag buckets.
-- Shared plot-area mechanics live in the framework, so app code can focus on
-  domain plotting while the framework handles stale axes state, fitted ranges,
-  empty previews, coordinate offsets, and registered preview utilities.
-- Electrochem apps now match the active file selection after add/remove/clear
-  workflows, and CIC keeps the critical Emc/Ema readout visible on dense plots.
-- Users can distinguish long launcher work from a frozen MATLAB session.
-- Multi-plot apps expose utility actions in a clearer, less repetitive flow.
-- Figure cleanup and data/script export move into a dedicated reusable workflow
-  instead of crowding every popout plot window.
+The declarative runtime had made app structure more consistent, but its public
+packages still reflected the order in which features had been extracted:
+`app`, `spec`, `view`, `tool`, and `diag` mixed lifecycle, layout, plotting,
+interaction, and diagnostics. App authors often had to know implementation
+history to guess where an operation belonged.
+
+Plot behavior exposed the cost of that ambiguity. Apps independently cleared
+axes, fitted limits, translated image coordinates, registered previews, and
+handled empty states. After removing or changing a file, an electrochem plot
+could retain limits, legends, or annotations from the previous selection.
+
+Launcher operations also needed visible progress, and the growing collection
+of popout-figure actions no longer fit comfortably in every app. Figure
+cleanup, style adjustment, data export, and reconstruction were substantial
+enough to justify their own workflow.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Name the UI facade by responsibility: runtime, layout, controls, plots,
+interactions, and debugging. Move reusable axes mechanics into the plot layer,
+then migrate every supported app in one breaking version so old and new package
+names cannot coexist indefinitely. Give long launcher operations one busy and
+progress model, and move advanced figure work into Figure Studio rather than
+expanding the app shell further.
 
 ## Changes
 
@@ -119,17 +127,22 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- App authors now use a smaller set of responsibility-named UI packages instead
-  of learning old mixed app/spec/view/tool/diag buckets.
-- Shared plot-area mechanics live in the framework, so app code can focus on
-  domain plotting while the framework handles stale axes state, fitted ranges,
-  empty previews, coordinate offsets, and registered preview utilities.
-- Electrochem apps now match the active file selection after add/remove/clear
-  workflows, and CIC keeps the critical Emc/Ema readout visible on dense plots.
-- Users can distinguish long launcher work from a frozen MATLAB session.
-- Multi-plot apps expose utility actions in a clearer, less repetitive flow.
-- Figure cleanup and data/script export move into a dedicated reusable workflow
-  instead of crowding every popout plot window.
+App plots now followed the current file selection: clearing or changing data
+also cleared stale ranges, legends, markers, and annotations. CIC kept Emc and
+Ema labels readable on dense traces, and multi-axes apps offered one consistent
+set of plot utilities. Launcher progress distinguished a long synchronous
+operation from a frozen MATLAB session and rejected repeated clicks while that
+operation was active.
+
+Figure Studio added a separate place to open a `.fig`, compare the imported
+style with a LabKit single-panel style, adjust visible graphics, and export the
+axes data with a reconstruction script. These operations worked on figure
+presentation and visible graphics; they did not replace the scientific export
+owned by the source app.
+
+For app authors, the breaking rename made API discovery more direct. Lifecycle
+code used `labkit.ui.runtime`, layout descriptions used `labkit.ui.layout`, and
+plot or interaction code no longer depended on a broad historical bucket.
 
 ## Compatibility and migration
 
@@ -138,14 +151,21 @@ evidence changed together to address the stated user or maintainer need.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+Commit `78f4827e` migrated 383 source and test files and added focused plot-
+helper and neurophysiology layout coverage. Launcher progress received its own
+GUI suite in `edbc79d8`. Figure Studio added GUI and result-export suites in
+`4c841d6f`, followed by source-axes import tests in `7edd619f`. Exact local
+commands for the combined release were not recorded.
 
 ## Evidence
 
-- Main UI 5 squash commit.
+- UI 5 facade and app migration `78f4827e`.
+- Launcher progress and plot utilities `edbc79d8`.
+- Figure Studio `4c841d6f` and source-axes cleanup `8aeee1f1`.
+- FIG import normalization `7edd619f`.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+UI 5 clarified package ownership, but app code still performed much of its own
+lifecycle and rendering coordination. Runtime V2 later took explicit ownership
+of startup, callbacks, presenters, injected services, and serializable state.

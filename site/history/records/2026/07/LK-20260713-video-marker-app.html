@@ -54,9 +54,11 @@ introduced: `labkit_VideoMarker_app` | `1.0.0`</code></pre>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <p>The app is additive and does not change existing image measurement apps or public LabKit facades. No existing project files or exports require migration.</p>
 <h2 id="validation">Validation</h2>
-<p><code>VideoMarkerTest</code> covers skeleton parsing, frame inheritance, marker CSV round trip, coordinate transforms, and project save/load. <code>GuiLayoutVideoMarkerTest</code> covers the hidden GUI launch and semantic control contract. Final branch validation is recorded in the carrying PR.</p>
+<p><code>VideoMarkerTest</code> covers skeleton parsing, frame inheritance, marker CSV round trip, coordinate transforms, and project save/load. <code>GuiLayoutVideoMarkerTest</code> covers the hidden GUI launch and semantic control contract. Both accompanied the app in commit <code>b41f5254</code>.</p>
 <h2 id="evidence">Evidence</h2>
-<p>The carrying commit is located by Change ID <code>LK-20260713-video-marker-app</code>.</p>
+<ul>
+<li>Initial Video Marker app <code>b41f5254</code>.</li>
+</ul>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
 <p>The first version is manual and single-subject. It intentionally does not perform automatic interpolation, optical flow, model inference, multi-camera synchronization, 3D annotation, or per-point missing/out-of-frame labeling.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

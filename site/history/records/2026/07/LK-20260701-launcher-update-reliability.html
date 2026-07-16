@@ -30,11 +30,9 @@ compatibility: compatible
 component: `labkit_launcher` | `1.1.3 -&gt; 1.1.4`
 component: `labkit_launcher` | `1.1.4 -&gt; 1.1.5`</code></pre>
 <h2 id="context">Context</h2>
-<ul>
-<li>Updating the self-contained launcher became less fragile.</li>
-</ul>
+<p>The self-contained launcher could install a ZIP release, but the replacement path performed more filesystem work than necessary and duplicated logic for locating, unpacking, and replacing the workbench. Slow replacement made a successful update look stalled; duplicated recovery paths made failures harder to reason about.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>
-<p>Treat this as one coherent evolution record because the listed versions and evidence changed together to address the stated user or maintainer need.</p>
+<p>Minimize the files touched during an update and give ZIP replacement one straight-line implementation. Preserve the existing installation until the download and unpack steps have produced a usable replacement.</p>
 <h2 id="changes">Changes</h2>
 <ul>
 <li><code>labkit_launcher</code> <code>1.1.3 -&gt; 1.1.5</code></li>
@@ -44,19 +42,17 @@ component: `labkit_launcher` | `1.1.4 -&gt; 1.1.5`</code></pre>
 <li>Simplified launcher zip replacement.</li>
 </ul>
 <h2 id="user-and-data-impact">User and data impact</h2>
-<ul>
-<li>Updating the self-contained launcher became less fragile.</li>
-</ul>
+<p>ZIP updates completed with less waiting and fewer intermediate operations. A failure before replacement left the existing checkout available, while a successful update continued to present the same launcher entry point.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
-<p>No manual migration was recorded for this historical change.</p>
+<p>Existing managed installations remained updateable. The replacement algorithm changed internally and did not require users to reinstall a working checkout.</p>
 <h2 id="validation">Validation</h2>
-<p>Historical test commands were not recorded consistently. The carrying mainline commits and release tags below are the authoritative evidence; current guardrails protect the surviving contracts.</p>
+<p>Both commits extended <code>LauncherGuiTest</code> around download, replacement, and recovery behavior. The exact historical commands were not recorded.</p>
 <h2 id="evidence">Evidence</h2>
 <ul>
 <li>Main commits <code>ebf86cf2</code> and <code>becf9391</code>.</li>
 </ul>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
-<p>This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.</p>
+<p>The updater still depended on the release artifact being trustworthy. Later release work added stronger tag-to-asset verification and update diagnostics.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

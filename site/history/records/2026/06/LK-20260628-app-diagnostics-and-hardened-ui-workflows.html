@@ -57,9 +57,9 @@ component: `labkit_RHSPreview_app` | `1.2.0 -&gt; 1.2.1`</code></pre>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Debug runs produced evidence that could identify the failing operation and app state without copying laboratory inputs into the repository. Normal projects and exports kept their previous formats.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
-<p>No manual migration was recorded for this historical change.</p>
+<p>The diagnostic files were additive and existing app inputs and saved results remained readable. Debug runs began producing more detailed local artifacts.</p>
 <h2 id="validation">Validation</h2>
-<p>The carrying commits updated launcher, framework, and affected app workflow tests for diagnostic creation and hardened callbacks. Exact historical commands were not recorded.</p>
+<p>Commits <code>e966457b</code> and <code>f5bc6f98</code> updated launcher, framework, and affected app workflow tests for diagnostic creation and hardened callbacks.</p>
 <h2 id="evidence">Evidence</h2>
 <ul>
 <li>Main commits <code>e966457b</code> and <code>f5bc6f98</code>.</li>

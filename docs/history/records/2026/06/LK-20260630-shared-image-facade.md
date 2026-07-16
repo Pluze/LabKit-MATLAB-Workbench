@@ -46,13 +46,15 @@ Scientific app outputs and source files did not change format.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Image apps kept their entry points and exports while adopting the shared
+operations. App code that called the retired local helpers needed to use the
+image facade or the owning app operation.
 
 ## Validation
 
-The carrying commit added a dedicated `LabKitImageFacadeTest` suite and updated
+Commit `7023e87e` added a dedicated `LabKitImageFacadeTest` suite and updated
 app compatibility, package-boundary, public-surface, and focused image-app
-tests. The exact historical command was not recorded.
+tests.
 
 ## Evidence
 

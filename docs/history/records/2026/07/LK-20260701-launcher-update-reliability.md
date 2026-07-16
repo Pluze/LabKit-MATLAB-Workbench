@@ -12,12 +12,17 @@ component: `labkit_launcher` | `1.1.4 -> 1.1.5`
 
 ## Context
 
-- Updating the self-contained launcher became less fragile.
+The self-contained launcher could install a ZIP release, but the replacement
+path performed more filesystem work than necessary and duplicated logic for
+locating, unpacking, and replacing the workbench. Slow replacement made a
+successful update look stalled; duplicated recovery paths made failures harder
+to reason about.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Minimize the files touched during an update and give ZIP replacement one
+straight-line implementation. Preserve the existing installation until the
+download and unpack steps have produced a usable replacement.
 
 ## Changes
 
@@ -28,17 +33,19 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Updating the self-contained launcher became less fragile.
+ZIP updates completed with less waiting and fewer intermediate operations. A
+failure before replacement left the existing checkout available, while a
+successful update continued to present the same launcher entry point.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Existing managed installations remained updateable. The replacement algorithm
+changed internally and did not require users to reinstall a working checkout.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+Both commits extended `LauncherGuiTest` around download, replacement, and
+recovery behavior. The exact historical commands were not recorded.
 
 ## Evidence
 
@@ -46,4 +53,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+The updater still depended on the release artifact being trustworthy. Later
+release work added stronger tag-to-asset verification and update diagnostics.

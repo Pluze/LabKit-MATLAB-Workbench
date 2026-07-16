@@ -20,13 +20,17 @@ component: `labkit_ImageMatch_app` | `1.4.0 -> 1.4.1`
 
 ## Context
 
-- Large image workflows became more predictable and less likely to spend time on
-  unnecessary preview work.
+Image apps used full-resolution data for several previews even when the screen
+could not display that detail. Controls also accepted ranges that were awkward
+for the current image, and FLIR point and ROI measurements were not yet a
+complete direct-manipulation workflow.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Set an explicit preview budget, derive sensible control bounds from the loaded
+image, and preserve full-resolution data for calculations and exports. Expand
+the FLIR app around point and ROI temperature tools rather than adding more
+separate analysis dialogs.
 
 ## Changes
 
@@ -42,18 +46,22 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Large image workflows became more predictable and less likely to spend time on
-  unnecessary preview work.
+Large images produced bounded previews while exports continued to use source
+resolution. Batch Crop controls reflected the crop and scale being edited, and
+FLIR users could place temperature points or regions directly on the image and
+read their values in the detail panel.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Existing image inputs and app exports remained valid. Preview budgeting changed
+display resolution only; calculations and exports continued to use the source
+data required by each workflow.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The two commits expanded Batch Crop export tests, FLIR operation and layout
+tests, image-facade preview tests, busy-state tests, scale-bar gesture checks,
+and launcher coverage. Exact historical commands were not recorded.
 
 ## Evidence
 
@@ -61,4 +69,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Preview budgeting improved responsiveness but did not by itself remove every
+eager image read. Batch Crop file selection was made lazy in the following
+profiling work.

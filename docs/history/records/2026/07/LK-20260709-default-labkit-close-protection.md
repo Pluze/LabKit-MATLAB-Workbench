@@ -14,13 +14,17 @@ component: `labkit_ImageMatch_app` | `1.5.5 -> 1.5.6`
 
 ## Context
 
-- Public and private apps get a baseline close-safety prompt from the framework,
-  without app-owned dirty-state close logic.
+Only apps that installed a dirty-state guard warned before closing. A newly
+created public or private app could therefore discard work silently until its
+author implemented and tested a separate guard. Repeated close shortcuts could
+also race with a modal confirmation.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Make close confirmation a default property of every framework-owned app window
+and remove the optional app-facing guard API. Keep one in-window prompt active
+at a time; a repeated close shortcut confirms that prompt instead of opening
+another one.
 
 ## Changes
 
@@ -39,8 +43,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Public and private apps get a baseline close-safety prompt from the framework,
-  without app-owned dirty-state close logic.
+Every public or private LabKit app asked before its window closed, even if the
+app had no custom dirty-state logic. Users gained a consistent protection
+against accidental closure at the cost of one confirmation step.
 
 ## Compatibility and migration
 
@@ -50,14 +55,16 @@ evidence changed together to address the stated user or maintainer need.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+Commit `0c9f472b` expanded the UI busy-state GUI suite for initial close,
+cancel, confirmation, and repeated-shortcut behavior, then updated public-
+surface and app-compatibility checks.
 
 ## Evidence
 
-- Mainline commit `0c9f472`.
+- Mainline commit `0c9f472b`.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+This policy protected the window, not the semantic completeness of each saved
+project. Runtime V2 later combined default close handling with app-owned dirty
+state and lifecycle services.

@@ -16,13 +16,18 @@ component: `labkit_ImageMatch_app` | `1.5.6 -> 1.5.7`
 
 ## Context
 
-- CI now protects the base-MATLAB user path instead of passing only on
-  machines that happen to have Image Processing Toolbox installed.
+Several image workflows appeared toolbox-optional but still called Image
+Processing Toolbox functions for conversion, grayscale luminance, resizing,
+smoothing, alignment, or warping. Development machines with the toolbox hid
+those calls, so a nominally supported Base MATLAB installation could fail only
+after the user entered a particular workflow.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Own the essential image operations used by LabKit and make their Base MATLAB
+paths the tested behavior. Optional toolbox acceleration could remain only
+when the call was explicit, a repository-owned fallback existed, and parity
+tests protected the app-consumed result.
 
 ## Changes
 
@@ -48,8 +53,10 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- CI now protects the base-MATLAB user path instead of passing only on
-  machines that happen to have Image Processing Toolbox installed.
+DIC alignment and overlays, Focus Stack, Image Enhance, and Image Match could
+run without Image Processing Toolbox. Users with the toolbox retained
+compatible workflows, while CI now exercised the installation that previously
+failed late and silently.
 
 ## Compatibility and migration
 
@@ -58,9 +65,10 @@ evidence changed together to address the stated user or maintainer need.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The commit expanded DIC, Focus Stack, Image Enhance, Image Match, and image-
+facade unit suites and added `ToolboxDependencyGuardrailTest` to detect new
+unguarded calls. GUI layout tests covered the affected DIC workflows. The exact
+historical command was not recorded.
 
 ## Evidence
 
@@ -68,4 +76,7 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Base MATLAB compatibility does not mean every optional accelerated algorithm
+is numerically identical by construction. Where a toolbox branch affects
+scientific values, representative parity and idempotency tests remain required
+until the repository-owned implementation fully replaces it.

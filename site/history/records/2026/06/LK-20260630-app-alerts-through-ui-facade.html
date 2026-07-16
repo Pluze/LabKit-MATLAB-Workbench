@@ -57,9 +57,9 @@ component: `labkit_ECGPrint_app` | `1.2.1 -&gt; 1.2.2`</code></pre>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Errors continued to appear as app alerts, but test and debug runs could capture them without blocking on an invisible dialog. No saved or exported data changed.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
-<p>No manual migration was recorded for this historical change.</p>
+<p>App error conditions and messages remained app-owned. Only the display route changed, so user data and app project formats required no conversion.</p>
 <h2 id="validation">Validation</h2>
-<p>The carrying commit migrated alert call sites and updated hidden workflow tests across the listed apps. The exact historical command was not recorded.</p>
+<p>Commit <code>8d7c83b1</code> migrated alert call sites and updated hidden workflow tests across the listed apps.</p>
 <h2 id="evidence">Evidence</h2>
 <ul>
 <li>Main commit <code>8d7c83b1</code>.</li>

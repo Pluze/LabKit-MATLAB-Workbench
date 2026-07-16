@@ -11,13 +11,16 @@ component: `labkit.ui` | `5.0.3 -> 5.0.4`
 
 ## Context
 
-- App-owned side panels such as color scales and histograms can remain compact
-  and stable without disabling useful wheel interaction.
+The preview area applied the same two-dimensional wheel zoom to every
+registered axes. That was appropriate for an image or main plot, but awkward
+for a narrow histogram or color-scale axes: horizontal zoom changed a dimension
+whose layout was meant to remain fixed.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Let a preview-area definition choose `xy`, `x`, or `y` wheel zoom for each
+axes. Preserve `xy` as the default so existing apps keep their behavior, while
+side axes can opt into only the dimension that carries data.
 
 ## Changes
 
@@ -30,8 +33,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- App-owned side panels such as color scales and histograms can remain compact
-  and stable without disabling useful wheel interaction.
+A histogram or temperature scale could remain horizontally stable while still
+supporting vertical exploration. Main images and plots continued to zoom in
+both dimensions unless their app explicitly chose another mode.
 
 ## Compatibility and migration
 
@@ -40,9 +44,8 @@ evidence changed together to address the stated user or maintainer need.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The commit extended UI layout unit tests and axes-workbench GUI coverage for
+the default and per-axis modes. The exact historical command was not recorded.
 
 ## Evidence
 
@@ -50,4 +53,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+The option controlled wheel navigation only. Toolbar zoom, pan, linked axes,
+and app-specific limit policies remained separate concerns.

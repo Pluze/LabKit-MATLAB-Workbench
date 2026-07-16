@@ -56,13 +56,13 @@ data or numerical results.
 
 ## Compatibility and migration
 
-No manual migration was recorded for this historical change.
+Version requests and titles were additive. Existing app commands, inputs, and
+saved results continued to work without conversion.
 
 ## Validation
 
-The carrying commit added version-request, title, catalog, and format checks.
-Release tag `v2.4.0` identifies the shipped baseline; the exact historical test
-command was not recorded.
+Commit `d70c2607` added version-request, title, catalog, and format checks.
+Release tag `v2.4.0` identifies the shipped baseline.
 
 ## Evidence
 
