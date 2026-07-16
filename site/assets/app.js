@@ -1,6 +1,21 @@
 (() => {
   const input = document.getElementById('doc-search');
   const panel = document.getElementById('search-results');
+  const toggle = document.querySelector('.nav-toggle');
+  const sidebar = document.getElementById('local-navigation');
+  const setNavigation = open => { document.body.classList.toggle('nav-open', open); if (toggle) toggle.setAttribute('aria-expanded', String(open)); };
+  if (toggle && sidebar) {
+    toggle.addEventListener('click', () => setNavigation(!document.body.classList.contains('nav-open')));
+    sidebar.addEventListener('click', event => { if (event.target.closest('a')) setNavigation(false); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') setNavigation(false); });
+  }
+  const tocLinks = [...document.querySelectorAll('.toc-link')];
+  const headings = tocLinks.map(link => document.getElementById(link.hash.slice(1))).filter(Boolean);
+  if (headings.length && 'IntersectionObserver' in window) {
+    const byId = new Map(tocLinks.map(link => [link.hash.slice(1), link]));
+    const observer = new IntersectionObserver(entries => { entries.filter(entry => entry.isIntersecting).forEach(entry => { tocLinks.forEach(link => link.classList.remove('active')); const link = byId.get(entry.target.id); if (link) link.classList.add('active'); }); }, {rootMargin:'-15% 0px -75% 0px'});
+    headings.forEach(heading => observer.observe(heading));
+  }
   if (!input || !panel) return;
   const root = document.body.dataset.siteRoot || '';
   const index = Array.isArray(window.LABKIT_SEARCH_INDEX) ? window.LABKIT_SEARCH_INDEX : [];

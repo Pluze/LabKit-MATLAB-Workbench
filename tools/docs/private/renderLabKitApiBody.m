@@ -25,14 +25,39 @@ function html = renderLabKitApiBody(model, item, outputPath)
         "<h1><code>" + htmlEscape(item.symbol) + "</code></h1>"
         "<p class=""lead"">" + htmlEscape(summary) + "</p>"
         "<h2 id=""syntax"">Syntax</h2>"
-        "<pre><code class=""language-matlab"">" + ...
-            htmlEscape(syntax) + "</code></pre>"
+        renderSyntax(syntax)
         contractHtml
         relatedHtml
         "<h2 id=""source"">Source</h2>"
         "<p>This page is generated from the MATLAB help text in " + ...
             "<a href=""" + htmlEscape(sourceUrl) + """><code>" + ...
             htmlEscape(item.source) + "</code></a>.</p>"], newline);
+end
+
+function html = renderSyntax(syntax)
+    lines = splitlines(string(syntax));
+    groups = strings(0, 1);
+    current = strings(0, 1);
+    for k = 1:numel(lines)
+        if strlength(strip(lines(k))) == 0
+            if ~isempty(current)
+                groups(end + 1, 1) = syntaxGroup(current);
+                current = strings(0, 1);
+            end
+        else
+            current(end + 1, 1) = lines(k);
+        end
+    end
+    if ~isempty(current)
+        groups(end + 1, 1) = syntaxGroup(current);
+    end
+    html = "<div class=""syntax-signature"">" + strjoin(groups, "") + ...
+        "</div>";
+end
+
+function html = syntaxGroup(lines)
+    html = "<div class=""syntax-group""><code class=""language-matlab"">" + ...
+        htmlEscape(strjoin(lines, newline)) + "</code></div>";
 end
 
 function html = renderHelpSections(helpText, summaryLine)
