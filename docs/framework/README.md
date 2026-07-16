@@ -67,6 +67,11 @@ empty arrays (`emptySourceRecords` and `services.results.emptyOutputs()`),
 then append validated real records. Apps do not construct empty-ID placeholder
 records merely to copy their struct shape.
 
+A persistent App exposes one `projectSpec.m` entry containing its project
+version plus local create, validate, and migrate functions. Runtime V2 owns the
+loop across missing versions and validates each returned payload; App packages
+do not publish one migration file per historical step.
+
 Read [Runtime and lifecycle](runtime.md) for the detailed definition fields,
 state transaction rules, startup/readiness behavior, plot and interaction
 contracts, debug semantics, callback policy, and the responsibilities of the

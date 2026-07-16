@@ -72,9 +72,9 @@ function def = define(varargin)
 %       parameters, annotations, results, and extensions fields are added.
 %   Validate - Function that checks a complete project. It may throw on invalid
 %       data or return a logical scalar.
-%   Migrations - Cell array of ordered functions project = migrate(project).
-%       Entry k upgrades version k to k+1. Exactly Version-1 entries are
-%       required. Default: {}.
+%   Migrate - Function project = migrate(project,fromVersion). The runtime
+%       calls it once for each missing version and validates every returned
+%       payload. Required when Version is greater than 1. Default: none.
 %   LegacyImports - Scalar struct mapping MAT-file variable names to import
 %       functions. An importer is called as project = import(value) or
 %       [project,resume] = import(value), where value is the named MAT-file
@@ -193,7 +193,7 @@ function spec = defaultProjectSpec()
         "Version", 1, ...
         "Create", @createEmptyProject, ...
         "Validate", @acceptProject, ...
-        "Migrations", {{}});
+        "Migrate", []);
 end
 
 function project = createEmptyProject()

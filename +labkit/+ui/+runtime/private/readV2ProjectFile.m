@@ -68,11 +68,19 @@ function project = migratePayload(project, versionValue, spec)
             'Project payload version %d is newer than supported version %d.', ...
             versionValue, current);
     end
-    migrations = optionValue(spec, 'Migrations', {});
     for version = versionValue:current - 1
-        project = migrations{version}(project);
+        project = migrateOneVersion(project, version, spec);
         validateSerializableState(project);
     end
+end
+
+function project = migrateOneVersion(project, fromVersion, spec)
+    if isfield(spec, 'Migrate') && isa(spec.Migrate, 'function_handle')
+        project = spec.Migrate(project, fromVersion);
+        return;
+    end
+    migrations = optionValue(spec, 'Migrations', {});
+    project = migrations{fromVersion}(project);
 end
 
 function [project, resume, envelope] = importSnapshot(snapshot, def)

@@ -21,9 +21,10 @@ apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchLayout.m
 `runtime.define` supplies an empty version-1 project, empty session, empty
 action registry, and empty presenter model when those components are omitted.
 Add `definitionActions.m` for interactions, a presenter for dynamic views,
-`createSession.m` for transient decoded/cache state, and a project declaration
-only when the App owns durable data. A migration callback exists only after a
-saved project schema has actually changed.
+`createSession.m` for transient decoded/cache state, and `projectSpec.m` only
+when the App owns durable data. That single project file contains local create,
+validate, and migrate functions. Its migrate callback exists only after a saved
+project schema has actually changed; Runtime V2 owns the version loop.
 
 Create additional packages only for concrete workflows that need them, for
 example `+sourceFiles`, `+analysisRun`, `+resultFiles`, `+cropGeometry`, or

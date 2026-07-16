@@ -102,7 +102,7 @@ the runtime how to create, validate, migrate, and restore that payload:
 | `Version` | Yes | Positive integer payload version. Version 1 has no migration entries. |
 | `Create` | Yes | `project = createProject()` returns a complete new durable payload. |
 | `Validate` | Yes | `accepted = validateProject(project)` returns a logical scalar or throws a field-specific error. |
-| `Migrations` | For version > 1 | Cell entry `k` is `project = migrateV{k}ToV{k+1}(project)`. Exactly `Version-1` entries are required. |
+| `Migrate` | For version > 1 | `project = migrate(project,fromVersion)` upgrades exactly one version. The runtime calls it repeatedly for every missing step. |
 | `LegacyImports` | No | Struct mapping a trusted top-level MAT variable name to `project = import(value)` or `[project,resume] = import(value)`. Imports are read-only adapters. |
 | `CreateResume` | No | `resume = createResume(session,project)` saves small navigation convenience, never authoritative data. |
 | `ApplyResume` | No | `session = applyResume(session,resume,project)` applies that convenience after a fresh session is built. |
@@ -135,29 +135,30 @@ envelope owns format and producer metadata, source portability, payload
 version, and optional resume state; apps own only their payload fields and do
 not construct the envelope themselves.
 
-For a project at version `N`, `Migrations` contains exactly `N-1` ordered
-functions. Cell 1 converts payload version 1 to 2, cell 2 converts 2 to 3, and
-so on. When an older document is opened, the runtime applies every missing
-step in order, validates the final current payload, rebuilds the session, and
-keeps the document visibly dirty until the user saves it. A migration changes
-durable data only; it does not open dialogs, draw, dispatch actions, or invent
-scientific values that cannot be derived from the saved payload.
+For a project at version `N`, one `Migrate` callback owns every supported
+step. When an older document is opened, the runtime calls it with the saved
+version, validates that returned payload is serializable, advances one version,
+and repeats until `N`. It then validates the complete current project, rebuilds
+the session, and keeps the document visibly dirty until the user saves it. A
+migration changes durable data only; it does not open dialogs, draw, dispatch
+actions, or invent scientific values that cannot be derived from the saved
+payload.
 
 For example, a current version-3 app declares:
 
 ```matlab
 project = struct( ...
     "Version", 3, ...
-    "Create", @example.appLifecycle.createProject, ...
-    "Validate", @example.appLifecycle.validateProject, ...
-    "Migrations", {{ ...
-        @example.appLifecycle.migrateProjectV1ToV2, ...
-        @example.appLifecycle.migrateProjectV2ToV3}});
+    "Create", @createProject, ...
+    "Validate", @validateProject, ...
+    "Migrate", @migrateProject);
 ```
 
-`migrateProjectV1ToV2` exists because a version-1 saved payload cannot already
-have version-2 fields or semantics. It is called only while loading that older
-payload; new projects start from `Create`, and current projects skip it.
+`projectSpec.m` normally owns the three local functions behind these handles.
+`migrateProject(project,fromVersion)` uses `fromVersion` to select exactly one
+step. A version-1 saved payload cannot already contain version-2 fields, so the
+case for `fromVersion == 1` derives them before returning. New projects start
+from `Create`, and current projects skip migration.
 
 #### Portable Source Records
 
