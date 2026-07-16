@@ -66,7 +66,7 @@ classdef GuiLayoutResponseReviewStatsTest < matlab.unittest.TestCase
             projectPath = fullfile(folder, 'response-review-project.mat');
             labkit.ui.runtime.saveState(fig, projectPath);
             saved = load(projectPath, 'labkitProject');
-            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 2);
             testCase.verifyFalse(isfield(saved.labkitProject.payload, 'cache'));
             driver.click('Reset');
             labkit.ui.runtime.loadState(fig, projectPath);

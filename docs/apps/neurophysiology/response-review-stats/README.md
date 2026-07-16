@@ -42,6 +42,10 @@ When no window is specified, the grid spans the intersection of the time
 ranges after each segment's alignment-time shift. Samples outside an aligned
 segment's original range remain `NaN`.
 
+The selected input is stored in the standard project `inputs.sources`
+collection. Version 1 projects using the former singular `inputs.source`
+field are upgraded on load and saved as payload version 2.
+
 ## Measurements And Summary
 
 For each aligned segment, the calculation subtracts the baseline mean and

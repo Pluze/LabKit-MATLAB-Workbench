@@ -2,6 +2,21 @@ classdef ResponseReviewStatsOpsTest < matlab.unittest.TestCase
     %RESPONSEREVIEWSTATSOPSTEST Verify segment parsing, alignment, metrics.
 
     methods (Test, TestTags = {'Unit'})
+        function projectMigrationAdoptsCanonicalSourceCollection(testCase)
+            setupLabKitTestPath();
+            project = response_review_stats.appLifecycle.createProject();
+            expected = struct("absolutePath", "/tmp/responses.csv");
+            project.inputs.source = expected;
+            project.inputs = rmfield(project.inputs, "sources");
+
+            migrated = response_review_stats.appLifecycle.migrateProjectV1ToV2(project);
+            definition = response_review_stats.definition();
+
+            testCase.verifyEqual(migrated.inputs.sources, expected);
+            testCase.verifyFalse(isfield(migrated.inputs, "source"));
+            testCase.verifyEqual(definition.project.Version, 2);
+        end
+
         function segmentCsvShapeAlignsAndMeasures(testCase)
             setupLabKitTestPath();
 

@@ -34,6 +34,10 @@ not jointly own timing, skeleton, calibration, and annotation provenance.
 `computeGait` still accepts an in-memory normalized pose for deterministic
 tests and programmatic calculations.
 
+The app stores this input in the standard project `inputs.sources` collection.
+Version 2 Gait Analysis projects are upgraded on load from the former singular
+`inputs.source` field; the next save writes project payload version 3.
+
 Coordinates use image convention: the origin is at the upper left and Y
 increases downward. The skeleton preview preserves that convention. Angle and
 length time series use conventional plot axes.

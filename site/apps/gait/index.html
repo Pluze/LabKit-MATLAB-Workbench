@@ -27,12 +27,12 @@
 <div class="table-wrap"><table><thead><tr><th>Task</th><th>App</th></tr></thead><tbody><tr><td>Place and revise landmarks on video frames</td><td><a href="../image-measurement/video-marker.html">Video Marker</a></td></tr><tr><td>Convert completed landmarks into gait metrics</td><td><a href="gait-analysis.html">Gait Analysis</a></td></tr></tbody></table></div>
 <h2 id="data-flow">Data Flow</h2>
 <ol>
-<li>Video Marker or a compatible Image Marker project records one ordered set of named points per frame.</li>
-<li>Gait Analysis normalizes the marker project, MAT payload, or wide text table to a frame-by-point-by-two coordinate array.</li>
+<li>The current Video Marker records one ordered set of named points per frame and saves coordinates, skeleton, timing, and calibration in its project.</li>
+<li>Gait Analysis validates that project and normalizes the saved payload to a frame-by-point-by-two coordinate array.</li>
 <li>The user maps point names to iliac, hip, knee, ankle, and foot roles.</li>
 <li>The app smooths coordinates, calculates joint angles and segment lengths, detects steps, applies quality rules, and builds export tables.</li>
 </ol>
-<p>Gait Analysis reads marker project and autosave files directly. It never rewrites the annotation project and does not require an intermediate CSV.</p>
+<p>Gait Analysis reads current Video Marker project and autosave files directly. It never rewrites the annotation project and does not accept generic MAT or coordinate-table substitutes that lack the required source metadata.</p>
 <h2 id="use-the-calculation-without-the-app">Use The Calculation Without The App</h2>
 <p>The app-owned calculation entry point is <code>gait_analysis.analysisRun.computeGait</code>. It accepts normalized pose data from <code>gait_analysis.sourceFiles.readPoseFile</code> and the same option structure used by the app. See the <a href="gait-analysis.html">Gait Analysis manual</a> for the data shape, defaults, outputs, and example.</p>
 <h2 id="related-documentation">Related Documentation</h2>

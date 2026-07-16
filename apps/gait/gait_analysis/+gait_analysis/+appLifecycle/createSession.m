@@ -3,7 +3,7 @@
 % convenience, duplicate-run fingerprint, and workflow log.
 function session = createSession(project)
     pose = gait_analysis.sourceFiles.emptyPoseData();
-    filepath = sourcePath(project.inputs.source);
+    filepath = sourcePath(project.inputs.sources);
     outputFolder = "";
     if strlength(filepath) > 0
         pose = gait_analysis.sourceFiles.readPoseFile(filepath);

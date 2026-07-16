@@ -2,6 +2,21 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
     %ECGPRINTHELPERSTEST Verify GUI-free ECG Print app-owned helpers.
 
     methods (Test, TestTags = {'Unit'})
+        function projectMigrationAdoptsCanonicalSourceCollection(testCase)
+            setupLabKitTestPath();
+            project = ecg_print.appLifecycle.createProject();
+            expected = struct("absolutePath", "/tmp/ecg.csv");
+            project.inputs.source = expected;
+            project.inputs = rmfield(project.inputs, "sources");
+
+            migrated = ecg_print.appLifecycle.migrateProjectV1ToV2(project);
+            definition = ecg_print.definition();
+
+            testCase.verifyEqual(migrated.inputs.sources, expected);
+            testCase.verifyFalse(isfield(migrated.inputs, "source"));
+            testCase.verifyEqual(definition.project.Version, 2);
+        end
+
         function importOptionsNormalizeUiValues(testCase)
             setupLabKitTestPath();
 

@@ -2,7 +2,7 @@
 % project with resolved source. Output owns metrics, aligned signals, summary,
 % preview selection, output convenience, and workflow messages.
 function session = createSession(project)
-    filepath = sourcePath(project.inputs.source);
+    filepath = sourcePath(project.inputs.sources);
     [metrics, summary, aligned] = emptyCache();
     outputFolder = "";
     status = "No input selected.";

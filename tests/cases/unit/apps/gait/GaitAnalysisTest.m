@@ -156,6 +156,22 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
             testCase.verifyEqual(migrated.parameters.detectionMinHeightSigma, 2);
             testCase.verifyFalse(isfield(migrated.parameters, 'minStride'));
         end
+
+        function project_migration_adopts_canonical_source_collection(testCase)
+            setupLabKitTestPath();
+            project = gait_analysis.appLifecycle.createProject();
+            expected = struct("absolutePath", "/tmp/walk.mat");
+            project.inputs.source = expected;
+            project.inputs = rmfield(project.inputs, "sources");
+
+            migrated = gait_analysis.appLifecycle.migrateProjectV2ToV3(project);
+            definition = gait_analysis.definition();
+
+            testCase.verifyEqual(migrated.inputs.sources, expected);
+            testCase.verifyFalse(isfield(migrated.inputs, "source"));
+            testCase.verifyEqual(definition.project.Version, 3);
+            testCase.verifyEqual(numel(definition.project.Migrations), 2);
+        end
     end
 end
 

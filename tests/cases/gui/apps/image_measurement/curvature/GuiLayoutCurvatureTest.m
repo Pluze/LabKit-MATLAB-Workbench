@@ -95,7 +95,7 @@ classdef GuiLayoutCurvatureTest < matlab.unittest.TestCase
             projectPath = fullfile(outputFolder, 'curvature-project.mat');
             labkit.ui.runtime.saveState(fig, projectPath);
             saved = load(projectPath, 'labkitProject');
-            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 2);
             testCase.verifyFalse(isfield(saved.labkitProject.payload, 'image'));
             labkit.ui.runtime.loadState(fig, projectPath);
             h.waitForUiIdle(fig);

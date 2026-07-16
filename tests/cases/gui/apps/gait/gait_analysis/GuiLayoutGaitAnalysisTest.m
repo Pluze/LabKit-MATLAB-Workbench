@@ -64,7 +64,7 @@ classdef GuiLayoutGaitAnalysisTest < matlab.unittest.TestCase
             projectPath = fullfile(outputFolder, 'gait-project.mat');
             labkit.ui.runtime.saveState(fig, projectPath);
             saved = load(projectPath, 'labkitProject');
-            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 2);
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 3);
             testCase.verifyFalse(isfield(saved.labkitProject.payload, 'pose'));
             labkit.ui.runtime.loadState(fig, projectPath);
             h.waitForUiIdle(fig);

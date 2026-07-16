@@ -18,6 +18,24 @@ function verify_imageCurvatureMeasurement()
     checkDensifyUsesCurvePath();
     checkTaskFingerprintsTrackInputs();
     checkInvalidCurvePoints();
+    checkProjectSourceMigration();
+end
+
+function checkProjectSourceMigration()
+    project = curvature.appLifecycle.createProject();
+    expected = struct("absolutePath", "/tmp/image.png");
+    project.inputs.source = expected;
+    project.inputs = rmfield(project.inputs, "sources");
+
+    migrated = curvature.appLifecycle.migrateProjectV1ToV2(project);
+    definition = curvature.definition();
+
+    assert(isequal(migrated.inputs.sources, expected), ...
+        'Curvature source migration changed the source record.');
+    assert(~isfield(migrated.inputs, 'source'), ...
+        'Curvature source migration retained the retired field.');
+    assert(definition.project.Version == 2, ...
+        'Curvature project version did not advance.');
 end
 
 function checkCircularFitWithMeasuredScale()

@@ -25,6 +25,10 @@ labkit_CurvatureMeasurement_app
 The canvas title/subtitle identifies curve-edit mode and its placement/removal
 gesture. Anchor edits and result overlays preserve the current axes zoom.
 
+The chosen image is stored in the standard project `inputs.sources`
+collection. Version 1 projects using the former singular `inputs.source`
+field are upgraded on load and saved as payload version 2.
+
 ## Curve Editing
 
 Curve points are ordered by placement. **Undo last point** removes the newest

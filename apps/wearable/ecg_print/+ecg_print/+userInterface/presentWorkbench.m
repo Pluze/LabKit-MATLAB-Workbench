@@ -4,12 +4,12 @@
 function view = presentWorkbench(state)
     cache = state.session.cache;
     parameters = state.project.parameters;
-    hasSource = ~isempty(state.project.inputs.source);
+    hasSource = ~isempty(state.project.inputs.sources);
     hasSignal = ~isempty(cache.signal);
     hasMeasurements = ~isempty(cache.measurements) && ...
         ~isempty(cache.measurements.perSegment);
     view = struct();
-    view.controls.recording = sourcePanel(state.project.inputs.source);
+    view.controls.recording = sourcePanel(state.project.inputs.sources);
     view.controls.importStatus = valueSpec(state.session.workflow.importStatus);
     view.controls.filePreview = valueSpec(cache.filePreview);
     view.controls.channel = channelSpec(cache);

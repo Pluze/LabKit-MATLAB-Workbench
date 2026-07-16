@@ -2,7 +2,7 @@
 % resolved image source. Output owns the decoded image, edit mode, transient
 % scale-bar geometry, fingerprints, and workflow log.
 function session = createSession(project)
-    imagePath = sourcePath(project.inputs.source);
+    imagePath = sourcePath(project.inputs.sources);
     imageData = [];
     if strlength(imagePath) > 0 && isfile(imagePath)
         imageData = imread(imagePath);

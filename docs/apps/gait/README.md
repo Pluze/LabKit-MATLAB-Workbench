@@ -14,16 +14,17 @@ metrics, quality checks, and result export.
 
 ## Data Flow
 
-1. Video Marker or a compatible Image Marker project records one ordered set
-   of named points per frame.
-2. Gait Analysis normalizes the marker project, MAT payload, or wide text table
-   to a frame-by-point-by-two coordinate array.
+1. The current Video Marker records one ordered set of named points per frame
+   and saves coordinates, skeleton, timing, and calibration in its project.
+2. Gait Analysis validates that project and normalizes the saved payload to a
+   frame-by-point-by-two coordinate array.
 3. The user maps point names to iliac, hip, knee, ankle, and foot roles.
 4. The app smooths coordinates, calculates joint angles and segment lengths,
    detects steps, applies quality rules, and builds export tables.
 
-Gait Analysis reads marker project and autosave files directly. It never
-rewrites the annotation project and does not require an intermediate CSV.
+Gait Analysis reads current Video Marker project and autosave files directly.
+It never rewrites the annotation project and does not accept generic MAT or
+coordinate-table substitutes that lack the required source metadata.
 
 ## Use The Calculation Without The App
 

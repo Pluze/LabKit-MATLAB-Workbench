@@ -74,7 +74,7 @@ classdef GuiLayoutEcgPrintTest < matlab.unittest.TestCase
             projectPath = fullfile(outputFolder, 'ecg-print-project.mat');
             labkit.ui.runtime.saveState(fig, projectPath);
             saved = load(projectPath, 'labkitProject');
-            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 2);
             testCase.verifyFalse(isfield(saved.labkitProject.payload, 'cache'));
             runtime = getappdata(fig, 'labkitUiAppRuntime');
             testCase.verifyFalse(isfield( ...

@@ -4,7 +4,7 @@ function view = presentWorkbench(state)
     pose = state.session.cache.pose;
     result = state.project.results.analysis;
     view = struct();
-    view.controls.poseFile = sourcePanel(state.project.inputs.source);
+    view.controls.poseFile = sourcePanel(state.project.inputs.sources);
     view.controls.sourceSummary = valueSpec(sourceSummary(pose));
     view.controls.outputFolder = valueSpec(outputFolderText( ...
         state.session.workflow.outputFolder));

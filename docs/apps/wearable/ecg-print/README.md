@@ -32,6 +32,10 @@ For a difficult text file, choose **Preview file header**, then set:
 Choose **Parse / refresh file** after changing import settings. The app reports
 the detected channels and lets you select one for analysis.
 
+The recording reference is stored in the standard project `inputs.sources`
+collection. Version 1 ECG Print projects using the former singular
+`inputs.source` field are upgraded on load and saved as payload version 2.
+
 ## Analyze ECG
 
 1. Open and parse a recording.
