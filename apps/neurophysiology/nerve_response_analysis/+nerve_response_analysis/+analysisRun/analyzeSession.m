@@ -1,8 +1,67 @@
-% Expected caller: nerve_response_analysis.definitionActions or tests. Input is a
-% RHS filter/session struct plus protocol and options. Output is a combined
-% analysis struct. Side effects are lazy RHS reads through analyzeRecording.
 function analysis = analyzeSession(session, protocol, opts)
-%ANALYZESESSION Analyze good recordings from a filter record.
+%ANALYZESESSION Analyze accepted RHS recordings and combine their results.
+%
+% Usage:
+%   analysis = nerve_response_analysis.analysisRun.analyzeSession(session)
+%   analysis = nerve_response_analysis.analysisRun.analyzeSession( ...
+%       session, protocol)
+%   analysis = nerve_response_analysis.analysisRun.analyzeSession( ...
+%       session, protocol, opts)
+%
+% Description:
+%   Selects accepted rows from an RHS Preview filter record, analyzes each file
+%   with analyzeRecording, and vertically concatenates event, train, metric,
+%   and issue tables. A failure in one recording becomes an issue row and does
+%   not stop later recordings.
+%
+% Inputs:
+%   session - Scalar structure whose recordings field is a table or structure
+%       array. Required recording columns are recordingId and filePath. label,
+%       comment, qcFlag, and keep are optional selection/provenance fields.
+%   protocol - Optional channel-role and pair protocol passed unchanged to each
+%       recording. See analyzeRecording. Default: struct().
+%   opts - Optional scalar structure. Recording-level fields are forwarded to
+%       analyzeRecording after recordingId is replaced by the current row id.
+%
+% Recording Selection:
+%   If keep exists, rows with logical keep=true are selected. Otherwise label
+%   selects normalized "good" rows; accepted synonyms are good, keep, kept,
+%   true, 1, yes, and y, while bad/reject synonyms normalize to "bad". If label
+%   is absent but qcFlag exists, rows equal to "accepted" are selected. With no
+%   selection column, every row is treated as good. This precedence means keep
+%   overrides label and qcFlag when more than one is present.
+%
+% Options:
+%   maxRecordings - Positive finite limit applied after recording selection.
+%       Zero, nonpositive, nonfinite, or omitted input means no limit. Default:
+%       Inf.
+%   maxDurationSec - Forwarded to analyzeRecording for every selected file.
+%   eventDetection - Forwarded to analyzeRecording for every selected file.
+%
+% Outputs:
+%   analysis - Scalar session-analysis structure.
+%
+% Analysis Fields:
+%   type, version - "nerveResponseSessionAnalysis" and schema version 1.
+%   recordingCount - Total rows before acceptance filtering.
+%   analyzedCount - Number of selected rows after maxRecordings. This counts
+%       attempted recordings, including files that later produce issues.
+%   protocolSnapshot - Protocol supplied by the caller.
+%   events, trains, metrics - Combined nonempty tables returned by recording
+%       analyses.
+%   issues - Combined recording issues plus caught exceptions, with recordingId,
+%       severity, and message columns.
+%
+% Example:
+%   recordings = table(strings(0,1), strings(0,1), ...
+%       'VariableNames', {'recordingId', 'filePath'});
+%   session = struct("recordings", recordings);
+%   analysis = nerve_response_analysis.analysisRun.analyzeSession(session);
+%   assert(analysis.recordingCount == 0 && analysis.analyzedCount == 0)
+%
+% See also nerve_response_analysis.analysisRun.analyzeRecording,
+%   nerve_response_analysis.analysisRun.detectEventTrains,
+%   nerve_response_analysis.analysisRun.measureCapMetrics
 
     if nargin < 2 || isempty(protocol)
         protocol = struct();

@@ -1,22 +1,104 @@
-% Expected caller: nerve_response_analysis.analysisRun.analyzeSession or tests.
-% Inputs are one RHS path, one protocol struct, and options. Output is a
-% recording analysis struct. Side effects are lazy RHS window reads only.
 function analysis = analyzeRecording(filepath, protocol, opts)
 %ANALYZERECORDING Analyze one RHS recording according to a protocol.
+%
+% Usage:
 %   analysis = nerve_response_analysis.analysisRun.analyzeRecording(filepath)
-%   analysis = nerve_response_analysis.analysisRun.analyzeRecording(filepath,
-%   protocol, opts) indexes one RHS file, resolves protocol channel roles,
-%   detects stimulation events/trains, and measures every declared response
-%   pair. opts may contain recordingId, maxDurationSec, and eventDetection.
+%   analysis = nerve_response_analysis.analysisRun.analyzeRecording( ...
+%       filepath, protocol)
+%   analysis = nerve_response_analysis.analysisRun.analyzeRecording( ...
+%       filepath, protocol, opts)
 %
-%   analysis contains type/version, recordingId, filepath, protocolSnapshot,
-%   events, trains, metrics, and issues. Parser or per-pair problems are kept in
-%   issues so batch callers can retain partial results. RHS samples are read in
-%   bounded windows; the function does not create UI or write output files.
+% Description:
+%   Indexes one Intan RHS file, maps protocol roles to amplifier channels,
+%   chooses an event source, detects pulse trains, and measures compound action
+%   potential features for every configured or inferred differential pair.
+%   Waveforms are read lazily over a bounded time range. The function does not
+%   open a GUI or write results.
 %
-%   See also nerve_response_analysis.analysisRun.analyzeSession,
+%   File, channel, and pair failures are recorded in analysis.issues whenever
+%   the remaining work can continue. This allows a batch analysis to retain
+%   successfully detected events or measured pairs instead of discarding the
+%   entire recording.
+%
+% Inputs:
+%   filepath - Path to one Intan RHS recording.
+%   protocol - Optional scalar protocol structure, normally loaded from an RHS
+%       Preview protocol JSON. An empty structure still allows stimulation-
+%       channel event detection and fallback amplifier detection. Default:
+%       struct().
+%   opts - Optional scalar structure containing run and detector options.
+%
+% Protocol Fields:
+%   channels.roles - Structure array assigning logical roles to channels. Each
+%       entry uses id and may include label, nativeName, and
+%       match.anyNativeName. Matching is case-insensitive and ignores
+%       punctuation against both native and custom RHS channel names.
+%   channels.pairs - Structure array with id, label, positive, and negative role
+%       ids. Each pair is analyzed as positive-minus-negative. If pairs are
+%       absent, roles ending in "_positive" are paired with the corresponding
+%       "_negative" role when both resolve. A pair's optional mode field is
+%       retained in the protocol snapshot but does not change this calculation.
+%
+% Options:
+%   recordingId - Text identifier inserted into every event, train, metric, and
+%       issue row. Default: "".
+%   maxDurationSec - Maximum recording duration read from the start of the file.
+%       A nonpositive, nonfinite, or omitted value uses the indexed duration;
+%       values beyond the file are limited to that duration. Default: Inf.
+%   eventDetection - Structure accepted by
+%       nerve_response_analysis.analysisRun.detectEventTrains. Default:
+%       detector defaults.
+%
+% Event Source Priority:
+%   The first usable source is selected in this order: nonzero RHS stimulation
+%   current (maximum absolute value across stimulation channels); the amplifier
+%   channel assigned to role "reference"; channels named by configured response
+%   pairs; conventional positive/negative response roles; and finally the first
+%   amplifier channel. Amplifier sources are differentiated by
+%   detectEventTrains. A fallback source adds a warning to issues.
+%
+% Pair Measurement:
+%   Each pair reads its positive and negative amplifier channels and forms a
+%   differential response. When a reference role is available, it is supplied
+%   to common-mode correction. CAP features use the default windows documented
+%   by nerve_response_analysis.analysisRun.measureCapMetrics. Missing pair
+%   channels or failed reads add a warning and leave other pairs available.
+%
+% Outputs:
+%   analysis - Scalar recording-analysis structure.
+%
+% Analysis Fields:
+%   type, version - "nerveResponseRecordingAnalysis" and schema version 1.
+%   recordingId, filepath - Effective recording identity and source path.
+%   protocolSnapshot - Protocol value supplied by the caller.
+%   events - Event table from detectEventTrains with recordingId prepended when
+%       events exist.
+%   trains - Train table from detectEventTrains with recordingId prepended when
+%       trains exist.
+%   metrics - One row per event and analyzed pair. Columns are recordingId,
+%       pairId, pairLabel, followed by all measureCapMetrics columns.
+%   issues - Table with recordingId, severity ("warning" or "error"), and a
+%       reader-facing message. An unreadable file produces an error row and no
+%       further analysis; missing sources, events, or pairs produce warnings.
+%
+% Failure Behavior:
+%   Expected data and IO failures return a partial analysis structure rather
+%   than throwing. Invalid MATLAB types or unexpected parser/calculation errors
+%   may still throw; analyzeSession converts those exceptions into issue rows.
+%
+% Typical Call:
+%   protocol = jsondecode(fileread("nerve-response-protocol.json"));
+%   opts = struct("recordingId", "R001", "maxDurationSec", 30, ...
+%       "eventDetection", struct("stdMultiplier", 3));
+%   analysis = nerve_response_analysis.analysisRun.analyzeRecording( ...
+%       "recording.rhs", protocol, opts);
+%   disp(analysis.metrics)
+%   disp(analysis.issues)
+%
+% See also nerve_response_analysis.analysisRun.analyzeSession,
 %   nerve_response_analysis.analysisRun.detectEventTrains,
-%   nerve_response_analysis.analysisRun.measureCapMetrics.
+%   nerve_response_analysis.analysisRun.measureCapMetrics,
+%   labkit.rhs.indexFile, labkit.rhs.readWindow
 
     if nargin < 2 || isempty(protocol)
         protocol = struct();
