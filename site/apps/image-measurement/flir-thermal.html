@@ -18,44 +18,58 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="flir-thermal">FLIR Thermal</h1>
-<p>FLIR Thermal decodes radiometric FLIR images, displays calibrated temperature, and measures points, ROIs, minima, and maxima.</p>
-<h2 id="launch">Launch</h2>
+<p>FLIR Thermal decodes radiometric FLIR JPEG/RJPEG files, displays calibrated temperature maps, measures rectangular ROI hot/cold/mean values, and exports rendered images with Celsius data.</p>
+<h2 id="requirements-and-launch">Requirements And Launch</h2>
+<p>The app requires the LabKit UI and Thermal facades. A <code>.jpg</code>, <code>.jpeg</code>, or <code>.rjpg</code> extension alone is insufficient; the file must contain a readable FLIR raw thermal record and calibration metadata.</p>
 <pre><code class="language-matlab">labkit_FLIRThermal_app</code></pre>
-<h2 id="workflow">Workflow</h2>
-<p>Load a radiometric image, inspect the temperature map, then place point or ROI measurements. Markers and rectangles remain editable and preserve the current zoom. Exports include the rendered view and measurement values without overwriting the source image.</p>
-<h2 id="scientific-semantics">Scientific Semantics</h2>
-<p>Temperature comes from the embedded raw sensor values and calibration metadata through <code>labkit.thermal</code>. Point measurements sample the selected pixel. ROI measurements use the pixels inside the ROI. Extreme measurements report both value and location. Display color limits do not change numeric temperature results.</p>
+<h2 id="inputs-and-navigation">Inputs And Navigation</h2>
+<p>Use <strong>Add FLIR files or folder</strong> to load one or more radiometric images. The selected row is the current image; Previous/Next change selection without discarding per-image display range or measurement annotations. Source files are read-only.</p>
+<h2 id="basic-workflow">Basic Workflow</h2>
+<ol>
+<li>Load radiometric files and inspect the decoded min/max/metadata summary.</li>
+<li>Choose a palette and color mapping.</li>
+<li>Set a range preset, per-image range, or shared group range.</li>
+<li>Place a rectangular ROI and choose hot spot, cold spot, or mean reading.</li>
+<li>Review the numeric result and marker.</li>
+<li>Export the current image or the full batch.</li>
+</ol>
+<p>Placing or dragging a reading ROI and refreshing its marker preserves the current zoom. The reading is recalculated from the thermal matrix, not from screen colors.</p>
+<h2 id="temperature-conversion">Temperature Conversion</h2>
+<p><code>labkit.thermal.readFile</code> extracts the raw sensor matrix and converts it to Celsius. Environment-corrected conversion uses Planck constants plus available emissivity, object distance, atmospheric/window transmission, reflected temperature, and related metadata. Missing environmental fields may use documented defaults and are listed in <code>record.metadata.temperatureConversion</code>; required Planck constants are never invented.</p>
+<p>Absolute temperature accuracy depends on camera calibration and environmental assumptions. Preserve conversion diagnostics with reported measurements.</p>
+<h2 id="display-controls">Display Controls</h2>
+<p>Palettes are Turbo, Iron, Hot, Parula, and Gray. Mapping modes are Linear, Log, and Gamma; gamma defaults to 2.2 and is limited to 0.1–5. Display ranges are stored per image. Actions can set each image independently, apply one shared group range, fit the current image, or round configured bounds.</p>
+<p>Palette, mapping, gamma, and color limits affect only mapping into display colors. They do not transform the Celsius matrix or exported temperature values.</p>
+<h2 id="roi-readings">ROI Readings</h2>
+<p>The rectangular ROI includes both boundary pixels after its two corners are rounded and clamped to the thermal matrix. Hot and cold readings report value and <code>[x y]</code> location. Mean ignores non-finite pixels and also records ROI geometry and finite pixel count. The marker is a display annotation; moving it does not change source data.</p>
+<h2 id="outputs">Outputs</h2>
+<p>Current or batch export can write PNG, TIFF, or JPEG rendered thermal images, color scale graphics, Celsius matrices/tables, measurement values, and a manifest. The clean image export excludes interactive toolbar chrome. Numeric temperature outputs remain Celsius regardless of palette or mapping mode.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">record = labkit.thermal.readFile(&quot;capture.jpg&quot;);
+<pre><code class="language-matlab">record = labkit.thermal.readFile(&quot;capture.rjpg&quot;);
 temperatureC = record.temperatureC;
 
 point = flir_thermal.analysisRun.pointTemperatureReading( ...
     temperatureC, [120 80]);
-[roiHot, roiCold, roiMean] = ...
+[hot, cold, meanReading] = ...
     flir_thermal.analysisRun.roiTemperatureMeanReading( ...
-    temperatureC, [90 60], [169 129]);
+        temperatureC, [90 60], [169 129]);
 [imageHot, imageCold] = ...
     flir_thermal.analysisRun.extremeTemperatureReadings(temperatureC);</code></pre>
-<p><code>pointTemperatureReading</code> rounds and clamps an <code>[x y]</code> pixel coordinate. <code>roiTemperatureMeanReading</code> accepts two opposite ROI corners, includes both boundary pixels, ignores non-finite temperature values, and reports hot, cold, and mean records. Every point record contains <code>x</code>, <code>y</code>, and <code>temperatureC</code>; the mean record also contains ROI geometry and <code>pixelCount</code>.</p>
-<p><code>labkit.thermal.readFile</code> accepts an optional <code>TemperatureCorrection</code> field. Use <code>&quot;environment&quot;</code> for the metadata-aware correction path or <code>&quot;planck-basic&quot;</code> when the intended calculation deliberately omits reflected, atmospheric, distance, and window corrections.</p>
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li>A supported JPEG extension does not guarantee that the file contains an</li>
+<li>Non-radiometric JPEG files are rejected even when their extension is valid.</li>
+<li>Coordinates refer to the decoded thermal matrix, not a separately scaled</li>
 </ul>
-<p>embedded radiometric record and usable calibration metadata.</p>
+<p>visible-light image.</p>
 <ul>
-<li>Pixel coordinates refer to the calibrated thermal matrix, not a separately</li>
+<li>An ROI containing no finite temperature pixels cannot return a finite mean.</li>
+<li>JPEG export is visual and lossy; keep Celsius data for quantitative work.</li>
 </ul>
-<p>scaled screenshot or visible-light preview.</p>
-<ul>
-<li>Emissivity and environmental assumptions affect absolute temperature; keep</li>
-</ul>
-<p>the conversion metadata with any reported result.</p>
-<h2 id="see-also">See Also</h2>
+<h2 id="related-topics">Related Topics</h2>
 <ul>
 <li><a href="../../libraries/thermal/index.html">Thermal Library</a></li>
-<li><code>labkit.thermal.readFile</code></li>
-<li><code>labkit.thermal.rawToTemperatureC</code></li>
+<li><a href="index.html">Image Measurement family</a></li>
+<li><a href="../../reference/index.html">API Reference</a></li>
 </ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/flir_thermal/analysisRun/extremeTemperatureReadings.html"><code>flir_thermal.analysisRun.extremeTemperatureReadings</code></a></td><td>Locate finite global thermal extrema.</td></tr><tr><td><a href="../../reference/api/flir_thermal/analysisRun/pointTemperatureReading.html"><code>flir_thermal.analysisRun.pointTemperatureReading</code></a></td><td>Read the nearest calibrated thermal pixel.</td></tr><tr><td><a href="../../reference/api/flir_thermal/analysisRun/roiTemperatureMeanReading.html"><code>flir_thermal.analysisRun.roiTemperatureMeanReading</code></a></td><td>Measure an inclusive rectangular thermal ROI.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../libraries/thermal/history/LK-20260713-flir-calibration-provenance.html">2026-07-13 - Traceable FLIR temperature calibration</a><small>feat | additive</small></li><li><a href="../../development/launcher/history/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li><li><a href="../electrochemistry/history/LK-20260703-app-file-selection-and-electrochem-control-fixes.html">2026-07-03 - App file-selection and electrochem control fixes</a><small>fix | compatible</small></li><li><a href="../../framework/history/LK-20260703-csc-export-and-viewport-policy.html">2026-07-03 - CSC export and viewport policy</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-declarative-app-runtime.html">2026-07-03 - Declarative app runtime</a><small>refactor | compatible</small></li><li><a href="../electrochemistry/history/LK-20260703-flir-display-tuning.html">2026-07-03 - FLIR display tuning</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-ui-groups-migration.html">2026-07-03 - UI groups migration</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260701-debug-sample-packs.html">2026-07-01 - Debug sample packs</a><small>feat | compatible</small></li><li><a href="../../development/launcher/history/LK-20260701-image-app-workflow-improvements.html">2026-07-01 - Image app workflow improvements</a><small>feat | compatible</small></li><li><a href="../../libraries/thermal/history/LK-20260701-thermal-facade-and-flir-app.html">2026-07-01 - Thermal facade and FLIR app</a><small>feat | compatible</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

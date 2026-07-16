@@ -1,58 +1,98 @@
 # Image Enhance
 
-Image Enhance builds a repeatable per-image enhancement pipeline and applies
-the same operations during preview and export.
+Image Enhance builds an ordered, reversible processing history for one image
+or a batch and exports the resulting images with the exact step sequence.
 
-## Launch
+## Requirements And Launch
+
+The app requires the LabKit UI and Image facades. All processing is implemented
+with MATLAB and repository-owned code.
 
 ```matlab
 labkit_ImageEnhance_app
 ```
 
-## Workflow
+## Inputs And Batch Mode
 
-Add images, select an image, append brightness, contrast, clarity, color, or
-white-balance steps, and review the history. Each image retains its own
-pipeline when switching files. Undo and reset update both state and preview.
+Add supported image files or a folder. In **Batch shared processing** mode, one
+shared step history is applied to every source. When batch mode is off, each
+image owns its own history and optional white ROI. Selecting another image
+updates the preview without recalculating unrelated files.
 
-## Processing Contract
+## Basic Workflow
 
-Operations run in displayed history order. Numeric controls are stored as
-finite scalar values, and export calls the same app-owned pipeline as preview.
-This avoids a visually plausible preview whose saved pixels were computed by a
-different path.
+1. Load images and select a representative source.
+2. Decide whether steps are shared across the batch.
+3. Choose a tool and set its controls.
+4. For White ROI calibration, draw the white-background ROI first.
+5. Apply the tool to history and inspect Enhanced, Original, or Before | After.
+6. Undo or reset history as needed.
+7. Choose output format/folder and export.
+
+Each **Apply tool** action adds a durable step. Panner changes only preview the
+pending tool until it is applied. ROI creation and overlay refresh preserve the
+current zoom.
+
+## Tools And Defaults
+
+| Tool | Primary control | Secondary control |
+| --- | --- | --- |
+| Brightness/contrast | Brightness 0% | Contrast 15% |
+| Local contrast | Clarity 30% | Radius 12 px |
+| Sharpen | Sharpen 35% | Radius 1.5 px |
+| Hue/saturation | Hue 0 degrees | Saturation 10% |
+| White balance | Strength 100% | Temperature 0% |
+| White ROI calibration | Strength 100% | White target 92% |
+| Subject-preserving enhance | Strength 70% | Background target 90% |
+
+Processing converts input to RGB double in `[0,1]`, applies steps in table
+order, and clamps the final image. Brightness, local contrast, sharpening,
+hue/saturation, and gray-world white balance call the linked `labkit.image`
+primitives.
+
+White ROI calibration requires a valid rectangle for every affected image. It
+builds a softened background mask from the rectangle and adjusts luminance
+toward the target while limiting subject changes. Subject-preserving enhance
+estimates a low-saturation bright background automatically and uses a whole
+image fallback only when no usable background support is found.
+
+## History And Reproducibility
+
+The history table records step kind and settings in execution order. **Undo
+history** removes the latest applied step; **Reset history** returns to the
+normalized original. Source images are not modified. Shared and per-image
+histories are stored separately in project state so switching batch mode does
+not ambiguously merge them.
+
+## Outputs
+
+Export supports PNG, TIFF, and JPEG. Each output is rendered from the source
+plus its effective stored pipeline, not from a downsampled preview. The export
+manifest records source, ordered steps, ROI geometry, batch mode, format, and
+output filename; the runtime result JSON records the output set and project
+parameters.
 
 ## Use Without The GUI
 
 ```matlab
-image = imread("input.png");
-step = image_enhance.analysisRun.makeStep( ...
-    "Brightness / Contrast", 8, 15, 0);
-processed = image_enhance.analysisRun.applyPipeline({image}, step);
-imwrite(processed{1}, "enhanced.png");
+steps = [ ...
+    image_enhance.analysisRun.makeStep("Brightness/contrast", 0, 15), ...
+    image_enhance.analysisRun.makeStep("Local contrast", 30, 12), ...
+    image_enhance.analysisRun.makeStep("Sharpen", 35, 1.5)];
+output = image_enhance.analysisRun.applyPipeline(imread("source.png"), steps);
+imwrite(output, "enhanced.png");
 ```
-
-`makeStep(kind, amount, secondary, referenceIndex)` creates the complete
-history record expected by the pipeline. The meaning and legal range of the
-two numeric controls depend on `kind`; query
-`image_enhance.analysisRun.defaultStepValues(kind)` when constructing a tool
-programmatically. The optional third `contexts` argument to `applyPipeline`
-supplies per-image context for operations that use a reference image.
-
-Inputs are normalized to RGB double precision in `[0, 1]`. The function always
-returns a column cell array, even when the input was one numeric image. Steps
-run in array order, making the history directly replayable.
 
 ## Errors And Limitations
 
-- Reordering nonlinear operations can change pixels substantially.
-- Repeated lossy file export is not equivalent to replaying the original
-  pipeline from the source image.
-- Step factories sanitize scalar values, but callers still own choosing
-  scientifically or visually justified parameters.
+- Unknown step labels are rejected.
+- White ROI calibration fails when a required image has no valid ROI.
+- Enhancement changes pixel values and can invalidate quantitative intensity
+  analysis; retain the source and manifest.
+- JPEG export adds lossy compression after processing.
 
-## See Also
+## Related Topics
 
-- `image_enhance.analysisRun.applyPipeline`
-- `image_enhance.analysisRun.makeStep`
+- [Image Match](../image-match/README.md)
 - [Image Library](../../../libraries/image/README.md)
+- [API Reference](../../../libraries/README.md)

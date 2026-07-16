@@ -1,48 +1,93 @@
 # Batch Image Crop
 
-Batch Image Crop applies one calibrated crop geometry to a set of images while
-making padding and scale normalization explicit.
+Batch Image Crop defines one crop task per image, previews rotation and
+edge-continuous padding, and exports repeatable same-size crops in pixel or
+physical-scale mode.
 
-## Launch
+## Requirements And Launch
+
+The app requires the LabKit UI and Image facades.
 
 ```matlab
 labkit_BatchImageCrop_app
 ```
 
-## Workflow
+## Inputs
 
-Add images, choose the reference image, drag or resize the ROI, review the
-preview, then apply the crop to the selected batch. The interactive rectangle
-is constrained to the reference image and retains its position until the user
-changes or resets it.
+Use **Add images or folder** to load supported image files. A folder selection
+loads supported files from that folder. Each list row owns crop center,
+rotation, padding, and optional scale calibration. **Duplicate image** creates
+another task for the same source so multiple ROIs can be exported without
+loading duplicate files.
 
-## Geometry And Outputs
+## Basic Workflow
 
-The app can crop at the original pixel scale or first normalize images to a
-common scale. Out-of-bounds regions use the configured padding policy rather
-than silently changing the requested crop size. Exports preserve the input
-files and write cropped images plus operation metadata to the selected output
-folder.
+1. Load images and select a task.
+2. Set crop width and height or switch to physical mode.
+3. Drag the highlighted crop center/ROI in the preview or enter center X/Y.
+4. Set rotation and padding.
+5. Calibrate physical scale when required.
+6. Duplicate tasks for additional ROIs.
+7. Choose format and output folder, then export.
+
+The preview rectangle remains draggable and resizable. Editing the ROI updates
+the selected task immediately; switching tasks restores that task's geometry.
+Marker and ROI refreshes preserve axes zoom.
+
+## Pixel Mode
+
+Default crop dimensions are 1024 by 1024 pixels. Rotation defaults to 0 degrees
+and padding to 0%. Center controls use source-image coordinates. When crop
+geometry crosses the rotated image boundary, edge-continuous padding supplies
+pixels so every exported crop retains the requested dimensions.
+
+## Physical Mode And Scale
+
+Physical mode specifies width and height in the selected unit (default `um`).
+Each source image requires a valid pixels-per-unit calibration. Measure a known
+reference line, enter its physical length, and verify the displayed
+pixels/unit. `targetPixelsPerUnit=0` selects an automatic common output scale;
+a positive value requests an explicit scale.
+
+The max-upsample warning defaults to 15%. It warns when a task would require
+substantial interpolation; it does not silently change the requested physical
+geometry. Crop and calibration units are converted explicitly.
+
+## Scale Bar
+
+The scale-bar length defaults to 100 selected units, at Bottom right, in Black.
+Measure the reference first, then place the bar. The bar is an export overlay;
+its placement does not change crop geometry or scale calculations.
+
+## Outputs
+
+Exports support PNG, TIFF, and JPEG. Each task produces one image at the
+planned output dimensions. The crop manifest records source, task identity,
+center, rotation, padding, source/output scale, requested physical geometry,
+format, and output filename. Runtime provenance JSON records common project
+parameters and output roles.
 
 ## Use Without The GUI
 
 ```matlab
-image = imread("input.png");
-rect = [120 80 640 640];
-cropped = batch_crop.cropGeometry.cropImage(image, rect);
-imwrite(cropped, "cropped.png");
+plan = batch_crop.cropGeometry.scalePlan(sourcePixelsPerUnit, ...
+    100, 100, "um", 0);
+cropped = batch_crop.cropGeometry.cropScaledImage( ...
+    imageData, [centerX centerY], plan, rotationDeg, paddingPercent);
 ```
 
-For calibrated batches, use `batch_crop.cropGeometry.scalePlan` followed by
-`batch_crop.cropGeometry.cropScaledImage`.
+For pixel-domain work use `batch_crop.cropGeometry.cropImage`. Open the linked
+API pages for exact plan fields, interpolation, and padding behavior.
 
-## Troubleshooting
+## Errors And Limitations
 
-- Confirm the ROI is inside the visible image before applying it.
-- Use one common physical-scale policy when input resolutions differ.
-- Padding is part of the output geometry and should be recorded in methods.
+- Physical export requires a finite positive calibration for every task.
+- Large upsampling cannot restore information absent from the source.
+- Rotation and scale resampling can soften high-frequency detail.
+- JPEG is lossy; use PNG or TIFF for quantitative downstream image analysis.
 
-## See Also
+## Related Topics
 
-- `batch_crop.cropGeometry.cropImage`
+- [Image Measurement family](../README.md)
 - [Image Library](../../../libraries/image/README.md)
+- [API Reference](../../../libraries/README.md)

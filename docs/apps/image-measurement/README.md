@@ -1,31 +1,47 @@
 # Image Measurement Apps
 
-This family covers repeatable image preparation, calibrated measurement,
-thermal inspection, appearance processing, focus fusion, and video landmark
-annotation.
+The Image Measurement family turns image and video data into repeatable crops,
+calibrated measurements, thermal readings, fused images, appearance pipelines,
+and landmark coordinates. Scientific and workflow-specific choices remain
+app-owned; generic image IO and primitives come from `labkit.image` and
+`labkit.thermal`.
 
 ## Choose An App
 
-| Task | App |
-| --- | --- |
-| Repeated fixed-size crops and physical scale normalization | [Batch Image Crop](batch-crop/README.md) |
-| Curve radius, curvature, and length | [Curvature Measurement](curvature/README.md) |
-| Radiometric temperature display and point/ROI measurements | [FLIR Thermal](flir-thermal/README.md) |
-| All-in-focus image fusion | [Focus Stack](focus-stack/README.md) |
-| Brightness, contrast, clarity, color, and white balance | [Image Enhance](image-enhance/README.md) |
-| Match appearance to a reference image | [Image Match](image-match/README.md) |
-| Ordered video landmarks and project/autosave recovery | [Video Marker](video-marker/README.md) |
+| Goal | App | Main result |
+| --- | --- | --- |
+| Apply repeatable crop geometry to many images | [Batch Image Crop](batch-crop/README.md) | same-size crop images and manifest |
+| Measure a fitted circular arc and traced length | [Curvature Measurement](curvature/README.md) | radius, curvature, length, overlay |
+| Decode and measure radiometric FLIR images | [FLIR Thermal](flir-thermal/README.md) | Celsius matrix, readings, rendered image |
+| Fuse multiple focal planes | [Focus Stack](focus-stack/README.md) | all-in-focus image and depth index map |
+| Apply an ordered enhancement pipeline | [Image Enhance](image-enhance/README.md) | enhanced images and processing history |
+| Transfer appearance from a reference image | [Image Match](image-match/README.md) | matched images and match history |
+| Mark ordered landmarks across video | [Video Marker](video-marker/README.md) | recoverable project and coordinate tables |
 
-## Interaction Conventions
+## Shared Interaction Conventions
 
-Interactive rectangles use the framework rectangle editor. Anchor and point
-tools show an interaction-mode subtitle near the canvas. Adding or removing
-markers, moving an ROI, or committing an overlay must preserve the user's zoom
-unless the source image or explicit Fit command changes the viewport.
+Managed points, rectangles, scale references, and overlays remain editable
+without resetting the current zoom. A new source or project may start at a home
+view; ordinary marker placement, dragging, ROI resizing, and annotation refresh
+preserve the user's viewport. Canvas subtitles and action labels describe the
+active interaction mode.
 
-## Programmatic Entry Points
+Image coordinates use `[x y]` with `x` as column and `y` as row. Rectangle
+geometry uses `[x y width height]` unless a linked API states that it accepts
+two corners. Calibrated measurements always retain the pixel-domain source
+geometry needed for audit.
 
-The [Image Library](../../libraries/image/README.md) owns reusable file and pixel operations.
-Cataloged app APIs expose scientific or workflow-specific calculations such as
-crop geometry, curve fitting, temperature readings, focus fusion, appearance
-pipelines, coordinate export, and point tracking.
+## Numeric And Display Boundaries
+
+Display palettes, axes zoom, overlay opacity, marker appearance, and preview
+downsampling do not change scientific arrays. Crop geometry, scale
+calibration, thermal conversion, fusion parameters, enhancement steps, and
+coordinate transforms do affect output and are stored in project state or
+result manifests.
+
+## Related Modules
+
+- [Image Library](../../libraries/image/README.md)
+- [Thermal Library](../../libraries/thermal/README.md)
+- [App Framework interactions](../../framework/README.md)
+- [All Apps](../README.md)

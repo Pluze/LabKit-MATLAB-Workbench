@@ -18,28 +18,64 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="video-marker">Video Marker</h1>
-<p>Video Marker creates ordered frame-by-frame landmark annotations with project save, autosave, recovery, and app-owned point tracking.</p>
-<h2 id="launch">Launch</h2>
+<p>Video Marker defines an ordered landmark skeleton, records coordinates across video frames, predicts forward positions between manual anchors, and saves a portable project with autosave and recovery.</p>
+<h2 id="requirements-and-launch">Requirements And Launch</h2>
+<p>The app requires the LabKit UI and Image facades. Video decoding uses MATLAB's available video support. Predictive navigation uses MATLAB point tracking when available and repository-owned fallback logic; no model weights or third-party runtime package are downloaded.</p>
 <pre><code class="language-matlab">labkit_VideoMarker_app</code></pre>
-<h2 id="projects-and-session-actions">Projects And Session Actions</h2>
-<p>The Session panel is the first workflow panel. <strong>Open MAT</strong> loads a saved or autosaved project. <strong>New setup</strong> requires confirmation and offers Cancel, Save and start new, or Discard and start new so an active annotation session is not silently destroyed.</p>
+<h2 id="start-or-open-a-project">Start Or Open A Project</h2>
+<p>The <strong>Session</strong> panel appears first in the Video tab. <strong>Open MAT</strong> uses the same loader as the window's top-level Load State action and accepts an explicit project or compatible autosave. <strong>New setup</strong> offers Cancel, Save and start new, or Discard and start new; it never silently clears the current session.</p>
+<p>For a new project, choose a preset or add keypoints, edit their names, reorder them, and define connections. <strong>Connect in order</strong> links every adjacent pair. At least one keypoint is required before opening a new annotation session. The skeleton is locked after the video opens so coordinate column meaning remains stable.</p>
 <h2 id="marking-workflow">Marking Workflow</h2>
-<p>Open a video or image sequence, define ordered marker names, then place points on each frame. Project state records coordinates, point order, source identity, current frame, setup, and recovery information. Predictive navigation uses the repository-owned tracker and keeps manually confirmed points authoritative.</p>
-<h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">[trackedPoints, confidence] = video_marker.motionEstimate.trackPoints( ...
-    previousFrame, nextFrame, previousPoints, struct());
-tableOut = video_marker.coordinateExport.buildTable(project);</code></pre>
+<ol>
+<li>Define the ordered skeleton and optional scale calibration.</li>
+<li>Open the video.</li>
+<li>Click blank image locations to place the next missing keypoint in order.</li>
+<li>Drag an existing marker to refine it.</li>
+<li>Use Undo last point or Clear frame points when needed.</li>
+<li>Move to the next frame; the current frame is saved automatically.</li>
+<li>Correct predicted frames periodically and export or save the project.</li>
+</ol>
+<p>Point marking remains active while a video is open. A complete edited frame is a manual anchor. Moving forward predicts every ordered point using cropped pyramidal KLT tracking with forward/backward reliability checks; rejected points use a constant-velocity estimate. Predicted frames remain editable drafts. Editing a complete frame makes it a new manual anchor for later prediction. Jumping forward propagates through intermediate frames and does not overwrite existing manual anchors.</p>
+<p>Frame navigation and marker refresh preserve the current zoom. Opening a new video or project starts at its own home view.</p>
+<h2 id="scale-and-coordinate-export">Scale And Coordinate Export</h2>
+<p>Scale calibration stores a measured pixel distance, known length, and unit. The coordinate export options are:</p>
+<ul>
+<li>units: <code>pixels</code> or <code>calibrated_physical</code>;</li>
+<li>origin: <code>top_left_pixel_center</code> or <code>first_point</code>;</li>
+<li>Y axis: <code>up</code> or <code>down</code>;</li>
+<li>inclusive start and end frame.</li>
+</ul>
+<p>Marker CSV is the round-trip editing format. Coordinate CSV is the plotting-oriented table after optional calibration, origin shift, and Y-axis conversion. Raw pixel coordinates remain available in the project.</p>
+<h2 id="autosave-recovery-and-portability">Autosave, Recovery, And Portability</h2>
+<p>Durable annotation changes are atomically saved to <code>Video Marker Autosaves</code> beside the source video. Autosave and explicit project MAT files use the same project payload. The payload stores the video path relative to the MAT file, the original path, and same-folder filename fallbacks.</p>
+<p>When a project tree moves between folders, users, or operating systems, the relative reference is tried first. If no candidate exists, the app asks the user to locate the video without discarding skeleton or annotations. Opening a video with adjacent recovery data asks whether to restore it or start new.</p>
 <h2 id="outputs">Outputs</h2>
 <ul>
-<li>current project MAT and autosave MAT;</li>
-<li>coordinate tables ordered by frame and marker;</li>
-<li>recoverable setup and navigation state.</li>
+<li>explicit project MAT and visible autosave MAT;</li>
+<li>marker CSV for round-trip editing;</li>
+<li>coordinate CSV for analysis and plotting;</li>
+<li>output manifests recording coordinate options and file roles.</li>
 </ul>
-<h2 id="see-also">See Also</h2>
+<h2 id="use-without-the-gui">Use Without The GUI</h2>
+<pre><code class="language-matlab">[nextPoints, confidence] = video_marker.motionEstimate.trackPoints( ...
+    previousFrame, nextFrame, previousPoints, struct());
+coordinateTable = video_marker.coordinateExport.buildTable(project);</code></pre>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
+<ul>
+<li>Prediction is an editing aid, not unattended long-duration tracking.</li>
+<li>Occlusion, blur, large deformation, and leaving the frame can invalidate KLT</li>
+</ul>
+<p>predictions; inspect and correct drafts.</p>
+<ul>
+<li>Calibrated export requires a valid positive scale calibration.</li>
+<li>Changing skeleton order after annotation would change coordinate meaning and</li>
+</ul>
+<p>is therefore prevented once a video session begins.</p>
+<h2 id="related-topics">Related Topics</h2>
 <ul>
 <li><a href="../gait/gait-analysis.html">Gait Analysis</a></li>
-<li><code>video_marker.motionEstimate.trackPoints</code></li>
-<li><code>video_marker.coordinateExport.buildTable</code></li>
+<li><a href="index.html">Image Measurement family</a></li>
+<li><a href="../../reference/index.html">API Reference</a></li>
 </ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/video_marker/coordinateExport/buildTable.html"><code>video_marker.coordinateExport.buildTable</code></a></td><td>Build the plain coordinate CSV table for external plotting.</td></tr><tr><td><a href="../../reference/api/video_marker/motionEstimate/trackPoints.html"><code>video_marker.motionEstimate.trackPoints</code></a></td><td>Predict ordered points with base-MATLAB multiscale patch matching.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../framework/history/LK-20260714-video-marker-continuous-marking.html">2026-07-14 - Video Marker visual skeleton setup and continuous marking</a><small>feat | compatible</small></li><li><a href="history/LK-20260714-video-marker-predictive-navigation.html">2026-07-14 - Video Marker predictive frame navigation</a><small>feat | compatible</small></li><li><a href="history/LK-20260714-video-marker-startup-fix.html">2026-07-14 - Video Marker startup validation</a><small>fix | compatible</small></li><li><a href="history/LK-20260713-video-marker-app.html">2026-07-13 - Video Marker app</a><small>feat | additive</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

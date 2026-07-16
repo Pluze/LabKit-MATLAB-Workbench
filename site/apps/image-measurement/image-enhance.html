@@ -18,36 +18,53 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="image-enhance">Image Enhance</h1>
-<p>Image Enhance builds a repeatable per-image enhancement pipeline and applies the same operations during preview and export.</p>
-<h2 id="launch">Launch</h2>
+<p>Image Enhance builds an ordered, reversible processing history for one image or a batch and exports the resulting images with the exact step sequence.</p>
+<h2 id="requirements-and-launch">Requirements And Launch</h2>
+<p>The app requires the LabKit UI and Image facades. All processing is implemented with MATLAB and repository-owned code.</p>
 <pre><code class="language-matlab">labkit_ImageEnhance_app</code></pre>
-<h2 id="workflow">Workflow</h2>
-<p>Add images, select an image, append brightness, contrast, clarity, color, or white-balance steps, and review the history. Each image retains its own pipeline when switching files. Undo and reset update both state and preview.</p>
-<h2 id="processing-contract">Processing Contract</h2>
-<p>Operations run in displayed history order. Numeric controls are stored as finite scalar values, and export calls the same app-owned pipeline as preview. This avoids a visually plausible preview whose saved pixels were computed by a different path.</p>
+<h2 id="inputs-and-batch-mode">Inputs And Batch Mode</h2>
+<p>Add supported image files or a folder. In <strong>Batch shared processing</strong> mode, one shared step history is applied to every source. When batch mode is off, each image owns its own history and optional white ROI. Selecting another image updates the preview without recalculating unrelated files.</p>
+<h2 id="basic-workflow">Basic Workflow</h2>
+<ol>
+<li>Load images and select a representative source.</li>
+<li>Decide whether steps are shared across the batch.</li>
+<li>Choose a tool and set its controls.</li>
+<li>For White ROI calibration, draw the white-background ROI first.</li>
+<li>Apply the tool to history and inspect Enhanced, Original, or Before | After.</li>
+<li>Undo or reset history as needed.</li>
+<li>Choose output format/folder and export.</li>
+</ol>
+<p>Each <strong>Apply tool</strong> action adds a durable step. Panner changes only preview the pending tool until it is applied. ROI creation and overlay refresh preserve the current zoom.</p>
+<h2 id="tools-and-defaults">Tools And Defaults</h2>
+<div class="table-wrap"><table><thead><tr><th>Tool</th><th>Primary control</th><th>Secondary control</th></tr></thead><tbody><tr><td>Brightness/contrast</td><td>Brightness 0%</td><td>Contrast 15%</td></tr><tr><td>Local contrast</td><td>Clarity 30%</td><td>Radius 12 px</td></tr><tr><td>Sharpen</td><td>Sharpen 35%</td><td>Radius 1.5 px</td></tr><tr><td>Hue/saturation</td><td>Hue 0 degrees</td><td>Saturation 10%</td></tr><tr><td>White balance</td><td>Strength 100%</td><td>Temperature 0%</td></tr><tr><td>White ROI calibration</td><td>Strength 100%</td><td>White target 92%</td></tr><tr><td>Subject-preserving enhance</td><td>Strength 70%</td><td>Background target 90%</td></tr></tbody></table></div>
+<p>Processing converts input to RGB double in <code>[0,1]</code>, applies steps in table order, and clamps the final image. Brightness, local contrast, sharpening, hue/saturation, and gray-world white balance call the linked <code>labkit.image</code> primitives.</p>
+<p>White ROI calibration requires a valid rectangle for every affected image. It builds a softened background mask from the rectangle and adjusts luminance toward the target while limiting subject changes. Subject-preserving enhance estimates a low-saturation bright background automatically and uses a whole image fallback only when no usable background support is found.</p>
+<h2 id="history-and-reproducibility">History And Reproducibility</h2>
+<p>The history table records step kind and settings in execution order. <strong>Undo history</strong> removes the latest applied step; <strong>Reset history</strong> returns to the normalized original. Source images are not modified. Shared and per-image histories are stored separately in project state so switching batch mode does not ambiguously merge them.</p>
+<h2 id="outputs">Outputs</h2>
+<p>Export supports PNG, TIFF, and JPEG. Each output is rendered from the source plus its effective stored pipeline, not from a downsampled preview. The export manifest records source, ordered steps, ROI geometry, batch mode, format, and output filename; the runtime result JSON records the output set and project parameters.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">image = imread(&quot;input.png&quot;);
-step = image_enhance.analysisRun.makeStep( ...
-    &quot;Brightness / Contrast&quot;, 8, 15, 0);
-processed = image_enhance.analysisRun.applyPipeline({image}, step);
-imwrite(processed{1}, &quot;enhanced.png&quot;);</code></pre>
-<p><code>makeStep(kind, amount, secondary, referenceIndex)</code> creates the complete history record expected by the pipeline. The meaning and legal range of the two numeric controls depend on <code>kind</code>; query <code>image_enhance.analysisRun.defaultStepValues(kind)</code> when constructing a tool programmatically. The optional third <code>contexts</code> argument to <code>applyPipeline</code> supplies per-image context for operations that use a reference image.</p>
-<p>Inputs are normalized to RGB double precision in <code>[0, 1]</code>. The function always returns a column cell array, even when the input was one numeric image. Steps run in array order, making the history directly replayable.</p>
+<pre><code class="language-matlab">steps = [ ...
+    image_enhance.analysisRun.makeStep(&quot;Brightness/contrast&quot;, 0, 15), ...
+    image_enhance.analysisRun.makeStep(&quot;Local contrast&quot;, 30, 12), ...
+    image_enhance.analysisRun.makeStep(&quot;Sharpen&quot;, 35, 1.5)];
+output = image_enhance.analysisRun.applyPipeline(imread(&quot;source.png&quot;), steps);
+imwrite(output, &quot;enhanced.png&quot;);</code></pre>
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li>Reordering nonlinear operations can change pixels substantially.</li>
-<li>Repeated lossy file export is not equivalent to replaying the original</li>
+<li>Unknown step labels are rejected.</li>
+<li>White ROI calibration fails when a required image has no valid ROI.</li>
+<li>Enhancement changes pixel values and can invalidate quantitative intensity</li>
 </ul>
-<p>pipeline from the source image.</p>
+<p>analysis; retain the source and manifest.</p>
 <ul>
-<li>Step factories sanitize scalar values, but callers still own choosing</li>
+<li>JPEG export adds lossy compression after processing.</li>
 </ul>
-<p>scientifically or visually justified parameters.</p>
-<h2 id="see-also">See Also</h2>
+<h2 id="related-topics">Related Topics</h2>
 <ul>
-<li><code>image_enhance.analysisRun.applyPipeline</code></li>
-<li><code>image_enhance.analysisRun.makeStep</code></li>
+<li><a href="image-match.html">Image Match</a></li>
 <li><a href="../../libraries/image/index.html">Image Library</a></li>
+<li><a href="../../reference/index.html">API Reference</a></li>
 </ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/image_enhance/analysisRun/applyPipeline.html"><code>image_enhance.analysisRun.applyPipeline</code></a></td><td>Replay an ordered non-destructive image enhancement history.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../libraries/image/history/LK-20260713-base-matlab-image-compatibility.html">2026-07-13 - Base-MATLAB image compatibility</a><small>feat | compatible</small></li><li><a href="../../libraries/image/history/LK-20260713-matlab-compatible-image-conversion.html">2026-07-13 - MATLAB-compatible image conversion API</a><small>refactor | breaking</small></li><li><a href="../../framework/history/LK-20260709-default-labkit-close-protection.html">2026-07-09 - Default LabKit close protection</a><small>fix | compatible</small></li><li><a href="../../development/launcher/history/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li><li><a href="../electrochemistry/history/LK-20260703-app-file-selection-and-electrochem-control-fixes.html">2026-07-03 - App file-selection and electrochem control fixes</a><small>fix | compatible</small></li><li><a href="../../framework/history/LK-20260703-csc-export-and-viewport-policy.html">2026-07-03 - CSC export and viewport policy</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-declarative-app-runtime.html">2026-07-03 - Declarative app runtime</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260703-ui-groups-migration.html">2026-07-03 - UI groups migration</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260701-debug-sample-packs.html">2026-07-01 - Debug sample packs</a><small>feat | compatible</small></li><li><a href="../../development/launcher/history/LK-20260701-image-app-workflow-improvements.html">2026-07-01 - Image app workflow improvements</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-app-alerts-through-ui-facade.html">2026-06-30 - App alerts through UI facade</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-close-guards-and-caught-exception-diagnostics.html">2026-06-30 - Close guards and caught-exception diagnostics</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-migration-helper-cleanup.html">2026-06-30 - Migration helper cleanup</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260630-output-folder-prompts.html">2026-06-30 - Output folder prompts</a><small>feat | compatible</small></li><li><a href="../../libraries/image/history/LK-20260630-shared-image-facade.html">2026-06-30 - Shared image facade</a><small>feat | compatible</small></li><li><a href="history/LK-20260629-protected-image-enhancement-workflows.html">2026-06-29 - Protected image enhancement workflows</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260629-tool-panel-hosts-and-image-app-fixes.html">2026-06-29 - Tool-panel hosts and image app fixes</a><small>fix | compatible</small></li><li><a href="../../development/launcher/history/LK-20260628-app-diagnostics-and-hardened-ui-workflows.html">2026-06-28 - App diagnostics and hardened UI workflows</a><small>feat | compatible</small></li><li><a href="../../libraries/dta/history/LK-20260624-file-panel-migration.html">2026-06-24 - File-panel migration</a><small>refactor | breaking</small></li><li><a href="../../development/launcher/history/LK-20260623-version-metadata-baseline.html">2026-06-23 - Version metadata baseline</a><small>feat | compatible</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

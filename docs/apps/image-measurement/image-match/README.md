@@ -1,25 +1,64 @@
 # Image Match
 
-Image Match transfers selected appearance properties from a reference image to
-one or more source images.
+Image Match transfers tone and color statistics from one reference image to
+one or more source images while preserving each source image's geometry.
 
-## Launch
+## Requirements And Launch
+
+The app requires the LabKit UI and Image facades. It performs appearance
+matching only; it does not geometrically register images.
 
 ```matlab
 labkit_ImageMatch_app
 ```
 
-## Workflow
+## Inputs
 
-Choose a reference, add source images, select the match method, and inspect the
-preview and history before export. Switching files restores that image's real
-persisted operations. Overlay markers do not alter the viewport.
+Choose one reference image and add source images or a source folder. The
+reference supplies appearance statistics and is not exported as a matched
+source. All images are normalized to RGB double data in `[0,1]`; output retains
+the source height and width.
 
-## Processing Semantics
+## Basic Workflow
 
-Methods may match tone, histogram, or color-space statistics. The reference
-defines the target appearance but does not supply spatial content. Results
-depend on compatible image types and representative reference content.
+1. Choose the reference and source images.
+2. Select a matching method.
+3. Set overall, tone, and color strength.
+4. Apply the match to history.
+5. Inspect Matched, Original, and Before | After views.
+6. Undo/reset history or add another step.
+7. Export matched images.
+
+Changing method or strength previews the pending match; **Apply match** adds it
+to the ordered durable history.
+
+## Matching Methods
+
+| Method | Behavior |
+| --- | --- |
+| Balanced | robust white-point match followed by Lab-style tone/color transfer |
+| White balance | match robust bright-neutral RGB white points |
+| Tone only | quantile-match Lab lightness only |
+| Protected tone | constrained luminance/background adjustment with shadow, highlight, and saturation guards |
+| Lab style | quantile-match lightness and covariance-match Lab chroma |
+| Histogram | independently quantile-match all three Lab channels |
+
+Overall strength blends the matched result with the original. Tone and color
+strength separately blend lightness and chroma behavior where the selected
+method supports them. All three default to 100%.
+
+Robust statistics and covariance regularization handle flat or nearly
+single-color images, but a visually dissimilar reference can still produce an
+unhelpful result. Matching reproduces distributions, not semantic lighting or
+camera calibration.
+
+## History And Outputs
+
+Each source is recomputed from its original plus the ordered match history.
+Undo removes the latest step and reset removes all steps. Export supports PNG,
+TIFF, and JPEG and writes an image manifest containing reference/source
+identity, method, strengths, history, format, and output filenames. Source and
+reference files are never overwritten.
 
 ## Use Without The GUI
 
@@ -28,38 +67,22 @@ source = imread("source.png");
 reference = imread("reference.png");
 step = image_match.analysisRun.makeStep("Balanced", 100, 100, 100);
 matched = image_match.analysisRun.applyMatch(source, reference, step);
-imwrite(matched, "matched.png");
+
+% Apply a stored sequence:
+output = image_match.analysisRun.applyPipeline(source, reference, step);
 ```
-
-The four step arguments are method, overall strength, tone strength, and color
-strength, expressed as percentages. Supported methods are defined by
-`image_match.userInterface.matchMethods`; callers should use those values
-instead of inventing method strings. `applyMatch` converts inputs to RGB
-double precision in `[0, 1]` and returns the same display-ready representation.
-
-Pipelines can be replayed over one image, a numeric stack, or a cell array:
-
-```matlab
-steps = [ ...
-    image_match.analysisRun.makeStep("White balance", 80, 100, 100)
-    image_match.analysisRun.makeStep("Tone only", 50, 70, 0)];
-processed = image_match.analysisRun.applyPipeline( ...
-    {source}, steps, reference);
-matched = processed{1};
-```
-
-The reference is immutable and is never included in `processed`.
 
 ## Errors And Limitations
 
-- Appearance matching does not register geometry or align objects.
-- A non-representative reference can produce technically valid but misleading
-  color or tone statistics.
-- Use the normalized step factory so missing fields cannot silently change the
-  algorithm branch.
+- An empty reference returns normalized source data in the calculation API,
+  but the app requires a reference before enabling match actions.
+- Matching never corrects position, scale, rotation, perspective, or parallax.
+- Histogram and Lab matching can shift scientifically meaningful pixel values;
+  retain original images for quantitative analysis.
+- JPEG export is lossy.
 
-## See Also
+## Related Topics
 
-- `image_match.analysisRun.applyMatch`
-- `image_match.analysisRun.applyPipeline`
+- [Image Enhance](../image-enhance/README.md)
 - [Image Library](../../../libraries/image/README.md)
+- [API Reference](../../../libraries/README.md)

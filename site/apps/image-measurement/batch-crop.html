@@ -18,29 +18,50 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="batch-image-crop">Batch Image Crop</h1>
-<p>Batch Image Crop applies one calibrated crop geometry to a set of images while making padding and scale normalization explicit.</p>
-<h2 id="launch">Launch</h2>
+<p>Batch Image Crop defines one crop task per image, previews rotation and edge-continuous padding, and exports repeatable same-size crops in pixel or physical-scale mode.</p>
+<h2 id="requirements-and-launch">Requirements And Launch</h2>
+<p>The app requires the LabKit UI and Image facades.</p>
 <pre><code class="language-matlab">labkit_BatchImageCrop_app</code></pre>
-<h2 id="workflow">Workflow</h2>
-<p>Add images, choose the reference image, drag or resize the ROI, review the preview, then apply the crop to the selected batch. The interactive rectangle is constrained to the reference image and retains its position until the user changes or resets it.</p>
-<h2 id="geometry-and-outputs">Geometry And Outputs</h2>
-<p>The app can crop at the original pixel scale or first normalize images to a common scale. Out-of-bounds regions use the configured padding policy rather than silently changing the requested crop size. Exports preserve the input files and write cropped images plus operation metadata to the selected output folder.</p>
+<h2 id="inputs">Inputs</h2>
+<p>Use <strong>Add images or folder</strong> to load supported image files. A folder selection loads supported files from that folder. Each list row owns crop center, rotation, padding, and optional scale calibration. <strong>Duplicate image</strong> creates another task for the same source so multiple ROIs can be exported without loading duplicate files.</p>
+<h2 id="basic-workflow">Basic Workflow</h2>
+<ol>
+<li>Load images and select a task.</li>
+<li>Set crop width and height or switch to physical mode.</li>
+<li>Drag the highlighted crop center/ROI in the preview or enter center X/Y.</li>
+<li>Set rotation and padding.</li>
+<li>Calibrate physical scale when required.</li>
+<li>Duplicate tasks for additional ROIs.</li>
+<li>Choose format and output folder, then export.</li>
+</ol>
+<p>The preview rectangle remains draggable and resizable. Editing the ROI updates the selected task immediately; switching tasks restores that task's geometry. Marker and ROI refreshes preserve axes zoom.</p>
+<h2 id="pixel-mode">Pixel Mode</h2>
+<p>Default crop dimensions are 1024 by 1024 pixels. Rotation defaults to 0 degrees and padding to 0%. Center controls use source-image coordinates. When crop geometry crosses the rotated image boundary, edge-continuous padding supplies pixels so every exported crop retains the requested dimensions.</p>
+<h2 id="physical-mode-and-scale">Physical Mode And Scale</h2>
+<p>Physical mode specifies width and height in the selected unit (default <code>um</code>). Each source image requires a valid pixels-per-unit calibration. Measure a known reference line, enter its physical length, and verify the displayed pixels/unit. <code>targetPixelsPerUnit=0</code> selects an automatic common output scale; a positive value requests an explicit scale.</p>
+<p>The max-upsample warning defaults to 15%. It warns when a task would require substantial interpolation; it does not silently change the requested physical geometry. Crop and calibration units are converted explicitly.</p>
+<h2 id="scale-bar">Scale Bar</h2>
+<p>The scale-bar length defaults to 100 selected units, at Bottom right, in Black. Measure the reference first, then place the bar. The bar is an export overlay; its placement does not change crop geometry or scale calculations.</p>
+<h2 id="outputs">Outputs</h2>
+<p>Exports support PNG, TIFF, and JPEG. Each task produces one image at the planned output dimensions. The crop manifest records source, task identity, center, rotation, padding, source/output scale, requested physical geometry, format, and output filename. Runtime provenance JSON records common project parameters and output roles.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">image = imread(&quot;input.png&quot;);
-rect = [120 80 640 640];
-cropped = batch_crop.cropGeometry.cropImage(image, rect);
-imwrite(cropped, &quot;cropped.png&quot;);</code></pre>
-<p>For calibrated batches, use <code>batch_crop.cropGeometry.scalePlan</code> followed by <code>batch_crop.cropGeometry.cropScaledImage</code>.</p>
-<h2 id="troubleshooting">Troubleshooting</h2>
+<pre><code class="language-matlab">plan = batch_crop.cropGeometry.scalePlan(sourcePixelsPerUnit, ...
+    100, 100, &quot;um&quot;, 0);
+cropped = batch_crop.cropGeometry.cropScaledImage( ...
+    imageData, [centerX centerY], plan, rotationDeg, paddingPercent);</code></pre>
+<p>For pixel-domain work use <code>batch_crop.cropGeometry.cropImage</code>. Open the linked API pages for exact plan fields, interpolation, and padding behavior.</p>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li>Confirm the ROI is inside the visible image before applying it.</li>
-<li>Use one common physical-scale policy when input resolutions differ.</li>
-<li>Padding is part of the output geometry and should be recorded in methods.</li>
+<li>Physical export requires a finite positive calibration for every task.</li>
+<li>Large upsampling cannot restore information absent from the source.</li>
+<li>Rotation and scale resampling can soften high-frequency detail.</li>
+<li>JPEG is lossy; use PNG or TIFF for quantitative downstream image analysis.</li>
 </ul>
-<h2 id="see-also">See Also</h2>
+<h2 id="related-topics">Related Topics</h2>
 <ul>
-<li><code>batch_crop.cropGeometry.cropImage</code></li>
+<li><a href="index.html">Image Measurement family</a></li>
 <li><a href="../../libraries/image/index.html">Image Library</a></li>
+<li><a href="../../reference/index.html">API Reference</a></li>
 </ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/batch_crop/cropGeometry/cropImage.html"><code>batch_crop.cropGeometry.cropImage</code></a></td><td>Pad/rotate an image canvas and crop a fixed pixel rectangle.</td></tr><tr><td><a href="../../reference/api/batch_crop/cropGeometry/cropScaledImage.html"><code>batch_crop.cropGeometry.cropScaledImage</code></a></td><td>Crop native physical ROI and resample to target output size.</td></tr><tr><td><a href="../../reference/api/batch_crop/cropGeometry/scalePlan.html"><code>batch_crop.cropGeometry.scalePlan</code></a></td><td>Choose physical-mode output pixel density and per-image warnings.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../libraries/image/history/LK-20260713-matlab-compatible-image-conversion.html">2026-07-13 - MATLAB-compatible image conversion API</a><small>refactor | breaking</small></li><li><a href="../../development/launcher/history/LK-20260707-debug-workflows-launcher-tools-and-changelog-governance.html">2026-07-07 - Debug workflows, launcher tools, and changelog governance</a><small>feat | compatible</small></li><li><a href="../../development/launcher/history/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li><li><a href="../electrochemistry/history/LK-20260703-app-file-selection-and-electrochem-control-fixes.html">2026-07-03 - App file-selection and electrochem control fixes</a><small>fix | compatible</small></li><li><a href="../../framework/history/LK-20260703-csc-export-and-viewport-policy.html">2026-07-03 - CSC export and viewport policy</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-declarative-app-runtime.html">2026-07-03 - Declarative app runtime</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260703-ui-groups-migration.html">2026-07-03 - UI groups migration</a><small>refactor | compatible</small></li><li><a href="../../development/launcher/history/LK-20260702-profiling-and-validation-speedups.html">2026-07-02 - Profiling and validation speedups</a><small>ci | compatible</small></li><li><a href="../../framework/history/LK-20260701-debug-sample-packs.html">2026-07-01 - Debug sample packs</a><small>feat | compatible</small></li><li><a href="../../development/launcher/history/LK-20260701-image-app-workflow-improvements.html">2026-07-01 - Image app workflow improvements</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-app-alerts-through-ui-facade.html">2026-06-30 - App alerts through UI facade</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-close-guards-and-caught-exception-diagnostics.html">2026-06-30 - Close guards and caught-exception diagnostics</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-migration-helper-cleanup.html">2026-06-30 - Migration helper cleanup</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260630-output-folder-prompts.html">2026-06-30 - Output folder prompts</a><small>feat | compatible</small></li><li><a href="../../libraries/image/history/LK-20260630-shared-image-facade.html">2026-06-30 - Shared image facade</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260629-tool-panel-hosts-and-image-app-fixes.html">2026-06-29 - Tool-panel hosts and image app fixes</a><small>fix | compatible</small></li><li><a href="../../development/launcher/history/LK-20260628-app-diagnostics-and-hardened-ui-workflows.html">2026-06-28 - App diagnostics and hardened UI workflows</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260628-batch-crop-file-workflow-feedback.html">2026-06-28 - Batch Crop file workflow feedback</a><small>feat | compatible</small></li><li><a href="../../libraries/dta/history/LK-20260624-file-panel-migration.html">2026-06-24 - File-panel migration</a><small>refactor | breaking</small></li><li><a href="../../development/launcher/history/LK-20260623-version-metadata-baseline.html">2026-06-23 - Version metadata baseline</a><small>feat | compatible</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
