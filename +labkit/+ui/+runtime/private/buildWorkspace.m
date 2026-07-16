@@ -183,6 +183,10 @@ function validateAxisIds(ids)
                 'previewArea axis id "%s" must be a valid MATLAB field name.', ids{k});
         end
     end
+    if numel(unique(string(ids), 'stable')) ~= numel(ids)
+        error('labkit:ui:runtime:DuplicateAxisId', ...
+            'previewArea axis ids must be unique.');
+    end
 end
 
 function titleText = axisTitle(previewSpec, axisIds, index)

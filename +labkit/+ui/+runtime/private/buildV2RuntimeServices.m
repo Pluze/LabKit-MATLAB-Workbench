@@ -223,6 +223,7 @@ function sources = upsertSource(sources, id, role, filepath, required)
     if nargin < 5
         required = true;
     end
+    validateSourceRecords(sources);
     source = sourceRecord(id, role, filepath, required);
     if isempty(sources)
         sources = source;
@@ -239,6 +240,12 @@ end
 function sources = reconcileSources(existing, paths, role, idPrefix, required)
     if nargin < 5
         required = true;
+    end
+    validateSourceRecords(existing);
+    idPrefix = string(idPrefix);
+    if ~isscalar(idPrefix) || strlength(idPrefix) == 0
+        error('labkit:ui:runtime:InvalidSourceRecords', ...
+            'Source reconciliation idPrefix must be nonempty scalar text.');
     end
     paths = string(paths(:));
     sources = repmat(sourceRecord("", role, "", required), 0, 1);
@@ -281,8 +288,17 @@ function output = resultOutput(id, role, pathValue, mediaType, status, message)
     if nargin < 6
         message = "";
     end
+    if ~(ischar(id) || (isstring(id) && isscalar(id)))
+        error('labkit:ui:runtime:InvalidResultManifest', ...
+            'Result output id must be nonempty scalar text.');
+    end
+    id = string(id);
+    if ~isscalar(id) || strlength(id) == 0
+        error('labkit:ui:runtime:InvalidResultManifest', ...
+            'Result output id must be nonempty scalar text.');
+    end
     output = struct( ...
-        "Id", string(id), ...
+        "Id", id, ...
         "Role", string(role), ...
         "Path", string(pathValue), ...
         "MediaType", string(mediaType), ...

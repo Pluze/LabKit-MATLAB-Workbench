@@ -67,6 +67,19 @@ function validateLayout(props)
         error('labkit:ui:layout:InvalidPreviewCount', ...
             'previewArea count must be a positive integer scalar.');
     end
+    if isfield(props, 'axisIds') && ~isempty(props.axisIds)
+        ids = string(props.axisIds);
+        ids = ids(:);
+        if any(strlength(ids) == 0) || ...
+                any(~arrayfun(@(value) isvarname(char(value)), ids))
+            error('labkit:ui:runtime:InvalidAxisId', ...
+                'previewArea axis ids must be valid MATLAB field names.');
+        end
+        if numel(unique(ids, 'stable')) ~= numel(ids)
+            error('labkit:ui:runtime:DuplicateAxisId', ...
+                'previewArea axis ids must be unique.');
+        end
+    end
 end
 
 function value = optionValue(opts, name, defaultValue)

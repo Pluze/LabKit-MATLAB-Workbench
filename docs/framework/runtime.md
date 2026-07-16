@@ -154,6 +154,30 @@ Use these app-facing rules:
   and injected services, then return updated canonical state without directly
   mutating framework lifecycle state.
 
+### Identity Contracts
+
+Runtime ids are developer-owned semantic names, not generated object handles.
+Name an object once at its declaration and reuse that id when referring to it;
+the runtime validates the resulting graph before it mutates the visible UI.
+
+| Identity | Scope and contract | Compatibility meaning |
+| --- | --- | --- |
+| App `Id` | Starts with an ASCII letter and contains only letters, digits, `_`, `-`, or `.`. Public app ids are unique across the app catalog. | Permanent after a project or recovery file has been written. Renaming it creates a different app identity. |
+| Layout node id | Nonempty MATLAB field name, globally unique in one workbench tree. | Used to bind presenter controls and UI callbacks. |
+| Preview axis id | Nonempty MATLAB field name, unique within its preview area and in the runtime axes registry. | Used by presenter axes models and `services.previews.axes`. |
+| Action id | MATLAB struct field in `definitionActions`; every layout or interaction event reference must name a registered action. | Renaming requires updating every declaration that emits the event. |
+| Renderer id | MATLAB struct field in `Renderers`; every presented renderer reference must name a registered renderer. | App-owned presentation contract. |
+| Durable source id | Nonempty text, unique in `project.inputs.sources`. | Stable key for reconciliation and portable external-file references. |
+| Result output id | Nonempty text, unique within one result manifest. | Stable machine-readable name for one exported artifact. |
+| Resource id | Nonempty text paired with an event, interaction, or figure scope. | Calling `set` again with the same scope and id intentionally disposes and replaces the previous resource; use different ids for resources that coexist. |
+
+Invalid declarations fail during definition, layout preparation, state
+validation, or presentation preflight instead of silently overwriting a
+registry entry. Recovery folders use a reversible encoded app id so distinct
+legal ids cannot normalize to the same path. Discovery also checks the earlier
+MATLAB-normalized folder name, allowing existing recovery files to remain
+readable while all new writes use the collision-free key.
+
 ### File Selection And Dialogs
 
 - `filePanel` owns file input mechanics: file chooser defaults, optional

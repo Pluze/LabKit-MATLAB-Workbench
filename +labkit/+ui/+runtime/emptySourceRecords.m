@@ -29,5 +29,9 @@ function sources = emptySourceRecords()
 %
 % See also labkit.ui.runtime.createPortableFileReference
 
-    sources = repmat(canonicalSourceRecord("", "", "", true), 0, 1);
+    reference = struct("schemaVersion", 1, "relativePath", "", ...
+        "originalPath", "", "fileName", "");
+    prototype = struct("id", "", "required", true, "role", "", ...
+        "reference", reference);
+    sources = repmat(prototype, 0, 1);
 end

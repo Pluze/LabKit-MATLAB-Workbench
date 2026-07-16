@@ -14,6 +14,7 @@ function presentation = commitV2Presentation(runtime, state, preserveView)
         error('labkit:ui:runtime:InvalidPresentation', ...
             'Present must return a scalar struct.');
     end
+    validatePresentationReferences(runtime, presentation);
     if isfield(presentation, 'controls')
         applyControlConstraints(runtime.ui, presentation.controls);
     end
@@ -34,6 +35,74 @@ function presentation = commitV2Presentation(runtime, state, preserveView)
         reconcileV2Interactions(runtime, presentation.interactions);
     else
         reconcileV2Interactions(runtime, struct());
+    end
+end
+
+function validatePresentationReferences(runtime, presentation)
+    if isfield(presentation, 'controls')
+        controls = presentation.controls;
+        if ~isstruct(controls) || ~isscalar(controls)
+            error('labkit:ui:runtime:InvalidPresentation', ...
+                'Presentation controls must be a scalar struct.');
+        end
+        ids = string(fieldnames(controls));
+        known = string(fieldnames(runtime.ui.controls));
+        unknown = setdiff(ids, known, 'stable');
+        if ~isempty(unknown)
+            error('labkit:ui:runtime:UnknownPresentationControl', ...
+                'Presentation references unknown control "%s".', unknown(1));
+        end
+    end
+    if ~isfield(presentation, 'previews')
+        return;
+    end
+    previews = presentation.previews;
+    if ~isstruct(previews) || ~isscalar(previews)
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Presentation previews must be a scalar struct.');
+    end
+    previewIds = string(fieldnames(previews));
+    for k = 1:numel(previewIds)
+        previewId = previewIds(k);
+        control = resolvePlotControl(runtime.ui, previewId);
+        spec = previews.(char(previewId));
+        [hasAxes, axesSpecs] = propertyValue(spec, "Axes");
+        if hasAxes
+            if ~isstruct(axesSpecs) || ~isscalar(axesSpecs)
+                error('labkit:ui:runtime:InvalidPresentation', ...
+                    'Preview "%s" Axes must be a scalar struct.', previewId);
+            end
+            axisIds = string(fieldnames(axesSpecs));
+            knownAxes = string(fieldnames(control.axesById));
+            unknownAxes = setdiff(axisIds, knownAxes, 'stable');
+            if ~isempty(unknownAxes)
+                error('labkit:ui:runtime:UnknownPresentationAxis', ...
+                    'Preview "%s" references unknown axis "%s".', ...
+                    previewId, unknownAxes(1));
+            end
+            for j = 1:numel(axisIds)
+                validateRendererReference(runtime, previewId, ...
+                    axesSpecs.(char(axisIds(j))));
+            end
+        else
+            validateRendererReference(runtime, previewId, spec);
+        end
+    end
+end
+
+function validateRendererReference(runtime, previewId, spec)
+    [hasRenderer, rendererId] = propertyValue(spec, "Renderer");
+    [hasModel, ~] = propertyValue(spec, "Model");
+    if ~hasRenderer || ~hasModel
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Preview "%s" requires Renderer and Model.', previewId);
+    end
+    rendererId = string(rendererId);
+    if ~isscalar(rendererId) || strlength(rendererId) == 0 || ...
+            ~isfield(runtime.definition.renderers, char(rendererId))
+        error('labkit:ui:runtime:UnknownRenderer', ...
+            'Preview "%s" references unknown renderer "%s".', ...
+            previewId, join(rendererId, ", "));
     end
 end
 

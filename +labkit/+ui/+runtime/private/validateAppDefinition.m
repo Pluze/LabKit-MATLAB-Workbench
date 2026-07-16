@@ -18,7 +18,7 @@ function validateV2Definition(def)
         error('labkit:ui:runtime:InvalidDefinition', ...
             'App definition has unsupported type "%s".', string(def.type));
     end
-    assertScalarText(def.id, "id");
+    assertAppId(def.id);
     assertScalarText(def.title, "title");
     validateProjectSpec(def.project);
     if ~isempty(def.createSession) && ~isa(def.createSession, 'function_handle')
@@ -48,6 +48,17 @@ function validateV2Definition(def)
             'DebugSample must be a function handle when supplied.');
     end
     validateUtilitiesSpec(def.utilities);
+end
+
+function assertAppId(value)
+    assertScalarText(value, "id");
+    value = string(value);
+    if isempty(regexp(char(value), '^[A-Za-z][A-Za-z0-9_.-]*$', 'once'))
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            ['App definition id must start with an ASCII letter and contain ' ...
+            'only letters, digits, underscore, hyphen, or period.']);
+    end
+    appStorageKey(value);
 end
 
 function requireFields(value, required)

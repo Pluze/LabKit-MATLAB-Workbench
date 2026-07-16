@@ -15,6 +15,10 @@ function validateV2State(state, def)
         "project");
     validateBuckets(state.session, ...
         ["selection", "workflow", "view", "cache"], "session");
+    if isstruct(state.project.inputs) && isscalar(state.project.inputs) && ...
+            isfield(state.project.inputs, 'sources')
+        validateSourceRecords(state.project.inputs.sources);
+    end
     try
         validateSerializableState(state);
     catch ME

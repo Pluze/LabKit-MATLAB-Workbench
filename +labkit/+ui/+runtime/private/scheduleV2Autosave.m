@@ -51,8 +51,8 @@ function folder = recoveryFolder(runtime)
     if strlength(root) == 0
         root = fullfile(prefdir, "LabKit", "recovery");
     end
-    folder = fullfile(root, matlab.lang.makeValidName( ...
-        char(runtime.definition.id)), char(runtime.document.id));
+    folder = fullfile(root, appStorageKey(runtime.definition.id), ...
+        char(runtime.document.id));
 end
 
 function tf = autosaveDisabled(request)

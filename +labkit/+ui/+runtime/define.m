@@ -18,7 +18,10 @@ function def = define(varargin)
 %   app begins startup.
 %
 % Required Name-Value Arguments:
-%   Id - Stable scalar text identifier for saved projects and diagnostics.
+%   Id - Stable scalar text identifier for saved projects, recovery storage,
+%       results, and diagnostics. It starts with an ASCII letter and contains
+%       only letters, digits, underscore, hyphen, or period. Treat it as a
+%       permanent compatibility identifier after projects have been saved.
 %   Title - Text shown in the app window title.
 %   Project - Scalar struct that owns the durable project schema. Required
 %       fields are listed under Project Fields.
@@ -108,6 +111,8 @@ function def = define(varargin)
 %       declared preview area.
 %   services.resources - set, get, remove, and clearScope manage resources with
 %       optional cleanup functions at event, interaction, or figure scope.
+%       set replaces and disposes an existing resource with the same scope and
+%       id; choose distinct ids for resources that must coexist.
 %   services.results - results.output creates a manifest output record;
 %       results.writeManifest writes the app's result manifest.
 %

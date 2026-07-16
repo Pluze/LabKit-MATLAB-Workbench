@@ -14,6 +14,14 @@ function reconcileV2Interactions(runtime, interactions)
     hub.setSuppressed(true);
     cleanup = onCleanup(@() hub.setSuppressed(false));
     desiredIds = string(fieldnames(interactions));
+    specs = cell(numel(desiredIds), 1);
+    actionIds = string(fieldnames(runtime.actions));
+    targetIds = hub.targetIds();
+    for k = 1:numel(desiredIds)
+        id = desiredIds(k);
+        specs{k} = normalizeSpec( ...
+            id, interactions.(char(id)), actionIds, targetIds);
+    end
     currentIds = v2ResourceRegistry(runtime.ui.figure, ...
         "listIds", "interaction");
     removedIds = setdiff(currentIds, desiredIds, 'stable');
@@ -23,7 +31,7 @@ function reconcileV2Interactions(runtime, interactions)
     end
     for k = 1:numel(desiredIds)
         id = desiredIds(k);
-        spec = normalizeSpec(id, interactions.(char(id)));
+        spec = specs{k};
         current = v2ResourceRegistry(runtime.ui.figure, ...
             "get", "interaction", id);
         if isempty(current) || ~sameIdentity(current.spec, spec)
@@ -316,7 +324,7 @@ function position = rectangleFromPoints(a, b)
     position = [origin, abs(b - a)];
 end
 
-function spec = normalizeSpec(id, value)
+function spec = normalizeSpec(id, value, actionIds, targetIds)
     if ~isstruct(value) || ~isscalar(value)
         error('labkit:ui:runtime:InvalidInteractionSpec', ...
             'Interaction "%s" must be a scalar struct.', id);
@@ -347,6 +355,24 @@ function spec = normalizeSpec(id, value)
     if ~isscalar(spec.Event) || strlength(spec.Event) == 0
         error('labkit:ui:runtime:InvalidInteractionSpec', ...
             'Interaction "%s" requires one semantic Event.', id);
+    end
+    if ~isscalar(spec.BackgroundEvent) || ~isscalar(spec.ScrollEvent)
+        error('labkit:ui:runtime:InvalidInteractionSpec', ...
+            'Interaction "%s" optional events must be scalar text.', id);
+    end
+    referencedEvents = [spec.Event, spec.BackgroundEvent, spec.ScrollEvent];
+    referencedEvents = referencedEvents(strlength(referencedEvents) > 0);
+    if any(~ismember(referencedEvents, actionIds))
+        unknown = referencedEvents(~ismember(referencedEvents, actionIds));
+        error('labkit:ui:runtime:UnknownInteractionAction', ...
+            'Interaction "%s" references unknown action "%s".', ...
+            id, unknown(1));
+    end
+    unknownTargets = setdiff(spec.Targets, targetIds, 'stable');
+    if ~isempty(unknownTargets)
+        error('labkit:ui:runtime:UnknownInteractionTarget', ...
+            'Interaction "%s" references unknown target "%s".', ...
+            id, unknownTargets(1));
     end
     if lower(spec.Kind) == "pairedanchors" && numel(spec.Targets) < 2
         error('labkit:ui:runtime:InvalidInteractionSpec', ...

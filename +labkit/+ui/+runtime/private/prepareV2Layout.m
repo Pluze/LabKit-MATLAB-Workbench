@@ -5,7 +5,9 @@
 function [layout, bindings] = prepareV2Layout(def, callbacks, state, bindingCallback)
     layout = invokeLayout(def.layout, callbacks, state);
     bindings = emptyBindings();
-    [layout, bindings] = visitValue(layout, state, bindingCallback, bindings);
+    actionIds = string(fieldnames(def.actions));
+    [layout, bindings] = visitValue( ...
+        layout, state, bindingCallback, bindings, actionIds);
     layout.props.utilities = v2Utilities(def.utilities, layout);
 end
 
@@ -65,10 +67,12 @@ function layout = invokeLayout(factory, callbacks, state)
     end
 end
 
-function [value, bindings] = visitValue(value, state, callback, bindings)
+function [value, bindings] = visitValue( ...
+        value, state, callback, bindings, actionIds)
     if iscell(value)
         for k = 1:numel(value)
-            [value{k}, bindings] = visitValue(value{k}, state, callback, bindings);
+            [value{k}, bindings] = visitValue( ...
+                value{k}, state, callback, bindings, actionIds);
         end
         return;
     end
@@ -78,7 +82,7 @@ function [value, bindings] = visitValue(value, state, callback, bindings)
     for element = 1:numel(value)
         if isLayoutNode(value(element))
             [value(element), bindings] = bindNode( ...
-                value(element), state, callback, bindings);
+                value(element), state, callback, bindings, actionIds);
         end
         fields = fieldnames(value(element));
         for k = 1:numel(fields)
@@ -87,11 +91,11 @@ function [value, bindings] = visitValue(value, state, callback, bindings)
                 continue;
             end
             [value(element).(field), bindings] = visitValue( ...
-                value(element).(field), state, callback, bindings);
+                value(element).(field), state, callback, bindings, actionIds);
         end
         if isLayoutNode(value(element))
             [value(element).props, bindings] = visitValue( ...
-                value(element).props, state, callback, bindings);
+                value(element).props, state, callback, bindings, actionIds);
         end
     end
 end
@@ -101,7 +105,8 @@ function tf = isLayoutNode(value)
         isfield(value, 'props') && isfield(value, 'children');
 end
 
-function [node, bindings] = bindNode(node, state, callback, bindings)
+function [node, bindings] = bindNode( ...
+        node, state, callback, bindings, actionIds)
     [hasBinding, path] = propertyValue(node.props, "Bind");
     [hasEvent, eventId] = propertyValue(node.props, "Event");
     if ~hasBinding
@@ -117,6 +122,14 @@ function [node, bindings] = bindNode(node, state, callback, bindings)
     assertBindingPath(path);
     if ~hasEvent
         eventId = "";
+    else
+        eventId = string(eventId);
+        if ~isscalar(eventId) || strlength(eventId) == 0 || ...
+                ~any(actionIds == eventId)
+            error('labkit:ui:runtime:UnknownLayoutAction', ...
+                'Layout control "%s" references unknown action "%s".', ...
+                string(node.id), join(eventId, ", "));
+        end
     end
     current = valueAtPath(state, path);
     node.props.value = current;

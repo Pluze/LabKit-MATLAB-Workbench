@@ -87,6 +87,13 @@ function outputs = normalizeOutputs(folder, values)
             "bytes", bytes, "sha256", digest, "status", status, ...
             "message", message);
     end
+    ids = string({outputs.id});
+    if any(strlength(ids) == 0)
+        invalid('Result output ids must be nonempty scalar text.');
+    end
+    if numel(unique(ids, 'stable')) ~= numel(ids)
+        invalid('Result output ids must be unique.');
+    end
 end
 
 function path = normalizedRelativePath(value)

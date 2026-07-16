@@ -10,12 +10,18 @@ function filepath = discoverV2RecoveryFile(def, request)
     if strlength(root) == 0
         root = fullfile(prefdir, "LabKit", "recovery");
     end
-    appFolder = fullfile(root, matlab.lang.makeValidName(char(def.id)));
     filepath = "";
-    if ~isfolder(appFolder)
-        return;
+    keys = [appStorageKey(def.id), ...
+        string(matlab.lang.makeValidName(char(def.id)))];
+    keys = unique(keys, 'stable');
+    candidates = dir(fullfile(root, "__labkit_missing__", "*"));
+    for k = 1:numel(keys)
+        appFolder = fullfile(root, keys(k));
+        if isfolder(appFolder)
+            found = dir(fullfile(appFolder, "*", "recovery.mat"));
+            candidates = [candidates; found(:)];
+        end
     end
-    candidates = dir(fullfile(appFolder, "*", "recovery.mat"));
     if isempty(candidates)
         return;
     end

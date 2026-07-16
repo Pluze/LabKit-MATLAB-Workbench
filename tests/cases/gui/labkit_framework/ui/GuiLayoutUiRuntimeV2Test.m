@@ -14,6 +14,38 @@ classdef GuiLayoutUiRuntimeV2Test < matlab.unittest.TestCase
                 @unboundEventVersion), ...
                 'labkit:ui:runtime:UnboundLayoutEvent');
         end
+
+        function unknown_layout_actions_fail_at_launch(testCase)
+            setupLabKitTestPath();
+            testCase.verifyError(@() labkit.ui.runtime.launch( ...
+                @unknownLayoutActionDefinition, @unboundEventRequirements, ...
+                @unboundEventVersion), ...
+                'labkit:ui:runtime:UnknownLayoutAction');
+        end
+
+        function invalid_presentation_references_fail_at_launch(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanupFigures = onCleanup(@() h.closeAllFigures());
+            testCase.verifyError(@() labkit.ui.runtime.launch( ...
+                @unknownControlDefinition, @unboundEventRequirements, ...
+                @unboundEventVersion), ...
+                'labkit:ui:runtime:UnknownPresentationControl');
+            testCase.verifyError(@() labkit.ui.runtime.launch( ...
+                @unknownInteractionActionDefinition, ...
+                @unboundEventRequirements, @unboundEventVersion), ...
+                'labkit:ui:runtime:UnknownInteractionAction');
+            clear cleanupFigures;
+        end
+
+        function duplicate_durable_source_ids_fail_before_commit(testCase)
+            setupLabKitTestPath();
+            testCase.verifyError(@() labkit.ui.runtime.launch( ...
+                @duplicateSourceDefinition, @unboundEventRequirements, ...
+                @unboundEventVersion), ...
+                'labkit:ui:runtime:InvalidSourceRecords');
+        end
     end
 end
 
@@ -371,6 +403,95 @@ function layout = unboundEventLayout(varargin)
         'controls', 'Controls', {control})})}, ...
         'workspace', labkit.ui.layout.workspace( ...
         'workspace', 'Workspace', {}));
+end
+
+function def = unknownLayoutActionDefinition()
+    project = projectSpec(@projectWithGain);
+    def = labkit.ui.runtime.define( ...
+        'Id', 'unknown_layout_action_probe', 'Title', 'Unknown Layout Action', ...
+        'Project', project, 'Layout', @unknownLayoutActionLayout, ...
+        'Actions', struct('noop', @(state, varargin) state), ...
+        'Present', @(state) struct());
+end
+
+function layout = unknownLayoutActionLayout(varargin)
+    control = labkit.ui.layout.field('gain', 'Gain', ...
+        'Bind', 'project.parameters.gain', 'Event', 'missingAction');
+    layout = probeLayout(control, {});
+end
+
+function def = unknownControlDefinition()
+    def = basicProbeDefinition('unknown_control_probe', @emptyProbeLayout, ...
+        @(state) struct('controls', struct('missingControl', true)));
+end
+
+function def = unknownInteractionActionDefinition()
+    def = basicProbeDefinition('unknown_interaction_probe', ...
+        @previewProbeLayout, @interactionPresentation);
+end
+
+function def = duplicateSourceDefinition()
+    def = basicProbeDefinition('duplicate_source_probe', ...
+        @emptyProbeLayout, @(state) struct(), @projectWithDuplicateSources);
+end
+
+function def = basicProbeDefinition(id, layoutFactory, presenter, projectFactory)
+    if nargin < 4
+        projectFactory = @unboundEventProject;
+    end
+    def = labkit.ui.runtime.define( ...
+        'Id', id, 'Title', 'Identity Probe', ...
+        'Project', projectSpec(projectFactory), ...
+        'Layout', layoutFactory, ...
+        'Actions', struct('noop', @(state, varargin) state), ...
+        'Present', presenter, ...
+        'Renderers', struct('probe', @(varargin) []));
+end
+
+function spec = projectSpec(factory)
+    spec = struct('Version', 1, 'Create', factory, ...
+        'Validate', @(value) isstruct(value));
+end
+
+function project = projectWithGain()
+    project = unboundEventProject();
+    project.parameters.gain = 1;
+end
+
+function project = projectWithDuplicateSources()
+    project = unboundEventProject();
+    reference = struct('schemaVersion', 1, 'relativePath', '', ...
+        'originalPath', '/tmp/input.dat', 'fileName', 'input.dat');
+    source = struct('id', 'input', 'required', true, ...
+        'role', 'input', 'reference', reference);
+    project.inputs.sources = [source source];
+end
+
+function layout = emptyProbeLayout(varargin)
+    layout = probeLayout( ...
+        labkit.ui.layout.action('noop', 'No operation', []), {});
+end
+
+function layout = previewProbeLayout(varargin)
+    preview = labkit.ui.layout.previewArea('preview', 'Preview');
+    layout = probeLayout( ...
+        labkit.ui.layout.action('noop', 'No operation', []), {preview});
+end
+
+function layout = probeLayout(control, workspaceChildren)
+    layout = labkit.ui.layout.workbench('identityProbe', 'Identity Probe', ...
+        'controlTabs', {labkit.ui.layout.tab('main', 'Main', { ...
+            labkit.ui.layout.section('content', 'Content', {control})})}, ...
+        'workspace', labkit.ui.layout.workspace( ...
+            'workspace', 'Workspace', workspaceChildren));
+end
+
+function view = interactionPresentation(~)
+    view = struct();
+    view.previews.preview = struct('Renderer', 'probe', 'Model', 1);
+    view.interactions.editor = struct( ...
+        'Kind', 'anchors', 'Targets', 'preview', 'Value', zeros(0, 2), ...
+        'Event', 'missingAction', 'ImageSize', [10 10]);
 end
 
 function value = unboundEventRequirements()
