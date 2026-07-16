@@ -52,6 +52,34 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
                 "qrs-streaming");
         end
 
+        function analyzeSignalBuildsGuiIndependentProducts(testCase)
+            setupLabKitTestPath();
+
+            fs = 100;
+            time = (0:1/fs:6)';
+            values = 0.02 * sin(2 * pi * 1.5 * time);
+            values(101:100:501) = values(101:100:501) + 1;
+            signal = struct('time', time, 'values', values, 'fs', fs, ...
+                'displayName', "Synthetic ECG", 'metadata', struct());
+            cache = struct('signal', signal, 'sourceMarker', 42);
+            parameters = struct('lowCut', 0.5, 'highCut', 40, ...
+                'roiStart', 0, 'roiEnd', 0, ...
+                'peakMethod', "Local peaks", 'peakDistance', 0.5, ...
+                'segmentWindow', 0.7, 'templateTopN', 5);
+
+            actual = ecg_print.analysisRun.analyzeSignal(cache, parameters);
+
+            testCase.verifyEqual(actual.sourceMarker, 42);
+            testCase.verifyEqual(actual.workingSignal, signal);
+            testCase.verifyEqual(actual.filteredSignal.metadata.filter.cutoffHz, ...
+                [0.5 40]);
+            testCase.verifyEqual(actual.events.metadata.method, "local");
+            testCase.verifyEqual(actual.segments.metadata.windowSec, [-0.7 0.7]);
+            testCase.verifyLessThanOrEqual( ...
+                numel(actual.template.keptSegmentIndex), 5);
+            testCase.verifyTrue(isfield(actual.measurements, 'perSegment'));
+        end
+
         function importStatusTextPreservesMetadataSummary(testCase)
             setupLabKitTestPath();
 
