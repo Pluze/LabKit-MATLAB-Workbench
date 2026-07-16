@@ -38,7 +38,8 @@ function services = buildV2RuntimeServices(fig, runtime, dispatch)
         "sourceRecord", @sourceRecord, ...
         "upsertSource", @upsertSource, ...
         "reconcileSources", @reconcileSources, ...
-        "saveState", @() saveProjectState(fig, runtime.request));
+        "saveState", @() saveProjectState(fig, runtime.request), ...
+        "saveAutosave", @(state) saveAutosaveState(fig, state));
     services.previews = struct( ...
         "axes", @(previewId, axisId) resolvePreviewAxes( ...
             runtime.ui, previewId, axisId));
@@ -82,6 +83,13 @@ function filepath = saveProjectState(fig, request)
     else
         filepath = labkit.ui.runtime.saveState(fig, filepath);
     end
+end
+
+function filepath = saveAutosaveState(fig, state)
+    current = getAppRuntime(fig);
+    current.state = state;
+    filepath = writeV2RecoveryFile(current);
+    setappdata(fig, 'labkitV2RecoveryFile', string(filepath));
 end
 
 function state = appendWorkflowLog(state, debugLog, message)

@@ -106,7 +106,8 @@ function def = define(varargin)
 %       selected string path and a logical cancelled flag.
 %   services.project - sourceRecord, upsertSource, and reconcileSources create
 %       external-file records understood by project save/load; saveState saves
-%       the current project.
+%       a named project, while saveAutosave(state) immediately writes the
+%       framework-managed recovery copy without prompting for a path.
 %   services.previews - previews.axes(previewId,axisId) returns axes owned by a
 %       declared preview area.
 %   services.resources - set, get, remove, and clearScope manage resources with

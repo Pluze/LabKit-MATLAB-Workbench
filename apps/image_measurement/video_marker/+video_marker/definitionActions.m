@@ -19,6 +19,7 @@ function actions = definitionActions()
         "exportMarkerCsv", @onExportMarkerCsv, ...
         "exportSettingChanged", @onExportSettingChanged, ...
         "exportCoordinateCsv", @onExportCoordinateCsv, ...
+        "saveAutosave", @onSaveAutosave, ...
         "newSetup", @onNewSetup);
     actions = mergeActions(actions, ...
         video_marker.skeletonSetup.definitionActions());
@@ -408,6 +409,11 @@ function state = onExportCoordinateCsv(state, ~, services)
     state.project.results.coordinateManifestPath = string(manifestPath);
     state = services.workflow.log(state, ...
         "Exported coordinate CSV: " + filepath);
+end
+
+function state = onSaveAutosave(state, ~, services)
+    services.project.saveAutosave(state);
+    state = services.workflow.log(state, "Autosave updated.");
 end
 
 function state = onNewSetup(state, ~, services)

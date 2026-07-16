@@ -29,30 +29,8 @@ function runAutosave(fig)
         scheduleV2Autosave(fig);
         return;
     end
-    folder = recoveryFolder(runtime);
-    if ~isfolder(folder)
-        mkdir(folder);
-    end
-    current = fullfile(folder, "recovery.mat");
-    previous = fullfile(folder, "previous.mat");
-    if isfile(current)
-        copyfile(current, previous, 'f');
-    end
-    envelope = createV2ProjectEnvelope(runtime);
-    writeV2ProjectFile(current, envelope);
+    current = writeV2RecoveryFile(runtime);
     setappdata(fig, 'labkitV2RecoveryFile', string(current));
-end
-
-function folder = recoveryFolder(runtime)
-    root = "";
-    if isstruct(runtime.request) && isfield(runtime.request, 'recoveryRoot')
-        root = string(runtime.request.recoveryRoot);
-    end
-    if strlength(root) == 0
-        root = fullfile(prefdir, "LabKit", "recovery");
-    end
-    folder = fullfile(root, appStorageKey(runtime.definition.id), ...
-        char(runtime.document.id));
 end
 
 function tf = autosaveDisabled(request)
