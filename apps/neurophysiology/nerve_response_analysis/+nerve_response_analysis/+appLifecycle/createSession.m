@@ -2,8 +2,12 @@
 % project with resolved sources. Output owns parsed JSON, analysis, preview
 % mode, output-folder convenience, and workflow messages.
 function session = createSession(project)
-    filterPath = sourcePath(project.inputs.filterSource);
-    protocolPath = sourcePath(project.inputs.protocolSource);
+    filterSources = nerve_response_analysis.appLifecycle.sourceRecordsForRole( ...
+        project.inputs.sources, "filterRecord");
+    protocolSources = nerve_response_analysis.appLifecycle.sourceRecordsForRole( ...
+        project.inputs.sources, "protocol");
+    filterPath = sourcePath(filterSources);
+    protocolPath = sourcePath(protocolSources);
     filterRecord = loadRequiredJson(filterPath);
     protocol = loadOptionalJson(protocolPath);
     outputFolder = "";

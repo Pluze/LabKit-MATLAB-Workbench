@@ -28,6 +28,12 @@ labkit_NerveResponseAnalysis_app
 Changing the filter, protocol, or limits clears the previous analysis so that
 an export cannot silently use outdated settings.
 
+The filter record and optional protocol share the standard project
+`inputs.sources` collection and retain distinct `filterRecord` and `protocol`
+roles. Version 1 projects with separate role-specific fields are combined on
+load and the next save writes payload version 2. This lets common project
+save/load and missing-file relinking inspect every external dependency.
+
 ## What The Analysis Does
 
 For each readable recording, the app selects an event source from the protocol

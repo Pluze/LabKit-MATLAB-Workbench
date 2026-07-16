@@ -5,13 +5,19 @@ function session = createSession(project)
     session = emptySession();
     session.cache.protocol = project.annotations.protocol;
     session.cache.previewChannelRows = project.annotations.previewChannelRows;
-    if ~isempty(project.inputs.protocolSource)
-        session.cache.protocolPath = sourcePath(project.inputs.protocolSource(1));
+    protocolSources = rhs_preview.appLifecycle.sourceRecordsForRole( ...
+        project.inputs.sources, "protocol");
+    rhsSources = rhs_preview.appLifecycle.sourceRecordsForRole( ...
+        project.inputs.sources, "recording");
+    filterSources = rhs_preview.appLifecycle.sourceRecordsForRole( ...
+        project.inputs.sources, "filterRecording");
+    if ~isempty(protocolSources)
+        session.cache.protocolPath = sourcePath(protocolSources(1));
         session.cache.protocol = rhs_preview.sourceFiles.loadProtocol( ...
             session.cache.protocolPath);
     end
-    if ~isempty(project.inputs.rhsSource)
-        session.cache.rhsPath = sourcePath(project.inputs.rhsSource(1));
+    if ~isempty(rhsSources)
+        session.cache.rhsPath = sourcePath(rhsSources(1));
         [index, status] = labkit.rhs.indexFile(session.cache.rhsPath);
         if ~status.ok
             error('rhs_preview:SourceLoadFailed', ...
@@ -33,8 +39,8 @@ function session = createSession(project)
             session.workflow.statusMessage = "RHS header indexed.";
         end
     end
-    if ~isempty(project.inputs.filterSources)
-        paths = arrayfun(@sourcePath, project.inputs.filterSources).';
+    if ~isempty(filterSources)
+        paths = arrayfun(@sourcePath, filterSources).';
         session.cache.filterRows = rhs_preview.analysisRun.discoverFilterRows(paths);
         session.cache.filterRows = applyFilterAnnotations( ...
             session.cache.filterRows, project.annotations);

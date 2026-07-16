@@ -2,6 +2,27 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
     %RHSPREVIEWVIEWTEST Verify RHS Preview display helpers.
 
     methods (Test, TestTags = {'Unit'})
+        function projectMigrationCombinesRoleSpecificSources(testCase)
+            setupLabKitTestPath();
+            project = rhs_preview.appLifecycle.createProject();
+            rhsSource = sourceRecord("rhs", "recording");
+            protocolSource = sourceRecord("protocol", "protocol");
+            filterSources = [sourceRecord("filter1", "filterRecording"), ...
+                sourceRecord("filter2", "filterRecording")];
+            project.inputs = struct("rhsSource", rhsSource, ...
+                "protocolSource", protocolSource, ...
+                "filterSources", filterSources);
+
+            migrated = rhs_preview.appLifecycle.migrateProjectV1ToV2(project);
+            definition = rhs_preview.definition();
+
+            testCase.verifyEqual(migrated.inputs.sources, ...
+                [rhsSource, protocolSource, filterSources]);
+            testCase.verifyEqual(definition.project.Version, 2);
+            testCase.verifyFalse(any(isfield(migrated.inputs, ...
+                {"rhsSource", "protocolSource", "filterSources"})));
+        end
+
         function summaryAndDetailsRenderDefaultState(testCase)
             setupLabKitTestPath();
 
@@ -134,6 +155,12 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
             testCase.verifyEqual(bounds.durationSec, 0);
         end
     end
+end
+
+function source = sourceRecord(id, role)
+    reference = struct("originalPath", "/tmp/" + id);
+    source = struct("id", id, "required", true, ...
+        "role", role, "reference", reference);
 end
 
 function removeFolderIfPresent(folder)

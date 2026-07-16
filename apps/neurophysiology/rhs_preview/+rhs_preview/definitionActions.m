@@ -37,8 +37,10 @@ function state = onRhsChosen(state, event, services)
             "RHS inspect failed: " + string(status.message));
         return;
     end
-    state.project.inputs.rhsSource = services.project.sourceRecord( ...
+    source = services.project.sourceRecord( ...
         "rhs", "recording", filepath, true);
+    state.project.inputs.sources = replaceRole( ...
+        state.project.inputs.sources, "recording", source);
     state.session.cache.rhsPath = filepath;
     state.session.cache.index = index;
     state.session.cache.info = index.info;
@@ -76,8 +78,10 @@ function state = onProtocolChosen(state, event, services)
     end
     filepath = paths(1);
     protocol = rhs_preview.sourceFiles.loadProtocol(filepath);
-    state.project.inputs.protocolSource = services.project.sourceRecord( ...
+    source = services.project.sourceRecord( ...
         "protocol", "protocol", filepath, false);
+    state.project.inputs.sources = replaceRole( ...
+        state.project.inputs.sources, "protocol", source);
     state.project.annotations.protocol = protocol;
     state.session.cache.protocolPath = filepath;
     state.session.cache.protocol = protocol;
@@ -104,7 +108,8 @@ function state = onFolderChosen(state, event, services)
         return;
     end
     state.session.cache.filterRows = rows;
-    state.project.inputs.filterSources = sourceRecords(rows, services);
+    state.project.inputs.sources = replaceRole(state.project.inputs.sources, ...
+        "filterRecording", sourceRecords(rows, services));
     state = storeFilterAnnotations(state);
     state.session.workflow.statusMessage = sprintf( ...
         'Discovered %d RHS file(s).', height(rows));
@@ -123,7 +128,10 @@ function state = onFolderRemoved(state, event, services)
         rows.recordingId = "R" + compose("%03d", (1:height(rows)).');
     end
     state.session.cache.filterRows = rows;
-    state.project.inputs.filterSources(indices) = [];
+    sources = roleSources(state, "filterRecording");
+    sources(indices) = [];
+    state.project.inputs.sources = replaceRole( ...
+        state.project.inputs.sources, "filterRecording", sources);
     state = storeFilterAnnotations(state);
     state.session.workflow.statusMessage = sprintf( ...
         'Removed %d RHS filter task(s).', numel(indices));
@@ -132,7 +140,8 @@ function state = onFolderRemoved(state, event, services)
 end
 
 function state = onFolderCleared(state, ~, services)
-    state.project.inputs.filterSources = state.project.inputs.filterSources([]);
+    state.project.inputs.sources = replaceRole(state.project.inputs.sources, ...
+        "filterRecording", labkit.ui.runtime.emptySourceRecords());
     state.project.annotations.filterLabels = strings(0, 1);
     state.project.annotations.filterComments = strings(0, 1);
     state.session.cache.filterRows = table();
@@ -184,11 +193,12 @@ function state = onRefreshPreviewWindow(state, ~, services)
 end
 
 function state = onRefreshFolderFiles(state, ~, services)
-    if isempty(state.project.inputs.filterSources)
+    filterSources = roleSources(state, "filterRecording");
+    if isempty(filterSources)
         state.session.workflow.statusMessage = "Select RHS filter files first.";
         return;
     end
-    paths = sourcePaths(state.project.inputs.filterSources);
+    paths = sourcePaths(filterSources);
     try
         state.session.cache.filterRows = ...
             rhs_preview.analysisRun.discoverFilterRows( ...
@@ -198,8 +208,9 @@ function state = onRefreshFolderFiles(state, ~, services)
         state.session.workflow.statusMessage = string(ME.message);
         return;
     end
-    state.project.inputs.filterSources = ...
-        sourceRecords(state.session.cache.filterRows, services);
+    state.project.inputs.sources = replaceRole(state.project.inputs.sources, ...
+        "filterRecording", sourceRecords( ...
+        state.session.cache.filterRows, services));
     state = storeFilterAnnotations(state);
     state.session.workflow.statusMessage = sprintf( ...
         'Discovered %d RHS file(s).', height(state.session.cache.filterRows));
@@ -354,7 +365,8 @@ end
 function context = previewContext(state)
     context = struct( ...
         "rhsFile", state.session.cache.rhsPath, ...
-        "rhsFolder", commonParent(sourcePaths(state.project.inputs.filterSources)), ...
+        "rhsFolder", commonParent(sourcePaths( ...
+        roleSources(state, "filterRecording"))), ...
         "protocolFile", state.session.cache.protocolPath, ...
         "protocol", state.project.annotations.protocol, ...
         "family", state.project.parameters.family, ...
@@ -437,11 +449,20 @@ function [manifestPath, report] = writeJsonManifest( ...
     output = services.results.output(id, "primary", ...
         string(name) + string(extension), "application/json");
     spec = struct("Outputs", output, ...
-        "Inputs", [state.project.inputs.rhsSource, ...
-        state.project.inputs.protocolSource, state.project.inputs.filterSources], ...
+        "Inputs", state.project.inputs.sources, ...
         "Parameters", state.project.parameters, ...
         "Summary", struct(), "ManifestName", manifestName);
     [manifestPath, report] = services.results.writeManifest(folder, spec);
+end
+
+function sources = roleSources(state, role)
+    sources = rhs_preview.appLifecycle.sourceRecordsForRole( ...
+        state.project.inputs.sources, role);
+end
+
+function sources = replaceRole(sources, role, replacements)
+    sources = rhs_preview.appLifecycle.replaceSourceRecordsForRole( ...
+        sources, role, replacements);
 end
 
 function value = finiteScalar(value, fallback)

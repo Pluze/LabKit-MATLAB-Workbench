@@ -76,7 +76,7 @@ classdef GuiLayoutRhsPreviewTest < matlab.unittest.TestCase
             projectPath = fullfile(outputFolder, 'rhs-preview-project.mat');
             labkit.ui.runtime.saveState(fig, projectPath);
             saved = load(projectPath, 'labkitProject');
-            assert(saved.labkitProject.app.payloadVersion == 1);
+            assert(saved.labkitProject.app.payloadVersion == 2);
             assert(~isfield(saved.labkitProject.payload.inputs, 'index'));
             workflow.click('Reset');
             labkit.ui.runtime.loadState(fig, projectPath);
@@ -84,7 +84,9 @@ classdef GuiLayoutRhsPreviewTest < matlab.unittest.TestCase
             assert(workflow.previewChildCount('preview') > 0, ...
                 'Project reopen should rebuild the indexed preview cache.');
             runtime = getappdata(fig, 'labkitUiAppRuntime');
-            assert(numel(runtime.state.project.inputs.filterSources) == 2);
+            filterSources = rhs_preview.appLifecycle.sourceRecordsForRole( ...
+                runtime.state.project.inputs.sources, "filterRecording");
+            assert(numel(filterSources) == 2);
             clear outputCleanup;
 
             function [filename, folderPath] = chooseOutput(~, ~, ~)

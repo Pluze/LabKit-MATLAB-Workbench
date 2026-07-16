@@ -28,8 +28,10 @@ function state = onSessionChosen(state, event, services)
             "Filter record load failed: " + string(ME.message));
         return;
     end
-    state.project.inputs.filterSource = services.project.sourceRecord( ...
+    source = services.project.sourceRecord( ...
         "filterRecord", "filterRecord", filepath, true);
+    state.project.inputs.sources = replaceRole( ...
+        state.project.inputs.sources, "filterRecord", source);
     state.project.results.lastExport = [];
     state.session.cache.filterPath = filepath;
     state.session.cache.filterRecord = filterRecord;
@@ -50,8 +52,10 @@ function state = onProtocolChosen(state, event, services)
         return;
     end
     protocol = loadOptionalProtocol(filepath);
-    state.project.inputs.protocolSource = services.project.sourceRecord( ...
+    source = services.project.sourceRecord( ...
         "protocol", "protocol", filepath, false);
+    state.project.inputs.sources = replaceRole( ...
+        state.project.inputs.sources, "protocol", source);
     state.project.results.lastExport = [];
     state.session.cache.protocolPath = filepath;
     state.session.cache.protocol = protocol;
@@ -106,7 +110,7 @@ function state = onPreviewModeChanged(state, event, ~)
 end
 
 function state = onRunAnalysis(state, ~, services)
-    if isempty(state.project.inputs.filterSource)
+    if isempty(roleSources(state, "filterRecord"))
         state.session.workflow.statusMessage = "Select a filter record first.";
         return;
     end
@@ -153,7 +157,7 @@ function state = onExportAnalysis(state, ~, services)
         "nerveResponseAnalysis", "primary", outputName, "application/json");
     spec = struct( ...
         "Outputs", output, ...
-        "Inputs", allSources(state.project.inputs), ...
+        "Inputs", state.project.inputs.sources, ...
         "Parameters", state.project.parameters, ...
         "Summary", analysisSummary(state.session.cache.analysis), ...
         "ManifestName", "nerve_response_analysis.labkit.json");
@@ -203,8 +207,15 @@ function count = tableHeight(analysis, fieldName)
     end
 end
 
-function sources = allSources(inputs)
-    sources = [inputs.filterSource, inputs.protocolSource];
+function sources = roleSources(state, role)
+    sources = nerve_response_analysis.appLifecycle.sourceRecordsForRole( ...
+        state.project.inputs.sources, role);
+end
+
+function sources = replaceRole(sources, role, replacements)
+    sources = ...
+        nerve_response_analysis.appLifecycle.replaceSourceRecordsForRole( ...
+        sources, role, replacements);
 end
 
 function protocol = loadOptionalProtocol(filepath)

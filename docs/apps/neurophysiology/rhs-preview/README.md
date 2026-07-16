@@ -54,6 +54,15 @@ Record**.
 The filter record identifies the selected files and their labels. It does not
 copy the RHS recordings or contain decoded waveforms.
 
+## Saved Project Sources
+
+The preview recording, optional protocol, and filter recordings share the
+standard project `inputs.sources` collection. Each record keeps its
+`recording`, `protocol`, or `filterRecording` role, so reopening restores the
+correct control without teaching the framework app-specific field names.
+Version 1 RHS Preview projects stored three separate source fields; they are
+combined on load and the next save writes payload version 2.
+
 ## Review Recording Information
 
 The **Review** tab shows the indexed duration, channel counts, current window,

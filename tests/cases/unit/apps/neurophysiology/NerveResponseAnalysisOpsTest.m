@@ -2,6 +2,25 @@ classdef NerveResponseAnalysisOpsTest < matlab.unittest.TestCase
     %NERVERESPONSEANALYSISOPSTEST Verify event and CAP analysis helpers.
 
     methods (Test, TestTags = {'Unit'})
+        function projectMigrationCombinesRoleSpecificSources(testCase)
+            setupLabKitTestPath();
+            project = nerve_response_analysis.appLifecycle.createProject();
+            filterSource = sourceRecord("filterRecord", "filterRecord");
+            protocolSource = sourceRecord("protocol", "protocol");
+            project.inputs = struct("filterSource", filterSource, ...
+                "protocolSource", protocolSource);
+
+            migrated = ...
+                nerve_response_analysis.appLifecycle.migrateProjectV1ToV2(project);
+            definition = nerve_response_analysis.definition();
+
+            testCase.verifyEqual(migrated.inputs.sources, ...
+                [filterSource, protocolSource]);
+            testCase.verifyEqual(definition.project.Version, 2);
+            testCase.verifyFalse(any(isfield(migrated.inputs, ...
+                {"filterSource", "protocolSource"})));
+        end
+
         function detectEventTrainsFindsFivePulseTrain(testCase)
             setupLabKitTestPath();
 
@@ -113,4 +132,10 @@ classdef NerveResponseAnalysisOpsTest < matlab.unittest.TestCase
             testCase.verifyEqual(analysis.issues.recordingId(1), "R002");
         end
     end
+end
+
+function source = sourceRecord(id, role)
+    reference = struct("originalPath", "/tmp/" + id);
+    source = struct("id", id, "required", true, ...
+        "role", role, "reference", reference);
 end
