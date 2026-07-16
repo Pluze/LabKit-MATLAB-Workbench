@@ -1,6 +1,6 @@
 function [codeLines, physicalLines] = labkitEffectiveCodeLineCount(filepath)
 %LABKITEFFECTIVECODELINECOUNT Count executable MATLAB source lines.
-% Expected callers: repository line-budget and helper-quality guardrails.
+% Expected caller: repository effective-code-line guardrails.
 % Input: path to one MATLAB source file. Outputs: nonblank lines excluding
 % full-line and block comments, plus the physical line count for diagnostics.
 % Side effects: reads the source file without evaluating it.

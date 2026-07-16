@@ -75,6 +75,6 @@ control mutation facades, or helpers merely to meet a line budget.
 8. Update the app manual, version, and component history.
 
 Use `labkit-boundary-guard` before adding a public facade API,
-`labkit-migration-planner` only for active compatibility retirement, and
-`labkit-test-planner` for validation. Report preserved science, changed flow,
+record active compatibility retirement directly in `.agents/migration_guide.md`,
+and use `labkit-test-planner` for validation. Report preserved science, changed flow,
 files, tests, manual checks, and anything intentionally left app-local.

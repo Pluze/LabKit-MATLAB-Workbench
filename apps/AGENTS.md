@@ -54,8 +54,8 @@ library manual for APIs the app actually uses. App tests live under
 - Preview work uses current/display-resolution data; original-resolution batch
   work belongs at Run or Export. Pixel-unit preview parameters scale with
   preview resolution.
-- Repeatable Run/Export workflows use deterministic task snapshots or
-  fingerprints when stale or duplicated work is possible.
+- Repeatable Run/Export workflows use immutable task snapshots and
+  deterministic fingerprints when stale or duplicated work is possible.
 
 ## UI and persistence
 
@@ -84,5 +84,5 @@ library manual for APIs the app actually uses. App tests live under
 - Use the owning app-family unit suite and the app's hidden-GUI suite. Add
   project guardrails for entrypoint, boundary, fixture, or validation-policy
   changes. Exact commands belong in `docs/development/testing.md`.
-- Use the migration planner only for a concrete active compatibility or
-  transitional implementation, not ordinary refactoring or file size.
+- Record only concrete compatibility or transitional retirement work in
+  `.agents/migration_guide.md`; ordinary refactoring and file size are not debt.
