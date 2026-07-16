@@ -181,6 +181,23 @@ columns, formulas, units, and error behavior must match their current code
 owners. If code and documentation disagree, resolve the product contract
 rather than documenting both as alternatives.
 
+### Public Function Help
+
+A public function help block is part of the tested API. It states public call
+syntax, behavior, inputs, outputs, option fields, defaults, legal values, and
+errors or side effects where they matter. The documentation guardrail compares
+the names in the function signature with the `Inputs` and `Outputs` sections
+and requires option-bearing APIs to describe named fields. Generated API pages
+use this same help block, so the command-line `help` view and HTML reference do
+not have separate prose owners.
+
+Code under an `Example:` heading is an executable contract. The test runner
+extracts that code from the function header and executes it in MATLAB. Use
+`Typical Call:` when a useful sketch depends on a user's data file, an existing
+app/session variable, or an interactive dialog. Such a sketch becomes an
+`Example:` only after it has self-contained synthetic setup and passes the
+example runner.
+
 ## Cross-References
 
 Use relative Markdown links between narrative sources. Link the first useful

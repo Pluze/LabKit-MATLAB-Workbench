@@ -4,6 +4,7 @@ function audit = labkitHelperQualityAudit(root, varargin)
 % root and optional MaxLines/Scope values. Scope may be a tracked path prefix
 % or "all". Output is a table describing short helper files, call/test
 % references, package role, boundary class, and a non-blocking recommendation.
+% CodeLines excludes blank and comment-only lines; PhysicalLines is diagnostic.
 % Side effects: reads tracked MATLAB source files.
 
     if nargin < 1 || strlength(string(root)) == 0
@@ -16,7 +17,7 @@ function audit = labkitHelperQualityAudit(root, varargin)
     helperTokens = helperReferenceTokens(files);
 
     allSource = readSourceCorpus(root, trackedFiles, helperTokens);
-    rows = cell(numel(files), 12);
+    rows = cell(numel(files), 13);
     for k = 1:numel(files)
         path = files(k);
         lines = readFileLines(fullfile(root, char(path)));
@@ -26,28 +27,31 @@ function audit = labkitHelperQualityAudit(root, varargin)
         callCount = approximateCallCount(allSource, basename);
         testRefs = directUnitTestReferences(allSource, basename, path);
         rows{k, 1} = path;
-        rows{k, 2} = numel(lines);
-        rows{k, 3} = topLevelScope(path);
-        rows{k, 4} = rolePackage(path);
-        rows{k, 5} = functionCount(lines);
-        rows{k, 6} = callCount;
-        rows{k, 7} = publicStatus(path);
-        rows{k, 8} = testRefs;
-        rows{k, 9} = boundary;
-        rows{k, 10} = exception;
-        rows{k, 11} = recommendation(rows{k, 2}, rows{k, 5}, callCount, ...
+        [codeLines, physicalLines] = labkitEffectiveCodeLineCount( ...
+            fullfile(root, char(path)));
+        rows{k, 2} = codeLines;
+        rows{k, 3} = physicalLines;
+        rows{k, 4} = topLevelScope(path);
+        rows{k, 5} = rolePackage(path);
+        rows{k, 6} = functionCount(lines);
+        rows{k, 7} = callCount;
+        rows{k, 8} = publicStatus(path);
+        rows{k, 9} = testRefs;
+        rows{k, 10} = boundary;
+        rows{k, 11} = exception;
+        rows{k, 12} = recommendation(rows{k, 2}, rows{k, 6}, callCount, ...
             testRefs, exception, boundary);
-        rows{k, 12} = reviewReason(rows{k, 11}, exception, boundary);
+        rows{k, 13} = reviewReason(rows{k, 12}, exception, boundary);
     end
 
     audit = cell2table(rows, 'VariableNames', { ...
-        'RelativePath', 'Lines', 'TopLevelScope', 'RolePackage', ...
+        'RelativePath', 'CodeLines', 'PhysicalLines', 'TopLevelScope', 'RolePackage', ...
         'FunctionCount', 'CallCount', 'PublicStatus', ...
         'DirectUnitTestReferences', 'BoundaryClass', 'AllowedException', ...
         'Recommendation', 'ReviewReason'});
     if ~isempty(audit)
         audit = sortrows(audit, {'Recommendation', 'TopLevelScope', ...
-            'Lines', 'RelativePath'});
+            'CodeLines', 'RelativePath'});
     end
 end
 
@@ -103,21 +107,7 @@ function tf = isCandidateHelper(root, path, maxLines)
         tf = false;
         return;
     end
-    tf = fileLineCount(fullfile(root, char(path))) <= maxLines;
-end
-
-function count = fileLineCount(path)
-    text = readFileText(path);
-    if isempty(text)
-        count = 0;
-        return;
-    end
-
-    lineFeed = char(10);
-    count = sum(text == lineFeed);
-    if text(end) ~= lineFeed
-        count = count + 1;
-    end
+    tf = labkitEffectiveCodeLineCount(fullfile(root, char(path))) <= maxLines;
 end
 
 function text = readFileText(path)

@@ -122,6 +122,13 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Repository-wide guardrails should cache tracked-file lists or file contents
   within the test process when multiple assertions scan the same scope. Do not
   add duplicate full-tree scans that differ only by diagnostic wording.
+- File-length and short-helper audits must use the shared effective MATLAB
+  code-line counter. It excludes blank lines, full-line comments, and block
+  comments, counts lines that contain code plus an inline comment, and reports
+  physical lines only as diagnostic context.
+- Public help sections titled `Example:` must be extracted from source and
+  executed by MATLAB. File-dependent or interactive sketches belong under
+  `Typical Call:` until they have self-contained synthetic setup.
 - Project hygiene guardrails may scan app source and test text to enforce that
   declared UI label helpers own their long user-visible literals. Keep this
   check scoped to named label/choice helpers so ordinary one-off UI labels,

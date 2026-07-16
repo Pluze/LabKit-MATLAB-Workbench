@@ -21,7 +21,7 @@ function [x, y, xname, yname] = getCurveXY(curve, xsel, ysel)
 %   xname - Matched header character vector, or '' when lookup fails.
 %   yname - Matched header character vector, or '' when lookup fails.
 %
-% Example:
+% Typical Call:
 %   [voltageV, currentA, xname, yname] = ...
 %       labkit.dta.getCurveXY(curve, "Vf", "Im");
 

@@ -21,8 +21,7 @@ function filterSpec = fileDialogFilter(varargin)
 %
 % Example:
 %   filters = labkit.thermal.fileDialogFilter("IncludeAll", true);
-%   [names, folder] = uigetfile(filters, "Select thermal images", ...
-%       "MultiSelect", "on");
+%   assert(isequal(size(filters), [2 2]))
 
     opts = parseOptions(varargin{:});
     thermalRow = {'*.jpg;*.jpeg;*.rjpg', ...

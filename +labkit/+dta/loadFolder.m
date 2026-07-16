@@ -17,6 +17,12 @@ function [items, report] = loadFolder(rootDir, expectedKind, opts)
 %       normalization as loadFile. Default: "auto".
 %   opts - Optional scalar structure forwarded to loadFiles and loadFile.
 %
+% Options:
+%   pulseMode - Pulse-detection mode used for discovered chrono files. See
+%       detectPulses for the legal labels and normalization behavior.
+%   pulseOptions - Scalar structure accepted by detectPulses. When both
+%       pulseOptions and pulseMode are present, pulseOptions takes precedence.
+%
 % Outputs:
 %   items - Cell row vector of successfully loaded item structures.
 %   report - loadFiles report with three additional discovery fields.
@@ -36,7 +42,7 @@ function [items, report] = loadFolder(rootDir, expectedKind, opts)
 %   Throws labkit:dta:InvalidFolder for an invalid rootDir and
 %   labkit:dta:InvalidKind for an unsupported expectedKind.
 %
-% Example:
+% Typical Call:
 %   [items, report] = labkit.dta.loadFolder("experiment", "auto");
 %   fprintf("Found %d DTA files; loaded %d.\n", ...
 %       report.nDiscovered, report.nLoaded)

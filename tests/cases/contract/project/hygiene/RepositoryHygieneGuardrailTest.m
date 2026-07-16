@@ -2,16 +2,40 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
     %REPOSITORYHYGIENEGUARDRAILTEST Generic repository size and helper hygiene.
 
     methods (Test, TestTags = {'Integration', 'Style'})
-        function trackedFilesStayWithinLineBudget(testCase)
+        function trackedMatlabFilesStayWithinEffectiveCodeLineBudget(testCase)
             root = setupLabKitTestPath();
             maxLines = 650;
             actual = collectOversizedTrackedFiles(root, maxLines);
             testCase.verifyEmpty(actual, ...
-                ['tracked files except labkit_launcher.m must remain at or ' ...
-                'below ' num2str(maxLines) ' lines. Split large files by ' ...
+                ['tracked MATLAB files except labkit_launcher.m must remain at or ' ...
+                'below ' num2str(maxLines) ' nonblank, non-comment code lines. ' ...
+                'Documentation comments do not consume the budget. Split large files by ' ...
                 'cohesive private helpers or app-owned component packages ' ...
                 'before adding more logic. Files: ' ...
                 strjoin(cellstr(actual), ', ')]);
+        end
+
+        function effectiveCodeLineCountIgnoresDocumentationComments(testCase)
+            folder = matlab.unittest.fixtures.TemporaryFolderFixture;
+            testCase.applyFixture(folder);
+            filepath = fullfile(folder.Folder, "sample.m");
+            content = strjoin([ ...
+                "function value = sample(input)"
+                "% Summary documentation."
+                ""
+                "%{"
+                "Block documentation."
+                "%}"
+                "value = input + 1; % Inline rationale remains a code line."
+                "end"], newline);
+            fid = fopen(filepath, "w");
+            cleaner = onCleanup(@() fclose(fid));
+            fwrite(fid, content);
+            clear cleaner
+
+            [codeLines, physicalLines] = labkitEffectiveCodeLineCount(filepath);
+            testCase.verifyEqual(codeLines, 3);
+            testCase.verifyEqual(physicalLines, 8);
         end
 
         function scriptsDoNotContainMatlabEntryScripts(testCase)
@@ -478,6 +502,7 @@ end
 
 function files = collectOversizedTrackedFiles(root, maxLines)
     tracked = gitTrackedFiles(root);
+    tracked = tracked(endsWith(lower(tracked), ".m"));
     tracked = setdiff(tracked, "labkit_launcher.m");
     files = collectOversizedFiles(root, tracked, maxLines);
 end
@@ -489,9 +514,10 @@ function files = collectOversizedFiles(root, tracked, maxLines)
         if exist(filepath, 'file') ~= 2
             continue;
         end
-        lineCount = countFileLines(filepath);
+        [lineCount, physicalLines] = labkitEffectiveCodeLineCount(filepath);
         if lineCount > maxLines
-            files(end+1) = tracked(k) + " (" + string(lineCount) + " lines)";
+            files(end+1) = tracked(k) + " (" + string(lineCount) + ...
+                " code lines; " + string(physicalLines) + " physical lines)";
         end
     end
 end
@@ -525,20 +551,6 @@ function files = collectRelativeFiles(root, pattern)
         end
     end
     files = unique(files(1:fileCount));
-end
-
-function n = countFileLines(filepath)
-    text = readCachedText(filepath);
-    if isempty(text)
-        n = 0;
-        return;
-    end
-
-    lineFeed = char(10);
-    n = sum(text == lineFeed);
-    if text(end) ~= lineFeed
-        n = n + 1;
-    end
 end
 
 function files = gitTrackedFiles(root)

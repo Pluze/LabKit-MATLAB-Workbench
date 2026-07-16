@@ -140,7 +140,7 @@ end
 
 function html = renderSectionContent(title, lines)
     codeTitles = ["Usage", "App-facing Contract", "Example", "Examples", ...
-        "Internal Usage"];
+        "Typical Call", "Internal Usage"];
     if any(title == codeTitles)
         html = "<pre><code class=""language-matlab"">" + ...
             htmlEscape(strjoin(strip(lines), newline)) + "</code></pre>";

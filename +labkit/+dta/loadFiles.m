@@ -20,6 +20,12 @@ function [items, report] = loadFiles(filepaths, expectedKind, opts)
 %       normalization as loadFile. Default: "auto".
 %   opts - Optional scalar structure forwarded unchanged to loadFile.
 %
+% Options:
+%   pulseMode - Pulse-detection mode used for chrono files. See detectPulses
+%       for the legal labels and normalization behavior.
+%   pulseOptions - Scalar structure accepted by detectPulses. When both
+%       pulseOptions and pulseMode are present, pulseOptions takes precedence.
+%
 % Outputs:
 %   items - Cell row vector containing successfully loaded item structures in
 %       input order, with failed inputs omitted.

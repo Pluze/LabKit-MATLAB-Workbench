@@ -45,7 +45,7 @@ function [records, report] = readFiles(paths, opts)
 %   opts or a callback is invalid and labkit:thermal:NoPaths when AllowEmpty is
 %   false and no usable path remains.
 %
-% Example:
+% Typical Call:
 %   opts = struct("SkipInvalid", true, ...
 %       "TemperatureCorrection", "environment");
 %   [records, report] = labkit.thermal.readFiles(files, opts);

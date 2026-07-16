@@ -20,7 +20,7 @@ function filepaths = findFiles(rootDir)
 %   Throws labkit:dta:InvalidFolder when rootDir is not a text scalar or does
 %   not name an existing folder.
 %
-% Example:
+% Typical Call:
 %   files = labkit.dta.findFiles("data");
 %   [items, report] = labkit.dta.loadFiles(files, "auto");
 

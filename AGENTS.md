@@ -77,7 +77,14 @@ debt for the touched area.
 - New app code must not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*`; use `labkit.dta.*`, `labkit.rhs.*`, `labkit.biosignal.*`, `labkit.image.*`, `labkit.thermal.*`, `labkit.ui.*`, or app-local helpers.
 - Do not reintroduce root-level legacy command wrappers, app-specific public helper packages, or public helper-dump packages such as `+labkit/+analysis`, `+data`, `+io`, or `+util`.
 - Do not convert struct models to MATLAB classes, rewrite all GUIs, replace separate app entry points with one launcher, or migrate code to another language without explicit approval.
-- Treat file line budgets as maintainability backstops, not extraction goals. Do not create or preserve tiny app helpers solely to lower a `run.m` line count; keep callback-local glue local when that makes workflow order clearer, and extract only cohesive app-owned contracts or reusable framework mechanics.
+- Treat file line budgets as maintainability backstops, not extraction goals.
+  MATLAB line budgets count nonblank, non-comment code lines; full-line help
+  text and block comments do not consume the budget, while a code line with an
+  inline comment still counts. Preserve the physical line count only in
+  diagnostics. Do not create or preserve tiny app helpers solely to lower a
+  `run.m` line count; keep callback-local glue local when that makes workflow
+  order clearer, and extract only cohesive app-owned contracts or reusable
+  framework mechanics.
 - Name functions for the specific action and object they own so callers can
   understand intent without opening the implementation. Avoid context-free
   names such as `normalize`, `process`, `handle`, or `manage` when a concrete
@@ -148,6 +155,12 @@ Do not duplicate long policy text across human docs. Human docs may explain arch
 ## Public API Documentation
 
 Every public library function under `+labkit/+ui`, `+labkit/+image`, `+labkit/+thermal`, `+labkit/+dta`, `+labkit/+rhs`, and `+labkit/+biosignal` must document its app-facing call contract immediately after the function declaration. Include inputs, outputs, options/spec fields, defaults, legal values, and examples where useful.
+
+Help sections titled `Example:` are executable contracts: they must be
+self-contained in a clean MATLAB session and covered by the documentation
+example runner. Use `Typical Call:` for a useful usage sketch that requires a
+user file, an existing app/session variable, or interactive input; do not label
+such a sketch as an example until the repository supplies executable setup.
 
 Detailed generated API reference covers all non-private `labkit.*` functions
 and only the app-owned functions explicitly declared in

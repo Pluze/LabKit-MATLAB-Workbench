@@ -17,7 +17,7 @@ function col = getColumn(tbl, name)
 % Outputs:
 %   col - Numeric column vector from tbl.data, or [] when no header matches.
 %
-% Example:
+% Typical Call:
 %   timeSec = labkit.dta.getColumn(item.curve, "T");
 %   currentA = labkit.dta.getColumn(item.curve, "Im");
 

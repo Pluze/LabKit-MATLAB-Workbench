@@ -41,7 +41,7 @@ function record = readFile(path, opts)
 %   no supported radiometric payload, and labkit:thermal:InvalidOptions for an
 %   invalid option value.
 %
-% Example:
+% Typical Call:
 %   opts = struct("TemperatureCorrection", "environment");
 %   record = labkit.thermal.readFile("capture.rjpg", opts);
 %   imagesc(record.temperatureC)

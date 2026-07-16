@@ -226,7 +226,10 @@ real contract. Conversely, a long extracted helper is not reusable merely
 because it moved out of `run.m`; it must improve ownership, testability, or the
 app-facing API. When reviewing helper organization, prefer evidence from the
 helper's boundary role, call sites, tests, side effects, and ownership over raw
-line count.
+line count. Repository line budgets count effective MATLAB code lines: blank
+lines and comment-only documentation do not consume the budget. Physical line
+counts remain useful diagnostic context, but they must not discourage complete
+function help.
 
 ## Current Exceptions
 

@@ -20,7 +20,7 @@ function filepaths = findFiles(rootDir)
 %   Throws labkit:rhs:InvalidFolder when rootDir is not a text scalar or does
 %   not name an existing folder.
 %
-% Example:
+% Typical Call:
 %   files = labkit.rhs.findFiles("recordings");
 %   [info, status] = labkit.rhs.inspectFile(files{1});
 
