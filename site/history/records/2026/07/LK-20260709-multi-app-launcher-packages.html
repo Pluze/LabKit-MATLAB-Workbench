@@ -38,24 +38,16 @@ component: `labkit_launcher` | `1.2.7 -&gt; 1.3.0`</code></pre>
 <li>Project deployment tooling, multi-app bundle support.</li>
 </ul>
 <ul>
-<li>Added an independent <code>Package</code> checkbox column to the launcher app table so</li>
+<li>Added an independent <code>Package</code> checkbox column to the launcher app table so users can choose multiple apps without changing the row selected for Open or Debug.</li>
+<li><code>Package Checked</code> and <code>Checked P-code</code> now create one zip containing every checked app, one direct entry file per app, and a multi-app manifest.</li>
+<li>Kept single-app package names, result fields, and manifest schema compatible when only one app is supplied to <code>packageLabKitApp</code>.</li>
 </ul>
-<p>users can choose multiple apps without changing the row selected for Open or Debug.</p>
-<ul>
-<li><code>Package Checked</code> and <code>Checked P-code</code> now create one zip containing every</li>
-</ul>
-<p>checked app, one direct entry file per app, and a multi-app manifest.</p>
-<ul>
-<li>Kept single-app package names, result fields, and manifest schema compatible</li>
-</ul>
-<p>when only one app is supplied to <code>packageLabKitApp</code>.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Users could distribute a related group of apps in one source or P-code ZIP without including the rest of the workbench. Opening and debugging still acted on the highlighted app, so preparing a package did not change normal launcher navigation.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <ul>
-<li>Existing direct calls that package one app continue to produce the original</li>
+<li>Existing direct calls that package one app continue to produce the original single-app package contract.</li>
 </ul>
-<p>single-app package contract.</p>
 <h2 id="validation">Validation</h2>
 <p>The commit expanded deployment unit tests, launcher packaging GUI coverage, selection helpers, changed-file routing, and build-task efficiency checks. The exact historical command was not recorded.</p>
 <h2 id="evidence">Evidence</h2>

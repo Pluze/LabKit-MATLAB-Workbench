@@ -27,7 +27,7 @@
 <h2 id="syntax">Syntax</h2>
 <div class="syntax-signature"><div class="syntax-group"><code class="language-matlab">filterSpec = labkit.image.fileDialogFilter()
 filterSpec = labkit.image.fileDialogFilter(&quot;IncludeAll&quot;, true)</code></div></div>
-<section class="api-section"><h2 id="description">Description</h2><p>Builds the two-column filter specification used by MATLAB file-selection dialogs and LabKit file panels. The first row contains every extension returned by labkit.image.supportedExtensions. By default, files outside that set are hidden from the chooser.</p></section>
+<section class="api-section"><h2 id="description">Description</h2><p>Builds the two-column filter specification used by MATLAB file-selection dialogs and LabKit file panels. The first row contains every extension returned by <a class="api-inline-link" href="supportedExtensions.html"><code>labkit.image.supportedExtensions</code></a>. By default, files outside that set are hidden from the chooser.</p></section>
 <section class="api-section"><h2 id="inputs">Inputs</h2><p>None.</p></section>
 <section class="api-section"><h2 id="name-value-arguments">Name-Value Arguments</h2><dl class="argument-list"><div class="argument"><dt><code>IncludeAll</code></dt><dd>Logical scalar. true appends an &quot;All files (*.*)&quot; row after the image filter. The default is false. Numeric scalars are converted to logical values.</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>filterSpec</code></dt><dd>One- or two-row cell array. Column 1 contains wildcard patterns and column 2 contains user-visible descriptions.</dd></div></dl></section>

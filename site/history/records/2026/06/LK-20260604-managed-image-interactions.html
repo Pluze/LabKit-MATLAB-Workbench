@@ -34,21 +34,14 @@ scope: historical project evolution</code></pre>
 <p>Move repeatable interaction mechanics into the UI foundation while leaving image-specific geometry and workflow state in each app. Give long-running actions an explicit busy-state guard, make image axes and tools managed resources, and record callback progress in diagnostic traces that could be inspected after a failure.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Added axes popout support and corrected image aspect and menu refresh</li>
-</ul>
-<p>behavior.</p>
-<ul>
+<li>Added axes popout support and corrected image aspect and menu refresh behavior.</li>
 <li>Added shared UI control helpers and a reusable ECG peak detector facade.</li>
 <li>Added the Focus Stack app with automatic and manual image selection.</li>
 <li>Improved anchor insertion, curvature controls, and scale-bar ownership.</li>
 <li>Added a busy-state guard to prevent overlapping actions.</li>
-<li>Introduced a managed image-axes runtime, layered UI facades, and app debug</li>
+<li>Introduced a managed image-axes runtime, layered UI facades, and app debug trace logging.</li>
+<li>Split large app entry points into app-owned private workflow helpers rather than widening the public framework API.</li>
 </ul>
-<p>trace logging.</p>
-<ul>
-<li>Split large app entry points into app-owned private workflow helpers rather</li>
-</ul>
-<p>than widening the public framework API.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Users gained Focus Stack and more predictable image editing. Popout views, anchors, scale bars, and long operations provided clearer feedback and were less likely to leave an app in a broken intermediate state. Debug traces made it possible to distinguish a slow or failed callback from an unresponsive window.</p>
 <p>The changes affected UI state and presentation; they did not intentionally alter existing scientific results.</p>
@@ -63,9 +56,8 @@ scope: historical project evolution</code></pre>
 <li>Focus Stack <code>08518e91</code>, <code>cc4cdf92</code>.</li>
 <li>Busy guard <code>ac36bd54</code>.</li>
 <li>Image interaction and scale-bar work <code>f58b8559</code> through <code>5304fa20</code>.</li>
-<li>Managed axes, traces, and layered UI facades <code>27bdbdd8</code>, <code>e86e4ea3</code>,</li>
+<li>Managed axes, traces, and layered UI facades <code>27bdbdd8</code>, <code>e86e4ea3</code>, <code>da0663f1</code>, <code>c4cae633</code>.</li>
 </ul>
-<p><code>da0663f1</code>, <code>c4cae633</code>.</p>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
 <p>The interaction layer was still evolving and the test infrastructure mixed custom runners with newer MATLAB tests. The v1.0 stabilization pass addressed test entry points, package ownership, and remaining compatibility aliases.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

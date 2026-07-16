@@ -33,10 +33,7 @@
 <ol>
 <li>Add chrono DTA files and select a representative file.</li>
 <li>Choose a water-window preset or set custom cathodic/anodic limits.</li>
-<li>Choose pulse detection, post-pulse delay, electrode area, phase mode, and</li>
-</ol>
-<p>output unit.</p>
-<ol>
+<li>Choose pulse detection, post-pulse delay, electrode area, phase mode, and output unit.</li>
 <li>Inspect detected phases, sampling markers, and voltage/current plots.</li>
 <li>Review the current-file summary.</li>
 <li>Export the batch result CSV.</li>
@@ -68,18 +65,11 @@ result = cic.analysisRun.computeCIC(item, options);
 assert(result.ok, result.message);</code></pre>
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li>Missing <code>T</code>, <code>Vf</code>, or <code>Im</code>, fewer than five valid samples, or failed pulse</li>
-</ul>
-<p>detection returns <code>ok=false</code> with a message.</p>
-<ul>
+<li>Missing <code>T</code>, <code>Vf</code>, or <code>Im</code>, fewer than five valid samples, or failed pulse detection returns <code>ok=false</code> with a message.</li>
 <li>A delay outside the recorded time range fails instead of extrapolating.</li>
-<li>Area-normalized values require a positive area; invalid area is not replaced</li>
+<li>Area-normalized values require a positive area; invalid area is not replaced by an arbitrary default.</li>
+<li>CIC results depend on pulse detection, baseline selection, sampling rate, electrode area, and whether measured or estimated current is used.</li>
 </ul>
-<p>by an arbitrary default.</p>
-<ul>
-<li>CIC results depend on pulse detection, baseline selection, sampling rate,</li>
-</ul>
-<p>electrode area, and whether measured or estimated current is used.</p>
 <h2 id="related-topics">Related Topics</h2>
 <ul>
 <li><a href="index.html">Electrochemistry family</a></li>

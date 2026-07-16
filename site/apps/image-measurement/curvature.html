@@ -29,10 +29,7 @@
 <h2 id="basic-workflow">Basic Workflow</h2>
 <ol>
 <li>Choose an image.</li>
-<li>Measure a known scale reference and enter its length/unit when physical</li>
-</ol>
-<p>values are required.</p>
-<ol>
+<li>Measure a known scale reference and enter its length/unit when physical values are required.</li>
 <li>Start curve editing and place ordered anchors along the feature.</li>
 <li>Drag anchors to refine the trace; undo or clear as needed.</li>
 <li>Fit the circle and measure curve length.</li>
@@ -59,9 +56,8 @@ lengthResult = curvature.analysisRun.computeCurveLength(points, struct());</code
 <ul>
 <li>Collinear or nearly collinear points do not define a stable finite circle.</li>
 <li>Calibration uncertainty propagates directly to physical radius and length.</li>
-<li>A circle fit summarizes a curved segment; it does not prove the feature is</li>
+<li>A circle fit summarizes a curved segment; it does not prove the feature is truly circular. Inspect residuals and the overlay.</li>
 </ul>
-<p>truly circular. Inspect residuals and the overlay.</p>
 <h2 id="related-topics">Related Topics</h2>
 <ul>
 <li><a href="index.html">Image Measurement family</a></li>

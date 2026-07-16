@@ -6,7 +6,7 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
 %   outputRoot - destination for generated HTML and static assets.
 % Output:
 %   result - struct with pageCount, apiCount, fileCount, and paths.
-% Side effects: atomically replaces outputRoot with deterministic output.
+% Side effects: synchronizes outputRoot with deterministic generated output.
 
     repoRoot = fileparts(fileparts(fileparts(mfilename("fullpath"))));
     if nargin < 1 || strlength(string(sourceRoot)) == 0
@@ -17,7 +17,7 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
     end
 
     model = loadLabKitDocumentation(repoRoot, sourceRoot);
-    stagingRoot = string(tempname(fileparts(char(outputRoot))));
+    stagingRoot = string(tempname);
     cleanup = onCleanup(@() removeDocFolder(stagingRoot));
     mkdir(stagingRoot);
 
@@ -34,10 +34,7 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
         "window.LABKIT_SEARCH_INDEX = " + searchJson + ";");
     writeDocText(fullfile(stagingRoot, ".nojekyll"), "");
 
-    if isfolder(outputRoot)
-        rmdir(outputRoot, "s");
-    end
-    movefile(stagingRoot, outputRoot);
+    syncLabKitDocTree(stagingRoot, outputRoot);
     clear cleanup
 
     files = dir(fullfile(outputRoot, "**", "*"));

@@ -55,13 +55,9 @@ plotData = figure_studio.resultFiles.extractAxesData(ax(1));</code></pre>
 <ul>
 <li>A FIG must contain a readable axes to enter the editing workflow.</li>
 <li>Invisible objects are not exported.</li>
-<li>Callbacks, application data, custom classes, and analysis provenance inside</li>
+<li>Callbacks, application data, custom classes, and analysis provenance inside the source figure are not treated as portable scientific data.</li>
+<li>Some object-specific rendering semantics cannot be reproduced from a plain graphics snapshot.</li>
 </ul>
-<p>the source figure are not treated as portable scientific data.</p>
-<ul>
-<li>Some object-specific rendering semantics cannot be reproduced from a plain</li>
-</ul>
-<p>graphics snapshot.</p>
 <h2 id="related-functions-and-documentation">Related Functions And Documentation</h2>
 <ul>
 <li><code>figure_studio.resultFiles.extractAxesData</code></li>

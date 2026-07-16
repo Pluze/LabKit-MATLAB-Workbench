@@ -35,53 +35,19 @@ component: `labkit_VideoMarker_app` | `1.0.1 -&gt; 1.1.0`</code></pre>
 <p>Make skeleton definition the first explicit step, represent keypoints and connections as structured controls, and keep point editing active for the whole video session. Frame navigation is the save boundary; complete frames confirm automatically and inherited frames remain drafts until edited.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Replaced long skeleton strings with an editable ordered-keypoint table,</li>
+<li>Replaced long skeleton strings with an editable ordered-keypoint table, mutually filtered connection endpoint selectors, and add/remove/reorder actions.</li>
+<li>Added editable skeleton presets led by the legacy iliac-to-foot five-point leg chain, while keeping blank custom construction available.</li>
+<li>Added a connect-in-order shortcut that fills all adjacent point connections without removing other user-defined edges.</li>
+<li>Added the domain-neutral <code>labkit.ui.control.setItems</code> API for dynamically updating selectable control choices without firing app callbacks.</li>
+<li>Added <code>labkit.ui.plot.replaceOverlay</code> so image apps can replace one named overlay layer without clearing peer graphics, view limits, or callbacks.</li>
+<li>Added hidden-test-safe <code>labkit.ui.runtime.confirm</code> for app-owned two-choice recovery and confirmation workflows.</li>
+<li>Removed start/finish and confirm controls; blank clicks add points in order, dragging refines them, and frame changes save and inherit coordinates.</li>
+<li>Made point edits refresh only the skeleton overlay so zoom, wheel handling, and the active continuous-marking session survive each placed point.</li>
+<li>Preserved the current X/Y viewport across frame navigation so users can mark the same zoomed ROI through consecutive frames.</li>
+<li>Added draft-only marking assists for temporal interpolation between nearest confirmed frames and lightweight local block matching from the immediately previous confirmed frame.</li>
+<li>Added atomic change-driven project-compatible autosave in a visible subfolder beside the source video, plus matching-video restore/start-new choices.</li>
+<li>Added a new-setup action that explicitly clears the current session before a different skeleton is declared.</li>
 </ul>
-<p>mutually filtered connection endpoint selectors, and add/remove/reorder actions.</p>
-<ul>
-<li>Added editable skeleton presets led by the legacy iliac-to-foot five-point</li>
-</ul>
-<p>leg chain, while keeping blank custom construction available.</p>
-<ul>
-<li>Added a connect-in-order shortcut that fills all adjacent point connections</li>
-</ul>
-<p>without removing other user-defined edges.</p>
-<ul>
-<li>Added the domain-neutral <code>labkit.ui.control.setItems</code> API for dynamically</li>
-</ul>
-<p>updating selectable control choices without firing app callbacks.</p>
-<ul>
-<li>Added <code>labkit.ui.plot.replaceOverlay</code> so image apps can replace one named</li>
-</ul>
-<p>overlay layer without clearing peer graphics, view limits, or callbacks.</p>
-<ul>
-<li>Added hidden-test-safe <code>labkit.ui.runtime.confirm</code> for app-owned two-choice</li>
-</ul>
-<p>recovery and confirmation workflows.</p>
-<ul>
-<li>Removed start/finish and confirm controls; blank clicks add points in order,</li>
-</ul>
-<p>dragging refines them, and frame changes save and inherit coordinates.</p>
-<ul>
-<li>Made point edits refresh only the skeleton overlay so zoom, wheel handling,</li>
-</ul>
-<p>and the active continuous-marking session survive each placed point.</p>
-<ul>
-<li>Preserved the current X/Y viewport across frame navigation so users can mark</li>
-</ul>
-<p>the same zoomed ROI through consecutive frames.</p>
-<ul>
-<li>Added draft-only marking assists for temporal interpolation between nearest</li>
-</ul>
-<p>confirmed frames and lightweight local block matching from the immediately previous confirmed frame.</p>
-<ul>
-<li>Added atomic change-driven project-compatible autosave in a visible subfolder</li>
-</ul>
-<p>beside the source video, plus matching-video restore/start-new choices.</p>
-<ul>
-<li>Added a new-setup action that explicitly clears the current session before a</li>
-</ul>
-<p>different skeleton is declared.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Skeleton setup is visible and validated before video loading. Existing marker CSV, coordinate CSV, and project MAT schemas remain unchanged. Point order is still the coordinate-column identity contract.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>

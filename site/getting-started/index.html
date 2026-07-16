@@ -26,20 +26,13 @@
 <h2 id="requirements">Requirements</h2>
 <ul>
 <li>A supported MATLAB installation.</li>
-<li>Internet access for the first launcher download or update. Installed source</li>
+<li>Internet access for the first launcher download or update. Installed source and P-code packages run offline unless an app's own input lives on a network drive.</li>
+<li>Any MathWorks products declared by the selected app. The launcher shows app requirements before launch.</li>
 </ul>
-<p>and P-code packages run offline unless an app's own input lives on a network drive.</p>
-<ul>
-<li>Any MathWorks products declared by the selected app. The launcher shows app</li>
-</ul>
-<p>requirements before launch.</p>
 <p>Production apps do not create Python or Conda environments, download model weights, or install third-party packages on first use.</p>
 <h2 id="install-and-launch">Install And Launch</h2>
 <ol>
-<li>Download the latest</li>
-</ol>
-<p><a href="https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest/download/labkit_launcher.m"><code>labkit_launcher.m</code></a>.</p>
-<ol>
+<li>Download the latest <a href="https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest/download/labkit_launcher.m"><code>labkit_launcher.m</code></a>.</li>
 <li>Put it in a standalone folder such as <code>LabKit/</code>.</li>
 <li>Open MATLAB in that folder.</li>
 <li>Run:</li>
@@ -50,9 +43,8 @@
 <ul>
 <li><strong>Release</strong> installs the latest stable GitHub release.</li>
 <li><strong>Latest</strong> installs the current <code>main</code> branch.</li>
-<li><strong>Versions</strong> selects a recent release, tag, or commit for a deliberate</li>
+<li><strong>Versions</strong> selects a recent release, tag, or commit for a deliberate upgrade or rollback.</li>
 </ul>
-<p>upgrade or rollback.</p>
 <p>Before replacing an installed runtime, the launcher moves its current contents to a dated <code>LabKit-previous-*</code> folder. This provides a local recovery point but is not a substitute for backing up lab data.</p>
 <h2 id="open-an-app">Open An App</h2>
 <p>Select one row in the launcher and choose <strong>Open</strong>. The launcher prepares the MATLAB path, checks the app's LabKit version requirements, and displays startup progress until the app is ready.</p>
@@ -63,9 +55,8 @@
 <li><strong>Screenshot</strong> captures the active app surface.</li>
 <li><strong>Save State</strong> writes the current project document.</li>
 <li><strong>Load State</strong> opens a compatible project document.</li>
-<li><strong>Plot</strong> contains plot-specific actions such as opening a larger editable</li>
+<li><strong>Plot</strong> contains plot-specific actions such as opening a larger editable view when the current axes supports them.</li>
 </ul>
-<p>view when the current axes supports them.</p>
 <p>State files preserve app projects. They are different from exported result files and from ignored debug manifests under <code>artifacts/debug/</code>.</p>
 <h2 id="source-checkout">Source Checkout</h2>
 <p>Clone the repository only when you need source development, tests, profiling, or review:</p>

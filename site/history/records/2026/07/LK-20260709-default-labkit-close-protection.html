@@ -43,24 +43,16 @@ component: `labkit_ImageMatch_app` | `1.5.5 -&gt; 1.5.6`</code></pre>
 <li><code>labkit_ImageMatch_app</code> <code>1.5.5 -&gt; 1.5.6</code></li>
 </ul>
 <ul>
-<li>LabKit runtime figures now show an in-window confirmation prompt before any</li>
+<li>LabKit runtime figures now show an in-window confirmation prompt before any framework-owned app window closes, even when the app has not marked itself dirty.</li>
+<li>Removed the app-facing <code>labkit.ui.runtime.setCloseGuard</code> API and migrated existing app close-guard dirty checks to the framework default behavior.</li>
+<li>Repeating or holding the app close shortcut while the in-window prompt is active confirms the close.</li>
 </ul>
-<p>framework-owned app window closes, even when the app has not marked itself dirty.</p>
-<ul>
-<li>Removed the app-facing <code>labkit.ui.runtime.setCloseGuard</code> API and migrated</li>
-</ul>
-<p>existing app close-guard dirty checks to the framework default behavior.</p>
-<ul>
-<li>Repeating or holding the app close shortcut while the in-window prompt is</li>
-</ul>
-<p>active confirms the close.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Every public or private LabKit app asked before its window closed, even if the app had no custom dirty-state logic. Users gained a consistent protection against accidental closure at the cost of one confirmation step.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <ul>
-<li>Closing LabKit apps now requires one confirmation step by default. App code</li>
+<li>Closing LabKit apps now requires one confirmation step by default. App code that calls <code>labkit.ui.runtime.setCloseGuard</code> must remove that call; close confirmation is framework-owned.</li>
 </ul>
-<p>that calls <code>labkit.ui.runtime.setCloseGuard</code> must remove that call; close confirmation is framework-owned.</p>
 <h2 id="validation">Validation</h2>
 <p>Commit <code>0c9f472b</code> expanded the UI busy-state GUI suite for initial close, cancel, confirmation, and repeated-shortcut behavior, then updated public- surface and app-compatibility checks.</p>
 <h2 id="evidence">Evidence</h2>

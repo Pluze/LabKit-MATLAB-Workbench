@@ -29,18 +29,9 @@
 <h2 id="preview-a-recording">Preview A Recording</h2>
 <ol>
 <li>On <strong>Setup</strong>, choose one <code>.rhs</code> file.</li>
-<li>The app reads the header, lists the amplifier channels, selects up to eight</li>
-</ol>
-<p>channels, and displays a short waveform window.</p>
-<ol>
-<li>Drag <strong>Pan</strong> to move the window through the recording. Scroll over the plot</li>
-</ol>
-<p>to change the displayed duration around the pointer.</p>
-<ol>
-<li>Edit the plotted interval on the graph when you need to mark a smaller</li>
-</ol>
-<p>region. Choose <strong>Zoom to ROI</strong> to make that interval the current window.</p>
-<ol>
+<li>The app reads the header, lists the amplifier channels, selects up to eight channels, and displays a short waveform window.</li>
+<li>Drag <strong>Pan</strong> to move the window through the recording. Scroll over the plot to change the displayed duration around the pointer.</li>
+<li>Edit the plotted interval on the graph when you need to mark a smaller region. Choose <strong>Zoom to ROI</strong> to make that interval the current window.</li>
 <li>Choose <strong>Refresh Preview</strong> to reread the current window from disk.</li>
 </ol>
 <p>Only the displayed window is decoded. This keeps navigation practical for long recordings and does not change the source file.</p>
@@ -68,17 +59,10 @@ assert(status.ok, status.message)</code></pre>
 <ul>
 <li>RHS Preview currently displays amplifier channels.</li>
 <li>A channel listed in a protocol must exist in the selected recording.</li>
-<li>A window is limited to the indexed recording duration; requests outside that</li>
+<li>A window is limited to the indexed recording duration; requests outside that range are clamped.</li>
+<li>Short reads reduce memory and waiting time, but repeated navigation still requires disk access.</li>
+<li>The app is for inspection and preparation. Use Nerve Response Analysis for stimulus detection and CAP measurements.</li>
 </ul>
-<p>range are clamped.</p>
-<ul>
-<li>Short reads reduce memory and waiting time, but repeated navigation still</li>
-</ul>
-<p>requires disk access.</p>
-<ul>
-<li>The app is for inspection and preparation. Use Nerve Response Analysis for</li>
-</ul>
-<p>stimulus detection and CAP measurements.</p>
 <h2 id="related-functions-and-apps">Related Functions And Apps</h2>
 <ul>
 <li><code>labkit.rhs.indexFile</code></li>

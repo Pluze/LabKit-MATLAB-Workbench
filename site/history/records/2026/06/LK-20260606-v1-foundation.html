@@ -34,27 +34,14 @@ scope: historical project evolution</code></pre>
 <p>Make each app package responsible for its runner, callbacks, presenters, and private workflow helpers. Use MATLAB's official test platform as the common runner, retain focused GUI gesture tests where automation was meaningful, and remove compatibility abstractions that no longer represented supported code.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Added the official MATLAB test-platform skeleton and migrated project</li>
-</ul>
-<p>guardrails and app suites to it.</p>
-<ul>
-<li>Decomposed image, DIC, electrochem, and ECG entry points into app-owned</li>
-</ul>
-<p>packages and private workflow helpers.</p>
-<ul>
+<li>Added the official MATLAB test-platform skeleton and migrated project guardrails and app suites to it.</li>
+<li>Decomposed image, DIC, electrochem, and ECG entry points into app-owned packages and private workflow helpers.</li>
 <li>Added GUI gesture coverage and CI test artifacts.</li>
-<li>Centralized the build-task catalog and separated scheduled coverage from</li>
-</ul>
-<p>faster routine checks.</p>
-<ul>
+<li>Centralized the build-task catalog and separated scheduled coverage from faster routine checks.</li>
 <li>Added Batch Image Crop with a base-MATLAB rotation path.</li>
-<li>Completed DIC package migration and removed toolbox-only unit dependencies</li>
+<li>Completed DIC package migration and removed toolbox-only unit dependencies from its tested paths.</li>
+<li>Removed obsolete UI compatibility aliases and specialized dual-plot shell APIs in favor of structured form specifications and app-owned plot controls.</li>
 </ul>
-<p>from its tested paths.</p>
-<ul>
-<li>Removed obsolete UI compatibility aliases and specialized dual-plot shell</li>
-</ul>
-<p>APIs in favor of structured form specifications and app-owned plot controls.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>The v1.0 foundation provided a coherent set of named apps backed by repeatable tests. Batch Image Crop joined the image family, while existing electrochem, DIC, curvature, focus, and ECG workflows retained their app entry points.</p>
 <p>The release concentrated on ownership and validation. It did not introduce a single shared project-file format or combine the apps into one monolithic GUI.</p>

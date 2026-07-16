@@ -35,17 +35,10 @@ introduced: `labkit_GaitAnalysis_app` | `1.0.0`</code></pre>
 <h2 id="changes">Changes</h2>
 <ul>
 <li>Added <code>labkit_GaitAnalysis_app</code> under the new Gait family.</li>
-<li>Added CSV/TSV/TXT and MAT pose-coordinate import, including generic</li>
+<li>Added CSV/TSV/TXT and MAT pose-coordinate import, including generic <code>point_x</code>/<code>point_y</code> and LabKit <code>point__x</code>/<code>point__y</code> column shapes.</li>
+<li>Added smoothing, foot-relative step-event detection, hip/knee/ankle angle calculation, segment lengths, per-step translations, stride length, step time, ROM, summary metrics, and trajectory/angle/step-event previews.</li>
+<li>Added CSV set export for frame metrics, step metrics, summary metrics, and per-frame coordinates that keep raw pixel columns alongside optional scale-calibrated and first-frame-origin-shifted columns.</li>
 </ul>
-<p><code>point_x</code>/<code>point_y</code> and LabKit <code>point__x</code>/<code>point__y</code> column shapes.</p>
-<ul>
-<li>Added smoothing, foot-relative step-event detection, hip/knee/ankle angle</li>
-</ul>
-<p>calculation, segment lengths, per-step translations, stride length, step time, ROM, summary metrics, and trajectory/angle/step-event previews.</p>
-<ul>
-<li>Added CSV set export for frame metrics, step metrics, summary metrics, and</li>
-</ul>
-<p>per-frame coordinates that keep raw pixel columns alongside optional scale-calibrated and first-frame-origin-shifted columns.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Users can analyze gait from multiple pose-coordinate sources without tying the workflow to a specific tracking model. The exported tables are plain CSV and separate frame-level, coordinate, step-level, and summary data for downstream overlay, plotting, or statistics.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>

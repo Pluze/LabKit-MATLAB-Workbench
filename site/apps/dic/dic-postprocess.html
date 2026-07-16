@@ -39,10 +39,7 @@
 <li>Choose the DIC MAT file, matching reference image, and mask image.</li>
 <li>Set the overlay range and opacity.</li>
 <li>Adjust oversampling, smoothing, and edge trimming when justified.</li>
-<li>Optionally tune optical-image brightness, contrast, gamma, saturation, and</li>
-</ol>
-<p>RGB gains.</p>
-<ol>
+<li>Optionally tune optical-image brightness, contrast, gamma, saturation, and RGB gains.</li>
 <li>Generate the EXX/EYY overlays and review the summary table.</li>
 <li>Save clean overlay PNGs and export the summary CSV.</li>
 </ol>
@@ -79,14 +76,10 @@ summary = dic_postprocess.analysisRun.summarizeStrain( ...
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
 <li>A MAT file without the recognized Ncorr strain structure is rejected.</li>
-<li>Reference image, mask, and strain arrays must describe the same specimen</li>
-</ul>
-<p>domain; resizing resolves array dimensions, not semantic misalignment.</p>
-<ul>
+<li>Reference image, mask, and strain arrays must describe the same specimen domain; resizing resolves array dimensions, not semantic misalignment.</li>
 <li>A mask with no valid finite strain pixels produces no meaningful summary.</li>
-<li>Smoothing can suppress local extrema. Choose it as an analysis parameter,</li>
+<li>Smoothing can suppress local extrema. Choose it as an analysis parameter, not merely a visual preference.</li>
 </ul>
-<p>not merely a visual preference.</p>
 <h2 id="related-topics">Related Topics</h2>
 <ul>
 <li><a href="dic-preprocess.html">DIC Preprocess</a></li>

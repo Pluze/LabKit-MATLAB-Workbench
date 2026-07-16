@@ -40,19 +40,12 @@
 <h2 id="analyze-ecg">Analyze ECG</h2>
 <ol>
 <li>Open and parse a recording.</li>
-<li>Select a channel and, if needed, set the start and end of the time region.</li>
-</ol>
-<p>When the end is not greater than the start, the full signal is used.</p>
-<ol>
+<li>Select a channel and, if needed, set the start and end of the time region. When the end is not greater than the start, the full signal is used.</li>
 <li>Set the bandpass range and peak method.</li>
-<li>Set minimum peak distance, segment half-window, template count, and smoothing</li>
-</ol>
-<p>count.</p>
-<ol>
+<li>Set minimum peak distance, segment half-window, template count, and smoothing count.</li>
 <li>Choose <strong>Analyze current ROI</strong>.</li>
-<li>Review the four plots: waveform and peaks, template-noise RMS, template SNR,</li>
+<li>Review the four plots: waveform and peaks, template-noise RMS, template SNR, and the template with either a residual band or individual segments.</li>
 </ol>
-<p>and the template with either a residual band or individual segments.</p>
 <p>The filter is applied to the full selected channel before the time region is cropped. This reduces boundary artifacts at the region edges.</p>
 <h2 id="analysis-parameters">Analysis Parameters</h2>
 <div class="table-wrap"><table><thead><tr><th>Parameter</th><th>Default</th><th>Meaning</th></tr></thead><tbody><tr><td>Fallback sample rate</td><td>2000 Hz</td><td>Used only when import cannot derive time spacing</td></tr><tr><td>Bandpass</td><td>0.5 to 40 Hz</td><td>Applied before peak detection; the upper cutoff is kept below 45% of sample rate</td></tr><tr><td>Peak method</td><td>QRS streaming</td><td>QRS streaming, Pan-Tompkins, or local peaks</td></tr><tr><td>Peak distance</td><td>0.28 s</td><td>Minimum interval between accepted detections</td></tr><tr><td>Segment half-window</td><td>0.7 s</td><td>Data retained before and after each event</td></tr><tr><td>Template top N</td><td>30</td><td>Number of best segments used to build the template</td></tr><tr><td>Smooth beats</td><td>15</td><td>Smoothing span used in exported per-segment trends</td></tr><tr><td>Template plot</td><td>Template + residual band</td><td>Alternative view is template plus individual segments</td></tr></tbody></table></div>
@@ -80,21 +73,11 @@ cache = ecg_print.analysisRun.analyzeSignal(cache, parameters);</code></pre>
 <p>The returned cache contains the working and filtered signals, detected events, segments, template, and measurements. For a more customized pipeline, call <code>labkit.biosignal.filterSignal</code>, <code>detectEcgPeaks</code>, <code>segmentByEvents</code>, <code>buildTemplate</code>, and <code>measureSegments</code> directly.</p>
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li>Time or a valid sample rate is required to interpret filter frequencies and</li>
+<li>Time or a valid sample rate is required to interpret filter frequencies and event spacing.</li>
+<li>Automatic parsing should be checked when a text file has long preambles, unusual headers, or mixed metadata rows.</li>
+<li>Automatic peak polarity and thresholds still require visual review when morphology or noise changes within a recording.</li>
+<li>Filtering and detection settings must accompany any reported heart rate or signal-quality result.</li>
 </ul>
-<p>event spacing.</p>
-<ul>
-<li>Automatic parsing should be checked when a text file has long preambles,</li>
-</ul>
-<p>unusual headers, or mixed metadata rows.</p>
-<ul>
-<li>Automatic peak polarity and thresholds still require visual review when</li>
-</ul>
-<p>morphology or noise changes within a recording.</p>
-<ul>
-<li>Filtering and detection settings must accompany any reported heart rate or</li>
-</ul>
-<p>signal-quality result.</p>
 <h2 id="related-functions-and-documentation">Related Functions And Documentation</h2>
 <ul>
 <li><code>ecg_print.analysisRun.analyzeSignal</code></li>

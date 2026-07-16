@@ -29,19 +29,10 @@
 <h2 id="analyze-a-recording-set">Analyze A Recording Set</h2>
 <ol>
 <li>On <strong>Setup</strong>, choose the filter JSON created by RHS Preview.</li>
-<li>On <strong>Protocol</strong>, choose the protocol JSON that assigns channel roles. A</li>
-</ol>
-<p>protocol is optional, but strongly recommended.</p>
-<ol>
-<li>Set <strong>Max recordings</strong> or <strong>Max duration</strong> only when you want a shorter test</li>
-</ol>
-<p>run. A value of zero means no limit.</p>
-<ol>
+<li>On <strong>Protocol</strong>, choose the protocol JSON that assigns channel roles. A protocol is optional, but strongly recommended.</li>
+<li>Set <strong>Max recordings</strong> or <strong>Max duration</strong> only when you want a shorter test run. A value of zero means no limit.</li>
 <li>Choose <strong>Analyze Filtered Files</strong>.</li>
-<li>On <strong>Review</strong>, inspect the counts and switch the plot between <strong>Counts</strong> and</li>
-</ol>
-<p><strong>Issues</strong>.</p>
-<ol>
+<li>On <strong>Review</strong>, inspect the counts and switch the plot between <strong>Counts</strong> and <strong>Issues</strong>.</li>
 <li>On <strong>Export</strong>, choose an output folder and then <strong>Export Analysis</strong>.</li>
 </ol>
 <p>Changing the filter, protocol, or limits clears the previous analysis so that an export cannot silently use outdated settings.</p>
@@ -52,13 +43,9 @@
 <h2 id="output-files">Output Files</h2>
 <p><strong>Export Analysis</strong> writes:</p>
 <ul>
-<li><code>nerve_response_analysis.json</code>, containing source information, the protocol,</li>
+<li><code>nerve_response_analysis.json</code>, containing source information, the protocol, events, trains, response measurements, and issues;</li>
+<li><code>nerve_response_analysis.labkit.json</code>, containing the selected inputs, run limits, output identity, and result counts.</li>
 </ul>
-<p>events, trains, response measurements, and issues;</p>
-<ul>
-<li><code>nerve_response_analysis.labkit.json</code>, containing the selected inputs,</li>
-</ul>
-<p>run limits, output identity, and result counts.</p>
 <p>An unreadable recording or missing channel is recorded in the issues table so that other recordings can still complete.</p>
 <h2 id="detect-events-in-matlab-code">Detect Events In MATLAB Code</h2>
 <pre><code class="language-matlab">sampleRate = 10000;
@@ -82,14 +69,8 @@ eventOptions = struct( ...
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
 <li>Time and signal vectors must have the same length.</li>
-<li>A detection peak marks an electrical transition; it is not automatically the</li>
-</ul>
-<p>physical onset of the delivered stimulus.</p>
-<ul>
-<li>Default timing windows are starting points, not universal physiological</li>
-</ul>
-<p>constants.</p>
-<ul>
+<li>A detection peak marks an electrical transition; it is not automatically the physical onset of the delivered stimulus.</li>
+<li>Default timing windows are starting points, not universal physiological constants.</li>
 <li>Missing events produce empty results rather than fabricated measurements.</li>
 <li>Review the issues table before comparing counts across recordings.</li>
 </ul>

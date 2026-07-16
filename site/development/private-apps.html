@@ -73,13 +73,9 @@ git remote add origin git@github.com:&lt;owner&gt;/&lt;private-repo&gt;.git</cod
 <li>use <code>definition.m</code>, <code>definitionActions.m</code>, <code>requirements.m</code>, and <code>version.m</code></li>
 <li>keep lifecycle state in <code>+appLifecycle</code></li>
 <li>keep the data-only layout and pure presenter in <code>+userInterface</code></li>
-<li>group workflow code by concrete user capability, such as <code>+sourceFiles</code>,</li>
+<li>group workflow code by concrete user capability, such as <code>+sourceFiles</code>, <code>+analysisRun</code>, <code>+resultFiles</code>, or another app-owned domain package</li>
+<li>use shared LabKit facades such as <code>labkit.ui.*</code>, <code>labkit.image.*</code>, <code>labkit.thermal.*</code>, <code>labkit.dta.*</code>, <code>labkit.rhs.*</code>, and <code>labkit.biosignal.*</code></li>
 </ul>
-<p><code>+analysisRun</code>, <code>+resultFiles</code>, or another app-owned domain package</p>
-<ul>
-<li>use shared LabKit facades such as <code>labkit.ui.*</code>, <code>labkit.image.*</code>,</li>
-</ul>
-<p><code>labkit.thermal.*</code>, <code>labkit.dta.*</code>, <code>labkit.rhs.*</code>, and <code>labkit.biosignal.*</code></p>
 <p>Do not put private app source under public <code>apps/</code>. Do not move private workflow formulas, private result schemas, private labels, or private data assumptions into <code>+labkit</code>.</p>
 <h2 id="private-documentation">Private Documentation</h2>
 <p>The public repository should contain only this generic private-app structure guide. Put private app catalogs, SOPs, validation commands, sample notes, deployment notes, and release history in the private app repository.</p>

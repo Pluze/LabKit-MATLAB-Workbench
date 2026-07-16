@@ -37,17 +37,10 @@ scope: historical project evolution</code></pre>
 <li>Project validation workflow, no component version change.</li>
 </ul>
 <ul>
-<li>Release candidate tags now run the full MATLAB test workflow gate before</li>
+<li>Release candidate tags now run the full MATLAB test workflow gate before publication: headless tests, coverage, GUI tests, and a release summary gate.</li>
+<li>GUI layout tests now assert structural grid contracts instead of platform-dependent flattened pixel ordering or width comparisons.</li>
+<li>Shared GUI test idle waiting allows slower CI display backends more time to finish registered UI work.</li>
 </ul>
-<p>publication: headless tests, coverage, GUI tests, and a release summary gate.</p>
-<ul>
-<li>GUI layout tests now assert structural grid contracts instead of</li>
-</ul>
-<p>platform-dependent flattened pixel ordering or width comparisons.</p>
-<ul>
-<li>Shared GUI test idle waiting allows slower CI display backends more time to</li>
-</ul>
-<p>finish registered UI work.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Published release candidates gained a single pass/fail validation signal. Application behavior and data formats did not change; the GUI suite became less sensitive to harmless platform layout differences.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>

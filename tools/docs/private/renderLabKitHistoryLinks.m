@@ -36,7 +36,12 @@ function [html, plainText] = renderLabKitHistoryLinks(model, page)
         searchable(k) = label + " " + detail + " " + ...
             strjoin(item.components, " ");
     end
-    html = "<section class=""component-history""><h2>Change history</h2><ul>" + ...
+    heading = "Change history";
+    if page.id == "history"
+        heading = "Complete timeline";
+    end
+    html = "<section class=""component-history""><h2>" + heading + ...
+        "</h2><ul>" + ...
         strjoin(items, "") + "</ul></section>";
     plainText = strjoin(searchable, " ");
 end

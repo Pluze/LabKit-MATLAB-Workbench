@@ -32,10 +32,7 @@
 <h2 id="basic-workflow">Basic Workflow</h2>
 <ol>
 <li>Choose the reference and moving images.</li>
-<li>Select <strong>Current pair</strong> or <strong>False-color overlay</strong> to assess the initial</li>
-</ol>
-<p>displacement.</p>
-<ol>
+<li>Select <strong>Current pair</strong> or <strong>False-color overlay</strong> to assess the initial displacement.</li>
 <li>Run manual point matching or <strong>Auto align current pair</strong>.</li>
 <li>Inspect the false-color result and undo or reset if necessary.</li>
 <li>Start the crop ROI, drag or resize the square, and apply it to both images.</li>
@@ -77,17 +74,10 @@ cropped = dic_preprocess.analysisRun.cropImage(aligned, [80 60 300 300]);</code>
 <h2 id="errors-and-troubleshooting">Errors And Troubleshooting</h2>
 <ul>
 <li>Point alignment remains unavailable until at least two complete pairs exist.</li>
-<li>A strong colored double edge in the overlay indicates residual geometric</li>
+<li>A strong colored double edge in the overlay indicates residual geometric mismatch, not a palette defect.</li>
+<li>Automatic alignment can fail on nearly uniform images; use separated manual points or improve the source capture.</li>
+<li>Crop and mask geometry is constrained to the active image domain; an old project source that changed size cannot safely reuse its prior annotations.</li>
 </ul>
-<p>mismatch, not a palette defect.</p>
-<ul>
-<li>Automatic alignment can fail on nearly uniform images; use separated manual</li>
-</ul>
-<p>points or improve the source capture.</p>
-<ul>
-<li>Crop and mask geometry is constrained to the active image domain; an old</li>
-</ul>
-<p>project source that changed size cannot safely reuse its prior annotations.</p>
 <h2 id="related-topics">Related Topics</h2>
 <ul>
 <li><a href="dic-postprocess.html">DIC Postprocess</a></li>

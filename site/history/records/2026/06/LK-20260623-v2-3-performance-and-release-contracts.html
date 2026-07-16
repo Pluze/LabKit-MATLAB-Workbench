@@ -34,14 +34,8 @@ scope: historical project evolution</code></pre>
 <p>Separate preview computation from rendering so an interaction does not repeat scientific or image processing unnecessarily. Stabilize axes behavior at the app boundary, then make release assets reproducible and add facade contract checks that describe which library calls apps may rely on.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Stabilized EIS zoom on logarithmic axes and reset plot limits when coordinate</li>
-</ul>
-<p>choices changed.</p>
-<ul>
-<li>Reduced repeated image preview processing and separated preview preparation</li>
-</ul>
-<p>from display updates.</p>
-<ul>
+<li>Stabilized EIS zoom on logarithmic axes and reset plot limits when coordinate choices changed.</li>
+<li>Reduced repeated image preview processing and separated preview preparation from display updates.</li>
 <li>Documented the boundary between preview state and exported results.</li>
 <li>Added pixel-radius controls for scale previews.</li>
 <li>Required release assets to be reproduced from their Git tag.</li>

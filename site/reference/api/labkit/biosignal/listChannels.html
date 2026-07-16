@@ -26,8 +26,8 @@
 <p class="lead">Return display names for all channels in a recording.</p>
 <h2 id="syntax">Syntax</h2>
 <div class="syntax-signature"><div class="syntax-group"><code class="language-matlab">names = labkit.biosignal.listChannels(recording)</code></div></div>
-<section class="api-section"><h2 id="description">Description</h2><p>Returns channel display names in recording order. These are the same names accepted by labkit.biosignal.getChannel and are suitable for a list box or drop-down menu. A recording with no signals returns a 1-by-0 cell array.</p></section>
-<section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>recording</code></dt><dd>Recording structure returned by labkit.biosignal.readRecording.</dd></div></dl></section>
+<section class="api-section"><h2 id="description">Description</h2><p>Returns channel display names in recording order. These are the same names accepted by <a class="api-inline-link" href="getChannel.html"><code>labkit.biosignal.getChannel</code></a> and are suitable for a list box or drop-down menu. A recording with no signals returns a 1-by-0 cell array.</p></section>
+<section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>recording</code></dt><dd>Recording structure returned by <a class="api-inline-link" href="readRecording.html"><code>labkit.biosignal.readRecording</code></a>.</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>names</code></dt><dd>1-by-N cell array of display-name character vectors.</dd></div></dl></section>
 <section class="api-section"><h2 id="errors">Errors</h2><dl class="argument-list"><div class="argument"><dt><code>labkit:biosignal:InvalidRecording</code></dt><dd>recording is not a structure with a signals field.</dd></div></dl></section>
 <section class="api-section"><h2 id="example">Example</h2><pre><code class="language-matlab">signals(1).displayName = &quot;ECG&quot;;

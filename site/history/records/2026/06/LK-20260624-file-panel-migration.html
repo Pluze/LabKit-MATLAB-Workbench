@@ -63,9 +63,8 @@ component: `labkit_ECGPrint_app` | `1.0.0 -&gt; 1.2.0`</code></pre>
 <p>File lists, current selection, add/remove actions, and status display became consistent across the migrated apps. App code written against the removed task inputs or DTA session helpers required an update.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <ul>
-<li>This was a breaking workflow migration. Older app code expecting task inputs</li>
+<li>This was a breaking workflow migration. Older app code expecting task inputs or the removed DTA session helpers needed migration.</li>
 </ul>
-<p>or the removed DTA session helpers needed migration.</p>
 <h2 id="validation">Validation</h2>
 <p>Commit <code>b145c904</code> migrated app GUI workflows and package compatibility tests to the new file-panel and DTA APIs.</p>
 <h2 id="evidence">Evidence</h2>

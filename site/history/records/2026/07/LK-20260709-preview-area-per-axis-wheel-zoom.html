@@ -37,20 +37,15 @@ component: `labkit.ui` | `5.0.3 -&gt; 5.0.4`</code></pre>
 <li><code>labkit.ui</code> <code>5.0.3 -&gt; 5.0.4</code></li>
 </ul>
 <ul>
-<li>Added a <code>scrollZoomAxes</code> preview-area layout option so apps can declare</li>
+<li>Added a <code>scrollZoomAxes</code> preview-area layout option so apps can declare whether each preview axis should mouse-wheel zoom in <code>xy</code>, <code>x</code>, or <code>y</code>.</li>
+<li>Preview-area side axes can now remain horizontally stable while still allowing app-selected vertical wheel zoom.</li>
 </ul>
-<p>whether each preview axis should mouse-wheel zoom in <code>xy</code>, <code>x</code>, or <code>y</code>.</p>
-<ul>
-<li>Preview-area side axes can now remain horizontally stable while still</li>
-</ul>
-<p>allowing app-selected vertical wheel zoom.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>A histogram or temperature scale could remain horizontally stable while still supporting vertical exploration. Main images and plots continued to zoom in both dimensions unless their app explicitly chose another mode.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <ul>
-<li>Existing preview areas keep default <code>xy</code> wheel zoom unless they opt into</li>
+<li>Existing preview areas keep default <code>xy</code> wheel zoom unless they opt into another per-axis setting.</li>
 </ul>
-<p>another per-axis setting.</p>
 <h2 id="validation">Validation</h2>
 <p>The commit extended UI layout unit tests and axes-workbench GUI coverage for the default and per-axis modes. The exact historical command was not recorded.</p>
 <h2 id="evidence">Evidence</h2>

@@ -35,28 +35,17 @@ scope: historical project evolution</code></pre>
 <h2 id="changes">Changes</h2>
 <ul>
 <li>Imported the legacy MATLAB tree without rewriting its scientific formulas.</li>
-<li>Extracted chrono, EIS, and CV/CT DTA parsers plus pulse detection and named</li>
+<li>Extracted chrono, EIS, and CV/CT DTA parsers plus pulse detection and named synthetic fixtures.</li>
+<li>Separated chrono alignment/export, CIC, CSC, VT resistance, and EIS result operations from their GUI assembly.</li>
+<li>Added named app entry points and package-backed runners, then removed the duplicate root legacy entry points and legacy GUI directory.</li>
+<li>Introduced the first shared two-pane/tabbed shells, file panels, plot controls, log panels, and axes helpers used by the electrochem apps.</li>
 </ul>
-<p>synthetic fixtures.</p>
-<ul>
-<li>Separated chrono alignment/export, CIC, CSC, VT resistance, and EIS result</li>
-</ul>
-<p>operations from their GUI assembly.</p>
-<ul>
-<li>Added named app entry points and package-backed runners, then removed the</li>
-</ul>
-<p>duplicate root legacy entry points and legacy GUI directory.</p>
-<ul>
-<li>Introduced the first shared two-pane/tabbed shells, file panels, plot</li>
-</ul>
-<p>controls, log panels, and axes helpers used by the electrochem apps.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Users gained named electrochem app commands instead of opening the old GUI scripts directly. Calculations and exported values were intended to remain unchanged while code ownership moved; laboratory files remained external inputs rather than being copied into a central LabKit database.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <ul>
-<li>Component/app version files did not exist yet. Old root GUI entry points were</li>
+<li>Component/app version files did not exist yet. Old root GUI entry points were removed as package-backed app commands became the supported launch path.</li>
 </ul>
-<p>removed as package-backed app commands became the supported launch path.</p>
 <h2 id="validation">Validation</h2>
 <p>The first regression evidence included named DTA fixtures, calculation tests, an optional GUI smoke runner, and GUI compatibility checks. A single standard test command had not yet been established.</p>
 <h2 id="evidence">Evidence</h2>

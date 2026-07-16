@@ -34,27 +34,14 @@ scope: historical project evolution</code></pre>
 <p>Make the launcher usable as a self-contained entry artifact and refine the high-frequency image workflows in place. These releases favored fewer steps and stable spatial state over adding more general-purpose dialogs or toolbars.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Made the launcher self-contained and added an update button backed by the</li>
-</ul>
-<p>release updater.</p>
-<ul>
+<li>Made the launcher self-contained and added an update button backed by the release updater.</li>
 <li>Appended file-panel selections and added multi-file choose-and-load behavior.</li>
-<li>Improved Image Match speed and separated its reference input from moving</li>
-</ul>
-<p>images.</p>
-<ul>
-<li>Preserved Batch Crop source coordinates when padding, reduced padding seams,</li>
-</ul>
-<p>and refined the padding workflow.</p>
-<ul>
-<li>Added physical scale mode to Batch Crop and restored scale and duplicate-task</li>
-</ul>
-<p>interactions after edits.</p>
-<ul>
+<li>Improved Image Match speed and separated its reference input from moving images.</li>
+<li>Preserved Batch Crop source coordinates when padding, reduced padding seams, and refined the padding workflow.</li>
+<li>Added physical scale mode to Batch Crop and restored scale and duplicate-task interactions after edits.</li>
 <li>Preserved image-tool zoom while placing or editing overlays.</li>
-<li>Hardened image-tool ownership and changed the README to present the launcher</li>
+<li>Hardened image-tool ownership and changed the README to present the launcher as the primary user entry.</li>
 </ul>
-<p>as the primary user entry.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Users could begin from a compact launcher, select several files in one action, and edit image overlays without losing their current view. Batch Crop gained physical scaling while retaining the relationship between the visible crop and the source image.</p>
 <p>Padding and scale metadata affected exported crop interpretation, so regression work explicitly protected source coordinates and resumed interaction modes.</p>

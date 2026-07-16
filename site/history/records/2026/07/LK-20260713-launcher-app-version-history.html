@@ -34,17 +34,10 @@ component: `labkit_launcher` | `1.3.0 -&gt; 1.4.0`</code></pre>
 <p>Expose component-filtered history in the launcher and make exact component events the durable lookup key. A user should be able to move from the current app catalog directly to its evolution record without reading Git history or understanding changelog internals.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Added <code>labkit_launcher(&quot;history&quot;, appCommand)</code> for programmatic history</li>
+<li>Added <code>labkit_launcher(&quot;history&quot;, appCommand)</code> for programmatic history lookup and a Version History viewer for the selected launcher app.</li>
+<li>Added explicit component introduction events and reconstructed every tracked launcher, facade, and app version transition from <code>origin/main</code> history.</li>
+<li>Added continuous-history validation so missing introductions, gaps, and current-version mismatches fail the release guardrail.</li>
 </ul>
-<p>lookup and a Version History viewer for the selected launcher app.</p>
-<ul>
-<li>Added explicit component introduction events and reconstructed every tracked</li>
-</ul>
-<p>launcher, facade, and app version transition from <code>origin/main</code> history.</p>
-<ul>
-<li>Added continuous-history validation so missing introductions, gaps, and</li>
-</ul>
-<p>current-version mismatches fail the release guardrail.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Launcher users can inspect dated version transitions, compatibility, rationale, impact, and evidence for the selected app. App calculations and user data are unchanged.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
@@ -53,13 +46,9 @@ component: `labkit_launcher` | `1.3.0 -&gt; 1.4.0`</code></pre>
 <p><code>LauncherGuiTest</code> covers programmatic filtering and the hidden GUI viewer; <code>ChangelogGuardrailTest</code> validates complete version chains against current metadata. These checks were included in the combined mainline change <code>4a6c41dd</code>.</p>
 <h2 id="evidence">Evidence</h2>
 <ul>
-<li>Component history, launcher viewer, and changelog validation were included in</li>
+<li>Component history, launcher viewer, and changelog validation were included in <code>4a6c41dd</code>.</li>
+<li>Historical component events were reconstructed from version-file changes on the then-current <code>origin/main</code> history.</li>
 </ul>
-<p><code>4a6c41dd</code>.</p>
-<ul>
-<li>Historical component events were reconstructed from version-file changes on</li>
-</ul>
-<p>the then-current <code>origin/main</code> history.</p>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
 <p>History begins when version metadata was first tracked for each component. Behavior before that point can only be inferred from older source commits and is not assigned invented version numbers.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

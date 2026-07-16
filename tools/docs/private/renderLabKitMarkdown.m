@@ -71,11 +71,14 @@ function [html, plainText] = renderLabKitMarkdown(model, page)
                 wanted = "ol";
                 item = numbered;
             end
+            itemText = string(item{1});
+            index = index + 1;
+            [itemText, index] = appendListItemContinuations( ...
+                lines, index, itemText);
             [output, listType] = ensureList(output, listType, wanted);
             output(end + 1, 1) = "<li>" + ...
-                renderInline(model, page, string(item{1})) + "</li>";
-            plain(end + 1, 1) = string(item{1});
-            index = index + 1;
+                renderInline(model, page, itemText) + "</li>";
+            plain(end + 1, 1) = itemText;
             continue;
         end
         [output, listType] = closeList(output, listType);
@@ -110,6 +113,23 @@ function [html, plainText] = renderLabKitMarkdown(model, page)
     end
     html = strjoin(output, newline);
     plainText = strjoin(plain, " ");
+end
+
+function [itemText, nextIndex] = appendListItemContinuations( ...
+        lines, nextIndex, itemText)
+    while nextIndex <= numel(lines)
+        line = lines(nextIndex);
+        trimmed = strtrim(line);
+        isIndented = ~isempty(regexp(char(line), '^\s{2,}\S', 'once'));
+        isListItem = ~isempty(regexp(char(line), ...
+            '^\s*(?:[-*]|\d+[.])\s+', 'once'));
+        if strlength(trimmed) == 0 || ~isIndented || isListItem || ...
+                startsWith(trimmed, "```")
+            break;
+        end
+        itemText = itemText + " " + trimmed;
+        nextIndex = nextIndex + 1;
+    end
 end
 
 function tf = isParagraphContinuation(lines, index)

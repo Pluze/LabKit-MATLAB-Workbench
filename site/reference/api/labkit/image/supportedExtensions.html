@@ -26,7 +26,7 @@
 <p class="lead">Return extensions supported by LabKit image file inputs.</p>
 <h2 id="syntax">Syntax</h2>
 <div class="syntax-signature"><div class="syntax-group"><code class="language-matlab">extensions = labkit.image.supportedExtensions()</code></div></div>
-<section class="api-section"><h2 id="description">Description</h2><p>Lists the filename extensions accepted by the generic LabKit image input functions. Matching in labkit.image.isSupportedPath is case-insensitive. This list describes source-image support; an individual app may offer a smaller set of export formats.</p></section>
+<section class="api-section"><h2 id="description">Description</h2><p>Lists the filename extensions accepted by the generic LabKit image input functions. Matching in <a class="api-inline-link" href="isSupportedPath.html"><code>labkit.image.isSupportedPath</code></a> is case-insensitive. This list describes source-image support; an individual app may offer a smaller set of export formats.</p></section>
 <section class="api-section"><h2 id="inputs">Inputs</h2><p>None.</p></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>extensions</code></dt><dd>String column of lowercase extensions, including the leading dot. The current values are .png, .jpg, .jpeg, .tif, .tiff, and .bmp.</dd></div></dl></section>
 <section class="api-section"><h2 id="example">Example</h2><pre><code class="language-matlab">extensions = labkit.image.supportedExtensions();

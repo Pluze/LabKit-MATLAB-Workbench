@@ -26,7 +26,7 @@
 <p class="lead">List the supported thermal filename extensions.</p>
 <h2 id="syntax">Syntax</h2>
 <div class="syntax-signature"><div class="syntax-group"><code class="language-matlab">extensions = labkit.thermal.supportedExtensions()</code></div></div>
-<section class="api-section"><h2 id="description">Description</h2><p>Returns the filename extensions recognized by the thermal file-selection and reading functions. JPEG is a container format, so a listed extension does not guarantee that a file contains FLIR radiometric data. Use labkit.thermal.inspectFile to check a particular file.</p></section>
+<section class="api-section"><h2 id="description">Description</h2><p>Returns the filename extensions recognized by the thermal file-selection and reading functions. JPEG is a container format, so a listed extension does not guarantee that a file contains FLIR radiometric data. Use <a class="api-inline-link" href="inspectFile.html"><code>labkit.thermal.inspectFile</code></a> to check a particular file.</p></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>extensions</code></dt><dd>String row vector [&quot;.jpg&quot;, &quot;.jpeg&quot;, &quot;.rjpg&quot;]. Extensions are lowercase and include the leading period.</dd></div></dl></section>
 <section class="api-section"><h2 id="example">Example</h2><pre><code class="language-matlab">extensions = labkit.thermal.supportedExtensions();
 pattern = &quot;*&quot; + strjoin(extensions, &quot;;*&quot;);</code></pre></section>

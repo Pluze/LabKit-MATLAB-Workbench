@@ -29,10 +29,7 @@
 <h2 id="supported-inputs">Supported Inputs</h2>
 <p>Use <strong>Source &gt; Open pose file</strong> to open one of these inputs:</p>
 <ul>
-<li>CSV, TSV, or TXT with paired <code>point_x</code>/<code>point_y</code> or</li>
-</ul>
-<p><code>point__x</code>/<code>point__y</code> columns;</p>
-<ul>
+<li>CSV, TSV, or TXT with paired <code>point_x</code>/<code>point_y</code> or <code>point__x</code>/<code>point__y</code> columns;</li>
 <li>MAT containing a <code>pose</code> or <code>poseData</code> structure;</li>
 <li>MAT containing <code>coords</code> and <code>pointNames</code> variables;</li>
 <li>a current Video Marker <code>labkit.project</code> document or autosave;</li>
@@ -42,20 +39,13 @@
 <h2 id="analyze-a-recording">Analyze A Recording</h2>
 <ol>
 <li>On <strong>Source</strong>, open a pose or marker-project file.</li>
-<li>On <strong>Roles + Detection</strong>, enter the exact point name for each anatomical</li>
-</ol>
-<p>role.</p>
-<ol>
+<li>On <strong>Roles + Detection</strong>, enter the exact point name for each anatomical role.</li>
 <li>Set frame rate, pixels per unit, output unit, and optional origin shift.</li>
 <li>Set smoothing and step quality thresholds.</li>
 <li>Return to <strong>Source</strong> and choose <strong>Run analysis</strong>.</li>
-<li>Use the preview mode selector to inspect <strong>Trajectory</strong>, <strong>Angles</strong>, or</li>
+<li>Use the preview mode selector to inspect <strong>Trajectory</strong>, <strong>Angles</strong>, or <strong>Steps</strong>.</li>
+<li>On <strong>Results + Export</strong>, review the summary and step table, choose an output folder, and choose <strong>Export CSV set</strong>.</li>
 </ol>
-<p><strong>Steps</strong>.</p>
-<ol>
-<li>On <strong>Results + Export</strong>, review the summary and step table, choose an output</li>
-</ol>
-<p>folder, and choose <strong>Export CSV set</strong>.</p>
 <p>Changing an option invalidates the previous result. Repeating a run with the same source and options is skipped when the result fingerprint is unchanged.</p>
 <h2 id="parameters">Parameters</h2>
 <div class="table-wrap"><table><thead><tr><th>Parameter</th><th>Default</th><th>Meaning</th></tr></thead><tbody><tr><td>Iliac, hip, knee, ankle, foot point</td><td>matching lowercase role name</td><td>Exact, case-insensitive source point name assigned to each role</td></tr><tr><td>Frame rate</td><td>30 Hz</td><td>Used only when the source does not provide a usable time vector</td></tr><tr><td>Pixels per unit</td><td>1</td><td>Coordinate scale; physical distance equals pixels divided by this value</td></tr><tr><td>Unit name</td><td><code>px</code></td><td>Label attached to scaled coordinate and distance outputs</td></tr><tr><td>Use first-frame first point as origin</td><td>Off</td><td>Shifts derived export coordinates while retaining raw pixel columns</td></tr><tr><td>Smooth window</td><td>5 frames</td><td>Centered finite-value mean applied independently to every coordinate</td></tr><tr><td>Minimum step</td><td>3 frames</td><td>Shorter candidates fail step quality control</td></tr><tr><td>Maximum step</td><td>300 frames</td><td>Longer candidates fail step quality control</td></tr><tr><td>Minimum stride</td><td>1 output unit</td><td>Smaller candidates fail step quality control</td></tr><tr><td>Maximum hip drift</td><td>1,000,000 output units</td><td>Upper drift rule; the default effectively leaves it disabled</td></tr></tbody></table></div>
@@ -69,9 +59,8 @@
 <li>coordinates, including raw pixels and optional scaled/origin-shifted values;</li>
 <li>one row per detected step with quality status and step measurements;</li>
 <li>summary metrics;</li>
-<li><code>&lt;source&gt;_gait.labkit.json</code>, which records inputs, parameters, output names,</li>
+<li><code>&lt;source&gt;_gait.labkit.json</code>, which records inputs, parameters, output names, and the valid-step count.</li>
 </ul>
-<p>and the valid-step count.</p>
 <p>The manifest is provenance metadata, not an extra scientific result.</p>
 <h2 id="use-gait-analysis-without-the-gui">Use Gait Analysis Without The GUI</h2>
 <pre><code class="language-matlab">pose = gait_analysis.sourceFiles.readPoseFile(&quot;marker-project.mat&quot;);
@@ -89,13 +78,9 @@ writetable(result.stepTable, &quot;steps.csv&quot;);</code></pre>
 <li>Every required role name must resolve to a source point.</li>
 <li>Coordinate units are only as valid as the entered calibration.</li>
 <li>Frame rate is ignored when a usable source time vector is present.</li>
-<li>Smoothing changes event locations and derived angles; save the chosen window</li>
+<li>Smoothing changes event locations and derived angles; save the chosen window with any reported results.</li>
+<li>The app analyzes existing coordinates; it does not assess landmark placement accuracy.</li>
 </ul>
-<p>with any reported results.</p>
-<ul>
-<li>The app analyzes existing coordinates; it does not assess landmark placement</li>
-</ul>
-<p>accuracy.</p>
 <h2 id="related-functions-and-apps">Related Functions And Apps</h2>
 <ul>
 <li><code>gait_analysis.sourceFiles.readPoseFile</code></li>

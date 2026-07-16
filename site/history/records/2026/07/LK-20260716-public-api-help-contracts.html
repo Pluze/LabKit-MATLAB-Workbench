@@ -42,25 +42,12 @@ scope: documentation contract tests</code></pre>
 <p>The patch versions record a compatible documentation-contract improvement. Function signatures, calculations, returned data, and error identifiers are unchanged.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Expanded public help with syntax, inputs, outputs, option names and legal</li>
+<li>Expanded public help with syntax, inputs, outputs, option names and legal values, defaults, units, errors, examples or typical calls, and related APIs.</li>
+<li>Distinguished self-contained <code>Example:</code> sections from interactive or file-dependent <code>Typical Call:</code> sections.</li>
+<li>Added generated-reference checks for thermal conversion and rendering, DTA schemas and pulse modes, and RHS lazy reads and waveform units.</li>
+<li>Corrected stale biosignal documentation links in package guidance and an implementation contract.</li>
+<li>Made label-ownership and package-boundary scans ignore prose-only substring collisions while continuing to reject literals and forbidden MATLAB tokens in executable code.</li>
 </ul>
-<p>values, defaults, units, errors, examples or typical calls, and related APIs.</p>
-<ul>
-<li>Distinguished self-contained <code>Example:</code> sections from interactive or</li>
-</ul>
-<p>file-dependent <code>Typical Call:</code> sections.</p>
-<ul>
-<li>Added generated-reference checks for thermal conversion and rendering, DTA</li>
-</ul>
-<p>schemas and pulse modes, and RHS lazy reads and waveform units.</p>
-<ul>
-<li>Corrected stale biosignal documentation links in package guidance and an</li>
-</ul>
-<p>implementation contract.</p>
-<ul>
-<li>Made label-ownership and package-boundary scans ignore prose-only substring</li>
-</ul>
-<p>collisions while continuing to reject literals and forbidden MATLAB tokens in executable code.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Users can discover the supported call contract through both <code>help</code> and the generated HTML reference without launching an app. No file format, saved project, calculation, or exported value changes.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>

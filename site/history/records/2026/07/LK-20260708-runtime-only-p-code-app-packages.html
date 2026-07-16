@@ -37,24 +37,16 @@ scope: historical project evolution</code></pre>
 <li>Project deployment tooling, no component version change.</li>
 </ul>
 <ul>
-<li><code>Package P-code</code> now creates a runtime-only single-app package instead of</li>
+<li><code>Package P-code</code> now creates a runtime-only single-app package instead of shipping a P-coded LabKit launcher and launcher maintenance tools.</li>
+<li>P-code package manifests and README instructions point users to the direct <code>run_&lt;app_command&gt;</code> entry file.</li>
+<li>P-code packaging no longer requires <code>labkit_launcher.m</code> or <code>labkit_launcher.p</code> to exist in the package root being used as the runtime source.</li>
 </ul>
-<p>shipping a P-coded LabKit launcher and launcher maintenance tools.</p>
-<ul>
-<li>P-code package manifests and README instructions point users to the direct</li>
-</ul>
-<p><code>run_&lt;app_command&gt;</code> entry file.</p>
-<ul>
-<li>P-code packaging no longer requires <code>labkit_launcher.m</code> or <code>labkit_launcher.p</code></li>
-</ul>
-<p>to exist in the package root being used as the runtime source.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Recipients of a P-code package start the protected app with <code>run_&lt;app_command&gt;</code> and no longer see unrelated launcher maintenance actions. The protected app and its data formats are unchanged.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <ul>
-<li>Users of P-code packages should run <code>run_&lt;app_command&gt;</code> from the unzipped</li>
+<li>Users of P-code packages should run <code>run_&lt;app_command&gt;</code> from the unzipped package instead of <code>labkit_launcher</code>. Source packages still include and support the launcher.</li>
 </ul>
-<p>package instead of <code>labkit_launcher</code>. Source packages still include and support the launcher.</p>
 <h2 id="validation">Validation</h2>
 <p>Commit <code>75f63f1</code> expanded <code>PackageLabKitAppToolTest</code> for runtime-only package contents and updated the generated package instructions.</p>
 <h2 id="evidence">Evidence</h2>

@@ -37,21 +37,11 @@ scope: `CHANGELOG.md`</code></pre>
 <p>Store each change explanation once as an independent Markdown page in the chronological <code>docs/history/records/&lt;year&gt;/&lt;month&gt;/</code> tree. Let the component metadata, rather than the file's physical folder, associate a record with each affected app, framework, or library. The documentation compiler then generates both component-specific history lists and a searchable project-wide index.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Split the existing recorded history into one Markdown file per Change ID and</li>
+<li>Split the existing recorded history into one Markdown file per Change ID and placed every public record under one chronological source tree.</li>
+<li>Removed the root aggregate changelog, duplicated current-version lookup, and the dedicated release-history parser.</li>
+<li>Replaced the launcher's custom version-history window with a direct link to the selected App's generated Documentation and History page.</li>
+<li>Routed version governance through owned component docs, distributed history, generated-site consistency, and source version metadata.</li>
 </ul>
-<p>placed every public record under one chronological source tree.</p>
-<ul>
-<li>Removed the root aggregate changelog, duplicated current-version lookup, and</li>
-</ul>
-<p>the dedicated release-history parser.</p>
-<ul>
-<li>Replaced the launcher's custom version-history window with a direct link to</li>
-</ul>
-<p>the selected App's generated Documentation and History page.</p>
-<ul>
-<li>Routed version governance through owned component docs, distributed history,</li>
-</ul>
-<p>generated-site consistency, and source version metadata.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Users see instructions, APIs, scientific context, and relevant changes from one app or library page. Source readers can find every public history record under <code>docs/history/records/</code>. Search still reaches the complete historical record. No project files, calculations, or experimental data formats change.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>

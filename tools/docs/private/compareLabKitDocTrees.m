@@ -1,8 +1,8 @@
 function [matches, diagnostic, comparedCount] = compareLabKitDocTrees(leftRoot, rightRoot)
 %COMPARELABKITDOCTREES Compare generated documentation trees byte-for-byte.
 
-    left = relativeFiles(leftRoot);
-    right = relativeFiles(rightRoot);
+    left = listLabKitDocTreeFiles(leftRoot);
+    right = listLabKitDocTreeFiles(rightRoot);
     comparedCount = numel(left);
     if ~isequal(left, right)
         matches = false;
@@ -20,24 +20,6 @@ function [matches, diagnostic, comparedCount] = compareLabKitDocTrees(leftRoot, 
     end
     matches = true;
     diagnostic = "";
-end
-
-function files = relativeFiles(root)
-    if ~isfolder(root)
-        files = strings(0, 1);
-        return;
-    end
-    entries = dir(fullfile(root, "**", "*"));
-    entries = entries(~[entries.isdir]);
-    entries = entries(~ismember(string({entries.name}), ...
-        [".DS_Store", "Thumbs.db"]));
-    files = strings(numel(entries), 1);
-    prefix = string(root) + filesep;
-    for k = 1:numel(entries)
-        filepath = string(fullfile(entries(k).folder, entries(k).name));
-        files(k) = replace(extractAfter(filepath, strlength(prefix)), filesep, "/");
-    end
-    files = sort(files);
 end
 
 function bytes = readBytes(filepath)

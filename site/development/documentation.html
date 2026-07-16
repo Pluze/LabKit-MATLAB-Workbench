@@ -128,7 +128,7 @@
 <h2 id="rendering-and-search">Rendering And Search</h2>
 <p><code>tools/docs/renderLabKitDocs.m</code> reads the structured model, renders all narrative and API pages, builds navigation and related links, and writes the static site to <code>site/</code>. The renderer uses MATLAB only and introduces no third-party runtime dependency.</p>
 <p>Search is a generated static index containing titles, headings, descriptions, keywords, components, MATLAB symbols, and help text. It works from GitHub Pages and when <code>site/index.html</code> is opened directly from disk; it must not depend on a local web server or a fetch request.</p>
-<p>Generated pages carry a generated-file marker. Regeneration replaces the complete generated tree, so obsolete pages cannot survive a source move.</p>
+<p>Generated pages carry a generated-file marker. Regeneration builds a complete temporary tree, then synchronizes its files into <code>site/</code>: changed files are updated, obsolete files and empty directories are removed, and the canonical <code>site/</code> directory itself is preserved. Keeping that root stable avoids numbered conflict copies when the repository is stored in a synchronized folder.</p>
 <h2 id="build-and-validate">Build And Validate</h2>
 <p>Use the documentation build and consistency tasks listed in <a href="testing.html">Testing</a>. The build regenerates the tracked site; the consistency check renders independently and compares that result with <code>site/</code>. Project documentation tests additionally check page/catalog uniqueness, source and output existence, API coverage, local links, direct-file search, generated markers, and prohibited retired paths.</p>
 <p>Before committing documentation work:</p>

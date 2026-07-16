@@ -47,28 +47,17 @@ component: `labkit_ImageMatch_app` | `1.5.6 -&gt; 1.5.7`</code></pre>
 <li><code>labkit_ImageMatch_app</code> <code>1.5.6 -&gt; 1.5.7</code></li>
 </ul>
 <ul>
-<li>Added <code>labkit.image.toDouble</code> and <code>labkit.image.toLuma</code>, and replaced hard</li>
+<li>Added <code>labkit.image.toDouble</code> and <code>labkit.image.toLuma</code>, and replaced hard Image Processing Toolbox calls in shared image facade code and image-app workflow paths with base-MATLAB implementations.</li>
+<li>DIC preprocessing now uses a toolbox-free phase-correlation translation path for automatic alignment and a base-MATLAB rigid warp for control-point alignment.</li>
+<li>DIC postprocessing, Focus Stack, Image Enhance, and Image Match now use app-local or facade-owned image normalization, resizing, smoothing, and luma helpers instead of requiring toolbox functions.</li>
+<li>Added a project hygiene guardrail that rejects unguarded toolbox image helper calls under <code>apps/</code> and <code>+labkit/</code>, while still allowing explicit optional toolbox paths with fallbacks.</li>
 </ul>
-<p>Image Processing Toolbox calls in shared image facade code and image-app workflow paths with base-MATLAB implementations.</p>
-<ul>
-<li>DIC preprocessing now uses a toolbox-free phase-correlation translation</li>
-</ul>
-<p>path for automatic alignment and a base-MATLAB rigid warp for control-point alignment.</p>
-<ul>
-<li>DIC postprocessing, Focus Stack, Image Enhance, and Image Match now use</li>
-</ul>
-<p>app-local or facade-owned image normalization, resizing, smoothing, and luma helpers instead of requiring toolbox functions.</p>
-<ul>
-<li>Added a project hygiene guardrail that rejects unguarded toolbox image</li>
-</ul>
-<p>helper calls under <code>apps/</code> and <code>+labkit/</code>, while still allowing explicit optional toolbox paths with fallbacks.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>DIC alignment and overlays, Focus Stack, Image Enhance, and Image Match could run without Image Processing Toolbox. Users with the toolbox retained compatible workflows, while CI now exercised the installation that previously failed late and silently.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <ul>
-<li>Existing app workflows and exported schemas are preserved. Optional toolbox</li>
+<li>Existing app workflows and exported schemas are preserved. Optional toolbox acceleration paths remain allowed only when a base-MATLAB fallback is present.</li>
 </ul>
-<p>acceleration paths remain allowed only when a base-MATLAB fallback is present.</p>
 <h2 id="validation">Validation</h2>
 <p>The commit expanded DIC, Focus Stack, Image Enhance, Image Match, and image- facade unit suites and added <code>ToolboxDependencyGuardrailTest</code> to detect new unguarded calls. GUI layout tests covered the affected DIC workflows. The exact historical command was not recorded.</p>
 <h2 id="evidence">Evidence</h2>

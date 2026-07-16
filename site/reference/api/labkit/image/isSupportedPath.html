@@ -26,7 +26,7 @@
 <p class="lead">Return true when a path has a supported image extension.</p>
 <h2 id="syntax">Syntax</h2>
 <div class="syntax-signature"><div class="syntax-group"><code class="language-matlab">tf = labkit.image.isSupportedPath(pathValue)</code></div></div>
-<section class="api-section"><h2 id="description">Description</h2><p>Compares the final filename extension with labkit.image.supportedExtensions. The comparison is case-insensitive and does not open the file, inspect its contents, or require it to exist. A path with no extension returns false.</p></section>
+<section class="api-section"><h2 id="description">Description</h2><p>Compares the final filename extension with <a class="api-inline-link" href="supportedExtensions.html"><code>labkit.image.supportedExtensions</code></a>. The comparison is case-insensitive and does not open the file, inspect its contents, or require it to exist. A path with no extension returns false.</p></section>
 <section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>pathValue</code></dt><dd>One value convertible to text and accepted by fileparts.</dd></div></dl></section>
 <section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>tf</code></dt><dd>Logical scalar indicating whether the extension is supported.</dd></div></dl></section>
 <section class="api-section"><h2 id="example">Example</h2><pre><code class="language-matlab">tf = labkit.image.isSupportedPath(&quot;experiment.TIFF&quot;);</code></pre></section>

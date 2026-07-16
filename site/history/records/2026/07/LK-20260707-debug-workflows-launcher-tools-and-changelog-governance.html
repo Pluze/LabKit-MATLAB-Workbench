@@ -53,63 +53,26 @@ component: `labkit_FigureStudio_app` | `0.1.4 -&gt; 0.1.5`</code></pre>
 <li><code>labkit_FocusStack_app</code> <code>1.4.5 -&gt; 1.4.6</code></li>
 </ul>
 <ul>
-<li>DIC Preprocess ROI mask export now reads the live ROI editor anchors when</li>
+<li>DIC Preprocess ROI mask export now reads the live ROI editor anchors when building a mask, so preview/save do not misreport a drawn ROI as empty when editor state is newer than the app state snapshot.</li>
+<li>DIC Preprocess keeps the double-click ROI anchor workflow and makes the double-click requirement explicit in the visible details text.</li>
+<li>Batch Image Crop duplicate tasks now redraw with finite preview overlay coordinates while still requiring users to confirm the duplicated crop center before export.</li>
+<li>Figure Studio quick PNG/JPG/SVG export actions use runtime-compatible handler signatures.</li>
+<li>Focus Stack exposes a direct <code>Choose folder</code> action for loading all supported images from a focus-stack folder.</li>
+<li>Debug trace diagnostics no longer write stalled-callback crash reports while a file chooser modal is active.</li>
+<li>Moved the launcher Code Analyzer scan into <code>tools/codecheck</code>, which writes timestamped JSON/HTML report pairs under <code>artifacts/code-check/</code> without overwriting earlier runs.</li>
+<li>Added launcher actions and a deployment tool that package one selected LabKit app into a standalone zip, either as source <code>.m</code> files or encoded <code>.p</code> files.</li>
+<li>Added launcher discovery for local private app workspaces under <code>private_apps/apps/</code> and roots named by <code>LABKIT_PRIVATE_APP_ROOTS</code>.</li>
+<li>Clarified the public changelog model as a project evolution map organized by reader-facing evolution entries, with release tags and commits kept as anchors and evidence rather than the primary structure.</li>
 </ul>
-<p>building a mask, so preview/save do not misreport a drawn ROI as empty when editor state is newer than the app state snapshot.</p>
-<ul>
-<li>DIC Preprocess keeps the double-click ROI anchor workflow and makes the</li>
-</ul>
-<p>double-click requirement explicit in the visible details text.</p>
-<ul>
-<li>Batch Image Crop duplicate tasks now redraw with finite preview overlay</li>
-</ul>
-<p>coordinates while still requiring users to confirm the duplicated crop center before export.</p>
-<ul>
-<li>Figure Studio quick PNG/JPG/SVG export actions use runtime-compatible</li>
-</ul>
-<p>handler signatures.</p>
-<ul>
-<li>Focus Stack exposes a direct <code>Choose folder</code> action for loading all supported</li>
-</ul>
-<p>images from a focus-stack folder.</p>
-<ul>
-<li>Debug trace diagnostics no longer write stalled-callback crash reports while</li>
-</ul>
-<p>a file chooser modal is active.</p>
-<ul>
-<li>Moved the launcher Code Analyzer scan into <code>tools/codecheck</code>, which writes</li>
-</ul>
-<p>timestamped JSON/HTML report pairs under <code>artifacts/code-check/</code> without overwriting earlier runs.</p>
-<ul>
-<li>Added launcher actions and a deployment tool that package one selected LabKit</li>
-</ul>
-<p>app into a standalone zip, either as source <code>.m</code> files or encoded <code>.p</code> files.</p>
-<ul>
-<li>Added launcher discovery for local private app workspaces under</li>
-</ul>
-<p><code>private_apps/apps/</code> and roots named by <code>LABKIT_PRIVATE_APP_ROOTS</code>.</p>
-<ul>
-<li>Clarified the public changelog model as a project evolution map organized by</li>
-</ul>
-<p>reader-facing evolution entries, with release tags and commits kept as anchors and evidence rather than the primary structure.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>The supplied debug packs could be followed without producing a false crash report or an apparently disabled workflow. DIC mask export used the anchors currently visible in the editor, duplicate crops remained blocked until their centers were confirmed, and Focus Stack offered a direct folder action.</p>
 <p>Maintainers gained timestamped HTML and JSON Code Analyzer reports. A selected app could be packaged for production or offline use without tests, unrelated apps, or repository metadata. Private apps could live beside the checkout, appear in the ordinary launcher, and retain their own repository and history.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <ul>
-<li>DIC ROI editing still uses double-click to add anchors; no interaction-mode</li>
-</ul>
-<p>migration is required.</p>
-<ul>
+<li>DIC ROI editing still uses double-click to add anchors; no interaction-mode migration is required.</li>
 <li>Existing file-panel image selection remains available in Focus Stack.</li>
-<li>Code Analyzer report consumers should read the timestamped</li>
-</ul>
-<p><code>artifacts/code-check/matlab_code_issues_*.json</code> files.</p>
-<ul>
-<li>Full LabKit checkout installs are unchanged. Single-app packages can start</li>
-</ul>
-<p>through either the packaged launcher or the direct run file; P-code packages require MATLAB to run the generated <code>.p</code> files.</p>
-<ul>
+<li>Code Analyzer report consumers should read the timestamped <code>artifacts/code-check/matlab_code_issues_*.json</code> files.</li>
+<li>Full LabKit checkout installs are unchanged. Single-app packages can start through either the packaged launcher or the direct run file; P-code packages require MATLAB to run the generated <code>.p</code> files.</li>
 <li>Public apps, public releases, and public CI remain scoped to <code>apps/</code>.</li>
 </ul>
 <h2 id="validation">Validation</h2>

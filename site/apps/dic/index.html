@@ -31,10 +31,7 @@
 <li>Apply a shared crop and save the prepared pair.</li>
 <li>Create and save the ROI mask.</li>
 <li>Run correlation in Ncorr using the prepared images and mask.</li>
-<li>Load the Ncorr MAT result, matching reference image, and mask into DIC</li>
-</ol>
-<p>Postprocess.</p>
-<ol>
+<li>Load the Ncorr MAT result, matching reference image, and mask into DIC Postprocess.</li>
 <li>Generate overlays, inspect valid coverage, and export the summary.</li>
 </ol>
 <p>The two apps deliberately exchange ordinary image and MAT files rather than a private in-memory object. This keeps the external solver boundary explicit and makes each stage independently repeatable.</p>

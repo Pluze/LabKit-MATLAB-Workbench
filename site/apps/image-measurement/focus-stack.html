@@ -34,10 +34,7 @@
 <li>Remove frames that do not belong to the stack.</li>
 <li>Start with the Balanced preset.</li>
 <li>Enable auto-registration when the stack has small rigid camera motion.</li>
-<li>Tune detail scale, blend radius, and uncertain blend only when artifacts</li>
-</ol>
-<p>are visible.</p>
-<ol>
+<li>Tune detail scale, blend radius, and uncertain blend only when artifacts are visible.</li>
 <li>Run the stack and inspect both fused image and focus map.</li>
 <li>Export fused PNG, focus-map PNG, and summary CSV.</li>
 </ol>
@@ -53,10 +50,7 @@
 <li>fused all-in-focus image;</li>
 <li>integer focus-depth index map;</li>
 <li>confidence map and per-plane focus coverage in the run result;</li>
-<li>summary CSV with geometry, parameters, confidence, coverage, registration,</li>
-</ul>
-<p>and resize information;</p>
-<ul>
+<li>summary CSV with geometry, parameters, confidence, coverage, registration, and resize information;</li>
 <li>result provenance manifest.</li>
 </ul>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
@@ -71,9 +65,8 @@ imwrite(result.fused, &quot;stacked.png&quot;);</code></pre>
 <li>Fewer than two images is an error.</li>
 <li><code>minConfidence</code> must be finite and between 0 and 1.</li>
 <li>Resizing changes sampling and should not substitute for consistent capture.</li>
-<li>Auto-registration should be reviewed; a wrong registration can create a</li>
+<li>Auto-registration should be reviewed; a wrong registration can create a sharp-looking but geometrically false composite.</li>
 </ul>
-<p>sharp-looking but geometrically false composite.</p>
 <h2 id="related-topics">Related Topics</h2>
 <ul>
 <li><a href="index.html">Image Measurement family</a></li>

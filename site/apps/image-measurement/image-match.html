@@ -55,15 +55,9 @@ matched = image_match.analysisRun.applyMatch(source, reference, step);
 output = image_match.analysisRun.applyPipeline(source, reference, step);</code></pre>
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li>An empty reference returns normalized source data in the calculation API,</li>
-</ul>
-<p>but the app requires a reference before enabling match actions.</p>
-<ul>
+<li>An empty reference returns normalized source data in the calculation API, but the app requires a reference before enabling match actions.</li>
 <li>Matching never corrects position, scale, rotation, perspective, or parallax.</li>
-<li>Histogram and Lab matching can shift scientifically meaningful pixel values;</li>
-</ul>
-<p>retain original images for quantitative analysis.</p>
-<ul>
+<li>Histogram and Lab matching can shift scientifically meaningful pixel values; retain original images for quantitative analysis.</li>
 <li>JPEG export is lossy.</li>
 </ul>
 <h2 id="related-topics">Related Topics</h2>

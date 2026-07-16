@@ -27,25 +27,12 @@
 <div class="table-wrap"><table><thead><tr><th>What you want to do</th><th>App</th></tr></thead><tbody><tr><td>Check recording metadata and short waveform windows; assign channel roles</td><td><a href="rhs-preview.html">RHS Preview</a></td></tr><tr><td>Find stimulation events and measure compound action potentials</td><td><a href="nerve-response-analysis.html">Nerve Response Analysis</a></td></tr><tr><td>Recalculate or summarize measurements from an analysis or segment table</td><td><a href="response-review-stats.html">Response Review and Stats</a></td></tr></tbody></table></div>
 <h2 id="recommended-workflow">Recommended Workflow</h2>
 <ol>
-<li>Open a representative recording in RHS Preview. Confirm the channels and</li>
+<li>Open a representative recording in RHS Preview. Confirm the channels and inspect a short portion of the waveform.</li>
+<li>Save a protocol draft that records channel roles. If you are working with a set of recordings, label the files and save a filter record.</li>
+<li>Open the filter record in Nerve Response Analysis, add the protocol, and run the analysis.</li>
+<li>Export the analysis as JSON. This file contains the events, stimulus trains, response measurements, and any issues found while reading the recordings.</li>
+<li>Open that JSON in Response Review and Stats to inspect and export the measurement table. A compatible segment CSV can be used instead when you need to recalculate measurements from waveforms.</li>
 </ol>
-<p>inspect a short portion of the waveform.</p>
-<ol>
-<li>Save a protocol draft that records channel roles. If you are working with a</li>
-</ol>
-<p>set of recordings, label the files and save a filter record.</p>
-<ol>
-<li>Open the filter record in Nerve Response Analysis, add the protocol, and run</li>
-</ol>
-<p>the analysis.</p>
-<ol>
-<li>Export the analysis as JSON. This file contains the events, stimulus trains,</li>
-</ol>
-<p>response measurements, and any issues found while reading the recordings.</p>
-<ol>
-<li>Open that JSON in Response Review and Stats to inspect and export the</li>
-</ol>
-<p>measurement table. A compatible segment CSV can be used instead when you need to recalculate measurements from waveforms.</p>
 <p>Each stage saves its own parameters with the results. Keep those settings with any reported latency, amplitude, or signal-to-noise values.</p>
 <h2 id="use-rhs-data-in-matlab-code">Use RHS Data In MATLAB Code</h2>
 <p>The <a href="../../libraries/rhs/index.html">RHS library</a> provides functions for reading recording metadata and selected waveform windows without opening an app. The individual app manuals show the calculation functions used for event detection, response measurement, alignment, and summary statistics.</p>

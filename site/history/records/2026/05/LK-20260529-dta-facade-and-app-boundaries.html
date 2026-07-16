@@ -35,26 +35,13 @@ scope: historical project evolution</code></pre>
 <p>This distinction became an early form of LabKit's present architecture: a small library presents stable data operations, while an app owns the laboratory workflow assembled around those operations.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Added GUI-independent DTA loading and adopted it in the EIS and Chrono</li>
-</ul>
-<p>Overlay apps.</p>
-<ul>
-<li>Added discovery and folder-loading operations, including validation for</li>
-</ul>
-<p>empty selections, missing folders, and expected experiment kinds.</p>
-<ul>
+<li>Added GUI-independent DTA loading and adopted it in the EIS and Chrono Overlay apps.</li>
+<li>Added discovery and folder-loading operations, including validation for empty selections, missing folders, and expected experiment kinds.</li>
 <li>Documented and tested the report schemas returned by batch operations.</li>
-<li>Moved EIS, Chrono Overlay, CSC, VT Resistance, and CIC out of the original</li>
+<li>Moved EIS, Chrono Overlay, CSC, VT Resistance, and CIC out of the original <code>gamrywb</code> namespace and into app-owned entry points.</li>
+<li>Returned calculation details, labels, callback flow, and exports to their owning apps when they were not genuinely reusable.</li>
+<li>Introduced boundary tests to prevent UI, data, IO, analysis, and utility packages from growing through accidental cross-dependencies.</li>
 </ul>
-<p><code>gamrywb</code> namespace and into app-owned entry points.</p>
-<ul>
-<li>Returned calculation details, labels, callback flow, and exports to their</li>
-</ul>
-<p>owning apps when they were not genuinely reusable.</p>
-<ul>
-<li>Introduced boundary tests to prevent UI, data, IO, analysis, and utility</li>
-</ul>
-<p>packages from growing through accidental cross-dependencies.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Electrochem users kept the same principal workflows, but file-loading failures became more explicit and batch loading gained a defined result report. App authors could use the DTA layer without starting a GUI or depending on the layout of an existing app.</p>
 <p>No laboratory file format or scientific result schema was intentionally changed by the ownership cleanup.</p>
@@ -64,10 +51,7 @@ scope: historical project evolution</code></pre>
 <p>The period added DTA schema tests, empty- and missing-folder tests, architectural boundary checks, and behavior-focused calculation tests. The repository did not yet have the later unified MATLAB test command, so no single historical validation invocation is available.</p>
 <h2 id="evidence">Evidence</h2>
 <ul>
-<li>GUI-free loading facade <code>88b19851</code> and initial app adoption <code>789ef507</code>,</li>
-</ul>
-<p><code>0ccc3ad6</code>.</p>
-<ul>
+<li>GUI-free loading facade <code>88b19851</code> and initial app adoption <code>789ef507</code>, <code>0ccc3ad6</code>.</li>
 <li>App ownership migration <code>1ee8e82d</code> through <code>1b6042bf</code>.</li>
 <li>Discovery and folder loading <code>c06946d9</code>, <code>82f4146d</code>.</li>
 <li>Report documentation and contract tests <code>669eea38</code>, <code>e04292c0</code>.</li>

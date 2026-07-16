@@ -233,8 +233,11 @@ keywords, components, MATLAB symbols, and help text. It works from GitHub
 Pages and when `site/index.html` is opened directly from disk; it must not
 depend on a local web server or a fetch request.
 
-Generated pages carry a generated-file marker. Regeneration replaces the
-complete generated tree, so obsolete pages cannot survive a source move.
+Generated pages carry a generated-file marker. Regeneration builds a complete
+temporary tree, then synchronizes its files into `site/`: changed files are
+updated, obsolete files and empty directories are removed, and the canonical
+`site/` directory itself is preserved. Keeping that root stable avoids numbered
+conflict copies when the repository is stored in a synchronized folder.
 
 ## Build And Validate
 

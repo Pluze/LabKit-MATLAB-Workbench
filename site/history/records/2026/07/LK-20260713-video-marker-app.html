@@ -34,21 +34,11 @@ introduced: `labkit_VideoMarker_app` | `1.0.0`</code></pre>
 <p>Add a standalone Video Marker app instead of extending an existing image-only app or adding a public video facade. The first version keeps marker semantics app-local, uses existing UI interaction tools for ordered points and scale calibration, and avoids training, inference, multi-subject tracking, or per-point missing-state semantics.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Added <code>labkit_VideoMarker_app</code> under Image Measurement with video loading,</li>
+<li>Added <code>labkit_VideoMarker_app</code> under Image Measurement with video loading, indexed frame navigation, ordered keypoint placement, skeleton overlays, and previous-confirmed-frame inheritance as draft annotations.</li>
+<li>Added a self-describing marker CSV that stores pixel coordinates for every frame and can be imported back into the app for overlay or editing.</li>
+<li>Added a separate coordinate CSV export for continuous confirmed frame ranges, with selectable pixel or calibrated units, top-left or first-point origin, and up/down Y-axis convention.</li>
+<li>Added project MAT save/load and debug sample-pack coverage for synthetic video marker assets.</li>
 </ul>
-<p>indexed frame navigation, ordered keypoint placement, skeleton overlays, and previous-confirmed-frame inheritance as draft annotations.</p>
-<ul>
-<li>Added a self-describing marker CSV that stores pixel coordinates for every</li>
-</ul>
-<p>frame and can be imported back into the app for overlay or editing.</p>
-<ul>
-<li>Added a separate coordinate CSV export for continuous confirmed frame ranges,</li>
-</ul>
-<p>with selectable pixel or calibrated units, top-left or first-point origin, and up/down Y-axis convention.</p>
-<ul>
-<li>Added project MAT save/load and debug sample-pack coverage for synthetic</li>
-</ul>
-<p>video marker assets.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Users can manually annotate video frames without depending on a model-training workflow. Marker CSV remains the editable round-trip format; coordinate CSV is plain plotting data and does not mutate the saved marker annotations.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>

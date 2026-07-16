@@ -18,7 +18,8 @@ function html = renderLabKitApiBody(model, item, outputPath)
     sourceUrl = model.repositoryUrl + "/blob/main/" + item.source;
     summary = cleanSummary(item.summary);
     syntax = publicCallSyntax(item.helpText, item.signature);
-    contractHtml = renderHelpSections(item.helpText, item.summary);
+    contractHtml = renderHelpSections( ...
+        item.helpText, item.summary, model.api, item, outputPath);
     relatedHtml = renderRelatedApis(model.api, item, outputPath);
     html = strjoin([ ...
         context
@@ -60,7 +61,7 @@ function html = syntaxGroup(lines)
         htmlEscape(strjoin(lines, newline)) + "</code></div>";
 end
 
-function html = renderHelpSections(helpText, summaryLine)
+function html = renderHelpSections(helpText, summaryLine, api, item, outputPath)
     lines = splitlines(string(helpText));
     if ~isempty(lines) && strip(lines(1)) == strip(string(summaryLine))
         lines(1) = [];
@@ -80,7 +81,8 @@ function html = renderHelpSections(helpText, summaryLine)
         id = slug(title);
         blocks(end + 1, 1) = "<section class=""api-section""><h2 id=""" + ...
             id + """>" + htmlEscape(title) + "</h2>" + ...
-            renderSectionContent(title, content) + "</section>";
+            renderSectionContent( ...
+                title, content, api, item, outputPath) + "</section>";
     end
     html = strjoin(blocks, newline);
 end
@@ -147,7 +149,7 @@ function sections = parseSections(lines)
     end
 end
 
-function html = renderSectionContent(title, lines)
+function html = renderSectionContent(title, lines, api, item, outputPath)
     codeTitles = ["Usage", "App-facing Contract", "Example", "Examples", ...
         "Typical Call", "Internal Usage"];
     if any(title == codeTitles)
@@ -164,13 +166,13 @@ function html = renderSectionContent(title, lines)
             endsWith(title, " Options") || ...
             endsWith(title, " Methods") || ...
             endsWith(title, "Name-Value Arguments") || title == "Errors"
-        html = renderDefinitions(lines);
+        html = renderDefinitions(lines, api, item, outputPath);
         return;
     end
-    html = renderParagraphs(lines);
+    html = renderParagraphs(lines, api, item, outputPath);
 end
 
-function html = renderDefinitions(lines)
+function html = renderDefinitions(lines, api, item, outputPath)
     entries = repmat(struct("term", "", "description", ""), 0, 1);
     preface = strings(0, 1);
     current = 0;
@@ -191,14 +193,16 @@ function html = renderDefinitions(lines)
     end
     parts = strings(0, 1);
     if any(strlength(strip(preface)) > 0)
-        parts(end + 1, 1) = renderParagraphs(preface);
+        parts(end + 1, 1) = renderParagraphs( ...
+            preface, api, item, outputPath);
     end
     if ~isempty(entries)
         rows = strings(numel(entries), 1);
         for k = 1:numel(entries)
             rows(k) = "<div class=""argument""><dt><code>" + ...
                 htmlEscape(entries(k).term) + "</code></dt><dd>" + ...
-                htmlEscape(entries(k).description) + "</dd></div>";
+                renderApiText(entries(k).description, ...
+                    api, item, outputPath) + "</dd></div>";
         end
         parts(end + 1, 1) = "<dl class=""argument-list"">" + ...
             strjoin(rows, "") + "</dl>";
@@ -206,17 +210,54 @@ function html = renderDefinitions(lines)
     html = strjoin(parts, newline);
 end
 
-function html = renderParagraphs(lines)
+function html = renderParagraphs(lines, api, item, outputPath)
     text = strip(strjoin(lines, newline));
     paragraphs = regexp(char(text), '\n\s*\n', 'split');
     blocks = strings(0, 1);
     for k = 1:numel(paragraphs)
         value = strip(regexprep(string(paragraphs{k}), '\s+', ' '));
         if strlength(value) > 0
-            blocks(end + 1, 1) = "<p>" + htmlEscape(value) + "</p>";
+            blocks(end + 1, 1) = "<p>" + ...
+                renderApiText(value, api, item, outputPath) + "</p>";
         end
     end
     html = strjoin(blocks, newline);
+end
+
+function html = renderApiText(text, api, item, outputPath)
+    protected = string(text);
+    replacements = strings(0, 1);
+    symbols = string({api.symbol});
+    symbols(symbols == string(item.symbol)) = [];
+    [~, order] = sort(strlength(symbols), "descend");
+    symbols = symbols(order);
+    for k = 1:numel(symbols)
+        symbol = symbols(k);
+        pattern = ['(?<![A-Za-z0-9_.])' ...
+            regexptranslate('escape', char(symbol)) ...
+            '(?![A-Za-z0-9_]|[.][A-Za-z0-9_])'];
+        while true
+            [first, last] = regexp(char(protected), pattern, ...
+                'start', 'end', 'once');
+            if isempty(first)
+                break;
+            end
+            target = "reference/api/" + replace(symbol, ".", "/") + ...
+                ".html";
+            replacements(end + 1, 1) = ...
+                "<a class=""api-inline-link"" href=""" + ...
+                relativeWebPath(outputPath, target) + """><code>" + ...
+                htmlEscape(symbol) + "</code></a>";
+            marker = "@@LABKITAPILINK" + string(numel(replacements)) + "@@";
+            protected = extractBefore(protected, first) + marker + ...
+                extractAfter(protected, last);
+        end
+    end
+    html = htmlEscape(protected);
+    for k = 1:numel(replacements)
+        marker = "@@LABKITAPILINK" + string(k) + "@@";
+        html = replace(html, marker, replacements(k));
+    end
 end
 
 function html = renderRelatedApis(api, item, outputPath)

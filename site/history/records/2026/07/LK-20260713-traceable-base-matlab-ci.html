@@ -34,18 +34,11 @@ scope: GitHub Actions and MATLAB validation routing</code></pre>
 <p>Make the existing official runner publish progress and active-test state, and add a distinct compatibility gate that combines static calls, product ownership, and toolbox-shadowed behavior.</p>
 <h2 id="changes">Changes</h2>
 <ul>
-<li>Added per-test progress, heartbeat, active-test, timeout-summary, and artifact</li>
-</ul>
-<p>publication behavior to CI.</p>
-<ul>
+<li>Added per-test progress, heartbeat, active-test, timeout-summary, and artifact publication behavior to CI.</li>
 <li>Added <code>buildtool baseMatlab</code> and representative toolbox-shadow workflows.</li>
-<li>Improved changed-file routing to target direct consumers while retaining</li>
+<li>Improved changed-file routing to target direct consumers while retaining explicit owners such as the launcher GUI suite.</li>
+<li>Corrected result aggregation so assumption-filtered tests remain visible as skipped without being misreported as shard failures.</li>
 </ul>
-<p>explicit owners such as the launcher GUI suite.</p>
-<ul>
-<li>Corrected result aggregation so assumption-filtered tests remain visible as</li>
-</ul>
-<p>skipped without being misreported as shard failures.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Base-MATLAB compatibility is now an explicit supported path, and failed or stalled CI runs provide enough state to identify the last active test. Runtime scientific outputs are not changed by this record.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>

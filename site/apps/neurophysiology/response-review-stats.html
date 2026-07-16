@@ -30,24 +30,15 @@
 <ol>
 <li>On <strong>Setup</strong>, choose an analysis JSON or segment CSV.</li>
 <li>The app loads the measurement rows immediately.</li>
-<li>If the input contains waveform segments, set the <strong>Baseline</strong> and <strong>Noise</strong></li>
-</ol>
-<p>windows. Both ranges are expressed in seconds relative to alignment time.</p>
-<ol>
+<li>If the input contains waveform segments, set the <strong>Baseline</strong> and <strong>Noise</strong> windows. Both ranges are expressed in seconds relative to alignment time.</li>
 <li>Choose <strong>Refresh Metrics</strong> when you want to reload the source explicitly.</li>
-<li>On <strong>Review</strong>, inspect the summary and details. Switch the plot between</li>
-</ol>
-<p><strong>Summary</strong> and <strong>Aligned</strong>.</p>
-<ol>
+<li>On <strong>Review</strong>, inspect the summary and details. Switch the plot between <strong>Summary</strong> and <strong>Aligned</strong>.</li>
 <li>On <strong>Export</strong>, choose a folder and select <strong>Export Metrics</strong>.</li>
 </ol>
 <p>Changing either time window recalculates a loaded segment input automatically. For an analysis JSON that already contains measurements, the app reads those measurements rather than recreating unavailable waveform data.</p>
 <h2 id="accepted-inputs">Accepted Inputs</h2>
 <ul>
-<li>JSON exported by Nerve Response Analysis. The app reads its <code>metrics</code></li>
-</ul>
-<p>records.</p>
-<ul>
+<li>JSON exported by Nerve Response Analysis. The app reads its <code>metrics</code> records.</li>
 <li>CSV that can be interpreted as waveform segments with time and values.</li>
 </ul>
 <p>When segments have different time grids, the app interpolates them onto a shared grid. If no interval is specified in code, it uses the median positive source interval. If the timestamps cannot provide one, it uses 0.0001 seconds. When no window is specified, the grid spans the intersection of the time ranges after each segment's alignment-time shift. Samples outside an aligned segment's original range remain <code>NaN</code>.</p>
@@ -57,9 +48,8 @@
 <p><strong>Export Metrics</strong> writes:</p>
 <ul>
 <li><code>response_review_metrics.csv</code>, one row per measurement;</li>
-<li><code>response_review_metrics.labkit.json</code>, recording the input, time windows,</li>
+<li><code>response_review_metrics.labkit.json</code>, recording the input, time windows, output identity, row count, and group count.</li>
 </ul>
-<p>output identity, row count, and group count.</p>
 <h2 id="align-segments-in-matlab-code">Align Segments In MATLAB Code</h2>
 <pre><code class="language-matlab">localTime = (-0.003:0.001:0.012).';
 firstValues = zeros(size(localTime));
@@ -85,14 +75,8 @@ summary = response_review_stats.analysisRun.summarizeMetrics(metrics);</code></p
 <p>Each segment supplies <code>timeSec</code>, <code>values</code>, and <code>name</code>. An optional <code>alignTimeSec</code> shifts that segment to the common zero. <code>aligned.values</code> is a samples-by-segments matrix.</p>
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li>Baseline and noise windows must overlap the available data to produce finite</li>
-</ul>
-<p>measurements.</p>
-<ul>
-<li>Interpolation makes grids comparable but cannot restore timing precision or</li>
-</ul>
-<p>bandwidth that is absent from the source.</p>
-<ul>
+<li>Baseline and noise windows must overlap the available data to produce finite measurements.</li>
+<li>Interpolation makes grids comparable but cannot restore timing precision or bandwidth that is absent from the source.</li>
 <li>An empty input returns an empty result rather than a synthetic summary.</li>
 <li>Keep the chosen windows with any exported amplitude or SNR values.</li>
 </ul>

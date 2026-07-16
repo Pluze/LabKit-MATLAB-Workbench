@@ -55,14 +55,10 @@ axis equal</code></pre>
 <p><code>valuesForAxis</code> is app-owned and not currently part of the published app API catalog. The DTA loader and <code>getZCurve</code> are supported reusable APIs.</p>
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li>Log axes omit or reject nonpositive coordinates according to MATLAB axes</li>
-</ul>
-<p>behavior; inspect the data rather than treating missing points as zero.</p>
-<ul>
+<li>Log axes omit or reject nonpositive coordinates according to MATLAB axes behavior; inspect the data rather than treating missing points as zero.</li>
 <li>Overlaying files does not normalize electrode area or fixture geometry.</li>
-<li>Axis labels describe parsed DTA columns; they do not validate the experiment</li>
+<li>Axis labels describe parsed DTA columns; they do not validate the experiment configuration recorded by the instrument.</li>
 </ul>
-<p>configuration recorded by the instrument.</p>
 <h2 id="related-topics">Related Topics</h2>
 <ul>
 <li><a href="index.html">Electrochemistry family</a></li>

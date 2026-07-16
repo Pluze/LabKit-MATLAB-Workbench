@@ -94,133 +94,50 @@ end</code></pre>
 <h3 id="layout-and-action-rules">Layout And Action Rules</h3>
 <p>Use these app-facing rules:</p>
 <ul>
-<li>The default shell is a LabKit workbench: control tabs on the left and primary</li>
+<li>The default shell is a LabKit workbench: control tabs on the left and primary preview, plot, waveform, image, or canvas content on the right.</li>
+<li><code>definition.m</code> declares app identity, project schema, optional session factory, workbench layout, handler registry, presenter, prepared-data renderers, and optional <code>Start</code> event.</li>
+<li>The framework runtime owns lifecycle scheduling, readiness/loading surface, generated callbacks, busy gating, debug exception plumbing, close guards, and hidden/minimized test behavior.</li>
+<li><code>buildWorkbenchLayout.m</code> describes controls and workspace structure only. App command handlers own app-specific state changes, alerts, refresh decisions, and log wording.</li>
+<li>Control ids are globally unique within an app. The UI registry is keyed by those ids, not by tab or section placement.</li>
+<li>Public layouts are semantic controls such as <code>filePanel</code>, <code>toolPanel</code>, <code>field</code>, <code>panner</code>, <code>action</code>, <code>previewArea</code>, <code>resultTable</code>, <code>logPanel</code>, and <code>statusPanel</code>. Primitive MATLAB controls are implementation details.</li>
+<li><code>section</code> layout nodes should contain real semantic controls. Use <code>toolPanel</code> as a named host when a reusable <code>labkit.ui.interaction.*</code> control needs to attach a composed runtime widget from app command or UI-update code; do not leave empty titled sections as placeholders.</li>
+<li>Public callbacks use <code>function callback(control, event)</code>. Events carry semantic fields such as <code>id</code>, <code>kind</code>, <code>source</code>, <code>value</code>, <code>previousValue</code>, and <code>ui</code>.</li>
+<li>App handlers should be named by user intent. They receive semantic events and injected services, then return updated canonical state without directly mutating framework lifecycle state.</li>
 </ul>
-<p>preview, plot, waveform, image, or canvas content on the right.</p>
-<ul>
-<li><code>definition.m</code> declares app identity, project schema, optional session</li>
-</ul>
-<p>factory, workbench layout, handler registry, presenter, prepared-data renderers, and optional <code>Start</code> event.</p>
-<ul>
-<li>The framework runtime owns lifecycle scheduling, readiness/loading surface,</li>
-</ul>
-<p>generated callbacks, busy gating, debug exception plumbing, close guards, and hidden/minimized test behavior.</p>
-<ul>
-<li><code>buildWorkbenchLayout.m</code> describes controls and workspace structure only. App</li>
-</ul>
-<p>command handlers own app-specific state changes, alerts, refresh decisions, and log wording.</p>
-<ul>
-<li>Control ids are globally unique within an app. The UI registry is keyed by</li>
-</ul>
-<p>those ids, not by tab or section placement.</p>
-<ul>
-<li>Public layouts are semantic controls such as <code>filePanel</code>, <code>toolPanel</code>, <code>field</code>,</li>
-</ul>
-<p><code>panner</code>, <code>action</code>, <code>previewArea</code>, <code>resultTable</code>, <code>logPanel</code>, and <code>statusPanel</code>. Primitive MATLAB controls are implementation details.</p>
-<ul>
-<li><code>section</code> layout nodes should contain real semantic controls. Use <code>toolPanel</code> as a</li>
-</ul>
-<p>named host when a reusable <code>labkit.ui.interaction.*</code> control needs to attach a composed runtime widget from app command or UI-update code; do not leave empty titled sections as placeholders.</p>
-<ul>
-<li>Public callbacks use <code>function callback(control, event)</code>. Events carry</li>
-</ul>
-<p>semantic fields such as <code>id</code>, <code>kind</code>, <code>source</code>, <code>value</code>, <code>previousValue</code>, and <code>ui</code>.</p>
-<ul>
-<li>App handlers should be named by user intent. They receive semantic events</li>
-</ul>
-<p>and injected services, then return updated canonical state without directly mutating framework lifecycle state.</p>
 <h3 id="file-selection-and-dialogs">File Selection And Dialogs</h3>
 <ul>
-<li><code>filePanel</code> owns file input mechanics: file chooser defaults, optional</li>
+<li><code>filePanel</code> owns file input mechanics: file chooser defaults, optional recursive folder scans, duplicate filename display, current selection, and file-entry events. Each file entry exposes <code>id</code>, <code>index</code>, <code>path</code>, <code>name</code>, <code>displayName</code>, and <code>status</code>. Callback events expose file entries through <code>event.files</code>, <code>event.addedFiles</code>, <code>event.removedFiles</code>, <code>event.selectedFiles</code>, and <code>event.value</code> for the current selection. Apps consume paths and indices through <code>services.events</code>; apps do not parse control ids, UI registries, or adapter structs.</li>
+<li>The active <code>filePanel</code> selection is also a framework title context. When a file is selected through the panel or a presentation commit, the app window title and preview axes titles include <code>file N/M: name.ext</code>; when selection is cleared, the framework removes that suffix. Apps should keep preview titles focused on the view or measurement being shown, not duplicate the selected filename in app-local title strings.</li>
+<li>Multi-file <code>filePanel</code> mode exposes direct commands for adding one or more files from one folder, every supported file directly under one folder, or every supported file recursively below a folder, plus Remove selected and Clear. Each command opens the native file or folder navigator immediately; there is no file-versus-folder question. The native file dialog supports ordinary same-folder multi-selection; separate folder commands cover directory-wide imports. Recursive folder scans count matching files first and ask for confirmation only when the count exceeds the panel warning threshold. File labels show sequence numbers plus short filenames, adding the nearest unique parent directory when repeated filenames would otherwise collide. Apps that allow duplicate source files should remove by file <code>id</code> or <code>index</code> from <code>event.removedFiles</code> instead of deleting by path. Programmatic file replacement uses presenter-owned <code>Value</code> and <code>Selection</code> properties. Apps with their own nearby status field can pass <code>showStatus=false</code> to omit the panel's internal count/status text.</li>
+<li>Single-file <code>filePanel</code> mode opens one file directly, replaces the previous file on the next choose action, does not offer recursive folder selection, and displays the short filename in one read-only text field instead of a selectable list.</li>
+<li>File and folder selection in handlers goes through <code>services.dialogs</code>, which owns safe remembered defaults outside the LabKit install root.</li>
+<li>App output defaults should be source-adjacent when a source file or folder is known. Use <code>labkit.ui.runtime.defaultOutputFolder(sourcePaths, subfolderName)</code>; the helper uses the first source path when multiple files are loaded and creates the app-specific subfolder before returning it.</li>
+<li>App-owned alerts use <code>services.dialogs.alert(message, title)</code>. Apps still own the wording and decision; the runtime owns modal and hidden-test mechanics.</li>
 </ul>
-<p>recursive folder scans, duplicate filename display, current selection, and file-entry events. Each file entry exposes <code>id</code>, <code>index</code>, <code>path</code>, <code>name</code>, <code>displayName</code>, and <code>status</code>. Callback events expose file entries through <code>event.files</code>, <code>event.addedFiles</code>, <code>event.removedFiles</code>, <code>event.selectedFiles</code>, and <code>event.value</code> for the current selection. Apps consume paths and indices through <code>services.events</code>; apps do not parse control ids, UI registries, or adapter structs.</p>
-<ul>
-<li>The active <code>filePanel</code> selection is also a framework title context. When a</li>
-</ul>
-<p>file is selected through the panel or a presentation commit, the app window title and preview axes titles include <code>file N/M: name.ext</code>; when selection is cleared, the framework removes that suffix. Apps should keep preview titles focused on the view or measurement being shown, not duplicate the selected filename in app-local title strings.</p>
-<ul>
-<li>Multi-file <code>filePanel</code> mode exposes direct commands for adding one or more</li>
-</ul>
-<p>files from one folder, every supported file directly under one folder, or every supported file recursively below a folder, plus Remove selected and Clear. Each command opens the native file or folder navigator immediately; there is no file-versus-folder question. The native file dialog supports ordinary same-folder multi-selection; separate folder commands cover directory-wide imports. Recursive folder scans count matching files first and ask for confirmation only when the count exceeds the panel warning threshold. File labels show sequence numbers plus short filenames, adding the nearest unique parent directory when repeated filenames would otherwise collide. Apps that allow duplicate source files should remove by file <code>id</code> or <code>index</code> from <code>event.removedFiles</code> instead of deleting by path. Programmatic file replacement uses presenter-owned <code>Value</code> and <code>Selection</code> properties. Apps with their own nearby status field can pass <code>showStatus=false</code> to omit the panel's internal count/status text.</p>
-<ul>
-<li>Single-file <code>filePanel</code> mode opens one file directly, replaces the previous</li>
-</ul>
-<p>file on the next choose action, does not offer recursive folder selection, and displays the short filename in one read-only text field instead of a selectable list.</p>
-<ul>
-<li>File and folder selection in handlers goes through <code>services.dialogs</code>, which</li>
-</ul>
-<p>owns safe remembered defaults outside the LabKit install root.</p>
-<ul>
-<li>App output defaults should be source-adjacent when a source file or folder is</li>
-</ul>
-<p>known. Use <code>labkit.ui.runtime.defaultOutputFolder(sourcePaths, subfolderName)</code>; the helper uses the first source path when multiple files are loaded and creates the app-specific subfolder before returning it.</p>
-<ul>
-<li>App-owned alerts use <code>services.dialogs.alert(message, title)</code>. Apps still own</li>
-</ul>
-<p>the wording and decision; the runtime owns modal and hidden-test mechanics.</p>
 <h3 id="saved-projects-and-result-utilities">Saved Projects And Result Utilities</h3>
 <ul>
-<li><code>labkit.ui.runtime.saveState/loadState</code> retain one stable public signature.</li>
+<li><code>labkit.ui.runtime.saveState/loadState</code> retain one stable public signature. Apps write a versioned <code>labkitProject</code> envelope with only durable project buckets, ordered app payload migrations, producer provenance, optional resume data, and additive extension preservation. Loads inventory the MAT file before loading a recognized variable, migrate and validate off to the side, resolve required sources, create a fresh session, invalidate the previous document's presentation cache, and then replace live state and repaint every preview once. This repaint also occurs when the loaded project has the same semantic values as the current document, because ephemeral graphics are not durable state. Saves use temporary-file readback plus atomic replacement. Project edits drive the dirty title, debounced bounded recovery, and unsaved-close wording; recovery never owns or overwrites an explicit project path. Declared old snapshots and legacy app variables are import-only and are never written again.</li>
+<li>Apps whose saved state refers to external source files should store <code>labkit.ui.runtime.createPortableFileReference(anchorFile, targetFile)</code> in their app-owned project schema. On load, <code>resolvePortableFileReference(anchorFile, reference)</code> checks the path relative to the loaded project first, then the original absolute path, then the saved filename beside the project. Relative references use <code>/</code> inside MAT payloads, so a project/source directory tree can move between cloud-drive roots and operating systems. Resolution is GUI-free; each app still decides whether to prompt for a missing file and how to validate a user-selected replacement against its saved metadata.</li>
+<li>Interactive imports should call <code>resolveOrPromptForFileReference</code> for every external-file field. It converts malformed or unresolved saved paths into a field-labeled file chooser instead of failing the entire import. The return metadata distinguishes automatic matches, manual selections, cancellation, and invalid selections. Direct one-file imports already begin with a chooser and do not need a redundant reference fallback.</li>
 </ul>
-<p>Apps write a versioned <code>labkitProject</code> envelope with only durable project buckets, ordered app payload migrations, producer provenance, optional resume data, and additive extension preservation. Loads inventory the MAT file before loading a recognized variable, migrate and validate off to the side, resolve required sources, create a fresh session, invalidate the previous document's presentation cache, and then replace live state and repaint every preview once. This repaint also occurs when the loaded project has the same semantic values as the current document, because ephemeral graphics are not durable state. Saves use temporary-file readback plus atomic replacement. Project edits drive the dirty title, debounced bounded recovery, and unsaved-close wording; recovery never owns or overwrites an explicit project path. Declared old snapshots and legacy app variables are import-only and are never written again.</p>
-<ul>
-<li>Apps whose saved state refers to external source files should store</li>
-</ul>
-<p><code>labkit.ui.runtime.createPortableFileReference(anchorFile, targetFile)</code> in their app-owned project schema. On load, <code>resolvePortableFileReference(anchorFile, reference)</code> checks the path relative to the loaded project first, then the original absolute path, then the saved filename beside the project. Relative references use <code>/</code> inside MAT payloads, so a project/source directory tree can move between cloud-drive roots and operating systems. Resolution is GUI-free; each app still decides whether to prompt for a missing file and how to validate a user-selected replacement against its saved metadata.</p>
-<ul>
-<li>Interactive imports should call <code>resolveOrPromptForFileReference</code> for every</li>
-</ul>
-<p>external-file field. It converts malformed or unresolved saved paths into a field-labeled file chooser instead of failing the entire import. The return metadata distinguishes automatic matches, manual selections, cancellation, and invalid selections. Direct one-file imports already begin with a chooser and do not need a redundant reference fallback.</p>
 <h3 id="workbench-utilities-and-preview-axes">Workbench Utilities And Preview Axes</h3>
 <ul>
-<li>The workbench shell includes a native <code>Plot</code> menu plus top-level</li>
+<li>The workbench shell includes a native <code>Plot</code> menu plus top-level <code>Screenshot</code>, <code>Save State</code>, and <code>Load State</code> entries. Plot commands operate on every registered preview axes in the app, so multi-axes workspaces do not require users to repeat the same command per view. Apps can use <code>define(..., &quot;Utilities&quot;, struct(...))</code> to hide the bar or disable groups of commands without adding app-local shell buttons. Utility commands operate on framework-owned runtime or visible preview axes; scientific result exports remain app-owned.</li>
+<li><code>previewArea</code> belongs in <code>workspace</code> by default. Its optional <code>viewModes</code> selector is workspace-owned, and apps can react through <code>onModeChange</code>.</li>
+<li><code>previewArea</code> axes install LabKit-managed, pointer-gated mouse-wheel zoom by default. Scrolling over controls, logs, or empty figure space does not zoom plots, and users should not need to click a preview before wheel zoom works. Time-series axes with a time x-label zoom the horizontal time axis only. Apps can set per-axis <code>scrollZoomAxes</code> values of <code>xy</code>, <code>x</code>, or <code>y</code> when a secondary fixed-width scale or histogram axis should receive wheel events without changing its horizontal span. Preview axes are also registered with the workbench utility menus, whose plot commands act on all registered visible axes.</li>
+<li><code>labkit.ui.interaction.enablePopout(ax)</code> installs the standard axes context menu action, which copies the visible axes into a standalone MATLAB figure with optional copied-figure text buttons for font size, plotted data line width, axes line width, grid visibility, and a Studio handoff. Popout edits operate on the copied figure only. Plot axes remain freely resizable, while image axes preserve locked data aspect ratio. Data-package export and generated reconstruction scripts belong in the Figure Studio workflow rather than the lightweight popout window; app-owned scientific CSV/MAT result exports still belong in the app package.</li>
 </ul>
-<p><code>Screenshot</code>, <code>Save State</code>, and <code>Load State</code> entries. Plot commands operate on every registered preview axes in the app, so multi-axes workspaces do not require users to repeat the same command per view. Apps can use <code>define(..., &quot;Utilities&quot;, struct(...))</code> to hide the bar or disable groups of commands without adding app-local shell buttons. Utility commands operate on framework-owned runtime or visible preview axes; scientific result exports remain app-owned.</p>
-<ul>
-<li><code>previewArea</code> belongs in <code>workspace</code> by default. Its optional <code>viewModes</code></li>
-</ul>
-<p>selector is workspace-owned, and apps can react through <code>onModeChange</code>.</p>
-<ul>
-<li><code>previewArea</code> axes install LabKit-managed, pointer-gated mouse-wheel zoom by</li>
-</ul>
-<p>default. Scrolling over controls, logs, or empty figure space does not zoom plots, and users should not need to click a preview before wheel zoom works. Time-series axes with a time x-label zoom the horizontal time axis only. Apps can set per-axis <code>scrollZoomAxes</code> values of <code>xy</code>, <code>x</code>, or <code>y</code> when a secondary fixed-width scale or histogram axis should receive wheel events without changing its horizontal span. Preview axes are also registered with the workbench utility menus, whose plot commands act on all registered visible axes.</p>
-<ul>
-<li><code>labkit.ui.interaction.enablePopout(ax)</code> installs the standard axes context</li>
-</ul>
-<p>menu action, which copies the visible axes into a standalone MATLAB figure with optional copied-figure text buttons for font size, plotted data line width, axes line width, grid visibility, and a Studio handoff. Popout edits operate on the copied figure only. Plot axes remain freely resizable, while image axes preserve locked data aspect ratio. Data-package export and generated reconstruction scripts belong in the Figure Studio workflow rather than the lightweight popout window; app-owned scientific CSV/MAT result exports still belong in the app package.</p>
 <h3 id="parameter-controls-and-layout-sizing">Parameter Controls And Layout Sizing</h3>
 <ul>
-<li>Parameter value controls (<code>field</code>, <code>rangeField</code>, and <code>panner</code>) debounce</li>
+<li>Parameter value controls (<code>field</code>, <code>rangeField</code>, and <code>panner</code>) debounce semantic <code>onChange</code> callbacks by default so short bursts of edits submit only the latest value after roughly 0.5 seconds of idle time. Explicit actions, file selection, and table edits run immediately. Apps should put expensive recompute work behind those semantic callbacks or explicit action buttons rather than binding work to lower-level MATLAB value-changing events.</li>
+<li><code>panner</code> is the preferred app layout control for bounded numeric parameters. It renders as a compact numeric spinner plus a linked slider when limits are finite, and as spinner-only when limits are intentionally unbounded. Slider drags update the numeric readout continuously and submit semantic changes through the same debounced callback queue as spinner edits; release submits the final committed value.</li>
+<li>Text-heavy controls have conservative automatic heights owned by the framework. App layout nodes must not set concrete height, row-count, spacing, padding, chrome, row-height, or column-width properties.</li>
+<li>Text-bearing controls default to complete display over single-line compactness. The framework enables wrapping where MATLAB supports it, shrinks long labels within a small readability range, gives text-heavy rows extra height, and keeps the full text available as a tooltip when supported. Apps should shorten wording when it improves workflow clarity, but should not add app-local layout or font-size patches to prevent clipping.</li>
+<li>Section height is automatic: the builder estimates height from child control types and framework spacing defaults. Apps declare only the page, section, and control order.</li>
+<li><code>group</code> composes related semantic controls inside a section and replaces the older action-only grouping concept. Apps should use <code>group(id, &quot;&quot;, {...})</code> for inline tool rows and <code>group(id, title, {...})</code> for titled subgroups. With <code>layout=&quot;auto&quot;</code>, a group whose children are all <code>action</code> layout nodes uses the action layout; mixed controls use a compact form layout. Action groups wrap into at most two columns by default, collapse to one column for long labels, and let a single odd final action span the row. Apps should not create app-local button grids just to place several actions near each other.</li>
+<li>Use app-level <code>usage</code>/<code>usageTitle</code> on <code>labkit.ui.layout.workbench</code> for static workflow instructions. The framework places that read-only usage panel at the bottom of the first control tab.</li>
+<li>Presenter <code>Limits</code> and <code>Items</code> properties are committed before bound values; the runtime clamps or selects safely without firing app callbacks.</li>
 </ul>
-<p>semantic <code>onChange</code> callbacks by default so short bursts of edits submit only the latest value after roughly 0.5 seconds of idle time. Explicit actions, file selection, and table edits run immediately. Apps should put expensive recompute work behind those semantic callbacks or explicit action buttons rather than binding work to lower-level MATLAB value-changing events.</p>
-<ul>
-<li><code>panner</code> is the preferred app layout control for bounded numeric parameters.</li>
-</ul>
-<p>It renders as a compact numeric spinner plus a linked slider when limits are finite, and as spinner-only when limits are intentionally unbounded. Slider drags update the numeric readout continuously and submit semantic changes through the same debounced callback queue as spinner edits; release submits the final committed value.</p>
-<ul>
-<li>Text-heavy controls have conservative automatic heights owned by the</li>
-</ul>
-<p>framework. App layout nodes must not set concrete height, row-count, spacing, padding, chrome, row-height, or column-width properties.</p>
-<ul>
-<li>Text-bearing controls default to complete display over single-line</li>
-</ul>
-<p>compactness. The framework enables wrapping where MATLAB supports it, shrinks long labels within a small readability range, gives text-heavy rows extra height, and keeps the full text available as a tooltip when supported. Apps should shorten wording when it improves workflow clarity, but should not add app-local layout or font-size patches to prevent clipping.</p>
-<ul>
-<li>Section height is automatic: the builder estimates height from child control</li>
-</ul>
-<p>types and framework spacing defaults. Apps declare only the page, section, and control order.</p>
-<ul>
-<li><code>group</code> composes related semantic controls inside a section and replaces the</li>
-</ul>
-<p>older action-only grouping concept. Apps should use <code>group(id, &quot;&quot;, {...})</code> for inline tool rows and <code>group(id, title, {...})</code> for titled subgroups. With <code>layout=&quot;auto&quot;</code>, a group whose children are all <code>action</code> layout nodes uses the action layout; mixed controls use a compact form layout. Action groups wrap into at most two columns by default, collapse to one column for long labels, and let a single odd final action span the row. Apps should not create app-local button grids just to place several actions near each other.</p>
-<ul>
-<li>Use app-level <code>usage</code>/<code>usageTitle</code> on <code>labkit.ui.layout.workbench</code> for static</li>
-</ul>
-<p>workflow instructions. The framework places that read-only usage panel at the bottom of the first control tab.</p>
-<ul>
-<li>Presenter <code>Limits</code> and <code>Items</code> properties are committed before bound values;</li>
-</ul>
-<p>the runtime clamps or selects safely without firing app callbacks.</p>
 <p>The public layout-node grammar is semantic: pages, sections, controls, order, values, and callbacks. When a workflow needs a control that cannot be expressed with the ordinary layout nodes, add a named framework or app-owned layout node instead of placing MATLAB layout code in <code>buildWorkbenchLayout.m</code>.</p>
 <p>Control tabs with more than one section include draggable horizontal separators by default. A tab may opt out with <code>resize=&quot;none&quot;</code> when a fixed stack is intentional.</p>
 <h3 id="runtime-state-and-transactions">Runtime State And Transactions</h3>

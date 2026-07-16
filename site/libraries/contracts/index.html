@@ -51,9 +51,8 @@ end</code></pre>
 <p>A requirement passes only when both conditions are true:</p>
 <ol>
 <li>The module's <code>current</code> version falls inside the app's requested range.</li>
-<li>The requested range overlaps at least one range in the module's</li>
+<li>The requested range overlaps at least one range in the module's <code>compatible</code> list.</li>
 </ol>
-<p><code>compatible</code> list.</p>
 <p>The second check prevents a current version number from appearing acceptable when the installed implementation does not advertise the requested contract.</p>
 <h2 id="inspecting-a-compatibility-report">Inspecting a Compatibility Report</h2>
 <p>Use <code>checkRequirements</code> when a caller should decide how to display or handle a failure:</p>
@@ -77,17 +76,10 @@ report = labkit.contract.checkRequirements(req, available);</code></pre>
 <p>This form is useful for checking a proposed version declaration without changing the installed module.</p>
 <h2 id="related-topics">Related Topics</h2>
 <ul>
-<li><a href="../../development/app-development.html">App development</a> explains where an</li>
-</ul>
-<p>app's <code>requirements.m</code> and <code>version.m</code> files fit in its source tree.</p>
-<ul>
-<li><a href="../../development/architecture.html">Architecture</a> describes the public</li>
-</ul>
-<p>LabKit modules that can appear in a requirement list.</p>
-<ul>
-<li><a href="../../history/index.html">Project history</a> records API version and</li>
-</ul>
-<p>compatibility changes.</p><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/labkit/contract/assertRequirements.html"><code>labkit.contract.assertRequirements</code></a></td><td>Throw an error when LabKit API requirements are not met.</td></tr><tr><td><a href="../../reference/api/labkit/contract/checkRequirements.html"><code>labkit.contract.checkRequirements</code></a></td><td>Compare required API ranges with available LabKit versions.</td></tr><tr><td><a href="../../reference/api/labkit/contract/requirements.html"><code>labkit.contract.requirements</code></a></td><td>Describe the LabKit API versions required by a caller.</td></tr><tr><td><a href="../../reference/api/labkit/contract/versionInfo.html"><code>labkit.contract.versionInfo</code></a></td><td>Describe one LabKit API version and its compatibility range.</td></tr></tbody></table></section>
+<li><a href="../../development/app-development.html">App development</a> explains where an app's <code>requirements.m</code> and <code>version.m</code> files fit in its source tree.</li>
+<li><a href="../../development/architecture.html">Architecture</a> describes the public LabKit modules that can appear in a requirement list.</li>
+<li><a href="../../history/index.html">Project history</a> records API version and compatibility changes.</li>
+</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/labkit/contract/assertRequirements.html"><code>labkit.contract.assertRequirements</code></a></td><td>Throw an error when LabKit API requirements are not met.</td></tr><tr><td><a href="../../reference/api/labkit/contract/checkRequirements.html"><code>labkit.contract.checkRequirements</code></a></td><td>Compare required API ranges with available LabKit versions.</td></tr><tr><td><a href="../../reference/api/labkit/contract/requirements.html"><code>labkit.contract.requirements</code></a></td><td>Describe the LabKit API versions required by a caller.</td></tr><tr><td><a href="../../reference/api/labkit/contract/versionInfo.html"><code>labkit.contract.versionInfo</code></a></td><td>Describe one LabKit API version and its compatibility range.</td></tr></tbody></table></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>
