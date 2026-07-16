@@ -220,7 +220,7 @@ function html = renderParagraphs(lines)
 end
 
 function html = renderRelatedApis(api, item, outputPath)
-    related = relatedApiItems(api, item.symbol);
+    related = relatedApiItems(api, item);
     if isempty(related)
         html = "";
         return;
@@ -275,13 +275,55 @@ function [title, target] = ownerPage(model, item)
     end
 end
 
-function related = relatedApiItems(api, symbol)
-    parts = split(string(symbol), ".");
+function related = relatedApiItems(api, item)
+    symbol = string(item.symbol);
+    parts = split(symbol, ".");
     prefix = strjoin(parts(1:max(1, numel(parts) - 1)), ".") + ".";
     symbols = string({api.symbol});
-    matches = startsWith(symbols, prefix) & symbols ~= string(symbol);
-    candidates = api(matches);
-    related = candidates(1:min(8, numel(candidates)));
+    indices = explicitRelatedIndices(api, item.helpText, prefix);
+    siblingIndices = find(startsWith(symbols, prefix) & symbols ~= symbol);
+    indices = unique([indices, siblingIndices], "stable");
+    indices(symbols(indices) == symbol) = [];
+    limit = max(8, numel(explicitRelatedIndices( ...
+        api, item.helpText, prefix)));
+    indices = indices(1:min(limit, numel(indices)));
+    related = api(indices);
+end
+
+function indices = explicitRelatedIndices(api, helpText, localPrefix)
+    sections = parseSections(splitlines(string(helpText)));
+    seeAlso = find(lower(string({sections.name})) == "see also");
+    if isempty(seeAlso)
+        indices = zeros(1, 0);
+        return;
+    end
+    sectionText = strings(1, numel(seeAlso));
+    for k = 1:numel(seeAlso)
+        sectionText(k) = strjoin(sections(seeAlso(k)).lines, " ");
+    end
+    text = strjoin(sectionText, " ");
+    tokens = string(regexp(char(text), ...
+        '[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*', ...
+        'match'));
+    symbols = string({api.symbol});
+    indices = zeros(1, 0);
+    for k = 1:numel(tokens)
+        token = tokens(k);
+        index = find(symbols == token, 1);
+        if isempty(index) && ~contains(token, ".")
+            index = find(symbols == localPrefix + token, 1);
+        end
+        if isempty(index) && ~contains(token, ".")
+            suffixMatches = find(endsWith(symbols, "." + token));
+            if numel(suffixMatches) == 1
+                index = suffixMatches;
+            end
+        end
+        if ~isempty(index)
+            indices(end + 1) = index;
+        end
+    end
+    indices = unique(indices, "stable");
 end
 
 function value = displaySectionTitle(value)

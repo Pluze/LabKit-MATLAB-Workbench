@@ -95,6 +95,23 @@ and links them to the generated [API Reference](../libraries/README.md).
 Reusable file parsers and generic processing functions live in the public
 `labkit.*` libraries.
 
+MATLAB must be able to see both the repository root and the owning app root.
+The launcher prepares these paths automatically. In a source checkout, add
+them explicitly before calling an app package:
+
+```matlab
+repoRoot = "/path/to/LabKit-MATLAB-Workbench";
+addpath(repoRoot)
+addpath(fullfile(repoRoot, "apps", "electrochem", "cic"))
+
+help cic.analysisRun.computeCIC
+```
+
+For another app, replace the final app path with the directory that directly
+contains its `+package` folder. Do not add every repository subfolder with
+`genpath`; app roots are independent and may contain same-named private or
+development files that should not become global MATLAB commands.
+
 ## Related Documentation
 
 - [Getting Started](../getting-started/README.md)

@@ -168,7 +168,12 @@ and only the app-owned functions explicitly declared in
 the GUI and document syntax, units, assumptions, options, outputs, errors, a
 standalone example, and related APIs. Do not catalog `private/` helpers.
 
-Private and app-owned package helpers must include concise top-of-file implementation contracts: expected caller, input/output shapes, side effects, and non-obvious assumptions.
+Private and non-public app-owned package helpers must include concise top-of-file
+implementation contracts: expected caller, input/output shapes, side effects,
+and non-obvious assumptions. Cataloged public app APIs instead start with the
+function declaration followed immediately by their public MATLAB help block so
+`help package.function` displays the user contract rather than an internal
+caller note.
 
 ## Sensitive Sample Data
 

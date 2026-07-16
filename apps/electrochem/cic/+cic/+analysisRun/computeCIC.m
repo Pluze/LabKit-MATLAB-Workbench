@@ -1,7 +1,3 @@
-% Expected caller: CIC app runner and unit tests. Inputs are a DTA item struct
-% and CIC option struct. Output is the stable CIC analysis result struct. No file
-% or UI side effects.
-
 function A = computeCIC(item, opts)
 %COMPUTECIC Calculate charge-injection and voltage-transient metrics.
 %
@@ -49,8 +45,8 @@ function A = computeCIC(item, opts)
 %       phase duration. Default: true.
 %
 % Calculations:
-%   Samples with nonfinite T, Vf, or Im are removed together. At least five
-%   valid samples are required. Emc is Vf at cath_end+delay_s and Ema is Vf at
+%   Samples with NaN T, Vf, or Im are removed together. At least five remaining
+%   samples are required. Emc is Vf at cath_end+delay_s and Ema is Vf at
 %   anod_end+delay_s. The cathodic baseline Eipp uses the first finite value in
 %   this order: pre-pulse median, interpulse median, post-pulse median, zero.
 %   The anodic baseline Eipp_gap prefers the interpulse median, followed by the
@@ -70,8 +66,19 @@ function A = computeCIC(item, opts)
 % Output Fields:
 %   ok - Logical success flag.
 %   message - "OK" or a description of the first failed stage.
+%   delay_s - Effective delayed-voltage sampling interval in seconds.
+%   cathLimit - Effective cathodic voltage limit in volts.
+%   anodLimit - Effective anodic voltage limit in volts.
+%   area_cm2 - Selected positive electrode area in cm^2, or NaN when missing.
+%   usedMeasuredCurrent - Effective charge-integration policy.
+%   logOnFailure - True for failures that the app should copy into its visible
+%       diagnostic log; false for ordinary incomplete-input results.
 %   Emc - Delayed cathodic polarization voltage in volts.
 %   Ema - Delayed anodic polarization voltage in volts.
+%   t_emc - Requested Emc sample time in seconds.
+%   t_ema - Requested Ema sample time in seconds.
+%   emc_idx - Index of the recorded sample nearest t_emc.
+%   ema_idx - Index of the recorded sample nearest t_ema.
 %   Epre - Median pre-pulse voltage in volts.
 %   Ebetween - Median interpulse voltage in volts.
 %   Epost - Median post-pulse voltage in volts.
@@ -83,6 +90,8 @@ function A = computeCIC(item, opts)
 %   baselineAnodWindow - Two-element time window used for Eipp_gap, in seconds.
 %   Vc_on - Voltage sampled delay_s after cathodic phase onset, in volts.
 %   Va_on - Voltage sampled delay_s after anodic phase onset, in volts.
+%   t_conset - Requested cathodic onset sample time in seconds.
+%   t_aonset - Requested anodic onset sample time in seconds.
 %   Va_cath_mag - Absolute Eipp-to-Vc_on voltage change, in volts.
 %   Va_anod_mag - Absolute Eipp_gap-to-Va_on voltage change, in volts.
 %   tc_s - Cathodic phase duration in seconds.
@@ -90,6 +99,8 @@ function A = computeCIC(item, opts)
 %   tip_s - Interpulse gap duration in seconds.
 %   Ic_est_A - Median measured cathodic current in amperes.
 %   Ia_est_A - Median measured anodic current in amperes.
+%   cathMask - Logical vector selecting cathodic phase samples.
+%   anodMask - Logical vector selecting anodic phase samples.
 %   Qc_C - Cathodic charge magnitude in coulombs.
 %   Qa_C - Anodic charge magnitude in coulombs.
 %   Qt_C - Qc_C + Qa_C in coulombs.
@@ -108,6 +119,9 @@ function A = computeCIC(item, opts)
 %   Vf - Filtered voltage vector in volts.
 %   Im - Filtered current vector in amperes.
 %   pt - Filtered source point numbers or generated zero-based sample numbers.
+%   sample_dt - Median difference between consecutive filtered times, in
+%       seconds. sample_dt_report contains the same value for exports.
+%   ampEstimate_A - Largest absolute filtered current in amperes.
 %
 % Failure Behavior:
 %   Missing curves, too few valid samples, failed pulse detection, an
@@ -116,7 +130,7 @@ function A = computeCIC(item, opts)
 %   throwing. Invalid MATLAB types or malformed structures can still raise an
 %   error from the DTA access or numeric functions.
 %
-% Example:
+% Typical Call:
 %   [item, status] = labkit.dta.loadFile("pulse.DTA", "chrono");
 %   assert(status.ok, status.message)
 %   opts = struct( ...
@@ -129,6 +143,8 @@ function A = computeCIC(item, opts)
 %   A = cic.analysisRun.computeCIC(item, opts);
 %   assert(A.ok, A.message)
 %   fprintf("Cathodic CIC: %.4g mC/cm^2\n", A.CICc_mCcm2)
+%
+% See also labkit.dta.detectPulses, vt_resistance.analysisRun.computeResistance
 
     if nargin < 2
         opts = struct();

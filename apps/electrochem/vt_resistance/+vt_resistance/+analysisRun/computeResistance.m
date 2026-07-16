@@ -1,9 +1,103 @@
-% Expected caller: VT resistance app runner and unit tests. Inputs are a DTA item
-% struct and option struct. Output is the stable resistance result struct. No
-% file or UI side effects.
-
 function A = computeResistance(item, opts)
-%COMPUTERESISTANCE Compute VT resistance metrics for the VT app.
+%COMPUTERESISTANCE Estimate cathodic and anodic resistance from a VT pulse.
+%
+% Usage:
+%   A = vt_resistance.analysisRun.computeResistance(item)
+%   A = vt_resistance.analysisRun.computeResistance(item, opts)
+%
+% Inputs:
+%   item - Scalar DTA item struct. item.curve, or the main curve selected from
+%       item.tables, must provide T in seconds, Vf in volts, and Im in amperes.
+%       Pt is optional; zero-based sample numbers are generated when absent.
+%       item.meta may contain pulse timing and current metadata.
+%   opts - Optional scalar struct described below. Default: struct().
+%
+% Options:
+%   windowMode - Samples used for steady voltage/current medians: "Full pulse
+%       median" or "Center 60% median". The latter excludes the first and last
+%       20% of each detected phase. Default: "Full pulse median".
+%   voltageMode - Resistance numerator: "Baseline-corrected dV/I" or "Raw
+%       Vf/I". Default: "Baseline-corrected dV/I".
+%   pulseMode - Pulse-detection policy: "Metadata first, then auto", "Metadata
+%       only", or "Auto from Im only". Default: "Metadata first, then auto".
+%
+% Outputs:
+%   A - Scalar result struct. Success is indicated by A.ok and A.message="OK".
+%       Data-validation failures return ok=false and the fields calculated up
+%       to the failed stage.
+%
+% Result Fields:
+%   ok - True when the final mean absolute resistance is finite.
+%   message - "OK" or an explanation of the first failed stage.
+%   windowMode - Effective steady-window label.
+%   voltageMode - Effective voltage-numerator label.
+%   logOnFailure - True when the app should surface the failure in its log.
+%   t - Filtered time vector in seconds.
+%   Vf - Filtered voltage vector in volts.
+%   Im - Filtered current vector in amperes.
+%   pt - Filtered source point numbers or generated zero-based sample numbers.
+%   pulse - Pulse geometry returned by labkit.dta.detectPulses.
+%   detectMode - Detection method that produced pulse.
+%   detectMsg - Pulse-detection status message.
+%   cathMask - Logical samples in the selected cathodic steady window.
+%   anodMask - Logical samples in the selected anodic steady window.
+%   cathSteadyStart, cathSteadyEnd - Cathodic steady-window bounds in seconds.
+%   anodSteadyStart, anodSteadyEnd - Anodic steady-window bounds in seconds.
+%   Ic_est_A - Median cathodic current in amperes.
+%   Ia_est_A - Median anodic current in amperes.
+%   Vc_ss_V - Median cathodic steady voltage in volts.
+%   Va_ss_V - Median anodic steady voltage in volts.
+%   cathBaselineStart, cathBaselineEnd - Requested pre-pulse cathodic baseline
+%       bounds in seconds.
+%   anodBaselineStart, anodBaselineEnd - Requested post-pulse anodic baseline
+%       bounds in seconds.
+%   Vc_baseline_V - Median pre-pulse voltage, or 0 when unavailable.
+%   Va_baseline_V - Median post-pulse voltage; falls back to the cathodic
+%       baseline and then 0.
+%   cathBaselineWindow_s - Duration of the requested cathodic baseline window.
+%   anodBaselineWindow_s - Duration of the requested anodic baseline window.
+%   dVc_V - Vc_ss_V-Vc_baseline_V in volts.
+%   dVa_V - Va_ss_V-Va_baseline_V in volts.
+%   Rc_raw_ohm - Vc_ss_V/Ic_est_A in ohms.
+%   Ra_raw_ohm - Va_ss_V/Ia_est_A in ohms.
+%   Rc_dV_ohm - dVc_V/Ic_est_A in ohms.
+%   Ra_dV_ohm - dVa_V/Ia_est_A in ohms.
+%   Rc_ohm - Selected cathodic raw or baseline-corrected resistance.
+%   Ra_ohm - Selected anodic raw or baseline-corrected resistance.
+%   Rc_abs_ohm - Absolute Rc_ohm.
+%   Ra_abs_ohm - Absolute Ra_ohm.
+%   Ravg_abs_ohm - Mean of the finite absolute cathodic and anodic values.
+%
+% Description:
+%   computeResistance analyzes one detected biphasic voltage transient and
+%   reports phase-specific as well as averaged resistance. Apps may choose raw
+%   steady voltage or subtract the adjacent baseline before division. The
+%   function performs no plotting, file selection, or export.
+%
+% Calculations:
+%   Rows containing NaN in T, Vf, or Im are removed together. Pulse detection
+%   is delegated to labkit.dta.detectPulses. Steady values are phase-window
+%   medians. Division returns NaN when either operand is nonfinite or current is
+%   smaller than eps in magnitude. The reported average uses absolute phase
+%   resistances so opposite current signs do not cancel.
+%
+% Failure Behavior:
+%   Missing curve data, fewer than five remaining samples, failed pulse
+%   detection, undersampled steady windows, or nonfinite final resistance
+%   returns ok=false. Malformed structs and unsupported MATLAB value types may
+%   still throw from DTA access or numeric operations.
+%
+% Typical Call:
+%   [item, status] = labkit.dta.loadFile("transient.DTA", "chrono");
+%   assert(status.ok, status.message)
+%   opts = struct("windowMode", "Center 60% median", ...
+%       "voltageMode", "Baseline-corrected dV/I", ...
+%       "pulseMode", "Metadata first, then auto");
+%   A = vt_resistance.analysisRun.computeResistance(item, opts);
+%   assert(A.ok, A.message)
+%   fprintf("Mean resistance: %.4g ohm\n", A.Ravg_abs_ohm)
+%
+% See also labkit.dta.detectPulses, cic.analysisRun.computeCIC
 
     if nargin < 2
         opts = struct();

@@ -68,6 +68,13 @@ labkit_CIC_app</code></pre>
 <p>Input data and exported results should remain outside the replaceable LabKit runtime folder. Apps do not overwrite source files unless an app page states an explicit in-place operation.</p>
 <h2 id="programmatic-use">Programmatic Use</h2>
 <p>Important scientific and deterministic app operations can be called without opening the GUI. Each app page identifies its supported app-owned functions and links them to the generated <a href="../reference/index.html">API Reference</a>. Reusable file parsers and generic processing functions live in the public <code>labkit.*</code> libraries.</p>
+<p>MATLAB must be able to see both the repository root and the owning app root. The launcher prepares these paths automatically. In a source checkout, add them explicitly before calling an app package:</p>
+<pre><code class="language-matlab">repoRoot = &quot;/path/to/LabKit-MATLAB-Workbench&quot;;
+addpath(repoRoot)
+addpath(fullfile(repoRoot, &quot;apps&quot;, &quot;electrochem&quot;, &quot;cic&quot;))
+
+help cic.analysisRun.computeCIC</code></pre>
+<p>For another app, replace the final app path with the directory that directly contains its <code>+package</code> folder. Do not add every repository subfolder with <code>genpath</code>; app roots are independent and may contain same-named private or development files that should not become global MATLAB commands.</p>
 <h2 id="related-documentation">Related Documentation</h2>
 <ul>
 <li><a href="../getting-started/index.html">Getting Started</a></li>

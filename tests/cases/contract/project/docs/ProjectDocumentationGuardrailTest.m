@@ -480,8 +480,9 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
         function appOwnedPackageHelpersDocumentImplementationContracts(testCase)
             root = setupLabKitTestPath();
             files = collectAppOwnedPackageFiles(root);
+            files = setdiff(files, catalogedAppApiFiles(root), "stable");
             testCase.assertFalse(isempty(files), ...
-                'App-owned package contract guardrail should scan package helper files.');
+                'App-owned package contract guardrail should scan non-public helpers.');
 
             missing = strings(1, 0);
             for k = 1:numel(files)
@@ -491,7 +492,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             end
 
             testCase.verifyTrue(isempty(missing), ...
-                ['App-owned package helpers need top-of-file implementation contracts: ' ...
+                ['Non-public app package helpers need top-of-file implementation contracts: ' ...
                 strjoin(cellstr(missing), ', ')]);
         end
     end
@@ -609,6 +610,17 @@ function files = collectAppOwnedPackageFiles(root)
             continue;
         end
         files(end+1) = filepath;
+    end
+    files = unique(files);
+end
+
+function files = catalogedAppApiFiles(root)
+    catalog = jsondecode(fileread(fullfile(root, "docs", "catalogs", ...
+        "api.json")));
+    entries = normalizeDocStructArray(catalog.appApis);
+    files = strings(1, numel(entries));
+    for k = 1:numel(entries)
+        files(k) = string(fullfile(root, entries(k).source));
     end
     files = unique(files);
 end
