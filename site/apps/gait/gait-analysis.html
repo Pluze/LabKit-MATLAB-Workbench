@@ -35,7 +35,7 @@
 <li>a current Video Marker <code>labkit.project</code> document or autosave;</li>
 <li>compatible legacy <code>videoMarkerProject</code> or <code>imageMarkerProject</code> payloads.</li>
 </ul>
-<p>Normalized coordinates have shape frames-by-points-by-2. Point names must match the second dimension. A supplied frame index or time vector must match the frame count.</p>
+<p>Normalized coordinates have shape frames-by-points-by-2. Point names must match the second dimension. A supplied frame index or time vector must match the frame count. Trajectory preview uses image coordinates: the origin is at the upper left and Y increases downward, matching Video Marker and Image Marker source data. Angle and step time-series previews retain conventional plot axes.</p>
 <h2 id="analyze-a-recording">Analyze A Recording</h2>
 <ol>
 <li>On <strong>Source</strong>, open a pose or marker-project file.</li>
@@ -87,7 +87,7 @@ writetable(result.stepTable, &quot;steps.csv&quot;);</code></pre>
 <li><code>gait_analysis.analysisRun.computeGait</code></li>
 <li><a href="../image-measurement/video-marker.html">Video Marker</a></li>
 <li><a href="index.html">Gait apps</a></li>
-</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/gait_analysis/analysisRun/computeGait.html"><code>gait_analysis.analysisRun.computeGait</code></a></td><td>Calculate joint, segment, stride, and step-quality measurements.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../history/records/2026/07/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../history/records/2026/07/LK-20260714-gait-analysis-app.html">2026-07-14 - Gait Analysis app</a><small>feat | additive</small></li></ul></section>
+</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/gait_analysis/analysisRun/computeGait.html"><code>gait_analysis.analysisRun.computeGait</code></a></td><td>Calculate joint, segment, stride, and step-quality measurements.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../history/records/2026/07/LK-20260716-gait-image-coordinates.html">2026-07-16 - Gait trajectory image-coordinate preview</a><small>fix | compatible</small></li><li><a href="../../history/records/2026/07/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../history/records/2026/07/LK-20260714-gait-analysis-app.html">2026-07-14 - Gait Analysis app</a><small>feat | additive</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

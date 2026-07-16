@@ -9,11 +9,13 @@ function drawGaitPreview(ax, model)
     elseif model.pose.ok
         drawTrajectory(ax, model.pose);
     else
+        ax.YDir = "normal";
         labkit.ui.plot.message(ax, "Load pose data to preview gait analysis.");
     end
 end
 
 function drawTrajectory(ax, pose)
+    ax.YDir = "reverse";
     hold(ax, "on");
     for k = 1:numel(pose.pointNames)
         plot(ax, pose.coords(:, k, 1), pose.coords(:, k, 2), ...
@@ -28,6 +30,7 @@ function drawTrajectory(ax, pose)
 end
 
 function drawAngles(ax, value)
+    ax.YDir = "normal";
     x = value.time_s;
     label = "Time (s)";
     if all(~isfinite(x))
@@ -47,6 +50,7 @@ function drawAngles(ax, value)
 end
 
 function drawSteps(ax, events)
+    ax.YDir = "normal";
     y = events.footRelativeX;
     x = (1:numel(y)).';
     plot(ax, x, y, "DisplayName", "Foot relative X");

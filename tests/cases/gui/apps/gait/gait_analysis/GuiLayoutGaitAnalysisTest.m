@@ -30,12 +30,19 @@ classdef GuiLayoutGaitAnalysisTest < matlab.unittest.TestCase
             driver.click('Open pose file');
             testCase.verifyTrue(driver.enabled('runAnalysis'));
             testCase.verifyGreaterThan(driver.previewChildCount('gaitAxes'), 0);
+            ui = getappdata(fig, 'labkitUiRegistry');
+            gaitAxes = ui.controls.gaitAxes.axesById.main;
+            testCase.verifyEqual(string(gaitAxes.YDir), "reverse", ...
+                ['Trajectory preview should use the same top-left image ' ...
+                'coordinate origin as marker source data.']);
             driver.click('Run analysis');
             testCase.verifyTrue(driver.enabled('exportResults'));
             testCase.verifyGreaterThan(height( ...
                 getappdata(fig, 'labkitUiAppRuntime').state.project.results.analysis.frameTable), 0);
             driver.dropdown('Angles');
             testCase.verifyGreaterThan(driver.previewChildCount('gaitAxes'), 0);
+            testCase.verifyEqual(string(gaitAxes.YDir), "normal", ...
+                'Time-series previews should restore the normal Y direction.');
 
             outputFolder = string(tempname);
             mkdir(outputFolder);

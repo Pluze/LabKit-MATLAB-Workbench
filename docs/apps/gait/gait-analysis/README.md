@@ -27,7 +27,10 @@ Use **Source > Open pose file** to open one of these inputs:
 
 Normalized coordinates have shape frames-by-points-by-2. Point names must
 match the second dimension. A supplied frame index or time vector must match
-the frame count.
+the frame count. Trajectory preview uses image coordinates: the origin is at
+the upper left and Y increases downward, matching Video Marker and Image
+Marker source data. Angle and step time-series previews retain conventional
+plot axes.
 
 ## Analyze A Recording
 
