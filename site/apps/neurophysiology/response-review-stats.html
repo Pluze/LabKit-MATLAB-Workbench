@@ -18,46 +18,78 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="response-review-and-stats">Response Review And Stats</h1>
-<p>Response Review and Stats aligns response segments, supports visual review, and summarizes retained measurements.</p>
-<h2 id="launch">Launch</h2>
+<p>Response Review and Stats opens a Nerve Response Analysis result or a segment table, displays the measurements, and exports a clean CSV for review or downstream statistics. Segment tables can also be aligned and measured again with new baseline and noise windows.</p>
+<h2 id="open-response-review-and-stats">Open Response Review And Stats</h2>
+<p>From the launcher, select <strong>Response Review Stats</strong> and choose <strong>Open</strong>. From a source checkout, run:</p>
 <pre><code class="language-matlab">labkit_ResponseReviewStats_app</code></pre>
-<h2 id="workflow">Workflow</h2>
-<p>Load response results, select alignment and baseline policies, inspect the segments, exclude invalid observations when justified, then export aligned signals, per-segment measurements, and summary statistics.</p>
-<h2 id="scientific-semantics">Scientific Semantics</h2>
-<p>Alignment changes the common time origin but not source sampling. Measurement windows and baseline policy must be consistent across compared groups. Summaries report the retained sample count so exclusions remain auditable.</p>
-<h2 id="use-without-the-gui">Use Without The GUI</h2>
+<h2 id="review-an-analysis">Review An Analysis</h2>
+<ol>
+<li>On <strong>Setup</strong>, choose an analysis JSON or segment CSV.</li>
+<li>The app loads the measurement rows immediately.</li>
+<li>If the input contains waveform segments, set the <strong>Baseline</strong> and <strong>Noise</strong></li>
+</ol>
+<p>windows. Both ranges are expressed in seconds relative to alignment time.</p>
+<ol>
+<li>Choose <strong>Refresh Metrics</strong> when you want to reload the source explicitly.</li>
+<li>On <strong>Review</strong>, inspect the summary and details. Switch the plot between</li>
+</ol>
+<p><strong>Summary</strong> and <strong>Aligned</strong>.</p>
+<ol>
+<li>On <strong>Export</strong>, choose a folder and select <strong>Export Metrics</strong>.</li>
+</ol>
+<p>Changing either time window recalculates a loaded segment input automatically. For an analysis JSON that already contains measurements, the app reads those measurements rather than recreating unavailable waveform data.</p>
+<h2 id="accepted-inputs">Accepted Inputs</h2>
+<ul>
+<li>JSON exported by Nerve Response Analysis. The app reads its <code>metrics</code></li>
+</ul>
+<p>records.</p>
+<ul>
+<li>CSV that can be interpreted as waveform segments with time and values.</li>
+</ul>
+<p>When segments have different time grids, the app interpolates them onto a shared grid. If no interval is specified in code, it uses the median positive source interval. If the timestamps cannot provide one, it uses 0.0001 seconds. Samples outside a segment's original range remain <code>NaN</code>.</p>
+<h2 id="measurements-and-summary">Measurements And Summary</h2>
+<p>For each aligned segment, the calculation subtracts the baseline mean and reports positive and negative peaks, peak-to-peak amplitude, noise RMS, and SNR. The summary groups rows by <code>pairId</code> when available; otherwise it uses the segment name. Counts are included so exclusions and missing rows remain visible.</p>
+<h2 id="output-files">Output Files</h2>
+<p><strong>Export Metrics</strong> writes:</p>
+<ul>
+<li><code>response_review_metrics.csv</code>, one row per measurement;</li>
+<li><code>response_review_metrics.labkit.json</code>, recording the input, time windows,</li>
+</ul>
+<p>output identity, row count, and group count.</p>
+<h2 id="align-segments-in-matlab-code">Align Segments In MATLAB Code</h2>
 <pre><code class="language-matlab">options = struct( ...
     &quot;sampleIntervalSec&quot;, 1e-4, ...
     &quot;windowSec&quot;, [-0.01 0.02], ...
     &quot;baselineWindowSec&quot;, [-0.01 -0.002], ...
     &quot;noiseWindowSec&quot;, [-0.01 -0.002], ...
     &quot;measurementWindowSec&quot;, [0.002 0.012]);
+
 aligned = response_review_stats.analysisRun.alignSegments(segments, options);
 metrics = response_review_stats.analysisRun.measureAlignedSegments( ...
     aligned, options);
 summary = response_review_stats.analysisRun.summarizeMetrics(metrics);</code></pre>
-<p>Each input segment must provide <code>timeSec</code>, <code>values</code>, and <code>name</code>; an optional <code>alignTimeSec</code> shifts that segment onto the common time origin. When <code>sampleIntervalSec</code> is omitted, the median positive source interval is used. When <code>windowSec</code> is omitted, alignment uses only the time range shared by all segments. Linear interpolation leaves out-of-range samples as <code>NaN</code>.</p>
-<p><code>measureAlignedSegments</code> returns one row per segment with baseline limits, positive and negative peaks, peak-to-peak amplitude, noise RMS, and SNR in dB. The baseline mean is subtracted before measuring. <code>summarizeMetrics</code> groups by <code>pairId</code> when present, otherwise by <code>SegmentName</code>, and reports count plus mean peak-to-peak and SNR values.</p>
+<p>Each segment supplies <code>timeSec</code>, <code>values</code>, and <code>name</code>. An optional <code>alignTimeSec</code> shifts that segment to the common zero. <code>aligned.values</code> is a samples-by-segments matrix.</p>
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li>Empty input returns an aligned model with status <code>empty</code>; an invalid or</li>
+<li>Baseline and noise windows must overlap the available data to produce finite</li>
 </ul>
-<p>unavailable sample interval falls back to a 10 kHz grid.</p>
+<p>measurements.</p>
 <ul>
-<li>Baseline, noise, and measurement windows use seconds and must overlap the</li>
+<li>Interpolation makes grids comparable but cannot restore timing precision or</li>
 </ul>
-<p>aligned grid to produce finite measurements.</p>
+<p>bandwidth that is absent from the source.</p>
 <ul>
-<li>Interpolation enables comparison on a shared grid but cannot recreate</li>
+<li>An empty input returns an empty result rather than a synthetic summary.</li>
+<li>Keep the chosen windows with any exported amplitude or SNR values.</li>
 </ul>
-<p>bandwidth or timing precision absent from the source samples.</p>
-<h2 id="see-also">See Also</h2>
+<h2 id="related-functions-and-apps">Related Functions And Apps</h2>
 <ul>
-<li><a href="nerve-response-analysis.html">Nerve Response Analysis</a></li>
+<li><code>response_review_stats.analysisRun.loadMetrics</code></li>
 <li><code>response_review_stats.analysisRun.alignSegments</code></li>
 <li><code>response_review_stats.analysisRun.measureAlignedSegments</code></li>
 <li><code>response_review_stats.analysisRun.summarizeMetrics</code></li>
-</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/response_review_stats/analysisRun/alignSegments.html"><code>response_review_stats.analysisRun.alignSegments</code></a></td><td>Interpolate segment traces to a shared time grid.</td></tr><tr><td><a href="../../reference/api/response_review_stats/analysisRun/measureAlignedSegments.html"><code>response_review_stats.analysisRun.measureAlignedSegments</code></a></td><td>Measure peak-to-peak, noise, and SNR per segment.</td></tr><tr><td><a href="../../reference/api/response_review_stats/analysisRun/summarizeMetrics.html"><code>response_review_stats.analysisRun.summarizeMetrics</code></a></td><td>Compute grouped metric counts and finite means.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../libraries/dta/history/LK-20260713-managed-calculation-constants.html">2026-07-13 - Managed scientific and conversion constants</a><small>refactor | compatible</small></li><li><a href="../../development/launcher/history/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li><li><a href="../../framework/history/LK-20260703-csc-export-and-viewport-policy.html">2026-07-03 - CSC export and viewport policy</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-declarative-app-runtime.html">2026-07-03 - Declarative app runtime</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260703-ui-groups-migration.html">2026-07-03 - UI groups migration</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260701-debug-sample-packs.html">2026-07-01 - Debug sample packs</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-close-guards-and-caught-exception-diagnostics.html">2026-06-30 - Close guards and caught-exception diagnostics</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-output-folder-prompts.html">2026-06-30 - Output folder prompts</a><small>feat | compatible</small></li><li><a href="../../development/launcher/history/LK-20260628-app-diagnostics-and-hardened-ui-workflows.html">2026-06-28 - App diagnostics and hardened UI workflows</a><small>feat | compatible</small></li><li><a href="../../libraries/dta/history/LK-20260624-file-panel-migration.html">2026-06-24 - File-panel migration</a><small>refactor | breaking</small></li><li><a href="../../development/launcher/history/LK-20260623-version-metadata-baseline.html">2026-06-23 - Version metadata baseline</a><small>feat | compatible</small></li></ul></section>
+<li><a href="nerve-response-analysis.html">Nerve Response Analysis</a></li>
+</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/response_review_stats/analysisRun/alignSegments.html"><code>response_review_stats.analysisRun.alignSegments</code></a></td><td>Interpolate segment traces to a shared time grid.</td></tr><tr><td><a href="../../reference/api/response_review_stats/analysisRun/measureAlignedSegments.html"><code>response_review_stats.analysisRun.measureAlignedSegments</code></a></td><td>Measure peak-to-peak, noise, and SNR per segment.</td></tr><tr><td><a href="../../reference/api/response_review_stats/analysisRun/summarizeMetrics.html"><code>response_review_stats.analysisRun.summarizeMetrics</code></a></td><td>Compute grouped metric counts and finite means.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../history/records/2026/07/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../history/records/2026/07/LK-20260713-managed-calculation-constants.html">2026-07-13 - Managed scientific and conversion constants</a><small>refactor | compatible</small></li><li><a href="../../history/records/2026/07/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li><li><a href="../../history/records/2026/07/LK-20260703-csc-export-and-viewport-policy.html">2026-07-03 - CSC export and viewport policy</a><small>feat | compatible</small></li><li><a href="../../history/records/2026/07/LK-20260703-declarative-app-runtime.html">2026-07-03 - Declarative app runtime</a><small>refactor | compatible</small></li><li><a href="../../history/records/2026/07/LK-20260703-ui-groups-migration.html">2026-07-03 - UI groups migration</a><small>refactor | compatible</small></li><li><a href="../../history/records/2026/07/LK-20260701-debug-sample-packs.html">2026-07-01 - Debug sample packs</a><small>feat | compatible</small></li><li><a href="../../history/records/2026/06/LK-20260630-close-guards-and-caught-exception-diagnostics.html">2026-06-30 - Close guards and caught-exception diagnostics</a><small>feat | compatible</small></li><li><a href="../../history/records/2026/06/LK-20260630-output-folder-prompts.html">2026-06-30 - Output folder prompts</a><small>feat | compatible</small></li><li><a href="../../history/records/2026/06/LK-20260628-app-diagnostics-and-hardened-ui-workflows.html">2026-06-28 - App diagnostics and hardened UI workflows</a><small>feat | compatible</small></li><li><a href="../../history/records/2026/06/LK-20260624-file-panel-migration.html">2026-06-24 - File-panel migration</a><small>refactor | breaking</small></li><li><a href="../../history/records/2026/06/LK-20260623-version-metadata-baseline.html">2026-06-23 - Version metadata baseline</a><small>feat | compatible</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

@@ -1,14 +1,21 @@
 classdef DocumentationHistoryGuardrailTest < matlab.unittest.TestCase
-    %DOCUMENTATIONHISTORYGUARDRAILTEST Guard distributed component history.
+    %DOCUMENTATIONHISTORYGUARDRAILTEST Guard centralized history records.
 
     methods (Test, TestTags = {'Integration', 'Style'})
-        function historyUsesDistributedMarkdownRecords(testCase)
+        function historyUsesCentralMarkdownRecords(testCase)
             root = setupLabKitTestPath();
-            entries = dir(fullfile(root, "docs", "**", "history", "**", "*.md"));
+            historyRoot = fullfile(root, "docs", "history", "records");
+            entries = dir(fullfile(historyRoot, "**", "*.md"));
             testCase.verifyGreaterThanOrEqual(numel(entries), 50, ...
                 "Recorded project evolution should remain available after migration.");
+            allHistory = dir(fullfile(root, "docs", "**", "history", ...
+                "**", "*.md"));
+            allHistory = allHistory(~strcmpi(string({allHistory.name}), "README.md"));
+            testCase.verifyTrue(all(startsWith( ...
+                string({allHistory.folder}), string(historyRoot))), ...
+                "History records should have one predictable source directory.");
             testCase.verifyFalse(isfile(fullfile(root, "CHANGELOG.md")), ...
-                "History belongs with component documentation, not a root giant file.");
+                "History uses individual records, not a root giant file.");
             testCase.verifyFalse(isfile(fullfile(root, "tools", "release", ...
                 "parseLabKitChangelog.m")), ...
                 "Documentation history should not require a separate release parser.");
@@ -16,7 +23,8 @@ classdef DocumentationHistoryGuardrailTest < matlab.unittest.TestCase
 
         function historyRecordsKeepUniqueStructuredIdentity(testCase)
             root = setupLabKitTestPath();
-            entries = dir(fullfile(root, "docs", "**", "history", "**", "*.md"));
+            entries = dir(fullfile(root, "docs", "history", "records", ...
+                "**", "*.md"));
             ids = strings(numel(entries), 1);
             missing = strings(0, 1);
             requiredHeadings = [ ...
@@ -40,7 +48,7 @@ classdef DocumentationHistoryGuardrailTest < matlab.unittest.TestCase
             testCase.verifyEmpty(missing, ...
                 "History records should retain identity and decision sections.");
             testCase.verifyEqual(numel(unique(ids)), numel(ids), ...
-                "Distributed history Change IDs must remain unique.");
+                "History Change IDs must remain unique.");
         end
 
         function generatedPagesAggregateRelatedHistory(testCase)

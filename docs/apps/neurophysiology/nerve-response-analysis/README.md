@@ -1,71 +1,104 @@
 # Nerve Response Analysis
 
-Nerve Response Analysis detects stimulation events in Intan RHS recordings and
-measures compound action potential responses.
+Nerve Response Analysis reads the recording list prepared in RHS Preview,
+finds stimulation events, groups them into trains, and measures compound action
+potential responses in the assigned channels.
 
-## Launch
+## Open Nerve Response Analysis
+
+From the launcher, select **Nerve Response Analysis** and choose **Open**. From
+a source checkout, run:
 
 ```matlab
 labkit_NerveResponseAnalysis_app
 ```
 
-## Workflow
+## Analyze A Recording Set
 
-Load a recording or session, select channels, configure event and train
-detection, review detected windows, then compute and export CAP metrics.
-Interactive review separates detection decisions from numeric measurement.
+1. On **Setup**, choose the filter JSON created by RHS Preview.
+2. On **Protocol**, choose the protocol JSON that assigns channel roles. A
+   protocol is optional, but strongly recommended.
+3. Set **Max recordings** or **Max duration** only when you want a shorter test
+   run. A value of zero means no limit.
+4. Choose **Analyze Filtered Files**.
+5. On **Review**, inspect the counts and switch the plot between **Counts** and
+   **Issues**.
+6. On **Export**, choose an output folder and then **Export Analysis**.
 
-## Scientific Semantics
+Changing the filter, protocol, or limits clears the previous analysis so that
+an export cannot silently use outdated settings.
 
-Event thresholds and refractory rules identify candidate stimulation times.
-Train grouping operates on event spacing. CAP metrics are measured in explicit
-baseline and response windows with the recording sample rate and channel units
-preserved.
+## What The Analysis Does
 
-## Use Without The GUI
+For each readable recording, the app selects an event source from the protocol
+and recording metadata, reads the required waveform, and finds sharp changes
+using the absolute first difference. A robust noise estimate sets the default
+detection threshold. Nearby peaks are reduced according to the minimum event
+spacing, then grouped into trains by their time gaps and train rules.
 
-```matlab
-protocol = struct();  % Supply channel roles and analysis pairs when available.
-options = struct("recordingId", "recording-1", "maxDurationSec", 30);
-analysis = nerve_response_analysis.analysisRun.analyzeRecording( ...
-    "recording.rhs", protocol, options);
-```
+For every event and response channel, the app measures a pre-event baseline,
+baseline noise, positive and negative peaks, peak-to-peak amplitude, peak time,
+latency, and SNR. The response search starts after the pulse-blanking interval
+to avoid measuring the stimulation artifact itself.
 
-The result contains the source identity, protocol snapshot, detected `events`
-and `trains`, per-pair CAP `metrics`, and an `issues` table. Parse or detection
-problems are represented in `issues` so a batch can retain successful files.
-For multiple recordings, use
-`nerve_response_analysis.analysisRun.analyzeSession`.
+Detection and measurement settings are scientific choices. Confirm that the
+event source and timing shift match the physical stimulus before interpreting
+latency.
 
-The detector and metric stages can also be called on already decoded arrays:
+## Output Files
+
+**Export Analysis** writes:
+
+- `nerve_response_analysis.json`, containing source information, the protocol,
+  events, trains, response measurements, and issues;
+- `nerve_response_analysis.labkit.json`, containing the selected inputs,
+  run limits, output identity, and result counts.
+
+An unreadable recording or missing channel is recorded in the issues table so
+that other recordings can still complete.
+
+## Detect Events In MATLAB Code
 
 ```matlab
 [events, trains] = ...
     nerve_response_analysis.analysisRun.detectEventTrains( ...
-    timeSec, eventSourceSignal, eventOptions);
+        timeSec, eventSignal, eventOptions);
+```
+
+`timeSec` and `eventSignal` must be equal-length numeric vectors. Options can
+set the threshold multiplier, minimum score, minimum peak spacing, train gap,
+minimum pulse count, maximum train duration, isolation rule, and reported
+stimulus-time shift. With no candidates, the function returns empty tables.
+
+## Measure CAP Features In MATLAB Code
+
+```matlab
 metrics = nerve_response_analysis.analysisRun.measureCapMetrics( ...
     timeSec, responseSignal, events.timeSec, metricOptions);
 ```
 
-`timeSec` and each signal must be equal-length column-compatible numeric
-vectors. `eventOptions` controls derivative-score thresholding, minimum event
-spacing, train grouping, isolation, and the physical stimulus-time shift.
-`metricOptions` controls the pre-stimulus baseline, post-pulse blanking, and CAP
-search end. Metric output includes baseline and noise, positive and negative
-peaks, peak-to-peak amplitude, latency, SNR, and per-event status.
+`metricOptions` can set `baselineWindowSec`, `blankingAfterPulseSec`, and
+`searchEndAfterPulseSec`. The output contains one row per event. If the search
+window contains no samples, that row is kept with status `noSamples`.
+
+To process an RHS file or an entire filter record, use
+`nerve_response_analysis.analysisRun.analyzeRecording` or
+`nerve_response_analysis.analysisRun.analyzeSession`.
 
 ## Errors And Limitations
 
-- Vector length mismatches throw named size errors; missing detections return
-  empty tables rather than invented events.
-- Default timing windows are policies, not universal physiology. Save the
-  exact options and protocol used for each analysis.
-- A derivative peak identifies an electrical transition; validate its relation
-  to physical stimulus onset before interpreting latency.
+- Time and signal vectors must have the same length.
+- A detection peak marks an electrical transition; it is not automatically the
+  physical onset of the delivered stimulus.
+- Default timing windows are starting points, not universal physiological
+  constants.
+- Missing events produce empty results rather than fabricated measurements.
+- Review the issues table before comparing counts across recordings.
 
-## See Also
+## Related Functions And Apps
 
-- [RHS Library](../../../libraries/rhs/README.md)
-- [Response Review and Stats](../response-review-stats/README.md)
+- `nerve_response_analysis.analysisRun.analyzeSession`
 - `nerve_response_analysis.analysisRun.detectEventTrains`
 - `nerve_response_analysis.analysisRun.measureCapMetrics`
+- [RHS Preview](../rhs-preview/README.md)
+- [Response Review and Stats](../response-review-stats/README.md)

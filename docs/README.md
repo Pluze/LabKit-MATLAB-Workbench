@@ -27,7 +27,7 @@ framework/        UI runtime concepts, behavior, and app-authoring contracts
 libraries/        one directory per reusable public MATLAB facade
 how-to/           focused task recipes and documentation asset workflows
 development/      architecture, app authoring, testing, private apps, release
-history/          the global index over component-owned history records
+history/          chronological change records and the project history index
 catalogs/         structured app and app-owned API membership metadata
 site.json         navigation, page identity, source, and output mapping
 ```
@@ -64,7 +64,8 @@ owned by MATLAB source help blocks. Handwritten HTML is never a source.
 
 ## Project History And Support
 
-- [Project history](history/README.md) aggregates component-owned change records.
+- [Project history](history/README.md) lists all change records and connects
+  them to the affected apps, framework, and libraries.
 - [Support](../.github/SUPPORT.md) explains how to report workflow problems.
 - [Documentation asset guide](how-to/workflow-assets.md) explains how to
   generate synthetic screenshots and example outputs.

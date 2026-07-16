@@ -18,23 +18,54 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="figure-studio">Figure Studio</h1>
-<p>Figure Studio restyles existing MATLAB figures and exports their visible graphics data without changing the calculations that produced them.</p>
-<h2 id="launch">Launch</h2>
+<p>Figure Studio restyles MATLAB figures, exports presentation copies, and extracts supported visible graphics into a portable data package. It changes presentation properties, not the calculation that produced the plot.</p>
+<h2 id="open-figure-studio">Open Figure Studio</h2>
+<p>From the launcher, select <strong>Figure Studio</strong> and choose <strong>Open</strong>. From a source checkout, run:</p>
 <pre><code class="language-matlab">labkit_FigureStudio_app</code></pre>
-<h2 id="workflow">Workflow</h2>
-<p>Open a FIG file or choose an existing figure, select axes and graphics objects, edit presentation properties, and export the revised figure or visible data. The app is intended for presentation cleanup and inspection, not recomputing scientific results.</p>
-<h2 id="behavior">Behavior</h2>
-<p>Object selection follows the figure hierarchy. Edits apply to the selected graphics objects and remain visible in the preview. Data export reads plotted object data in display order and reports unsupported object types rather than inventing a table.</p>
-<h2 id="outputs">Outputs</h2>
+<p>A LabKit plot can also send its current axes to Figure Studio through the plot context menu. That handoff embeds a serializable plot snapshot in the project.</p>
+<h2 id="load-and-select-figures">Load And Select Figures</h2>
+<p>On <strong>Figures</strong>, choose <strong>Add FIG files or scan folder</strong>. The source list accepts MATLAB <code>.fig</code> files and keeps one current selection. Selecting another source loads that figure's plot snapshot and original style. <strong>Clear figures</strong> removes all sources from the project.</p>
+<p>For a source using <strong>FIG default</strong>, Figure Studio adopts its font, line, grid, canvas, and axes appearance. Selecting <strong>LabKit figure</strong> applies the LabKit preset while retaining the source canvas size.</p>
+<h2 id="style-and-canvas-controls">Style And Canvas Controls</h2>
+<div class="table-wrap"><table><thead><tr><th>Group</th><th>Controls</th></tr></thead><tbody><tr><td>Style</td><td>preset, all/title/label/tick font size, plot line width, axes line width, grid alpha, grid visibility</td></tr><tr><td>Canvas</td><td>4:3, 16:9, 1:1, 3:2, or custom aspect; width; height; export scale; boundary visibility</td></tr></tbody></table></div>
+<p>Changing <strong>All font</strong> updates title, label, and tick sizes together until a specific font size is edited. Canvas width and height are stored as project parameters. PNG and JPG resolution is <code>300 * Export x</code>, with a minimum of 72 dpi. SVG uses vector content.</p>
+<h2 id="quick-exports">Quick Exports</h2>
+<p>The <strong>Figures</strong> tab provides:</p>
 <ul>
-<li>restyled MATLAB figures;</li>
-<li>exported visible line, scatter, image, or surface data where supported;</li>
-<li>recoverable project state for the editing session.</li>
+<li><strong>Save FIG</strong> for an editable MATLAB figure;</li>
+<li><strong>PNG</strong> and <strong>JPG</strong> for raster output;</li>
+<li><strong>SVG</strong> for vector output.</li>
 </ul>
-<h2 id="see-also">See Also</h2>
+<p>Each quick export also writes a LabKit result manifest beside the selected file. The manifest records the source, style parameters, output identity, and summary metadata.</p>
+<h2 id="export-a-data-package">Export A Data Package</h2>
+<p>On <strong>Export</strong>, select an output folder and choose <strong>Export data + script</strong>. Figure Studio creates a package containing supported visible data, style and axes metadata, and a MATLAB recreation script. The extractor currently recognizes visible line, scatter, image, surface, patch, text, and constant-line objects. Unsupported graphics are skipped and reported as warnings.</p>
+<p>The package represents displayed graphics in axes child order. It is intended for audit, handoff, and plot recreation—not for reconstructing hidden source data or rerunning the original analysis.</p>
+<h2 id="programmatic-data-extraction">Programmatic Data Extraction</h2>
+<pre><code class="language-matlab">fig = openfig(&quot;result.fig&quot;, &quot;invisible&quot;);
+cleanup = onCleanup(@() close(fig));
+ax = findobj(fig, &quot;Type&quot;, &quot;axes&quot;, &quot;-depth&quot;, 1);
+
+plotData = figure_studio.resultFiles.extractAxesData(ax(1));</code></pre>
+<p><code>plotData.axes</code> contains titles, labels, scales, directions, limits, grid and aspect settings, color order, font settings, and colormap when available. <code>plotData.objects</code> contains the graphics type, display name, coordinate/color data, style fields, and object metadata. <code>plotData.warnings</code> lists skipped objects.</p>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li><a href="../../framework/index.html">App Framework</a></li>
-</ul><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../development/launcher/history/LK-20260707-debug-workflows-launcher-tools-and-changelog-governance.html">2026-07-07 - Debug workflows, launcher tools, and changelog governance</a><small>feat | compatible</small></li><li><a href="../../development/launcher/history/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li></ul></section>
+<li>A FIG must contain a readable axes to enter the editing workflow.</li>
+<li>Invisible objects are not exported.</li>
+<li>Callbacks, application data, custom classes, and analysis provenance inside</li>
+</ul>
+<p>the source figure are not treated as portable scientific data.</p>
+<ul>
+<li>Some object-specific rendering semantics cannot be reproduced from a plain</li>
+</ul>
+<p>graphics snapshot.</p>
+<h2 id="related-functions-and-documentation">Related Functions And Documentation</h2>
+<ul>
+<li><code>figure_studio.resultFiles.extractAxesData</code></li>
+<li><code>figure_studio.resultFiles.exportAxesPackage</code></li>
+<li><code>figure_studio.resultFiles.createStyledFigure</code></li>
+<li><a href="index.html">LabKit Core apps</a></li>
+<li><a href="../../framework/index.html">Plotting framework</a></li>
+</ul><section class="component-history"><h2>Change history</h2><ul><li><a href="../../history/records/2026/07/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../history/records/2026/07/LK-20260707-debug-workflows-launcher-tools-and-changelog-governance.html">2026-07-07 - Debug workflows, launcher tools, and changelog governance</a><small>feat | compatible</small></li><li><a href="../../history/records/2026/07/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

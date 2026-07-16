@@ -1,21 +1,28 @@
 # LabKit Core Apps
 
-Core apps work across experimental domains rather than owning one scientific
-measurement.
+Core apps provide cross-domain tools that are useful to many LabKit workflows
+but do not own a scientific measurement or experiment-specific formula.
 
-## App
+## Choose An App
 
-[Figure Studio](figure-studio/README.md) accepts a MATLAB FIG file or
-axes sent from a LabKit plot context menu. It provides consistent style modes,
-per-part editing, and visible-data export without modifying the source figure.
+| Task | App |
+| --- | --- |
+| Restyle a MATLAB figure and export its visible graphics | [Figure Studio](figure-studio/README.md) |
 
-## Relationship To The Framework
+## Figure Handoff
 
-The App Framework provides a lightweight popout for inspection and simple
-style adjustments. Figure Studio is the durable workflow for structured data
-export, recreation scripts, and reusable style presets.
+Figure Studio can open tracked `.fig` files or receive a plot sent from a
+LabKit plot context menu. The lightweight framework popout is intended for
+inspection; Figure Studio is the durable workflow for controlled canvas and
+style settings, raster/vector export, and a data-plus-recreation-script
+package.
+
+Figure Studio snapshots visible graphics. It does not rerun the calculation
+that produced the original figure and does not claim that displayed graphics
+are a lossless replacement for the original scientific dataset.
 
 ## Related Documentation
 
+- [Figure Studio manual](figure-studio/README.md)
 - [App Framework](../../framework/README.md)
 - [Architecture](../../development/architecture.md)

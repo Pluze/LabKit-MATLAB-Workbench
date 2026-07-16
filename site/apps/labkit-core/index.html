@@ -18,13 +18,15 @@
 <main class="content">
 <p class="page-kind">app family</p>
 <h1 id="labkit-core-apps">LabKit Core Apps</h1>
-<p>Core apps work across experimental domains rather than owning one scientific measurement.</p>
-<h2 id="app">App</h2>
-<p><a href="figure-studio.html">Figure Studio</a> accepts a MATLAB FIG file or axes sent from a LabKit plot context menu. It provides consistent style modes, per-part editing, and visible-data export without modifying the source figure.</p>
-<h2 id="relationship-to-the-framework">Relationship To The Framework</h2>
-<p>The App Framework provides a lightweight popout for inspection and simple style adjustments. Figure Studio is the durable workflow for structured data export, recreation scripts, and reusable style presets.</p>
+<p>Core apps provide cross-domain tools that are useful to many LabKit workflows but do not own a scientific measurement or experiment-specific formula.</p>
+<h2 id="choose-an-app">Choose An App</h2>
+<div class="table-wrap"><table><thead><tr><th>Task</th><th>App</th></tr></thead><tbody><tr><td>Restyle a MATLAB figure and export its visible graphics</td><td><a href="figure-studio.html">Figure Studio</a></td></tr></tbody></table></div>
+<h2 id="figure-handoff">Figure Handoff</h2>
+<p>Figure Studio can open tracked <code>.fig</code> files or receive a plot sent from a LabKit plot context menu. The lightweight framework popout is intended for inspection; Figure Studio is the durable workflow for controlled canvas and style settings, raster/vector export, and a data-plus-recreation-script package.</p>
+<p>Figure Studio snapshots visible graphics. It does not rerun the calculation that produced the original figure and does not claim that displayed graphics are a lossless replacement for the original scientific dataset.</p>
 <h2 id="related-documentation">Related Documentation</h2>
 <ul>
+<li><a href="figure-studio.html">Figure Studio manual</a></li>
 <li><a href="../../framework/index.html">App Framework</a></li>
 <li><a href="../../development/architecture.html">Architecture</a></li>
 </ul>

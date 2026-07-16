@@ -1,70 +1,119 @@
 # ECG Print
 
-ECG Print filters wearable ECG, detects peaks, measures segment quality, and
-creates printable review outputs.
+ECG Print reads a wearable recording, filters one channel, detects beats,
+builds event-centered segments and a representative template, and reports
+signal quality over time. It can export the segment measurements and a
+printable waveform image.
 
-## Launch
+## Open ECG Print
+
+From the LabKit launcher, select **ECG Print** and choose **Open**. From a
+source checkout, run:
 
 ```matlab
 labkit_ECGPrint_app
 ```
 
-## Workflow
+## Supported Inputs
 
-Load a supported ECG recording, verify channel and sample-rate metadata,
-configure filtering and peak detection, review detected beats and segment SNR,
-then export the report and measurements.
+Choose **Open recording** to load a MAT, CSV, TXT, or TSV biosignal file. MAT
+files can contain a supported timetable or recording structure. Delimited text
+files can be detected automatically or parsed with the controls under
+**Import Parsing**.
 
-## Scientific Semantics
+For a difficult text file, choose **Preview file header**, then set:
 
-Filtering, polarity, minimum peak spacing, and SNR windows affect detection and
-must accompany reported heart-rate or quality results. The app retains source
-timing and does not infer a sample rate when required metadata is absent.
+- the line containing column names;
+- whether a header is present;
+- the time column and its unit;
+- the signal columns;
+- a fallback sample rate when time values are unavailable.
 
-## Use Without The GUI
+Choose **Parse / refresh file** after changing import settings. The app reports
+the detected channels and lets you select one for analysis.
 
-`analyzeSignal` operates on the same decoded cache and durable parameters used
-by Runtime V2:
+## Analyze ECG
+
+1. Open and parse a recording.
+2. Select a channel and, if needed, set the start and end of the time region.
+   When the end is not greater than the start, the full signal is used.
+3. Set the bandpass range and peak method.
+4. Set minimum peak distance, segment half-window, template count, and smoothing
+   count.
+5. Choose **Analyze current ROI**.
+6. Review the four plots: waveform and peaks, template-noise RMS, template SNR,
+   and the template with either a residual band or individual segments.
+
+The filter is applied to the full selected channel before the time region is
+cropped. This reduces boundary artifacts at the region edges.
+
+## Analysis Parameters
+
+| Parameter | Default | Meaning |
+| --- | --- | --- |
+| Fallback sample rate | 2000 Hz | Used only when import cannot derive time spacing |
+| Bandpass | 0.5 to 40 Hz | Applied before peak detection; the upper cutoff is kept below 45% of sample rate |
+| Peak method | QRS streaming | QRS streaming, Pan-Tompkins, or local peaks |
+| Peak distance | 0.28 s | Minimum interval between accepted detections |
+| Segment half-window | 0.7 s | Data retained before and after each event |
+| Template top N | 30 | Number of best segments used to build the template |
+| Smooth beats | 15 | Smoothing span used in exported per-segment trends |
+| Template plot | Template + residual band | Alternative view is template plus individual segments |
+
+Peak polarity is selected automatically. The default detector threshold is
+2.8 standard deviations inside the app calculation.
+
+## Output Files
+
+**Export segment SNR CSV** writes `ecg_segment_snr.csv` and a matching
+`ecg_segment_snr.labkit.json` manifest. The CSV contains per-segment
+measurements and smoothed trends.
+
+**Export waveform PNG** writes `ecg_waveform.png` and
+`ecg_waveform.labkit.json`. The manifest records the source, import and
+analysis settings, output identity, event count, segment count, and summary.
+
+## Analyze A Signal In MATLAB Code
 
 ```matlab
 [recording, status] = labkit.biosignal.readRecording("ecg.csv");
-assert(status.ok, status.message);
-signalRecord = labkit.biosignal.getChannel(recording, 1);
-cache = struct("signal", signalRecord);
+assert(status.ok, status.message)
+
+signal = labkit.biosignal.getChannel(recording, 1);
+cache = struct("signal", signal);
 parameters = struct( ...
-    "lowCut", 0.5, "highCut", 40, ...
-    "roiStart", 0, "roiEnd", 0, ...
-    "peakMethod", "QRS streaming", "peakDistance", 0.25, ...
-    "segmentWindow", 0.4, "templateTopN", 20);
+    "lowCut", 0.5, ...
+    "highCut", 40, ...
+    "roiStart", 0, ...
+    "roiEnd", 0, ...
+    "peakMethod", "QRS streaming", ...
+    "peakDistance", 0.28, ...
+    "segmentWindow", 0.7, ...
+    "templateTopN", 30);
+
 cache = ecg_print.analysisRun.analyzeSignal(cache, parameters);
 ```
 
-`signalRecord` is the normalized biosignal record returned by the app importer
-or `labkit.biosignal.readRecording`, not a bare numeric vector. The returned
-cache adds `workingSignal`, `filteredSignal`, `events`, `segments`, `template`,
-and `measurements`. When `roiEnd <= roiStart`, the full signal is analyzed.
-The upper cutoff is constrained below the Nyquist frequency.
-
-For a smaller script that does not need the app cache, compose the public
-facade functions directly: `filterSignal`, `detectEcgPeaks`,
-`segmentByEvents`, `buildTemplate`, and `measureSegments`.
-
-## Outputs
-
-- detected peak and interval tables;
-- segment SNR and summary measurements;
-- printable ECG figures or reports.
+The returned cache contains the working and filtered signals, detected events,
+segments, template, and measurements. For a more customized pipeline, call
+`labkit.biosignal.filterSignal`, `detectEcgPeaks`, `segmentByEvents`,
+`buildTemplate`, and `measureSegments` directly.
 
 ## Errors And Limitations
 
-- Required channel and sampling metadata must be present in the normalized
-  recording.
-- Automatic polarity and threshold selection still require visual review when
-  morphology or noise changes across a recording.
-- Filter settings, detection options, and excluded time ranges belong with any
-  derived heart-rate or signal-quality result.
+- Time or a valid sample rate is required to interpret filter frequencies and
+  event spacing.
+- Automatic parsing should be checked when a text file has long preambles,
+  unusual headers, or mixed metadata rows.
+- Automatic peak polarity and thresholds still require visual review when
+  morphology or noise changes within a recording.
+- Filtering and detection settings must accompany any reported heart rate or
+  signal-quality result.
 
-## See Also
+## Related Functions And Documentation
 
-- [Biosignal Library](../../../libraries/biosignal/README.md)
 - `ecg_print.analysisRun.analyzeSignal`
+- `labkit.biosignal.readRecording`
+- `labkit.biosignal.detectEcgPeaks`
+- `labkit.biosignal.measureSegments`
+- [Biosignal library](../../../libraries/biosignal/README.md)

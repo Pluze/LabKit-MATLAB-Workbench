@@ -1,62 +1,98 @@
 # RHS Preview
 
-RHS Preview opens bounded waveform windows from Intan RHS recordings and helps
-inspect channels before a longer analysis.
+RHS Preview lets you inspect an Intan RHS recording without loading the entire
+waveform into memory. Use it to check channels, move through short waveform
+windows, choose the channels to plot, and prepare protocol or file-filter JSON
+for later analysis.
 
-## Launch
+## Open RHS Preview
+
+From the LabKit launcher, select **RHS Preview** and choose **Open**. From a
+source checkout, run:
 
 ```matlab
 labkit_RHSPreview_app
 ```
 
-## Workflow
+## Preview A Recording
 
-Choose an RHS file, select channels and a time window, inspect waveform and
-stimulation context, then save the preview or draft protocol information.
-Windowed reads avoid decoding an entire long recording for each navigation
-action.
+1. On **Setup**, choose one `.rhs` file.
+2. The app reads the header, lists the amplifier channels, selects up to eight
+   channels, and displays a short waveform window.
+3. Drag **Pan** to move the window through the recording. Scroll over the plot
+   to change the displayed duration around the pointer.
+4. Edit the plotted interval on the graph when you need to mark a smaller
+   region. Choose **Zoom to ROI** to make that interval the current window.
+5. Choose **Refresh Preview** to reread the current window from disk.
 
-## Use Without The GUI
+Only the displayed window is decoded. This keeps navigation practical for long
+recordings and does not change the source file.
 
-For ordinary non-GUI waveform access, call the reusable RHS facade directly:
+## Choose Channels And Roles
+
+On **Protocol**, the channel table contains four columns:
+
+| Column | Purpose |
+| --- | --- |
+| Plot | Show or hide this channel in the stacked preview |
+| Role | Assign its purpose in the experiment |
+| Label | Enter a readable name for plots and later analysis |
+| Channel | Intan channel name read from the recording |
+
+You may open an existing protocol JSON before editing the table. Choose
+**Save Protocol Draft** to save the current assignments. A protocol is
+recommended for response analysis because it makes the stimulation,
+reference, and response channels explicit.
+
+## Prepare A File Filter
+
+Use **Add RHS files or folder** to collect recordings for a later analysis.
+The file table lets you assign a label and comment to each recording. Remove
+individual entries or clear the list as needed, then choose **Save Filter
+Record**.
+
+The filter record identifies the selected files and their labels. It does not
+copy the RHS recordings or contain decoded waveforms.
+
+## Review Recording Information
+
+The **Review** tab shows the indexed duration, channel counts, current window,
+selected channels, and recent action. The preview plot uses a separate vertical
+band for each selected channel so traces do not obscure one another.
+
+## Read An RHS Window Without The App
 
 ```matlab
 [index, status] = labkit.rhs.indexFile("recording.rhs");
-assert(status.ok, status.message);
+assert(status.ok, status.message)
+
 options = struct( ...
     "family", "amplifier", ...
     "channels", ["A-000", "A-001"], ...
     "timeRangeSec", [1.0 1.5]);
 [window, status] = labkit.rhs.readWindow("recording.rhs", options);
-assert(status.ok, status.message);
+assert(status.ok, status.message)
 ```
 
-`indexFile` reads recording metadata without decoding the full waveform.
-`readWindow` returns the bounded data and retains sampling and channel metadata
-needed to interpret the waveform matrix.
-
-`rhs_preview.analysisRun.readPreviewWindow` is also documented because it is
-an app-owned callable contract, but it is intended for Runtime V2 state
-transitions. It accepts the complete RHS Preview state, selected channel ids,
-an action label, and a preserve-ROI flag, then returns updated state, an `ok`
-flag, and a log message. Scripts that only need data should prefer
-`labkit.rhs.readWindow`.
+`indexFile` reads recording metadata. `readWindow` returns the selected time
+range together with the sample rate and channel information needed to
+interpret the waveform matrix.
 
 ## Errors And Limitations
 
-- File indexing can succeed even when a requested family or channel selection
-  is unavailable; check the status from each read.
-- Time ranges use seconds and are clamped by app state in the GUI workflow.
-- Windowed reads reduce IO and memory cost but do not cache an unlimited number
-  of decoded windows.
+- RHS Preview currently displays amplifier channels.
+- A channel listed in a protocol must exist in the selected recording.
+- A window is limited to the indexed recording duration; requests outside that
+  range are clamped.
+- Short reads reduce memory and waiting time, but repeated navigation still
+  requires disk access.
+- The app is for inspection and preparation. Use Nerve Response Analysis for
+  stimulus detection and CAP measurements.
 
-## Troubleshooting
+## Related Functions And Apps
 
-- Keep start and sample-count values inside the recording bounds.
-- Resolve channels by metadata rather than assuming a fixed amplifier index.
-- Use the full analysis app when event detection or CAP metrics are required.
-
-## See Also
-
-- [RHS Library](../../../libraries/rhs/README.md)
+- `labkit.rhs.indexFile`
+- `labkit.rhs.readWindow`
+- `rhs_preview.analysisRun.readPreviewWindow`
 - [Nerve Response Analysis](../nerve-response-analysis/README.md)
+- [RHS library](../../../libraries/rhs/README.md)

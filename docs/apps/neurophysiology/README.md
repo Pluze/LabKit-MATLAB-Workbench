@@ -1,32 +1,43 @@
 # Neurophysiology Apps
 
-The neurophysiology family moves from raw Intan RHS inspection through protocol
-definition, event-locked response analysis, and final metric review.
+The neurophysiology apps cover three stages of an Intan RHS workflow: checking
+recordings, measuring stimulus-evoked responses, and reviewing the resulting
+measurements.
 
 ## Choose An App
 
-| Stage | App |
+| What you want to do | App |
 | --- | --- |
-| Inspect headers and waveform windows; draft channel/filter protocol | [RHS Preview](rhs-preview/README.md) |
-| Detect stimulation trains and measure CAP responses | [Nerve Response Analysis](nerve-response-analysis/README.md) |
-| Review aligned segments and descriptive statistics | [Response Review and Stats](response-review-stats/README.md) |
+| Check recording metadata and short waveform windows; assign channel roles | [RHS Preview](rhs-preview/README.md) |
+| Find stimulation events and measure compound action potentials | [Nerve Response Analysis](nerve-response-analysis/README.md) |
+| Recalculate or summarize measurements from an analysis or segment table | [Response Review and Stats](response-review-stats/README.md) |
 
-## Shared Workflow
+## Recommended Workflow
 
-RHS Preview reads bounded windows rather than loading complete recordings.
-Nerve Response Analysis combines a filter record, protocol, and source files
-into an analysis JSON containing events, trains, metrics, and issues. Response
-Review and Stats reads that analysis or a supported legacy segment table and
-exports review metrics.
+1. Open a representative recording in RHS Preview. Confirm the channels and
+   inspect a short portion of the waveform.
+2. Save a protocol draft that records channel roles. If you are working with a
+   set of recordings, label the files and save a filter record.
+3. Open the filter record in Nerve Response Analysis, add the protocol, and run
+   the analysis.
+4. Export the analysis as JSON. This file contains the events, stimulus trains,
+   response measurements, and any issues found while reading the recordings.
+5. Open that JSON in Response Review and Stats to inspect and export the
+   measurement table. A compatible segment CSV can be used instead when you
+   need to recalculate measurements from waveforms.
 
-## Programmatic Entry Points
+Each stage saves its own parameters with the results. Keep those settings with
+any reported latency, amplitude, or signal-to-noise values.
 
-`labkit.rhs.*` provides indexed header and waveform access. Cataloged
-`nerve_response_analysis.analysisRun.*` and
-`response_review_stats.analysisRun.*` functions expose event detection,
-segment alignment, CAP measurement, and summary calculations without a GUI.
+## Use RHS Data In MATLAB Code
 
-## Related Libraries
+The [RHS library](../../libraries/rhs/README.md) provides functions for reading
+recording metadata and selected waveform windows without opening an app. The
+individual app manuals show the calculation functions used for event
+detection, response measurement, alignment, and summary statistics.
 
-- [RHS Library](../../libraries/rhs/README.md)
-- [Biosignal Library](../../libraries/biosignal/README.md)
+## Related Documentation
+
+- [RHS library](../../libraries/rhs/README.md)
+- [Biosignal library](../../libraries/biosignal/README.md)
+- [App catalog](../README.md)

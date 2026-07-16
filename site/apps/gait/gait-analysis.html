@@ -18,60 +18,87 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="gait-analysis">Gait Analysis</h1>
-<p>Gait Analysis converts ordered pose coordinates into frame, step, and summary metrics with explicit point-role, scale, time, smoothing, and origin options.</p>
-<h2 id="launch">Launch</h2>
+<p>Gait Analysis converts named two-dimensional pose coordinates into frame, coordinate, step, and summary tables. The app keeps role mapping, time and scale calibration, smoothing, event detection, preview, and export in one reproducible project.</p>
+<h2 id="open-gait-analysis">Open Gait Analysis</h2>
+<p>From the LabKit launcher, select <strong>Gait Analysis</strong> and choose <strong>Open</strong>. From a source checkout, run:</p>
 <pre><code class="language-matlab">labkit_GaitAnalysis_app</code></pre>
-<h2 id="inputs">Inputs</h2>
+<h2 id="supported-inputs">Supported Inputs</h2>
+<p>Use <strong>Source &gt; Open pose file</strong> to open one of these inputs:</p>
 <ul>
-<li>CSV, TSV, or TXT tables with paired point X/Y columns;</li>
-<li>MAT files containing <code>pose</code>, <code>poseData</code>, or <code>coords</code> plus <code>pointNames</code>;</li>
-<li>current Video Marker project or recovery envelopes;</li>
-<li>compatible legacy Video Marker or Image Marker project/autosave payloads.</li>
+<li>CSV, TSV, or TXT with paired <code>point_x</code>/<code>point_y</code> or</li>
 </ul>
-<p>Marker projects are read directly. Gait Analysis does not require an intermediate CSV and does not modify the source project.</p>
-<h2 id="workflow">Workflow</h2>
+<p><code>point__x</code>/<code>point__y</code> columns;</p>
+<ul>
+<li>MAT containing a <code>pose</code> or <code>poseData</code> structure;</li>
+<li>MAT containing <code>coords</code> and <code>pointNames</code> variables;</li>
+<li>a current Video Marker <code>labkit.project</code> document or autosave;</li>
+<li>compatible legacy <code>videoMarkerProject</code> or <code>imageMarkerProject</code> payloads.</li>
+</ul>
+<p>Normalized coordinates have shape frames-by-points-by-2. Point names must match the second dimension. A supplied frame index or time vector must match the frame count.</p>
+<h2 id="analyze-a-recording">Analyze A Recording</h2>
 <ol>
-<li>Load a coordinate or marker-project file.</li>
-<li>Map point names to anatomical roles.</li>
-<li>Set frame rate/time source, smoothing window, scale, coordinate unit, and</li>
+<li>On <strong>Source</strong>, open a pose or marker-project file.</li>
+<li>On <strong>Roles + Detection</strong>, enter the exact point name for each anatomical</li>
 </ol>
-<p>origin policy.</p>
+<p>role.</p>
 <ol>
-<li>Configure step-event detection.</li>
-<li>Run analysis and review the QC preview.</li>
-<li>Export frame, coordinate, step, and summary tables.</li>
+<li>Set frame rate, pixels per unit, output unit, and optional origin shift.</li>
+<li>Set smoothing and step quality thresholds.</li>
+<li>Return to <strong>Source</strong> and choose <strong>Run analysis</strong>.</li>
+<li>Use the preview mode selector to inspect <strong>Trajectory</strong>, <strong>Angles</strong>, or</li>
 </ol>
-<h2 id="scientific-semantics">Scientific Semantics</h2>
-<p>Coordinates remain ordered by point name. Smoothing is applied before joint angles, segment lengths, translations, and event detection. Scale converts pixel distances to the selected physical unit; origin shifting affects derived coordinate columns but the export retains raw pixel coordinates for audit.</p>
-<p>Step metrics are derived from detected events and their frame/time positions. Role mapping is explicit because point labels from different marker projects are not assumed to share anatomical meaning.</p>
+<p><strong>Steps</strong>.</p>
+<ol>
+<li>On <strong>Results + Export</strong>, review the summary and step table, choose an output</li>
+</ol>
+<p>folder, and choose <strong>Export CSV set</strong>.</p>
+<p>Changing an option invalidates the previous result. Repeating a run with the same source and options is skipped when the result fingerprint is unchanged.</p>
+<h2 id="parameters">Parameters</h2>
+<div class="table-wrap"><table><thead><tr><th>Parameter</th><th>Default</th><th>Meaning</th></tr></thead><tbody><tr><td>Iliac, hip, knee, ankle, foot point</td><td>matching lowercase role name</td><td>Exact, case-insensitive source point name assigned to each role</td></tr><tr><td>Frame rate</td><td>30 Hz</td><td>Used only when the source does not provide a usable time vector</td></tr><tr><td>Pixels per unit</td><td>1</td><td>Coordinate scale; physical distance equals pixels divided by this value</td></tr><tr><td>Unit name</td><td><code>px</code></td><td>Label attached to scaled coordinate and distance outputs</td></tr><tr><td>Use first-frame first point as origin</td><td>Off</td><td>Shifts derived export coordinates while retaining raw pixel columns</td></tr><tr><td>Smooth window</td><td>5 frames</td><td>Centered finite-value mean applied independently to every coordinate</td></tr><tr><td>Minimum step</td><td>3 frames</td><td>Shorter candidates fail step quality control</td></tr><tr><td>Maximum step</td><td>300 frames</td><td>Longer candidates fail step quality control</td></tr><tr><td>Minimum stride</td><td>1 output unit</td><td>Smaller candidates fail step quality control</td></tr><tr><td>Maximum hip drift</td><td>1,000,000 output units</td><td>Upper drift rule; the default effectively leaves it disabled</td></tr></tbody></table></div>
+<h2 id="calculation-sequence">Calculation Sequence</h2>
+<p><code>computeGait</code> resolves the five role names, selects source time or derives time from frame rate, determines coordinate scale, and smooths each point and axis. It then computes hip, knee, and ankle angles from adjacent segment vectors, computes scaled segment lengths, detects step events, evaluates step quality, and assembles all result tables.</p>
+<p>Joint angles use the vector dot product and are reported in degrees. A zero or nonfinite segment produces <code>NaN</code>; the app does not invent an angle. Missing coordinate samples are ignored inside each smoothing window when at least one finite value is available.</p>
 <h2 id="outputs">Outputs</h2>
+<p><strong>Export CSV set</strong> writes four CSV files and one LabKit result manifest:</p>
 <ul>
-<li>frame metrics CSV;</li>
-<li>coordinate CSV with raw pixel and scaled/origin-shifted columns;</li>
-<li>step metrics CSV;</li>
-<li>summary CSV and QC plot.</li>
+<li>frame metrics, including time, angles, lengths, and step membership;</li>
+<li>coordinates, including raw pixels and optional scaled/origin-shifted values;</li>
+<li>one row per detected step with quality status and step measurements;</li>
+<li>summary metrics;</li>
+<li><code>&lt;source&gt;_gait.labkit.json</code>, which records inputs, parameters, output names,</li>
 </ul>
-<h2 id="use-without-the-gui">Use Without The GUI</h2>
+<p>and the valid-step count.</p>
+<p>The manifest is provenance metadata, not an extra scientific result.</p>
+<h2 id="use-gait-analysis-without-the-gui">Use Gait Analysis Without The GUI</h2>
 <pre><code class="language-matlab">pose = gait_analysis.sourceFiles.readPoseFile(&quot;marker-project.mat&quot;);
+
 opts = gait_analysis.appState.defaultOptions();
 opts.frameRate = 120;
+opts.pixelsPerUnit = 24.6;
+opts.unitName = &quot;mm&quot;;
+
 result = gait_analysis.analysisRun.computeGait(pose, opts);
 writetable(result.stepTable, &quot;steps.csv&quot;);</code></pre>
-<h2 id="errors-and-troubleshooting">Errors And Troubleshooting</h2>
+<p>The returned structure contains <code>frameTable</code>, <code>coordinateTable</code>, <code>stepTable</code>, <code>summaryTable</code>, detected <code>events</code>, the normalized <code>options</code>, <code>ok</code>, and a message. <code>computeGait</code> performs no UI or file writes.</p>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
-<li>Every point requires paired X/Y columns and a stable name.</li>
-<li>A marker MAT must contain a recognized project envelope or supported legacy</li>
+<li>Every required role name must resolve to a source point.</li>
+<li>Coordinate units are only as valid as the entered calibration.</li>
+<li>Frame rate is ignored when a usable source time vector is present.</li>
+<li>Smoothing changes event locations and derived angles; save the chosen window</li>
 </ul>
-<p>payload.</p>
+<p>with any reported results.</p>
 <ul>
-<li>Review role mapping and scale before interpreting physical distances or ROM.</li>
+<li>The app analyzes existing coordinates; it does not assess landmark placement</li>
 </ul>
-<h2 id="see-also">See Also</h2>
+<p>accuracy.</p>
+<h2 id="related-functions-and-apps">Related Functions And Apps</h2>
 <ul>
+<li><code>gait_analysis.sourceFiles.readPoseFile</code></li>
 <li><code>gait_analysis.analysisRun.computeGait</code></li>
 <li><a href="../image-measurement/video-marker.html">Video Marker</a></li>
-<li><a href="index.html">Gait family</a></li>
-</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/gait_analysis/analysisRun/computeGait.html"><code>gait_analysis.analysisRun.computeGait</code></a></td><td>Compute gait frame, step, and summary metrics from pose data.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="history/LK-20260714-gait-analysis-app.html">2026-07-14 - Gait Analysis app</a><small>feat | additive</small></li></ul></section>
+<li><a href="index.html">Gait apps</a></li>
+</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/gait_analysis/analysisRun/computeGait.html"><code>gait_analysis.analysisRun.computeGait</code></a></td><td>Compute gait frame, step, and summary metrics from pose data.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../history/records/2026/07/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../history/records/2026/07/LK-20260714-gait-analysis-app.html">2026-07-14 - Gait Analysis app</a><small>feat | additive</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

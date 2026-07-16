@@ -1,18 +1,24 @@
 # Wearable Apps
 
-The wearable family analyzes recorded physiological signals through reusable
-`labkit.biosignal` data structures and app-owned workflows.
+Wearable apps read physiological recordings, preserve their time and channel
+information, and provide focused analysis and reporting workflows.
 
-## App
+## Choose An App
 
-[ECG Print](ecg-print/README.md) reads a MAT timetable or delimited table,
-selects a time region, filters the waveform, detects peaks, builds aligned
-segments and a template, and reports segment SNR.
+| What you want to do | App |
+| --- | --- |
+| Filter ECG, detect beats, inspect segment quality, and export a printable waveform | [ECG Print](ecg-print/README.md) |
 
-## Programmatic Entry Points
+## Use Biosignal Functions Directly
 
-The [Biosignal Library](../../libraries/biosignal/README.md) exposes recording import,
-channel selection, filtering, peak detection, event segmentation, template
-construction, and segment measurement. The cataloged
-`ecg_print.analysisRun.analyzeSignal` function composes those operations using
-the same durable parameters as the app.
+The [Biosignal library](../../libraries/biosignal/README.md) provides the same
+building blocks used by ECG Print: recording import, channel selection,
+filtering, peak detection, event-centered segments, template construction, and
+segment measurements. Use those functions when you need a script or batch
+workflow rather than the app.
+
+## Related Documentation
+
+- [ECG Print manual](ecg-print/README.md)
+- [Biosignal library](../../libraries/biosignal/README.md)
+- [App catalog](../README.md)

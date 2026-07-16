@@ -1,29 +1,40 @@
 # Gait Apps
 
-The gait family converts ordered pose coordinates into frame metrics, step
-events, joint angles, translations, range of motion, and quality-control
-previews.
+Gait apps turn frame-ordered landmark coordinates into auditable kinematic
+tables. Annotation stays in the image or video marker workflow; this family
+owns role mapping, coordinate calibration, temporal interpretation, gait
+metrics, quality checks, and result export.
 
-## App
+## Choose An App
 
-[Gait Analysis](gait-analysis/README.md) reads coordinate tables, MAT
-coordinate payloads, and compatible Video Marker or legacy Image Marker
-projects and autosaves.
+| Task | App |
+| --- | --- |
+| Place and revise landmarks on video frames | [Video Marker](../image-measurement/video-marker/README.md) |
+| Convert completed landmarks into gait metrics | [Gait Analysis](gait-analysis/README.md) |
 
-## Workflow Boundary
+## Data Flow
 
-Marker placement and frame annotation belong in Video Marker or Image Marker.
-Gait Analysis consumes those coordinates, maps point names to anatomical roles,
-applies configured smoothing and scale/origin transforms, and exports derived
-metrics without changing the annotation project.
+1. Video Marker or a compatible Image Marker project records one ordered set
+   of named points per frame.
+2. Gait Analysis normalizes the marker project, MAT payload, or wide text table
+   to a frame-by-point-by-two coordinate array.
+3. The user maps point names to iliac, hip, knee, ankle, and foot roles.
+4. The app smooths coordinates, calculates joint angles and segment lengths,
+   detects steps, applies quality rules, and builds export tables.
 
-## Programmatic Entry Point
+Gait Analysis reads marker project and autosave files directly. It never
+rewrites the annotation project and does not require an intermediate CSV.
 
-`gait_analysis.analysisRun.computeGait` accepts normalized pose data and an
-option struct and returns the same GUI-free frame, coordinate, step, and summary
-tables used by the app.
+## Use The Calculation Without The App
 
-## Related Apps
+The app-owned calculation entry point is
+`gait_analysis.analysisRun.computeGait`. It accepts normalized pose data from
+`gait_analysis.sourceFiles.readPoseFile` and the same option structure used by
+the app. See the [Gait Analysis manual](gait-analysis/README.md) for the data
+shape, defaults, outputs, and example.
 
-- [Video Marker](../image-measurement/video-marker/README.md)
-- [Gait Analysis](gait-analysis/README.md)
+## Related Documentation
+
+- [Image Measurement apps](../image-measurement/README.md)
+- [App catalog](../README.md)
+- [App Framework](../../framework/README.md)
