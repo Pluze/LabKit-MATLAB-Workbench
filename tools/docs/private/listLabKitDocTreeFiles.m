@@ -9,6 +9,12 @@ function files = listLabKitDocTreeFiles(root)
         files = strings(0, 1);
         return;
     end
+    [status, attributes] = fileattrib(root);
+    if ~status
+        error("LabKit:Docs:UnreadableTree", ...
+            "Could not resolve documentation tree: %s", string(root));
+    end
+    root = string(attributes.Name);
     entries = dir(fullfile(root, "**", "*"));
     entries = entries(~[entries.isdir]);
     entries = entries(~ismember(string({entries.name}), ...
@@ -20,7 +26,7 @@ function files = listLabKitDocTreeFiles(root)
         files(k) = replace(extractAfter(filepath, strlength(prefix)), ...
             filesep, "/");
     end
-    rootHiddenFiles = [".nojekyll"];
+    rootHiddenFiles = ".nojekyll";
     for k = 1:numel(rootHiddenFiles)
         if isfile(fullfile(root, rootHiddenFiles(k))) && ...
                 ~any(files == rootHiddenFiles(k))

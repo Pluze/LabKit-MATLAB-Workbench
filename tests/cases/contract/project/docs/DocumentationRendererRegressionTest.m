@@ -120,6 +120,32 @@ classdef DocumentationRendererRegressionTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(syncHelper, ...
                 "removeEmptyNumberedSiblings(targetRoot)"));
         end
+
+        function generatedTreeListingSupportsRelativeRoots(testCase)
+            root = setupLabKitTestPath();
+            tools = fullfile(root, "tools", "docs");
+            addpath(tools);
+            pathCleanup = onCleanup(@() rmpath(tools));
+
+            originalFolder = pwd;
+            sandbox = string(tempname);
+            mkdir(sandbox);
+            folderCleanup = onCleanup(@() cleanupRelativeTree( ...
+                originalFolder, sandbox));
+            cd(sandbox);
+            result = renderLabKitDocs(fullfile(root, "docs"), "relative-site");
+            testCase.verifyTrue(isfile(fullfile("relative-site", "index.html")));
+            testCase.verifyEqual(result.outputRoot, ...
+                string(fullfile(sandbox, "relative-site")));
+            clear folderCleanup pathCleanup
+        end
+    end
+end
+
+function cleanupRelativeTree(originalFolder, sandbox)
+    cd(originalFolder);
+    if isfolder(sandbox)
+        rmdir(sandbox, "s");
     end
 end
 

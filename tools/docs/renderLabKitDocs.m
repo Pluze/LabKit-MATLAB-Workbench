@@ -15,6 +15,8 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
     if nargin < 2 || strlength(string(outputRoot)) == 0
         outputRoot = fullfile(repoRoot, "site");
     end
+    sourceRoot = absoluteDocFolder(sourceRoot, false);
+    outputRoot = absoluteDocFolder(outputRoot, true);
 
     model = loadLabKitDocumentation(repoRoot, sourceRoot);
     stagingRoot = string(tempname);
@@ -44,6 +46,19 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
         "fileCount", sum(~[files.isdir]), ...
         "sourceRoot", string(sourceRoot), ...
         "outputRoot", string(outputRoot));
+end
+
+function folder = absoluteDocFolder(folder, createIfMissing)
+    folder = string(folder);
+    if createIfMissing && ~isfolder(folder)
+        mkdir(folder);
+    end
+    [status, attributes] = fileattrib(folder);
+    if ~status || ~attributes.directory
+        error("LabKit:Docs:InvalidFolder", ...
+            "Documentation folder does not exist: %s", folder);
+    end
+    folder = string(attributes.Name);
 end
 
 function output = renderNarrativePages(model, stagingRoot)
