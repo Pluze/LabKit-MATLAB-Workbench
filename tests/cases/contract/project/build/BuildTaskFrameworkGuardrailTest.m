@@ -83,6 +83,17 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "PlatformSkeletonTest/artifactPathsUseRunnerLayout"));
         end
 
+        function qualifiedMethodSelectorIsDiscoveredBeforeNameFiltering(testCase)
+            setupLabKitTestPath();
+            output = listLabKitTestsQuietly( ...
+                "Tests", ...
+                "PlatformSkeletonTest/artifactPathsUseRunnerLayout", ...
+                "RunName", "qualified_method_selector_probe");
+            testCase.verifyEqual(output.count, 1);
+            testCase.verifyEqual(output.tests.Name, ...
+                "PlatformSkeletonTest/artifactPathsUseRunnerLayout");
+        end
+
         function runnerFilesRequiresGuiModeForGuiFiles(testCase)
             root = setupLabKitTestPath();
             guiFile = fullfile(root, "tests", "cases", "gui", ...

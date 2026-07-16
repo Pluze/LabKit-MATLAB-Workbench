@@ -19,7 +19,7 @@ function groups = labkitDiscoverSelectorGroups(casesRoot, opts)
 end
 
 function folders = selectorCandidateFolders(casesRoot, opts)
-    selectors = lower(normalizeTextList(opts.Tests));
+    selectors = selectorDiscoveryTerms(opts.Tests);
     roots = selectorSearchRoots(casesRoot, opts);
     folders = strings(1, 0);
     for r = 1:numel(roots)
@@ -31,6 +31,19 @@ function folders = selectorCandidateFolders(casesRoot, opts)
         end
     end
     folders = unique(folders, "stable");
+end
+
+function terms = selectorDiscoveryTerms(values)
+    selectors = lower(normalizeTextList(values));
+    terms = selectors;
+    for k = 1:numel(selectors)
+        selector = selectors(k);
+        if contains(selector, "/")
+            parts = split(selector, "/");
+            terms = [terms, parts(strlength(parts) > 0).'];
+        end
+    end
+    terms = unique(terms(strlength(terms) > 0), "stable");
 end
 
 function roots = selectorSearchRoots(casesRoot, opts)

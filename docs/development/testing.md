@@ -302,6 +302,15 @@ runLabKitTests("Tests", "GuiLayoutBatchCropTest", ...
     "IncludeGui", true, "GuiMode", "hidden", "HtmlReport", false)
 ```
 
+An unqualified method name is accepted when it is unique. To select one method
+without ambiguity, use the official `ClassName/methodName` test name:
+
+```matlab
+runLabKitTests("Tests", ...
+    "PlatformSkeletonTest/artifactPathsUseRunnerLayout", ...
+    "HtmlReport", false)
+```
+
 For the lowest-learning-cost exact rerun, select the test file directly:
 
 ```matlab
