@@ -146,10 +146,6 @@ function validateActions(actions)
             'Actions must be a scalar struct of function handles.');
     end
     ids = fieldnames(actions);
-    if isempty(ids)
-        error('labkit:ui:runtime:InvalidDefinition', ...
-            'Actions must define at least one action function.');
-    end
     for k = 1:numel(ids)
         if ~isa(actions.(ids{k}), 'function_handle')
             error('labkit:ui:runtime:InvalidDefinition', ...

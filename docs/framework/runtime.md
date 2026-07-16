@@ -49,22 +49,10 @@ end
 
 ```matlab
 function def = definition()
-project = struct( ...
-    "Version", 1, ...
-    "Create", @example.appLifecycle.createProject, ...
-    "Validate", @example.appLifecycle.validateProject, ...
-    "Migrations", {{}});
 def = labkit.ui.runtime.define( ...
     "Id", "example", ...
     "Title", "Example App", ...
-    "Project", project, ...
-    "CreateSession", @example.appLifecycle.createSession, ...
-    "Layout", @example.userInterface.buildWorkbenchLayout, ...
-    "Actions", example.definitionActions(), ...
-    "Present", @example.userInterface.presentWorkbench, ...
-    "Renderers", struct("preview", ...
-        @example.userInterface.drawPreview), ...
-    "Start", "start");
+    "Layout", @example.userInterface.buildWorkbenchLayout);
 end
 ```
 
@@ -84,11 +72,11 @@ must provide the field; optional components may be omitted.
 | --- | --- | --- | --- |
 | `Id` | Yes | Stable nonempty text | Permanent project, recovery, result, and diagnostic identity. |
 | `Title` | Yes | Nonempty text | Window title without the runtime-added version and file state. |
-| `Project` | Yes | Scalar project-declaration struct described below | Durable schema, validation, migration, and source relinking. |
+| `Project` | No | Scalar project-declaration struct described below | Durable schema, validation, migration, and source relinking. Omission uses an empty version-1 project. |
 | `CreateSession` | No | `session = createSession()` or `session = createSession(project)` | Rebuild transient selection, workflow, view, and cache state. |
 | `Layout` | Yes | `layout()`, `layout(callbacks)`, or `layout(callbacks,state)` | Return one data-only `labkit.ui.layout.workbench` tree. |
-| `Actions` | Yes | Nonempty struct mapping action IDs to `state = action(state,event,services)` | Apply one semantic workflow transaction. |
-| `Present` | Yes | `view = present(state)` | Convert canonical state into semantic control, preview, and interaction properties. |
+| `Actions` | No | Struct mapping action IDs to `state = action(state,event,services)` | Apply semantic workflow transactions. Default: no actions. |
+| `Present` | No | `view = present(state)` | Convert canonical state into semantic control, preview, and interaction properties. Default: an empty model. |
 | `Renderers` | No | Struct mapping renderer IDs to `renderer()`, `renderer(model)`, or `renderer(ax,model)` | Draw a prepared presenter model without changing workflow state. |
 | `Start` | No | Registered action ID or an action function | Queue optional initialization after the first visible presentation. |
 | `DebugSample` | No | `pack = writer(debugContext)` | Create synthetic local debug inputs only during a debug launch. |
@@ -242,9 +230,10 @@ figure callbacks. Renderer IDs in presentation must exactly match fields in
 `Renderers`; action and interaction event IDs must exactly match fields in
 `Actions`.
 
-Apps declare the project contract in `definition.m`, use `+appLifecycle` for
-`createProject.m`, `createSession.m`, `validateProject.m`, and ordered
-migrations or imports, and use `definitionActions.m` plus `+userInterface`;
+Static Apps may omit `Project`, `CreateSession`, `Actions`, and `Present`.
+Apps add `+appLifecycle` only when they own durable schema, transient cache,
+migrations, or imports, and add `definitionActions.m` and presenter functions
+only when they own semantic interactions;
 app-specific work belongs in concrete workflow packages such as
 `+sourceFiles`, `+analysisRun`, `+resultFiles`, or a domain-specific package.
 The older `+state`, `+actions`, `+ui`, and `+view` adapter packages have been
@@ -522,8 +511,8 @@ stack is intentional.
 
 ### Runtime State And Transactions
 
-A definition declares `Project`, optional `CreateSession`, `Actions`,
-`Present`, optional `Renderers`, and optional `Start`. It launches through
+A definition always declares `Id`, `Title`, and `Layout`. It may add `Project`,
+`CreateSession`, `Actions`, `Present`, `Renderers`, and `Start`. It launches through
 `labkit.ui.runtime.launch`, which owns lightweight request dispatch, contract
 checks, runtime creation, output normalization, and the versioned title.
 

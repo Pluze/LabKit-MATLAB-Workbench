@@ -42,6 +42,12 @@ function varargout = labkit_Example_app(varargin)
 end
 ```
 
+A static App definition needs only stable `Id` and `Title` values plus a
+semantic `Layout`. The runtime supplies an empty version-1 project, an empty
+session, no actions, and an empty presentation model. Add project, session,
+action, presenter, renderer, or startup callbacks only when the App actually
+owns that behavior.
+
 The framework then validates the definition, creates canonical project and
 session state, builds the semantic layout, generates callbacks, commits the
 first presentation, and queues the optional start action. App handlers receive

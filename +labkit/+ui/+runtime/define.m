@@ -3,8 +3,7 @@ function def = define(varargin)
 %
 % Usage:
 %   def = labkit.ui.runtime.define("Id", id, "Title", title, ...
-%       "Project", projectSpec, "Layout", layoutFcn, ...
-%       "Actions", actions, "Present", presentFcn)
+%       "Layout", layoutFcn)
 %   def = labkit.ui.runtime.define(..., Name=Value)
 %
 % Outputs:
@@ -23,22 +22,25 @@ function def = define(varargin)
 %       only letters, digits, underscore, hyphen, or period. Treat it as a
 %       permanent compatibility identifier after projects have been saved.
 %   Title - Text shown in the app window title.
-%   Project - Scalar struct that owns the durable project schema. Required
-%       fields are listed under Project Fields.
 %   Layout - Function handle returning a labkit.ui.layout.workbench tree. It
 %       may accept no inputs, callbacks, or callbacks and initial state:
 %       layoutFcn(), layoutFcn(callbacks), or layoutFcn(callbacks,state).
-%   Actions - Nonempty scalar struct whose field names are event IDs and whose
-%       values are functions of the form state = action(state,event,services).
-%   Present - Function handle of the form view = present(state). The returned
-%       presenter model supplies control values, lists, tables, text, plots,
-%       and interaction models for one committed view.
 %
 % Optional Name-Value Arguments:
+%   Project - Scalar struct that owns a durable project schema. Omit it for an
+%       empty version-1 project with no App validator or migrations. Supplied
+%       project fields are listed under Project Fields.
 %   CreateSession - Function handle returning transient session state. It may
 %       accept no inputs or the newly created project. Missing selection,
 %       workflow, view, and cache fields are added automatically. Default: an
 %       empty session struct.
+%   Actions - Scalar struct whose field names are event IDs and whose values
+%       are functions of the form state = action(state,event,services).
+%       Default: struct(), which is valid for a static App.
+%   Present - Function handle of the form view = present(state). The returned
+%       presenter model supplies control values, lists, tables, text, plots,
+%       and interaction models for one committed view. Default: an empty
+%       presenter model, which preserves values declared by a static layout.
 %   Renderers - Scalar struct of renderer functions keyed by renderer ID. A
 %       renderer may accept no inputs, the presented model, or the target axes
 %       and model. Default: struct().
@@ -129,13 +131,9 @@ function def = define(varargin)
 %   session state.
 %
 % Typical Call:
-%   project = struct("Version", 1, "Create", @createProject, ...
-%       "Validate", @validateProject, "Migrations", {{}});
 %   def = labkit.ui.runtime.define( ...
 %       "Id", "org.example.viewer", "Title", "Example Viewer", ...
-%       "Project", project, "Layout", @buildLayout, ...
-%       "Actions", struct("openFiles", @openFiles), ...
-%       "Present", @presentState, "Start", "openFiles");
+%       "Layout", @buildStaticLayout);
 %
 % See also labkit.ui.runtime.launch, labkit.ui.runtime.saveState,
 %   labkit.ui.runtime.loadState
@@ -151,15 +149,35 @@ function def = createV2Definition(opts)
     def.contractVersion = 2;
     def.id = string(requiredOption(opts, "Id"));
     def.title = string(requiredOption(opts, "Title"));
-    def.project = requiredOption(opts, "Project");
+    def.project = optionValue(opts, "Project", defaultProjectSpec());
     def.createSession = optionValue(opts, "CreateSession", []);
     def.layout = requiredOption(opts, "Layout");
-    def.actions = requiredOption(opts, "Actions");
-    def.present = requiredOption(opts, "Present");
+    def.actions = optionValue(opts, "Actions", struct());
+    def.present = optionValue(opts, "Present", @emptyPresentation);
     def.renderers = optionValue(opts, "Renderers", struct());
     def.start = optionValue(opts, "Start", []);
     def.debugSample = optionValue(opts, "DebugSample", []);
     def.utilities = optionValue(opts, "Utilities", struct());
+end
+
+function spec = defaultProjectSpec()
+    spec = struct( ...
+        "Version", 1, ...
+        "Create", @createEmptyProject, ...
+        "Validate", @acceptProject, ...
+        "Migrations", {{}});
+end
+
+function project = createEmptyProject()
+    project = struct();
+end
+
+function accepted = acceptProject(~)
+    accepted = true;
+end
+
+function presentation = emptyPresentation(~)
+    presentation = struct();
 end
 
 function opts = parseOptions(args)

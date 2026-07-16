@@ -9,20 +9,23 @@ lifecycle and domain-neutral UI mechanics.
 Start from the LabKit app template rather than copying a complete neighboring
 app. Use the smallest nearby app only as a workflow example.
 
-A typical app begins with this fixed surface:
+A static App begins with only the product entrypoint, metadata, definition,
+and layout it actually uses:
 
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
 apps/<family>/<app_slug>/+<app_slug>/definition.m
-apps/<family>/<app_slug>/+<app_slug>/definitionActions.m
 apps/<family>/<app_slug>/+<app_slug>/requirements.m
 apps/<family>/<app_slug>/+<app_slug>/version.m
-apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createProject.m
-apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createSession.m
-apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/validateProject.m
 apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchLayout.m
-apps/<family>/<app_slug>/+<app_slug>/+userInterface/presentWorkbench.m
 ```
+
+`runtime.define` supplies an empty version-1 project, empty session, empty
+action registry, and empty presenter model when those components are omitted.
+Add `definitionActions.m` for interactions, a presenter for dynamic views,
+`createSession.m` for transient decoded/cache state, and a project declaration
+only when the App owns durable data. A migration callback exists only after a
+saved project schema has actually changed.
 
 Create additional packages only for concrete workflows that need them, for
 example `+sourceFiles`, `+analysisRun`, `+resultFiles`, `+cropGeometry`, or
@@ -32,9 +35,9 @@ example `+sourceFiles`, `+analysisRun`, `+resultFiles`, `+cropGeometry`, or
 ## Define The Runtime Contract
 
 `definition.m` returns a plain struct created by
-`labkit.ui.runtime.define`. It names the app id, project schema, optional
-session factory, layout builder, action registry, presenter, renderers, and
-optional startup event.
+`labkit.ui.runtime.define`. Every definition names the app id, title, and
+layout builder. Project schema, session factory, action registry, presenter,
+renderers, and startup event are opt-in capabilities.
 
 The complete field tables, callback signatures, canonical project/session
 buckets, presenter shape, and renderer contract are documented in
