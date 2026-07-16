@@ -163,6 +163,9 @@ requires a global positive-integer `sequence`; values are unique and
 contiguous, and a new record normally takes the previous maximum plus one. The
 renderer orders the timeline by descending sequence rather than inferring
 same-day order from a title, filename, filesystem timestamp, or Git checkout.
+Each rendered record ends with adjacent-record navigation: **Previous change**
+uses `sequence - 1` and **Next change** uses `sequence + 1`. The first and last
+records show only the direction that exists.
 
 ## Structured Sources
 

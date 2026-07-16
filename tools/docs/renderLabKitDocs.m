@@ -63,6 +63,7 @@ function output = renderNarrativePages(model, stagingRoot)
         [historyBody, historyText] = renderLabKitHistoryLinks(model, page);
         body = body + historyBody;
         plainText = plainText + " " + historyText;
+        body = body + renderLabKitHistorySequenceNavigation(model, page);
         html = renderLabKitPage(model, page.title, page.output, ...
             page.kind, body);
         writeDocText(fullfile(stagingRoot, page.output), html);

@@ -39,6 +39,52 @@ classdef DocumentationRendererRegressionTest < matlab.unittest.TestCase
                 "later records instead of a separate ordered-list format."]);
         end
 
+        function historyRecordsLinkAdjacentSequenceAtPageEnd(testCase)
+            root = setupLabKitTestPath();
+            records = dir(fullfile(root, "docs", "history", "records", ...
+                "**", "*.md"));
+            sequences = zeros(numel(records), 1);
+            outputs = strings(numel(records), 1);
+            for k = 1:numel(records)
+                source = string(fullfile(records(k).folder, records(k).name));
+                token = regexp(fileread(source), ...
+                    '^sequence:\s*([1-9][0-9]*)$', "tokens", "once", ...
+                    "lineanchors");
+                sequences(k) = str2double(token{1});
+                relative = extractAfter(source, string(root) + filesep + ...
+                    "docs" + filesep);
+                outputs(k) = replace(erase(relative, ".md") + ".html", ...
+                    filesep, "/");
+            end
+            [~, order] = sort(sequences);
+            outputs = outputs(order);
+
+            middleIndex = floor((numel(outputs) + 1) / 2);
+            middle = string(fileread(fullfile(root, "site", outputs(middleIndex))));
+            navigation = extractBetween(middle, ...
+                '<nav class="history-sequence-nav"', "</nav>");
+            testCase.assertNotEmpty(navigation);
+            testCase.verifyTrue(contains(navigation, "Previous change"));
+            testCase.verifyTrue(contains(navigation, "Next change"));
+            testCase.verifyTrue(contains(navigation, relativeWebPathForTest( ...
+                outputs(middleIndex), outputs(middleIndex - 1))));
+            testCase.verifyTrue(contains(navigation, relativeWebPathForTest( ...
+                outputs(middleIndex), outputs(middleIndex + 1))));
+            testCase.verifyLessThan(strfind(middle, ...
+                '<nav class="history-sequence-nav"'), ...
+                strfind(middle, "<footer>"), ...
+                "Adjacent links must be the last record content before the footer.");
+
+            oldest = string(fileread(fullfile(root, "site", outputs(1))));
+            newest = string(fileread(fullfile(root, "site", outputs(end))));
+            oldestNavigation = extractBetween(oldest, ...
+                '<nav class="history-sequence-nav"', "</nav>");
+            newestNavigation = extractBetween(newest, ...
+                '<nav class="history-sequence-nav"', "</nav>");
+            testCase.verifyFalse(contains(oldestNavigation, "Previous change"));
+            testCase.verifyFalse(contains(newestNavigation, "Next change"));
+        end
+
         function apiProseLinksKnownPublicSymbols(testCase)
             root = setupLabKitTestPath();
             page = string(fileread(fullfile(root, "site", "reference", ...
@@ -75,4 +121,17 @@ classdef DocumentationRendererRegressionTest < matlab.unittest.TestCase
                 "removeEmptyNumberedSiblings(targetRoot)"));
         end
     end
+end
+
+function path = relativeWebPathForTest(fromPath, toPath)
+    fromParts = split(string(fromPath), "/");
+    toParts = split(string(toPath), "/");
+    fromParts = fromParts(1:end - 1);
+    shared = 0;
+    while shared < min(numel(fromParts), numel(toParts)) && ...
+            fromParts(shared + 1) == toParts(shared + 1)
+        shared = shared + 1;
+    end
+    path = join([repmat("..", numel(fromParts) - shared, 1); ...
+        toParts(shared + 1:end)], "/");
 end
