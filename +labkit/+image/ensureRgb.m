@@ -1,17 +1,35 @@
 function rgb = ensureRgb(imageData)
 %ENSURERGB Return image data with exactly three color channels.
 %
-% App-facing contract:
+% Usage:
 %   rgb = labkit.image.ensureRgb(imageData)
 %
+% Description:
+%   Converts grayscale image arrays to RGB by copying the same values into
+%   the red, green, and blue channels. RGB input passes through unchanged,
+%   and input with more than three channels keeps only the first three. This
+%   is useful for removing an alpha or auxiliary channel after image import.
+%
+%   The function does not change numeric values, normalize intensity, or
+%   convert the input class. Empty input is returned with its original empty
+%   shape.
+%
 % Inputs:
-%   imageData - numeric or logical M-by-N grayscale, M-by-N-by-1 grayscale,
-%       M-by-N-by-3 RGB, or M-by-N-by-C data with C greater than three.
+%   imageData - Nonsparse numeric or logical M-by-N grayscale, M-by-N-by-1
+%               grayscale, M-by-N-by-3 RGB, or M-by-N-by-C array with C
+%               greater than three.
 %
 % Outputs:
-%   rgb - data with the same class and first two dimensions as imageData.
-%       Grayscale is replicated across three channels and channels after the
-%       first three are dropped. Values and numeric class are not changed.
+%   rgb - Array with the same class and first two dimensions as imageData.
+%         Nonempty output has exactly three channels.
+%
+% Errors:
+%   labkit:image:ensureRgb:InvalidChannelCount - Nonempty 3-D input has two
+%                                               color channels.
+%
+% Example:
+%   gray = uint8([0 64; 128 255]);
+%   rgb = labkit.image.ensureRgb(gray);
 
     narginchk(1, 1);
     validateattributes(imageData, {'numeric', 'logical'}, {'nonsparse'}, ...

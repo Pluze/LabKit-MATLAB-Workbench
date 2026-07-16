@@ -1,15 +1,27 @@
 function name = displayName(pathValue)
 %DISPLAYNAME Return a short image-file display name.
 %
-% App-facing contract:
+% Usage:
 %   name = labkit.image.displayName(pathValue)
 %
+% Description:
+%   Removes the folder portion of one path and returns the final filename
+%   with its extension. The function performs text processing only; the path
+%   does not need to exist. If fileparts cannot derive a filename, the
+%   trimmed input text is returned.
+%
 % Inputs:
-%   pathValue - one char, string, or scalar path-like value.
+%   pathValue - Character vector, string scalar, or another value convertible
+%               to one string scalar.
 %
 % Outputs:
-%   name - string scalar containing filename plus extension. If no filename
-%       can be derived, the trimmed input text is returned.
+%   name - String scalar containing the filename and extension.
+%
+% Errors:
+%   labkit:image:InvalidPath - pathValue converts to more than one string.
+%
+% Example:
+%   name = labkit.image.displayName(fullfile("images", "frame01.tif"));
 
     pathText = string(pathValue);
     if ~isscalar(pathText)

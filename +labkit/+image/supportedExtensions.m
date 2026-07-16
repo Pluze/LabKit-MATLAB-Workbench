@@ -1,16 +1,26 @@
 function extensions = supportedExtensions()
 %SUPPORTEDEXTENSIONS Return extensions supported by LabKit image file inputs.
 %
-% App-facing contract:
+% Usage:
 %   extensions = labkit.image.supportedExtensions()
+%
+% Description:
+%   Lists the filename extensions accepted by the generic LabKit image input
+%   functions. Matching in labkit.image.isSupportedPath is case-insensitive.
+%   This list describes source-image support; an individual app may offer a
+%   smaller set of export formats.
 %
 % Inputs:
 %   None.
 %
 % Outputs:
-%   extensions - string column of lowercase filename extensions including
-%       leading dots. The list is intended for generic source-image inputs,
-%       not app-specific export policy.
+%   extensions - String column of lowercase extensions, including the
+%                leading dot. The current values are .png, .jpg, .jpeg,
+%                .tif, .tiff, and .bmp.
+%
+% Example:
+%   extensions = labkit.image.supportedExtensions();
+%   acceptsTiff = any(extensions == ".tiff");
 
     extensions = [".png"; ".jpg"; ".jpeg"; ".tif"; ".tiff"; ".bmp"];
 end

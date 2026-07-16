@@ -1,17 +1,30 @@
 function filterSpec = fileDialogFilter(varargin)
 %FILEDIALOGFILTER Return a file-chooser-compatible image filter.
 %
-% App-facing contract:
+% Usage:
 %   filterSpec = labkit.image.fileDialogFilter()
 %   filterSpec = labkit.image.fileDialogFilter("IncludeAll", true)
 %
+% Description:
+%   Builds the two-column filter specification used by MATLAB file-selection
+%   dialogs and LabKit file panels. The first row contains every extension
+%   returned by labkit.image.supportedExtensions. By default, files outside
+%   that set are hidden from the chooser.
+%
 % Inputs:
-%   IncludeAll - optional logical scalar, default false. When true, append an
-%       "All files (*.*)" row after the image-file row.
+%   None.
+%
+% Name-Value Arguments:
+%   IncludeAll - Logical scalar. true appends an "All files (*.*)" row after
+%                the image filter. The default is false. Numeric scalars are
+%                converted to logical values.
 %
 % Outputs:
-%   filterSpec - cell array accepted by filePanel filters and MATLAB
-%       file-chooser filter specs.
+%   filterSpec - One- or two-row cell array. Column 1 contains wildcard
+%                patterns and column 2 contains user-visible descriptions.
+%
+% Example:
+%   filterSpec = labkit.image.fileDialogFilter("IncludeAll", true);
 
     opts = parseOptions(varargin{:});
     imageRow = {'*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp', ...

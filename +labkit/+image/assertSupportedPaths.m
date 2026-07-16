@@ -1,16 +1,29 @@
 function assertSupportedPaths(paths)
 %ASSERTSUPPORTEDPATHS Throw when any path has an unsupported image extension.
 %
-% App-facing contract:
+% Usage:
 %   labkit.image.assertSupportedPaths(paths)
 %
+% Description:
+%   Validates a collection of source-image paths by filename extension. The
+%   function accepts the same path forms as labkit.image.normalizePaths and
+%   stops at the first unsupported extension. It does not test whether files
+%   exist or contain valid image data. Empty input succeeds.
+%
 % Inputs:
-%   paths - char, string, cell array, or empty value accepted by
-%       labkit.image.normalizePaths.
+%   paths - Character vector, string array, cell array, or empty value
+%           accepted by labkit.image.normalizePaths.
 %
 % Outputs:
-%   None. Throws labkit:image:UnsupportedImageFile on the first unsupported
-%       extension.
+%   None.
+%
+% Errors:
+%   labkit:image:UnsupportedImageFile - A normalized path has an extension
+%                                       outside supportedExtensions.
+%   labkit:image:InvalidPaths - paths has an unsupported container type.
+%
+% Example:
+%   labkit.image.assertSupportedPaths(["frame01.png"; "frame02.TIF"]);
 
     paths = labkit.image.normalizePaths(paths);
     for k = 1:numel(paths)

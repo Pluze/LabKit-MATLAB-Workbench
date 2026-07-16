@@ -1,21 +1,41 @@
 function [imageOut, scale] = resizeToFit(imageIn, varargin)
 %RESIZETOFIT Resize an image to fit within maximum row/column limits.
 %
-% App-facing contract:
-%   imageOut = labkit.image.resizeToFit(imageIn, "MaxHeight", 1500)
-%   [imageOut, scale] = labkit.image.resizeToFit(...)
+% Usage:
+%   imageOut = labkit.image.resizeToFit(imageIn)
+%   imageOut = labkit.image.resizeToFit(imageIn, Name, Value)
+%   [imageOut, scale] = labkit.image.resizeToFit(___)
+%
+% Description:
+%   Computes one uniform scale that satisfies both the maximum row and column
+%   limits, preserving aspect ratio. With the default AllowUpscale value,
+%   images that already fit are returned unchanged. Target dimensions are
+%   rounded to the nearest integer and limited to at least one pixel.
+%
+%   "nearest" samples endpoint-aligned nearest input pixels. "bilinear"
+%   performs endpoint-aligned linear interpolation independently in each
+%   channel. Output keeps the input class; integer linear results are rounded
+%   and limited to the class range.
 %
 % Inputs:
-%   imageIn - numeric image data.
-%   MaxHeight - optional positive scalar, default Inf.
-%   MaxWidth - optional positive scalar, default Inf.
-%   AllowUpscale - optional logical scalar, default false.
-%   Method - optional resize method text, default "bilinear".
+%   imageIn - Numeric or logical 2-D image or 3-D multichannel image. Empty
+%             input is returned unchanged with scale 1.
+%
+% Name-Value Arguments:
+%   MaxHeight - Positive maximum output row count. The default is Inf.
+%   MaxWidth - Positive maximum output column count. The default is Inf.
+%   AllowUpscale - Logical scalar controlling enlargement when both limits
+%                  permit it. The default is false.
+%   Method - "bilinear" (default) or "nearest".
 %
 % Outputs:
-%   imageOut - resized image data. If the image already fits and upscaling is
-%       disabled, the input is returned unchanged.
-%   scale - scalar applied to both rows and columns.
+%   imageOut - Resized image, or imageIn unchanged when scale is 1.
+%   scale - Uniform requested scale before target dimensions are rounded.
+%
+% Example:
+%   imageIn = reshape(uint8(1:200), 10, 20);
+%   [imageOut, scale] = labkit.image.resizeToFit(imageIn, ...
+%       "MaxHeight", 5, "Method", "nearest");
 
     opts = parseOptions(varargin{:});
     imageOut = imageIn;
