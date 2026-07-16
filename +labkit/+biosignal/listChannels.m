@@ -2,13 +2,30 @@ function names = listChannels(recording)
 %LISTCHANNELS Return display names for all channels in a recording.
 %
 % Usage:
-%   names = labkit.biosignal.listChannels(recording);
+%   names = labkit.biosignal.listChannels(recording)
+%
+% Description:
+%   Returns channel display names in recording order. These are the same
+%   names accepted by labkit.biosignal.getChannel and are suitable for a
+%   list box or drop-down menu. A recording with no signals returns a 1-by-0
+%   cell array.
 %
 % Inputs:
-%   recording - struct returned by readRecording.
+%   recording - Recording structure returned by
+%               labkit.biosignal.readRecording.
 %
-% Output:
-%   names - cell row of display-name char vectors for app channel pickers.
+% Outputs:
+%   names - 1-by-N cell array of display-name character vectors.
+%
+% Errors:
+%   labkit:biosignal:InvalidRecording - recording is not a structure with a
+%                                      signals field.
+%
+% Example:
+%   signals(1).displayName = "ECG";
+%   signals(2).displayName = "Respiration";
+%   recording = struct('signals', signals);
+%   names = labkit.biosignal.listChannels(recording);
 
     validateRecording(recording);
     if isempty(recording.signals)

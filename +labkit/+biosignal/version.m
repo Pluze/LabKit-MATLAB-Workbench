@@ -1,16 +1,26 @@
 function info = version()
 %VERSION Return the LabKit biosignal facade contract version.
 %
-% App-facing contract:
+% Usage:
 %   info = labkit.biosignal.version()
+%
+% Description:
+%   Reports the semantic version and compatibility range of the public
+%   labkit.biosignal API. Use this information when an app or saved project
+%   needs to check whether the installed biosignal facade satisfies a known
+%   contract range.
 %
 % Inputs:
 %   None.
 %
 % Outputs:
-%   info - plain struct describing the current labkit.biosignal contract, the
-%       compatible contract ranges implemented by this code, contract status,
-%       and a short maintainer note.
+%   info - Scalar structure returned by labkit.contract.versionInfo. It
+%          identifies the biosignal component, current version, compatible
+%          contract range, stability status, and a short description.
+%
+% Example:
+%   info = labkit.biosignal.version();
+%   currentVersion = info.current;
 
     info = labkit.contract.versionInfo("biosignal", "1.0.1", ">=1.0 <2", ...
         "stable", "Biosignal recording, filtering, event, segmentation, and ECG facade contract.");

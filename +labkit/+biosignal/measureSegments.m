@@ -2,24 +2,62 @@ function result = measureSegments(segments, template, opts)
 %MEASURESEGMENTS Measure generic template-residual segment quality.
 %
 % Usage:
-%   measurements = labkit.biosignal.measureSegments(segments, template);
-%   opts = struct('signalWindowSec', [-0.05 0.05], ...
-%       'noiseWindowsSec', [-0.30 -0.20; 0.30 0.40]);
-%   measurements = labkit.biosignal.measureSegments(segments, template, opts);
+%   result = labkit.biosignal.measureSegments(segments, template)
+%   result = labkit.biosignal.measureSegments(segments, template, opts)
+%
+% Description:
+%   Measures each segment against a representative template. SignalP2P is
+%   the peak-to-peak amplitude inside the signal window. NoiseRMS is the root
+%   mean square of segment minus template inside the selected noise windows.
+%   SNRdB is 20*log10(SignalP2P/NoiseRMS), and TemplateCorrelation is the
+%   mean-centered correlation between the complete segment and template.
+%
+%   The function also summarizes the per-segment measurements with means and
+%   sample standard deviations. If either the segment matrix or template is
+%   empty, both returned tables and metadata are empty.
 %
 % Inputs:
-%   segments - struct returned by segmentByEvents.
-%   template - struct returned by buildTemplate.
-%   opts - optional struct.
+%   segments - Segment structure returned by
+%              labkit.biosignal.segmentByEvents. Its values matrix must have
+%              the same number of rows as template.values.
+%   template - Template structure returned by
+%              labkit.biosignal.buildTemplate.
+%   opts - Optional scalar struct containing the fields listed below.
 %
 % Options:
-%   signalWindowSec - [start end] seconds relative to event, default
-%                     [-0.06 0.06].
-%   noiseWindowsSec - N-by-2 seconds relative to event, default
-%                     [-0.30 -0.20; 0.40 0.50].
+%   signalWindowSec - Two-element interval used for SignalP2P. The default
+%                     is [-0.06 0.06] seconds relative to the event. The
+%                     interval must include at least one timeOffset sample.
+%   noiseWindowsSec - N-by-2 matrix of intervals used for NoiseRMS. The
+%                     default is [-0.30 -0.20; 0.40 0.50] seconds. Their
+%                     union must include at least one timeOffset sample.
 %
-% Output:
-%   result - struct with perSegment table, summary table, and metadata.
+% Outputs:
+%   result - Structure containing per-segment measurements, aggregate
+%            statistics, and the windows used in the calculation.
+%
+% Output Fields:
+%   type - String scalar "biosignalSegmentMeasurements".
+%   perSegment - Table with Segment, EventIndex, EventTime, SignalP2P,
+%                NoiseRMS, SNRdB, and TemplateCorrelation columns.
+%   summary - One-row table with SegmentCount and the mean and standard
+%             deviation of SignalP2P, NoiseRMS, and SNRdB, plus the mean
+%             TemplateCorrelation.
+%   metadata.signalWindowSec - Signal interval used for the calculation.
+%   metadata.noiseWindowsSec - Noise intervals used for the calculation.
+%
+% Errors:
+%   labkit:biosignal:InvalidSegments - segments lacks values or timeOffset.
+%   labkit:biosignal:InvalidTemplate - template lacks values.
+%
+% Example:
+%   segments = struct('values', [0 0; 2 1.8; 0 0], ...
+%       'timeOffset', [-0.1; 0; 0.1], 'eventIndex', [10; 20], ...
+%       'eventTime', [1; 2]);
+%   template = struct('values', [0; 1.9; 0]);
+%   opts = struct('signalWindowSec', [-0.05 0.05], ...
+%       'noiseWindowsSec', [-0.1 -0.05; 0.05 0.1]);
+%   result = labkit.biosignal.measureSegments(segments, template, opts);
 
     if nargin < 3
         opts = struct();
