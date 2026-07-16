@@ -1,11 +1,28 @@
 function filepaths = findFiles(rootDir)
-%FINDFILES Recursively collect Gamry DTA files without GUI side effects.
+%FINDFILES Find DTA files in a folder and its subfolders.
+%
+% Usage:
+%   filepaths = labkit.dta.findFiles(rootDir)
+%
+% Description:
+%   Recursively walks rootDir and collects files whose extension is .dta,
+%   using a case-insensitive comparison. The function does not inspect file
+%   contents; use detectType or loadFile to validate each result.
 %
 % Inputs:
-%   rootDir - existing folder path.
+%   rootDir - Character vector or string scalar naming an existing folder.
 %
-% Output:
-%   filepaths - cell array of discovered *.DTA/*.dta file paths.
+% Outputs:
+%   filepaths - Cell row vector of full file paths in directory traversal
+%       order. The value is an empty cell array when no DTA files are found.
+%
+% Errors:
+%   Throws labkit:dta:InvalidFolder when rootDir is not a text scalar or does
+%   not name an existing folder.
+%
+% Example:
+%   files = labkit.dta.findFiles("data");
+%   [items, report] = labkit.dta.loadFiles(files, "auto");
 
     rootDir = normalizeRootDir(rootDir);
     filepaths = findDTAFilesRecursive(rootDir);

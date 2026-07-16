@@ -1,13 +1,30 @@
 function [curve, ok, msg] = getMainCurve(tables)
-%GETMAINCURVE Return the transient table containing T/Vf/Im data.
+%GETMAINCURVE Select the transient table containing T, Vf, and Im data.
+%
+% Usage:
+%   [curve, ok, message] = labkit.dta.getMainCurve(tables)
+%
+% Description:
+%   First selects a table named CURVE or CURVE1. If neither name is present,
+%   selects the first table whose headers include T, Vf, and Im, using
+%   case-insensitive comparisons. No table is selected when the input is empty
+%   or no compatible columns are found.
 %
 % Inputs:
-%   tables - parsed DTA table struct array.
+%   tables - Structure array of parsed DTA tables. Each element is expected to
+%       contain name, headers, and data fields.
 %
-% Output:
-%   curve - selected curve/table struct, or empty struct.
-%   ok - logical success flag.
-%   msg - status text for logs or UI summaries.
+% Outputs:
+%   curve - Selected table structure, or an empty structure on failure.
+%   ok - Logical scalar indicating whether a table was selected.
+%   message - Character vector naming the selected table or stating that the
+%       main transient table was not found.
+%
+% Example:
+%   [curve, ok, message] = labkit.dta.getMainCurve(item.tables);
+%   if ok
+%       timeSec = labkit.dta.getColumn(curve, "T");
+%   end
 
     ok = false;
     msg = 'Main transient table not found.';

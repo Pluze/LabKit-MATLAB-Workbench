@@ -201,6 +201,38 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 '&quot;turbo&quot;, &quot;parula&quot;, &quot;hot&quot;, &quot;gray&quot;, and &quot;iron&quot;'));
         end
 
+        function generatedDtaReferenceExplainsFilesAndDataSchemas(testCase)
+            root = setupLabKitTestPath();
+            apiRoot = fullfile(root, "site", "reference", "api", ...
+                "labkit", "dta");
+            functions = ["detectPulses", "detectType", "findFiles", ...
+                "getColumn", "getCurveXY", "getMainCurve", "getZCurve", ...
+                "loadFile", "loadFiles", "loadFolder", "version"];
+            for k = 1:numel(functions)
+                page = string(fileread(fullfile(apiRoot, functions(k) + ".html")));
+                testCase.verifyTrue(contains(page, ...
+                    "labkit.dta." + functions(k) + "("), ...
+                    functions(k) + " should show its public MATLAB call syntax.");
+                testCase.verifyTrue(contains(page, ...
+                    '<h2 id="description">Description</h2>'), ...
+                    functions(k) + " should explain its behavior.");
+                testCase.verifyTrue(contains(page, '<h2 id="outputs">Outputs</h2>'), ...
+                    functions(k) + " should describe returned values.");
+            end
+
+            pulsePage = string(fileread(fullfile(apiRoot, "detectPulses.html")));
+            testCase.verifyTrue(contains(pulsePage, ...
+                '<h2 id="mode-values">Mode Values</h2>'));
+            testCase.verifyTrue(contains(pulsePage, "current_only"));
+            testCase.verifyTrue(contains(pulsePage, "25 percent"));
+
+            loadPage = string(fileread(fullfile(apiRoot, "loadFile.html")));
+            testCase.verifyTrue(contains(loadPage, ...
+                '<h2 id="output-fields">Output Fields</h2>'));
+            testCase.verifyTrue(contains(loadPage, "scanRate_V_per_s"));
+            testCase.verifyTrue(contains(loadPage, "status.ok=false"));
+        end
+
         function documentationSourcesUseReaderOrientedHierarchy(testCase)
             root = setupLabKitTestPath();
             docsRoot = fullfile(root, "docs");

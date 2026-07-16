@@ -1,22 +1,70 @@
 function [item, status] = loadFile(filepath, expectedKind, opts)
-%LOADFILE Load one supported DTA file without GUI side effects.
+%LOADFILE Read one supported Gamry DTA file.
 %
 % Usage:
-%   [item, status] = labkit.dta.loadFile(filepath);
-%   [item, status] = labkit.dta.loadFile(filepath, "chrono");
+%   [item, status] = labkit.dta.loadFile(filepath)
+%   [item, status] = labkit.dta.loadFile(filepath, expectedKind)
+%   [item, status] = labkit.dta.loadFile(filepath, expectedKind, opts)
+%
+% Description:
+%   Detects and parses one chrono, EIS, or CV/CT DTA file. Set expectedKind to
+%   a specific family when a workflow must reject other DTA types. Parse and
+%   format failures are returned in status; invalid arguments throw errors.
 %
 % Inputs:
-%   filepath - char/string path to one Gamry DTA file.
-%   expectedKind - "auto" (default), "chrono", "eis", or "cvct".
-%   opts - optional struct passed to kind-specific item construction.
+%   filepath - Character vector or string scalar naming one DTA file.
+%   expectedKind - Character vector or string scalar. Allowed values are
+%       "auto", "chrono", "eis", and "cvct". Matching is case-insensitive,
+%       surrounding whitespace is ignored, and a blank value means "auto".
+%       Default: "auto".
+%   opts - Optional scalar structure. Options apply to chrono loading only.
 %
 % Options:
-%   For chrono files, opts may contain pulse-detection options accepted by
-%   labkit.dta.detectPulses through the private chrono item builder.
+%   pulseMode - Pulse-detection mode accepted by detectPulses, such as
+%       "Metadata first, then auto", "Metadata only", or "Auto from Im only".
+%   pulseOptions - Structure with a mode field accepted by detectPulses. When
+%       both pulseOptions and pulseMode are present, pulseOptions takes
+%       precedence.
 %
-% Output:
-%   item - parsed DTA item struct when status.ok is true.
-%   status - struct with ok, message, kind, expectedKind, and filepath.
+% Outputs:
+%   item - Scalar parsed item structure when status.ok is true, or an empty
+%       structure array when loading fails. See Output Fields.
+%   status - Scalar structure with ok, message, kind, expectedKind, and
+%       filepath fields. A kind mismatch reports both the expected and detected
+%       family in message.
+%
+% Output Fields:
+%   type - "chrono", "eis", or "cvct".
+%   filepath - Source path as a character vector.
+%   name - Source filename including extension.
+%   meta - Parsed metadata for chrono and EIS items.
+%   tables - Parsed table structures for chrono and EIS items.
+%   t_s - Chrono time in seconds.
+%   Vf_V - Chrono measured voltage in volts.
+%   Im_A - Chrono measured current in amperes.
+%   pulse - Chrono pulse structure returned by detectPulses.
+%   freq_Hz - EIS frequency in hertz.
+%   Zreal_ohm - EIS real impedance in ohms.
+%   Zimag_ohm - EIS imaginary impedance in ohms.
+%   Zmod_ohm - EIS impedance magnitude in ohms.
+%   Zphz_deg - EIS phase angle in degrees.
+%   scanRate_V_per_s - CV/CT scan rate in volts per second.
+%   curves - Parsed CV/CT curve structures in file order.
+%   analysis - Empty structure reserved for caller-owned results.
+%
+% Errors:
+%   Throws labkit:dta:InvalidFilepath for a nonscalar path and
+%   labkit:dta:InvalidKind for an unsupported expectedKind. Missing files,
+%   unsupported content, parse failures, and type mismatches are returned as
+%   status.ok=false rather than thrown.
+%
+% Example:
+%   [item, status] = labkit.dta.loadFile("measurement.DTA", "eis");
+%   if status.ok
+%       semilogx(item.freq_Hz, item.Zmod_ohm)
+%   else
+%       warning("%s", status.message)
+%   end
 
     if nargin < 2
         expectedKind = "auto";

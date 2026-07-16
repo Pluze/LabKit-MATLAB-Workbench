@@ -1,17 +1,49 @@
 function [items, report] = loadFiles(filepaths, expectedKind, opts)
-%LOADFILES Load multiple supported DTA files without GUI side effects.
+%LOADFILES Read a list of Gamry DTA files.
 %
 % Usage:
-%   [items, report] = labkit.dta.loadFiles(filepaths, "auto");
+%   [items, report] = labkit.dta.loadFiles(filepaths)
+%   [items, report] = labkit.dta.loadFiles(filepaths, expectedKind)
+%   [items, report] = labkit.dta.loadFiles(filepaths, expectedKind, opts)
+%
+% Description:
+%   Calls loadFile for each path in input order. Successful items are returned
+%   in items; failures do not stop the batch and are recorded in report. The
+%   positions in items therefore need not match the positions in filepaths;
+%   use report.statuses when per-input correspondence matters.
 %
 % Inputs:
-%   filepaths - char/string path, string array, or cell array of paths.
-%   expectedKind - "auto" (default), "chrono", "eis", or "cvct".
-%   opts - optional struct forwarded to loadFile for each file.
+%   filepaths - One character-vector or string-scalar path, a string array, or
+%       a cell array of character vectors and string scalars. An empty input is
+%       allowed and returns an empty report.
+%   expectedKind - "auto", "chrono", "eis", or "cvct", with the same
+%       normalization as loadFile. Default: "auto".
+%   opts - Optional scalar structure forwarded unchanged to loadFile.
 %
-% Output:
-%   items - cell array of successfully loaded DTA item structs.
-%   report - struct with loaded, failed, statuses, and count fields.
+% Outputs:
+%   items - Cell row vector containing successfully loaded item structures in
+%       input order, with failed inputs omitted.
+%   report - Scalar structure summarizing every requested path.
+%
+% Output Fields:
+%   loaded - Cell array of paths that loaded successfully.
+%   failed - Structure array with filepath, kind, and message for failures.
+%   statuses - One loadFile status structure per requested input, in input
+%       order.
+%   nRequested - Number of input paths.
+%   nLoaded - Number of successful items.
+%   nFailed - Number of failed inputs.
+%
+% Errors:
+%   Throws labkit:dta:InvalidFilepaths or labkit:dta:InvalidFilepath when the
+%   path collection contains unsupported values, and labkit:dta:InvalidKind
+%   for an unsupported expectedKind. Individual file read failures are stored
+%   in report instead of thrown.
+%
+% Example:
+%   files = ["run-01.DTA", "run-02.DTA"];
+%   [items, report] = labkit.dta.loadFiles(files, "chrono");
+%   fprintf("Loaded %d of %d files.\n", report.nLoaded, report.nRequested)
 
     if nargin < 2
         expectedKind = "auto";

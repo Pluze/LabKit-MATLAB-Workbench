@@ -1,13 +1,29 @@
 function [x, y, xname, yname] = getCurveXY(curve, xsel, ysel)
-%GETCURVEXY Return exact-name X/Y vectors from a parsed CV/CT curve.
+%GETCURVEXY Extract paired X and Y data from a parsed CV/CT curve.
+%
+% Usage:
+%   [x, y, xname, yname] = labkit.dta.getCurveXY(curve, xsel, ysel)
+%
+% Description:
+%   Looks up two headers using case-sensitive, exact-name matching. Rows where
+%   either selected column is NaN are removed from both outputs so x and y
+%   remain paired. Use getColumn when case-insensitive lookup or unfiltered
+%   data is required.
 %
 % Inputs:
-%   curve - parsed curve struct with headers and data fields.
-%   xsel, ysel - exact header names to extract.
+%   curve - Scalar parsed curve structure with headers and data fields.
+%   xsel - Character vector or string scalar matching one header exactly.
+%   ysel - Character vector or string scalar matching one header exactly.
 %
-% Output:
-%   x, y - numeric vectors, or [] when either header is absent.
-%   xname, yname - returned header names, or '' when absent.
+% Outputs:
+%   x - Numeric column vector for xsel, with paired NaN rows removed.
+%   y - Numeric column vector for ysel, with paired NaN rows removed.
+%   xname - Matched header character vector, or '' when lookup fails.
+%   yname - Matched header character vector, or '' when lookup fails.
+%
+% Example:
+%   [voltageV, currentA, xname, yname] = ...
+%       labkit.dta.getCurveXY(curve, "Vf", "Im");
 
     x = [];
     y = [];
