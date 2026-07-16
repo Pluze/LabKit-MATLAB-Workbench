@@ -1,21 +1,33 @@
 function folder = defaultOutputFolder(sourcePaths, subfolderName, fallbackFolder)
 %DEFAULTOUTPUTFOLDER Return a source-adjacent app output folder.
 %
-% App-facing contract:
+% Usage:
 %   folder = labkit.ui.runtime.defaultOutputFolder(sourcePaths, subfolderName)
-%   folder = labkit.ui.runtime.defaultOutputFolder(..., fallbackFolder)
+%   folder = labkit.ui.runtime.defaultOutputFolder(sourcePaths, subfolderName, fallbackFolder)
 %
 % Inputs:
-%   sourcePaths - file or folder path, or a string/cell array of paths. When
-%       multiple paths are provided, the first path decides the base folder.
-%   subfolderName - output subfolder name created under the source folder.
-%   fallbackFolder - optional folder used when no source folder can be
-%       resolved.
+%   sourcePaths - File path, folder path, string array, or cell array of paths.
+%       The first nonempty path selects the base folder. The default is empty.
+%   subfolderName - Name of the output folder to create. Characters that are
+%       illegal in common file systems are replaced with underscores. The
+%       default is "labkit_output".
+%   fallbackFolder - Existing folder to use when sourcePaths does not identify
+%       an existing source location. The default is LabKit's remembered output
+%       location or the current user's home folder.
 %
 % Outputs:
-%   folder - existing output folder path. The helper creates the requested
-%       subfolder when possible and otherwise falls back to a safe LabKit
-%       output dialog folder.
+%   folder - Character vector naming an existing output folder.
+%
+% Description:
+%   When the first path is a file, the new subfolder is created beside that
+%   file. When it is a folder, the subfolder is created inside it. If the source
+%   cannot be resolved or the new folder cannot be created, the function
+%   returns a safe existing fallback folder instead of failing because the
+%   requested output folder could not be created.
+%
+% Typical Call:
+%   outputFolder = labkit.ui.runtime.defaultOutputFolder( ...
+%       importedFiles, "Processed Results", pwd);
 
     if nargin < 1
         sourcePaths = strings(0, 1);

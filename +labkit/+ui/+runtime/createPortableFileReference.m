@@ -1,20 +1,41 @@
 function reference = createPortableFileReference(anchorFile, targetFile)
 %CREATEPORTABLEFILEREFERENCE Describe an external file relative to saved state.
 %
-% App-facing contract:
+% Usage:
 %   reference = labkit.ui.runtime.createPortableFileReference(anchorFile, targetFile)
 %
 % Inputs:
-%   anchorFile - scalar text path of the project, snapshot, or autosave file.
-%   targetFile - scalar text path of an external source file.
+%   anchorFile - Path of the project or autosave file that will store the
+%       reference. The file does not need to exist.
+%   targetFile - Path of the external source file. The file does not need to
+%       exist.
 %
-% Output:
-%   reference - schema-1 struct with portable `relativePath`, fallback
-%       `originalPath`, and `fileName` fields. The relative path always uses
-%       forward slashes and may contain `..` components. Empty inputs produce
-%       empty path fields.
+% Outputs:
+%   reference - Scalar struct with schemaVersion, relativePath, originalPath,
+%       and fileName fields.
 %
-% The reference stores no file contents and performs no network access.
+% Reference Fields:
+%   schemaVersion - Reference schema number. The current value is 1.
+%   relativePath - targetFile expressed relative to the folder containing
+%       anchorFile, using forward slashes. It is "" when no relative path can
+%       be formed.
+%   originalPath - targetFile exactly as supplied by the caller.
+%   fileName - Final file name and extension from targetFile.
+%
+% Description:
+%   The returned reference gives the loader three ways to find a moved source:
+%   its path relative to anchorFile, its original path, and its file name beside
+%   the saved project. relativePath uses forward slashes and may contain "..".
+%   A relative targetFile is stored unchanged. If two absolute paths have no
+%   common root, relativePath is empty and the other fallbacks remain usable.
+%   This function only records path text; it does not open either file.
+%
+% Example:
+%   ref = labkit.ui.runtime.createPortableFileReference( ...
+%       fullfile("study", "project.mat"), fullfile("images", "frame01.tif"));
+%   assert(ref.relativePath == "images/frame01.tif")
+%
+% See also labkit.ui.runtime.resolvePortableFileReference
 
     anchorFile = string(anchorFile);
     targetFile = string(targetFile);

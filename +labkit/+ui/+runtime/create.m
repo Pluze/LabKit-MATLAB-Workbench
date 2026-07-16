@@ -1,20 +1,30 @@
 function ui = create(layout, varargin)
 %CREATE Build a LabKit workbench from a declarative layout.
 %
-% App-facing contract:
+% Usage:
+%   ui = labkit.ui.runtime.create(layout)
 %   ui = labkit.ui.runtime.create(layout, "debug", debugContext)
 %
 % Inputs:
-%   layout - scalar layout tree from labkit.ui.layout.workbench. The layout owns
-%       controlTabs and workspace children; all controls use globally unique ids.
-%   debug - optional labkit.ui.debug context. When supplied, the created
-%       figure is instrumented and the first logPanel mirrors trace lines.
+%   layout - Scalar layout tree returned by labkit.ui.layout.workbench. Control
+%       IDs must be unique throughout the tree.
 %
-% Output:
-%   ui - registry struct with figure/fig, shell handles, controls, sections,
-%       tabs, workspace, original layout, and optional debug context. Stable app
-%       framework code should use semantic ids and runtime-private control or
-%       labkit.ui.plot helpers rather than adapter internals.
+% Name-Value Arguments:
+%   debug - labkit.ui.debug context used to instrument the new figure and show
+%       trace messages in the first log panel. The default is no debug context.
+%
+% Outputs:
+%   ui - Struct containing the figure, shell panels, controls, tabs, workspace,
+%       source layout, and debug context. Controls and sections are indexed by
+%       their layout IDs.
+%
+% Description:
+%   create builds the complete workbench immediately and returns its handle
+%   registry. Use this lower-level function when code already has a finished
+%   layout tree. Most apps should use labkit.ui.runtime.launch, which also owns
+%   project state, actions, presentation, startup, and persistence.
+%
+% See also labkit.ui.runtime.launch, labkit.ui.layout.workbench
 
     opts = parseOptions(varargin);
     debug = optionValue(opts, 'debug', []);

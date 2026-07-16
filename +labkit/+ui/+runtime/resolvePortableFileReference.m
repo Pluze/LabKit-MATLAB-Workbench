@@ -1,22 +1,32 @@
 function [targetFile, matchKind] = resolvePortableFileReference(anchorFile, reference)
 %RESOLVEPORTABLEFILEREFERENCE Resolve an external file after saved state moves.
 %
-% App-facing contract:
+% Usage:
 %   targetFile = labkit.ui.runtime.resolvePortableFileReference(anchorFile, reference)
 %   [targetFile, matchKind] = labkit.ui.runtime.resolvePortableFileReference(...)
 %
 % Inputs:
-%   anchorFile - scalar text path of the loaded project, snapshot, or autosave.
-%   reference - struct created by `createPortableFileReference`. Additive
-%       unknown fields are ignored for forward compatibility.
+%   anchorFile - Path of the loaded project or autosave file.
+%   reference - Struct returned by createPortableFileReference. Unknown fields
+%       are ignored.
 %
 % Outputs:
-%   targetFile - canonical existing file path, or empty text when unresolved.
-%   matchKind - `relative`, `original`, `same_folder`, or `none`.
+%   targetFile - Canonical path of an existing file, or "" when no candidate
+%       can be resolved.
+%   matchKind - How the file was found: "relative", "original",
+%       "same_folder", or "none".
 %
-% Resolution order is relative path, original path, then the saved filename
-% beside the anchor file. The function does not prompt, inspect file contents,
-% mutate state, or access the network.
+% Description:
+%   Candidates are checked in this order: relativePath from the anchor folder,
+%   originalPath, then fileName beside the anchor file. Only existing files are
+%   accepted; directories are ignored. The function does not display a dialog,
+%   read file contents, change app state, or access the network.
+%
+% Typical Call:
+%   [sourceFile, how] = labkit.ui.runtime.resolvePortableFileReference( ...
+%       projectFile, project.inputs.sources(1).reference);
+%
+% See also labkit.ui.runtime.createPortableFileReference
 
     anchorFile = string(anchorFile);
     [anchorFolder, ~, ~] = fileparts(anchorFile);

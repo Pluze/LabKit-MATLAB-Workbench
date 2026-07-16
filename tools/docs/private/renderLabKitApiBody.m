@@ -68,7 +68,8 @@ function html = renderHelpSections(helpText, summaryLine)
     sections = parseSections(lines);
     blocks = strings(0, 1);
     for k = 1:numel(sections)
-        if any(lower(sections(k).name) == ["usage", "app-facing contract"])
+        if any(lower(sections(k).name) == ...
+                ["usage", "app-facing contract", "see also"])
             continue;
         end
         content = stripEmptyEdges(sections(k).lines);
@@ -122,7 +123,15 @@ function sections = parseSections(lines)
         trimmed = strip(line);
         isHeader = line == trimmed && ~isempty(regexp(char(trimmed), ...
             '^[A-Za-z][A-Za-z0-9 /&-]+:$', 'once'));
-        if isHeader
+        isSeeAlso = line == trimmed && ...
+            startsWith(lower(trimmed), "see also ");
+        if isSeeAlso
+            sections(end + 1, 1) = template;
+            current = numel(sections);
+            sections(current).name = "See also";
+            sections(current).lines = extractAfter( ...
+                trimmed, strlength("See also "));
+        elseif isHeader
             name = extractBefore(trimmed, strlength(trimmed));
             if isempty(sections(current).lines) && ...
                     sections(current).name == "Description"
@@ -152,7 +161,8 @@ function html = renderSectionContent(title, lines)
         "Inputs/Outputs", "Returned Options", ...
         "Returned Editor API", "Callback Events", "Mode Values"];
     if any(title == definitionTitles) || endsWith(title, " Fields") || ...
-            endsWith(title, " Options") || title == "Errors"
+            endsWith(title, " Options") || ...
+            endsWith(title, "Name-Value Arguments") || title == "Errors"
         html = renderDefinitions(lines);
         return;
     end

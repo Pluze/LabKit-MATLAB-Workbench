@@ -1,21 +1,36 @@
 function filepath = saveState(fig, filepath)
 %SAVESTATE Save a Runtime V2 project to a MAT file.
 %
-% App-facing contract:
+% Usage:
 %   filepath = labkit.ui.runtime.saveState(fig)
 %   filepath = labkit.ui.runtime.saveState(fig, filepath)
 %
 % Inputs:
-%   fig - LabKit app figure created by labkit.ui.runtime.launch.
-%   filepath - optional scalar text MAT-file target. When omitted, a save
-%       dialog is shown.
+%   fig - Live app figure created by labkit.ui.runtime.launch.
+%   filepath - Destination MAT-file. When omitted, MATLAB opens a save dialog.
+%       The parent folder must already exist.
 %
-% Output:
-%   filepath - selected or supplied MAT-file path. Empty when the user
-%       cancels the save dialog.
+% Outputs:
+%   filepath - Selected or supplied path as a string scalar, or "" when the
+%       user cancels the dialog.
 %
-% Project contract:
-%   Saves one `labkitProject` envelope containing only durable project data.
+% Description:
+%   saveState writes one variable named labkitProject. The envelope contains
+%   durable project data, schema and producer versions, source references,
+%   document identity and revision information, and optional resume data.
+%   Session caches and live graphics handles are not saved. Unknown additive
+%   envelope fields from a previously loaded project are preserved.
+%
+%   The file is first written and verified at a temporary path in the same
+%   folder. It replaces the destination only after the read-back comparison
+%   succeeds, so a failure before replacement leaves an existing project file
+%   unchanged. After a successful save the app records the new path, clears its
+%   dirty flag, and updates the window title.
+%
+% Typical Call:
+%   savedFile = labkit.ui.runtime.saveState(fig, "analysis.project.mat");
+%
+% See also labkit.ui.runtime.loadState
 
     if nargin < 2
         filepath = chooseProjectOutput();

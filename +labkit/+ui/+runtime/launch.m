@@ -1,7 +1,7 @@
 function varargout = launch(definitionFcn, requirementsFcn, versionFcn, varargin)
 %LAUNCH Dispatch requests and launch a LabKit runtime definition.
 %
-% App-facing contract:
+% Usage:
 %   fig = labkit.ui.runtime.launch(definitionFcn, requirementsFcn, ...
 %       versionFcn, varargin{:})
 %   [fig, debug] = labkit.ui.runtime.launch(..., "debug")
@@ -10,18 +10,37 @@ function varargout = launch(definitionFcn, requirementsFcn, versionFcn, varargin
 %   fig = labkit.ui.runtime.launch(..., "RequestAdapter", adapter, args{:})
 %
 % Inputs:
-%   definitionFcn - function handle returning a Runtime V2 definition.
-%   requirementsFcn - function handle returning labkit.requirements metadata.
-%   versionFcn - function handle returning app version metadata.
-%   varargin - normal, debug, requirements, or version request arguments.
-%       An advanced app with a typed launch handoff may prefix its arguments
-%       with `"RequestAdapter", adapter`; adapter receives the remaining cell
-%       array and returns `[runtimeRequest, dispatchArgs]`. The request must be
-%       a scalar struct and remains outside canonical app state.
+%   definitionFcn - Function handle returning a definition created by define.
+%   requirementsFcn - Function handle returning the app's requirements struct.
+%   versionFcn - Function handle returning app version metadata with a name
+%       field used for titles and app-specific error identifiers.
 %
 % Outputs:
-%   Normal launch returns the app figure. Debug launch may also return the
-%   debug context. Lightweight requests return their requested metadata.
+%   fig - App figure for normal and debug launches.
+%   debug - Debug context returned only when the request is "debug".
+%   requirements - Requirements metadata for a "requirements" request.
+%   version - Version metadata for a "version" request.
+%
+% Description:
+%   launch checks product requirements, creates project and session state,
+%   builds the layout, presents the first view, and then queues the definition's
+%   Start action. The startup window reports these phases until the app is
+%   ready. A debug launch additionally enables tracing and queues DebugSample.
+%   The "requirements" and "version" requests return metadata without building
+%   a GUI.
+%
+% Request Adapter:
+%   Apps that accept typed entry-point arguments can pass "RequestAdapter",
+%   adapter before those arguments. MATLAB calls
+%   [request,dispatchArgs] = adapter(args), where args is a cell array. request
+%   must be a scalar struct and is available to actions as services.request;
+%   dispatchArgs must be a cell array containing a normal runtime request such
+%   as {} or {"debug"}.
+%
+% Typical Call:
+%   fig = labkit.ui.runtime.launch(@appDefinition, @requirements, @version);
+%
+% See also labkit.ui.runtime.define
 
     assertFactory(definitionFcn, "definitionFcn");
     assertFactory(requirementsFcn, "requirementsFcn");

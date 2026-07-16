@@ -23,6 +23,9 @@ function code = labkitPublicHelpExampleCode(filepath)
         if value == strip(value) && endsWith(value, ":")
             break;
         end
+        if startsWith(lower(strip(value)), "see also ")
+            break;
+        end
         if startsWith(value, "  ")
             value = extractAfter(value, 2);
         end

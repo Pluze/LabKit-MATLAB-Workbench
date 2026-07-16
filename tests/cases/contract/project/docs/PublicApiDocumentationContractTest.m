@@ -48,6 +48,62 @@ classdef PublicApiDocumentationContractTest < matlab.unittest.TestCase
                 "Every help section titled Example must execute: " + ...
                 strjoin(failures, "; "));
         end
+
+        function exampleExtractionStopsAtSeeAlso(testCase)
+            folder = matlab.unittest.fixtures.TemporaryFolderFixture;
+            testCase.applyFixture(folder);
+            filepath = fullfile(folder.Folder, "documentedFunction.m");
+            source = strjoin([ ...
+                "function value = documentedFunction()"
+                "%DOCUMENTEDFUNCTION Demonstrate a help example."
+                "%"
+                "% Example:"
+                "%   value = 42;"
+                "%"
+                "% See also anotherFunction"
+                "value = 42;"
+                "end"], newline);
+            fid = fopen(filepath, "w");
+            cleaner = onCleanup(@() fclose(fid));
+            fwrite(fid, source);
+            clear cleaner
+
+            code = labkitPublicHelpExampleCode(filepath);
+            testCase.verifyEqual(strip(code), "value = 42;");
+        end
+
+        function generatedApiCodeBlocksExcludeSeeAlsoText(testCase)
+            root = setupLabKitTestPath();
+            files = dir(fullfile(root, "site", "reference", "api", ...
+                "**", "*.html"));
+            findings = strings(0, 1);
+            pattern = '<pre><code[^>]*>[^<]*See also[^<]*</code></pre>';
+            for k = 1:numel(files)
+                filepath = fullfile(files(k).folder, files(k).name);
+                if ~isempty(regexp(fileread(filepath), pattern, "once"))
+                    findings(end + 1, 1) = string(filepath);
+                end
+            end
+            testCase.verifyEmpty(findings, ...
+                "Generated MATLAB code blocks must not contain See also text.");
+        end
+
+        function generatedNameValueSectionsUseDefinitionLists(testCase)
+            root = setupLabKitTestPath();
+            filepath = fullfile(root, "site", "reference", "api", ...
+                "labkit", "ui", "runtime", "define.html");
+            html = string(fileread(filepath));
+            for id = ["required-name-value-arguments", ...
+                    "optional-name-value-arguments"]
+                sectionStart = '<section class="api-section"><h2 id="' + ...
+                    id + '">';
+                section = extractAfter(html, sectionStart);
+                section = extractBefore(section, "</section>");
+                testCase.verifyTrue(contains(section, ...
+                    '<dl class="argument-list">'), ...
+                    "Generated Name-Value sections must be scannable definition lists.");
+            end
+        end
     end
 end
 
@@ -57,7 +113,7 @@ end
 
 function files = rewrittenModuleFiles(root)
     moduleFolders = ["+biosignal", "+contract", "+dta", "+image", "+rhs", ...
-        "+thermal"];
+        "+thermal", fullfile("+ui", "+runtime")];
     files = strings(0, 1);
     for iModule = 1:numel(moduleFolders)
         entries = dir(fullfile(root, "+labkit", moduleFolders(iModule), "*.m"));
