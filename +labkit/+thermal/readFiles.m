@@ -1,29 +1,55 @@
 function [records, report] = readFiles(paths, opts)
-%READFILES Read thermal image files into raw and temperature records.
+%READFILES Read several radiometric image files.
 %
-% App-facing contract:
+% Usage:
 %   records = labkit.thermal.readFiles(paths)
 %   records = labkit.thermal.readFiles(paths, opts)
 %   [records, report] = labkit.thermal.readFiles(paths, opts)
 %
+% Description:
+%   Calls labkit.thermal.readFile for each path in input order. By default, the
+%   first unreadable file stops the operation. Set SkipInvalid to true when a
+%   batch should keep its readable records and return a failure entry for each
+%   skipped file.
+%
 % Inputs:
-%   paths - char, string, cell array, or empty value accepted by local path
-%       normalization.
-%   opts - optional scalar struct with fields:
-%       AllowEmpty - logical scalar, default true.
-%       RequireExisting - logical scalar, default true.
-%       SkipInvalid - logical scalar, default false. When true, files that do
-%           not contain readable thermal payloads are skipped and reported
-%           instead of aborting the whole read.
-%       TemperatureCorrection - forwarded to labkit.thermal.readFile.
-%       progressFcn - function handle called before and after each read with
-%           fields stage, index, count, path, and name.
+%   paths - Character vector, string array, or cell array of character vectors
+%       and strings. Empty strings are removed. Output record order follows the
+%       remaining input order.
+%   opts - Optional scalar structure. See Options.
+%
+% Options:
+%   AllowEmpty - Logical scalar. When true, an empty path list returns empty
+%       records and a zero-count report. When false, an empty list throws
+%       labkit:thermal:NoPaths. Default: true.
+%   RequireExisting - Logical scalar forwarded to readFile. Default: true.
+%   SkipInvalid - Logical scalar. When true, an unreadable file is added to
+%       report.failures and processing continues. When false, its exception is
+%       rethrown immediately. Default: false.
+%   TemperatureCorrection - String scalar forwarded to readFile. Allowed
+%       values are "environment" and "planck-basic". Default: "environment".
+%   progressFcn - Empty or a function handle called once before each read and
+%       again after it loads or is skipped. The callback receives a scalar
+%       structure with stage, index, count, path, and name. stage is
+%       "beforeRead", "afterRead", or "skipped". Default: [].
 %
 % Outputs:
-%   records - struct column returned by repeated labkit.thermal.readFile
-%       calls. App workflows may copy these records into app-owned item
-%       structs.
-%   report - struct with requested, loaded, skipped, and failures fields.
+%   records - Column structure array of successfully read thermal records. See
+%       labkit.thermal.readFile for the fields in each element.
+%   report - Scalar structure. requested is the number of normalized paths;
+%       loaded and skipped are counts. failures is a structure array with path,
+%       name, identifier, and message for each skipped file.
+%
+% Errors:
+%   In addition to readFile errors, throws labkit:thermal:InvalidOptions when
+%   opts or a callback is invalid and labkit:thermal:NoPaths when AllowEmpty is
+%   false and no usable path remains.
+%
+% Example:
+%   opts = struct("SkipInvalid", true, ...
+%       "TemperatureCorrection", "environment");
+%   [records, report] = labkit.thermal.readFiles(files, opts);
+%   fprintf("Loaded %d of %d files.\n", report.loaded, report.requested)
 
     if nargin < 2 || isempty(opts)
         opts = struct();

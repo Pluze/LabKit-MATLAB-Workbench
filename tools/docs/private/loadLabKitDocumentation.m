@@ -322,8 +322,6 @@ function item = readApiItem(repoRoot, filepath, origin, owner)
     end
     if isempty(helpLines) && ~isempty(leadingHelp)
         helpLines = leadingHelp;
-    elseif ~isempty(helpLines) && ~isempty(leadingHelp)
-        helpLines = [helpLines; ""; leadingHelp];
     end
     if isempty(helpLines)
         error("LabKit:Docs:MissingApiContract", ...

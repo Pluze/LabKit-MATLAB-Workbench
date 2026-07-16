@@ -136,6 +136,35 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(missing), ', ')]);
         end
 
+        function generatedApiUsesPublicHelpInsteadOfImplementationPreamble(testCase)
+            root = setupLabKitTestPath();
+            page = string(fileread(fullfile(root, "site", "reference", "api", ...
+                "nerve_response_analysis", "analysisRun", ...
+                "detectEventTrains.html")));
+
+            testCase.verifyTrue(contains(page, ...
+                "Detect pulse candidates and group them into trains."));
+            testCase.verifyFalse(contains(page, "Expected caller:"), ...
+                ["A public API page should use the help block after the " ...
+                "function declaration, not a leading implementation note."]);
+        end
+
+        function generatedScientificApiExplainsOptionsAndResults(testCase)
+            root = setupLabKitTestPath();
+            page = string(fileread(fullfile(root, "site", "reference", "api", ...
+                "cic", "analysisRun", "computeCIC.html")));
+
+            testCase.verifyTrue(contains(page, '<h2 id="options">Options</h2>'));
+            testCase.verifyTrue(contains(page, "pulseMode"));
+            testCase.verifyTrue(contains(page, "Metadata first, then auto"));
+            testCase.verifyTrue(contains(page, "Metadata only"));
+            testCase.verifyTrue(contains(page, "Auto from Im only"));
+            testCase.verifyTrue(contains(page, "1000*Q/area_cm2"));
+            testCase.verifyTrue(contains(page, ...
+                '<h2 id="output-fields">Output Fields</h2>'));
+            testCase.verifyFalse(contains(page, "Expected caller:"));
+        end
+
         function documentationSourcesUseReaderOrientedHierarchy(testCase)
             root = setupLabKitTestPath();
             docsRoot = fullfile(root, "docs");

@@ -17,8 +17,6 @@
     {"id":"rhs","source":"libraries/rhs/README.md","output":"libraries/rhs/index.html","title":"RHS Library","kind":"reference","nav":["Libraries"],"order":5,"keywords":["Intan","neurophysiology"],"components":["labkit.rhs"]},
     {"id":"biosignal","source":"libraries/biosignal/README.md","output":"libraries/biosignal/index.html","title":"Biosignal Library","kind":"reference","nav":["Libraries"],"order":6,"keywords":["ECG","signals"],"components":["labkit.biosignal"]},
     {"id":"history","source":"history/README.md","output":"history/index.html","title":"Project History","kind":"history index","nav":["History"],"order":1,"keywords":["changes","versions","evolution"]},
-    {"id":"guides","source":"how-to/README.md","output":"how-to/index.html","title":"How-to Guides","kind":"how-to","nav":["How-to Guides"],"order":1,"keywords":["tasks","recipes"]},
-    {"id":"workflow-assets","source":"how-to/workflow-assets.md","output":"how-to/workflow-assets.html","title":"Generate Workflow Assets","kind":"how-to","nav":["How-to Guides"],"order":2,"keywords":["screenshots","synthetic"]},
     {"id":"development","source":"development/README.md","output":"development/index.html","title":"Development","kind":"overview","nav":["Development"],"order":1,"keywords":["maintainers","source"]},
     {"id":"architecture","source":"development/architecture.md","output":"development/architecture.html","title":"Architecture","kind":"explanation","nav":["Development"],"order":2,"keywords":["ownership","boundaries"]},
     {"id":"app-development","source":"development/app-development.md","output":"development/app-development.html","title":"App Development","kind":"how-to","nav":["Development"],"order":3,"keywords":["build","app"]},

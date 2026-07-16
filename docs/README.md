@@ -25,7 +25,6 @@ getting-started/  installation, launcher, updates, and first-run concepts
 apps/             one directory per family and one subdirectory per app
 framework/        UI runtime concepts, behavior, and app-authoring contracts
 libraries/        one directory per reusable public MATLAB facade
-how-to/           focused task recipes and documentation asset workflows
 development/      architecture, app authoring, testing, private apps, release
 history/          chronological change records and the project history index
 catalogs/         structured app and app-owned API membership metadata
@@ -67,8 +66,5 @@ owned by MATLAB source help blocks. Handwritten HTML is never a source.
 - [Project history](history/README.md) lists all change records and connects
   them to the affected apps, framework, and libraries.
 - [Support](../.github/SUPPORT.md) explains how to report workflow problems.
-- [Documentation asset guide](how-to/workflow-assets.md) explains how to
-  generate synthetic screenshots and example outputs.
-
 Agent execution rules, skills, and active migration debt stay outside this
 human documentation set in scoped `AGENTS.md` files and `.agents/`.
