@@ -12,12 +12,15 @@ component: `labkit.ui` | `3.2.4 -> 3.2.5`
 
 ## Context
 
-- File-heavy app workflows became easier to scan and less layout-fragile.
+The single-file panel allocated too much height to its rows and could render
+inconsistently as the containing app resized. This was especially noticeable in
+file-heavy apps, where the panel competed with analysis controls and plots.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Give the panel explicit, compact row sizing and protect that geometry with GUI
+layout tests. The change stayed in the shared file-panel builder because the
+same visual defect appeared wherever the component was used.
 
 ## Changes
 
@@ -27,7 +30,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- File-heavy app workflows became easier to scan and less layout-fragile.
+File names and actions occupied less vertical space, leaving more room for the
+workflow below them. The change affected layout only; selections and loaded
+file data were unchanged.
 
 ## Compatibility and migration
 
@@ -35,9 +40,8 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+Both commits extended `GuiLayoutUiDeclarativeAppTest` with the expected panel
+geometry. Exact historical test commands were not recorded.
 
 ## Evidence
 
@@ -45,4 +49,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Later runtime generations replaced this private UI 3.x builder, but retained
+the principle that shared components own and test their responsive geometry.

@@ -24,13 +24,17 @@ component: `labkit_ECGPrint_app` | `1.2.0 -> 1.2.1`
 
 ## Context
 
-- Crashes and interrupted workflows leave better evidence for maintainers, and
-  users get safer close behavior around incomplete image workflows.
+Many app callbacks caught an exception, showed its message, and returned. That
+protected the UI but discarded the stack and callback context needed to
+diagnose the failure. Image apps also tracked unsaved or incomplete work in
+slightly different ways when deciding whether a window could close.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Report caught exceptions to the existing debug trace before presenting the
+user-facing error, and promote the file-index and close-guard mechanics that
+were shared by several image apps. Preserve app ownership of what counts as
+dirty or incomplete work.
 
 ## Changes
 
@@ -44,8 +48,10 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Crashes and interrupted workflows leave better evidence for maintainers, and
-  users get safer close behavior around incomplete image workflows.
+An app could still recover from a failed load, calculation, or export, while
+its debug report retained the exception evidence. Closing an image workflow
+with unfinished state produced a consistent warning instead of silently
+discarding work. Scientific results and saved schemas were unchanged.
 
 ## Compatibility and migration
 
@@ -53,9 +59,10 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The exception-reporting commit expanded app/library compatibility checks across
+the affected runners. The close-guard commit added public-surface and
+compatibility coverage for promoted file indices and app close behavior. Exact
+historical commands were not recorded.
 
 ## Evidence
 
@@ -63,4 +70,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Runtime V2 later replaced direct debug-log and close-guard calls with lifecycle
+and diagnostic services, but retained the requirement that caught exceptions
+remain observable.

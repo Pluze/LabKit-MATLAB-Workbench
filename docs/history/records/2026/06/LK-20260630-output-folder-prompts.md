@@ -19,13 +19,16 @@ component: `labkit_ResponseReviewStats_app` | `1.2.1 -> 1.2.2`
 
 ## Context
 
-- Apps gained consistent output-folder behavior without hard-coding dialog
-  mechanics into each workflow.
+Exporting from different apps opened `uigetdir` directly, chose starting
+folders differently, and could not substitute a noninteractive chooser in a
+test. The repeated dialog code also made cancellation handling inconsistent.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Provide one output-folder prompt that selects a safe default, returns an
+explicit cancellation flag, remembers a successful folder, and accepts an
+injected chooser for tests. Apps would still decide when an output folder was
+needed and what they wrote there.
 
 ## Changes
 
@@ -38,8 +41,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Apps gained consistent output-folder behavior without hard-coding dialog
-  mechanics into each workflow.
+Output dialogs began in a useful folder and cancellation returned cleanly to
+the app. The selected folder was remembered as a preference; no output was
+created until the owning app performed its export.
 
 ## Compatibility and migration
 
@@ -47,9 +51,10 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The carrying commit added `AppHookHelpersTest` coverage for defaults,
+cancellation, successful selection, and chooser injection, then updated the
+affected app compatibility checks. The exact historical command was not
+recorded.
 
 ## Evidence
 
@@ -57,4 +62,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Runtime V2 later moved dialog access into injected services, preserving the
+same separation between app decisions and platform dialog mechanics.
