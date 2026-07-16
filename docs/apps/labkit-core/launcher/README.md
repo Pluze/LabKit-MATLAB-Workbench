@@ -63,8 +63,10 @@ one requested GUI output raise `labkit_launcher:InvalidInput` or
 ## App Discovery
 
 Public apps are discovered from `apps/**/labkit_*_app.m`. Each entry point
-supplies display metadata, family, command, version, requirements, and launch
-routing. Local private apps may be discovered from `private_apps/apps/` or
+delegates to one `definition.m`, which supplies display metadata, family,
+command, version, requirements, layout, and optional capabilities. The
+launcher reads version and update metadata from that definition without
+starting the App. Local private apps may be discovered from `private_apps/apps/` or
 paths named by `LABKIT_PRIVATE_APP_ROOTS`; their repositories and manuals
 remain private.
 

@@ -110,7 +110,7 @@ end
 
 function path = documentationSourceForArtifact(root, artifact)
     if artifact.label == "labkit_launcher"
-        path = "docs/getting-started/README.md";
+        path = "docs/apps/labkit-core/launcher/README.md";
         return;
     end
     if startsWith(artifact.label, "labkit.")

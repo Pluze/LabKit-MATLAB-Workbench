@@ -112,8 +112,8 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.5.0", ...
-        "updated", "2026-07-15");
+        "version", "1.5.1", ...
+        "updated", "2026-07-16");
 end
 
 function titleText = launcherVersionTitle()
@@ -1536,6 +1536,21 @@ end
 
 function info = appVersionInfo(folder)
     info = struct('version', "", 'updated', "");
+    definitions = dir(fullfile(folder, '+*', 'definition.m'));
+    if ~isempty(definitions)
+        filepath = fullfile(definitions(1).folder, definitions(1).name);
+        try
+            text = fileread(filepath);
+            info.version = stringLiteralField(text, "AppVersion");
+            info.updated = stringLiteralField(text, "Updated");
+        catch
+        end
+        if strlength(info.version) > 0 && strlength(info.updated) > 0
+            return;
+        end
+    end
+
+    % Transitional fallback for Apps not yet moved to one definition.
     entries = dir(fullfile(folder, '+*', 'version.m'));
     if isempty(entries)
         return;

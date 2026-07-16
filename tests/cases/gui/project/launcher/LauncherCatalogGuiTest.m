@@ -28,6 +28,42 @@ classdef LauncherCatalogGuiTest < matlab.unittest.TestCase
                 'labkit_launcher list mode should discover app entry points.');
         end
 
+        function launcher_reads_version_from_single_definition(testCase)
+            setupLabKitTestPath();
+            privateRoot = string(tempname);
+            appFolder = fullfile(privateRoot, "apps", "probe_family", ...
+                "definition_metadata_probe");
+            packageFolder = fullfile(appFolder, "+definition_metadata_probe");
+            mkdir(packageFolder);
+            testCase.addTeardown(@() removeFolderIfPresent(privateRoot));
+            cleanup = setPrivateRoots(privateRoot);
+
+            writeText(fullfile(appFolder, ...
+                "labkit_DefinitionMetadataProbe_app.m"), sprintf([ ...
+                'function labkit_DefinitionMetadataProbe_app\n' ...
+                '%%LABKIT_DEFINITIONMETADATAPROBE_APP Synthetic catalog probe.\n' ...
+                'end\n']));
+            writeText(fullfile(packageFolder, "definition.m"), sprintf([ ...
+                'function def = definition()\n' ...
+                'def = labkit.ui.runtime.define( ...\n' ...
+                '    "Command", "labkit_DefinitionMetadataProbe_app", ...\n' ...
+                '    "Id", "definition_metadata_probe", ...\n' ...
+                '    "Title", "Definition Metadata Probe", ...\n' ...
+                '    "Family", "Probe", ...\n' ...
+                '    "AppVersion", "3.2.1", ...\n' ...
+                '    "Updated", "2026-07-16", ...\n' ...
+                '    "Requirements", labkit.contract.requirements("ui", ">=7 <8"), ...\n' ...
+                '    "Layout", @() struct());\n' ...
+                'end\n']));
+
+            apps = labkit_launcher("list");
+            row = apps(apps.Command == "labkit_DefinitionMetadataProbe_app", :);
+            testCase.verifyEqual(height(row), 1);
+            testCase.verifyEqual(row.Version, "3.2.1");
+            testCase.verifyEqual(row.Updated, "2026-07-16");
+            clear cleanup
+        end
+
         function launcher_documentation_mode_resolves_selected_app_page(testCase)
             setupLabKitTestPath();
 
@@ -55,5 +91,25 @@ classdef LauncherCatalogGuiTest < matlab.unittest.TestCase
                 'Opened documentation for')));
             clear cleanup
         end
+    end
+end
+
+function cleanup = setPrivateRoots(root)
+    previous = getenv("LABKIT_PRIVATE_APP_ROOTS");
+    setenv("LABKIT_PRIVATE_APP_ROOTS", char(root));
+    cleanup = onCleanup(@() setenv("LABKIT_PRIVATE_APP_ROOTS", previous));
+end
+
+function writeText(filepath, content)
+    fid = fopen(filepath, 'w');
+    assert(fid >= 0, 'Could not create launcher catalog fixture.');
+    cleanup = onCleanup(@() fclose(fid));
+    fprintf(fid, '%s', content);
+    clear cleanup
+end
+
+function removeFolderIfPresent(folder)
+    if isfolder(folder)
+        rmdir(folder, 's');
     end
 end
