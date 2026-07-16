@@ -198,6 +198,14 @@ app/session variable, or an interactive dialog. Such a sketch becomes an
 `Example:` only after it has self-contained synthetic setup and passes the
 example runner.
 
+A self-contained MATLAB block in an app manual may be preceded by
+`<!-- labkit-runnable-example -->`. The documentation contract extracts and
+executes every marked block in a clean test setup. Mark only examples that use
+synthetic data, require no dialogs or user files, and avoid lasting file or UI
+side effects. Unmarked blocks may demonstrate a typical call with a user's own
+file, but every variable and placeholder must still be explained by the nearby
+text.
+
 ## Cross-References
 
 Use relative Markdown links between narrative sources. Link the first useful

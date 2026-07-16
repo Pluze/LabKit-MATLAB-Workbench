@@ -54,7 +54,7 @@ input and output formats.
 
 ## Common App Commands
 
-Every Runtime V2 app exposes these top-level entries:
+Every current LabKit app exposes these top-level entries:
 
 - **Screenshot** captures the active app surface.
 - **Save State** writes the current project document.

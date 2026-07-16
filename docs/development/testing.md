@@ -117,10 +117,10 @@ prove identical inputs reproduce the same app-consumed values; stateful
 operations must prove that safe repetition does not compound state or side
 effects. Compare the outputs consumed by the app, including
 downstream decisions or exports, within a documented tolerance. The same ID
-must remain active in `.agents/migration_guide.md`. This records debt without
-hiding it: dynamic invocation does not satisfy the contract, broad product
-allowlists are rejected, and the base-MATLAB path must provide comparable
-user-visible behavior until the Toolbox branch is deleted.
+remains active in the debt registry until the Toolbox branch is deleted. This
+records debt without hiding it: dynamic invocation does not satisfy the
+contract, broad product allowlists are rejected, and the Base MATLAB path must
+provide comparable user-visible behavior until the Toolbox branch is deleted.
 
 Private workspaces under `private_apps/` are separate Git repositories, so the
 public `changed` and `changedFast` tasks do not discover their diffs. Validate a

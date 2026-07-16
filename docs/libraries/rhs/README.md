@@ -51,7 +51,7 @@ timestamps stored in the recording, converted to seconds.
 | Read header, channel, and duration information | [`labkit.rhs.inspectFile`](../../reference/api/labkit/rhs/inspectFile.html) |
 | Build the byte/sample layout for later reads | [`labkit.rhs.indexFile`](../../reference/api/labkit/rhs/indexFile.html) |
 | Read one channel family and time interval | [`labkit.rhs.readWindow`](../../reference/api/labkit/rhs/readWindow.html) |
-| Check the API contract version | [`labkit.rhs.version`](../../reference/api/labkit/rhs/version.html) |
+| Check library version and compatibility | [`labkit.rhs.version`](../../reference/api/labkit/rhs/version.html) |
 
 ## Header Information
 

@@ -7,8 +7,8 @@ physiological and wearable time-series data. Use it to build a MATLAB script
 from the same recording, channel, event, segment, template, and measurement
 structures used by LabKit apps.
 
-`labkit.biosignal.version()` returns the biosignal facade contract version
-struct used by `labkit.contract` requirement checks.
+`labkit.biosignal.version()` returns biosignal-library version and compatibility
+information used by `labkit.contract` requirement checks.
 
 ECG peak detection is the only modality-specific detector in the current
 module. Import, filtering, segmentation, template construction, measurement,

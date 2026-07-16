@@ -51,7 +51,7 @@ contain surrounding whitespace. A blank value also means `"auto"`.
 | Select a chrono or EIS table | [`getMainCurve`](../../reference/api/labkit/dta/getMainCurve.html), [`getZCurve`](../../reference/api/labkit/dta/getZCurve.html) |
 | Extract numeric columns from parsed tables | [`getColumn`](../../reference/api/labkit/dta/getColumn.html), [`getCurveXY`](../../reference/api/labkit/dta/getCurveXY.html) |
 | Locate chrono pulse windows | [`labkit.dta.detectPulses`](../../reference/api/labkit/dta/detectPulses.html) |
-| Check the API contract version | [`labkit.dta.version`](../../reference/api/labkit/dta/version.html) |
+| Check library version and compatibility | [`labkit.dta.version`](../../reference/api/labkit/dta/version.html) |
 
 ## Loading Several Files
 

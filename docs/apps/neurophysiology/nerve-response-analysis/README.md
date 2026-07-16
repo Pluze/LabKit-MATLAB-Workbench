@@ -59,7 +59,17 @@ that other recordings can still complete.
 
 ## Detect Events In MATLAB Code
 
+<!-- labkit-runnable-example -->
 ```matlab
+sampleRate = 10000;
+timeSec = (0:1/sampleRate:0.12).';
+eventSignal = zeros(size(timeSec));
+pulseTimes = 0.03 + (0:4).' * 0.01;
+eventSignal(round(pulseTimes * sampleRate) + 1) = 5;
+eventOptions = struct( ...
+    "sourceId", "stim", ...
+    "stimShiftSec", 0, ...
+    "train", struct("minDetectedPulses", 5));
 [events, trains] = ...
     nerve_response_analysis.analysisRun.detectEventTrains( ...
         timeSec, eventSignal, eventOptions);

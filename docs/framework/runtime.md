@@ -540,7 +540,7 @@ already current. Internal synchronization should not fire app-facing semantic
 callbacks. Composed tools should trace callback reason/source as `user`,
 `internal`, or `programmatic` when an event crosses the app/tool boundary.
 
-## Ownership Boundary
+## Framework And App Responsibilities
 
 `labkit.ui` provides the app-neutral GUI shell, view construction, axes
 rendering, interaction lifecycle, composed tools, diagnostics, and reusable

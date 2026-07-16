@@ -6,8 +6,8 @@
 and common enhancement operations. App-specific registration, measurement,
 ROI, matching, and export workflows build on these functions.
 
-`labkit.image.version()` returns the image facade contract version used by app
-`requirements.m` declarations.
+`labkit.image.version()` returns image-library version and compatibility
+information used by app `requirements.m` declarations.
 
 ## Common Calls
 

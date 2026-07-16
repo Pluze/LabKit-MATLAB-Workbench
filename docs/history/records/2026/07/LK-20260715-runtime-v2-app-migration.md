@@ -30,7 +30,7 @@ component: `labkit_ECGPrint_app` | `1.3.5 -> 1.4.0`
 scope: `private_apps`
 scope: `docs/`
 scope: `docs/ui-runtime-redesign.md`
-scope: `.agents/migration_guide.md`
+scope: runtime migration guidance
 ```
 
 ## Context
@@ -149,12 +149,12 @@ coordinate parity with `vision.PointTracker` when that product is installed.
 
 ## Evidence
 
-- Runtime V2 migration checkpoints on `codex/upgrade-and-repair`, including
-  `1ef46bfd` for legacy public-surface retirement.
-- Private migration checkpoint `acce2f37` and UI 6 version closure `b064f80`
-  on `codex/ui-runtime-v2`.
-- Stable Change ID `LK-20260715-runtime-v2-app-migration` locates the carrying
-  branch and later mainline record.
+- `4454ca30` introduced the Runtime V2 kernel; the app migrations then ran from
+  Chrono Overlay (`5fe76ee4`) through Figure Studio (`21936e8d`).
+- `1ef46bfd` removed the retired UI runtime, and `8e109ff4` completed the
+  framework contracts used by the migrated apps.
+- The commits listed in the migration sequence above preserve the individual
+  app checkpoints; this record explains their shared architectural result.
 
 ## Known limitations and follow-up
 

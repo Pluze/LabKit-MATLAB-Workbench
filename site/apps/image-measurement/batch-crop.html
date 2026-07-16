@@ -49,10 +49,17 @@
 <h2 id="outputs">Outputs</h2>
 <p>Exports support PNG, TIFF, and JPEG. Each task produces one image at the planned output dimensions. The crop manifest records source, task identity, center, rotation, padding, source/output scale, requested physical geometry, format, and output filename. A second LabKit result JSON records project-wide parameters and identifies each output file.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">plan = batch_crop.cropGeometry.scalePlan(sourcePixelsPerUnit, ...
-    100, 100, &quot;um&quot;, 0);
+<pre><code class="language-matlab">calibration = labkit.ui.interaction.scaleBarCalibration(20, 10, &quot;um&quot;);
+items = struct(&quot;scaleCalibration&quot;, calibration);
+physicalOptions = struct( ...
+    &quot;physicalWidth&quot;, 5, &quot;physicalHeight&quot;, 3, ...
+    &quot;scaleUnit&quot;, &quot;um&quot;, &quot;targetPixelsPerUnit&quot;, 4);
+plan = batch_crop.cropGeometry.scalePlan(items, physicalOptions);
+
+imageData = reshape(uint8(1:100), 10, 10);
+cropOptions = struct(&quot;centerXY&quot;, [5 5]);
 cropped = batch_crop.cropGeometry.cropScaledImage( ...
-    imageData, [centerX centerY], plan, rotationDeg, paddingPercent);</code></pre>
+    imageData, cropOptions, plan);</code></pre>
 <p>For pixel-domain work use <code>batch_crop.cropGeometry.cropImage</code>. Open the linked API pages for exact plan fields, interpolation, and padding behavior.</p>
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>

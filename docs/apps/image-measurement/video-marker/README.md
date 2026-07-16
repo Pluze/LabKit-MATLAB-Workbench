@@ -6,10 +6,10 @@ portable project with autosave and recovery.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and Image facades. Video decoding uses MATLAB's
-available video support. Predictive navigation uses MATLAB point tracking when
-available and repository-owned fallback logic; no model weights or third-party
-runtime package are downloaded.
+The app declares compatibility with LabKit UI 6.x and uses the image functions
+shipped with the same workbench. Video decoding uses MATLAB's available video
+support. Predictive navigation is implemented in repository-owned MATLAB code;
+no model weights or third-party runtime package are downloaded.
 
 ```matlab
 labkit_VideoMarker_app
@@ -40,11 +40,13 @@ stable.
 
 Point marking remains active while a video is open. A complete edited frame is
 a manual anchor. Moving forward predicts every ordered point using cropped
-pyramidal KLT tracking with forward/backward reliability checks; rejected
-points use a constant-velocity estimate. Predicted frames remain editable
-drafts. Editing a complete frame makes it a new manual anchor for later
-prediction. Jumping forward propagates through intermediate frames and does not
-overwrite existing manual anchors.
+multiscale patch matching. The tracker compares mean-centered local patches by
+normalized correlation, refines accepted matches to subpixel coordinates, and
+reports confidence for each point. A rejected point retains its bounded motion-
+prior estimate. Predicted frames remain editable drafts. Editing a complete
+frame makes it a new manual anchor for later prediction. Jumping forward
+propagates through intermediate frames and does not overwrite existing manual
+anchors.
 
 Frame navigation and marker refresh preserve the current zoom. Opening a new
 video or project starts at its own home view.
@@ -84,17 +86,33 @@ video with adjacent recovery data asks whether to restore it or start new.
 
 ## Use Without The GUI
 
+<!-- labkit-runnable-example -->
 ```matlab
+previousFrame = peaks(61);
+nextFrame = circshift(previousFrame, [-2 3]);
 [nextPoints, confidence] = video_marker.motionEstimate.trackPoints( ...
-    previousFrame, nextFrame, previousPoints, struct());
-coordinateTable = video_marker.coordinateExport.buildTable(project);
+    previousFrame, nextFrame, [31 31]);
+
+skeleton = video_marker.skeletonDefinition.fromText( ...
+    "hip, knee", "hip-knee");
+annotations = video_marker.frameAnnotations.emptyAnnotations(2, 2);
+annotations = video_marker.frameAnnotations.setFramePoints( ...
+    annotations, 1, [11 21; 31 41], "confirmed");
+annotations = video_marker.frameAnnotations.setFramePoints( ...
+    annotations, 2, [13 25; 35 45], "confirmed");
+videoInfo = struct("frameRate", 10);
+options = video_marker.coordinateExport.options( ...
+    "startFrame", 1, "endFrame", 2, "unitMode", "pixels", ...
+    "originMode", "first_point", "yAxisMode", "up");
+coordinateTable = video_marker.coordinateExport.buildTable( ...
+    annotations, skeleton, videoInfo, struct(), options);
 ```
 
 ## Errors And Limitations
 
 - Prediction is an editing aid, not unattended long-duration tracking.
-- Occlusion, blur, large deformation, and leaving the frame can invalidate KLT
-  predictions; inspect and correct drafts.
+- Occlusion, blur, repeated texture, large deformation, and leaving the frame
+  can invalidate patch matches; inspect and correct drafts.
 - Calibrated export requires a valid positive scale calibration.
 - Changing skeleton order after annotation would change coordinate meaning and
   is therefore prevented once a video session begins.

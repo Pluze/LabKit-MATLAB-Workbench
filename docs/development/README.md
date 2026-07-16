@@ -16,5 +16,4 @@ only [Getting started](../getting-started/README.md) and the
 | Choose versions, tags, and release evidence | [Release process](release.md) |
 
 Reusable facade calls are documented separately in the
-[public API reference](../libraries/README.md). Active migration execution rules do
-not belong here; they remain in `.agents/migration_guide.md` until resolved.
+[public API reference](../libraries/README.md).

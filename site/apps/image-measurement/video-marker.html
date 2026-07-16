@@ -24,7 +24,7 @@
 <h1 id="video-marker">Video Marker</h1>
 <p>Video Marker defines an ordered landmark skeleton, records coordinates across video frames, predicts forward positions between manual anchors, and saves a portable project with autosave and recovery.</p>
 <h2 id="requirements-and-launch">Requirements And Launch</h2>
-<p>The app requires the LabKit UI and Image facades. Video decoding uses MATLAB's available video support. Predictive navigation uses MATLAB point tracking when available and repository-owned fallback logic; no model weights or third-party runtime package are downloaded.</p>
+<p>The app declares compatibility with LabKit UI 6.x and uses the image functions shipped with the same workbench. Video decoding uses MATLAB's available video support. Predictive navigation is implemented in repository-owned MATLAB code; no model weights or third-party runtime package are downloaded.</p>
 <pre><code class="language-matlab">labkit_VideoMarker_app</code></pre>
 <h2 id="start-or-open-a-project">Start Or Open A Project</h2>
 <p>The <strong>Session</strong> panel appears first in the Video tab. <strong>Open MAT</strong> uses the same loader as the window's top-level Load State action and accepts an explicit project or compatible autosave. <strong>New setup</strong> offers Cancel, Save and start new, or Discard and start new; it never silently clears the current session.</p>
@@ -39,7 +39,7 @@
 <li>Move to the next frame; the current frame is saved automatically.</li>
 <li>Correct predicted frames periodically and export or save the project.</li>
 </ol>
-<p>Point marking remains active while a video is open. A complete edited frame is a manual anchor. Moving forward predicts every ordered point using cropped pyramidal KLT tracking with forward/backward reliability checks; rejected points use a constant-velocity estimate. Predicted frames remain editable drafts. Editing a complete frame makes it a new manual anchor for later prediction. Jumping forward propagates through intermediate frames and does not overwrite existing manual anchors.</p>
+<p>Point marking remains active while a video is open. A complete edited frame is a manual anchor. Moving forward predicts every ordered point using cropped multiscale patch matching. The tracker compares mean-centered local patches by normalized correlation, refines accepted matches to subpixel coordinates, and reports confidence for each point. A rejected point retains its bounded motion- prior estimate. Predicted frames remain editable drafts. Editing a complete frame makes it a new manual anchor for later prediction. Jumping forward propagates through intermediate frames and does not overwrite existing manual anchors.</p>
 <p>Frame navigation and marker refresh preserve the current zoom. Opening a new video or project starts at its own home view.</p>
 <h2 id="scale-and-coordinate-export">Scale And Coordinate Export</h2>
 <p>Scale calibration stores a measured pixel distance, known length, and unit. The coordinate export options are:</p>
@@ -61,15 +61,30 @@
 <li>output manifests recording coordinate options and file roles.</li>
 </ul>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">[nextPoints, confidence] = video_marker.motionEstimate.trackPoints( ...
-    previousFrame, nextFrame, previousPoints, struct());
-coordinateTable = video_marker.coordinateExport.buildTable(project);</code></pre>
+<pre><code class="language-matlab">previousFrame = peaks(61);
+nextFrame = circshift(previousFrame, [-2 3]);
+[nextPoints, confidence] = video_marker.motionEstimate.trackPoints( ...
+    previousFrame, nextFrame, [31 31]);
+
+skeleton = video_marker.skeletonDefinition.fromText( ...
+    &quot;hip, knee&quot;, &quot;hip-knee&quot;);
+annotations = video_marker.frameAnnotations.emptyAnnotations(2, 2);
+annotations = video_marker.frameAnnotations.setFramePoints( ...
+    annotations, 1, [11 21; 31 41], &quot;confirmed&quot;);
+annotations = video_marker.frameAnnotations.setFramePoints( ...
+    annotations, 2, [13 25; 35 45], &quot;confirmed&quot;);
+videoInfo = struct(&quot;frameRate&quot;, 10);
+options = video_marker.coordinateExport.options( ...
+    &quot;startFrame&quot;, 1, &quot;endFrame&quot;, 2, &quot;unitMode&quot;, &quot;pixels&quot;, ...
+    &quot;originMode&quot;, &quot;first_point&quot;, &quot;yAxisMode&quot;, &quot;up&quot;);
+coordinateTable = video_marker.coordinateExport.buildTable( ...
+    annotations, skeleton, videoInfo, struct(), options);</code></pre>
 <h2 id="errors-and-limitations">Errors And Limitations</h2>
 <ul>
 <li>Prediction is an editing aid, not unattended long-duration tracking.</li>
-<li>Occlusion, blur, large deformation, and leaving the frame can invalidate KLT</li>
+<li>Occlusion, blur, repeated texture, large deformation, and leaving the frame</li>
 </ul>
-<p>predictions; inspect and correct drafts.</p>
+<p>can invalidate patch matches; inspect and correct drafts.</p>
 <ul>
 <li>Calibrated export requires a valid positive scale calibration.</li>
 <li>Changing skeleton order after annotation would change coordinate meaning and</li>

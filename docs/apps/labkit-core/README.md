@@ -13,8 +13,8 @@ but do not own a scientific measurement or experiment-specific formula.
 
 Figure Studio can open tracked `.fig` files or receive a plot sent from a
 LabKit plot context menu. The lightweight framework popout is intended for
-inspection; Figure Studio provides the complete workflow for controlled canvas and
-style settings, raster/vector export, and a data-plus-recreation-script
+inspection; Figure Studio provides the complete workflow for controlled canvas
+and style settings, raster/vector export, and a data-plus-recreation-script
 package.
 
 Figure Studio snapshots visible graphics. It does not rerun the calculation

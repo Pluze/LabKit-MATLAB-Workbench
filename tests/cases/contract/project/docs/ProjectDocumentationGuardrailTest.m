@@ -15,7 +15,9 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 "commit hash", ...
                 "branch deletion", ...
                 "current turn", ...
-                "final response"];
+                "final response", ...
+                ".agents/", ...
+                "AGENTS.md"];
 
             leaks = strings(1, 0);
             for k = 1:numel(files)
@@ -64,6 +66,49 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 ["History pages should explain the specific decision, effect, " ...
                 "and evidence instead of normalization boilerplate: " + ...
                 strjoin(offenders, ", ")]);
+        end
+
+        function markedAppManualExamplesExecute(testCase)
+            root = setupLabKitTestPath();
+            entries = dir(fullfile(root, "docs", "apps", "**", "README.md"));
+            failures = strings(1, 0);
+            exampleCount = 0;
+            pattern = ['<!-- labkit-runnable-example -->\s*```matlab\s*' ...
+                '([\s\S]*?)\s*```'];
+
+            for k = 1:numel(entries)
+                filepath = fullfile(entries(k).folder, entries(k).name);
+                examples = regexp(fileread(filepath), pattern, "tokens");
+                for iExample = 1:numel(examples)
+                    exampleCount = exampleCount + 1;
+                    try
+                        executeDocumentationExample(examples{iExample}{1});
+                    catch ME
+                        failures(end + 1) = relativePath(root, filepath) + ...
+                            " example " + iExample + ": " + string(ME.message);
+                    end
+                end
+            end
+
+            testCase.verifyGreaterThanOrEqual(exampleCount, 4, ...
+                "App manuals should retain executable synthetic examples.");
+            testCase.verifyEmpty(failures, ...
+                "Marked app-manual examples must execute: " + ...
+                strjoin(failures, ", "));
+
+            generatedPages = dir(fullfile(root, "site", "apps", "**", "*.html"));
+            exposedMarkers = strings(1, 0);
+            for k = 1:numel(generatedPages)
+                filepath = fullfile(generatedPages(k).folder, ...
+                    generatedPages(k).name);
+                if contains(fileread(filepath), "labkit-runnable-example")
+                    exposedMarkers(end + 1) = relativePath(root, filepath);
+                end
+            end
+            testCase.verifyEmpty(exposedMarkers, ...
+                "Runnable-example markers are source metadata and must not " + ...
+                "appear in generated app manuals: " + ...
+                strjoin(exposedMarkers, ", "));
         end
 
         function testingDocOwnsBuildTaskCommandMatrix(testCase)
@@ -531,6 +576,10 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
     end
 end
 
+function executeDocumentationExample(code)
+    evalc(code);
+end
+
 function values = normalizeDocStructArray(values)
     if isempty(values)
         values = struct([]);
@@ -544,9 +593,7 @@ function files = collectHumanDocFiles(root)
     entries = dir(fullfile(root, "docs", "**", "*.md"));
     for k = 1:numel(entries)
         filepath = string(fullfile(entries(k).folder, entries(k).name));
-        if ~isHistoryDocument(filepath)
-            files(end+1) = filepath;
-        end
+        files(end+1) = filepath;
     end
 end
 

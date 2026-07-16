@@ -38,6 +38,11 @@ function [html, plainText] = renderLabKitMarkdown(model, page)
             index = index + 1;
             continue;
         end
+        if startsWith(trimmed, "<!--") && endsWith(trimmed, "-->")
+            [output, listType] = closeList(output, listType);
+            index = index + 1;
+            continue;
+        end
         if isTableStart(lines, index)
             [output, listType] = closeList(output, listType);
             [tableHtml, tablePlain, index] = renderTable(model, page, lines, index);

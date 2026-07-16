@@ -24,7 +24,7 @@
 <h1 id="image-api">Image API</h1>
 <p><a href="../../reference/index.html">Public API index</a> | <a href="../../apps/index.html">App guide</a></p>
 <p><code>labkit.image.*</code> provides GUI-free image file IO, conversion, preview sizing, and common enhancement operations. App-specific registration, measurement, ROI, matching, and export workflows build on these functions.</p>
-<p><code>labkit.image.version()</code> returns the image facade contract version used by app <code>requirements.m</code> declarations.</p>
+<p><code>labkit.image.version()</code> returns image-library version and compatibility information used by app <code>requirements.m</code> declarations.</p>
 <h2 id="common-calls">Common Calls</h2>
 <pre><code class="language-matlab">filter = labkit.image.fileDialogFilter(&quot;IncludeAll&quot;, true);
 paths = labkit.image.normalizePaths(rawPaths);

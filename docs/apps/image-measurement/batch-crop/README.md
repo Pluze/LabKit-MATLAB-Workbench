@@ -69,11 +69,19 @@ parameters and identifies each output file.
 
 ## Use Without The GUI
 
+<!-- labkit-runnable-example -->
 ```matlab
-plan = batch_crop.cropGeometry.scalePlan(sourcePixelsPerUnit, ...
-    100, 100, "um", 0);
+calibration = labkit.ui.interaction.scaleBarCalibration(20, 10, "um");
+items = struct("scaleCalibration", calibration);
+physicalOptions = struct( ...
+    "physicalWidth", 5, "physicalHeight", 3, ...
+    "scaleUnit", "um", "targetPixelsPerUnit", 4);
+plan = batch_crop.cropGeometry.scalePlan(items, physicalOptions);
+
+imageData = reshape(uint8(1:100), 10, 10);
+cropOptions = struct("centerXY", [5 5]);
 cropped = batch_crop.cropGeometry.cropScaledImage( ...
-    imageData, [centerX centerY], plan, rotationDeg, paddingPercent);
+    imageData, cropOptions, plan);
 ```
 
 For pixel-domain work use `batch_crop.cropGeometry.cropImage`. Open the linked

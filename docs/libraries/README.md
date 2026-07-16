@@ -9,7 +9,7 @@ syntax, arguments, outputs, behavior, source, and related APIs.
 | Need | Module guide |
 | --- | --- |
 | App lifecycle, layout, plotting, interaction, state, and debugging | [App Framework](../framework/README.md) |
-| MATLAB-product requirements and facade versions | [Contracts](contracts/README.md) |
+| MATLAB product requirements and library compatibility | [Contracts](contracts/README.md) |
 | Image IO and generic image operations | [Image](image/README.md) |
 | Radiometric image decoding and temperature conversion | [Thermal](thermal/README.md) |
 | Gamry DTA discovery, parsing, curves, and pulses | [DTA](dta/README.md) |
@@ -24,10 +24,10 @@ app-API catalog are not supported entry points.
 
 ## Compatibility
 
-Each reusable facade publishes a `version()` result. Apps declare compatible
-facade ranges in their app-owned `requirements.m`. A function documented here
-is public within its facade version; compatibility across a breaking facade
-version is not implied.
+Each reusable library publishes a `version()` result. Apps declare compatible
+library ranges in their app-owned `requirements.m`. A function documented here
+is public within that library version; compatibility across a breaking version
+is not implied.
 
 The tables below are generated from current MATLAB source and the app API
 catalog, so each entry links to the current function help.

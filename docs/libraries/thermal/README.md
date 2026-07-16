@@ -41,7 +41,7 @@ returns every readable record and describes unreadable files in
 | Convert a numeric matrix to RGB colours | [`labkit.thermal.renderImage`](../../reference/api/labkit/thermal/renderImage.html) |
 | Build a file-dialog filter | [`labkit.thermal.fileDialogFilter`](../../reference/api/labkit/thermal/fileDialogFilter.html) |
 | Test or list recognized extensions | [`isSupportedPath`](../../reference/api/labkit/thermal/isSupportedPath.html), [`supportedExtensions`](../../reference/api/labkit/thermal/supportedExtensions.html) |
-| Check the API contract version | [`labkit.thermal.version`](../../reference/api/labkit/thermal/version.html) |
+| Check library version and compatibility | [`labkit.thermal.version`](../../reference/api/labkit/thermal/version.html) |
 
 ## Thermal Records
 
