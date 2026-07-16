@@ -1,17 +1,37 @@
 function xy = clampData(ax, xy, varargin)
-%CLAMPDATA Clamp data coordinates inside the visible axes box.
+%CLAMPDATA Keep data coordinates inside the visible axes box.
 %
-% App-facing contract:
+% Usage:
 %   xyOut = labkit.ui.plot.clampData(ax, xy)
-%   xyOut = labkit.ui.plot.clampData(ax, xy, "Padding", 0.04)
+%   xyOut = labkit.ui.plot.clampData(ax, xy, Name=Value)
 %
 % Inputs:
-%   ax - target MATLAB axes or uiaxes handle.
-%   xy - N-by-2 numeric data coordinates.
-%   Padding - optional normalized axes padding, default 0.04.
+%   ax - Valid scalar MATLAB axes or uiaxes handle. Its XLim, YLim, XScale,
+%       YScale, XDir, and YDir properties define the visible box.
+%   xy - N-by-2 numeric matrix of [x y] data coordinates.
+%
+% Name-Value Arguments:
+%   Padding - Minimum distance from each axes edge, expressed as a fraction of
+%       the visible width or height. Values are limited to [0, 0.49]. Default:
+%       0.04.
 %
 % Outputs:
-%   xyOut - N-by-2 clamped data coordinates.
+%   xy - N-by-2 data coordinates, shown as xyOut in the usage syntax. Each
+%       point is moved only as far as needed to satisfy Padding.
+%
+% Description:
+%   clampData is useful for labels and annotations that must remain readable
+%   near an axes boundary. Conversion through normalized axes coordinates keeps
+%   the result visually consistent on logarithmic or reversed axes.
+%
+% Example:
+%   fig = figure("Visible", "off");
+%   cleanup = onCleanup(@() close(fig));
+%   ax = axes(fig, "XLim", [0 10], "YLim", [0 20]);
+%   xy = labkit.ui.plot.clampData(ax, [-2 25], "Padding", 0.1);
+%   assert(isequal(xy, [1 18]))
+%
+% See also labkit.ui.plot.offsetData
 
     opts = parseAxesOptions(varargin, struct('Padding', 0.04));
     pad = max(0, min(0.49, double(opts.Padding)));

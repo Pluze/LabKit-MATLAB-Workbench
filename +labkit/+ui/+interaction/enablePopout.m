@@ -1,16 +1,28 @@
 function enablePopout(ax)
-%ENABLEPOPOUT Add a context-menu action to copy an axes to a figure.
+%ENABLEPOPOUT Add a standalone-figure action to an axes context menu.
 %
-% App-facing contract:
+% Usage:
 %   labkit.ui.interaction.enablePopout(ax)
 %
 % Inputs:
-%   ax - UI axes or axes handle to receive the "Open axes in new figure"
-%       context action.
+%   ax - MATLAB axes or uiaxes handle that receives an "Open axes in new
+%       figure" context-menu item. Empty or invalid handles are ignored.
 %
-% Output:
-%   No return value. Mutates ax and graphics children in place. Safe to call
-%       after redraws.
+% Outputs:
+%   None.
+%
+% Description:
+%   The menu copies the current axes content, limits, labels, colors, and
+%   visible legend entries into a normal MATLAB figure with publication and
+%   export tools. Existing axes context-menu items are preserved. Children
+%   without their own context menu inherit the axes menu, including children
+%   added after this call. Repeated calls do not add duplicate menu items.
+%
+% Typical Call:
+%   plot(ax, time, signal);
+%   labkit.ui.interaction.enablePopout(ax);
+%
+% See also labkit.ui.layout.previewArea
 
     if isempty(ax) || ~isvalid(ax)
         return;

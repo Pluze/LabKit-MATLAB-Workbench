@@ -1,22 +1,37 @@
 function clear(ax, varargin)
-%CLEAR Clear a plot axes before app-owned redraws.
+%CLEAR Prepare an axes for an app-owned redraw.
 %
-% App-facing contract:
+% Usage:
 %   labkit.ui.plot.clear(ax)
-%   labkit.ui.plot.clear(ax, "ResetScale", true)
+%   labkit.ui.plot.clear(ax, Name=Value)
 %
 % Inputs:
-%   ax - target MATLAB axes or uiaxes handle.
-%   ResetScale - optional logical, default false. When true, XScale/YScale are
-%       restored to linear and X/Y tick modes are restored to automatic.
-%   ClearLegend - optional logical, default true. Turns the axes legend off.
+%   ax - Valid scalar MATLAB axes or uiaxes handle to clear.
+%
+% Name-Value Arguments:
+%   ResetScale - Logical value. true restores linear X/Y scales and automatic
+%       X/Y tick modes. false preserves those four properties. Default: false.
+%   ClearLegend - Logical value. true turns the legend off. Default: true.
 %
 % Outputs:
 %   None.
 %
+% Description:
+%   clear deletes plotted children, clears LabKit's cached image home view,
+%   releases hold, and returns XLim, YLim, ZLim, and CLim to automatic mode.
+%   Labels and other axes decorations follow MATLAB cla behavior. Call it once
+%   at the start of a complete redraw, not when adding an overlay that should
+%   preserve the current zoom.
+%
 % Example:
+%   fig = figure("Visible", "off");
+%   cleanup = onCleanup(@() close(fig));
+%   ax = axes(fig);
+%   plot(ax, 1:3, [2 1 3]);
 %   labkit.ui.plot.clear(ax, "ResetScale", true);
-%   plot(ax, t, y);
+%   assert(isempty(ax.Children))
+%
+% See also labkit.ui.plot.fit, labkit.ui.plot.message
 
     opts = parseAxesOptions(varargin, struct( ...
         'ResetScale', false, ...

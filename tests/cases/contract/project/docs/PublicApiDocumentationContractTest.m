@@ -104,6 +104,19 @@ classdef PublicApiDocumentationContractTest < matlab.unittest.TestCase
                     "Generated Name-Value sections must be scannable definition lists.");
             end
         end
+
+        function generatedMethodSectionsUseDefinitionLists(testCase)
+            root = setupLabKitTestPath();
+            filepath = fullfile(root, "site", "reference", "api", ...
+                "labkit", "ui", "debug", "context.html");
+            html = string(fileread(filepath));
+            section = extractAfter(html, ...
+                '<section class="api-section"><h2 id="context-methods">');
+            section = extractBefore(section, "</section>");
+            testCase.verifyTrue(contains(section, ...
+                '<dl class="argument-list">'), ...
+                "Generated method sections must be scannable definition lists.");
+        end
     end
 end
 
@@ -113,7 +126,9 @@ end
 
 function files = rewrittenModuleFiles(root)
     moduleFolders = ["+biosignal", "+contract", "+dta", "+image", "+rhs", ...
-        "+thermal", fullfile("+ui", "+layout"), ...
+        "+thermal", fullfile("+ui", "+debug"), ...
+        fullfile("+ui", "+interaction"), fullfile("+ui", "+layout"), ...
+        fullfile("+ui", "+plot"), ...
         fullfile("+ui", "+runtime")];
     files = strings(0, 1);
     for iModule = 1:numel(moduleFolders)

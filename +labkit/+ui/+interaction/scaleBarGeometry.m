@@ -1,24 +1,49 @@
 function geometry = scaleBarGeometry(imageSize, calibration, barLength, position, colorName)
-%SCALEBARGEOMETRY Build serializable image scale-bar overlay geometry.
+%SCALEBARGEOMETRY Compute serializable image scale-bar overlay geometry.
 %
 % Usage:
-%   cal = labkit.ui.interaction.scaleBarCalibration(80, 20, "mm");
-%   geometry = labkit.ui.interaction.scaleBarGeometry( ...
-%       size(imageData), cal, 10, "Bottom right", "White");
+%   geometry = labkit.ui.interaction.scaleBarGeometry(imageSize, ...
+%       calibration, barLength, position, colorName)
 %
 % Inputs:
-%   imageSize - source image size; the first two elements are height/width.
-%   calibration - scaleBarCalibration-compatible struct with positive
-%       pixelsPerUnit and a unit label.
-%   barLength - positive physical length expressed in calibration.unit.
-%   position - Bottom/Top combined with left/center/right. Default is
-%       "Bottom right" when the supplied value has no recognized token.
-%   colorName - "Black" or "White"; other values fall back to black.
+%   imageSize - Numeric vector whose first two elements are positive finite
+%       image height and width in pixels.
+%   calibration - Struct with a positive finite pixelsPerUnit field and a unit
+%       field, normally returned by scaleBarCalibration.
+%   barLength - Positive finite physical length expressed in calibration.unit.
+%   position - Text containing "top" or "bottom" and optionally "left",
+%       "center", or "right". Unrecognized vertical text uses bottom;
+%       unrecognized horizontal text uses center.
+%   colorName - "White" selects [1 1 1]. Every other value selects black.
 %
-% Output:
-%   geometry - scalar data struct with line, label, color, labelPosition,
-%       verticalAlignment, pixelsPerUnit, unit, barLength, position, and
-%       colorName. Apps/renderers own drawing; this function creates no UI.
+% Outputs:
+%   geometry - Scalar data struct with the fields described below.
+%
+% Geometry Fields:
+%   line - Two-by-two [x y] endpoints in image-pixel coordinates.
+%   label - Display text containing barLength and calibration.unit.
+%   color - RGB triplet selected by colorName.
+%   labelPosition - One-by-two centered label position in image pixels.
+%   verticalAlignment - "top" for a top bar or "bottom" for a bottom bar.
+%   pixelsPerUnit - Calibration value copied into the geometry.
+%   unit - Unit label copied into the geometry as a string scalar.
+%   barLength - Requested physical length.
+%   position - Supplied position text as a string scalar.
+%   colorName - Supplied color text as a string scalar.
+%
+% Description:
+%   The helper places the line with an eight-percent image-edge margin and a
+%   five-pixel minimum inset. It errors when the requested bar cannot fit in the
+%   available horizontal span. Apps and renderers own drawing; this function
+%   creates no graphics and is suitable for saved project state.
+%
+% Example:
+%   cal = labkit.ui.interaction.scaleBarCalibration(80, 20, "mm");
+%   geometry = labkit.ui.interaction.scaleBarGeometry( ...
+%       [600 800], cal, 10, "Bottom right", "White");
+%   assert(abs(diff(geometry.line(:,1))) == 40)
+%
+% See also labkit.ui.interaction.scaleBarCalibration
 
     imageSize = double(imageSize);
     assert(numel(imageSize) >= 2 && all(isfinite(imageSize(1:2))) && ...

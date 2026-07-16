@@ -1,26 +1,42 @@
 function limits = fit(ax, varargin)
 %FIT Fit axes limits to finite plotted X/Y data.
 %
-% App-facing contract:
+% Usage:
 %   limits = labkit.ui.plot.fit(ax)
 %   limits = labkit.ui.plot.fit(ax, graphicsHandles)
-%   limits = labkit.ui.plot.fit(ax, graphicsHandles, "Padding", 0.02)
+%   limits = labkit.ui.plot.fit(..., Name=Value)
 %
 % Inputs:
-%   ax - target MATLAB axes or uiaxes handle.
-%   graphicsHandles - optional graphics handles whose XData/YData should drive
-%       the fitted range. When omitted, finite X/Y data are collected from the
-%       axes children.
-%   Padding - optional fractional padding, default 0.02.
+%   ax - Valid scalar MATLAB axes or uiaxes handle whose limits are changed.
+%   graphicsHandles - Optional graphics handle array. Objects with numeric
+%       XData and YData contribute to the fitted range. When omitted, all
+%       current axes children are examined.
+%
+% Name-Value Arguments:
+%   Padding - Nonnegative fractional padding added on each side of the data
+%       range. Default: 0.02. For logarithmic axes, padding is computed in
+%       base-10 logarithmic space.
 %
 % Outputs:
-%   limits - struct with x and y fields containing the applied limits, or empty
-%       arrays when no finite data were available.
+%   limits - Scalar struct with x and y fields. Each field contains the applied
+%       two-element limit, or [] when that dimension had no usable data and was
+%       returned to automatic limit mode.
+%
+% Description:
+%   fit ignores nonfinite XData and YData. Nonpositive values do not contribute
+%   to a logarithmic dimension. Supplying graphicsHandles lets an app exclude
+%   annotations such as reference lines from the fitted range.
 %
 % Example:
-%   h = plot(ax, t, y);
-%   xline(ax, eventTime);
-%   labkit.ui.plot.fit(ax, h);
+%   fig = figure("Visible", "off");
+%   cleanup = onCleanup(@() close(fig));
+%   ax = axes(fig);
+%   h = plot(ax, [1 2 3], [10 20 15]);
+%   xline(ax, 100);
+%   limits = labkit.ui.plot.fit(ax, h, "Padding", 0);
+%   assert(isequal(limits.x, [1 3]))
+%
+% See also labkit.ui.plot.clear
 
     validateAxesHandle(ax, 'fit');
     [handles, opts] = parseFitInputs(ax, varargin);
