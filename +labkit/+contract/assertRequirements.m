@@ -1,17 +1,32 @@
 function assertRequirements(appName, req, versions)
-%ASSERTREQUIREMENTS Require app facade contracts to match current LabKit.
+%ASSERTREQUIREMENTS Throw an error when LabKit API requirements are not met.
 %
-% App-facing contract:
+% Usage:
 %   labkit.contract.assertRequirements(appName, req)
 %   labkit.contract.assertRequirements(appName, req, versions)
 %
+% Description:
+%   Calls checkRequirements and returns normally when every requirement is
+%   compatible. On failure, combines the individual report messages into one
+%   error. Use checkRequirements instead when incompatibility should be shown
+%   without throwing.
+%
 % Inputs:
-%   appName - app entry-point name used for the error identifier.
-%   req - struct returned by labkit.contract.requirements.
-%   versions - optional facade version struct array for tests or diagnostics.
+%   appName - Text scalar used as the error-identifier prefix. It should be a
+%       valid MATLAB identifier, for example "labkit_Example_app".
+%   req - Scalar structure returned by labkit.contract.requirements.
+%   versions - Optional version structure array accepted by checkRequirements.
 %
 % Outputs:
-%   None. Throws <appName>:IncompatibleLabKit when a requirement fails.
+%   None - Returns no value.
+%
+% Errors:
+%   Throws <appName>:IncompatibleLabKit when compatibility checks fail. Input
+%   and range validation errors from checkRequirements are passed through.
+%
+% Example:
+%   req = labkit.contract.requirements("ui", ">=6 <7");
+%   labkit.contract.assertRequirements("labkit_Example_app", req)
 
     if nargin < 3
         report = labkit.contract.checkRequirements(req);

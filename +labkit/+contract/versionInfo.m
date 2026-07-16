@@ -1,20 +1,39 @@
 function info = versionInfo(facade, current, compatible, status, notes)
-%VERSIONINFO Build a LabKit facade version contract struct.
+%VERSIONINFO Describe one LabKit API version and its compatibility range.
 %
-% App-facing contract:
+% Usage:
 %   info = labkit.contract.versionInfo(facade, current, compatible, status, notes)
 %
+% Description:
+%   Creates the standard structure returned by module version functions. The
+%   function normalizes text and validates the status value, but it does not
+%   parse current or compatible as semantic versions. checkRequirements parses
+%   those values when it performs a comparison.
+%
 % Inputs:
-%   facade - short facade name, for example "ui" or "dta".
-%   current - current semantic contract version, for example "2.0.0".
-%   compatible - string array of implemented contract ranges, for example
-%       ">=2.0 <3".
-%   status - "stable", "deprecated", or "experimental".
-%   notes - short maintainer-facing compatibility note.
+%   facade - Character vector or string scalar, such as "ui", "dta", or
+%       "labkit.image". The optional "labkit." prefix is removed.
+%   current - Character vector or string scalar containing the current API
+%       version, normally a semantic version such as "2.0.0".
+%   compatible - Character vector, string scalar, or string array containing
+%       one or more supported requirement ranges, such as ">=2.0 <3".
+%   status - "stable", "deprecated", or "experimental". Matching is
+%       case-insensitive.
+%   notes - Character vector or string scalar summarizing the module contract.
 %
 % Outputs:
-%   info - plain struct with name, facade, current, compatible, status, and
-%       notes fields.
+%   info - Scalar structure with name, facade, current, compatible, status,
+%       and notes. name includes the "labkit." prefix; compatible is a string
+%       column vector; other text values are string scalars.
+%
+% Errors:
+%   Throws labkit:contract:InvalidVersionInfo for nontext scalar inputs, an
+%   empty facade, no nonempty compatible ranges, or an unsupported status.
+%
+% Example:
+%   info = labkit.contract.versionInfo( ...
+%       "image", "4.1.0", ">=4 <5", "stable", ...
+%       "Image file IO and processing functions.");
 
     facade = normalizeFacade(facade);
     current = normalizeText(current, 'current');

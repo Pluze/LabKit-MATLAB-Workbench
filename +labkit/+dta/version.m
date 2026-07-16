@@ -11,13 +11,13 @@ function info = version()
 %
 % Outputs:
 %   info - Scalar structure returned by labkit.contract.versionInfo. name is
-%       "dta"; version is the current semantic version; compatibility is the
-%       supported requirement range; stability describes API maturity; and
-%       notes summarizes the module.
+%       "labkit.dta"; facade is "dta"; current is the current semantic
+%       version; compatible lists supported requirement ranges; status
+%       describes API maturity; and notes summarizes the module.
 %
 % Example:
 %   info = labkit.dta.version();
-%   fprintf("DTA API %s (%s)\n", info.version, info.stability)
+%   fprintf("DTA API %s (%s)\n", info.current, info.status)
 
     info = labkit.contract.versionInfo("dta", "2.0.1", ">=2.0 <3", ...
         "stable", "DTA parser, file item, pulse, and curve facade contract.");

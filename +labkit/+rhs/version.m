@@ -11,13 +11,13 @@ function info = version()
 %
 % Outputs:
 %   info - Scalar structure returned by labkit.contract.versionInfo. name is
-%       "rhs"; version is the current semantic version; compatibility is the
-%       supported requirement range; stability describes API maturity; and
-%       notes summarizes the module.
+%       "labkit.rhs"; facade is "rhs"; current is the current semantic
+%       version; compatible lists supported requirement ranges; status
+%       describes API maturity; and notes summarizes the module.
 %
 % Example:
 %   info = labkit.rhs.version();
-%   fprintf("RHS API %s (%s)\n", info.version, info.stability)
+%   fprintf("RHS API %s (%s)\n", info.current, info.status)
 
     info = labkit.contract.versionInfo("rhs", "1.0.1", ">=1.0 <2", ...
         "stable", "RHS discovery, metadata, indexing, and waveform-window facade contract.");

@@ -1,20 +1,50 @@
 function report = checkRequirements(req, versions)
-%CHECKREQUIREMENTS Check app facade requirements against LabKit versions.
+%CHECKREQUIREMENTS Compare required API ranges with available LabKit versions.
 %
-% App-facing contract:
+% Usage:
 %   report = labkit.contract.checkRequirements(req)
 %   report = labkit.contract.checkRequirements(req, versions)
 %
+% Description:
+%   Checks each requested facade in two ways: its current version must satisfy
+%   the caller's range, and that range must overlap at least one compatibility
+%   range advertised by the facade. When versions is omitted, the current ui,
+%   dta, rhs, biosignal, image, and thermal version functions are queried.
+%
 % Inputs:
-%   req - struct returned by labkit.contract.requirements.
-%   versions - optional struct array of facade version structs. When omitted,
-%       current labkit.ui/dta/rhs/biosignal/image/thermal version APIs are
-%       queried.
+%   req - Scalar structure returned by labkit.contract.requirements.
+%   versions - Optional structure array returned by facade version functions
+%       or versionInfo. Every element must contain name, current, compatible,
+%       status, and notes. An optional facade field overrides the name used for
+%       matching. This argument is mainly useful for diagnostics and tests.
 %
 % Outputs:
-%   report - struct with ok, failures, and message fields. ok is true only
-%       when each current facade version satisfies the app requirement and
-%       the requirement intersects the facade-compatible contract ranges.
+%   report - Scalar structure with ok, failures, and message fields. ok is
+%       true when every requirement passes. message is a success sentence or
+%       newline-separated failure text.
+%
+% Output Fields:
+%   failures - Structure array with one element per failed requirement.
+%   failures.facade - Normalized facade name.
+%   failures.required - Range requested by the caller.
+%   failures.available - Compatibility ranges advertised by the facade, or an
+%       empty string array when the facade is unknown.
+%   failures.message - Readable incompatibility explanation.
+%
+% Errors:
+%   Throws labkit:contract:InvalidRequirements for a malformed req,
+%   labkit:contract:InvalidVersionInfo for a malformed versions array,
+%   labkit:contract:InvalidFacadeName for invalid names, and
+%   labkit:contract:InvalidVersionRange when a version or constraint cannot be
+%   parsed. Versions contain one to three numeric components, such as 6,
+%   6.1, or 6.1.2.
+%
+% Example:
+%   req = labkit.contract.requirements("thermal", ">=1.0 <2");
+%   report = labkit.contract.checkRequirements(req);
+%   if ~report.ok
+%       warning("%s", report.message)
+%   end
 
     if nargin < 2 || isempty(versions)
         versions = currentFacadeVersions();

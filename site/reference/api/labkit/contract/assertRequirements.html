@@ -19,13 +19,17 @@
 <p class="page-kind">reference</p>
 <p class="api-context"><a href="../../../index.html">API Reference</a> &rsaquo; <a href="../../../../libraries/contracts/index.html">Contracts</a></p>
 <h1><code>labkit.contract.assertRequirements</code></h1>
-<p class="lead">Require app facade contracts to match current LabKit.</p>
+<p class="lead">Throw an error when LabKit API requirements are not met.</p>
 <h2 id="syntax">Syntax</h2>
 <pre><code class="language-matlab">labkit.contract.assertRequirements(appName, req)
 labkit.contract.assertRequirements(appName, req, versions)</code></pre>
-<section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>appName</code></dt><dd>app entry-point name used for the error identifier.</dd></div><div class="argument"><dt><code>req</code></dt><dd>struct returned by labkit.contract.requirements.</dd></div><div class="argument"><dt><code>versions</code></dt><dd>optional facade version struct array for tests or diagnostics.</dd></div></dl></section>
-<section class="api-section"><h2 id="outputs">Outputs</h2><p>None. Throws &lt;appName&gt;:IncompatibleLabKit when a requirement fails.</p></section>
-<h2 id="related-apis">Related APIs</h2><ul><li><a href="checkRequirements.html"><code>labkit.contract.checkRequirements</code></a> — Check app facade requirements against LabKit versions.</li><li><a href="requirements.html"><code>labkit.contract.requirements</code></a> — Build a LabKit facade requirement contract.</li><li><a href="versionInfo.html"><code>labkit.contract.versionInfo</code></a> — Build a LabKit facade version contract struct.</li></ul>
+<section class="api-section"><h2 id="description">Description</h2><p>Calls checkRequirements and returns normally when every requirement is compatible. On failure, combines the individual report messages into one error. Use checkRequirements instead when incompatibility should be shown without throwing.</p></section>
+<section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>appName</code></dt><dd>Text scalar used as the error-identifier prefix. It should be a valid MATLAB identifier, for example &quot;labkit_Example_app&quot;.</dd></div><div class="argument"><dt><code>req</code></dt><dd>Scalar structure returned by labkit.contract.requirements.</dd></div><div class="argument"><dt><code>versions</code></dt><dd>Optional version structure array accepted by checkRequirements.</dd></div></dl></section>
+<section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>None</code></dt><dd>Returns no value.</dd></div></dl></section>
+<section class="api-section"><h2 id="errors">Errors</h2><p>Throws &lt;appName&gt;:IncompatibleLabKit when compatibility checks fail. Input and range validation errors from checkRequirements are passed through.</p></section>
+<section class="api-section"><h2 id="example">Example</h2><pre><code class="language-matlab">req = labkit.contract.requirements(&quot;ui&quot;, &quot;&gt;=6 &lt;7&quot;);
+labkit.contract.assertRequirements(&quot;labkit_Example_app&quot;, req)</code></pre></section>
+<h2 id="related-apis">Related APIs</h2><ul><li><a href="checkRequirements.html"><code>labkit.contract.checkRequirements</code></a> — Compare required API ranges with available LabKit versions.</li><li><a href="requirements.html"><code>labkit.contract.requirements</code></a> — Describe the LabKit API versions required by a caller.</li><li><a href="versionInfo.html"><code>labkit.contract.versionInfo</code></a> — Describe one LabKit API version and its compatibility range.</li></ul>
 <h2 id="source">Source</h2>
 <p>This page is generated from the MATLAB help text in <a href="https://github.com/Pluze/LabKit-MATLAB-Workbench/blob/main/+labkit/+contract/assertRequirements.m"><code>+labkit/+contract/assertRequirements.m</code></a>.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

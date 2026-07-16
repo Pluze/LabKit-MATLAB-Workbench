@@ -262,6 +262,35 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(inspectPage, "exactBlocks"));
         end
 
+        function generatedContractReferenceUsesActualVersionFields(testCase)
+            root = setupLabKitTestPath();
+            apiRoot = fullfile(root, "site", "reference", "api", ...
+                "labkit", "contract");
+            functions = ["assertRequirements", "checkRequirements", ...
+                "requirements", "versionInfo"];
+            for k = 1:numel(functions)
+                page = string(fileread(fullfile(apiRoot, functions(k) + ".html")));
+                testCase.verifyTrue(contains(page, ...
+                    "labkit.contract." + functions(k) + "("));
+                testCase.verifyTrue(contains(page, ...
+                    '<h2 id="description">Description</h2>'));
+                testCase.verifyTrue(contains(page, '<h2 id="outputs">Outputs</h2>'));
+            end
+
+            versionPage = string(fileread(fullfile(apiRoot, "versionInfo.html")));
+            testCase.verifyTrue(contains(versionPage, "name, facade, current, compatible, status"));
+
+            moduleRoots = ["thermal", "dta", "rhs"];
+            for k = 1:numel(moduleRoots)
+                page = string(fileread(fullfile(root, "site", "reference", ...
+                    "api", "labkit", moduleRoots(k), "version.html")));
+                testCase.verifyTrue(contains(page, "info.current"));
+                testCase.verifyTrue(contains(page, "info.status"));
+                testCase.verifyFalse(contains(page, "info.version"));
+                testCase.verifyFalse(contains(page, "info.stability"));
+            end
+        end
+
         function documentationSourcesUseReaderOrientedHierarchy(testCase)
             root = setupLabKitTestPath();
             docsRoot = fullfile(root, "docs");

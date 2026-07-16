@@ -17,41 +17,73 @@
 <aside class="sidebar"><p class="tagline">Apps, framework guides, and MATLAB API reference for laboratory workflows.</p><nav aria-label="Documentation"><a class="nav-link" href="../../index.html">Home</a><section class="nav-group"><h2>API Reference</h2><a class="nav-link" href="../../reference/index.html">API Reference</a></section><section class="nav-group"><h2>App Framework</h2><a class="nav-link" href="../../framework/index.html">App Framework</a><a class="nav-link" href="../../framework/runtime.html">Runtime and Lifecycle</a></section><section class="nav-group"><h2>Apps</h2><a class="nav-link" href="../../apps/index.html">Apps</a><a class="nav-link" href="../../apps/dic/index.html">DIC</a><a class="nav-link" href="../../apps/electrochemistry/index.html">Electrochemistry</a><a class="nav-link" href="../../apps/gait/index.html">Gait</a><a class="nav-link" href="../../apps/image-measurement/index.html">Image Measurement</a><a class="nav-link" href="../../apps/labkit-core/index.html">LabKit Core</a><a class="nav-link" href="../../apps/neurophysiology/index.html">Neurophysiology</a><a class="nav-link" href="../../apps/wearable/index.html">Wearable</a><a class="nav-link" href="../../apps/dic/dic-postprocess.html">DIC Postprocess</a><a class="nav-link" href="../../apps/dic/dic-preprocess.html">DIC Preprocess</a><a class="nav-link" href="../../apps/electrochemistry/cic.html">CIC</a><a class="nav-link" href="../../apps/electrochemistry/csc.html">CSC</a><a class="nav-link" href="../../apps/electrochemistry/chrono-overlay.html">Chrono Overlay</a><a class="nav-link" href="../../apps/electrochemistry/eis.html">EIS</a><a class="nav-link" href="../../apps/electrochemistry/vt-resistance.html">VT Resistance</a><a class="nav-link" href="../../apps/gait/gait-analysis.html">Gait Analysis</a><a class="nav-link" href="../../apps/image-measurement/batch-crop.html">Batch Image Crop</a><a class="nav-link" href="../../apps/image-measurement/curvature.html">Curvature Measurement</a><a class="nav-link" href="../../apps/image-measurement/flir-thermal.html">FLIR Thermal</a><a class="nav-link" href="../../apps/image-measurement/focus-stack.html">Focus Stack</a><a class="nav-link" href="../../apps/image-measurement/image-enhance.html">Image Enhance</a><a class="nav-link" href="../../apps/image-measurement/image-match.html">Image Match</a><a class="nav-link" href="../../apps/image-measurement/video-marker.html">Video Marker</a><a class="nav-link" href="../../apps/labkit-core/figure-studio.html">Figure Studio</a><a class="nav-link" href="../../apps/neurophysiology/nerve-response-analysis.html">Nerve Response Analysis</a><a class="nav-link" href="../../apps/neurophysiology/rhs-preview.html">RHS Preview</a><a class="nav-link" href="../../apps/neurophysiology/response-review-stats.html">Response Review and Stats</a><a class="nav-link" href="../../apps/wearable/ecg-print.html">ECG Print</a></section><section class="nav-group"><h2>Libraries</h2><a class="nav-link active" href="index.html">Contracts</a><a class="nav-link" href="../image/index.html">Image Library</a><a class="nav-link" href="../thermal/index.html">Thermal Library</a><a class="nav-link" href="../dta/index.html">DTA Library</a><a class="nav-link" href="../rhs/index.html">RHS Library</a><a class="nav-link" href="../biosignal/index.html">Biosignal Library</a></section><section class="nav-group"><h2>Development</h2><a class="nav-link" href="../../development/index.html">Development</a><a class="nav-link" href="../../development/architecture.html">Architecture</a><a class="nav-link" href="../../development/app-development.html">App Development</a><a class="nav-link" href="../../development/private-apps.html">Private Apps</a><a class="nav-link" href="../../development/testing.html">Testing</a><a class="nav-link" href="../../development/documentation.html">Documentation System</a><a class="nav-link" href="../../development/release.html">Release Process</a></section><section class="nav-group"><h2>Getting Started</h2><a class="nav-link" href="../../getting-started/index.html">Getting Started</a></section><section class="nav-group"><h2>History</h2><a class="nav-link" href="../../history/index.html">Project History</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">reference</p>
-<h1 id="contract-api">Contract API</h1>
-<p><a href="../../reference/index.html">Public API index</a> | <a href="../../development/app-development.html">App development</a></p>
-<p><code>labkit.contract</code> checks whether an app's required LabKit facade versions are available before launch. It is a same-repository compatibility guardrail, not a package manager.</p>
-<h2 id="requirements"><code>requirements</code></h2>
-<pre><code class="language-matlab">req = labkit.contract.requirements(facade1, range1, facade2, range2, ...)</code></pre>
-<p>Provide facade/range pairs such as <code>&quot;ui&quot;, &quot;&gt;=6 &lt;7&quot;</code>. Facade names may be short or begin with <code>labkit.</code>. Ranges contain whitespace-separated semantic-version constraints using <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>=</code>, or <code>==</code>.</p>
-<p>The returned struct has <code>type=&quot;labkit.requirements&quot;</code> and a <code>facades</code> struct array with <code>facade</code> and <code>range</code> fields. Duplicate facade names and malformed pairs are errors.</p>
-<h2 id="checkrequirements"><code>checkRequirements</code></h2>
-<pre><code class="language-matlab">report = labkit.contract.checkRequirements(req)
-report = labkit.contract.checkRequirements(req, versions)</code></pre>
-<p>When <code>versions</code> is omitted, LabKit queries the current UI, DTA, RHS, biosignal, image, and thermal facade versions. The result contains:</p>
-<div class="table-wrap"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td><code>ok</code></td><td>True when every required range matches the current and advertised facade contracts.</td></tr><tr><td><code>failures</code></td><td>Struct array with <code>facade</code>, <code>required</code>, <code>available</code>, and <code>message</code>.</td></tr><tr><td><code>message</code></td><td>One success message or newline-separated incompatibility details.</td></tr></tbody></table></div>
-<p>Pass an explicit version struct array only for tests or diagnostics.</p>
-<h2 id="assertrequirements"><code>assertRequirements</code></h2>
-<pre><code class="language-matlab">labkit.contract.assertRequirements(appName, req)
-labkit.contract.assertRequirements(appName, req, versions)</code></pre>
-<p>This is the throwing form of <code>checkRequirements</code>. It returns no value. On failure it throws <code>&lt;appName&gt;:IncompatibleLabKit</code> with the report details. Public app launch commands call it before constructing the GUI.</p>
-<h2 id="versioninfo"><code>versionInfo</code></h2>
-<pre><code class="language-matlab">info = labkit.contract.versionInfo( ...
-    facade, current, compatible, status, notes)</code></pre>
-<p><code>compatible</code> is a string array of implemented ranges. <code>status</code> is <code>&quot;stable&quot;</code>, <code>&quot;deprecated&quot;</code>, or <code>&quot;experimental&quot;</code>. The returned struct contains <code>name</code>, <code>facade</code>, <code>current</code>, <code>compatible</code>, <code>status</code>, and <code>notes</code>.</p>
-<p>Facade-owned <code>version.m</code> functions use this helper; apps normally consume the result through requirement checks rather than constructing version records.</p>
-<h2 id="example">Example</h2>
+<h1 id="api-version-compatibility">API Version Compatibility</h1>
+<p><a href="../../reference/index.html">API reference</a> | <a href="../../development/app-development.html">App development</a></p>
+<p><code>labkit.contract</code> lets an app state which LabKit API versions it supports and check those requirements before startup. It compares versions already present in this repository; it does not download, install, or update code.</p>
+<h2 id="typical-use">Typical Use</h2>
+<p>An app normally defines its requirements in a small function:</p>
 <pre><code class="language-matlab">function req = requirements()
     req = labkit.contract.requirements( ...
         &quot;ui&quot;, &quot;&gt;=6 &lt;7&quot;, ...
         &quot;image&quot;, &quot;&gt;=4 &lt;5&quot;);
-end
+end</code></pre>
+<p>The app entry point checks them before creating the interface:</p>
+<pre><code class="language-matlab">labkit.contract.assertRequirements( ...
+    &quot;labkit_Example_app&quot;, requirements())</code></pre>
+<p>If all requirements are compatible, <code>assertRequirements</code> returns without a value. Otherwise it throws <code>labkit_Example_app:IncompatibleLabKit</code> with one message for each incompatible module.</p>
+<h2 id="choose-a-function">Choose a Function</h2>
+<div class="table-wrap"><table><thead><tr><th>Task</th><th>Function</th></tr></thead><tbody><tr><td>Build a requirement structure</td><td><a href="../../reference/api/labkit/contract/requirements.html"><code>labkit.contract.requirements</code></a></td></tr><tr><td>Inspect compatibility without throwing</td><td><a href="../../reference/api/labkit/contract/checkRequirements.html"><code>labkit.contract.checkRequirements</code></a></td></tr><tr><td>Stop startup when requirements fail</td><td><a href="../../reference/api/labkit/contract/assertRequirements.html"><code>labkit.contract.assertRequirements</code></a></td></tr><tr><td>Create the structure returned by a module's <code>version</code> function</td><td><a href="../../reference/api/labkit/contract/versionInfo.html"><code>labkit.contract.versionInfo</code></a></td></tr></tbody></table></div>
+<h2 id="version-ranges">Version Ranges</h2>
+<p>A range contains one or more whitespace-separated constraints. Supported operators are <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>=</code>, and <code>==</code>:</p>
+<pre><code class="language-matlab">&quot;&gt;=6 &lt;7&quot;       % 6.x releases
+&quot;&gt;=2.1 &lt;=2.4&quot; % from 2.1 through 2.4, inclusive
+&quot;=1.3.0&quot;       % exactly 1.3.0</code></pre>
+<p>Versions may contain one, two, or three numeric components. Missing components are treated as zero during comparison, so <code>6</code>, <code>6.0</code>, and <code>6.0.0</code> compare as the same version.</p>
+<p>Facade names may be short, such as <code>&quot;thermal&quot;</code>, or include the prefix, such as <code>&quot;labkit.thermal&quot;</code>. Names are normalized to lowercase without the prefix. Listing the same facade twice in one requirement structure is an error.</p>
+<h2 id="how-compatibility-is-decided">How Compatibility Is Decided</h2>
+<p>Each module's <code>version</code> function returns a structure like this:</p>
+<pre><code class="language-matlab">info = labkit.thermal.version()</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td><code>name</code></td><td>Full module name, such as <code>&quot;labkit.thermal&quot;</code></td></tr><tr><td><code>facade</code></td><td>Short normalized name, such as <code>&quot;thermal&quot;</code></td></tr><tr><td><code>current</code></td><td>Current API version</td></tr><tr><td><code>compatible</code></td><td>One or more requirement ranges implemented by this version</td></tr><tr><td><code>status</code></td><td><code>&quot;stable&quot;</code>, <code>&quot;experimental&quot;</code>, or <code>&quot;deprecated&quot;</code></td></tr><tr><td><code>notes</code></td><td>Short description of the module contract</td></tr></tbody></table></div>
+<p>A requirement passes only when both conditions are true:</p>
+<ol>
+<li>The module's <code>current</code> version falls inside the app's requested range.</li>
+<li>The requested range overlaps at least one range in the module's</li>
+</ol>
+<p><code>compatible</code> list.</p>
+<p>The second check prevents a current version number from appearing acceptable when the installed implementation does not advertise the requested contract.</p>
+<h2 id="inspecting-a-compatibility-report">Inspecting a Compatibility Report</h2>
+<p>Use <code>checkRequirements</code> when a caller should decide how to display or handle a failure:</p>
+<pre><code class="language-matlab">req = labkit.contract.requirements(&quot;thermal&quot;, &quot;&gt;=1 &lt;2&quot;);
+report = labkit.contract.checkRequirements(req);
 
-labkit.contract.assertRequirements(&quot;labkit_Example_app&quot;, requirements())</code></pre>
+if ~report.ok
+    disp(report.message)
+end</code></pre>
+<p>The returned structure contains:</p>
+<div class="table-wrap"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td><code>ok</code></td><td>True when every requirement passes</td></tr><tr><td><code>failures</code></td><td>One structure per failed requirement</td></tr><tr><td><code>message</code></td><td>Success text or newline-separated failure explanations</td></tr></tbody></table></div>
+<p>Each failure records the normalized <code>facade</code>, the <code>required</code> range, the module's advertised <code>available</code> ranges, and a readable <code>message</code>. An unknown facade has an empty <code>available</code> array.</p>
+<h2 id="supplying-version-information-explicitly">Supplying Version Information Explicitly</h2>
+<p><code>checkRequirements</code> normally queries the installed UI, DTA, RHS, biosignal, image, and thermal modules. Diagnostic code can pass an explicit version structure instead:</p>
+<pre><code class="language-matlab">available = labkit.contract.versionInfo( ...
+    &quot;image&quot;, &quot;4.1.0&quot;, &quot;&gt;=4 &lt;5&quot;, &quot;stable&quot;, ...
+    &quot;Image file IO and processing functions.&quot;);
+
+req = labkit.contract.requirements(&quot;image&quot;, &quot;&gt;=4.0 &lt;5&quot;);
+report = labkit.contract.checkRequirements(req, available);</code></pre>
+<p>This form is useful for checking a proposed version declaration without changing the installed module.</p>
 <h2 id="related-topics">Related Topics</h2>
 <ul>
-<li><a href="../../development/architecture.html#ui-boundary">Architecture: UI boundary</a></li>
-<li><a href="../../development/app-development.html#version-and-requirements">App development: version and requirements</a></li>
-</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/labkit/contract/assertRequirements.html"><code>labkit.contract.assertRequirements</code></a></td><td>Require app facade contracts to match current LabKit.</td></tr><tr><td><a href="../../reference/api/labkit/contract/checkRequirements.html"><code>labkit.contract.checkRequirements</code></a></td><td>Check app facade requirements against LabKit versions.</td></tr><tr><td><a href="../../reference/api/labkit/contract/requirements.html"><code>labkit.contract.requirements</code></a></td><td>Build a LabKit facade requirement contract.</td></tr><tr><td><a href="../../reference/api/labkit/contract/versionInfo.html"><code>labkit.contract.versionInfo</code></a></td><td>Build a LabKit facade version contract struct.</td></tr></tbody></table></section>
+<li><a href="../../development/app-development.html">App development</a> explains where an</li>
+</ul>
+<p>app's <code>requirements.m</code> and <code>version.m</code> files fit in its source tree.</p>
+<ul>
+<li><a href="../../development/architecture.html">Architecture</a> describes the public</li>
+</ul>
+<p>LabKit modules that can appear in a requirement list.</p>
+<ul>
+<li><a href="../../history/index.html">Project history</a> records API version and</li>
+</ul>
+<p>compatibility changes.</p><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/labkit/contract/assertRequirements.html"><code>labkit.contract.assertRequirements</code></a></td><td>Throw an error when LabKit API requirements are not met.</td></tr><tr><td><a href="../../reference/api/labkit/contract/checkRequirements.html"><code>labkit.contract.checkRequirements</code></a></td><td>Compare required API ranges with available LabKit versions.</td></tr><tr><td><a href="../../reference/api/labkit/contract/requirements.html"><code>labkit.contract.requirements</code></a></td><td>Describe the LabKit API versions required by a caller.</td></tr><tr><td><a href="../../reference/api/labkit/contract/versionInfo.html"><code>labkit.contract.versionInfo</code></a></td><td>Describe one LabKit API version and its compatibility range.</td></tr></tbody></table></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>
