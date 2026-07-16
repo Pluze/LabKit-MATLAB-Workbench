@@ -1,10 +1,41 @@
-% Expected caller: DIC preprocess runner. Inputs are the current reference and
-% moving images. Outputs are a toolbox-free phase-correlation aligned image, a
-% 3x3 translation transform matrix, and a user-facing method label. Side
-% effects: none.
-
 function [alignedImage, tformRigid, method] = autoAlignMovingToReference(referenceImage, movingImage)
-%AUTOALIGNMOVINGTOREFERENCE Automatically align moving image to reference image.
+%AUTOALIGNMOVINGTOREFERENCE Estimate and apply an integer translation.
+%
+% Usage:
+%   [alignedImage, transform, method] = ...
+%       dic_preprocess.analysisRun.autoAlignMovingToReference( ...
+%       referenceImage, movingImage)
+%
+% Inputs:
+%   referenceImage - Numeric grayscale or RGB reference image. Its first two
+%       dimensions define the output canvas and correlation size.
+%   movingImage - Numeric grayscale or RGB image to translate.
+%
+% Outputs:
+%   alignedImage - Original movingImage translated onto the reference canvas,
+%       with linear interpolation and zero fill.
+%   tformRigid - Three-by-three row-vector homogeneous translation transform,
+%       shown as transform in the usage syntax.
+%   method - Character vector identifying the fixed phase-correlation method.
+%
+% Description:
+%   Each image is converted to normalized grayscale independently. For shift
+%   estimation only, moving grayscale data is resized to the reference size by
+%   nearest-neighbor sampling. Phase correlation returns a whole-pixel circular
+%   shift. Rotation, scale, deformation, repeated texture, and large nonoverlap
+%   can produce a poor fit.
+%
+% Example:
+%   reference = zeros(16); reference(5:8, 6:9) = 1;
+%   moving = circshift(reference, [2 -3]);
+%   [aligned, transform, method] = ...
+%       dic_preprocess.analysisRun.autoAlignMovingToReference( ...
+%       reference, moving);
+%   assert(isequal(size(aligned), size(reference)))
+%   assert(isequal(size(transform), [3 3]) && contains(method, "phase-correlation"))
+%
+% See also dic_preprocess.analysisRun.alignMovingToReference,
+%   dic_preprocess.analysisRun.applyRigidTransform
 
     fixedGray = normalizeGray(referenceImage);
     movingGray = normalizeGray(movingImage);

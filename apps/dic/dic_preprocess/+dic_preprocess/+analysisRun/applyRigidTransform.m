@@ -1,7 +1,37 @@
-% Expected callers: DIC alignment and durable edit-step replay. Inputs are a
-% reference image, moving image, and row-vector 3x3 rigid transform. Output is
-% the moving image warped onto the reference canvas using base MATLAB.
 function alignedImage = applyRigidTransform(referenceImage, movingImage, transform)
+%APPLYRIGIDTRANSFORM Resample a moving image onto a reference-sized canvas.
+%
+% Usage:
+%   alignedImage = dic_preprocess.analysisRun.applyRigidTransform( ...
+%       referenceImage, movingImage, transform)
+%
+% Inputs:
+%   referenceImage - Image whose height and width define the output canvas.
+%       Its pixel values and channel count are not used.
+%   movingImage - Numeric two-dimensional or multichannel source image.
+%   transform - Three-by-three row-vector homogeneous rigid transform. Source
+%       points map forward as [x y 1]*transform. The upper-left two-by-two block
+%       is rotation and row 3, columns 1:2 are [x y] translation.
+%
+% Outputs:
+%   alignedImage - Linearly interpolated moving image on the reference height
+%       and width, preserving movingImage class and channels. Samples outside
+%       movingImage are 0; integer outputs are rounded and clipped to range.
+%
+% Description:
+%   The function performs inverse mapping for every output pixel using base
+%   MATLAB interp2. It assumes the supplied two-by-two block is an orthogonal
+%   rotation; scale or shear matrices are not validated.
+%
+% Example:
+%   moving = uint8(reshape(1:25, 5, 5));
+%   transform = [1 0 0; 0 1 0; 1 0 1];
+%   aligned = dic_preprocess.analysisRun.applyRigidTransform( ...
+%       zeros(5), moving, transform);
+%   assert(isa(aligned, "uint8") && aligned(1,1) == 0)
+%   assert(aligned(1,2) == moving(1,1))
+%
+% See also dic_preprocess.analysisRun.alignMovingToReference
     transform = double(transform);
     R = transform(1:2, 1:2);
     translation = transform(3, 1:2);
