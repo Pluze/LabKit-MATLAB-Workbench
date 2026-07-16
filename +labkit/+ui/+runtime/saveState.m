@@ -7,8 +7,9 @@ function filepath = saveState(fig, filepath)
 %
 % Inputs:
 %   fig - Live app figure created by labkit.ui.runtime.launch.
-%   filepath - Destination MAT-file. When omitted, MATLAB opens a save dialog.
-%       The parent folder must already exist.
+%   filepath - Destination MAT-file. When omitted for an opened project, its
+%       current path is reused. When omitted for a new project, MATLAB opens a
+%       save dialog. The parent folder must already exist.
 %
 % Outputs:
 %   filepath - Selected or supplied path as a string scalar, or "" when the
@@ -24,23 +25,28 @@ function filepath = saveState(fig, filepath)
 %   The file is first written and verified at a temporary path in the same
 %   folder. It replaces the destination only after the read-back comparison
 %   succeeds, so a failure before replacement leaves an existing project file
-%   unchanged. After a successful save the app records the new path, clears its
-%   dirty flag, and updates the window title.
+%   unchanged. Save without an explicit filepath reuses an opened document's
+%   path, including a migrated old project, and asks for a path only for a new
+%   unsaved document. After a successful save the app records the path, clears
+%   its dirty flag, and updates the window title.
 %
 % Typical Call:
 %   savedFile = labkit.ui.runtime.saveState(fig, "analysis.project.mat");
 %
 % See also labkit.ui.runtime.loadState
 
+    runtime = getAppRuntime(fig);
     if nargin < 2
-        filepath = chooseProjectOutput();
+        filepath = string(runtime.document.path);
+        if strlength(filepath) == 0
+            filepath = chooseProjectOutput();
+        end
         if strlength(filepath) == 0
             return;
         end
     else
         filepath = string(filepath);
     end
-    runtime = getAppRuntime(fig);
     labkitProject = createV2ProjectEnvelope(runtime);
     beforeReplace = [];
     if isstruct(runtime.request) && ...

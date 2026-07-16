@@ -247,15 +247,17 @@ readable while all new writes use the collision-free key.
   relative to the loaded project first, then the original absolute path, then
   the saved filename beside the project. Relative references use `/` inside
   MAT payloads, so a project/source directory tree can move between cloud-drive
-  roots and operating systems. Resolution is GUI-free; each app still decides
-  whether to prompt for a missing file and how to validate a user-selected
-  replacement against its saved metadata.
-- Interactive imports should call `resolveOrPromptForFileReference` for every
-  external-file field. It converts malformed or unresolved saved paths into a
-  field-labeled file chooser instead of failing the entire import. The return
-  metadata distinguishes automatic matches, manual selections, cancellation,
-  and invalid selections. Direct one-file imports already begin with a chooser
-  and do not need a redundant reference fallback.
+  roots and operating systems. If a required source remains unresolved, the
+  runtime identifies its saved filename and role, asks whether to locate it,
+  and opens one file chooser for that source. A selected file receives a new
+  reference relative to the loaded project before session creation. The
+  repaired document opens as unsaved work so the new location can be retained;
+  cancelling leaves the current project and view unchanged. Apps may declare
+  `Project.RelinkSources` only when their source schema needs behavior beyond
+  this standard source-record flow. Projects migrated from an older payload,
+  snapshot, or declared legacy variable also open as unsaved work. **Save
+  State** reuses the opened path and atomically replaces it with the current
+  `labkitProject` format; opening alone never rewrites the source MAT file.
 
 ### Workbench Utilities And Preview Axes
 

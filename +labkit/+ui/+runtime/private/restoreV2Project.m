@@ -8,21 +8,25 @@ function restoreV2Project(fig, filepath, asRecovery)
     end
     runtime = getAppRuntime(fig);
     previous = runtime;
-    [project, resume, envelope] = readV2ProjectFile( ...
+    [project, resume, envelope, needsUpgrade] = readV2ProjectFile( ...
         filepath, runtime.definition);
     sources = struct([]);
     if isstruct(envelope) && isfield(envelope, 'sources')
         sources = envelope.sources;
     end
     validateProjectPayload(runtime.definition.project.Validate, project);
-    [project, resolvedSources] = resolveV2ProjectSources( ...
-        project, sources, filepath, runtime.definition.project);
+    services = buildV2RuntimeServices(fig, runtime, @(varargin) []);
+    [project, resolvedSources, relinkedSources] = resolveV2ProjectSources( ...
+        project, sources, filepath, runtime.definition.project, services);
     session = createFreshSession(runtime.definition, project, resume);
     session.cache.resolvedSources = resolvedSources;
     nextState = struct("project", project, "session", session);
     validateV2State(nextState, runtime.definition);
     runtime.state = nextState;
     runtime.document = documentFromEnvelope(runtime.document, envelope, filepath);
+    if relinkedSources || needsUpgrade
+        runtime.document.dirty = true;
+    end
     if asRecovery
         runtime.document.path = "";
         runtime.document.dirty = true;

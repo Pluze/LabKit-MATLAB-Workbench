@@ -18,11 +18,13 @@ function filepath = loadState(fig, filepath)
 %   loadState accepts a current labkitProject envelope, an older Runtime V2
 %   snapshot, or a MAT-file variable named in Project.LegacyImports. Current
 %   payloads are migrated one version at a time, validated, and checked for
-%   required source files. A fresh session is then created and optional resume
-%   data is applied. The live app changes only after the complete candidate and
-%   its first presentation succeed; an error leaves the previous project and
-%   view intact. Legacy formats can be opened but are never written back in
-%   their old format.
+%   required source files. When automatic source resolution fails, the runtime
+%   identifies each missing file and lets the user locate it or cancel. A fresh
+%   session is then created and optional resume data is applied. The live app
+%   changes only after the complete candidate and its first presentation
+%   succeed; an error or cancellation leaves the previous project and view
+%   intact. Relinked or migrated documents open as unsaved work. Saving them
+%   writes the current labkitProject format rather than the imported old format.
 %
 % Typical Call:
 %   loadedFile = labkit.ui.runtime.loadState(fig, "analysis.project.mat");

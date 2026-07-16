@@ -47,7 +47,11 @@ session state, builds the semantic layout, generates callbacks, commits the
 first presentation, and queues the optional start action. App handlers receive
 semantic events plus injected services and return updated state. They do not
 own busy flags, callback plumbing, persistence envelopes, or UI resource
-lifetimes.
+lifetimes. Project loading resolves portable external sources before session
+creation; when a required source moved, the framework identifies it and lets
+the user locate a replacement without committing a partial project. Migrated
+or relinked documents remain visibly unsaved until **Save State** atomically
+writes the current project format.
 
 Read [Runtime and lifecycle](runtime.md) for the detailed definition fields,
 state transaction rules, startup/readiness behavior, plot and interaction

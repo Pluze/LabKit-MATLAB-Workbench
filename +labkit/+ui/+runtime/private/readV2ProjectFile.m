@@ -1,8 +1,9 @@
 % Private UI runtime helper. Expected caller: loadState. Inputs are a MAT-file
 % path and current v2 definition. Outputs are a migrated complete project,
-% optional resume data, and the preserved envelope. The reader inventories the
-% file first and loads only one recognized trusted top-level variable.
-function [project, resume, envelope] = readV2ProjectFile(filepath, def)
+% optional resume data, the preserved envelope, and whether saving must upgrade
+% the opened file. The reader inventories the file first and loads only one
+% recognized trusted top-level variable.
+function [project, resume, envelope, needsUpgrade] = readV2ProjectFile(filepath, def)
     details = whos('-file', filepath);
     inventory = string({details.name});
     recognized = intersect(inventory, ...
@@ -15,16 +16,19 @@ function [project, resume, envelope] = readV2ProjectFile(filepath, def)
     loaded = load(filepath, variable);
     if variable == "labkitProject"
         envelope = loaded.labkitProject;
-        [project, resume] = decodeCurrentEnvelope(envelope, def);
+        [project, resume, needsUpgrade] = ...
+            decodeCurrentEnvelope(envelope, def);
     elseif variable == "snapshot"
         [project, resume, envelope] = importSnapshot(loaded.snapshot, def);
+        needsUpgrade = true;
     else
         [project, resume, envelope] = importLegacy( ...
             variable, loaded.(char(variable)), def);
+        needsUpgrade = true;
     end
 end
 
-function [project, resume] = decodeCurrentEnvelope(envelope, def)
+function [project, resume, needsUpgrade] = decodeCurrentEnvelope(envelope, def)
     requireScalarStruct(envelope, 'project envelope');
     required = ["format", "formatVersion", "app", "document", ...
         "producer", "sources", "payload"];
@@ -44,8 +48,9 @@ function [project, resume] = decodeCurrentEnvelope(envelope, def)
             'Project app id "%s" does not match "%s".', ...
             string(envelope.app.id), string(def.id));
     end
-    project = migratePayload(envelope.payload, ...
-        double(envelope.app.payloadVersion), def.project);
+    payloadVersion = double(envelope.app.payloadVersion);
+    project = migratePayload(envelope.payload, payloadVersion, def.project);
+    needsUpgrade = payloadVersion < double(def.project.Version);
     resume = struct();
     if isfield(envelope, 'resume') && isstruct(envelope.resume)
         resume = envelope.resume;

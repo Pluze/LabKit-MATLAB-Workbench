@@ -75,7 +75,10 @@ original path, and same-folder filename fallbacks.
 When a project tree moves between folders, users, or operating systems, the
 relative reference is tried first. If no candidate exists, the app asks the
 user to locate the video without discarding skeleton or annotations. Opening a
-video with adjacent recovery data asks whether to restore it or start new.
+video with adjacent recovery data asks whether to restore it or start new. A
+compatible old Video Marker project or autosave opens with an unsaved marker;
+choosing the top-level **Save State** action atomically upgrades that same MAT
+path to the current `labkitProject` format.
 
 ## Outputs
 
