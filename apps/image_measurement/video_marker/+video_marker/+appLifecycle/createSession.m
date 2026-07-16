@@ -3,7 +3,7 @@
 % current-frame navigation, workflow text, and rebuildable decoded image data.
 function session = createSession(project)
     currentFrame = 1;
-    info = video_marker.videoSource.emptyInfo();
+    info = infoFromProject(project);
     imageData = [];
     videoPath = video_marker.sourceFiles.pathForId( ...
         project.inputs.sources, "video");
@@ -30,6 +30,20 @@ function session = createSession(project)
             "videoInfo", info, ...
             "currentImage", imageData, ...
             "frameIndex", currentFrame));
+end
+
+function info = infoFromProject(project)
+    info = video_marker.videoSource.emptyInfo();
+    if isfield(project.inputs, "videoMetadata")
+        metadata = project.inputs.videoMetadata;
+        names = string(fieldnames(video_marker.videoSource.emptyMetadata()));
+        for k = 1:numel(names)
+            name = char(names(k));
+            if isfield(metadata, name)
+                info.(name) = metadata.(name);
+            end
+        end
+    end
 end
 
 function verifyAnnotationShape(annotations, info)

@@ -51,6 +51,8 @@ function state = onOpenVideo(state, event, services)
     end
     state.project.inputs.sources = services.project.sourceRecord( ...
         "video", "video", paths(1), true);
+    state.project.inputs.videoMetadata = ...
+        video_marker.videoSource.metadataFromInfo(resource.info);
     pointCount = numel(state.project.annotations.skeleton.pointIds);
     state.project.annotations.frames = ...
         video_marker.frameAnnotations.emptyAnnotations( ...
@@ -292,6 +294,8 @@ function state = onImportMarkerCsv(state, ~, services)
     state.project.annotations.skeleton = payload.skeleton;
     state.project.annotations.frames = payload.annotations;
     state.project.annotations.calibration = payload.calibration;
+    state.project.inputs.videoMetadata = ...
+        video_marker.videoSource.metadataFromInfo(payload.videoInfo);
     state = video_marker.skeletonSetup.normalizeSelection(state, true);
     state.session.workflow.scaleReferenceEditing = false;
     state.session.view.scaleBar = [];
@@ -421,6 +425,9 @@ function state = onSaveAutosave(state, ~, services)
     end
     try
         filepath = video_marker.autosave.filePath(videoPath);
+        state.project.inputs.videoMetadata = ...
+            video_marker.videoSource.metadataFromInfo( ...
+            state.session.cache.videoInfo);
         services.project.saveAutosave(state, filepath);
     catch ME
         services.diagnostics.report('Could not save Video Marker autosave', ME);

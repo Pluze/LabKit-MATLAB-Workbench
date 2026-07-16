@@ -260,7 +260,9 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             project.annotations.frames = ...
                 video_marker.frameAnnotations.emptyAnnotations(0, 5);
             testCase.verifyTrue(definition.project.Validate(project));
-            testCase.verifyEmpty(definition.project.Migrations);
+            testCase.verifyEqual(numel(definition.project.Migrations), 1);
+            testCase.verifyEqual(project.inputs.videoMetadata, ...
+                video_marker.videoSource.emptyMetadata());
             testCase.verifyFalse(isfield(project, 'currentImage'));
 
             session = video_marker.appLifecycle.createSession(project);
@@ -275,6 +277,36 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             session.selection.currentFrame = 7;
             resume = video_marker.appLifecycle.createResume(session, project);
             testCase.verifyEqual(resume.currentFrame, 7);
+        end
+
+        function video_metadata_is_durable_validated_and_migrated(testCase)
+            setupLabKitTestPath();
+            info = struct("frameCount", 12, "frameRate", 120, ...
+                "duration", 0.1, "height", 72, "width", 96, ...
+                "path", "/not/durable/sample.avi");
+            metadata = video_marker.videoSource.metadataFromInfo(info);
+            testCase.verifyEqual(metadata, struct( ...
+                "frameCount", 12, "frameRate", 120, ...
+                "duration", 0.1, "height", 72, "width", 96));
+            testCase.verifyFalse(isfield(metadata, "path"));
+
+            versionOne = video_marker.appLifecycle.createProject();
+            versionOne.inputs = rmfield(versionOne.inputs, "videoMetadata");
+            versionOne.annotations.skeleton = ...
+                video_marker.skeletonDefinition.fromText("hip, foot", "hip-foot");
+            versionOne.annotations.frames = ...
+                video_marker.frameAnnotations.emptyAnnotations(12, 2);
+            migrated = ...
+                video_marker.appLifecycle.migrateProjectV1ToV2(versionOne);
+            testCase.verifyEqual(migrated.inputs.videoMetadata.frameCount, 12);
+            testCase.verifyEqual(migrated.inputs.videoMetadata.frameRate, 0);
+            testCase.verifyTrue( ...
+                video_marker.appLifecycle.validateProject(migrated));
+
+            migrated.inputs.videoMetadata.frameCount = 11;
+            testCase.verifyError( ...
+                @() video_marker.appLifecycle.validateProject(migrated), ...
+                'video_marker:InvalidProject');
         end
 
         function legacy_project_import_is_read_only_and_complete(testCase)
