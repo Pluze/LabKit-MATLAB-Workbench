@@ -99,8 +99,10 @@ objects.
 ## Framework Compatibility
 
 This App's `definition.m` owns its product metadata, `labkit.ui >=7 <8`
-requirement, layout, project/session factories, actions, presentation, and
-startup capability. The entrypoint only adapts the optional axes handoff and
+requirement, layout, and optional capabilities. `projectSpec.m` is the single
+durable-schema entry and keeps project creation and validation local;
+`createSession.m` separately rebuilds decoded FIG data because it is transient
+runtime state. The entrypoint only adapts the optional axes handoff and
 delegates to Runtime V2. App code uses semantic actions and injected project
 services; busy-state and portable-reference serialization mechanics remain
 framework-private.

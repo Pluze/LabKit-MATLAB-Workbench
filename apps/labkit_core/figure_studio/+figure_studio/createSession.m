@@ -1,5 +1,6 @@
-% Expected caller: the LabKit V2 runtime. Input is a validated project.
-% Output owns ephemeral source selection, decoded current plot, status, and logs.
+%CREATESESSION Rebuild Figure Studio's transient view and decoded plot cache.
+% Expected caller: Runtime V2 through figure_studio.definition. Input is a
+% validated current project. File-read failures leave the source unloaded.
 function session = createSession(project)
     plotData = project.annotations.embeddedPlot;
     currentIndex = 0;
