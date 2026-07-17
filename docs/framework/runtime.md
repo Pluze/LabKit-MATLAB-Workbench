@@ -163,8 +163,11 @@ from `Create`, and current projects skip migration.
 #### Portable Source Records
 
 Apps create external-file references through the GUI-free
-`labkit.ui.runtime.sourceRecord(id,role,filepath,required)` factory. Action
-handlers may use the equivalent injected
+`labkit.ui.runtime.sourceRecord(id,role,sourceValue,required)` factory. The
+source value is normally a filepath; a legacy importer may instead pass an
+existing portable reference as one opaque struct so the Runtime can preserve
+and validate it without exposing reference construction to the App. Action
+handlers may use the equivalent filepath-based injected
 `services.project.sourceRecord(id,role,filepath,required)` service. The pure
 factory is available to project creation, migration, legacy import, tests, and
 other code that does not run inside a callback. A durable record has stable
@@ -175,6 +178,10 @@ source = labkit.ui.runtime.sourceRecord( ...
     "trace", "numericTrace", selectedPath, true);
 currentPath = labkit.ui.runtime.sourcePaths(source);
 ```
+
+Do not inspect or construct fields inside `source.reference`. A legacy importer
+that already received such a reference passes the whole struct back to
+`sourceRecord`; all other App code reads resolved paths through `sourcePaths`.
 
 | Field | Meaning |
 | --- | --- |
