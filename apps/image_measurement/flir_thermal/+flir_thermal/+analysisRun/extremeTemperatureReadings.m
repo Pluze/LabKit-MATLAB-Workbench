@@ -23,6 +23,11 @@ function [hotSpot, coldSpot] = extremeTemperatureReadings(temperatureC)
 %       temperatureC fields. Empty, nonmatrix, or all-nonfinite input returns
 %       NaN in every field of both outputs.
 %
+% Failure Behavior:
+%   Empty, nonmatrix, or all-nonfinite input returns NaN readings. Values must
+%   otherwise be convertible to double; unsupported MATLAB types propagate the
+%   originating conversion error.
+%
 % Example:
 %   T = [NaN 24; 18 31];
 %   [hot, cold] = flir_thermal.analysisRun.extremeTemperatureReadings(T);

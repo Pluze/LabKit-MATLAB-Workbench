@@ -24,6 +24,11 @@ function reading = pointTemperatureReading(temperatureC, pointXY)
 %       nonmatrix image, or a coordinate without two finite values, returns NaN
 %       in all fields. A nonfinite sampled pixel remains nonfinite in the result.
 %
+% Failure Behavior:
+%   Invalid image geometry or fewer than two finite coordinates returns a NaN
+%   reading. Inputs must otherwise be convertible to double; unsupported MATLAB
+%   types propagate the originating conversion error.
+%
 % Example:
 %   T = [10 20 30; 40 50 60];
 %   reading = flir_thermal.analysisRun.pointTemperatureReading(T, [2.2 1.7]);

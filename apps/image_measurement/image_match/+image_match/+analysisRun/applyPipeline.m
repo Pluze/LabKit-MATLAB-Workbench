@@ -37,6 +37,12 @@ function processed = applyPipeline(images, steps, referenceImage)
 %       entry is an M-by-N-by-3 double image in [0,1] and keeps its own source
 %       height and width.
 %
+% Failure Behavior:
+%   Empty images returns an empty cell column; empty steps or referenceImage
+%   performs normalization only. An invalid image container, unsupported image
+%   value, or malformed step propagates the originating normalization or
+%   applyMatch error and no partial output is returned.
+%
 % Example:
 %   sourceA = cat(3, 0.2*ones(6), 0.4*ones(6), 0.7*ones(6));
 %   sourceB = 0.6*ones(4, 5);
