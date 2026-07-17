@@ -137,8 +137,8 @@ function session = createSession(project)
     sourcePath = "";
     rawTrace = zeros(0,1);
     if ~isempty(project.inputs.sources)
-        sourcePath = string( ...
-            project.inputs.sources(1).reference.originalPath);
+        sourcePath = labkit.ui.runtime.sourcePaths( ...
+            project.inputs.sources(1));
     end
     if strlength(sourcePath) > 0 && isfile(sourcePath)
         rawTrace = trace_viewer.sourceFiles.readTrace(sourcePath);
@@ -158,9 +158,9 @@ Project and session are value structs. Graphics, readers, listeners, timers,
 and cleanup functions belong to framework-managed resources instead.
 
 The runtime resolves each portable source record before `createSession` runs.
-The path used by app code is therefore
-`project.inputs.sources(k).reference.originalPath`; there is no
-`sources(k).originalPath` shortcut. See
+App code obtains current locations with
+`labkit.ui.runtime.sourcePaths(project.inputs.sources)` and never reads the
+runtime-owned reference fields. See
 [Runtime and Lifecycle](../framework/runtime.md#portable-source-records) for
 the complete record shape and relinking behavior.
 
@@ -312,7 +312,7 @@ function view = presentWorkbench(state)
     sources = state.project.inputs.sources;
     files = struct("id", {}, "path", {}, "status", {});
     if ~isempty(sources)
-        path = string(sources(1).reference.originalPath);
+        path = labkit.ui.runtime.sourcePaths(sources(1));
         files = struct("id", "trace", "path", path, "status", "");
     end
     view.controls.traceFile = struct( ...

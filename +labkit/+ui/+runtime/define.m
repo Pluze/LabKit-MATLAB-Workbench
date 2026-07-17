@@ -119,7 +119,8 @@ function def = define(varargin)
 %       defaultOutputFolder path helpers. File and folder selectors return the
 %       selected string path and a logical cancelled flag.
 %   services.project - sourceRecord, upsertSource, and reconcileSources create
-%       external-file records understood by project save/load. Each save
+%       external-file records understood by project save/load. Apps read the
+%       current paths with labkit.ui.runtime.sourcePaths. Each save
 %       rebases their relative paths from its actual destination; saveState
 %       saves a named project, while saveAutosave(state) immediately writes the
 %       framework-managed recovery copy. saveAutosave(state,filepath) writes
@@ -152,8 +153,8 @@ function def = define(varargin)
 %       "Requirements", labkit.contract.requirements("ui", ">=7 <8"), ...
 %       "Layout", @buildStaticLayout);
 %
-% See also labkit.ui.runtime.launch, labkit.ui.runtime.saveState,
-%   labkit.ui.runtime.loadState
+% See also labkit.ui.runtime.launch, labkit.ui.runtime.sourcePaths,
+%   labkit.ui.runtime.saveState, labkit.ui.runtime.loadState
 
     opts = parseOptions(varargin);
     def = createV2Definition(opts);

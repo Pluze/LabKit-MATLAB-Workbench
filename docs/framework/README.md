@@ -65,7 +65,9 @@ which the source was first imported.
 Variable-length sources and manifest outputs start from framework-provided
 empty arrays (`emptySourceRecords` and `services.results.emptyOutputs()`),
 then append validated real records. Apps do not construct empty-ID placeholder
-records merely to copy their struct shape.
+records merely to copy their struct shape. App code reads current source
+locations through `labkit.ui.runtime.sourcePaths` rather than depending on the
+runtime-owned portable-reference fields.
 
 A persistent App exposes one `projectSpec.m` entry containing its project
 version plus local create, validate, and migrate functions. Runtime V2 owns the

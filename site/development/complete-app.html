@@ -107,8 +107,8 @@ end</code></pre>
     sourcePath = &quot;&quot;;
     rawTrace = zeros(0,1);
     if ~isempty(project.inputs.sources)
-        sourcePath = string( ...
-            project.inputs.sources(1).reference.originalPath);
+        sourcePath = labkit.ui.runtime.sourcePaths( ...
+            project.inputs.sources(1));
     end
     if strlength(sourcePath) &gt; 0 &amp;&amp; isfile(sourcePath)
         rawTrace = trace_viewer.sourceFiles.readTrace(sourcePath);
@@ -123,7 +123,7 @@ end</code></pre>
             &quot;rawTrace&quot;, rawTrace, &quot;scaledTrace&quot;, scaledTrace));
 end</code></pre>
 <p>Project and session are value structs. Graphics, readers, listeners, timers, and cleanup functions belong to framework-managed resources instead.</p>
-<p>The runtime resolves each portable source record before <code>createSession</code> runs. The path used by app code is therefore <code>project.inputs.sources(k).reference.originalPath</code>; there is no <code>sources(k).originalPath</code> shortcut. See <a href="../framework/runtime.html#portable-source-records">Runtime and Lifecycle</a> for the complete record shape and relinking behavior.</p>
+<p>The runtime resolves each portable source record before <code>createSession</code> runs. App code obtains current locations with <code>labkit.ui.runtime.sourcePaths(project.inputs.sources)</code> and never reads the runtime-owned reference fields. See <a href="../framework/runtime.html#portable-source-records">Runtime and Lifecycle</a> for the complete record shape and relinking behavior.</p>
 <h2 id="5-implement-gui-free-workflow-functions">5. Implement GUI-Free Workflow Functions</h2>
 <p><code>+sourceFiles/readTrace.m</code> owns the accepted file contract:</p>
 <pre><code class="language-matlab">function trace = readTrace(filepath)
@@ -239,7 +239,7 @@ end</code></pre>
     sources = state.project.inputs.sources;
     files = struct(&quot;id&quot;, {}, &quot;path&quot;, {}, &quot;status&quot;, {});
     if ~isempty(sources)
-        path = string(sources(1).reference.originalPath);
+        path = labkit.ui.runtime.sourcePaths(sources(1));
         files = struct(&quot;id&quot;, &quot;trace&quot;, &quot;path&quot;, path, &quot;status&quot;, &quot;&quot;);
     end
     view.controls.traceFile = struct( ...

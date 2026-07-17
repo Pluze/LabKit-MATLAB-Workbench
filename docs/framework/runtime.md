@@ -12,7 +12,7 @@ lifecycle exclusively.
 
 | Package | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.runtime` | Launch, canonical state, queued events, services, projects, and resources. | `launch`, `define`, `emptySourceRecords`, `saveState`, `loadState`, `defaultOutputFolder`. |
+| `labkit.ui.runtime` | Launch, canonical state, queued events, services, projects, and resources. | `launch`, `define`, `emptySourceRecords`, `sourcePaths`, `saveState`, `loadState`, `defaultOutputFolder`. |
 | `labkit.ui.layout` | Data-only semantic workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`. |
 | `labkit.ui.plot` | Advanced renderer viewport and coordinate mechanics. | `clear`, `fit`, `fitCanvas`, `message`, `offsetData`, `clampData`. |
 | `labkit.ui.interaction` | Managed-interaction calculation helpers and popout enablement. | `anchorPath`, `scaleBarCalibration`, `scaleBarGeometry`, `enablePopout`. |
@@ -163,19 +163,14 @@ from `Create`, and current projects skip migration.
 #### Portable Source Records
 
 Apps create external-file references through the injected
-`services.project.sourceRecord(id,role,filepath,required)` service. The durable
-record shape is:
+`services.project.sourceRecord(id,role,filepath,required)` service. A durable
+record has stable App-facing identity fields plus a runtime-owned portable
+reference:
 
 ```matlab
-source = struct( ...
-    "id", "trace", ...
-    "required", true, ...
-    "role", "numericTrace", ...
-    "reference", struct( ...
-        "schemaVersion", 1, ...
-        "relativePath", "", ...
-        "originalPath", "/current/path/trace.csv", ...
-        "fileName", "trace.csv"));
+source = services.project.sourceRecord( ...
+    "trace", "numericTrace", selectedPath, true);
+currentPath = labkit.ui.runtime.sourcePaths(source);
 ```
 
 | Field | Meaning |
@@ -183,17 +178,18 @@ source = struct( ...
 | `id` | App-stable identity for this source inside the project. IDs are unique within the app's source collection and are not file names. |
 | `required` | Whether project load must resolve the file before committing the loaded state. |
 | `role` | App-owned semantic role such as `numericTrace`, `referenceImage`, or `movingImage`. |
-| `reference.schemaVersion` | Runtime-owned portable-reference schema version. |
-| `reference.relativePath` | Path relative to the saved project when the runtime can establish one. |
-| `reference.originalPath` | Current resolved path used by app readers after load/relink. |
-| `reference.fileName` | Last path component used in matching and user messages. |
+| `reference` | Runtime-owned portable location data. Apps preserve this value but do not read or construct its fields. |
 
-`sourceRecord` intentionally starts with an empty `relativePath`, because an
-App does not yet know where the project, explicit autosave, or recovery file
-will be written. Immediately before each write, Runtime V2 copies the durable
-project and recalculates every relative path from that write's actual MAT-file
-destination. It preserves additive reference fields and does not mutate the
-live project merely to serialize it.
+An App reads current file locations with
+`labkit.ui.runtime.sourcePaths(sources)`. Supplying a source ID or ordered ID
+collection returns only those paths in requested order. This pure accessor is
+valid inside `CreateSession`, actions, presenters, and GUI-free workflow
+functions, so App code does not depend on the portable-reference schema.
+
+Immediately before each write, Runtime V2 copies the durable project and
+rebases its portable references from that write's actual MAT-file destination.
+It preserves additive reference data and does not mutate the live project
+merely to serialize it.
 
 For unordered file collections, the injected
 `services.project.reconcileSources(existing,paths,role,idPrefix,required)`
@@ -209,9 +205,9 @@ not a struct-template constructor.
 The runtime first tries the saved relative and original locations. When a
 required source cannot be resolved, it identifies the source by app ID, role,
 and filename and lets the user locate a replacement. Cancelling leaves the
-currently open app state unchanged. Apps normally read the resolved
-`reference.originalPath` in `CreateSession`; they do not parse the portable
-reference or implement their own repeated file-dialog loop.
+currently open app state unchanged. Apps read the resolved location through
+`labkit.ui.runtime.sourcePaths`; they do not parse the portable reference or
+implement their own repeated file-dialog loop.
 
 #### Session, Actions, Presentation, And Renderers
 
@@ -546,7 +542,8 @@ plain serializable MATLAB data. Graphics, listeners, timers, tools, callbacks,
 services, and debug contexts stay in the framework resource registry.
 
 Project factories use `labkit.ui.runtime.emptySourceRecords()`; the runtime owns
-that shape, while handlers populate it through `services.project` operations.
+that shape, handlers populate it through `services.project` operations, and
+all App layers read paths through `labkit.ui.runtime.sourcePaths()`.
 
 The V2 `Project` declaration owns its version, factory, validator, migrations,
 and named read-only legacy imports. Optional `CreateResume` and `ApplyResume`

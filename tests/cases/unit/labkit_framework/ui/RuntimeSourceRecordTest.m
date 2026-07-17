@@ -10,6 +10,33 @@ classdef RuntimeSourceRecordTest < matlab.unittest.TestCase
                 ["id"; "required"; "role"; "reference"]);
         end
 
+        function pathAccessorHidesPortableReferenceShape(testCase)
+            setupLabKitTestPath();
+            sources = [source("moving", "/data/moving.tif"); ...
+                source("reference", "/data/reference.tif")];
+
+            testCase.verifyEqual( ...
+                labkit.ui.runtime.sourcePaths(sources), ...
+                ["/data/moving.tif"; "/data/reference.tif"]);
+            testCase.verifyEqual( ...
+                labkit.ui.runtime.sourcePaths( ...
+                    sources, ["reference"; "moving"]), ...
+                ["/data/reference.tif"; "/data/moving.tif"]);
+            testCase.verifySize(labkit.ui.runtime.sourcePaths( ...
+                sources, strings(0, 1)), [0 1]);
+        end
+
+        function pathAccessorRejectsUnknownIdsAndInvalidReferences(testCase)
+            setupLabKitTestPath();
+            sources = source("trace", "/data/trace.csv");
+            testCase.verifyError(@() labkit.ui.runtime.sourcePaths( ...
+                sources, "missing"), ...
+                'labkit:ui:runtime:UnknownSourceId');
+            sources.reference = rmfield(sources.reference, 'originalPath');
+            testCase.verifyError(@() labkit.ui.runtime.sourcePaths(sources), ...
+                'labkit:ui:runtime:InvalidSourceRecords');
+        end
+
         function appIdentityRejectsUnsafeStorageNames(testCase)
             setupLabKitTestPath();
             project = struct("Version", 1, "Create", @emptyProject, ...
@@ -22,6 +49,15 @@ classdef RuntimeSourceRecordTest < matlab.unittest.TestCase
                 'labkit:ui:runtime:InvalidDefinition');
         end
     end
+end
+
+function value = source(id, pathValue)
+    [~, name, extension] = fileparts(pathValue);
+    reference = struct("schemaVersion", 1, "relativePath", "", ...
+        "originalPath", string(pathValue), ...
+        "fileName", string(name) + string(extension));
+    value = struct("id", string(id), "required", true, ...
+        "role", "test", "reference", reference);
 end
 
 function project = emptyProject()

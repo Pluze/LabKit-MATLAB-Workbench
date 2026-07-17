@@ -5,18 +5,17 @@ function sources = emptySourceRecords()
 %   sources = labkit.ui.runtime.emptySourceRecords()
 %
 % Outputs:
-%   sources - 0-by-1 struct array with id, required, role, and reference
-%       fields. reference contains schemaVersion, relativePath, originalPath,
-%       and fileName.
+%   sources - 0-by-1 struct array with id, required, role, and a
+%       runtime-owned portable reference.
 %
 % Source Record Fields:
 %   id - Stable source identifier chosen by the app.
 %   required - Logical value indicating whether project load must resolve the
 %       file before committing the project.
 %   role - App-defined description of how the source is used.
-%   reference - Runtime-owned portable reference with schemaVersion,
-%       relativePath, originalPath, and fileName fields. Apps normally obtain
-%       populated records from the injected services.project.sourceRecord.
+%   reference - Runtime-owned portable reference. Apps obtain populated
+%       records from injected services.project operations and read resolved
+%       paths through labkit.ui.runtime.sourcePaths rather than its fields.
 %
 % Description:
 %   Use this value to initialize project.inputs.sources when a new project has
@@ -28,7 +27,7 @@ function sources = emptySourceRecords()
 %       "sources", labkit.ui.runtime.emptySourceRecords());
 %   assert(isempty(project.inputs.sources))
 %
-% See also labkit.ui.runtime.define
+% See also labkit.ui.runtime.sourcePaths, labkit.ui.runtime.define
 
     reference = struct("schemaVersion", 1, "relativePath", "", ...
         "originalPath", "", "fileName", "");
