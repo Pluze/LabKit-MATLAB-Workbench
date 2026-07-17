@@ -380,10 +380,6 @@ function section = documentationSection(outputPath)
         section = "getting-started";
     elseif startsWith(outputPath, "apps/")
         section = "apps";
-    elseif outputPath == "libraries/contracts/index.html" || ...
-            startsWith(outputPath, "reference/api/labkit/ui/") || ...
-            startsWith(outputPath, "reference/api/labkit/contract/")
-        section = "framework";
     elseif any(startsWith(outputPath, ["reference/", "libraries/"]))
         section = "functions";
     elseif startsWith(outputPath, "framework/")

@@ -208,7 +208,7 @@ clean MATLAB test process.
   [CSC](../../apps/electrochemistry/csc/README.md), and
   [EIS](../../apps/electrochemistry/eis/README.md) use DTA records in
   interactive workflows.
-- [Contract functions](../contracts/README.md) explain how apps declare a
+- [Contract functions](../../framework/contracts.md) explain how apps declare a
   compatible `labkit.dta` API version.
 - [Project history](../../history/README.md) lists parser, schema, and
   compatibility changes.

@@ -11,7 +11,7 @@ workflow decisions, scientific calculations, data schemas, labels, and exports.
 | Goal | Documentation |
 | --- | --- |
 | Understand how an App starts and processes actions | [Runtime and lifecycle](runtime.md) |
-| Declare and validate compatible LabKit modules | [Compatibility contracts](../libraries/contracts/README.md) |
+| Declare and validate compatible LabKit modules | [Compatibility contracts](contracts.md) |
 | Build or refactor a concrete App | [App development](../development/app-development.md) |
 | Choose reusable package boundaries | [Architecture](../development/architecture.md) |
 | Look up exact MATLAB function syntax | [Public API reference](../libraries/README.md) |
