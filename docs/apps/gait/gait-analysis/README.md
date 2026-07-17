@@ -18,7 +18,11 @@ labkit_GaitAnalysis_app
 ## Input Contract
 
 The only file input is a current Video Marker `labkitProject` MAT document or
-autosave. The MAT file is the analysis source of truth. Gait Analysis reads:
+autosave. The MAT file is the analysis source of truth and the cross-App data
+contract; Gait Analysis does not call the Video Marker package at runtime. The
+saved fields are described by
+[Video Marker project and session state](../../image-measurement/video-marker/README.md#project-and-session-state).
+Gait Analysis reads:
 
 - frames-by-points-by-2 pixel coordinates;
 - point IDs, point names, and skeleton edges;
@@ -80,9 +84,9 @@ step** and **Next step**. The workspace then shows only that step:
 3. iliac-hip, hip-knee, knee-ankle, and ankle-foot length traces.
 
 The skeleton plot annotates swing duration, step length, iliac/hip/knee/ankle/
-foot translations, and each joint's minimum, maximum, and range of motion. This is the app version
-of the earlier per-step gait figure; the figures no longer need to be generated
-as an intermediate image set merely to inspect each step.
+foot translations, and each joint's minimum, maximum, and range of motion. This
+is the app version of the earlier per-step gait figure; the figures no longer
+need to be generated as an intermediate image set merely to inspect each step.
 
 ## Step Segmentation
 
@@ -215,9 +219,11 @@ There is no generic App lifecycle or state package. Migration iteration,
 portable source references, callback queues, busy state, source relinking, and
 serialization remain framework-owned.
 
-Its synthetic debug fixture constructs a current Video Marker payload through
-`video_marker.projectSpec` rather than depending on Video Marker's internal
-lifecycle files. Production Gait input remains the saved MAT document itself.
+Its synthetic debug fixture writes the documented Video Marker payload shape
+without loading a sibling App package. A separate producer-consumer integration
+test builds a project with the current Video Marker contract and reads the
+saved MAT through Gait, so producer drift is detected without making the
+consumer's normal launch depend on Video Marker source code.
 
 Its session factory returns only App-specific step selection, output-folder
 workflow, and decoded pose cache fields. Runtime supplies absent canonical

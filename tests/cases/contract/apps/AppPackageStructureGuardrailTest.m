@@ -45,6 +45,36 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
             end
         end
 
+        function appCodeDoesNotCallSiblingAppPackages(testCase)
+            root = setupLabKitTestPath();
+            layouts = discoveredAppLayouts(root);
+            packageNames = string(layouts(:, 2));
+            for k = 1:size(layouts, 1)
+                appDir = fullfile(root, layouts{k, 1});
+                owner = packageNames(k);
+                siblings = packageNames(packageNames ~= owner);
+                assertNoSiblingAppCalls( ...
+                    testCase, root, appDir, owner, siblings);
+            end
+        end
+
+    end
+end
+
+function assertNoSiblingAppCalls(testCase, root, appDir, owner, siblings)
+    files = dir(fullfile(appDir, "**", "*.m"));
+    for k = 1:numel(files)
+        filepath = fullfile(files(k).folder, files(k).name);
+        source = string(fileread(filepath));
+        code = regexprep(source, "(?m)^\s*%[^\n]*", "");
+        for sibling = siblings.'
+            pattern = "(?<![A-Za-z0-9_])" + sibling + ...
+                "(?:\.[A-Za-z]\w*)+\s*\(";
+            testCase.verifyEmpty(regexp(code, pattern, "once"), ...
+                relativePath(root, filepath) + ...
+                " must exchange a saved data contract with " + sibling + ...
+                ", not call that sibling App package from " + owner + ".");
+        end
     end
 end
 

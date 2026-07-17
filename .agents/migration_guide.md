@@ -69,40 +69,6 @@ Removal condition:
   contract, both repositories are pushed, and the public framework no longer
   needs source-structure compatibility for it.
 
-### App path isolation
-
-Owner:
-: Gait Analysis for the current defect; project architecture tests for
-  recurrence prevention.
-
-Evidence:
-: `gait_analysis.debug.writeSamplePack` calls `video_marker.projectSpec`,
-  `video_marker.skeletonDefinition`, and `video_marker.frameAnnotations`.
-  The launcher adds only the selected App root, while the test setup adds every
-  public App root. Gait debug sample generation therefore passes in the shared
-  test path but fails in an isolated launcher-equivalent path.
-
-Affected scope:
-: Gait debug sample generation, Video Marker-to-Gait file compatibility,
-  test path setup, App dependency guardrails, and single-App packaging.
-
-Completion condition:
-: Gait production and debug code consume the documented Video Marker MAT
-  format without calling the Video Marker package. A test-only integration
-  check may invoke both Apps to prove producer-consumer file compatibility.
-  Every App debug sample writer resolves with only the repository root and its
-  owning App root.
-
-Focused validation:
-: Exercise the Gait debug writer in an isolated MATLAB path, import a current
-  synthetic Video Marker project into Gait, run the Gait unit and hidden-GUI
-  workflow tests, and run the App boundary and packaging guardrails.
-
-Removal condition:
-: Delete this entry when isolated debug generation and the producer-consumer
-  file-contract test both pass and a general guardrail prevents production or
-  debug calls into sibling App packages.
-
 ### Project restore failure semantics
 
 Owner:

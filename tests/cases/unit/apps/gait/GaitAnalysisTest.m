@@ -6,7 +6,7 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             folder = makeFolder();
             cleanup = onCleanup(@() cleanupFolder(folder));
-            [labkitProject, expected] = markerProject();
+            [labkitProject, expected] = consumerMarkerProject();
             projectPath = fullfile(folder, "walk.video_marker.autosave.mat");
             save(projectPath, "labkitProject");
 
@@ -86,7 +86,7 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             folder = makeFolder();
             cleanup = onCleanup(@() cleanupFolder(folder));
-            [labkitProject, ~] = markerProject();
+            [labkitProject, ~] = consumerMarkerProject();
             labkitProject.payload.inputs.videoMetadata.frameRate = 0;
             projectPath = fullfile(folder, "missing-rate.mat");
             save(projectPath, "labkitProject");
@@ -175,10 +175,80 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
             testCase.verifyTrue(isa(definition.project.Migrate, ...
                 'function_handle'));
         end
+
+        function debug_sample_runs_on_an_isolated_gait_path(testCase)
+            [root, appRoot] = gaitRoots();
+            previousPath = path;
+            pathCleanup = onCleanup(@() path(previousPath));
+            restoredefaultpath;
+            addpath(root);
+            addpath(appRoot);
+            rehash path
+
+            pack = gait_analysis.debug.writeSamplePack();
+            pose = gait_analysis.sourceFiles.readPoseFile( ...
+                pack.representativeFiles);
+
+            testCase.verifyTrue(pose.ok);
+            testCase.verifyEqual(pose.frameRate, 30);
+            testCase.verifyEmpty(which("video_marker.projectSpec"));
+
+            clear pathCleanup
+        end
+    end
+
+    methods (Test, TestTags = {'Integration'})
+        function current_video_marker_producer_matches_gait_reader(testCase)
+            setupLabKitTestPath();
+            folder = makeFolder();
+            cleanup = onCleanup(@() cleanupFolder(folder));
+            [labkitProject, expected] = producerMarkerProject();
+            projectPath = fullfile(folder, ...
+                "producer.video_marker.autosave.mat");
+            save(projectPath, "labkitProject");
+
+            pose = gait_analysis.sourceFiles.readPoseFile(projectPath);
+
+            testCase.verifyEqual(pose.coords, expected);
+            testCase.verifyEqual(pose.frameRate, 30);
+            testCase.verifyEqual(pose.skeleton.edges, ...
+                [1 2; 2 3; 3 4; 4 5]);
+            testCase.verifyEqual(pose.unitName, "mm");
+        end
     end
 end
 
-function [labkitProject, coords] = markerProject()
+function [labkitProject, coords] = consumerMarkerProject()
+    pose = syntheticPose();
+    coords = pose.coords;
+    pointNames = pose.pointNames;
+    frames = struct( ...
+        "schemaVersion", 2, ...
+        "coords", coords, ...
+        "frameStatus", zeros(12, 1, "uint8"), ...
+        "frameSource", zeros(12, 1, "uint8"), ...
+        "trackingConfidence", NaN(12, 5), ...
+        "anchorRevision", zeros(12, 1, "uint64"));
+    project = struct();
+    project.inputs = struct( ...
+        "sources", labkit.ui.runtime.emptySourceRecords(), ...
+        "videoMetadata", markerVideoMetadata());
+    project.parameters = struct();
+    project.annotations = struct( ...
+        "skeleton", struct( ...
+        "schemaVersion", 1, ...
+        "pointIds", pointNames, ...
+        "pointNames", pointNames, ...
+        "edges", [1 2; 2 3; 3 4; 4 5]), ...
+        "frames", frames, ...
+        "calibration", ...
+        labkit.ui.interaction.scaleBarCalibration(20, 2, "mm"));
+    project.results = struct();
+    project.extensions = struct();
+    labkitProject = markerEnvelope(project);
+end
+
+function [labkitProject, coords] = producerMarkerProject()
     pose = syntheticPose();
     coords = pose.coords;
     spec = video_marker.projectSpec();
@@ -188,17 +258,36 @@ function [labkitProject, coords] = markerProject()
     project.annotations.frames = ...
         video_marker.frameAnnotations.emptyAnnotations(12, 5);
     project.annotations.frames.coords = coords;
-    project.inputs.videoMetadata = struct( ...
-        "frameCount", 12, "frameRate", 30, "duration", 12/30, ...
-        "height", 100, "width", 200);
+    project.inputs.videoMetadata = markerVideoMetadata();
     project.annotations.calibration = ...
         labkit.ui.interaction.scaleBarCalibration(20, 2, "mm");
+    assert(spec.Validate(project));
+    labkitProject = markerEnvelope(project);
+end
+
+function metadata = markerVideoMetadata()
+    metadata = struct( ...
+        "frameCount", 12, ...
+        "frameRate", 30, ...
+        "duration", 12/30, ...
+        "height", 100, ...
+        "width", 200);
+end
+
+function labkitProject = markerEnvelope(project)
     labkitProject = struct( ...
         "format", "labkit.project", ...
         "formatVersion", struct("major", 1, "minor", 0), ...
         "app", struct("id", "video_marker", "payloadVersion", 2), ...
         "document", struct(), "producer", struct(), ...
         "sources", struct([]), "payload", project);
+end
+
+function [root, appRoot] = gaitRoots()
+    testFile = mfilename("fullpath");
+    root = fileparts(fileparts(fileparts(fileparts( ...
+        fileparts(fileparts(testFile))))));
+    appRoot = fullfile(root, "apps", "gait", "gait_analysis");
 end
 
 function pose = syntheticPose()

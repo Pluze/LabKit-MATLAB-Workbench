@@ -100,6 +100,17 @@ last successful task explicit. Pure helpers build deterministic task snapshots
 and calculations; result writers receive explicit task data rather than
 reading UI handles.
 
+## Cross-App Data Contracts
+
+Apps exchange saved, documented data contracts; production and debug code do
+not call a sibling App package. A consumer owns its parser and error language,
+so it can launch with only the framework and its own App root on the MATLAB
+path. A producer owns serialization and schema validation. Keep one
+producer-consumer integration test that invokes both Apps and proves the
+current saved format remains compatible; keep consumer unit and debug fixtures
+independent of the producer package so the shared test path cannot hide a
+runtime dependency.
+
 ## Ownership Check
 
 Keep these in the app:
