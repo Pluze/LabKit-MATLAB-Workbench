@@ -83,9 +83,10 @@ end
 
 function [state, loaded] = loadSource(state, sources, index, services)
     loaded = false;
+    sourcePath = labkit.ui.runtime.sourcePaths(sources(index));
     try
         [plotData, sourceStyle] = figure_studio.sourceAxes.readFigFile( ...
-            sources(index).reference.originalPath);
+            sourcePath);
     catch ME
         state = reportFailure(state, services, "Open FIG", ME);
         return;
@@ -93,12 +94,12 @@ function [state, loaded] = loadSource(state, sources, index, services)
     state.session.selection.currentIndex = index;
     state.session.cache.plotData = plotData;
     state.session.cache.sourceDefaultStyle = sourceStyle;
-    state.session.cache.currentSource = string( ...
-        sources(index).reference.originalPath);
+    state.session.cache.currentSource = sourcePath;
     state.project.annotations.sourceDefaultStyle = sourceStyle;
     state = adoptSourceStyle(state, sourceStyle);
+    [~, sourceName, sourceExtension] = fileparts(sourcePath);
     state.session.workflow.status = "Opened " + ...
-        string(sources(index).reference.fileName) + ".";
+        string(sourceName) + string(sourceExtension) + ".";
     state = services.workflow.log(state, ...
         "Opened FIG: " + state.session.cache.currentSource);
     loaded = true;
@@ -342,11 +343,10 @@ function index = selectedIndex(sources, added)
     if isempty(added)
         return;
     end
-    for k = 1:numel(sources)
-        if string(sources(k).reference.originalPath) == string(added(end))
-            index = k;
-            return;
-        end
+    match = find(labkit.ui.runtime.sourcePaths(sources) == ...
+        string(added(end)), 1, 'first');
+    if ~isempty(match)
+        index = match;
     end
 end
 

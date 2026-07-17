@@ -8,9 +8,9 @@ function session = createSession(project)
     sourceDefaultStyle = project.annotations.sourceDefaultStyle;
     if isempty(plotData) && ~isempty(project.inputs.sources)
         currentIndex = 1;
-        [plotData, sourceDefaultStyle] = loadSource(project.inputs.sources(1));
-        currentSource = string( ...
-            project.inputs.sources(1).reference.originalPath);
+        currentSource = labkit.ui.runtime.sourcePaths( ...
+            project.inputs.sources(1));
+        [plotData, sourceDefaultStyle] = loadSource(currentSource);
     elseif ~isempty(plotData)
         currentSource = "Popout axes";
     end
@@ -26,12 +26,12 @@ function session = createSession(project)
             "currentSource", currentSource));
 end
 
-function [plotData, style] = loadSource(source)
+function [plotData, style] = loadSource(sourcePath)
     plotData = [];
     style = [];
     try
-        [plotData, style] = figure_studio.sourceAxes.readFigFile( ...
-            source.reference.originalPath);
+        [plotData, style] = ...
+            figure_studio.sourceAxes.readFigFile(sourcePath);
     catch
         % Missing portable references remain unloaded until relinked.
     end
