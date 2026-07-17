@@ -2,7 +2,7 @@
 % Expected caller: pose load action. Source metadata replaces defaults only
 % when the source supplies an explicit usable value.
 function options = optionsForPose(pose, options)
-    defaults = gait_analysis.appState.defaultOptions();
+    defaults = gait_analysis.analysisRun.defaultOptions();
     options.frameRate = defaults.frameRate;
     options.pixelsPerUnit = defaults.pixelsPerUnit;
     options.unitName = defaults.unitName;

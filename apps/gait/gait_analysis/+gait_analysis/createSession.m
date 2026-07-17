@@ -1,9 +1,9 @@
-% Expected caller: Runtime V2. Input is a validated gait project with resolved
-% pose source. Output owns decoded pose, current preview mode, output-folder
-% convenience, duplicate-run fingerprint, and workflow log.
+% Rebuild transient decoded pose, preview selection, export-folder
+% convenience, and duplicate-run fingerprint from one validated project.
 function session = createSession(project)
     pose = gait_analysis.sourceFiles.emptyPoseData();
-    filepath = sourcePath(project.inputs.sources);
+    filepath = labkit.ui.runtime.sourcePaths( ...
+        project.inputs.sources, "pose");
     outputFolder = "";
     if strlength(filepath) > 0
         pose = gait_analysis.sourceFiles.readPoseFile(filepath);
@@ -12,7 +12,7 @@ function session = createSession(project)
     end
     fingerprint = "";
     if project.results.analysis.ok && pose.ok
-        task = gait_analysis.appState.runTask( ...
+        task = gait_analysis.analysisRun.runTask( ...
             filepath, pose, project.parameters);
         fingerprint = task.fingerprint;
     end
@@ -23,11 +23,4 @@ function session = createSession(project)
         "view", struct(), ...
         "cache", struct("filepath", filepath, "pose", pose, ...
             "lastRunFingerprint", fingerprint));
-end
-
-function filepath = sourcePath(sources)
-    filepath = "";
-    if ~isempty(sources)
-        filepath = string(sources(1).reference.originalPath);
-    end
 end

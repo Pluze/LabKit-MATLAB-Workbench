@@ -1,6 +1,6 @@
 %RUNTASK Deterministic snapshot for duplicate gait analysis runs.
-% Expected caller: run-analysis action. The fingerprint is app-local and
-% includes only semantic inputs, not UI handles.
+% Expected caller: run-analysis action and session reconstruction. The
+% fingerprint includes semantic inputs only, never UI handles.
 function task = runTask(sourcePath, pose, opts)
     task = struct();
     task.sourcePath = string(sourcePath);

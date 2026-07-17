@@ -1,5 +1,5 @@
 %EMPTYRESULT Empty gait analysis result payload.
-% Expected caller: initial state, reset paths, and failed imports.
+% Expected caller: project creation, reset paths, and failed imports.
 function result = emptyResult()
     result = struct();
     result.ok = false;
@@ -12,5 +12,5 @@ function result = emptyResult()
     result.events = struct("liftOffFrames", [], "landingFrames", [], ...
         "detectionSignal", [], "footRelativeX", [], "prominence", [], ...
         "minimumPeakHeight", NaN);
-    result.options = gait_analysis.appState.defaultOptions();
+    result.options = gait_analysis.analysisRun.defaultOptions();
 end

@@ -42,6 +42,21 @@ Coordinates use image convention: the origin is at the upper left and Y
 increases downward. The skeleton preview preserves that convention. Angle and
 length time series use conventional plot axes.
 
+## Project And Session State
+
+`gait_analysis.projectSpec` owns durable schema version 3, project creation and
+validation, and the single migration entry for versions 1 and 2. Version 1
+renames the legacy step/stride options and invalidates results whose scientific
+meaning changed. Version 2 moves its singular source into the canonical source
+collection. Runtime V2 selects each missing step and validates the final
+project.
+
+The pose source, analysis options, computed tables/events, and export record
+are durable. Decoded pose data, selected step, output-folder convenience,
+workflow log, and duplicate-run fingerprint are transient and rebuilt by
+`gait_analysis.createSession`. Source paths are resolved by the Runtime before
+session construction and are read through `sourcePaths`.
+
 ## Two-Stage Workflow
 
 ### 1. Load And Inspect All Trajectories
@@ -150,8 +165,8 @@ column name matches the calculation.
 
 ```matlab
 pose = gait_analysis.sourceFiles.readPoseFile("marker-project.mat");
-opts = gait_analysis.appState.optionsForPose( ...
-    pose, gait_analysis.appState.defaultOptions());
+opts = gait_analysis.analysisRun.optionsForPose( ...
+    pose, gait_analysis.analysisRun.defaultOptions());
 result = gait_analysis.analysisRun.computeGait(pose, opts);
 writetable(result.stepTable, "steps.csv");
 ```
@@ -176,15 +191,25 @@ writetable(result.stepTable, "steps.csv");
 ## Related Functions And Apps
 
 - `gait_analysis.sourceFiles.readPoseFile`
-- `gait_analysis.appState.defaultOptions`
-- `gait_analysis.appState.optionsForPose`
+- `gait_analysis.analysisRun.defaultOptions`
+- `gait_analysis.analysisRun.optionsForPose`
 - `gait_analysis.analysisRun.computeGait`
 - [Video Marker](../../image-measurement/video-marker/README.md)
 - [Gait apps](../README.md)
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+This App requires `labkit.ui >=7 <8`. Its single `definition.m` owns product
+metadata, requirements, layout, actions, presentation, renderer, and debug
+capability. `projectSpec.m` concentrates durable creation, validation, and both
+historical migration steps; root `createSession.m` rebuilds transient decoded
+pose state.
+
+Analysis defaults, source-fact normalization, result construction, duplicate
+run fingerprints, and gait calculations are co-located under `+analysisRun`.
+There is no generic App lifecycle or state package. Migration iteration,
+portable source references, callback queues, busy state, source relinking, and
+serialization remain framework-owned.
 
 Its synthetic debug fixture constructs a current Video Marker payload through
 `video_marker.projectSpec` rather than depending on Video Marker's internal

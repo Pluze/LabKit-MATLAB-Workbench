@@ -19,7 +19,7 @@ function result = computeGait(pose, opts)
 %       F elements. unitName labels coordinates that are already physical.
 %       sourceFormat is copied into the summary table.
 %   opts - Scalar option structure. Start with
-%       gait_analysis.appState.defaultOptions; missing fields use those defaults.
+%       gait_analysis.analysisRun.defaultOptions; missing fields use those defaults.
 %
 % Options:
 %   iliacPoint - Case-insensitive point name assigned to the iliac role.
@@ -119,7 +119,7 @@ function result = computeGait(pose, opts)
 %   pose.coords(:, :, 1) = [-2*ones(12,1), zeros(12,1), ...
 %       ones(12,1), 2*ones(12,1), footX];
 %   pose.coords(:, :, 2) = repmat([8 6 4 2 0], 12, 1);
-%   opts = gait_analysis.appState.defaultOptions();
+%   opts = gait_analysis.analysisRun.defaultOptions();
 %   opts.smoothWindow = 1;
 %   opts.detectionProminence = 2;
 %   opts.minLiftOffIntervalSeconds = 0.1;
@@ -127,7 +127,7 @@ function result = computeGait(pose, opts)
 %   assert(result.ok && height(result.stepTable) == 2)
 %
 % See also gait_analysis.sourceFiles.readPoseFile,
-%   gait_analysis.appState.defaultOptions,
+%   gait_analysis.analysisRun.defaultOptions,
 %   video_marker.coordinateExport.buildTable
 
     if ~isstruct(pose) || ~isfield(pose, "coords") || isempty(pose.coords)
@@ -164,7 +164,7 @@ function result = computeGait(pose, opts)
 end
 
 function opts = normalizeOptions(opts)
-    defaults = gait_analysis.appState.defaultOptions();
+    defaults = gait_analysis.analysisRun.defaultOptions();
     names = string(fieldnames(defaults));
     for k = 1:numel(names)
         name = char(names(k));

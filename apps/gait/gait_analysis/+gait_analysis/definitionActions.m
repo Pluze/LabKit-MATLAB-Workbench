@@ -29,9 +29,9 @@ function state = onOpenPoseFile(state, event, services)
     end
     state.project.inputs.sources = services.project.sourceRecord( ...
         "pose", "poseCoordinates", filepath, true);
-    state.project.parameters = gait_analysis.appState.optionsForPose( ...
+    state.project.parameters = gait_analysis.analysisRun.optionsForPose( ...
         pose, state.project.parameters);
-    state.project.results.analysis = gait_analysis.appState.emptyResult();
+    state.project.results.analysis = gait_analysis.analysisRun.emptyResult();
     state.project.results.lastExport = [];
     state.session.cache.filepath = filepath;
     state.session.cache.pose = pose;
@@ -45,7 +45,7 @@ end
 
 function state = onOptionsChanged(state, ~, ~)
     state.project.parameters = sanitizeOptions(state.project.parameters);
-    state.project.results.analysis = gait_analysis.appState.emptyResult();
+    state.project.results.analysis = gait_analysis.analysisRun.emptyResult();
     state.project.results.analysis.message = ...
         "Analysis options changed; rerun analysis.";
     state.project.results.lastExport = [];
@@ -61,7 +61,7 @@ function state = onRunAnalysis(state, ~, services)
         return;
     end
     options = sanitizeOptions(state.project.parameters);
-    task = gait_analysis.appState.runTask( ...
+    task = gait_analysis.analysisRun.runTask( ...
         state.session.cache.filepath, pose, options);
     if state.project.results.analysis.ok && ...
             state.session.cache.lastRunFingerprint == task.fingerprint
@@ -177,7 +177,7 @@ function output = outputFor(services, id, filepath)
 end
 
 function options = sanitizeOptions(options)
-    defaults = gait_analysis.appState.defaultOptions();
+    defaults = gait_analysis.analysisRun.defaultOptions();
     numeric = ["frameRate", "pixelsPerUnit", "smoothWindow", ...
         "detectionProminence", "detectionMinHeightSigma", ...
         "minLiftOffIntervalSeconds", "minSwingFrames", ...

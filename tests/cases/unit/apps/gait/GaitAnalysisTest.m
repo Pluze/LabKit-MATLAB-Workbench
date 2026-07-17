@@ -29,7 +29,7 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
         function analysis_segments_active_swings_and_reports_metrics(testCase)
             setupLabKitTestPath();
             pose = syntheticPose();
-            opts = gait_analysis.appState.defaultOptions();
+            opts = gait_analysis.analysisRun.defaultOptions();
             opts.smoothWindow = 1;
             opts.detectionProminence = 2;
             opts.minLiftOffIntervalSeconds = 0.1;
@@ -58,7 +58,7 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
             pose.coords = pose.coords(7:end, :, :);
             pose.frameIndex = (1:6).';
             pose.time = (0:5).' ./ 30;
-            opts = gait_analysis.appState.defaultOptions();
+            opts = gait_analysis.analysisRun.defaultOptions();
             opts.smoothWindow = 1;
             opts.detectionProminence = 2;
 
@@ -101,13 +101,13 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
             pose = syntheticPose();
             pose.frameRate = 120;
             pose.pointNames(1) = "iliac_crest";
-            options = gait_analysis.appState.defaultOptions();
+            options = gait_analysis.analysisRun.defaultOptions();
             options.frameRate = 10;
             options.pixelsPerUnit = 22;
             options.unitName = "mm";
             options.iliacPoint = "old_iliac";
 
-            actual = gait_analysis.appState.optionsForPose(pose, options);
+            actual = gait_analysis.analysisRun.optionsForPose(pose, options);
 
             testCase.verifyEqual(actual.frameRate, 120);
             testCase.verifyEqual(actual.pixelsPerUnit, 1);
@@ -135,7 +135,8 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
 
         function project_migration_renames_v1_options(testCase)
             setupLabKitTestPath();
-            project = gait_analysis.appLifecycle.createProject();
+            spec = gait_analysis.projectSpec();
+            project = spec.Create();
             project.parameters = rmfield(project.parameters, ...
                 {'minLiftOffIntervalSeconds', 'minSwingFrames', ...
                 'maxSwingFrames', 'minStepLength', 'maxHipTranslation', ...
@@ -146,7 +147,7 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
             project.parameters.minStride = 3;
             project.parameters.maxBodyDrift = 9;
 
-            migrated = gait_analysis.appLifecycle.migrateProjectV1ToV2(project);
+            migrated = spec.Migrate(project, 1);
 
             testCase.verifyEqual(migrated.parameters.minLiftOffIntervalSeconds, 0.25);
             testCase.verifyEqual(migrated.parameters.minSwingFrames, 4);
@@ -159,18 +160,20 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
 
         function project_migration_adopts_canonical_source_collection(testCase)
             setupLabKitTestPath();
-            project = gait_analysis.appLifecycle.createProject();
+            spec = gait_analysis.projectSpec();
+            project = spec.Create();
             expected = struct("absolutePath", "/tmp/walk.mat");
             project.inputs.source = expected;
             project.inputs = rmfield(project.inputs, "sources");
 
-            migrated = gait_analysis.appLifecycle.migrateProjectV2ToV3(project);
+            migrated = spec.Migrate(project, 2);
             definition = gait_analysis.definition();
 
             testCase.verifyEqual(migrated.inputs.sources, expected);
             testCase.verifyFalse(isfield(migrated.inputs, "source"));
             testCase.verifyEqual(definition.project.Version, 3);
-            testCase.verifyEqual(numel(definition.project.Migrations), 2);
+            testCase.verifyTrue(isa(definition.project.Migrate, ...
+                'function_handle'));
         end
     end
 end
@@ -220,7 +223,7 @@ function pose = syntheticPose()
 end
 
 function opts = analysisOptions()
-    opts = gait_analysis.appState.defaultOptions();
+    opts = gait_analysis.analysisRun.defaultOptions();
     opts.smoothWindow = 1;
     opts.detectionProminence = 2;
 end

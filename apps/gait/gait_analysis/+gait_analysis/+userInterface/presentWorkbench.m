@@ -38,8 +38,8 @@ end
 function spec = sourcePanel(sources)
     files = struct("id", {}, "path", {}, "status", {});
     status = "No pose file loaded";
-    if ~isempty(sources)
-        filepath = string(sources(1).reference.originalPath);
+    filepath = labkit.ui.runtime.sourcePaths(sources, "pose");
+    if strlength(filepath) > 0
         files = struct("id", "item1", "path", filepath, "status", "");
         status = filepath;
     end

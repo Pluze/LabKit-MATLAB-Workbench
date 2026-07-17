@@ -1,6 +1,6 @@
 %DEFAULTOPTIONS Default gait analysis options.
-% Expected caller: initial state, UI option collection, and tests. Defaults
-% are conservative and app-owned because they define gait workflow behavior.
+% Expected caller: project creation, pose normalization, analysis, and tests.
+% Defaults are App-owned because they define gait workflow behavior.
 function opts = defaultOptions()
     opts = struct();
     opts.iliacPoint = "iliac";
@@ -22,6 +22,6 @@ function opts = defaultOptions()
     opts.minSwingFrames = 3;
     opts.maxSwingFrames = 300;
     opts.minStepLength = 1;
-    % Constant: effectively disables hip-drift rejection until the user tightens QC.
+    % Constant: effectively disables hip-drift rejection until QC is tightened.
     opts.maxHipTranslation = 1000000;
 end
