@@ -49,6 +49,10 @@ function [info, status] = inspectFile(filepath)
 %       fprintf("%.1f s at %.0f Hz\n", info.durationSec, info.sampleRateHz)
 %       disp(info.channelTable(:, ["family", "nativeName", "customName"]))
 %   end
+%
+% See also labkit.rhs.indexFile,
+%   labkit.rhs.readWindow,
+%   labkit.rhs.findFiles
 
     filepath = normalizeFilepath(filepath);
     info = emptyInfo(filepath);

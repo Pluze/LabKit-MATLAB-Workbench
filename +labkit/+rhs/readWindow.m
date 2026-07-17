@@ -71,6 +71,9 @@ function [window, status] = readWindow(filepath, opts)
 %       ylabel("Stimulation current (microamps)")
 %       legend(window.channels)
 %   end
+%
+% See also labkit.rhs.indexFile,
+%   labkit.rhs.inspectFile
 
     if nargin < 2 || isempty(opts)
         opts = struct();
