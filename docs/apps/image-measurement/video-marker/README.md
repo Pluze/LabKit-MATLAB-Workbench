@@ -170,3 +170,8 @@ serialization envelopes, and migration iteration remain framework-owned.
 Its session factory returns only App-specific frame selection, editing
 workflow, scale-bar view, and decoded video cache fields. Runtime supplies
 absent canonical buckets and owns workflow-log initialization.
+
+The skeleton preset selector is a direct session binding; choosing a label
+does not require an App callback until **Use preset** applies the selected
+schema. The decoded-video cache is a session resource registered with Runtime
+default cleanup rather than an App-owned empty cleanup hook.

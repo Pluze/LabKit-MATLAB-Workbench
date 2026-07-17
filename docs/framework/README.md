@@ -62,6 +62,12 @@ recovery write recalculates source-relative paths from that MAT file's actual
 destination, so moving a saved project tree does not depend on the folder from
 which the source was first imported.
 
+A control whose complete behavior is writing one state path uses `Bind`
+without `Event`; Runtime commits it without requiring an empty App action.
+Handlers register plain nonsemantic values through
+`services.resources.set(scope,id,value)` and supply a fourth cleanup function
+only when the resource needs custom disposal.
+
 An App `CreateSession` factory returns only its own transient selection, view,
 workflow, or cache fields. The runtime adds the canonical session buckets and
 initializes workflow logging; Apps do not repeat empty framework-owned

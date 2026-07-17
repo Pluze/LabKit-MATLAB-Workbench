@@ -492,10 +492,7 @@ function resource = openVideoResource(pathValue)
 end
 
 function setVideoResource(services, resource)
-    services.resources.set("session", "video", resource, @cleanupVideoResource);
-end
-
-function cleanupVideoResource(~)
+    services.resources.set("session", "video", resource);
 end
 
 function points = currentPoints(state)

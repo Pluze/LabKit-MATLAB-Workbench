@@ -585,7 +585,9 @@ presentation.
 
 Ordinary value controls may use a semantic binding such as
 `"Bind", "project.parameters.gamma"` and may name an optional `Event` to run
-after the value is staged. `Present(state)` returns control properties and
+after the value is staged. Omit `Event` when the bound value is the complete
+state change; the runtime still validates and commits the transaction, and the
+App does not need a no-op handler. `Present(state)` returns control properties and
 prepared preview models by semantic id. Registered renderers receive an axes
 and model; presenters and actions do not receive the raw UI registry on the v2
 path. A renderer runs only when its declared renderer/model request changes;
@@ -610,6 +612,11 @@ directly. A `Start` handler may resolve a registered preview with
 `services.previews.axes(previewId, axisId)` only to attach a framework-managed
 listener or timer; actions, presenters, and semantic state still use plain data
 and preview models.
+
+Injected `services.resources.set(scope,id,value)` registers a nonsemantic
+event-, session-, or figure-scoped resource with the Runtime's default cleanup.
+Pass a fourth cleanup function only when the value needs custom disposal.
+Replacing the same scope and id disposes the prior value before registration.
 
 Each figure owns one private interaction hub. Preview targets register as
 `previewId` or `previewId.axisId`; the hub owns hover wheel/zoom routing,
