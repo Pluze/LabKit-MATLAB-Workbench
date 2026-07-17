@@ -33,16 +33,30 @@ function varargout = launch(definitionFcn, varargin)
 %   dispatchArgs must be a cell array containing a normal runtime request such
 %   as {} or {"debug"}.
 %
+% Errors:
+%   labkit:ui:runtime:InvalidLaunchFactory - definitionFcn is not a function
+%       handle, or retired requirements/version factories were passed after
+%       the definition factory.
+%   labkit:ui:runtime:MissingProductMetadata - The definition does not provide
+%       its complete product metadata and Requirements.
+%   labkit:ui:runtime:InvalidProductMetadata - AppVersion or Updated does not
+%       use the documented semantic-version or ISO-date form.
+%
 % Typical Call:
 %   fig = labkit.ui.runtime.launch(@appDefinition);
 %
 % See also labkit.ui.runtime.define
 
     assertFactory(definitionFcn, "definitionFcn");
-    [definition, requirements, info, launchArgs] = ...
-        resolveDefinitionContract(definitionFcn, varargin);
+    if ~isempty(varargin) && isa(varargin{1}, 'function_handle')
+        error('labkit:ui:runtime:InvalidLaunchFactory', ...
+            ['launch accepts one definition factory. Put product metadata ' ...
+            'and Requirements in the definition returned by that factory.']);
+    end
+    definition = definitionFcn();
+    [requirements, info] = definitionLaunchMetadata(definition);
     appName = char(string(info.name));
-    [request, dispatchArgs] = prepareRequest(launchArgs);
+    [request, dispatchArgs] = prepareRequest(varargin);
     [handled, outputs, debug] = dispatchRequest( ...
         appName, dispatchArgs, nargout, "Requirements", requirements, ...
         "Version", info);
@@ -60,27 +74,6 @@ function varargout = launch(definitionFcn, varargin)
     if nargout >= 2
         varargout{2} = debug;
     end
-end
-
-function [definition, requirements, info, launchArgs] = ...
-        resolveDefinitionContract(definitionFcn, args)
-    definition = [];
-    if ~isempty(args) && isa(args{1}, 'function_handle')
-        if numel(args) < 2 || ~isa(args{2}, 'function_handle')
-            error('labkit:ui:runtime:InvalidLaunchFactory', ...
-                ['The transitional launch form requires both requirements ' ...
-                'and version factories.']);
-        end
-        requirements = args{1}();
-        info = args{2}();
-        launchArgs = args(3:end);
-        definition = definitionFcn();
-        return;
-    end
-
-    definition = definitionFcn();
-    [requirements, info] = definitionLaunchMetadata(definition);
-    launchArgs = args;
 end
 
 function [requirements, info] = definitionLaunchMetadata(definition)

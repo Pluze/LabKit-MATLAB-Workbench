@@ -104,6 +104,14 @@ version plus local create, validate, and migrate functions. Runtime V2 owns the
 loop across missing versions and validates each returned payload; App packages
 do not publish one migration file per historical step.
 
+These are the only supported source forms: `launch` receives one definition
+factory, and a versioned project exposes one
+`Migrate(project,fromVersion)` callback. Separate requirements/version launch
+factories, migration callback collections, and layout-only tool hosts are not
+part of the current UI contract. Declared legacy MAT imports and supported
+older project payloads remain read-only data compatibility, not alternate App
+source architectures.
+
 Read [Runtime and lifecycle](runtime.md) for the detailed definition fields,
 state transaction rules, startup/readiness behavior, plot and interaction
 contracts, debug semantics, callback policy, and the responsibilities of the

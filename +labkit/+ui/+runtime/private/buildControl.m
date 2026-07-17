@@ -25,8 +25,6 @@ function ui = buildControl(ui, controlSpec, parentGrid, row, debug)
             ui = buildUsagePanel(ui, controlSpec, parentGrid, row);
         case 'statusPanel'
             ui = buildStatusPanel(ui, controlSpec, parentGrid, row);
-        case 'toolPanel'
-            ui = buildToolPanelControl(ui, controlSpec, parentGrid, row);
         otherwise
             error('labkit:ui:runtime:UnsupportedControl', ...
                 'Unsupported declarative control kind "%s".', controlSpec.kind);

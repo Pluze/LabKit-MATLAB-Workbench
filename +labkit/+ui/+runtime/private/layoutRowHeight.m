@@ -17,8 +17,6 @@ function value = layoutRowHeight(spec, defaultValue)
             value = textPanelHeight(8, 240);
         case 'filePanel'
             value = filePanelHeight(spec);
-        case 'toolPanel'
-            value = 356;
         case 'field'
             value = fieldHeight(spec);
         case 'action'

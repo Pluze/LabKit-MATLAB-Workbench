@@ -46,8 +46,7 @@ function verifyControlledRectangleHitRouting()
     setenv('LABKIT_GUI_TEST_MODE', 'hidden');
     cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
     cleanupFigures = onCleanup(@() h.closeAllFigures());
-    fig = labkit.ui.runtime.launch( ...
-        @rectangleDefinition, @requirements, @versionInfo);
+    fig = labkit.ui.runtime.launch(@rectangleDefinition);
     h.waitForUiIdle(fig);
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     resource = interactionResource(runtime.resources, "cropRectangle");
@@ -105,8 +104,7 @@ function verifyControlledPointSlots()
     setenv('LABKIT_GUI_TEST_MODE', 'hidden');
     cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
     cleanupFigures = onCleanup(@() h.closeAllFigures());
-    fig = labkit.ui.runtime.launch( ...
-        @pointSlotsDefinition, @requirements, @versionInfo);
+    fig = labkit.ui.runtime.launch(@pointSlotsDefinition);
     h.waitForUiIdle(fig);
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     resource = interactionResource(runtime.resources, "slots");
@@ -141,8 +139,7 @@ function verifyPairedAnchorCellPayload()
     setenv('LABKIT_GUI_TEST_MODE', 'hidden');
     cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
     cleanupFigures = onCleanup(@() h.closeAllFigures());
-    fig = labkit.ui.runtime.launch( ...
-        @pairedDefinition, @requirements, @versionInfo);
+    fig = labkit.ui.runtime.launch(@pairedDefinition);
     h.waitForUiIdle(fig);
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     resource = interactionResource(runtime.resources, "pointPairs");
@@ -183,8 +180,7 @@ function verifyControlledRegionSelection()
     setenv('LABKIT_GUI_TEST_MODE', 'hidden');
     cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
     cleanupFigures = onCleanup(@() h.closeAllFigures());
-    fig = labkit.ui.runtime.launch( ...
-        @regionDefinition, @requirements, @versionInfo);
+    fig = labkit.ui.runtime.launch(@regionDefinition);
     h.waitForUiIdle(fig);
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     resource = interactionResource(runtime.resources, "region");
@@ -206,8 +202,7 @@ function verifyControlledInterval()
     setenv('LABKIT_GUI_TEST_MODE', 'hidden');
     cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
     cleanupFigures = onCleanup(@() h.closeAllFigures());
-    fig = labkit.ui.runtime.launch( ...
-        @intervalDefinition, @requirements, @versionInfo);
+    fig = labkit.ui.runtime.launch(@intervalDefinition);
     h.waitForUiIdle(fig);
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     resource = interactionResource(runtime.resources, "timeRange");
@@ -230,8 +225,7 @@ function verifyHubMechanics()
     setenv('LABKIT_GUI_TEST_MODE', 'hidden');
     cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
     cleanupFigures = onCleanup(@() h.closeAllFigures());
-    fig = labkit.ui.runtime.launch( ...
-        @hubDefinition, @requirements, @versionInfo);
+    fig = labkit.ui.runtime.launch(@hubDefinition);
     h.waitForUiIdle(fig);
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     ui = getappdata(fig, 'labkitUiRegistry');
@@ -308,8 +302,7 @@ function verifyControlledInteraction()
     setenv('LABKIT_GUI_TEST_MODE', 'hidden');
     cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
     cleanupFigures = onCleanup(@() h.closeAllFigures());
-    fig = labkit.ui.runtime.launch( ...
-        @controlledDefinition, @requirements, @versionInfo);
+    fig = labkit.ui.runtime.launch(@controlledDefinition);
     h.waitForUiIdle(fig);
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     assert(runtime.state.project.annotations.editCount == 0, ...
@@ -374,10 +367,15 @@ end
 
 function def = definitionBase(layout, actions, presenter)
     project = struct("Version", 1, "Create", @createProject, ...
-        "Validate", @(~) true, "Migrations", {{}});
+        "Validate", @(~) true);
     def = labkit.ui.runtime.define( ...
+        "Command", "runtime_v2_hub_probe", ...
         "Id", "runtime_v2_hub_probe", ...
         "Title", "Runtime V2 Hub Probe", ...
+        "Family", "Test", ...
+        "AppVersion", "1.0.0", ...
+        "Updated", "2026-07-14", ...
+        "Requirements", labkit.contract.requirements(), ...
         "Project", project, ...
         "CreateSession", @createSession, ...
         "Layout", layout, ...
@@ -543,16 +541,6 @@ function resource = interactionResource(resources, id)
         [resources.id] == string(id), 1, 'first');
     assert(~isempty(index), 'Expected controlled interaction resource.');
     resource = resources(index).value;
-end
-
-function req = requirements()
-    req = labkit.contract.requirements();
-end
-
-function info = versionInfo()
-    info = struct("name", "runtime_v2_hub_probe", ...
-        "displayName", "Runtime V2 Hub Probe", "family", "Test", ...
-        "version", "1.0.0", "updated", "2026-07-14");
 end
 
 function failDrag(~, ~)

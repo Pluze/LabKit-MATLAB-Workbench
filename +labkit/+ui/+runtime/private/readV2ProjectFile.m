@@ -75,12 +75,7 @@ function project = migratePayload(project, versionValue, spec)
 end
 
 function project = migrateOneVersion(project, fromVersion, spec)
-    if isfield(spec, 'Migrate') && isa(spec.Migrate, 'function_handle')
-        project = spec.Migrate(project, fromVersion);
-        return;
-    end
-    migrations = optionValue(spec, 'Migrations', {});
-    project = migrations{fromVersion}(project);
+    project = spec.Migrate(project, fromVersion);
 end
 
 function [project, resume, envelope] = importSnapshot(snapshot, def)

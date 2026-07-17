@@ -132,30 +132,17 @@ function validateProjectSpec(spec)
         error('labkit:ui:runtime:InvalidDefinition', ...
             'Project.Create and Project.Validate must be function handles.');
     end
+    if isfield(spec, 'Migrations')
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            ['Project.Migrations is retired. Use one version-aware ' ...
+            'Project.Migrate callback.']);
+    end
     hasMigrate = isfield(spec, 'Migrate') && ~isempty(spec.Migrate);
-    hasLegacyMigrations = isfield(spec, 'Migrations') && ...
-        ~isempty(spec.Migrations);
     if hasMigrate && ~isa(spec.Migrate, 'function_handle')
         error('labkit:ui:runtime:InvalidDefinition', ...
             'Project.Migrate must be a function handle when supplied.');
     end
-    if hasMigrate && hasLegacyMigrations
-        error('labkit:ui:runtime:InvalidDefinition', ...
-            'Project must not declare both Migrate and Migrations.');
-    end
-    if hasLegacyMigrations
-        if ~iscell(spec.Migrations) || ...
-                ~all(cellfun(@(f) isa(f, 'function_handle'), spec.Migrations))
-            error('labkit:ui:runtime:InvalidDefinition', ...
-                'Project.Migrations must be a cell array of function handles.');
-        end
-    end
-    if hasLegacyMigrations && ...
-            numel(spec.Migrations) ~= double(version) - 1
-        error('labkit:ui:runtime:InvalidDefinition', ...
-            'Project.Migrations must define every ordered version step.');
-    end
-    if version > 1 && ~hasMigrate && ~hasLegacyMigrations
+    if version > 1 && ~hasMigrate
         error('labkit:ui:runtime:InvalidDefinition', ...
             'Project.Migrate is required when Project.Version is greater than 1.');
     end

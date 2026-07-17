@@ -24,48 +24,10 @@ commit. Public and private repositories commit and push their work separately.
 Last audited: 2026-07-17.
 
 ```text
-retired-ui-runtime-compatibility: open-high
 documentation-and-agent-contract-drift: open-high
 validation-isolation-coverage: open-high
 toolbox-product-debt: none
 ```
-
-### Retired UI Runtime compatibility
-
-Owner:
-: `labkit.ui.runtime`.
-
-Evidence:
-: Runtime still accepts the transitional three-factory `launch` form and
-  `Project.Migrations`. It also validates and builds a `toolPanel` node even
-  though the public constructor is gone, no current App uses it, and component
-  history says the API was replaced. Current framework documentation and some
-  diagnostics still direct developers to the nonexistent constructor.
-
-Affected scope:
-: Runtime launch and project validation/read paths, layout validation and
-  builders, framework tests, public UI help/manuals, facade version, and UI
-  component history.
-
-Completion condition:
-: After accepted private consumers migrate, App launch uses only one
-  definition; project migration uses only one version-aware `Migrate`
-  callback; `toolPanel` implementation, validation, diagnostics, tests, and
-  current documentation are removed. Keep only real read-only saved-data
-  compatibility such as declared legacy MAT imports and supported payload
-  migrations.
-
-Focused validation:
-: Search configured public and accepted private App roots for remaining
-  consumers, then run Runtime definition/project/layout tests, package public
-  surface and dependency guardrails, and downstream hidden-GUI App coverage
-  selected by the changed-file planner.
-
-Removal condition:
-: Delete this entry when no source consumer uses the retired forms, their
-  implementation branches are absent, current docs contain no active
-  `toolPanel` guidance, and supported legacy data still opens through explicit
-  read-only adapters.
 
 ### Documentation and agent contract drift
 
@@ -76,9 +38,9 @@ Owner:
 Evidence:
 : The complete-App tutorial repeats canonical project checks that the Runtime
   manual assigns to the framework; private App guidance still teaches retired
-  files; the boundary skill assigns App metadata to `version.m`; the Runtime
-  manual advertises `toolPanel`; and the migration ledger previously reported
-  no debt while the defects above remained. The public-help guard checks
+  files; the boundary skill assigns App metadata to `version.m`; and the
+  migration ledger previously reported no debt while defects remained. The
+  public-help guard checks
   section presence and at least one option but does not prove every option,
   default, legal value, error, or related API is documented. Its module scan
   omits the rendered public `labkit.ui.version` page.
@@ -167,8 +129,6 @@ Do not begin general architecture simplification until all of these are true:
 - no App production or debug package calls a sibling App package;
 - missing, cancelled, damaged, and unsupported project sources have distinct,
   tested outcomes and no broad exception is silently swallowed;
-- retired `toolPanel`, launch, and migration-source paths are gone after their
-  consumers migrate;
 - current manuals, public help, skills, tests, and generated pages describe the
   same contract;
 - focused suites pass, one stable `buildtool changed` gate passes, both Git

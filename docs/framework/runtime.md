@@ -358,13 +358,13 @@ Use these app-facing rules:
   and log wording.
 - Control ids are globally unique within an app. The UI registry is keyed by
   those ids, not by tab or section placement.
-- Public layouts are semantic controls such as `filePanel`, `toolPanel`, `field`,
+- Public layouts are semantic controls such as `filePanel`, `field`,
   `panner`, `action`, `previewArea`, `resultTable`, `logPanel`, and `statusPanel`.
   Primitive MATLAB controls are implementation details.
-- `section` layout nodes should contain real semantic controls. Use `toolPanel` as a
-  named host when a reusable `labkit.ui.interaction.*` control needs to attach a
-  composed runtime widget from app command or UI-update code; do not leave
-  empty titled sections as placeholders.
+- `section` layout nodes contain real semantic controls; do not leave empty
+  titled sections as placeholders. Axes tools are declared through the
+  presenter's managed `interactions` model rather than mounted into a
+  layout-host control.
 - Callback values placed in the layout are framework-generated adapters; apps
   do not implement control-handle callbacks. App handlers are the functions in
   `definitionActions.m`, are named by user intent, and use
