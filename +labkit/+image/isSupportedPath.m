@@ -16,8 +16,17 @@ function tf = isSupportedPath(pathValue)
 % Outputs:
 %   tf - Logical scalar indicating whether the extension is supported.
 %
+% Failure Behavior:
+%   Missing or unknown extensions return false without accessing the file
+%   system. pathValue must be convertible to scalar text; unsupported MATLAB
+%   values or shapes may raise the originating string or fileparts error.
+%
 % Example:
 %   tf = labkit.image.isSupportedPath("experiment.TIFF");
+%
+% See also labkit.image.supportedExtensions,
+%   labkit.image.assertSupportedPaths,
+%   labkit.image.normalizePaths
 
     [~, ~, ext] = fileparts(char(string(pathValue)));
     tf = any(strcmpi(string(ext), labkit.image.supportedExtensions()));

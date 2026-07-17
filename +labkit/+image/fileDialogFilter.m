@@ -23,8 +23,16 @@ function filterSpec = fileDialogFilter(varargin)
 %   filterSpec - One- or two-row cell array. Column 1 contains wildcard
 %                patterns and column 2 contains user-visible descriptions.
 %
+% Errors:
+%   MATLAB inputParser errors are raised for an unknown name, a missing
+%   name-value partner, or an IncludeAll value that is not a logical or
+%   numeric scalar.
+%
 % Example:
 %   filterSpec = labkit.image.fileDialogFilter("IncludeAll", true);
+%
+% See also labkit.image.supportedExtensions,
+%   labkit.image.isSupportedPath
 
     opts = parseOptions(varargin{:});
     imageRow = {'*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp', ...

@@ -22,9 +22,17 @@ function imageOut = meanFilter2(imageIn, windowSize)
 % Outputs:
 %   imageOut - Double array with the same size as imageIn.
 %
+% Failure Behavior:
+%   imageIn must be compatible with double and conv2, and windowSize must be
+%   convertible to one numeric scalar. Unsupported types, sparse arrays, or
+%   nonscalar window values raise the originating MATLAB error.
+%
 % Example:
 %   impulse = [0 0 0; 0 1 0; 0 0 0];
 %   smoothed = labkit.image.meanFilter2(impulse, 3);
+%
+% See also labkit.image.localContrast,
+%   labkit.image.sharpen
 
     windowSize = max(1, round(double(windowSize)));
     if ndims(imageIn) <= 2

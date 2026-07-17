@@ -27,6 +27,9 @@ function writeFile(imageData, filepath)
 %
 % Typical Call:
 %   labkit.image.writeFile(processedImage, fullfile(outputFolder, "result.png"));
+%
+% See also labkit.image.readFiles,
+%   labkit.image.displayName
 
     filepath = string(filepath);
     if ~isscalar(filepath) || strlength(strtrim(filepath)) == 0

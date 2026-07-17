@@ -25,10 +25,18 @@ function imageOut = sharpen(imageIn, amountPct, radiusPx)
 % Outputs:
 %   imageOut - M-by-N-by-3 double image with values in [0,1].
 %
+% Failure Behavior:
+%   Unsupported image classes or channel shapes propagate errors from
+%   im2double or ensureRgb. amountPct and radiusPx must be numeric scalars;
+%   incompatible values raise the originating conversion or indexing error.
+%
 % Example:
 %   imageIn = zeros(9);
 %   imageIn(3:7, 3:7) = 0.6;
 %   imageOut = labkit.image.sharpen(imageIn, 50, 1);
+%
+% See also labkit.image.meanFilter2,
+%   labkit.image.localContrast
 
     imageIn = labkit.image.ensureRgb(labkit.image.im2double(imageIn));
     imageIn = min(max(imageIn, 0), 1);

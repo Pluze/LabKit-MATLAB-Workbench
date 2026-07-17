@@ -24,9 +24,19 @@ function imageOut = adjustBrightnessContrast(imageIn, brightnessPct, contrastPct
 % Outputs:
 %   imageOut - M-by-N-by-3 double image with values in [0,1].
 %
+% Failure Behavior:
+%   Unsupported image classes or channel shapes propagate errors from
+%   im2double or ensureRgb. brightnessPct and contrastPct must participate in
+%   scalar numeric arithmetic; incompatible MATLAB values raise the
+%   originating conversion or array-size error.
+%
 % Example:
 %   imageIn = reshape(linspace(0, 1, 12), 3, 4);
 %   imageOut = labkit.image.adjustBrightnessContrast(imageIn, 10, 20);
+%
+% See also labkit.image.adjustHueSaturation,
+%   labkit.image.grayWorldWhiteBalance,
+%   labkit.image.im2double
 
     imageIn = labkit.image.ensureRgb(labkit.image.im2double(imageIn));
     imageIn = min(max(imageIn, 0), 1);
