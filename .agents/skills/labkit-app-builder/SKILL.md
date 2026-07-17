@@ -32,26 +32,37 @@ Write a short working brief with app/family, inputs, project/session shape,
 controls, calculations, preserved compatibility, intentionally discarded flow,
 previews, results, exports, tests, and manual GUI checks.
 
-Use this current shape:
+Begin with the smallest complete shape:
 
 ```text
 labkit_<Name>_app.m
 +<slug>/definition.m
-+<slug>/definitionActions.m
-+<slug>/requirements.m
-+<slug>/version.m
-+<slug>/+appLifecycle/createProject.m
-+<slug>/+appLifecycle/createSession.m
-+<slug>/+appLifecycle/validateProject.m
 +<slug>/+userInterface/buildWorkbenchLayout.m
+```
+
+Add only capabilities the product needs:
+
+```text
++<slug>/definitionActions.m
++<slug>/projectSpec.m
++<slug>/createSession.m
 +<slug>/+userInterface/presentWorkbench.m
++<slug>/+userInterface/<renderer>.m
 +<slug>/+<workflowCapability>/...
 ```
 
-The entrypoint only launches. `definition.m` only declares the runtime graph.
+The entrypoint only launches one definition. `definition.m` owns identity,
+version, requirements, layout, and references to optional capabilities.
 `definitionActions.m` registers semantic commands and coordinates app-owned
-workflow code. Lifecycle owns durable/transient schemas and compatibility
-hooks. Layout is data-only; presentation is a pure state-to-view mapping.
+workflow code. One `projectSpec.m` owns local create, validate, and
+version-aware migrate functions when durable state exists; Runtime owns the
+migration loop. Root `createSession.m` rebuilds only App-specific transient
+data. Layout is data-only; presentation is a pure state-to-view mapping.
+
+Do not add separate `requirements.m`, `version.m`, generic `+appLifecycle` or
+`+appState` packages, per-version migration files, or a Start callback that
+only constructs default state. Add a semantically named Start function only
+for real post-layout request or resource initialization.
 
 Use concrete workflow packages such as `sourceFiles`, `analysisRun`,
 `cropGeometry`, or `resultFiles`. Keep small callback glue local. Do not create
@@ -60,8 +71,8 @@ control mutation facades, or helpers merely to meet a line budget.
 
 ## Build order
 
-1. Define requirements, version, identity, project/session schema, and project
-   validation.
+1. Define identity, version, requirements, layout, and only the optional
+   project/session capabilities the App needs.
 2. Declare the semantic layout and action registry.
 3. Implement GUI-free readers/calculations/result builders with synthetic
    tests.
@@ -72,7 +83,7 @@ control mutation facades, or helpers merely to meet a line budget.
    the read-only compatibility imports/migrations actually required.
 7. Test calculation/export contracts directly and the bounded GUI workflow
    semantically.
-8. Update the app manual, version, and component history.
+8. Update the App definition version, manual, and component history.
 
 Use `labkit-boundary-guard` before adding a public facade API,
 record active compatibility retirement directly in `.agents/migration_guide.md`,

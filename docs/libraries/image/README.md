@@ -7,7 +7,7 @@ and common enhancement operations. App-specific registration, measurement,
 ROI, matching, and export workflows build on these functions.
 
 `labkit.image.version()` returns image-library version and compatibility
-information used by app `requirements.m` declarations.
+information used by App `definition.m` requirement declarations.
 
 ## Common Calls
 

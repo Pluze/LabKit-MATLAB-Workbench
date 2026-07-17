@@ -2,9 +2,45 @@ classdef GuiLayoutUiRuntimeV2Test < matlab.unittest.TestCase
     %GUILAYOUTUIRUNTIMEV2TEST Verify queued v2 semantic runtime contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
-        function runtime_v2_commits_queued_events_atomically(testCase)
+        function runtime_v2_commits_queued_events_atomically(~)
             setupLabKitTestPath();
             verifyRuntimeV2();
+        end
+
+        function minimal_definition_launches_without_optional_components(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            oldMode = getenv('LABKIT_GUI_TEST_MODE');
+            setenv('LABKIT_GUI_TEST_MODE', 'hidden');
+            cleanupMode = onCleanup( ...
+                @() setenv('LABKIT_GUI_TEST_MODE', oldMode));
+            cleanupFigures = onCleanup(@() h.closeAllFigures());
+
+            fig = labkit.ui.runtime.launch(@minimalDefinition);
+            h.waitForUiIdle(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+
+            testCase.verifyEmpty(fieldnames(runtime.definition.actions), ...
+                'A static App should not need an action registry.');
+            testCase.verifyEmpty(runtime.definition.createSession, ...
+                'A static App should not need a session factory.');
+            testCase.verifyEmpty(runtime.definition.start, ...
+                'A static App should not need a startup callback.');
+            testCase.verifyTrue(all(isfield(runtime.state.project, ...
+                {'inputs', 'parameters', 'annotations', 'results', ...
+                'extensions'})), ...
+                'Runtime should supply the canonical empty project.');
+            testCase.verifyTrue(all(isfield(runtime.state.session, ...
+                {'selection', 'workflow', 'view', 'cache'})), ...
+                'Runtime should supply the canonical empty session.');
+            testCase.verifyEqual(string(runtime.definition.product.version), ...
+                "1.0.0");
+            testCase.verifyNotEmpty(findall(fig, ...
+                'Tag', 'labkitUiUtilitySaveState'), ...
+                'Default project state should support framework persistence.');
+
+            clear cleanupFigures cleanupMode;
         end
 
         function unbound_layout_events_fail_at_launch(testCase)
@@ -47,6 +83,32 @@ classdef GuiLayoutUiRuntimeV2Test < matlab.unittest.TestCase
                 'labkit:ui:runtime:InvalidSourceRecords');
         end
     end
+end
+
+function def = minimalDefinition()
+    def = labkit.ui.runtime.define( ...
+        "Command", "labkit_MinimalProbe_app", ...
+        "Id", "minimal_probe", ...
+        "Title", "Minimal Runtime Probe", ...
+        "Family", "Test", ...
+        "AppVersion", "1.0.0", ...
+        "Updated", "2026-07-16", ...
+        "Requirements", labkit.contract.requirements("ui", ">=7 <8"), ...
+        "Layout", @minimalLayout);
+end
+
+function layout = minimalLayout()
+    field = labkit.ui.layout.field( ...
+        "exampleValue", "Example value", "kind", "number", "value", 1);
+    tab = labkit.ui.layout.tab("main", "Main", { ...
+        labkit.ui.layout.section("settings", "Settings", {field})});
+    status = labkit.ui.layout.statusPanel( ...
+        "status", "Status", "value", "Ready.");
+    workspace = labkit.ui.layout.workspace( ...
+        "workspace", "Workspace", {status});
+    layout = labkit.ui.layout.workbench( ...
+        "minimalProbe", "Minimal Runtime Probe", ...
+        "controlTabs", {tab}, "workspace", workspace);
 end
 
 function verifyRuntimeV2()
@@ -285,7 +347,7 @@ function verifyRuntimeV2()
             sources, "input", "reference", "/tmp/first.dat", true);
         sources = services.project.upsertSource( ...
             sources, "input", "replacement", "/tmp/second.dat", false);
-        assert(numel(sources) == 1 && sources.role == "replacement" && ...
+        assert(isscalar(sources) && sources.role == "replacement" && ...
             ~sources.required, ...
             'Project source service should replace records by stable id.');
         state.project.parameters.count = state.project.parameters.count + 1;
@@ -298,7 +360,7 @@ function verifyRuntimeV2()
 
     function state = fileSelectionChanged(state, event, services)
         indices = services.events.indices(event, "selectedFiles", 2);
-        assert(numel(indices) == 1, ...
+        assert(isscalar(indices), ...
             'One selected file should decode to one scalar index.');
         state.session.selection.fileIndex = indices(1);
     end
@@ -327,7 +389,7 @@ function verifyRuntimeV2()
             {"alpha", "beta"}, @(~) []);
     end
 
-    function state = failAfterResource(state, ~, services)
+    function failAfterResource(~, ~, services)
         services.resources.set("event", "temporary", 99, @cleanupResource);
         error('runtimeV2Probe:ExpectedFailure', 'Expected resource failure.');
     end

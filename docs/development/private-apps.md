@@ -32,17 +32,14 @@ LabKit-MATLAB-Workbench/
           labkit_<PrivateAppName>_app.m
           +<app_slug>/
             definition.m
-            definitionActions.m
-            requirements.m
-            version.m
-            +appLifecycle/createProject.m
-            +appLifecycle/createSession.m
-            +appLifecycle/validateProject.m
             +userInterface/buildWorkbenchLayout.m
-            +userInterface/presentWorkbench.m
-            +sourceFiles/...
-            +analysisRun/...
-            +resultFiles/...
+            definitionActions.m                 optional
+            projectSpec.m                       optional
+            createSession.m                     optional
+            +userInterface/presentWorkbench.m   optional
+            +sourceFiles/...                    as needed
+            +analysisRun/...                    as needed
+            +resultFiles/...                    as needed
 ```
 
 That physical nesting is only a launcher mount; it does not make the private
@@ -97,19 +94,24 @@ Private apps should follow the same app-owned package shape as public apps:
 
 - keep one public entrypoint named `labkit_<PrivateAppName>_app.m`
 - keep app workflow code under the owning `+<app_slug>/` package
-- use `definition.m`, `definitionActions.m`, `requirements.m`, and `version.m`
-- keep lifecycle state in `+appLifecycle`
-- keep the data-only layout and pure presenter in `+userInterface`
+- use one `definition.m` for product identity, version, requirements, layout,
+  and references to optional capabilities
+- start with only the entrypoint, definition, and data-only layout
+- add `definitionActions.m` only for semantic interactions and a pure
+  presenter only for dynamic views
+- add one `projectSpec.m` only for durable App-owned state; keep create,
+  validate, and version-aware migrate functions local to that file
+- add root `createSession.m` only for App-specific transient reconstruction
 - group workflow code by concrete user capability, such as `+sourceFiles`,
   `+analysisRun`, `+resultFiles`, or another app-owned domain package
 - use shared LabKit facades such as `labkit.ui.*`, `labkit.image.*`,
   `labkit.thermal.*`, `labkit.dta.*`, `labkit.rhs.*`, and
   `labkit.biosignal.*`
 
-The minimal lifecycle files are `createProject.m`, `createSession.m`, and
-`validateProject.m`. Versioned payloads add ordered migration files such as
-`migrateProjectV1ToV2.m`; supported legacy top-level MAT variables add explicit
-import functions. See [Build a Complete App](complete-app.md) for a working
+Do not add separate `requirements.m`, `version.m`, generic `+appLifecycle` or
+`+appState` packages, or per-version `migrateProjectVx.m` files. Supported
+legacy top-level MAT variables use explicit import functions declared by the
+project spec. See [Build a Complete App](complete-app.md) for a working
 file-by-file example and [Runtime and Lifecycle](../framework/runtime.md) for
 every definition, project, session, action, presenter, and renderer field.
 
@@ -128,9 +130,9 @@ not need to add app-specific suites, fixtures, build tasks, or sample assets to
 the public LabKit repository. Private app internals may be looser than public
 apps when a local workflow needs it, but the launcher-facing surface should
 remain compatible with LabKit discovery and guardrails: keep launch commands,
-`requirements` and `version` lightweight requests, path setup, and private
-sample hygiene valid when the private workspace is present next to a public
-checkout.
+definition-backed `requirements` and `version` lightweight requests, path
+setup, and private sample hygiene valid when the private workspace is present
+next to a public checkout.
 
 The public launcher's Code Analyzer tool includes configured private app
 workspaces in local reports only after the private workspace opts in. Put an

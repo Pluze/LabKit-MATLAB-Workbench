@@ -260,13 +260,16 @@ figure callbacks. Renderer IDs in presentation must exactly match fields in
 `Actions`.
 
 Static Apps may omit `Project`, `CreateSession`, `Actions`, and `Present`.
-Apps add `+appLifecycle` only when they own durable schema, transient cache,
-migrations, or imports, and add `definitionActions.m` and presenter functions
-only when they own semantic interactions;
-app-specific work belongs in concrete workflow packages such as
-`+sourceFiles`, `+analysisRun`, `+resultFiles`, or a domain-specific package.
-The older `+state`, `+actions`, `+ui`, and `+view` adapter packages have been
-retired.
+Apps add one `projectSpec.m` only when they own durable schema or imports, root
+`createSession.m` only for App-specific transient reconstruction, and
+`definitionActions.m` plus presenter functions only when they own semantic
+interactions or dynamic views. Version-aware migration is one local function
+behind `Project.Migrate`; Runtime owns the ordered version loop. App-specific
+work belongs in concrete workflow packages such as `+sourceFiles`,
+`+analysisRun`, `+resultFiles`, or a domain-specific package. Separate
+`requirements.m`, `version.m`, generic `+appLifecycle`/`+appState` packages,
+per-version migration files, and the older `+state`, `+actions`, `+ui`, and
+`+view` adapters are retired.
 
 ```matlab
 function layout = buildWorkbenchLayout(callbacks)

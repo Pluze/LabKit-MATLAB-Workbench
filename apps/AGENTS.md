@@ -14,18 +14,25 @@ library manual for APIs the app actually uses. App tests live under
 
 - Keep `labkit_*_app.m` as a thin wrapper around
   `labkit.ui.runtime.launch`.
-- `definition.m` declares stable app identity, project schema, session factory,
-  layout, actions, presenter, renderers, and optional start action. It performs
-  no IO, computation, export, handle creation, or lifecycle mutation.
-- `definitionActions.m` is the semantic action registry and app workflow
-  coordinator. It is current architecture, not a legacy adapter. Keep short
-  callback glue local; move a cohesive deterministic calculation, source-file
-  policy, or result-file boundary into a concretely named app-owned package.
-- `+appLifecycle` owns project/session creation, validation, ordered
-  migrations, resume data, and declared read-only legacy import when required.
+- `definition.m` is the single product contract. It declares stable identity,
+  version, requirements, layout, and references to optional project, session,
+  action, presenter, renderer, debug-sample, utility, and Start capabilities.
+  It performs no IO, computation, export, handle creation, or lifecycle
+  mutation.
+- A static App needs only the entrypoint, definition, and
+  `+userInterface/buildWorkbenchLayout.m`. Add `definitionActions.m` only for
+  semantic commands or bound events, and keep short callback glue local.
+- Add one `projectSpec.m` only for durable App-owned state. It owns local
+  create, validate, version-aware migrate, resume, relink, and declared
+  read-only legacy-import functions as needed; Runtime owns the migration loop.
+- Add root `createSession.m` only to reconstruct App-specific transient data.
+  Runtime supplies the canonical selection, workflow, view, and cache buckets.
 - `+userInterface/buildWorkbenchLayout.m` returns a data-only semantic layout.
-  `presentWorkbench.m` maps state to control, preview, renderer, and
-  interaction models without IO or heavy computation.
+  Add `presentWorkbench.m` only for dynamic views; it maps state to control,
+  preview, renderer, and interaction models without IO or heavy computation.
+- Do not add separate `requirements.m`, `version.m`, generic `+appLifecycle`
+  or `+appState` packages, per-version migration files, or a Start callback
+  that only constructs default state.
 - Workflow packages use capability names such as `sourceFiles`, `analysisRun`,
   `cropGeometry`, `thermalFrames`, or `resultFiles`. Do not create technical
   buckets such as `actions`, `ops`, `io`, `ui`, `view`, `export`, `helpers`,
@@ -76,8 +83,9 @@ library manual for APIs the app actually uses. App tests live under
 
 ## Version, docs, and tests
 
-- Source or user-visible behavior changes update the app's `version.m`, owned
-  app documentation, and component history before direct-main push or merge.
+- Source or user-visible behavior changes update `AppVersion` and `Updated` in
+  the App's `definition.m`, owned documentation, and component history before
+  direct-main push or merge.
 - Test GUI wiring semantically: controls, choices, events, workflow outcomes,
   viewport behavior, and traces. Test calculations and exports directly with
   synthetic inputs.

@@ -25,9 +25,9 @@ app-API catalog are not supported entry points.
 ## Compatibility
 
 Each reusable library publishes a `version()` result. Apps declare compatible
-library ranges in their app-owned `requirements.m`. A function documented here
-is public within that library version; compatibility across a breaking version
-is not implied.
+library ranges in the `Requirements` field of their single `definition.m`
+contract. A function documented here is public within that library version;
+compatibility across a breaking version is not implied.
 
 The tables below are generated from current MATLAB source and the app API
 catalog, so each entry links to the current function help.

@@ -92,7 +92,7 @@ Direct syntax, options, outputs, and artifact behavior are documented in
 
 | Area | Owns |
 | --- | --- |
-| App entry point | Public launch name plus requirements/version/debug request routing. |
+| App entry point | Public launch name delegated to one Runtime V2 definition, including lightweight requirements/version/debug requests. |
 | App package | App definition, workflow state, command handlers, presenters, calculations, summaries, exports, and app-local helpers. |
 | `labkit.ui` | Declarative app runtime, app shell, readiness/busy state, data-only workbench layouts, semantic view updates, reusable tools, and diagnostics. |
 | `labkit.image` | GUI-free image file IO, display normalization, resizing, mean filtering, and basic enhancement primitives. |
@@ -113,17 +113,29 @@ its app folder:
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
 apps/<family>/<app_slug>/+<app_slug>/definition.m
-apps/<family>/<app_slug>/+<app_slug>/requirements.m
-apps/<family>/<app_slug>/+<app_slug>/version.m
-apps/<family>/<app_slug>/+<app_slug>/definitionActions.m
-apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createProject.m
-apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createSession.m
-apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/validateProject.m
 apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchLayout.m
-apps/<family>/<app_slug>/+<app_slug>/+userInterface/presentWorkbench.m
 ```
 
-Add workflow packages only when the app has that user-facing capability:
+Those three files are a complete static App. Add only the capabilities the
+product needs:
+
+```text
+definitionActions.m                         semantic commands or bound events
+projectSpec.m                               durable create/validate/migrate contract
+createSession.m                             transient App-specific reconstruction
++userInterface/presentWorkbench.m           dynamic semantic view models
++userInterface/<renderer>.m                 drawing for a registered preview model
+```
+
+`definition.m` is the single product contract. It owns identity, display
+metadata, App version, facade requirements, layout, and references to any
+optional capabilities. `projectSpec.m` is the one durable-schema entry and
+keeps its create, validate, and version-aware migrate functions local. Runtime
+owns the migration loop. Do not add separate `requirements.m`, `version.m`,
+generic `+appLifecycle` or `+appState` packages, or per-version migration
+files.
+
+Add workflow packages only when the App has that user-facing capability:
 
 ```text
 +sourceFiles/     choosing, reading, validating, and previewing source data
@@ -157,17 +169,17 @@ App GUIs use the layered UI foundation:
 | Interaction | GUI-free `anchorPath`, `scaleBarCalibration`, `scaleBarGeometry`, plus `enablePopout`; editor/runtime objects are private. |
 
 Reusable facades publish MATLAB-native contract versions through their
-`version()` APIs. Apps declare required facade ranges through app-local
-`requirements.m` functions, and `labkit.contract` checks those ranges in tests
-and at launch. This is a same-repo maintenance guardrail; routine users still
+`version()` APIs. Apps declare required facade ranges in the `Requirements`
+field of `definition.m`, and `labkit.contract` checks those ranges in tests and
+at launch. This is a same-repo maintenance guardrail; routine users still
 update LabKit as one repository.
 
-Apps also publish app-local `version.m` metadata for display in the launcher and
-app window title. App versions are not dependency constraints and do not belong
-in `labkit.contract`. Project guardrails check `X.Y.Z` format and require
-versioned code changes to increase the corresponding app, launcher, or facade
-version. The [release guide](release.md) explains how to select and publish the
-next version.
+Apps publish `AppVersion` and `Updated` metadata from the same definition for
+the launcher and window title. App versions are not dependency constraints and
+do not belong in `labkit.contract`. Project guardrails check `X.Y.Z` format and
+require versioned code changes to increase the corresponding definition,
+launcher, or facade version. The [release guide](release.md) explains how to
+select and publish the next version.
 
 Image workflows may use `labkit.image` for generic image file filters, source
 image reads, display-name normalization, RGB double conversion, preview-size

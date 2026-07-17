@@ -41,17 +41,14 @@
           labkit_&lt;PrivateAppName&gt;_app.m
           +&lt;app_slug&gt;/
             definition.m
-            definitionActions.m
-            requirements.m
-            version.m
-            +appLifecycle/createProject.m
-            +appLifecycle/createSession.m
-            +appLifecycle/validateProject.m
             +userInterface/buildWorkbenchLayout.m
-            +userInterface/presentWorkbench.m
-            +sourceFiles/...
-            +analysisRun/...
-            +resultFiles/...</code></pre>
+            definitionActions.m                 optional
+            projectSpec.m                       optional
+            createSession.m                     optional
+            +userInterface/presentWorkbench.m   optional
+            +sourceFiles/...                    as needed
+            +analysisRun/...                    as needed
+            +resultFiles/...                    as needed</code></pre>
 <p>That physical nesting is only a launcher mount; it does not make the private repository a folder owned by the public repository. The private repository may instead live anywhere and be registered through <code>LABKIT_PRIVATE_APP_ROOTS</code>. Each entry points either to a private repository root containing <code>apps/</code> or directly to its <code>apps/</code> folder. Separate entries with the platform path separator.</p>
 <h2 id="launcher-discovery">Launcher Discovery</h2>
 <p>The launcher discovers:</p>
@@ -75,17 +72,19 @@ git remote add origin git@github.com:&lt;owner&gt;/&lt;private-repo&gt;.git</cod
 <ul>
 <li>keep one public entrypoint named <code>labkit_&lt;PrivateAppName&gt;_app.m</code></li>
 <li>keep app workflow code under the owning <code>+&lt;app_slug&gt;/</code> package</li>
-<li>use <code>definition.m</code>, <code>definitionActions.m</code>, <code>requirements.m</code>, and <code>version.m</code></li>
-<li>keep lifecycle state in <code>+appLifecycle</code></li>
-<li>keep the data-only layout and pure presenter in <code>+userInterface</code></li>
+<li>use one <code>definition.m</code> for product identity, version, requirements, layout, and references to optional capabilities</li>
+<li>start with only the entrypoint, definition, and data-only layout</li>
+<li>add <code>definitionActions.m</code> only for semantic interactions and a pure presenter only for dynamic views</li>
+<li>add one <code>projectSpec.m</code> only for durable App-owned state; keep create, validate, and version-aware migrate functions local to that file</li>
+<li>add root <code>createSession.m</code> only for App-specific transient reconstruction</li>
 <li>group workflow code by concrete user capability, such as <code>+sourceFiles</code>, <code>+analysisRun</code>, <code>+resultFiles</code>, or another app-owned domain package</li>
 <li>use shared LabKit facades such as <code>labkit.ui.*</code>, <code>labkit.image.*</code>, <code>labkit.thermal.*</code>, <code>labkit.dta.*</code>, <code>labkit.rhs.*</code>, and <code>labkit.biosignal.*</code></li>
 </ul>
-<p>The minimal lifecycle files are <code>createProject.m</code>, <code>createSession.m</code>, and <code>validateProject.m</code>. Versioned payloads add ordered migration files such as <code>migrateProjectV1ToV2.m</code>; supported legacy top-level MAT variables add explicit import functions. See <a href="complete-app.html">Build a Complete App</a> for a working file-by-file example and <a href="../framework/runtime.html">Runtime and Lifecycle</a> for every definition, project, session, action, presenter, and renderer field.</p>
+<p>Do not add separate <code>requirements.m</code>, <code>version.m</code>, generic <code>+appLifecycle</code> or <code>+appState</code> packages, or per-version <code>migrateProjectVx.m</code> files. Supported legacy top-level MAT variables use explicit import functions declared by the project spec. See <a href="complete-app.html">Build a Complete App</a> for a working file-by-file example and <a href="../framework/runtime.html">Runtime and Lifecycle</a> for every definition, project, session, action, presenter, and renderer field.</p>
 <p>Do not put private app source under public <code>apps/</code>. Do not move private workflow formulas, private result schemas, private labels, or private data assumptions into <code>+labkit</code>.</p>
 <h2 id="private-documentation">Private Documentation</h2>
 <p>The public repository should contain only this generic private-app structure guide. Put private app catalogs, SOPs, validation commands, sample notes, deployment notes, and release history in the private app repository.</p>
-<p>Private app repositories own their own tests and validation runners. They do not need to add app-specific suites, fixtures, build tasks, or sample assets to the public LabKit repository. Private app internals may be looser than public apps when a local workflow needs it, but the launcher-facing surface should remain compatible with LabKit discovery and guardrails: keep launch commands, <code>requirements</code> and <code>version</code> lightweight requests, path setup, and private sample hygiene valid when the private workspace is present next to a public checkout.</p>
+<p>Private app repositories own their own tests and validation runners. They do not need to add app-specific suites, fixtures, build tasks, or sample assets to the public LabKit repository. Private app internals may be looser than public apps when a local workflow needs it, but the launcher-facing surface should remain compatible with LabKit discovery and guardrails: keep launch commands, definition-backed <code>requirements</code> and <code>version</code> lightweight requests, path setup, and private sample hygiene valid when the private workspace is present next to a public checkout.</p>
 <p>The public launcher's Code Analyzer tool includes configured private app workspaces in local reports only after the private workspace opts in. Put an empty <code>.labkit-accept-main-guardrails</code> file at the private workspace root to accept the public repository's style and code-quality guardrails for that workspace. When <code>private_apps/apps/</code> exists or <code>LABKIT_PRIVATE_APP_ROOTS</code> points at an accepted private workspace, the generated <code>artifacts/code-check/matlab_code_issues_*.json</code> and <code>.html</code> files include those private app findings without adding private source to the public repo. For one-off local checks, <code>LABKIT_GUARD_PRIVATE_APPS=1</code> temporarily includes configured private roots even without the sentinel file.</p>
 <p>Because private workspaces are separate Git repositories, public changed-file tasks do not discover private diffs. For an accepted private workspace, run the private repository's own tests and the public <code>buildtool changed</code> guardrail before commit or handoff when private source, tests, docs, component history, or version metadata changed.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

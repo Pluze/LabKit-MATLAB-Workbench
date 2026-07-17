@@ -86,7 +86,7 @@ The generated documentation site aggregates those files into the
 on every related component page.
 
 When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m` facade, or an
-`apps/**/version.m` app metadata file:
+App's `AppVersion` metadata in `apps/**/definition.m`:
 
 1. update the owning component documentation;
 2. add one history record with a stable Change ID, the next global history

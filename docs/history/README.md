@@ -37,5 +37,5 @@ components is stored once and linked from all of them.
 
 Use the site search for an app command, public function, Change ID, or feature
 name. You can also browse the complete timeline below by date. Current version
-numbers come from the launcher and component `version.m` files rather than from
-a separate table in this history.
+numbers come from the launcher, facade `version.m` files, and App
+`definition.m` metadata rather than from a separate table in this history.

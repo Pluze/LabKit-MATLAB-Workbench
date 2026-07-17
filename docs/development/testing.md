@@ -447,11 +447,12 @@ The workflow-first app contract is covered by layered tests, not by a single
 launch-only suite:
 
 - `AppPackageStructureGuardrailTest` discovers every `apps/**/labkit_*_app.m`
-  entrypoint, requires the canonical `definition.m`,
-  `definitionActions.m`, project/session lifecycle owners,
-  `+userInterface/buildWorkbenchLayout.m`, and the presenter, and rejects retired
-  package-root app runners and broad app buckets such as `+actions`, `+state`,
-  `+ui`, `+view`, `+ops`, `+io`, and `+export`.
+  entrypoint, requires the canonical `definition.m` and
+  `+userInterface/buildWorkbenchLayout.m`, verifies references to optional
+  action/project/session/presentation capabilities when present, and rejects
+  retired metadata files, generic lifecycle/state packages, per-version
+  migration files, package-root app runners, and broad app buckets such as
+  `+actions`, `+state`, `+ui`, `+view`, `+ops`, `+io`, and `+export`.
 - `GuiLayoutUiRuntimeV2Test` owns queued dispatch, canonical state,
   presentation commits, service injection, rollback, and `Start` behavior.
   `GuiLayoutUiRuntimeV2ProjectTest` owns project persistence, migrations,

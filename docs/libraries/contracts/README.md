@@ -129,8 +129,8 @@ changing the installed module.
 
 ## Related Topics
 
-- [App development](../../development/app-development.md) explains where an
-  app's `requirements.m` and `version.m` files fit in its source tree.
+- [App development](../../development/app-development.md) explains how one
+  App definition owns facade requirements and product version metadata.
 - [Architecture](../../development/architecture.md) describes the public
   LabKit modules that can appear in a requirement list.
 - [Project history](../../history/README.md) records API version and
