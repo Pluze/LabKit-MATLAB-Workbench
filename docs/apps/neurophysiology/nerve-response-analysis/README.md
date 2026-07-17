@@ -45,6 +45,8 @@ Parsed JSON, analysis tables, issue details, preview selection, log messages,
 and output-folder convenience are transient session state. Opening a project
 reparses its JSON sources but does not persist or silently reuse old analysis
 tables; choose **Analyze Filtered Files** to calculate them again.
+If an existing selected JSON file is malformed, project restore stops and
+preserves the current document. An absent optional protocol remains valid.
 
 For developers, `nerve_response_analysis.definition` is the complete product
 contract. `nerve_response_analysis.projectSpec` owns project creation,

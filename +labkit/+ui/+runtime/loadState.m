@@ -26,6 +26,13 @@ function filepath = loadState(fig, filepath)
 %   intact. Relinked or migrated documents open as unsaved work. Saving them
 %   writes the current labkitProject format rather than the imported old format.
 %
+% Errors:
+%   labkit:ui:runtime:ProjectLoadCancelled - Required-source relinking was
+%       cancelled. The live project remains unchanged.
+%   Project-format, validation, migration, source-decoding, and presentation
+%       errors are rethrown after the Runtime records diagnostic context. The
+%       live project remains unchanged.
+%
 % Typical Call:
 %   loadedFile = labkit.ui.runtime.loadState(fig, "analysis.project.mat");
 %
@@ -39,7 +46,12 @@ function filepath = loadState(fig, filepath)
     else
         filepath = string(filepath);
     end
-    restoreV2Project(fig, filepath);
+    try
+        restoreV2Project(fig, filepath);
+    catch ME
+        reportLoadFailure(fig, filepath, ME);
+        rethrow(ME);
+    end
 end
 
 function filepath = chooseProjectInput()
@@ -49,5 +61,26 @@ function filepath = chooseProjectInput()
         filepath = "";
     else
         filepath = string(fullfile(path, file));
+    end
+end
+
+function reportLoadFailure(fig, filepath, exception)
+    if string(exception.identifier) == ...
+            "labkit:ui:runtime:ProjectLoadCancelled"
+        return;
+    end
+    try
+        runtime = getAppRuntime(fig);
+        debug = runtime.debug;
+        if isstruct(debug) && isfield(debug, 'reportException') && ...
+                isa(debug.reportException, 'function_handle')
+            [~, name, extension] = fileparts(filepath);
+            context = sprintf('project load failed for %s%s', ...
+                name, extension);
+            debug.reportException(char(string(runtime.definition.id)), ...
+                context, exception);
+        end
+    catch
+        % Diagnostic reporting must not replace the original load failure.
     end
 end

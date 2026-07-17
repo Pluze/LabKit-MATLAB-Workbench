@@ -99,6 +99,9 @@ objects.
 ## Errors And Limitations
 
 - A FIG must contain a readable axes to enter the editing workflow.
+- Reopening a project with an existing but damaged or unsupported FIG stops
+  the restore and preserves the currently open document; it is not presented
+  as an empty figure source.
 - Invisible objects are not exported.
 - Callbacks, application data, custom classes, and analysis provenance inside
   the source figure are not treated as portable scientific data.

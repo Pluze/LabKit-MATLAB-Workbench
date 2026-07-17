@@ -62,6 +62,12 @@ recovery write recalculates source-relative paths from that MAT file's actual
 destination, so moving a saved project tree does not depend on the folder from
 which the source was first imported.
 
+An existing source that fails decoding is different from a missing path:
+Runtime aborts the candidate session, reports its `inputs.sources` identities
+and filenames to diagnostics, and preserves the currently open project and
+presentation. Session factories do not turn decoder or programming exceptions
+into empty caches.
+
 A control whose complete behavior is writing one state path uses `Bind`
 without `Event`; Runtime commits it without requiring an empty App action.
 Handlers register plain nonsemantic values through

@@ -83,6 +83,8 @@ imwrite(result.fused, "stacked.png");
 ## Errors And Limitations
 
 - Fewer than two images is an error.
+- Reopening a saved stack is strict: an existing image that cannot be decoded
+  aborts restore and leaves the current document unchanged.
 - `minConfidence` must be finite and between 0 and 1.
 - Resizing changes sampling and should not substitute for consistent capture.
 - Auto-registration should be reviewed; a wrong registration can create a

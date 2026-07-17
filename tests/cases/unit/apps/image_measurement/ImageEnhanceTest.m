@@ -177,12 +177,13 @@ end
 function checkWhiteRoiToolAvailabilityFollowsBatchMode()
     spec = image_enhance.projectSpec();
     project = spec.Create();
+    session = image_enhance.createSession(project);
     project.inputs.sources = struct('id', "image-1", 'required', true, ...
         'role', "source-image", 'reference', struct());
     annotation = image_enhance.enhancementAnnotations.empty();
     annotation.sourceId = "image-1";
     project.annotations.items = annotation;
-    session = image_enhance.createSession(project);
+    session.selection.currentIndex = 1;
     session.cache.item = image_enhance.sourceFiles.emptyItem();
     S = struct('project', project, 'session', session);
 

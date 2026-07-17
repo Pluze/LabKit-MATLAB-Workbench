@@ -71,24 +71,62 @@ function validateProjectPayload(validator, project)
 end
 
 function session = createFreshSession(def, project, resume)
-    if isempty(def.createSession)
-        session = struct();
-    elseif nargin(def.createSession) == 0
-        session = def.createSession();
-    else
-        session = def.createSession(project);
-    end
-    required = ["selection", "workflow", "view", "cache"];
-    for k = 1:numel(required)
-        field = char(required(k));
-        if ~isfield(session, field)
-            session.(field) = struct();
+    try
+        if isempty(def.createSession)
+            session = struct();
+        elseif nargin(def.createSession) == 0
+            session = def.createSession();
+        else
+            session = def.createSession(project);
         end
+        required = ["selection", "workflow", "view", "cache"];
+        for k = 1:numel(required)
+            field = char(required(k));
+            if ~isfield(session, field)
+                session.(field) = struct();
+            end
+        end
+        if isfield(def.project, 'ApplyResume') && ...
+                isa(def.project.ApplyResume, 'function_handle') && ...
+                ~isempty(resume)
+            session = def.project.ApplyResume(session, resume, project);
+        end
+    catch cause
+        failure = MException( ...
+            'labkit:ui:runtime:ProjectSessionRestoreFailed', ...
+            'Could not rebuild the project session from %s: %s', ...
+            sourceDescription(project), cause.message);
+        failure = addCause(failure, cause);
+        throw(failure);
     end
-    if isfield(def.project, 'ApplyResume') && ...
-            isa(def.project.ApplyResume, 'function_handle') && ...
-            ~isempty(resume)
-        session = def.project.ApplyResume(session, resume, project);
+end
+
+function description = sourceDescription(project)
+    description = "project state";
+    if ~isfield(project, 'inputs') || ~isstruct(project.inputs) || ...
+            ~isfield(project.inputs, 'sources') || ...
+            isempty(project.inputs.sources)
+        return;
+    end
+    sources = project.inputs.sources;
+    paths = labkit.ui.runtime.sourcePaths(sources);
+    count = min(numel(sources), 5);
+    labels = strings(count, 1);
+    for k = 1:count
+        id = string(sources(k).id);
+        role = string(sources(k).role);
+        [~, name, extension] = fileparts(paths(k));
+        filename = string(name) + string(extension);
+        if strlength(filename) == 0
+            filename = "(unresolved)";
+        end
+        labels(k) = sprintf('inputs.sources id "%s" role "%s" file "%s"', ...
+            id, role, filename);
+    end
+    description = join(labels, "; ");
+    if numel(sources) > count
+        description = description + sprintf( ...
+            '; and %d additional source record(s)', numel(sources) - count);
     end
 end
 

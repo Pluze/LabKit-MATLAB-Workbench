@@ -13,16 +13,13 @@ end
 
 function item = loadSelected(project, index)
     item = [];
-    try
-        source = project.inputs.sources(index);
-        loaded = flir_thermal.sourceFiles.readImages( ...
-            labkit.ui.runtime.sourcePaths(source));
-        if ~isempty(loaded)
-            annotation = annotationFor(project.annotations.items, source.id);
-            item = flir_thermal.thermalAnnotations.apply(loaded(1), annotation);
-        end
-    catch
-        % Missing portable references stay unloaded until the user relinks.
+    source = project.inputs.sources(index);
+    loaded = flir_thermal.sourceFiles.readImages( ...
+        labkit.ui.runtime.sourcePaths(source), ...
+        struct("SkipInvalid", false));
+    if ~isempty(loaded)
+        annotation = annotationFor(project.annotations.items, source.id);
+        item = flir_thermal.thermalAnnotations.apply(loaded(1), annotation);
     end
 end
 

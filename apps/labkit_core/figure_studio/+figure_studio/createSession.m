@@ -1,6 +1,7 @@
 %CREATESESSION Rebuild Figure Studio's transient view and decoded plot cache.
 % Expected caller: Runtime V2 through figure_studio.definition. Input is a
-% validated current project. File-read failures leave the source unloaded.
+% validated current project. Existing source decode failures propagate so a
+% damaged project cannot replace the live document with an empty cache.
 function session = createSession(project)
     plotData = project.annotations.embeddedPlot;
     currentIndex = 0;
@@ -24,14 +25,7 @@ function session = createSession(project)
 end
 
 function [plotData, style] = loadSource(sourcePath)
-    plotData = [];
-    style = [];
-    try
-        [plotData, style] = ...
-            figure_studio.sourceAxes.readFigFile(sourcePath);
-    catch
-        % Missing portable references remain unloaded until relinked.
-    end
+    [plotData, style] = figure_studio.sourceAxes.readFigFile(sourcePath);
 end
 
 function value = initialStatus(plotData)

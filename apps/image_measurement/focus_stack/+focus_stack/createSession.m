@@ -14,10 +14,6 @@ function images = loadImages(sources)
     if isempty(sources)
         return;
     end
-    try
-        images = focus_stack.sourceFiles.readImages( ...
-            labkit.ui.runtime.sourcePaths(sources));
-    catch
-        % Missing portable references remain unloaded until sources are relinked.
-    end
+    images = focus_stack.sourceFiles.readImages( ...
+        labkit.ui.runtime.sourcePaths(sources));
 end

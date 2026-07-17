@@ -97,6 +97,8 @@ the source-adjacent default; **Choose folder** remains available before export.
 ## Errors And Limitations
 
 - Unknown step labels are rejected.
+- Reopening a project with an existing unreadable image aborts restore and
+  preserves the current document instead of displaying an empty preview.
 - White ROI calibration fails when a required image has no valid ROI.
 - Enhancement changes pixel values and can invalidate quantitative intensity
   analysis; retain the source and manifest.

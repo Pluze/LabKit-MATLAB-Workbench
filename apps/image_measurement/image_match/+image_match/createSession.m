@@ -23,14 +23,10 @@ end
 
 function item = loadItem(source)
     item = [];
-    try
-        loaded = image_match.sourceFiles.readImages( ...
-            labkit.ui.runtime.sourcePaths(source));
-        if ~isempty(loaded)
-            item = loaded(1);
-        end
-    catch
-        % Missing portable references remain empty until the user relinks.
+    loaded = image_match.sourceFiles.readImages( ...
+        labkit.ui.runtime.sourcePaths(source));
+    if ~isempty(loaded)
+        item = loaded(1);
     end
 end
 

@@ -35,12 +35,8 @@ end
 
 function value = loadOptionalJson(filepath)
     value = struct();
-    if strlength(filepath) == 0
+    if strlength(filepath) == 0 || ~isfile(filepath)
         return;
     end
-    try
-        value = jsondecode(fileread(char(filepath)));
-    catch
-        value = struct();
-    end
+    value = jsondecode(fileread(char(filepath)));
 end

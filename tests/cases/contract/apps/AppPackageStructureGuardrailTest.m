@@ -58,6 +58,23 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
             end
         end
 
+        function sessionFactoriesDoNotSwallowRestoreFailures(testCase)
+            root = setupLabKitTestPath();
+            layouts = discoveredAppLayouts(root);
+            for k = 1:size(layouts, 1)
+                filepath = fullfile(root, layouts{k, 1}, ...
+                    ['+' layouts{k, 2}], 'createSession.m');
+                if ~isfile(filepath)
+                    continue;
+                end
+                source = string(fileread(filepath));
+                testCase.verifyEmpty(regexp(source, ...
+                    '(?m)^\s*catch(?:\s+\w+)?\s*$', 'once'), ...
+                    [relativePath(root, filepath) ...
+                    ' must let project reconstruction failures reach Runtime.']);
+            end
+        end
+
     end
 end
 

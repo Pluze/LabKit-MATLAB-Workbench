@@ -8,7 +8,9 @@ function [items, report] = readImages(paths, opts)
     if nargin < 2 || isempty(opts)
         opts = struct();
     end
-    opts.SkipInvalid = true;
+    if ~isfield(opts, 'SkipInvalid')
+        opts.SkipInvalid = true;
+    end
     [records, report] = labkit.thermal.readFiles(paths, opts);
     template = flir_thermal.sourceFiles.emptyItem();
     items = repmat(template, numel(records), 1);

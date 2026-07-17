@@ -81,6 +81,9 @@ and decoded Celsius matrices are transient session data: Runtime V2 resolves
 the source references and the App decodes only the selected image again when a
 project opens. Missing source files therefore use the framework's relinking
 flow rather than embedding local absolute paths in the project.
+An existing source that is no longer a readable radiometric file aborts the
+restore and preserves the current document. Batch import may still report and
+skip rejected selections before they become project sources.
 
 An empty launch does not choose an output directory. Adding files establishes
 the source-adjacent default; **Choose folder** remains available before export.

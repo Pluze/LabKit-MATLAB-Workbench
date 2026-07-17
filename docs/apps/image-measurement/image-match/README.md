@@ -77,6 +77,8 @@ output = outputs{1};
 
 - An empty reference returns normalized source data in the calculation API,
   but the app requires a reference before enabling match actions.
+- Reopening a project with an existing unreadable reference or source image
+  aborts restore and preserves the current document.
 - Matching never corrects position, scale, rotation, perspective, or parallax.
 - Histogram and Lab matching can shift scientifically meaningful pixel values;
   retain original images for quantitative analysis.

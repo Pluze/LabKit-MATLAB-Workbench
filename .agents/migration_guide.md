@@ -24,83 +24,11 @@ commit. Public and private repositories commit and push their work separately.
 Last audited: 2026-07-17.
 
 ```text
-private-app-ui7-compatibility: open-critical
-app-path-isolation: open-high
-project-restore-failure-semantics: open-high
 retired-ui-runtime-compatibility: open-high
 documentation-and-agent-contract-drift: open-high
 validation-isolation-coverage: open-high
 toolbox-product-debt: none
 ```
-
-### Private App UI 7 compatibility
-
-Owner:
-: The independent private App repository.
-
-Evidence:
-: Imager Reconstruction still uses separate `requirements.m`, `version.m`,
-  generic `startup.m`, `+appLifecycle`, `+appState`, the transitional
-  three-factory launch form, and `Project.Migrations`. It declares
-  `labkit.ui >=6 <7`, while the accepted public checkout provides UI 7 and
-  rejects the App before launch.
-
-Affected scope:
-: `private_apps/apps/imaging/imager_reconstruction/`, its private tests,
-  manual, history, and private repository rules.
-
-Completion condition:
-: The App uses one definition-owned identity/version/requirements contract,
-  one `projectSpec.m`, an optional root `createSession.m`, concrete
-  capability-owned packages, and UI 7-compatible requirements. A Start action
-  remains only when it names real post-layout initialization. Generic
-  lifecycle/state packages and split metadata files are gone.
-
-Focused validation:
-: Run the private repository tests first, then an isolated-path
-  requirements/version request and hidden launch against the accepted public
-  checkout. Run the relevant public structure and facade-compatibility
-  guardrails intentionally because the public changed-file planner cannot see
-  the nested private Git diff.
-
-Removal condition:
-: Delete this entry after the private App launches from only the public root
-  plus its own App root, its current tests and documentation use the same
-  contract, both repositories are pushed, and the public framework no longer
-  needs source-structure compatibility for it.
-
-### Project restore failure semantics
-
-Owner:
-: The affected Apps for decode policy; `labkit.ui.runtime` for atomic restore,
-  relinking, cancellation, and diagnostic delivery.
-
-Evidence:
-: FLIR Thermal, Focus Stack, Image Enhance, Image Match, and Figure Studio
-  catch every exception while rebuilding transient session caches and present
-  an empty cache. Runtime already resolves or interactively relinks required
-  sources before `createSession`, so damaged, unsupported, or undecodable files
-  can be mislabeled as an unresolved path and the real defect is hidden.
-
-Affected scope:
-: All App `createSession.m` factories, Runtime project restoration, source
-  relinking, diagnostics, and project-load workflow tests.
-
-Completion condition:
-: Missing paths use Runtime relinking; user cancellation leaves live state
-  unchanged; damaged or unsupported existing files report a field-specific
-  failure and diagnostic exception; programming errors are not swallowed.
-  Any intentionally recoverable catch reports through diagnostics and has a
-  test for the exact recovery.
-
-Focused validation:
-: For each affected App, cover successful restore, missing-source relink,
-  cancellation, and an existing corrupt or unsupported source. Verify state
-  rollback, visible error semantics, and diagnostic evidence.
-
-Removal condition:
-: Delete this entry after the repository-wide `createSession` audit finds no
-  unreported broad catch and the focused restore tests pass.
 
 ### Retired UI Runtime compatibility
 

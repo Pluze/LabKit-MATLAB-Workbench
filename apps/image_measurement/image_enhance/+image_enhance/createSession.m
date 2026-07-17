@@ -36,21 +36,17 @@ function cache = rebuildSelectedResult(project, index, cache)
 end
 
 function cache = loadSelectedCache(source, cache)
-    try
-        loaded = image_enhance.sourceFiles.readImages( ...
-            labkit.ui.runtime.sourcePaths(source));
-        if isempty(loaded)
-            return;
-        end
-        [preview, scale] = image_enhance.userInterface.previewImage( ...
-            loaded(1).image);
-        cache.sourceId = string(source.id);
-        cache.item = loaded(1);
-        cache.previewSource = preview;
-        cache.previewScale = scale;
-    catch
-        % The runtime presents an empty cache when a source needs relinking.
+    loaded = image_enhance.sourceFiles.readImages( ...
+        labkit.ui.runtime.sourcePaths(source));
+    if isempty(loaded)
+        return;
     end
+    [preview, scale] = image_enhance.userInterface.previewImage( ...
+        loaded(1).image);
+    cache.sourceId = string(source.id);
+    cache.item = loaded(1);
+    cache.previewSource = preview;
+    cache.previewScale = scale;
 end
 
 function cache = emptyCache()

@@ -246,6 +246,16 @@ starts a completely new project calls `services.project.newState()` so project
 creation, session reconstruction, and canonical normalization follow the same
 Runtime path as initial launch.
 
+Project loading resolves missing required sources before `CreateSession`.
+Cancelling that relink leaves the live document unchanged. Once a source path
+exists, its decoder must either return the transient value or throw; a session
+factory must not convert corrupt, unsupported, or programming failures into an
+empty cache. Runtime reports the exception with the `inputs.sources` IDs,
+roles, and filenames, preserves the previous state and presentation, and lets
+the Load State command show the failure. An optional source may be absent only
+when the App explicitly defines absence as valid; an existing optional file is
+still decoded strictly.
+
 `selection` is current user focus, `workflow` is transient progress and log
 state, `view` is presentation convenience, and `cache` is rebuildable decoded
 or calculated data. Session values are never the sole owner of scientific
