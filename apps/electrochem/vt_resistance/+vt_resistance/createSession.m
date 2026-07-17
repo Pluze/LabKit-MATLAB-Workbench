@@ -1,6 +1,6 @@
-% Expected caller: Runtime V2. Input is one validated VT Resistance project
-% with resolved source records. Output owns selection, workflow log, and the
-% rebuildable decoded/analyzed DTA cache.
+%CREATESESSION Rebuild the selected VT Resistance preview item lazily.
+% Expected caller: Runtime V2 through vt_resistance.definition. Only the first
+% source is decoded immediately; full-batch analysis remains export-time work.
 function session = createSession(project)
     items = struct([]);
     currentIndex = 0;
