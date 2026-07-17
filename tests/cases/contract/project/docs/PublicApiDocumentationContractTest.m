@@ -130,6 +130,55 @@ classdef PublicApiDocumentationContractTest < matlab.unittest.TestCase
                 '../../vt_resistance/analysisRun/computeResistance.html'), ...
                 "Explicit See also entries must link across app packages.");
         end
+
+        function helpContractDetectsEveryOptionDefaultErrorAndRelatedApi(testCase)
+            folder = matlab.unittest.fixtures.TemporaryFolderFixture;
+            testCase.applyFixture(folder);
+            packageFolder = fullfile(folder.Folder, "+labkit", "+probe");
+            mkdir(packageFolder);
+            filepath = fullfile(packageFolder, "incomplete.m");
+            source = strjoin([ ...
+                "function value = incomplete(opts)"
+                "%INCOMPLETE Deliberately incomplete public help."
+                "%"
+                "% Usage:"
+                "%   value = labkit.probe.incomplete(opts)"
+                "%"
+                "% Description:"
+                "%   Probe the contract checker."
+                "%"
+                "% Inputs:"
+                "%   opts - Scalar option struct."
+                "%"
+                "% Options:"
+                "%   first - Positive numeric scalar."
+                "%   third - Controls behavior. Default: 3."
+                "%"
+                "% Outputs:"
+                "%   value - Selected value."
+                "value = optionValue(opts, 'first', 1) + " + ...
+                    "optionValue(opts, 'second', 2) + " + ...
+                    "optionValue(opts, 'third', 3);"
+                "end"], newline);
+            fid = fopen(filepath, "w");
+            cleaner = onCleanup(@() fclose(fid));
+            fwrite(fid, source);
+            clear cleaner
+
+            defects = labkitPublicHelpContractDefects( ...
+                folder.Folder, filepath);
+            combined = strjoin(defects, newline);
+            testCase.verifyTrue(contains(combined, ...
+                "undocumented option second"));
+            testCase.verifyTrue(contains(combined, ...
+                "option first has no documented default"));
+            testCase.verifyTrue(contains(combined, ...
+                "option third does not describe legal values"));
+            testCase.verifyTrue(contains(combined, ...
+                "missing explicit Errors or Failure Behavior"));
+            testCase.verifyTrue(contains(combined, ...
+                "missing See also related APIs"));
+        end
     end
 end
 
@@ -138,19 +187,15 @@ function executeExample(code)
 end
 
 function files = publicApiContractFiles(root)
-    moduleFolders = ["+biosignal", "+contract", "+dta", "+image", "+rhs", ...
-        "+thermal", fullfile("+ui", "+debug"), ...
-        fullfile("+ui", "+interaction"), fullfile("+ui", "+layout"), ...
-        fullfile("+ui", "+plot"), ...
-        fullfile("+ui", "+runtime")];
+    entries = dir(fullfile(root, "+labkit", "**", "*.m"));
     files = strings(0, 1);
-    for iModule = 1:numel(moduleFolders)
-        entries = dir(fullfile(root, "+labkit", moduleFolders(iModule), "*.m"));
-        for k = 1:numel(entries)
-            files(end + 1, 1) = string(fullfile( ...
-                entries(k).folder, entries(k).name));
+    for k = 1:numel(entries)
+        filepath = string(fullfile(entries(k).folder, entries(k).name));
+        if ~contains(filepath, filesep + "private" + filesep)
+            files(end + 1, 1) = filepath;
         end
     end
+    files = sort(files);
     catalogPath = fullfile(root, "docs", "catalogs", "api.json");
     catalog = jsondecode(fileread(catalogPath));
     appSources = reshape(string({catalog.appApis.source}), [], 1);
