@@ -91,4 +91,10 @@ listed as stable public APIs; reusable DTA reading is supported through
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+The single `definition.m` owns product metadata, requirements, layout, and
+optional runtime capabilities. `projectSpec.m` owns the current version-2
+schema plus one version-aware migration entry; Runtime V2 advances older
+payloads one version at a time. `createSession.m` rebuilds decoded DTA items
+and selection because curves are transient caches. The App requires
+`labkit.ui >=7 <8` and `labkit.dta >=2 <3`; busy-state and portable-reference
+serialization remain framework-private.

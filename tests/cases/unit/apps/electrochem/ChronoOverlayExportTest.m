@@ -26,8 +26,8 @@ function checkRuntimeV2Contracts()
     assert(definition.project.Validate(project), ...
         'The default Chrono overlay project should validate.');
     assert(definition.project.Version == 2 && ...
-        numel(definition.project.Migrations) == 1, ...
-        'Payload version 2 should migrate decoded v1 inputs out of the project.');
+        isa(definition.project.Migrate, 'function_handle'), ...
+        'Payload version 2 should expose one version-aware migration entry.');
 
     invalid = project;
     invalid.parameters.lineWidth = Inf;
@@ -39,10 +39,10 @@ function checkRuntimeV2Contracts()
     item.filepath = '/synthetic/synthetic.DTA';
     legacyProject = project;
     legacyProject.inputs.items = item;
-    migrated = definition.project.Migrations{1}(legacyProject);
+    migrated = definition.project.Migrate(legacyProject, 1);
     assert(~isfield(migrated.inputs, 'items'), ...
         'Chrono Overlay v1 migration should remove decoded DTA items.');
-    session = chrono_overlay.appLifecycle.createSession(project);
+    session = chrono_overlay.createSession(project);
     session.cache.items = item;
     session.selection.paths = string(item.filepath);
     state = struct('project', project, 'session', session);

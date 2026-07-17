@@ -1,5 +1,6 @@
-% Expected caller: the LabKit V2 runtime. Input is a validated Chrono Overlay
-% project. Output owns ephemeral selection, workflow log, view, and cache data.
+%CREATESESSION Rebuild transient Chrono Overlay DTA items and selection.
+% Expected caller: Runtime V2 through chrono_overlay.definition. Input is a
+% validated current project; decoded DTA curves remain outside persistence.
 function session = createSession(project)
     items = chrono_overlay.sourceFiles.loadProjectItems(project.inputs.sources);
     selectedPaths = strings(0, 1);
