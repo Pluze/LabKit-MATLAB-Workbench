@@ -142,3 +142,11 @@ Applications decide:
 
 These application choices are intentionally not parameters of the generic
 biosignal functions.
+
+## Reference Contract
+
+The generated page for every `labkit.biosignal` function documents its exact
+input structure, implemented options, defaults, legal values, empty-result and
+error behavior, and related functions. The repository documentation contract
+discovers the whole public package rather than relying on a hand-maintained
+function list, and executes every block labeled `Example:`.

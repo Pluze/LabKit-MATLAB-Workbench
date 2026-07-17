@@ -102,6 +102,15 @@ Each segment supplies `timeSec`, `values`, and `name`. An optional
 `alignTimeSec` shifts that segment to the common zero. `aligned.values` is a
 samples-by-segments matrix.
 
+## Function Reference
+
+The generated pages for
+[`alignSegments`](../../../reference/api/response_review_stats/analysisRun/alignSegments.html)
+and
+[`measureAlignedSegments`](../../../reference/api/response_review_stats/analysisRun/measureAlignedSegments.html)
+define time-window option shapes and defaults, interpolation and empty-sample
+behavior, output table columns, failures, examples, and related APIs.
+
 ## Errors And Limitations
 
 - Baseline and noise windows must overlap the available data to produce finite

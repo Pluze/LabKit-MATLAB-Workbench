@@ -121,6 +121,16 @@ To process an RHS file or an entire filter record, use
 `nerve_response_analysis.analysisRun.analyzeRecording` or
 `nerve_response_analysis.analysisRun.analyzeSession`.
 
+## Function Reference
+
+The generated pages for
+[`detectEventTrains`](../../../reference/api/nerve_response_analysis/analysisRun/detectEventTrains.html),
+[`measureCapMetrics`](../../../reference/api/nerve_response_analysis/analysisRun/measureCapMetrics.html),
+and
+[`analyzeSession`](../../../reference/api/nerve_response_analysis/analysisRun/analyzeSession.html)
+document protocol nesting, direct option defaults and legal values, table
+schemas, units, partial-recording failure policy, and related APIs.
+
 ## Errors And Limitations
 
 - Time and signal vectors must have the same length.

@@ -109,6 +109,16 @@ parameters = struct( ...
 The source loader is app-owned; the generated API table below lists only
 operations intentionally supported as public GUI-free calculation APIs.
 
+## Function Reference
+
+Use the generated pages for
+[`makeStrainOverlay`](../../../reference/api/dic_postprocess/analysisRun/makeStrainOverlay.html),
+[`prepareOutputs`](../../../reference/api/dic_postprocess/analysisRun/prepareOutputs.html),
+and
+[`summarizeStrain`](../../../reference/api/dic_postprocess/analysisRun/summarizeStrain.html)
+for exact required and optional fields, units, output shapes, empty selections,
+failure behavior, and related APIs.
+
 ## Errors And Limitations
 
 - A MAT file without the recognized Ncorr strain structure is rejected.

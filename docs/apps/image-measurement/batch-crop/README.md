@@ -103,6 +103,14 @@ cropped = batch_crop.cropGeometry.cropScaledImage( ...
 For pixel-domain work use `batch_crop.cropGeometry.cropImage`. Open the linked
 API pages for exact plan fields, interpolation, and padding behavior.
 
+## Function Reference
+
+The generated crop-geometry pages document pixel coordinates, rounding,
+padding, scaling plans, per-image option fields, defaults, output metadata,
+failure behavior, and related APIs. Start with
+[`cropScaledImage`](../../../reference/api/batch_crop/cropGeometry/cropScaledImage.html)
+when reproducing a physical-scale export outside the GUI.
+
 ## Errors And Limitations
 
 - Physical export requires a finite positive calibration for every task.

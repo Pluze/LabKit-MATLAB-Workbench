@@ -73,6 +73,15 @@ outputs = image_match.analysisRun.applyPipeline({source}, step, reference);
 output = outputs{1};
 ```
 
+## Function Reference
+
+The generated pages for
+[`applyMatch`](../../../reference/api/image_match/analysisRun/applyMatch.html)
+and
+[`applyPipeline`](../../../reference/api/image_match/analysisRun/applyPipeline.html)
+document supported step fields and defaults, normalization and output
+geometry, empty-input behavior, failures, examples, and related APIs.
+
 ## Errors And Limitations
 
 - An empty reference returns normalized source data in the calculation API,

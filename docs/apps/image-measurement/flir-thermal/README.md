@@ -103,6 +103,15 @@ point = flir_thermal.analysisRun.pointTemperatureReading( ...
     flir_thermal.analysisRun.extremeTemperatureReadings(temperatureC);
 ```
 
+## Function Reference
+
+The generated pages for
+[`pointTemperatureReading`](../../../reference/api/flir_thermal/analysisRun/pointTemperatureReading.html)
+and
+[`extremeTemperatureReadings`](../../../reference/api/flir_thermal/analysisRun/extremeTemperatureReadings.html)
+specify coordinate order, clamping, nonfinite/empty behavior, returned fields,
+conversion failures, and related measurement APIs.
+
 ## Errors And Limitations
 
 - Non-radiometric JPEG files are rejected even when their extension is valid.

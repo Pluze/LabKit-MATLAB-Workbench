@@ -72,3 +72,12 @@ Use `labkit.image.readFiles` when an app needs generic source-image records.
 Apps may copy the returned `path`, `name`, and `image` fields into their own
 item structures. Specialized formats and result structures remain documented
 by the app that uses them.
+
+## Reference Contract
+
+The generated Image API pages linked from the [public API index](../README.md)
+document exact syntax, inputs, outputs, implemented options and defaults,
+legal values, failure behavior, examples, and related functions. In
+particular, [`resizeToFit`](../../reference/api/labkit/image/resizeToFit.html)
+accepts only the documented `"bilinear"` and `"nearest"` methods and rejects
+any other method instead of silently selecting an interpolation policy.
