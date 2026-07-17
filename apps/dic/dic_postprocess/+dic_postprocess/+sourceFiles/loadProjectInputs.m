@@ -8,7 +8,7 @@ function cache = loadProjectInputs(sources, loadStrain)
         "maskImage", readImage(sources, "maskImage"), ...
         "overlayExx", [], ...
         "overlayEyy", []);
-    filepath = dic_postprocess.sourceFiles.pathForId(sources, "dicMat");
+    filepath = labkit.ui.runtime.sourcePaths(sources, "dicMat");
     if loadStrain && strlength(filepath) > 0 && isfile(filepath)
         cache.strain = dic_postprocess.sourceFiles.loadNcorrStrain(filepath);
     end
@@ -16,7 +16,7 @@ end
 
 function imageData = readImage(sources, id)
     imageData = [];
-    filepath = dic_postprocess.sourceFiles.pathForId(sources, id);
+    filepath = labkit.ui.runtime.sourcePaths(sources, id);
     if strlength(filepath) > 0 && isfile(filepath)
         imageData = imread(filepath);
     end

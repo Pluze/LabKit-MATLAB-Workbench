@@ -182,9 +182,10 @@ currentPath = labkit.ui.runtime.sourcePaths(source);
 
 An App reads current file locations with
 `labkit.ui.runtime.sourcePaths(sources)`. Supplying a source ID or ordered ID
-collection returns only those paths in requested order. This pure accessor is
-valid inside `CreateSession`, actions, presenters, and GUI-free workflow
-functions, so App code does not depend on the portable-reference schema.
+collection returns those paths in requested order; a semantic source slot not
+yet present returns an empty string. This pure accessor is valid inside
+`CreateSession`, actions, presenters, and GUI-free workflow functions, so App
+code does not depend on the portable-reference schema.
 
 Immediately before each write, Runtime V2 copies the durable project and
 rebases its portable references from that write's actual MAT-file destination.

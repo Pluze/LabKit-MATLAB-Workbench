@@ -54,7 +54,8 @@ function state = onMaskChosen(state, event, services)
 end
 
 function state = onGenerate(state, ~, services)
-    matPath = sourcePath(state, "dicMat");
+    matPath = labkit.ui.runtime.sourcePaths( ...
+        state.project.inputs.sources, "dicMat");
     cache = state.session.cache;
     if strlength(matPath) == 0 || isempty(cache.referenceImage) || ...
             isempty(cache.maskImage)
@@ -114,7 +115,8 @@ function state = onSaveOverlays(state, ~, services)
         return;
     end
     tag = string(dic_postprocess.userInterface.tagFromPath( ...
-        char(sourcePath(state, "dicMat"))));
+        char(labkit.ui.runtime.sourcePaths( ...
+        state.project.inputs.sources, "dicMat"))));
     exxName = "overlay_exx_" + tag + ".png";
     eyyName = "overlay_eyy_" + tag + ".png";
     exxFile = fullfile(folder, exxName);
@@ -142,7 +144,8 @@ function state = onExportSummary(state, ~, services)
             'Generate a summary before exporting.', 'Export summary');
         return;
     end
-    [folder, name] = fileparts(char(sourcePath(state, "dicMat")));
+    [folder, name] = fileparts(char(labkit.ui.runtime.sourcePaths( ...
+        state.project.inputs.sources, "dicMat")));
     folder = services.dialogs.defaultFolder("output", folder);
     defaultName = fullfile(folder, [name '_strain_summary.csv']);
     [out, cancelled] = services.dialogs.outputFile( ...
@@ -175,11 +178,6 @@ function state = clearPreparedOutputs(state)
     state.project.results.summaryTable = table();
     state.session.cache.overlayExx = [];
     state.session.cache.overlayEyy = [];
-end
-
-function filepath = sourcePath(state, id)
-    filepath = dic_postprocess.sourceFiles.pathForId( ...
-        state.project.inputs.sources, id);
 end
 
 function tf = hasPreparedInputs(inputs)

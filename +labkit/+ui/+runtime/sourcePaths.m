@@ -11,8 +11,9 @@ function paths = sourcePaths(sources, ids)
 %       records through services.project.sourceRecord, upsertSource, or
 %       reconcileSources.
 %   ids - Optional source ID or collection of source IDs. Requested IDs are
-%       returned in the supplied order. Every ID must exist. When omitted,
-%       paths follow source-record order.
+%       returned in the supplied order. An ID that has not been added yet
+%       returns an empty string in that position. When omitted, paths follow
+%       source-record order.
 %
 % Outputs:
 %   paths - Column string array containing each source's current resolved
@@ -28,7 +29,6 @@ function paths = sourcePaths(sources, ids)
 % Errors:
 %   labkit:ui:runtime:InvalidSourceRecords - A source record, requested ID,
 %       or runtime-owned reference is malformed.
-%   labkit:ui:runtime:UnknownSourceId - A requested ID is not present.
 %
 % Example:
 %   sources = labkit.ui.runtime.emptySourceRecords();
@@ -54,16 +54,14 @@ function paths = sourcePaths(sources, ids)
             paths = strings(0, 1);
             return;
         end
-        [known, indices] = ismember(requested, sourceIds);
-        if any(~known)
-            error('labkit:ui:runtime:UnknownSourceId', ...
-                'Project source id "%s" was not found.', ...
-                requested(find(~known, 1, 'first')));
-        end
+        [~, indices] = ismember(requested, sourceIds);
     end
 
     paths = strings(numel(indices), 1);
     for k = 1:numel(indices)
+        if indices(k) == 0
+            continue;
+        end
         source = sources(indices(k));
         if ~isfield(source, 'reference') || ...
                 ~isstruct(source.reference) || ...

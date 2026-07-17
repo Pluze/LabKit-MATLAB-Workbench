@@ -8,7 +8,7 @@ end
 
 function imageData = readSource(sources, id)
     imageData = [];
-    filepath = dic_preprocess.sourceFiles.pathForId(sources, id);
+    filepath = labkit.ui.runtime.sourcePaths(sources, id);
     if strlength(filepath) > 0 && isfile(filepath)
         imageData = imread(filepath);
     end
