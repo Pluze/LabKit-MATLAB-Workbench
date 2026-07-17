@@ -174,9 +174,16 @@ function html = renderAppNavigation(pages, currentIndex, outputPath)
         family = families(k);
         members = appMembers(arrayfun( ...
             @(page) secondNavPart(page) == family, appMembers));
-        content = renderPageGroupLinks(members, outputPath, true);
+        familyPage = members(string({members.kind}) == "app family");
+        appPages = members(string({members.kind}) == "app");
+        content = renderPageGroupLinks(appPages, outputPath, false);
         if strlength(content) > 0
-            chunks(end + 1, 1) = localSubgroup(family, content);
+            target = "";
+            if ~isempty(familyPage) && familyPage(1).output ~= outputPath
+                target = string(familyPage(1).output);
+            end
+            chunks(end + 1, 1) = ...
+                localSubgroup(family, content, outputPath, target);
         end
     end
     html = strjoin(chunks, "");
@@ -243,13 +250,19 @@ function value = secondNavPart(page)
     end
 end
 
-function html = localSubgroup(title, content)
+function html = localSubgroup(title, content, currentPath, titleTarget)
     if strlength(content) == 0
         html = "";
         return;
     end
+    heading = htmlEscape(title);
+    if nargin >= 4 && strlength(titleTarget) > 0
+        heading = "<a href=""" + ...
+            relativeWebPath(currentPath, titleTarget) + """>" + ...
+            heading + "</a>";
+    end
     html = "<div class=""local-subgroup""><h3>" + ...
-        htmlEscape(title) + "</h3><div class=""local-branch"">" + ...
+        heading + "</h3><div class=""local-branch"">" + ...
         content + "</div></div>";
 end
 
