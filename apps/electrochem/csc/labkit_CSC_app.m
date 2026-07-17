@@ -21,5 +21,5 @@ function varargout = labkit_CSC_app(varargin)
 %   CSC = Q / area (cm^2); both charge and normalized CSC are shown.
 %
     [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
-        @csc.definition, @csc.requirements, @csc.version, varargin{:});
+        @csc.definition, varargin{:});
 end

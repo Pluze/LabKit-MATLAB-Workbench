@@ -1,5 +1,6 @@
-% Expected caller: Runtime V2. Input is a validated CSC project. Output owns
-% active file/curve selection, workflow log, and rebuildable decoded DTA data.
+%CREATESESSION Rebuild transient CSC curves and active selection.
+% Expected caller: Runtime V2 through csc.definition. Decoded DTA curves and
+% file/curve selection remain outside the durable project.
 function session = createSession(project)
     items = csc.sourceFiles.loadProjectItems(project.inputs.sources);
     currentIndex = 0;
