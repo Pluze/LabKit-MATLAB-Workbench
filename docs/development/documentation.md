@@ -182,6 +182,27 @@ Catalog data must not be copied into another catalog merely for rendering.
 Narrative pages may summarize it for readers, but catalog consistency and
 links are validated against the owning structured source.
 
+### Navigation hierarchy
+
+The top navigation selects a documentation area. The left sidebar then shows
+the current area's own hierarchy instead of repeating one flat site-wide list.
+Where a page has descendants, the sidebar uses labeled branches:
+
+- app pages are grouped by app family, with the family manual above its apps;
+- function pages are grouped by library, and API pages list sibling functions
+  under their MATLAB package;
+- framework and development guides are grouped by their reader task;
+- history uses its generated timeline and adjacent-record links rather than
+  placing every historical record in the sidebar.
+
+For pages declared in `docs/site.json`, `nav(1)` selects the documentation
+area and optional `nav(2)` names the sidebar branch. Branches follow the
+smallest page `order` in each branch, and pages retain their catalog or site
+order within that branch. New pages must reuse an existing branch name when
+the subject fits; introduce a new branch only when it represents a distinct
+reader task. A documentation area with no descendants remains a single page
+and does not render an empty artificial branch.
+
 ## Authoring From Current Code
 
 Documentation changes begin from the current implementation, not from old

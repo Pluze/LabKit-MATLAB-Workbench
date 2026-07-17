@@ -154,6 +154,49 @@ classdef DocumentationRendererRegressionTest < matlab.unittest.TestCase
                 string(fullfile(sandbox, "relative-site")));
             clear folderCleanup pathCleanup
         end
+
+        function developmentSidebarGroupsTopicsAndTools(testCase)
+            root = setupLabKitTestPath();
+            page = string(fileread(fullfile(root, "site", ...
+                "development", "index.html")));
+
+            testCase.verifyTrue(contains(page, ...
+                '<div class="local-subgroup"><h3>Build Apps</h3>'));
+            testCase.verifyTrue(contains(page, ...
+                '<div class="local-subgroup"><h3>Data and Designs</h3>'));
+            testCase.verifyTrue(contains(page, ...
+                '<a class="local-link" href="scientific-csv-interchange.html">Scientific CSV Interchange</a>'));
+            testCase.verifyTrue(contains(page, ...
+                '<a class="local-link local-parent-link" href="tools/index.html">Maintainer Tools</a>'));
+            testCase.verifyTrue(contains(page, ...
+                '<a class="local-link local-child-link" href="tools/documentation.html">Documentation Build Tools</a>'));
+        end
+
+        function appsSidebarUsesFamiliesAsNavigationBranches(testCase)
+            root = setupLabKitTestPath();
+            page = string(fileread(fullfile(root, "site", ...
+                "apps", "index.html")));
+
+            testCase.verifyTrue(contains(page, ...
+                '<div class="local-subgroup"><h3>Electrochemistry</h3>'));
+            testCase.verifyTrue(contains(page, ...
+                '<a class="local-link local-parent-link" href="electrochemistry/index.html">Electrochemistry</a>'));
+            testCase.verifyTrue(contains(page, ...
+                '<a class="local-link local-child-link" href="electrochemistry/cic.html">CIC</a>'));
+            testCase.verifyTrue(contains(page, ...
+                '<div class="local-subgroup"><h3>Wearable</h3>'));
+        end
+
+        function apiSidebarLabelsSiblingFunctionGroup(testCase)
+            root = setupLabKitTestPath();
+            page = string(fileread(fullfile(root, "site", "reference", ...
+                "api", "labkit", "dta", "loadFile.html")));
+
+            testCase.verifyTrue(contains(page, ...
+                '<div class="local-subgroup"><h3>dta Functions</h3>'));
+            testCase.verifyTrue(contains(page, ...
+                '<a class="local-link" href="detectPulses.html">detectPulses</a>'));
+        end
     end
 end
 

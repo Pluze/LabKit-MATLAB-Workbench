@@ -113,39 +113,31 @@ function html = renderSectionLinks(model, outputPath, section, apiItem)
 
     pages = model.pages;
     currentIndex = find(string({pages.output}) == outputPath, 1);
-    matches = false(numel(pages), 1);
     switch section
         case "apps"
-            if ~isempty(currentIndex) && numel(pages(currentIndex).nav) > 1
-                family = pages(currentIndex).nav(2);
-                matches = arrayfun(@(p) numel(p.nav) > 1 && ...
-                    p.nav(1) == "Apps" && p.nav(2) == family, pages);
-            else
-                matches = string({pages.kind}) == "app family";
-            end
+            html = renderAppNavigation(pages, currentIndex, outputPath);
         case "functions"
             matches = arrayfun(@(p) ~isempty(p.nav) && ...
                 p.nav(1) == "Libraries", pages);
+            html = renderPageGroups(pages(matches), outputPath, ...
+                "Libraries", false);
         case "framework"
             matches = arrayfun(@(p) ~isempty(p.nav) && ...
                 p.nav(1) == "App Framework", pages);
+            html = renderPageGroups(pages(matches), outputPath, ...
+                "Framework Guides", false);
         case "development"
             matches = arrayfun(@(p) ~isempty(p.nav) && ...
                 p.nav(1) == "Development", pages);
+            html = renderPageGroups(pages(matches), outputPath, ...
+                "General", true);
+        case "history"
+            historyIndex = pages(string({pages.id}) == "history");
+            html = renderPageGroups(historyIndex, outputPath, ...
+                "Timeline", false);
         otherwise
             html = "";
-            return;
     end
-    members = pages(matches);
-    links = strings(0, 1);
-    for k = 1:numel(members)
-        if members(k).output == outputPath
-            continue;
-        end
-        links(end + 1, 1) = localLink(outputPath, members(k).output, ...
-            members(k).title);
-    end
-    html = strjoin(links, "");
 end
 
 function html = renderSiblingApis(api, item, outputPath)
@@ -162,7 +154,101 @@ function html = renderSiblingApis(api, item, outputPath)
         nameParts = split(string(members(k).symbol), ".");
         links(end + 1, 1) = localLink(outputPath, target, nameParts(end));
     end
+    groupTitle = "Package Functions";
+    if ~isempty(parts) && numel(parts) > 1
+        groupTitle = parts(end - 1) + " Functions";
+    end
+    html = localSubgroup(groupTitle, strjoin(links, ""));
+end
+
+function html = renderAppNavigation(pages, currentIndex, outputPath)
+    appMembers = pages(string({pages.kind}) == "app family" | ...
+        string({pages.kind}) == "app");
+    families = unique(arrayfun(@secondNavPart, appMembers), "stable");
+    families(families == "") = [];
+    if ~isempty(currentIndex) && numel(pages(currentIndex).nav) > 1
+        families = pages(currentIndex).nav(2);
+    end
+    chunks = strings(0, 1);
+    for k = 1:numel(families)
+        family = families(k);
+        members = appMembers(arrayfun( ...
+            @(page) secondNavPart(page) == family, appMembers));
+        content = renderPageGroupLinks(members, outputPath, true);
+        if strlength(content) > 0
+            chunks(end + 1, 1) = localSubgroup(family, content);
+        end
+    end
+    html = strjoin(chunks, "");
+end
+
+function html = renderPageGroups(members, outputPath, defaultGroup, useNavGroup)
+    if isempty(members)
+        html = "";
+        return;
+    end
+    if useNavGroup
+        groupNames = arrayfun(@secondNavPart, members);
+        groupNames(groupNames == "") = string(defaultGroup);
+        groups = unique(groupNames, "stable");
+        groupOrders = inf(size(groups));
+        memberOrders = [members.order];
+        for k = 1:numel(groups)
+            groupOrders(k) = min(memberOrders(groupNames == groups(k)));
+        end
+        [~, groupOrder] = sort(groupOrders);
+        groups = groups(groupOrder);
+    else
+        groupNames = repmat(string(defaultGroup), numel(members), 1);
+        groups = string(defaultGroup);
+    end
+    chunks = strings(0, 1);
+    for k = 1:numel(groups)
+        content = renderPageGroupLinks( ...
+            members(groupNames == groups(k)), outputPath, true);
+        if strlength(content) > 0
+            chunks(end + 1, 1) = localSubgroup(groups(k), content);
+        end
+    end
+    html = strjoin(chunks, "");
+end
+
+function html = renderPageGroupLinks(members, outputPath, indentChildren)
+    parentKinds = ["overview", "app family"];
+    hasParent = any(ismember(string({members.kind}), parentKinds));
+    links = strings(0, 1);
+    for k = 1:numel(members)
+        if members(k).output == outputPath
+            continue;
+        end
+        className = "local-link";
+        isParent = any(string(members(k).kind) == parentKinds);
+        if indentChildren && hasParent && ~isParent
+            className = className + " local-child-link";
+        elseif isParent
+            className = className + " local-parent-link";
+        end
+        links(end + 1, 1) = localLinkWithClass( ...
+            outputPath, members(k).output, members(k).title, className);
+    end
     html = strjoin(links, "");
+end
+
+function value = secondNavPart(page)
+    value = "";
+    if numel(page.nav) > 1
+        value = string(page.nav(2));
+    end
+end
+
+function html = localSubgroup(title, content)
+    if strlength(content) == 0
+        html = "";
+        return;
+    end
+    html = "<div class=""local-subgroup""><h3>" + ...
+        htmlEscape(title) + "</h3><div class=""local-branch"">" + ...
+        content + "</div></div>";
 end
 
 function html = renderOnThisPage(body)
@@ -228,7 +314,11 @@ function path = apiOutputPath(item)
 end
 
 function html = localLink(current, target, label)
-    html = "<a class=""local-link"" href=""" + ...
+    html = localLinkWithClass(current, target, label, "local-link");
+end
+
+function html = localLinkWithClass(current, target, label, className)
+    html = "<a class=""" + className + """ href=""" + ...
         relativeWebPath(current, target) + """>" + htmlEscape(label) + "</a>";
 end
 
