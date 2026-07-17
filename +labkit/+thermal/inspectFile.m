@@ -27,6 +27,12 @@ function info = inspectFile(path, opts)
 %       radiometric payload is read successfully. On failure, identifier and
 %       message contain the caught reader error.
 %
+% Failure Behavior:
+%   Unsupported extensions and all readFile failures return isThermal=false
+%   with identifier and message populated; those reader exceptions are not
+%   rethrown. path must still be convertible to scalar text, and malformed
+%   MATLAB values may raise the originating conversion error.
+%
 % Example:
 %   info = labkit.thermal.inspectFile("candidate.jpg");
 %   if info.isThermal
@@ -34,6 +40,9 @@ function info = inspectFile(path, opts)
 %   else
 %       warning("%s", info.message)
 %   end
+%
+% See also labkit.thermal.readFile,
+%   labkit.thermal.isSupportedPath
 
     if nargin < 2 || isempty(opts)
         opts = struct();

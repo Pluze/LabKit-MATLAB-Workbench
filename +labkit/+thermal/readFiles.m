@@ -50,6 +50,9 @@ function [records, report] = readFiles(paths, opts)
 %       "TemperatureCorrection", "environment");
 %   [records, report] = labkit.thermal.readFiles(files, opts);
 %   fprintf("Loaded %d of %d files.\n", report.loaded, report.requested)
+%
+% See also labkit.thermal.readFile,
+%   labkit.thermal.inspectFile
 
     if nargin < 2 || isempty(opts)
         opts = struct();

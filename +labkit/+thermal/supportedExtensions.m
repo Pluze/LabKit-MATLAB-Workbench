@@ -14,9 +14,18 @@ function extensions = supportedExtensions()
 %   extensions - String row vector [".jpg", ".jpeg", ".rjpg"]. Extensions
 %       are lowercase and include the leading period.
 %
+% Failure Behavior:
+%   The function accepts no caller input and performs no file-system access.
+%   It returns the fixed facade extension list without a recoverable failure
+%   state.
+%
 % Example:
 %   extensions = labkit.thermal.supportedExtensions();
 %   pattern = "*" + strjoin(extensions, ";*");
+%
+% See also labkit.thermal.isSupportedPath,
+%   labkit.thermal.fileDialogFilter,
+%   labkit.thermal.inspectFile
 
     extensions = [".jpg", ".jpeg", ".rjpg"];
 end
