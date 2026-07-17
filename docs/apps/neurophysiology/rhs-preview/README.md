@@ -135,6 +135,10 @@ interaction, `sourcePaths`, and injected upsert/reconcile services; migration
 iteration, busy state, and portable-reference serialization remain
 framework-private.
 
+The project validator requires the source collection and retains recording,
+protocol, and filter role/cardinality rules plus preview and annotation fields;
+Runtime validates canonical buckets and each source record first.
+
 Its session factory returns only App-specific status, time-window view, and
 indexed preview cache fields. Runtime supplies absent canonical buckets and
 owns workflow-log initialization.
