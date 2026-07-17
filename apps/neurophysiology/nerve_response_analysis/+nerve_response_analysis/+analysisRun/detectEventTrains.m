@@ -26,12 +26,16 @@ function [events, trains] = detectEventTrains(timeSec, signal, opts)
 %       policy under opts.eventDetection.
 %
 % Options:
+%   eventDetection - Optional scalar protocol structure containing sources and
+%       train fields. When omitted, the supplied opts structure itself is
+%       interpreted as the event-detection policy. Default: direct opts.
 %   sourceId - Text copied to event and train source columns. Default: the first
 %       derivative source id in eventDetection.sources, or "analog_derivative".
-%   stdMultiplier - Multiplier applied to robust score noise. A derivative
-%       source's threshold.multiplier takes precedence. Default: 2.
-%   minScore - Absolute lower bound for the derivative score. The effective
-%       threshold is max(minScore, stdMultiplier*noise). Default: 0.
+%   stdMultiplier - Numeric scalar multiplier applied to robust score noise. A
+%       derivative source's threshold.multiplier takes precedence. Default: 2.
+%   minScore - Finite numeric scalar lower bound in signal-difference units.
+%       The effective threshold is max(minScore, stdMultiplier*noise).
+%       Default: 0.
 %   minPeakDistanceSec - Minimum separation between retained candidates. A
 %       derivative source's value takes precedence. Default: 0.005 seconds.
 %   groupGapSec - A gap larger than this value starts a new train. Supply it in

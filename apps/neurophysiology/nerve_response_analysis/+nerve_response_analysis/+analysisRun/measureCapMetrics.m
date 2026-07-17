@@ -21,6 +21,9 @@ function metrics = measureCapMetrics(timeSec, signal, eventTimesSec, opts)
 %   opts - Optional scalar structure containing the measurement windows below.
 %
 % Options:
+%   segments - Optional scalar protocol structure. segments.capSearch may
+%       contain blankingAfterPulseSec and searchEndAfterPulseSec; nested values
+%       override direct options. Default: struct().
 %   baselineWindowSec - Duration before each event used to estimate baseline.
 %       The inclusive baseline interval is [event-baselineWindowSec,
 %       event-blankingAfterPulseSec]. Default: 0.050 seconds.

@@ -21,8 +21,8 @@ function metrics = measureAlignedSegments(aligned, opts)
 % Options:
 %   baselineWindowSec - Inclusive [start end] interval in aligned seconds used
 %       to calculate and subtract the baseline mean. Default: [0.007 0.009].
-%   noiseWindowSec - Inclusive interval used for noise RMS after baseline
-%       subtraction. Default: baselineWindowSec.
+%   noiseWindowSec - Two-element numeric [start end] interval used for noise
+%       RMS after baseline subtraction. Default: baselineWindowSec.
 %   measurementWindowSec - Inclusive interval used for positive and negative
 %       peaks. Empty input uses all aligned samples. Default: [].
 %
@@ -39,6 +39,13 @@ function metrics = measureAlignedSegments(aligned, opts)
 %   metrics - N-row table with SegmentName, BaselineStart_s, BaselineEnd_s,
 %       PeakToPeak, Peak1Time_s, Peak1Value, Peak2Time_s, Peak2Value,
 %       NoiseStart_s, NoiseEnd_s, NoiseRMS, and SNR_dB columns.
+%
+% Failure Behavior:
+%   Windows without usable finite samples produce NaN metrics for the affected
+%   segment. aligned must provide compatible timeSec, values, and segmentNames
+%   fields, and every supplied window must contain two numeric endpoints;
+%   malformed values propagate the originating field, indexing, or conversion
+%   error.
 %
 % Example:
 %   aligned = struct("timeSec", (0:0.001:0.012).', ...
