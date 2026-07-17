@@ -21,7 +21,8 @@ function state = onOpenFilesChosen(state, event, services)
         return;
     end
 
-    failures = struct("filepath", {}, "message", {});
+    firstFailure = struct("filepath", "", "message", "");
+    hasFailure = false;
     for k = 1:numel(paths)
         filepath = paths(k);
         if isLoaded(state.session.cache.items, filepath)
@@ -31,29 +32,28 @@ function state = onOpenFilesChosen(state, event, services)
         end
         [item, status] = labkit.dta.loadFile(filepath, "cvct");
         if ~status.ok
-            failures(end + 1) = struct( ...
-                "filepath", filepath, "message", string(status.message));
+            if ~hasFailure
+                firstFailure = struct( ...
+                    "filepath", filepath, ...
+                    "message", string(status.message));
+                hasFailure = true;
+            end
             state = services.workflow.log(state, ...
                 "Failed to load " + filepath + ": " + string(status.message));
             continue;
         end
         state.session.cache.items = appendItem( ...
             state.session.cache.items, item);
-        source = services.project.sourceRecord( ...
-            nextSourceId(state.project.inputs.sources), ...
-            "cvct", filepath, true);
-        state.project.inputs.sources = appendSource( ...
-            state.project.inputs.sources, source);
         state.session.selection.currentIndex = ...
             numel(state.session.cache.items);
         state = logLoadedItem(state, item, services);
     end
+    state = reconcileProjectSources(state, services);
     state = resetCurrentView(state);
     state = clearExportReferences(state);
-    if ~isempty(failures)
-        first = failures(1);
+    if hasFailure
         services.dialogs.alert(sprintf('Failed to load:\n%s\n\n%s', ...
-            first.filepath, first.message), 'Load error');
+            firstFailure.filepath, firstFailure.message), 'Load error');
     end
 end
 
@@ -65,7 +65,7 @@ function state = onRemoveSelected(state, event, services)
     end
     removed = string({items(indices).filepath});
     state.session.cache.items(indices) = [];
-    state.project.inputs.sources(indices) = [];
+    state = reconcileProjectSources(state, services);
     state.session.selection.currentIndex = boundedIndex( ...
         state.session.selection.currentIndex, numel(state.session.cache.items));
     state = resetCurrentView(state);
@@ -76,8 +76,8 @@ function state = onRemoveSelected(state, event, services)
 end
 
 function state = onClearAll(state, ~, services)
-    state.project.inputs.sources = state.project.inputs.sources([]);
     state.session.cache.items = struct([]);
+    state = reconcileProjectSources(state, services);
     state.session.selection.currentIndex = 0;
     state = resetCurrentView(state);
     state = clearExportReferences(state);
@@ -181,7 +181,7 @@ function state = onExportVoltageCurrent(state, ~, services)
     state.project.results.lastVoltageCurrentExport = struct( ...
         "csvPaths", string(info.files), ...
         "manifestPath", string(manifestPath));
-    if numel(info.files) == 1
+    if isscalar(info.files)
         message = sprintf('Exported CV data CSV: %s (%d voltage rows)', ...
             info.files(1), info.rows);
     else
@@ -203,18 +203,14 @@ function spec = resultSpec(state, outputs, manifestName)
 end
 
 function outputs = outputRecords(files, services)
-    outputs = struct([]);
+    records = cell(numel(files), 1);
     for k = 1:numel(files)
         [~, name, extension] = fileparts(files(k));
-        output = services.results.output( ...
+        records{k} = services.results.output( ...
             "cvData" + string(k), outputRole(k), ...
             string(name) + string(extension), "text/csv");
-        if isempty(outputs)
-            outputs = output;
-        else
-            outputs(end + 1) = output;
-        end
     end
+    outputs = vertcat(records{:});
 end
 
 function role = outputRole(index)
@@ -280,16 +276,6 @@ function tf = isLoaded(items, filepath)
         any(string({items.filepath}) == string(filepath));
 end
 
-function id = nextSourceId(sources)
-    ids = string({sources.id});
-    number = numel(ids) + 1;
-    id = "dta" + string(number);
-    while any(ids == id)
-        number = number + 1;
-        id = "dta" + string(number);
-    end
-end
-
 function items = appendItem(items, item)
     if isempty(items)
         items = item;
@@ -298,12 +284,13 @@ function items = appendItem(items, item)
     end
 end
 
-function sources = appendSource(sources, source)
-    if isempty(sources)
-        sources = source;
-    else
-        sources(end + 1) = source;
+function state = reconcileProjectSources(state, services)
+    paths = strings(0, 1);
+    if ~isempty(state.session.cache.items)
+        paths = string({state.session.cache.items.filepath}).';
     end
+    state.project.inputs.sources = services.project.reconcileSources( ...
+        state.project.inputs.sources, paths, "cvct", "dta", true);
 end
 
 function index = boundedIndex(index, count)

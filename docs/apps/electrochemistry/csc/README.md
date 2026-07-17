@@ -18,7 +18,9 @@ labkit_CSC_app
 Add one or more CV/CT `.DTA` files. The selected file determines the current
 curve list, readout, and plots. Selecting another file resets the curve selection and
 default plot quantities to that file; it does not silently keep a cycle from
-the previous source.
+the previous source. Runtime V2 reconciles durable source identities from the
+successfully decoded file order, preserving retained identities through
+removal, later additions, save, and reopen.
 
 The default curve selection is **All cycles**. Individual cycle selection
 updates the comparison readout for that cycle.
@@ -114,6 +116,7 @@ The single `definition.m` owns product metadata, requirements, layout, and
 optional runtime capabilities. `projectSpec.m` owns the complete version-1
 durable schema, defaults, and validation. `createSession.m` rebuilds decoded
 CV/CT curves and active selection because they are transient runtime data. The
-App requires `labkit.ui >=7 <8` and `labkit.dta >=2 <3`; busy-state,
-resolved-path access, and portable-reference serialization remain
+App omits empty workflow and view buckets because Runtime canonicalizes them.
+It requires `labkit.ui >=7 <8` and `labkit.dta >=2 <3`; busy-state, source
+identity, resolved-path access, and portable-reference serialization remain
 framework-owned.
