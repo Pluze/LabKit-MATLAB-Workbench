@@ -18,7 +18,9 @@ labkit_CIC_app
 Add one or more chrono `.DTA` files. The selected row is decoded for immediate
 preview; batch calculation is performed with the same analysis settings when
 results are exported. This avoids repeatedly decoding every large file while
-the user is only switching previews.
+the user is only switching previews. Runtime V2 reconciles the ordered path
+list with durable source records, so retained files keep stable identities and
+new files receive collision-free identities without an App-owned counter.
 
 Electrode area comes from a positive UI override when supplied, otherwise from
 the parsed DTA metadata. Without a valid positive area, charge in coulombs can
@@ -125,5 +127,6 @@ optional runtime capabilities. `projectSpec.m` owns the complete version-1
 durable schema, defaults, and validation. `createSession.m` deliberately
 decodes only the first source for immediate preview; remaining batch files stay
 lazy until selection or export. The App requires `labkit.ui >=7 <8` and
-`labkit.dta >=2 <3`; busy-state, resolved-path access, and portable-reference
-serialization remain framework-owned.
+`labkit.dta >=2 <3`; Runtime also supplies omitted empty session buckets and
+owns workflow-log initialization. Busy-state, source identity, resolved-path
+access, and portable-reference serialization remain framework-owned.
