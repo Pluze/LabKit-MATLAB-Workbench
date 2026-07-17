@@ -25,6 +25,13 @@ function [alignedImage, tformRigid, method] = autoAlignMovingToReference(referen
 %   shift. Rotation, scale, deformation, repeated texture, and large nonoverlap
 %   can produce a poor fit.
 %
+% Failure Behavior:
+%   The function does not assign a confidence score or reject an ambiguous
+%   phase-correlation peak; low-texture or repeated-pattern inputs can return a
+%   numerically valid but poor translation. Empty arrays, unsupported image
+%   classes, or invalid channel shapes propagate image conversion/interpolation
+%   errors.
+%
 % Example:
 %   reference = zeros(16); reference(5:8, 6:9) = 1;
 %   moving = circshift(reference, [2 -3]);

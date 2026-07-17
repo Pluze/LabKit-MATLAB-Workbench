@@ -27,6 +27,14 @@ function [alignedImage, tformRigid] = alignMovingToReference(referenceImage, mov
 %   rotation and translation; reflection is explicitly rejected. It does not
 %   estimate scale or shear. Resampling is delegated to applyRigidTransform.
 %
+% Failure Behavior:
+%   The caller is responsible for supplying corresponding finite N-by-2 point
+%   arrays with enough nondegenerate geometry to constrain the fit. The
+%   function does not validate pair count or fit quality; insufficient or
+%   degenerate data can therefore return an arbitrary transform. Shapes that
+%   cannot participate in the matrix operations, unsupported image classes,
+%   and SVD/interpolation failures propagate the originating MATLAB error.
+%
 % Example:
 %   reference = zeros(12, 12);
 %   moving = zeros(12, 12); moving(4:6, 3:5) = 1;
