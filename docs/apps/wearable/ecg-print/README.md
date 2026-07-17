@@ -36,6 +36,25 @@ The recording reference is stored in the standard project `inputs.sources`
 collection. Version 1 ECG Print projects using the former singular
 `inputs.source` field are upgraded on load and saved as payload version 2.
 
+## Project And Session State
+
+ECG Print stores only durable workflow state in its project file:
+
+- the portable recording source;
+- import, channel, ROI, filter, detector, segment, template, and view settings;
+- the compact last-analysis summary and export records.
+
+Decoded recordings, signal arrays, events, segments, templates, measurements,
+header previews, and plot models are transient session data. They are rebuilt
+from the recording and durable parameters when a project is opened. This keeps
+saved projects portable and avoids duplicating large waveform caches.
+
+For developers, `ecg_print.definition` is the complete product contract.
+`ecg_print.projectSpec` keeps project creation, validation, and the version-1
+upgrade in one file; `ecg_print.createSession` reconstructs transient state.
+Runtime V2 performs the version loop and calls the migration entry once for
+each older payload version.
+
 ## Analyze ECG
 
 1. Open and parse a recording.
@@ -124,4 +143,7 @@ segments, template, and measurements. For a more customized pipeline, call
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8` and
+`labkit.biosignal >=1.0 <2`. App code uses semantic actions, `sourcePaths`, and
+injected project services; migration iteration, busy state, and portable
+reference serialization remain framework-private.

@@ -1,12 +1,12 @@
-% Expected caller: Runtime V2. Input is a validated ECG project with resolved
-% source. Output owns decoded recording/signals, events, segments, templates,
-% measurements, header preview, workflow log, and current plot caches.
+% Rebuild decoded recording, signal products, header preview, workflow log,
+% and plot caches from one validated ECG Print project.
 function session = createSession(project)
     cache = emptyCache();
     workflow = struct("importStatus", ...
         "Open a recording to inspect import settings.", ...
         "logLines", strings(0, 1));
-    filepath = sourcePath(project.inputs.sources);
+    filepath = labkit.ui.runtime.sourcePaths( ...
+        project.inputs.sources, "recording");
     if strlength(filepath) > 0
         [cache, workflow.importStatus] = ecg_print.sourceFiles.loadRecording( ...
             filepath, project.parameters, project.parameters.channel);
@@ -32,11 +32,4 @@ function cache = emptyCache()
         "segments", [], "template", [], "measurements", [], ...
         "channelItems", {{'(none)'}}, ...
         "filePreview", {{'Open a CSV/text file, then use Preview file header.'}});
-end
-
-function filepath = sourcePath(sources)
-    filepath = "";
-    if ~isempty(sources)
-        filepath = string(sources(1).reference.originalPath);
-    end
 end

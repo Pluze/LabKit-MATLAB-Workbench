@@ -243,8 +243,8 @@ end
 function state = clearDecodedRecording(state)
     filepath = state.session.cache.filepath;
     preview = state.session.cache.filePreview;
-    project = ecg_print.appLifecycle.createProject();
-    empty = ecg_print.appLifecycle.createSession(project);
+    projectSpec = ecg_print.projectSpec();
+    empty = ecg_print.createSession(projectSpec.Create());
     state.session.cache = empty.cache;
     state.session.cache.filepath = filepath;
     state.session.cache.filePreview = preview;

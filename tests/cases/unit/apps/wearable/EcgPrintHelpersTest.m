@@ -4,17 +4,19 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
     methods (Test, TestTags = {'Unit'})
         function projectMigrationAdoptsCanonicalSourceCollection(testCase)
             setupLabKitTestPath();
-            project = ecg_print.appLifecycle.createProject();
+            spec = ecg_print.projectSpec();
+            project = spec.Create();
             expected = struct("absolutePath", "/tmp/ecg.csv");
             project.inputs.source = expected;
             project.inputs = rmfield(project.inputs, "sources");
 
-            migrated = ecg_print.appLifecycle.migrateProjectV1ToV2(project);
+            migrated = spec.Migrate(project, 1);
             definition = ecg_print.definition();
 
             testCase.verifyEqual(migrated.inputs.sources, expected);
             testCase.verifyFalse(isfield(migrated.inputs, "source"));
             testCase.verifyEqual(definition.project.Version, 2);
+            testCase.verifyEqual(definition.project.Migrate, spec.Migrate);
         end
 
         function importOptionsNormalizeUiValues(testCase)
