@@ -214,6 +214,8 @@ function html = renderPageGroups(members, outputPath, defaultGroup, useNavGroup)
 end
 
 function html = renderPageGroupLinks(members, outputPath, indentChildren)
+    [~, memberOrder] = sort([members.order]);
+    members = members(memberOrder);
     parentKinds = ["overview", "app family"];
     hasParent = any(ismember(string({members.kind}), parentKinds));
     links = strings(0, 1);
