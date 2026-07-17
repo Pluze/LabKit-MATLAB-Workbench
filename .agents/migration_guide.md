@@ -36,14 +36,10 @@ Owner:
   contract tests.
 
 Evidence:
-: The complete-App tutorial repeats canonical project checks that the Runtime
-  manual assigns to the framework; private App guidance still teaches retired
-  files; the boundary skill assigns App metadata to `version.m`; and the
-  migration ledger previously reported no debt while defects remained. The
-  public-help guard checks
-  section presence and at least one option but does not prove every option,
-  default, legal value, error, or related API is documented. Its module scan
-  omits the rendered public `labkit.ui.version` page.
+: The public-help guard checks section presence and at least one option but
+  does not prove every option, default, legal value, error, or related API is
+  documented. Its module scan omits the rendered public
+  `labkit.ui.version` page.
 
 Affected scope:
 : Current development/framework/private-App manuals, public help, relevant

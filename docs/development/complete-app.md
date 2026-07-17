@@ -125,16 +125,6 @@ function project = createProject()
 end
 
 function accepted = validateProject(project)
-    buckets = ["inputs", "parameters", "annotations", ...
-        "results", "extensions"];
-    assert(isstruct(project) && isscalar(project) && ...
-        all(isfield(project, cellstr(buckets))), ...
-        "trace_viewer:InvalidProject", ...
-        "Trace Viewer project buckets are incomplete.");
-    assert(isfield(project.inputs, "sources") && ...
-        isstruct(project.inputs.sources), ...
-        "trace_viewer:InvalidProject", ...
-        "Trace Viewer inputs.sources must contain source records.");
     gain = project.parameters.gain;
     assert(isnumeric(gain) && isscalar(gain) && isfinite(gain), ...
         "trace_viewer:InvalidProject", ...
@@ -146,9 +136,12 @@ function accepted = validateProject(project)
 end
 ```
 
-The Runtime adds any missing canonical project buckets, then validates the
-complete value after creation, load, migration, and every action transaction.
-A validator checks; it does not repair, prompt, or access graphics.
+Runtime validates the scalar project, its five canonical buckets, and standard
+source-record structure before this callback. The App callback therefore
+checks only Trace Viewer fields and invariants: gain and summary in this
+example. Runtime validates the complete value after creation, load, migration,
+and every action transaction. A validator checks; it does not repeat
+framework checks, repair, prompt, or access graphics.
 
 When the schema later advances to version 2, change `Version` and provide one
 local version-aware function:

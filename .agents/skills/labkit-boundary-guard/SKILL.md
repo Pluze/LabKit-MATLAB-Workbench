@@ -29,7 +29,9 @@ Keep domain facades GUI-free and app-free. Keep `labkit.ui` parser/science-free;
 its public layers are `runtime`, `layout`, `plot`, `interaction`, and `debug`.
 Concrete controls, registries, queues, interaction runtimes, persistence
 storage, and lifecycle handles stay private. App metadata stays in app-owned
-`version.m`; `labkit.contract` is not a registry.
+`definition.m`; separate App `version.m` and requirements registries are
+retired. `labkit.contract` validates facade ranges; it is not an App metadata
+registry.
 
 Public API additions require a complete MATLAB help contract, focused tests,
 facade version update, owning docs, and component history. Internal refactors
