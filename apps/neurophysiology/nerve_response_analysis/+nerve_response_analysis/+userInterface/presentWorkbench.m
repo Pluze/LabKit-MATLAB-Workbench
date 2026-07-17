@@ -3,18 +3,18 @@
 % model without UI registry access or side effects.
 function view = presentWorkbench(state)
     model = presentationModel(state);
-    filterSources = roleSources(state, "filterRecord");
-    protocolSources = roleSources(state, "protocol");
-    hasFilter = ~isempty(filterSources);
+    filterPath = sourcePath(state, "filterRecord");
+    protocolPath = sourcePath(state, "protocol");
+    hasFilter = strlength(filterPath) > 0;
     hasAnalysis = isstruct(state.session.cache.analysis) && ...
         ~isempty(fieldnames(state.session.cache.analysis));
     hasOutput = strlength(state.session.workflow.outputFolder) > 0;
 
     view = struct();
     view.controls.sessionFile = sourcePanel( ...
-        filterSources, "No filter selected");
+        filterPath, "No filter selected");
     view.controls.protocolFile = sourcePanel( ...
-        protocolSources, "No protocol selected");
+        protocolPath, "No protocol selected");
     view.controls.outputFolder = valueSpec(outputFolderText( ...
         state.session.workflow.outputFolder));
     view.controls.runAnalysis = enabledSpec(hasFilter);
@@ -31,8 +31,8 @@ end
 
 function model = presentationModel(state)
     model = struct( ...
-        "sessionFile", sourcePath(roleSources(state, "filterRecord")), ...
-        "protocolFile", sourcePath(roleSources(state, "protocol")), ...
+        "sessionFile", sourcePath(state, "filterRecord"), ...
+        "protocolFile", sourcePath(state, "protocol"), ...
         "outputFolder", state.session.workflow.outputFolder, ...
         "maxRecordings", state.project.parameters.maxRecordings, ...
         "maxDurationSec", state.project.parameters.maxDurationSec, ...
@@ -42,16 +42,11 @@ function model = presentationModel(state)
         "lastAction", state.session.workflow.lastAction);
 end
 
-function sources = roleSources(state, role)
-    sources = nerve_response_analysis.appLifecycle.sourceRecordsForRole( ...
-        state.project.inputs.sources, role);
-end
-
-function spec = sourcePanel(sources, emptyStatus)
+function spec = sourcePanel(filepath, emptyStatus)
     files = struct("id", {}, "path", {}, "status", {});
-    if ~isempty(sources)
+    if strlength(filepath) > 0
         files = struct("id", "item1", ...
-            "path", string(sources(1).reference.originalPath), "status", "");
+            "path", filepath, "status", "");
     end
     status = string(emptyStatus);
     if ~isempty(files)
@@ -60,11 +55,9 @@ function spec = sourcePanel(sources, emptyStatus)
     spec = struct("Files", files, "Status", status);
 end
 
-function filepath = sourcePath(sources)
-    filepath = "";
-    if ~isempty(sources)
-        filepath = string(sources(1).reference.originalPath);
-    end
+function filepath = sourcePath(state, id)
+    filepath = labkit.ui.runtime.sourcePaths( ...
+        state.project.inputs.sources, id);
 end
 
 function text = outputFolderText(filepath)

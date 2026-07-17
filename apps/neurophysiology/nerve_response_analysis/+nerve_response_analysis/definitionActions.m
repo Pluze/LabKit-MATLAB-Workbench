@@ -28,10 +28,9 @@ function state = onSessionChosen(state, event, services)
             "Filter record load failed: " + string(ME.message));
         return;
     end
-    source = services.project.sourceRecord( ...
+    state.project.inputs.sources = services.project.upsertSource( ...
+        state.project.inputs.sources, ...
         "filterRecord", "filterRecord", filepath, true);
-    state.project.inputs.sources = replaceRole( ...
-        state.project.inputs.sources, "filterRecord", source);
     state.project.results.lastExport = [];
     state.session.cache.filterPath = filepath;
     state.session.cache.filterRecord = filterRecord;
@@ -52,10 +51,9 @@ function state = onProtocolChosen(state, event, services)
         return;
     end
     protocol = loadOptionalProtocol(filepath);
-    source = services.project.sourceRecord( ...
+    state.project.inputs.sources = services.project.upsertSource( ...
+        state.project.inputs.sources, ...
         "protocol", "protocol", filepath, false);
-    state.project.inputs.sources = replaceRole( ...
-        state.project.inputs.sources, "protocol", source);
     state.project.results.lastExport = [];
     state.session.cache.protocolPath = filepath;
     state.session.cache.protocol = protocol;
@@ -110,7 +108,7 @@ function state = onPreviewModeChanged(state, event, ~)
 end
 
 function state = onRunAnalysis(state, ~, services)
-    if isempty(roleSources(state, "filterRecord"))
+    if strlength(sourcePath(state, "filterRecord")) == 0
         state.session.workflow.statusMessage = "Select a filter record first.";
         return;
     end
@@ -173,9 +171,10 @@ function state = onExportAnalysis(state, ~, services)
 end
 
 function state = onResetWorkflow(~, ~, services)
-    project = nerve_response_analysis.appLifecycle.createProject();
+    projectSpec = nerve_response_analysis.projectSpec();
+    project = projectSpec.Create();
     state = struct("project", project, ...
-        "session", nerve_response_analysis.appLifecycle.createSession(project));
+        "session", nerve_response_analysis.createSession(project));
     state = services.workflow.log(state, ...
         "Reset Nerve Response Analysis state.");
 end
@@ -207,19 +206,12 @@ function count = tableHeight(analysis, fieldName)
     end
 end
 
-function sources = roleSources(state, role)
-    sources = nerve_response_analysis.appLifecycle.sourceRecordsForRole( ...
-        state.project.inputs.sources, role);
-end
-
-function sources = replaceRole(sources, role, replacements)
-    sources = ...
-        nerve_response_analysis.appLifecycle.replaceSourceRecordsForRole( ...
-        sources, role, replacements);
+function filepath = sourcePath(state, id)
+    filepath = labkit.ui.runtime.sourcePaths( ...
+        state.project.inputs.sources, id);
 end
 
 function protocol = loadOptionalProtocol(filepath)
-    protocol = struct();
     try
         protocol = jsondecode(fileread(char(filepath)));
     catch

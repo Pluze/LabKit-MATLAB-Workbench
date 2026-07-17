@@ -34,6 +34,24 @@ roles. Version 1 projects with separate role-specific fields are combined on
 load and the next save writes payload version 2. This lets common project
 save/load and missing-file relinking inspect every external dependency.
 
+## Project And Session State
+
+The durable project stores portable references for the filter record and
+optional protocol, the two run limits, and the last export paths. The fixed
+source IDs are `filterRecord` and `protocol`; each uses the same value as its
+role so loading, presentation, and relinking address one unambiguous record.
+
+Parsed JSON, analysis tables, issue details, preview selection, log messages,
+and output-folder convenience are transient session state. Opening a project
+reparses its JSON sources but does not persist or silently reuse old analysis
+tables; choose **Analyze Filtered Files** to calculate them again.
+
+For developers, `nerve_response_analysis.definition` is the complete product
+contract. `nerve_response_analysis.projectSpec` owns project creation,
+validation, and the version-1 upgrade in one file, while
+`nerve_response_analysis.createSession` rebuilds transient state. Runtime V2
+owns the migration loop and source-reference representation.
+
 ## What The Analysis Does
 
 For each readable recording, the app selects an event source from the protocol
@@ -121,4 +139,7 @@ To process an RHS file or an entire filter record, use
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8` and
+`labkit.rhs >=1.0 <2`. App code uses semantic actions, `sourcePaths`, and the
+injected source-upsert service; migration iteration, busy state, and portable
+reference serialization remain framework-private.

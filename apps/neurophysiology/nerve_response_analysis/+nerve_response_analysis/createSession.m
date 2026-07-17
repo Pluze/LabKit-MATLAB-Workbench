@@ -1,13 +1,10 @@
-% Expected caller: Runtime V2. Input is a validated Nerve Response Analysis
-% project with resolved sources. Output owns parsed JSON, analysis, preview
-% mode, output-folder convenience, and workflow messages.
+% Rebuild parsed filter/protocol JSON, output-folder convenience, preview
+% state, and workflow messages from one validated project.
 function session = createSession(project)
-    filterSources = nerve_response_analysis.appLifecycle.sourceRecordsForRole( ...
-        project.inputs.sources, "filterRecord");
-    protocolSources = nerve_response_analysis.appLifecycle.sourceRecordsForRole( ...
-        project.inputs.sources, "protocol");
-    filterPath = sourcePath(filterSources);
-    protocolPath = sourcePath(protocolSources);
+    paths = labkit.ui.runtime.sourcePaths( ...
+        project.inputs.sources, ["filterRecord", "protocol"]);
+    filterPath = paths(1);
+    protocolPath = paths(2);
     filterRecord = loadRequiredJson(filterPath);
     protocol = loadOptionalJson(protocolPath);
     outputFolder = "";
@@ -46,12 +43,5 @@ function value = loadOptionalJson(filepath)
         value = jsondecode(fileread(char(filepath)));
     catch
         value = struct();
-    end
-end
-
-function filepath = sourcePath(sources)
-    filepath = "";
-    if ~isempty(sources)
-        filepath = string(sources(1).reference.originalPath);
     end
 end

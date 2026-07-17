@@ -4,21 +4,32 @@ classdef NerveResponseAnalysisOpsTest < matlab.unittest.TestCase
     methods (Test, TestTags = {'Unit'})
         function projectMigrationCombinesRoleSpecificSources(testCase)
             setupLabKitTestPath();
-            project = nerve_response_analysis.appLifecycle.createProject();
+            spec = nerve_response_analysis.projectSpec();
+            project = spec.Create();
             filterSource = sourceRecord("filterRecord", "filterRecord");
             protocolSource = sourceRecord("protocol", "protocol");
             project.inputs = struct("filterSource", filterSource, ...
                 "protocolSource", protocolSource);
 
-            migrated = ...
-                nerve_response_analysis.appLifecycle.migrateProjectV1ToV2(project);
+            migrated = spec.Migrate(project, 1);
             definition = nerve_response_analysis.definition();
 
             testCase.verifyEqual(migrated.inputs.sources, ...
                 [filterSource, protocolSource]);
             testCase.verifyEqual(definition.project.Version, 2);
+            testCase.verifyEqual(definition.project.Migrate, spec.Migrate);
             testCase.verifyFalse(any(isfield(migrated.inputs, ...
                 {"filterSource", "protocolSource"})));
+        end
+
+        function projectRejectsMismatchedSourceIdentity(testCase)
+            setupLabKitTestPath();
+            spec = nerve_response_analysis.projectSpec();
+            project = spec.Create();
+            project.inputs.sources = sourceRecord("filterRecord", "protocol");
+
+            testCase.verifyError(@() spec.Validate(project), ...
+                'nerve_response_analysis:InvalidProject');
         end
 
         function detectEventTrainsFindsFivePulseTrain(testCase)
