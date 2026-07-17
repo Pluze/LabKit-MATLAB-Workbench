@@ -49,13 +49,18 @@ classdef GuiLayoutEisTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(workflow.fileSelection('files'), ...
                 'eis_potentiostatic_zcurve.DTA'), ...
                 'EIS presentation should preserve the selected subset.');
-            ax.XLim = [-1e4 5e4];
+            % The axis is logarithmic here, so model a stale but legal zoom.
+            % A negative limit would itself make MATLAB warn asynchronously
+            % and falsely attribute that warning to the next UI callback.
+            ax.XLim = [1e4 5e4];
             ax.YLim = [4e4 13e4];
             ax.XLimMode = 'manual';
             ax.YLimMode = 'manual';
 
-            workflow.dropdown(char(axisItems(2)));
-            workflow.checkbox('Log Y', true);
+            testCase.verifyWarningFree( ...
+                @() workflow.dropdown(char(axisItems(2))));
+            testCase.verifyWarningFree( ...
+                @() workflow.checkbox('Log Y', true));
 
             testCase.verifyLessThan(diff(ax.XLim), 10, ...
                 'Changing EIS coordinate selections should discard stale zoomed X limits.');

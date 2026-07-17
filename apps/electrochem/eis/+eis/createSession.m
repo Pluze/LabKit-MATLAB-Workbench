@@ -1,5 +1,6 @@
-% Expected caller: Runtime V2. Input is a validated EIS project. Output owns
-% selected sources, workflow log, and rebuildable decoded EIS item cache.
+%CREATESESSION Rebuild transient EIS curves and selected source paths.
+% Expected caller: Runtime V2 through eis.definition. Decoded ZCURVE data and
+% selection remain outside the durable project.
 function session = createSession(project)
     items = eis.sourceFiles.loadProjectItems(project.inputs.sources);
     selectedPaths = strings(0, 1);

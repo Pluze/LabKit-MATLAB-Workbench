@@ -91,4 +91,10 @@ catalog. The DTA loader and `getZCurve` are supported reusable APIs.
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+The single `definition.m` owns product metadata, requirements, layout, and
+optional runtime capabilities. `projectSpec.m` owns the complete version-1
+durable schema, defaults, and validation. `createSession.m` rebuilds decoded
+ZCURVE items and selected paths because they are transient runtime data. The
+App requires `labkit.ui >=7 <8` and `labkit.dta >=2 <3`; busy-state,
+viewport-preserving rendering, and portable-reference serialization remain
+framework-private.

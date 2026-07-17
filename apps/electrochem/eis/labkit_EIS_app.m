@@ -3,5 +3,5 @@ function varargout = labkit_EIS_app(varargin)
 % Single-file app that composes +labkit GUI/DTA APIs and owns EIS workflow choices.
 
     [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
-        @eis.definition, @eis.requirements, @eis.version, varargin{:});
+        @eis.definition, varargin{:});
 end

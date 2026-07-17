@@ -9,8 +9,6 @@ function labels = plotOverlay(ax, items, opts)
     opts = fillPlotOptions(opts);
 
     labkit.ui.plot.clear(ax, "ResetScale", true);
-    ax.XScale = ternary(opts.logX, 'log', 'linear');
-    ax.YScale = ternary(opts.logY, 'log', 'linear');
     axis(ax, 'normal');
 
     cmap = lines(numel(items));
@@ -32,6 +30,11 @@ function labels = plotOverlay(ax, items, opts)
         labels{k} = items(k).name;
     end
     hold(ax, 'off');
+    % Set logarithmic scales only after positive-only data has established
+    % valid automatic limits. Applying a log scale while stale manual limits
+    % are still negative makes MATLAB warn before the redraw can refit them.
+    ax.XScale = ternary(opts.logX, 'log', 'linear');
+    ax.YScale = ternary(opts.logY, 'log', 'linear');
     labkit.ui.plot.fit(ax, plottedLines(isgraphics(plottedLines)));
 
     xlabel(ax, labelForAxis(opts.xName));
