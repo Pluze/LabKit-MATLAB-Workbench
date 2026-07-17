@@ -17,7 +17,9 @@ labkit_ChronoOverlay_app
 Use **Add DTA files** to select one or more `.DTA` files from one directory.
 The app parses each file as chrono data and reports unreadable items. The file
 list controls curve order, legend labels, and removal; selection does not
-discard other loaded curves.
+discard other loaded curves. Runtime V2 reconciles durable source records with
+the successfully decoded list, preserving the identity of retained files and
+allocating collision-free identities after removal and later additions.
 
 ## Basic Workflow
 
@@ -95,6 +97,7 @@ The single `definition.m` owns product metadata, requirements, layout, and
 optional runtime capabilities. `projectSpec.m` owns the current version-2
 schema plus one version-aware migration entry; Runtime V2 advances older
 payloads one version at a time. `createSession.m` rebuilds decoded DTA items
-and selection because curves are transient caches. The App requires
-`labkit.ui >=7 <8` and `labkit.dta >=2 <3`; busy-state, resolved-path access,
-and portable-reference serialization remain framework-owned.
+and selection because curves are transient caches. Runtime supplies omitted
+empty workflow and view buckets. The App requires `labkit.ui >=7 <8` and
+`labkit.dta >=2 <3`; busy-state, source identity, resolved-path access, and
+portable-reference serialization remain framework-owned.

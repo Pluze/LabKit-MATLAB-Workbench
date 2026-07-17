@@ -15,7 +15,8 @@ function state = onOpenFilesChosen(state, event, services)
         state = services.workflow.log(state, "Open cancelled.");
         return;
     end
-    failed = struct('filepath', {}, 'message', {});
+    firstFailure = struct("filepath", "", "message", "");
+    hasFailure = false;
     for k = 1:numel(paths)
         filepath = paths(k);
         if isLoaded(state.session.cache.items, filepath)
@@ -25,8 +26,12 @@ function state = onOpenFilesChosen(state, event, services)
         end
         [item, status] = labkit.dta.loadFile(filepath, "chrono");
         if ~status.ok
-            failed(end + 1) = struct( ...
-                'filepath', char(filepath), 'message', char(status.message));
+            if ~hasFailure
+                firstFailure = struct( ...
+                    "filepath", filepath, ...
+                    "message", string(status.message));
+                hasFailure = true;
+            end
             state = services.workflow.log(state, ...
                 "Failed: " + filepath + " | " + status.message);
             continue;
@@ -34,8 +39,6 @@ function state = onOpenFilesChosen(state, event, services)
         [item, alignMessage] = chrono_overlay.sourceFiles.alignByPulseGap(item);
         state.session.cache.items = appendItem( ...
             state.session.cache.items, item);
-        state.project.inputs.sources = appendSource( ...
-            state.project.inputs.sources, filepath, services);
         state.session.selection.paths(end + 1, 1) = filepath;
         state = services.workflow.log(state, alignMessage);
         for iMessage = 1:numel(item.logmsg)
@@ -44,11 +47,11 @@ function state = onOpenFilesChosen(state, event, services)
         state = services.workflow.log(state, string(item.name) + ": " + item.message);
         state = services.workflow.log(state, "Loaded: " + filepath);
     end
-    if ~isempty(failed)
-        firstError = failed(1);
+    state = reconcileProjectSources(state, services);
+    if hasFailure
         services.dialogs.alert(sprintf( ...
-            'Failed to load:\n%s\n\n%s', firstError.filepath, ...
-            firstError.message), 'Load error');
+            'Failed to load:\n%s\n\n%s', firstFailure.filepath, ...
+            firstFailure.message), 'Load error');
     end
 end
 
@@ -59,8 +62,7 @@ function state = onRemoveSelected(state, event, services)
     end
     [state.session.cache.items, removed] = removeItems( ...
         state.session.cache.items, paths);
-    state.project.inputs.sources = removeSources( ...
-        state.project.inputs.sources, paths);
+    state = reconcileProjectSources(state, services);
     state.session.selection.paths = setdiff( ...
         state.session.selection.paths, paths, 'stable');
     for k = 1:numel(removed)
@@ -70,7 +72,7 @@ end
 
 function state = onClearAll(state, ~, services)
     state.session.cache.items = struct([]);
-    state.project.inputs.sources = state.project.inputs.sources([]);
+    state = reconcileProjectSources(state, services);
     state.session.selection.paths = strings(0, 1);
     state = services.workflow.log(state, "Cleared all files.");
 end
@@ -138,16 +140,6 @@ function items = appendItem(items, item)
     end
 end
 
-function sources = appendSource(sources, filepath, services)
-    source = services.project.sourceRecord( ...
-        "dta" + string(numel(sources) + 1), "chrono", filepath, true);
-    if isempty(sources)
-        sources = source;
-    else
-        sources(end + 1) = source;
-    end
-end
-
 function [items, removed] = removeItems(items, paths)
     removed = strings(0, 1);
     if isempty(items)
@@ -159,10 +151,11 @@ function [items, removed] = removeItems(items, paths)
     items = items(keep);
 end
 
-function sources = removeSources(sources, paths)
-    if isempty(sources)
-        return;
+function state = reconcileProjectSources(state, services)
+    paths = strings(0, 1);
+    if ~isempty(state.session.cache.items)
+        paths = string({state.session.cache.items.filepath}).';
     end
-    sourcePaths = labkit.ui.runtime.sourcePaths(sources);
-    sources = sources(~ismember(sourcePaths, paths(:)));
+    state.project.inputs.sources = services.project.reconcileSources( ...
+        state.project.inputs.sources, paths, "chrono", "dta", true);
 end
