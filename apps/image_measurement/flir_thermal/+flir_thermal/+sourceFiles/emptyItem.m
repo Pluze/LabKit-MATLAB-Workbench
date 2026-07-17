@@ -1,7 +1,6 @@
-% Expected caller: flir_thermal app state and tests. Output is one empty
-% loaded thermal item with app-owned fields copied from labkit.thermal records.
+% Return one empty decoded FLIR item. Source readers and tests use this shape;
+% it contains transient matrices plus app-owned display and reading fields.
 function item = emptyItem()
-
     labels = flir_thermal.userInterface.rangeControlLabels();
     item = struct( ...
         'path', "", ...

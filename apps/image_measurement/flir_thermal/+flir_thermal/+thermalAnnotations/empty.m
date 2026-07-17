@@ -1,7 +1,6 @@
-% Expected callers: FLIR project creation and annotation reconciliation.
-% Output is one lightweight durable per-source range and reading record.
-function annotation = emptyAnnotation()
-    item = flir_thermal.appState.emptyItem();
+% Return one lightweight durable per-source range and temperature annotation.
+function annotation = empty()
+    item = flir_thermal.sourceFiles.emptyItem();
     annotation = struct( ...
         "sourceId", "", ...
         "displayRange", item.displayRange, ...

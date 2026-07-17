@@ -1,7 +1,5 @@
-% Expected callers: FLIR V2 cache loading and export. Inputs are a freshly
-% decoded thermal item and optional durable annotation. Output restores only
-% app-owned range and reading fields without persisting decoded matrices.
-function item = applyAnnotation(item, annotation)
+% Restore one optional durable annotation onto a freshly decoded FLIR item.
+function item = apply(item, annotation)
     if isempty(annotation)
         return;
     end

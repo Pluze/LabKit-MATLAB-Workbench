@@ -10,7 +10,7 @@ function [items, report] = readImages(paths, opts)
     end
     opts.SkipInvalid = true;
     [records, report] = labkit.thermal.readFiles(paths, opts);
-    template = flir_thermal.appState.emptyItem();
+    template = flir_thermal.sourceFiles.emptyItem();
     items = repmat(template, numel(records), 1);
     for k = 1:numel(records)
         items(k) = itemFromRecord(records(k), template);

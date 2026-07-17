@@ -59,9 +59,10 @@ end
 function spec = fileSpec(sources, annotations, index)
     files = repmat(struct("id", "", "path", "", "status", "ready"), ...
         numel(sources), 1);
+    paths = labkit.ui.runtime.sourcePaths(sources);
     for k = 1:numel(sources)
         files(k).id = string(sources(k).id);
-        files(k).path = string(sources(k).reference.originalPath);
+        files(k).path = paths(k);
         annotation = annotationFor(annotations, sources(k).id);
         if ~isempty(annotation) && logical(annotation.rangeAdjusted)
             files(k).status = "range set";

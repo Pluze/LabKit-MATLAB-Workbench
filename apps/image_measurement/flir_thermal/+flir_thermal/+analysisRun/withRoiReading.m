@@ -1,11 +1,8 @@
-% Expected caller: FLIR thermal runner and tests. Inputs are one item, ROI
-% mode, and two image points. Output is the item with only that ROI result
-% updated plus the computed ROI mean. Side effects: none.
+% Return one FLIR item with the selected ROI reading updated.
 function [item, meanReading] = withRoiReading(item, mode, startXY, endXY)
-
     [hotSpot, coldSpot, meanReading] = ...
         flir_thermal.analysisRun.roiTemperatureMeanReading( ...
-        item.temperatureC, startXY, endXY);
+            item.temperatureC, startXY, endXY);
     if ~isfinite(meanReading.temperatureC)
         return;
     end

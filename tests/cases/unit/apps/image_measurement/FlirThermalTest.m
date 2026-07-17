@@ -100,7 +100,7 @@ classdef FlirThermalTest < matlab.unittest.TestCase
 
         function flirThermalRawItemsFallbackAndRangeStatus(testCase)
             setupLabKitTestPath();
-            item = flir_thermal.appState.emptyItem();
+            item = flir_thermal.sourceFiles.emptyItem();
             item.path = "raw_fixture.rjpg";
             item.name = "raw_fixture.rjpg";
             item.raw = [1 2; 3 4];
@@ -149,7 +149,7 @@ classdef FlirThermalTest < matlab.unittest.TestCase
 
         function flirThermalRangeControlBoundsPresets(testCase)
             setupLabKitTestPath();
-            item = flir_thermal.appState.emptyItem();
+            item = flir_thermal.sourceFiles.emptyItem();
             item.path = "bounds_fixture.rjpg";
             item.name = "bounds_fixture.rjpg";
             item.temperatureC = [20 25; 35 40];
@@ -179,7 +179,7 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             folder = tempname;
             mkdir(folder);
             cleanup = onCleanup(@() removeTempFolder(folder));
-            item = flir_thermal.appState.emptyItem();
+            item = flir_thermal.sourceFiles.emptyItem();
             item.path = fullfile(folder, "readings.rjpg");
             item.name = "readings.rjpg";
             item.temperatureC = [10 20 30; 40 50 60; 70 80 90];

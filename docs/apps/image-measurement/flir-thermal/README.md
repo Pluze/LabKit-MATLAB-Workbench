@@ -73,6 +73,18 @@ color scale graphics, Celsius matrices/tables, measurement values, and a
 manifest. The clean image export excludes interactive toolbar chrome. Numeric
 temperature outputs remain Celsius regardless of palette or mapping mode.
 
+## Project And State
+
+Saved projects keep portable source references, display parameters, export
+settings, and lightweight per-image ranges and readings. Raw sensor matrices
+and decoded Celsius matrices are transient session data: Runtime V2 resolves
+the source references and the App decodes only the selected image again when a
+project opens. Missing source files therefore use the framework's relinking
+flow rather than embedding local absolute paths in the project.
+
+An empty launch does not choose an output directory. Adding files establishes
+the source-adjacent default; **Choose folder** remains available before export.
+
 ## Use Without The GUI
 
 ```matlab
@@ -104,7 +116,18 @@ point = flir_thermal.analysisRun.pointTemperatureReading( ...
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
-Thermal image, colorbar, and CSV manifest outputs are appended to the
-framework's canonical empty output array; no invalid placeholder result is
-created before batch export.
+The single `definition.m` owns product metadata, requirements, layout, actions,
+presentation, renderers, and debug-sample capability. `projectSpec.m` is the
+only durable-project entry; the version-1 payload needs creation and validation
+but no migration. Root `createSession.m` rebuilds only the selected decoded
+thermal item after Runtime V2 resolves sources.
+
+Decoded record shape lives with `+sourceFiles`, point and ROI calculations live
+with `+analysisRun`, and lightweight durable readings live with
+`+thermalAnnotations`; there is no generic `+appState` package. The App
+requires `labkit.ui >=7 <8`, `labkit.image >=2 <3`, and
+`labkit.thermal >=1.1 <2`. Source-path access, persistence, callback lifetime,
+busy state, and managed region interaction remain framework-owned. Thermal
+image, colorbar, and CSV manifest outputs are appended to the framework's
+canonical empty output array; no invalid placeholder result is created before
+batch export.

@@ -49,7 +49,7 @@ function state = onFilesChosen(state, event, services)
         return;
     end
     oldSources = state.project.inputs.sources;
-    oldPaths = sourcePaths(oldSources);
+    oldPaths = labkit.ui.runtime.sourcePaths(oldSources);
     acceptedPaths = string({addedItems.path}).';
     desiredPaths = requestedPaths;
     if isempty(desiredPaths)
@@ -100,7 +100,7 @@ end
 function state = onClearFiles(state, ~, services)
     state.project.inputs.sources = labkit.ui.runtime.emptySourceRecords();
     state.project.annotations.items = repmat( ...
-        flir_thermal.appState.emptyAnnotation(), 0, 1);
+        flir_thermal.thermalAnnotations.empty(), 0, 1);
     state.session.selection.currentIndex = 0;
     state.session.cache.currentItem = [];
     state = invalidateResults(state);
@@ -264,7 +264,8 @@ function state = onTemperaturePointSelected(state, event, services)
     if isempty(item)
         return;
     end
-    [item, reading] = flir_thermal.appState.withManualPoint(item, event.value);
+    [item, reading] = flir_thermal.analysisRun.withManualPoint( ...
+        item, event.value);
     if ~isfinite(reading.temperatureC)
         return;
     end
@@ -283,7 +284,7 @@ function state = onTemperatureRegionSelected(state, event, services)
     end
     startPoint = position(1:2);
     endPoint = startPoint + position(3:4);
-    [item, reading] = flir_thermal.appState.withRoiReading( ...
+    [item, reading] = flir_thermal.analysisRun.withRoiReading( ...
         item, state.project.parameters.roiMode, startPoint, endPoint);
     if ~isfinite(reading.temperatureC)
         return;
@@ -374,7 +375,7 @@ function state = storeCurrentItem(state, item)
     sourceId = state.project.inputs.sources(index).id;
     annotations = state.project.annotations.items;
     annotationIndex = find(string({annotations.sourceId}) == string(sourceId), 1);
-    annotation = flir_thermal.appState.annotationFromItem(item, sourceId);
+    annotation = flir_thermal.thermalAnnotations.fromItem(item, sourceId);
     if isempty(annotationIndex)
         annotations(end + 1, 1) = annotation;
     else
@@ -387,20 +388,22 @@ end
 function state = storeLoadedItems(state, items)
     sources = state.project.inputs.sources;
     annotations = state.project.annotations.items;
+    paths = labkit.ui.runtime.sourcePaths(sources);
     for k = 1:numel(items)
-        index = find(sourcePaths(sources) == string(items(k).path), 1);
+        index = find(paths == string(items(k).path), 1);
         if isempty(index)
             continue;
         end
         sourceId = sources(index).id;
-        annotation = flir_thermal.appState.annotationFromItem(items(k), sourceId);
+        annotation = flir_thermal.thermalAnnotations.fromItem( ...
+            items(k), sourceId);
         annotationIndex = find(string({annotations.sourceId}) == string(sourceId), 1);
         annotations(annotationIndex) = annotation;
     end
     state.project.annotations.items = annotations;
     currentIndex = state.session.selection.currentIndex;
     if currentIndex >= 1 && currentIndex <= numel(sources)
-        path = string(sources(currentIndex).reference.originalPath);
+        path = labkit.ui.runtime.sourcePaths(sources(currentIndex));
         itemIndex = find(string({items.path}) == path, 1);
         if ~isempty(itemIndex)
             state.session.cache.currentItem = items(itemIndex);
@@ -410,7 +413,7 @@ end
 
 function [items, ok] = loadAllItems(state, services)
     ok = false;
-    items = repmat(flir_thermal.appState.emptyItem(), 0, 1);
+    items = repmat(flir_thermal.sourceFiles.emptyItem(), 0, 1);
     try
         items = loadSources(state.project.inputs.sources, ...
             state.project.annotations.items);
@@ -426,14 +429,14 @@ function [items, ok] = loadAllItems(state, services)
 end
 
 function items = loadSources(sources, annotations)
-    paths = sourcePaths(sources);
+    paths = labkit.ui.runtime.sourcePaths(sources);
     items = flir_thermal.sourceFiles.readImages(paths);
     for k = 1:numel(items)
         sourceIndex = find(paths == string(items(k).path), 1);
         sourceId = sources(sourceIndex).id;
         annotationIndex = find(string({annotations.sourceId}) == string(sourceId), 1);
         if ~isempty(annotationIndex)
-            items(k) = flir_thermal.appState.applyAnnotation( ...
+            items(k) = flir_thermal.thermalAnnotations.apply( ...
                 items(k), annotations(annotationIndex));
         end
     end
@@ -445,12 +448,14 @@ function item = selectedLoadedItem(state, addedItems, services)
     if index < 1 || index > numel(state.project.inputs.sources)
         return;
     end
-    path = string(state.project.inputs.sources(index).reference.originalPath);
+    path = labkit.ui.runtime.sourcePaths( ...
+        state.project.inputs.sources(index));
     addedIndex = find(string({addedItems.path}) == path, 1);
     if ~isempty(addedIndex)
         annotation = annotationFor(state.project.annotations.items, ...
             state.project.inputs.sources(index).id);
-        item = flir_thermal.appState.applyAnnotation(addedItems(addedIndex), annotation);
+        item = flir_thermal.thermalAnnotations.apply( ...
+            addedItems(addedIndex), annotation);
         return;
     end
     state = reloadCurrent(state, services);
@@ -458,7 +463,7 @@ function item = selectedLoadedItem(state, addedItems, services)
 end
 
 function annotations = reconcileAnnotations(oldAnnotations, sources, addedItems)
-    annotations = repmat(flir_thermal.appState.emptyAnnotation(), 0, 1);
+    annotations = repmat(flir_thermal.thermalAnnotations.empty(), 0, 1);
     for k = 1:numel(sources)
         sourceId = string(sources(k).id);
         oldIndex = find(string({oldAnnotations.sourceId}) == sourceId, 1);
@@ -466,11 +471,11 @@ function annotations = reconcileAnnotations(oldAnnotations, sources, addedItems)
             annotations(end + 1, 1) = oldAnnotations(oldIndex);
             continue;
         end
-        path = string(sources(k).reference.originalPath);
+        path = labkit.ui.runtime.sourcePaths(sources(k));
         itemIndex = find(string({addedItems.path}) == path, 1);
         if ~isempty(itemIndex)
             annotations(end + 1, 1) = ...
-                flir_thermal.appState.annotationFromItem( ...
+                flir_thermal.thermalAnnotations.fromItem( ...
                 addedItems(itemIndex), sourceId);
         end
     end
@@ -532,17 +537,11 @@ function value = finiteScalar(candidate, fallback)
     end
 end
 
-function paths = sourcePaths(sources)
-    paths = strings(numel(sources), 1);
-    for k = 1:numel(sources)
-        paths(k) = string(sources(k).reference.originalPath);
-    end
-end
-
 function index = selectedIndex(sources, newSourcePaths)
     index = double(~isempty(sources));
+    paths = labkit.ui.runtime.sourcePaths(sources);
     for k = 1:numel(newSourcePaths)
-        match = find(sourcePaths(sources) == newSourcePaths(k), 1);
+        match = find(paths == newSourcePaths(k), 1);
         if ~isempty(match)
             index = match;
             return;

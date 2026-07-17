@@ -1,7 +1,6 @@
-% Expected caller: FLIR V2 actions. Inputs are a decoded thermal item and
-% canonical source ID. Output is the lightweight durable item annotation.
-function annotation = annotationFromItem(item, sourceId)
-    annotation = flir_thermal.appState.emptyAnnotation();
+% Convert one decoded FLIR item into its lightweight durable annotation.
+function annotation = fromItem(item, sourceId)
+    annotation = flir_thermal.thermalAnnotations.empty();
     annotation.sourceId = string(sourceId);
     fields = fieldnames(annotation);
     for k = 1:numel(fields)
