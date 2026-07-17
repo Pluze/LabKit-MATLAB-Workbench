@@ -27,7 +27,8 @@ function sources = emptySourceRecords()
 %       "sources", labkit.ui.runtime.emptySourceRecords());
 %   assert(isempty(project.inputs.sources))
 %
-% See also labkit.ui.runtime.sourcePaths, labkit.ui.runtime.define
+% See also labkit.ui.runtime.sourceRecord, labkit.ui.runtime.sourcePaths,
+%   labkit.ui.runtime.define
 
     reference = struct("schemaVersion", 1, "relativePath", "", ...
         "originalPath", "", "fileName", "");

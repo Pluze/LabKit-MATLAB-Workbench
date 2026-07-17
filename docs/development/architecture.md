@@ -151,7 +151,7 @@ App GUIs use the layered UI foundation:
 
 | Layer | App-facing API |
 | --- | --- |
-| Runtime | `labkit.ui.runtime.launch`, `define`, `emptySourceRecords`, `sourcePaths`, `saveState`, `loadState`, portable source references, and source-adjacent output defaults; the runtime privately owns request dispatch, queueing, resources, presentation, interactions, recovery, diagnostics, and result manifests. |
+| Runtime | `labkit.ui.runtime.launch`, `define`, `emptySourceRecords`, `sourceRecord`, `sourcePaths`, `saveState`, `loadState`, portable source references, and source-adjacent output defaults; the runtime privately owns request dispatch, queueing, resources, presentation, interactions, recovery, diagnostics, and result manifests. |
 | Layout | `labkit.ui.layout.workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel` |
 | Plot | Advanced renderer helpers: `clear`, `fit`, `fitCanvas`, `offsetData`, `clampData`, `message` |
 | Interaction | GUI-free `anchorPath`, `scaleBarCalibration`, `scaleBarGeometry`, plus `enablePopout`; editor/runtime objects are private. |

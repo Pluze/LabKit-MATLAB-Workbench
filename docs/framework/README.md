@@ -66,7 +66,8 @@ Variable-length sources and manifest outputs start from framework-provided
 empty arrays (`emptySourceRecords` and `services.results.emptyOutputs()`),
 then append validated real records. Apps do not construct empty-ID placeholder
 records merely to copy their struct shape. App code reads current source
-locations through `labkit.ui.runtime.sourcePaths` rather than depending on the
+records through `labkit.ui.runtime.sourceRecord`, and reads current locations
+through `labkit.ui.runtime.sourcePaths` rather than depending on the
 runtime-owned portable-reference fields. ID-based lookup preserves requested
 order and returns an empty path for an optional semantic source slot that has
 not been selected yet.

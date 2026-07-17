@@ -35,7 +35,7 @@ function services = buildV2RuntimeServices(fig, runtime, dispatch)
             choiceDialog(runtime.request, fig, message, titleText, ...
             options, defaultOption, cancelOption));
     services.project = struct( ...
-        "sourceRecord", @sourceRecord, ...
+        "sourceRecord", @labkit.ui.runtime.sourceRecord, ...
         "upsertSource", @upsertSource, ...
         "reconcileSources", @reconcileSources, ...
         "saveState", @() saveProjectState(fig, runtime.request), ...
@@ -243,19 +243,13 @@ function args = chooserArgs(request, names)
     end
 end
 
-function source = sourceRecord(id, role, filepath, required)
-    if nargin < 4
-        required = true;
-    end
-    source = canonicalSourceRecord(id, role, filepath, required);
-end
-
 function sources = upsertSource(sources, id, role, filepath, required)
     if nargin < 5
         required = true;
     end
     validateSourceRecords(sources);
-    source = sourceRecord(id, role, filepath, required);
+    source = labkit.ui.runtime.sourceRecord( ...
+        id, role, filepath, required);
     if isempty(sources)
         sources = source;
         return;
@@ -284,7 +278,8 @@ function sources = reconcileSources(existing, paths, role, idPrefix, required)
         match = sourceIndexForPath(existing, paths(k));
         if isempty(match)
             id = nextSourceId(existing, sources, idPrefix);
-            source = sourceRecord(id, role, paths(k), required);
+            source = labkit.ui.runtime.sourceRecord( ...
+                id, role, paths(k), required);
         else
             source = existing(match);
         end

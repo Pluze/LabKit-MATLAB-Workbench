@@ -8,8 +8,8 @@ function paths = sourcePaths(sources, ids)
 % Inputs:
 %   sources - Runtime V2 source struct array. Apps normally initialize an
 %       empty collection with labkit.ui.runtime.emptySourceRecords and add
-%       records through services.project.sourceRecord, upsertSource, or
-%       reconcileSources.
+%       records through labkit.ui.runtime.sourceRecord or the equivalent
+%       injected project services.
 %   ids - Optional source ID or collection of source IDs. Requested IDs are
 %       returned in the supplied order. An ID that has not been added yet
 %       returns an empty string in that position. When omitted, paths follow
@@ -34,7 +34,8 @@ function paths = sourcePaths(sources, ids)
 %   sources = labkit.ui.runtime.emptySourceRecords();
 %   assert(isempty(labkit.ui.runtime.sourcePaths(sources)))
 %
-% See also labkit.ui.runtime.emptySourceRecords,
+% See also labkit.ui.runtime.sourceRecord,
+%   labkit.ui.runtime.emptySourceRecords,
 %   labkit.ui.runtime.defaultOutputFolder
 
     if nargin < 1

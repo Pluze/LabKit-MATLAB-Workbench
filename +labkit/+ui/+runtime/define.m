@@ -153,7 +153,8 @@ function def = define(varargin)
 %       "Requirements", labkit.contract.requirements("ui", ">=7 <8"), ...
 %       "Layout", @buildStaticLayout);
 %
-% See also labkit.ui.runtime.launch, labkit.ui.runtime.sourcePaths,
+% See also labkit.ui.runtime.launch, labkit.ui.runtime.sourceRecord,
+%   labkit.ui.runtime.sourcePaths,
 %   labkit.ui.runtime.saveState, labkit.ui.runtime.loadState
 
     opts = parseOptions(varargin);

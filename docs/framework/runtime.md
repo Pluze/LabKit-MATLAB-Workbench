@@ -12,7 +12,7 @@ lifecycle exclusively.
 
 | Package | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.runtime` | Launch, canonical state, queued events, services, projects, and resources. | `launch`, `define`, `emptySourceRecords`, `sourcePaths`, `saveState`, `loadState`, `defaultOutputFolder`. |
+| `labkit.ui.runtime` | Launch, canonical state, queued events, services, projects, and resources. | `launch`, `define`, `emptySourceRecords`, `sourceRecord`, `sourcePaths`, `saveState`, `loadState`, `defaultOutputFolder`. |
 | `labkit.ui.layout` | Data-only semantic workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`. |
 | `labkit.ui.plot` | Advanced renderer viewport and coordinate mechanics. | `clear`, `fit`, `fitCanvas`, `message`, `offsetData`, `clampData`. |
 | `labkit.ui.interaction` | Managed-interaction calculation helpers and popout enablement. | `anchorPath`, `scaleBarCalibration`, `scaleBarGeometry`, `enablePopout`. |
@@ -162,13 +162,16 @@ from `Create`, and current projects skip migration.
 
 #### Portable Source Records
 
-Apps create external-file references through the injected
-`services.project.sourceRecord(id,role,filepath,required)` service. A durable
-record has stable App-facing identity fields plus a runtime-owned portable
-reference:
+Apps create external-file references through the GUI-free
+`labkit.ui.runtime.sourceRecord(id,role,filepath,required)` factory. Action
+handlers may use the equivalent injected
+`services.project.sourceRecord(id,role,filepath,required)` service. The pure
+factory is available to project creation, migration, legacy import, tests, and
+other code that does not run inside a callback. A durable record has stable
+App-facing identity fields plus a runtime-owned portable reference:
 
 ```matlab
-source = services.project.sourceRecord( ...
+source = labkit.ui.runtime.sourceRecord( ...
     "trace", "numericTrace", selectedPath, true);
 currentPath = labkit.ui.runtime.sourcePaths(source);
 ```
