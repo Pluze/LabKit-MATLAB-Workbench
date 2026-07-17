@@ -1,6 +1,5 @@
-% App-owned image measurement package helper. Expected caller: owning app callbacks
-% and package tests. Inputs, outputs, and side effects are
-% documented with the helper function below.
+% App-owned mapping from a named Focus Stack workflow preset to numerical
+% fusion parameters. Expected callers are actions and package tests.
 function settings = fusionPresetSettings(preset)
 %FOCUSFUSIONPRESETSETTINGS Return preset options for labkit_FocusStack_app.
 %

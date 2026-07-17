@@ -51,7 +51,8 @@ function state = registerPaths(state, paths, folder, services, message)
     sources = services.project.reconcileSources( ...
         oldSources, paths, "focus-image", "image", true);
     try
-        images = focus_stack.sourceFiles.readImages(sourcePaths(sources));
+        images = focus_stack.sourceFiles.readImages( ...
+            labkit.ui.runtime.sourcePaths(sources));
     catch ME
         state = reportFailure(state, services, "Could not load focus stack", ME);
         return;
@@ -78,8 +79,9 @@ function state = onRemoveImages(state, event, services)
             "At least two focus image files are required; cleared the stack.");
         return;
     end
-    state = registerPaths(state, sourcePaths(sources), ...
-        fileparts(sourcePaths(sources(1))), services, sprintf( ...
+    paths = labkit.ui.runtime.sourcePaths(sources);
+    state = registerPaths(state, paths, ...
+        fileparts(paths(1)), services, sprintf( ...
         'Removed image file(s); %d remaining.', numel(sources)));
 end
 
@@ -97,7 +99,7 @@ end
 
 function state = onFusionPresetChanged(state, ~, services)
     preset = state.project.parameters.fusionPreset;
-    settings = focus_stack.appState.fusionPresetSettings(preset);
+    settings = focus_stack.analysisRun.fusionPresetSettings(preset);
     state.project.parameters.focusWindow = settings.focusWindow;
     state.project.parameters.smoothRadius = settings.smoothRadius;
     state.project.parameters.uncertainBlend = settings.minConfidencePercent;
@@ -121,8 +123,9 @@ function state = onRunFocusStack(state, ~, services)
     p = normalizeParameters(state.project.parameters);
     state.project.parameters = p;
     opts = fusionOptions(p);
-    paths = sourcePaths(state.project.inputs.sources);
-    task = focus_stack.appState.runTask(paths, images, opts, p.autoRegister);
+    paths = labkit.ui.runtime.sourcePaths(state.project.inputs.sources);
+    task = focus_stack.analysisRun.runTask( ...
+        paths, images, opts, p.autoRegister);
     if state.session.cache.result.ok && ...
             state.project.results.lastRunFingerprint == task.fingerprint
         state = services.workflow.log(state, ...
@@ -192,7 +195,8 @@ function state = exportResult(state, services, kind, titleText, defaultName)
     end
     try
         mediaType = writeOutput(kind, result, ...
-            sourcePaths(state.project.inputs.sources), filepath);
+            labkit.ui.runtime.sourcePaths( ...
+            state.project.inputs.sources), filepath);
         [~, outputName, outputExtension] = fileparts(filepath);
         output = services.results.output(kind, kind, ...
             string(outputName) + string(outputExtension), mediaType);
@@ -235,9 +239,9 @@ end
 
 function state = invalidateRun(state)
     state.session.cache.alignedImages = {};
-    state.session.cache.result = focus_stack.appState.emptyResult();
+    state.session.cache.result = focus_stack.analysisRun.emptyResult();
     state.session.workflow.registrationLines = strings(0, 1);
-    state.project.results.lastRun = focus_stack.appState.emptyResult();
+    state.project.results.lastRun = focus_stack.analysisRun.emptyResult();
     state.project.results.lastRunFingerprint = "";
     state.project.results.registrationLines = strings(0, 1);
     state.project.results.lastExport = [];
@@ -281,15 +285,8 @@ function value = finiteScalar(value, fallback, minValue, maxValue, roundValue)
     end
 end
 
-function paths = sourcePaths(sources)
-    paths = strings(numel(sources), 1);
-    for k = 1:numel(sources)
-        paths(k) = string(sources(k).reference.originalPath);
-    end
-end
-
 function folder = sourceFolder(state)
-    paths = sourcePaths(state.project.inputs.sources);
+    paths = labkit.ui.runtime.sourcePaths(state.project.inputs.sources);
     folder = "";
     if ~isempty(paths)
         folder = string(fileparts(paths(1)));

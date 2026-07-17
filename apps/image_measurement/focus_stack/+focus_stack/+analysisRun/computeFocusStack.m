@@ -106,7 +106,7 @@ function result = computeFocusStack(images, opts)
         coverage(k) = mean(focusIndex(:) == k);
     end
 
-    result = focus_stack.appState.emptyResult();
+    result = focus_stack.analysisRun.emptyResult();
     result.ok = true;
     result.message = '';
     result.fused = fused;

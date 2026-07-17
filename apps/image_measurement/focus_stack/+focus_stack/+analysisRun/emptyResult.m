@@ -1,6 +1,5 @@
-% App-owned image measurement package helper. Expected caller: owning app callbacks
-% and package tests. Inputs, outputs, and side effects are
-% documented with the helper function below.
+% App-owned Focus Stack result-shape owner. Expected callers are focus-stack
+% computation, project/session defaults, actions, and package tests.
 function result = emptyResult()
 %EMPTYRESULT Return default result for labkit_FocusStack_app.
 %

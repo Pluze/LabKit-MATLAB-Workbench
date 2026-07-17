@@ -29,9 +29,10 @@ end
 function spec = fileSpec(sources)
     files = repmat(struct("id", "", "path", "", "status", "ready"), ...
         numel(sources), 1);
+    paths = labkit.ui.runtime.sourcePaths(sources);
     for k = 1:numel(sources)
         files(k).id = string(sources(k).id);
-        files(k).path = string(sources(k).reference.originalPath);
+        files(k).path = paths(k);
     end
     status = "No images loaded";
     if ~isempty(sources)
@@ -45,7 +46,7 @@ function text = sourceDescription(sources)
         text = "No images loaded";
         return;
     end
-    folder = string(fileparts(sources(1).reference.originalPath));
+    folder = string(fileparts(labkit.ui.runtime.sourcePaths(sources(1))));
     text = "Selected image files from " + folder;
 end
 
@@ -66,7 +67,7 @@ function lines = detailLines(state, hasSources, hasStack)
     end
     if result.ok
         lines = focus_stack.userInterface.details(result, ...
-            sourcePaths(state.project.inputs.sources), ...
+            labkit.ui.runtime.sourcePaths(state.project.inputs.sources), ...
             cellstr(state.project.results.registrationLines));
         if ~state.session.cache.result.ok
             lines{end + 1} = ...
@@ -105,13 +106,6 @@ end
 
 function model = imageModel(imageData, titleText)
     model = struct("imageData", imageData, "title", string(titleText));
-end
-
-function paths = sourcePaths(sources)
-    paths = strings(numel(sources), 1);
-    for k = 1:numel(sources)
-        paths(k) = string(sources(k).reference.originalPath);
-    end
 end
 
 function spec = valueSpec(value)

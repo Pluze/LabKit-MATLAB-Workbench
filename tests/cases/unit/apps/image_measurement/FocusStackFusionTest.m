@@ -13,12 +13,29 @@ function verify_focusStackFusion()
 %TEST_FOCUSSTACKFUSION Verify focus-stack fusion app calculations.
 
     checkSyntheticFocusSelection();
+    checkProjectContract();
     checkSummaryTableContract();
     checkFolderDiscovery();
     checkReadImagesAcceptsFilePanelCellPaths();
     checkRegistrationImprovesSyntheticDrift();
     checkRunTaskFingerprintTracksOptionsAndRegistration();
     checkInvalidInputs();
+end
+
+function checkProjectContract()
+    definition = focus_stack.definition();
+    assert(definition.product.version == "1.5.2", ...
+        'Focus Stack definition should own product metadata.');
+    project = definition.project.Create();
+    assert(definition.project.Validate(project), ...
+        'Focus Stack projectSpec should accept its current project.');
+    assert(isempty(project.inputs.sources) && ...
+        strlength(project.parameters.outputFolder) == 0, ...
+        'A new project should be source-free and avoid startup path side effects.');
+    session = definition.createSession(project);
+    assert(isempty(session.cache.images) && ...
+        ~session.cache.result.ok, ...
+        'Focus Stack session reconstruction changed for an empty project.');
 end
 
 function checkSyntheticFocusSelection()
@@ -129,12 +146,16 @@ function checkRunTaskFingerprintTracksOptionsAndRegistration()
     paths = ["near.png"; "far.png"];
     opts = struct('focusWindow', 5, 'smoothRadius', 1, 'minConfidence', 0.05);
 
-    base = focus_stack.appState.runTask(paths, {nearImage, farImage}, opts, false);
-    repeated = focus_stack.appState.runTask(paths, {nearImage, farImage}, opts, false);
-    registered = focus_stack.appState.runTask(paths, {nearImage, farImage}, opts, true);
+    base = focus_stack.analysisRun.runTask( ...
+        paths, {nearImage, farImage}, opts, false);
+    repeated = focus_stack.analysisRun.runTask( ...
+        paths, {nearImage, farImage}, opts, false);
+    registered = focus_stack.analysisRun.runTask( ...
+        paths, {nearImage, farImage}, opts, true);
     changedOpts = opts;
     changedOpts.smoothRadius = 2;
-    changed = focus_stack.appState.runTask(paths, {nearImage, farImage}, changedOpts, false);
+    changed = focus_stack.analysisRun.runTask( ...
+        paths, {nearImage, farImage}, changedOpts, false);
 
     assert(base.fingerprint == repeated.fingerprint, ...
         'Identical focus-stack run tasks should have stable fingerprints.');

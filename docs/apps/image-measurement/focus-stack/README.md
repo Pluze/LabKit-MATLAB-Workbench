@@ -96,4 +96,15 @@ imwrite(result.fused, "stacked.png");
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+The single `definition.m` owns product metadata, requirements, layout, actions,
+presentation, renderers, and debug-sample capability. `projectSpec.m` is the
+only durable-project entry; the version-1 project needs creation and validation
+but no migration. Root `createSession.m` rebuilds decoded images after Runtime
+V2 resolves sources.
+
+Fusion result defaults, preset values, and deterministic run fingerprints live
+with the computation under `+analysisRun`; there is no generic `+appState`
+package. A new empty project performs no App-specific startup callback and
+chooses an output location only after sources are added or the user exports.
+The App requires `labkit.ui >=7 <8` and `labkit.image >=2 <3`; source-path
+access, persistence, busy state, and debug lifecycle remain framework-owned.

@@ -1,4 +1,4 @@
-% Expected caller: labkit_FocusStack_app run callback and package tests.
+% Expected caller: Focus Stack run action and package tests.
 % Inputs are source paths, loaded images, fusion options, and the registration
 % flag. Output is an immutable run task with a deterministic fingerprint; this
 % helper has no GUI or image-processing side effects.
