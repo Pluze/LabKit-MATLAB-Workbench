@@ -7,7 +7,7 @@ function step = makeStep(kind, amount, secondary, referenceIndex)
         referenceIndex = 0;
     end
 
-    step = image_enhance.appState.emptyStep();
+    step = image_enhance.analysisRun.emptyStep();
     step.kind = string(kind);
     step.amount = numericScalar(amount, 0);
     step.secondary = numericScalar(secondary, 0);

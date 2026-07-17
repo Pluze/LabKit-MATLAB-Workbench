@@ -40,7 +40,7 @@ function checkRuntimeV2ProjectAndPresenterContracts()
         'A new Image Enhance project should satisfy its durable contract.');
     assert(~isfield(project, 'items') && ~isfield(project, 'previewImages'), ...
         'The durable project must not contain decoded pixels or preview caches.');
-    session = image_enhance.appLifecycle.createSession(project);
+    session = image_enhance.createSession(project);
     state = struct('project', project, 'session', session);
     presentation = image_enhance.userInterface.presentWorkbench(state);
     assert(isscalar(presentation) && ...
@@ -164,24 +164,26 @@ function checkEmptyNumericToolValuesStayScalar()
     assert(step.amount == 0 && step.secondary == 0 && step.referenceIndex == 0, ...
         'Empty numeric tool values should fall back to scalar defaults.');
 
-    item = image_enhance.appState.emptyItem();
+    item = image_enhance.sourceFiles.emptyItem();
     item.path = "sample.png";
     item.name = "sample.png";
     item.image = syntheticGradientImage();
-    task = image_enhance.appState.exportTask(item, step, struct('outputFolder', "out"));
+    task = image_enhance.resultFiles.exportTask( ...
+        item, step, struct('outputFolder', "out"));
     assert(contains(task.fingerprint, "stepCount=1"), ...
         'Scalar fallback steps should remain valid export-task inputs.');
 end
 
 function checkWhiteRoiToolAvailabilityFollowsBatchMode()
-    project = image_enhance.appLifecycle.createProject();
+    spec = image_enhance.projectSpec();
+    project = spec.Create();
     project.inputs.sources = struct('id', "image-1", 'required', true, ...
         'role', "source-image", 'reference', struct());
-    annotation = image_enhance.appState.emptyAnnotation();
+    annotation = image_enhance.enhancementAnnotations.empty();
     annotation.sourceId = "image-1";
     project.annotations.items = annotation;
-    session = image_enhance.appLifecycle.createSession(project);
-    session.cache.item = image_enhance.appState.emptyItem();
+    session = image_enhance.createSession(project);
+    session.cache.item = image_enhance.sourceFiles.emptyItem();
     S = struct('project', project, 'session', session);
 
     availability = image_enhance.userInterface.toolAvailability(S, 'White ROI calibration');
@@ -214,7 +216,7 @@ function checkWhiteRoiDefaultUsesImageCorner()
 end
 
 function checkResultTableReportsExportSizeNotPreviewSize()
-    item = image_enhance.appState.emptyItem();
+    item = image_enhance.sourceFiles.emptyItem();
     item.name = "large.png";
     item.image = zeros(2400, 3200, 3);
     previewImage = zeros(1500, 2000, 3);
@@ -318,7 +320,7 @@ function checkPerImageExportSteps()
         };
 
     payload = image_enhance.resultFiles.writeOutputs(items, ...
-        repmat(image_enhance.appState.emptyStep(), 0, 1), struct( ...
+        repmat(image_enhance.analysisRun.emptyStep(), 0, 1), struct( ...
         'outputFolder', string(folder), ...
         'format', 'PNG', ...
         'itemSteps', {itemSteps}));
@@ -334,22 +336,22 @@ function checkPerImageExportSteps()
 end
 
 function checkExportTaskFingerprintTracksInputsOptionsAndSteps()
-    item = image_enhance.appState.emptyItem();
+    item = image_enhance.sourceFiles.emptyItem();
     item.path = "sample.png";
     item.name = "sample.png";
     item.image = syntheticGradientImage();
     step = image_enhance.analysisRun.makeStep('Brightness/contrast', 5, 0, 0);
 
-    base = image_enhance.appState.exportTask(item, step, struct( ...
+    base = image_enhance.resultFiles.exportTask(item, step, struct( ...
         'outputFolder', "out_a", ...
         'format', 'PNG'));
-    repeated = image_enhance.appState.exportTask(item, step, struct( ...
+    repeated = image_enhance.resultFiles.exportTask(item, step, struct( ...
         'outputFolder', "out_a", ...
         'format', 'PNG'));
-    moved = image_enhance.appState.exportTask(item, step, struct( ...
+    moved = image_enhance.resultFiles.exportTask(item, step, struct( ...
         'outputFolder', "out_b", ...
         'format', 'PNG'));
-    changedStep = image_enhance.appState.exportTask(item, ...
+    changedStep = image_enhance.resultFiles.exportTask(item, ...
         image_enhance.analysisRun.makeStep('Brightness/contrast', 6, 0, 0), ...
         struct('outputFolder', "out_a", 'format', 'PNG'));
 
@@ -362,7 +364,7 @@ function checkExportTaskFingerprintTracksInputsOptionsAndSteps()
 end
 
 function checkExportTaskPreservesPerImageSteps()
-    items = repmat(image_enhance.appState.emptyItem(), 2, 1);
+    items = repmat(image_enhance.sourceFiles.emptyItem(), 2, 1);
     for k = 1:2
         items(k).path = "sample_" + string(k) + ".png";
         items(k).name = "sample_" + string(k) + ".png";
@@ -371,8 +373,8 @@ function checkExportTaskPreservesPerImageSteps()
     firstStep = image_enhance.analysisRun.makeStep('Brightness/contrast', 6, 0, 0);
     secondStep = image_enhance.analysisRun.makeStep('Brightness/contrast', -6, 0, 0);
     itemSteps = {firstStep; secondStep};
-    task = image_enhance.appState.exportTask(items, ...
-        repmat(image_enhance.appState.emptyStep(), 0, 1), struct( ...
+    task = image_enhance.resultFiles.exportTask(items, ...
+        repmat(image_enhance.analysisRun.emptyStep(), 0, 1), struct( ...
         'outputFolder', "out", 'format', 'PNG', 'itemSteps', {itemSteps}));
     assert(numel(task.itemSteps) == 2, ...
         'Per-image export tasks should preserve individual histories.');

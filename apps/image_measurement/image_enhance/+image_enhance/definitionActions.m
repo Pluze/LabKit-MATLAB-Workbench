@@ -41,7 +41,7 @@ function state = onSourceImagesChosen(state, event, services)
     state.session.workflow.pendingDirty = false;
     state.session.view.roiEditing = false;
     state = invalidateResultsAndPreview(state);
-    state = image_enhance.ensureCurrentPreview(state, services);
+    state = image_enhance.sourceFiles.ensureCurrentPreview(state, services);
     state = rebuildPreview(state);
     state = services.workflow.log(state, sprintf( ...
         'Registered %d image source(s); loaded the selected preview only.', ...
@@ -68,7 +68,7 @@ function state = onRemoveImages(state, event, services)
     state.session.workflow.pendingDirty = false;
     state.session.view.roiEditing = false;
     state = invalidateResultsAndPreview(state);
-    state = image_enhance.ensureCurrentPreview(state, services);
+    state = image_enhance.sourceFiles.ensureCurrentPreview(state, services);
     state = rebuildPreview(state);
     state = services.workflow.log(state, sprintf( ...
         'Removed image source(s); %d remaining.', numel(sources)));
@@ -77,9 +77,9 @@ end
 function state = onClearImages(state, ~, services)
     state.project.inputs.sources = labkit.ui.runtime.emptySourceRecords();
     state.project.annotations.items = repmat( ...
-        image_enhance.appState.emptyAnnotation(), 0, 1);
+        image_enhance.enhancementAnnotations.empty(), 0, 1);
     state.project.annotations.sharedSteps = repmat( ...
-        image_enhance.appState.emptyStep(), 0, 1);
+        image_enhance.analysisRun.emptyStep(), 0, 1);
     state.session.selection.currentIndex = 0;
     state.session.workflow.pendingDirty = false;
     state.session.view.roiEditing = false;
@@ -98,7 +98,7 @@ function state = onImageSelectionChanged(state, event, services)
     state.session.workflow.pendingDirty = false;
     state.session.view.roiEditing = false;
     state = invalidatePreview(state);
-    state = image_enhance.ensureCurrentPreview(state, services);
+    state = image_enhance.sourceFiles.ensureCurrentPreview(state, services);
     state = rebuildPreview(state);
 end
 
@@ -137,10 +137,10 @@ function state = onToolSettingChanged(state, event, ~)
         state.session.view.toolKind);
     value = finiteScalar(event.value, 0);
     if string(event.id) == "toolSecondary"
-        state.session.view.toolSecondary = image_enhance.appState.clampValue( ...
+        state.session.view.toolSecondary = image_enhance.userInterface.clampValue( ...
             value, defaults.secondaryLimits);
     else
-        state.session.view.toolAmount = image_enhance.appState.clampValue( ...
+        state.session.view.toolAmount = image_enhance.userInterface.clampValue( ...
             value, defaults.amountLimits);
     end
     state.session.workflow.pendingDirty = true;
@@ -192,9 +192,9 @@ function state = onApplyTool(state, ~, services)
         return;
     end
     step = currentToolStep(state);
-    steps = image_enhance.appState.activeSteps(state);
+    steps = image_enhance.analysisRun.activeSteps(state);
     steps(end + 1, 1) = step;
-    state = image_enhance.appState.setActiveSteps(state, steps);
+    state = image_enhance.analysisRun.setActiveSteps(state, steps);
     state.session.workflow.pendingDirty = false;
     state.session.view.roiEditing = false;
     state = invalidateResultsAndProcessedPreview(state);
@@ -203,13 +203,13 @@ function state = onApplyTool(state, ~, services)
 end
 
 function state = onUndoHistory(state, ~, services)
-    steps = image_enhance.appState.activeSteps(state);
+    steps = image_enhance.analysisRun.activeSteps(state);
     if isempty(steps)
         return;
     end
     removed = steps(end);
     steps(end) = [];
-    state = image_enhance.appState.setActiveSteps(state, steps);
+    state = image_enhance.analysisRun.setActiveSteps(state, steps);
     state.session.workflow.pendingDirty = false;
     state = invalidateResultsAndProcessedPreview(state);
     state = rebuildPreview(state);
@@ -217,11 +217,11 @@ function state = onUndoHistory(state, ~, services)
 end
 
 function state = onResetHistory(state, ~, services)
-    if isempty(image_enhance.appState.activeSteps(state))
+    if isempty(image_enhance.analysisRun.activeSteps(state))
         return;
     end
-    state = image_enhance.appState.setActiveSteps(state, repmat( ...
-        image_enhance.appState.emptyStep(), 0, 1));
+    state = image_enhance.analysisRun.setActiveSteps(state, repmat( ...
+        image_enhance.analysisRun.emptyStep(), 0, 1));
     state.session.workflow.pendingDirty = false;
     state = invalidateResultsAndProcessedPreview(state);
     state = rebuildPreview(state);
@@ -259,7 +259,7 @@ function state = onExportImages(state, ~, services)
         opts = struct("outputFolder", state.project.parameters.outputFolder, ...
             "format", state.project.parameters.exportFormat, ...
             "itemSteps", {itemSteps});
-        task = image_enhance.appState.exportTask(items, steps, opts);
+        task = image_enhance.resultFiles.exportTask(items, steps, opts);
         if ~isempty(state.project.results.lastExport) && ...
                 state.project.results.lastExportFingerprint == task.fingerprint
             state = services.workflow.log(state, ...
@@ -298,12 +298,13 @@ function [sources, annotations] = reconcileSources(state, paths, services)
     oldAnnotations = state.project.annotations.items;
     sources = services.project.reconcileSources( ...
         oldSources, paths, "source-image", "image", true);
-    annotations = repmat(image_enhance.appState.emptyAnnotation(), numel(paths), 1);
+    annotations = repmat(image_enhance.enhancementAnnotations.empty(), ...
+        numel(paths), 1);
     for k = 1:numel(paths)
         source = sources(k);
         annotationIndex = find(string({oldAnnotations.sourceId}) == ...
             string(source.id), 1);
-        annotation = image_enhance.appState.emptyAnnotation();
+        annotation = image_enhance.enhancementAnnotations.empty();
         annotation.sourceId = string(source.id);
         if ~isempty(annotationIndex)
             annotation = oldAnnotations(annotationIndex);
@@ -315,8 +316,8 @@ end
 function index = sourceIndexForPath(sources, path)
     index = [];
     if ~isempty(sources)
-        index = find(string(arrayfun(@(s) s.reference.originalPath, ...
-            sources, 'UniformOutput', false)) == string(path), 1);
+        index = find(labkit.ui.runtime.sourcePaths(sources) == ...
+            string(path), 1);
     end
 end
 
@@ -337,7 +338,7 @@ function state = rebuildPreview(state)
         state.session.cache.previewResultKey = "";
         return;
     end
-    steps = image_enhance.appState.activeSteps(state);
+    steps = image_enhance.analysisRun.activeSteps(state);
     availability = image_enhance.userInterface.toolAvailability( ...
         state, state.session.view.toolKind);
     includePending = state.session.workflow.pendingDirty && ...
@@ -354,7 +355,7 @@ function state = rebuildPreview(state)
         return;
     end
     roi = state.project.annotations.items(currentIndex(state)).whiteRoi;
-    state.session.cache.previewResult = image_enhance.appState.previewResult( ...
+    state.session.cache.previewResult = image_enhance.analysisRun.previewResult( ...
         state.session.cache.previewSource, previewSteps, roi, ...
         state.session.cache.previewScale);
     state.session.cache.previewResultKey = key;
@@ -368,10 +369,7 @@ end
 
 function items = loadExportItems(state)
     sources = state.project.inputs.sources;
-    paths = strings(numel(sources), 1);
-    for k = 1:numel(sources)
-        paths(k) = string(sources(k).reference.originalPath);
-    end
+    paths = labkit.ui.runtime.sourcePaths(sources);
     items = image_enhance.sourceFiles.readImages(paths);
     for k = 1:numel(items)
         items(k).whiteRoi = state.project.annotations.items(k).whiteRoi;
@@ -383,7 +381,7 @@ function [steps, itemSteps] = exportSteps(state)
         steps = state.project.annotations.sharedSteps;
         itemSteps = {};
     else
-        steps = repmat(image_enhance.appState.emptyStep(), 0, 1);
+        steps = repmat(image_enhance.analysisRun.emptyStep(), 0, 1);
         itemSteps = {state.project.annotations.items.steps}.';
     end
 end

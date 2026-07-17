@@ -80,8 +80,19 @@ steps = [ ...
     image_enhance.analysisRun.makeStep("Local contrast", 30, 12), ...
     image_enhance.analysisRun.makeStep("Sharpen", 35, 1.5)];
 output = image_enhance.analysisRun.applyPipeline(imread("source.png"), steps);
-imwrite(output, "enhanced.png");
+imwrite(output{1}, "enhanced.png");
 ```
+
+## Project And State
+
+Saved projects keep portable source references, shared and per-image step
+histories, white-reference ROIs, export settings, and compact result metadata.
+Decoded full-size pixels and downsampled previews remain transient. Runtime V2
+resolves source references first; `createSession.m` then rebuilds only the
+selected source and its preview when a project opens.
+
+An empty launch does not choose an output directory. Adding images establishes
+the source-adjacent default; **Choose folder** remains available before export.
 
 ## Errors And Limitations
 
@@ -99,6 +110,18 @@ imwrite(output, "enhanced.png");
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
-Batch manifest outputs use the framework's canonical empty output array, so
-export validation applies only to real enhanced-image records.
+The single `definition.m` owns product metadata, requirements, layout, actions,
+presentation, renderer, and debug-sample capability. `projectSpec.m` is the
+only durable-project entry; the version-1 payload needs creation and validation
+but no migration. Root `createSession.m` rebuilds the selected image cache after
+Runtime V2 resolves sources.
+
+Decoded items and lazy preview loading live with `+sourceFiles`; step shapes,
+active histories, pipeline replay, and preview-coordinate scaling live with
+`+analysisRun`; durable per-image histories live with
+`+enhancementAnnotations`; export fingerprints live with `+resultFiles`.
+There is no generic `+appState` package. The App requires
+`labkit.ui >=7 <8` and `labkit.image >=2 <3`; persistence, source-path access,
+busy state, and managed ROI interaction remain framework-owned. Batch manifest
+outputs use the framework's canonical empty output array, so export validation
+applies only to real enhanced-image records.

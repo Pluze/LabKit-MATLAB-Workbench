@@ -1,4 +1,4 @@
-% Expected caller: labkit_ImageEnhance_app export callback and package tests.
+% Expected caller: Image Enhance export callback and package tests.
 % Inputs are loaded image items, committed shared steps, and export options
 % that may include per-image steps. Output is an immutable task snapshot with
 % a deterministic fingerprint. This helper has no GUI, file, or processing

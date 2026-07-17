@@ -1,4 +1,4 @@
-% Expected caller: Image Enhance lifecycle and actions. Inputs are canonical
+% Expected caller: Image Enhance actions. Inputs are canonical
 % state and runtime services. Output lazily owns only the selected decoded
 % image and its downsampled preview; failures are logged and reported.
 function state = ensureCurrentPreview(state, services)
@@ -16,7 +16,7 @@ function state = ensureCurrentPreview(state, services)
     state.session.cache = emptyCache();
     try
         loaded = image_enhance.sourceFiles.readImages( ...
-            source.reference.originalPath);
+            labkit.ui.runtime.sourcePaths(source));
         if isempty(loaded)
             return;
         end

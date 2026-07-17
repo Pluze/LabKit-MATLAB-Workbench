@@ -1,5 +1,4 @@
-% Expected caller: Image Enhance runner. Inputs are a scalar-ish UI value
-% and numeric limits. Output is a finite scalar clamped to the limits.
+% Convert a scalar UI value to a finite value clamped to numeric limits.
 function value = clampValue(value, limits)
     value = double(value);
     if isempty(value) || ~isscalar(value) || ~isfinite(value)

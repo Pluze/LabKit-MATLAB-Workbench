@@ -3,7 +3,7 @@
 function view = presentWorkbench(state)
     sources = state.project.inputs.sources;
     index = state.session.selection.currentIndex;
-    steps = image_enhance.appState.activeSteps(state);
+    steps = image_enhance.analysisRun.activeSteps(state);
     hasImage = ~isempty(state.session.cache.item);
     availability = image_enhance.userInterface.toolAvailability( ...
         state, state.session.view.toolKind);
@@ -60,9 +60,10 @@ end
 function spec = sourceSpec(sources, index)
     files = repmat(struct("id", "", "path", "", "status", "ready"), ...
         numel(sources), 1);
+    paths = labkit.ui.runtime.sourcePaths(sources);
     for k = 1:numel(sources)
         files(k).id = string(sources(k).id);
-        files(k).path = string(sources(k).reference.originalPath);
+        files(k).path = paths(k);
     end
     selection = strings(0, 1);
     if index >= 1 && index <= numel(sources)
@@ -122,7 +123,7 @@ function lines = detailLines(state, steps)
         lines = {'Load one or more images to begin enhancement.'};
         return;
     end
-    path = string(sources(index).reference.originalPath);
+    path = labkit.ui.runtime.sourcePaths(sources(index));
     [~, name, extension] = fileparts(path);
     lines = {sprintf('Selected: %s', char(string(name) + string(extension))), ...
         sprintf('Images registered: %d', numel(sources)), ...

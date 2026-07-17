@@ -8,7 +8,7 @@ function items = readImages(paths, opts)
     end
 
     records = labkit.image.readFiles(paths, opts);
-    template = image_enhance.appState.emptyItem();
+    template = image_enhance.sourceFiles.emptyItem();
     items = repmat(template, numel(records), 1);
     for k = 1:numel(records)
         items(k) = template;

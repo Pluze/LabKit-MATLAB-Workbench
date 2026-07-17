@@ -4,7 +4,7 @@ function state = toolAvailability(S, toolKind)
     hasImages = ~isempty(S.project.inputs.sources) && ...
         ~isempty(S.session.cache.item);
     batchMode = S.project.parameters.batchMode;
-    current = image_enhance.appState.emptyAnnotation();
+    current = image_enhance.enhancementAnnotations.empty();
     if hasImages
         current = S.project.annotations.items( ...
             S.session.selection.currentIndex);

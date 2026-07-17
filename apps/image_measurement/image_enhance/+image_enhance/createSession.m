@@ -1,5 +1,5 @@
-% Expected caller: the LabKit V2 runtime. Input is a validated project.
-% Output owns selection, draft tool state, logs, and one rebuildable preview.
+% Rebuild transient selection, draft controls, and the selected preview from
+% one validated Image Enhance project after Runtime V2 resolves sources.
 function session = createSession(project)
     index = double(~isempty(project.inputs.sources));
     kinds = image_enhance.userInterface.toolKinds();
@@ -30,7 +30,7 @@ function cache = rebuildSelectedResult(project, index, cache)
     else
         steps = project.annotations.items(index).steps;
     end
-    cache.previewResult = image_enhance.appState.previewResult( ...
+    cache.previewResult = image_enhance.analysisRun.previewResult( ...
         cache.previewSource, steps, ...
         project.annotations.items(index).whiteRoi, cache.previewScale);
     cache.previewResultKey = "restored";
@@ -39,7 +39,7 @@ end
 function cache = loadSelectedCache(source, cache)
     try
         loaded = image_enhance.sourceFiles.readImages( ...
-            source.reference.originalPath);
+            labkit.ui.runtime.sourcePaths(source));
         if isempty(loaded)
             return;
         end
@@ -50,7 +50,7 @@ function cache = loadSelectedCache(source, cache)
         cache.previewSource = preview;
         cache.previewScale = scale;
     catch
-        % The runtime will present an empty cache when a source needs relinking.
+        % The runtime presents an empty cache when a source needs relinking.
     end
 end
 
