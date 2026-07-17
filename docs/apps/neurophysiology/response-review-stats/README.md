@@ -46,6 +46,15 @@ The selected input is stored in the standard project `inputs.sources`
 collection. Version 1 projects using the former singular `inputs.source`
 field are upgraded on load and saved as payload version 2.
 
+## Project And Session State
+
+`response_review_stats.projectSpec` owns durable schema version 2, default
+baseline/noise windows, validation, and the single version-1 source migration.
+The source record, time windows, and last export reference are durable.
+Loaded metric tables, aligned waveforms, summaries, preview mode, output-folder
+convenience, and workflow messages are transient and rebuilt by
+`response_review_stats.createSession` after source resolution.
+
 ## Measurements And Summary
 
 For each aligned segment, the calculation subtracts the baseline mean and
@@ -112,4 +121,12 @@ samples-by-segments matrix.
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+This App requires `labkit.ui >=7 <8`. Its single `definition.m` owns product
+metadata, requirements, layout, actions, presentation, renderer, and debug
+capability. `projectSpec.m` concentrates durable creation, validation, and
+migration; root `createSession.m` rebuilds transient analysis tables.
+
+Source paths are read through `labkit.ui.runtime.sourcePaths`; no App code
+inspects portable-reference fields. Callback queues, busy state, migration
+iteration, source relinking, serialization, and resource lifetime remain
+framework-owned.

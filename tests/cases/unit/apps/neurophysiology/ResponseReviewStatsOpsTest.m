@@ -4,17 +4,20 @@ classdef ResponseReviewStatsOpsTest < matlab.unittest.TestCase
     methods (Test, TestTags = {'Unit'})
         function projectMigrationAdoptsCanonicalSourceCollection(testCase)
             setupLabKitTestPath();
-            project = response_review_stats.appLifecycle.createProject();
+            spec = response_review_stats.projectSpec();
+            project = spec.Create();
             expected = struct("absolutePath", "/tmp/responses.csv");
             project.inputs.source = expected;
             project.inputs = rmfield(project.inputs, "sources");
 
-            migrated = response_review_stats.appLifecycle.migrateProjectV1ToV2(project);
+            migrated = spec.Migrate(project, 1);
             definition = response_review_stats.definition();
 
             testCase.verifyEqual(migrated.inputs.sources, expected);
             testCase.verifyFalse(isfield(migrated.inputs, "source"));
             testCase.verifyEqual(definition.project.Version, 2);
+            testCase.verifyTrue(isa(definition.project.Migrate, ...
+                'function_handle'));
         end
 
         function segmentCsvShapeAlignsAndMeasures(testCase)

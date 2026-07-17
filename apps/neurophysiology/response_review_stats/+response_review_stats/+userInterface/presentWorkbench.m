@@ -38,8 +38,8 @@ end
 function spec = sourcePanel(sources)
     files = struct("id", {}, "path", {}, "status", {});
     status = "No input selected";
-    if ~isempty(sources)
-        filepath = string(sources(1).reference.originalPath);
+    filepath = sourcePath(sources);
+    if strlength(filepath) > 0
         files = struct("id", "item1", "path", filepath, "status", "");
         status = filepath;
     end
@@ -47,10 +47,7 @@ function spec = sourcePanel(sources)
 end
 
 function filepath = sourcePath(sources)
-    filepath = "";
-    if ~isempty(sources)
-        filepath = string(sources(1).reference.originalPath);
-    end
+    filepath = labkit.ui.runtime.sourcePaths(sources, "reviewInput");
 end
 
 function text = outputFolderText(filepath)

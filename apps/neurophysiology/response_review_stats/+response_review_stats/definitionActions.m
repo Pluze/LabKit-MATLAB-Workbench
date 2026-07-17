@@ -139,9 +139,10 @@ function state = onExportMetrics(state, ~, services)
 end
 
 function state = onResetWorkflow(~, ~, services)
-    project = response_review_stats.appLifecycle.createProject();
+    spec = response_review_stats.projectSpec();
+    project = spec.Create();
     state = struct("project", project, ...
-        "session", response_review_stats.appLifecycle.createSession(project));
+        "session", response_review_stats.createSession(project));
     state = services.workflow.log(state, ...
         "Reset Response Review Stats state.");
 end

@@ -1,8 +1,8 @@
-% Expected caller: Runtime V2. Input is a validated Response Review Stats
-% project with resolved source. Output owns metrics, aligned signals, summary,
-% preview selection, output convenience, and workflow messages.
+% Rebuild transient metrics, aligned signals, preview selection, output-folder
+% convenience, and workflow messages from one validated project.
 function session = createSession(project)
-    filepath = sourcePath(project.inputs.sources);
+    filepath = labkit.ui.runtime.sourcePaths( ...
+        project.inputs.sources, "reviewInput");
     [metrics, summary, aligned] = emptyCache();
     outputFolder = "";
     status = "No input selected.";
@@ -28,11 +28,4 @@ function [metrics, summary, aligned] = emptyCache()
     metrics = table();
     summary = table();
     aligned = [];
-end
-
-function filepath = sourcePath(sources)
-    filepath = "";
-    if ~isempty(sources)
-        filepath = string(sources(1).reference.originalPath);
-    end
 end
