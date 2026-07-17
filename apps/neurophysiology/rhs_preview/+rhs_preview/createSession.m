@@ -1,23 +1,22 @@
-% Expected caller: Runtime V2. Input is a validated RHS Preview project with
-% resolved sources. Output owns transient indexing, decoded preview windows,
-% filter rows, status, selection, time view, and workflow log.
+% Rebuild transient indexing, decoded preview windows, filter rows, selection,
+% time view, status, and workflow log from one validated RHS Preview project.
 function session = createSession(project)
     session = emptySession();
     session.cache.protocol = project.annotations.protocol;
     session.cache.previewChannelRows = project.annotations.previewChannelRows;
-    protocolSources = rhs_preview.appLifecycle.sourceRecordsForRole( ...
+    protocolPaths = rhs_preview.sourceFiles.pathsForRole( ...
         project.inputs.sources, "protocol");
-    rhsSources = rhs_preview.appLifecycle.sourceRecordsForRole( ...
+    rhsPaths = rhs_preview.sourceFiles.pathsForRole( ...
         project.inputs.sources, "recording");
-    filterSources = rhs_preview.appLifecycle.sourceRecordsForRole( ...
+    filterPaths = rhs_preview.sourceFiles.pathsForRole( ...
         project.inputs.sources, "filterRecording");
-    if ~isempty(protocolSources)
-        session.cache.protocolPath = sourcePath(protocolSources(1));
+    if ~isempty(protocolPaths)
+        session.cache.protocolPath = protocolPaths(1);
         session.cache.protocol = rhs_preview.sourceFiles.loadProtocol( ...
             session.cache.protocolPath);
     end
-    if ~isempty(rhsSources)
-        session.cache.rhsPath = sourcePath(rhsSources(1));
+    if ~isempty(rhsPaths)
+        session.cache.rhsPath = rhsPaths(1);
         [index, status] = labkit.rhs.indexFile(session.cache.rhsPath);
         if ~status.ok
             error('rhs_preview:SourceLoadFailed', ...
@@ -39,9 +38,9 @@ function session = createSession(project)
             session.workflow.statusMessage = "RHS header indexed.";
         end
     end
-    if ~isempty(filterSources)
-        paths = arrayfun(@sourcePath, filterSources).';
-        session.cache.filterRows = rhs_preview.analysisRun.discoverFilterRows(paths);
+    if ~isempty(filterPaths)
+        session.cache.filterRows = ...
+            rhs_preview.analysisRun.discoverFilterRows(filterPaths);
         session.cache.filterRows = applyFilterAnnotations( ...
             session.cache.filterRows, project.annotations);
     end
@@ -108,8 +107,4 @@ function rows = applyFilterAnnotations(rows, annotations)
         rows.label(1:count) = annotations.filterLabels(1:count);
         rows.comment(1:count) = annotations.filterComments(1:count);
     end
-end
-
-function path = sourcePath(source)
-    path = string(source.reference.originalPath);
 end

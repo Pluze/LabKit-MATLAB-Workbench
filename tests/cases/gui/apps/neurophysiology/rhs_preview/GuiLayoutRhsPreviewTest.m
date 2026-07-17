@@ -2,7 +2,7 @@ classdef GuiLayoutRhsPreviewTest < matlab.unittest.TestCase
     %GUILAYOUTRHSPREVIEWTEST Verify RHS Preview GUI workflow contracts.
 
     methods (Test, TestTags = {'GUI', 'Workflow'})
-        function rhs_preview_workflow_indexes_previews_and_discovers_filter_files(testCase)
+        function rhs_preview_workflow_indexes_previews_and_discovers_filter_files(~)
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
@@ -84,9 +84,9 @@ classdef GuiLayoutRhsPreviewTest < matlab.unittest.TestCase
             assert(workflow.previewChildCount('preview') > 0, ...
                 'Project reopen should rebuild the indexed preview cache.');
             runtime = getappdata(fig, 'labkitUiAppRuntime');
-            filterSources = rhs_preview.appLifecycle.sourceRecordsForRole( ...
+            filterPaths = rhs_preview.sourceFiles.pathsForRole( ...
                 runtime.state.project.inputs.sources, "filterRecording");
-            assert(numel(filterSources) == 2);
+            assert(numel(filterPaths) == 2);
             clear outputCleanup;
 
             function [filename, folderPath] = chooseOutput(~, ~, ~)

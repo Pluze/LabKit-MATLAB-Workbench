@@ -4,7 +4,8 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
     methods (Test, TestTags = {'Unit'})
         function projectMigrationCombinesRoleSpecificSources(testCase)
             setupLabKitTestPath();
-            project = rhs_preview.appLifecycle.createProject();
+            spec = rhs_preview.projectSpec();
+            project = spec.Create();
             rhsSource = sourceRecord("rhs", "recording");
             protocolSource = sourceRecord("protocol", "protocol");
             filterSources = [sourceRecord("filter1", "filterRecording"), ...
@@ -13,14 +14,27 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
                 "protocolSource", protocolSource, ...
                 "filterSources", filterSources);
 
-            migrated = rhs_preview.appLifecycle.migrateProjectV1ToV2(project);
+            migrated = spec.Migrate(project, 1);
             definition = rhs_preview.definition();
 
             testCase.verifyEqual(migrated.inputs.sources, ...
                 [rhsSource, protocolSource, filterSources]);
             testCase.verifyEqual(definition.project.Version, 2);
+            testCase.verifyEqual(definition.project.Migrate, spec.Migrate);
             testCase.verifyFalse(any(isfield(migrated.inputs, ...
                 {"rhsSource", "protocolSource", "filterSources"})));
+        end
+
+        function rolePathsPreserveSourceOrder(testCase)
+            setupLabKitTestPath();
+            sources = [sourceRecord("filter1", "filterRecording"), ...
+                sourceRecord("rhs", "recording"), ...
+                sourceRecord("filter2", "filterRecording")];
+
+            paths = rhs_preview.sourceFiles.pathsForRole( ...
+                sources, "filterRecording");
+
+            testCase.verifyEqual(paths, ["/tmp/filter1"; "/tmp/filter2"]);
         end
 
         function summaryAndDetailsRenderDefaultState(testCase)

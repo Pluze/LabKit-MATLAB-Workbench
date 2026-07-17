@@ -37,10 +37,8 @@ function state = onRhsChosen(state, event, services)
             "RHS inspect failed: " + string(status.message));
         return;
     end
-    source = services.project.sourceRecord( ...
-        "rhs", "recording", filepath, true);
-    state.project.inputs.sources = replaceRole( ...
-        state.project.inputs.sources, "recording", source);
+    state.project.inputs.sources = services.project.upsertSource( ...
+        state.project.inputs.sources, "rhs", "recording", filepath, true);
     state.session.cache.rhsPath = filepath;
     state.session.cache.index = index;
     state.session.cache.info = index.info;
@@ -78,10 +76,9 @@ function state = onProtocolChosen(state, event, services)
     end
     filepath = paths(1);
     protocol = rhs_preview.sourceFiles.loadProtocol(filepath);
-    source = services.project.sourceRecord( ...
+    state.project.inputs.sources = services.project.upsertSource( ...
+        state.project.inputs.sources, ...
         "protocol", "protocol", filepath, false);
-    state.project.inputs.sources = replaceRole( ...
-        state.project.inputs.sources, "protocol", source);
     state.project.annotations.protocol = protocol;
     state.session.cache.protocolPath = filepath;
     state.session.cache.protocol = protocol;
@@ -108,8 +105,8 @@ function state = onFolderChosen(state, event, services)
         return;
     end
     state.session.cache.filterRows = rows;
-    state.project.inputs.sources = replaceRole(state.project.inputs.sources, ...
-        "filterRecording", sourceRecords(rows, services));
+    state.project.inputs.sources = reconcileFilterSources( ...
+        state.project.inputs.sources, rows.filePath, services);
     state = storeFilterAnnotations(state);
     state.session.workflow.statusMessage = sprintf( ...
         'Discovered %d RHS file(s).', height(rows));
@@ -128,7 +125,7 @@ function state = onFolderRemoved(state, event, services)
         rows.recordingId = "R" + compose("%03d", (1:height(rows)).');
     end
     state.session.cache.filterRows = rows;
-    sources = roleSources(state, "filterRecording");
+    sources = roleSources(state.project.inputs.sources, "filterRecording");
     sources(indices) = [];
     state.project.inputs.sources = replaceRole( ...
         state.project.inputs.sources, "filterRecording", sources);
@@ -193,12 +190,12 @@ function state = onRefreshPreviewWindow(state, ~, services)
 end
 
 function state = onRefreshFolderFiles(state, ~, services)
-    filterSources = roleSources(state, "filterRecording");
+    filterSources = roleSources(state.project.inputs.sources, "filterRecording");
     if isempty(filterSources)
         state.session.workflow.statusMessage = "Select RHS filter files first.";
         return;
     end
-    paths = sourcePaths(filterSources);
+    paths = labkit.ui.runtime.sourcePaths(filterSources);
     try
         state.session.cache.filterRows = ...
             rhs_preview.analysisRun.discoverFilterRows( ...
@@ -208,9 +205,9 @@ function state = onRefreshFolderFiles(state, ~, services)
         state.session.workflow.statusMessage = string(ME.message);
         return;
     end
-    state.project.inputs.sources = replaceRole(state.project.inputs.sources, ...
-        "filterRecording", sourceRecords( ...
-        state.session.cache.filterRows, services));
+    state.project.inputs.sources = reconcileFilterSources( ...
+        state.project.inputs.sources, ...
+        state.session.cache.filterRows.filePath, services);
     state = storeFilterAnnotations(state);
     state.session.workflow.statusMessage = sprintf( ...
         'Discovered %d RHS file(s).', height(state.session.cache.filterRows));
@@ -319,9 +316,10 @@ function state = onSaveFilterRecord(state, ~, services)
 end
 
 function state = onResetWorkflow(~, ~, services)
-    project = rhs_preview.appLifecycle.createProject();
+    projectSpec = rhs_preview.projectSpec();
+    project = projectSpec.Create();
     state = struct("project", project, ...
-        "session", rhs_preview.appLifecycle.createSession(project));
+        "session", rhs_preview.createSession(project));
     state = services.workflow.log(state, "Reset RHS Preview state.");
 end
 
@@ -365,8 +363,8 @@ end
 function context = previewContext(state)
     context = struct( ...
         "rhsFile", state.session.cache.rhsPath, ...
-        "rhsFolder", commonParent(sourcePaths( ...
-        roleSources(state, "filterRecording"))), ...
+        "rhsFolder", commonParent(rhs_preview.sourceFiles.pathsForRole( ...
+        state.project.inputs.sources, "filterRecording")), ...
         "protocolFile", state.session.cache.protocolPath, ...
         "protocol", state.project.annotations.protocol, ...
         "family", state.project.parameters.family, ...
@@ -403,26 +401,6 @@ function state = storeFilterAnnotations(state)
     end
 end
 
-function sources = sourceRecords(rows, services)
-    sources = labkit.ui.runtime.emptySourceRecords();
-    for k = 1:height(rows)
-        source = services.project.sourceRecord("filter" + string(k), ...
-            "filterRecording", string(rows.filePath(k)), true);
-        if isempty(sources)
-            sources = source;
-        else
-            sources(end + 1) = source;
-        end
-    end
-end
-
-function paths = sourcePaths(sources)
-    paths = strings(0, 1);
-    for k = 1:numel(sources)
-        paths(end + 1, 1) = string(sources(k).reference.originalPath);
-    end
-end
-
 function selected = selectedChannels(rows, limit)
     selected = strings(0, 1);
     if istable(rows) && height(rows) > 0
@@ -455,14 +433,31 @@ function [manifestPath, report] = writeJsonManifest( ...
     [manifestPath, report] = services.results.writeManifest(folder, spec);
 end
 
-function sources = roleSources(state, role)
-    sources = rhs_preview.appLifecycle.sourceRecordsForRole( ...
-        state.project.inputs.sources, role);
+function sources = roleSources(sources, role)
+    if isempty(sources)
+        return;
+    end
+    sources = sources(string({sources.role}) == string(role));
 end
 
 function sources = replaceRole(sources, role, replacements)
-    sources = rhs_preview.appLifecycle.replaceSourceRecordsForRole( ...
-        sources, role, replacements);
+    if ~isempty(sources)
+        sources(string({sources.role}) == string(role)) = [];
+    end
+    if isempty(replacements)
+        return;
+    end
+    assert(all(string({replacements.role}) == string(role)), ...
+        'rhs_preview:InvalidSourceRole', ...
+        'Replacement source records must match role %s.', string(role));
+    sources = [sources(:); replacements(:)].';
+end
+
+function sources = reconcileFilterSources(sources, paths, services)
+    existing = roleSources(sources, "filterRecording");
+    replacements = services.project.reconcileSources( ...
+        existing, paths, "filterRecording", "filter", true);
+    sources = replaceRole(sources, "filterRecording", replacements);
 end
 
 function value = finiteScalar(value, fallback)

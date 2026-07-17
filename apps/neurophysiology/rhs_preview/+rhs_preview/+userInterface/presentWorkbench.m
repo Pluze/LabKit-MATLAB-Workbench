@@ -9,17 +9,20 @@ function view = presentWorkbench(state)
     hasChannels = rhs_preview.analysisRun.hasReadableChannel(context);
     hasRows = height(context.previewChannelRows) > 0;
     hasFilters = height(context.filterRows) > 0;
-    rhsSources = roleSources(state, "recording");
-    filterSources = roleSources(state, "filterRecording");
-    protocolSources = roleSources(state, "protocol");
+    rhsPaths = rhs_preview.sourceFiles.pathsForRole( ...
+        state.project.inputs.sources, "recording");
+    filterPaths = rhs_preview.sourceFiles.pathsForRole( ...
+        state.project.inputs.sources, "filterRecording");
+    protocolPaths = rhs_preview.sourceFiles.pathsForRole( ...
+        state.project.inputs.sources, "protocol");
 
     view = struct();
     view.controls.rhsFile = sourcePanel( ...
-        rhsSources, "No RHS file selected");
+        rhsPaths, "No RHS file selected");
     view.controls.rhsFolder = sourcePanel( ...
-        filterSources, "No RHS files selected");
+        filterPaths, "No RHS files selected");
     view.controls.protocolFile = sourcePanel( ...
-        protocolSources, "No protocol selected");
+        protocolPaths, "No protocol selected");
     view.controls.channelFamily = struct();
     view.controls.channelFamily.Items = cellstr(selection.families);
     view.controls.channelFamily.Value = selection.family;
@@ -57,11 +60,16 @@ function view = presentWorkbench(state)
     end
 end
 
-function spec = sourcePanel(sources, emptyStatus)
-    files = struct("id", {}, "path", {}, "status", {});
-    for k = 1:numel(sources)
-        files(end + 1) = struct("id", "item" + string(k), ...
-            "path", string(sources(k).reference.originalPath), "status", "");
+function spec = sourcePanel(paths, emptyStatus)
+    files = repmat(struct("id", "", "path", "", "status", ""), ...
+        0, 1);
+    if ~isempty(paths)
+        files = repmat(struct("id", "", "path", "", "status", ""), ...
+            numel(paths), 1);
+    end
+    for k = 1:numel(paths)
+        files(k) = struct("id", "item" + string(k), ...
+            "path", paths(k), "status", "");
     end
     status = string(emptyStatus);
     if ~isempty(files)
@@ -89,7 +97,8 @@ end
 function context = previewContext(state)
     context = struct( ...
         "rhsFile", state.session.cache.rhsPath, ...
-        "rhsFolder", commonParent(roleSources(state, "filterRecording")), ...
+        "rhsFolder", commonParent(rhs_preview.sourceFiles.pathsForRole( ...
+        state.project.inputs.sources, "filterRecording")), ...
         "protocolFile", state.session.cache.protocolPath, ...
         "protocol", state.project.annotations.protocol, ...
         "family", state.project.parameters.family, ...
@@ -106,14 +115,9 @@ function context = previewContext(state)
         "lastAction", state.session.workflow.lastAction);
 end
 
-function sources = roleSources(state, role)
-    sources = rhs_preview.appLifecycle.sourceRecordsForRole( ...
-        state.project.inputs.sources, role);
-end
-
-function folder = commonParent(sources)
+function folder = commonParent(paths)
     folder = "";
-    if ~isempty(sources)
-        folder = string(fileparts(char(sources(1).reference.originalPath)));
+    if ~isempty(paths)
+        folder = string(fileparts(char(paths(1))));
     end
 end

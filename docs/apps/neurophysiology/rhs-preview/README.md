@@ -63,6 +63,27 @@ correct control without teaching the framework app-specific field names.
 Version 1 RHS Preview projects stored three separate source fields; they are
 combined on load and the next save writes payload version 2.
 
+## Project And Session State
+
+The durable project stores portable references for one preview recording, one
+optional protocol, and an ordered collection of filter recordings. It also
+stores preview settings, channel-role drafts, manual filter labels/comments,
+and compact export records. The App owns the `recording`, `protocol`, and
+`filterRecording` roles; Runtime V2 owns each reference's portable path data.
+
+Header indices, decoded preview windows, table presentation state, current ROI
+and window position, status text, and log messages are transient session data.
+They are reconstructed from the project sources when a project is opened.
+
+For developers, `rhs_preview.definition` is the complete product contract.
+`rhs_preview.projectSpec` owns project creation, validation, and the version-1
+upgrade; `rhs_preview.createSession` rebuilds transient state. Fixed recording
+and protocol sources use the injected upsert service. The variable filter
+collection uses the injected reconcile service so existing source IDs remain
+stable when files are added, removed, or rediscovered. The App-local
+`rhs_preview.sourceFiles.pathsForRole` function selects its role ordering and
+delegates portable-reference decoding to `labkit.ui.runtime.sourcePaths`.
+
 ## Review Recording Information
 
 The **Review** tab shows the indexed duration, channel counts, current window,
@@ -108,4 +129,8 @@ interpret the waveform matrix.
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8` and
+`labkit.rhs >=1.0 <2`. App code uses semantic actions, managed interval
+interaction, `sourcePaths`, and injected upsert/reconcile services; migration
+iteration, busy state, and portable-reference serialization remain
+framework-private.
