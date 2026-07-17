@@ -50,6 +50,10 @@ function [items, report] = loadFiles(filepaths, expectedKind, opts)
 %   files = ["run-01.DTA", "run-02.DTA"];
 %   [items, report] = labkit.dta.loadFiles(files, "chrono");
 %   fprintf("Loaded %d of %d files.\n", report.nLoaded, report.nRequested)
+%
+% See also labkit.dta.loadFile,
+%   labkit.dta.findFiles,
+%   labkit.dta.loadFolder
 
     if nargin < 2
         expectedKind = "auto";

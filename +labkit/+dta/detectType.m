@@ -31,6 +31,9 @@ function [kind, status] = detectType(filepath)
 %   else
 %       warning("%s", status.message)
 %   end
+%
+% See also labkit.dta.loadFile,
+%   labkit.dta.findFiles
 
     filepath = normalizeFilepath(filepath);
     kind = "unknown";

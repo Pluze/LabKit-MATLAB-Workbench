@@ -23,6 +23,10 @@ function filepaths = findFiles(rootDir)
 % Typical Call:
 %   files = labkit.dta.findFiles("data");
 %   [items, report] = labkit.dta.loadFiles(files, "auto");
+%
+% See also labkit.dta.detectType,
+%   labkit.dta.loadFiles,
+%   labkit.dta.loadFolder
 
     rootDir = normalizeRootDir(rootDir);
     filepaths = findDTAFilesRecursive(rootDir);
