@@ -213,11 +213,11 @@ function html = renderInline(model, page, text)
     text = string(text);
     replacements = strings(0, 1);
     [text, replacements] = protectTokens(text, replacements, ...
-        '`([^`]+)`', @(token) "<code>" + htmlEscape(token{1}) + "</code>");
+        '`([^`]+)`', "code", model, page);
     [text, replacements] = protectTokens(text, replacements, ...
-        '!\[([^\]]*)\]\(([^)]+)\)', @(token) renderImage(token));
+        '!\[([^\]]*)\]\(([^)]+)\)', "image", model, page);
     [text, replacements] = protectTokens(text, replacements, ...
-        '\[([^\]]+)\]\(([^)]+)\)', @(token) renderLink(model, page, token));
+        '\[([^\]]+)\]\(([^)]+)\)', "link", model, page);
     html = htmlEscape(text);
     html = regexprep(html, '\*\*([^*]+)\*\*', '<strong>$1</strong>');
     html = regexprep(html, '(?<!\*)\*([^*]+)\*(?!\*)', '<em>$1</em>');
@@ -229,14 +229,26 @@ function html = renderInline(model, page, text)
     end
 end
 
-function [text, replacements] = protectTokens(text, replacements, pattern, renderer)
+function [text, replacements] = protectTokens( ...
+        text, replacements, pattern, tokenType, model, page)
     while true
         [start, finish, tokens] = regexp(char(text), pattern, ...
             'start', 'end', 'tokens', 'once');
         if isempty(start)
             break;
         end
-        replacements(end + 1, 1) = renderer(tokens);
+        switch tokenType
+            case "code"
+                replacement = "<code>" + htmlEscape(tokens{1}) + "</code>";
+            case "image"
+                replacement = renderImage(tokens);
+            case "link"
+                replacement = renderLink(model, page, tokens);
+            otherwise
+                error("LabKit:Docs:UnknownInlineToken", ...
+                    "Unknown Markdown inline token type: %s", tokenType);
+        end
+        replacements(end + 1, 1) = replacement;
         marker = tokenMarker(numel(replacements));
         text = extractBefore(text, start) + marker + extractAfter(text, finish);
     end
