@@ -2,8 +2,9 @@
 % Output is decoded EIS items; invalid required sources raise an app error.
 function items = loadProjectItems(sources)
     items = struct([]);
+    paths = labkit.ui.runtime.sourcePaths(sources);
     for k = 1:numel(sources)
-        filepath = string(sources(k).reference.originalPath);
+        filepath = paths(k);
         [item, status] = labkit.dta.loadFile(filepath, "eis");
         if ~status.ok
             error('eis:SourceLoadFailed', 'Could not load %s: %s', ...

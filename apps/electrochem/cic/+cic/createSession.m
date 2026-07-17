@@ -6,7 +6,8 @@ function session = createSession(project)
     currentIndex = 0;
     if ~isempty(project.inputs.sources)
         currentIndex = 1;
-        filepath = string(project.inputs.sources(1).reference.originalPath);
+        filepath = labkit.ui.runtime.sourcePaths( ...
+            project.inputs.sources(1));
         [item, status] = cic.sourceFiles.loadItem(filepath, project.parameters);
         if ~status.ok
             error('cic:SourceLoadFailed', 'Could not load %s: %s', ...

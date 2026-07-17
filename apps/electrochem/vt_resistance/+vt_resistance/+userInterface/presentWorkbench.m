@@ -24,7 +24,7 @@ end
 
 function spec = filePanelSpec(sources, items, index)
     files = struct("id", {}, "path", {}, "status", {});
-    paths = sourcePaths(sources);
+    paths = labkit.ui.runtime.sourcePaths(sources);
     for k = 1:numel(paths)
         files(end + 1) = struct( ...
             "id", "item" + string(k), ...
@@ -176,18 +176,9 @@ function itemIndex = loadedItemIndex(items, sources, sourceIndex)
     if sourceIndex == 0 || isempty(items)
         return;
     end
-    paths = sourcePaths(sources);
+    paths = labkit.ui.runtime.sourcePaths(sources);
     match = find(string({items.filepath}) == paths(sourceIndex), 1);
     if ~isempty(match)
         itemIndex = match;
-    end
-end
-
-function paths = sourcePaths(sources)
-    paths = strings(0, 1);
-    if ~isempty(sources)
-        paths = string(arrayfun(@(source) ...
-            source.reference.originalPath, sources, 'UniformOutput', false));
-        paths = paths(:);
     end
 end

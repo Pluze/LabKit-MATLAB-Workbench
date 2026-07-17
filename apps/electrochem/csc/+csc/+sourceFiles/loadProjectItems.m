@@ -2,8 +2,9 @@
 % records. Output is decoded CV/CT items; invalid required sources throw.
 function items = loadProjectItems(sources)
     items = struct([]);
+    paths = labkit.ui.runtime.sourcePaths(sources);
     for k = 1:numel(sources)
-        filepath = string(sources(k).reference.originalPath);
+        filepath = paths(k);
         [item, status] = labkit.dta.loadFile(filepath, "cvct");
         if ~status.ok
             error('csc:SourceLoadFailed', 'Could not load %s: %s', ...

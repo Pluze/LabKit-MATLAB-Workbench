@@ -163,9 +163,6 @@ function sources = removeSources(sources, paths)
     if isempty(sources)
         return;
     end
-    sourcePaths = strings(numel(sources), 1);
-    for k = 1:numel(sources)
-        sourcePaths(k) = string(sources(k).reference.originalPath);
-    end
+    sourcePaths = labkit.ui.runtime.sourcePaths(sources);
     sources = sources(~ismember(sourcePaths, paths(:)));
 end

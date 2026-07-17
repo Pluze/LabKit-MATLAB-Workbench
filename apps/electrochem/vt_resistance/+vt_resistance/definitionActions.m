@@ -54,7 +54,7 @@ function state = onRemoveSelected(state, event, services)
     if isempty(indices)
         return;
     end
-    removed = sourcePaths(sources(indices));
+    removed = labkit.ui.runtime.sourcePaths(sources(indices));
     state.session.cache.items = removeItemsByPath( ...
         state.session.cache.items, removed);
     state.project.inputs.sources(indices) = [];
@@ -177,7 +177,7 @@ function index = boundedIndex(index, count)
 end
 
 function tf = isRegistered(sources, filepath)
-    tf = any(sourcePaths(sources) == string(filepath));
+    tf = any(labkit.ui.runtime.sourcePaths(sources) == string(filepath));
 end
 
 function state = ensureCurrentItemLoaded(state, services)
@@ -186,7 +186,8 @@ function state = ensureCurrentItemLoaded(state, services)
     if index == 0
         return;
     end
-    filepath = sourcePaths(state.project.inputs.sources(index));
+    filepath = labkit.ui.runtime.sourcePaths( ...
+        state.project.inputs.sources(index));
     if itemIsLoaded(state.session.cache.items, filepath)
         return;
     end
@@ -209,7 +210,7 @@ end
 
 function [state, ok] = ensureAllItemsLoaded(state, services)
     ok = true;
-    paths = sourcePaths(state.project.inputs.sources);
+    paths = labkit.ui.runtime.sourcePaths(state.project.inputs.sources);
     for k = 1:numel(paths)
         if itemIsLoaded(state.session.cache.items, paths(k))
             continue;
@@ -230,15 +231,6 @@ end
 
 function tf = itemIsLoaded(items, filepath)
     tf = ~isempty(items) && any(string({items.filepath}) == filepath);
-end
-
-function paths = sourcePaths(sources)
-    paths = strings(0, 1);
-    if ~isempty(sources)
-        paths = string(arrayfun(@(source) ...
-            source.reference.originalPath, sources, 'UniformOutput', false));
-        paths = paths(:);
-    end
 end
 
 function items = removeItemsByPath(items, paths)

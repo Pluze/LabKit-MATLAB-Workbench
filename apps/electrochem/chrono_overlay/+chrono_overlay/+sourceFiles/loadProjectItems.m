@@ -2,8 +2,9 @@
 % records. Output is the rebuildable decoded and pulse-aligned DTA item vector.
 function items = loadProjectItems(sources)
     items = struct([]);
+    paths = labkit.ui.runtime.sourcePaths(sources);
     for k = 1:numel(sources)
-        filepath = string(sources(k).reference.originalPath);
+        filepath = paths(k);
         [item, status] = labkit.dta.loadFile(filepath, "chrono");
         if ~status.ok
             error('chrono_overlay:SourceLoadFailed', ...

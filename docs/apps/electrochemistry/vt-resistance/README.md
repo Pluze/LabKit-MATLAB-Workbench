@@ -102,5 +102,5 @@ optional runtime capabilities. `projectSpec.m` owns the complete version-1
 durable schema, defaults, and validation. `createSession.m` deliberately
 decodes only the first source for preview; the remaining batch stays lazy until
 selection or export. The App requires `labkit.ui >=7 <8` and
-`labkit.dta >=2 <3`; busy-state and portable-reference serialization remain
-framework-private.
+`labkit.dta >=2 <3`; busy-state, resolved-path access, and portable-reference
+serialization remain framework-owned.
