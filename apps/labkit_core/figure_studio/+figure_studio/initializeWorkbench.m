@@ -1,6 +1,7 @@
-% Expected caller: the LabKit V2 runtime Start hook. Output adopts a plain
-% axes-handoff snapshot and registers preview resize resources outside state.
-function state = startup(state, ~, services)
+% Initialize request-dependent Figure Studio state after Runtime V2 has built
+% the workbench. The Start hook adopts an axes handoff and registers the
+% preview resize resource; it does not own runtime readiness or queueing.
+function state = initializeWorkbench(state, ~, services)
     if strlength(state.project.parameters.outputFolder) == 0
         state.project.parameters.outputFolder = string( ...
             services.dialogs.defaultFolder("output"));

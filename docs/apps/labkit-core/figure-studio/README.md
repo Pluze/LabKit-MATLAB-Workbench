@@ -16,6 +16,23 @@ labkit_FigureStudio_app
 A LabKit plot can also send its current axes to Figure Studio through the plot
 context menu. That handoff embeds a serializable plot snapshot in the project.
 
+## Initialization And Runtime Services
+
+`figure_studio.definition` declares an optional Runtime V2 `Start` capability
+named `figure_studio.initializeWorkbench`. Runtime calls it after the semantic
+layout and preview axes exist but before startup readiness is released. This is
+why axes handoff and resize-resource registration do not belong in
+`createSession(project)`, which is deliberately GUI-free and receives no
+runtime services.
+
+The initializer receives the canonical state, the startup event, and injected
+services. `services.request` carries the optional axes handoff prepared by
+`figure_studio.launchRequest`; `services.previews` resolves the managed preview
+axes; `services.resources` registers cleanup-owned resize state;
+`services.dialogs`, `services.workflow`, and `services.debug` provide
+domain-neutral runtime behavior. Figure Studio does not construct these
+services or control callback queueing, busy state, or readiness.
+
 ## Load And Select Figures
 
 On **Figures**, choose **Add FIG files or scan folder**. The source list accepts

@@ -61,6 +61,9 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             runtime = getappdata(fig, 'labkitUiAppRuntime');
             testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
                 'Figure Studio must execute through Runtime V2.');
+            testCase.verifyEqual(func2str(runtime.definition.start), ...
+                'figure_studio.initializeWorkbench', ...
+                'Figure Studio should declare its post-layout initializer explicitly.');
             testCase.verifyFalse(containsGraphicsHandle(runtime.state.project), ...
                 'Figure Studio projects must not retain axes or other graphics handles.');
             ax = driver.registry().controls.preview.axesById.main;
@@ -150,7 +153,7 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
                 'Project reopen should redraw the embedded axes handoff.');
         end
 
-        function figure_studio_waits_for_stable_preview_canvas(testCase)
+        function figure_studio_waits_for_stable_preview_canvas(~)
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
@@ -180,7 +183,7 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
                 'Figure Studio should not freeze preview canvas size from the initial 100x100 uigridlayout measurement.');
         end
 
-        function popout_send_to_studio_copies_plot_content(testCase)
+        function popout_send_to_studio_copies_plot_content(~)
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
