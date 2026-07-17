@@ -87,6 +87,22 @@ compatible old Video Marker project or autosave opens with an unsaved marker;
 choosing the top-level **Save State** action atomically upgrades that same MAT
 path to the current `labkitProject` format.
 
+## Project And Session State
+
+`video_marker.projectSpec` is the single durable-project contract. It owns the
+current schema factory and validator, the version-1 payload upgrade, the former
+`videoMarkerProject` MAT-variable importer, and the lightweight current-frame
+resume policy. Runtime V2 performs migration iteration, validates the imported
+payload, resolves required video sources, and only then calls
+`video_marker.createSession`.
+
+Durable state consists of video metadata, the portable video source, skeleton,
+frame annotations and provenance, calibration, export parameters, and output
+manifest paths. The video reader, decoded frame, current interaction,
+selection, preview graphics, and frame cache are transient session resources.
+Only the current frame number is saved as navigation convenience; annotations
+remain the authoritative scientific data.
+
 ## Outputs
 
 - explicit project MAT and visible autosave MAT;
@@ -135,4 +151,14 @@ coordinateTable = video_marker.coordinateExport.buildTable( ...
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+This App requires `labkit.ui >=7 <8`. Its single `definition.m` owns product
+metadata, requirements, layout, actions, presentation, renderers, and optional
+capabilities. `projectSpec.m` concentrates all durable creation, validation,
+migration, legacy import, and resume hooks; root `createSession.m` rebuilds the
+transient video state.
+
+The App reads video locations only through `labkit.ui.runtime.sourcePaths`.
+Legacy portable references are passed intact to `sourceRecord` for framework
+validation and canonicalization; no App helper knows the Runtime's nested path
+schema. Busy state, callback queues, resource cleanup, source relinking,
+serialization envelopes, and migration iteration remain framework-owned.

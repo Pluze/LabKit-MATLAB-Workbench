@@ -13,7 +13,8 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
 
         function visual_skeleton_setup_starts_empty_and_remaps_connections(testCase)
             setupLabKitTestPath();
-            project = video_marker.appLifecycle.createProject();
+            spec = video_marker.projectSpec();
+            project = spec.Create();
             testCase.verifyEmpty(project.annotations.skeleton.pointNames);
 
             [skeleton, first] = video_marker.skeletonDefinition.addPoint( ...
@@ -260,12 +261,13 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             project.annotations.frames = ...
                 video_marker.frameAnnotations.emptyAnnotations(0, 5);
             testCase.verifyTrue(definition.project.Validate(project));
-            testCase.verifyEqual(numel(definition.project.Migrations), 1);
+            testCase.verifyTrue(isa(definition.project.Migrate, ...
+                'function_handle'));
             testCase.verifyEqual(project.inputs.videoMetadata, ...
                 video_marker.videoSource.emptyMetadata());
             testCase.verifyFalse(isfield(project, 'currentImage'));
 
-            session = video_marker.appLifecycle.createSession(project);
+            session = video_marker.createSession(project);
             state = struct('project', project, 'session', session);
             presentation = video_marker.userInterface.presentWorkbench(state);
             testCase.verifyTrue(isscalar(presentation));
@@ -275,7 +277,7 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyEmpty( ...
                 presentation.previews.videoAxes.Axes.video.Model.imageData);
             session.selection.currentFrame = 7;
-            resume = video_marker.appLifecycle.createResume(session, project);
+            resume = definition.project.CreateResume(session, project);
             testCase.verifyEqual(resume.currentFrame, 7);
         end
 
@@ -290,22 +292,22 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
                 "duration", 0.1, "height", 72, "width", 96));
             testCase.verifyFalse(isfield(metadata, "path"));
 
-            versionOne = video_marker.appLifecycle.createProject();
+            spec = video_marker.projectSpec();
+            versionOne = spec.Create();
             versionOne.inputs = rmfield(versionOne.inputs, "videoMetadata");
             versionOne.annotations.skeleton = ...
                 video_marker.skeletonDefinition.fromText("hip, foot", "hip-foot");
             versionOne.annotations.frames = ...
                 video_marker.frameAnnotations.emptyAnnotations(12, 2);
-            migrated = ...
-                video_marker.appLifecycle.migrateProjectV1ToV2(versionOne);
+            migrated = spec.Migrate(versionOne, 1);
             testCase.verifyEqual(migrated.inputs.videoMetadata.frameCount, 12);
             testCase.verifyEqual(migrated.inputs.videoMetadata.frameRate, 0);
             testCase.verifyTrue( ...
-                video_marker.appLifecycle.validateProject(migrated));
+                spec.Validate(migrated));
 
             migrated.inputs.videoMetadata.frameCount = 11;
             testCase.verifyError( ...
-                @() video_marker.appLifecycle.validateProject(migrated), ...
+                @() spec.Validate(migrated), ...
                 'video_marker:InvalidProject');
         end
 
@@ -330,9 +332,10 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
                 "startFrame", 1, "endFrame", 2);
             legacy.currentFrame = 2;
 
+            spec = video_marker.projectSpec();
             [project, resume] = ...
-                video_marker.appLifecycle.importLegacyProject(legacy);
-            testCase.verifyTrue(video_marker.appLifecycle.validateProject(project));
+                spec.LegacyImports.videoMarkerProject(legacy);
+            testCase.verifyTrue(spec.Validate(project));
             testCase.verifyEqual(project.inputs.sources.reference, ...
                 legacy.videoReference);
             testCase.verifyEqual(project.annotations.frames.coords, ...

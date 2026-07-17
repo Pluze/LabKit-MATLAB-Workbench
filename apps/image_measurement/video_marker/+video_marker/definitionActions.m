@@ -416,7 +416,7 @@ function state = onExportCoordinateCsv(state, ~, services)
 end
 
 function state = onSaveAutosave(state, ~, services)
-    videoPath = video_marker.sourceFiles.pathForId( ...
+    videoPath = labkit.ui.runtime.sourcePaths( ...
         state.project.inputs.sources, "video");
     if strlength(videoPath) == 0
         state = services.workflow.log(state, ...
@@ -462,15 +462,16 @@ function state = onNewSetup(state, ~, services)
         return;
     end
     services.resources.clearScope("session");
-    project = video_marker.appLifecycle.createProject();
-    session = video_marker.appLifecycle.createSession(project);
+    spec = video_marker.projectSpec();
+    project = spec.Create();
+    session = video_marker.createSession(project);
     state = struct("project", project, "session", session);
     state = services.workflow.log(state, ...
         "Started a new skeleton setup and cleared the annotation session.");
 end
 
 function resource = ensureVideoResource(state, services)
-    pathValue = video_marker.sourceFiles.pathForId( ...
+    pathValue = labkit.ui.runtime.sourcePaths( ...
         state.project.inputs.sources, "video");
     resource = services.resources.get("session", "video");
     if isstruct(resource) && isscalar(resource) && ...
@@ -524,7 +525,7 @@ function state = clearResults(state)
 end
 
 function folder = defaultOutputFolder(state, services)
-    videoPath = video_marker.sourceFiles.pathForId( ...
+    videoPath = labkit.ui.runtime.sourcePaths( ...
         state.project.inputs.sources, "video");
     folder = services.dialogs.defaultOutputFolder( ...
         videoPath, "video_marker");

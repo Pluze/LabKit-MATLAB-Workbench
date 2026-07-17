@@ -178,7 +178,8 @@ end
 function [labkitProject, coords] = markerProject()
     pose = syntheticPose();
     coords = pose.coords;
-    project = video_marker.appLifecycle.createProject();
+    spec = video_marker.projectSpec();
+    project = spec.Create();
     project.annotations.skeleton = video_marker.skeletonDefinition.fromParts( ...
         pose.pointNames, [1 2; 2 3; 3 4; 4 5]);
     project.annotations.frames = ...

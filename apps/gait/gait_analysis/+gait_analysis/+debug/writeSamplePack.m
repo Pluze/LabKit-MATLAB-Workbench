@@ -6,7 +6,8 @@ function pack = writeSamplePack(debugLog)
     if ~isfolder(root)
         mkdir(root);
     end
-    project = video_marker.appLifecycle.createProject();
+    spec = video_marker.projectSpec();
+    project = spec.Create();
     project.annotations.skeleton = video_marker.skeletonDefinition.fromParts( ...
         ["iliac"; "hip"; "knee"; "ankle"; "foot"], ...
         [1 2; 2 3; 3 4; 4 5]);

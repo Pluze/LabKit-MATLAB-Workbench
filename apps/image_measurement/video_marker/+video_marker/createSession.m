@@ -1,11 +1,10 @@
-% Expected caller: the LabKit V2 runtime. Input is a validated durable Video
-% Marker project whose source paths have already been resolved. Output owns
-% current-frame navigation, workflow text, and rebuildable decoded image data.
+% Rebuild transient Video Marker navigation and decoded-frame state from one
+% validated project after Runtime V2 resolves its video source.
 function session = createSession(project)
     currentFrame = 1;
     info = infoFromProject(project);
     imageData = [];
-    videoPath = video_marker.sourceFiles.pathForId( ...
+    videoPath = labkit.ui.runtime.sourcePaths( ...
         project.inputs.sources, "video");
     if strlength(videoPath) > 0 && isfile(videoPath)
         [reader, info] = video_marker.videoSource.openVideo(videoPath);
