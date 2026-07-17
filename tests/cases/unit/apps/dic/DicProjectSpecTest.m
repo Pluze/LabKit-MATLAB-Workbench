@@ -1,7 +1,7 @@
 classdef DicProjectSpecTest < matlab.unittest.TestCase
     %DICPROJECTSPECTEST Verify DIC App-owned project schema requirements.
 
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function defaultProjectsAcceptAndRequireSources(testCase)
             setupLabKitTestPath();
             factories = {@dic_postprocess.projectSpec, ...

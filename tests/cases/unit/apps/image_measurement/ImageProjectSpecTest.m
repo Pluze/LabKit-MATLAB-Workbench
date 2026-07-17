@@ -1,7 +1,7 @@
 classdef ImageProjectSpecTest < matlab.unittest.TestCase
     %IMAGEPROJECTSPECTEST Verify image App-owned project schema requirements.
 
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function defaultProjectsAcceptAndRequireSources(testCase)
             setupLabKitTestPath();
             factories = {@batch_crop.projectSpec, @curvature.projectSpec, ...

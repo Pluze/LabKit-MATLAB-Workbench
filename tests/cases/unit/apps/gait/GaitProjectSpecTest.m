@@ -1,7 +1,7 @@
 classdef GaitProjectSpecTest < matlab.unittest.TestCase
     %GAITPROJECTSPECTEST Verify Gait App-owned project schema requirements.
 
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function defaultProjectAcceptsAndRequiresSources(testCase)
             setupLabKitTestPath();
             spec = gait_analysis.projectSpec();

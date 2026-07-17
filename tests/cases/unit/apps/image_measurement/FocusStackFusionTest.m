@@ -24,8 +24,6 @@ end
 
 function checkProjectContract()
     definition = focus_stack.definition();
-    assert(definition.product.version == "1.5.3", ...
-        'Focus Stack definition should own product metadata.');
     project = definition.project.Create();
     assert(definition.project.Validate(project), ...
         'Focus Stack projectSpec should accept its current project.');

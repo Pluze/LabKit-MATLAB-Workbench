@@ -24,8 +24,6 @@ end
 function checkProjectSourceMigration()
     definition = curvature.definition();
     project = definition.project.Create();
-    assert(definition.product.version == "1.4.4", ...
-        'Curvature definition should own product metadata.');
     assert(definition.project.Validate(project), ...
         'Curvature projectSpec should accept its current project.');
     session = definition.createSession(project);

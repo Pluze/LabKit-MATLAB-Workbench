@@ -1,7 +1,7 @@
 classdef EcgProjectSpecTest < matlab.unittest.TestCase
     %ECGPROJECTSPECTEST Verify ECG Print project requirements.
 
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function defaultProjectAcceptsAndRequiresSources(testCase)
             setupLabKitTestPath();
             spec = ecg_print.projectSpec();

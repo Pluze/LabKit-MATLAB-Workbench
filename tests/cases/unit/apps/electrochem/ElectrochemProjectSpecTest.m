@@ -1,7 +1,7 @@
 classdef ElectrochemProjectSpecTest < matlab.unittest.TestCase
     %ELECTROCHEMPROJECTSPECTEST Verify App-owned project schema requirements.
 
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function defaultProjectsAcceptAndRequireSources(testCase)
             setupLabKitTestPath();
             factories = {@chrono_overlay.projectSpec, @cic.projectSpec, ...

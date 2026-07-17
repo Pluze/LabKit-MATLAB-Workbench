@@ -1,7 +1,7 @@
 classdef FigureStudioProjectSpecTest < matlab.unittest.TestCase
     %FIGURESTUDIOPROJECTSPECTEST Verify Figure Studio project requirements.
 
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function defaultProjectAcceptsAndRequiresSources(testCase)
             setupLabKitTestPath();
             spec = figure_studio.projectSpec();

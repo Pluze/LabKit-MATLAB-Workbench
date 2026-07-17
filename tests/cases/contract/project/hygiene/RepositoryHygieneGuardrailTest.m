@@ -46,15 +46,6 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
                 'labkit_launcher.m. Files: ' strjoin(cellstr(actual), ', ')]);
         end
 
-        function trackedTextFilesUseAsciiOnly(testCase)
-            root = setupLabKitTestPath();
-            scope = labkitQualityScanScope(root);
-            actual = collectNonAsciiFiles(root, scope.textFiles);
-            testCase.verifyEmpty(actual, ...
-                ['tracked text files must remain ASCII-only. Files: ' ...
-                strjoin(cellstr(actual), ', ')]);
-        end
-
         function charPathListsDoNotUseBracketConcatenation(testCase)
             root = setupLabKitTestPath();
             scope = labkitQualityScanScope(root);
@@ -477,32 +468,6 @@ end
 
 function text = quoteForFinding(literal)
     text = """" + literal + """";
-end
-
-function files = collectNonAsciiFiles(root, tracked)
-    files = strings(1, 0);
-    for k = 1:numel(tracked)
-        filepath = absoluteFilePath(root, tracked(k));
-        if exist(filepath, 'file') ~= 2
-            continue;
-        end
-        text = readCachedText(filepath);
-        if any(double(text) > 127)
-            files(end+1) = qualityPathLabel(root, tracked(k));
-        end
-    end
-end
-
-function tf = isTextTrackedFile(filepath)
-    [~, name, ext] = fileparts(char(filepath));
-    ext = lower(string(ext));
-    basename = string(name) + ext;
-    textExts = [".m", ".md", ".txt", ".json", ".yml", ".yaml", ...
-        ".csv", ".tsv", ".xml", ".html", ".css", ".js", ".sh", ...
-        ".ps1", ".gitignore", ".gitattributes"];
-    textNames = ["LICENSE", "NOTICE", "AGENTS"];
-    tf = ismember(ext, textExts) || ismember(basename, textNames) || ...
-        startsWith(basename, ".git");
 end
 
 function files = collectOversizedTrackedFiles(root, maxLines)

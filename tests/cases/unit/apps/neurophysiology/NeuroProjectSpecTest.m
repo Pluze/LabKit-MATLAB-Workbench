@@ -1,7 +1,7 @@
 classdef NeuroProjectSpecTest < matlab.unittest.TestCase
     %NEUROPROJECTSPECTEST Verify neurophysiology project requirements.
 
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function defaultProjectsAcceptAndRequireSources(testCase)
             setupLabKitTestPath();
             factories = {@nerve_response_analysis.projectSpec, ...
