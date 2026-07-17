@@ -22,6 +22,11 @@ function layout = statusPanel(id, titleText, varargin)
 %   replace as app state changes. Unlike logPanel, it has no follow-latest
 %   controls. Use the workbench usage option for static workflow instructions.
 %
+% Errors:
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed. Text conversion and graphics compatibility
+%   of value are validated when the runtime builds the panel.
+%
 % Example:
 %   status = labkit.ui.layout.statusPanel( ...
 %       "selectionStatus", "Selection", "value", "No file selected");

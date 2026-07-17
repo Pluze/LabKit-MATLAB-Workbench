@@ -21,6 +21,12 @@ function layout = section(id, titleText, children, varargin)
 %   choose the title, child controls, and their order; the workbench chooses the
 %   concrete height, spacing, padding, and border presentation.
 %
+% Errors:
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed.
+%   labkit:ui:layout:InvalidChildren - children is not a cell row of scalar
+%   layout nodes. Empty or unsupported child sets are rejected at launch.
+%
 % Example:
 %   inputs = labkit.ui.layout.section("inputs", "Inputs", { ...
 %       labkit.ui.layout.field("sampleName", "Sample name")});

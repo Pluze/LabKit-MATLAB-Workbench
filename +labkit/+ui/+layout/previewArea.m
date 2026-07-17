@@ -41,6 +41,14 @@ function layout = previewArea(id, titleText, varargin)
 %   renderers address the panel by preview ID and, when needed, an axis ID. Each
 %   axes receives the standard LabKit pop-out menu and wheel navigation.
 %
+% Errors:
+%   labkit:ui:layout:InvalidPreviewLayout or InvalidPreviewCount - layout or
+%   count is unsupported.
+%   labkit:ui:runtime:InvalidAxisId or DuplicateAxisId - axisIds contains an
+%   invalid or repeated identifier.
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed.
+%
 % Example:
 %   preview = labkit.ui.layout.previewArea("signals", "Signals", ...
 %       "layout", "pair", "axisIds", {"input","output"}, ...

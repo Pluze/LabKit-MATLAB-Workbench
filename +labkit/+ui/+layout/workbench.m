@@ -20,7 +20,8 @@ function layout = workbench(id, titleText, varargin)
 %   usage - Static workflow instructions as text, a string array, or cellstr.
 %       When nonempty, a read-only Usage section is appended to the first tab.
 %       Default: no usage section.
-%   usageTitle - Title of the generated usage section. Default: "Usage".
+%   usageTitle - Character vector or scalar string used as the title of the
+%       generated usage section. Default: "Usage".
 %
 % Outputs:
 %   layout - Scalar app node consumed by labkit.ui.runtime.create or by the
@@ -32,6 +33,12 @@ function layout = workbench(id, titleText, varargin)
 %   invalid child types, empty sections, and app-owned pixel geometry such as
 %   position, height, padding, or pane width. The function constructs data only;
 %   it does not open a figure.
+%
+% Errors:
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed. Missing required slots, duplicate IDs,
+%   invalid child kinds, empty sections, and forbidden concrete geometry are
+%   rejected when runtime.define or runtime.create validates the full tree.
 %
 % Example:
 %   controls = labkit.ui.layout.tab("main", "Main", { ...

@@ -29,6 +29,13 @@ function layout = group(id, titleText, children, varargin)
 %   a row or block of commands and for a labeled subsection of fields. Concrete
 %   row heights, spacing, and column widths are selected by the workbench.
 %
+% Errors:
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed.
+%   labkit:ui:layout:InvalidChildren - children is not a cell row of scalar
+%   layout nodes. Child kinds and layout mode compatibility are validated at
+%   workbench launch.
+%
 % Example:
 %   commands = labkit.ui.layout.group("commands", "Commands", { ...
 %       labkit.ui.layout.action("run", "Run", []), ...

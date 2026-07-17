@@ -29,6 +29,12 @@ function layout = rangeField(id, labelText, varargin)
 %   Both edits report the complete two-element value. Runtime construction
 %   rejects values that do not contain exactly two elements.
 %
+% Errors:
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed. The constructor stores option values as
+%   data; invalid value/limits/callback combinations are rejected when the
+%   runtime builds the control.
+%
 % Example:
 %   window = labkit.ui.layout.rangeField( ...
 %       "timeWindow", "Time window (s)", "value", [0 5], "limits", [0 Inf]);
