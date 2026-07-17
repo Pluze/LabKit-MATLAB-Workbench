@@ -27,6 +27,9 @@ function assertRequirements(appName, req, versions)
 % Example:
 %   req = labkit.contract.requirements("ui", ">=7 <8");
 %   labkit.contract.assertRequirements("labkit_Example_app", req)
+%
+% See also labkit.contract.checkRequirements,
+%   labkit.contract.requirements
 
     if nargin < 3
         report = labkit.contract.checkRequirements(req);

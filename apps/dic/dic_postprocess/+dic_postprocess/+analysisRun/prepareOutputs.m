@@ -37,6 +37,11 @@ function [summaryTable, overlayExx, overlayEyy] = prepareOutputs(inputs, paramet
 %   both components, renders EXX and EYY with identical display parameters, and
 %   summarizes finite strain samples inside roiMask when supplied.
 %
+% Failure Behavior:
+%   Missing input/parameter fields, incompatible EXX/EYY/mask geometry, or
+%   invalid display values propagate the originating field-access, overlay, or
+%   summary error. The function does not catch partial-output failures.
+%
 % Typical Call:
 %   [summary, exxImage, eyyImage] = ...
 %       dic_postprocess.analysisRun.prepareOutputs(inputs, parameters);

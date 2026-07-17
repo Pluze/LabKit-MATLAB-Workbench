@@ -121,8 +121,11 @@ framework and app.
 
 Exact syntax, inputs, outputs, defaults, legal values, examples, and related
 functions are generated from the help block immediately following each public
-function declaration. Open the [API reference](../libraries/README.md) and
-search for a fully qualified symbol such as `labkit.ui.runtime.launch`.
+function declaration. The documentation contract discovers every non-private
+`labkit.ui` function, requires explicit failure behavior, verifies each
+implemented option and default, and executes every `Example:` block. Open the
+[API reference](../libraries/README.md) and search for a fully qualified symbol
+such as `labkit.ui.runtime.launch` or `labkit.ui.version`.
 
 ## Related Topics
 

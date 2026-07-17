@@ -18,6 +18,12 @@ function layout = tab(id, titleText, children, varargin)
 %   tab defines one page in the left control pane. Add the resulting node to the
 %   controlTabs cell array of a workbench.
 %
+% Errors:
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed.
+%   labkit:ui:layout:InvalidChildren - children is not a cell row of scalar
+%   layout nodes. Child kinds and empty-section rules are checked at launch.
+%
 % Example:
 %   setupTab = labkit.ui.layout.tab("setup", "Setup", { ...
 %       labkit.ui.layout.section("inputs", "Inputs", { ...

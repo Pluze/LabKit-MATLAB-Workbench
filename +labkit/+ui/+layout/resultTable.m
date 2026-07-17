@@ -32,6 +32,11 @@ function layout = resultTable(id, titleText, varargin)
 %   workspace. String and other displayable cell values are converted to text
 %   when the table is built. Programmatic data updates do not call onCellEdit.
 %
+% Errors:
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed. Table data, formats, editability, and
+%   callback values are validated by MATLAB when the runtime builds the table.
+%
 % Example:
 %   results = labkit.ui.layout.resultTable("summary", "Summary", ...
 %       "columns", {"Metric","Value"}, ...

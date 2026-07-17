@@ -40,6 +40,13 @@ function layout = panner(id, labelText, varargin)
 %   slider navigation. Editing either control updates the other before the
 %   callback runs. Reassigning the current value does not fire the callback.
 %
+% Errors:
+%   labkit:ui:layout:InvalidPannerLimits - limits is not an increasing
+%   two-element numeric vector.
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed. Remaining numeric/control values are
+%   validated when the runtime builds the node.
+%
 % Example:
 %   frame = labkit.ui.layout.panner("frame", "Frame", ...
 %       "limits", [1 100], "value", 1, "step", 1);

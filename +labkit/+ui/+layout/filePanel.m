@@ -67,6 +67,14 @@ function layout = filePanel(id, labelText, varargin)
 %   leaves the current list unchanged. Files beyond maxFiles are discarded in
 %   selection order.
 %
+% Errors:
+%   labkit:ui:layout:InvalidFilePanelMode or
+%   InvalidFilePanelSelectionMode - A mode label is unsupported.
+%   labkit:ui:layout:InvalidFilePanelMaxFiles or
+%   InvalidFilePanelWarningThreshold - A numeric limit is invalid.
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed.
+%
 % Typical Call:
 %   files = labkit.ui.layout.filePanel("images", "Images", ...
 %       "filters", {'*.png;*.tif','Images'}, "selectionMode", "multiple");

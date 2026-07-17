@@ -135,6 +135,15 @@ cropped = dic_preprocess.analysisRun.cropImage(aligned, [80 60 300 300]);
 Use the linked function pages below for exact coordinate, rectangle, return
 shape, interpolation, and error contracts.
 
+## Function Reference
+
+The generated pages for
+[`alignMovingToReference`](../../../reference/api/dic_preprocess/analysisRun/alignMovingToReference.html),
+[`autoAlignMovingToReference`](../../../reference/api/dic_preprocess/analysisRun/autoAlignMovingToReference.html),
+[`applyRigidTransform`](../../../reference/api/dic_preprocess/analysisRun/applyRigidTransform.html),
+and the other cataloged DIC functions document coordinate conventions,
+assumptions, output shape, limitations, failure behavior, and related APIs.
+
 ## Errors And Troubleshooting
 
 - Point alignment remains unavailable until at least two complete pairs exist.

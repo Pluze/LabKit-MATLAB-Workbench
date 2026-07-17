@@ -44,6 +44,12 @@ function outputImage = applyMatch(inputImage, referenceImage, step)
 %   outputImage - M-by-N-by-3 double image in [0,1], with the same height and
 %       width as inputImage.
 %
+% Failure Behavior:
+%   Empty referenceImage returns normalized inputImage unchanged. Missing step
+%   fields use the App's match defaults; unsupported image classes/channel
+%   shapes or malformed numeric step values propagate the originating LabKit
+%   image or MATLAB calculation error.
+%
 % Example:
 %   source = cat(3, 0.3*ones(8), 0.5*ones(8), 0.8*ones(8));
 %   reference = cat(3, 0.8*ones(6), 0.5*ones(6), 0.3*ones(6));

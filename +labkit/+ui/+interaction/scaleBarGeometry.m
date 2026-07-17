@@ -37,6 +37,14 @@ function geometry = scaleBarGeometry(imageSize, calibration, barLength, position
 %   available horizontal span. Apps and renderers own drawing; this function
 %   creates no graphics and is suitable for saved project state.
 %
+% Errors:
+%   labkit:ui:interaction:InvalidImageSize - imageSize lacks positive finite
+%   height and width.
+%   labkit:ui:interaction:InvalidScaleBar - calibration or barLength is not a
+%   positive finite scalar.
+%   labkit:ui:interaction:ScaleBarTooLong - The requested bar does not fit
+%   inside the horizontal margins.
+%
 % Example:
 %   cal = labkit.ui.interaction.scaleBarCalibration(80, 20, "mm");
 %   geometry = labkit.ui.interaction.scaleBarGeometry( ...

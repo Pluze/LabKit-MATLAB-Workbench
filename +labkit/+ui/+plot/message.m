@@ -23,6 +23,12 @@ function hText = message(ax, message, varargin)
 %   prompt, or unavailable result. Because it performs a complete clear, it is
 %   not an overlay operation and does not preserve the previous zoom.
 %
+% Errors:
+%   labkit:ui:plot:InvalidAxes - ax is not a valid scalar axes handle.
+%   labkit:ui:plot:InvalidOptions or labkit:ui:plot:InvalidOption -
+%   Name-value arguments are malformed or unsupported. Invalid MATLAB text or
+%   color values propagate their originating graphics error.
+%
 % Example:
 %   fig = figure("Visible", "off");
 %   cleanup = onCleanup(@() close(fig));

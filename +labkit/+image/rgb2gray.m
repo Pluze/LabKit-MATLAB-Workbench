@@ -29,6 +29,9 @@ function gray = rgb2gray(rgb)
 % Example:
 %   rgb = cat(3, ones(2), zeros(2), zeros(2));
 %   gray = labkit.image.rgb2gray(rgb);
+%
+% See also labkit.image.ensureRgb,
+%   labkit.image.im2double
 
     narginchk(1, 1);
     validateattributes(rgb, {'uint8', 'uint16', 'int16', 'single', 'double'}, ...

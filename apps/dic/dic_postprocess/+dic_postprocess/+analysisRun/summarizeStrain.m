@@ -18,6 +18,11 @@ function T = summarizeStrain(strain, mask)
 %   Std uses MATLAB's default sample standard deviation. When a component has no
 %   finite selected values, all five values for that component are NaN.
 %
+% Failure Behavior:
+%   An empty finite selection returns NaN statistics as documented. Missing exx
+%   or eyy fields, incompatible mask geometry, or values unsupported by MATLAB
+%   numeric statistics propagate the originating field/indexing error.
+%
 % Example:
 %   strain = struct("exx", [1 2; NaN 4], "eyy", [2 4; 6 Inf]);
 %   T = dic_postprocess.analysisRun.summarizeStrain( ...

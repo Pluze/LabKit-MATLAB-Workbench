@@ -15,7 +15,7 @@ function overlay = makeStrainOverlay(referenceImage, strainMap, mask, roiMask, o
 %       otherwise a resized form of mask is used.
 %   opts - Scalar overlay option struct described below.
 %
-% Options:
+% Required Options:
 %   alpha - Strain-color blend fraction; 0 shows the reference and 1 shows the
 %       color map inside the overlay mask.
 %   colorRange - Two-element [minimum maximum] strain range mapped to the first
@@ -25,13 +25,15 @@ function overlay = makeStrainOverlay(referenceImage, strainMap, mask, roiMask, o
 %       before linear resize. Values below 1 use 1.
 %   sigmaSmooth - Gaussian smoothing sigma on the extended strain grid. Values
 %       at or below 0 disable smoothing.
-%   edgeTrim - Nonnegative number of valid-mask edge pixels removed before
-%       interpolation. Default: 1 when the field is absent.
 %   brightness - Additive reference-image brightness adjustment.
 %   contrast - Multiplicative contrast around normalized intensity 0.5.
 %   gamma - Exponent applied after brightness and contrast adjustment.
 %   saturation - Multiplier for the HSV saturation channel.
 %   rgbGain - Three-element red, green, and blue gain vector.
+%
+% Optional Options:
+%   edgeTrim - Nonnegative number of valid-mask edge pixels removed before
+%       interpolation. Default: 1 when the field is absent.
 %
 % Outputs:
 %   overlay - Double RGB image with the reference height and width. Reference
@@ -43,6 +45,12 @@ function overlay = makeStrainOverlay(referenceImage, strainMap, mask, roiMask, o
 %   extended into their ROI, optionally smoothed, linearly resized, clipped to
 %   colorRange, and blended only where both masks permit. The function creates
 %   image data only and performs no plotting or file output.
+%
+% Failure Behavior:
+%   referenceImage, strainMap, masks, and every required option must have
+%   compatible numeric shapes. Missing fields, an invalid color range or
+%   colormap, and incompatible mask/image sizes propagate the originating App
+%   helper or MATLAB indexing/conversion error.
 %
 % Typical Call:
 %   opts = struct("alpha", 0.55, "colorRange", [-0.02 0.02], ...

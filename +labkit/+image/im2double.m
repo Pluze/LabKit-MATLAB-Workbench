@@ -33,6 +33,9 @@ function imageOut = im2double(imageIn, imageType)
 % Example:
 %   intensity = labkit.image.im2double(uint8([0 128 255]));
 %   indices = labkit.image.im2double(uint8([0 1 2]), "indexed");
+%
+% See also labkit.image.ensureRgb,
+%   labkit.image.rgb2gray
 
     narginchk(1, 2);
     indexed = false;

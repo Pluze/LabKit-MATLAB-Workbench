@@ -34,6 +34,9 @@ function info = versionInfo(facade, current, compatible, status, notes)
 %   info = labkit.contract.versionInfo( ...
 %       "image", "4.1.0", ">=4 <5", "stable", ...
 %       "Image file IO and processing functions.");
+%
+% See also labkit.contract.requirements,
+%   labkit.contract.checkRequirements
 
     facade = normalizeFacade(facade);
     current = normalizeText(current, 'current');

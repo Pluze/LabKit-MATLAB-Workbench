@@ -26,9 +26,18 @@ function imageOut = grayWorldWhiteBalance(imageIn, strengthPct, temperaturePct)
 % Outputs:
 %   imageOut - M-by-N-by-3 double image with values in [0,1].
 %
+% Failure Behavior:
+%   Unsupported image classes or channel shapes propagate errors from
+%   im2double or ensureRgb. strengthPct and temperaturePct must participate
+%   in scalar numeric arithmetic; incompatible MATLAB values raise the
+%   originating conversion or array-size error.
+%
 % Example:
 %   imageIn = cat(3, 0.3*ones(4), 0.5*ones(4), 0.7*ones(4));
 %   imageOut = labkit.image.grayWorldWhiteBalance(imageIn, 100, 0);
+%
+% See also labkit.image.adjustBrightnessContrast,
+%   labkit.image.adjustHueSaturation
 
     imageIn = labkit.image.ensureRgb(labkit.image.im2double(imageIn));
     imageIn = min(max(imageIn, 0), 1);

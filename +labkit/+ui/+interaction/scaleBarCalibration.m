@@ -40,6 +40,13 @@ function cal = scaleBarCalibration(referencePixels, referenceLength, unitName, o
 %   identical numeric fields. Divide a pixel distance by pixelsPerUnit to obtain
 %   a distance in cal.unit.
 %
+% Failure Behavior:
+%   Missing or invalid measurement values are normalized into an uncalibrated
+%   result instead of throwing. opts must be a scalar structure whose units
+%   can be converted to text and whose referenceLine can be converted to an
+%   N-by-2 numeric array; incompatible MATLAB values propagate conversion
+%   errors.
+%
 % Example:
 %   cal = labkit.ui.interaction.scaleBarCalibration(80, 20, "mm");
 %   physicalLength = 40 / cal.pixelsPerUnit;

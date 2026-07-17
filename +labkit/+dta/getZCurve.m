@@ -20,11 +20,20 @@ function [curve, ok, msg] = getZCurve(tables)
 %   msg - Character vector naming the selected table or stating that a
 %       ZCURVE table was not found.
 %
+% Failure Behavior:
+%   Empty input or no impedance table returns curve=struct(), ok=false, and
+%   a diagnostic message. Nonempty elements must expose name and headers
+%   fields; malformed table structures raise the originating MATLAB
+%   field-access error.
+%
 % Typical Call:
 %   [curve, ok, msg] = labkit.dta.getZCurve(item.tables);
 %   if ok
 %       frequencyHz = labkit.dta.getColumn(curve, "Freq");
 %   end
+%
+% See also labkit.dta.getColumn,
+%   labkit.dta.loadFile
 
     curve = struct();
     ok = false;

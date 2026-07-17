@@ -95,6 +95,14 @@ result = csc.analysisRun.computeCSC(curve, options);
 assert(result.ok, result.message);
 ```
 
+## Function Reference
+
+The generated pages for
+[`computeCSC`](../../../reference/api/csc/analysisRun/computeCSC.html) and
+[`chargeDensity`](../../../reference/api/csc/analysisRun/chargeDensity.html)
+state the exact numeric inputs, units, sign conventions, outputs, invalid-area
+behavior, executable examples, and related APIs used outside the GUI.
+
 ## Errors And Limitations
 
 - Scan rate must be finite and positive.

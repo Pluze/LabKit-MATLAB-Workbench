@@ -37,6 +37,11 @@ function debugContext = context(appName, opts)
 %       fullfile(artifactFolder,"outputs").
 %   manifestFile - JSON manifest path. Default:
 %       fullfile(artifactFolder,"manifest.json").
+%   callbackProperties - Cell array or string array of graphics callback
+%       property names used only by instrumentFigure(fig,opts). Each name is
+%       ignored on handles that do not expose that property. Default: the
+%       standard button, value, selection, cell, close, size, keyboard, and
+%       tree callback properties listed by the runtime.
 %
 % Outputs:
 %   debugContext - Scalar struct, shown as debug in the usage syntax, containing
@@ -80,6 +85,14 @@ function debugContext = context(appName, opts)
 %   does not change error control flow. File-chooser trace events suppress stall
 %   reports while a known modal dialog is active. With no file paths configured,
 %   messages remain in memory and no files or folders are created.
+%
+% Errors:
+%   labkit:ui:DebugLogFileOpenFailed - A configured log or report file cannot
+%   be opened for writing.
+%   Instrumented callback exceptions are recorded and then rethrown unchanged.
+%   Invalid option types, callback properties, graphics handles, or artifact
+%   paths may propagate the originating MATLAB conversion, graphics, or
+%   file-system error.
 %
 % Example:
 %   debug = labkit.ui.debug.context("example_app");

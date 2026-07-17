@@ -15,10 +15,18 @@ function info = version()
 %       version; compatible lists supported requirement ranges; status
 %       describes API maturity; and notes summarizes the module.
 %
+% Failure Behavior:
+%   The function accepts no caller input. Invalid embedded facade metadata
+%   raises labkit:contract:InvalidVersionInfo; released metadata is validated
+%   by the contract test suite.
+%
 % Example:
 %   info = labkit.thermal.version();
 %   fprintf("Thermal API %s (%s)\n", info.current, info.status)
+%
+% See also labkit.contract.versionInfo,
+%   labkit.contract.checkRequirements
 
-    info = labkit.contract.versionInfo("thermal", "1.1.1", ">=1.0 <2", ...
+    info = labkit.contract.versionInfo("thermal", "1.1.2", ">=1.0 <2", ...
         "experimental", "GUI-free thermal image facade for FLIR radiometric JPEG reads, raw sensor matrices, provenance-aware temperature conversion, and display rendering.");
 end

@@ -26,10 +26,12 @@ function T = buildTable(annotations, skeleton, videoInfo, calibration, opts)
 %       video_marker.coordinateExport.options.
 %
 % Options:
-%   startFrame - First exported one-based frame index. It is rounded and
-%       limited to at least one. Default from options: 1.
-%   endFrame - Last exported frame index, inclusive. It is rounded and limited
-%       to the annotation frame count. Default from options: Inf.
+%   startFrame - Finite numeric scalar giving the first exported one-based
+%       frame index. It is rounded and limited to at least one. Default from
+%       options: 1.
+%   endFrame - Numeric scalar or Inf giving the last exported frame index,
+%       inclusive. It is rounded and limited to the annotation frame count.
+%       Default from options: Inf.
 %   unitMode - "pixels" retains pixel distances and reports "px";
 %       "calibrated_physical" divides distances by calibration.pixelsPerUnit
 %       and reports calibration.unit. Default: "pixels".

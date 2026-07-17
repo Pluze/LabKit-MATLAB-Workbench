@@ -58,6 +58,10 @@ function records = readFiles(paths, opts)
 % Typical Call:
 %   opts = struct('Normalize', true, 'progressFcn', @updateProgress);
 %   records = labkit.image.readFiles(selectedPaths, opts);
+%
+% See also labkit.image.normalizePaths,
+%   labkit.image.assertSupportedPaths,
+%   labkit.image.writeFile
 
     if nargin < 2 || isempty(opts)
         opts = struct();

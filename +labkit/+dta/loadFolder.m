@@ -46,6 +46,10 @@ function [items, report] = loadFolder(rootDir, expectedKind, opts)
 %   [items, report] = labkit.dta.loadFolder("experiment", "auto");
 %   fprintf("Found %d DTA files; loaded %d.\n", ...
 %       report.nDiscovered, report.nLoaded)
+%
+% See also labkit.dta.findFiles,
+%   labkit.dta.loadFiles,
+%   labkit.dta.loadFile
 
     if nargin < 2
         expectedKind = "auto";

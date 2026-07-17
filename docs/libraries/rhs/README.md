@@ -161,6 +161,13 @@ Successful parsing confirms that the supported RHS header and complete block
 layout were readable. It does not validate an experiment protocol, decide
 which channels form a differential signal, or assess recording quality.
 
+## Reference Contract
+
+The generated pages for `findFiles`, `inspectFile`, `indexFile`, `readWindow`,
+and `version` state complete inputs, outputs, options, defaults, legal values,
+status/error behavior, and related APIs. Contract tests discover the complete
+public package and execute each documented `Example:` block.
+
 ## Related Topics
 
 - [RHS Preview](../../apps/neurophysiology/rhs-preview/README.md) provides

@@ -43,6 +43,13 @@ function layout = field(id, labelText, varargin)
 %   path, writes user changes back, and then dispatches Event when supplied.
 %   Without Bind, onChange is the low-level callback used by runtime.create.
 %
+% Errors:
+%   labkit:ui:layout:InvalidFieldKind - kind is not one of the documented
+%   control types.
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed. Control-specific values are validated
+%   when the runtime builds the node.
+%
 % Example:
 %   gain = labkit.ui.layout.field("gain", "Gain", ...
 %       "kind", "spinner", "value", 2, "limits", [0 10], "step", 0.5);

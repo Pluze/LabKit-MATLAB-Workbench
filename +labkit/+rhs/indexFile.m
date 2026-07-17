@@ -43,6 +43,9 @@ function [index, status] = indexFile(filepath)
 %       fprintf("%d samples in %d blocks\n", ...
 %           index.sampleCount, index.blockCount)
 %   end
+%
+% See also labkit.rhs.inspectFile,
+%   labkit.rhs.readWindow
 
     filepath = normalizeFilepath(filepath);
     [info, status] = labkit.rhs.inspectFile(filepath);

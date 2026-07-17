@@ -20,11 +20,21 @@ function [curve, ok, msg] = getMainCurve(tables)
 %   msg - Character vector naming the selected table or stating that the
 %       main transient table was not found.
 %
+% Failure Behavior:
+%   Empty input or no table with the required headers returns curve=struct(),
+%   ok=false, and a diagnostic message. Nonempty elements must expose name
+%   and headers fields; malformed table structures raise the originating
+%   MATLAB field-access error.
+%
 % Typical Call:
 %   [curve, ok, msg] = labkit.dta.getMainCurve(item.tables);
 %   if ok
 %       timeSec = labkit.dta.getColumn(curve, "T");
 %   end
+%
+% See also labkit.dta.getColumn,
+%   labkit.dta.detectPulses,
+%   labkit.dta.loadFile
 
     ok = false;
     msg = 'Main transient table not found.';

@@ -129,6 +129,22 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
                 "Shared launcher helpers should route to launcher GUI tests.");
         end
 
+        function changedAppSourceRoutesIsolatedPathContract(testCase)
+            root = setupLabKitTestPath();
+
+            steps = labkitValidationPlanForChangedPaths(root, ...
+                "apps/gait/gait_analysis/+gait_analysis/definition.m");
+            signatures = validationStepSignatures(steps);
+            selectors = validationStepTestSelectors(steps);
+
+            isolated = signatures == "contract/apps|false";
+            testCase.verifyTrue(any(isolated), ...
+                "App source changes should run the App isolation contract.");
+            testCase.verifyTrue(any(contains(selectors(isolated), ...
+                "AppIsolatedPathContractTest")), ...
+                "The changed-file plan should name the focused isolation test.");
+        end
+
         function changedValidationPlanRoutesProjectGuiTestsByOwner(testCase)
             root = setupLabKitTestPath();
 

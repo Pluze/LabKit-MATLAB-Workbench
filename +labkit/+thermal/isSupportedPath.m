@@ -18,9 +18,17 @@ function tf = isSupportedPath(path)
 %   tf - Logical scalar. The value is true for .jpg, .jpeg, and .rjpg names
 %       and false for all other extensions.
 %
+% Failure Behavior:
+%   Unknown extensions return false without accessing the file system. path
+%   must be convertible to scalar text; unsupported MATLAB values or shapes
+%   may raise the originating string or fileparts conversion error.
+%
 % Example:
 %   labkit.thermal.isSupportedPath("capture.RJPG")  % returns true
 %   labkit.thermal.isSupportedPath("capture.png")   % returns false
+%
+% See also labkit.thermal.supportedExtensions,
+%   labkit.thermal.inspectFile
 
     [~, ~, ext] = fileparts(char(string(path)));
     tf = any(lower(string(ext)) == labkit.thermal.supportedExtensions());

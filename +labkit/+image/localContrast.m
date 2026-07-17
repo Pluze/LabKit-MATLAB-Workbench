@@ -24,9 +24,17 @@ function imageOut = localContrast(imageIn, amountPct, radiusPx)
 % Outputs:
 %   imageOut - M-by-N-by-3 double image with values in [0,1].
 %
+% Failure Behavior:
+%   Unsupported image classes or channel shapes propagate errors from
+%   im2double or ensureRgb. amountPct and radiusPx must be numeric scalars;
+%   incompatible values raise the originating conversion or indexing error.
+%
 % Example:
 %   imageIn = repmat(linspace(0.2, 0.8, 20), 10, 1);
 %   imageOut = labkit.image.localContrast(imageIn, 40, 3);
+%
+% See also labkit.image.meanFilter2,
+%   labkit.image.sharpen
 
     imageIn = labkit.image.ensureRgb(labkit.image.im2double(imageIn));
     imageIn = min(max(imageIn, 0), 1);

@@ -37,6 +37,12 @@ function result = cropScaledImage(imageData, opts, plan, itemIndex)
 %       describe the pre-resampling crop. scaleUnit, sourcePixelsPerUnit,
 %       targetPixelsPerUnit, resampleFactor, and scaleWarning come from plan.
 %
+% Failure Behavior:
+%   itemIndex must select an element from every per-image plan field, and plan
+%   output dimensions must be positive. Missing fields, out-of-range indices,
+%   invalid image/crop options, or unsupported interpolation classes propagate
+%   the originating cropGeometry or MATLAB error.
+%
 % Example:
 %   imageData = reshape(uint8(1:100), 10, 10);
 %   opts = struct("centerXY", [5 5]);

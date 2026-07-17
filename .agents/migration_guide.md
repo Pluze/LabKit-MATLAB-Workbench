@@ -24,81 +24,8 @@ commit. Public and private repositories commit and push their work separately.
 Last audited: 2026-07-17.
 
 ```text
-documentation-and-agent-contract-drift: open-high
-validation-isolation-coverage: open-high
 toolbox-product-debt: none
 ```
-
-### Documentation and agent contract drift
-
-Owner:
-: The owning manuals, public MATLAB help, agent skills/rules, and documentation
-  contract tests.
-
-Evidence:
-: The public-help guard checks section presence and at least one option but
-  does not prove every option, default, legal value, error, or related API is
-  documented. Its module scan omits the rendered public
-  `labkit.ui.version` page.
-
-Affected scope:
-: Current development/framework/private-App manuals, public help, relevant
-  skills and scoped rules, documentation renderer inputs, generated `site/`,
-  and documentation tests.
-
-Completion condition:
-: Current manuals and agent instructions name one owner for canonical
-  validation and definition metadata, describe only existing APIs, and agree
-  with real public/private App structure. Every public API participates in the
-  help contract. Struct options are all explained with defaults and legal
-  values; errors or an explicit no-error contract and related APIs are present;
-  executable examples run in a clean owning path.
-
-Focused validation:
-: Run the narrow documentation contract and renderer regression tests while
-  editing, regenerate `site/` only through `renderLabKitDocs`, run `docsCheck`,
-  verify links/search, and visually inspect representative changed pages when
-  rendered structure changes.
-
-Removal condition:
-: Delete this entry after source help, authored manuals, agent instructions,
-  generated pages, and focused tests agree. Do not claim semantic accuracy from
-  a successful byte-for-byte documentation build alone.
-
-### Validation isolation coverage
-
-Owner:
-: Project test architecture and the private repository's own test runner.
-
-Evidence:
-: The public test setup adds all public App roots, which can hide sibling-App
-  dependencies. Public architecture and facade compatibility discovery covers
-  public `apps/` but does not give an accepted independent private repository
-  an equivalent launch-contract check. Hidden GUI tests remain intentionally
-  unable to prove native dialogs, pointer feel, visual quality, real data, or
-  scientific validity.
-
-Affected scope:
-: App boundary tests, debug-sample coverage, private compatibility tests,
-  changed-file routing, and CI scope.
-
-Completion condition:
-: Fast isolated-path tests protect App metadata, debug samples, and package
-  independence; the private repository checks its own facade compatibility;
-  test documentation continues to state manual limits honestly. Evaluate a
-  measured changed-App GUI smoke lane for ordinary CI without moving the full
-  GUI suite out of scheduled/manual/release validation unless runtime evidence
-  justifies it.
-
-Focused validation:
-: Run new isolation tests alone, then their owning contract suites. At the
-  stable closure checkpoint run `buildtool changed`; reserve full GUI and
-  release gates for the scopes defined in the testing manual.
-
-Removal condition:
-: Delete this entry when the known masking behavior has a regression test,
-  private compatibility is protected in its owning repository, routing selects
-  the new tests, and CI cost has been measured rather than guessed.
 
 ## Intentional compatibility
 

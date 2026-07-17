@@ -179,6 +179,13 @@ Unknown production or repository files still fall back conservatively. The
 printed plan includes selected folders, files, test-name selectors, GUI mode,
 and the reason for each step.
 
+Every public App source change also runs `AppIsolatedPathContractTest`. That
+test restores the default MATLAB path, adds only the LabKit root and one owning
+App root, then loads the definition, checks facade compatibility, and writes
+the App's synthetic debug sample. Static sibling-call checks remain separate;
+together they prevent the all-App setup used by ordinary family tests from
+hiding a package dependency.
+
 ## Validation Cadence
 
 Prefer a staged validation cadence so small follow-up edits do not repeatedly
@@ -249,6 +256,14 @@ and main-push CI because automated GUI checks use hidden synthetic workflows
 rather than full manual interaction. Supplying `release_tag` to a manual run
 requests tag creation after those jobs pass; leaving it empty performs the same
 full validation without creating a tag.
+
+The 2026-07-17 local changed-file evidence measured representative hidden App
+workflows at about 18 seconds each and the Gait launch smoke at about 30
+seconds, before MATLAB setup and license acquisition. Those checks still
+cannot prove native dialogs, pointer feel, or visual quality. Ordinary CI
+therefore keeps the fast non-GUI isolation contract, while App-specific hidden
+GUI suites remain part of local changed validation and the complete GUI gate
+remains scheduled, manual, and release-only.
 
 ## Test Layout
 

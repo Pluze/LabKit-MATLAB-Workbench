@@ -24,6 +24,10 @@ function assertSupportedPaths(paths)
 %
 % Example:
 %   labkit.image.assertSupportedPaths(["frame01.png"; "frame02.TIF"]);
+%
+% See also labkit.image.normalizePaths,
+%   labkit.image.isSupportedPath,
+%   labkit.image.supportedExtensions
 
     paths = labkit.image.normalizePaths(paths);
     for k = 1:numel(paths)

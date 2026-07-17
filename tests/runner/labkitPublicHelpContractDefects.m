@@ -14,9 +14,6 @@ function defects = labkitPublicHelpContractDefects(root, filepath)
     if ~isempty(inputs)
         required(end + 1) = "Inputs";
     end
-    if any(inputs == "opts")
-        required(end + 1) = "Options";
-    end
     for k = 1:numel(required)
         content = helpSection(helpLines, required(k));
         if isempty(content) || all(strlength(strip(content)) == 0)
@@ -42,15 +39,145 @@ function defects = labkitPublicHelpContractDefects(root, filepath)
             defects(end + 1, 1) = rel + " -> undocumented output " + outputs(k);
         end
     end
-    if any(inputs == "opts")
-        options = helpSection(helpLines, "Options");
-        namedField = regexp(cellstr(options), ...
-            '^\s{2,}[A-Za-z][A-Za-z0-9_.]*\s+-\s+\S', "once");
-        if ~any(~cellfun("isempty", namedField))
+    errorBehavior = [ ...
+        helpSection(helpLines, "Errors"); ...
+        helpSection(helpLines, "Failure Behavior"); ...
+        helpSection(helpLines, "Error Behavior")];
+    if isempty(errorBehavior) || all(strlength(strip(errorBehavior)) == 0)
+        defects(end + 1, 1) = rel + ...
+            " -> missing explicit Errors or Failure Behavior section";
+    end
+    if ~any(startsWith(strip(helpLines), "See also "))
+        defects(end + 1, 1) = rel + " -> missing See also related APIs";
+    end
+
+    optionFields = implementedOptionFields(filepath, signature);
+    requiredOptions = [ ...
+        helpSection(helpLines, "Required Name-Value Arguments"); ...
+        helpSection(helpLines, "Required Options")];
+    optionHelp = [ ...
+        requiredOptions; ...
+        helpSection(helpLines, "Optional Name-Value Arguments"); ...
+        helpSection(helpLines, "Optional Options"); ...
+        helpSection(helpLines, "Name-Value Arguments"); ...
+        helpSection(helpLines, "Options")];
+    if any(ismember(inputs, ["opts", "props"])) && ...
+            (isempty(optionHelp) || all(strlength(strip(optionHelp)) == 0))
+        defects(end + 1, 1) = rel + ...
+            " -> missing or empty Options section";
+    end
+    for k = 1:numel(optionFields)
+        field = optionFields(k);
+        block = documentedFieldBlock(optionHelp, field);
+        if isempty(block)
             defects(end + 1, 1) = rel + ...
-                " -> Options must name fields and explain their values";
+                " -> undocumented option " + field;
+            continue;
+        end
+        if isempty(documentedFieldBlock(requiredOptions, field)) && ...
+                ~documentsDefault(block)
+            defects(end + 1, 1) = rel + ...
+                " -> option " + field + " has no documented default";
+        end
+        if ~describesLegalValues(block)
+            defects(end + 1, 1) = rel + ...
+                " -> option " + field + " does not describe legal values";
         end
     end
+end
+
+function tf = documentsDefault(block)
+    text = lower(strjoin(block, " "));
+    tf = any(contains(text, [ ...
+        "default", "when omitted", "if omitted", "omit it", ...
+        "when absent", "if absent"]));
+end
+
+function fields = implementedOptionFields(filepath, signature)
+    source = implementationSource(filepath);
+    mainSource = mainFunctionSource(filepath);
+    variables = intersect(signatureInputs(signature), ["opts", "props"], ...
+        "stable");
+    if contains(signature, "varargin")
+        tokens = regexp(source, ...
+            '([A-Za-z][A-Za-z0-9_]*)\s*=\s*(?:optionStruct|parseOptions)\s*\(\s*varargin\s*\)', ...
+            "tokens");
+        for k = 1:numel(tokens)
+            variables(end + 1, 1) = string(tokens{k}{1});
+        end
+    end
+    variables = unique(variables, "stable");
+    variables = variables(~ismissing(variables) & strlength(variables) > 0);
+    fields = strings(0, 1);
+    for variable = variables(:).'
+        escaped = regexptranslate("escape", char(variable));
+        helperExpression = [ ...
+            '(?:optionValue|requiredOption|requireOption|fieldOrDefault)' ...
+            '\s*\(\s*' escaped '\s*,\s*[''"]' ...
+            '([A-Za-z][A-Za-z0-9_]*)[''"]'];
+        tokens = regexp(source, helperExpression, "tokens");
+        for k = 1:numel(tokens)
+            fields(end + 1, 1) = string(tokens{k}{1});
+        end
+        memberExpression = [escaped ...
+            '\.([A-Za-z][A-Za-z0-9_]*)(?![A-Za-z0-9_]|\s*=)'];
+        tokens = regexp(mainSource, memberExpression, "tokens");
+        for k = 1:numel(tokens)
+            fields(end + 1, 1) = string(tokens{k}{1});
+        end
+    end
+    fields = unique(fields, "stable");
+end
+
+function source = implementationSource(filepath)
+    lines = readlines(filepath, "EmptyLineRule", "read");
+    keep = ~startsWith(strtrim(lines), "%");
+    source = char(strjoin(lines(keep), newline));
+end
+
+function source = mainFunctionSource(filepath)
+    lines = readlines(filepath, "EmptyLineRule", "read");
+    functionLines = find(startsWith(strtrim(lines), "function "));
+    if numel(functionLines) > 1
+        lines = lines(1:functionLines(2) - 1);
+    end
+    keep = ~startsWith(strtrim(lines), "%");
+    source = char(strjoin(lines(keep), newline));
+end
+
+function block = documentedFieldBlock(lines, field)
+    stripped = strip(lines);
+    first = find(startsWith(stripped, field + " - "), 1);
+    if isempty(first)
+        block = strings(0, 1);
+        return;
+    end
+    finish = numel(lines) + 1;
+    for k = first + 1:numel(lines)
+        if ~isempty(regexp(stripped(k), ...
+                '^[A-Za-z][A-Za-z0-9_]*\s+-\s+\S', "once"))
+            finish = k;
+            break;
+        end
+    end
+    block = lines(first:finish - 1);
+end
+
+function tf = describesLegalValues(block)
+    text = lower(strjoin(block, " "));
+    markers = ["allowed", "must", "logical", "positive", "nonnegative", ...
+        "numeric", "text", "string", "character", "function handle", ...
+        "empty", "cell", "table", "struct", "scalar", "array", ...
+        "vector", "range", "one of", "supported", "canonical", ...
+        "finite", "integer", "identifier", "path", "fraction", "seconds", ...
+        "frames", "pixels", "degrees", "percent", "volts", ...
+        "amperes", "unit", "version", "date", "result", "callback", ...
+        "action id", "product name"];
+    quotedValues = regexp(char(text), '"[^"]+"', "match");
+    bracketedDomain = regexp(char(text), ...
+        '\[[^\]\r\n]+(?:,|\s)[^\]\r\n]+\]', "once");
+    tf = any(contains(text, markers)) || numel(quotedValues) >= 2 || ...
+        ~isempty(bracketedDomain);
 end
 
 function [signature, helpLines] = publicFunctionHelp(filepath)

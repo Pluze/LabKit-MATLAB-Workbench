@@ -30,6 +30,9 @@ function rgb = ensureRgb(imageData)
 % Example:
 %   gray = uint8([0 64; 128 255]);
 %   rgb = labkit.image.ensureRgb(gray);
+%
+% See also labkit.image.im2double,
+%   labkit.image.rgb2gray
 
     narginchk(1, 1);
     validateattributes(imageData, {'numeric', 'logical'}, {'nonsparse'}, ...

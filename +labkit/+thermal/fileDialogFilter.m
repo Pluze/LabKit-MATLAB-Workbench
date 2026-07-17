@@ -19,9 +19,17 @@ function filterSpec = fileDialogFilter(varargin)
 %   filterSpec - One- or two-row cell array. Column 1 contains wildcard
 %       patterns and column 2 contains the text shown in the file dialog.
 %
+% Errors:
+%   MATLAB inputParser errors are raised for an unknown name, a missing
+%   name-value partner, or an IncludeAll value that is not a logical or
+%   numeric scalar.
+%
 % Example:
 %   filters = labkit.thermal.fileDialogFilter("IncludeAll", true);
 %   assert(isequal(size(filters), [2 2]))
+%
+% See also labkit.thermal.supportedExtensions,
+%   labkit.thermal.inspectFile
 
     opts = parseOptions(varargin{:});
     thermalRow = {'*.jpg;*.jpeg;*.rjpg', ...

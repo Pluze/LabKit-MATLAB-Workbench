@@ -23,6 +23,14 @@ function alignedImage = applyRigidTransform(referenceImage, movingImage, transfo
 %   MATLAB interp2. It assumes the supplied two-by-two block is an orthogonal
 %   rotation; scale or shear matrices are not validated.
 %
+% Failure Behavior:
+%   transform is expected to be a finite 3-by-3 numeric matrix and images must
+%   be compatible with interp2 and output casting. The function does not
+%   validate finiteness, rigidity, or invertibility; nonfinite or nonrigid
+%   values can therefore produce an unusable image without a dedicated error.
+%   Invalid dimensions and unsupported classes propagate the originating
+%   indexing, interpolation, or cast error.
+%
 % Example:
 %   moving = uint8(reshape(1:25, 5, 5));
 %   transform = [1 0 0; 0 1 0; 1 0 1];

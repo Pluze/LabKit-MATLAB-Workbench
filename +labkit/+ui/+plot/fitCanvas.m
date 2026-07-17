@@ -27,6 +27,12 @@ function [applied, frame] = fitCanvas(ax, width, height, varargin)
 %   instead of throwing when the host has not been laid out yet or is smaller
 %   than the minimum usable preview area.
 %
+% Failure Behavior:
+%   Invalid axes, host grids, source dimensions, or insufficient available
+%   space return applied=false and frame=struct(). Malformed or unsupported
+%   name-value arguments throw labkit:ui:plot:InvalidOptions or
+%   labkit:ui:plot:InvalidOption.
+%
 % Typical Call:
 %   [ok, frame] = labkit.ui.plot.fitCanvas(ax, 720, 540);
 %

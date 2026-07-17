@@ -17,9 +17,18 @@ function col = getColumn(tbl, name)
 % Outputs:
 %   col - Numeric column vector from tbl.data, or [] when no header matches.
 %
+% Failure Behavior:
+%   A missing header returns []. tbl must expose corresponding headers and
+%   data fields; malformed structures or an out-of-range data layout raise
+%   the originating MATLAB field or indexing error.
+%
 % Typical Call:
 %   timeSec = labkit.dta.getColumn(item.curve, "T");
 %   currentA = labkit.dta.getColumn(item.curve, "Im");
+%
+% See also labkit.dta.getCurveXY,
+%   labkit.dta.getMainCurve,
+%   labkit.dta.getZCurve
 
     idx = find(strcmpi(tbl.headers, name), 1);
     if isempty(idx)

@@ -40,6 +40,12 @@ function aligned = alignSegments(segments, opts)
 %   segmentNames - N-by-1 string vector copied from segments.name.
 %   status - "ok", or "empty" when segments is empty.
 %
+% Failure Behavior:
+%   Empty segments returns stable empty arrays with status="empty". Nonempty
+%   elements must provide compatible timeSec, values, and name fields; invalid
+%   option intervals, disjoint derived ranges, or interpolation-incompatible
+%   data propagate the originating MATLAB field, colon, or interp1 error.
+%
 % Example:
 %   segments = struct( ...
 %       "timeSec", {[10; 11; 12], [20; 21; 22]}, ...

@@ -23,6 +23,12 @@ function clear(ax, varargin)
 %   at the start of a complete redraw, not when adding an overlay that should
 %   preserve the current zoom.
 %
+% Errors:
+%   labkit:ui:plot:InvalidAxes - ax is not a valid scalar axes handle.
+%   labkit:ui:plot:InvalidOptions or labkit:ui:plot:InvalidOption -
+%   Name-value arguments are malformed or unsupported. MATLAB graphics errors
+%   raised while clearing a valid axes propagate to the caller.
+%
 % Example:
 %   fig = figure("Visible", "off");
 %   cleanup = onCleanup(@() close(fig));

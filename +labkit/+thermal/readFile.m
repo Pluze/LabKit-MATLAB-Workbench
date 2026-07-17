@@ -47,6 +47,10 @@ function record = readFile(path, opts)
 %   imagesc(record.temperatureC)
 %   axis image
 %   colorbar
+%
+% See also labkit.thermal.inspectFile,
+%   labkit.thermal.readFiles,
+%   labkit.thermal.rawToTemperatureC
 
     if nargin < 2 || isempty(opts)
         opts = struct();

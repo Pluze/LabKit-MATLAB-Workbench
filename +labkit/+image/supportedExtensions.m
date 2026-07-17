@@ -18,9 +18,17 @@ function extensions = supportedExtensions()
 %                leading dot. The current values are .png, .jpg, .jpeg,
 %                .tif, .tiff, and .bmp.
 %
+% Failure Behavior:
+%   The function accepts no caller input and performs no file-system access.
+%   It returns the fixed facade extension list without a recoverable failure
+%   state.
+%
 % Example:
 %   extensions = labkit.image.supportedExtensions();
 %   acceptsTiff = any(extensions == ".tiff");
+%
+% See also labkit.image.isSupportedPath,
+%   labkit.image.fileDialogFilter
 
     extensions = [".png"; ".jpg"; ".jpeg"; ".tif"; ".tiff"; ".bmp"];
 end

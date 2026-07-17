@@ -40,10 +40,19 @@ function [preview, info] = previewBudget(imageData, varargin)
 %   sourceSize - Original size vector.
 %   previewSize - Returned preview size vector.
 %
+% Errors:
+%   labkit:image:InvalidImageData - imageData is empty, nonnumeric/nonlogical,
+%   or has more than three dimensions.
+%   labkit:image:InvalidPreviewBudgetOptions - Name-value arguments are not
+%   paired.
+%   labkit:image:InvalidPreviewBudgetOption - An option name is unsupported.
+%
 % Example:
 %   rgb = zeros(100, 200, 3, 'uint8');
 %   [preview, info] = labkit.image.previewBudget(rgb, ...
 %       "MaxPixels", 5000, "Expansion", 2);
+%
+% See also labkit.image.resizeToFit
 
     opts = parseOptions(varargin);
     validateImageData(imageData);

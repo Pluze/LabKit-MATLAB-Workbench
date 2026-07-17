@@ -22,6 +22,11 @@ function sources = emptySourceRecords()
 %   no external files. Starting with the expected empty shape avoids struct
 %   assignment errors when source records are added later.
 %
+% Failure Behavior:
+%   The function accepts no caller input and performs no file-system access.
+%   It returns the fixed Runtime V2 empty source schema without a recoverable
+%   failure state.
+%
 % Example:
 %   project.inputs = struct( ...
 %       "sources", labkit.ui.runtime.emptySourceRecords());

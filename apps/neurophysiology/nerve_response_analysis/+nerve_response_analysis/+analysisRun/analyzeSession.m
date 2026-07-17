@@ -52,6 +52,13 @@ function analysis = analyzeSession(session, protocol, opts)
 %   issues - Combined recording issues plus caught exceptions, with recordingId,
 %       severity, and message columns.
 %
+% Failure Behavior:
+%   A recording-level analysis exception is converted to one issue row and
+%   later recordings continue. Missing or unsupported session.recordings input
+%   becomes an empty session; a nonempty table without recordingId or filePath,
+%   incompatible selection columns, or unappendable result tables may still
+%   raise the originating table/field error before or between recordings.
+%
 % Example:
 %   recordings = table(strings(0,1), strings(0,1), ...
 %       'VariableNames', {'recordingId', 'filePath'});

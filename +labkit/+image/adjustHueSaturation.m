@@ -22,9 +22,18 @@ function imageOut = adjustHueSaturation(imageIn, hueDeg, saturationPct)
 % Outputs:
 %   imageOut - M-by-N-by-3 double image with values in [0,1].
 %
+% Failure Behavior:
+%   Unsupported image classes or channel shapes propagate errors from
+%   im2double or ensureRgb. hueDeg and saturationPct must participate in
+%   scalar numeric arithmetic; incompatible MATLAB values raise the
+%   originating conversion or array-size error.
+%
 % Example:
 %   imageIn = cat(3, ones(2), 0.4*ones(2), zeros(2));
 %   imageOut = labkit.image.adjustHueSaturation(imageIn, 30, 25);
+%
+% See also labkit.image.adjustBrightnessContrast,
+%   labkit.image.grayWorldWhiteBalance
 
     imageIn = labkit.image.ensureRgb(labkit.image.im2double(imageIn));
     imageIn = min(max(imageIn, 0), 1);

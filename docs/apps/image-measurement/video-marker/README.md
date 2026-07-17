@@ -134,6 +134,16 @@ coordinateTable = video_marker.coordinateExport.buildTable( ...
     annotations, skeleton, videoInfo, struct(), options);
 ```
 
+## Function Reference
+
+Use the generated
+[`buildTable`](../../../reference/api/video_marker/coordinateExport/buildTable.html)
+page for exact frame-range option types, defaults, coordinate transforms,
+calibration requirements, output columns, failures, and related marker APIs.
+The
+[`trackPoints`](../../../reference/api/video_marker/motionEstimate/trackPoints.html)
+page documents the repository-owned prediction contract separately.
+
 ## Errors And Limitations
 
 - Prediction is an editing aid, not unattended long-duration tracking.

@@ -15,10 +15,18 @@ function info = version()
 %       version; compatible lists supported requirement ranges; status
 %       describes API maturity; and notes summarizes the module.
 %
+% Failure Behavior:
+%   The function accepts no caller input. Invalid embedded facade metadata
+%   raises labkit:contract:InvalidVersionInfo; released metadata is validated
+%   by the contract test suite.
+%
 % Example:
 %   info = labkit.dta.version();
 %   fprintf("DTA API %s (%s)\n", info.current, info.status)
+%
+% See also labkit.contract.versionInfo,
+%   labkit.contract.checkRequirements
 
-    info = labkit.contract.versionInfo("dta", "2.0.2", ">=2.0 <3", ...
+    info = labkit.contract.versionInfo("dta", "2.0.3", ">=2.0 <3", ...
         "stable", "DTA parser, file item, pulse, and curve facade contract.");
 end

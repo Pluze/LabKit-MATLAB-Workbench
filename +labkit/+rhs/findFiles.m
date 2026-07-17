@@ -23,6 +23,10 @@ function filepaths = findFiles(rootDir)
 % Typical Call:
 %   files = labkit.rhs.findFiles("recordings");
 %   [info, status] = labkit.rhs.inspectFile(files{1});
+%
+% See also labkit.rhs.inspectFile,
+%   labkit.rhs.indexFile,
+%   labkit.rhs.readWindow
 
     rootDir = normalizeRootDir(rootDir);
     entries = dir(fullfile(rootDir, "**", "*.rhs"));

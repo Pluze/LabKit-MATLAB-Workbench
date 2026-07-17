@@ -22,6 +22,9 @@ function name = displayName(pathValue)
 %
 % Example:
 %   name = labkit.image.displayName(fullfile("images", "frame01.tif"));
+%
+% See also labkit.image.normalizePaths,
+%   labkit.image.readFiles
 
     pathText = string(pathValue);
     if ~isscalar(pathText)

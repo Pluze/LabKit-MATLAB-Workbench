@@ -27,6 +27,12 @@ function limits = fit(ax, varargin)
 %   to a logarithmic dimension. Supplying graphicsHandles lets an app exclude
 %   annotations such as reference lines from the fitted range.
 %
+% Errors:
+%   labkit:ui:plot:InvalidAxes - ax is not a valid scalar axes handle.
+%   labkit:ui:plot:InvalidOptions or labkit:ui:plot:InvalidOption -
+%   Name-value arguments are malformed or unsupported. Invalid supplied
+%   graphics handles are ignored when they do not expose numeric XData/YData.
+%
 % Example:
 %   fig = figure("Visible", "off");
 %   cleanup = onCleanup(@() close(fig));

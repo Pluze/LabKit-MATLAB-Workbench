@@ -22,6 +22,12 @@ function xy = offsetData(ax, xy, offsetFraction)
 %   data units. This keeps the apparent offset stable as data ranges change and
 %   correctly handles logarithmic and reversed axes.
 %
+% Errors:
+%   labkit:ui:plot:InvalidAxes - ax is not a valid scalar axes handle.
+%   labkit:ui:plot:InvalidPointPairs - xy is not an N-by-2 numeric array.
+%   labkit:ui:plot:InvalidPointOffsets - offsetFraction is neither one row nor
+%   one row per point.
+%
 % Example:
 %   fig = figure("Visible", "off");
 %   cleanup = onCleanup(@() close(fig));

@@ -90,6 +90,9 @@ function events = detectEcgPeaks(signal, opts)
 %   opts = struct('method', 'local', 'polarity', 'positive', ...
 %       'minDistanceSec', 0.5, 'thresholdStd', 1);
 %   events = labkit.biosignal.detectEcgPeaks(signal, opts);
+%
+% See also labkit.biosignal.defaultEcgPeakOptions,
+%   labkit.biosignal.segmentByEvents
 
     if nargin < 2
         opts = struct();

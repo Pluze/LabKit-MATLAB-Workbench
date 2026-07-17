@@ -34,6 +34,11 @@ function [curve, owners] = anchorPath(points, imageSize, options)
 %   two-point open curves reduce to a straight segment. The function creates no
 %   graphics and can be used independently of a LabKit app.
 %
+% Errors:
+%   MATLAB argument-validation or assertion errors are raised when points is
+%   not N-by-2, imageSize lacks positive finite height and width, Style is
+%   unsupported, or a named argument has an incompatible type or shape.
+%
 % Example:
 %   points = [10 30; 30 10; 50 30];
 %   curve = labkit.ui.interaction.anchorPath( ...

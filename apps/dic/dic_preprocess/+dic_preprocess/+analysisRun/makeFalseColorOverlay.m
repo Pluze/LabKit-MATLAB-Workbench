@@ -20,6 +20,12 @@ function overlay = makeFalseColorOverlay(referenceImage, alignedImage)
 %   reference-only structure green. Independent min/max grayscale normalization
 %   emphasizes geometry rather than preserving absolute intensity calibration.
 %
+% Failure Behavior:
+%   A constant image retains its normalized intensity instead of being
+%   stretched. An all-NaN image remains NaN. Empty arrays, unsupported image
+%   classes, or invalid channel shapes propagate errors from LabKit image
+%   conversion or nearest-neighbor resizing.
+%
 % Example:
 %   reference = eye(5);
 %   moving = circshift(reference, [0 1]);

@@ -99,6 +99,9 @@ classdef LabKitImageFacadeTest < matlab.unittest.TestCase
             testCase.verifyTrue(greenLuma > redLuma && redLuma > blueLuma);
             testCase.verifyEqual(size(preview), [6 10 3]);
             testCase.verifyEqual(scale, 0.5, "AbsTol", 1e-12);
+            testCase.verifyError(@() labkit.image.resizeToFit( ...
+                image, "Method", "cubic"), ...
+                "labkit:image:InvalidResizeMethod");
             testCase.verifyLessThan(size(budgetPreview, 1), size(image, 1));
             testCase.verifyEqual(budgetInfo.scaleFactor, 5);
             testCase.verifyEqual(budgetInfo.coordinateScale, 0.2, "AbsTol", 1e-12);

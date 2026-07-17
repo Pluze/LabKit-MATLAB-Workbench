@@ -21,9 +21,17 @@ function [x, y, xname, yname] = getCurveXY(curve, xsel, ysel)
 %   xname - Matched header character vector, or '' when lookup fails.
 %   yname - Matched header character vector, or '' when lookup fails.
 %
+% Failure Behavior:
+%   If either exact header is absent, all numeric outputs remain empty and
+%   unmatched names are ''. curve must expose corresponding headers and data
+%   fields; malformed structures raise the originating MATLAB error.
+%
 % Typical Call:
 %   [voltageV, currentA, xname, yname] = ...
 %       labkit.dta.getCurveXY(curve, "Vf", "Im");
+%
+% See also labkit.dta.getColumn,
+%   labkit.dta.loadFile
 
     x = [];
     y = [];

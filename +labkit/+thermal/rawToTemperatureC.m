@@ -76,6 +76,9 @@ function [temperatureC, diagnostics] = rawToTemperatureC(raw, calibration, opts)
 %   [temperatureC, diagnostics] = ...
 %       labkit.thermal.rawToTemperatureC(raw, calibration, ...
 %       struct("Correction", "planck-basic"));
+%
+% See also labkit.thermal.readFile,
+%   labkit.thermal.renderImage
 
     if nargin < 3 || isempty(opts)
         opts = struct();

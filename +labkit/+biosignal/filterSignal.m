@@ -60,6 +60,9 @@ function filtered = filterSignal(signal, spec)
 %       'metadata', struct());
 %   filtered = labkit.biosignal.filterSignal(signal, ...
 %       struct('type', 'lowpass', 'cutoffHz', 10));
+%
+% See also labkit.biosignal.cropSignal,
+%   labkit.biosignal.detectEcgPeaks
 
     if nargin < 2
         spec = struct();

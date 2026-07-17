@@ -47,6 +47,10 @@ function segments = segmentByEvents(signal, events, windowSec)
 %   signal = struct('values', (1:21)', 'fs', 10, 'displayName', "ECG");
 %   events = struct('index', [6; 16], 'time', [0.5; 1.5]);
 %   segments = labkit.biosignal.segmentByEvents(signal, events, [-0.2 0.2]);
+%
+% See also labkit.biosignal.detectEcgPeaks,
+%   labkit.biosignal.buildTemplate,
+%   labkit.biosignal.measureSegments
 
     if nargin < 3 || isempty(windowSec)
         windowSec = [-0.35 0.35];

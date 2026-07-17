@@ -38,6 +38,9 @@ function rgb = renderImage(values, opts)
 %   rgb = labkit.thermal.renderImage(temperatureC, ...
 %       struct("Limits", [20 40], "Palette", "iron", "Levels", 256));
 %   assert(isequal(size(rgb), [2 3 3]))
+%
+% See also labkit.thermal.rawToTemperatureC,
+%   labkit.thermal.readFile
 
     if nargin < 2 || isempty(opts)
         opts = struct();

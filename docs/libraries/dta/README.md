@@ -195,6 +195,13 @@ unsupported content, parse failures, and expected-kind mismatches. Invalid
 argument types and invalid expected-kind strings throw documented LabKit
 errors.
 
+## Reference Contract
+
+Open an individual DTA function page for exact accepted kinds, path forms,
+status fields, thrown errors, and related loaders or accessors. Public help is
+checked against implemented options and its executable examples are run in a
+clean MATLAB test process.
+
 ## Related Topics
 
 - [CIC](../../apps/electrochemistry/cic/README.md),

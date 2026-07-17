@@ -58,6 +58,9 @@ function result = measureSegments(segments, template, opts)
 %   opts = struct('signalWindowSec', [-0.05 0.05], ...
 %       'noiseWindowsSec', [-0.1 -0.05; 0.05 0.1]);
 %   result = labkit.biosignal.measureSegments(segments, template, opts);
+%
+% See also labkit.biosignal.buildTemplate,
+%   labkit.biosignal.segmentByEvents
 
     if nargin < 3
         opts = struct();

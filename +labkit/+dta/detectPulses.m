@@ -57,6 +57,13 @@ function [pulse, message] = detectPulses(t, Im, meta, mode)
 %   post_start - Start time of the post-pulse region in seconds.
 %   post_end - End time of the post-pulse region in seconds.
 %
+% Failure Behavior:
+%   Missing usable metadata, absent opposite-polarity current phases, or
+%   unsupported mode text returns pulse.ok=false with NaN window fields and
+%   an explanatory message. t and Im must be corresponding numeric vectors;
+%   incompatible MATLAB values or lengths may raise the originating indexing
+%   or conversion error.
+%
 % Example:
 %   t = (0:0.001:0.020).';
 %   Im = zeros(size(t));
@@ -64,6 +71,9 @@ function [pulse, message] = detectPulses(t, Im, meta, mode)
 %   Im(13:16) = 1e-3;
 %   [pulse, message] = labkit.dta.detectPulses( ...
 %       t, Im, struct(), "Auto from Im only");
+%
+% See also labkit.dta.loadFile,
+%   labkit.dta.getMainCurve
 
     if nargin < 3
         meta = struct();

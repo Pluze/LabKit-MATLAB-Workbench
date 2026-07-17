@@ -65,6 +65,10 @@ function [item, status] = loadFile(filepath, expectedKind, opts)
 %   else
 %       warning("%s", status.message)
 %   end
+%
+% See also labkit.dta.detectType,
+%   labkit.dta.loadFiles,
+%   labkit.dta.detectPulses
 
     if nargin < 2
         expectedKind = "auto";

@@ -20,6 +20,12 @@ function layout = workspace(id, titleText, children, varargin)
 %   rows and sizing from the child types; apps choose only the semantic content
 %   and order.
 %
+% Errors:
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed.
+%   labkit:ui:layout:InvalidChildren - children is not a cell row of scalar
+%   layout nodes. Unsupported workspace child kinds are rejected at launch.
+%
 % Example:
 %   preview = labkit.ui.layout.workspace("workspace", "Preview", { ...
 %       labkit.ui.layout.previewArea("image", "Image")});

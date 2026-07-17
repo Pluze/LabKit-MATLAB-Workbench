@@ -32,10 +32,19 @@ function [imageOut, scale] = resizeToFit(imageIn, varargin)
 %   imageOut - Resized image, or imageIn unchanged when scale is 1.
 %   scale - Uniform requested scale before target dimensions are rounded.
 %
+% Errors:
+%   MATLAB inputParser errors are raised for invalid limits, AllowUpscale,
+%   malformed name-value arguments, or unsupported option names.
+%   labkit:image:InvalidResizeMethod - Method is not "bilinear" or "nearest".
+%   Unsupported image classes or dimensions may raise the originating MATLAB
+%   interpolation or cast error.
+%
 % Example:
 %   imageIn = reshape(uint8(1:200), 10, 20);
 %   [imageOut, scale] = labkit.image.resizeToFit(imageIn, ...
 %       "MaxHeight", 5, "Method", "nearest");
+%
+% See also labkit.image.previewBudget
 
     opts = parseOptions(varargin{:});
     imageOut = imageIn;
@@ -156,6 +165,10 @@ function opts = parseOptions(varargin)
     opts.MaxWidth = double(opts.MaxWidth);
     opts.AllowUpscale = logical(opts.AllowUpscale);
     opts.Method = string(opts.Method);
+    if ~any(lower(opts.Method) == ["bilinear", "nearest"])
+        error('labkit:image:InvalidResizeMethod', ...
+            'Method must be "bilinear" or "nearest".');
+    end
 end
 
 function tf = isPositiveScalar(value)

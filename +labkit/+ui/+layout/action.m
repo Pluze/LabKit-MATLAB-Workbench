@@ -29,6 +29,12 @@ function layout = action(id, labelText, onInvoke, varargin)
 %   press while the figure is already busy and restores the normal title after
 %   the callback completes or throws.
 %
+% Errors:
+%   labkit:ui:layout:InvalidId - id is not a valid MATLAB field name.
+%   labkit:ui:layout:InvalidOptions or InvalidOptionName - Name-value
+%   arguments are unpaired or an option name is not valid scalar text.
+%   Callback value compatibility is checked when the runtime builds the node.
+%
 % Example:
 %   runAction = labkit.ui.layout.action( ...
 %       "runAnalysis", "Run analysis", @(~,~) disp("Running"));

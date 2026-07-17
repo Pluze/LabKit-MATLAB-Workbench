@@ -25,6 +25,11 @@ function layout = logPanel(id, titleText, varargin)
 %   workbench usage option for static instructions that should always remain
 %   visible.
 %
+% Errors:
+%   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
+%   Name-value syntax is malformed. Text conversion and graphics compatibility
+%   of value are validated when the runtime builds the panel.
+%
 % Example:
 %   logView = labkit.ui.layout.logPanel( ...
 %       "workflowLog", "Log", "value", ["Ready."; "Waiting for files."]);

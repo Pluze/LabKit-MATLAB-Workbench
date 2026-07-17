@@ -31,6 +31,10 @@ function paths = normalizePaths(paths, varargin)
 %
 % Example:
 %   paths = labkit.image.normalizePaths([" frame01.png "; ""; "frame02.JPG"]);
+%
+% See also labkit.image.assertSupportedPaths,
+%   labkit.image.isSupportedPath,
+%   labkit.image.readFiles
 
     opts = parseOptions(varargin{:});
     if isempty(paths)
