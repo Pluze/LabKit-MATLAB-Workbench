@@ -24,44 +24,8 @@ commit. Public and private repositories commit and push their work separately.
 Last audited: 2026-07-17.
 
 ```text
-validation-isolation-coverage: open-high
 toolbox-product-debt: none
 ```
-
-### Validation isolation coverage
-
-Owner:
-: Project test architecture and the private repository's own test runner.
-
-Evidence:
-: The public test setup adds all public App roots, which can hide sibling-App
-  dependencies. Public architecture and facade compatibility discovery covers
-  public `apps/` but does not give an accepted independent private repository
-  an equivalent launch-contract check. Hidden GUI tests remain intentionally
-  unable to prove native dialogs, pointer feel, visual quality, real data, or
-  scientific validity.
-
-Affected scope:
-: App boundary tests, debug-sample coverage, private compatibility tests,
-  changed-file routing, and CI scope.
-
-Completion condition:
-: Fast isolated-path tests protect App metadata, debug samples, and package
-  independence; the private repository checks its own facade compatibility;
-  test documentation continues to state manual limits honestly. Evaluate a
-  measured changed-App GUI smoke lane for ordinary CI without moving the full
-  GUI suite out of scheduled/manual/release validation unless runtime evidence
-  justifies it.
-
-Focused validation:
-: Run new isolation tests alone, then their owning contract suites. At the
-  stable closure checkpoint run `buildtool changed`; reserve full GUI and
-  release gates for the scopes defined in the testing manual.
-
-Removal condition:
-: Delete this entry when the known masking behavior has a regression test,
-  private compatibility is protected in its owning repository, routing selects
-  the new tests, and CI cost has been measured rather than guessed.
 
 ## Intentional compatibility
 
