@@ -102,6 +102,9 @@ only durable-project entry; the version-1 project needs creation and validation
 but no migration. Root `createSession.m` rebuilds decoded images after Runtime
 V2 resolves sources.
 
+The project validator requires the image-source collection and checks fusion
+parameters; Runtime validates canonical buckets and each source record first.
+
 Fusion result defaults, preset values, and deterministic run fingerprints live
 with the computation under `+analysisRun`; there is no generic `+appState`
 package. A new empty project performs no App-specific startup callback and

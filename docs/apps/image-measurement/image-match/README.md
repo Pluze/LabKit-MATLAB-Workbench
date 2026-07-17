@@ -96,6 +96,10 @@ only durable-project entry; the version-1 project needs creation and validation
 but no migration. Root `createSession.m` reconstructs only the selected source,
 reference, and preview caches after Runtime V2 resolves sources.
 
+The project validator requires the image-source collection and checks matching
+parameters and durable steps; Runtime validates canonical buckets and each
+source record first.
+
 Source item records live in `+sourceFiles`, matching steps in `+analysisRun`,
 and deterministic export tasks in `+resultFiles`; there is no generic
 `+appState` package. A new empty project performs no App-specific startup

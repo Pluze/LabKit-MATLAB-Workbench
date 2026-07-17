@@ -60,41 +60,42 @@ function project = migrateVersionOne(project)
     items = project.inputs.items;
     sources = project.inputs.sources;
     sourcePaths = labkit.ui.runtime.sourcePaths(sources);
+    addedSources = cell(numel(items), 1);
+    addedPaths = strings(numel(items), 1);
+    addedCount = 0;
     for k = 1:numel(items)
         path = string(items(k).path);
-        match = find(sourcePaths == path, 1, 'first');
+        paths = [sourcePaths; addedPaths(1:addedCount)];
+        match = find(paths == path, 1, 'first');
         if isempty(match)
-            sourceId = "image" + string(numel(sources) + 1);
+            addedCount = addedCount + 1;
+            sourceId = "image" + string(numel(sources) + addedCount);
             source = labkit.ui.runtime.sourceRecord( ...
                 sourceId, "cropSource", path, true);
-            sources(end + 1) = source;
-            sourcePaths(end + 1, 1) = path;
-        else
+            addedSources{addedCount} = source;
+            addedPaths(addedCount) = path;
+        elseif match <= numel(sources)
             sourceId = string(sources(match).id);
+        else
+            added = addedSources{match - numel(sources)};
+            sourceId = string(added.id);
         end
         items(k).sourceId = sourceId;
+    end
+    if addedCount > 0
+        sources = [sources(:); vertcat(addedSources{1:addedCount})];
     end
     project.inputs.items = rmfield(items, 'path');
     project.inputs.sources = sources;
 end
 
 function accepted = validateProject(project)
-    requiredBuckets = ["inputs", "parameters", "annotations", ...
-        "results", "extensions"];
-    assert(isstruct(project) && isscalar(project) && ...
-        all(isfield(project, cellstr(requiredBuckets))), ...
-        'batch_crop:InvalidProject', ...
-        'Batch crop project is missing required durable buckets.');
-    assert(isstruct(project.inputs) && isscalar(project.inputs) && ...
-        isfield(project.inputs, 'items') && isfield(project.inputs, 'sources'), ...
+    assert(isfield(project.inputs, 'items') && ...
+        isfield(project.inputs, 'sources'), ...
         'batch_crop:InvalidProject', ...
         'Batch crop project inputs must contain items and sources.');
     items = project.inputs.items;
     sources = project.inputs.sources;
-    assert(isstruct(sources) && (isempty(sources) || ...
-        all(isfield(sources, {'id', 'required', 'role', 'reference'}))), ...
-        'batch_crop:InvalidProject', ...
-        'Batch crop sources must use the canonical source-record contract.');
     assert(isstruct(items), 'batch_crop:InvalidProject', ...
         'Batch crop project items must be a struct array.');
     requiredItemFields = ["sourceId", "angleDeg", ...
@@ -114,8 +115,7 @@ function accepted = validateProject(project)
         "targetPixelsPerUnit", "maxUpsamplePercent", "format", ...
         "outputFolder", "scaleBarLength", "scaleBarPosition", ...
         "scaleBarColor"];
-    assert(isstruct(project.parameters) && isscalar(project.parameters) && ...
-        all(isfield(project.parameters, cellstr(requiredParameters))), ...
+    assert(all(isfield(project.parameters, cellstr(requiredParameters))), ...
         'batch_crop:InvalidProject', ...
         'Batch crop project parameters are incomplete.');
     accepted = true;

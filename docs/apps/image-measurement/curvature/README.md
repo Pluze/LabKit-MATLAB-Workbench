@@ -101,6 +101,10 @@ version-1 source migration together. Runtime V2 owns the migration loop. Root
 `createSession.m` reconstructs the decoded image and transient edit state after
 source relinking.
 
+The project validator requires the image-source collection and checks
+curvature parameters, annotations, and results; Runtime validates canonical
+buckets and each source record first.
+
 Fit/length result shapes and deterministic task fingerprints live with their
 calculations under `+analysisRun`; there is no generic `+appState` package. The
 App requires `labkit.ui >=7 <8` and `labkit.image >=2 <3`; source-path access,

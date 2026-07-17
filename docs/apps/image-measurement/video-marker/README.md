@@ -157,6 +157,10 @@ capabilities. `projectSpec.m` concentrates all durable creation, validation,
 migration, legacy import, and resume hooks; root `createSession.m` rebuilds the
 transient video state.
 
+The project validator requires the video-source collection and checks metadata,
+coordinate parameters, skeleton, and frame-array relationships; Runtime
+validates canonical buckets and each source record first.
+
 The App reads video locations only through `labkit.ui.runtime.sourcePaths`.
 Legacy portable references are passed intact to `sourceRecord` for framework
 validation and canonicalization; no App helper knows the Runtime's nested path

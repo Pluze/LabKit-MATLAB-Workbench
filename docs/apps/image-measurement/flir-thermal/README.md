@@ -122,6 +122,10 @@ only durable-project entry; the version-1 payload needs creation and validation
 but no migration. Root `createSession.m` rebuilds only the selected decoded
 thermal item after Runtime V2 resolves sources.
 
+The project validator requires the thermal-source collection and checks
+thermal parameters and annotations; Runtime validates canonical buckets and
+each source record first.
+
 Decoded record shape lives with `+sourceFiles`, point and ROI calculations live
 with `+analysisRun`, and lightweight durable readings live with
 `+thermalAnnotations`; there is no generic `+appState` package. The App

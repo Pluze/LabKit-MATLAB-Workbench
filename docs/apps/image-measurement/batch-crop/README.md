@@ -125,6 +125,10 @@ validation, and migration are concentrated in `projectSpec.m`; root
 `createSession.m` reconstructs transient state and lazily loads only the first
 selected image.
 
+The project validator requires the App's item and source collections, validates
+their relationship and crop parameters, and leaves canonical bucket and source
+record shape to Runtime.
+
 Workflow helpers are owned by the capabilities they describe:
 `+sourceFiles`, `+cropTasks`, `+cropGeometry`, `+scaleCalibration`,
 `+resultFiles`, and `+userInterface`. There is no generic App lifecycle or

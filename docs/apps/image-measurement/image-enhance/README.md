@@ -116,6 +116,10 @@ only durable-project entry; the version-1 payload needs creation and validation
 but no migration. Root `createSession.m` rebuilds the selected image cache after
 Runtime V2 resolves sources.
 
+The project validator requires the image-source collection and checks export,
+shared-history, and per-image annotation relationships; Runtime validates
+canonical buckets and each source record first.
+
 Decoded items and lazy preview loading live with `+sourceFiles`; step shapes,
 active histories, pipeline replay, and preview-coordinate scaling live with
 `+analysisRun`; durable per-image histories live with
