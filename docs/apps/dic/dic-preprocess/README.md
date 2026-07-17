@@ -168,3 +168,7 @@ align/crop undo and reset semantics, `maskEditing` owns mask canvas and mask
 undo semantics, and `sourceFiles.hasImagePair` reports whether the transient
 image cache is ready. There is no generic app-state service or alternate
 lifecycle layer.
+
+Its session factory returns only App-specific editing workflow and decoded
+cache fields. Runtime supplies absent canonical buckets and owns workflow-log
+initialization.

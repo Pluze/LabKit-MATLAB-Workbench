@@ -162,3 +162,7 @@ Legacy portable references are passed intact to `sourceRecord` for framework
 validation and canonicalization; no App helper knows the Runtime's nested path
 schema. Busy state, callback queues, resource cleanup, source relinking,
 serialization envelopes, and migration iteration remain framework-owned.
+
+Its session factory returns only App-specific frame selection, editing
+workflow, scale-bar view, and decoded video cache fields. Runtime supplies
+absent canonical buckets and owns workflow-log initialization.

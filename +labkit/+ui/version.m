@@ -12,6 +12,6 @@ function info = version()
 %       compatible contract ranges implemented by this code, contract status,
 %       and a short maintainer note.
 
-    info = labkit.contract.versionInfo("ui", "7.4.3", ">=7 <8", ...
-        "stable", "UI 7 Runtime V2 contract with one-definition App metadata, one project migration entry per App, minimal optional lifecycle capabilities, queued semantic events, deterministic presentation, managed interactions and resources, opaque portable source references with GUI-free record creation and path access, runtime dialog/result services, and private serialization and busy-state mechanics.");
+    info = labkit.contract.versionInfo("ui", "7.4.4", ">=7 <8", ...
+        "stable", "UI 7 Runtime V2 contract with one-definition App metadata, one project migration entry per App, minimal optional lifecycle capabilities, canonical new-state construction, queued semantic events, deterministic presentation, managed interactions and resources, opaque portable source references with GUI-free record creation and path access, runtime dialog/result services, and private serialization and busy-state mechanics.");
 end

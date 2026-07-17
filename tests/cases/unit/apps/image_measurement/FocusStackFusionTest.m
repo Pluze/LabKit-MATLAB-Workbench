@@ -2,7 +2,7 @@ classdef FocusStackFusionTest < matlab.unittest.TestCase
     %FOCUSSTACKFUSIONTEST Verify LabKit behavior through official MATLAB tests.
 
     methods (Test, TestTags = {'Unit'})
-        function test_focusStackFusion(testCase)
+        function test_focusStackFusion(~)
             setupLabKitTestPath();
             verify_focusStackFusion();
         end
@@ -24,7 +24,7 @@ end
 
 function checkProjectContract()
     definition = focus_stack.definition();
-    assert(definition.product.version == "1.5.2", ...
+    assert(definition.product.version == "1.5.3", ...
         'Focus Stack definition should own product metadata.');
     project = definition.project.Create();
     assert(definition.project.Validate(project), ...

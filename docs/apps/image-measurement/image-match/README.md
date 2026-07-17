@@ -106,3 +106,7 @@ framework-owned.
 
 Matched-image manifest outputs use the framework's canonical empty output
 array, so export validation applies only to real output records.
+
+Its session factory returns only App-specific selection, draft workflow, view,
+and matched-preview cache fields. Runtime supplies absent canonical buckets and
+owns workflow-log initialization.

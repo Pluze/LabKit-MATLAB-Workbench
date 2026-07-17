@@ -125,3 +125,7 @@ There is no generic `+appState` package. The App requires
 busy state, and managed ROI interaction remain framework-owned. Batch manifest
 outputs use the framework's canonical empty output array, so export validation
 applies only to real enhanced-image records.
+
+Its session factory returns only App-specific selection, draft workflow, view,
+and preview-cache fields. Runtime supplies absent canonical buckets and owns
+workflow-log initialization.

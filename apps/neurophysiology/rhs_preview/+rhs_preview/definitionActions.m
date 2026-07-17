@@ -316,10 +316,7 @@ function state = onSaveFilterRecord(state, ~, services)
 end
 
 function state = onResetWorkflow(~, ~, services)
-    projectSpec = rhs_preview.projectSpec();
-    project = projectSpec.Create();
-    state = struct("project", project, ...
-        "session", rhs_preview.createSession(project));
+    state = services.project.newState();
     state = services.workflow.log(state, "Reset RHS Preview state.");
 end
 

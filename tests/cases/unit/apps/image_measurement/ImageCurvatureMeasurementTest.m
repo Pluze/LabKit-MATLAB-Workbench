@@ -2,7 +2,7 @@ classdef ImageCurvatureMeasurementTest < matlab.unittest.TestCase
     %IMAGECURVATUREMEASUREMENTTEST Verify LabKit behavior through official MATLAB tests.
 
     methods (Test, TestTags = {'Unit'})
-        function test_imageCurvatureMeasurement(testCase)
+        function test_imageCurvatureMeasurement(~)
             setupLabKitTestPath();
             verify_imageCurvatureMeasurement();
         end
@@ -24,7 +24,7 @@ end
 function checkProjectSourceMigration()
     definition = curvature.definition();
     project = definition.project.Create();
-    assert(definition.product.version == "1.4.3", ...
+    assert(definition.product.version == "1.4.4", ...
         'Curvature definition should own product metadata.');
     assert(definition.project.Validate(project), ...
         'Curvature projectSpec should accept its current project.');
@@ -206,7 +206,7 @@ function checkInvalidCurvePoints()
         [1; 2], [3; 4], opts), ...
         'labkit_CurvatureMeasurement_app:NotEnoughPoints', ...
         'Two unique curve points should be rejected.');
-    assertThrows(@() curvature.analysisRun.computeLengthFromOptions([1], [3], opts), ...
+    assertThrows(@() curvature.analysisRun.computeLengthFromOptions(1, 3, opts), ...
         'labkit_CurvatureMeasurement_app:NotEnoughLengthPoints', ...
         'Single-point curve length should be rejected.');
 end

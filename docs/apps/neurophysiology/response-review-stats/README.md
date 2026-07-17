@@ -130,3 +130,7 @@ Source paths are read through `labkit.ui.runtime.sourcePaths`; no App code
 inspects portable-reference fields. Callback queues, busy state, migration
 iteration, source relinking, serialization, and resource lifetime remain
 framework-owned.
+
+Its session factory returns only App-specific workflow, preview view, and
+decoded metrics cache fields. Runtime supplies absent canonical buckets and
+owns workflow-log initialization.

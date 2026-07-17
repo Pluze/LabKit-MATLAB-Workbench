@@ -35,6 +35,7 @@ function services = buildV2RuntimeServices(fig, runtime, dispatch)
             choiceDialog(runtime.request, fig, message, titleText, ...
             options, defaultOption, cancelOption));
     services.project = struct( ...
+        "newState", @() createV2State(runtime.definition), ...
         "sourceRecord", @labkit.ui.runtime.sourceRecord, ...
         "upsertSource", @upsertSource, ...
         "reconcileSources", @reconcileSources, ...
@@ -274,16 +275,22 @@ function sources = reconcileSources(existing, paths, role, idPrefix, required)
     end
     paths = string(paths(:));
     sources = labkit.ui.runtime.emptySourceRecords();
+    if isempty(paths)
+        return;
+    end
+    prototype = labkit.ui.runtime.sourceRecord( ...
+        idPrefix + "-1", role, paths(1), required);
+    sources(numel(paths), 1) = prototype;
     for k = 1:numel(paths)
         match = sourceIndexForPath(existing, paths(k));
         if isempty(match)
-            id = nextSourceId(existing, sources, idPrefix);
+            id = nextSourceId(existing, sources(1:k-1), idPrefix);
             source = labkit.ui.runtime.sourceRecord( ...
                 id, role, paths(k), required);
         else
             source = existing(match);
         end
-        sources(end + 1, 1) = source;
+        sources(k, 1) = source;
     end
 end
 

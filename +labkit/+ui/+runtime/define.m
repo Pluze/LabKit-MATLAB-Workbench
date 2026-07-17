@@ -118,9 +118,11 @@ function def = define(varargin)
 %       outputFile, and outputFolder dialogs, plus defaultFolder and
 %       defaultOutputFolder path helpers. File and folder selectors return the
 %       selected string path and a logical cancelled flag.
-%   services.project - sourceRecord, upsertSource, and reconcileSources create
-%       external-file records understood by project save/load. Apps read the
-%       current paths with labkit.ui.runtime.sourcePaths. Each save
+%   services.project - newState creates a fresh canonical project and session
+%       through the current definition. sourceRecord, upsertSource, and
+%       reconcileSources create external-file records understood by project
+%       save/load. Apps read current paths with labkit.ui.runtime.sourcePaths.
+%       Each save
 %       rebases their relative paths from its actual destination; saveState
 %       saves a named project, while saveAutosave(state) immediately writes the
 %       framework-managed recovery copy. saveAutosave(state,filepath) writes

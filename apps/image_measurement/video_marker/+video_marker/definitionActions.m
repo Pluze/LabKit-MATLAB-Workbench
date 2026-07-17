@@ -462,10 +462,7 @@ function state = onNewSetup(state, ~, services)
         return;
     end
     services.resources.clearScope("session");
-    spec = video_marker.projectSpec();
-    project = spec.Create();
-    session = video_marker.createSession(project);
-    state = struct("project", project, "session", session);
+    state = services.project.newState();
     state = services.workflow.log(state, ...
         "Started a new skeleton setup and cleared the annotation session.");
 end
@@ -513,10 +510,6 @@ end
 function tf = hasVideo(state)
     tf = state.session.cache.videoInfo.frameCount > 0 && ...
         ~isempty(state.session.cache.currentImage);
-end
-
-function tf = skeletonLocked(state)
-    tf = state.session.cache.videoInfo.frameCount > 0;
 end
 
 function state = clearResults(state)

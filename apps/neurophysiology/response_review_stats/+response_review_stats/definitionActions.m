@@ -139,10 +139,7 @@ function state = onExportMetrics(state, ~, services)
 end
 
 function state = onResetWorkflow(~, ~, services)
-    spec = response_review_stats.projectSpec();
-    project = spec.Create();
-    state = struct("project", project, ...
-        "session", response_review_stats.createSession(project));
+    state = services.project.newState();
     state = services.workflow.log(state, ...
         "Reset Response Review Stats state.");
 end

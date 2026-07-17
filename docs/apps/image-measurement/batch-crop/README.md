@@ -134,3 +134,7 @@ portable-path reconciliation remain framework responsibilities.
 Variable-length crop manifest outputs begin with the framework's canonical
 empty output array, so zero-result and multi-result exports never construct an
 invalid placeholder ID.
+
+Its session factory returns only App-specific selection, crop workflow, view,
+and image-cache fields. Runtime supplies absent canonical buckets and owns
+workflow-log initialization.

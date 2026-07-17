@@ -38,8 +38,6 @@ function view = presentWorkbench(state)
         state.project.parameters.exportFormat);
     view.controls.exportImages = enabledSpec(hasImage);
     view.controls.exportDetails = valueSpec(detailLines(state, steps));
-    view.controls.logPanel = valueSpec(cellstr( ...
-        state.session.workflow.logLines));
     view.controls.preview = valueSpec(state.session.view.previewMode);
 
     model = previewModel(state);

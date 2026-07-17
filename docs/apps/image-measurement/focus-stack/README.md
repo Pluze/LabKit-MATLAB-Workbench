@@ -108,3 +108,7 @@ package. A new empty project performs no App-specific startup callback and
 chooses an output location only after sources are added or the user exports.
 The App requires `labkit.ui >=7 <8` and `labkit.image >=2 <3`; source-path
 access, persistence, busy state, and debug lifecycle remain framework-owned.
+
+Its session factory returns only App-specific registration workflow and image
+cache fields. Runtime supplies absent canonical buckets and owns workflow-log
+initialization.

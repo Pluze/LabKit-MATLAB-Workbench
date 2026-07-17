@@ -147,3 +147,7 @@ This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8` and
 `labkit.biosignal >=1.0 <2`. App code uses semantic actions, `sourcePaths`, and
 injected project services; migration iteration, busy state, and portable
 reference serialization remain framework-private.
+
+Its session factory returns only App-specific import workflow and decoded
+signal cache fields. Runtime supplies absent canonical buckets and owns
+workflow-log initialization.

@@ -222,16 +222,21 @@ implement their own repeated file-dialog loop.
 
 #### Session, Actions, Presentation, And Renderers
 
-`CreateSession` returns one scalar struct with four transient buckets. Missing
-buckets are added by the runtime:
+`CreateSession` returns one scalar struct containing only App-specific
+transient fields. Runtime adds any missing canonical buckets:
 
 ```matlab
 session = struct( ...
     "selection", struct("currentIndex", 1), ...
-    "workflow", struct("logLines", strings(0,1)), ...
     "view", struct("mode", "Preview"), ...
     "cache", struct("decodedInput", []));
 ```
+
+Do not return empty buckets or initialize `workflow.logLines`. The injected
+workflow service creates that framework-owned log on first use. An action that
+starts a completely new project calls `services.project.newState()` so project
+creation, session reconstruction, and canonical normalization follow the same
+Runtime path as initial launch.
 
 `selection` is current user focus, `workflow` is transient progress and log
 state, `view` is presentation convenience, and `cache` is rebuildable decoded

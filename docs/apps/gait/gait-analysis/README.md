@@ -214,3 +214,7 @@ serialization remain framework-owned.
 Its synthetic debug fixture constructs a current Video Marker payload through
 `video_marker.projectSpec` rather than depending on Video Marker's internal
 lifecycle files. Production Gait input remains the saved MAT document itself.
+
+Its session factory returns only App-specific step selection, output-folder
+workflow, and decoded pose cache fields. Runtime supplies absent canonical
+buckets and owns workflow-log initialization.

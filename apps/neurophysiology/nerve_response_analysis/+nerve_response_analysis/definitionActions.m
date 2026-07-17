@@ -171,10 +171,7 @@ function state = onExportAnalysis(state, ~, services)
 end
 
 function state = onResetWorkflow(~, ~, services)
-    projectSpec = nerve_response_analysis.projectSpec();
-    project = projectSpec.Create();
-    state = struct("project", project, ...
-        "session", nerve_response_analysis.createSession(project));
+    state = services.project.newState();
     state = services.workflow.log(state, ...
         "Reset Nerve Response Analysis state.");
 end

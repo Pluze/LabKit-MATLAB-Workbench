@@ -62,6 +62,15 @@ recovery write recalculates source-relative paths from that MAT file's actual
 destination, so moving a saved project tree does not depend on the folder from
 which the source was first imported.
 
+An App `CreateSession` factory returns only its own transient selection, view,
+workflow, or cache fields. The runtime adds the canonical session buckets and
+initializes workflow logging; Apps do not repeat empty framework-owned
+structures. An action that must discard the complete current document calls
+`services.project.newState()`, which rebuilds both project and session through
+the current definition and applies the same canonical normalization used at
+launch. App code must not approximate a full reset by calling its session
+factory directly.
+
 Variable-length sources and manifest outputs start from framework-provided
 empty arrays (`emptySourceRecords` and `services.results.emptyOutputs()`),
 then append validated real records. Apps do not construct empty-ID placeholder

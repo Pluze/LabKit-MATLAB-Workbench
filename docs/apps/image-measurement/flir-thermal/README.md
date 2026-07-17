@@ -131,3 +131,7 @@ busy state, and managed region interaction remain framework-owned. Thermal
 image, colorbar, and CSV manifest outputs are appended to the framework's
 canonical empty output array; no invalid placeholder result is created before
 batch export.
+
+Its session factory returns only App-specific image selection and decoded
+thermal cache fields. Runtime supplies absent canonical buckets and owns
+workflow-log initialization.

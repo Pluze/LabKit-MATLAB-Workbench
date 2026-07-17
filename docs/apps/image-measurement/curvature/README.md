@@ -106,3 +106,7 @@ calculations under `+analysisRun`; there is no generic `+appState` package. The
 App requires `labkit.ui >=7 <8` and `labkit.image >=2 <3`; source-path access,
 persistence, callback lifetime, and managed anchor interactions remain
 framework-owned.
+
+Its session factory returns only App-specific edit workflow, scale-bar view,
+and decoded image cache fields. Runtime supplies absent canonical buckets and
+owns workflow-log initialization.

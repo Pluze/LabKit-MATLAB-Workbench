@@ -123,3 +123,7 @@ runtime state. The entrypoint only adapts the optional axes handoff and
 delegates to Runtime V2. App code uses semantic actions, injected project
 services, and the stable resolved-path accessor; busy-state and
 portable-reference serialization mechanics remain framework-owned.
+
+Its session factory returns only App-specific source selection, status
+workflow, and decoded plot cache fields. Runtime supplies absent canonical
+buckets and owns workflow-log initialization.

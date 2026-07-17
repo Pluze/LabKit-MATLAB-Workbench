@@ -134,3 +134,7 @@ rebuilds file-backed strain, image, mask, and overlay caches because those are
 transient runtime data rather than saved project fields. The App requires
 `labkit.ui >=7 <8` and `labkit.image >=2 <3`; busy-state, optional source-slot
 lookup, and portable-reference serialization remain framework-owned.
+
+Its session factory returns only App-specific selection and decoded cache
+fields. Runtime supplies absent canonical buckets and owns workflow-log
+initialization.
