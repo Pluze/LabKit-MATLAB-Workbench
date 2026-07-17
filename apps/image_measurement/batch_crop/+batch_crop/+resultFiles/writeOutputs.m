@@ -32,15 +32,16 @@ function payload = writeOutputs(items, opts)
         scalePlan = batch_crop.cropGeometry.scalePlan(items, opts);
     end
 
-    results = repmat(batch_crop.appState.emptyResult(), numel(items), 1);
+    results = repmat(batch_crop.resultFiles.emptyResult(), numel(items), 1);
     reservedPaths = strings(0, 1);
     for k = 1:numel(items)
-        result = batch_crop.appState.emptyResult();
+        result = batch_crop.resultFiles.emptyResult();
         result.sourcePath = string(items(k).path);
         try
             cropOpts = opts;
             cropOpts.angleDeg = items(k).angleDeg;
-            cropOpts.paddingPercent = batch_crop.appState.itemPaddingPercent( ...
+            cropOpts.paddingPercent = ...
+                batch_crop.cropGeometry.itemPaddingPercent( ...
                 items(k), optionValue(opts, 'paddingPercent', 0));
             cropOpts.centerXY = items(k).centerXY;
             if physicalMode

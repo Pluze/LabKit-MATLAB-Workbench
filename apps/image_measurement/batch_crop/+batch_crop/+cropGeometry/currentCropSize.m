@@ -8,7 +8,7 @@ function sizeValue = currentCropSize(state)
         ~isempty(state.session.cache.images{index});
     if strcmpi(parameters.scaleMode, "Physical") && hasCurrent
         calibration = state.project.inputs.items(index).scaleCalibration;
-        if batch_crop.appState.isScaleCalibrationSet(calibration)
+        if batch_crop.scaleCalibration.isSet(calibration)
             pixelsPerUnit = ...
                 batch_crop.cropGeometry.pixelsPerUnitForUnit( ...
                 calibration, parameters.scaleUnit);

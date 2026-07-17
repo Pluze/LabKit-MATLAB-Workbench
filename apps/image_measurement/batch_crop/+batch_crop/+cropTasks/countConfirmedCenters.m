@@ -1,4 +1,4 @@
-% App-owned state query. Expected caller: batch-crop UI summary and tests.
+% App-owned crop-task query. Expected caller: batch-crop UI summary and tests.
 % Input is a crop item struct vector. Output is the number of items with a
 % confirmed crop center. No state is modified.
 function count = countConfirmedCenters(items)

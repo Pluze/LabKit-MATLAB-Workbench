@@ -1,4 +1,4 @@
-% App-owned state factory. Expected caller: batch-crop app startup, reset,
+% App-owned geometry-cache factory. Expected caller: batch-crop reset,
 % and image-change callbacks. Output is the scalar cache state for prepared
 % crop preview canvases. No file or graphics side effects occur here.
 function cache = emptyCanvasCache()

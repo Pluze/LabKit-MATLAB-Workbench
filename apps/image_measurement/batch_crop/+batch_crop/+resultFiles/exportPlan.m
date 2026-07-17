@@ -1,4 +1,4 @@
-% App-owned batch crop lifecycle helper. Expected caller: batch-crop export
+% App-owned batch-crop export helper. Expected caller: batch-crop export
 % callback and package tests. Inputs are crop items and export options. Output
 % is an immutable export plan with per-item fingerprints; this helper has no
 % GUI, file, or image-processing side effects.
@@ -58,7 +58,9 @@ function fingerprint = itemFingerprint(item, opts, index)
         "item[" + string(index) + "]=" + string(item.path)
         "image=" + imageToken(item.image)
         "angleDeg=" + numberToken(item.angleDeg)
-        "paddingPercent=" + numberToken(batch_crop.appState.itemPaddingPercent(item, opts.paddingPercent))
+        "paddingPercent=" + numberToken( ...
+            batch_crop.cropGeometry.itemPaddingPercent( ...
+                item, opts.paddingPercent))
         "centerXY=" + numberToken(item.centerXY)
         "centerSet=" + string(logical(item.centerSet))
         "scale=" + calibrationToken(item.scaleCalibration, opts.scaleUnit)], "|");

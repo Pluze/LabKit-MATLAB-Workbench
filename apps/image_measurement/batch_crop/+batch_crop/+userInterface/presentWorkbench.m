@@ -2,14 +2,14 @@
 % state. Output is a deterministic control, summary, preview, and controlled
 % interaction presentation without UI registry access.
 function view = presentWorkbench(state)
-    items = batch_crop.appState.workingItems( ...
+    items = batch_crop.sourceFiles.workingItems( ...
         state.project.inputs.items, state.session.cache.images, ...
         state.project.inputs.sources);
     parameters = state.project.parameters;
     index = currentIndex(state);
     hasImage = hasCurrentImage(state);
     physicalMode = strcmpi(parameters.scaleMode, "Physical");
-    cropSize = batch_crop.appState.currentCropSize(state);
+    cropSize = batch_crop.cropGeometry.currentCropSize(state);
     padding = currentPadding(state);
 
     view = struct();
@@ -73,7 +73,8 @@ end
 
 function view = scaleControlPresentation(view, state, hasImage, physicalMode)
     editing = state.session.workflow.scaleReferenceEditing;
-    cal = batch_crop.appState.emptyScaleCalibration(state.project.parameters.scaleUnit);
+    cal = batch_crop.scaleCalibration.emptyCalibration( ...
+        state.project.parameters.scaleUnit);
     if hasImage
         cal = state.project.inputs.items(currentIndex(state)).scaleCalibration;
     end
@@ -126,13 +127,13 @@ function value = imageStatus(items, physicalMode)
         return;
     end
     if physicalMode
-        summary = batch_crop.appState.scaleCalibrationSummary(items);
+        summary = batch_crop.scaleCalibration.summarize(items);
         value = sprintf('Images: %d | centers: %d | scales: %d', ...
-            numel(items), batch_crop.appState.countConfirmedCenters(items), ...
+            numel(items), batch_crop.cropTasks.countConfirmedCenters(items), ...
             summary.calibratedCount);
     else
         value = sprintf('Images: %d | confirmed centers: %d', ...
-            numel(items), batch_crop.appState.countConfirmedCenters(items));
+            numel(items), batch_crop.cropTasks.countConfirmedCenters(items));
     end
 end
 
@@ -175,10 +176,10 @@ end
 
 function [geometry, render] = previewGeometry(state)
     index = currentIndex(state);
-    item = batch_crop.appState.workingItems( ...
+    item = batch_crop.sourceFiles.workingItems( ...
         state.project.inputs.items(index), state.session.cache.images(index), ...
         state.project.inputs.sources);
-    [geometry, ~] = batch_crop.appState.currentGeometry( ...
+    [geometry, ~] = batch_crop.cropGeometry.currentGeometry( ...
         state.session.cache.canvas, index, item, item.paddingPercent);
     placement = struct("offset", [0 0], ...
         "xData", [1 size(geometry.canvas, 2)], ...

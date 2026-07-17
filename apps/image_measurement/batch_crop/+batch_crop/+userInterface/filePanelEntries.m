@@ -17,7 +17,8 @@ function status = itemStatus(item, physicalMode)
         status = "needs center";
         return;
     end
-    if physicalMode && ~batch_crop.appState.isScaleCalibrationSet(item.scaleCalibration)
+    if physicalMode && ...
+            ~batch_crop.scaleCalibration.isSet(item.scaleCalibration)
         status = "needs scale";
         return;
     end

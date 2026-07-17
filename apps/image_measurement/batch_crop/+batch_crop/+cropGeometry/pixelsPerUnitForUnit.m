@@ -7,7 +7,7 @@ function pixelsPerUnit = pixelsPerUnitForUnit(cal, targetUnit)
     if nargin < 2 || strlength(string(targetUnit)) == 0
         targetUnit = "um";
     end
-    if ~batch_crop.appState.isScaleCalibrationSet(cal)
+    if ~batch_crop.scaleCalibration.isSet(cal)
         pixelsPerUnit = NaN;
         return;
     end

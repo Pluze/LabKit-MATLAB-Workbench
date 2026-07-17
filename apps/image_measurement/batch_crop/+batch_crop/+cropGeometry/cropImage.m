@@ -82,7 +82,7 @@ function result = cropImage(imageData, opts)
     cropped = batch_crop.cropGeometry.cropCanvasFixedSize(geometry.canvas, canvasCenterXY, ...
         [cropWidth, cropHeight], geometry.fillValue);
 
-    result = batch_crop.appState.emptyResult();
+    result = batch_crop.resultFiles.emptyResult();
     result.ok = true;
     result.status = "cropped";
     result.image = cropped;

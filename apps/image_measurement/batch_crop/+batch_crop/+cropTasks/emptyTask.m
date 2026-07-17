@@ -1,4 +1,4 @@
-% App-owned durable-state factory. Expected caller: Batch Crop project and
+% App-owned durable crop-task factory. Expected caller: Batch Crop project and
 % task-list actions. Output describes one reproducible crop task without
 % decoded image pixels or other session-owned data.
 function task = emptyTask()
@@ -8,5 +8,6 @@ function task = emptyTask()
         'paddingPercent', 0, ...
         'centerXY', [NaN, NaN], ...
         'centerSet', false, ...
-        'scaleCalibration', batch_crop.appState.emptyScaleCalibration());
+        'scaleCalibration', ...
+            batch_crop.scaleCalibration.emptyCalibration());
 end

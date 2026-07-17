@@ -16,10 +16,10 @@ function text = scaleStatusText(state, currentIndex, mode, physicalSize, unitNam
         return;
     end
 
-    scaleSummary = batch_crop.appState.scaleCalibrationSummary(items);
+    scaleSummary = batch_crop.scaleCalibration.summarize(items);
     item = items(currentIndex);
     cal = item.scaleCalibration;
-    if batch_crop.appState.isScaleCalibrationSet(cal)
+    if batch_crop.scaleCalibration.isSet(cal)
         cropPixelsPerUnit = batch_crop.cropGeometry.pixelsPerUnitForUnit(cal, unitName);
         text = sprintf(['Physical mode: crop %.6g x %.6g %s; image %d scale %.6g px/%s ' ...
             '(%.6g px/%s for crop); calibrated %d/%d.'], ...

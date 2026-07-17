@@ -1,8 +1,9 @@
-% App-owned geometry cache helper. Expected caller: batch_crop/run. Inputs
+% App-owned geometry cache helper. Expected caller: Batch Crop actions. Inputs
 % are the current cache, item index, crop item, and padding percent. Outputs
 % are prepared crop geometry and the updated cache.
 function [geometry, cache] = currentGeometry(cache, itemIndex, item, paddingPercent)
-    key = batch_crop.appState.canvasCacheKey(itemIndex, item, paddingPercent);
+    key = batch_crop.cropGeometry.canvasCacheKey( ...
+        itemIndex, item, paddingPercent);
     if cache.valid && isequal(cache.key, key)
         geometry = cache.geometry;
         return;

@@ -67,6 +67,22 @@ center, rotation, padding, source/output scale, requested physical geometry,
 format, and output filename. A second LabKit result JSON records project-wide
 parameters and identifies each output file.
 
+## Project And State
+
+Saved projects use durable schema version 2. `inputs.sources` contains the
+framework's portable source records, while `inputs.items` contains the crop
+tasks that refer to those sources by `sourceId`. Crop dimensions, physical
+scale settings, output format, output folder, and scale-bar choices are durable
+project parameters. Loaded image pixels, the current selection, interaction
+flags, preview graphics, and rotated-canvas caches are transient session state
+and are reconstructed after load.
+
+Version-1 projects are upgraded by the single migration entry in
+`batch_crop.projectSpec`. It removes embedded image pixels, converts item paths
+to source records, and preserves each task's crop center, rotation, padding,
+and calibration. Missing required sources are handled by the Runtime's shared
+source-reconciliation workflow rather than by Batch Crop-specific path code.
+
 ## Use Without The GUI
 
 <!-- labkit-runnable-example -->
@@ -102,7 +118,19 @@ API pages for exact plan fields, interpolation, and padding behavior.
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+This App requires `labkit.ui >=7 <8` and `labkit.image >=2 <3`. Its single
+`definition.m` owns product metadata, dependencies, layout, actions,
+presentation, renderers, and optional capabilities. Durable creation,
+validation, and migration are concentrated in `projectSpec.m`; root
+`createSession.m` reconstructs transient state and lazily loads only the first
+selected image.
+
+Workflow helpers are owned by the capabilities they describe:
+`+sourceFiles`, `+cropTasks`, `+cropGeometry`, `+scaleCalibration`,
+`+resultFiles`, and `+userInterface`. There is no generic App lifecycle or
+state package. Busy state, source serialization, migration iteration, and
+portable-path reconciliation remain framework responsibilities.
+
 Variable-length crop manifest outputs begin with the framework's canonical
 empty output array, so zero-result and multi-result exports never construct an
 invalid placeholder ID.

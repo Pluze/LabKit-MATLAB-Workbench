@@ -1,6 +1,5 @@
-% App-owned state factory. Expected caller: batch-crop app startup and reset
-% callbacks. Output is a scalar item struct for one loaded image and has no
-% side effects.
+% App-owned decoded-item factory. Expected callers: source readers and tests.
+% Output is a scalar item struct for one loaded image and has no side effects.
 function item = emptyItem()
 %EMPTYITEM Return an empty loaded-image crop item.
 
@@ -11,5 +10,6 @@ function item = emptyItem()
         'paddingPercent', 0, ...
         'centerXY', [NaN, NaN], ...
         'centerSet', false, ...
-        'scaleCalibration', batch_crop.appState.emptyScaleCalibration());
+        'scaleCalibration', ...
+            batch_crop.scaleCalibration.emptyCalibration());
 end

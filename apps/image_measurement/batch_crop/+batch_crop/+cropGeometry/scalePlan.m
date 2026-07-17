@@ -12,7 +12,7 @@ function plan = scalePlan(items, opts)
 %
 % Inputs:
 %   items - Nonempty structure array. Each element must have a valid
-%       scaleCalibration accepted by batch_crop.appState.isScaleCalibrationSet,
+%       scaleCalibration accepted by batch_crop.scaleCalibration.isSet,
 %       including a positive pixelsPerUnit value and its source unit.
 %   opts - Scalar structure containing the physical crop options below.
 %

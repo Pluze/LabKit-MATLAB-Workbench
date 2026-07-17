@@ -8,7 +8,7 @@ function actions = definitionActions()
 end
 
 function state = onExportSettingChanged(state, ~, ~)
-    state.project.results = batch_crop.appState.clearExportState( ...
+    state.project.results = batch_crop.resultFiles.clearExportState( ...
         state.project.results);
 end
 
@@ -21,7 +21,7 @@ function state = onChooseOutputFolder(state, ~, services)
         return;
     end
     state.project.parameters.outputFolder = string(folder);
-    state.project.results = batch_crop.appState.clearExportState( ...
+    state.project.results = batch_crop.resultFiles.clearExportState( ...
         state.project.results);
 end
 
@@ -39,25 +39,25 @@ function state = onExportCrops(state, ~, services)
         return;
     end
     if strcmpi(state.project.parameters.scaleMode, "Physical") && ...
-            ~batch_crop.appState.scaleCalibrationSummary(tasks).allCalibrated
+            ~batch_crop.scaleCalibration.summarize(tasks).allCalibrated
         services.dialogs.alert( ...
             batch_crop.userInterface.missingWorkflowItemsText(tasks, "scale"), ...
             'Scale calibration missing');
         return;
     end
     try
-        items = batch_crop.appState.workingItems( ...
+        items = batch_crop.sourceFiles.workingItems( ...
             tasks, state.session.cache.images, state.project.inputs.sources);
-        items = batch_crop.appState.loadMissingImages(items);
+        items = batch_crop.sourceFiles.loadMissingImages(items);
     catch ME
         services.diagnostics.report('Could not load image', ME);
         services.dialogs.alert(ME.message, 'Could not load image');
         return;
     end
     state.session.cache.images = {items.image}.';
-    state.session.cache.canvas = batch_crop.appState.emptyCanvasCache();
+    state.session.cache.canvas = batch_crop.cropGeometry.emptyCanvasCache();
     opts = currentExportOptions(state);
-    plan = batch_crop.appState.exportPlan(items, opts);
+    plan = batch_crop.resultFiles.exportPlan(items, opts);
     results = state.project.results;
     if ~isempty(results.lastExport) && ...
             results.lastExportFingerprint == plan.fingerprint
@@ -101,9 +101,9 @@ function opts = currentExportOptions(state)
             ~isempty(state.session.cache.images{index})
         padding = state.project.inputs.items(index).paddingPercent;
     end
-    opts = batch_crop.appState.exportOptions( ...
+    opts = batch_crop.resultFiles.exportOptions( ...
         parameters.outputFolder, parameters.format, ...
-        batch_crop.appState.currentCropSize(state), padding, ...
+        batch_crop.cropGeometry.currentCropSize(state), padding, ...
         parameters.scaleMode, parameters.scaleUnit, ...
         [parameters.physicalWidth, parameters.physicalHeight], ...
         parameters.targetPixelsPerUnit, parameters.maxUpsamplePercent);

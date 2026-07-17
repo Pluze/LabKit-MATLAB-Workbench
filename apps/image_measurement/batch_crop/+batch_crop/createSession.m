@@ -1,19 +1,13 @@
-% Expected caller: the LabKit V2 runtime. Input is a validated durable
-% batch-crop project. Output owns selection, workflow flags, view state, and
-% rebuildable canvas data only.
+% Rebuild transient selection and only the first selected image from one
+% validated Batch Crop project after Runtime V2 resolves sources.
 function session = createSession(project)
-    currentIndex = 0;
-    if ~isempty(project.inputs.items)
-        currentIndex = 1;
-    end
+    currentIndex = double(~isempty(project.inputs.items));
     images = cell(numel(project.inputs.items), 1);
     if currentIndex > 0
         sourceId = string(project.inputs.items(currentIndex).sourceId);
-        sourceIndex = find(string({project.inputs.sources.id}) == sourceId, ...
-            1, 'first');
-        if ~isempty(sourceIndex)
-            loaded = batch_crop.appState.readItems( ...
-                project.inputs.sources(sourceIndex).reference.originalPath);
+        path = labkit.ui.runtime.sourcePaths(project.inputs.sources, sourceId);
+        if strlength(path) > 0
+            loaded = batch_crop.sourceFiles.readItems(path);
             if ~isempty(loaded)
                 images{currentIndex} = loaded(1).image;
             end
@@ -28,5 +22,5 @@ function session = createSession(project)
         "view", struct("scaleBar", []), ...
         "cache", struct( ...
             "images", {images}, ...
-            "canvas", batch_crop.appState.emptyCanvasCache()));
+            "canvas", batch_crop.cropGeometry.emptyCanvasCache()));
 end

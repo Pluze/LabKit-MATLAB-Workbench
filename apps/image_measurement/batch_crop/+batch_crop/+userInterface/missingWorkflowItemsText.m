@@ -38,7 +38,7 @@ function tf = isMissing(item, missingKind)
             tf = ~isfield(item, 'centerSet') || ~logical(item.centerSet);
         case "scale"
             tf = ~isfield(item, 'scaleCalibration') || ...
-                ~batch_crop.appState.isScaleCalibrationSet(item.scaleCalibration);
+                ~batch_crop.scaleCalibration.isSet(item.scaleCalibration);
         otherwise
             tf = false;
     end

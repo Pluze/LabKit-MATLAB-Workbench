@@ -47,7 +47,7 @@ function checkPerItemPaddingExportsIndependently()
     mkdir(folder);
     cleanup = onCleanup(@() removeTempFolder(folder));
 
-    itemA = batch_crop.appState.emptyItem();
+    itemA = batch_crop.sourceFiles.emptyItem();
     itemA.path = string(fullfile(folder, 'pad_a.png'));
     itemA.image = uint8(40 * ones(8, 8));
     itemA.centerXY = [4, 4];
@@ -156,9 +156,10 @@ function checkScaleCalibrationSummaryReportsReadiness()
     items = [physicalItem("ready_a.png", uint8(ones(10, 10)), 4); ...
         physicalItem("ready_b.png", uint8(10 * ones(8, 12)), 8); ...
         physicalItem("needs_scale.png", uint8(20 * ones(6, 7)), 4)];
-    items(3).scaleCalibration = batch_crop.appState.emptyScaleCalibration("um");
+    items(3).scaleCalibration = ...
+        batch_crop.scaleCalibration.emptyCalibration("um");
 
-    summary = batch_crop.appState.scaleCalibrationSummary(items);
+    summary = batch_crop.scaleCalibration.summarize(items);
 
     assert(summary.total == 3, ...
         'Scale summary should report every crop item.');
@@ -167,7 +168,7 @@ function checkScaleCalibrationSummaryReportsReadiness()
     assert(~summary.allCalibrated, ...
         'Scale summary should reject mixed calibrated/missing item vectors.');
 
-    readySummary = batch_crop.appState.scaleCalibrationSummary(items(1:2));
+    readySummary = batch_crop.scaleCalibration.summarize(items(1:2));
     assert(readySummary.allCalibrated && readySummary.missingCount == 0, ...
         'Scale summary should accept all-calibrated item vectors.');
 end
@@ -178,7 +179,8 @@ function checkMissingWorkflowPromptNamesAffectedFiles()
         physicalItem("needs_scale.png", uint8(ones(10, 10)), 4)];
     items(2).centerSet = false;
     items(2).centerXY = [NaN, NaN];
-    items(3).scaleCalibration = batch_crop.appState.emptyScaleCalibration("um");
+    items(3).scaleCalibration = ...
+        batch_crop.scaleCalibration.emptyCalibration("um");
 
     centerText = batch_crop.userInterface.missingWorkflowItemsText(items, "center");
     scaleText = batch_crop.userInterface.missingWorkflowItemsText(items, "scale");
@@ -195,7 +197,8 @@ function checkFilePanelEntriesExposeWorkflowStatus()
         physicalItem("needs_scale.png", uint8(ones(10, 10)), 4)];
     items(2).centerSet = false;
     items(2).centerXY = [NaN, NaN];
-    items(3).scaleCalibration = batch_crop.appState.emptyScaleCalibration("um");
+    items(3).scaleCalibration = ...
+        batch_crop.scaleCalibration.emptyCalibration("um");
 
     pixelEntries = batch_crop.userInterface.filePanelEntries(items, "Pixels");
     physicalEntries = batch_crop.userInterface.filePanelEntries(items, "Physical");
@@ -269,7 +272,7 @@ function checkExportWritesUniqueOutputsForDuplicateSource()
 end
 
 function checkExportPlanFingerprintTracksItemsAndOptions()
-    item = batch_crop.appState.emptyItem();
+    item = batch_crop.sourceFiles.emptyItem();
     item.path = "shared_source.png";
     item.image = uint8(20 * ones(8, 8));
     item.angleDeg = 0;
@@ -283,17 +286,17 @@ function checkExportPlanFingerprintTracksItemsAndOptions()
         'paddingPercent', 0, ...
         'scaleMode', 'Pixels');
 
-    base = batch_crop.appState.exportPlan(item, opts);
-    repeated = batch_crop.appState.exportPlan(item, opts);
+    base = batch_crop.resultFiles.exportPlan(item, opts);
+    repeated = batch_crop.resultFiles.exportPlan(item, opts);
     moved = opts;
     moved.outputFolder = "out_b";
-    movedPlan = batch_crop.appState.exportPlan(item, moved);
+    movedPlan = batch_crop.resultFiles.exportPlan(item, moved);
     shifted = item;
     shifted.centerXY = [5, 5];
-    shiftedPlan = batch_crop.appState.exportPlan(shifted, opts);
+    shiftedPlan = batch_crop.resultFiles.exportPlan(shifted, opts);
     padded = item;
     padded.paddingPercent = 40;
-    paddedPlan = batch_crop.appState.exportPlan(padded, opts);
+    paddedPlan = batch_crop.resultFiles.exportPlan(padded, opts);
 
     assert(base.fingerprint == repeated.fingerprint, ...
         'Identical batch-crop export plans should have stable fingerprints.');
@@ -315,7 +318,7 @@ function cols = expectedManifestColumns()
 end
 
 function item = physicalItem(pathValue, imageData, pixelsPerUnit)
-    item = batch_crop.appState.emptyItem();
+    item = batch_crop.sourceFiles.emptyItem();
     item.path = string(pathValue);
     item.image = imageData;
     item.angleDeg = 0;

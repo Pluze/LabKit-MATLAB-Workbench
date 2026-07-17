@@ -1,4 +1,4 @@
-% App-owned crop-state helper. Expected caller: batch-crop runner, export,
+% App-owned crop-geometry helper. Expected caller: batch-crop runner, export,
 % and plan helpers. Input is one crop item and an optional default percent.
 % Output is a finite padding percentage clamped to the supported app range.
 function percent = itemPaddingPercent(item, defaultPercent)

@@ -42,11 +42,11 @@ function checkV2ProjectPresentationAndScaleBarGeometry()
         'Batch crop definition should use the V2 runtime contract.');
     project = definition.project.Create();
     assert(definition.project.Version == 2 && ...
-        numel(definition.project.Migrations) == 1, ...
+        isa(definition.project.Migrate, 'function_handle'), ...
         'Batch crop should migrate v1 pixel-owning projects to v2 tasks.');
     assert(definition.project.Validate(project), ...
         'Fresh batch crop projects should satisfy the app validator.');
-    item = batch_crop.appState.emptyItem();
+    item = batch_crop.sourceFiles.emptyItem();
     item.path = "synthetic.png";
     item.image = uint8(reshape(1:120, 10, 12));
     item.centerXY = [6.5 5.5];
@@ -56,17 +56,19 @@ function checkV2ProjectPresentationAndScaleBarGeometry()
         'referenceLine', [2 2; 42 2]));
     legacyProject = project;
     legacyProject.inputs.items = item;
-    migrated = definition.project.Migrations{1}(legacyProject);
+    migrated = definition.project.Migrate(legacyProject, 1);
     assert(~isfield(migrated.inputs.items, 'image') && ...
         ~isfield(migrated.inputs.items, 'path') && ...
         migrated.inputs.items.sourceId == "image1" && ...
-        migrated.inputs.sources(1).reference.originalPath == "synthetic.png", ...
+        labkit.ui.runtime.sourcePaths( ...
+            migrated.inputs.sources(1)) == "synthetic.png", ...
         'The v1 migration should replace embedded pixels and paths with a source id.');
     task = rmfield(item, {'path', 'image'});
     task.sourceId = "image1";
-    project.inputs.sources = struct("id", "image1", "required", true, ...
-        "role", "cropSource", "reference", "synthetic.png");
-    project.inputs.items = orderfields(task, batch_crop.appState.emptyTask());
+    project.inputs.sources = labkit.ui.runtime.sourceRecord( ...
+        "image1", "cropSource", "synthetic.png", true);
+    project.inputs.items = orderfields( ...
+        task, batch_crop.cropTasks.emptyTask());
     session = definition.createSession(definition.project.Create());
     session.selection.currentIndex = 1;
     session.cache.images{1} = item.image;
@@ -378,13 +380,14 @@ function checkRotationBackgroundUsesWhiteFill()
 end
 
 function checkNewItemsDefaultToZeroPadding()
-    item = batch_crop.appState.emptyItem();
-    assert(item.paddingPercent == 0 && batch_crop.appState.itemPaddingPercent(item) == 0, ...
+    item = batch_crop.sourceFiles.emptyItem();
+    assert(item.paddingPercent == 0 && ...
+        batch_crop.cropGeometry.itemPaddingPercent(item) == 0, ...
         'New batch-crop items should default to no repaired padding.');
 end
 
 function checkTasksForSourceIdsExcludeImagePixels()
-    items = batch_crop.appState.tasksForSourceIds("image1");
+    items = batch_crop.cropTasks.forSourceIds("image1");
 
     assert(numel(items) == 1, ...
         'Batch crop path items should preserve one task per selected file.');
@@ -404,7 +407,7 @@ function checkReadItemsAcceptsFilePanelCellPaths()
     sourcePath = fullfile(folder, 'frame_a.png');
     imwrite(uint8(42 * ones(6, 7)), sourcePath);
 
-    items = batch_crop.appState.readItems({sourcePath});
+    items = batch_crop.sourceFiles.readItems({sourcePath});
     assert(numel(items) == 1, ...
         'Batch crop reader should accept filePanel cell-array paths.');
     assert(items(1).path == string(sourcePath), ...
@@ -414,7 +417,7 @@ function checkReadItemsAcceptsFilePanelCellPaths()
 end
 
 function checkDuplicateItemCreatesIndependentCropTask()
-    item = batch_crop.appState.emptyItem();
+    item = batch_crop.sourceFiles.emptyItem();
     item.path = "source.png";
     item.image = uint8(ones(5, 6));
     item.angleDeg = 12;
@@ -424,7 +427,7 @@ function checkDuplicateItemCreatesIndependentCropTask()
     item.scaleCalibration = labkit.ui.interaction.scaleBarCalibration(80, 20, "um", ...
         struct('defaultUnit', 'um'));
 
-    duplicated = batch_crop.appState.duplicateItem(item);
+    duplicated = batch_crop.cropTasks.duplicateItem(item);
     assert(duplicated.path == item.path, ...
         'Duplicated crop task should preserve the source image path.');
     assert(isequal(duplicated.image, item.image), ...
@@ -442,7 +445,7 @@ function checkDuplicateItemCreatesIndependentCropTask()
 end
 
 function item = physicalItem(pathValue, imageData, pixelsPerUnit)
-    item = batch_crop.appState.emptyItem();
+    item = batch_crop.sourceFiles.emptyItem();
     item.path = string(pathValue);
     item.image = imageData;
     item.angleDeg = 0;

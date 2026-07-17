@@ -38,7 +38,7 @@ function state = onImagesChosen(state, event, services)
         state = services.workflow.log(state, "Image file selection cancelled.");
         return;
     end
-    [tasks, sources, images] = batch_crop.appState.reconcileSelectedSources( ...
+    [tasks, sources, images] = batch_crop.sourceFiles.reconcileSelection( ...
         state.project.inputs.items, state.project.inputs.sources, ...
         state.session.cache.images, paths, services.project.sourceRecord);
     state.project.inputs.items = tasks;
@@ -61,7 +61,8 @@ function state = onImagesChosen(state, event, services)
 end
 
 function state = onClearImages(state, ~, services)
-    state.project.inputs.items = repmat(batch_crop.appState.emptyTask(), 0, 1);
+    state.project.inputs.items = repmat( ...
+        batch_crop.cropTasks.emptyTask(), 0, 1);
     state.project.inputs.sources = labkit.ui.runtime.emptySourceRecords();
     state.session.cache.images = cell(0, 1);
     state.session.selection.currentIndex = 0;
@@ -349,7 +350,7 @@ function state = onPlaceScaleBar(state, ~, services)
         return;
     end
     item = currentItem(state);
-    if ~batch_crop.appState.isScaleCalibrationSet(item.scaleCalibration)
+    if ~batch_crop.scaleCalibration.isSet(item.scaleCalibration)
         showError(services, 'Calibration required', ...
             ['Measure or enter reference pixels, then enter a positive ' ...
             'reference length and unit.']);
@@ -425,7 +426,7 @@ function [state, loaded] = ensureCurrentImageLoaded(state, services)
             loaded = true;
             return;
         end
-        loadedItems = batch_crop.appState.readItems( ...
+        loadedItems = batch_crop.sourceFiles.readItems( ...
         sourcePath(state.project.inputs.items(index), ...
         state.project.inputs.sources));
         if isempty(loadedItems)
@@ -457,16 +458,16 @@ function state = setCurrentCenter(state, center, confirmed)
     index = currentIndex(state);
     [geometry, ~] = currentGeometryAndPlacement(state);
     center = batch_crop.cropGeometry.clampCropCenterToCanvas( ...
-        geometry, center, batch_crop.appState.currentCropSize(state));
+        geometry, center, batch_crop.cropGeometry.currentCropSize(state));
     state.project.inputs.items(index).centerXY = center;
     state.project.inputs.items(index).centerSet = logical(confirmed);
 end
 
 function [geometry, placement] = currentGeometryAndPlacement(state)
     item = currentItem(state);
-    [geometry, ~] = batch_crop.appState.currentGeometry( ...
+    [geometry, ~] = batch_crop.cropGeometry.currentGeometry( ...
         state.session.cache.canvas, currentIndex(state), item, ...
-        batch_crop.appState.itemPaddingPercent(item, 0));
+        batch_crop.cropGeometry.itemPaddingPercent(item, 0));
     placement = struct("offset", [0 0], ...
         "xData", [1 size(geometry.canvas, 2)], ...
         "yData", [1 size(geometry.canvas, 1)]);
@@ -474,7 +475,7 @@ end
 
 function state = clearExportAndCanvas(state)
     state = clearExport(state);
-    state.session.cache.canvas = batch_crop.appState.emptyCanvasCache();
+    state.session.cache.canvas = batch_crop.cropGeometry.emptyCanvasCache();
 end
 
 function state = clearExport(state)
@@ -485,7 +486,7 @@ end
 
 function item = currentItem(state)
     index = currentIndex(state);
-    item = batch_crop.appState.workingItems( ...
+    item = batch_crop.sourceFiles.workingItems( ...
         state.project.inputs.items(index), state.session.cache.images(index), ...
         state.project.inputs.sources);
 end
@@ -511,7 +512,8 @@ function index = selectedAddedIndex(items, sources, added)
     if isempty(added)
         return;
     end
-    source = find(sourcePaths(sources) == added(1), 1, 'first');
+    source = find(labkit.ui.runtime.sourcePaths(sources) == ...
+        added(1), 1, 'first');
     match = [];
     if ~isempty(source)
         match = find(string({items.sourceId}) == string(sources(source).id), ...
@@ -537,19 +539,7 @@ function path = sourcePath(task, sources)
     path = "";
     match = find(string({sources.id}) == string(task.sourceId), 1, 'first');
     if ~isempty(match)
-        path = sourcePaths(sources(match));
-    end
-end
-
-function paths = sourcePaths(sources)
-    paths = strings(numel(sources), 1);
-    for k = 1:numel(sources)
-        reference = sources(k).reference;
-        if isstruct(reference) && isfield(reference, 'originalPath')
-            paths(k) = string(reference.originalPath);
-        else
-            paths(k) = string(reference);
-        end
+        path = labkit.ui.runtime.sourcePaths(sources(match));
     end
 end
 

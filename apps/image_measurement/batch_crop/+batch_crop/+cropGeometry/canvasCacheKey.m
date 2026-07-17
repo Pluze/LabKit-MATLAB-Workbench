@@ -1,4 +1,4 @@
-% App-owned preview-cache helper. Expected caller: batch-crop runner. Inputs
+% App-owned preview-geometry cache helper. Expected caller: batch-crop runner. Inputs
 % are the current item index, loaded crop item, and padding percent. Output is
 % a comparable key for invalidating padded/rotated preview canvas state.
 function key = canvasCacheKey(index, item, paddingPercent)

@@ -1,8 +1,8 @@
 % App-owned scale state factory. Expected caller: batch-crop item factories
 % and UI refresh code. Output matches the reusable scale-bar calibration shape
 % without depending on UI packages from app state helpers.
-function cal = emptyScaleCalibration(unitName)
-%EMPTYSCALECALIBRATION Return an uncalibrated per-image scale struct.
+function cal = emptyCalibration(unitName)
+%EMPTYCALIBRATION Return an uncalibrated per-image scale struct.
 
     if nargin < 1 || strlength(string(unitName)) == 0
         unitName = "um";

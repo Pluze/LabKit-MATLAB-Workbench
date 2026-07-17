@@ -1,4 +1,4 @@
-% App-owned state helper. Expected caller: batch-crop app duplicate callback
+% App-owned crop-task helper. Expected caller: batch-crop duplicate callback
 % and package tests. Input is one loaded crop item. Output is a new crop item
 % for the same source image with independent crop-center confirmation state.
 function item = duplicateItem(sourceItem)

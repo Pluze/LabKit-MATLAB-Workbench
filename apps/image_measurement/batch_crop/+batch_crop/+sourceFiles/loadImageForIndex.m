@@ -1,4 +1,4 @@
-% App-owned lazy image loader. Expected caller: batch-crop runner refresh and
+% App-owned lazy image loader. Expected caller: batch-crop refresh and
 % export callbacks. Inputs are crop items and a one-based item index. Output is
 % the updated item vector plus whether the indexed item has image pixels.
 function [items, loaded] = loadImageForIndex(items, index)
@@ -13,7 +13,7 @@ function [items, loaded] = loadImageForIndex(items, index)
         return;
     end
 
-    loadedItems = batch_crop.appState.readItems(items(index).path);
+    loadedItems = batch_crop.sourceFiles.readItems(items(index).path);
     if isempty(loadedItems)
         error('labkit_BatchImageCrop_app:ImageNotLoaded', ...
             'No image was loaded for item %d.', index);
