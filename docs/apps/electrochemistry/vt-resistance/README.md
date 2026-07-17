@@ -17,7 +17,9 @@ labkit_VTResistance_app
 Add one or more chrono `.DTA` files. The selected file is decoded and analyzed
 for preview; exporting applies the current settings to the full source list.
 No electrode-area normalization is performed because the reported quantity is
-electrical resistance in ohms.
+electrical resistance in ohms. Runtime V2 reconciles the ordered lazy path list
+with durable source records, preserving retained identities and allocating
+collision-free identities for later additions.
 
 ## Basic Workflow
 
@@ -102,5 +104,6 @@ optional runtime capabilities. `projectSpec.m` owns the complete version-1
 durable schema, defaults, and validation. `createSession.m` deliberately
 decodes only the first source for preview; the remaining batch stays lazy until
 selection or export. The App requires `labkit.ui >=7 <8` and
-`labkit.dta >=2 <3`; busy-state, resolved-path access, and portable-reference
-serialization remain framework-owned.
+`labkit.dta >=2 <3`; Runtime supplies omitted empty session buckets and owns
+workflow-log initialization. Busy-state, source identity, resolved-path
+access, and portable-reference serialization remain framework-owned.

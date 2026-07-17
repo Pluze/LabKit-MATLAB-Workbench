@@ -21,22 +21,26 @@ function state = onOpenFilesChosen(state, event, services)
         return;
     end
 
+    existingPaths = labkit.ui.runtime.sourcePaths( ...
+        state.project.inputs.sources);
+    addedPaths = strings(numel(paths), 1);
     added = 0;
     for k = 1:numel(paths)
         filepath = paths(k);
-        if isRegistered(state.project.inputs.sources, filepath)
+        if any(existingPaths == filepath) || ...
+                any(addedPaths(1:added) == filepath)
             state = services.workflow.log(state, ...
                 "Skipped duplicate: " + filepath);
             continue;
         end
-        source = services.project.sourceRecord( ...
-            nextSourceId(state.project.inputs.sources), ...
-            "chrono", filepath, true);
-        state.project.inputs.sources = appendSource( ...
-            state.project.inputs.sources, source);
         added = added + 1;
+        addedPaths(added) = filepath;
         state = services.workflow.log(state, "Registered: " + filepath);
     end
+    addedPaths = addedPaths(1:added);
+    state.project.inputs.sources = services.project.reconcileSources( ...
+        state.project.inputs.sources, [existingPaths; addedPaths], ...
+        "chrono", "dta", true);
     state.session.selection.currentIndex = numel(state.project.inputs.sources);
     state = ensureCurrentItemLoaded(state, services);
     state.project.parameters = resetPlotSelections(state.project.parameters);
@@ -57,7 +61,10 @@ function state = onRemoveSelected(state, event, services)
     removed = labkit.ui.runtime.sourcePaths(sources(indices));
     state.session.cache.items = removeItemsByPath( ...
         state.session.cache.items, removed);
-    state.project.inputs.sources(indices) = [];
+    remainingPaths = labkit.ui.runtime.sourcePaths(sources);
+    remainingPaths(indices) = [];
+    state.project.inputs.sources = services.project.reconcileSources( ...
+        sources, remainingPaths, "chrono", "dta", true);
     state.session.selection.currentIndex = boundedIndex( ...
         state.session.selection.currentIndex, numel(state.project.inputs.sources));
     state.project.parameters = resetPlotSelections(state.project.parameters);
@@ -68,7 +75,9 @@ function state = onRemoveSelected(state, event, services)
 end
 
 function state = onClearAll(state, ~, services)
-    state.project.inputs.sources = state.project.inputs.sources([]);
+    state.project.inputs.sources = services.project.reconcileSources( ...
+        state.project.inputs.sources, strings(0, 1), ...
+        "chrono", "dta", true);
     state.project.results.lastExport = [];
     state.session.cache.items = struct([]);
     state.session.selection.currentIndex = 0;
@@ -145,16 +154,16 @@ function state = onExportResults(state, ~, services)
     state = services.workflow.log(state, "Exported CSV: " + string(out));
 end
 
-function state = logAnalysis(state, item)
+function state = logAnalysis(state, item, services)
     analysis = item.analysis;
     if analysis.ok
-        state.session.workflow.logLines(end + 1, 1) = string(sprintf( ...
+        state = services.workflow.log(state, string(sprintf( ...
             '%s: Rc=%.6g ohm, Ra=%.6g ohm, Ravg=%.6g ohm', ...
             item.name, analysis.Rc_abs_ohm, analysis.Ra_abs_ohm, ...
-            analysis.Ravg_abs_ohm));
+            analysis.Ravg_abs_ohm)));
     elseif isfield(analysis, 'logOnFailure') && analysis.logOnFailure
-        state.session.workflow.logLines(end + 1, 1) = ...
-            string(item.name) + ": " + string(analysis.message);
+        state = services.workflow.log(state, ...
+            string(item.name) + ": " + string(analysis.message));
     end
 end
 
@@ -174,10 +183,6 @@ function index = boundedIndex(index, count)
     else
         index = min(max(1, round(double(index))), count);
     end
-end
-
-function tf = isRegistered(sources, filepath)
-    tf = any(labkit.ui.runtime.sourcePaths(sources) == string(filepath));
 end
 
 function state = ensureCurrentItemLoaded(state, services)
@@ -204,7 +209,7 @@ function state = ensureCurrentItemLoaded(state, services)
     for messageIndex = 1:numel(item.logmsg)
         state = services.workflow.log(state, item.logmsg{messageIndex});
     end
-    state = logAnalysis(state, item);
+    state = logAnalysis(state, item, services);
     state = services.workflow.log(state, "Loaded: " + filepath);
 end
 
@@ -240,28 +245,10 @@ function items = removeItemsByPath(items, paths)
     items(ismember(string({items.filepath}), paths(:))) = [];
 end
 
-function id = nextSourceId(sources)
-    ids = string({sources.id});
-    number = numel(ids) + 1;
-    id = "dta" + string(number);
-    while any(ids == id)
-        number = number + 1;
-        id = "dta" + string(number);
-    end
-end
-
 function items = appendItem(items, item)
     if isempty(items)
         items = item;
     else
         items(end + 1) = item;
-    end
-end
-
-function sources = appendSource(sources, source)
-    if isempty(sources)
-        sources = source;
-    else
-        sources(end + 1) = source;
     end
 end
