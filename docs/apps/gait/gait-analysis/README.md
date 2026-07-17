@@ -205,6 +205,10 @@ capability. `projectSpec.m` concentrates durable creation, validation, and both
 historical migration steps; root `createSession.m` rebuilds transient decoded
 pose state.
 
+The project validator requires the pose-project source collection and checks
+gait options, numeric limits, and result fields; Runtime validates canonical
+buckets and each source record first.
+
 Analysis defaults, source-fact normalization, result construction, duplicate
 run fingerprints, and gait calculations are co-located under `+analysisRun`.
 There is no generic App lifecycle or state package. Migration iteration,

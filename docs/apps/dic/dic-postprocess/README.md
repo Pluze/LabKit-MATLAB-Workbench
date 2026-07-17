@@ -135,6 +135,10 @@ transient runtime data rather than saved project fields. The App requires
 `labkit.ui >=7 <8` and `labkit.image >=2 <3`; busy-state, optional source-slot
 lookup, and portable-reference serialization remain framework-owned.
 
+The project validator requires the DIC source collection and checks summary
+table and parameter fields; Runtime validates canonical buckets and each
+source record first.
+
 Its session factory returns only App-specific selection and decoded cache
 fields. Runtime supplies absent canonical buckets and owns workflow-log
 initialization.

@@ -163,6 +163,10 @@ those images are transient caches rather than project data. The App requires
 optional source-slot lookup, and portable-reference serialization remain
 framework-owned.
 
+The project validator requires the DIC image-source collection and checks
+alignment, crop, mask, history, and preview fields; Runtime validates canonical
+buckets and each source record first.
+
 App-owned state operations are grouped by capability: `editHistory` owns
 align/crop undo and reset semantics, `maskEditing` owns mask canvas and mask
 undo semantics, and `sourceFiles.hasImagePair` reports whether the transient
