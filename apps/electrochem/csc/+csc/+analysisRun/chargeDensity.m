@@ -18,6 +18,12 @@ function value = chargeDensity(chargeC, areaCm2)
 %   millicoulombs. This unit helper performs no integration and does not take
 %   the absolute value of cathodic charge.
 %
+% Failure Behavior:
+%   A nonfinite or nonpositive scalar area returns scalar NaN. areaCm2 must be
+%   scalar and chargeC must support numeric division; incompatible MATLAB
+%   values or nonscalar area conditions raise the originating logical or
+%   arithmetic error.
+%
 % Example:
 %   density = csc.analysisRun.chargeDensity([0.002 -0.001], 0.5);
 %   assert(isequal(density, [4 -2]))
