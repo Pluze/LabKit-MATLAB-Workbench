@@ -32,6 +32,15 @@ function filepath = saveState(fig, filepath)
 %   preserved. After a successful save the app records the path, clears
 %   its dirty flag, and updates the window title.
 %
+% Failure Behavior:
+%   Cancelling the save dialog returns "". labkit:ui:runtime:MissingRuntime is
+%   thrown when fig is not a live Runtime V2 figure.
+%   labkit:ui:runtime:ProjectWriteFailed is thrown when temporary writing,
+%   verification, the pre-replace hook, or atomic replacement fails. The
+%   previous destination and in-memory document ownership remain unchanged.
+%   Project canonicalization or App resume callbacks may propagate their
+%   validation error before any destination is replaced.
+%
 % Typical Call:
 %   savedFile = labkit.ui.runtime.saveState(fig, "analysis.project.mat");
 %

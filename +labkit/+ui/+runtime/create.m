@@ -24,6 +24,13 @@ function ui = create(layout, varargin)
 %   layout tree. Most apps should use labkit.ui.runtime.launch, which also owns
 %   project state, actions, presentation, startup, and persistence.
 %
+% Errors:
+%   labkit:ui:runtime:InvalidOptions - Name-value arguments are not paired.
+%   Layout-tree validation errors identify invalid IDs, duplicate IDs, missing
+%   workbench slots, unsupported child kinds, empty sections, or forbidden
+%   concrete geometry. MATLAB graphics construction errors propagate after
+%   validation; a partially created figure is cleaned up by the runtime.
+%
 % See also labkit.ui.runtime.launch, labkit.ui.layout.workbench
 
     opts = parseOptions(varargin);

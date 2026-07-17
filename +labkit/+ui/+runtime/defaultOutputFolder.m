@@ -25,9 +25,18 @@ function folder = defaultOutputFolder(sourcePaths, subfolderName, fallbackFolder
 %   returns a safe existing fallback folder instead of failing because the
 %   requested output folder could not be created.
 %
+% Failure Behavior:
+%   Missing source locations, unsafe names, and mkdir failures fall back to an
+%   existing remembered output folder or user home directory. Input values
+%   must be convertible to text; incompatible MATLAB containers may raise the
+%   originating string conversion error before fallback selection.
+%
 % Typical Call:
 %   outputFolder = labkit.ui.runtime.defaultOutputFolder( ...
 %       importedFiles, "Processed Results", pwd);
+%
+% See also labkit.ui.runtime.sourcePaths,
+%   labkit.ui.runtime.saveState
 
     if nargin < 1
         sourcePaths = strings(0, 1);

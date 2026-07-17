@@ -27,7 +27,8 @@ function def = define(varargin)
 %       only letters, digits, underscore, hyphen, or period. Treat it as a
 %       permanent compatibility identifier after projects have been saved.
 %   Title - Text shown in the app window title.
-%   Family - Reader-facing App family used by the launcher and documentation.
+%   Family - Nonempty character vector or scalar string naming the
+%       reader-facing App family used by the launcher and documentation.
 %   AppVersion - Semantic App version in X.Y.Z form. This versions the App
 %       product, not the Runtime V2 project payload.
 %   Updated - Last product-change date in YYYY-MM-DD form.
@@ -145,6 +146,16 @@ function def = define(varargin)
 %   view are restored and the error is rethrown. An action with no output is
 %   allowed for side effects, but it cannot change value-based project or
 %   session state.
+%
+% Errors:
+%   labkit:ui:runtime:InvalidDefinitionOptions - Name-value arguments are not
+%   paired.
+%   labkit:ui:runtime:MissingDefinitionField - A required definition field is
+%   absent.
+%   labkit:ui:runtime:InvalidDefinition - Product metadata, requirements,
+%   project specification, callbacks, actions, utilities, or startup IDs do
+%   not satisfy the Runtime V2 contract. Layout callback output is validated
+%   later when launch or create builds the workbench.
 %
 % Typical Call:
 %   def = labkit.ui.runtime.define( ...
