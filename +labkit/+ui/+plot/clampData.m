@@ -24,6 +24,12 @@ function xy = clampData(ax, xy, varargin)
 %   near an axes boundary. Conversion through normalized axes coordinates keeps
 %   the result visually consistent on logarithmic or reversed axes.
 %
+% Errors:
+%   labkit:ui:plot:InvalidAxes - ax is not a valid scalar axes handle.
+%   labkit:ui:plot:InvalidPointPairs - xy is not an N-by-2 numeric array.
+%   labkit:ui:plot:InvalidOptions or labkit:ui:plot:InvalidOption -
+%   Name-value arguments are malformed or unsupported.
+%
 % Example:
 %   fig = figure("Visible", "off");
 %   cleanup = onCleanup(@() close(fig));

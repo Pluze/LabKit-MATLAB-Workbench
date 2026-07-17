@@ -18,6 +18,11 @@ function enablePopout(ax)
 %   without their own context menu inherit the axes menu, including children
 %   added after this call. Repeated calls do not add duplicate menu items.
 %
+% Failure Behavior:
+%   Empty or invalid handles are ignored. Errors raised while MATLAB creates
+%   the context menu, copies graphics, or opens the standalone figure are not
+%   caught and propagate from the originating graphics operation.
+%
 % Typical Call:
 %   plot(ax, time, signal);
 %   labkit.ui.interaction.enablePopout(ax);
