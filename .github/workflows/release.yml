@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version using vX.Y.Z.
+        required: true
+        type: string
+      manual_validation_confirmed:
+        description: Confirm that the Apps completed manual interactive validation.
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  validate-request:
+    name: Validate manual release request
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.request.outputs.version }}
+
+    steps:
+      - name: Validate branch, version, confirmation, CI, and remote state
+        id: request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.version }}
+          RELEASE_SHA: ${{ github.sha }}
+          MANUAL_VALIDATION_CONFIRMED: ${{ inputs.manual_validation_confirmed }}
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Release must be dispatched from main."
+            exit 1
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release version must use vX.Y.Z."
+            exit 1
+          fi
+          if [[ "$MANUAL_VALIDATION_CONFIRMED" != "true" ]]; then
+            echo "::error::Complete manual App validation before starting release."
+            exit 1
+          fi
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "::error::Tag ${RELEASE_TAG} already exists."
+            exit 1
+          fi
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Release ${RELEASE_TAG} already exists."
+            exit 1
+          fi
+          ci_run_id="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${RELEASE_SHA}&event=push&status=success&per_page=1" \
+            --jq '.workflow_runs[0].id // empty')"
+          if [[ -z "$ci_run_id" ]]; then
+            echo "::error::The exact main commit has no successful Continuous Integration push run."
+            exit 1
+          fi
+          echo "version=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Using successful CI run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${ci_run_id}" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+  create-draft:
+    name: Create validated tag and draft release
+    needs: validate-request
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out the validated commit
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+
+      - name: Create annotated tag and stage launcher from its blob
+        env:
+          RELEASE_TAG: ${{ needs.validate-request.outputs.version }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate "$RELEASE_TAG" "$RELEASE_SHA" \
+            --message "LabKit MATLAB Workbench ${RELEASE_TAG}"
+          mkdir -p "artifacts/release/${RELEASE_TAG}"
+          git show "${RELEASE_TAG}:labkit_launcher.m" \
+            > "artifacts/release/${RELEASE_TAG}/labkit_launcher.m"
+          git show "${RELEASE_TAG}:labkit_launcher.m" \
+            | sha256sum \
+            > "artifacts/release/${RELEASE_TAG}/tag-blob.sha256"
+          sha256sum "artifacts/release/${RELEASE_TAG}/labkit_launcher.m" \
+            > "artifacts/release/${RELEASE_TAG}/asset.sha256"
+          diff \
+            <(cut -d' ' -f1 "artifacts/release/${RELEASE_TAG}/tag-blob.sha256") \
+            <(cut -d' ' -f1 "artifacts/release/${RELEASE_TAG}/asset.sha256")
+
+      - name: Push validated tag
+        env:
+          RELEASE_TAG: ${{ needs.validate-request.outputs.version }}
+        run: git push origin "refs/tags/${RELEASE_TAG}"
+
+      - name: Create draft release with verified tag asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.validate-request.outputs.version }}
+        run: |
+          asset="artifacts/release/${RELEASE_TAG}/labkit_launcher.m"
+          gh release create "$RELEASE_TAG" \
+            "${asset}#labkit_launcher.m" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "LabKit MATLAB Workbench ${RELEASE_TAG}" \
+            --generate-notes \
+            --draft
+          gh release verify-asset "$RELEASE_TAG" "$asset" \
+            --repo "$GITHUB_REPOSITORY"
+          echo "Review and complete the release notes, asset, and validation evidence before publishing the draft." \
+            >> "$GITHUB_STEP_SUMMARY"

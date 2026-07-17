@@ -4,7 +4,6 @@ function plan = buildfile
 % User-facing commands:
 %   buildtool changed       conservative validation routed from the git diff
 %   buildtool changedFast   faster local iteration routed from the git diff
-%   buildtool baseMatlab    verify source workflows require only base MATLAB
 %   buildtool docs          rebuild the tracked static documentation site
 %   buildtool docsCheck     verify the tracked site matches its sources
 %   buildtool headless      full non-GUI validation
@@ -34,14 +33,6 @@ end
 
 function changedFastTask(~)
     runCatalogTask("changedFast");
-end
-
-function baseMatlabTask(~)
-    previous = getenv("LABKIT_VERIFY_TOOLBOX_PRODUCTS");
-    setenv("LABKIT_VERIFY_TOOLBOX_PRODUCTS", "1");
-    cleanup = onCleanup(@() setenv("LABKIT_VERIFY_TOOLBOX_PRODUCTS", previous));
-    runCatalogTask("baseMatlab");
-    clear cleanup
 end
 
 function docsTask(~)

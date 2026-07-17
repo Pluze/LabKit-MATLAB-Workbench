@@ -74,7 +74,6 @@ Use MATLAB build tasks for the stable official entry points:
 ```bash
 buildtool changed
 buildtool changedFast
-buildtool baseMatlab
 buildtool docs
 buildtool docsCheck
 buildtool headless
@@ -87,7 +86,6 @@ buildtool listTasks
 | --- | --- |
 | `changedFast` | Tight local iteration from the current diff; substitutes representative GUI coverage for expensive broad GUI scopes. |
 | `changed` | Conservative pre-handoff validation from the current diff. |
-| `baseMatlab` | Explicit compatibility gate: static toolbox-call scan, MATLAB product-ownership analysis, and representative workflows with toolbox helpers shadowed. |
 | `docs` | Rebuild the tracked `site/` tree from Markdown, structured catalogs, and MATLAB help contracts. |
 | `docsCheck` | Regenerate documentation in a temporary folder and compare it byte-for-byte with tracked `site/`. |
 | `headless` | Full non-GUI validation. |
@@ -111,7 +109,6 @@ Common choices:
 | Tight local iteration on one known component | Focused `runLabKitTests` folder or test-name selection |
 | Coherent local checkpoint while files are still changing | `buildtool changedFast` |
 | Before commit, PR, or handoff | `buildtool changed` |
-| Verify the repository on a machine that has toolboxes installed | `buildtool baseMatlab` |
 | Rebuild documentation after editing sources or public help contracts | `buildtool docs` |
 | Verify generated documentation is current | `buildtool docsCheck` |
 | Full broad non-GUI validation | `buildtool headless` |
@@ -137,11 +134,17 @@ source to the public repository. For temporary local checks,
 `LABKIT_GUARD_PRIVATE_APPS=1` includes configured private roots even without
 the sentinel file.
 
-Toolbox compatibility guardrails protect the base-MATLAB user path. They
-reject undeclared non-base calls under `apps/` and `+labkit/`, verify MATLAB's
-dependency analysis resolves every product, and run representative workflows
-with known toolbox helpers shadowed on the MATLAB path. A temporary MathWorks
-product path is accepted only through an exact entry in
+Toolbox compatibility guardrails protect the Base MATLAB user path. Every
+ordinary and release CI runner installs MATLAB without optional Toolboxes, so
+the complete headless and hidden-GUI suites execute in the same dependency
+baseline promised to users. Source guardrails also reject known undeclared
+non-base calls under `apps/` and `+labkit/` and run representative workflows
+with known Toolbox helpers shadowed on the MATLAB path. CI deliberately does
+not install candidate Toolboxes or infer product ownership from an
+all-products development environment: successful execution in a clean runtime
+is the primary contract.
+
+A temporary MathWorks product path is accepted only through an exact entry in
 `tests/runner/labkitToolboxDebt.m` that names its source, symbol, product,
 owner, no-Toolbox fallback test, idempotency test, Toolbox parity test, and
 repository-owned replacement. Numeric or scientific replacements must also
@@ -222,49 +225,51 @@ iteration loop.
 
 ## CI Scope
 
-Main-branch push and pull-request CI runs the public `headless` build task.
-The buildfile probes the selected test count and may run deterministic
-zero-based internal shards when the broad non-GUI suite is large enough.
-Assumption-filtered tests remain visible as skipped or incomplete but do not
-fail their shard. Actual test failures still fail the owning shard and retain
-the progress, JUnit, HTML, and worker-log evidence used for diagnosis.
-Feature-branch pushes do not run the same MATLAB workflow until a pull request
-targets `main`, which avoids duplicate branch-push and PR runs for the same
-commit. A manually dispatched release request from `main` runs the full release
-gate before creating its requested `vX.Y.Z` tag: `headless`, `baseMatlab`,
-`coverage`, and `gui` must pass, followed by the `Release Test Gate` summary job. The
-`Create Validated Release Tag` job then points the new tag at the exact
-validated commit. Workflow YAML calls public buildfile tasks through
-`matlab-actions/run-build`; it must not
-maintain test-class lists, owner shard lists, CI-only build tasks, shard
-environment variables, or call the lower-level runner directly. The buildfile
-task still publishes JUnit summaries and logs.
-MATLAB CI checkouts fetch the current commit plus its parent so version and
-changed-file guardrails have a stable `HEAD^` baseline on push and pull-request
-runs.
+CI is a clean-room check for omissions that a developer's configured machine
+or targeted local test can hide. `ci.yml` installs R2025a with no optional
+Toolboxes, then runs:
+
+- `buildtool headless` on Linux, macOS, and Windows;
+- `buildtool gui` with hidden figures on Linux, macOS, and Windows.
+
+Both platform matrices use `fail-fast: false`, so one failure does not cancel
+the evidence from the other operating systems. Each job keeps JUnit, HTML,
+active-test, MATLAB log, debug, and applicable GUI artifacts. The MATLAB
+execution timeout is shorter than the containing job timeout so diagnostics
+still upload after a stalled test.
+
+`Continuous Integration` runs this required suite for pull requests targeting
+`main` and pushes to `main`. Feature-branch pushes do not duplicate the
+pull-request run. Coverage has no pass threshold and would only repeat the
+non-GUI tests, so `buildtool coverage` remains an explicit local report rather
+than a second CI path.
+
+The manual `Release` workflow is separate from ordinary CI. A developer first
+completes interactive App testing, dispatches it from `main` with a `vX.Y.Z`
+version and confirms that manual validation. The workflow requires an already
+successful `Continuous Integration` main-push run for that exact commit; it
+does not duplicate the six jobs. Only then does it create the tag and a draft
+GitHub Release. Ordinary CI has read-only repository permissions and cannot
+create tags.
+
+Workflow YAML calls public buildfile tasks through
+`matlab-actions/run-build`; it does not maintain test-class lists, owner shard
+lists, CI-only build tasks, shard environment variables, or call the lower-level
+runner directly. CI checkouts fetch the candidate and its parent so version and
+changed-file contracts have a stable `HEAD^` baseline. GitHub Actions remains
+single-process because the parent MATLAB action's license does not imply that
+child MATLAB workers can start.
 
 When adding a test, place it under the correct ownership tree and give it the
 right stage tag: `Unit`, `Integration`, or `GUI`. GUI tests may add secondary
-tags such as `Structural`, `Workflow`, or `Gesture` to describe the contract
-shape. CI membership should follow from the public `headless` task and the
-runner's default non-GUI selection; ordinary test additions should not require
-editing `.github/workflows/matlab-tests.yml`.
+tags such as `Structural`, `Workflow`, or `Gesture`. Membership follows from
+the public `headless` or `gui` task; ordinary test additions should not require
+editing workflow YAML.
 
-Manual and scheduled workflows keep the broader compatibility and report jobs
-available: `baseMatlab` runs the broad product-ownership scan, coverage runs
-separately, and GUI validation remains opt-in for ordinary PR and main-push CI
-because automated GUI checks use hidden synthetic workflows rather than full
-manual interaction. Supplying `release_tag` to a manual run requests tag
-creation after those jobs pass; leaving it empty performs the same full
-validation without creating a tag.
-
-The 2026-07-17 local changed-file evidence measured representative hidden App
-workflows at about 18 seconds each and the Gait launch smoke at about 30
-seconds, before MATLAB setup and license acquisition. Those checks still
-cannot prove native dialogs, pointer feel, or visual quality. Ordinary CI
-therefore keeps the fast non-GUI isolation contract, while App-specific hidden
-GUI suites remain part of local changed validation and the complete GUI gate
-remains scheduled, manual, and release-only.
+Hidden GUI automation still cannot prove native file dialogs, pointer feel,
+visual quality, scientific validity, or a complete human workflow. That is why
+manual App validation remains a required release input rather than an
+inference from green CI.
 
 ## Test Layout
 

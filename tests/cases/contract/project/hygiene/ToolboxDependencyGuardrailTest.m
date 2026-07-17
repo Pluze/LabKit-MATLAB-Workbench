@@ -16,18 +16,6 @@ classdef ToolboxDependencyGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(actual), ', ')]);
         end
 
-        function sourceDependenciesResolveToBaseMatlab(testCase)
-            testCase.assumeEqual(string(getenv("LABKIT_VERIFY_TOOLBOX_PRODUCTS")), "1", ...
-                "Product ownership scan runs through buildtool baseMatlab.");
-            root = setupLabKitTestPath();
-            files = trackedSourceFiles(root);
-            findings = dependencyProductFindings(root, files, labkitToolboxDebt());
-            testCase.verifyEmpty(findings, ...
-                ["Each source ownership domain must resolve only to MATLAB or " + ...
-                "an exact declared temporary toolbox debt. " + ...
-                "Findings: " + strjoin(findings, ", ")]);
-        end
-
         function declaredToolboxDebtIsTraceable(testCase)
             root = setupLabKitTestPath();
             findings = toolboxDebtTraceabilityFindings(root, labkitToolboxDebt());
@@ -293,42 +281,6 @@ function names = guardedToolboxFunctionNames()
         "pca", "kmeans", ...
         "findpeaks", "butter", "filtfilt", "designfilt", "spectrogram", "cwt", ...
         "parpool", "gpuArray", "optimoptions", "fmincon", "lsqcurvefit", "lsqnonlin"];
-end
-
-function findings = dependencyProductFindings(root, files, debt)
-    groups = [ ...
-        "+labkit"
-        "apps/dic/dic_preprocess"
-        "apps/dic/dic_postprocess"
-        "apps/electrochem"
-        "apps/gait"
-        "apps/image_measurement"
-        "apps/labkit_core"
-        "apps/neurophysiology"
-        "apps/wearable"];
-    findings = strings(1, 0);
-    assigned = false(size(files));
-    for iGroup = 1:numel(groups)
-        inGroup = startsWith(files, groups(iGroup) + "/");
-        assigned = assigned | inGroup;
-        if ~any(inGroup)
-            continue;
-        end
-        absoluteFiles = fullfile(root, files(inGroup));
-        [~, products] = matlab.codetools.requiredFilesAndProducts( ...
-            cellstr(absoluteFiles));
-        certain = logical([products.Certain]);
-        productNames = string({products.Name});
-        nonBase = productNames(certain & productNames ~= "MATLAB");
-        inGroupDebt = startsWith(slashPath(string({debt.source})), groups(iGroup) + "/");
-        declaredProducts = string({debt(inGroupDebt).product});
-        nonBase = setdiff(nonBase, declaredProducts, 'stable');
-        for iProduct = 1:numel(nonBase)
-            findings(end + 1) = groups(iGroup) + ": " + nonBase(iProduct);
-        end
-    end
-    assert(all(assigned), ...
-        'Every tracked source file must belong to a product-ownership scan group.');
 end
 
 function findings = toolboxDebtTraceabilityFindings(root, debt)
