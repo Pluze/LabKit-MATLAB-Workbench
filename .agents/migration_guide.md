@@ -24,46 +24,9 @@ commit. Public and private repositories commit and push their work separately.
 Last audited: 2026-07-17.
 
 ```text
-documentation-and-agent-contract-drift: open-high
 validation-isolation-coverage: open-high
 toolbox-product-debt: none
 ```
-
-### Documentation and agent contract drift
-
-Owner:
-: The owning manuals, public MATLAB help, agent skills/rules, and documentation
-  contract tests.
-
-Evidence:
-: The public-help guard checks section presence and at least one option but
-  does not prove every option, default, legal value, error, or related API is
-  documented. Its module scan omits the rendered public
-  `labkit.ui.version` page.
-
-Affected scope:
-: Current development/framework/private-App manuals, public help, relevant
-  skills and scoped rules, documentation renderer inputs, generated `site/`,
-  and documentation tests.
-
-Completion condition:
-: Current manuals and agent instructions name one owner for canonical
-  validation and definition metadata, describe only existing APIs, and agree
-  with real public/private App structure. Every public API participates in the
-  help contract. Struct options are all explained with defaults and legal
-  values; errors or an explicit no-error contract and related APIs are present;
-  executable examples run in a clean owning path.
-
-Focused validation:
-: Run the narrow documentation contract and renderer regression tests while
-  editing, regenerate `site/` only through `renderLabKitDocs`, run `docsCheck`,
-  verify links/search, and visually inspect representative changed pages when
-  rendered structure changes.
-
-Removal condition:
-: Delete this entry after source help, authored manuals, agent instructions,
-  generated pages, and focused tests agree. Do not claim semantic accuracy from
-  a successful byte-for-byte documentation build alone.
 
 ### Validation isolation coverage
 
