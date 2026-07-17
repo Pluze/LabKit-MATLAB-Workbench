@@ -14,6 +14,7 @@ function restoreV2Project(fig, filepath, asRecovery)
     if isstruct(envelope) && isfield(envelope, 'sources')
         sources = envelope.sources;
     end
+    validateV2Project(project);
     validateProjectPayload(runtime.definition.project.Validate, project);
     services = buildV2RuntimeServices(fig, runtime, @(varargin) []);
     [project, resolvedSources, relinkedSources] = resolveV2ProjectSources( ...

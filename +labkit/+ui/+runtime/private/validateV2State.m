@@ -10,15 +10,9 @@ function validateV2State(state, def)
     if ~isequal(sort(roots), sort(["project"; "session"]))
         invalid('State root fields must be exactly project and session.');
     end
-    validateBuckets(state.project, ...
-        ["inputs", "parameters", "annotations", "results", "extensions"], ...
-        "project");
+    validateV2Project(state.project);
     validateBuckets(state.session, ...
         ["selection", "workflow", "view", "cache"], "session");
-    if isstruct(state.project.inputs) && isscalar(state.project.inputs) && ...
-            isfield(state.project.inputs, 'sources')
-        validateSourceRecords(state.project.inputs.sources);
-    end
     try
         validateSerializableState(state);
     catch ME

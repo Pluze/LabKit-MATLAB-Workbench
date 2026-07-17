@@ -101,7 +101,7 @@ the runtime how to create, validate, migrate, and restore that payload:
 | --- | --- | --- |
 | `Version` | Yes | Positive integer payload version. Version 1 has no migration entries. |
 | `Create` | Yes | `project = createProject()` returns a complete new durable payload. |
-| `Validate` | Yes | `accepted = validateProject(project)` returns a logical scalar or throws a field-specific error. |
+| `Validate` | Yes | `accepted = validateProject(project)` checks the App-owned schema and returns a logical scalar or throws a field-specific error. Runtime first validates the canonical buckets and standard source records. |
 | `Migrate` | For version > 1 | `project = migrate(project,fromVersion)` upgrades exactly one version. The runtime calls it repeatedly for every missing step. |
 | `LegacyImports` | No | Struct mapping a trusted top-level MAT variable name to `project = import(value)` or `[project,resume] = import(value)`. Imports are read-only adapters. |
 | `CreateResume` | No | `resume = createResume(session,project)` saves small navigation convenience, never authoritative data. |
@@ -159,6 +159,14 @@ project = struct( ...
 step. A version-1 saved payload cannot already contain version-2 fields, so the
 case for `fromVersion == 1` derives them before returning. New projects start
 from `Create`, and current projects skip migration.
+
+Runtime verifies that `inputs`, `parameters`, `annotations`, `results`, and
+`extensions` are scalar structs before it invokes `Validate`. When
+`inputs.sources` exists, Runtime also verifies the complete portable
+source-record contract. App validators therefore check only their own required
+fields, legal values, cross-field relationships, source roles, and scientific
+constraints. Repeating canonical bucket or source-record checks in every App
+would give one framework contract two owners.
 
 #### Portable Source Records
 

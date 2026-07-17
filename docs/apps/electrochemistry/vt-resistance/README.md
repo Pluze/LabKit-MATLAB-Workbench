@@ -101,7 +101,8 @@ assert(result.ok, result.message);
 
 The single `definition.m` owns product metadata, requirements, layout, and
 optional runtime capabilities. `projectSpec.m` owns the complete version-1
-durable schema, defaults, and validation. `createSession.m` deliberately
+domain schema, defaults, and analysis-parameter validation; Runtime validates
+canonical buckets and source records first. `createSession.m` deliberately
 decodes only the first source for preview; the remaining batch stays lazy until
 selection or export. The App requires `labkit.ui >=7 <8` and
 `labkit.dta >=2 <3`; Runtime supplies omitted empty session buckets and owns

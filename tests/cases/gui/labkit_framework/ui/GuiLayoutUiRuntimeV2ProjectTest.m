@@ -2,7 +2,7 @@ classdef GuiLayoutUiRuntimeV2ProjectTest < matlab.unittest.TestCase
     %GUILAYOUTUIRUNTIMEV2PROJECTTEST Verify durable V2 project documents.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
-        function project_roundtrip_migration_and_failures_are_atomic(testCase)
+        function project_roundtrip_migration_and_failures_are_atomic(~)
             setupLabKitTestPath();
             verifyProjectDocuments();
         end
@@ -262,6 +262,15 @@ function verifyProjectDocuments()
     assertThrows(@() labkit.ui.runtime.loadState(fig, wrongPath), ...
         'labkit:ui:runtime:WrongProjectApp');
     assertRuntimeUnchanged(fig, before, 'Wrong app rejection must be atomic.');
+
+    malformed = stored.labkitProject;
+    malformed.payload = rmfield(malformed.payload, 'extensions');
+    malformedPath = fullfile(folder, "malformed.mat");
+    saveProject(malformedPath, malformed);
+    assertThrows(@() labkit.ui.runtime.loadState(fig, malformedPath), ...
+        'labkit:ui:runtime:InvalidState');
+    assertRuntimeUnchanged(fig, before, ...
+        'Runtime project-shape rejection must precede App validation.');
 
     unresolved = stored.labkitProject;
     missingSource = struct("id", "requiredInput", ...

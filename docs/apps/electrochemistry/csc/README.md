@@ -114,7 +114,8 @@ assert(result.ok, result.message);
 
 The single `definition.m` owns product metadata, requirements, layout, and
 optional runtime capabilities. `projectSpec.m` owns the complete version-1
-durable schema, defaults, and validation. `createSession.m` rebuilds decoded
+domain schema, defaults, and parameter/result validation; Runtime validates
+canonical buckets and source records first. `createSession.m` rebuilds decoded
 CV/CT curves and active selection because they are transient runtime data. The
 App omits empty workflow and view buckets because Runtime canonicalizes them.
 It requires `labkit.ui >=7 <8` and `labkit.dta >=2 <3`; busy-state, source

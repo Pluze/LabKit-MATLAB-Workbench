@@ -71,6 +71,11 @@ the current definition and applies the same canonical normalization used at
 launch. App code must not approximate a full reset by calling its session
 factory directly.
 
+The same ownership applies to durable validation. Runtime verifies the five
+canonical project buckets and any standard portable source records before it
+calls the App's project validator. The App validator owns only its domain
+fields, legal values, relationships, roles, and scientific invariants.
+
 Variable-length sources and manifest outputs start from framework-provided
 empty arrays (`emptySourceRecords` and `services.results.emptyOutputs()`),
 then append validated real records. Apps do not construct empty-ID placeholder

@@ -95,9 +95,11 @@ listed as stable public APIs; reusable DTA reading is supported through
 
 The single `definition.m` owns product metadata, requirements, layout, and
 optional runtime capabilities. `projectSpec.m` owns the current version-2
-schema plus one version-aware migration entry; Runtime V2 advances older
-payloads one version at a time. `createSession.m` rebuilds decoded DTA items
-and selection because curves are transient caches. Runtime supplies omitted
-empty workflow and view buckets. The App requires `labkit.ui >=7 <8` and
-`labkit.dta >=2 <3`; busy-state, source identity, resolved-path access, and
-portable-reference serialization remain framework-owned.
+domain schema plus one version-aware migration entry; Runtime V2 advances
+older payloads one version at a time and validates canonical buckets and source
+records before the App checks its parameter rules. `createSession.m` rebuilds
+decoded DTA items and selection because curves are transient caches. Runtime
+supplies omitted empty workflow and view buckets. The App requires
+`labkit.ui >=7 <8` and `labkit.dta >=2 <3`; busy-state, source identity,
+resolved-path access, and portable-reference serialization remain
+framework-owned.
