@@ -223,10 +223,12 @@ fail their shard. Actual test failures still fail the owning shard and retain
 the progress, JUnit, HTML, and worker-log evidence used for diagnosis.
 Feature-branch pushes do not run the same MATLAB workflow until a pull request
 targets `main`, which avoids duplicate branch-push and PR runs for the same
-commit. Release candidate tag pushes matching `vX.Y.Z` run the full release
-gate before publishing: `headless`, `coverage`, and `gui` must pass, followed
-by the `Release Test Gate` summary job. Workflow YAML calls public buildfile
-tasks through `matlab-actions/run-build`; it must not
+commit. A manually dispatched release request from `main` runs the full release
+gate before creating its requested `vX.Y.Z` tag: `headless`, `coverage`, and
+`gui` must pass, followed by the `Release Test Gate` summary job. The
+`Create Validated Release Tag` job then points the new tag at the exact
+validated commit. Workflow YAML calls public buildfile tasks through
+`matlab-actions/run-build`; it must not
 maintain test-class lists, owner shard lists, CI-only build tasks, shard
 environment variables, or call the lower-level runner directly. The buildfile
 task still publishes JUnit summaries and logs.
@@ -241,10 +243,12 @@ shape. CI membership should follow from the public `headless` task and the
 runner's default non-GUI selection; ordinary test additions should not require
 editing `.github/workflows/matlab-tests.yml`.
 
-Manual, scheduled, and release-candidate workflows keep the broader report jobs
-available: coverage runs separately, and GUI validation remains opt-in for
-ordinary PR and main-push CI because automated GUI checks use hidden synthetic
-workflows rather than full manual interaction.
+Manual and scheduled workflows keep the broader report jobs available:
+coverage runs separately, and GUI validation remains opt-in for ordinary PR
+and main-push CI because automated GUI checks use hidden synthetic workflows
+rather than full manual interaction. Supplying `release_tag` to a manual run
+requests tag creation after those jobs pass; leaving it empty performs the same
+full validation without creating a tag.
 
 ## Test Layout
 
