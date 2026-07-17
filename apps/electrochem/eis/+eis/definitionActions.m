@@ -18,7 +18,8 @@ function state = onOpenFilesChosen(state, event, services)
         state = services.workflow.log(state, "Open cancelled.");
         return;
     end
-    failures = struct("filepath", {}, "message", {});
+    firstFailure = struct("filepath", "", "message", "");
+    hasFailure = false;
     for k = 1:numel(paths)
         filepath = paths(k);
         if isLoaded(state.session.cache.items, filepath)
@@ -28,28 +29,27 @@ function state = onOpenFilesChosen(state, event, services)
         end
         [item, status] = labkit.dta.loadFile(filepath, "eis");
         if ~status.ok
-            failures(end + 1) = struct( ...
-                "filepath", filepath, "message", string(status.message));
+            if ~hasFailure
+                firstFailure = struct( ...
+                    "filepath", filepath, ...
+                    "message", string(status.message));
+                hasFailure = true;
+            end
             state = services.workflow.log(state, ...
                 "Failed: " + filepath + " | " + string(status.message));
             continue;
         end
         state.session.cache.items = appendItem( ...
             state.session.cache.items, item);
-        source = services.project.sourceRecord( ...
-            nextSourceId(state.project.inputs.sources), ...
-            "eis", filepath, true);
-        state.project.inputs.sources = appendSource( ...
-            state.project.inputs.sources, source);
         state = logLoadedItem(state, item, services);
     end
+    state = reconcileProjectSources(state, services);
     state.session.selection.paths = ...
         string({state.session.cache.items.filepath}).';
     state.project.results.lastExport = [];
-    if ~isempty(failures)
-        first = failures(1);
+    if hasFailure
         services.dialogs.alert(sprintf('Failed to load:\n%s\n\n%s', ...
-            first.filepath, first.message), 'Load error');
+            firstFailure.filepath, firstFailure.message), 'Load error');
     end
 end
 
@@ -60,8 +60,7 @@ function state = onRemoveSelected(state, event, services)
     end
     [state.session.cache.items, removed] = removeItems( ...
         state.session.cache.items, paths);
-    state.project.inputs.sources = removeSources( ...
-        state.project.inputs.sources, paths);
+    state = reconcileProjectSources(state, services);
     state.session.selection.paths = setdiff( ...
         state.session.selection.paths, removed, 'stable');
     state.project.results.lastExport = [];
@@ -71,9 +70,9 @@ function state = onRemoveSelected(state, event, services)
 end
 
 function state = onClearAll(state, ~, services)
-    state.project.inputs.sources = state.project.inputs.sources([]);
     state.project.results.lastExport = [];
     state.session.cache.items = struct([]);
+    state = reconcileProjectSources(state, services);
     state.session.selection.paths = strings(0, 1);
     state = services.workflow.log(state, "Cleared all files.");
 end
@@ -149,29 +148,11 @@ function tf = isLoaded(items, filepath)
         any(string({items.filepath}) == string(filepath));
 end
 
-function id = nextSourceId(sources)
-    ids = string({sources.id});
-    number = numel(ids) + 1;
-    id = "dta" + string(number);
-    while any(ids == id)
-        number = number + 1;
-        id = "dta" + string(number);
-    end
-end
-
 function items = appendItem(items, item)
     if isempty(items)
         items = item;
     else
         items(end + 1) = item;
-    end
-end
-
-function sources = appendSource(sources, source)
-    if isempty(sources)
-        sources = source;
-    else
-        sources(end + 1) = source;
     end
 end
 
@@ -186,10 +167,11 @@ function [items, removed] = removeItems(items, paths)
     items = items(keep);
 end
 
-function sources = removeSources(sources, paths)
-    if isempty(sources)
-        return;
+function state = reconcileProjectSources(state, services)
+    paths = strings(0, 1);
+    if ~isempty(state.session.cache.items)
+        paths = string({state.session.cache.items.filepath}).';
     end
-    sourcePaths = labkit.ui.runtime.sourcePaths(sources);
-    sources = sources(~ismember(sourcePaths, paths(:)));
+    state.project.inputs.sources = services.project.reconcileSources( ...
+        state.project.inputs.sources, paths, "eis", "dta", true);
 end
