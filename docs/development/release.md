@@ -34,20 +34,27 @@ Do not rename or delete historical published tags only to normalize naming.
 If an older release used a different tag style, keep it for compatibility with
 existing links and user checkouts. Future releases should use `vX.Y.Z`.
 
-Do not create a new release tag locally as the first validation step. Dispatch
-the `MATLAB Tests` workflow from `main` with its optional `release_tag` input.
-The workflow runs headless, Base MATLAB compatibility, coverage, and GUI
-projects against the dispatched commit and creates that exact tag only after
-the `Release Test Gate` passes.
-An invalid tag name, a non-`main` dispatch, an existing tag, or any failed test
-leaves the repository without a new release tag.
+Complete developer-led interactive App validation before starting a release.
+Then dispatch the `Release` workflow from `main`, provide the new version, and
+explicitly confirm that manual validation is complete. The exact main commit
+must already have a successful `Continuous Integration` push run, which proves
+the complete headless and hidden-GUI suites on Toolbox-free Linux, macOS, and
+Windows. The release workflow verifies that run instead of executing the same
+six jobs again, then creates the annotated tag.
+
+An invalid version, a non-`main` dispatch, a missing manual-validation
+confirmation, an existing tag or release, or the absence of a successful
+same-commit main CI run prevents tag creation. Ordinary push, pull-request,
+and documentation workflows never create release tags.
 
 ```bash
-gh workflow run matlab-tests.yml --ref main -f release_tag=vX.Y.Z
+gh workflow run release.yml --ref main \
+  -f version=vX.Y.Z \
+  -f manual_validation_confirmed=true
 gh run watch
 ```
 
-Leave `release_tag` empty when manually running all test projects without
+Use `buildtool coverage` locally when you need a coverage report without
 preparing a release.
 
 ## GitHub Releases
@@ -79,12 +86,17 @@ Use this note structure:
 Omit an empty section when it does not apply. Keep validation factual: name the
 commands or CI workflow that passed and the commit used for the release.
 
-Before publishing a GitHub release, confirm the manually dispatched `MATLAB
-Tests` run completed both `Release Test Gate` and `Create Validated Release
-Tag`. The gate requires the public `headless`, `baseMatlab`, `coverage`, and
-`gui` build tasks to pass for the release candidate. The tag job points
-`vX.Y.Z` at the same `github.sha` that those jobs validated; a later advance of
-`main` does not move the tag.
+After it verifies the required CI run, the workflow exports
+`labkit_launcher.m` from the annotated tag blob, verifies its SHA-256 against
+that blob, pushes the tag, creates a draft GitHub Release, uploads the launcher,
+and verifies the remote asset. The tag points at the same `github.sha` recorded
+by that Base MATLAB CI run; a later advance of `main` does not move it.
+
+Automation deliberately stops at a draft. Before publishing, rewrite or
+complete the generated notes with the required sections above, confirm the
+version and tag target, inspect the launcher asset, and record the final manual
+and CI evidence. Publishing the draft is a developer release decision, not a
+side effect of ordinary CI.
 
 Attach `labkit_launcher.m` to each GitHub release. The root README download
 link points at the latest release asset so browsers download the launcher

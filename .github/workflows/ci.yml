@@ -1,0 +1,153 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  MATLAB_RELEASE: R2025a
+
+concurrency:
+  group: ci-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  headless-platforms:
+    name: Headless / ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            id: linux
+            label: Linux
+          - os: macos-14
+            id: macos
+            label: macOS
+          - os: windows-latest
+            id: windows
+            label: Windows
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Set up clean MATLAB runtime
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ env.MATLAB_RELEASE }}
+
+      - name: Prepare artifact directories
+        shell: bash
+        run: mkdir -p artifacts/logs/headless
+
+      - name: Run full non-GUI validation
+        timeout-minutes: 30
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: headless
+          startup-options: -logfile artifacts/logs/headless/matlab.log
+
+      - name: Summarize headless validation
+        if: always()
+        shell: bash
+        run: |
+          if [ -f artifacts/test-results/headless/junit.xml ]; then
+            python scripts/summarize_junit.py \
+              artifacts/test-results/headless/junit.xml \
+              --run-name "headless-${{ matrix.id }}" \
+              --html artifacts/test-results/headless/html/index.html \
+              --log artifacts/logs/headless/matlab.log \
+              --active-test artifacts/logs/headless/active-test.json
+          else
+            echo "::warning::Headless validation did not produce JUnit output."
+          fi
+
+      - name: Upload headless artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: matlab-headless-${{ matrix.id }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/test-results/**
+            artifacts/debug/**
+            artifacts/logs/**
+
+  gui-platforms:
+    name: Hidden GUI / ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            id: linux
+            label: Linux
+          - os: macos-14
+            id: macos
+            label: macOS
+          - os: windows-latest
+            id: windows
+            label: Windows
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Set up clean MATLAB runtime
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ env.MATLAB_RELEASE }}
+
+      - name: Prepare artifact directories
+        shell: bash
+        run: mkdir -p artifacts/logs/gui
+
+      - name: Run hidden GUI validation
+        timeout-minutes: 30
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: gui
+          startup-options: -logfile artifacts/logs/gui/matlab.log
+
+      - name: Summarize GUI validation
+        if: always()
+        shell: bash
+        run: |
+          if [ -f artifacts/test-results/gui/junit.xml ]; then
+            python scripts/summarize_junit.py \
+              artifacts/test-results/gui/junit.xml \
+              --run-name "gui-${{ matrix.id }}" \
+              --html artifacts/test-results/gui/html/index.html \
+              --log artifacts/logs/gui/matlab.log \
+              --active-test artifacts/logs/gui/active-test.json
+          else
+            echo "::warning::GUI validation did not produce JUnit output."
+          fi
+
+      - name: Upload GUI artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: matlab-gui-${{ matrix.id }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/test-results/**
+            artifacts/debug/**
+            artifacts/gui/**
+            artifacts/logs/**

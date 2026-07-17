@@ -35,10 +35,13 @@
 <h2 id="tags">Tags</h2>
 <p>Use <code>vX.Y.Z</code> for new release tags, for example <code>v2.2.0</code>.</p>
 <p>Do not rename or delete historical published tags only to normalize naming. If an older release used a different tag style, keep it for compatibility with existing links and user checkouts. Future releases should use <code>vX.Y.Z</code>.</p>
-<p>Do not create a new release tag locally as the first validation step. Dispatch the <code>MATLAB Tests</code> workflow from <code>main</code> with its optional <code>release_tag</code> input. The workflow runs headless, Base MATLAB compatibility, coverage, and GUI projects against the dispatched commit and creates that exact tag only after the <code>Release Test Gate</code> passes. An invalid tag name, a non-<code>main</code> dispatch, an existing tag, or any failed test leaves the repository without a new release tag.</p>
-<pre><code class="language-bash">gh workflow run matlab-tests.yml --ref main -f release_tag=vX.Y.Z
+<p>Complete developer-led interactive App validation before starting a release. Then dispatch the <code>Release</code> workflow from <code>main</code>, provide the new version, and explicitly confirm that manual validation is complete. The exact main commit must already have a successful <code>Continuous Integration</code> push run, which proves the complete headless and hidden-GUI suites on Toolbox-free Linux, macOS, and Windows. The release workflow verifies that run instead of executing the same six jobs again, then creates the annotated tag.</p>
+<p>An invalid version, a non-<code>main</code> dispatch, a missing manual-validation confirmation, an existing tag or release, or the absence of a successful same-commit main CI run prevents tag creation. Ordinary push, pull-request, and documentation workflows never create release tags.</p>
+<pre><code class="language-bash">gh workflow run release.yml --ref main \
+  -f version=vX.Y.Z \
+  -f manual_validation_confirmed=true
 gh run watch</code></pre>
-<p>Leave <code>release_tag</code> empty when manually running all test projects without preparing a release.</p>
+<p>Use <code>buildtool coverage</code> locally when you need a coverage report without preparing a release.</p>
 <h2 id="github-releases">GitHub Releases</h2>
 <p>Use the release title format:</p>
 <pre><code class="language-text">LabKit MATLAB Workbench vX.Y.Z</code></pre>
@@ -57,7 +60,8 @@ gh run watch</code></pre>
 ## Validation
 - Local and CI validation evidence.</code></pre>
 <p>Omit an empty section when it does not apply. Keep validation factual: name the commands or CI workflow that passed and the commit used for the release.</p>
-<p>Before publishing a GitHub release, confirm the manually dispatched <code>MATLAB Tests</code> run completed both <code>Release Test Gate</code> and <code>Create Validated Release Tag</code>. The gate requires the public <code>headless</code>, <code>baseMatlab</code>, <code>coverage</code>, and <code>gui</code> build tasks to pass for the release candidate. The tag job points <code>vX.Y.Z</code> at the same <code>github.sha</code> that those jobs validated; a later advance of <code>main</code> does not move the tag.</p>
+<p>After it verifies the required CI run, the workflow exports <code>labkit_launcher.m</code> from the annotated tag blob, verifies its SHA-256 against that blob, pushes the tag, creates a draft GitHub Release, uploads the launcher, and verifies the remote asset. The tag points at the same <code>github.sha</code> recorded by that Base MATLAB CI run; a later advance of <code>main</code> does not move it.</p>
+<p>Automation deliberately stops at a draft. Before publishing, rewrite or complete the generated notes with the required sections above, confirm the version and tag target, inspect the launcher asset, and record the final manual and CI evidence. Publishing the draft is a developer release decision, not a side effect of ordinary CI.</p>
 <p>Attach <code>labkit_launcher.m</code> to each GitHub release. The root README download link points at the latest release asset so browsers download the launcher instead of opening the raw source text.</p>
 <p>The launcher version manager lists recent releases, tags, and main-branch commits. Keep release titles and upgrade notes clear enough for users to select an older release when the newest build is unsuitable for their workflow.</p>
 <h2 id="component-history">Component History</h2>

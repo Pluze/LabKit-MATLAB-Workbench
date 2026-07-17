@@ -149,10 +149,11 @@ explicit compliant squash subject; do not rely on GitHub defaults.
 - New release tags are `vX.Y.Z`; do not rename published legacy tags. Release
   titles are `LabKit MATLAB Workbench vX.Y.Z` with relevant `Highlights`,
   `Fixes`, `Upgrade Note`, and `Validation` sections.
-- Create a new release tag only through the manual `MATLAB Tests`
-  `release_tag` input. The workflow creates it from the validated `main`
-  commit after headless, coverage, and GUI gates pass; do not push an
-  unvalidated candidate tag first.
+- Start the manual `Release` workflow only after developer-led interactive App
+  validation and a successful `Continuous Integration` main-push run for the
+  exact commit. It then creates the validated tag and a draft GitHub Release.
+  Review its notes and asset before publishing; ordinary CI never creates
+  tags, and CI runners never install optional Toolboxes.
 - Release assets come from the tag blob, not the worktree. Verify byte count
   and SHA-256 before and after upload; replace a mismatched asset without moving
   a published tag.
