@@ -1,6 +1,6 @@
-% Expected caller: Runtime V2. Input is one validated CIC project whose
-% source records are resolved. Output owns current selection, workflow log,
-% and the rebuildable decoded/analyzed DTA cache.
+%CREATESESSION Rebuild the selected CIC preview item lazily.
+% Expected caller: Runtime V2 through cic.definition. Only the first source is
+% decoded for immediate preview; the full batch remains deferred to export.
 function session = createSession(project)
     items = struct([]);
     currentIndex = 0;
