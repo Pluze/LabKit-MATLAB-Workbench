@@ -83,6 +83,12 @@ function [recording, status] = readRecording(filepath, opts)
 %          or the attempted file extension.
 %   filepath - Normalized source path.
 %
+% Failure Behavior:
+%   A missing, unsupported, unreadable, or malformed source returns
+%   status.ok=false, preserves the normalized source path, and returns an
+%   empty recording. Only an invalid filepath MATLAB value is thrown as
+%   labkit:biosignal:InvalidFilepath before import begins.
+%
 % Example:
 %   filepath = [tempname '.csv'];
 %   sampleTime = (0:0.01:0.03)';
@@ -92,6 +98,9 @@ function [recording, status] = readRecording(filepath, opts)
 %   [recording, status] = labkit.biosignal.readRecording(filepath, ...
 %       struct('timeColumn', 'sampleTime', 'timeUnit', 'seconds'));
 %   signal = labkit.biosignal.getChannel(recording, 'ECG');
+%
+% See also labkit.biosignal.listChannels,
+%   labkit.biosignal.getChannel
 
     if nargin < 2
         opts = struct();

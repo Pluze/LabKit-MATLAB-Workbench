@@ -39,6 +39,9 @@ function signal = getChannel(recording, channel)
 %       'unit', "mV", 'metadata', struct());
 %   recording = struct('signals', channel);
 %   signal = labkit.biosignal.getChannel(recording, "ECG");
+%
+% See also labkit.biosignal.listChannels,
+%   labkit.biosignal.readRecording
 
     if ~isstruct(recording) || ~isfield(recording, 'signals')
         error('labkit:biosignal:InvalidRecording', ...

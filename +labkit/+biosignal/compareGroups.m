@@ -31,10 +31,19 @@ function result = compareGroups(values, groups)
 %              MeanDifference, T, DF, and P. MeanDifference is mean(GroupA)
 %              minus mean(GroupB); P is the two-sided Welch-test p-value.
 %
+% Failure Behavior:
+%   Groups with fewer than two finite observations, or with zero estimated
+%   standard error, retain a pairwise row with NaN test statistics. values
+%   and groups must contain the same number of elements; incompatible input
+%   shapes or values that cannot be converted to numeric/text raise the
+%   originating MATLAB error.
+%
 % Example:
 %   values = [4.8 5.1 5.0 6.2 6.0 6.4];
 %   groups = ["control" "control" "control" "treated" "treated" "treated"];
 %   result = labkit.biosignal.compareGroups(values, groups);
+%
+% See also labkit.biosignal.measureSegments
 
     values = double(values(:));
     groups = string(groups(:));

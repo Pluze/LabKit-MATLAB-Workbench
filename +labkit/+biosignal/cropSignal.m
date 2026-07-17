@@ -36,6 +36,9 @@ function cropped = cropSignal(signal, timeRangeSec)
 %   signal = struct('time', (0:0.5:3)', 'values', (10:16)', ...
 %       'fs', 2, 'metadata', struct());
 %   cropped = labkit.biosignal.cropSignal(signal, [0.75 2.25]);
+%
+% See also labkit.biosignal.filterSignal,
+%   labkit.biosignal.getChannel
 
     validateSignal(signal);
     if nargin < 2 || isempty(timeRangeSec)

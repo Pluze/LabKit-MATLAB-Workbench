@@ -46,10 +46,18 @@ function template = buildTemplate(segments, opts)
 %                         nonempty template. metadata is empty when no
 %                         segment waveforms are available.
 %
+% Errors:
+%   labkit:biosignal:InvalidSegments - segments is not a structure with
+%       values and timeOffset fields. Invalid numeric values or an unusable
+%       topN value may also raise the originating MATLAB conversion error.
+%
 % Example:
 %   segments = struct('values', [0 0; 1 0.9; 0 0], ...
 %       'timeOffset', [-1; 0; 1], 'sourceName', "ECG");
 %   template = labkit.biosignal.buildTemplate(segments, struct('topN', 1));
+%
+% See also labkit.biosignal.segmentByEvents,
+%   labkit.biosignal.measureSegments
 
     if nargin < 2
         opts = struct();

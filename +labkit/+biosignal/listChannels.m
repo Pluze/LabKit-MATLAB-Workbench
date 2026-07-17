@@ -26,6 +26,9 @@ function names = listChannels(recording)
 %   signals(2).displayName = "Respiration";
 %   recording = struct('signals', signals);
 %   names = labkit.biosignal.listChannels(recording);
+%
+% See also labkit.biosignal.getChannel,
+%   labkit.biosignal.readRecording
 
     validateRecording(recording);
     if isempty(recording.signals)

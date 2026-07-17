@@ -69,6 +69,8 @@ function opts = defaultEcgPeakOptions(method)
 % Example:
 %   opts = labkit.biosignal.defaultEcgPeakOptions("pan-tompkins");
 %   opts.minDistanceSec = 0.35;
+%
+% See also labkit.biosignal.detectEcgPeaks
 
     if nargin < 1 || isempty(method)
         method = "qrs-streaming";

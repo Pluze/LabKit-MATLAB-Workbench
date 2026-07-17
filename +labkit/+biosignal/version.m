@@ -18,9 +18,17 @@ function info = version()
 %          identifies the biosignal component, current version, compatible
 %          contract range, stability status, and a short description.
 %
+% Failure Behavior:
+%   The function accepts no caller input. Invalid embedded facade metadata
+%   raises labkit:contract:InvalidVersionInfo; released metadata is validated
+%   by the contract test suite.
+%
 % Example:
 %   info = labkit.biosignal.version();
 %   currentVersion = info.current;
+%
+% See also labkit.contract.versionInfo,
+%   labkit.contract.checkRequirements
 
     info = labkit.contract.versionInfo("biosignal", "1.0.2", ">=1.0 <2", ...
         "stable", "Biosignal recording, filtering, event, segmentation, and ECG facade contract.");
