@@ -75,7 +75,7 @@ function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, f
 % See also curvature.analysisRun.computeCurveLength,
 %   curvature.analysisRun.normalizeScaleCalibration
 
-    fit = curvature.appState.emptyFitResult();
+    fit = curvature.analysisRun.emptyFitResult();
     xPix = xPix(:);
     yPix = yPix(:);
     pointTolerancePx = curvature.analysisRun.curvePointTolerance();

@@ -205,7 +205,7 @@ function state = onFitCurvature(state, ~, services)
     end
     try
         path = visibleCurve(state);
-        task = curvature.appState.fitTask(points, path, ...
+        task = curvature.analysisRun.fitTask(points, path, ...
             state.project.annotations.calibration, struct( ...
             "doDensify", state.project.parameters.densify, ...
             "denseN", state.project.parameters.densePointCount));
@@ -225,7 +225,8 @@ function state = onFitCurvature(state, ~, services)
         return;
     end
     state.project.results.fit = fit;
-    state.project.results.length = curvature.appState.lengthResultFromFit(fit);
+    state.project.results.length = ...
+        curvature.analysisRun.lengthResultFromFit(fit);
     state.project.results.lastCsvExport = [];
     state.project.results.lastOverlayExport = [];
     state.session.cache.fitFingerprint = task.fingerprint;
@@ -245,7 +246,7 @@ function state = onMeasureCurveLength(state, ~, services)
     end
     try
         path = visibleCurve(state);
-        task = curvature.appState.lengthTask(points, path, ...
+        task = curvature.analysisRun.lengthTask(points, path, ...
             state.project.annotations.calibration);
         if state.project.results.length.ok && ...
                 state.session.cache.lengthFingerprint == task.fingerprint
@@ -351,8 +352,8 @@ function [manifestPath, report] = writeManifest( ...
 end
 
 function state = clearMeasurements(state)
-    state.project.results.fit = curvature.appState.emptyFitResult();
-    state.project.results.length = curvature.appState.emptyLengthResult();
+    state.project.results.fit = curvature.analysisRun.emptyFitResult();
+    state.project.results.length = curvature.analysisRun.emptyLengthResult();
     state.project.results.lastCsvExport = [];
     state.project.results.lastOverlayExport = [];
     state.session.cache.fitFingerprint = "";

@@ -1,8 +1,8 @@
-% Expected caller: Runtime V2. Input is a validated curvature project with a
-% resolved image source. Output owns the decoded image, edit mode, transient
-% scale-bar geometry, fingerprints, and workflow log.
+% Rebuild the decoded image and transient interaction state from one validated
+% Curvature project. Runtime V2 calls this after source relinking.
 function session = createSession(project)
-    imagePath = sourcePath(project.inputs.sources);
+    imagePath = labkit.ui.runtime.sourcePaths( ...
+        project.inputs.sources, "image");
     imageData = [];
     if strlength(imagePath) > 0 && isfile(imagePath)
         imageData = imread(imagePath);
@@ -19,13 +19,6 @@ function session = createSession(project)
             "image", imageData, ...
             "fitFingerprint", "", ...
             "lengthFingerprint", ""));
-end
-
-function pathValue = sourcePath(sources)
-    pathValue = "";
-    if ~isempty(sources)
-        pathValue = string(sources(1).reference.originalPath);
-    end
 end
 
 function message = initialStatus(imageData)

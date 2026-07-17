@@ -94,4 +94,15 @@ lengthResult = curvature.analysisRun.computeCurveLength(points, struct());
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+The single `definition.m` owns product metadata, requirements, layout, actions,
+presentation, renderer, and debug-sample capability. `projectSpec.m` is the
+only durable-project entry and keeps current creation, validation, and the
+version-1 source migration together. Runtime V2 owns the migration loop. Root
+`createSession.m` reconstructs the decoded image and transient edit state after
+source relinking.
+
+Fit/length result shapes and deterministic task fingerprints live with their
+calculations under `+analysisRun`; there is no generic `+appState` package. The
+App requires `labkit.ui >=7 <8` and `labkit.image >=2 <3`; source-path access,
+persistence, callback lifetime, and managed anchor interactions remain
+framework-owned.

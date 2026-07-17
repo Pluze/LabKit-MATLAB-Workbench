@@ -1,6 +1,5 @@
-% App-owned image measurement package helper. Expected caller: owning app callbacks
-% and package tests. Inputs, outputs, and side effects are
-% documented with the helper function below.
+% App-owned Curvature length-result shape. Expected callers are analysis,
+% project/action defaults, result presentation, and package tests.
 function lengthResult = emptyLengthResult()
 %EMPTYLENGTHRESULT Return default length result for labkit_CurvatureMeasurement_app.
 %

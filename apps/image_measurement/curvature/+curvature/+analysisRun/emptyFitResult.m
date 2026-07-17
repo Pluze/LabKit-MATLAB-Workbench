@@ -1,6 +1,5 @@
-% App-owned image measurement package helper. Expected caller: owning app callbacks
-% and package tests. Inputs, outputs, and side effects are
-% documented with the helper function below.
+% App-owned Curvature fit-result shape. Expected callers are analysis,
+% project/action defaults, result presentation, and package tests.
 function fit = emptyFitResult()
 %EMPTYFITRESULT Return default fit result for labkit_CurvatureMeasurement_app.
 %

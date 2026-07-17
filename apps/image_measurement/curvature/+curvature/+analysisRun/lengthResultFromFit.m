@@ -1,6 +1,5 @@
-% App-owned image measurement package helper. Expected caller: owning app callbacks
-% and package tests. Inputs, outputs, and side effects are
-% documented with the helper function below.
+% App-owned conversion from a Curvature fit result to the length-result shape.
+% Expected callers are actions, result presentation, and package tests.
 function lengthResult = lengthResultFromFit(fit)
 %LENGTHRESULTFROMFIT Derive curve-length result from a fit result.
 %
@@ -15,7 +14,7 @@ function lengthResult = lengthResultFromFit(fit)
 % Side effects:
 %   None.
 
-    lengthResult = curvature.appState.emptyLengthResult();
+    lengthResult = curvature.analysisRun.emptyLengthResult();
     if isstruct(fit) && isfield(fit, 'curveLength_px') && ...
             isfinite(fit.curveLength_px) && fit.curveLength_px >= 0
         lengthResult.ok = true;

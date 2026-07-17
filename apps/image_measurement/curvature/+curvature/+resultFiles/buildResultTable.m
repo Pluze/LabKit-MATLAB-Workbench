@@ -15,7 +15,7 @@ function T = buildResultTable(fit, imagePath, lengthResult)
 %   None. The caller owns file writing.
 
     if nargin < 3 || isempty(lengthResult)
-        lengthResult = curvature.appState.lengthResultFromFit(fit);
+        lengthResult = curvature.analysisRun.lengthResultFromFit(fit);
     end
     scaleInfo = resultScaleInfo(fit, lengthResult);
     T = table( ...

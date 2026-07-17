@@ -47,7 +47,7 @@ function lengthResult = computeCurveLength(xPix, yPix, calibration)
 % See also curvature.analysisRun.computeCurvatureFit,
 %   curvature.analysisRun.normalizeScaleCalibration
 
-    lengthResult = curvature.appState.emptyLengthResult();
+    lengthResult = curvature.analysisRun.emptyLengthResult();
     xPix = xPix(:);
     yPix = yPix(:);
     pointTolerancePx = curvature.analysisRun.curvePointTolerance();
