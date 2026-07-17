@@ -54,7 +54,8 @@ function state = onSourcesChosen(state, event, services)
     state.project.inputs.sources = [reference(:); sources(:)];
     state.session.selection.currentIndex = selectedIndex(sources, added);
     state.session.cache.currentItem = loadItem( ...
-        sources(state.session.selection.currentIndex).reference.originalPath, services);
+        labkit.ui.runtime.sourcePaths( ...
+        sources(state.session.selection.currentIndex)), services);
     state.project.parameters.outputFolder = string( ...
         services.dialogs.defaultOutputFolder(paths, "image_match", ...
         state.project.parameters.outputFolder));
@@ -80,7 +81,8 @@ function state = onRemoveImages(state, event, services)
         state.session.selection.currentIndex = 0;
         state.session.cache.currentItem = [];
     else
-        path = sources(state.session.selection.currentIndex).reference.originalPath;
+        path = labkit.ui.runtime.sourcePaths( ...
+            sources(state.session.selection.currentIndex));
         state.session.cache.currentItem = loadItem(path, services);
     end
     state.session.workflow.pendingDirty = false;
@@ -92,7 +94,7 @@ function state = onClearImages(state, ~, services)
     [reference, ~] = sourceGroups(state.project.inputs.sources);
     state.project.inputs.sources = reference;
     state.project.annotations.steps = repmat( ...
-        image_match.appState.emptyStep(), 0, 1);
+        image_match.analysisRun.emptyStep(), 0, 1);
     state.session.selection.currentIndex = 0;
     state.session.cache.currentItem = [];
     state.session.workflow.pendingDirty = false;
@@ -110,7 +112,7 @@ function state = onSelectionChanged(state, event, services)
     end
     state.session.selection.currentIndex = indices(1);
     state.session.cache.currentItem = loadItem( ...
-        sources(indices(1)).reference.originalPath, services);
+        labkit.ui.runtime.sourcePaths(sources(indices(1))), services);
     state.session.workflow.pendingDirty = false;
     state = rebuildPreview(state);
 end
@@ -169,7 +171,7 @@ end
 
 function state = onResetHistory(state, ~, services)
     state.project.annotations.steps = repmat( ...
-        image_match.appState.emptyStep(), 0, 1);
+        image_match.analysisRun.emptyStep(), 0, 1);
     state.session.workflow.pendingDirty = false;
     state = invalidateResults(state);
     state = rebuildPreview(state);
@@ -206,11 +208,11 @@ function state = onExportImages(state, ~, services)
     try
         items = loadItems(sources);
         reference = image_match.sourceFiles.readImages( ...
-            referenceSource.reference.originalPath);
+            labkit.ui.runtime.sourcePaths(referenceSource));
         reference = reference(1);
         opts = struct("outputFolder", state.project.parameters.outputFolder, ...
             "format", state.project.parameters.exportFormat);
-        task = image_match.appState.exportTask(items, reference, ...
+        task = image_match.resultFiles.exportTask(items, reference, ...
             state.project.annotations.steps, opts);
         if ~isempty(state.project.results.lastExport) && ...
                 state.project.results.lastExportFingerprint == task.fingerprint
@@ -285,11 +287,8 @@ function item = loadItem(path, services)
 end
 
 function items = loadItems(sources)
-    paths = strings(numel(sources), 1);
-    for k = 1:numel(sources)
-        paths(k) = string(sources(k).reference.originalPath);
-    end
-    items = image_match.sourceFiles.readImages(paths);
+    items = image_match.sourceFiles.readImages( ...
+        labkit.ui.runtime.sourcePaths(sources));
 end
 
 function [reference, sources] = sourceGroups(allSources)
@@ -306,11 +305,10 @@ function index = selectedIndex(sources, added)
     if isempty(added)
         return;
     end
-    for k = 1:numel(sources)
-        if string(sources(k).reference.originalPath) == string(added(1))
-            index = k;
-            return;
-        end
+    match = find(labkit.ui.runtime.sourcePaths(sources) == ...
+        string(added(1)), 1, 'first');
+    if ~isempty(match)
+        index = match;
     end
 end
 

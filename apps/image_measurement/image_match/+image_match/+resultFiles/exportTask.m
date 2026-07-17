@@ -1,4 +1,4 @@
-% Expected caller: labkit_ImageMatch_app export callback and package tests.
+% Expected callers are the Image Match export action and package tests.
 % Inputs are loaded source items, one reference item, committed match steps,
 % and export options. Output is an immutable task snapshot with a
 % deterministic fingerprint; this helper has no GUI, file, or image-processing

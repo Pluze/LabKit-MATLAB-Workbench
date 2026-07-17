@@ -1,4 +1,4 @@
-% Expected caller: labkit_ImageMatch_app and image_match package tests.
+% Expected callers are Image Match pipeline builders and package tests.
 % Output is one reference-match history step. Numeric controls and match
 % options describe the selected matching algorithm.
 function step = emptyStep()

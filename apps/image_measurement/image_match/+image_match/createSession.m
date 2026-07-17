@@ -1,6 +1,5 @@
-% Expected caller: the LabKit V2 runtime. Input is a validated project.
-% Output owns ephemeral selection, pending preview state, logs, and decoded
-% reference/current-source caches only.
+% Rebuild transient decoded images and preview caches from one validated
+% Image Match project. Runtime V2 calls this after source relinking.
 function session = createSession(project)
     sourceIndices = find(string({project.inputs.sources.role}) == "source-image");
     index = double(~isempty(sourceIndices));
@@ -8,7 +7,8 @@ function session = createSession(project)
     referenceIndex = find(string({project.inputs.sources.role}) == ...
         "reference-image", 1);
     if ~isempty(referenceIndex)
-        cache.referenceItem = loadItem(project.inputs.sources(referenceIndex));
+        cache.referenceItem = loadItem( ...
+            project.inputs.sources(referenceIndex));
     end
     if index > 0
         cache.currentItem = loadItem(project.inputs.sources(sourceIndices(1)));
@@ -26,7 +26,7 @@ function item = loadItem(source)
     item = [];
     try
         loaded = image_match.sourceFiles.readImages( ...
-            source.reference.originalPath);
+            labkit.ui.runtime.sourcePaths(source));
         if ~isempty(loaded)
             item = loaded(1);
         end

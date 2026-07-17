@@ -69,7 +69,8 @@ step = image_match.analysisRun.makeStep("Balanced", 100, 100, 100);
 matched = image_match.analysisRun.applyMatch(source, reference, step);
 
 % Apply a stored sequence:
-output = image_match.analysisRun.applyPipeline(source, reference, step);
+outputs = image_match.analysisRun.applyPipeline({source}, step, reference);
+output = outputs{1};
 ```
 
 ## Errors And Limitations
@@ -89,6 +90,19 @@ output = image_match.analysisRun.applyPipeline(source, reference, step);
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+The single `definition.m` owns product metadata, requirements, layout, actions,
+presentation, renderers, and debug-sample capability. `projectSpec.m` is the
+only durable-project entry; the version-1 project needs creation and validation
+but no migration. Root `createSession.m` reconstructs only the selected source,
+reference, and preview caches after Runtime V2 resolves sources.
+
+Source item records live in `+sourceFiles`, matching steps in `+analysisRun`,
+and deterministic export tasks in `+resultFiles`; there is no generic
+`+appState` package. A new empty project performs no App-specific startup
+callback and chooses its output directory after source selection or explicit
+user choice. The App requires `labkit.ui >=7 <8` and `labkit.image >=2 <3`;
+source-path access, persistence, busy state, and debug lifecycle remain
+framework-owned.
+
 Matched-image manifest outputs use the framework's canonical empty output
 array, so export validation applies only to real output records.
