@@ -32,6 +32,9 @@ function project = createProject()
 end
 
 function accepted = validateProject(project)
+    assert(isfield(project.inputs, 'sources'), ...
+        'vt_resistance:InvalidProject', ...
+        'VT Resistance project sources are missing.');
     choices = vt_resistance.userInterface.analysisChoices();
     p = project.parameters;
     fields = ["pulseMode", "steadyWindow", "voltageMode", ...

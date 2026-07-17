@@ -25,6 +25,8 @@ function project = createProject()
 end
 
 function accepted = validateProject(project)
+    assert(isfield(project.inputs, 'sources'), ...
+        'eis:InvalidProject', 'EIS project sources are missing.');
     p = project.parameters;
     fields = ["xName", "yName", "lineWidth", "markerSize", ...
         "showMarkers", "logX", "logY", "showLegend", "showGrid"];

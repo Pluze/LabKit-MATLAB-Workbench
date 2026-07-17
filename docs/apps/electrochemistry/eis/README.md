@@ -96,10 +96,11 @@ catalog. The DTA loader and `getZCurve` are supported reusable APIs.
 
 The single `definition.m` owns product metadata, requirements, layout, and
 optional runtime capabilities. `projectSpec.m` owns the complete version-1
-domain schema, defaults, and plot-parameter validation; Runtime validates
-canonical buckets and source records first. `createSession.m` rebuilds decoded
-ZCURVE items and selected paths because they are transient runtime data. Empty
-workflow and view buckets are supplied by Runtime V2 rather than repeated in
-the App factory. The App requires `labkit.ui >=7 <8` and
+domain schema, defaults, plot-parameter validation, and the required source
+collection; Runtime validates canonical buckets and each source record first.
+`createSession.m` rebuilds decoded ZCURVE items and selected paths because they
+are transient runtime data. Empty workflow and view buckets are supplied by
+Runtime V2 rather than repeated in the App factory. The App requires
+`labkit.ui >=7 <8` and
 `labkit.dta >=2 <3`; busy-state, viewport-preserving rendering, resolved-path
 access, and portable-reference serialization remain framework-owned.

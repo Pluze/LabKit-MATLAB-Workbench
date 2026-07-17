@@ -101,10 +101,11 @@ assert(result.ok, result.message);
 
 The single `definition.m` owns product metadata, requirements, layout, and
 optional runtime capabilities. `projectSpec.m` owns the complete version-1
-domain schema, defaults, and analysis-parameter validation; Runtime validates
-canonical buckets and source records first. `createSession.m` deliberately
-decodes only the first source for preview; the remaining batch stays lazy until
-selection or export. The App requires `labkit.ui >=7 <8` and
+domain schema, defaults, analysis-parameter validation, and the required source
+collection; Runtime validates canonical buckets and each source record first.
+`createSession.m` deliberately decodes only the first source for preview; the
+remaining batch stays lazy until selection or export. The App requires
+`labkit.ui >=7 <8` and
 `labkit.dta >=2 <3`; Runtime supplies omitted empty session buckets and owns
 workflow-log initialization. Busy-state, source identity, resolved-path
 access, and portable-reference serialization remain framework-owned.

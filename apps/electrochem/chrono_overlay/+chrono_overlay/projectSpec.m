@@ -23,7 +23,8 @@ function project = createProject()
 end
 
 function accepted = validateProject(project)
-    accepted = validParameters(project.parameters);
+    accepted = isfield(project.inputs, 'sources') && ...
+        validParameters(project.parameters);
 end
 
 function accepted = validParameters(parameters)

@@ -39,6 +39,8 @@ function project = createProject()
 end
 
 function accepted = validateProject(project)
+    assert(isfield(project.inputs, 'sources'), ...
+        'cic:InvalidProject', 'CIC project sources are missing.');
     choices = cic.userInterface.analysisChoices();
     p = project.parameters;
     requiredParameters = ["preset", "cathLimit", "anodLimit", ...
