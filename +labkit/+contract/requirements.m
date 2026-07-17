@@ -32,6 +32,10 @@ function req = requirements(varargin)
 %       "ui", ">=7 <8", ...
 %       "image", ">=4.0 <5");
 %   report = labkit.contract.checkRequirements(req);
+%
+% See also labkit.contract.checkRequirements,
+%   labkit.contract.assertRequirements,
+%   labkit.contract.versionInfo
 
     if mod(numel(varargin), 2) ~= 0
         error('labkit:contract:InvalidRequirements', ...

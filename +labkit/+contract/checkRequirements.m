@@ -45,6 +45,10 @@ function report = checkRequirements(req, versions)
 %   if ~report.ok
 %       warning("%s", report.message)
 %   end
+%
+% See also labkit.contract.requirements,
+%   labkit.contract.assertRequirements,
+%   labkit.contract.versionInfo
 
     if nargin < 2 || isempty(versions)
         versions = currentFacadeVersions();
