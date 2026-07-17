@@ -43,6 +43,24 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
                 'CI workflow should not call CI-only integration shard tasks.');
         end
 
+        function ciBaseMatlabRunsOnManualOrScheduledWorkflows(testCase)
+            root = setupLabKitTestPath();
+            workflowPath = fullfile(root, ".github", "workflows", ...
+                "matlab-tests.yml");
+            workflow = string(fileread(workflowPath));
+            baseMatlabJob = extractWorkflowJob(workflow, "base-matlab");
+
+            testCase.verifyTrue(contains(baseMatlabJob, "tasks: baseMatlab"), ...
+                'CI should call the public Base MATLAB compatibility task.');
+            testCase.verifyTrue(contains(baseMatlabJob, ...
+                "github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'"), ...
+                ['The broad MATLAB product-ownership scan should run for ' ...
+                'scheduled validation and release candidates.']);
+            testCase.verifyTrue(contains(baseMatlabJob, ...
+                "artifacts/test-results/baseMatlab/junit.xml"), ...
+                'Base MATLAB validation should publish its official JUnit result.');
+        end
+
         function ciBuildfileAvoidsUnlicensedChildMatlabWorkers(testCase)
             root = setupLabKitTestPath();
             buildfilePath = fullfile(root, "buildfile.m");
@@ -59,19 +77,20 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
             workflowPath = fullfile(root, ".github", "workflows", ...
                 "matlab-tests.yml");
             workflow = string(fileread(workflowPath));
-            headlessJob = extractWorkflowJob(workflow, "headless");
-            buildTasks = workflowBuildTasks(headlessJob);
+            buildTasks = workflowBuildTasks(workflow);
             catalogTasks = buildfileTaskNames(root);
 
-            testCase.verifyFalse(contains(headlessJob, "matlab-actions/run-command"), ...
+            testCase.verifyFalse(contains(workflow, "matlab-actions/run-command"), ...
                 'CI should not use run-command for test execution.');
-            testCase.verifyFalse(contains(headlessJob, "runLabKitTests("), ...
+            testCase.verifyFalse(contains(workflow, "runLabKitTests("), ...
                 'CI workflow should not call the low-level runner directly.');
-            testCase.verifyFalse(contains(headlessJob, 'addpath("tests")'), ...
+            testCase.verifyFalse(contains(workflow, 'addpath("tests")'), ...
                 'CI workflow should not manage runner path setup directly.');
-            testCase.verifyFalse(~isempty(regexp(char(headlessJob), ...
+            testCase.verifyFalse(~isempty(regexp(char(workflow), ...
                 '"Tests"\s*,\s*\[', 'once')), ...
                 'CI workflow should not maintain long-lived test-class selectors.');
+            testCase.verifyNotEmpty(buildTasks, ...
+                'CI workflow should expose its validation through public build tasks.');
             testCase.verifyEmpty(setdiff(buildTasks, catalogTasks), ...
                 "CI workflow should reference buildfile tasks only: " + ...
                 strjoin(setdiff(buildTasks, catalogTasks), ", "));
@@ -131,6 +150,7 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
             pushEvent = extractWorkflowEvent(char(workflow), "push");
             coverageJob = extractWorkflowJob(workflow, "coverage");
             guiJob = extractWorkflowJob(workflow, "gui");
+            baseMatlabJob = extractWorkflowJob(workflow, "base-matlab");
             gateJob = extractWorkflowJob(workflow, "release-test-gate");
             tagJob = extractWorkflowJob(workflow, "release-tag");
 
@@ -140,9 +160,12 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
                 contains(workflow, "inputs.release_tag"), ...
                 'Manual release validation should accept one optional release tag.');
             testCase.verifyTrue(contains(coverageJob, "workflow_dispatch") && ...
-                contains(guiJob, "workflow_dispatch"), ...
-                'Manual release validation should include coverage and GUI jobs.');
+                contains(guiJob, "workflow_dispatch") && ...
+                contains(baseMatlabJob, "workflow_dispatch"), ...
+                ['Manual release validation should include Base MATLAB, ' ...
+                'coverage, and GUI jobs.']);
             testCase.verifyTrue(contains(gateJob, "headless") && ...
+                contains(gateJob, "base-matlab") && ...
                 contains(gateJob, "coverage") && contains(gateJob, "gui"), ...
                 'Release Test Gate should depend on all public test projects.');
             testCase.verifyTrue(contains(tagJob, "release-test-gate") && ...
@@ -159,7 +182,7 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
             workflowPath = fullfile(root, ".github", "workflows", ...
                 "matlab-tests.yml");
             workflow = string(fileread(workflowPath));
-            jobNames = ["headless", "coverage", "gui"];
+            jobNames = ["headless", "base-matlab", "coverage", "gui"];
 
             for k = 1:numel(jobNames)
                 job = extractWorkflowJob(workflow, jobNames(k));
@@ -178,7 +201,7 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
             workflowPath = fullfile(root, ".github", "workflows", ...
                 "matlab-tests.yml");
             workflow = string(fileread(workflowPath));
-            jobNames = ["headless", "coverage", "gui"];
+            jobNames = ["headless", "base-matlab", "coverage", "gui"];
 
             for k = 1:numel(jobNames)
                 job = extractWorkflowJob(workflow, jobNames(k));
@@ -240,7 +263,7 @@ function job = extractWorkflowJob(workflow, jobName)
 end
 
 function tasks = workflowBuildTasks(workflow)
-    tokens = regexp(char(workflow), '(?m)^\s+task:\s*([A-Za-z][A-Za-z0-9_]*)\s*$', ...
+    tokens = regexp(char(workflow), '(?m)^\s+tasks:\s*([A-Za-z][A-Za-z0-9_]*)\s*$', ...
         'tokens');
     tasks = strings(1, numel(tokens));
     for k = 1:numel(tokens)
@@ -249,12 +272,7 @@ function tasks = workflowBuildTasks(workflow)
     tasks = unique(tasks, "stable");
 end
 
-function names = buildfileTaskNames(root)
-    content = fileread(fullfile(root, "buildfile.m"));
-    tokens = regexp(content, 'taskSpec\("([^"]+)"', 'tokens');
-    names = strings(1, numel(tokens));
-    for k = 1:numel(tokens)
-        names(k) = string(tokens{k}{1});
-    end
-    names = unique(names, "stable");
+function names = buildfileTaskNames(~)
+    catalog = labkitBuildTaskCatalog();
+    names = unique([catalog.Name], "stable");
 end

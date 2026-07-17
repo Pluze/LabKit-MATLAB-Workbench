@@ -36,8 +36,9 @@ existing links and user checkouts. Future releases should use `vX.Y.Z`.
 
 Do not create a new release tag locally as the first validation step. Dispatch
 the `MATLAB Tests` workflow from `main` with its optional `release_tag` input.
-The workflow runs headless, coverage, and GUI projects against the dispatched
-commit and creates that exact tag only after the `Release Test Gate` passes.
+The workflow runs headless, Base MATLAB compatibility, coverage, and GUI
+projects against the dispatched commit and creates that exact tag only after
+the `Release Test Gate` passes.
 An invalid tag name, a non-`main` dispatch, an existing tag, or any failed test
 leaves the repository without a new release tag.
 
@@ -80,10 +81,10 @@ commands or CI workflow that passed and the commit used for the release.
 
 Before publishing a GitHub release, confirm the manually dispatched `MATLAB
 Tests` run completed both `Release Test Gate` and `Create Validated Release
-Tag`. The gate requires the public `headless`, `coverage`, and `gui` build
-tasks to pass for the release candidate. The tag job points `vX.Y.Z` at the
-same `github.sha` that those jobs validated; a later advance of `main` does not
-move the tag.
+Tag`. The gate requires the public `headless`, `baseMatlab`, `coverage`, and
+`gui` build tasks to pass for the release candidate. The tag job points
+`vX.Y.Z` at the same `github.sha` that those jobs validated; a later advance of
+`main` does not move the tag.
 
 Attach `labkit_launcher.m` to each GitHub release. The root README download
 link points at the latest release asset so browsers download the launcher
