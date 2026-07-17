@@ -361,6 +361,10 @@ Use these app-facing rules:
   `state = handler(state,event,services)`. The normalized event carries
   `id`, `source`, `target`, `value`, and `meta`; injected services decode file
   entries and indices without exposing the UI registry.
+- Reference a generated callback directly as `callbacks.actionId`. Do not use
+  an App-owned lookup that substitutes `[]` for an unknown action. A missing
+  or misspelled action ID is a definition error and must fail while the layout
+  is built, before the user receives a control that silently does nothing.
 
 ### Identity Contracts
 

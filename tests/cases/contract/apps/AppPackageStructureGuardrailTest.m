@@ -28,6 +28,46 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
             end
         end
 
+        function appLayoutsResolveOnlyRegisteredActions(testCase)
+            root = setupLabKitTestPath();
+            layouts = discoveredAppLayouts(root);
+            for k = 1:size(layouts, 1)
+                packageName = string(layouts{k, 2});
+                definitionFcn = str2func(packageName + ".definition");
+                definition = definitionFcn();
+                callbacks = runtimeCallbackStubs(definition.actions);
+
+                layout = invokeDefinitionLayout(definition, callbacks);
+
+                testCase.verifyTrue(isstruct(layout), ...
+                    [char(packageName) ...
+                    ' layout should resolve every Runtime callback.']);
+            end
+        end
+
+    end
+end
+
+function callbacks = runtimeCallbackStubs(actions)
+    callbacks = struct();
+    ids = fieldnames(actions);
+    for k = 1:numel(ids)
+        callbacks.(ids{k}) = @(varargin) [];
+    end
+    callbacks.runtimeLoadState = @(varargin) [];
+end
+
+function layout = invokeDefinitionLayout(definition, callbacks)
+    argumentCount = nargin(definition.layout);
+    if argumentCount == 0
+        layout = definition.layout();
+    elseif argumentCount == 1
+        layout = definition.layout(callbacks);
+    else
+        state = struct( ...
+            "project", definition.project.Create(), ...
+            "session", struct());
+        layout = definition.layout(callbacks, state);
     end
 end
 
@@ -124,6 +164,10 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
         [relativePath(root, buildLayoutFile) ' should return a semantic LabKit app layout.']);
     assertSourceDoesNotContain(testCase, buildLayoutSource, ...
         buildLayoutForbiddenWords(), relativePath(root, buildLayoutFile));
+    testCase.verifyFalse(contains(buildLayoutSource, 'callbackValue('), ...
+        [relativePath(root, buildLayoutFile) ...
+        ' must reference Runtime callbacks directly. Missing actions ' ...
+        'should fail during layout construction, not create silent controls.']);
     assertNoAppOwnedLayoutProps(testCase, buildLayoutSource, ...
         relativePath(root, buildLayoutFile));
     assertNoEmptyUiSections(testCase, buildLayoutSource, ...

@@ -175,3 +175,6 @@ The skeleton preset selector is a direct session binding; choosing a label
 does not require an App callback until **Use preset** applies the selected
 schema. The decoded-video cache is a session resource registered with Runtime
 default cleanup rather than an App-owned empty cleanup hook.
+
+The semantic layout follows the [Runtime callback contract](../../../framework/runtime.md#layout-and-action-rules):
+every referenced action must be registered and resolves during layout construction.

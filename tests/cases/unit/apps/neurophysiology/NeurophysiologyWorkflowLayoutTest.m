@@ -5,7 +5,8 @@ classdef NeurophysiologyWorkflowLayoutTest < matlab.unittest.TestCase
         function previewOwnsProtocolDraftingSurface(testCase)
             setupLabKitTestPath();
 
-            layout = rhs_preview.userInterface.buildWorkbenchLayout(struct());
+            layout = rhs_preview.userInterface.buildWorkbenchLayout( ...
+                appCallbacks(rhs_preview.definitionActions()));
 
             testCase.verifyEqual(tabTitles(layout), ...
                 ["Setup", "Protocol", "Filter", "Review", "Log"]);
@@ -22,7 +23,8 @@ classdef NeurophysiologyWorkflowLayoutTest < matlab.unittest.TestCase
         function analysisWorkflowKeepsHeavyAnalyzeExplicit(testCase)
             setupLabKitTestPath();
 
-            layout = nerve_response_analysis.userInterface.buildWorkbenchLayout(struct());
+            layout = nerve_response_analysis.userInterface.buildWorkbenchLayout( ...
+                appCallbacks(nerve_response_analysis.definitionActions()));
 
             testCase.verifyEqual(tabTitles(layout), ...
                 ["Setup", "Protocol", "Review", "Export", "Log"]);
@@ -39,7 +41,8 @@ classdef NeurophysiologyWorkflowLayoutTest < matlab.unittest.TestCase
         function statsWorkflowAutoLoadHasRefreshAndExport(testCase)
             setupLabKitTestPath();
 
-            layout = response_review_stats.userInterface.buildWorkbenchLayout(struct());
+            layout = response_review_stats.userInterface.buildWorkbenchLayout( ...
+                appCallbacks(response_review_stats.definitionActions()));
 
             testCase.verifyEqual(tabTitles(layout), ...
                 ["Setup", "Review", "Export", "Log"]);
@@ -48,6 +51,14 @@ classdef NeurophysiologyWorkflowLayoutTest < matlab.unittest.TestCase
             testCase.verifyTrue(any(actionLabels(layout) == ...
                 "Export Metrics"));
         end
+    end
+end
+
+function callbacks = appCallbacks(actions)
+    callbacks = struct();
+    ids = fieldnames(actions);
+    for k = 1:numel(ids)
+        callbacks.(ids{k}) = @(varargin) [];
     end
 end
 
@@ -61,22 +72,28 @@ end
 
 function titles = sectionTitles(layout)
     flat = flattenLayout(layout);
-    titles = strings(1, 0);
+    titles = strings(1, numel(flat));
+    count = 0;
     for k = 1:numel(flat)
         if strcmp(flat(k).kind, "section") && isfield(flat(k).props, "title")
-            titles(end + 1) = string(flat(k).props.title);
+            count = count + 1;
+            titles(count) = string(flat(k).props.title);
         end
     end
+    titles = titles(1:count);
 end
 
 function labels = actionLabels(layout)
     flat = flattenLayout(layout);
-    labels = strings(1, 0);
+    labels = strings(1, numel(flat));
+    count = 0;
     for k = 1:numel(flat)
         if strcmp(flat(k).kind, "action") && isfield(flat(k).props, "label")
-            labels(end + 1) = string(flat(k).props.label);
+            count = count + 1;
+            labels(count) = string(flat(k).props.label);
         end
     end
+    labels = labels(1:count);
 end
 
 function flat = flattenLayout(layout)
@@ -94,12 +111,12 @@ function flat = flattenLayout(layout)
     end
     if isfield(layout, "slots") && isstruct(layout.slots)
         slotNames = fieldnames(layout.slots);
+        slotValues = cell(1, numel(slotNames));
         for k = 1:numel(slotNames)
-            slotValue = layout.slots.(slotNames{k});
-            if isstruct(slotValue)
-                childLayouts{end + 1} = slotValue;
-            end
+            slotValues{k} = layout.slots.(slotNames{k});
         end
+        childLayouts = [childLayouts, ...
+            slotValues(cellfun(@isstruct, slotValues))];
     end
     parts = cell(1, numel(childLayouts) + 1);
     parts{1} = layout;
