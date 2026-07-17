@@ -125,7 +125,7 @@ function html = renderSectionLinks(model, outputPath, section, apiItem)
             matches = arrayfun(@(p) ~isempty(p.nav) && ...
                 p.nav(1) == "App Framework", pages);
             html = renderPageGroups(pages(matches), outputPath, ...
-                "Framework Guides", false);
+                "Framework Guides", true);
         case "development"
             matches = arrayfun(@(p) ~isempty(p.nav) && ...
                 p.nav(1) == "Development", pages);
@@ -158,7 +158,18 @@ function html = renderSiblingApis(api, item, outputPath)
     if ~isempty(parts) && numel(parts) > 1
         groupTitle = parts(end - 1) + " Functions";
     end
+    packagePrefix = strjoin(parts(1:end - 1), ".");
+    if packagePrefix == "labkit.contract"
+        groupTitle = "Framework Compatibility";
+    elseif startsWith(packagePrefix, "labkit.ui")
+        groupTitle = "Framework " + titleCasePackage(parts(end - 1));
+    end
     html = localSubgroup(groupTitle, strjoin(links, ""));
+end
+
+function value = titleCasePackage(value)
+    value = string(value);
+    value = upper(extractBefore(value, 2)) + extractAfter(value, 1);
 end
 
 function html = renderAppNavigation(pages, currentIndex, outputPath)
@@ -369,6 +380,10 @@ function section = documentationSection(outputPath)
         section = "getting-started";
     elseif startsWith(outputPath, "apps/")
         section = "apps";
+    elseif outputPath == "libraries/contracts/index.html" || ...
+            startsWith(outputPath, "reference/api/labkit/ui/") || ...
+            startsWith(outputPath, "reference/api/labkit/contract/")
+        section = "framework";
     elseif any(startsWith(outputPath, ["reference/", "libraries/"]))
         section = "functions";
     elseif startsWith(outputPath, "framework/")

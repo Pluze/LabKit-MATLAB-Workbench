@@ -1,10 +1,16 @@
-# API Version Compatibility
+# Framework Compatibility Contracts
 
-[API reference](../README.md) | [App development](../../development/app-development.md)
+[App Framework](../../framework/README.md) |
+[API reference](../README.md) |
+[App development](../../development/app-development.md)
 
 `labkit.contract` lets an app state which LabKit API versions it supports and
 check those requirements before startup. It compares versions already present
 in this repository; it does not download, install, or update code.
+
+This is part of the documented App Framework surface. The MATLAB namespace
+remains `labkit.contract` because it checks UI and domain facades alike; it is
+not an App metadata registry or a UI-only helper.
 
 ## Typical Use
 

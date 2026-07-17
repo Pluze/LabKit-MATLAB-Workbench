@@ -52,7 +52,7 @@ function groups = apiGroups(api)
         indices = libraryIndices(libraryKeys == key);
         groups(end + 1, 1) = struct( ...
             "id", slug(key), ...
-            "title", key, ...
+            "title", libraryTitle(key), ...
             "description", libraryDescription(key), ...
             "indices", indices(:).');
     end
@@ -72,6 +72,27 @@ function groups = apiGroups(api)
                     humanize(owner) + " app in the " + family + " family.", ...
                 "indices", indices(:).');
         end
+    end
+end
+
+function title = libraryTitle(key)
+    switch key
+        case "labkit.contract"
+            title = "Framework Compatibility (labkit.contract)";
+        case "labkit.ui.runtime"
+            title = "Framework Runtime (labkit.ui.runtime)";
+        case "labkit.ui.layout"
+            title = "Framework Layout (labkit.ui.layout)";
+        case "labkit.ui.plot"
+            title = "Framework Plot (labkit.ui.plot)";
+        case "labkit.ui.interaction"
+            title = "Framework Interaction (labkit.ui.interaction)";
+        case "labkit.ui.debug"
+            title = "Framework Debug (labkit.ui.debug)";
+        case "labkit.ui"
+            title = "Framework Version (labkit.ui)";
+        otherwise
+            title = key;
     end
 end
 

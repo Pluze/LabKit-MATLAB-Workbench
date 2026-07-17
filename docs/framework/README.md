@@ -11,6 +11,7 @@ workflow decisions, scientific calculations, data schemas, labels, and exports.
 | Goal | Documentation |
 | --- | --- |
 | Understand how an App starts and processes actions | [Runtime and lifecycle](runtime.md) |
+| Declare and validate compatible LabKit modules | [Compatibility contracts](../libraries/contracts/README.md) |
 | Build or refactor a concrete App | [App development](../development/app-development.md) |
 | Choose reusable package boundaries | [Architecture](../development/architecture.md) |
 | Look up exact MATLAB function syntax | [Public API reference](../libraries/README.md) |
@@ -25,6 +26,12 @@ workflow decisions, scientific calculations, data schemas, labels, and exports.
 | `labkit.ui.plot` | Viewport-safe plot and image mechanics | `clear`, `fit`, `fitCanvas`, `message`, `clampData` |
 | `labkit.ui.interaction` | Managed axes interactions and reusable geometry | `enablePopout`, `anchorPath`, `scaleBarGeometry` |
 | `labkit.ui.debug` | Structured trace and exception context | `context` |
+| `labkit.contract` | Framework-wide facade requirements and compatibility checks | `requirements`, `checkRequirements`, `assertRequirements` |
+
+`labkit.contract` is documented with the App Framework because definitions and
+startup consume it, while its stable MATLAB namespace remains separate: it
+checks compatibility for UI and domain facades rather than becoming a UI-only
+dependency.
 
 This package division is the supported public surface. Primitive MATLAB UI
 handles, registry mutation, concrete grid geometry, event queues, renderer

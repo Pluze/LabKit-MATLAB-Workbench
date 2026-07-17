@@ -8,8 +8,7 @@ syntax, arguments, outputs, behavior, source, and related APIs.
 
 | Need | Module guide |
 | --- | --- |
-| App lifecycle, layout, plotting, interaction, state, and debugging | [App Framework](../framework/README.md) |
-| MATLAB product requirements and library compatibility | [Contracts](contracts/README.md) |
+| App lifecycle, layout, plotting, interaction, state, debugging, and compatibility requirements | [App Framework](../framework/README.md) |
 | Image IO and generic image operations | [Image](image/README.md) |
 | Radiometric image decoding and temperature conversion | [Thermal](thermal/README.md) |
 | Gamry DTA discovery, parsing, curves, and pulses | [DTA](dta/README.md) |

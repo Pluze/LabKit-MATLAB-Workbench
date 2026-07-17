@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="generator" content="LabKit MATLAB documentation compiler">
-<title>Contracts - LabKit MATLAB Workbench</title>
+<title>Compatibility Contracts - LabKit MATLAB Workbench</title>
 <link rel="stylesheet" href="../../assets/style.css">
 </head>
 <body data-site-root="../../">
@@ -16,14 +16,15 @@
 <div class="search"><label class="sr-only" for="doc-search">Search documentation</label><input id="doc-search" type="search" placeholder="Search documentation" autocomplete="off"><div id="search-results" class="search-results" hidden></div></div>
 </div>
 </header>
-<nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../apps/index.html">Apps</a><a class="product-nav-link active" href="../../reference/index.html">Functions</a><a class="product-nav-link" href="../../framework/index.html">Framework</a><a class="product-nav-link" href="../../development/index.html">Development</a><a class="product-nav-link" href="../../history/index.html">History</a></div></nav>
+<nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../apps/index.html">Apps</a><a class="product-nav-link" href="../../reference/index.html">Functions</a><a class="product-nav-link active" href="../../framework/index.html">Framework</a><a class="product-nav-link" href="../../development/index.html">Development</a><a class="product-nav-link" href="../../history/index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../index.html">Documentation Home</a><a class="context-parent" href="../../reference/index.html">Functions</a><p class="current-page">Contracts</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Libraries</h3><div class="local-branch"><a class="local-link" href="../image/index.html">Image Library</a><a class="local-link" href="../thermal/index.html">Thermal Library</a><a class="local-link" href="../dta/index.html">DTA Library</a><a class="local-link" href="../rhs/index.html">RHS Library</a><a class="local-link" href="../biosignal/index.html">Biosignal Library</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#typical-use">Typical Use</a><a class="toc-link" href="#choose-a-function">Choose a Function</a><a class="toc-link" href="#version-ranges">Version Ranges</a><a class="toc-link" href="#how-compatibility-is-decided">How Compatibility Is Decided</a><a class="toc-link" href="#inspecting-a-compatibility-report">Inspecting a Compatibility Report</a><a class="toc-link" href="#supplying-version-information-explicitly">Supplying Version Information Explicitly</a><a class="toc-link" href="#related-topics">Related Topics</a><a class="toc-link" href="#functions-and-api">Functions And API</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../index.html">Documentation Home</a><a class="context-parent" href="../../framework/index.html">Framework</a><p class="current-page">Compatibility Contracts</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Framework Guides</h3><div class="local-branch"><a class="local-link" href="../../framework/index.html">App Framework</a><a class="local-link" href="../../framework/runtime.html">Runtime and Lifecycle</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#typical-use">Typical Use</a><a class="toc-link" href="#choose-a-function">Choose a Function</a><a class="toc-link" href="#version-ranges">Version Ranges</a><a class="toc-link" href="#how-compatibility-is-decided">How Compatibility Is Decided</a><a class="toc-link" href="#inspecting-a-compatibility-report">Inspecting a Compatibility Report</a><a class="toc-link" href="#supplying-version-information-explicitly">Supplying Version Information Explicitly</a><a class="toc-link" href="#related-topics">Related Topics</a><a class="toc-link" href="#functions-and-api">Functions And API</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">reference</p>
-<h1 id="api-version-compatibility">API Version Compatibility</h1>
-<p><a href="../../reference/index.html">API reference</a> | <a href="../../development/app-development.html">App development</a></p>
+<h1 id="framework-compatibility-contracts">Framework Compatibility Contracts</h1>
+<p><a href="../../framework/index.html">App Framework</a> | <a href="../../reference/index.html">API reference</a> | <a href="../../development/app-development.html">App development</a></p>
 <p><code>labkit.contract</code> lets an app state which LabKit API versions it supports and check those requirements before startup. It compares versions already present in this repository; it does not download, install, or update code.</p>
+<p>This is part of the documented App Framework surface. The MATLAB namespace remains <code>labkit.contract</code> because it checks UI and domain facades alike; it is not an App metadata registry or a UI-only helper.</p>
 <h2 id="typical-use">Typical Use</h2>
 <p>An app normally defines its requirements in a small function:</p>
 <pre><code class="language-matlab">function req = requirements()
