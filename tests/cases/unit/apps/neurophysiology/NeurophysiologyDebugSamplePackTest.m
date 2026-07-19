@@ -7,8 +7,7 @@ classdef NeurophysiologyDebugSamplePackTest < matlab.unittest.TestCase
             root = string(tempname);
             cleanup = onCleanup(@() cleanupFolder(root));
             mkdir(char(root));
-            debug = labkit.ui.debug.context("neuro_debug_sample_test", struct( ...
-                "logFile", fullfile(char(root), "trace.log")));
+            debug = debugSampleContext(root);
 
             rhsPack = rhs_preview.debug.writeSamplePack(debug);
             [index, status] = labkit.rhs.indexFile(rhsPack.representativeFiles.primaryRhs);

@@ -26,7 +26,8 @@ function applyFigureStyle(ax, preset)
         preset = "nature";
     end
     if isempty(ax) || ~isvalid(ax)
-        error('labkit:ui:InvalidAxes', 'Axes handle is not valid.');
+        error('figure_studio:resultFiles:InvalidAxes', ...
+            'Axes handle is not valid.');
     end
     if isstruct(preset)
         applyStyleStruct(ax, preset);

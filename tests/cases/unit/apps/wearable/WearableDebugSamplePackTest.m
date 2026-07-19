@@ -7,8 +7,7 @@ classdef WearableDebugSamplePackTest < matlab.unittest.TestCase
             root = string(tempname);
             cleanup = onCleanup(@() cleanupFolder(root));
             mkdir(char(root));
-            debug = labkit.ui.debug.context("wearable_debug_sample_test", struct( ...
-                "logFile", fullfile(char(root), "trace.log")));
+            debug = debugSampleContext(root);
 
             pack = ecg_print.debug.writeSamplePack(debug);
             [recording, status] = labkit.biosignal.readRecording(char(pack.representativeFiles), ...

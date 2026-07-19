@@ -194,7 +194,7 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             plot(sourceAx, 1:3, [2 1 4], 'DisplayName', 'source');
             title(sourceAx, 'Source Plot');
 
-            labkit.ui.interaction.enablePopout(sourceAx);
+            labkit.app.plot.enablePopout(sourceAx);
             menu = findall(sourceAx.ContextMenu, 'Type', 'uimenu', ...
                 'Tag', 'labkitAxesPopoutMenu');
             menu(1).MenuSelectedFcn(menu(1), []);
