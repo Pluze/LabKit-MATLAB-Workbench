@@ -59,7 +59,7 @@ launches the real App and generates overlays and a summary through Runtime V2.
 ## Evidence
 
 - [DIC Postprocess](../../../../apps/dic/dic-postprocess/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

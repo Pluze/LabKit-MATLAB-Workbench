@@ -65,7 +65,7 @@ and the existing custom relink hook.
 
 ## Evidence
 
-- [Runtime and lifecycle](../../../../framework/runtime.md) documents the default
+- [Runtime and lifecycle](../../../../framework/guides/runtime.md) documents the default
   missing-source interaction.
 - Runtime source resolution reruns before fresh-session construction and state
   commit.

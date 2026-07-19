@@ -54,9 +54,9 @@ relinking, saves the current payload version, and checks failure atomicity.
 
 ## Evidence
 
-- [Runtime and Lifecycle](../../../../framework/runtime.md) documents the
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md) documents the
   project declaration and loop.
-- [App Development](../../../../development/app-development.md) describes the
+- [App Development](../../../../development/build-apps/app-development.md) describes the
   single project file.
 
 ## Known limitations and follow-up

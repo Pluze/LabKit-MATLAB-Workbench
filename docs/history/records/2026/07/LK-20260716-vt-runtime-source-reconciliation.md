@@ -63,8 +63,8 @@ tests cover the surrounding calculation and product behavior.
 ## Evidence
 
 - [VT Resistance](../../../../apps/electrochemistry/vt-resistance/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
-- [App Development](../../../../development/app-development.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
+- [App Development](../../../../development/build-apps/app-development.md)
 
 ## Known limitations and follow-up
 

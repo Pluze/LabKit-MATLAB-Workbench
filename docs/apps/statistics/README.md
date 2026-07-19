@@ -19,7 +19,7 @@ numeric ranges that have scientific meaning. The first captured group is the
 reference and every later group is tested against it.
 
 For exchange between Apps and scripts, prefer the
-[Simple Scientific CSV Exchange](../../development/scientific-csv-interchange.md):
+[Simple Scientific CSV Exchange](../../development/data-and-designs/scientific-csv-interchange.md):
 one header row, one rectangular table, readable labels, and blank cells for
 missing values. This is a lowest-layer table contract, not a universal
 experiment schema.
@@ -27,6 +27,6 @@ experiment schema.
 ## Related Documentation
 
 - [T-Test Wizard manual](ttest-wizard/README.md)
-- [Simple Scientific CSV Exchange](../../development/scientific-csv-interchange.md)
-- [T-Test Wizard design](../../development/group-comparison-app-design.md)
+- [Simple Scientific CSV Exchange](../../development/data-and-designs/scientific-csv-interchange.md)
+- [T-Test Wizard design](../../development/data-and-designs/group-comparison-app-design.md)
 - [All Apps](../README.md)

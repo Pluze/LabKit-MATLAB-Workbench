@@ -1,6 +1,6 @@
 # Image API
 
-[Public API index](../README.md) | [App guide](../../apps/README.md)
+[Public API index](../../reference/README.md) | [App guide](../../apps/README.md)
 
 `labkit.image.*` provides GUI-free image file IO, conversion, preview sizing,
 and common enhancement operations. App-specific registration, measurement,
@@ -75,7 +75,7 @@ by the app that uses them.
 
 ## Reference Contract
 
-The generated Image API pages linked from the [public API index](../README.md)
+The generated Image API pages linked from the [public API index](../../reference/README.md)
 document exact syntax, inputs, outputs, implemented options and defaults,
 legal values, failure behavior, examples, and related functions. In
 particular, [`resizeToFit`](../../reference/api/labkit/image/resizeToFit.html)

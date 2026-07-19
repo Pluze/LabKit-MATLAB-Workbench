@@ -52,7 +52,7 @@ presentation, save/load, and output workflows.
 ## Evidence
 
 - [Figure Studio](../../../../apps/labkit-core/figure-studio/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

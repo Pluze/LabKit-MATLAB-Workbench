@@ -57,7 +57,7 @@ still has no named project path.
 
 - [Video Marker](../../../../apps/image-measurement/video-marker/README.md)
   documents the exact no-dialog destination.
-- [Runtime and lifecycle](../../../../framework/runtime.md) distinguishes
+- [Runtime and lifecycle](../../../../framework/guides/runtime.md) distinguishes
   generic recovery from an app-targeted autosave.
 
 ## Known limitations and follow-up

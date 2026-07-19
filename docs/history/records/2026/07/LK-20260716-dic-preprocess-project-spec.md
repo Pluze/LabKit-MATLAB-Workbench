@@ -58,7 +58,7 @@ viewport preservation, and generated outputs.
 ## Evidence
 
 - [DIC Preprocess](../../../../apps/dic/dic-preprocess/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

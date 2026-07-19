@@ -4,15 +4,13 @@ classdef AppIdentityContractTest < matlab.unittest.TestCase
     methods (Test, TestTags = {'Integration', 'Style'})
         function publicDefinitionsDeclareUniqueStableIds(testCase)
             root = setupLabKitTestPath();
-            catalog = jsondecode(fileread(fullfile( ...
-                root, "docs", "catalogs", "apps.json")));
-            apps = catalog.apps;
-            ids = strings(numel(apps), 1);
-            for k = 1:numel(apps)
-                folder = fullfile(root, string(apps(k).folder));
+            apps = discoverLabKitApps();
+            ids = strings(height(apps), 1);
+            for k = 1:height(apps)
+                folder = string(apps.Folder(k));
                 definitions = dir(fullfile(folder, "+*", "definition.m"));
                 testCase.assertNumElements(definitions, 1, ...
-                    "Each cataloged app must own one package definition.");
+                    "Each discovered public app must own one package definition.");
                 source = fileread(fullfile( ...
                     definitions(1).folder, definitions(1).name));
                 token = regexp(source, ...

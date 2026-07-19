@@ -62,9 +62,9 @@ and full definitions.
 
 - [App Framework](../../../../framework/README.md) introduces the minimal
   definition.
-- [Runtime and Lifecycle](../../../../framework/runtime.md) lists required and
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md) lists required and
   optional definition components.
-- [App Development](../../../../development/app-development.md) maps files to
+- [App Development](../../../../development/build-apps/app-development.md) maps files to
   capabilities instead of treating them as universal boilerplate.
 
 ## Known limitations and follow-up

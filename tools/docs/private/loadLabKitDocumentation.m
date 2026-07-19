@@ -1,32 +1,10 @@
 function model = loadLabKitDocumentation(repoRoot, sourceRoot)
-%LOADLABKITDOCUMENTATION Validate narrative pages and discover public APIs.
+%LOADLABKITDOCUMENTATION Discover and validate documentation source contracts.
 
-    configFile = fullfile(sourceRoot, "site.json");
-    if ~isfile(configFile)
-        error("LabKit:Docs:MissingConfig", ...
-            "Documentation source requires docs/site.json.");
-    end
-    try
-        config = jsondecode(fileread(configFile));
-    catch ME
-        error("LabKit:Docs:InvalidConfig", ...
-            "Could not decode docs/site.json: %s", ME.message);
-    end
-    requireFields(config, ["schemaVersion", "title", "tagline", ...
-        "repositoryUrl", "pages"], "site.json");
-    if double(config.schemaVersion) ~= 1
-        error("LabKit:Docs:UnsupportedSchema", ...
-            "Documentation schemaVersion must be 1.");
-    end
-
-    rawPages = normalizeStructArray(config.pages);
-    pages = repmat(emptyPage(), numel(rawPages), 1);
-    for k = 1:numel(rawPages)
-        pages(k) = validatePage(rawPages(k), sourceRoot);
-    end
-    [appPages, apps] = loadAppCatalog(repoRoot, sourceRoot);
+    apps = discoverPublicApps(repoRoot, sourceRoot);
+    pages = discoverNarrativePages(sourceRoot, apps);
     historyPages = discoverHistoryPages(sourceRoot);
-    pages = [pages; appPages; historyPages];
+    pages = [pages; historyPages];
     assertUnique(string({pages.id}), "page id");
     assertUnique(string({pages.source}), "page source");
     assertUnique(string({pages.output}), "page output");
@@ -34,21 +12,228 @@ function model = loadLabKitDocumentation(repoRoot, sourceRoot)
     pages = pages(order);
 
     libraryApi = discoverLabKitPublicApi(repoRoot);
-    appApi = discoverAppPublicApi(repoRoot, sourceRoot);
+    appApi = discoverAppPublicApi(repoRoot, apps);
     api = [libraryApi; appApi];
     assertUnique(string({api.symbol}), "public API symbol");
     [~, apiOrder] = sort(string({api.symbol}));
     api = api(apiOrder);
+    [siteTitle, repositoryUrl] = repositoryIdentity(repoRoot);
     model = struct( ...
         "repoRoot", string(repoRoot), ...
         "sourceRoot", string(sourceRoot), ...
-        "title", string(config.title), ...
-        "tagline", string(config.tagline), ...
-        "repositoryUrl", string(config.repositoryUrl), ...
+        "title", siteTitle, ...
+        "repositoryUrl", repositoryUrl, ...
         "pages", pages, ...
         "apps", apps, ...
         "history", historyPages, ...
         "api", api);
+end
+
+function [title, repositoryUrl] = repositoryIdentity(repoRoot)
+    readme = fullfile(repoRoot, "README.md");
+    if ~isfile(readme)
+        error("LabKit:Docs:MissingRepositoryReadme", ...
+            "Documentation discovery requires the repository README.md.");
+    end
+    text = string(fileread(readme));
+    lines = splitlines(text);
+    heading = lines(startsWith(lines, "# "));
+    if isempty(heading)
+        error("LabKit:Docs:MissingRepositoryTitle", ...
+            "Repository README.md must contain a level-one title.");
+    end
+    title = strip(extractAfter(heading(1), "# "));
+    token = regexp(char(text), ...
+        'https://github[.]com/[^/\s)]+/[^/\s)#]+', "match", "once");
+    if isempty(token)
+        error("LabKit:Docs:MissingRepositoryUrl", ...
+            "Repository README.md must link to its GitHub repository.");
+    end
+    repositoryUrl = string(token);
+end
+
+function pages = discoverNarrativePages(sourceRoot, apps)
+    entries = dir(fullfile(sourceRoot, "**", "*.md"));
+    sources = strings(0, 1);
+    for k = 1:numel(entries)
+        filepath = string(fullfile(entries(k).folder, entries(k).name));
+        source = replace(extractAfter(filepath, string(sourceRoot) + filesep), ...
+            filesep, "/");
+        if startsWith(source, "history/records/")
+            continue;
+        end
+        sources(end + 1, 1) = source;
+    end
+    sources = sort(sources);
+    pages = repmat(emptyPage(), numel(sources), 1);
+    for k = 1:numel(sources)
+        source = sources(k);
+        filepath = string(fullfile(sourceRoot, source));
+        text = string(fileread(filepath));
+        title = markdownTitle(text, source);
+        [id, output, kind, nav, components] = ...
+            narrativeIdentity(source, title, apps);
+        raw = struct( ...
+            "id", id, ...
+            "source", source, ...
+            "output", output, ...
+            "title", title, ...
+            "kind", kind, ...
+            "nav", nav, ...
+            "order", double(k), ...
+            "keywords", [pathWords(source); title], ...
+            "components", components);
+        pages(k) = validatePage(raw, sourceRoot);
+    end
+end
+
+function title = markdownTitle(text, source)
+    lines = splitlines(text);
+    matches = lines(startsWith(lines, "# "));
+    if isempty(matches)
+        error("LabKit:Docs:MissingTitle", ...
+            "Documentation page has no level-one title: %s", source);
+    end
+    if numel(matches) > 1
+        error("LabKit:Docs:DuplicateTitle", ...
+            "Documentation page has multiple level-one titles: %s", source);
+    end
+    title = strip(extractAfter(matches, "# "));
+end
+
+function [id, output, kind, nav, components] = ...
+        narrativeIdentity(source, title, apps)
+    source = string(source);
+    title = string(title);
+    isReadme = endsWith(source, "/README.md") || source == "README.md";
+    stem = erase(source, ".md");
+    if isReadme
+        folder = erase(source, "/README.md");
+        if source == "README.md"
+            folder = "";
+        end
+        output = folder + "/index.html";
+        output = strip(output, "/");
+        if strlength(output) == 0
+            output = "index.html";
+        end
+    else
+        output = stem + ".html";
+    end
+
+    id = replace(lower(stem), ["/", "_"], "-");
+    id = erase(id, "-readme");
+    kind = "guide";
+    if isReadme
+        kind = "overview";
+    end
+    nav = strings(0, 1);
+    components = strings(0, 1);
+
+    appIndex = find(string({apps.source}) == source, 1);
+    familyIndex = find(string({apps.familySource}) == source, 1);
+    if ~isempty(appIndex)
+        app = apps(appIndex);
+        id = "app-" + string(app.id);
+        output = string(app.output);
+        kind = "app";
+        nav = ["Apps"; string(app.familyTitle)];
+        components = string(app.command);
+    elseif ~isempty(familyIndex)
+        app = apps(familyIndex);
+        id = "app-family-" + string(app.family);
+        kind = "app family";
+        nav = ["Apps"; string(app.familyTitle)];
+    elseif source == "README.md"
+        id = "home";
+        kind = "overview";
+    elseif source == "getting-started/README.md"
+        id = "getting-started";
+        kind = "tutorial";
+        nav = "Getting Started";
+        components = "labkit_launcher";
+    elseif source == "apps/README.md"
+        id = "apps";
+        kind = "overview";
+        nav = "Apps";
+    elseif source == "reference/README.md"
+        id = "api";
+        output = "reference/index.html";
+        kind = "reference";
+        nav = "API Reference";
+    elseif source == "framework/README.md"
+        id = "framework";
+        kind = "explanation";
+        nav = "App Framework";
+        components = "labkit.ui";
+    elseif startsWith(source, "framework/")
+        group = pathGroup(source, "framework");
+        if group == "Guides"
+            group = "Framework Guides";
+        elseif group == "Compatibility"
+            group = "Framework Compatibility";
+        end
+        nav = ["App Framework"; group];
+        components = frameworkComponents(source);
+    elseif source == "history/README.md"
+        id = "history";
+        kind = "history index";
+        nav = "History";
+    elseif source == "development/README.md"
+        id = "development";
+        kind = "overview";
+        nav = "Development";
+    elseif startsWith(source, "development/")
+        nav = ["Development"; pathGroup(source, "development")];
+    elseif startsWith(source, "libraries/")
+        nav = "Libraries";
+        kind = "reference";
+        parts = split(source, "/");
+        if numel(parts) > 1
+            components = "labkit." + replace(parts(2), "-", ".");
+        end
+    elseif source == "apps/labkit-core/launcher/README.md"
+        id = "launcher";
+        kind = "app manual";
+        nav = ["Apps"; "LabKit Core"];
+        components = "labkit_launcher";
+    end
+end
+
+function group = pathGroup(source, root)
+    parts = split(extractAfter(source, string(root) + "/"), "/");
+    if numel(parts) < 2
+        group = "General";
+        return;
+    end
+    group = titleCasePathToken(parts(1));
+end
+
+function value = titleCasePathToken(value)
+    words = split(replace(string(value), "-", " "));
+    for k = 1:numel(words)
+        if k > 1 && any(words(k) == ["and", "or", "the"])
+            continue;
+        end
+        words(k) = upper(extractBefore(words(k), 2)) + extractAfter(words(k), 1);
+    end
+    value = strjoin(words, " ");
+end
+
+function components = frameworkComponents(source)
+    if contains(source, "/runtime")
+        components = "labkit.ui.runtime";
+    elseif contains(source, "/contracts")
+        components = "labkit.contract";
+    else
+        components = "labkit.ui";
+    end
+end
+
+function words = pathWords(source)
+    words = split(replace(erase(string(source), [".md", "README"]), ...
+        ["/", "-", "_"], " "));
+    words = words(strlength(words) > 0);
 end
 
 function page = validatePage(raw, sourceRoot)
@@ -191,75 +376,69 @@ function value = historyScalar(lines, key, source)
     end
 end
 
-function [pages, apps] = loadAppCatalog(repoRoot, sourceRoot)
-    catalogPath = fullfile(sourceRoot, "catalogs", "apps.json");
-    if ~isfile(catalogPath)
-        error("LabKit:Docs:MissingAppCatalog", ...
-            "Documentation source requires docs/catalogs/apps.json.");
+function apps = discoverPublicApps(repoRoot, sourceRoot)
+    oldPath = path;
+    cleanup = onCleanup(@() path(oldPath));
+    addpath(repoRoot, "-begin");
+    catalog = labkit_launcher("list");
+    clear cleanup
+    required = ["Command", "DisplayName", "Family", "Visibility", "Folder", ...
+        "Description"];
+    if ~istable(catalog) || ~all(ismember(required, ...
+            string(catalog.Properties.VariableNames)))
+        error("LabKit:Docs:InvalidAppDiscovery", ...
+            "labkit_launcher(""list"") did not return the required App metadata.");
     end
-    try
-        catalog = jsondecode(fileread(catalogPath));
-    catch ME
-        error("LabKit:Docs:InvalidAppCatalog", ...
-            "Could not decode app catalog: %s", ME.message);
+    catalog = catalog(string(catalog.Visibility) == "public", :);
+    template = struct("id", "", "command", "", "family", "", ...
+        "familyTitle", "", "folder", "", "source", "", "output", "", ...
+        "familySource", "", "description", "");
+    apps = repmat(template, height(catalog), 1);
+    appRoot = string(fullfile(repoRoot, "apps")) + filesep;
+    for k = 1:height(catalog)
+        folder = string(catalog.Folder(k));
+        relativeFolder = replace(extractAfter(folder, appRoot), filesep, "/");
+        parts = split(relativeFolder, "/");
+        if numel(parts) ~= 2
+            error("LabKit:Docs:InvalidAppFolder", ...
+                "Public App folder must be apps/<family>/<app>: %s", folder);
+        end
+        id = replace(parts(2), "_", "-");
+        manuals = dir(fullfile(sourceRoot, "apps", "*", id, "README.md"));
+        if numel(manuals) ~= 1
+            error("LabKit:Docs:MissingAppManual", ...
+                ["Discovered App must have exactly one manual at " ...
+                "docs/apps/<family>/%s/README.md."], id);
+        end
+        family = string(manuals(1).folder);
+        family = replace(extractBefore(extractAfter(family, ...
+            string(sourceRoot) + filesep + "apps" + filesep), filesep), ...
+            filesep, "/");
+        source = "apps/" + family + "/" + id + "/README.md";
+        familySource = "apps/" + family + "/README.md";
+        if ~isfile(fullfile(sourceRoot, familySource))
+            error("LabKit:Docs:MissingAppFamilyManual", ...
+                "Discovered App family has no manual: %s", familySource);
+        end
+        familyTitle = markdownTitle(string(fileread( ...
+            fullfile(sourceRoot, familySource))), familySource);
+        if endsWith(familyTitle, " Apps")
+            familyTitle = extractBefore(familyTitle, ...
+                strlength(familyTitle) - strlength(" Apps") + 1);
+        end
+        apps(k) = struct( ...
+            "id", char(id), ...
+            "command", char(string(catalog.Command(k))), ...
+            "family", char(family), ...
+            "familyTitle", char(familyTitle), ...
+            "folder", char(relativeFolder), ...
+            "source", char(source), ...
+            "output", char("apps/" + family + "/" + id + ".html"), ...
+            "familySource", char(familySource), ...
+            "description", char(string(catalog.Description(k))));
     end
-    requireFields(catalog, ["schemaVersion", "families", "apps"], "app catalog");
-    if double(catalog.schemaVersion) ~= 1
-        error("LabKit:Docs:UnsupportedAppCatalog", ...
-            "App catalog schemaVersion must be 1.");
-    end
-    families = normalizeStructArray(catalog.families);
-    apps = normalizeStructArray(catalog.apps);
-    familyIds = string({families.id});
-    assertUnique(familyIds, "app family id");
     assertUnique(string({apps.id}), "app id");
     assertUnique(string({apps.command}), "app command");
-
-    pages = repmat(emptyPage(), numel(families) + numel(apps), 1);
-    for k = 1:numel(families)
-        family = families(k);
-        requireFields(family, ["id", "title", "source", "output", "order"], ...
-            "app family");
-        raw = struct( ...
-            "id", "app-family-" + string(family.id), ...
-            "source", string(family.source), ...
-            "output", string(family.output), ...
-            "title", string(family.title), ...
-            "kind", "app family", ...
-            "nav", ["Apps"; string(family.title)], ...
-            "order", 100 + double(family.order), ...
-            "keywords", [string(family.id); string(family.title)], ...
-            "components", strings(0, 1));
-        pages(k) = validatePage(raw, sourceRoot);
-    end
-    for k = 1:numel(apps)
-        app = apps(k);
-        requireFields(app, ["id", "title", "command", "family", "folder", ...
-            "source", "output", "description", "keywords"], "app");
-        familyIndex = find(familyIds == string(app.family), 1);
-        if isempty(familyIndex)
-            error("LabKit:Docs:UnknownAppFamily", ...
-                "App %s references unknown family %s.", app.id, app.family);
-        end
-        entryFile = fullfile(repoRoot, string(app.folder), string(app.command) + ".m");
-        if ~isfile(entryFile)
-            error("LabKit:Docs:MissingAppEntrypoint", ...
-                "Cataloged app entry point does not exist: %s", entryFile);
-        end
-        familyTitle = string(families(familyIndex).title);
-        raw = struct( ...
-            "id", "app-" + string(app.id), ...
-            "source", string(app.source), ...
-            "output", string(app.output), ...
-            "title", string(app.title), ...
-            "kind", "app", ...
-            "nav", ["Apps"; familyTitle], ...
-            "order", 200 + double(families(familyIndex).order), ...
-            "keywords", [string(app.keywords(:)); string(app.command); ...
-                string(app.description)], ...
-            "components", string(app.command));
-        pages(numel(families) + k) = validatePage(raw, sourceRoot);
-    end
 end
 
 function api = discoverLabKitPublicApi(repoRoot)
@@ -278,40 +457,52 @@ function api = discoverLabKitPublicApi(repoRoot)
     api = api(order);
 end
 
-function api = discoverAppPublicApi(repoRoot, sourceRoot)
-    catalogPath = fullfile(sourceRoot, "catalogs", "api.json");
-    if ~isfile(catalogPath)
-        error("LabKit:Docs:MissingApiCatalog", ...
-            "Documentation source requires docs/catalogs/api.json.");
-    end
-    try
-        catalog = jsondecode(fileread(catalogPath));
-    catch ME
-        error("LabKit:Docs:InvalidApiCatalog", ...
-            "Could not decode app API catalog: %s", ME.message);
-    end
-    requireFields(catalog, ["schemaVersion", "appApis"], "api catalog");
-    if double(catalog.schemaVersion) ~= 1
-        error("LabKit:Docs:UnsupportedApiCatalog", ...
-            "App API catalog schemaVersion must be 1.");
-    end
-    entries = normalizeStructArray(catalog.appApis);
-    api = repmat(emptyApi(), numel(entries), 1);
+function api = discoverAppPublicApi(repoRoot, apps)
+    entries = dir(fullfile(repoRoot, "apps", "**", "*.m"));
+    api = repmat(emptyApi(), 0, 1);
     for k = 1:numel(entries)
-        requireFields(entries(k), ["source", "app", "family"], ...
-            "app API entry");
-        source = normalizedRepositoryPath(entries(k).source);
-        filepath = string(fullfile(repoRoot, source));
-        if ~isfile(filepath)
-            error("LabKit:Docs:MissingAppApi", ...
-                "Cataloged app API does not exist: %s", source);
+        filepath = string(fullfile(entries(k).folder, entries(k).name));
+        text = string(fileread(filepath));
+        if ~hasPublicAppHelpContract(text)
+            continue;
         end
-        if contains("/" + source + "/", "/private/")
-            error("LabKit:Docs:PrivateApiCatalog", ...
-                "Private helpers cannot be published as app APIs: %s", source);
+        relative = replace(extractAfter(filepath, string(repoRoot) + filesep), ...
+            filesep, "/");
+        if contains("/" + relative + "/", "/private/")
+            error("LabKit:Docs:PrivateAppApi", ...
+                "Private helpers cannot carry the App API marker: %s", relative);
         end
-        api(k) = readApiItem(repoRoot, filepath, "app", entries(k).app);
-        api(k).family = char(scalarText(entries(k).family, "family"));
+        parts = split(relative, "/");
+        if numel(parts) < 4
+            error("LabKit:Docs:InvalidAppApi", ...
+                "Marked App API is outside an App package: %s", relative);
+        end
+        appId = replace(parts(3), "_", "-");
+        appIndex = find(string({apps.id}) == appId, 1);
+        if isempty(appIndex)
+            error("LabKit:Docs:UnknownAppApiOwner", ...
+                "Marked App API has no discovered public App owner: %s", relative);
+        end
+        owner = replace(appId, "-", "_");
+        item = readApiItem(repoRoot, filepath, "app", owner);
+        item.family = char(string(apps(appIndex).familyTitle));
+        api(end + 1, 1) = item;
+    end
+end
+
+function tf = hasPublicAppHelpContract(text)
+    required = [ ...
+        "^%\s+(?:Usage|Syntax):\s*$"
+        "^%\s+Inputs:\s*$"
+        "^%\s+Outputs:\s*$"
+        "^%\s+(?:Errors|Failure Behavior):\s*$"
+        "^%\s+See also\s+\S+"];
+    tf = true;
+    for k = 1:numel(required)
+        if isempty(regexp(char(text), required(k), "once", "lineanchors"))
+            tf = false;
+            return;
+        end
     end
 end
 
@@ -416,14 +607,6 @@ function path = normalizedRelativePath(path)
     end
 end
 
-function path = normalizedRepositoryPath(path)
-    path = replace(string(path), "\", "/");
-    if startsWith(path, "/") || contains(path, "../") || contains(path, "/..")
-        error("LabKit:Docs:InvalidRepositoryPath", ...
-            "API catalog paths must stay inside the repository: %s", path);
-    end
-end
-
 function requireFields(value, fields, context)
     missing = fields(~isfield(value, fields));
     if ~isempty(missing)
@@ -436,26 +619,5 @@ function assertUnique(values, label)
     if numel(unique(values)) ~= numel(values)
         error("LabKit:Docs:DuplicateValue", ...
             "Documentation contains a duplicate %s.", label);
-    end
-end
-
-function values = normalizeStructArray(values)
-    if isempty(values)
-        values = struct([]);
-    elseif iscell(values)
-        fields = strings(0, 1);
-        for k = 1:numel(values)
-            fields = union(fields, string(fieldnames(values{k})), "stable");
-        end
-        template = cell2struct(cell(numel(fields), 1), cellstr(fields), 1);
-        normalized = repmat(template, numel(values), 1);
-        for k = 1:numel(values)
-            itemFields = string(fieldnames(values{k}));
-            for iField = 1:numel(itemFields)
-                field = itemFields(iField);
-                normalized(k).(field) = values{k}.(field);
-            end
-        end
-        values = normalized;
     end
 end

@@ -64,11 +64,11 @@ metadata.
 
 ## Evidence
 
-- [Build a Complete App](../../../../development/complete-app.md) gives the
+- [Build a Complete App](../../../../development/build-apps/complete-app.md) gives the
   progressive file-by-file tutorial.
-- [Architecture](../../../../development/architecture.md) defines the current
+- [Architecture](../../../../development/build-apps/architecture.md) defines the current
   package shape and ownership boundaries.
-- [Runtime and Lifecycle](../../../../framework/runtime.md) specifies every
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md) specifies every
   optional component and callback.
 
 ## Known limitations and follow-up

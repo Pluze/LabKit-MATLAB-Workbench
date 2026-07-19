@@ -8,8 +8,9 @@ description: "Use for validation planning, MATLAB test execution, pre-commit che
 ## Read
 
 Read `AGENTS.md`, `tests/AGENTS.md`, affected source/tests, and
-`docs/development/testing.md` when exact tasks or routing matter. Do not reread
-shared context already inspected for another active skill.
+`docs/development/maintain-and-release/testing.md` when exact tasks or routing
+matter. Do not reread shared context already inspected for another active
+skill.
 
 ## Select evidence
 
@@ -17,7 +18,7 @@ Keep the calling model small:
 
 - before PR preparation, use focused tests for the current small branch step;
   reserve `changedFast` and `changed` for the review-ready or explicitly final
-  gate described in `docs/development/testing.md`;
+  gate described in `docs/development/maintain-and-release/testing.md`;
 - use `runLabKitTests("Files", path)` to reproduce one or more known test
   files;
 - use `Suites` only for a folder scope and `Tests` only for a class or method

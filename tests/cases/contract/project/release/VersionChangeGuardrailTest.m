@@ -122,16 +122,21 @@ function path = documentationSourceForArtifact(root, artifact)
         end
         return;
     end
-    catalogPath = fullfile(root, "docs", "catalogs", "apps.json");
-    catalog = jsondecode(fileread(catalogPath));
-    apps = catalog.apps;
     appRoot = artifact.label;
-    match = find(string({apps.folder}) == appRoot, 1);
-    if isempty(match)
+    parts = split(appRoot, "/");
+    if numel(parts) < 3
         path = "";
-    else
-        path = "docs/" + string(apps(match).source);
+        return;
     end
+    appId = replace(parts(3), "_", "-");
+    manuals = dir(fullfile(root, "docs", "apps", "*", appId, "README.md"));
+    if numel(manuals) ~= 1
+        path = "";
+        return;
+    end
+    path = normalizePath(string(fullfile( ...
+        manuals(1).folder, manuals(1).name)));
+    path = extractAfter(path, normalizePath(string(root)) + "/");
 end
 
 function paths = normalizePaths(paths)

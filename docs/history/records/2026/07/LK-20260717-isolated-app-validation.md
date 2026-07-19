@@ -72,9 +72,9 @@ roots from its runner path.
 
 ## Evidence
 
-- [Testing and validation](../../../../development/testing.md)
-- [Architecture](../../../../development/architecture.md)
-- [App development](../../../../development/app-development.md)
+- [Testing and validation](../../../../development/maintain-and-release/testing.md)
+- [Architecture](../../../../development/build-apps/architecture.md)
+- [App development](../../../../development/build-apps/app-development.md)
 
 ## Known limitations and follow-up
 

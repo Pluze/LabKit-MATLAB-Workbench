@@ -9,11 +9,11 @@ code.
 For a narrow change read this file, the nearest scoped `AGENTS.md`, and the
 affected source/tests/docs. Read component manuals only for changed contracts:
 
-- architecture: `docs/development/architecture.md`
+- architecture: `docs/development/build-apps/architecture.md`
 - framework: `docs/framework/README.md`
-- app development: `docs/development/app-development.md`
-- testing: `docs/development/testing.md`
-- release: `docs/development/release.md`
+- app development: `docs/development/build-apps/app-development.md`
+- testing: `docs/development/maintain-and-release/testing.md`
+- release: `docs/development/maintain-and-release/release.md`
 - libraries: `docs/libraries/<area>/README.md`
 - apps: `docs/apps/README.md`
 
@@ -68,8 +68,9 @@ retirement. A zero-debt ledger is not an everyday checklist.
 
 ## Documentation
 
-- Human sources are Markdown under `docs/`, catalog/navigation JSON, and public
-  MATLAB help. `site/` is generated only by
+- Human sources are path-organized Markdown under `docs/` and public MATLAB
+  help. Narrative pages, App manuals, and App APIs are discovered from paths,
+  launcher metadata, and complete public help contracts. `site/` is generated only by
   `tools/docs/renderLabKitDocs.m`; never edit generated assets directly.
 - Update human docs for user behavior or public contracts, scoped AGENTS for
   execution/ownership rules, and both only when both changed. Do not duplicate
@@ -83,7 +84,9 @@ retirement. A zero-debt ledger is not an everyday checklist.
   docs runner. Use `Typical Call:` for interactive or user-file-dependent
   sketches.
 - Regenerate the site and run documentation consistency checks after source
-  pages, catalogs, public help, or renderer changes.
+  pages, public help, discovery rules, or renderer changes. After moving
+  Markdown, use `maintainLabKitDocLinks(..., "Update", true)` to repair
+  standard relative links before rendering.
 
 ## Sensitive data
 
@@ -105,7 +108,7 @@ tests, history, and details out of the public repository.
   integration, or another explicitly final handoff.
 - After failure, fix and rerun the narrowest failed file, method, or suite; do not repeatedly
   invoke the planner. Exact commands and scope live in
-  `docs/development/testing.md`.
+  `docs/development/maintain-and-release/testing.md`.
 - MATLAB and GitHub inspection require host runtime/network permissions. If
   MATLAB exits before a build/test banner, diagnose launcher access rather than
   source failure.

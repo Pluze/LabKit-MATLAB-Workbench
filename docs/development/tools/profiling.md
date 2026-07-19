@@ -76,5 +76,5 @@ profile identifies cost; it does not prove correctness or scientific parity.
 ## Related Documentation
 
 - [Maintainer Tools](README.md)
-- [Testing](../testing.md)
+- [Testing](../maintain-and-release/testing.md)
 - [LabKit Launcher](../../apps/labkit-core/launcher/README.md)

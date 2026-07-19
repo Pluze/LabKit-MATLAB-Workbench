@@ -56,7 +56,7 @@ save/load, plot overlays, and exports.
 ## Evidence
 
 - [CSC](../../../../apps/electrochemistry/csc/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

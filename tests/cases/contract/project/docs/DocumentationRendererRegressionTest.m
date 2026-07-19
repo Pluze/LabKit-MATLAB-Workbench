@@ -155,6 +155,43 @@ classdef DocumentationRendererRegressionTest < matlab.unittest.TestCase
             clear folderCleanup pathCleanup
         end
 
+        function markdownLinkMaintainerFindsNoBrokenLinks(testCase)
+            root = setupLabKitTestPath();
+            tools = fullfile(root, "tools", "docs");
+            addpath(tools);
+            pathCleanup = onCleanup(@() rmpath(tools));
+
+            result = maintainLabKitDocLinks(root);
+
+            testCase.verifyGreaterThan(result.checkedFileCount, 100);
+            testCase.verifyEqual(result.repairedLinkCount, 0);
+            testCase.verifyEmpty(result.unresolved);
+            clear pathCleanup
+        end
+
+        function markdownLinkMaintainerRepairsUniqueMovedPage(testCase)
+            folder = matlab.unittest.fixtures.TemporaryFolderFixture;
+            testCase.applyFixture(folder);
+            mkdir(fullfile(folder.Folder, "guide", "new"));
+            writeFixture(fullfile(folder.Folder, "README.md"), ...
+                "# Home" + newline + newline + "[Topic](guide/old/topic.md)");
+            writeFixture(fullfile(folder.Folder, "guide", "new", "topic.md"), ...
+                "# Topic" + newline);
+            root = setupLabKitTestPath();
+            tools = fullfile(root, "tools", "docs");
+            addpath(tools);
+            pathCleanup = onCleanup(@() rmpath(tools));
+
+            result = maintainLabKitDocLinks(folder.Folder, "Update", true);
+
+            testCase.verifyEqual(result.repairedLinkCount, 1);
+            testCase.verifyEqual(result.updatedFileCount, 1);
+            updated = string(fileread(fullfile(folder.Folder, "README.md")));
+            testCase.verifyTrue(contains(updated, ...
+                "[Topic](guide/new/topic.md)"));
+            clear pathCleanup
+        end
+
         function developmentSidebarGroupsTopicsAndTools(testCase)
             root = setupLabKitTestPath();
             page = string(fileread(fullfile(root, "site", ...
@@ -165,9 +202,11 @@ classdef DocumentationRendererRegressionTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(page, ...
                 '<div class="local-subgroup"><h3>Data and Designs</h3>'));
             testCase.verifyTrue(contains(page, ...
-                '<a class="local-link" href="scientific-csv-interchange.html">Simple Scientific CSV Exchange</a>'));
+                ['<a class="local-link" href="data-and-designs/' ...
+                'scientific-csv-interchange.html">Simple Scientific CSV Exchange</a>']));
             testCase.verifyTrue(contains(page, ...
-                '<a class="local-link" href="group-comparison-app-design.html">T-Test Wizard Design</a>'));
+                ['<a class="local-link" href="data-and-designs/' ...
+                'group-comparison-app-design.html">T-Test Wizard Design</a>']));
             testCase.verifyTrue(contains(page, ...
                 '<a class="local-link local-parent-link" href="tools/index.html">Maintainer Tools</a>'));
             testCase.verifyTrue(contains(page, ...
@@ -190,7 +229,8 @@ classdef DocumentationRendererRegressionTest < matlab.unittest.TestCase
                 ['<a class="local-link local-parent-link" ' ...
                 'href="electrochemistry/index.html">Electrochemistry</a>']));
             testCase.verifyTrue(contains(page, ...
-                '<a class="local-link" href="electrochemistry/cic.html">CIC</a>'));
+                ['<a class="local-link" href="electrochemistry/cic.html">' ...
+                'Charge-Injection Capacity</a>']));
             testCase.verifyTrue(contains(page, ...
                 ['<div class="local-subgroup"><h3><a ' ...
                 'href="wearable/index.html">Wearable</a></h3>']));
@@ -212,9 +252,7 @@ classdef DocumentationRendererRegressionTest < matlab.unittest.TestCase
             framework = string(fileread(fullfile(root, "site", ...
                 "framework", "index.html")));
             contracts = string(fileread(fullfile(root, "site", ...
-                "framework", "contracts.html")));
-            legacyContracts = string(fileread(fullfile(root, "site", ...
-                "libraries", "contracts", "index.html")));
+                "framework", "compatibility", "contracts.html")));
             runtimeApi = string(fileread(fullfile(root, "site", ...
                 "reference", "api", "labkit", "ui", "runtime", ...
                 "launch.html")));
@@ -222,17 +260,25 @@ classdef DocumentationRendererRegressionTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(framework, ...
                 '<div class="local-subgroup"><h3>Framework Compatibility</h3>'));
             testCase.verifyTrue(contains(framework, ...
-                'href="contracts.html">Compatibility Contracts</a>'));
+                ['href="compatibility/contracts.html">' ...
+                'Framework Compatibility Contracts</a>']));
             testCase.verifyTrue(contains(contracts, ...
-                'class="product-nav-link active" href="index.html">Framework</a>'));
-            testCase.verifyTrue(contains(legacyContracts, ...
-                'href="../../framework/contracts.html">App Framework</a>'));
+                ['class="product-nav-link active" ' ...
+                'href="../index.html">Framework</a>']));
             testCase.verifyTrue(contains(runtimeApi, ...
                 '<div class="local-subgroup"><h3>Framework Runtime</h3>'));
             testCase.verifyTrue(contains(runtimeApi, ...
                 'class="product-nav-link active" href="../../../../index.html">Functions</a>'));
         end
     end
+end
+
+function writeFixture(filepath, text)
+    fid = fopen(filepath, "w", "n", "UTF-8");
+    assert(fid >= 0, "Could not write documentation link fixture.");
+    cleanup = onCleanup(@() fclose(fid));
+    fwrite(fid, char(text), "char");
+    clear cleanup
 end
 
 function cleanupRelativeTree(originalFolder, sandbox)

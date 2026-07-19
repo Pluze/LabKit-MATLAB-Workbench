@@ -72,7 +72,7 @@ new-project choices, named save/load, recovery, and old-format upgrade.
 ## Evidence
 
 - [Video Marker](../../../../apps/image-measurement/video-marker/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 - [Gait Analysis](../../../../apps/gait/gait-analysis/README.md)
 
 ## Known limitations and follow-up

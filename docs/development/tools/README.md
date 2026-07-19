@@ -43,7 +43,7 @@ be retained outside `artifacts/` or attach it to the relevant release or issue.
 ## Related Documentation
 
 - [LabKit Launcher](../../apps/labkit-core/launcher/README.md)
-- [Testing](../testing.md)
-- [Documentation System](../documentation.md)
-- [Release Process](../release.md)
-- [Architecture](../architecture.md)
+- [Testing](../maintain-and-release/testing.md)
+- [Documentation System](../maintain-and-release/documentation.md)
+- [Release Process](../maintain-and-release/release.md)
+- [Architecture](../build-apps/architecture.md)

@@ -60,7 +60,7 @@ manifest through real Runtime callbacks.
 ## Evidence
 
 - [Response Review And Stats](../../../../apps/neurophysiology/response-review-stats/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 - [Nerve Response Analysis](../../../../apps/neurophysiology/nerve-response-analysis/README.md)
 
 ## Known limitations and follow-up

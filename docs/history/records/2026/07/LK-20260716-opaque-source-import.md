@@ -57,9 +57,9 @@ schema versions, source path access, and the public package surface.
 
 ## Evidence
 
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 - [App Framework](../../../../framework/README.md)
-- [Architecture](../../../../development/architecture.md)
+- [Architecture](../../../../development/build-apps/architecture.md)
 
 ## Known limitations and follow-up
 

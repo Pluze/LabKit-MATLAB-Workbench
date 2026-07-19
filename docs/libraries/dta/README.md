@@ -1,6 +1,6 @@
 # Gamry DTA Files
 
-[API reference](../README.md) | [Electrochemistry apps](../../apps/electrochemistry/README.md)
+[API reference](../../reference/README.md) | [Electrochemistry apps](../../apps/electrochemistry/README.md)
 
 The `labkit.dta` functions find and read Gamry DTA files without opening an
 app. They recognize chrono, electrochemical impedance spectroscopy (EIS), and
@@ -208,7 +208,7 @@ clean MATLAB test process.
   [CSC](../../apps/electrochemistry/csc/README.md), and
   [EIS](../../apps/electrochemistry/eis/README.md) use DTA records in
   interactive workflows.
-- [Contract functions](../../framework/contracts.md) explain how apps declare a
+- [Contract functions](../../framework/compatibility/contracts.md) explain how apps declare a
   compatible `labkit.dta` API version.
 - [Project history](../../history/README.md) lists parser, schema, and
   compatibility changes.

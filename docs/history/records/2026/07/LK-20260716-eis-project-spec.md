@@ -59,7 +59,7 @@ export.
 ## Evidence
 
 - [EIS](../../../../apps/electrochemistry/eis/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

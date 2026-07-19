@@ -62,7 +62,7 @@ viewport-preserving interaction, project state, and result export.
 
 - [DIC Preprocess](../../../../apps/dic/dic-preprocess/README.md)
 - [DIC Postprocess](../../../../apps/dic/dic-postprocess/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

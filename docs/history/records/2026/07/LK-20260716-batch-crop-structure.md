@@ -73,7 +73,7 @@ exports a synthetic crop through the real Runtime callbacks.
 ## Evidence
 
 - [Batch Image Crop](../../../../apps/image-measurement/batch-crop/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 - [Image Library](../../../../libraries/image/README.md)
 
 ## Known limitations and follow-up

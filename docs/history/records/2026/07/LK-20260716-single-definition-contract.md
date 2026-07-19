@@ -56,9 +56,9 @@ contract tests protect the metadata shape during the family migrations.
 
 ## Evidence
 
-- [Runtime and Lifecycle](../../../../framework/runtime.md) documents the
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md) documents the
   single definition and field meanings.
-- [App Development](../../../../development/app-development.md) shows the
+- [App Development](../../../../development/build-apps/app-development.md) shows the
   reduced static App file set.
 
 ## Known limitations and follow-up

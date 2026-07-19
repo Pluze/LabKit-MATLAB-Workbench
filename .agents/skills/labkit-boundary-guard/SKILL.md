@@ -8,8 +8,8 @@ description: "Use for changes to +labkit, public APIs, package ownership, helper
 ## Read
 
 Read `AGENTS.md`, the nearest scoped rules, affected code/tests, and
-`docs/development/architecture.md`. Read only the owning framework/library/app
-manual for the boundary being changed.
+`docs/development/build-apps/architecture.md`. Read only the owning
+framework/library/app manual for the boundary being changed.
 
 ## Decision
 

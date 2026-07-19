@@ -1,6 +1,6 @@
 # Thermal Images
 
-[API reference](../README.md) | [FLIR Thermal app](../../apps/image-measurement/flir-thermal/README.md)
+[API reference](../../reference/README.md) | [FLIR Thermal app](../../apps/image-measurement/flir-thermal/README.md)
 
 The `labkit.thermal` functions read FLIR radiometric JPEG files, expose their
 raw sensor data and calibration metadata, convert sensor values to degrees

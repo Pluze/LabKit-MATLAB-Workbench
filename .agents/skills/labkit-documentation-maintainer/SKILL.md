@@ -1,20 +1,23 @@
 ---
 name: labkit-documentation-maintainer
-description: "Use for LabKit documentation architecture, public API reference, component history, catalogs/navigation, the MATLAB documentation renderer, generated site consistency, or documentation deployment changes."
+description: "Use for LabKit documentation architecture, public API reference, component history, path-derived navigation, the MATLAB documentation renderer, generated site consistency, or documentation deployment changes."
 ---
 
 # LabKit Documentation Maintainer
 
 ## Sources of truth
 
-Read `AGENTS.md`, the affected manual/help block, `docs/site.json`, relevant
-catalog JSON, renderer source under `tools/docs`, and focused documentation
-tests. Read `docs/development/tools/documentation.md` for renderer behavior and
-`docs/development/release.md` when release history is involved.
+Read `AGENTS.md`, the affected manual/help block, renderer source under
+`tools/docs`, and focused documentation tests. Read
+`docs/development/tools/documentation.md` for renderer behavior and
+`docs/development/maintain-and-release/release.md` when release history is
+involved.
 
-Authored sources are Markdown, structured JSON catalogs/navigation, and public
-MATLAB help. `site/` is tracked generated output. Never hand-edit HTML, CSS,
-JavaScript, or search indexes.
+Authored sources are path-organized Markdown and public MATLAB help. Narrative
+pages are discovered from `docs/`; public Apps come from
+`labkit_launcher("list")` plus path-conventional manuals; App API pages come
+from complete public help contracts. `site/` is tracked generated output.
+Never hand-edit HTML, CSS, JavaScript, or search indexes.
 
 ## Page design
 
@@ -42,8 +45,10 @@ copy edits, or generated-site churn.
 
 ## Workflow
 
-1. Change authored sources or renderer code.
-2. Run the smallest documentation contract/regression test during iteration.
+1. Change authored sources or renderer code. After moving Markdown, run
+   `maintainLabKitDocLinks(repoRoot, "Update", true)` and review every rewrite.
+2. Run `maintainLabKitDocLinks(repoRoot)` and the smallest documentation
+   contract/regression test during iteration.
 3. From the repository root, run `addpath("tools/docs"); renderLabKitDocs()`
    to synchronize the default `docs/` sources into `site/`. Custom roots use
    positional arguments `renderLabKitDocs(sourceRoot, outputRoot)`; the

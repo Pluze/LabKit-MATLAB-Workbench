@@ -66,7 +66,7 @@ selection, history, preview, export, and save/load workflows.
 ## Evidence
 
 - [Image Match](../../../../apps/image-measurement/image-match/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

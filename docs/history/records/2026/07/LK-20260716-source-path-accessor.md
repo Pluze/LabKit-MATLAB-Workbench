@@ -60,8 +60,8 @@ cover the new public contract.
 
 ## Evidence
 
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
-- [Complete App Tutorial](../../../../development/complete-app.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
+- [Complete App Tutorial](../../../../development/build-apps/complete-app.md)
 
 ## Known limitations and follow-up
 

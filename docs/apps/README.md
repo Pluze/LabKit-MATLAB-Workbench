@@ -97,7 +97,7 @@ an explicit in-place operation.
 
 Important scientific and deterministic app operations can be called without
 opening the GUI. Each app page identifies its supported app-owned functions
-and links them to the generated [API Reference](../libraries/README.md).
+and links them to the generated [API Reference](../reference/README.md).
 Reusable file parsers and generic processing functions live in the public
 `labkit.*` libraries.
 
@@ -123,6 +123,6 @@ development files that should not become global MATLAB commands.
 - [Getting Started](../getting-started/README.md)
 - [LabKit Launcher](labkit-core/launcher/README.md)
 - [App Framework](../framework/README.md)
-- [API Reference](../libraries/README.md)
-- [App Development](../development/app-development.md)
+- [API Reference](../reference/README.md)
+- [App Development](../development/build-apps/app-development.md)
 - [Component History](../history/README.md)

@@ -3,7 +3,8 @@
 This file records only active architecture migration or compatibility-retirement
 debt. Current supported behavior belongs in `docs/`; execution rules belong in
 the nearest `AGENTS.md`; exact validation commands belong in
-`docs/development/testing.md`; completed work belongs in component history.
+`docs/development/maintain-and-release/testing.md`; completed work belongs in
+component history.
 
 ## Active debt
 
@@ -741,7 +742,7 @@ Before merge or direct-main push:
    evidence;
 4. replace current framework and App-development manuals with the accepted
    replacement contract and migration examples;
-5. update API catalogs/navigation and regenerate the site;
+5. update public help and path-owned navigation, then regenerate the site;
 6. run documentation consistency, contract, focused GUI/core, `changedFast`,
    and one stable `buildtool changed` gate;
 7. complete developer-led interactive validation of every affected workflow
@@ -845,7 +846,8 @@ This debt entry is complete only when all of the following are true:
 - retired code, migration-only bridge code, and debt-only guardrails are deleted.
 
 At that point, move durable replacement design and compatibility promises into
-`docs/framework/`, `docs/development/app-development.md`, public MATLAB help,
+`docs/framework/`, `docs/development/build-apps/app-development.md`, public
+MATLAB help,
 the API catalog, and component history. Then delete this entire active debt
 entry in the same change. Do not preserve the completed roadmap here.
 

@@ -70,7 +70,7 @@ reset, reopen, and reanalysis.
 
 - [Nerve Response Analysis](../../../../apps/neurophysiology/nerve-response-analysis/README.md)
 - [RHS Preview](../../../../apps/neurophysiology/rhs-preview/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

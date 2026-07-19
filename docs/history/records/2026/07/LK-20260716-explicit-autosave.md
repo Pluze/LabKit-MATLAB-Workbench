@@ -59,7 +59,7 @@ generations, and recovery loading.
 
 ## Evidence
 
-- [Runtime and lifecycle](../../../../framework/runtime.md) documents the
+- [Runtime and lifecycle](../../../../framework/guides/runtime.md) documents the
   injected recovery operation and its distinction from named saves.
 - [Video Marker](../../../../apps/image-measurement/video-marker/README.md)
   documents the Session button and no-dialog behavior.

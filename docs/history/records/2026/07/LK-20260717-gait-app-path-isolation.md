@@ -71,7 +71,7 @@ workflow, and the App package boundary guardrail.
 
 - [Gait Analysis](../../../../apps/gait/gait-analysis/README.md)
 - [Video Marker](../../../../apps/image-measurement/video-marker/README.md)
-- [App Development](../../../../development/app-development.md#cross-app-data-contracts)
+- [App Development](../../../../development/build-apps/app-development.md#cross-app-data-contracts)
 
 ## Known limitations and follow-up
 

@@ -105,5 +105,5 @@ supplies omitted empty workflow and view buckets. The App requires
 resolved-path access, and portable-reference serialization remain
 framework-owned.
 
-The semantic layout follows the [Runtime callback contract](../../../framework/runtime.md#layout-and-action-rules):
+The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
 every referenced action must be registered and resolves during layout construction.

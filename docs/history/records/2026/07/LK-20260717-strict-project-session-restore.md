@@ -73,7 +73,7 @@ forbids broad catches in `createSession.m`.
 
 ## Evidence
 
-- [Runtime and lifecycle](../../../../framework/runtime.md#session-actions-presentation-and-renderers)
+- [Runtime and lifecycle](../../../../framework/guides/runtime.md#session-actions-presentation-and-renderers)
 - [Figure Studio](../../../../apps/labkit-core/figure-studio/README.md)
 - [FLIR Thermal](../../../../apps/image-measurement/flir-thermal/README.md)
 - [Focus Stack](../../../../apps/image-measurement/focus-stack/README.md)

@@ -61,7 +61,7 @@ workflows cover project reconstruction, preview, analysis, and export behavior.
 - [Figure Studio](../../../../apps/labkit-core/figure-studio/README.md)
 - [Neurophysiology Apps](../../../../apps/neurophysiology/README.md)
 - [ECG Print](../../../../apps/wearable/ecg-print/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

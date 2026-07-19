@@ -156,5 +156,5 @@ Its session factory returns only App-specific import workflow and decoded
 signal cache fields. Runtime supplies absent canonical buckets and owns
 workflow-log initialization.
 
-The semantic layout follows the [Runtime callback contract](../../../framework/runtime.md#layout-and-action-rules):
+The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
 every referenced action must be registered and resolves during layout construction.

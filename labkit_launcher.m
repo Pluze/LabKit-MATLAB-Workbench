@@ -112,8 +112,8 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.5.1", ...
-        "updated", "2026-07-16");
+        "version", "1.5.2", ...
+        "updated", "2026-07-19");
 end
 
 function titleText = launcherVersionTitle()
@@ -857,29 +857,24 @@ end
 %% Section: App documentation
 
 function page = launcherAppDocumentation(root, appCommand)
-    catalogFile = fullfile(root, 'docs', 'catalogs', 'apps.json');
-    if exist(catalogFile, 'file') ~= 2
-        error('labkit_launcher:DocumentationCatalogUnavailable', ...
-            'docs/catalogs/apps.json is missing. Update or repair the LabKit install.');
-    end
-    try
-        catalog = jsondecode(fileread(catalogFile));
-    catch err
-        error('labkit_launcher:DocumentationCatalogInvalid', ...
-            'Could not read the app documentation catalog: %s', err.message);
-    end
-    if ~isfield(catalog, 'apps')
-        error('labkit_launcher:DocumentationCatalogInvalid', ...
-            'The app documentation catalog has no apps collection.');
-    end
-    apps = catalog.apps;
+    apps = discoverApps(root);
     commands = string({apps.command});
     match = find(commands == string(appCommand), 1);
-    if isempty(match)
+    if isempty(match) || ~strcmp(apps(match).visibility, 'public')
         error('labkit_launcher:AppDocumentationUnavailable', ...
-            'No documentation page is cataloged for %s.', appCommand);
+            'No public documentation page is available for %s.', appCommand);
     end
-    page = fullfile(root, 'site', char(string(apps(match).output)));
+    [~, appId] = fileparts(apps(match).folder);
+    appId = strrep(appId, '_', '-');
+    manuals = dir(fullfile(root, 'docs', 'apps', '*', appId, 'README.md'));
+    if numel(manuals) ~= 1
+        error('labkit_launcher:AppDocumentationUnavailable', ...
+            ['Expected one manual at docs/apps/<family>/%s/README.md; ' ...
+            'found %d.'], appId, numel(manuals));
+    end
+    familyFolder = fileparts(manuals(1).folder);
+    [~, familyId] = fileparts(familyFolder);
+    page = fullfile(root, 'site', 'apps', familyId, [appId '.html']);
     if exist(page, 'file') ~= 2
         error('labkit_launcher:AppDocumentationNotBuilt', ...
             ['The generated page is missing for %s. Use Update Documentation ' ...
@@ -1412,7 +1407,7 @@ function message = codeCheckStatus(report)
         char(report.relativeHtmlFile));
 end
 
-%% Section: App discovery and catalog metadata
+%% Section: App discovery and metadata
 
 function apps = discoverApps(root)
     template = emptyAppStruct();

@@ -68,8 +68,8 @@ calculation/view and repository contract tests cover the remaining behavior.
 ## Evidence
 
 - [Charge-Storage Capacity](../../../../apps/electrochemistry/csc/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
-- [App Development](../../../../development/app-development.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
+- [App Development](../../../../development/build-apps/app-development.md)
 
 ## Known limitations and follow-up
 

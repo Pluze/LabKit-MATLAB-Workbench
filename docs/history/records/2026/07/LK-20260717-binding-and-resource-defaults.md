@@ -62,7 +62,7 @@ Marker structure and targeted behavior tests cover the simplified definition.
 
 ## Evidence
 
-- [Runtime and Lifecycle](../../../../framework/runtime.md) documents bound
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md) documents bound
   controls and injected resource ownership.
 - [Video Marker](../../../../apps/image-measurement/video-marker/README.md)
   describes the preset and decoded-video resource behavior.

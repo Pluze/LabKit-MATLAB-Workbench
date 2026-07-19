@@ -64,7 +64,7 @@ fusion, presentation, export manifest, save/load reconstruction, and append.
 ## Evidence
 
 - [Focus Stack](../../../../apps/image-measurement/focus-stack/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

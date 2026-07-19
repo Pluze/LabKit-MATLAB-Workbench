@@ -79,5 +79,5 @@ directory afterward.
 
 - [Maintainer Tools](README.md)
 - [LabKit Launcher](../../apps/labkit-core/launcher/README.md)
-- [Private Apps](../private-apps.md)
-- [Release Process](../release.md)
+- [Private Apps](../maintain-and-release/private-apps.md)
+- [Release Process](../maintain-and-release/release.md)

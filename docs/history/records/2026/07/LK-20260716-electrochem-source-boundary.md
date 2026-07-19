@@ -58,7 +58,7 @@ Package and version guardrails verify the shared API and component metadata.
 ## Evidence
 
 - [Electrochemistry Apps](../../../../apps/electrochemistry/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

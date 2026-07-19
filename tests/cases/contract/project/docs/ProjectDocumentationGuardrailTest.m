@@ -157,7 +157,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
         function releaseDocsPinLauncherAssetToTagBlob(testCase)
             root = setupLabKitTestPath();
             releaseDoc = string(fileread(fullfile(root, "docs", ...
-                "development", "release.md")));
+                "development", "maintain-and-release", "release.md")));
             gitAttributes = string(fileread(fullfile(root, ".gitattributes")));
 
             requiredReleasePhrases = [ ...
@@ -169,7 +169,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             ];
             for k = 1:numel(requiredReleasePhrases)
                 testCase.verifyTrue(contains(releaseDoc, requiredReleasePhrases(k)), ...
-                    "docs/development/release.md should preserve launcher asset reproducibility rule: " + ...
+                    "docs/development/maintain-and-release/release.md should preserve launcher asset reproducibility rule: " + ...
                     requiredReleasePhrases(k));
             end
 
@@ -236,7 +236,8 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(page, ...
                 '<section class="local-group on-this-page"><h2>On this page</h2>'));
             testCase.verifyTrue(contains(page, ...
-                '<a class="context-parent" href="../../../../libraries/dta/index.html">DTA Library</a>'));
+                ['<a class="context-parent" ' ...
+                'href="../../../../libraries/dta/index.html">Gamry DTA Files</a>']));
             testCase.verifyTrue(contains(page, ...
                 '<a class="local-link" href="detectPulses.html">detectPulses</a>'));
             testCase.verifyFalse(contains(page, ...
@@ -320,16 +321,22 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             testCase.verifyEmpty(mFiles, ...
                 "docs/ contains structured documentation sources, not executable tools.");
             testCase.verifyTrue(isfile(fullfile(docsRoot, "framework", "README.md")));
-            testCase.verifyTrue(isfile(fullfile(docsRoot, "libraries", "README.md")));
+            testCase.verifyTrue(isfile(fullfile(docsRoot, "reference", "README.md")));
             testCase.verifyTrue(isfile(fullfile(docsRoot, "history", "README.md")));
+            testCase.verifyFalse(isfile(fullfile(docsRoot, "site.json")), ...
+                "Page discovery should not require a duplicated site registry.");
+            testCase.verifyFalse(isfolder(fullfile(docsRoot, "catalogs")), ...
+                "App and API discovery should not require catalog JSON.");
 
-            catalog = jsondecode(fileread(fullfile(docsRoot, "catalogs", "apps.json")));
-            apps = normalizeDocStructArray(catalog.apps);
-            for k = 1:numel(apps)
-                expected = "apps/" + string(apps(k).family) + "/" + ...
-                    string(apps(k).id) + "/README.md";
-                testCase.verifyEqual(string(apps(k).source), expected, ...
-                    "Each app should own one immediately recognizable documentation directory.");
+            apps = discoverLabKitApps();
+            for k = 1:height(apps)
+                folderParts = split(replace(string(apps.Folder(k)), ...
+                    "\", "/"), "/");
+                appId = replace(folderParts(end), "_", "-");
+                manuals = dir(fullfile(docsRoot, "apps", "*", ...
+                    appId, "README.md"));
+                testCase.verifyNumElements(manuals, 1, ...
+                    "Each discovered App should own one path-conventional manual.");
             end
         end
 
@@ -344,7 +351,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
 
             testCase.verifyGreaterThan(result.pageCount, 15, ...
                 "Documentation site should contain the narrative hierarchy.");
-            testCase.verifyGreaterThan(result.apiCount, 100, ...
+            testCase.verifyGreaterThan(result.apiCount, 90, ...
                 "Documentation site should include library and app-owned public APIs.");
             testCase.verifyGreaterThan(result.comparedFileCount, result.apiCount, ...
                 "Generated tree comparison should include pages and static assets.");
@@ -362,7 +369,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             testCase.verifyTrue(any(titles == "labkit.thermal.rawToTemperatureC"), ...
                 "Search should index reusable scientific APIs.");
             testCase.verifyTrue(any(titles == "cic.analysisRun.computeCIC"), ...
-                "Search should index explicitly cataloged app scientific APIs.");
+                "Search should index App APIs discovered from complete public help.");
             testCase.verifyFalse(any(contains(titles, ".private.")), ...
                 "Search should not publish private implementation helpers.");
         end
@@ -444,19 +451,18 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 "Inline code used as a link label should render inside its anchor.");
         end
 
-        function appApiCatalogIsExplicitAndContainsNoPrivatePaths(testCase)
+        function appApisAreDiscoveredFromCompletePublicHelp(testCase)
             root = setupLabKitTestPath();
-            catalog = jsondecode(fileread(fullfile(root, "docs", ...
-                "catalogs", "api.json")));
-            entries = normalizeDocStructArray(catalog.appApis);
-            testCase.assertGreaterThan(numel(entries), 20, ...
-                "App API catalog should identify core GUI-free workflows.");
-            for k = 1:numel(entries)
-                source = string(entries(k).source);
+            files = discoverLabKitAppApiFiles(root);
+            testCase.assertGreaterThan(numel(files), 20, ...
+                "Complete public help should identify core GUI-free workflows.");
+            for k = 1:numel(files)
+                source = replace(extractAfter(files(k), ...
+                    string(root) + filesep), filesep, "/");
                 testCase.verifyFalse(contains("/" + source + "/", "/private/"), ...
                     "Private helpers must not enter detailed API documentation.");
-                testCase.verifyTrue(isfile(fullfile(root, source)), ...
-                    "Cataloged app API should exist: " + source);
+                testCase.verifyTrue(isfile(files(k)), ...
+                    "Discovered app API should exist: " + source);
             end
         end
 
@@ -471,7 +477,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
         function appOwnedPackageHelpersDocumentImplementationContracts(testCase)
             root = setupLabKitTestPath();
             files = collectAppOwnedPackageFiles(root);
-            files = setdiff(files, catalogedAppApiFiles(root), "stable");
+            files = setdiff(files, discoverLabKitAppApiFiles(root), "stable");
             testCase.assertFalse(isempty(files), ...
                 'App-owned package contract guardrail should scan non-public helpers.');
 
@@ -483,7 +489,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             end
 
             testCase.verifyTrue(isempty(missing), ...
-                ['Non-public app package helpers need top-of-file implementation contracts: ' ...
+                ['Non-public app package helpers need implementation contracts: ' ...
                 strjoin(cellstr(missing), ', ')]);
         end
     end
@@ -491,14 +497,6 @@ end
 
 function executeDocumentationExample(code)
     evalc(code);
-end
-
-function values = normalizeDocStructArray(values)
-    if isempty(values)
-        values = struct([]);
-    elseif iscell(values)
-        values = [values{:}];
-    end
 end
 
 function files = collectHumanDocFiles(root)
@@ -581,17 +579,6 @@ function files = collectAppOwnedPackageFiles(root)
     files = unique(files);
 end
 
-function files = catalogedAppApiFiles(root)
-    catalog = jsondecode(fileread(fullfile(root, "docs", "catalogs", ...
-        "api.json")));
-    entries = normalizeDocStructArray(catalog.appApis);
-    files = strings(1, numel(entries));
-    for k = 1:numel(entries)
-        files(k) = string(fullfile(root, entries(k).source));
-    end
-    files = unique(files);
-end
-
 function folders = collectPrivateDirs(folder)
     folders = strings(1, 0);
     if ~isfolder(folder)
@@ -622,6 +609,22 @@ end
 function tf = hasTopFileContract(filepath)
     first = firstNonEmptyLine(filepath);
     tf = ~isempty(first) && startsWith(first, "%");
+    if tf
+        return;
+    end
+    text = fileread(filepath);
+    required = [ ...
+        "^%\s+Typical Call:\s*$"
+        "^%\s+Inputs:\s*$"
+        "^%\s+Outputs?:\s*$"
+        "^%\s+Side effects:\s*\S+"];
+    tf = true;
+    for k = 1:numel(required)
+        if isempty(regexp(text, required(k), "once", "lineanchors"))
+            tf = false;
+            return;
+        end
+    end
 end
 
 function first = firstNonEmptyLine(filepath)

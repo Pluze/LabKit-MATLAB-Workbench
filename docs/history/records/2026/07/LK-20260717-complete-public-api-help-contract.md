@@ -87,10 +87,10 @@ validation are run after this record and its component manuals are rendered.
 
 ## Evidence
 
-- [Public API index](../../../../libraries/README.md)
+- [Public API index](../../../../reference/README.md)
 - [LabKit App Framework](../../../../framework/README.md)
 - [App catalog](../../../../apps/README.md)
-- [Documentation maintenance](../../../../development/documentation.md)
+- [Documentation maintenance](../../../../development/maintain-and-release/documentation.md)
 
 ## Known limitations and follow-up
 

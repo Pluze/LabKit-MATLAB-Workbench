@@ -92,7 +92,7 @@ history contracts.
 
 - [UI Framework](../../../../framework/README.md) maps the supported public
   packages and runtime entry points.
-- [Runtime and Data Model](../../../../framework/runtime.md) explains semantic
+- [Runtime and Data Model](../../../../framework/guides/runtime.md) explains semantic
   transactions, injected services, and portable source behavior.
 
 ## Known limitations and follow-up

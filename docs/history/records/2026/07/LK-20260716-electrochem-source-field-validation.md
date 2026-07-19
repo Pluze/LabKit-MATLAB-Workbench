@@ -57,7 +57,7 @@ tests continue to cover canonical record validation and working file flows.
 
 ## Evidence
 
-- [Runtime and Lifecycle](../../../../framework/runtime.md) separates
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md) separates
   framework-owned record shape from App-owned fields and roles.
 - The [Electrochemistry App manuals](../../../../apps/electrochemistry/README.md)
   identify the required App source collection.

@@ -56,7 +56,7 @@ export.
 ## Evidence
 
 - [VT Resistance](../../../../apps/electrochemistry/vt-resistance/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

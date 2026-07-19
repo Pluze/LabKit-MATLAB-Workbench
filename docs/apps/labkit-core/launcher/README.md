@@ -60,6 +60,10 @@ Unsupported modes, empty documentation commands, extra inputs, and more than
 one requested GUI output raise `labkit_launcher:InvalidInput` or
 `labkit_launcher:TooManyOutputs` errors.
 
+Documentation lookup uses the discovered public App folder and the unique
+path-conventional manual at `docs/apps/<family>/<app>/README.md`. It does not
+require a separately maintained App catalog.
+
 ## App Discovery
 
 Public apps are discovered from `apps/**/labkit_*_app.m`. Each entry point
@@ -121,6 +125,6 @@ Key milestones:
 - [Getting Started](../../../getting-started/README.md)
 - [LabKit Apps](../../README.md)
 - [LabKit Core Apps](../README.md)
-- [Architecture](../../../development/architecture.md)
-- [Private Apps](../../../development/private-apps.md)
-- [Release Process](../../../development/release.md)
+- [Architecture](../../../development/build-apps/architecture.md)
+- [Private Apps](../../../development/maintain-and-release/private-apps.md)
+- [Release Process](../../../development/maintain-and-release/release.md)

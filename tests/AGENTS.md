@@ -32,7 +32,7 @@ Tests mirror source ownership and use MATLAB's official test framework.
 - Unknown changed paths fall back to full non-GUI validation rather than a
   narrow false signal. GUI changes route to the owning hidden-GUI suite.
 - Exact public tasks and examples belong only in
-  `docs/development/testing.md`.
+  `docs/development/maintain-and-release/testing.md`.
 
 ## Test design
 
@@ -78,5 +78,5 @@ Tests mirror source ownership and use MATLAB's official test framework.
 - Do not run manual interactive workflows in `-batch`. Broad GUI runs can steal
   focus and should be used only when required.
 
-Update `docs/development/testing.md` when public tasks, validation strategy, CI
+Update `docs/development/maintain-and-release/testing.md` when public tasks, validation strategy, CI
 scope, test layout, or fixture policy changes.

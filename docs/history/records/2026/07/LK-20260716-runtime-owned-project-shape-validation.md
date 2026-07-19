@@ -66,9 +66,9 @@ validators.
 
 ## Evidence
 
-- [Runtime and Lifecycle](../../../../framework/runtime.md) defines the
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md) defines the
   framework and App validation boundary.
-- [App Development](../../../../development/app-development.md) tells App
+- [App Development](../../../../development/build-apps/app-development.md) tells App
   authors which validation remains in `projectSpec.m`.
 - Each affected [Electrochemistry App](../../../../apps/electrochemistry/README.md)
   manual identifies its domain-owned validator responsibilities.

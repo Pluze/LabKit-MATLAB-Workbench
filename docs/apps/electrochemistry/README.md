@@ -50,5 +50,5 @@ page and in the generated API reference.
 ## Related Modules
 
 - [DTA Library](../../libraries/dta/README.md)
-- [API Reference](../../libraries/README.md)
+- [API Reference](../../reference/README.md)
 - [All Apps](../README.md)

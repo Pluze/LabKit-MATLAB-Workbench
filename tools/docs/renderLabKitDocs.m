@@ -2,7 +2,7 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
 %RENDERLABKITDOCS Build the tracked LabKit static documentation site.
 % Expected caller: buildtool docs, tests, and release preparation.
 % Inputs:
-%   sourceRoot - documentation source folder containing site.json.
+%   sourceRoot - documentation source folder containing Markdown pages.
 %   outputRoot - destination for generated HTML and static assets.
 % Output:
 %   result - struct with pageCount, apiCount, fileCount, and paths.

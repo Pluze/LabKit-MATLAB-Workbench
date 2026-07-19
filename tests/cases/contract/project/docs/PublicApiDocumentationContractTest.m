@@ -2,7 +2,7 @@ classdef PublicApiDocumentationContractTest < matlab.unittest.TestCase
     %PUBLICAPIDOCUMENTATIONCONTRACTTEST Verify source help and examples.
 
     methods (Test, TestTags = {'Integration', 'Style'})
-        function catalogedPublicApisKeepCompleteHelpContracts(testCase)
+        function discoveredPublicApisKeepCompleteHelpContracts(testCase)
             root = setupLabKitTestPath();
             files = publicApiContractFiles(root);
             defects = strings(0, 1);
@@ -12,11 +12,11 @@ classdef PublicApiDocumentationContractTest < matlab.unittest.TestCase
             end
 
             testCase.verifyEmpty(defects, ...
-                "Cataloged public APIs need complete, signature-aligned help contracts: " + ...
+                "Discovered public APIs need complete, signature-aligned help contracts: " + ...
                 strjoin(defects, "; "));
         end
 
-        function catalogedPublicApiExamplesExecuteInMatlab(testCase)
+        function discoveredPublicApiExamplesExecuteInMatlab(testCase)
             root = setupLabKitTestPath();
             files = publicApiContractFiles(root);
             examples = strings(0, 1);
@@ -196,8 +196,5 @@ function files = publicApiContractFiles(root)
         end
     end
     files = sort(files);
-    catalogPath = fullfile(root, "docs", "catalogs", "api.json");
-    catalog = jsondecode(fileread(catalogPath));
-    appSources = reshape(string({catalog.appApis.source}), [], 1);
-    files = [files; fullfile(root, appSources(:))];
+    files = [files; discoverLabKitAppApiFiles(root)];
 end

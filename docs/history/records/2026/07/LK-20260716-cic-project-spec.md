@@ -56,7 +56,7 @@ source selection, calculation, save/load, and export through Runtime V2.
 ## Evidence
 
 - [CIC](../../../../apps/electrochemistry/cic/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

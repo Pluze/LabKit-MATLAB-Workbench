@@ -122,7 +122,7 @@ when reproducing a physical-scale export outside the GUI.
 
 - [Image Measurement family](../README.md)
 - [Image Library](../../../libraries/image/README.md)
-- [API Reference](../../../libraries/README.md)
+- [API Reference](../../../reference/README.md)
 
 ## Framework Compatibility
 
@@ -151,5 +151,5 @@ Its session factory returns only App-specific selection, crop workflow, view,
 and image-cache fields. Runtime supplies absent canonical buckets and owns
 workflow-log initialization.
 
-The semantic layout follows the [Runtime callback contract](../../../framework/runtime.md#layout-and-action-rules):
+The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
 every referenced action must be registered and resolves during layout construction.

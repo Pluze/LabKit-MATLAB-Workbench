@@ -78,9 +78,9 @@ construction outside a running figure.
 
 ## Evidence
 
-- [Runtime layout and action rules](../../../../framework/runtime.md#layout-and-action-rules)
+- [Runtime layout and action rules](../../../../framework/guides/runtime.md#layout-and-action-rules)
 - [Apps](../../../../apps/README.md)
-- [App development](../../../../development/app-development.md)
+- [App development](../../../../development/build-apps/app-development.md)
 
 ## Known limitations and follow-up
 

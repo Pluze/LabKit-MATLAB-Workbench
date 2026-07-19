@@ -70,7 +70,7 @@ shared ranges, and batch export.
 
 - [FLIR Thermal](../../../../apps/image-measurement/flir-thermal/README.md)
 - [Thermal Library](../../../../libraries/thermal/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

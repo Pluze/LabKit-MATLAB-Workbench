@@ -77,9 +77,9 @@ and representative source-backed sessions across the affected families.
 
 ## Evidence
 
-- [Runtime and Lifecycle](../../../../framework/runtime.md) defines canonical
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md) defines canonical
   session normalization and workflow logging.
-- [App Development](../../../../development/app-development.md) requires
+- [App Development](../../../../development/build-apps/app-development.md) requires
   `createSession.m` to rebuild only App-specific transient data.
 - Each affected App manual describes its remaining session-owned fields.
 

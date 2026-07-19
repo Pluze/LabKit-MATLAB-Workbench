@@ -77,11 +77,11 @@ cd LabKit-MATLAB-Workbench
 buildtool headless
 ```
 
-See [Testing](../development/testing.md) before choosing a broader build task.
+See [Testing](../development/maintain-and-release/testing.md) before choosing a broader build task.
 
 ## Next Steps
 
 - [App guide](../apps/README.md)
 - [LabKit Launcher](../apps/labkit-core/launcher/README.md)
-- [Public API reference](../libraries/README.md)
+- [Public API reference](../reference/README.md)
 - [Development guide](../development/README.md)

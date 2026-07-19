@@ -2,7 +2,7 @@ function result = checkLabKitDocs(sourceRoot, committedSiteRoot)
 %CHECKLABKITDOCS Verify that tracked HTML matches structured sources.
 % Expected caller: buildtool docsCheck and project documentation tests.
 % Inputs:
-%   sourceRoot        - documentation source folder containing site.json.
+%   sourceRoot        - documentation source folder containing Markdown pages.
 %   committedSiteRoot - tracked generated site folder.
 % Output:
 %   result - renderer result plus comparedFileCount.

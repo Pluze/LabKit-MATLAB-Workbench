@@ -90,7 +90,7 @@ catalog. The DTA loader and `getZCurve` are supported reusable APIs.
 
 - [Electrochemistry family](../README.md)
 - [DTA Library](../../../libraries/dta/README.md)
-- [API Reference](../../../libraries/README.md)
+- [API Reference](../../../reference/README.md)
 
 ## Framework Compatibility
 
@@ -105,5 +105,5 @@ Runtime V2 rather than repeated in the App factory. The App requires
 `labkit.dta >=2 <3`; busy-state, viewport-preserving rendering, resolved-path
 access, and portable-reference serialization remain framework-owned.
 
-The semantic layout follows the [Runtime callback contract](../../../framework/runtime.md#layout-and-action-rules):
+The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
 every referenced action must be registered and resolves during layout construction.

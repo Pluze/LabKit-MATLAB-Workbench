@@ -61,7 +61,7 @@ version/history governance.
 
 - [Figure Studio](../../../../apps/labkit-core/figure-studio/README.md)
   documents the unchanged workflow and new definition ownership.
-- [Runtime and Lifecycle](../../../../framework/runtime.md) defines the shared
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md) defines the shared
   product contract.
 
 ## Known limitations and follow-up

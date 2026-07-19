@@ -1,6 +1,6 @@
 # Intan RHS Recordings
 
-[API reference](../README.md) | [Neurophysiology apps](../../apps/neurophysiology/README.md)
+[API reference](../../reference/README.md) | [Neurophysiology apps](../../apps/neurophysiology/README.md)
 
 The `labkit.rhs` functions inspect Intan RHS recordings and read selected
 waveform windows without loading an entire file into memory. They expose file

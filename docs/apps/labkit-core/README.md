@@ -34,4 +34,4 @@ are a lossless replacement for the original scientific dataset.
 - [Figure Studio manual](figure-studio/README.md)
 - [LabKit Launcher manual](launcher/README.md)
 - [App Framework](../../framework/README.md)
-- [Architecture](../../development/architecture.md)
+- [Architecture](../../development/build-apps/architecture.md)

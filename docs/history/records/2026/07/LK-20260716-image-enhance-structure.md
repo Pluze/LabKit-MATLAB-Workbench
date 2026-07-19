@@ -72,7 +72,7 @@ export, save/load, and transient cache reconstruction.
 
 - [Image Enhance](../../../../apps/image-measurement/image-enhance/README.md)
 - [Image Library](../../../../libraries/image/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

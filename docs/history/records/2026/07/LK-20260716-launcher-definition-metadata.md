@@ -53,7 +53,7 @@ discovery at it, and verifies the returned version and date without a
 
 - [LabKit Launcher](../../../../apps/labkit-core/launcher/README.md) explains
   definition-backed discovery.
-- [Runtime and Lifecycle](../../../../framework/runtime.md) defines the App
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md) defines the App
   product metadata fields.
 
 ## Known limitations and follow-up

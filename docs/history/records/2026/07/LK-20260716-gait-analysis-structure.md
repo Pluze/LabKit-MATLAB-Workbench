@@ -70,7 +70,7 @@ pose reconstruction after reopen.
 
 - [Gait Analysis](../../../../apps/gait/gait-analysis/README.md)
 - [Video Marker](../../../../apps/image-measurement/video-marker/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

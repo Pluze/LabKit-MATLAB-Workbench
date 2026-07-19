@@ -9,7 +9,7 @@ type: feat
 compatibility: compatible
 component: `labkit_VideoMarker_app` | `1.1.0 -> 1.2.0`
 component: `labkit.ui` | `5.1.1 -> 5.2.0`
-scope: `docs/development/architecture.md`
+scope: `docs/development/build-apps/architecture.md`
 scope: `docs/api/ui.md`
 scope: runtime dependency policy
 ```

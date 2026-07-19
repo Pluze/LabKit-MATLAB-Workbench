@@ -56,7 +56,7 @@ and Gait project load/step-analysis behavior.
 
 - [DIC Apps](../../../../apps/dic/README.md)
 - [Gait Analysis](../../../../apps/gait/gait-analysis/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

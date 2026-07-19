@@ -64,7 +64,7 @@ export workflows.
 
 ## Evidence
 
-- [Runtime and Lifecycle](../../../../framework/runtime.md) defines canonical
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md) defines canonical
   project and source validation.
 - Each affected [Image Measurement App](../../../../apps/image-measurement/README.md)
   manual lists its remaining project and session responsibilities.

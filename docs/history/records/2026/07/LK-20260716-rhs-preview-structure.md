@@ -73,7 +73,7 @@ reset, reopen, and reconstruction of both preview and filter sources.
 
 - [RHS Preview](../../../../apps/neurophysiology/rhs-preview/README.md)
 - [Nerve Response Analysis](../../../../apps/neurophysiology/nerve-response-analysis/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

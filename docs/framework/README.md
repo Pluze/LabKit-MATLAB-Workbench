@@ -10,12 +10,12 @@ workflow decisions, scientific calculations, data schemas, labels, and exports.
 
 | Goal | Documentation |
 | --- | --- |
-| Understand how an App starts and processes actions | [Runtime and lifecycle](runtime.md) |
-| Declare and validate compatible LabKit modules | [Compatibility contracts](contracts.md) |
-| Build or refactor a concrete App | [App development](../development/app-development.md) |
-| Choose reusable package boundaries | [Architecture](../development/architecture.md) |
-| Look up exact MATLAB function syntax | [Public API reference](../libraries/README.md) |
-| Validate framework or GUI changes | [Testing](../development/testing.md) |
+| Understand how an App starts and processes actions | [Runtime and lifecycle](guides/runtime.md) |
+| Declare and validate compatible LabKit modules | [Compatibility contracts](compatibility/contracts.md) |
+| Build or refactor a concrete App | [App development](../development/build-apps/app-development.md) |
+| Choose reusable package boundaries | [Architecture](../development/build-apps/architecture.md) |
+| Look up exact MATLAB function syntax | [Public API reference](../reference/README.md) |
+| Validate framework or GUI changes | [Testing](../development/maintain-and-release/testing.md) |
 
 ## Module Overview
 
@@ -124,7 +124,7 @@ part of the current UI contract. Declared legacy MAT imports and supported
 older project payloads remain read-only data compatibility, not alternate App
 source architectures.
 
-Read [Runtime and lifecycle](runtime.md) for the detailed definition fields,
+Read [Runtime and lifecycle](guides/runtime.md) for the detailed definition fields,
 state transaction rules, startup/readiness behavior, plot and interaction
 contracts, debug semantics, callback policy, and the responsibilities of the
 framework and app.
@@ -136,12 +136,12 @@ functions are generated from the help block immediately following each public
 function declaration. The documentation contract discovers every non-private
 `labkit.ui` function, requires explicit failure behavior, verifies each
 implemented option and default, and executes every `Example:` block. Open the
-[API reference](../libraries/README.md) and search for a fully qualified symbol
+[API reference](../reference/README.md) and search for a fully qualified symbol
 such as `labkit.ui.runtime.launch` or `labkit.ui.version`.
 
 ## Related Topics
 
 - [App catalog](../apps/README.md)
-- [App development](../development/app-development.md)
-- [Architecture](../development/architecture.md)
+- [App development](../development/build-apps/app-development.md)
+- [Architecture](../development/build-apps/architecture.md)
 - [Project history](../history/README.md)

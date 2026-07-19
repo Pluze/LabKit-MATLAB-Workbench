@@ -57,7 +57,7 @@ Preprocess unit and hidden GUI workflows verify the unchanged callers.
 ## Evidence
 
 - [DIC Preprocess](../../../../apps/dic/dic-preprocess/README.md)
-- [Architecture](../../../../development/architecture.md)
+- [Architecture](../../../../development/build-apps/architecture.md)
 
 ## Known limitations and follow-up
 

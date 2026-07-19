@@ -57,7 +57,7 @@ plotting, and export through the consolidated definition.
 ## Evidence
 
 - [Chrono Overlay](../../../../apps/electrochemistry/chrono-overlay/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

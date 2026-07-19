@@ -11,14 +11,14 @@ MATLAB call syntax or returned data shapes.
 | Install, update, or open LabKit | [Getting started](getting-started/README.md) |
 | Understand every launcher action or call it from MATLAB | [LabKit Launcher](apps/labkit-core/launcher/README.md) |
 | Choose an app and understand its inputs and outputs | [App guide](apps/README.md) |
-| Call a reusable `labkit.*` function | [Public API reference](libraries/README.md) |
-| Understand ownership and package boundaries | [Architecture](development/architecture.md) |
-| Create or modify an app | [App development](development/app-development.md) |
-| Run tests or diagnose performance | [Testing](development/testing.md) |
+| Call a reusable `labkit.*` function | [Public API reference](reference/README.md) |
+| Understand ownership and package boundaries | [Architecture](development/build-apps/architecture.md) |
+| Create or modify an app | [App development](development/build-apps/app-development.md) |
+| Run tests or diagnose performance | [Testing](development/maintain-and-release/testing.md) |
 | Call packaging, profiling, codecheck, or documentation tools | [Maintainer tools](development/tools/README.md) |
-| Understand documentation sources and generated HTML | [Documentation system](development/documentation.md) |
-| Maintain a private app workspace | [Private apps](development/private-apps.md) |
-| Prepare a release | [Release process](development/release.md) |
+| Understand documentation sources and generated HTML | [Documentation system](development/maintain-and-release/documentation.md) |
+| Maintain a private app workspace | [Private apps](development/maintain-and-release/private-apps.md) |
+| Prepare a release | [Release process](development/maintain-and-release/release.md) |
 
 ## Documentation Layers
 
@@ -28,16 +28,15 @@ apps/             one directory per family and one subdirectory per app
                   including the LabKit Launcher under LabKit Core
 framework/        UI runtime concepts, behavior, and app-authoring contracts
 libraries/        one directory per reusable public MATLAB facade
-development/      architecture, app authoring, testing, tools, private apps, release
+reference/        generated-function reference landing page
+development/      reader-task folders for app building, maintenance, and tools
 history/          chronological change records and the project history index
-catalogs/         structured app and app-owned API membership metadata
-site.json         navigation, page identity, source, and output mapping
 ```
 
-The structure follows the same separation used by mature technical
-documentation sets: a short product landing page, task-oriented guides,
-examples close to the task, and a distinct function reference. It deliberately
-does not mirror the source tree one file at a time.
+Every Markdown file is published automatically. Its path owns navigation and
+its first level-one heading owns the page title. Public App manuals are matched
+to `labkit_launcher("list")`; App-owned function pages are discovered from
+complete public MATLAB help contracts.
 
 ## Reference Conventions
 

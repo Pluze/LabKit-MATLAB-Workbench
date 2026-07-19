@@ -61,7 +61,7 @@ behavior, scale calibration, results, and save/load.
 ## Evidence
 
 - [Curvature Measurement](../../../../apps/image-measurement/curvature/README.md)
-- [Runtime and Lifecycle](../../../../framework/runtime.md)
+- [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up
 

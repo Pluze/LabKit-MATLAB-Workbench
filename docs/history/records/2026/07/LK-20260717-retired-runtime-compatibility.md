@@ -70,9 +70,9 @@ tests cover App layout structure and public surface drift.
 
 ## Evidence
 
-- [Runtime and lifecycle](../../../../framework/runtime.md)
-- [App development](../../../../development/app-development.md)
-- [Public API reference](../../../../libraries/README.md)
+- [Runtime and lifecycle](../../../../framework/guides/runtime.md)
+- [App development](../../../../development/build-apps/app-development.md)
+- [Public API reference](../../../../reference/README.md)
 
 ## Known limitations and follow-up
 

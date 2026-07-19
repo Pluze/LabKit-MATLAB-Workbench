@@ -10,7 +10,7 @@ compatibility: additive
 component: `labkit_launcher` | documentation
 scope: `docs/apps/labkit-core/launcher/`
 scope: `docs/development/tools/`
-scope: `docs/development/testing.md`
+scope: `docs/development/maintain-and-release/testing.md`
 ```
 
 ## Context
