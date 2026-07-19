@@ -54,6 +54,10 @@ Keep the public root small and partition optional capabilities by purpose:
 `layout`, `view`, `event`, `project`, `result`, and `dialog`. Reject names that
 require reading implementation code to distinguish their purpose.
 
+Apply the same discoverability rule inside migrated Apps: do not forward SDK
+values through untyped app-local parameters. Declare runtime-injected contexts
+and event payloads by concrete type in callback `arguments` blocks.
+
 ## Validation and handoff
 
 Run the owning framework suite, project boundary guardrails, and downstream app

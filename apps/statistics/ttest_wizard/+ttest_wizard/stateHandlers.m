@@ -1,88 +1,65 @@
 % App workflow registry; returns handlers for table, analysis, plot, and export.
-function actions = definitionActions()
-%DEFINITIONACTIONS Return T-Test Wizard semantic workflow handlers.
+function handlers = stateHandlers()
+%STATEHANDLERS Return T-Test Wizard semantic state handlers.
 %
 % Expected caller: ttest_wizard.definition. Handlers own source loading,
 % visible cell selection, editable ordered groups, first-group comparisons,
 % result freshness, and CSV export. They do not access the UI registry.
 
-    actions = struct( ...
-        "openSource", @onOpenSource, ...
-        "clearSource", @onClearSource, ...
-        "sheetChanged", @onSheetChanged, ...
-        "sourceSelectionChanged", @onSourceSelectionChanged, ...
-        "analysisSelectionChanged", @onAnalysisSelectionChanged, ...
-        "captureGroup", @onCaptureGroup, ...
-        "assignRowsToGroup", @onAssignRowsToGroup, ...
-        "deleteSelectedRows", @onDeleteSelectedRows, ...
-        "groupsEdited", @onGroupsEdited, ...
-        "clearGroups", @onClearGroups, ...
-        "testSettingsChanged", @onTestSettingsChanged, ...
-        "runComparisons", @onRunComparisons, ...
-        "plotChanged", @onPlotChanged, ...
-        "exportData", @onExportData, ...
-        "exportResult", @onExportResult);
+    handlers = struct( ...
+        "sheetChanged", labkit.app.StateHandler( ...
+            "sheetChanged", @onSheetChanged, Event="valueChange"), ...
+        "sourceSelectionChanged", labkit.app.StateHandler( ...
+            "sourceSelectionChanged", @onSourceSelectionChanged, ...
+            Event="tableCellSelection"), ...
+        "analysisSelectionChanged", labkit.app.StateHandler( ...
+            "analysisSelectionChanged", @onAnalysisSelectionChanged, ...
+            Event="tableCellSelection"), ...
+        "captureGroup", labkit.app.StateHandler( ...
+            "captureGroup", @onCaptureGroup), ...
+        "assignRowsToGroup", labkit.app.StateHandler( ...
+            "assignRowsToGroup", @onAssignRowsToGroup), ...
+        "deleteSelectedRows", labkit.app.StateHandler( ...
+            "deleteSelectedRows", @onDeleteSelectedRows), ...
+        "groupsEdited", labkit.app.StateHandler( ...
+            "groupsEdited", @onGroupsEdited, Event="tableCellEdit"), ...
+        "clearGroups", labkit.app.StateHandler( ...
+            "clearGroups", @onClearGroups), ...
+        "testSettingsChanged", labkit.app.StateHandler( ...
+            "testSettingsChanged", @onTestSettingsChanged, ...
+            Event="valueChange"), ...
+        "runComparisons", labkit.app.StateHandler( ...
+            "runComparisons", @onRunComparisons), ...
+        "plotChanged", labkit.app.StateHandler( ...
+            "plotChanged", @onPlotChanged, Event="valueChange"), ...
+        "exportData", labkit.app.StateHandler( ...
+            "exportData", @onExportData), ...
+        "exportResult", labkit.app.StateHandler( ...
+            "exportResult", @onExportResult));
 end
 
-function state = onOpenSource(state, event, services)
-    paths = services.events.paths(event, "addedFiles");
-    if isempty(paths)
-        paths = services.events.paths(event, "files");
+function state = onSheetChanged(state, requested, context)
+    arguments
+        state (1, 1) struct
+        requested
+        context (1, 1) labkit.app.CallbackContext
     end
-    if isempty(paths)
-        return;
-    end
-    filepath = paths(end);
-    try
-        source = ttest_wizard.sourceTable.readSourceTable(filepath);
-    catch ME
-        services.diagnostics.report("Open source table", ME);
-        services.dialogs.alert(ME.message, "Open table");
-        state = services.workflow.log(state, ...
-            "Could not open table: " + string(ME.message));
-        return;
-    end
-    state.project.inputs.sources = services.project.reconcileSources( ...
-        state.project.inputs.sources, filepath, "table", "table", true);
-    state.project.inputs.sourceSheet = source.sheet;
-    state.session.cache.source = source;
-    state.session.selection.sourceCells = zeros(0, 2);
-    state.session.selection.selectionMessage = ...
-        "Select numeric cells in the opened table.";
-    state = services.workflow.log(state, ...
-        "Opened table: " + source.displayName + " | " + source.message);
-end
-
-function state = onClearSource(state, ~, services)
-    state.project.inputs.sources = services.project.reconcileSources( ...
-        state.project.inputs.sources, strings(0, 1), ...
-        "table", "table", true);
-    state.project.inputs.sourceSheet = "(no source)";
-    state.session.cache.source = ttest_wizard.sourceTable.emptySource();
-    state.session.selection.sourceCells = zeros(0, 2);
-    state.session.selection.selectionMessage = ...
-        "Open a table or enter data directly below.";
-    state = services.workflow.log(state, ...
-        "Cleared the source table; analysis data were kept.");
-end
-
-function state = onSheetChanged(state, event, services)
     source = state.session.cache.source;
     if ~source.ok || isempty(state.project.inputs.sources)
         return;
     end
-    requested = string(event.value);
+    requested = string(requested);
     if ~isscalar(requested) || ~any(requested == source.sheetNames)
         requested = source.sheetNames(1);
     end
-    filepath = labkit.ui.runtime.sourcePaths( ...
-        state.project.inputs.sources(1));
+    paths = context.resolveSourcePaths(state.project.inputs.sources);
+    filepath = paths(1);
     try
         source = ttest_wizard.sourceTable.readSourceTable( ...
             filepath, requested);
     catch ME
-        services.diagnostics.report("Change worksheet", ME);
-        services.dialogs.alert(ME.message, "Worksheet");
+        context.reportError("Change worksheet", ME);
+        context.alert(ME.message, "Worksheet");
         return;
     end
     state.project.inputs.sourceSheet = source.sheet;
@@ -90,14 +67,16 @@ function state = onSheetChanged(state, event, services)
     state.session.selection.sourceCells = zeros(0, 2);
     state.session.selection.selectionMessage = ...
         "Select numeric cells in the new worksheet.";
-    state = services.workflow.log(state, "Worksheet: " + source.sheet);
+    context.appendStatus("Worksheet: " + source.sheet);
 end
 
-function state = onSourceSelectionChanged(state, event, services)
-    indices = services.events.entries(event, "indices");
-    if ~isnumeric(indices) || size(indices, 2) ~= 2
-        indices = zeros(0, 2);
+function state = onSourceSelectionChanged(state, selection, context)
+    arguments
+        state (1, 1) struct
+        selection (1, 1) labkit.app.event.TableCellSelection
+        context (1, 1) labkit.app.CallbackContext
     end
+    indices = selection.CellIndices;
     state.session.selection.sourceCells = double(indices);
     source = state.session.cache.source;
     if ~source.ok || isempty(indices)
@@ -110,19 +89,25 @@ function state = onSourceSelectionChanged(state, event, services)
     state.session.selection.selectionMessage = selection.message;
 end
 
-function state = onAnalysisSelectionChanged(state, event, services)
-    indices = services.events.entries(event, "indices");
-    if ~isnumeric(indices) || size(indices, 2) ~= 2
-        indices = zeros(0, 2);
+function state = onAnalysisSelectionChanged(state, selection, context)
+    arguments
+        state (1, 1) struct
+        selection (1, 1) labkit.app.event.TableCellSelection
+        context (1, 1) labkit.app.CallbackContext
     end
+    indices = selection.CellIndices;
     state.session.selection.analysisCells = double(indices);
 end
 
-function state = onCaptureGroup(state, ~, services)
+function state = onCaptureGroup(state, context)
+    arguments
+        state (1, 1) struct
+        context (1, 1) labkit.app.CallbackContext
+    end
     source = state.session.cache.source;
     indices = state.session.selection.sourceCells;
     if ~source.ok || isempty(indices)
-        services.dialogs.alert( ...
+        context.alert( ...
             "Select cells in the opened table first.", "Select data");
         return;
     end
@@ -130,7 +115,7 @@ function state = onCaptureGroup(state, ~, services)
         source.cells, indices);
     state.session.selection.selectionMessage = selection.message;
     if ~selection.ok
-        services.dialogs.alert(selection.message, ...
+        context.alert(selection.message, ...
             "Selected cells cannot be used");
         return;
     end
@@ -154,12 +139,16 @@ function state = onCaptureGroup(state, ~, services)
     state.project.inputs.groups = groups;
     state.project.parameters.captureTarget = "(new group)";
     state = dataChanged(state);
-    state = services.workflow.log(state, sprintf( ...
+    context.appendStatus(sprintf( ...
         'Added %d value(s) to %s.', ...
         selection.acceptedCount, groups(groupIndex).label));
 end
 
-function state = onAssignRowsToGroup(state, ~, services)
+function state = onAssignRowsToGroup(state, context)
+    arguments
+        state (1, 1) struct
+        context (1, 1) labkit.app.CallbackContext
+    end
     target = string(state.session.selection.batchGroupTarget);
     selectedRows = selectedObservationRows(state);
     if target == "(select group)" || isempty(selectedRows)
@@ -170,12 +159,16 @@ function state = onAssignRowsToGroup(state, ~, services)
     state.project.inputs.groups = groups;
     state.session.selection.analysisCells = zeros(0, 2);
     state = dataChanged(state);
-    state = services.workflow.log(state, sprintf( ...
+    context.appendStatus(sprintf( ...
         'Changed %d selected row(s) to %s.', ...
         numel(selectedRows), target));
 end
 
-function state = onDeleteSelectedRows(state, ~, services)
+function state = onDeleteSelectedRows(state, context)
+    arguments
+        state (1, 1) struct
+        context (1, 1) labkit.app.CallbackContext
+    end
     selectedRows = selectedObservationRows(state);
     if isempty(selectedRows)
         return;
@@ -193,14 +186,19 @@ function state = onDeleteSelectedRows(state, ~, services)
         state.session.selection.batchGroupTarget = "(select group)";
     end
     state = dataChanged(state);
-    state = services.workflow.log(state, sprintf( ...
+    context.appendStatus(sprintf( ...
         'Deleted %d selected row(s).', numel(selectedRows)));
 end
 
-function state = onGroupsEdited(state, event, services)
-    data = event.value;
+function state = onGroupsEdited(state, edit, context)
+    arguments
+        state (1, 1) struct
+        edit (1, 1) labkit.app.event.TableCellEdit
+        context (1, 1) labkit.app.CallbackContext
+    end
+    data = edit.Data;
     if ~iscell(data) || size(data, 2) < 2
-        services.dialogs.alert( ...
+        context.alert( ...
             "The data table must contain Group and Value columns.", ...
             "Edit analysis data");
         return;
@@ -208,7 +206,7 @@ function state = onGroupsEdited(state, event, services)
     [groups, ok, message] = groupsFromRows( ...
         data(:, 1), data(:, 2), state.project.inputs.groups);
     if ~ok
-        services.dialogs.alert(message, "Edit analysis data");
+        context.alert(message, "Edit analysis data");
         return;
     end
     state.project.inputs.groups = groups;
@@ -217,39 +215,52 @@ function state = onGroupsEdited(state, event, services)
         state.project.parameters.captureTarget = "(new group)";
     end
     state = dataChanged(state);
-    state = services.workflow.log(state, sprintf( ...
+    context.appendStatus(sprintf( ...
         'Updated analysis data: %d group(s), %d value(s).', ...
         numel(groups), sum(arrayfun( ...
         @(group) numel(group.values), groups))));
 end
 
-function state = onClearGroups(state, ~, services)
+function state = onClearGroups(state, context)
+    arguments
+        state (1, 1) struct
+        context (1, 1) labkit.app.CallbackContext
+    end
     state.project.inputs.groups = repmat(emptyGroup("Group 1"), 0, 1);
     state.project.parameters.captureTarget = "(new group)";
     state.session.selection.analysisCells = zeros(0, 2);
     state.session.selection.batchGroupTarget = "(select group)";
     state = dataChanged(state);
-    state = services.workflow.log(state, "Cleared all analysis data.");
+    context.appendStatus("Cleared all analysis data.");
 end
 
 function state = dataChanged(state)
     state.project.results.lastDataExport = "";
 end
 
-function state = onTestSettingsChanged(state, ~, services)
+function state = onTestSettingsChanged(state, newValue, context)
+    arguments
+        state (1, 1) struct
+        newValue
+        context (1, 1) labkit.app.CallbackContext
+    end
     alpha = double(state.project.parameters.alpha);
     if ~isscalar(alpha) || ~isfinite(alpha) || alpha <= 0 || alpha >= 1
         state.project.parameters.alpha = 0.05;
-        services.dialogs.alert( ...
+        context.alert( ...
             "Alpha must be between zero and one. It was reset to 0.05.", ...
             "Test settings");
     end
 end
 
-function state = onRunComparisons(state, ~, services)
+function state = onRunComparisons(state, context)
+    arguments
+        state (1, 1) struct
+        context (1, 1) labkit.app.CallbackContext
+    end
     groups = state.project.inputs.groups;
     if numel(groups) < 2
-        services.dialogs.alert( ...
+        context.alert( ...
             "Enter at least two groups before running comparisons.", ...
             "T-tests");
         return;
@@ -259,70 +270,83 @@ function state = onRunComparisons(state, ~, services)
     state.project.results.current = results;
     state.project.results.lastResultExport = "";
     okCount = sum([results.ok]);
-    state = services.workflow.log(state, sprintf( ...
+    context.appendStatus(sprintf( ...
         'Completed %d of %d comparison(s) against %s.', ...
         okCount, numel(results), groups(1).label));
     if okCount < numel(results)
         failed = results(~[results.ok]);
-        services.dialogs.alert(strjoin(unique([failed.message]), newline), ...
+        context.alert(strjoin(unique([failed.message]), newline), ...
             "Some t-tests were not completed");
     end
 end
 
-function state = onPlotChanged(state, ~, ~)
+function state = onPlotChanged(state, newValue, context)
+    arguments
+        state (1, 1) struct
+        newValue
+        context (1, 1) labkit.app.CallbackContext
+    end
     % Plot-only settings intentionally do not change the result family.
 end
 
-function state = onExportData(state, ~, services)
+function state = onExportData(state, context)
+    arguments
+        state (1, 1) struct
+        context (1, 1) labkit.app.CallbackContext
+    end
     groups = state.project.inputs.groups;
     if isempty(groups)
-        services.dialogs.alert( ...
+        context.alert( ...
             "Enter group data before exporting.", "Export data");
         return;
     end
-    [filepath, cancelled] = services.dialogs.outputFile( ...
-        {'*.csv', 'CSV table (*.csv)'}, ...
-        "Export group data", "ttest_group_data.csv");
-    if cancelled
+    chosen = context.chooseOutputFile( ...
+        ["*.csv", "CSV table (*.csv)"], ...
+        fullfile(pwd, "ttest_group_data.csv"));
+    if chosen.Cancelled
         return;
     end
+    filepath = string(chosen.Value);
     filepath = ensureCsvExtension(filepath);
     try
         ttest_wizard.sourceTable.writeGroupCsv(filepath, groups);
     catch ME
-        services.diagnostics.report("Export group data", ME);
-        services.dialogs.alert(ME.message, "Export data");
+        context.reportError("Export group data", ME);
+        context.alert(ME.message, "Export data");
         return;
     end
     state.project.results.lastDataExport = string(filepath);
-    state = services.workflow.log(state, ...
-        "Exported group data: " + string(filepath));
+    context.appendStatus("Exported group data: " + string(filepath));
 end
 
-function state = onExportResult(state, ~, services)
+function state = onExportResult(state, context)
+    arguments
+        state (1, 1) struct
+        context (1, 1) labkit.app.CallbackContext
+    end
     results = state.project.results.current;
     if isempty(results)
-        services.dialogs.alert( ...
+        context.alert( ...
             "Run comparisons before exporting results.", "Export results");
         return;
     end
-    [filepath, cancelled] = services.dialogs.outputFile( ...
-        {'*.csv', 'CSV table (*.csv)'}, ...
-        "Export t-test results", "ttest_results.csv");
-    if cancelled
+    chosen = context.chooseOutputFile( ...
+        ["*.csv", "CSV table (*.csv)"], ...
+        fullfile(pwd, "ttest_results.csv"));
+    if chosen.Cancelled
         return;
     end
+    filepath = string(chosen.Value);
     filepath = ensureCsvExtension(filepath);
     try
         ttest_wizard.resultFiles.writeResultCsv(filepath, results);
     catch ME
-        services.diagnostics.report("Export t-test results", ME);
-        services.dialogs.alert(ME.message, "Export results");
+        context.reportError("Export t-test results", ME);
+        context.alert(ME.message, "Export results");
         return;
     end
     state.project.results.lastResultExport = string(filepath);
-    state = services.workflow.log(state, ...
-        "Exported t-test results: " + string(filepath));
+    context.appendStatus("Exported t-test results: " + string(filepath));
 end
 
 function [groups, ok, message] = groupsFromRows( ...

@@ -14,7 +14,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
             testCase.verifyEqual(runtime.commitCount(), 3);
 
             function state = dispatchIncrement(state, context)
-                context.dispatch(increment, []);
+                context.dispatchHandler(increment, []);
                 context.appendStatus("queued");
             end
         end

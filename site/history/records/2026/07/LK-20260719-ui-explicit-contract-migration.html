@@ -30,8 +30,10 @@ type: refactor
 compatibility: breaking
 component: `labkit.app` | `new -&gt; 1.0.0`
 component: `labkit_ChronoOverlay_app` | `1.4.7 -&gt; 1.5.0`
+component: `labkit_TTestWizard_app` | `1.0.1 -&gt; 1.1.0`
 scope: App Framework
 scope: Electrochem
+scope: Statistics
 scope: Project persistence
 scope: Result provenance</code></pre>
 <h2 id="context">Context</h2>
@@ -48,9 +50,11 @@ scope: Result provenance</code></pre>
 <li>Migrated Chrono Overlay to one export StateHandler, four direct bindings, one two-axis renderer call, and a two-operation view snapshot.</li>
 <li>Partitioned the public SDK into <code>layout</code>, <code>view</code>, <code>event</code>, <code>project</code>, <code>result</code>, and <code>dialog</code>; layout nodes, option parsing, stores, adapters, and runtime execution remain hidden under <code>internal</code>.</li>
 <li>Reduced Chrono's noncomment layout/action/presenter code from 277 lines to 86 while preserving its DTA alignment, plot options, project schema, CSV columns, and result provenance.</li>
+<li>Migrated T-Test Wizard as the typed editable-table and multi-page workspace proof: table selections and edits have explicit payload classes, callbacks declare injected SDK types in <code>arguments</code> blocks, and the private adapter owns the two-column control/workspace layout.</li>
+<li>Removed handler-object forwarding from App definitions. Each layout builder obtains the handlers it references, avoiding an untyped app-local SDK object bag between definition and layout functions.</li>
 </ul>
 <h2 id="user-and-data-impact">User and data impact</h2>
-<p>Chrono Overlay retains its input formats, pulse-gap alignment, plot meanings, parameter defaults, CSV table, and version-2 project payload. File identities and portable paths remain runtime-owned. Existing version-1 payload migration still removes decoded transient items before validation.</p>
+<p>Chrono Overlay retains its input formats, pulse-gap alignment, plot meanings, parameter defaults, CSV table, and version-2 project payload. T-Test Wizard retains its source formats, group/test calculations, plot meaning, two CSV exports, and version-2 project payload. File identities and portable paths remain runtime-owned. Existing payload migrations remain App-owned.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <p><code>labkit.app</code> 1 is a source-breaking replacement contract. Apps migrate on the branch before the UI 7 <code>runtime/layout</code> boundary is deleted; the two public authoring surfaces are not a permanent compatibility layer. Project documents retain their format and App payload versions independently of either facade.</p>
 <h2 id="validation">Validation</h2>

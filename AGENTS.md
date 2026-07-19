@@ -35,6 +35,11 @@ retirement. A zero-debt ledger is not an everyday checklist.
   `labkit.app.event.*` payloads, and `labkit.app.CallbackContext`. Entrypoints
   call `definition().launch(...)`. Apps do not receive registries or own
   lifecycle timers, readiness, callback queues, or concrete framework layout.
+- Do not forward SDK objects through app-local function parameters merely to
+  assemble a definition. Layout builders obtain their own named state
+  handlers. Runtime-injected `CallbackContext` and typed event payloads use
+  MATLAB `arguments` blocks so their capabilities are visible at the callback
+  declaration.
 - Keep app entrypoints thin and app helpers under the owning app package. Name
   packages and functions for the capability they own, not `helpers`, `utils`,
   `process`, `handle`, or `manage`.

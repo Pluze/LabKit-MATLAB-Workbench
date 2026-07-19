@@ -9,8 +9,10 @@ type: refactor
 compatibility: breaking
 component: `labkit.app` | `new -> 1.0.0`
 component: `labkit_ChronoOverlay_app` | `1.4.7 -> 1.5.0`
+component: `labkit_TTestWizard_app` | `1.0.1 -> 1.1.0`
 scope: App Framework
 scope: Electrochem
+scope: Statistics
 scope: Project persistence
 scope: Result provenance
 ```
@@ -62,13 +64,21 @@ requiring the later managed-interaction vocabulary.
 - Reduced Chrono's noncomment layout/action/presenter code from 277 lines to
   86 while preserving its DTA alignment, plot options, project schema, CSV
   columns, and result provenance.
+- Migrated T-Test Wizard as the typed editable-table and multi-page workspace
+  proof: table selections and edits have explicit payload classes, callbacks
+  declare injected SDK types in `arguments` blocks, and the private adapter
+  owns the two-column control/workspace layout.
+- Removed handler-object forwarding from App definitions. Each layout builder
+  obtains the handlers it references, avoiding an untyped app-local SDK object
+  bag between definition and layout functions.
 
 ## User and data impact
 
 Chrono Overlay retains its input formats, pulse-gap alignment, plot meanings,
-parameter defaults, CSV table, and version-2 project payload. File identities
-and portable paths remain runtime-owned. Existing version-1 payload migration
-still removes decoded transient items before validation.
+parameter defaults, CSV table, and version-2 project payload. T-Test Wizard
+retains its source formats, group/test calculations, plot meaning, two CSV
+exports, and version-2 project payload. File identities and portable paths
+remain runtime-owned. Existing payload migrations remain App-owned.
 
 ## Compatibility and migration
 

@@ -39,7 +39,6 @@ end
 
 ```matlab
 function app = definition()
-    handlers = trace_viewer.stateHandlers();
     app = labkit.app.Definition( ...
         Entrypoint="labkit_TraceViewer_app", ...
         AppId="trace_viewer", ...
@@ -50,7 +49,7 @@ function app = definition()
         Requirements=labkit.contract.requirements("app", ">=1 <2"), ...
         ProjectSchema=trace_viewer.projectSpec(), ...
         CreateSession=@trace_viewer.createSession, ...
-        Workbench=trace_viewer.userInterface.buildWorkbenchLayout(handlers), ...
+        Workbench=trace_viewer.userInterface.buildWorkbenchLayout(), ...
         BuildView=@trace_viewer.userInterface.presentWorkbench, ...
         Renderers=struct( ...
             "trace", @trace_viewer.userInterface.renderTrace));
@@ -96,6 +95,10 @@ migration loop and project envelope.
 
 ```matlab
 function session = createSession(project, context)
+    arguments
+        project (1, 1) struct
+        context (1, 1) labkit.app.CallbackContext
+    end
     paths = context.resolveSourcePaths(project.inputs.sources);
     traces = cell(numel(paths), 1);
     for k = 1:numel(paths)
@@ -116,7 +119,8 @@ this factory transactionally. A selection-only change does not reload files.
 ## 5. Semantic Layout
 
 ```matlab
-function layout = buildWorkbenchLayout(handlers)
+function layout = buildWorkbenchLayout()
+    handlers = trace_viewer.stateHandlers();
     controls = { ...
         labkit.app.layout.fileList("files", ...
             Filters=["*.csv", "CSV files (*.csv)"], ...
@@ -184,6 +188,10 @@ function handlers = stateHandlers()
 end
 
 function state = exportTrace(state, context)
+    arguments
+        state (1, 1) struct
+        context (1, 1) labkit.app.CallbackContext
+    end
     chosen = context.chooseOutputFile( ...
         ["*.csv", "CSV files (*.csv)"], pwd);
     if chosen.Cancelled

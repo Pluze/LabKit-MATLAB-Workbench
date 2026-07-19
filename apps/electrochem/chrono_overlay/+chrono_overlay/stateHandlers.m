@@ -6,6 +6,10 @@ function handlers = stateHandlers()
 end
 
 function state = onExportCSV(state, context)
+    arguments
+        state (1, 1) struct
+        context (1, 1) labkit.app.CallbackContext
+    end
     items = selectedItems(state);
     if isempty(items)
         context.alert("No files selected for export.", "Export");

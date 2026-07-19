@@ -2,6 +2,10 @@
 % Expected caller: LabKit App runtime through chrono_overlay.definition.
 % Portable sources remain opaque; context resolves their current paths.
 function session = createSession(project, context)
+    arguments
+        project (1, 1) struct
+        context (1, 1) labkit.app.CallbackContext
+    end
     paths = context.resolveSourcePaths(project.inputs.sources);
     items = chrono_overlay.sourceFiles.loadProjectItems(paths);
     session = struct( ...

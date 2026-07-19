@@ -16,7 +16,13 @@ labkit_TTestWizard_app
 The App requires Base MATLAB and the LabKit App Framework. It does not require
 Statistics and Machine Learning Toolbox.
 
-Current App version: **1.0.1**.
+Current App version: **1.1.0**.
+
+The App uses `labkit.app` 1.x. Its definition names the project schema,
+transient session factory, semantic workbench, derived view, and plot
+renderer. Runtime-injected callback context and table payload types are
+declared in MATLAB `arguments` blocks; the App does not receive a component
+registry or an untyped service bag.
 
 ## Workflow
 

@@ -35,6 +35,12 @@ Read an App in this order: `definition.m` shows its complete contract,
 `createSession.m`, view builders, or renderers only when the definition names
 those optional capabilities.
 
+SDK objects are not relayed through app-local function parameters. A layout
+builder obtains the App-local handlers it references. The only SDK values
+normally injected into App functions are `labkit.app.CallbackContext` and
+typed `labkit.app.event.*` payloads; callback `arguments` blocks declare those
+types for MATLAB help, editor navigation, and completion.
+
 Optional capabilities are grouped by purpose:
 
 | Package | Purpose |

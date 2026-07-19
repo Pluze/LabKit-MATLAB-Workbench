@@ -65,6 +65,10 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
   collects them. `ExtraHandlers` is only for programmatic dispatch. Ordinary
   Apps omit the capability list; `StrictCapabilities` is advanced audit
   metadata.
+- App examples do not relay SDK values through untyped app-local parameters.
+  Layout builders obtain the handlers they reference; runtime-injected
+  contexts and event payloads use concrete types in callback `arguments`
+  blocks.
 - Compile the immutable static Definition graph once. View commits
   validate against the cached graph and must not re-flatten layout on every
   update.

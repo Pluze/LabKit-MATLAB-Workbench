@@ -13,6 +13,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         Components
         Axes
         Layouts
+        WorkbenchControls
+        WorkbenchWorkspace
         Runtime
     end
 
@@ -26,7 +28,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             obj.Layouts = containers.Map("KeyType", "char", ...
                 "ValueType", "any");
             obj.Figure = uifigure(Visible="off", ...
-                Name="LabKit application");
+                Name="LabKit application", Position=[100 100 1180 760]);
             obj.buildTree();
         end
 
@@ -131,6 +133,14 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             nodes = obj.Plan.Nodes;
             for k = 1:numel(nodes)
                 if any(nodes(k).ChildIds == node.Id)
+                    if nodes(k).Kind == "workbench"
+                        if node.Kind == "workspace"
+                            parent = obj.WorkbenchWorkspace;
+                        else
+                            parent = obj.WorkbenchControls;
+                        end
+                        return;
+                    end
                     parent = obj.contentParent(nodes(k).Id);
                     return;
                 end
@@ -142,14 +152,21 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             switch node.Kind
                 case "workbench"
                     component = uipanel(parent, BorderType="none", ...
-                        Position=[1 1 900 650]);
-                    obj.installContentGrid(node, component);
-                case {"group", "section", "tab"}
+                        Units="normalized", Position=[0 0 1 1]);
+                    obj.installWorkbenchLayout(node, component);
+                case {"group", "section"}
                     title = "";
                     if isfield(config, "Title")
                         title = config.Title;
                     end
                     component = uipanel(parent, Title=title);
+                    obj.installContentGrid(node, component);
+                case "tab"
+                    if isa(parent, "matlab.ui.container.TabGroup")
+                        component = uitab(parent, Title=config.Title);
+                    else
+                        component = uipanel(parent, Title=config.Title);
+                    end
                     obj.installContentGrid(node, component);
                 case "button"
                     component = uibutton(parent, Text=config.Label, ...
@@ -319,10 +336,88 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if isempty(node.ChildIds)
                 return;
             end
-            grid = uigridlayout(component, [numel(node.ChildIds) 1], ...
-                Padding=[6 6 6 6], RowSpacing=5, ColumnSpacing=5);
-            grid.RowHeight = repmat({'1x'}, 1, numel(node.ChildIds));
+            horizontal = node.Kind == "group" && ...
+                isfield(node.Configuration, "Layout") && ...
+                node.Configuration.Layout == "horizontal";
+            if horizontal
+                grid = uigridlayout(component, [1 numel(node.ChildIds)], ...
+                    Padding=[6 6 6 6], RowSpacing=5, ColumnSpacing=5);
+                grid.ColumnWidth = repmat({'1x'}, 1, numel(node.ChildIds));
+            else
+                grid = uigridlayout(component, [numel(node.ChildIds) 1], ...
+                    Padding=[6 6 6 6], RowSpacing=5, ColumnSpacing=5);
+                grid.RowHeight = obj.childRowHeights(node.ChildIds);
+            end
             obj.Layouts(char(node.Id)) = grid;
+        end
+
+        function installWorkbenchLayout(obj, node, component)
+            nodes = obj.nodes(node.ChildIds);
+            hasWorkspace = any(string({nodes.Kind}) == "workspace");
+            columns = 1 + hasWorkspace;
+            grid = uigridlayout(component, [1 columns], ...
+                Padding=[8 8 8 8], RowSpacing=0, ColumnSpacing=8);
+            if hasWorkspace
+                grid.ColumnWidth = {380, '1x'};
+            else
+                grid.ColumnWidth = {'1x'};
+            end
+            controls = nodes(string({nodes.Kind}) ~= "workspace");
+            if ~isempty(controls) && ...
+                    all(string({controls.Kind}) == "tab")
+                controlParent = uitabgroup(grid);
+                controlContainer = controlParent;
+            else
+                controlPanel = uipanel(grid, BorderType="none");
+                controlGrid = uigridlayout(controlPanel, ...
+                    [max(1, numel(controls)) 1], ...
+                    Padding=[0 0 0 0], RowSpacing=5, ColumnSpacing=0);
+                if ~isempty(controls)
+                    controlGrid.RowHeight = ...
+                        obj.childRowHeights(string({controls.Id}));
+                end
+                controlParent = controlGrid;
+                controlContainer = controlPanel;
+            end
+            controlContainer.Layout.Row = 1;
+            controlContainer.Layout.Column = 1;
+            obj.WorkbenchControls = controlParent;
+            if hasWorkspace
+                workspace = uipanel(grid, BorderType="none");
+                workspace.Layout.Row = 1;
+                workspace.Layout.Column = 2;
+                workspaceGrid = uigridlayout(workspace, [1 1], ...
+                    Padding=[0 0 0 0], RowSpacing=0, ColumnSpacing=0);
+                obj.WorkbenchWorkspace = workspaceGrid;
+            else
+                obj.WorkbenchWorkspace = component;
+            end
+        end
+
+        function heights = childRowHeights(obj, ids)
+            nodes = obj.nodes(ids);
+            heights = repmat({'fit'}, 1, numel(nodes));
+            flexible = ["fileList", "dataTable", "logPanel", ...
+                "plotArea", "section", "tab", "workspace"];
+            for k = 1:numel(nodes)
+                if any(nodes(k).Kind == flexible)
+                    heights{k} = '1x';
+                elseif nodes(k).Kind == "statusPanel"
+                    heights{k} = 54;
+                end
+            end
+        end
+
+        function selected = nodes(obj, ids)
+            selected = repmat(obj.Plan.Nodes(1), 0, 1);
+            for id = string(ids)
+                index = find(string({obj.Plan.Nodes.Id}) == id, 1);
+                if isempty(index)
+                    error("labkit:app:runtime:InvariantFailure", ...
+                        "Compiled Layout child is missing: %s.", id);
+                end
+                selected(end + 1, 1) = obj.Plan.Nodes(index);
+            end
         end
 
         function parent = contentParent(obj, id)
@@ -337,7 +432,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         function list = createFilePanel(obj, node, parent)
             config = node.Configuration;
             panel = uipanel(parent, BorderType="line", ...
-                Title=char(node.Id));
+                Title=char(config.Label));
             grid = uigridlayout(panel, [2 1], Padding=[5 5 5 5], ...
                 RowHeight={'1x', 'fit'}, RowSpacing=4);
             list = uilistbox(grid, Items=strings(1, 0), ...
@@ -639,13 +734,23 @@ if ~iscell(value)
     return;
 end
 for k = 1:numel(value)
-    if isstring(value{k})
-        if isscalar(value{k})
-            value{k} = char(value{k});
+    item = value{k};
+    if isempty(item)
+        value{k} = '';
+    elseif ischar(item)
+        continue;
+    elseif (isnumeric(item) || islogical(item)) && isscalar(item)
+        continue;
+    elseif isscalar(item)
+        text = string(item);
+        if ismissing(text)
+            value{k} = '';
         else
-            error("labkit:app:contract:InvalidValue", ...
-                "Table cell string values must be scalar.");
+            value{k} = char(text);
         end
+    else
+        error("labkit:app:contract:InvalidValue", ...
+            "Table cells must contain scalar display values.");
     end
 end
 end

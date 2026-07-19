@@ -608,8 +608,15 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                             Columns=config.Columns, ...
                             RowNames=config.RowNames, ...
                             ColumnEditable=config.ColumnEditable);
-                    case {"logPanel", "statusPanel"}
-                        view = view.text(node.Id, "");
+                    case "logPanel"
+                        view = view.text(node.Id, ...
+                            join(obj.StatusLog, newline));
+                    case "statusPanel"
+                        status = "";
+                        if ~isempty(obj.StatusLog)
+                            status = obj.StatusLog(end);
+                        end
+                        view = view.text(node.Id, status);
                     case "workspacePage"
                         view = view.workspacePage(node.Id);
                     otherwise

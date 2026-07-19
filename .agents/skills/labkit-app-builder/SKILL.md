@@ -69,6 +69,12 @@ signature and rebuilds only App-specific transient data; opaque source paths
 are resolved with `context.resolveSourcePaths`. Layout nodes are data-only;
 `labkit.app.view.Snapshot` is a pure state-to-view mapping.
 
+Do not pass the handler collection from `definition.m` into the layout
+builder. The layout builder obtains it directly, so its function declaration
+does not hide an untyped SDK object bag. Add MATLAB `arguments` blocks to
+runtime callbacks and declare `labkit.app.CallbackContext` plus the exact
+`labkit.app.event.*` payload type at that boundary.
+
 On the App SDK paved road, bind ordinary project/session fields directly in
 `labkit.app.layout.*`, let `labkit.app.Definition` collect signal handlers,
 omit `StrictCapabilities` unless strict auditing is needed, and let runtime

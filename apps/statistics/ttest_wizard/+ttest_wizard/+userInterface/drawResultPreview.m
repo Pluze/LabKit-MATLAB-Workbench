@@ -9,14 +9,14 @@ function drawResultPreview(ax, model)
 % bars, no grid, and stacked first-versus-each significance brackets. Side
 % effects are limited to redrawing ax.
 
-    labkit.ui.plot.clear(ax);
+    clearAxes(ax);
     if ~isstruct(model) || ~isscalar(model) || ...
             ~isfield(model, 'ready') || ~model.ready
         message = "No completed comparisons to plot.";
         if isstruct(model) && isfield(model, 'message')
             message = string(model.message);
         end
-        labkit.ui.plot.message(ax, message);
+        showMessage(ax, message);
         return;
     end
 
@@ -108,6 +108,29 @@ function drawResultPreview(ax, model)
     ylabel(ax, char(string(parameters.yLabel)), 'FontSize', 18);
     title(ax, char(string(parameters.title)));
     hold(ax, 'off');
+end
+
+function clearAxes(ax)
+    delete(allchild(ax));
+    cla(ax);
+    ax.Visible = "on";
+    ax.XLimMode = "auto";
+    ax.YLimMode = "auto";
+    ax.XScale = "linear";
+    ax.YScale = "linear";
+    ax.XTickMode = "auto";
+    ax.YTickMode = "auto";
+end
+
+function showMessage(ax, message)
+    text(ax, 0.5, 0.5, string(message), ...
+        Units="normalized", HorizontalAlignment="center", ...
+        VerticalAlignment="middle", Interpreter="none", HitTest="off");
+    ax.XLim = [0 1];
+    ax.YLim = [0 1];
+    ax.XTick = [];
+    ax.YTick = [];
+    ax.Box = "off";
 end
 
 function drawGroups(ax, groups, model, parameters, colors, plotType, ...

@@ -189,6 +189,11 @@ The following decisions apply before exact MATLAB symbol names are frozen:
     not repeat capability metadata. Internal SDK complexity is acceptable when
     it removes repeated App callbacks, presenters, lifecycle code, or
     synchronized registries.
+14. **Injected types are visible at the function boundary.** Apps do not pass
+    SDK objects through untyped app-local parameters merely to assemble a
+    definition. Runtime callback `arguments` blocks declare
+    `CallbackContext` and the exact event payload type before the body uses
+    their methods or properties.
 
 ### Target architecture
 

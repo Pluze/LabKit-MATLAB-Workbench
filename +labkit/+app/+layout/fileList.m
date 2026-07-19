@@ -12,6 +12,7 @@ function node = fileList(id, varargin)
 %   id - Unique MATLAB identifier for the layout target.
 %
 % Options:
+%   Label - Reader-facing collection label. Default: id.
 %   Mode - "files" or "folder". Default: "files".
 %   Filters - File-dialog filter text row. Default: strings(1,0).
 %   SelectionMode - "single" or "multiple". Default: "multiple".
