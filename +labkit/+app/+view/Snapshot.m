@@ -13,8 +13,9 @@ classdef (Sealed) Snapshot
     %   view = view.listSelection(target, selection)
     %   view = view.tableCellSelection(target, selection)
     %   view = view.tableData(target, data, Name=Value)
-    %   view = view.renderPlot(target, renderer, model)
+    %   view = view.renderPlot(target, model)
     %   view = view.workspacePage(target, Name=Value)
+    %   view = view.include(fragment)
     %
     % Description:
     %   View snapshot is a closed immutable operation vocabulary. One value
@@ -34,10 +35,12 @@ classdef (Sealed) Snapshot
     %   paths - String or cell array of file paths.
     %   selection - Selection value accepted by the target.
     %   data - App-owned table, numeric array, or cell array.
-    %   renderer - Declared renderer ID.
+    %   model - App-owned model passed to the renderer declared by plotArea.
     %
     % Outputs:
     %   view - New immutable labkit.app.view.Snapshot snapshot.
+    %   fragment - Another Snapshot whose non-duplicate operations should be
+    %       included in this snapshot.
     %
     % Errors:
     %   labkit:app:contract:InvalidValue - An operation argument is malformed.
@@ -62,7 +65,7 @@ classdef (Sealed) Snapshot
         end
 
         function obj = value(obj, target, value)
-            obj = append(obj, "value", target, value, "");
+            obj = append(obj, "value", target, value);
         end
 
         function obj = choices(obj, target, choices)
@@ -74,7 +77,7 @@ classdef (Sealed) Snapshot
                 error("labkit:app:contract:InvalidValue", ...
                     "View snapshot choices must be text.");
             end
-            obj = append(obj, "choices", target, reshape(choices, 1, []), "");
+            obj = append(obj, "choices", target, reshape(choices, 1, []));
         end
 
         function obj = limits(obj, target, limits)
@@ -83,17 +86,17 @@ classdef (Sealed) Snapshot
                 error("labkit:app:contract:InvalidValue", ...
                     "View snapshot limits must be an increasing finite 1-by-2 row.");
             end
-            obj = append(obj, "limits", target, limits, "");
+            obj = append(obj, "limits", target, limits);
         end
 
         function obj = enabled(obj, target, enabled)
             obj = append(obj, "enabled", target, ...
-                logicalScalar(enabled, "enabled"), "");
+                logicalScalar(enabled, "enabled"));
         end
 
         function obj = visible(obj, target, visible)
             obj = append(obj, "visible", target, ...
-                logicalScalar(visible, "visible"), "");
+                logicalScalar(visible, "visible"));
         end
 
         function obj = text(obj, target, text)
@@ -101,7 +104,7 @@ classdef (Sealed) Snapshot
                 error("labkit:app:contract:InvalidValue", ...
                     "View snapshot text must be scalar text.");
             end
-            obj = append(obj, "text", target, string(text), "");
+            obj = append(obj, "text", target, string(text));
         end
 
         function obj = filePaths(obj, target, paths)
@@ -114,7 +117,7 @@ classdef (Sealed) Snapshot
                     "View snapshot files must be a string or cell array.");
             end
             obj = append(obj, "filePaths", ...
-                target, reshape(paths, 1, []), "");
+                target, reshape(paths, 1, []));
         end
 
         function obj = listSelection(obj, target, selection)
@@ -122,7 +125,7 @@ classdef (Sealed) Snapshot
                 error("labkit:app:contract:InvalidValue", ...
                     "ViewSnapshot listSelection requires ListSelection.");
             end
-            obj = append(obj, "listSelection", target, selection, "");
+            obj = append(obj, "listSelection", target, selection);
         end
 
         function obj = tableCellSelection(obj, target, selection)
@@ -132,7 +135,7 @@ classdef (Sealed) Snapshot
                     "TableCellSelection.");
             end
             obj = append(obj, ...
-                "tableCellSelection", target, selection, "");
+                "tableCellSelection", target, selection);
         end
 
         function obj = tableData(obj, target, data, varargin)
@@ -153,12 +156,11 @@ classdef (Sealed) Snapshot
                 "RowNames", textRow(optionValue( ...
                     options, "RowNames", strings(1, 0)), "RowNames"), ...
                 "ColumnEditable", editable);
-            obj = append(obj, "tableData", target, value, "");
+            obj = append(obj, "tableData", target, value);
         end
 
-        function obj = renderPlot(obj, target, renderer, model)
-            renderer = scalarId(renderer, "renderer");
-            obj = append(obj, "renderPlot", target, model, renderer);
+        function obj = renderPlot(obj, target, model)
+            obj = append(obj, "renderPlot", target, model);
         end
 
         function obj = workspacePage(obj, target, varargin)
@@ -180,12 +182,25 @@ classdef (Sealed) Snapshot
                 status = string(supplied);
             end
             obj = append(obj, "workspacePage", target, ...
-                struct("Enabled", enabled, "Status", status), "");
+                struct("Enabled", enabled, "Status", status));
+        end
+
+        function obj = include(obj, fragment)
+            %INCLUDE Compose a feature-owned snapshot fragment.
+            if ~isa(fragment, "labkit.app.view.Snapshot")
+                error("labkit:app:contract:InvalidValue", ...
+                    "View snapshot include requires another Snapshot.");
+            end
+            for k = 1:numel(fragment.Operations)
+                operation = fragment.Operations{k};
+                obj = append(obj, operation.Kind, ...
+                    operation.Target, operation.Value);
+            end
         end
     end
 
     methods (Access = private)
-        function obj = append(obj, kind, target, value, reference)
+        function obj = append(obj, kind, target, value)
             target = scalarId(target, "target");
             for k = 1:numel(obj.Operations)
                 operation = obj.Operations{k};
@@ -198,8 +213,7 @@ classdef (Sealed) Snapshot
             obj.Operations{end + 1} = struct( ...
                 "Kind", kind, ...
                 "Target", target, ...
-                "Value", value, ...
-                "Reference", reference);
+                "Value", value);
         end
     end
 

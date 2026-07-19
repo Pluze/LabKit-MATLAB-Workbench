@@ -11,9 +11,9 @@ classdef (Sealed) Definition
     %   version = app.launch("version")
     %
     % Description:
-    %   Definition validates product metadata, handlers referenced by semantic
-    %   layout nodes, renderer ownership, CallbackContext capabilities, global
-    %   IDs, event types, and references in one atomic constructor. The static
+    %   Definition validates product metadata, layout-owned callbacks and
+    %   renderers, global IDs, callback roles, and references in one atomic
+    %   constructor. The static
     %   target graph is cached once. validateViewSnapshot checks a complete
     %   view snapshot against that graph without rebuilding the layout.
     %
@@ -36,19 +36,10 @@ classdef (Sealed) Definition
     %       Portable project sources remain opaque; use
     %       context.resolveSourcePaths
     %       while rebuilding transient session data. Default: empty.
-    %   BuildView - Fixed callback view = callback(state). Default: empty.
-    %   ExtraHandlers - Row cell array of StateHandler values available only
-    %       to programmatic dispatch. Layout signals are collected
-    %       automatically. Default: {}.
-    %   Renderers - Scalar struct mapping renderer IDs to function handles.
-    %       Default: struct().
-    %   StrictCapabilities - Unique row string array drawn from "dispatch",
-    %       "workflow", "diagnostics", "dialogs", "project", "render",
-    %       "resources", and "results". Omit this option on the standard
-    %       authoring path; all context groups are then available. Supply an
-    %       explicit row only for advanced strict capability auditing.
-    %   StartupHandler - Event="action" handler queued after the first view
-    %       commit. Default: empty.
+    %   PresentWorkbench - Fixed callback view = callback(state). Default:
+    %       empty.
+    %   OnStart - Fixed callback state = callback(state,context), invoked
+    %       after the first view commit. Default: empty.
     %   BuildDebugSample - Fixed callback pack = callback(context). Default:
     %       empty.
     %
@@ -62,34 +53,31 @@ classdef (Sealed) Definition
     %   launch("version") - Return product version metadata without creating
     %       a figure.
     %   validateViewSnapshot(view) - Validate target references, target
-    %       capabilities, renderer ownership, and complete target coverage.
+    %       capabilities and complete target coverage.
     %       Returns true or throws before any runtime UI mutation.
     %
     % Errors:
     %   labkit:app:contract:UnknownArgument - A required argument is missing or
     %       an argument is unknown, duplicated, or unpaired.
     %   labkit:app:contract:InvalidValue - Metadata, requirements, workbench,
-    %       handlers, renderers, or capabilities are malformed.
-    %   labkit:app:contract:DuplicateId - A layout, handler, or renderer ID is
-    %       duplicated.
-    %   labkit:app:contract:UnknownReference - A renderer or
-    %       view target is undeclared.
+    %       callbacks, or renderers are malformed.
+    %   labkit:app:contract:DuplicateId - A layout ID is duplicated.
+    %   labkit:app:contract:UnknownReference - A view target is undeclared.
     %   labkit:app:contract:UnsupportedOperation - A view operation is
     %       not legal for its target.
     %   labkit:app:contract:InvalidValue - A launch request or output count is
     %       unsupported.
     %
     % Typical Call:
-    %   run = labkit.app.StateHandler("run", @runAnalysis);
     %   workbench = labkit.app.layout.workbench({ ...
-    %       labkit.app.layout.button("run", "Run", run)});
+    %       labkit.app.layout.button("run", "Run", @runAnalysis)});
     %   app = labkit.app.Definition( ...
     %       Entrypoint="labkit_Example_app", AppId="example.app", ...
     %       Title="Example", Family="Examples", AppVersion="1.0.0", ...
     %       Updated="2026-07-19", Requirements=[], Workbench=workbench);
     %
-    % See also labkit.app.StateHandler, labkit.app.layout.workbench,
-    %   labkit.app.view.Snapshot, labkit.contract.requirements
+    % See also labkit.app.layout.workbench, labkit.app.view.Snapshot,
+    %   labkit.contract.requirements
 
     properties (SetAccess = immutable)
         Entrypoint (1, 1) string
@@ -102,17 +90,16 @@ classdef (Sealed) Definition
         Requirements
         ProjectSchema
         CreateSession
-        BuildView
-        StartupHandler
+        PresentWorkbench
+        OnStart
         BuildDebugSample
         TargetIds (1, :) string
-        GrantedCapabilities (1, :) string
     end
 
     properties (SetAccess = immutable, GetAccess = private)
         TargetNodes (1, :) cell
-        Handlers (1, :) cell
-        RendererIds (1, :) string
+        SignalBindings (1, :) cell
+        OnStartBinding
         PlatformPlan (1, 1) struct
     end
 
@@ -121,9 +108,8 @@ classdef (Sealed) Definition
             names = [ ...
                 "Entrypoint", "AppId", "Title", "DisplayName", "Family", ...
                 "AppVersion", "Updated", "Requirements", "Workbench", ...
-                "ProjectSchema", "CreateSession", "BuildView", ...
-                "ExtraHandlers", "Renderers", "StrictCapabilities", ...
-                "StartupHandler", "BuildDebugSample"];
+                "ProjectSchema", "CreateSession", "PresentWorkbench", ...
+                "OnStart", "BuildDebugSample"];
             options = labkit.app.internal.OptionParser.parse( ...
                 "labkit.app.Definition", names, varargin{:});
             required = [ ...
@@ -153,20 +139,19 @@ classdef (Sealed) Definition
                 optionValue(options, "ProjectSchema", []));
             obj.CreateSession = optionalFixedCallback( ...
                 options, "CreateSession", 2, 1);
-            obj.BuildView = optionalFixedCallback( ...
-                options, "BuildView", 1, 1);
-            obj.GrantedCapabilities = validateCapabilities( ...
-                optionValue(options, ...
-                    "StrictCapabilities", allCapabilities()));
-            extraHandlers = validateExtraHandlers( ...
-                optionValue(options, "ExtraHandlers", {}));
-            obj.StartupHandler = validateStart( ...
-                optionValue(options, "StartupHandler", []));
+            obj.PresentWorkbench = optionalFixedCallback( ...
+                options, "PresentWorkbench", 1, 1);
+            startCallback = optionalFixedCallback( ...
+                options, "OnStart", 2, 1);
+            obj.OnStart = startCallback;
+            onStartBinding = [];
+            if ~isempty(startCallback)
+                onStartBinding = labkit.app.internal.SignalBinding( ...
+                    "application", "started", startCallback);
+            end
+            obj.OnStartBinding = onStartBinding;
             obj.BuildDebugSample = optionalFixedCallback( ...
                 options, "BuildDebugSample", 1, 1);
-            [renderers, rendererIds] = validateRenderers( ...
-                optionValue(options, "Renderers", struct()));
-            obj.RendererIds = rendererIds;
 
             layout = options.Workbench;
             if ~isa(layout, "labkit.app.internal.LayoutNode") || ...
@@ -182,10 +167,9 @@ classdef (Sealed) Definition
                 ~isempty(value.Capabilities), nodes);
             obj.TargetNodes = nodes(targetMask);
             obj.TargetIds = ids(targetMask);
-            obj.Handlers = collectHandlers( ...
-                nodes, extraHandlers, obj.StartupHandler);
-            validateRendererReferences(nodes, rendererIds, renderers);
-            obj.PlatformPlan = compilePlatformPlan(nodes, renderers);
+            obj.SignalBindings = collectSignalBindings( ...
+                nodes, obj.OnStartBinding);
+            obj.PlatformPlan = compilePlatformPlan(nodes);
         end
 
         function accepted = validateViewSnapshot(obj, view)
@@ -209,12 +193,10 @@ classdef (Sealed) Definition
                         "Target %s does not support %s.", ...
                         operation.Target, operation.Kind);
                 end
-                if operation.Kind == "renderPlot" && ...
-                        (~any(obj.RendererIds == operation.Reference) || ...
-                        ~any(node.RendererIds == operation.Reference))
+                if operation.Kind == "renderPlot" && isempty(node.Renderer)
                     error("labkit:app:contract:UnknownReference", ...
-                        "Target %s does not declare renderer %s.", ...
-                        operation.Target, operation.Reference);
+                        "Target %s does not declare a renderer.", ...
+                        operation.Target);
                 end
                 covered(index) = true;
             end
@@ -274,14 +256,18 @@ classdef (Sealed) Definition
     end
 
     methods (Hidden)
-        function ids = handlerIdsForRuntime(obj)
-            ids = string(cellfun(@(handler) handler.Id, obj.Handlers, ...
+        function ids = signalIdsForRuntime(obj)
+            ids = string(cellfun(@(binding) binding.Id, obj.SignalBindings, ...
                 "UniformOutput", false));
         end
 
-        function tf = hasHandlerForRuntime(obj, handler)
+        function binding = onStartBindingForRuntime(obj)
+            binding = obj.OnStartBinding;
+        end
+
+        function tf = hasSignalForRuntime(obj, binding)
             tf = any(cellfun(@(candidate) ...
-                isequaln(candidate, handler), obj.Handlers));
+                isequaln(candidate, binding), obj.SignalBindings));
         end
 
         function runtime = createRuntimeForTesting( ...
@@ -313,11 +299,11 @@ classdef (Sealed) Definition
     end
 end
 
-function plan = compilePlatformPlan(nodes, renderers)
+function plan = compilePlatformPlan(nodes)
     compiled = repmat(struct( ...
         "Kind", "", "Id", "", "ChildIds", strings(1, 0), ...
         "Capabilities", strings(1, 0), "Signals", {{}}, ...
-        "RendererIds", strings(1, 0), "AxisIds", strings(1, 0), ...
+        "Renderer", [], "AxisIds", strings(1, 0), ...
         "PageIds", strings(1, 0), "InitialPage", "", ...
         "Configuration", struct()), 1, numel(nodes));
     for k = 1:numel(nodes)
@@ -328,11 +314,11 @@ function plan = compilePlatformPlan(nodes, renderers)
             "Kind", node.Kind, "Id", node.Id, "ChildIds", childIds, ...
             "Capabilities", node.Capabilities, ...
             "Signals", {node.Signals}, ...
-            "RendererIds", node.RendererIds, "AxisIds", node.AxisIds, ...
+            "Renderer", node.Renderer, "AxisIds", node.AxisIds, ...
             "PageIds", node.PageIds, "InitialPage", node.InitialPage, ...
             "Configuration", node.configurationForCompiler());
     end
-    plan = struct("Nodes", compiled, "Renderers", renderers);
+    plan = struct("Nodes", compiled);
 end
 
 function value = optionValue(options, name, defaultValue)
@@ -431,65 +417,6 @@ function callback = optionalFixedCallback(options, name, inputs, outputs)
     end
 end
 
-function value = validateStart(value)
-    if isempty(value)
-        return;
-    end
-    if ~isa(value, "labkit.app.StateHandler") || value.Event ~= "action"
-        error("labkit:app:contract:CallbackRoleMismatch", ...
-            "Definition StartupHandler must use Event=action.");
-    end
-end
-
-function values = validateCapabilities(values)
-    if ischar(values)
-        values = string(values);
-    elseif iscellstr(values)
-        values = string(values);
-    elseif ~isstring(values)
-        error("labkit:app:contract:InvalidValue", ...
-            "Definition StrictCapabilities must be text.");
-    end
-    values = reshape(values, 1, []);
-    allowed = allCapabilities();
-    if numel(unique(values)) ~= numel(values) || ...
-            any(~ismember(values, allowed))
-        error("labkit:app:contract:InvalidValue", ...
-            "Definition StrictCapabilities contain a duplicate or unknown value.");
-    end
-end
-
-function values = allCapabilities()
-    values = [ ...
-        "dispatch", "workflow", "diagnostics", "dialogs", ...
-        "project", "render", "resources", "results"];
-end
-
-function values = validateExtraHandlers(values)
-    if ~iscell(values) || (~isempty(values) && ~isrow(values)) || ...
-            ~all(cellfun(@(value) isa(value, "labkit.app.StateHandler"), values))
-        error("labkit:app:contract:InvalidValue", ...
-            "Definition ExtraHandlers must be a row of StateHandler values.");
-    end
-end
-
-function [renderers, ids] = validateRenderers(renderers)
-    if ~isstruct(renderers) || ~isscalar(renderers)
-        error("labkit:app:contract:InvalidValue", ...
-            "Definition Renderers must be a scalar struct.");
-    end
-    ids = string(fieldnames(renderers)).';
-    for k = 1:numel(ids)
-        callback = renderers.(ids(k));
-        if ~isa(callback, "function_handle") || ~isscalar(callback) || ...
-                nargin(callback) ~= 2 || nargout(callback) ~= 0
-            error("labkit:app:contract:InvalidValue", ...
-                "Definition renderer %s must be a fixed two-input, " + ...
-                "zero-output function.", ids(k));
-        end
-    end
-end
-
 function assertUnique(values, label)
     if numel(unique(values)) ~= numel(values)
         error("labkit:app:contract:DuplicateId", ...
@@ -497,22 +424,21 @@ function assertUnique(values, label)
     end
 end
 
-function handlers = collectHandlers(nodes, extraHandlers, start)
-    handlers = {};
+function bindings = collectSignalBindings(nodes, start)
+    bindings = {};
     for k = 1:numel(nodes)
         signals = nodes{k}.Signals;
         for s = 1:numel(signals)
-            handlers{end + 1} = signals{s};
+            bindings{end + 1} = signals{s};
         end
     end
-    handlers = [handlers, extraHandlers];
     if ~isempty(start)
-        handlers{end + 1} = start;
+        bindings{end + 1} = start;
     end
-    handlers = uniqueCommands(handlers);
+    bindings = uniqueBindings(bindings);
 end
 
-function values = uniqueCommands(values)
+function values = uniqueBindings(values)
     uniqueValues = {};
     for k = 1:numel(values)
         value = values{k};
@@ -522,21 +448,10 @@ function values = uniqueCommands(values)
             uniqueValues{end + 1} = value;
         elseif ~isequaln(uniqueValues{sameId}, value)
             error("labkit:app:contract:DuplicateId", ...
-                "StateHandler ID %s has conflicting values.", value.Id);
+                "Layout signal ID %s has conflicting callbacks.", value.Id);
         end
     end
     values = uniqueValues;
-end
-
-function validateRendererReferences(nodes, rendererIds, ~)
-    for k = 1:numel(nodes)
-        missing = setdiff(nodes{k}.RendererIds, rendererIds);
-        if ~isempty(missing)
-            error("labkit:app:contract:UnknownReference", ...
-                "Layout preview references an undeclared renderer: %s.", ...
-                missing(1));
-        end
-    end
 end
 
 function state = runAnalysis(state, ~)

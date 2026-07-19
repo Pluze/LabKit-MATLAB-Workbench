@@ -18,13 +18,14 @@ function node = slider(id, varargin)
 %   ShowTicks - Logical tick visibility. Default: false.
 %   Bind - Project or session field path. Default: "".
 %   Enabled - Initial logical enabled state. Default: true.
-%   ValueChanged - StateHandler with Event="valueChange". Default: [].
+%   OnValueChanged - Scalar callback
+%       state = callback(state,value,context). Default: [].
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by layout containers.
 %
 % Errors:
-%   Throws labkit:app:contract:* for invalid IDs, options, or handlers.
+%   Throws labkit:app:contract:* for invalid IDs, options, or callbacks.
 %
 % Typical Call:
 %   node = labkit.app.layout.slider("frame", Limits=[1 100]);

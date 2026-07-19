@@ -16,13 +16,14 @@ function node = rangeField(id, varargin)
 %   Limits - Increasing finite numeric 1-by-2 row. Default: [].
 %   Enabled - Initial logical enabled state. Default: true.
 %   Bind - Project or session field path. Default: "".
-%   ValueChanged - StateHandler with Event="valueChange". Default: [].
+%   OnValueChanged - Scalar callback
+%       state = callback(state,value,context). Default: [].
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by layout containers.
 %
 % Errors:
-%   Throws labkit:app:contract:* for invalid IDs, options, or handlers.
+%   Throws labkit:app:contract:* for invalid IDs, options, or callbacks.
 %
 % Typical Call:
 %   node = labkit.app.layout.rangeField("window", Limits=[0 10]);

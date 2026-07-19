@@ -322,7 +322,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         function renderPlot(obj, operation)
             node = obj.node(operation.Target);
-            renderer = obj.Plan.Renderers.(operation.Reference);
+            renderer = node.Renderer;
             axes = gobjects(1, numel(node.AxisIds));
             for k = 1:numel(node.AxisIds)
                 axes(k) = obj.Axes(char(axisKey(node.Id, node.AxisIds(k))));
@@ -477,13 +477,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function installTableCallbacks(obj, node, component)
-            roles = string(cellfun(@(value) value.Event, node.Signals, ...
+            roles = string(cellfun(@(value) value.Signal, node.Signals, ...
                 "UniformOutput", false));
-            if any(roles == "tableCellEdit")
+            if any(roles == "cellEdited")
                 component.CellEditCallback = @(src, event) ...
                     obj.dispatchTableEdit(node.Id, src, event);
             end
-            if any(roles == "tableCellSelection")
+            if any(roles == "cellSelectionChanged")
                 if isprop(component, "SelectionChangedFcn")
                     component.SelectionChangedFcn = @(~, event) ...
                         obj.Runtime.applyTableSelection( ...
@@ -593,8 +593,7 @@ operations = operations(order);
 end
 
 function plan = validatePlan(plan)
-if ~isstruct(plan) || ~isscalar(plan) || ~isfield(plan, "Nodes") || ...
-        ~isfield(plan, "Renderers")
+if ~isstruct(plan) || ~isscalar(plan) || ~isfield(plan, "Nodes")
     error("labkit:app:contract:InvalidValue", ...
         "MATLAB platform adapter requires a compiled Application plan.");
 end

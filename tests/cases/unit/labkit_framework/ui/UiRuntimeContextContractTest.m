@@ -10,14 +10,11 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
                 "labkit:app:runtime:InvariantFailure");
         end
 
-        function declaredCapabilitiesUseOneSealedBackend(testCase)
+        function namedOperationsUseOneSealedBackend(testCase)
             setupLabKitTestPath();
-            command = labkit.app.StateHandler("run", @runCommand);
-            app = applicationWith(command, ...
-                ["dispatch", "workflow", "dialogs", "project", "resources"]);
+            app = application();
             store = containers.Map("KeyType", "char", "ValueType", "any");
             backend = struct( ...
-                "dispatch", @dispatch, ...
                 "appendStatus", @appendStatus, ...
                 "choose", @choose, ...
                 "sourcePaths", @sourcePaths, ...
@@ -30,7 +27,6 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
             choice = context.chooseOption("Continue?", ["yes", "no"]);
             context.setResource("document", "reader", 42, []);
             value = context.getResource("document", "reader");
-            context.dispatchHandler(command, []);
             paths = context.resolveSourcePaths(struct(), ["first", "second"]);
 
             testCase.verifyEqual(choice.Value, "yes");
@@ -40,13 +36,6 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
             testCase.verifyError(@() context.reportError( ...
                 "operation", MException("probe:error", "failure")), ...
                 "labkit:app:runtime:InvariantFailure");
-            testCase.verifyError(@() context.dispatchHandler( ...
-                labkit.app.StateHandler("other", @runCommand), []), ...
-                "labkit:app:contract:UnknownReference");
-
-            function dispatch(~, ~)
-            end
-
             function appendStatus(message)
                 store("status") = message;
             end
@@ -80,14 +69,10 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
     end
 end
 
-function app = applicationWith(command, capabilities)
+function app = application()
     app = labkit.app.Definition( ...
         Entrypoint="labkit_Probe_app", AppId="probe.context", ...
         Title="Probe", Family="Tests", AppVersion="1.0.0", ...
         Updated="2026-07-19", Requirements=[], ...
-        Workbench=labkit.app.layout.workbench({}), ...
-        ExtraHandlers={command}, StrictCapabilities=capabilities);
-end
-
-function state = runCommand(state, ~)
+        Workbench=labkit.app.layout.workbench({}));
 end

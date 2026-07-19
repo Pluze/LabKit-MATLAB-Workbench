@@ -28,7 +28,7 @@ classdef (Sealed) ListSelection
     %   assert(isequal(selection.Indices, [1 3]))
     %
     % See also labkit.app.event.TableCellSelection,
-    %   labkit.app.StateHandler
+    %   labkit.app.layout.fileList
 
     properties (SetAccess = immutable)
         Ids (1, :) string

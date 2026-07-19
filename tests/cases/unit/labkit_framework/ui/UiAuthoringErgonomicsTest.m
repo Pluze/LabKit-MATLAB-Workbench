@@ -6,7 +6,7 @@ classdef UiAuthoringErgonomicsTest < matlab.unittest.TestCase
             app = minimalApplication(labkit.app.layout.workbench({}));
 
             testCase.verifyEmpty(app.TargetIds);
-            testCase.verifyEmpty(app.handlerIdsForRuntime());
+            testCase.verifyEmpty(app.signalIdsForRuntime());
         end
 
         function boundFieldNeedsNoCommandOrPresenter(testCase)
@@ -23,20 +23,17 @@ classdef UiAuthoringErgonomicsTest < matlab.unittest.TestCase
             runtime.applyBinding("gain", 3);
 
             testCase.verifyEqual(runtime.State.project.parameters.gain, 3);
-            testCase.verifyEmpty(app.handlerIdsForRuntime());
+            testCase.verifyEmpty(app.signalIdsForRuntime());
         end
 
-        function layoutSignalsAndCapabilitiesNeedNoDuplicateLists(testCase)
+        function layoutCallbackNeedsNoHandlerOrCapabilityRegistry(testCase)
             setupLabKitTestPath();
-            run = labkit.app.StateHandler("run", @runApp);
             layout = labkit.app.layout.workbench({ ...
-                labkit.app.layout.button("run", "Run", run)});
+                labkit.app.layout.button("run", "Run", @runApp)});
             app = minimalApplication(layout);
 
-            testCase.verifyEqual(app.handlerIdsForRuntime(), "run");
-            testCase.verifyEqual(app.GrantedCapabilities, [ ...
-                "dispatch", "workflow", "diagnostics", "dialogs", ...
-                "project", "render", "resources", "results"]);
+            testCase.verifyEqual( ...
+                app.signalIdsForRuntime(), "run__pressed");
         end
 
         function simpleProjectContractNeedsNoLocalCallbacks(testCase)
@@ -63,7 +60,7 @@ classdef UiAuthoringErgonomicsTest < matlab.unittest.TestCase
             runtime.applyFileSelection( ...
                 "files", ["first.csv"; "second.csv"], 2);
 
-            testCase.verifyEmpty(app.handlerIdsForRuntime());
+            testCase.verifyEmpty(app.signalIdsForRuntime());
             testCase.verifyEqual(runtime.sourcePaths( ...
                 runtime.State.project.inputs.sources, strings(0, 1)), ...
                 ["first.csv"; "second.csv"]);

@@ -1,7 +1,7 @@
 % Expected caller: the registered Chrono Overlay renderer. Inputs are the
 % voltage/current axes in declared AxisIds order and one prepared overlay model.
 % Side effects are limited to redrawing the supplied axes.
-function renderOverlayAxis(axes, model)
+function draw(axes, model)
     if numel(axes) ~= 2
         error("chrono_overlay:InvalidRenderSurface", ...
             "Chrono Overlay requires voltage and current axes.");

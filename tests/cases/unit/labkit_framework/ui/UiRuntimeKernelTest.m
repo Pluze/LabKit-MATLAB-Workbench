@@ -1,60 +1,45 @@
 classdef UiRuntimeKernelTest < matlab.unittest.TestCase
     methods (Test)
-        function processesCommandsAndNestedDispatchInFifoOrder(testCase)
+        function invokesLayoutCallbackAndCommitsState(testCase)
             setupLabKitTestPath();
-            increment = labkit.app.StateHandler("increment", @incrementValue);
-            nested = labkit.app.StateHandler("nested", @dispatchIncrement);
-            app = counterApplication({increment, nested}, ...
-                ["dispatch", "workflow"]);
+            app = counterApplication(@incrementValue);
             runtime = app.createRuntimeForTesting();
-            runtime.dispatch(nested, []);
+
+            runtime.invokeAction("increment");
 
             testCase.verifyEqual(runtime.State.project.value, 1);
-            testCase.verifyEqual(runtime.StatusLog, "queued");
-            testCase.verifyEqual(runtime.commitCount(), 3);
+            testCase.verifyEqual(runtime.StatusLog, "incremented");
+            testCase.verifyEqual(runtime.commitCount(), 2);
+        end
 
-            function state = dispatchIncrement(state, context)
-                context.dispatchHandler(increment, []);
-                context.appendStatus("queued");
-            end
+        function invokesOnStartAfterFirstPresentation(testCase)
+            setupLabKitTestPath();
+            app = counterApplication(@incrementValue, OnStart=@markStarted);
+            runtime = app.createRuntimeForTesting();
+
+            testCase.verifyTrue(runtime.State.session.started);
+            testCase.verifyEqual(runtime.commitCount(), 2);
         end
 
         function rollsBackStateAndPresentationOnCommitFailure(testCase)
             setupLabKitTestPath();
-            increment = labkit.app.StateHandler("increment", @incrementValue);
-            app = counterApplication({increment}, strings(1, 0));
+            app = counterApplication(@incrementValue);
             runtime = app.createRuntimeForTesting();
             before = runtime.State;
             runtime.failNextCommit();
 
-            testCase.verifyError(@() runtime.dispatch(increment, []), ...
+            testCase.verifyError(@() runtime.invokeAction("increment"), ...
                 "labkit:app:runtime:ActionFailed");
             testCase.verifyEqual(runtime.State, before);
             testCase.verifyEqual(runtime.commitCount(), 1);
         end
 
-        function validatesTypedPayloadBeforeCallback(testCase)
-            setupLabKitTestPath();
-            select = labkit.app.StateHandler( ...
-                "select", @selectRows, Event="listSelection");
-            app = counterApplication({select}, strings(1, 0));
-            runtime = app.createRuntimeForTesting();
-
-            testCase.verifyError(@() runtime.dispatch(select, [1 2]), ...
-                "labkit:app:contract:InvalidValue");
-            runtime.dispatch(select, ...
-                labkit.app.event.ListSelection(Indices=[1 2]));
-            testCase.verifyEqual(runtime.State.session.selection, [1 2]);
-        end
-
         function disposesReplacementEventAndApplicationResourcesOnce(testCase)
             setupLabKitTestPath();
-            counts = containers.Map( ...
-                {'event', 'application'}, [0, 0]);
-            resources = labkit.app.StateHandler("resources", @setResources);
-            app = counterApplication({resources}, "resources");
+            counts = containers.Map({'event', 'application'}, [0, 0]);
+            app = counterApplication(@setResources);
             runtime = app.createRuntimeForTesting();
-            runtime.dispatch(resources, []);
+            runtime.invokeAction("increment");
             runtime.close();
             runtime.close();
 
@@ -77,12 +62,10 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
 
         function cleanupFailureDoesNotSkipRemainingResources(testCase)
             setupLabKitTestPath();
-            counts = containers.Map( ...
-                {'failed', 'remaining'}, [0, 0]);
-            resources = labkit.app.StateHandler("resources", @setResources);
-            app = counterApplication({resources}, "resources");
+            counts = containers.Map({'failed', 'remaining'}, [0, 0]);
+            app = counterApplication(@setResources);
             runtime = app.createRuntimeForTesting();
-            runtime.dispatch(resources, []);
+            runtime.invokeAction("increment");
 
             testCase.verifyError(@() runtime.close(), ...
                 "labkit:app:runtime:ResourceCleanupFailed");
@@ -107,7 +90,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
             end
         end
 
-        function boundFieldNeedsNoCommandOrPresenter(testCase)
+        function boundFieldNeedsNoCallbackOrPresenter(testCase)
             setupLabKitTestPath();
             project = labkit.app.project.Schema( ...
                 Version=1, Create=@createBoundProject, ...
@@ -134,20 +117,18 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
 
         function dispatchesTypedTableEditAndCellSelection(testCase)
             setupLabKitTestPath();
-            edited = labkit.app.StateHandler( ...
-                "edited", @editTable, Event="tableCellEdit");
-            selected = labkit.app.StateHandler( ...
-                "selected", @selectCells, Event="tableCellSelection");
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.dataTable("data", ...
                     Columns=["Group", "Value"], ...
                     ColumnEditable=[true true], ...
-                    CellEdited=edited, CellSelectionChanged=selected)});
+                    OnCellEdited=@editTable, ...
+                    OnCellSelectionChanged=@selectCells)});
             app = labkit.app.Definition( ...
                 Entrypoint="labkit_TableProbe_app", AppId="probe.table", ...
                 Title="Table probe", Family="Tests", AppVersion="1.0.0", ...
                 Updated="2026-07-19", Requirements=[], Workbench=layout, ...
-                CreateSession=@createTableSession, BuildView=@presentTable);
+                CreateSession=@createTableSession, ...
+                PresentWorkbench=@presentTable);
             runtime = app.createRuntimeForTesting();
             data = {"A", 1; "B", 2};
 
@@ -162,58 +143,59 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
     end
 end
 
-function app = counterApplication(commands, capabilities)
-    project = labkit.app.project.Schema( ...
-        Version=1, Create=@createProject, Validate=@validateProject);
-    app = labkit.app.Definition( ...
-        Entrypoint="labkit_Counter_app", AppId="probe.counter", ...
-        Title="Counter", Family="Tests", AppVersion="1.0.0", ...
-        Updated="2026-07-19", Requirements=[], ProjectSchema=project, ...
-        CreateSession=@createSession, ...
-        Workbench=labkit.app.layout.workbench({ ...
-            labkit.app.layout.field("value")}), ...
-        BuildView=@present, ExtraHandlers=commands, StrictCapabilities=capabilities);
+function app = counterApplication(onPressed, varargin)
+project = labkit.app.project.Schema( ...
+    Version=1, Create=@createProject, Validate=@validateProject);
+app = labkit.app.Definition( ...
+    "Entrypoint", "labkit_Counter_app", "AppId", "probe.counter", ...
+    "Title", "Counter", "Family", "Tests", "AppVersion", "1.0.0", ...
+    "Updated", "2026-07-19", "Requirements", [], ...
+    "ProjectSchema", project, "CreateSession", @createSession, ...
+    "Workbench", labkit.app.layout.workbench({ ...
+        labkit.app.layout.field("value"), ...
+        labkit.app.layout.button("increment", "Increment", onPressed)}), ...
+    "PresentWorkbench", @present, varargin{:});
 end
 
 function project = createProject()
-    project = struct("value", 0);
+project = struct("value", 0);
 end
 
 function accepted = validateProject(project)
-    accepted = isstruct(project) && isscalar(project) && ...
-        isfield(project, "value") && isnumeric(project.value) && ...
-        isscalar(project.value) && isfinite(project.value);
+accepted = isstruct(project) && isscalar(project) && ...
+    isfield(project, "value") && isnumeric(project.value) && ...
+    isscalar(project.value) && isfinite(project.value);
 end
 
 function session = createSession(~, ~)
-    session = struct();
+session = struct("started", false);
 end
 
 function view = present(state)
-    view = labkit.app.view.Snapshot().value( ...
-        "value", state.project.value);
+view = labkit.app.view.Snapshot().value("value", state.project.value);
 end
 
-function state = incrementValue(state, ~)
-    state.project.value = state.project.value + 1;
+function state = incrementValue(state, context)
+state.project.value = state.project.value + 1;
+context.appendStatus("incremented");
 end
 
-function state = selectRows(state, selection, ~)
-    state.session.selection = selection.Indices;
+function state = markStarted(state, ~)
+state.session.started = true;
 end
 
 function project = createBoundProject()
-    project = struct("parameters", struct("threshold", 1));
+project = struct("parameters", struct("threshold", 1));
 end
 
 function accepted = validateBoundProject(project)
-    accepted = isstruct(project) && isscalar(project) && ...
-        isfield(project, "parameters") && ...
-        isstruct(project.parameters) && isscalar(project.parameters) && ...
-        isfield(project.parameters, "threshold") && ...
-        isnumeric(project.parameters.threshold) && ...
-        isscalar(project.parameters.threshold) && ...
-        isfinite(project.parameters.threshold);
+accepted = isstruct(project) && isscalar(project) && ...
+    isfield(project, "parameters") && ...
+    isstruct(project.parameters) && isscalar(project.parameters) && ...
+    isfield(project.parameters, "threshold") && ...
+    isnumeric(project.parameters.threshold) && ...
+    isscalar(project.parameters.threshold) && ...
+    isfinite(project.parameters.threshold);
 end
 
 function session = createTableSession(~, ~)

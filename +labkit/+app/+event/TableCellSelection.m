@@ -25,7 +25,7 @@ classdef (Sealed) TableCellSelection
     %   assert(isequal(selection.CellIndices, [1 2; 3 1]))
     %
     % See also labkit.app.event.TableCellEdit,
-    %   labkit.app.StateHandler
+    %   labkit.app.layout.dataTable
 
     properties (SetAccess = immutable)
         CellIndices (:, 2) double

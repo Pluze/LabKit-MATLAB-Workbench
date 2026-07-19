@@ -1,7 +1,7 @@
 % Expected caller: the LabKit App runtime. Binding values, file rows,
 % selection, and framework log text are supplied by the runtime; this
 % presenter owns only Chrono-specific availability and plot content.
-function view = presentWorkbench(state)
+function view = present(state)
     arguments
         state (1, 1) struct
     end
@@ -11,7 +11,7 @@ function view = presentWorkbench(state)
         "options", state.project.parameters);
     view = labkit.app.view.Snapshot() ...
         .enabled("exportCurves", ~isempty(items)) ...
-        .renderPlot("overlayPlots", "overlay", model);
+        .renderPlot("overlayPlots", model);
 end
 
 function items = selectedItems(state)

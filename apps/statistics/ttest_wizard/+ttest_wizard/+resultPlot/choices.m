@@ -1,6 +1,6 @@
 % App plot-choice owner; returns stable visible plot labels without side effects.
-function value = plotChoices()
-%PLOTCHOICES Return user-facing T-Test Wizard plot choices.
+function value = choices()
+%CHOICES Return user-facing T-Test Wizard plot choices.
 %
 % Expected callers: project defaults, layout, presenter, and plot renderer.
 % The output owns stable visible plot type labels. Side effects are none.

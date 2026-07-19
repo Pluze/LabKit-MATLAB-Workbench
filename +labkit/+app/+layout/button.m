@@ -1,8 +1,8 @@
-function node = button(id, label, handler, varargin)
-%BUTTON Add a push button that dispatches an action handler.
+function node = button(id, label, onPressed, varargin)
+%BUTTON Add a push button with one explicit pressed callback.
 %
 % Usage:
-%   node = labkit.app.layout.button(id, label, handler, Name=Value)
+%   node = labkit.app.layout.button(id, label, onPressed, Name=Value)
 %
 % Description:
 %   Declares a semantic push button without creating a native component.
@@ -10,7 +10,8 @@ function node = button(id, label, handler, varargin)
 % Inputs:
 %   id - Unique MATLAB identifier for the layout target.
 %   label - Nonempty text displayed on the button.
-%   handler - StateHandler whose Event is "action".
+%   onPressed - Scalar function handle with the fixed callback
+%       state = onPressed(state,context).
 %
 % Options:
 %   BusyMessage - Status text while the action runs. Default: "".
@@ -23,8 +24,9 @@ function node = button(id, label, handler, varargin)
 %   Throws labkit:app:contract:* for invalid IDs, options, or handlers.
 %
 % Typical Call:
-%   node = labkit.app.layout.button("run", "Run", runHandler);
+%   node = labkit.app.layout.button("run", "Run", @runAnalysis);
 %
-% See also labkit.app.StateHandler, labkit.app.layout.workbench
-node = labkit.app.internal.LayoutNode.button(id, label, handler, varargin{:});
+% See also labkit.app.layout.workbench, labkit.app.CallbackContext
+node = labkit.app.internal.LayoutNode.button( ...
+    id, label, onPressed, varargin{:});
 end

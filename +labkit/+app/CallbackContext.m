@@ -3,7 +3,6 @@ classdef (Sealed) CallbackContext < handle
     %
     % Usage:
     %   context = labkit.app.CallbackContext()
-    %   context.dispatchHandler(handler, payload)
     %   context.appendStatus(message)
     %   context.reportError(operation, exception)
     %   context.alert(message, title)
@@ -27,16 +26,13 @@ classdef (Sealed) CallbackContext < handle
     %   result = context.writeResultPackage(folder, result)
     %
     % Description:
-    %   CallbackContext is the sealed callback capability boundary. Definition
-    %   declares capability groups before launch; every method verifies that
-    %   declaration before invoking a private runtime backend. The public
-    %   zero-argument constructor creates a no-capability context for tests
+    %   CallbackContext is the sealed callback capability boundary. Each
+    %   specifically named method invokes one private runtime operation. The
+    %   public zero-argument constructor creates an unconnected context for tests
     %   whose callbacks must remain pure. It exposes no figure, registry,
     %   component, launch request, debug object, or nested service bag.
     %
     % Inputs:
-    %   handler - Declared labkit.app.StateHandler value.
-    %   payload - Value documented by the StateHandler Event or interaction.
     %   state - Complete App-owned state value.
     %   message - Scalar reader-facing text.
     %   operation - Scalar diagnostic operation text.
@@ -75,10 +71,9 @@ classdef (Sealed) CallbackContext < handle
     %
     % Errors:
     %   labkit:app:contract:InvalidValue - A public argument is malformed.
-    %   labkit:app:contract:UnknownReference - A StateHandler or renderer target is
-    %       undeclared.
-    %   labkit:app:runtime:InvariantFailure - A method capability was not
-    %       declared or its private backend operation is unavailable.
+    %   labkit:app:contract:UnknownReference - A renderer target is undeclared.
+    %   labkit:app:runtime:InvariantFailure - A private backend operation is
+    %       unavailable.
     %
     % Example:
     %   context = labkit.app.CallbackContext();
@@ -88,34 +83,18 @@ classdef (Sealed) CallbackContext < handle
     %       assert(ME.identifier == "labkit:app:runtime:InvariantFailure")
     %   end
     %
-    % See also labkit.app.Definition, labkit.app.StateHandler,
-    %   labkit.app.dialog.Choice, labkit.app.result.Package
-
-    properties (SetAccess = private)
-        Capabilities (1, :) string
-    end
+    % See also labkit.app.Definition, labkit.app.dialog.Choice,
+    %   labkit.app.result.Package
 
     properties (Access = private)
         Backend (1, 1) struct
-        StateHandlerIds (1, :) string
         TargetIds (1, :) string
     end
 
     methods
         function obj = CallbackContext()
-            obj.Capabilities = strings(1, 0);
             obj.Backend = struct();
-            obj.StateHandlerIds = strings(1, 0);
             obj.TargetIds = strings(1, 0);
-        end
-
-        function dispatchHandler(obj, handler, payload)
-            if ~isa(handler, "labkit.app.StateHandler") || ...
-                    ~any(obj.StateHandlerIds == handler.Id)
-                error("labkit:app:contract:UnknownReference", ...
-                    "CallbackContext dispatch StateHandler is undeclared.");
-            end
-            obj.invoke("dispatch", "dispatch", {handler, payload}, 0);
         end
 
         function appendStatus(obj, message)
@@ -281,9 +260,7 @@ classdef (Sealed) CallbackContext < handle
                     "CallbackContext backend operations must be function handles.");
             end
             obj = labkit.app.CallbackContext();
-            obj.Capabilities = application.GrantedCapabilities;
             obj.Backend = backend;
-            obj.StateHandlerIds = application.handlerIdsForRuntime();
             obj.TargetIds = application.TargetIds;
             if numel(unique(names)) ~= numel(names)
                 error("labkit:app:runtime:InvariantFailure", ...
@@ -299,11 +276,7 @@ classdef (Sealed) CallbackContext < handle
             requireChoice(result, operation);
         end
 
-        function varargout = invoke(obj, operation, capability, inputs, outputs)
-            if ~any(obj.Capabilities == capability)
-                error("labkit:app:runtime:InvariantFailure", ...
-                    "CallbackContext capability is undeclared: %s.", capability);
-            end
+        function varargout = invoke(obj, operation, ~, inputs, outputs)
             if ~isfield(obj.Backend, operation)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "CallbackContext backend operation is unavailable: %s.", ...

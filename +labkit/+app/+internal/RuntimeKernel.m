@@ -52,8 +52,9 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 end
                 obj.Presentation = obj.present(obj.State);
                 obj.Adapter.reconcile([], obj.Presentation);
-                if ~isempty(application.StartupHandler)
-                    obj.dispatch(application.StartupHandler, []);
+                if ~isempty(application.OnStart)
+                    obj.dispatch( ...
+                        application.onStartBindingForRuntime(), []);
                 end
             catch cause
                 obj.close();
@@ -63,11 +64,11 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
     end
 
     methods
-        function dispatch(obj, command, payload)
+        function dispatch(obj, binding, payload)
             obj.assertOpen();
-            obj.validateDispatch(command, payload);
+            obj.validateDispatch(binding, payload);
             obj.Queue{end + 1} = struct( ...
-                "Command", command, "Payload", payload);
+                "Binding", binding, "Payload", payload);
             if obj.Processing
                 return;
             end
@@ -76,7 +77,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             while ~isempty(obj.Queue)
                 item = obj.Queue{1};
                 obj.Queue(1) = [];
-                obj.execute(item.Command, item.Payload);
+                obj.execute(item.Binding, item.Payload);
             end
             clear cleanup
         end
@@ -204,20 +205,20 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if strlength(plan.Nodes(index).Configuration.Bind) > 0
                 obj.applyBoundControl(target, value, true);
             else
-                command = obj.signalForTarget( ...
-                    target, "valueChange", false);
-                if isempty(command)
+                binding = obj.signalForTarget( ...
+                    target, "valueChanged", false);
+                if isempty(binding)
                     error("labkit:app:contract:UnknownReference", ...
                         "Layout target has no value behavior: %s.", target);
                 end
-                obj.dispatch(command, value);
+                obj.dispatch(binding, value);
             end
         end
 
         function invokeAction(obj, target)
             obj.assertOpen();
-            command = obj.signalForTarget(target, "action");
-            obj.dispatch(command, []);
+            binding = obj.signalForTarget(target, "pressed");
+            obj.dispatch(binding, []);
         end
 
         function applyTableEdit(obj, target, edit)
@@ -226,15 +227,15 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 error("labkit:app:contract:InvalidValue", ...
                     "Table edit payload must be a TableEdit value.");
             end
-            command = obj.signalForTarget(target, "tableCellEdit");
-            obj.dispatch(command, edit);
+            binding = obj.signalForTarget(target, "cellEdited");
+            obj.dispatch(binding, edit);
         end
 
         function applyTableSelection(obj, target, cells)
             obj.assertOpen();
             selection = labkit.app.event.TableCellSelection(cells);
-            command = obj.signalForTarget(target, "tableCellSelection");
-            obj.dispatch(command, selection);
+            binding = obj.signalForTarget(target, "cellSelectionChanged");
+            obj.dispatch(binding, selection);
         end
 
         function applyFilePanelSelection(obj, target, indices)
@@ -264,10 +265,10 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             try
                 candidate = setBoundValue(previousState, path, value);
                 if dispatchChanged
-                    command = obj.signalForTarget( ...
-                        target, "valueChange", false);
-                    if ~isempty(command)
-                        candidate = command.UpdateState( ...
+                    binding = obj.signalForTarget( ...
+                        target, "valueChanged", false);
+                    if ~isempty(binding)
+                        candidate = binding.UpdateState( ...
                             candidate, value, obj.Context);
                     end
                 end
@@ -324,25 +325,25 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
     end
 
     methods (Access = private)
-        function command = signalForTarget(obj, target, event, required)
+        function binding = signalForTarget(obj, target, signal, required)
             if nargin < 4
                 required = true;
             end
             plan = obj.Application.platformPlanForRuntime();
             index = find(string({plan.Nodes.Id}) == string(target), 1);
-            command = [];
+            binding = [];
             if ~isempty(index)
                 signals = plan.Nodes(index).Signals;
                 match = find(cellfun( ...
-                    @(value) value.Event == event, signals), 1);
+                    @(value) value.Signal == signal, signals), 1);
                 if ~isempty(match)
-                    command = signals{match};
+                    binding = signals{match};
                 end
             end
-            if required && isempty(command)
+            if required && isempty(binding)
                 error("labkit:app:contract:UnknownReference", ...
-                    "Workbench target has no %s StateHandler: %s.", ...
-                    event, target);
+                    "Workbench target has no %s callback: %s.", ...
+                    signal, target);
             end
         end
 
@@ -425,7 +426,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 backend = struct();
             end
             builtins = struct( ...
-                "dispatch", @(command, payload) obj.dispatch(command, payload), ...
                 "appendStatus", @(message) obj.appendStatus(message), ...
                 "reportError", @(operation, exception) ...
                     obj.reportError(operation, exception), ...
@@ -481,14 +481,14 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
         end
 
-        function execute(obj, command, payload)
+        function execute(obj, binding, payload)
             previousState = obj.State;
             previousPresentation = obj.Presentation;
             try
-                if command.Event == "action"
-                    candidate = command.UpdateState(previousState, obj.Context);
+                if ~binding.AcceptsPayload
+                    candidate = binding.UpdateState(previousState, obj.Context);
                 else
-                    candidate = command.UpdateState( ...
+                    candidate = binding.UpdateState( ...
                         previousState, payload, obj.Context);
                 end
                 obj.validateState(candidate);
@@ -501,28 +501,28 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.Presentation = previousPresentation;
                 obj.Resources.clearScope("event");
                 failure = MException("labkit:app:runtime:ActionFailed", ...
-                    "Command %s failed transactionally.", command.Id);
+                    "Callback %s failed transactionally.", binding.Id);
                 failure = addCause(failure, cause);
                 throwAsCaller(failure);
             end
             obj.Resources.clearScope("event");
         end
 
-        function validateDispatch(obj, command, payload)
-            if ~isa(command, "labkit.app.StateHandler") || ...
-                    ~obj.Application.hasHandlerForRuntime(command)
+        function validateDispatch(obj, binding, payload)
+            if ~isa(binding, "labkit.app.internal.SignalBinding") || ...
+                    ~obj.Application.hasSignalForRuntime(binding)
                 error("labkit:app:contract:UnknownReference", ...
-                    "Runtime dispatch Command is undeclared.");
+                    "Runtime dispatch callback is undeclared.");
             end
-            if command.Event == "action" && ~isempty(payload)
+            if ~binding.AcceptsPayload && ~isempty(payload)
                 error("labkit:app:contract:InvalidValue", ...
-                    "Invoke Command payload must be empty.");
+                    "Callback %s does not accept a payload.", binding.Id);
             end
-            if strlength(command.PayloadClass) > 0 && ...
-                    ~isa(payload, command.PayloadClass)
+            if strlength(binding.PayloadClass) > 0 && ...
+                    ~isa(payload, binding.PayloadClass)
                 error("labkit:app:contract:InvalidValue", ...
-                    "Command %s payload must be %s.", ...
-                    command.Id, command.PayloadClass);
+                    "Callback %s payload must be %s.", ...
+                    binding.Id, binding.PayloadClass);
             end
         end
 
@@ -545,10 +545,10 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function view = present(obj, state)
             view = obj.defaultPresentation(state);
-            if isempty(obj.Application.BuildView)
+            if isempty(obj.Application.PresentWorkbench)
                 custom = labkit.app.view.Snapshot();
             else
-                custom = obj.Application.BuildView(state);
+                custom = obj.Application.PresentWorkbench(state);
             end
             view = view.overlayForRuntime(custom);
             obj.Application.validateViewSnapshot(view);

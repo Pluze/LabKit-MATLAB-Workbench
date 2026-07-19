@@ -13,13 +13,14 @@ function node = workspace(varargin)
 %   content - Optional plotArea, dataTable, group, or section node.
 %
 % Options:
-%   PageChanged - StateHandler with Event="valueChange". Default: [].
+%   OnPageChanged - Callback state = callback(state,pageId,context).
+%       Default: [].
 %
 % Outputs:
 %   node - Immutable workspace node accepted by layout.workbench.
 %
 % Errors:
-%   Throws labkit:app:contract:* for invalid content, pages, or handlers.
+%   Throws labkit:app:contract:* for invalid content, pages, or callbacks.
 %
 % Typical Call:
 %   node = labkit.app.layout.workspace(plotArea);

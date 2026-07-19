@@ -36,7 +36,7 @@ classdef (Sealed) TableCellEdit
     %       ColumnId="group", PreviousValue="A", NewValue="B");
     %   assert(edit.ColumnId == "group")
     %
-    % See also labkit.app.StateHandler, labkit.app.event.ListSelection
+    % See also labkit.app.layout.dataTable, labkit.app.event.ListSelection
 
     properties (SetAccess = immutable)
         RowId (1, 1) string

@@ -1,9 +1,9 @@
 % App renderer; redraws one managed axes as a multi-group mean/SD comparison.
-function drawResultPreview(ax, model)
-%DRAWRESULTPREVIEW Draw grouped bars and first-group significance brackets.
+function drawComparison(ax, model)
+%DRAWCOMPARISON Draw grouped bars and first-group significance brackets.
 %
 % Expected caller: Runtime registered renderer. ax is a managed UI axes;
-% model is prepared by presentWorkbench and contains copied group/result
+% model is prepared by resultPlot.present and contains copied group/result
 % snapshots plus plot-only settings. The visual contract follows the selected
 % reference style: white background, black boxed axes, pastel bars, SD error
 % bars, no grid, and stacked first-versus-each significance brackets. Side
@@ -26,7 +26,7 @@ function drawResultPreview(ax, model)
     count = numel(groups);
     x = 1:count;
     colors = groupColors(count);
-    plotChoices = ttest_wizard.userInterface.plotChoices();
+    plotChoices = ttest_wizard.resultPlot.choices();
     boxPlotLabel = plotChoices.types(2);
     hold(ax, 'on');
 

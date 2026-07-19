@@ -14,15 +14,18 @@ function node = dataTable(id, varargin)
 %   Columns - Column-label text row. Default: strings(1,0).
 %   RowNames - Row-label text row. Default: strings(1,0).
 %   ColumnEditable - Logical scalar or row matching Columns. Default: false.
-%   CellEdited - StateHandler with Event="tableCellEdit". Default: [].
-%   CellSelectionChanged - StateHandler with Event="tableCellSelection".
-%       Default: [].
+%   OnCellEdited - Scalar callback
+%       state = callback(state,edit,context), where edit is a
+%       labkit.app.event.TableCellEdit. Default: [].
+%   OnCellSelectionChanged - Scalar callback
+%       state = callback(state,selection,context), where selection is a
+%       labkit.app.event.TableCellSelection. Default: [].
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by layout containers.
 %
 % Errors:
-%   Throws labkit:app:contract:* for invalid options or handler events.
+%   Throws labkit:app:contract:* for invalid options or callback signatures.
 %
 % Typical Call:
 %   node = labkit.app.layout.dataTable("results", Columns=["Name" "Value"]);

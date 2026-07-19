@@ -21,7 +21,8 @@ function node = field(id, varargin)
 %   ValueDisplayFormat - MATLAB numeric display format. Default: "".
 %   ShowTicks - Logical slider-tick preference. Default: false.
 %   Enabled - Initial logical enabled state. Default: true.
-%   ValueChanged - StateHandler with Event="valueChange". Default: [].
+%   OnValueChanged - Scalar callback
+%       state = callback(state,value,context). Default: [].
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by layout containers.

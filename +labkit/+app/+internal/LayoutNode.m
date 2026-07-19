@@ -2,7 +2,7 @@ classdef (Sealed, Hidden) LayoutNode
     %LAYOUT Compose an immutable semantic UI ownership graph.
     %
     % Usage:
-    %   node = labkit.app.internal.LayoutNode.button(id, label, command, Name=Value)
+    %   node = labkit.app.internal.LayoutNode.button(id, label, onPressed, Name=Value)
     %   node = labkit.app.layout.field(id, Name=Value)
     %   node = labkit.app.layout.rangeField(id, Name=Value)
     %   node = labkit.app.internal.LayoutNode.slider(id, Name=Value)
@@ -28,31 +28,31 @@ classdef (Sealed, Hidden) LayoutNode
     %   id - Nonempty MATLAB identifier unique within one Application.
     %   label - Nonempty reader-facing action text.
     %   title - Nonempty reader-facing section or tab title.
-    %   command - labkit.app.StateHandler with Event="action".
+    %   onPressed - Callback state = callback(state,context).
     %   children - Row cell array of labkit.app.internal.LayoutNode values.
     %
     % Name-Value Arguments:
-    %   ValueChanged - Event="valueChange" StateHandler for field, rangeField,
-    %       slider, or plot-area mode changes. Default: empty.
+    %   OnValueChanged - Callback state = callback(state,value,context) for
+    %       field, rangeField, slider, or plot-area mode changes. Default:
+    %       empty.
     %   Bind - Optional strict state field path rooted at project or session.
     %       Bound controls need no ValueChanged handler for ordinary updates.
     %       Expressions, indexing, and function calls are not supported.
     %       Default: empty.
     %   SelectionBind - Optional strict state field path for fileList
     %       selection. Default: empty.
-    %   CellEdited - Event="tableCellEdit" StateHandler for dataTable.
+    %   OnCellEdited - Callback state = callback(state,edit,context) for dataTable.
     %       Default: empty.
-    %   SelectionChanged - Event="listSelection" StateHandler for fileList.
-    %       Default: empty.
-    %   CellSelectionChanged - Event="tableCellSelection" StateHandler for
-    %       dataTable. Default: empty.
+    %   OnCellSelectionChanged - Callback
+    %       state = callback(state,selection,context) for dataTable. Default:
+    %       empty.
     %   Columns - Row text array of initial dataTable column labels.
     %       Default: empty.
     %   RowNames - Row text array of initial dataTable row labels.
     %       Default: empty.
     %   ColumnEditable - Logical scalar or row marking editable dataTable
     %       columns. Default: false.
-    %   Renderers - Unique renderer-ID row for previewArea. Default: empty.
+    %   renderer - Callback renderer(axes,model) owned by plotArea.
     %   AxisIds - Unique axes-ID row for previewArea. Default: "main".
     %   Workspace - One workspace Layout for workbench. Default: empty.
     %   Layout - "auto", "vertical", or "horizontal" for group. Default:
@@ -86,14 +86,14 @@ classdef (Sealed, Hidden) LayoutNode
     %   labkit:app:contract:UnsupportedOperation - Nesting is illegal.
     %
     % Typical Call:
-    %   run = labkit.app.StateHandler("run", @runAnalysis);
-    %   controls = {labkit.app.internal.LayoutNode.button("run", "Run", run)};
+    %   controls = {labkit.app.internal.LayoutNode.button( ...
+    %       "run", "Run", @runAnalysis)};
     %   workspace = labkit.app.layout.workspace( ...
-    %       labkit.app.internal.LayoutNode.plotArea("result", Renderers="drawResult"));
+    %       labkit.app.internal.LayoutNode.plotArea( ...
+    %       "result", @drawResult));
     %   layout = labkit.app.layout.workbench(controls, Workspace=workspace);
     %
-    % See also labkit.app.Definition, labkit.app.StateHandler,
-    %   labkit.app.view.Snapshot
+    % See also labkit.app.Definition, labkit.app.view.Snapshot
 
     properties (SetAccess = private)
         Kind (1, 1) string
@@ -101,7 +101,7 @@ classdef (Sealed, Hidden) LayoutNode
         Children (1, :) cell
         Capabilities (1, :) string
         Signals (1, :) cell
-        RendererIds (1, :) string
+        Renderer
         AxisIds (1, :) string
         PageIds (1, :) string
         InitialPage (1, 1) string
@@ -113,13 +113,13 @@ classdef (Sealed, Hidden) LayoutNode
 
     methods (Access = private)
         function obj = LayoutNode(kind, id, children, capabilities, signals, ...
-                rendererIds, axisIds, configuration)
+                renderer, axisIds, configuration)
             obj.Kind = kind;
             obj.Id = id;
             obj.Children = children;
             obj.Capabilities = capabilities;
             obj.Signals = signals;
-            obj.RendererIds = rendererIds;
+            obj.Renderer = renderer;
             obj.AxisIds = axisIds;
             obj.PageIds = strings(1, 0);
             obj.InitialPage = "";
@@ -128,10 +128,10 @@ classdef (Sealed, Hidden) LayoutNode
     end
 
     methods (Static)
-        function obj = button(id, label, command, varargin)
+        function obj = button(id, label, onPressed, varargin)
             options = labkit.app.internal.OptionParser.parse("labkit.app.layout.button", ...
                 ["BusyMessage", "Enabled"], varargin{:});
-            validateSignal(command, "action", "button");
+            signal = bindSignal(id, "pressed", onPressed);
             configuration = struct( ...
                 "Label", nonemptyText(label, "action label"), ...
                 "BusyMessage", scalarText(optionValue( ...
@@ -139,18 +139,20 @@ classdef (Sealed, Hidden) LayoutNode
                 "Enabled", logicalValue(optionValue( ...
                     options, "Enabled", true), "Enabled"));
             obj = makeLeaf("button", id, ...
-                ["enabled", "visible", "text"], {command}, configuration);
+                ["enabled", "visible", "text"], {signal}, configuration);
         end
 
         function obj = field(id, varargin)
             names = ["Label", "Kind", "Value", "Choices", "Limits", "Step", "Bind", ...
-                "ValueDisplayFormat", "ShowTicks", "Enabled", "ValueChanged"];
+                "ValueDisplayFormat", "ShowTicks", "Enabled", ...
+                "OnValueChanged"];
             options = labkit.app.internal.OptionParser.parse( ...
                 "labkit.app.layout.field", names, varargin{:});
             kind = enumText(optionValue(options, "Kind", "text"), ...
                 ["text", "numeric", "choice", "logical"], "field Kind");
-            signal = optionValue(options, "ValueChanged", []);
-            validateSignal(signal, "valueChange", "field");
+            signal = optionalSignal( ...
+                id, "valueChanged", optionValue( ...
+                options, "OnValueChanged", []));
             configuration = struct( ...
                 "Label", scalarText(optionValue(options, ...
                     "Label", id), "Label"), ...
@@ -178,9 +180,9 @@ classdef (Sealed, Hidden) LayoutNode
         function obj = rangeField(id, varargin)
             options = labkit.app.internal.OptionParser.parse("labkit.app.layout.rangeField", ...
                 ["Label", "Value", "Limits", "Enabled", "Bind", ...
-                 "ValueChanged"], varargin{:});
-            signal = optionValue(options, "ValueChanged", []);
-            validateSignal(signal, "valueChange", "rangeField");
+                 "OnValueChanged"], varargin{:});
+            signal = optionalSignal(id, "valueChanged", ...
+                optionValue(options, "OnValueChanged", []));
             configuration = struct( ...
                 "Label", scalarText(optionValue(options, ...
                     "Label", id), "Label"), ...
@@ -198,11 +200,11 @@ classdef (Sealed, Hidden) LayoutNode
 
         function obj = slider(id, varargin)
             names = ["Label", "Value", "Limits", "Step", "ShowTicks", "Bind", ...
-                "Enabled", "ValueChanged"];
+                "Enabled", "OnValueChanged"];
             options = labkit.app.internal.OptionParser.parse( ...
                 "labkit.app.layout.slider", names, varargin{:});
-            signal = optionValue(options, "ValueChanged", []);
-            validateSignal(signal, "valueChange", "slider");
+            signal = optionalSignal(id, "valueChanged", ...
+                optionValue(options, "OnValueChanged", []));
             limits = optionalLimits(optionValue( ...
                 options, "Limits", [0 1]), "Limits");
             value = optionValue(options, "Value", limits(1));
@@ -230,18 +232,10 @@ classdef (Sealed, Hidden) LayoutNode
             names = ["Label", "Mode", "Filters", "SelectionMode", "MaxFiles", ...
                 "FolderWarningThreshold", "ShowStatus", "StartPath", ...
                 "ChooseLabel", "FolderLabel", "RecursiveFolderLabel", ...
-                "RemoveLabel", "ClearLabel", "EmptyText", "Chosen", ...
-                "Removed", "Cleared", "SelectionChanged", "Bind", ...
+                "RemoveLabel", "ClearLabel", "EmptyText", "Bind", ...
                 "SelectionBind", "SourceRole", "SourceIdPrefix", "Required"];
             options = labkit.app.internal.OptionParser.parse( ...
                 "labkit.app.layout.fileList", names, varargin{:});
-            signals = {
-                roleSignal(options, "Chosen", "listSelection", "fileList")
-                roleSignal(options, "Removed", "listSelection", "fileList")
-                roleSignal(options, "Cleared", "action", "fileList")
-                roleSignal(options, "SelectionChanged", ...
-                    "listSelection", "fileList")}.';
-            signals = signals(~cellfun(@isempty, signals));
             configuration = struct( ...
                 "Label", scalarText(optionValue( ...
                     options, "Label", id), "Label"), ...
@@ -286,34 +280,32 @@ classdef (Sealed, Hidden) LayoutNode
             obj = makeLeaf("fileList", id, ...
                 ["filePaths", "listSelection", ...
                  "enabled", "visible", "text"], ...
-                signals, configuration);
+                {}, configuration);
         end
 
-        function obj = plotArea(id, varargin)
-            names = ["AxisIds", "Renderers", "ViewModes", "ValueChanged"];
+        function obj = plotArea(id, renderer, varargin)
+            names = ["AxisIds", "ViewModes", "OnValueChanged"];
             options = labkit.app.internal.OptionParser.parse( ...
                 "labkit.app.layout.plotArea", names, varargin{:});
-            signal = optionValue(options, "ValueChanged", []);
-            validateSignal(signal, "valueChange", "plotArea");
+            signal = optionalSignal(id, "valueChanged", ...
+                optionValue(options, "OnValueChanged", []));
             axisIds = idRow(optionValue(options, "AxisIds", "main"), "axis");
-            rendererIds = idRow(optionValue( ...
-                options, "Renderers", strings(1, 0)), "renderer");
+            renderer = rendererCallback(renderer);
             configuration = struct("ViewModes", textRow(optionValue( ...
                 options, "ViewModes", strings(1, 0)), "ViewModes"));
             obj = labkit.app.internal.LayoutNode("plotArea", normalizeId(id), {}, ...
                 ["renderPlot", "value", "visible"], signalCell(signal), ...
-                rendererIds, axisIds, configuration);
+                renderer, axisIds, configuration);
         end
 
         function obj = dataTable(id, varargin)
             options = labkit.app.internal.OptionParser.parse("labkit.app.layout.dataTable", ...
                 ["Columns", "RowNames", "ColumnEditable", ...
-                 "CellEdited", "CellSelectionChanged"], varargin{:});
+                 "OnCellEdited", "OnCellSelectionChanged"], varargin{:});
             signals = {
-                roleSignal(options, "CellEdited", ...
-                    "tableCellEdit", "dataTable")
-                roleSignal(options, "CellSelectionChanged", ...
-                    "tableCellSelection", "dataTable")}.';
+                namedSignal(id, options, "OnCellEdited", "cellEdited")
+                namedSignal(id, options, "OnCellSelectionChanged", ...
+                    "cellSelectionChanged")}.';
             signals = signals(~cellfun(@isempty, signals));
             columns = textRow(optionValue( ...
                 options, "Columns", strings(1, 0)), "Columns");
@@ -380,15 +372,15 @@ classdef (Sealed, Hidden) LayoutNode
                 varargin = varargin(2:end);
             end
             options = labkit.app.internal.OptionParser.parse("labkit.app.layout.workspace", ...
-                "PageChanged", varargin{:});
-            signal = optionValue(options, "PageChanged", []);
-            validateSignal(signal, "valueChange", "workspace");
+                "OnPageChanged", varargin{:});
+            signal = optionalSignal("workspace", "pageChanged", ...
+                optionValue(options, "OnPageChanged", []));
             if ~isempty(content)
                 validateChildKinds(content, workspaceContentKinds(), ...
                     "workspace");
             end
             obj = labkit.app.internal.LayoutNode("workspace", "workspace", content, ...
-                strings(1, 0), signalCell(signal), strings(1, 0), ...
+                strings(1, 0), signalCell(signal), [], ...
                 strings(1, 0), struct());
         end
 
@@ -408,7 +400,7 @@ classdef (Sealed, Hidden) LayoutNode
                 children{end + 1} = workspace;
             end
             obj = labkit.app.internal.LayoutNode("workbench", "application", children, ...
-                strings(1, 0), {}, strings(1, 0), strings(1, 0), struct());
+                strings(1, 0), {}, [], strings(1, 0), struct());
         end
     end
 
@@ -435,7 +427,7 @@ classdef (Sealed, Hidden) LayoutNode
             validateChildKinds({content}, workspaceContentKinds(), ...
                 "workspace page");
             pageNode = labkit.app.internal.LayoutNode("workspacePage", id, {content}, ...
-                ["workspacePage"], {}, strings(1, 0), strings(1, 0), ...
+                ["workspacePage"], {}, [], strings(1, 0), ...
                 struct("Title", nonemptyText(title, "workspace page title")));
             obj.Children{end + 1} = pageNode;
             obj.PageIds(end + 1) = id;
@@ -476,12 +468,12 @@ end
 
 function obj = makeLeaf(kind, id, capabilities, signals, configuration)
     obj = labkit.app.internal.LayoutNode(kind, normalizeId(id), {}, capabilities, ...
-        signals, strings(1, 0), strings(1, 0), configuration);
+        signals, [], strings(1, 0), configuration);
 end
 
 function obj = makeContainer(kind, id, children, configuration)
     obj = labkit.app.internal.LayoutNode(kind, normalizeId(id), children, ...
-        strings(1, 0), {}, strings(1, 0), strings(1, 0), configuration);
+        strings(1, 0), {}, [], strings(1, 0), configuration);
 end
 
 function value = optionValue(options, name, defaultValue)
@@ -541,11 +533,6 @@ function kinds = workspaceContentKinds()
     kinds = [leafAndGroupKinds(), "section"];
 end
 
-function signal = roleSignal(options, name, role, target)
-    signal = optionValue(options, name, []);
-    validateSignal(signal, role, target);
-end
-
 function values = signalCell(signal)
     values = {};
     if ~isempty(signal)
@@ -553,18 +540,31 @@ function values = signalCell(signal)
     end
 end
 
-function validateSignal(value, event, target)
-    if isempty(value)
-        return;
-    end
-    if ~isa(value, "labkit.app.StateHandler")
-        error("labkit:app:contract:InvalidValue", ...
-            "%s signal must be a Command value.", target);
-    end
-    if value.Event ~= event
-        error("labkit:app:contract:CallbackRoleMismatch", ...
-            "%s event requires StateHandler Event=%s.", target, event);
-    end
+function signal = namedSignal(target, options, optionName, signalName)
+signal = optionalSignal( ...
+    target, signalName, optionValue(options, optionName, []));
+end
+
+function signal = optionalSignal(target, signalName, callback)
+signal = [];
+if ~isempty(callback)
+    signal = bindSignal(target, signalName, callback);
+end
+end
+
+function signal = bindSignal(target, signalName, callback)
+signal = labkit.app.internal.SignalBinding(target, signalName, callback);
+end
+
+function callback = rendererCallback(callback)
+if ~isa(callback, "function_handle") || ~isscalar(callback)
+    error("labkit:app:contract:InvalidValue", ...
+        "layout.plotArea renderer must be a function handle.");
+end
+if nargin(callback) ~= 2 || nargout(callback) > 0
+    error("labkit:app:contract:CallbackRoleMismatch", ...
+        "layout.plotArea renderer must accept axes and model with no output.");
+end
 end
 
 function value = scalarText(value, label)

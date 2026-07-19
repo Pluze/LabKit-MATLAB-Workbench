@@ -26,10 +26,6 @@ function node = fileList(id, varargin)
 %   RemoveLabel - Remove button text. Default: "Remove".
 %   ClearLabel - Clear button text. Default: "Clear".
 %   EmptyText - Empty-list text. Default: "No files selected".
-%   Chosen - StateHandler with Event="listSelection". Default: [].
-%   Removed - StateHandler with Event="listSelection". Default: [].
-%   Cleared - StateHandler with Event="action". Default: [].
-%   SelectionChanged - StateHandler with Event="listSelection". Default: [].
 %   Bind - Project source-record field path. Default: "".
 %   SelectionBind - ListSelection field path. Default: "".
 %   SourceRole - Portable source role. Default: id.
@@ -40,7 +36,7 @@ function node = fileList(id, varargin)
 %   node - Immutable internal layout node accepted by layout containers.
 %
 % Errors:
-%   Throws labkit:app:contract:* for invalid options, paths, or handlers.
+%   Throws labkit:app:contract:* for invalid options, paths, or callbacks.
 %
 % Typical Call:
 %   node = labkit.app.layout.fileList("files", ...
