@@ -2,17 +2,17 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
     methods (Test)
         function noCapabilityContextRejectsOperations(testCase)
             setupLabKitTestPath();
-            context = labkit.ui.RuntimeContext();
+            context = labkit.app.CallbackContext();
 
             testCase.verifyTrue(meta.class.fromName( ...
-                "labkit.ui.RuntimeContext").Sealed);
+                "labkit.app.CallbackContext").Sealed);
             testCase.verifyError(@() context.alert("message", "title"), ...
-                "labkit:ui:runtime:InvariantFailure");
+                "labkit:app:runtime:InvariantFailure");
         end
 
         function declaredCapabilitiesUseOneSealedBackend(testCase)
             setupLabKitTestPath();
-            command = labkit.ui.Command("run", @runCommand);
+            command = labkit.app.StateHandler("run", @runCommand);
             app = applicationWith(command, ...
                 ["dispatch", "workflow", "dialogs", "project", "resources"]);
             store = containers.Map("KeyType", "char", "ValueType", "any");
@@ -25,13 +25,13 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
                 "getResource", @getResource, ...
                 "removeResource", @removeResource, ...
                 "clearResourceScope", @clearResourceScope);
-            context = labkit.ui.RuntimeContext.createForRuntime(app, backend);
+            context = labkit.app.CallbackContext.createForRuntime(app, backend);
             context.appendStatus("ready");
-            choice = context.choose("Continue?", ["yes", "no"]);
+            choice = context.chooseOption("Continue?", ["yes", "no"]);
             context.setResource("document", "reader", 42, []);
             value = context.getResource("document", "reader");
-            context.dispatch(command, []);
-            paths = context.sourcePaths(struct(), ["first", "second"]);
+            context.dispatchHandler(command, []);
+            paths = context.resolveSourcePaths(struct(), ["first", "second"]);
 
             testCase.verifyEqual(choice.Value, "yes");
             testCase.verifyEqual(value, 42);
@@ -39,10 +39,10 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
             testCase.verifyEqual(paths, ["first"; "second"] + ".dat");
             testCase.verifyError(@() context.reportError( ...
                 "operation", MException("probe:error", "failure")), ...
-                "labkit:ui:runtime:InvariantFailure");
-            testCase.verifyError(@() context.dispatch( ...
-                labkit.ui.Command("other", @runCommand), []), ...
-                "labkit:ui:contract:UnknownReference");
+                "labkit:app:runtime:InvariantFailure");
+            testCase.verifyError(@() context.dispatchHandler( ...
+                labkit.app.StateHandler("other", @runCommand), []), ...
+                "labkit:app:contract:UnknownReference");
 
             function dispatch(~, ~)
             end
@@ -52,7 +52,7 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
             end
 
             function result = choose(~, choices)
-                result = labkit.ui.DialogResult(choices(1));
+                result = labkit.app.dialog.Choice(choices(1));
             end
 
             function paths = sourcePaths(~, ids)
@@ -81,12 +81,12 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
 end
 
 function app = applicationWith(command, capabilities)
-    app = labkit.ui.Application( ...
-        Command="labkit_Probe_app", Id="probe.context", ...
+    app = labkit.app.Definition( ...
+        Entrypoint="labkit_Probe_app", AppId="probe.context", ...
         Title="Probe", Family="Tests", AppVersion="1.0.0", ...
         Updated="2026-07-19", Requirements=[], ...
-        Layout=labkit.ui.Layout.workbench({}), ...
-        ExtraCommands={command}, Capabilities=capabilities);
+        Workbench=labkit.app.layout.workbench({}), ...
+        ExtraHandlers={command}, StrictCapabilities=capabilities);
 end
 
 function state = runCommand(state, ~)

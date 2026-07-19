@@ -96,6 +96,7 @@ end
 
 function versions = currentFacadeVersions()
     versions = [
+        labkit.app.version()
         labkit.ui.version()
         labkit.dta.version()
         labkit.rhs.version()

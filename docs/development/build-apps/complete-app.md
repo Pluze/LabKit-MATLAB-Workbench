@@ -2,9 +2,9 @@
 
 [App development](app-development.md) | [Framework](../../framework/README.md) | [Testing](../maintain-and-release/testing.md)
 
-This tutorial shows the production explicit UI contract. The example opens
+This tutorial shows the production App SDK contract. The example opens
 numeric trace files, binds a gain parameter, previews the selected traces, and
-declares one export Command.
+declares one export handler.
 
 ## File Shape
 
@@ -15,7 +15,7 @@ apps/example/trace_viewer/
     |-- definition.m
     |-- projectSpec.m
     |-- createSession.m
-    |-- definitionActions.m
+    |-- stateHandlers.m
     |-- +sourceFiles/readTrace.m
     `-- +userInterface/
         |-- buildWorkbenchLayout.m
@@ -23,7 +23,7 @@ apps/example/trace_viewer/
         `-- renderTrace.m
 ```
 
-A static App can omit the project, session, Commands, presenter, and renderer.
+A static App can omit the project, session, handlers, view builder, and renderer.
 
 ## 1. Thin Entrypoint
 
@@ -35,37 +35,37 @@ function varargout = labkit_TraceViewer_app(varargin)
 end
 ```
 
-## 2. One Application Contract
+## 2. One App Definition
 
 ```matlab
 function app = definition()
-    commands = trace_viewer.definitionActions();
-    app = labkit.ui.Application( ...
-        Command="labkit_TraceViewer_app", ...
-        Id="trace_viewer", ...
+    handlers = trace_viewer.stateHandlers();
+    app = labkit.app.Definition( ...
+        Entrypoint="labkit_TraceViewer_app", ...
+        AppId="trace_viewer", ...
         Title="Trace Viewer", ...
         Family="Examples", ...
         AppVersion="1.0.0", ...
         Updated="2026-07-19", ...
-        Requirements=labkit.contract.requirements("ui", ">=8 <9"), ...
-        Project=trace_viewer.projectSpec(), ...
-        Session=@trace_viewer.createSession, ...
-        Layout=trace_viewer.userInterface.buildWorkbenchLayout(commands), ...
-        Present=@trace_viewer.userInterface.presentWorkbench, ...
+        Requirements=labkit.contract.requirements("app", ">=1 <2"), ...
+        ProjectSchema=trace_viewer.projectSpec(), ...
+        CreateSession=@trace_viewer.createSession, ...
+        Workbench=trace_viewer.userInterface.buildWorkbenchLayout(handlers), ...
+        BuildView=@trace_viewer.userInterface.presentWorkbench, ...
         Renderers=struct( ...
             "trace", @trace_viewer.userInterface.renderTrace));
 end
 ```
 
-Layout automatically registers referenced Commands. Do not duplicate them in
-Application. Omit `Capabilities` unless the App needs an advanced strict
+Layout automatically registers referenced StateHandlers. Do not duplicate
+them in Definition. Omit `StrictCapabilities` unless the App needs an advanced
 allow-list audit.
 
 ## 3. Durable Project
 
 ```matlab
 function contract = projectSpec()
-    contract = labkit.ui.ProjectContract( ...
+    contract = labkit.app.project.Schema( ...
         Version=1, Create=@createProject, Validate=@validateProject);
 end
 
@@ -87,7 +87,7 @@ function accepted = validateProject(project)
 end
 ```
 
-Use `labkit.ui.ProjectContract()` when any scalar struct is sufficient. For a
+Use `labkit.app.project.Schema()` when any scalar struct is sufficient. For a
 later payload version, add the one fixed
 `project = migrate(project,fromVersion)` callback. Framework owns the ordered
 migration loop and project envelope.
@@ -96,46 +96,47 @@ migration loop and project envelope.
 
 ```matlab
 function session = createSession(project, context)
-    paths = context.sourcePaths(project.inputs.sources);
+    paths = context.resolveSourcePaths(project.inputs.sources);
     traces = cell(numel(paths), 1);
     for k = 1:numel(paths)
         traces{k} = trace_viewer.sourceFiles.readTrace(paths(k));
     end
     session = struct( ...
         "selection", struct("files", ...
-            labkit.ui.Selection(Indices=1:numel(paths))), ...
+            labkit.app.event.ListSelection(Indices=1:numel(paths))), ...
         "cache", struct("traces", {traces}));
 end
 ```
 
-Portable source records are opaque. Resolve them with `context.sourcePaths`;
+Portable source records are opaque. Resolve them with
+`context.resolveSourcePaths`;
 do not read their representation. A standard file collection change reruns
 this factory transactionally. A selection-only change does not reload files.
 
 ## 5. Semantic Layout
 
 ```matlab
-function layout = buildWorkbenchLayout(commands)
+function layout = buildWorkbenchLayout(handlers)
     controls = { ...
-        labkit.ui.Layout.filePanel("files", ...
+        labkit.app.layout.fileList("files", ...
             Filters=["*.csv", "CSV files (*.csv)"], ...
             Bind="project.inputs.sources", ...
             SelectionBind="session.selection.files", ...
             SourceRole="trace", SourceIdPrefix="trace"), ...
-        labkit.ui.Layout.field("gain", Label="Gain", ...
+        labkit.app.layout.field("gain", Label="Gain", ...
             Kind="numeric", Bind="project.parameters.gain"), ...
-        labkit.ui.Layout.action("export", "Export", commands.export)};
-    workspace = labkit.ui.Layout.workspace( ...
-        labkit.ui.Layout.previewArea("preview", ...
+        labkit.app.layout.button("export", "Export", handlers.export)};
+    workspace = labkit.app.layout.workspace( ...
+        labkit.app.layout.plotArea("preview", ...
             AxisIds="trace", Renderers="trace"));
-    layout = labkit.ui.Layout.workbench(controls, Workspace=workspace);
+    layout = labkit.app.layout.workbench(controls, Workspace=workspace);
 end
 ```
 
-The file panel and gain field need no callbacks. Runtime owns file
+The file list and gain field need no callbacks. Runtime owns file
 add/remove/clear, selection, state writes, and their default presentation.
 
-## 6. Dynamic Presentation
+## 6. Dynamic View Snapshot
 
 ```matlab
 function view = presentWorkbench(state)
@@ -144,27 +145,28 @@ function view = presentWorkbench(state)
     model = struct( ...
         "traces", {traces}, ...
         "gain", state.project.parameters.gain);
-    view = labkit.ui.Presentation() ...
+    view = labkit.app.view.Snapshot() ...
         .enabled("export", ~isempty(traces)) ...
-        .plot("preview", "trace", model);
+        .renderPlot("preview", "trace", model);
 end
 ```
 
 The App returns only derived dynamic operations. Runtime completes the snapshot
-from Layout defaults, bindings, file state, and framework log/status state.
+from layout defaults, bindings, file state, and framework log/status state.
 
 ## 7. Renderer
 
 ```matlab
 function renderTrace(axes, model)
     ax = axes(1);
-    labkit.ui.plot.clear(ax, ResetScale=true);
+    cla(ax, "reset");
     hold(ax, "on");
     for k = 1:numel(model.traces)
         values = model.gain .* model.traces{k};
         plot(ax, 1:numel(values), values);
     end
     hold(ax, "off");
+    axis(ax, "tight");
     xlabel(ax, "Sample");
     ylabel(ax, "Scaled value");
 end
@@ -173,12 +175,12 @@ end
 Every renderer has exactly two inputs and no output. Multi-axis previews
 receive axes in `AxisIds` order. Apps never receive a component registry.
 
-## 8. Business Command And Result
+## 8. Business Handler And Result
 
 ```matlab
-function commands = definitionActions()
-    commands = struct( ...
-        "export", labkit.ui.Command("export", @exportTrace));
+function handlers = stateHandlers()
+    handlers = struct( ...
+        "export", labkit.app.StateHandler("export", @exportTrace));
 end
 
 function state = exportTrace(state, context)
@@ -190,26 +192,26 @@ function state = exportTrace(state, context)
     outputPath = string(chosen.Value);
     writematrix(state.session.cache.traces{1}, outputPath);
     [folder, name, extension] = fileparts(outputPath);
-    output = labkit.ui.ResultOutput( ...
+    output = labkit.app.result.File( ...
         "trace", "primary", string(name) + string(extension), ...
         MediaType="text/csv");
-    result = labkit.ui.Result( ...
+    result = labkit.app.result.Package( ...
         Outputs={output}, Inputs=struct( ...
             "sources", state.project.inputs.sources), ...
         Parameters=state.project.parameters, ...
         Summary=struct("traceCount", ...
             numel(state.session.cache.traces)));
-    context.writeResult(folder, result);
+    context.writeResultPackage(folder, result);
     context.appendStatus("Exported " + outputPath);
 end
 ```
 
-Cancellation is explicit in `DialogResult`. Runtime result writing owns
+Cancellation is explicit in `labkit.app.dialog.Choice`. Runtime result writing owns
 provenance, checksums, file sizes, and atomic manifest replacement.
 
 ## Validation
 
-Test readers, calculations, project validation, Commands, and presenters
+Test readers, calculations, project validation, StateHandlers, and view builders
 without a GUI first. Add one hidden GUI workflow for semantic construction,
 native callback wiring, rendering, file lifecycle, export, and project
 restore. Hidden GUI automation does not validate native dialog feel or the

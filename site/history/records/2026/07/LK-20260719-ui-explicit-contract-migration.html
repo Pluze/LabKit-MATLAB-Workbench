@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="generator" content="LabKit MATLAB documentation compiler">
-<title>UI explicit contract begins real App migration - LabKit MATLAB Workbench</title>
+<title>App SDK explicit contract begins real App migration - LabKit MATLAB Workbench</title>
 <link rel="stylesheet" href="../../../../assets/style.css">
 </head>
 <body data-site-root="../../../../">
@@ -18,17 +18,17 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../../../apps/index.html">Apps</a><a class="product-nav-link" href="../../../../reference/index.html">Functions</a><a class="product-nav-link" href="../../../../framework/index.html">Framework</a><a class="product-nav-link" href="../../../../development/index.html">Development</a><a class="product-nav-link active" href="../../../index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">UI explicit contract begins real App migration</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-data-impact">User and data impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">App SDK explicit contract begins real App migration</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-data-impact">User and data impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">history</p>
-<h1 id="ui-explicit-contract-begins-real-app-migration">UI explicit contract begins real App migration</h1>
+<h1 id="app-sdk-explicit-contract-begins-real-app-migration">App SDK explicit contract begins real App migration</h1>
 <pre><code class="language-labkit-change">schema: 2
 id: LK-20260719-ui-explicit-contract-migration
 date: 2026-07-19
 sequence: 138
 type: refactor
 compatibility: breaking
-component: `labkit.ui` | `7.6.0 -&gt; 8.0.0`
+component: `labkit.app` | `new -&gt; 1.0.0`
 component: `labkit_ChronoOverlay_app` | `1.4.7 -&gt; 1.5.0`
 scope: App Framework
 scope: Electrochem
@@ -37,21 +37,22 @@ scope: Result provenance</code></pre>
 <h2 id="context">Context</h2>
 <p>Runtime V2 removed substantial per-App lifecycle code, but Apps still registered callback tables, repeated bound values in presenters, authored standard file add/remove/clear behavior, and depended on nested event/service structs. A replacement SDK kernel had already established immutable semantic values, pre-GUI validation, transactional state/presentation commits, project documents, result manifests, resources, and portable sources. It still needed evidence from a real source-backed plotting App and a native MATLAB adapter.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>
-<p>Make the explicit values the new UI major contract rather than adapting them back to Runtime V2 transport structs. Keep the strict internal kernel and concentrate complexity in a paved authoring path: Layout-collected Commands, strict bindings, runtime-completed presentations, standard file lifecycle, fixed <code>Session(project,context)</code>, and a private native component adapter.</p>
+<p>Create <code>labkit.app</code> as the future stable SDK rather than misnaming the expanded contract <code>labkit.ui</code> or adapting it back to Runtime V2 transport structs. Keep the public root small, partition authoring by capability, and concentrate complexity in a paved path: <code>layout.*</code> nodes, collected StateHandlers, strict bindings, runtime-completed <code>view.Snapshot</code> values, standard file lifecycle, fixed <code>CreateSession(project,context)</code>, and private native adapters.</p>
 <p>Chrono Overlay is the first migrated App because it exercises a project, portable files, transient decoding, selection, bound controls, two axes, native viewport preservation, CSV output, and a result manifest without requiring the later managed-interaction vocabulary.</p>
 <h2 id="changes">Changes</h2>
 <ul>
 <li>Added the private native MATLAB adapter with semantic component ownership, typed RuntimeKernel callbacks, native dialog results, complete-presentation reconciliation, and rollback to the previous native view after a failed renderer commit.</li>
-<li>Added <code>Application.launch</code>, fixed renderer <code>(axes,model)</code> dispatch, semantic labels, runtime-owned file add/remove/clear and selection, and transient session rebuild after source collection changes.</li>
-<li>Added strict table presentation options, typed complete-data edits, and two-dimensional cell selection through the existing <code>TableEdit</code> and <code>Selection</code> values; the private adapter absorbs native MATLAB table-value differences.</li>
-<li>Fixed session construction to <code>Session(project,context)</code> so Apps resolve opaque portable sources without reading their representation.</li>
-<li>Migrated Chrono Overlay to one export Command, four direct bindings, one two-axis renderer call, and a two-operation App presentation.</li>
+<li>Added <code>Definition.launch</code>, fixed renderer <code>(axes,model)</code> dispatch, semantic labels, runtime-owned file add/remove/clear and selection, and transient session rebuild after source collection changes.</li>
+<li>Added strict table view options, typed complete-data edits, and distinct <code>event.TableCellEdit</code>, <code>event.TableCellSelection</code>, and <code>event.ListSelection</code> values; the private adapter absorbs native MATLAB table-value differences.</li>
+<li>Fixed session construction to <code>CreateSession(project,context)</code> so Apps resolve opaque portable sources without reading their representation.</li>
+<li>Migrated Chrono Overlay to one export StateHandler, four direct bindings, one two-axis renderer call, and a two-operation view snapshot.</li>
+<li>Partitioned the public SDK into <code>layout</code>, <code>view</code>, <code>event</code>, <code>project</code>, <code>result</code>, and <code>dialog</code>; layout nodes, option parsing, stores, adapters, and runtime execution remain hidden under <code>internal</code>.</li>
 <li>Reduced Chrono's noncomment layout/action/presenter code from 277 lines to 86 while preserving its DTA alignment, plot options, project schema, CSV columns, and result provenance.</li>
 </ul>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Chrono Overlay retains its input formats, pulse-gap alignment, plot meanings, parameter defaults, CSV table, and version-2 project payload. File identities and portable paths remain runtime-owned. Existing version-1 payload migration still removes decoded transient items before validation.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
-<p>UI 8 is a source-breaking replacement contract. Apps migrate on the branch before the UI 7 <code>runtime/layout</code> boundary is deleted; the two public authoring surfaces are not a permanent compatibility layer. Project documents retain their format and App payload versions independently of the UI facade major.</p>
+<p><code>labkit.app</code> 1 is a source-breaking replacement contract. Apps migrate on the branch before the UI 7 <code>runtime/layout</code> boundary is deleted; the two public authoring surfaces are not a permanent compatibility layer. Project documents retain their format and App payload versions independently of either facade.</p>
 <h2 id="validation">Validation</h2>
 <p>Focused headless tests cover strict values, transactional runtime behavior, project save/restore, authoring defaults, and Chrono calculations/exports. Hidden GUI tests cover native semantic construction, typed control and table callbacks, bound side effects, standard file lifecycle, transient session rebuild, two-axis rendering, viewport preservation, renderer rollback, Chrono export, and project restore.</p>
 <h2 id="evidence">Evidence</h2>

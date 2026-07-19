@@ -1,5 +1,5 @@
 % Expected caller: the registered Chrono Overlay renderer. Inputs are the
-% voltage/current axes in Layout AxisIds order and one prepared overlay model.
+% voltage/current axes in declared AxisIds order and one prepared overlay model.
 % Side effects are limited to redrawing the supplied axes.
 function renderOverlayAxis(axes, model)
     if numel(axes) ~= 2
@@ -13,7 +13,7 @@ end
 function renderSignal(ax, model, signal)
     options = model.options;
     items = model.items;
-    labkit.ui.plot.clear(ax, "ResetScale", true);
+    clearAxesForRedraw(ax);
     if isempty(items)
         renderEmpty(ax, signal);
         return;
@@ -31,13 +31,64 @@ function renderSignal(ax, model, signal)
         labels{k} = char(item.name);
     end
     hold(ax, 'off');
-    labkit.ui.plot.fit(ax, plotLines(isgraphics(plotLines)));
+    fitAxesToLines(ax, plotLines(isgraphics(plotLines)));
     xlabel(ax, axisLabel(options.xAxis));
     [titleText, yLabel] = signalLabels(signal, numel(items));
     ylabel(ax, yLabel);
     title(ax, titleText);
     setGrid(ax, options.showGrid);
     setLegend(ax, labels, options.showLegend);
+end
+
+function clearAxesForRedraw(ax)
+    delete(allchild(ax));
+    cla(ax);
+    legend(ax, "off");
+    hold(ax, "off");
+    ax.XLimMode = "auto";
+    ax.YLimMode = "auto";
+    ax.XScale = "linear";
+    ax.YScale = "linear";
+    ax.XTickMode = "auto";
+    ax.YTickMode = "auto";
+end
+
+function fitAxesToLines(ax, plotLines)
+    xParts = cell(1, numel(plotLines));
+    yParts = cell(1, numel(plotLines));
+    for k = 1:numel(plotLines)
+        xParts{k} = plotLines(k).XData(:);
+        yParts{k} = plotLines(k).YData(:);
+    end
+    x = vertcat(xParts{:});
+    y = vertcat(yParts{:});
+    x = x(isfinite(x));
+    y = y(isfinite(y));
+    applyPaddedLimits(ax, x, y);
+end
+
+function applyPaddedLimits(ax, x, y)
+    if isempty(x)
+        xlim(ax, "auto");
+    else
+        xlim(ax, paddedLimits(x));
+    end
+    if isempty(y)
+        ylim(ax, "auto");
+    else
+        ylim(ax, paddedLimits(y));
+    end
+end
+
+function limits = paddedLimits(values)
+    lower = min(values);
+    upper = max(values);
+    if lower == upper
+        padding = max(abs(lower), 1) * 0.05;
+    else
+        padding = (upper - lower) * 0.02;
+    end
+    limits = [lower - padding, upper + padding];
 end
 
 function renderEmpty(ax, signal)

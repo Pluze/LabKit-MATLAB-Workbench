@@ -115,7 +115,7 @@ function path = documentationSourceForArtifact(root, artifact)
     end
     if startsWith(artifact.label, "labkit.")
         facade = extractAfter(artifact.label, "labkit.");
-        if facade == "ui"
+        if any(facade == ["app", "ui"])
             path = "docs/framework/README.md";
         else
             path = "docs/libraries/" + facade + "/README.md";

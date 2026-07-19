@@ -48,7 +48,7 @@ labkit_<Name>_app.m
 Add only capabilities the product needs:
 
 ```text
-+<slug>/definitionActions.m
++<slug>/stateHandlers.m
 +<slug>/projectSpec.m
 +<slug>/createSession.m
 +<slug>/+userInterface/presentWorkbench.m
@@ -58,31 +58,34 @@ Add only capabilities the product needs:
 
 The entrypoint only calls `definition().launch(...)`. `definition.m` owns identity,
 version, requirements, layout, and references to optional capabilities.
-`definitionActions.m` returns only semantic Commands for App-owned business
-behavior; Layout bindings and runtime lifecycle behavior require no
-placeholder Commands. One `projectSpec.m` returns a `ProjectContract` owning
+`stateHandlers.m` returns only semantic `labkit.app.StateHandler` values
+for App-owned business behavior; `labkit.app.layout.*` bindings and runtime
+lifecycle behavior require no placeholder handlers. One `projectSpec.m`
+returns a `labkit.app.project.Schema` owning
 local create, validate, and
 version-aware migrate functions when durable state exists; Runtime owns the
 migration loop. Root `createSession.m` uses the fixed `(project,context)`
 signature and rebuilds only App-specific transient data; opaque source paths
-are resolved with `context.sourcePaths`. Layout is data-only; presentation is
-a pure state-to-view mapping.
+are resolved with `context.resolveSourcePaths`. Layout nodes are data-only;
+`labkit.app.view.Snapshot` is a pure state-to-view mapping.
 
-On the explicit-contract paved road, bind ordinary project/session fields
-directly in Layout, let Application collect signal Commands, omit capability
-metadata unless strict auditing is needed, and let runtime defaults complete
-the presentation. Add a Command and presenter operation only for real
-business effects or derived UI state.
+On the App SDK paved road, bind ordinary project/session fields directly in
+`labkit.app.layout.*`, let `labkit.app.Definition` collect signal handlers,
+omit `StrictCapabilities` unless strict auditing is needed, and let runtime
+defaults complete the view snapshot. Add a StateHandler and view operation
+only for real business effects or derived UI state.
 
 Do not add separate `requirements.m`, `version.m`, generic `+appLifecycle` or
-`+appState` packages, per-version migration files, or a Start callback that
+`+appState` packages, per-version migration files, or a `StartupHandler` that
 only constructs default state. Add a semantically named Start function only
 for real post-layout request or resource initialization.
 
 Use concrete workflow packages such as `sourceFiles`, `analysisRun`,
 `cropGeometry`, or `resultFiles`. Keep small callback glue local. Do not create
 technical buckets, package-root runners, alternate interaction runtimes,
-control mutation facades, or helpers merely to meet a line budget.
+control mutation facades, or helpers merely to meet a line budget. Public SDK
+names must state their capability directly; do not add general buckets such as
+`Manager`, `Service`, `Helper`, or `Data`.
 
 ## Build order
 

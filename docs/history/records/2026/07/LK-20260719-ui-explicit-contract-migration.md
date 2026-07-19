@@ -1,4 +1,4 @@
-# UI explicit contract begins real App migration
+# App SDK explicit contract begins real App migration
 
 ```labkit-change
 schema: 2
@@ -7,7 +7,7 @@ date: 2026-07-19
 sequence: 138
 type: refactor
 compatibility: breaking
-component: `labkit.ui` | `7.6.0 -> 8.0.0`
+component: `labkit.app` | `new -> 1.0.0`
 component: `labkit_ChronoOverlay_app` | `1.4.7 -> 1.5.0`
 scope: App Framework
 scope: Electrochem
@@ -27,11 +27,12 @@ evidence from a real source-backed plotting App and a native MATLAB adapter.
 
 ## Decision and rationale
 
-Make the explicit values the new UI major contract rather than adapting them
-back to Runtime V2 transport structs. Keep the strict internal kernel and
-concentrate complexity in a paved authoring path: Layout-collected Commands,
-strict bindings, runtime-completed presentations, standard file lifecycle,
-fixed `Session(project,context)`, and a private native component adapter.
+Create `labkit.app` as the future stable SDK rather than misnaming the expanded
+contract `labkit.ui` or adapting it back to Runtime V2 transport structs. Keep
+the public root small, partition authoring by capability, and concentrate
+complexity in a paved path: `layout.*` nodes, collected StateHandlers, strict
+bindings, runtime-completed `view.Snapshot` values, standard file lifecycle,
+fixed `CreateSession(project,context)`, and private native adapters.
 
 Chrono Overlay is the first migrated App because it exercises a project,
 portable files, transient decoding, selection, bound controls, two axes,
@@ -44,17 +45,20 @@ requiring the later managed-interaction vocabulary.
   typed RuntimeKernel callbacks, native dialog results, complete-presentation
   reconciliation, and rollback to the previous native view after a failed
   renderer commit.
-- Added `Application.launch`, fixed renderer `(axes,model)` dispatch, semantic
+- Added `Definition.launch`, fixed renderer `(axes,model)` dispatch, semantic
   labels, runtime-owned file add/remove/clear and selection, and transient
   session rebuild after source collection changes.
-- Added strict table presentation options, typed complete-data edits, and
-  two-dimensional cell selection through the existing `TableEdit` and
-  `Selection` values; the private adapter absorbs native MATLAB table-value
-  differences.
-- Fixed session construction to `Session(project,context)` so Apps resolve
+- Added strict table view options, typed complete-data edits, and distinct
+  `event.TableCellEdit`, `event.TableCellSelection`, and
+  `event.ListSelection` values; the private adapter absorbs native MATLAB
+  table-value differences.
+- Fixed session construction to `CreateSession(project,context)` so Apps resolve
   opaque portable sources without reading their representation.
-- Migrated Chrono Overlay to one export Command, four direct bindings, one
-  two-axis renderer call, and a two-operation App presentation.
+- Migrated Chrono Overlay to one export StateHandler, four direct bindings,
+  one two-axis renderer call, and a two-operation view snapshot.
+- Partitioned the public SDK into `layout`, `view`, `event`, `project`,
+  `result`, and `dialog`; layout nodes, option parsing, stores, adapters, and
+  runtime execution remain hidden under `internal`.
 - Reduced Chrono's noncomment layout/action/presenter code from 277 lines to
   86 while preserving its DTA alignment, plot options, project schema, CSV
   columns, and result provenance.
@@ -68,10 +72,10 @@ still removes decoded transient items before validation.
 
 ## Compatibility and migration
 
-UI 8 is a source-breaking replacement contract. Apps migrate on the branch
-before the UI 7 `runtime/layout` boundary is deleted; the two public authoring
-surfaces are not a permanent compatibility layer. Project documents retain
-their format and App payload versions independently of the UI facade major.
+`labkit.app` 1 is a source-breaking replacement contract. Apps migrate on the
+branch before the UI 7 `runtime/layout` boundary is deleted; the two public
+authoring surfaces are not a permanent compatibility layer. Project documents
+retain their format and App payload versions independently of either facade.
 
 ## Validation
 

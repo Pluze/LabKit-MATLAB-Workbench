@@ -1,5 +1,10 @@
 # UI explicit-contract replacement RFC
 
+> Naming amendment (2026-07-19): the accepted behavior moved to the
+> capability-partitioned `labkit.app` SDK. Historical prototype symbols below
+> map to `Definition`, `StateHandler`, `layout.*`, `view.Snapshot`,
+> `project.Schema`, and `CallbackContext`; they are not compatibility aliases.
+
 Status: Phase 1A representation and Phase 1B end-to-end contract gates
 accepted on 2026-07-19. Phase 2 production implementation may begin. This is
 not yet a released API; the contract remains migration-scoped until the Phase
@@ -81,7 +86,7 @@ commands, session, presenter, renderer, and startup work.
 
 The one session factory shape is
 `session = createSession(project,context)`. Portable source records remain
-opaque; a source-backed App resolves paths through `context.sourcePaths`
+opaque; a source-backed App resolves paths through `context.resolveSourcePaths`
 while rebuilding transient decoded data. The runtime uses the same fixed
 shape during initial construction and project restore.
 

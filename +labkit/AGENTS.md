@@ -30,7 +30,8 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
 - `labkit.image`, `thermal`, `dta`, `rhs`, and `biosignal` stay GUI-free and
   app-free. Each owns its documented file/data/scientific primitive contract,
   not an app's task orchestration.
-- `labkit.ui` stays parser- and analysis-free. Its public layers are
+- `labkit.app` owns the future App SDK; `labkit.ui` stays parser- and
+  analysis-free while its legacy public layers are
   `runtime`, `layout`, `plot`, `interaction`, and `debug`; registry mutation,
   queueing, concrete controls, and lifecycle handles remain private.
 - `labkit.contract` owns MATLAB-native version requirements and range checks,
@@ -47,23 +48,24 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
 
 ## Runtime contracts
 
-- Migrated Apps return one `labkit.ui.Application` and launch it through
-  `Application.launch`; do not adapt explicit values back into
+- Migrated Apps return one `labkit.app.Definition` and launch it through
+  `Definition.launch`; do not adapt explicit values back into
   `labkit.ui.runtime.launch/define`. The runtime owns
   startup readiness, busy state, queued events, atomic presentation, close
   guards, diagnostics, persistence, recovery, resources, and interactions.
 - Semantic ids are developer-owned and framework-validated. App ids are stable
   compatibility identifiers; layout/action/axis/source/result namespaces must
   remain legal and unique; references must resolve before UI mutation.
-- Presentation must preserve unchanged graphics and viewports. Renderers own
+- View snapshots must preserve unchanged graphics and viewports. Renderers own
   incremental overlay changes; interaction specs own user gestures.
-- The explicit runtime composes complete presentation snapshots from Layout
-  defaults, strict state bindings, framework-owned state, and the App's
-  dynamic Presentation fragment; private reconciliation owns diffs.
-- Layout signals reference Command values and Application collects them.
-  `ExtraCommands` is only for programmatic dispatch. Ordinary Apps omit the
-  capability list; an explicit list is advanced strict-audit metadata.
-- Compile the immutable static Application graph once. Presentation commits
+- The App runtime composes complete `labkit.app.view.Snapshot` values from
+  `labkit.app.layout.*` defaults, strict state bindings, framework-owned state,
+  and the App's dynamic view fragment; private reconciliation owns diffs.
+- Layout signals reference `labkit.app.StateHandler` values and Definition
+  collects them. `ExtraHandlers` is only for programmatic dispatch. Ordinary
+  Apps omit the capability list; `StrictCapabilities` is advanced audit
+  metadata.
+- Compile the immutable static Definition graph once. View commits
   validate against the cached graph and must not re-flatten layout on every
   update.
 - A new public UI capability needs repeated evidence from at least two Apps or

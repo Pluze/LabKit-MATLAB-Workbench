@@ -26,14 +26,15 @@ retirement. A zero-debt ledger is not an everyday checklist.
 - Apps own formulas, thresholds, units, workflow decisions, plots, results,
   exports, failures, and wording. Promote code into `+labkit` only when it is a
   stable domain-neutral contract useful beyond one app.
-- App-facing packages are `labkit.ui`, `image`, `thermal`, `dta`, `rhs`, and
-  `biosignal`. Do not create public `analysis`, `data`, `io`, `util`, or
-  app-specific helper surfaces.
-- Apps use `labkit.ui.Application`, semantic Layout values, strict bindings,
-  Command roles, Presentation fragments, RuntimeContext, and managed
-  interactions/resources. Entrypoints call `definition().launch(...)`. Apps do not
-  receive registries or own lifecycle timers, readiness, callback queues, or
-  concrete framework layout.
+- App-facing packages are `labkit.app`, `ui`, `image`, `thermal`, `dta`, `rhs`,
+  and `biosignal`; `labkit.ui` is legacy until migration completes. Do not
+  create public `analysis`, `data`, `io`, `util`, or app-specific helper
+  surfaces.
+- Migrated Apps use `labkit.app.Definition`, `labkit.app.layout.*`,
+  `labkit.app.StateHandler`, `labkit.app.view.Snapshot`, typed
+  `labkit.app.event.*` payloads, and `labkit.app.CallbackContext`. Entrypoints
+  call `definition().launch(...)`. Apps do not receive registries or own
+  lifecycle timers, readiness, callback queues, or concrete framework layout.
 - Keep app entrypoints thin and app helpers under the owning app package. Name
   packages and functions for the capability they own, not `helpers`, `utils`,
   `process`, `handle`, or `manage`.

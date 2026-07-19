@@ -1,4 +1,4 @@
-# UI explicit-contract migration examples
+# App SDK explicit-contract migration examples
 
 These examples are source-edit guidance for the accepted RFC. They are not a
 runtime adapter and do not make generated edits scientifically correct.
@@ -20,24 +20,25 @@ def = labkit.ui.runtime.define( ...
 After:
 
 ```matlab
-run = labkit.ui.Command("run", @onRun);
-layout = labkit.ui.Layout.workbench({ ...
-    labkit.ui.Layout.action("run", "Run", run)}, ...
-    Workspace=labkit.ui.Layout.workspace( ...
-        labkit.ui.Layout.previewArea( ...
+run = labkit.app.StateHandler("run", @onRun);
+layout = labkit.app.layout.workbench({ ...
+    labkit.app.layout.button("run", "Run", run)}, ...
+    Workspace=labkit.app.layout.workspace( ...
+        labkit.app.layout.plotArea( ...
             "preview", Renderers="preview")));
-app = labkit.ui.Application( ...
-    Command="labkit_Example_app", Id="example", ...
+app = labkit.app.Definition( ...
+    Entrypoint="labkit_Example_app", AppId="example", ...
     Title="Example", Family="Examples", AppVersion="1.0.0", ...
-    Updated="2026-07-19", Requirements=[], ...
-    Project=projectContract(), Layout=layout, Present=@present, ...
+    Updated="2026-07-19", ...
+    Requirements=labkit.contract.requirements("app", ">=1 <2"), ...
+    ProjectSchema=projectSpec(), Workbench=layout, BuildView=@present, ...
     Renderers=struct("preview", @drawPreview));
 ```
 
-Layout signals are collected automatically; no duplicate Command registry is
+Layout signals are collected automatically; no duplicate StateHandler registry is
 maintained by the App.
 
-## Presentation
+## View snapshot
 
 Before:
 
@@ -51,10 +52,10 @@ view.previews.image = struct( ...
 After:
 
 ```matlab
-view = labkit.ui.Presentation();
+view = labkit.app.view.Snapshot();
 view = view.enabled("run", state.session.canRun);
 view = view.text("status", state.session.status);
-view = view.plot("image", "preview", state.session.preview);
+view = view.renderPlot("image", "preview", state.session.preview);
 ```
 
 ## Interaction
@@ -73,7 +74,7 @@ view.interactions.roi = struct( ...
 Accepted semantic target (not production syntax until Phase 4 closes):
 
 ```matlab
-roi = labkit.ui.interaction.rectangle( ...
+roi = labkit.app.interaction.rectangle( ...
     Target="image", ...
     Bounds=state.session.roi, ...
     Changed=commands.roiChanged, ...
@@ -82,7 +83,7 @@ view = view.interaction(roi);
 ```
 
 The interaction example remains deliberately labelled as a target because the
-production interaction constructors and `Presentation.interaction` operation
+production interaction constructors and `view.Snapshot.interaction` operation
 are not implemented yet. It must become an executable example when Phase 4
 closes; it is not currently an API promise.
 
@@ -108,13 +109,13 @@ function state = onFilesSelected(state, selection, context)
 end
 ```
 
-The command is declared with `Role="selection"`, so compilation validates this
+The handler is declared with `Event="listSelection"`, so compilation validates this
 signature and the originating control before figure creation.
 
 ## Review rule
 
 Mechanical edits may replace exact constructor or operation spelling only
 after the production vocabulary is approved. A reviewer still verifies App
-state ownership, callback role, payload meaning, project compatibility,
+state ownership, handler event, payload meaning, project compatibility,
 scientific results, cancellation, cleanup, and focused GUI behavior. No
 analyzer output is accepted as semantic proof.

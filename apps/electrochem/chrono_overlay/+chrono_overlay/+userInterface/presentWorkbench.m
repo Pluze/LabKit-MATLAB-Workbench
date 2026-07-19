@@ -1,4 +1,4 @@
-% Expected caller: the LabKit UI runtime. Binding values, file rows,
+% Expected caller: the LabKit App runtime. Binding values, file rows,
 % selection, and framework log text are supplied by the runtime; this
 % presenter owns only Chrono-specific availability and plot content.
 function view = presentWorkbench(state)
@@ -6,9 +6,9 @@ function view = presentWorkbench(state)
     model = struct( ...
         "items", items, ...
         "options", state.project.parameters);
-    view = labkit.ui.Presentation() ...
+    view = labkit.app.view.Snapshot() ...
         .enabled("exportCurves", ~isempty(items)) ...
-        .plot("overlayPlots", "overlay", model);
+        .renderPlot("overlayPlots", "overlay", model);
 end
 
 function items = selectedItems(state)

@@ -1,10 +1,12 @@
-# LabKit App Framework
+# LabKit App SDK
 
-`labkit.ui` is the MATLAB App SDK above LabKit's GUI-free domain libraries.
-Apps own scientific workflow, calculations, units, wording, plots, and
-exports. The framework owns semantic component construction, transactions,
-project documents, portable sources, dialogs, resources, results, and native
-component lifecycle.
+`labkit.app` is the MATLAB App SDK above LabKit's GUI-free domain libraries.
+Apps own scientific workflow, calculations, units, wording, plots, and exports.
+The SDK owns semantic layout, transactions, project documents, portable
+sources, dialogs, resources, results, and native component lifecycle.
+
+`labkit.ui` is the legacy framework during migration. New and migrated Apps
+depend on `labkit.app`.
 
 ## Start Here
 
@@ -16,94 +18,82 @@ component lifecycle.
 | Look up exact MATLAB syntax | [Public API reference](../reference/README.md) |
 | Validate framework or GUI changes | [Testing](../development/maintain-and-release/testing.md) |
 
-## Authoring Model
+## SDK Map
 
-An App definition returns one validated `labkit.ui.Application`:
+The required path has four concepts:
+
+| API | Purpose |
+| --- | --- |
+| `labkit.app.Definition` | App identity, lifecycle callbacks, layout, and launch |
+| `labkit.app.layout.*` | Semantic inputs, displays, containers, and workbench structure |
+| `labkit.app.StateHandler` | One declared event and its state transition |
+| `labkit.app.view.Snapshot` | Derived visible state and App-owned rendering |
+
+Read an App in this order: `definition.m` shows its complete contract,
+`buildWorkbenchLayout.m` shows what the user can see and do, and
+`stateHandlers.m` shows App-owned state transitions. Open `projectSpec.m`,
+`createSession.m`, view builders, or renderers only when the definition names
+those optional capabilities.
+
+Optional capabilities are grouped by purpose:
+
+| Package | Purpose |
+| --- | --- |
+| `labkit.app.event.*` | Typed callback payloads |
+| `labkit.app.project.*` | Durable project schema and migration |
+| `labkit.app.result.*` | Exported files and result packages |
+| `labkit.app.dialog.*` | Explicit dialog outcomes |
+| `labkit.app.CallbackContext` | Runtime operations available inside callbacks |
+
+## Smallest App
 
 ```matlab
 function app = definition()
-    run = labkit.ui.Command("run", @runAnalysis);
-    layout = labkit.ui.Layout.workbench({ ...
-        labkit.ui.Layout.field("gain", Label="Gain", ...
+    run = labkit.app.StateHandler("run", @runAnalysis);
+    workbench = labkit.app.layout.workbench({ ...
+        labkit.app.layout.field("gain", Label="Gain", ...
             Kind="numeric", Bind="project.parameters.gain"), ...
-        labkit.ui.Layout.action("run", "Run", run)});
-    app = labkit.ui.Application( ...
-        Command="labkit_Example_app", Id="example", ...
+        labkit.app.layout.button("run", "Run", run)});
+    app = labkit.app.Definition( ...
+        Entrypoint="labkit_Example_app", AppId="example", ...
         Title="Example", Family="Examples", ...
         AppVersion="1.0.0", Updated="2026-07-19", ...
-        Requirements=labkit.contract.requirements("ui", ">=8 <9"), ...
-        Project=example.projectSpec(), Layout=layout);
+        Requirements=labkit.contract.requirements("app", ">=1 <2"), ...
+        Workbench=workbench);
 end
 ```
 
-The entrypoint constructs that value and calls `launch`:
-
-```matlab
-function varargout = labkit_Example_app(varargin)
-    app = example.definition();
-    [varargout{1:nargout}] = app.launch(varargin{:});
-end
-```
-
-`Application` compiles the immutable Layout graph before creating a figure.
-It collects Commands referenced by Layout, validates callback roles and
-renderer references, and builds one private native platform plan. Apps do not
-register the same Command again, receive component registries, or manipulate
-framework lifecycle state.
+The entrypoint calls `definition().launch(...)`. Definition compiles the
+immutable semantic graph before creating a figure, collects referenced
+handlers, validates event and renderer references, and builds one private
+native platform plan.
 
 ## Paved Road
 
-- Bind ordinary state directly with `Bind="project..."` or
-  `Bind="session..."`; no callback or presenter operation is needed.
-- A standard `filePanel` owns portable records, add/remove/clear, selection,
-  and transient session rebuild. App code declares `Bind` and
-  `SelectionBind`.
-- `Session` has one fixed shape:
-  `session = createSession(project,context)`. Resolve opaque source paths with
-  `context.sourcePaths`.
-- Runtime combines Layout defaults, bindings, framework-owned state, and the
-  App's dynamic `Presentation` fragment into one complete snapshot.
-- Declare tables with `Layout.resultTable`. `Presentation.table` owns strict
-  data, column-label, row-label, and editable-column options; table callbacks
-  receive `TableEdit` with the complete proposed data or `Selection.Cells`
-  with N-by-2 row/column indices. Apps never decode native table events.
-- A renderer has the fixed shape `renderer(axes,model)`. For a multi-axis
-  preview, `axes` follows the declared `AxisIds` order.
-- Omit `Capabilities` on the ordinary path. An explicit allow-list is advanced
-  audit metadata.
-- Use `ProjectContract()` for a default version-1 scalar-struct project, or
-  provide fixed create/validate/migrate callbacks for a domain schema.
-- Use `ResultOutput` and `Result` for App-owned output meaning; runtime writes
-  provenance, sizes, checksums, and the manifest.
+- Bind ordinary state with `Bind="project..."` or `Bind="session..."`.
+- Use `labkit.app.layout.fileList` for portable file records and selection.
+- Rebuild transient data with
+  `session = createSession(project,context)` and resolve opaque source records
+  with `context.resolveSourcePaths`.
+- Return only derived view state from `labkit.app.view.Snapshot`; runtime
+  supplies layout defaults, bindings, file state, log text, and status text.
+- Use `labkit.app.layout.dataTable` with
+  `labkit.app.event.TableCellEdit` and
+  `labkit.app.event.TableCellSelection`; Apps never decode native events.
+- Use `labkit.app.layout.plotArea` and a fixed
+  `renderer(axes,model)` callback.
+- Omit `StrictCapabilities` on the ordinary path.
+- Use `labkit.app.project.Schema`, `labkit.app.result.File`, and
+  `labkit.app.result.Package` only when those optional capabilities exist.
 
-## Transaction And Platform Boundary
-
-Runtime validates candidate state and the complete presentation before
-publishing either. A failed command, project restore, native component update,
-or renderer restores the prior state and replays the prior native view.
-Queued commands are FIFO and event-scoped resources are cleaned after success
-or failure.
-
-The MATLAB adapter is private. It maps semantic IDs to native components,
-routes native callbacks only through typed runtime entrypoints, preserves
-manual plot viewports, normalizes MATLAB table-value differences, and never
-exposes a registry or general component mutation API to Apps.
-
-## Extension Gate
-
-A new public UI capability needs evidence from at least two Apps or one
-framework-owned lifecycle/consistency requirement. Repeated App callback or
-presenter glue is evidence for framework automation; App-specific scientific
-behavior remains in the owning App.
+Runtime validates candidate state and the complete view snapshot before
+publishing either. The private MATLAB adapter maps semantic IDs to native
+components, preserves plot viewports, normalizes native event differences, and
+never exposes component registries to Apps.
 
 Framework concepts and source names are versionless. Compatibility belongs to
-`labkit.ui.version` and App requirements; saved-data versions belong to
-`ProjectContract`.
-
-## Public API Documentation
-
-Exact syntax, inputs, outputs, defaults, errors, examples, and related symbols
-come from public MATLAB help. Browse the [API reference](../reference/README.md).
+`labkit.app.version`; saved-data versions belong to
+`labkit.app.project.Schema`.
 
 ## Related Topics
 

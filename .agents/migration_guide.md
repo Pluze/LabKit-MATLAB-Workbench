@@ -12,25 +12,33 @@ Last audited: 2026-07-19.
 
 ```text
 toolbox-product-debt: none
-ui-migration-debt: ui-explicit-contract-redesign
+app-sdk-migration-debt: ui-explicit-contract-redesign
 ```
 
-## UI explicit-contract redesign
+## App SDK explicit-contract migration
 
 ### Decision and scope
 
 - **Debt ID:** `ui-explicit-contract-redesign`
-- **Owner:** `labkit.ui`
-- **Target boundary:** the next incompatible `labkit.ui` contract and every
-  tracked App that consumes it
+- **Owner:** `labkit.app`
+- **Target boundary:** stable `labkit.app` 1.x and every tracked App currently
+  consuming legacy `labkit.ui`
 - **Status:** Phase 0 inventory, Phase 1 contract gates, and Phase 2 strict
-  kernel complete; Phase 3 runtime and platform implementation in progress
+  kernel complete; Phase 3 runtime/platform implementation and App migration
+  in progress
 - **User-visible reason:** App authors must be able to discover the framework
   from function, constructor, method, and parameter names. Invalid App code
   must fail at the contract boundary instead of being ignored, guessed, or
   rendered in an unintended form.
 - **Release model:** a deliberate incompatible-contract replacement, not an
   additive compatibility layer on the current runtime
+
+The accepted public structure is capability-partitioned:
+`labkit.app.Definition`, `StateHandler`, and `CallbackContext` form the small
+root; `layout`, `view`, `event`, `project`, `result`, and `dialog` own optional
+or specialized concepts. Native adapters, layout-node values, stores, queues,
+and reconciliation remain under `labkit.app.internal`. There are no aliases
+from the new SDK back to old `labkit.ui` symbols.
 
 The replacement may rewrite the current runtime kernel, definition model,
 protocol, interaction system, event transport, capability injection, renderer
@@ -214,14 +222,14 @@ The App-facing layers should be limited to the following stable concepts.
 Exact symbol spelling is accepted only after the contract prototypes described
 below.
 
-#### Application definition
+#### App definition
 
 - Keep one obvious definition entry and one launch entry.
 - Required product metadata remains explicit in the definition signature.
 - Replace open `Project`, `Actions`, `Renderers`, and `Utilities` structs with
   validated public values or owned builder methods.
-- A command has an ID, one callback role, and one documented signature.
-  Duplicate command IDs and missing command references fail during contract
+- A StateHandler has an ID, one named event, and one documented signature.
+  Duplicate handler IDs and missing handler references fail during contract
   compilation.
 - Renderer IDs and preview targets are checked before UI creation.
 - Static Apps do not need empty placeholder registries or presenter functions.
@@ -232,7 +240,7 @@ below.
   concrete `uigridlayout`, pixel, component, or registry fields.
 - Every layout constructor declares its complete name-value set and rejects
   unknown names.
-- `labkit.ui.Layout.workspace` remains the single public entry for organizing
+- `labkit.app.layout.workspace` remains the single public entry for organizing
   the right-side workspace. A single-page App supplies one content layout.
   A multi-page App adds named pages through the returned workspace value or
   another operation owned by `workspace`; the replacement must not expose a parallel
@@ -249,9 +257,9 @@ below.
 A provisional shape, used only to test the concept count, is:
 
 ```matlab
-workspace = labkit.ui.Layout.workspace(singleContent);
+workspace = labkit.app.layout.workspace(singleContent);
 
-workspace = labkit.ui.Layout.workspace();
+workspace = labkit.app.layout.workspace();
 workspace = workspace.page("data", "Data", dataContent);
 workspace = workspace.page("plot", "Plot", plotContent);
 workspace = workspace.initialPage("data");
@@ -260,9 +268,9 @@ workspace = workspace.initialPage("data");
 This sketch recommends an owned `page` operation rather than another global
 constructor. It does not approve MATLAB classes by itself.
 
-#### Presentation
+#### View snapshot
 
-- Replace arbitrary nested presenter structs with one immutable presentation
+- Replace arbitrary nested presenter structs with one immutable view snapshot
   value.
 - Its public operations should cover stable semantic changes such as control
   value, enabled/visible state, choices, table model, text, plot model,
@@ -282,12 +290,12 @@ A provisional discoverable value-style API is:
 
 ```matlab
 function view = present(state)
-    view = labkit.ui.Presentation();
+    view = labkit.app.view.Snapshot();
     view = view.value("worksheet", state.session.sheet);
     view = view.choices("group", state.session.groupNames);
-    view = view.table("dataTable", state.session.tableModel);
+    view = view.tableData("dataTable", state.session.tableModel);
     view = view.enabled("runTest", state.session.canRun);
-    view = view.plot("resultPlot", "groupComparison", state.session.plotModel);
+    view = view.renderPlot("resultPlot", "groupComparison", state.session.plotModel);
     view = view.workspacePage("plot", Enabled=state.session.hasResult, ...
         Status=state.session.plotStatus);
 end

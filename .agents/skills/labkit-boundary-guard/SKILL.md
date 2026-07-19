@@ -23,21 +23,21 @@ Before moving code into `+labkit`, prove that it:
 - makes the public API easier to understand than app-local ownership.
 
 Otherwise keep it in the app. Duplication, helper length, and a desire to make
-`definitionActions.m` shorter are not sufficient evidence.
+`stateHandlers.m` shorter are not sufficient evidence.
 
-Keep domain facades GUI-free and app-free. Keep `labkit.ui` parser/science-free;
-its public layers are `runtime`, `layout`, `plot`, `interaction`, and `debug`.
+Keep domain facades GUI-free and app-free. `labkit.app` owns the future App
+SDK; `labkit.ui` stays parser/science-free during legacy migration.
 Concrete controls, registries, queues, interaction runtimes, persistence
 storage, and lifecycle handles stay private. App metadata stays in app-owned
 `definition.m`; separate App `version.m` and requirements registries are
 retired. `labkit.contract` validates facade ranges; it is not an App metadata
 registry.
 
-For the active UI explicit-contract migration, distinguish contract approval
+For the active App SDK migration, distinguish contract approval
 from release approval. Sealed immutable values and the end-to-end contract
 passed Phase 1; the production API remains migration-scoped until the Phase 2
-kernel gate. Presentation is a complete snapshot, command links use Command
-values, Apps declare context capabilities, acquired render surfaces cannot
+kernel gate. `labkit.app.view.Snapshot` is complete, event links use
+`labkit.app.StateHandler` values, Apps declare context capabilities, acquired render surfaces cannot
 escape their event scope, and static layout compilation is cached rather than
 repeated per presentation.
 
@@ -45,11 +45,14 @@ Public API additions require a complete MATLAB help contract, focused tests,
 facade version update, owning docs, and component history. Internal refactors
 that preserve the public boundary do not require a new API or governance rule.
 
-For the UI SDK, also apply the authoring extension gate: require repeated need
+For the App SDK, also apply the authoring extension gate: require repeated need
 from at least two Apps or one framework-owned lifecycle/consistency problem.
 Measure the paved-road effect. Prefer a strict binding, inferred registration,
 or framework default when it removes repeated App callbacks/presenter glue;
-do not make ordinary authors maintain a second command or capability list.
+do not make ordinary authors maintain a second handler or capability list.
+Keep the public root small and partition optional capabilities by purpose:
+`layout`, `view`, `event`, `project`, `result`, and `dialog`. Reject names that
+require reading implementation code to distinguish their purpose.
 
 ## Validation and handoff
 

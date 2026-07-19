@@ -5,7 +5,7 @@ files on a common pulse-centered time axis and exports the aligned curves.
 
 ## Requirements And Launch
 
-The app uses the LabKit UI framework and DTA library. Each source must contain a
+The app uses the LabKit App SDK and DTA library. Each source must contain a
 readable chrono curve with time, voltage, and current data.
 
 ```matlab
@@ -17,7 +17,7 @@ labkit_ChronoOverlay_app
 Use **Add DTA files** to select one or more `.DTA` files from one directory.
 The app parses each file as chrono data and reports unreadable items. The file
 list controls curve order, legend labels, and removal; selection does not
-discard other loaded curves. The UI runtime owns durable source identities,
+discard other loaded curves. The App runtime owns durable source identities,
 portable project references, add/remove/clear behavior, and selection. It
 rebuilds the transient decoded session only when the file collection changes.
 
@@ -93,12 +93,12 @@ listed as stable public APIs; reusable DTA reading is supported through
 
 ## Framework Compatibility
 
-`definition.m` returns one validated `labkit.ui.Application`.
-`projectSpec.m` returns the current version-2 `ProjectContract` plus its
+`definition.m` returns one validated `labkit.app.Definition`.
+`projectSpec.m` returns the current version-2 `labkit.app.project.Schema` plus its
 version-aware migration entry. `createSession(project,context)` resolves the
 runtime-owned portable sources and rebuilds decoded DTA items because curves
 remain transient caches. Layout bindings provide all four plot parameters and
 the file collection without App callbacks or presenter duplication. The only
-App Command is CSV/result export; one renderer receives the voltage and
-current axes in declared order. The App requires `labkit.ui >=8 <9` and
+App StateHandler is CSV/result export; one renderer receives the voltage and
+current axes in declared order. The App requires `labkit.app >=1 <2` and
 `labkit.dta >=2 <3`.

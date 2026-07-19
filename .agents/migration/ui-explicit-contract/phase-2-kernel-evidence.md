@@ -1,5 +1,9 @@
 # UI explicit-contract Phase 2 kernel evidence
 
+> Naming amendment (2026-07-19): this evidence predates the final
+> `labkit.app` package split. Its `labkit.ui` explicit-value names are
+> historical prototype names, not the SDK surface.
+
 Status: accepted on 2026-07-19.
 
 The first production slices establish the GUI-free static contract graph. They
