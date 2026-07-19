@@ -202,7 +202,9 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 error("labkit:app:contract:UnknownReference", ...
                     "Layout target is undeclared: %s.", target);
             end
-            if strlength(plan.Nodes(index).Configuration.Bind) > 0
+            configuration = plan.Nodes(index).Configuration;
+            if isfield(configuration, "Bind") && ...
+                    strlength(configuration.Bind) > 0
                 obj.applyBoundControl(target, value, true);
             else
                 binding = obj.signalForTarget( ...

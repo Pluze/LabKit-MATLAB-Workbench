@@ -186,7 +186,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                         Enable=onOff(config.Enabled));
                 case "field"
                     component = obj.createField(parent, config, node.Id);
-                case {"rangeField", "slider"}
+                case "rangeField"
+                    [limits, value] = rangeSliderInitialValue(config);
+                    controlParent = labeledParent( ...
+                        parent, config.Label, node.Id);
+                    component = uislider(controlParent, "range", Limits=limits, ...
+                        Value=value, Enable=onOff(config.Enabled));
+                case "slider"
                     [limits, value] = sliderInitialValue(config);
                     controlParent = labeledParent( ...
                         parent, config.Label, node.Id);
@@ -683,6 +689,17 @@ end
 value = config.Value;
 if isempty(value)
     value = limits(1);
+end
+end
+
+function [limits, value] = rangeSliderInitialValue(config)
+limits = config.Limits;
+if isempty(limits)
+    limits = [0 1];
+end
+value = config.Value;
+if isempty(value)
+    value = limits;
 end
 end
 

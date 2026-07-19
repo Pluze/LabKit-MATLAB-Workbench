@@ -1,8 +1,8 @@
 % Rebuild transient metrics, aligned signals, preview selection, output-folder
 % convenience, and workflow messages from one validated project.
 function session = createSession(project, context)
-    paths = context.resolveSourcePaths(project.inputs.sources, "reviewInput");
-    filepath = paths(1);
+    filepath = pathForRole( ...
+        project.inputs.sources, "reviewInput", context);
     [metrics, summary, aligned] = emptyCache();
     outputFolder = "";
     status = "No input selected.";
@@ -20,6 +20,21 @@ function session = createSession(project, context)
         "view", struct("previewMode", "Summary"), ...
         "cache", struct("filepath", filepath, "metrics", metrics, ...
             "summary", summary, "aligned", aligned));
+end
+
+function filepath = pathForRole(sources, role, context)
+    filepath = "";
+    if isempty(sources)
+        return;
+    end
+    match = find(string({sources.role}) == role, 1);
+    if isempty(match)
+        return;
+    end
+    paths = context.resolveSourcePaths(sources(match));
+    if ~isempty(paths)
+        filepath = paths(1);
+    end
 end
 
 function [metrics, summary, aligned] = emptyCache()

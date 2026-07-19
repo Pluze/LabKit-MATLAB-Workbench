@@ -1,10 +1,10 @@
 % Rebuild parsed filter/protocol JSON, output-folder convenience, preview
 % state, and workflow messages from one validated project.
 function session = createSession(project, context)
-    paths = context.resolveSourcePaths( ...
-        project.inputs.sources, ["filterRecord", "protocol"]);
-    filterPath = paths(1);
-    protocolPath = paths(2);
+    filterPath = pathForRole( ...
+        project.inputs.sources, "filterRecord", context);
+    protocolPath = pathForRole( ...
+        project.inputs.sources, "protocol", context);
     filterRecord = loadRequiredJson(filterPath);
     protocol = loadOptionalJson(protocolPath);
     outputFolder = "";
@@ -23,6 +23,21 @@ function session = createSession(project, context)
         "cache", struct("filterPath", filterPath, ...
             "protocolPath", protocolPath, "filterRecord", filterRecord, ...
             "protocol", protocol, "analysis", []));
+end
+
+function filepath = pathForRole(sources, role, context)
+    filepath = "";
+    if isempty(sources)
+        return;
+    end
+    match = find(string({sources.role}) == role, 1);
+    if isempty(match)
+        return;
+    end
+    paths = context.resolveSourcePaths(sources(match));
+    if ~isempty(paths)
+        filepath = paths(1);
+    end
 end
 
 function value = loadRequiredJson(filepath)
