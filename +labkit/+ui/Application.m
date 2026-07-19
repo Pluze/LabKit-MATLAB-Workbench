@@ -213,6 +213,23 @@ classdef (Sealed) Application
             ids = string(cellfun(@(command) command.Id, obj.Commands, ...
                 "UniformOutput", false));
         end
+
+        function tf = hasCommandForRuntime(obj, command)
+            tf = any(cellfun(@(candidate) ...
+                isequaln(candidate, command), obj.Commands));
+        end
+
+        function runtime = createRuntimeForTesting( ...
+                obj, initialProject, backend)
+            if nargin < 2
+                initialProject = [];
+            end
+            if nargin < 3
+                backend = struct();
+            end
+            runtime = labkit.ui.RuntimeKernel( ...
+                obj, initialProject, backend);
+        end
     end
 end
 

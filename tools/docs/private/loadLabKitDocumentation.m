@@ -450,11 +450,21 @@ function api = discoverLabKitPublicApi(repoRoot)
         if contains(filepath, filesep + "private" + filesep)
             continue;
         end
+        if isHiddenClassFile(filepath)
+            continue;
+        end
         item = readApiItem(repoRoot, filepath, "library", "labkit");
         api(end + 1, 1) = item;
     end
     [~, order] = sort(string({api.symbol}));
     api = api(order);
+end
+
+function tf = isHiddenClassFile(filepath)
+    lines = strip(readlines(filepath, "EmptyLineRule", "skip"));
+    lines = lines(~startsWith(lines, "%"));
+    tf = ~isempty(lines) && startsWith(lines(1), "classdef") && ...
+        contains(lines(1), "Hidden");
 end
 
 function api = discoverAppPublicApi(repoRoot, apps)

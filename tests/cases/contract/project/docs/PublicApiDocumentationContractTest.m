@@ -191,10 +191,18 @@ function files = publicApiContractFiles(root)
     files = strings(0, 1);
     for k = 1:numel(entries)
         filepath = string(fullfile(entries(k).folder, entries(k).name));
-        if ~contains(filepath, filesep + "private" + filesep)
+        if ~contains(filepath, filesep + "private" + filesep) && ...
+                ~isHiddenClassFile(filepath)
             files(end + 1, 1) = filepath;
         end
     end
     files = sort(files);
     files = [files; discoverLabKitAppApiFiles(root)];
+end
+
+function tf = isHiddenClassFile(filepath)
+    lines = strip(readlines(filepath, "EmptyLineRule", "skip"));
+    lines = lines(~startsWith(lines, "%"));
+    tf = ~isempty(lines) && startsWith(lines(1), "classdef") && ...
+        contains(lines(1), "Hidden");
 end
