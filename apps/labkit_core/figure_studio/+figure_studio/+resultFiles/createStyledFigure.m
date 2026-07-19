@@ -4,5 +4,5 @@ function [fig, ax] = createStyledFigure(plotData, style)
     fig = figure('Visible', 'off', 'Color', 'w');
     ax = axes('Parent', fig);
     model = struct("plotData", plotData, "style", style, "preview", false);
-    figure_studio.userInterface.renderStudioPlot(ax, model);
+    figure_studio.sourceAxes.drawPreview(ax, model);
 end

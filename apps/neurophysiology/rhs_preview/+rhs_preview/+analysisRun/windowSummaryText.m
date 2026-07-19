@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.definitionActions. Input is app state. Output is the
+% Expected caller: RHS Preview direct callbacks. Input is app state. Output is the
 % user-facing preview-window summary.
 function text = windowSummaryText(S)
 %WINDOWSUMMARYTEXT Format current preview window.

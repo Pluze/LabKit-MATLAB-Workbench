@@ -66,20 +66,20 @@ classdef DicPostprocessIoExportTest < matlab.unittest.TestCase
                 ["Mean"; "Std"; "Median"; "Min"; "Max"]);
         end
 
-        function runtimeV2ProjectAndPresenterContracts(testCase)
+        function appSdkProjectAndPresenterContracts(testCase)
             setupLabKitTestPath();
             folder = tempname;
             mkdir(folder);
             cleanup = onCleanup(@() cleanupFolder(folder));
             definition = dic_postprocess.definition();
-            testCase.verifyEqual(definition.contractVersion, 2);
-            project = definition.project.Create();
-            testCase.verifyTrue(definition.project.Validate(project));
-            testCase.verifyEmpty(definition.project.Migrate, ...
+            testCase.verifyClass(definition, "labkit.app.Definition");
+            project = definition.ProjectSchema.Create();
+            testCase.verifyTrue(definition.ProjectSchema.Validate(project));
+            testCase.verifyEmpty(definition.ProjectSchema.Migrate, ...
                 'Payload version 1 should not invent a migration callback.');
             invalid = project;
             invalid.parameters.gamma = Inf;
-            testCase.verifyFalse(definition.project.Validate(invalid));
+            testCase.verifyFalse(definition.ProjectSchema.Validate(invalid));
 
             matPath = fullfile(folder, 'project-strain.mat');
             referencePath = fullfile(folder, 'project-reference.png');
@@ -95,21 +95,19 @@ classdef DicPostprocessIoExportTest < matlab.unittest.TestCase
                 sourceRecord("dicMat", "strain", matPath); ...
                 sourceRecord("referenceImage", "reference", referencePath); ...
                 sourceRecord("maskImage", "mask", maskPath)];
-            cache = dic_postprocess.sourceFiles.loadProjectInputs( ...
-                project.inputs.sources, true);
+            cache = dic_postprocess.sourceFiles.loadProjectInputs(struct( ...
+                "dicMat", string(matPath), ...
+                "referenceImage", string(referencePath), ...
+                "maskImage", string(maskPath)), true);
             [summary, ~, ~] = dic_postprocess.analysisRun.prepareOutputs( ...
                 cache, project.parameters);
             project.results.summaryTable = summary;
-            session = dic_postprocess.createSession(project);
-            state = struct('project', project, 'session', session);
-            presentation = dic_postprocess.userInterface.presentWorkbench(state);
-            testCase.verifyTrue(isscalar(presentation));
-            testCase.verifyGreaterThan(size( ...
-                presentation.controls.resultTable.Data, 1), 0);
-            testCase.verifyNotEmpty( ...
-                presentation.previews.overlayAxes.Axes.exx.Model.imageData);
-            testCase.verifyNotEmpty( ...
-                presentation.previews.overlayAxes.Axes.eyy.Model.imageData);
+            runtime = definition.createRuntimeForTesting(project);
+            runtimeCleanup = onCleanup(@() runtime.close());
+            testCase.verifyClass(runtime.Presentation, ...
+                "labkit.app.view.Snapshot");
+            testCase.verifyNotEmpty(runtime.State.session.cache.overlayExx);
+            testCase.verifyNotEmpty(runtime.State.session.cache.overlayEyy);
             testCase.verifyEqual(fieldnames(project.inputs), {'sources'}, ...
                 'Durable project inputs should not duplicate decoded cache data.');
         end

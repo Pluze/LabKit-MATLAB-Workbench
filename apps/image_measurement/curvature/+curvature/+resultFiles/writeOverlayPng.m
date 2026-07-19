@@ -5,6 +5,6 @@ function writeOverlayPng(model, outputPath)
     figureHandle = figure("Visible", "off", "Color", "white");
     cleanup = onCleanup(@() close(figureHandle));
     ax = axes(figureHandle);
-    curvature.userInterface.renderCurvaturePreview(ax, model);
+    curvature.curvePreview.presentationData.renderCurvaturePreview(ax, model);
     exportgraphics(ax, outputPath, "Resolution", 300);
 end

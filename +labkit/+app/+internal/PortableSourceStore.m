@@ -79,6 +79,50 @@ classdef (Hidden, Sealed) PortableSourceStore < handle
             end
         end
 
+        function records = recordsForRole(~, records, role)
+            validateRecords(records);
+            role = requiredText(role, "Project source role");
+            if isempty(records)
+                records = emptyRecords();
+                return;
+            end
+            records = canonicalCollection(records( ...
+                string({records.role}) == role));
+        end
+
+        function records = reconcileRolePaths(obj, current, paths, ...
+                role, prefix, required)
+            validateRecords(current);
+            role = requiredText(role, "Project source role");
+            currentRole = obj.recordsForRole(current, role);
+            replacement = obj.reconcilePaths( ...
+                currentRole, paths, role, prefix, required);
+            if isempty(current)
+                records = replacement;
+                return;
+            end
+            roleMask = string({current.role}) == role;
+            insertion = find(roleMask, 1, "first");
+            if isempty(insertion)
+                records = canonicalCollection(current);
+                for k = 1:numel(replacement)
+                    records = appendRecord(records, replacement(k));
+                end
+                return;
+            end
+            records = emptyRecords();
+            for k = 1:numel(current)
+                if k == insertion
+                    for n = 1:numel(replacement)
+                        records = appendRecord(records, replacement(n));
+                    end
+                end
+                if ~roleMask(k)
+                    records = appendRecord(records, current(k));
+                end
+            end
+        end
+
         function records = rebase(~, records, projectFile)
             validateRecords(records);
             projectFile = requiredPath(projectFile, "Project filepath");

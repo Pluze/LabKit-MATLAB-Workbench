@@ -23,7 +23,7 @@ Before moving code into `+labkit`, prove that it:
 - makes the public API easier to understand than app-local ownership.
 
 Otherwise keep it in the app. Duplication, helper length, and a desire to make
-`stateHandlers.m` shorter are not sufficient evidence.
+an App callback file shorter are not sufficient evidence.
 
 Keep domain facades GUI-free and app-free. `labkit.app` owns the future App
 SDK; `labkit.ui` stays parser/science-free during legacy migration.
@@ -36,10 +36,10 @@ registry.
 For the active App SDK migration, distinguish contract approval
 from release approval. Sealed immutable values and the end-to-end contract
 passed Phase 1; the production API remains migration-scoped until the Phase 2
-kernel gate. `labkit.app.view.Snapshot` is complete, event links use
-`labkit.app.StateHandler` values, Apps declare context capabilities, acquired render surfaces cannot
-escape their event scope, and static layout compilation is cached rather than
-repeated per presentation.
+kernel gate. `labkit.app.view.Snapshot` is complete, layout nodes own direct
+callbacks and renderers, acquired render surfaces cannot escape their event
+scope, and static layout compilation is cached rather than repeated per
+presentation.
 
 Public API additions require a complete MATLAB help contract, focused tests,
 facade version update, owning docs, and component history. Internal refactors
@@ -51,8 +51,9 @@ Measure the paved-road effect. Prefer a strict binding, inferred registration,
 or framework default when it removes repeated App callbacks/presenter glue;
 do not make ordinary authors maintain a second handler or capability list.
 Keep the public root small and partition optional capabilities by purpose:
-`layout`, `view`, `event`, `project`, `result`, and `dialog`. Reject names that
-require reading implementation code to distinguish their purpose.
+`layout`, `view`, `event`, `interaction`, `plot`, `project`, `result`, and
+`dialog`. Reject names that require reading implementation code to distinguish
+their purpose.
 
 Apply the same discoverability rule inside migrated Apps: do not forward SDK
 values through untyped app-local parameters. Declare runtime-injected contexts

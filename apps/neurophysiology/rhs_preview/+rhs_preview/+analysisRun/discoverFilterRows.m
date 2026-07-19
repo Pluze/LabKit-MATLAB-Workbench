@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.definitionActions and unit tests. Inputs are one root folder
+% Expected caller: RHS Preview direct callbacks and unit tests. Inputs are one root folder
 % or a string list of RHS task files plus optional previous filter rows.
 % Output is the RHS file list with user labels/comments preserved by file
 % path. No QC is performed.

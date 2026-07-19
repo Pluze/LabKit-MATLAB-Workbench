@@ -32,9 +32,9 @@ evidence from a real source-backed plotting App and a native MATLAB adapter.
 Create `labkit.app` as the future stable SDK rather than misnaming the expanded
 contract `labkit.ui` or adapting it back to Runtime V2 transport structs. Keep
 the public root small, partition authoring by capability, and concentrate
-complexity in a paved path: `layout.*` nodes, collected StateHandlers, strict
-bindings, runtime-completed `view.Snapshot` values, standard file lifecycle,
-fixed `CreateSession(project,context)`, and private native adapters.
+complexity in a paved path: direct-callback `layout.*` nodes, strict bindings,
+runtime-completed `view.Snapshot` values, standard file lifecycle, fixed
+`CreateSession(project,context)`, and private native adapters.
 
 Chrono Overlay is the first migrated App because it exercises a project,
 portable files, transient decoding, selection, bound controls, two axes,
@@ -56,21 +56,22 @@ requiring the later managed-interaction vocabulary.
   table-value differences.
 - Fixed session construction to `CreateSession(project,context)` so Apps resolve
   opaque portable sources without reading their representation.
-- Migrated Chrono Overlay to one export StateHandler, four direct bindings,
-  one two-axis renderer call, and a two-operation view snapshot.
+- Migrated Chrono Overlay to one directly bound export callback, four state
+  bindings, one directly bound two-axis renderer, and a two-operation view
+  snapshot.
 - Partitioned the public SDK into `layout`, `view`, `event`, `project`,
   `result`, and `dialog`; layout nodes, option parsing, stores, adapters, and
   runtime execution remain hidden under `internal`.
 - Reduced Chrono's noncomment layout/action/presenter code from 277 lines to
   86 while preserving its DTA alignment, plot options, project schema, CSV
   columns, and result provenance.
-- Migrated T-Test Wizard as the typed editable-table and multi-page workspace
-  proof: table selections and edits have explicit payload classes, callbacks
-  declare injected SDK types in `arguments` blocks, and the private adapter
-  owns the two-column control/workspace layout.
-- Removed handler-object forwarding from App definitions. Each layout builder
-  obtains the handlers it references, avoiding an untyped app-local SDK object
-  bag between definition and layout functions.
+- Migrated T-Test Wizard as the typed editable-table, feature-fragment, and
+  multi-page workspace proof: table selections and edits have explicit payload
+  classes, `+workbench` exposes product assembly, workflow packages own their
+  layout/presentation/actions, and the private adapter owns concrete layout.
+- Removed handler objects, callback tables, renderer registries, and their
+  forwarding from the App authoring contract. Layout controls and plot areas
+  reference concrete functions directly.
 
 ## User and data impact
 

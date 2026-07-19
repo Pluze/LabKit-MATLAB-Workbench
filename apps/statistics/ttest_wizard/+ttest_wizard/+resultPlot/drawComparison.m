@@ -1,5 +1,5 @@
 % App renderer; redraws one managed axes as a multi-group mean/SD comparison.
-function drawComparison(ax, model)
+function drawComparison(axesById, model)
 %DRAWCOMPARISON Draw grouped bars and first-group significance brackets.
 %
 % Expected caller: Runtime registered renderer. ax is a managed UI axes;
@@ -8,6 +8,7 @@ function drawComparison(ax, model)
 % reference style: white background, black boxed axes, pastel bars, SD error
 % bars, no grid, and stacked first-versus-each significance brackets. Side
 % effects are limited to redrawing ax.
+ax = axesById.main;
 
     clearAxes(ax);
     if ~isstruct(model) || ~isscalar(model) || ...

@@ -84,7 +84,7 @@ function A = computeCSC(curve, opts)
 %
 % See also csc.analysisRun.chargeDensity
 
-    choices = csc.userInterface.analysisChoices();
+    choices = csc.analysisRun.analysisChoices();
     if nargin < 2
         opts = struct();
     end
@@ -188,7 +188,7 @@ end
 
 function opts = fillOptions(opts)
     if ~isfield(opts, 'mode')
-        choices = csc.userInterface.analysisChoices();
+        choices = csc.analysisRun.analysisChoices();
         opts.mode = char(choices.modes(1));
     end
     if ~isfield(opts, 'scanRate')

@@ -1,4 +1,4 @@
-% Expected caller: ecg_print.definitionActions and direct unit tests. Inputs are a
+% Expected caller: ecg_print direct callbacks and direct unit tests. Inputs are a
 % file path and maximum line count. Output is a column cell array of display
 % lines. Side effects: reads the requested file only.
 

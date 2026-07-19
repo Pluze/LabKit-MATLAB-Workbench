@@ -89,6 +89,31 @@ classdef UiExplicitContractClosureTest < matlab.unittest.TestCase
             testCase.verifyError(@() combined.include(struct()), ...
                 "labkit:app:contract:InvalidValue");
         end
+
+        function compilesNamedManagedInteractionWithoutTransportStruct(testCase)
+            setupLabKitTestPath();
+            crop = labkit.app.interaction.rectangle( ...
+                "cropRegion", @changeRectangle);
+            plot = labkit.app.layout.plotArea( ...
+                "preview", @drawInteractionProbe, ...
+                Interactions={crop});
+            layout = labkit.app.layout.workbench({}, ...
+                Workspace=labkit.app.layout.workspace(plot));
+            app = labkit.app.Definition( ...
+                Entrypoint="labkit_InteractionProbe_app", ...
+                AppId="probe.interaction", Title="Interaction", ...
+                Family="Tests", AppVersion="1.0.0", ...
+                Updated="2026-07-19", Requirements=[], ...
+                Workbench=layout, ...
+                PresentWorkbench=@presentInteractionProbe);
+
+            runtime = app.createRuntimeForTesting();
+            cleanup = onCleanup(@() runtime.close());
+
+            testCase.verifyTrue(any(app.TargetIds == "cropRegion"));
+            testCase.verifyTrue(any(app.signalIdsForRuntime() == ...
+                "cropRegion__interactionChanged"));
+        end
     end
 end
 
@@ -111,4 +136,16 @@ function state = selectionEdit(state, ~, ~)
 end
 
 function state = valueEdit(state, ~, ~)
+end
+
+function state = changeRectangle(state, ~, ~)
+end
+
+function drawInteractionProbe(~, ~)
+end
+
+function view = presentInteractionProbe(~)
+view = labkit.app.view.Snapshot() ...
+    .renderPlot("preview", struct()) ...
+    .rectangle("cropRegion", [1 1 2 2], ImageSize=[10 10]);
 end

@@ -1,9 +1,11 @@
 # UI explicit-contract replacement RFC
 
-> Naming amendment (2026-07-19): the accepted behavior moved to the
-> capability-partitioned `labkit.app` SDK. Historical prototype symbols below
-> map to `Definition`, `StateHandler`, `layout.*`, `view.Snapshot`,
-> `project.Schema`, and `CallbackContext`; they are not compatibility aliases.
+> Production amendment (2026-07-19): experiments removed public Command/
+> StateHandler objects and every App-authored handler/renderer registry.
+> Production `labkit.app` layout nodes own direct callbacks and renderers;
+> `Definition`, `layout.*`, `view.Snapshot`, `project.Schema`, and
+> `CallbackContext` are the stable concepts. Historical prototype symbols
+> below are evidence only and are not compatibility aliases.
 
 Status: Phase 1A representation and Phase 1B end-to-end contract gates
 accepted on 2026-07-19. Phase 2 production implementation may begin. This is

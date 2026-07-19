@@ -24,7 +24,7 @@ function processed = applyPipeline(images, steps, contexts)
 %       it. Default: one empty context per image.
 %
 % Step Fields:
-%   kind - One label returned by image_enhance.userInterface.toolKinds:
+%   kind - One label returned by image_enhance.imagePreview.presentationData.toolKinds:
 %       "Brightness/contrast", "Local contrast", "Sharpen",
 %       "Hue/saturation", "White balance", "White ROI calibration", or
 %       "Subject-preserving enhance".

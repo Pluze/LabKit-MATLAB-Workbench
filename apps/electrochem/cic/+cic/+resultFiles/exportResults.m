@@ -1,0 +1,40 @@
+function applicationState = exportResults( ...
+        applicationState, callbackContext)
+%EXPORTRESULTS Write the loaded CIC batch and its provenance manifest.
+items = applicationState.session.cache.items;
+if isempty(items)
+    callbackContext.alert("No CIC results to export.", "Export");
+    return
+end
+
+choice = callbackContext.chooseOutputFile( ...
+    ["*.csv", "CSV files"], "cic_results.csv");
+if choice.Cancelled
+    callbackContext.appendStatus("CIC result export cancelled.");
+    return
+end
+filepath = string(choice.Value);
+[~, unitLabel] = cic.analysisRun.displayUnit( ...
+    applicationState.project.parameters.cicUnit);
+[ok, message] = cic.resultFiles.writeResultsCSV( ...
+    items, filepath, unitLabel);
+if ~ok
+    callbackContext.alert(message, "Export");
+    return
+end
+
+[folder, name, extension] = fileparts(filepath);
+output = labkit.app.result.File( ...
+    "cicResults", "primary", string(name) + string(extension), ...
+    MediaType="text/csv");
+package = labkit.app.result.Package( ...
+    Outputs={output}, ...
+    Inputs=struct("sources", applicationState.project.inputs.sources), ...
+    Parameters=applicationState.project.parameters, ...
+    Summary=struct("fileCount", numel(items)), ...
+    ManifestName="cic_results.labkit.json");
+written = callbackContext.writeResultPackage(folder, package);
+applicationState.project.results.lastExport = struct( ...
+    "csvPath", filepath, "manifestPath", string(written.Value));
+callbackContext.appendStatus("Exported CIC CSV: " + filepath);
+end

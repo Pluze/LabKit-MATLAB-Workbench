@@ -1,9 +1,9 @@
-% Expected caller: eis.userInterface.plotOverlay, eis.resultFiles, and unit
+% Expected caller: eis.overlayPlot.plotOverlay, eis.resultFiles, and unit
 % tests. Inputs are an EIS item struct and axis label. Output is the selected
 % numeric vector. No side effects.
 
 function values = valuesForAxis(item, axisName)
-    items = eis.userInterface.axisItems();
+    items = eis.overlayPlot.axisItems();
     switch axisName
         case char(items(1))
             values = itemField(item, 'freq_Hz', 'Freq');

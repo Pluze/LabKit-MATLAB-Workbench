@@ -1,15 +1,15 @@
 % Rebuild transient indexing, decoded preview windows, filter rows, selection,
 % time view, status, and workflow log from one validated RHS Preview project.
-function session = createSession(project)
+function session = createSession(project, callbackContext)
     session = emptySession();
     session.cache.protocol = project.annotations.protocol;
     session.cache.previewChannelRows = project.annotations.previewChannelRows;
     protocolPaths = rhs_preview.sourceFiles.pathsForRole( ...
-        project.inputs.sources, "protocol");
+        project.inputs.sources, "protocol", callbackContext);
     rhsPaths = rhs_preview.sourceFiles.pathsForRole( ...
-        project.inputs.sources, "recording");
+        project.inputs.sources, "recording", callbackContext);
     filterPaths = rhs_preview.sourceFiles.pathsForRole( ...
-        project.inputs.sources, "filterRecording");
+        project.inputs.sources, "filterRecording", callbackContext);
     if ~isempty(protocolPaths)
         session.cache.protocolPath = protocolPaths(1);
         session.cache.protocol = rhs_preview.sourceFiles.loadProtocol( ...

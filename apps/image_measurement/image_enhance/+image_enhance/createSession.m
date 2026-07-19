@@ -1,16 +1,17 @@
 % Rebuild transient selection, draft controls, and the selected preview from
 % one validated Image Enhance project after Runtime V2 resolves sources.
-function session = createSession(project)
+function session = createSession(project, context)
     index = double(~isempty(project.inputs.sources));
-    kinds = image_enhance.userInterface.toolKinds();
+    kinds = image_enhance.imagePreview.presentationData.toolKinds();
     defaults = image_enhance.analysisRun.defaultStepValues(kinds{1});
     cache = emptyCache();
     if index > 0
-        cache = loadSelectedCache(project.inputs.sources(index), cache);
+        cache = loadSelectedCache(project.inputs.sources(index), cache, context);
         cache = rebuildSelectedResult(project, index, cache);
     end
     session = struct( ...
-        "selection", struct("currentIndex", index), ...
+        "selection", struct("currentIndex", index, ...
+            "sourceImages", labkit.app.event.ListSelection()), ...
         "workflow", struct("pendingDirty", false), ...
         "view", struct("previewMode", "Enhanced", ...
             "toolKind", string(kinds{1}), ...
@@ -27,21 +28,23 @@ function cache = rebuildSelectedResult(project, index, cache)
     if project.parameters.batchMode
         steps = project.annotations.sharedSteps;
     else
-        steps = project.annotations.items(index).steps;
+        annotation = image_enhance.sourceLibrary.annotationForSource( ...
+            project.annotations.items, project.inputs.sources(index).id);
+        steps = annotation.steps;
     end
     cache.previewResult = image_enhance.analysisRun.previewResult( ...
         cache.previewSource, steps, ...
-        project.annotations.items(index).whiteRoi, cache.previewScale);
+        annotation.whiteRoi, cache.previewScale);
     cache.previewResultKey = "restored";
 end
 
-function cache = loadSelectedCache(source, cache)
+function cache = loadSelectedCache(source, cache, context)
     loaded = image_enhance.sourceFiles.readImages( ...
-        labkit.ui.runtime.sourcePaths(source));
+        context.resolveSourcePaths(source));
     if isempty(loaded)
         return;
     end
-    [preview, scale] = image_enhance.userInterface.previewImage( ...
+    [preview, scale] = image_enhance.imagePreview.presentationData.previewImage( ...
         loaded(1).image);
     cache.sourceId = string(source.id);
     cache.item = loaded(1);

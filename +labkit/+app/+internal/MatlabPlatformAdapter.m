@@ -16,6 +16,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         WorkbenchControls
         WorkbenchWorkspace
         Runtime
+        InteractionBridge
+        InteractionDeclarations (1, :) cell = {}
     end
 
     methods (Access = ?labkit.app.internal.RuntimeKernel)
@@ -40,6 +42,14 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             obj.Runtime = runtime;
             obj.Figure.CloseRequestFcn = @(~, ~) runtime.close();
             obj.installCallbacks();
+            obj.InteractionDeclarations = obj.collectInteractionDeclarations();
+            if ~isempty(obj.InteractionDeclarations)
+                obj.InteractionBridge = ...
+                    labkit.ui.runtime.appSdkInteractionBridge( ...
+                    obj.Figure, obj.interactionTargetAxes(), ...
+                    @(id, signal, value) ...
+                    runtime.applyInteraction(id, signal, value));
+            end
         end
 
         function reconcile(obj, previous, view)
@@ -67,6 +77,10 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function close(obj)
+            if ~isempty(obj.InteractionBridge)
+                obj.InteractionBridge.delete();
+                obj.InteractionBridge = [];
+            end
             if ~isempty(obj.Figure) && isvalid(obj.Figure)
                 delete(obj.Figure);
             end
@@ -247,8 +261,16 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         function applyView(obj, view)
             operations = orderedOperations(view.operationsForCompiler());
+            interactionOperations = operations(cellfun(@(operation) ...
+                isInteractionKind(operation.Kind), operations));
+            operations = operations(~cellfun(@(operation) ...
+                isInteractionKind(operation.Kind), operations));
             for k = 1:numel(operations)
                 obj.apply(operations{k});
+            end
+            if ~isempty(obj.InteractionBridge)
+                obj.InteractionBridge.reconcile( ...
+                    obj.InteractionDeclarations, interactionOperations);
             end
         end
 
@@ -323,13 +345,43 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         function renderPlot(obj, operation)
             node = obj.node(operation.Target);
             renderer = node.Renderer;
+            axesById = struct();
             axes = gobjects(1, numel(node.AxisIds));
             for k = 1:numel(node.AxisIds)
                 axes(k) = obj.Axes(char(axisKey(node.Id, node.AxisIds(k))));
+                axesById.(char(node.AxisIds(k))) = axes(k);
             end
             viewport = captureViewport(axes);
-            renderer(axes, operation.Value);
+            renderer(axesById, operation.Value);
+            for k = 1:numel(axes)
+                labkit.app.plot.enablePopout(axes(k));
+            end
             restoreViewport(axes, viewport);
+        end
+
+        function declarations = collectInteractionDeclarations(obj)
+            declarations = {};
+            for k = 1:numel(obj.Plan.Nodes)
+                config = obj.Plan.Nodes(k).Configuration;
+                if isfield(config, "Interactions")
+                    declarations = [declarations config.Interactions];
+                end
+            end
+        end
+
+        function targets = interactionTargetAxes(obj)
+            targets = struct("id", {}, "axes", {});
+            for k = 1:numel(obj.Plan.Nodes)
+                node = obj.Plan.Nodes(k);
+                if node.Kind ~= "plotArea"
+                    continue;
+                end
+                for axisId = node.AxisIds
+                    key = axisKey(node.Id, axisId);
+                    targets(end + 1) = struct( ...
+                        "id", key, "axes", obj.Axes(char(key)));
+                end
+            end
         end
 
         function installContentGrid(obj, node, component)
@@ -575,6 +627,7 @@ function operations = orderedOperations(operations)
 if isempty(operations)
     return;
 end
+
 priority = zeros(1, numel(operations));
 for k = 1:numel(operations)
     switch operations{k}.Kind
@@ -590,6 +643,12 @@ for k = 1:numel(operations)
 end
 [~, order] = sort(priority, "ascend");
 operations = operations(order);
+end
+
+function tf = isInteractionKind(kind)
+tf = any(string(kind) == [ ...
+    "anchorPath", "pairedAnchors", "pointSlots", "rectangle", ...
+    "regionSelection", "interval", "scaleReference"]);
 end
 
 function plan = validatePlan(plan)

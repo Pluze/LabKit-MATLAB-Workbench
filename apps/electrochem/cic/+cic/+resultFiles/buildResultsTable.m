@@ -64,7 +64,7 @@ function [scale, unitSuffix] = displayScaleSuffix(unitLabel)
 end
 
 function [scale, unitLabel] = displayScale(unitLabel)
-    [scale, unitLabel] = cic.userInterface.displayUnit(unitLabel);
+    [scale, unitLabel] = cic.analysisRun.displayUnit(unitLabel);
 end
 
 function name = itemName(item)

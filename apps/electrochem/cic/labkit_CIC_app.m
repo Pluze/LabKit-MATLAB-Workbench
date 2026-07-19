@@ -23,6 +23,5 @@ function varargout = labkit_CIC_app(varargin)
 %     reports the highest safe file among all loaded files.
 %   - By default, the evaluation point is 10 us after the end of each phase,
 %     matching the convention commonly used in the literature the user shared.
-    [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
-        @cic.definition, varargin{:});
+    [varargout{1:nargout}] = cic.definition().launch(varargin{:});
 end

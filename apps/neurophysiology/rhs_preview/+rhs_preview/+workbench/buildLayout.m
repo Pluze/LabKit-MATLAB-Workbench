@@ -1,0 +1,9 @@
+function layout = buildLayout()
+controls = {labkit.app.layout.tab("setup", "Setup", { ...
+    rhs_preview.sourceFiles.layoutSection(), rhs_preview.analysisRun.layoutSection(), rhs_preview.resultFiles.layoutSection()}), ...
+    labkit.app.layout.tab("review", "Review", {labkit.app.layout.dataTable("summaryTable", Columns=["Field", "Value"]), labkit.app.layout.statusPanel("details")}), ...
+    labkit.app.layout.tab("log", "Log", {labkit.app.layout.logPanel("logPanel")})};
+interaction = labkit.app.interaction.interval("previewRange", @rhs_preview.analysisRun.editRange, OnScrolled=@rhs_preview.analysisRun.scrollWindow, Style=struct("color", [0.75 0.55 0.12], "faceColor", [0.94 0.78 0.28], "faceAlpha", 0.22));
+workspace = labkit.app.layout.workspace(labkit.app.layout.plotArea("preview", @rhs_preview.analysisRun.drawPreview, Interactions={interaction}));
+layout = labkit.app.layout.workbench(controls, Workspace=workspace);
+end

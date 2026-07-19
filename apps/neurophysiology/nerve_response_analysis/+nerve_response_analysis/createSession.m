@@ -1,7 +1,7 @@
 % Rebuild parsed filter/protocol JSON, output-folder convenience, preview
 % state, and workflow messages from one validated project.
-function session = createSession(project)
-    paths = labkit.ui.runtime.sourcePaths( ...
+function session = createSession(project, context)
+    paths = context.resolveSourcePaths( ...
         project.inputs.sources, ["filterRecord", "protocol"]);
     filterPath = paths(1);
     protocolPath = paths(2);
@@ -9,8 +9,7 @@ function session = createSession(project)
     protocol = loadOptionalJson(protocolPath);
     outputFolder = "";
     if strlength(filterPath) > 0
-        outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
-            filterPath, "nerve_response_analysis", ""));
+        outputFolder = string(fileparts(filterPath));
     end
     status = "No filter record selected.";
     if strlength(filterPath) > 0

@@ -126,18 +126,19 @@ its app folder:
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
 apps/<family>/<app_slug>/+<app_slug>/definition.m
-apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchLayout.m
+apps/<family>/<app_slug>/+<app_slug>/+workbench/buildLayout.m
 ```
 
 Those three files are a complete static App. Add only the capabilities the
 product needs:
 
 ```text
-definitionActions.m                         semantic commands or bound events
 projectSpec.m                               durable create/validate/migrate contract
 createSession.m                             transient App-specific reconstruction
-+userInterface/presentWorkbench.m           dynamic semantic view models
-+userInterface/<renderer>.m                 drawing for a registered preview model
++workbench/present.m                        dynamic snapshot assembly
++<workflowCapability>/layoutSection.m       feature-owned controls
++<workflowCapability>/present.m             feature-owned snapshot fragment
++<workflowCapability>/draw.m                feature-owned plot renderer
 ```
 
 `definition.m` is the single product contract. It owns identity, display
@@ -161,8 +162,8 @@ Add workflow packages only when the App has that user-facing capability:
 
 Create only the packages the app needs. Names should describe a workflow or
 domain capability that changes together, not a broad technical phase. Avoid
-generic `+actions`, `+renderers`, `+ops`, `+io`, `+export`, `+helpers`, and
-`+utils` packages for new app code. Avoid fixed `+app` namespaces,
+generic `+actions`, `+renderers`, `+ops`, `+io`, `+ui`, `+userInterface`,
+`+view`, `+export`, `+helpers`, and `+utils` packages for new app code. Avoid fixed `+app` namespaces,
 family-level `private/` helpers, `*Workflow.m` string dispatchers, and
 `+core/dispatch.m` routers.
 
@@ -170,16 +171,17 @@ family-level `private/` helpers, `*Workflow.m` string dispatchers, and
 were retired with the workflow-first migration. Current app work should follow
 the workflow-first shape.
 
-## UI Boundary
+## App SDK Boundary
 
-App GUIs use the layered UI foundation:
+App GUIs use the explicit `labkit.app` SDK:
 
 | Layer | App-facing API |
 | --- | --- |
-| Runtime | `labkit.ui.runtime.launch`, `define`, `emptySourceRecords`, `sourceRecord`, `sourcePaths`, `saveState`, `loadState`, portable source references, and source-adjacent output defaults; the runtime privately owns request dispatch, queueing, resources, presentation, interactions, recovery, diagnostics, and result manifests. |
-| Layout | `labkit.ui.layout.workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel` |
-| Plot | Advanced renderer helpers: `clear`, `fit`, `fitCanvas`, `offsetData`, `clampData`, `message` |
-| Interaction | GUI-free `anchorPath`, `scaleBarCalibration`, `scaleBarGeometry`, plus `enablePopout`; editor/runtime objects are private. |
+| Definition | `labkit.app.Definition` owns identity, requirements, optional project/session boundaries, workbench, presentation, and launch. |
+| Layout | `labkit.app.layout.*` owns semantic controls, containers, workspace pages, direct callbacks, bindings, and plot renderers. |
+| View | `labkit.app.view.Snapshot` owns complete derived visible state and prepared renderer models. |
+| Callback boundary | Typed `labkit.app.event.*` values and sealed, specifically named `labkit.app.CallbackContext` operations. |
+| Optional contracts | `labkit.app.project.*`, `result.*`, and `dialog.*`. |
 
 Reusable facades publish MATLAB-native contract versions through their
 `version()` APIs. Apps declare required facade ranges in the `Requirements`
@@ -209,20 +211,46 @@ placement, overlay-removal workflow wording, measurements, and user-facing
 decisions. Generic image IO and filters stay in `labkit.image`; thermal file
 parsing and raw-to-temperature mechanics stay in `labkit.thermal`.
 
-`definition.m` returns the app runtime contract. It names the project schema,
-optional session factory, data-only layout builder, handler registry,
-presenter, renderers, and optional `Start`. The framework runtime validates
-the definition, generates semantic callbacks, builds the shell, owns the event
-queue and readiness/busy state, routes diagnostics, and
-protects hidden test behavior.
+`definition.m` returns the app runtime contract. Layout nodes own concrete
+callbacks and renderers, so Apps maintain no parallel registries. The
+framework compiles the static graph, builds the shell, owns the transactional
+event queue, persistence, resources, diagnostics, and private native adapter.
 
-`+userInterface/buildWorkbenchLayout.m` returns a data-only `labkit.ui.layout.*`
-tree. It should not create MATLAB UI handles, mutate app state, perform IO,
-run calculations, write exports, schedule startup, or set row/column layout
-mechanics. App command handlers own app-specific state changes, alerts, refresh
-decisions, and log wording. `+userInterface/presentWorkbench.m` is the pure
-bridge from canonical state to semantic control properties, prepared preview
-models, and controlled interaction specs.
+`+workbench/buildLayout.m` should read as the product's user workflow.
+Capability packages own their controls, state transitions, prepared view
+models, rendering, alerts, and wording. `+workbench/present.m` extracts exact
+state inputs and composes those feature fragments; it is not a second
+monolithic implementation of the App.
+
+### The state funnel
+
+The runtime commits one canonical value containing `project` and `session`,
+but that value is an SDK transaction envelope, not the App's domain model.
+Keep it at the edge:
+
+```text
+layout signal
+    -> capability action(applicationState, event, callbackContext)
+        -> calculation(exact scientific inputs)
+        -> writer(exact result and destination inputs)
+
+runtime presentation
+    -> workbench.present(applicationState)
+        -> capability.present(exact visible inputs)
+            -> renderer(axes, prepared model)
+```
+
+Only `createSession`, `workbench.present`, `OnStart`, and a function bound
+directly to a layout signal accept the complete envelope. Those functions
+name it `applicationState`, expose the typed event and `callbackContext` in
+their signatures, and unpack it immediately. Feature presenters, renderers,
+calculations, writers, and local helpers receive named narrow inputs.
+
+Do not introduce a second App object, service bag, callback registry, or
+feature-wide context type to hide these inputs. If a calculation needs five
+scientific values, list those five values. If several always travel together
+and form a stable app-owned concept, give that concept a semantic struct and
+validate it at its owner.
 
 ## Reusable Extraction Rule
 

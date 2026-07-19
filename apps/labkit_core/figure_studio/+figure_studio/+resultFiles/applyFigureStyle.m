@@ -276,7 +276,7 @@ end
 function tf = applyGridCanvasFrame(ax, width, height)
     tf = false;
     try
-        [tf, frame] = labkit.ui.plot.fitCanvas(ax, width, height);
+        [tf, frame] = labkit.app.plot.fitCanvasToSource(ax, width, height);
         if ~tf
             return;
         end

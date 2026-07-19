@@ -238,6 +238,12 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.dispatch(binding, selection);
         end
 
+        function applyInteraction(obj, interactionId, signal, payload)
+            obj.assertOpen();
+            binding = obj.interactionSignal(interactionId, signal);
+            obj.dispatch(binding, payload);
+        end
+
         function applyFilePanelSelection(obj, target, indices)
             obj.assertOpen();
             [config, current] = obj.fileListState(target);
@@ -290,15 +296,18 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         function applyFileSelection(obj, target, paths, indices)
             obj.assertOpen();
             [config, current] = obj.fileListState(target);
-            sources = obj.Sources.reconcilePaths( ...
+            sources = obj.Sources.reconcileRolePaths( ...
                 current, paths, config.SourceRole, ...
                 config.SourceIdPrefix, config.Required);
+            visibleSources = obj.Sources.recordsForRole( ...
+                sources, config.SourceRole);
             if nargin < 4
-                indices = 1:numel(sources);
+                indices = 1:numel(visibleSources);
             end
             if ~(isnumeric(indices) && isrow(indices) && ...
                     all(isfinite(indices)) && all(indices == fix(indices)) && ...
-                    all(indices >= 1) && all(indices <= numel(sources)))
+                    all(indices >= 1) && ...
+                    all(indices <= numel(visibleSources)))
                 error("labkit:app:contract:InvalidValue", ...
                     "fileList selection indices are invalid.");
             end
@@ -325,6 +334,29 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
     end
 
     methods (Access = private)
+        function binding = interactionSignal(obj, interactionId, signal)
+            plan = obj.Application.platformPlanForRuntime();
+            binding = [];
+            for k = 1:numel(plan.Nodes)
+                config = plan.Nodes(k).Configuration;
+                if ~isfield(config, "Interactions")
+                    continue;
+                end
+                interactions = config.Interactions;
+                match = find(cellfun(@(value) ...
+                    value.Id == string(interactionId), interactions), 1);
+                if ~isempty(match)
+                    binding = interactions{match}.signal(string(signal));
+                    break;
+                end
+            end
+            if isempty(binding)
+                error("labkit:app:contract:UnknownReference", ...
+                    "Interaction %s has no %s callback.", ...
+                    interactionId, signal);
+            end
+        end
+
         function binding = signalForTarget(obj, target, signal, required)
             if nargin < 4
                 required = true;
@@ -366,9 +398,12 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if nargin < 6
                 rebuildSession = false;
             end
+            visibleSources = obj.Sources.recordsForRole( ...
+                sources, config.SourceRole);
             if ~(isnumeric(indices) && isrow(indices) && ...
                     all(isfinite(indices)) && all(indices == fix(indices)) && ...
-                    all(indices >= 1) && all(indices <= numel(sources)))
+                    all(indices >= 1) && ...
+                    all(indices <= numel(visibleSources)))
                 error("labkit:app:contract:InvalidValue", ...
                     "fileList selection indices are invalid.");
             end
@@ -380,10 +415,20 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if strlength(config.SelectionBind) > 0
                 ids = strings(1, 0);
                 if ~isempty(indices)
-                    ids = string({sources(indices).id});
+                    ids = string({visibleSources(indices).id});
                 end
-                candidate = setBoundValue(candidate, config.SelectionBind, ...
-                    labkit.app.event.ListSelection(Ids=ids, Indices=indices));
+                selection = labkit.app.event.ListSelection( ...
+                    Ids=ids, Indices=indices);
+                candidate = setBoundValue( ...
+                    candidate, config.SelectionBind, selection);
+            else
+                selection = labkit.app.event.ListSelection(Indices=indices);
+            end
+            binding = obj.signalForTarget( ...
+                target, "listSelectionChanged", false);
+            if ~isempty(binding)
+                candidate = binding.UpdateState( ...
+                    candidate, selection, obj.Context);
             end
             previousState = obj.State;
             previousPresentation = obj.Presentation;
@@ -593,6 +638,8 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                         paths = strings(0, 1);
                         if strlength(config.Bind) > 0
                             sources = getBoundValue(state, config.Bind);
+                            sources = obj.Sources.recordsForRole( ...
+                                sources, config.SourceRole);
                             paths = obj.Sources.sourcePaths(sources);
                         end
                         view = view.filePaths(node.Id, paths);

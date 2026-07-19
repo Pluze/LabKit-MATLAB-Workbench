@@ -98,7 +98,8 @@ listed as stable public APIs; reusable DTA reading is supported through
 version-aware migration entry. `createSession(project,context)` resolves the
 runtime-owned portable sources and rebuilds decoded DTA items because curves
 remain transient caches. Layout bindings provide all four plot parameters and
-the file collection without App callbacks or presenter duplication. The only
-App StateHandler is CSV/result export; one renderer receives the voltage and
-current axes in declared order. The App requires `labkit.app >=1 <2` and
-`labkit.dta >=2 <3`.
+the file collection without App callbacks or presenter duplication.
+`+workbench/buildLayout.m` binds CSV export directly to
+`+resultFiles/exportSelectedCurves.m`, while `+overlayPlot/draw.m` receives the
+voltage and current axes in declared order. The App requires
+`labkit.app >=1 <2` and `labkit.dta >=2 <3`.

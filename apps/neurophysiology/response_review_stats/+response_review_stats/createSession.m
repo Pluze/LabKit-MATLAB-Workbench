@@ -1,8 +1,8 @@
 % Rebuild transient metrics, aligned signals, preview selection, output-folder
 % convenience, and workflow messages from one validated project.
-function session = createSession(project)
-    filepath = labkit.ui.runtime.sourcePaths( ...
-        project.inputs.sources, "reviewInput");
+function session = createSession(project, context)
+    paths = context.resolveSourcePaths(project.inputs.sources, "reviewInput");
+    filepath = paths(1);
     [metrics, summary, aligned] = emptyCache();
     outputFolder = "";
     status = "No input selected.";
@@ -10,8 +10,7 @@ function session = createSession(project)
         [metrics, summary, aligned] = ...
             response_review_stats.analysisRun.loadMetrics( ...
             filepath, project.parameters);
-        outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
-            filepath, "response_review_stats", ""));
+        outputFolder = string(fileparts(filepath));
         status = sprintf("Loaded %d metric row(s).", height(metrics));
     end
     session = struct( ...

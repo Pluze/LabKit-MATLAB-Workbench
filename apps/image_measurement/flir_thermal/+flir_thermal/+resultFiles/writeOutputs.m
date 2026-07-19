@@ -23,7 +23,7 @@ function payload = writeOutputs(items, opts)
         result.gammaValue = opts.gammaValue;
         result = addReadingResults(result, items(k));
         try
-            [values, units] = flir_thermal.userInterface.valueMatrix(items(k));
+            [values, units] = flir_thermal.thermalPreview.presentationData.valueMatrix(items(k));
             range = itemRange(items(k), opts.range);
             result.rangeMin = range(1);
             result.rangeMax = range(2);
@@ -34,7 +34,7 @@ function payload = writeOutputs(items, opts)
                 "_colorbar", "PNG");
             temperatureCsvPath = uniqueOutputPath(opts.outputFolder, items(k).path, ...
                 "_temperature_c", "CSV");
-            rgb = flir_thermal.userInterface.renderThermalImage(values, ...
+            rgb = flir_thermal.thermalPreview.presentationData.renderThermalImage(values, ...
                 range, opts.palette, opts.colorMapping, opts.gammaValue);
             labkit.image.writeFile(rgb, imagePath);
             labkit.image.writeFile(colorbarImage(range, opts.palette, ...
@@ -88,7 +88,7 @@ function opts = normalizeOptions(opts)
         otherwise
             opts.colorMapping = "Linear";
     end
-    opts.gammaValue = flir_thermal.userInterface.normalizeGammaValue(opts.gammaValue);
+    opts.gammaValue = flir_thermal.thermalPreview.presentationData.normalizeGammaValue(opts.gammaValue);
     opts.range = opts.range(:).';
     if ~(isempty(opts.range) || (numel(opts.range) == 2 && ...
             all(isfinite(opts.range)) && opts.range(2) > opts.range(1)))
@@ -102,7 +102,7 @@ function range = itemRange(item, fallbackRange)
         range = double(item.displayRange(:)).';
     end
     if numel(range) ~= 2 || ~all(isfinite(range)) || range(2) <= range(1)
-        [values] = flir_thermal.userInterface.valueMatrix(item);
+        [values] = flir_thermal.thermalPreview.presentationData.valueMatrix(item);
         values = values(isfinite(values));
         if isempty(values)
             range = [20 40];
@@ -283,7 +283,7 @@ end
 function image = colorbarImage(range, palette, colorMapping, gammaValue)
     values = linspace(range(2), range(1), 256).';
     values = repmat(values, 1, 32);
-    image = flir_thermal.userInterface.renderThermalImage(values, range, ...
+    image = flir_thermal.thermalPreview.presentationData.renderThermalImage(values, range, ...
         palette, colorMapping, gammaValue);
 end
 

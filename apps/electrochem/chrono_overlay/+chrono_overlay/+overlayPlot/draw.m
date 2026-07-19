@@ -1,13 +1,9 @@
 % Expected caller: the registered Chrono Overlay renderer. Inputs are the
-% voltage/current axes in declared AxisIds order and one prepared overlay model.
+% named voltage/current axes and one prepared overlay model.
 % Side effects are limited to redrawing the supplied axes.
-function draw(axes, model)
-    if numel(axes) ~= 2
-        error("chrono_overlay:InvalidRenderSurface", ...
-            "Chrono Overlay requires voltage and current axes.");
-    end
-    renderSignal(axes(1), model, "voltage");
-    renderSignal(axes(2), model, "current");
+function draw(axesById, model)
+    renderSignal(axesById.voltage, model, "voltage");
+    renderSignal(axesById.current, model, "current");
 end
 
 function renderSignal(ax, model, signal)

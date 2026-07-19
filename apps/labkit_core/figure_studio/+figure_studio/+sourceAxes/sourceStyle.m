@@ -1,5 +1,5 @@
 % Read style defaults from a source axes for Figure Studio. Expected caller is
-% figure_studio.definitionActions; output follows the app-owned style struct.
+% Figure Studio direct callbacks; output follows the app-owned style struct.
 function style = sourceStyle(srcAx, opts)
     arguments
         srcAx

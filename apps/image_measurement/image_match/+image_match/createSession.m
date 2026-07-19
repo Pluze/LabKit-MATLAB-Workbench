@@ -1,30 +1,26 @@
 % Rebuild transient decoded images and preview caches from one validated
 % Image Match project. Runtime V2 calls this after source relinking.
-function session = createSession(project)
-    sourceIndices = find(string({project.inputs.sources.role}) == "source-image");
-    index = double(~isempty(sourceIndices));
+function session = createSession(project, context)
+    index = double(~isempty(project.inputs.sources));
     cache = emptyCache();
-    referenceIndex = find(string({project.inputs.sources.role}) == ...
-        "reference-image", 1);
-    if ~isempty(referenceIndex)
-        cache.referenceItem = loadItem( ...
-            project.inputs.sources(referenceIndex));
+    if ~isempty(project.inputs.reference)
+        cache.referenceItem = loadItem(project.inputs.reference, context);
     end
     if index > 0
-        cache.currentItem = loadItem(project.inputs.sources(sourceIndices(1)));
+        cache.currentItem = loadItem(project.inputs.sources(1), context);
     end
     cache = rebuildResult(project, cache);
     session = struct( ...
-        "selection", struct("currentIndex", index), ...
+        "selection", struct("sourceImages", labkit.app.event.ListSelection(), "currentIndex", index), ...
         "workflow", struct("pendingDirty", false), ...
         "view", struct("previewMode", "Matched"), ...
         "cache", cache);
 end
 
-function item = loadItem(source)
+function item = loadItem(source, context)
     item = [];
     loaded = image_match.sourceFiles.readImages( ...
-        labkit.ui.runtime.sourcePaths(source));
+        context.resolveSourcePaths(source));
     if ~isempty(loaded)
         item = loaded(1);
     end
@@ -34,9 +30,9 @@ function cache = rebuildResult(project, cache)
     if isempty(cache.currentItem) || isempty(cache.referenceItem)
         return;
     end
-    cache.previewSource = image_match.userInterface.previewImage( ...
+    cache.previewSource = image_match.imagePreview.presentationData.previewImage( ...
         cache.currentItem.image);
-    cache.previewReference = image_match.userInterface.previewImage( ...
+    cache.previewReference = image_match.imagePreview.presentationData.previewImage( ...
         cache.referenceItem.image);
     processed = image_match.analysisRun.applyPipeline( ...
         {cache.previewSource}, project.annotations.steps, ...

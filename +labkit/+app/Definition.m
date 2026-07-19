@@ -7,6 +7,7 @@ classdef (Sealed) Definition
     %       Family=family, AppVersion=version, Updated=date, ...
     %       Requirements=requirements, Workbench=workbench, Name=Value)
     %   fig = app.launch()
+    %   fig = app.launch(InitialProject=project)
     %   requirements = app.launch("requirements")
     %   version = app.launch("version")
     %
@@ -162,13 +163,17 @@ classdef (Sealed) Definition
             nodes = layout.flattenForCompiler();
             ids = string(cellfun(@(value) value.Id, nodes, ...
                 "UniformOutput", false));
-            assertUnique(ids, "Layout");
+            interactions = collectInteractions(nodes);
+            interactionIds = string(cellfun(@(value) value.Id, interactions, ...
+                "UniformOutput", false));
+            assertUnique([ids interactionIds], "Layout and interaction");
             targetMask = cellfun(@(value) ...
                 ~isempty(value.Capabilities), nodes);
-            obj.TargetNodes = nodes(targetMask);
-            obj.TargetIds = ids(targetMask);
+            obj.TargetNodes = [nodes(targetMask) interactions];
+            obj.TargetIds = string(cellfun(@(value) value.Id, ...
+                obj.TargetNodes, "UniformOutput", false));
             obj.SignalBindings = collectSignalBindings( ...
-                nodes, obj.OnStartBinding);
+                [nodes interactions], obj.OnStartBinding);
             obj.PlatformPlan = compilePlatformPlan(nodes);
         end
 
@@ -211,6 +216,24 @@ classdef (Sealed) Definition
 
         function varargout = launch(obj, varargin)
             %LAUNCH Answer metadata requests or show the native MATLAB App.
+            initialProject = [];
+            if ~isempty(varargin) && ...
+                    ~(numel(varargin) == 1 && ...
+                      (ischar(varargin{1}) || ...
+                       (isstring(varargin{1}) && isscalar(varargin{1}))))
+                options = labkit.app.internal.OptionParser.parse( ...
+                    "labkit.app.Definition.launch", "InitialProject", ...
+                    varargin{:});
+                if ~isfield(options, "InitialProject") || ...
+                        ~isstruct(options.InitialProject) || ...
+                        ~isscalar(options.InitialProject)
+                    error("labkit:app:contract:InvalidValue", ...
+                        "Definition launch InitialProject must be a " + ...
+                        "scalar project struct.");
+                end
+                initialProject = options.InitialProject;
+                varargin = {};
+            end
             if ~isempty(varargin)
                 if numel(varargin) ~= 1 || ...
                         ~(ischar(varargin{1}) || ...
@@ -244,7 +267,7 @@ classdef (Sealed) Definition
                 error("labkit:app:contract:InvalidValue", ...
                     "Definition launch returns at most one figure.");
             end
-            runtime = obj.createMatlabRuntime();
+            runtime = obj.createMatlabRuntime(initialProject);
             runtime.showFigure();
             figure = runtime.figureHandle();
             if nargout == 1
@@ -436,6 +459,19 @@ function bindings = collectSignalBindings(nodes, start)
         bindings{end + 1} = start;
     end
     bindings = uniqueBindings(bindings);
+end
+
+function interactions = collectInteractions(nodes)
+interactions = {};
+for k = 1:numel(nodes)
+    if nodes{k}.Kind ~= "plotArea"
+        continue;
+    end
+    configuration = nodes{k}.configurationForCompiler();
+    if isfield(configuration, "Interactions")
+        interactions = [interactions configuration.Interactions];
+    end
+end
 end
 
 function values = uniqueBindings(values)

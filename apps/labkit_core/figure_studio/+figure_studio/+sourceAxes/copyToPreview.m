@@ -1,8 +1,8 @@
 % Copy axes graphics and display state into a Figure Studio preview axes.
-% Expected caller is figure_studio.definitionActions; source graphics are not
+% Expected caller is Figure Studio direct callbacks; source graphics are not
 % modified and destination axes content is reset before children are copied.
 function copyToPreview(srcAx, dstAx)
-    labkit.ui.plot.clear(dstAx, "ResetScale", true);
+    labkit.app.plot.clearAxes(dstAx);
     dstAx.Visible = 'on';
     disableDefaultAxesToolbar(dstAx);
     copyAxesState(srcAx, dstAx);
@@ -15,7 +15,7 @@ function copyToPreview(srcAx, dstAx)
     ylabel(dstAx, string(srcAx.YLabel.String), 'Interpreter', 'none');
     zlabel(dstAx, string(srcAx.ZLabel.String), 'Interpreter', 'none');
     normalizePreviewAxesLayout(dstAx);
-    labkit.ui.interaction.enablePopout(dstAx);
+    labkit.app.plot.fitAxesToGraphics(dstAx);
 end
 
 function disableDefaultAxesToolbar(ax)

@@ -1,4 +1,4 @@
-% Expected caller: figure_studio.definitionActions during debug launch and
+% Expected caller: Figure Studio direct callbacks during debug launch and
 % unit guardrails. Input is a LabKit debug context. Output is a deterministic
 % synthetic FIG sample pack. Side effects: writes anonymous debug FIG files
 % and records a session manifest when available.

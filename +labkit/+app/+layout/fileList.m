@@ -28,6 +28,11 @@ function node = fileList(id, varargin)
 %   EmptyText - Empty-list text. Default: "No files selected".
 %   Bind - Project source-record field path. Default: "".
 %   SelectionBind - ListSelection field path. Default: "".
+%   OnSelectionChanged - Optional callback
+%       applicationState = callback(applicationState,selection,callbackContext)
+%       for business effects such as lazily decoding the selected source.
+%       selection is labkit.app.event.ListSelection. Ordinary selection state
+%       needs only SelectionBind. Default: empty.
 %   SourceRole - Portable source role. Default: id.
 %   SourceIdPrefix - Portable source ID prefix. Default: id.
 %   Required - Logical relinking requirement. Default: true.

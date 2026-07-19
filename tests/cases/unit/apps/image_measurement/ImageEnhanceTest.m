@@ -33,19 +33,18 @@ end
 
 function checkRuntimeV2ProjectAndPresenterContracts()
     definition = image_enhance.definition();
-    assert(definition.contractVersion == 2, ...
-        'Image Enhance must use the Runtime V2 definition contract.');
-    project = definition.project.Create();
-    assert(definition.project.Validate(project), ...
+    assert(isa(definition, 'labkit.app.Definition'), ...
+        'Image Enhance must use the explicit App SDK definition contract.');
+    project = definition.ProjectSchema.Create();
+    assert(definition.ProjectSchema.Validate(project), ...
         'A new Image Enhance project should satisfy its durable contract.');
     assert(~isfield(project, 'items') && ~isfield(project, 'previewImages'), ...
         'The durable project must not contain decoded pixels or preview caches.');
-    session = image_enhance.createSession(project);
+    session = image_enhance.createSession(project, labkit.app.CallbackContext());
     state = struct('project', project, 'session', session);
-    presentation = image_enhance.userInterface.presentWorkbench(state);
-    assert(isscalar(presentation) && ...
-        isfield(presentation.previews.preview, 'Renderer'), ...
-        'The V2 presenter should return one deterministic registered preview.');
+    presentation = image_enhance.workbench.present(state);
+    assert(isa(presentation, 'labkit.app.view.Snapshot'), ...
+        'The presenter should return one explicit semantic snapshot.');
     assert(isempty(session.cache.item) && ...
         ~isfield(session, 'whiteRoiHandle'), ...
         'The rebuildable session must start without pixels or ROI handles.');
@@ -177,7 +176,7 @@ end
 function checkWhiteRoiToolAvailabilityFollowsBatchMode()
     spec = image_enhance.projectSpec();
     project = spec.Create();
-    session = image_enhance.createSession(project);
+    session = image_enhance.createSession(project, labkit.app.CallbackContext());
     project.inputs.sources = struct('id', "image-1", 'required', true, ...
         'role', "source-image", 'reference', struct());
     annotation = image_enhance.enhancementAnnotations.empty();
@@ -187,17 +186,17 @@ function checkWhiteRoiToolAvailabilityFollowsBatchMode()
     session.cache.item = image_enhance.sourceFiles.emptyItem();
     S = struct('project', project, 'session', session);
 
-    availability = image_enhance.userInterface.toolAvailability(S, 'White ROI calibration');
+    availability = image_enhance.imagePreview.presentationData.toolAvailability(S, 'White ROI calibration');
     assert(~availability.canSetWhiteRoi && ~availability.canApply, ...
         'White ROI controls should stay disabled in shared batch mode.');
 
     S.project.parameters.batchMode = false;
-    availability = image_enhance.userInterface.toolAvailability(S, 'White ROI calibration');
+    availability = image_enhance.imagePreview.presentationData.toolAvailability(S, 'White ROI calibration');
     assert(availability.canSetWhiteRoi && ~availability.canApply, ...
         'Turning off shared batch mode should immediately enable ROI selection.');
 
     S.project.annotations.items.whiteRoi = [1 1 4 4];
-    availability = image_enhance.userInterface.toolAvailability(S, 'White ROI calibration');
+    availability = image_enhance.imagePreview.presentationData.toolAvailability(S, 'White ROI calibration');
     assert(availability.canSetWhiteRoi && availability.canApply, ...
         'A per-image white ROI should enable applying the tool for the selected image.');
     assert(~availability.canPreviewPending, ...
@@ -205,13 +204,13 @@ function checkWhiteRoiToolAvailabilityFollowsBatchMode()
 end
 
 function checkWhiteRoiDefaultUsesImageCorner()
-    position = image_enhance.userInterface.defaultWhiteRoi([100 200 3]);
+    position = image_enhance.imagePreview.presentationData.defaultWhiteRoi([100 200 3]);
     assert(position(1) <= 10 && position(2) <= 10, ...
         'Default white ROI should start near the image corner instead of the center.');
     assert(position(3) == 40 && position(4) == 20, ...
         'Default white ROI should keep the existing 20 percent image-size footprint.');
 
-    smallPosition = image_enhance.userInterface.defaultWhiteRoi([6 5 3]);
+    smallPosition = image_enhance.imagePreview.presentationData.defaultWhiteRoi([6 5 3]);
     assert(isequal(smallPosition, [1 1 5 6]), ...
         'Default white ROI should clamp to small image bounds.');
 end
@@ -222,7 +221,7 @@ function checkResultTableReportsExportSizeNotPreviewSize()
     item.image = zeros(2400, 3200, 3);
     previewImage = zeros(1500, 2000, 3);
 
-    data = image_enhance.userInterface.resultTableData(item, previewImage, 0);
+    data = image_enhance.imagePreview.presentationData.resultTableData(item, previewImage, 0);
     metricNames = string(data(:, 1));
     outputValue = string(data(metricNames == "Output size", 2));
 
@@ -389,7 +388,7 @@ end
 
 function checkPreviewImageDownsamplesLargeInputs()
     img = repmat(linspace(0, 1, 160), 120, 1);
-    [preview, scale] = image_enhance.userInterface.previewImage(img, 50);
+    [preview, scale] = image_enhance.imagePreview.presentationData.previewImage(img, 50);
     assert(size(preview, 3) == 3, ...
         'Enhancement preview should render grayscale inputs as RGB.');
     assert(size(preview, 1) <= 50, ...
@@ -402,12 +401,12 @@ end
 
 function checkPixelRadiusScalesWithPreview()
     img = syntheticGradientImage();
-    preview = image_enhance.userInterface.previewImage(img, 24);
+    preview = image_enhance.imagePreview.presentationData.previewImage(img, 24);
     fullStep = image_enhance.analysisRun.makeStep('Local contrast', 50, 12, 0);
     previewStep = image_enhance.analysisRun.makeStep('Local contrast', 50, 6, 0);
 
     fullProcessed = image_enhance.analysisRun.applyStep(img, fullStep, []);
-    fullPreview = image_enhance.userInterface.previewImage(fullProcessed, 24);
+    fullPreview = image_enhance.imagePreview.presentationData.previewImage(fullProcessed, 24);
     previewProcessed = image_enhance.analysisRun.applyStep(preview, previewStep, []);
 
     assert(mean(abs(fullPreview(:) - previewProcessed(:))) < 0.04, ...

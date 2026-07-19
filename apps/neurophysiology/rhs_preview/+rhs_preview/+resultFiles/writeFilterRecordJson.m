@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.definitionActions. Input is app state and target JSON path.
+% Expected caller: RHS Preview direct callbacks. Input is app state and target JSON path.
 % Output is the written path. Side effect is one manual filter record JSON.
 function outputPath = writeFilterRecordJson(S, outputPath)
 %WRITEFILTERRECORDJSON Write a Preview-authored RHS filter record.

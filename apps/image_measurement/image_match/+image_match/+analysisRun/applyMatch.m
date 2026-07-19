@@ -21,7 +21,7 @@ function outputImage = applyMatch(inputImage, referenceImage, step)
 %   step - Scalar structure created by image_match.analysisRun.makeStep.
 %
 % Step Fields:
-%   matchMethod - One label returned by image_match.userInterface.matchMethods.
+%   matchMethod - One label returned by image_match.imagePreview.presentationData.matchMethods.
 %       Punctuation and spaces are ignored when matching labels. An unknown or
 %       empty value uses "Balanced".
 %   amount - Overall blend percentage. Zero returns the source; 100 returns the
@@ -58,7 +58,7 @@ function outputImage = applyMatch(inputImage, referenceImage, step)
 %   assert(isequal(size(outputImage), [8 8 3]))
 %
 % See also image_match.analysisRun.applyPipeline,
-%   image_match.analysisRun.makeStep, image_match.userInterface.matchMethods
+%   image_match.analysisRun.makeStep, image_match.imagePreview.presentationData.matchMethods
 
     inputImage = labkit.image.ensureRgb(labkit.image.im2double(inputImage));
     inputImage = min(max(inputImage, 0), 1);

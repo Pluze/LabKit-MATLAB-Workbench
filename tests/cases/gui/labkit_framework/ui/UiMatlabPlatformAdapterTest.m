@@ -82,6 +82,8 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             testCase.verifyEqual(runtime.State.project.actionCount, 1);
             testCase.verifyEqual(runtime.State.session.sourceCount, 2);
             testCase.verifyEqual(runtime.State.session.selection.Indices, 2);
+            testCase.verifyEqual( ...
+                runtime.State.session.selectedSourceIds, "files-2");
             data = component(figure, "data");
             data.Data = {'A', 2; 'B', 3};
             data.CellEditCallback(data, struct( ...
@@ -95,7 +97,56 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
                 [1 1; 2 2]);
             clear cleanup
         end
+
+        function reconcilesManagedRectangleAndDispatchesDirectCallback(testCase)
+            setupLabKitTestPath();
+            helpers = guiTestHelpers();
+            helpers.assertUifigureAvailable();
+            runtime = interactionApplication().createMatlabRuntime();
+            cleanup = onCleanup(@() runtime.close());
+            ax = component(runtime.figureHandle(), "preview.main");
+
+            rectangles = findall(ax, "Type", "rectangle");
+            testCase.verifyNotEmpty(rectangles);
+            runtime.applyInteraction( ...
+                "cropRegion", "interactionChanged", [2 3 4 5]);
+            testCase.verifyEqual(runtime.State.project.crop, [2 3 4 5]);
+            clear cleanup
+        end
     end
+end
+
+function app = interactionApplication()
+interaction = labkit.app.interaction.rectangle( ...
+    "cropRegion", @changeCrop);
+plot = labkit.app.layout.plotArea( ...
+    "preview", @drawInteractionImage, ...
+    Interactions={interaction});
+app = labkit.app.Definition( ...
+    Entrypoint="labkit_InteractionProbe_app", ...
+    AppId="probe.interaction", Title="Interaction probe", ...
+    Family="Tests", AppVersion="1.0.0", Updated="2026-07-19", ...
+    Requirements=[], Workbench=labkit.app.layout.workbench({}, ...
+        Workspace=labkit.app.layout.workspace(plot)), ...
+    PresentWorkbench=@presentInteraction);
+end
+
+function state = changeCrop(state, position, ~)
+state.project.crop = position;
+end
+
+function drawInteractionImage(axesById, ~)
+imagesc(axesById.main, zeros(10));
+end
+
+function view = presentInteraction(state)
+position = [1 1 3 3];
+if isfield(state.project, "crop")
+    position = state.project.crop;
+end
+view = labkit.app.view.Snapshot() ...
+    .renderPlot("preview", struct()) ...
+    .rectangle("cropRegion", position, ImageSize=[10 10]);
 end
 
 function app = chronoLikeApplication()
@@ -106,7 +157,8 @@ content = labkit.app.layout.group("controls", { ...
     labkit.app.layout.slider("lineWidth", Value=1, Limits=[0.5 5], ...
         Bind="project.lineWidth", OnValueChanged=@lineWidthChanged), ...
     labkit.app.layout.fileList("files", Bind="project.sources", ...
-        SelectionBind="session.selection")});
+        SelectionBind="session.selection", ...
+        OnSelectionChanged=@fileSelectionChanged)});
 dataTable = labkit.app.layout.dataTable("data", ...
     Columns=["Group", "Value"], ColumnEditable=[true true], ...
     OnCellEdited=@tableEdited, ...
@@ -157,11 +209,12 @@ accepted = isstruct(project) && isscalar(project) && ...
     isfield(project, "sources");
 end
 
-function draw(axes, scale)
-cla(axes(1));
-plot(axes(1), 1:3, scale * (1:3));
-xlim(axes(1), [0 10]);
-ylim(axes(1), [0 20]);
+function draw(axesById, scale)
+ax = axesById.main;
+cla(ax);
+plot(ax, 1:3, scale * (1:3));
+xlim(ax, [0 10]);
+ylim(ax, [0 20]);
 if scale == 4
     error("probe:RendererFailure", "Injected renderer failure.");
 end
@@ -178,8 +231,13 @@ end
 function session = createSession(project, ~)
 session = struct("selection", labkit.app.event.ListSelection(), ...
     "sourceCount", numel(project.sources), ...
+    "selectedSourceIds", strings(1, 0), ...
     "tableData", {{"A", 1; "B", 2}}, ...
     "tableCells", zeros(0, 2));
+end
+
+function state = fileSelectionChanged(state, selection, ~)
+state.session.selectedSourceIds = selection.Ids;
 end
 
 function state = tableEdited(state, edit, ~)

@@ -34,11 +34,14 @@ app-sdk-migration-debt: ui-explicit-contract-redesign
   additive compatibility layer on the current runtime
 
 The accepted public structure is capability-partitioned:
-`labkit.app.Definition`, `StateHandler`, and `CallbackContext` form the small
-root; `layout`, `view`, `event`, `project`, `result`, and `dialog` own optional
-or specialized concepts. Native adapters, layout-node values, stores, queues,
-and reconciliation remain under `labkit.app.internal`. There are no aliases
-from the new SDK back to old `labkit.ui` symbols.
+`labkit.app.Definition` and `CallbackContext` form the small root; `layout`,
+`view`, `event`, `interaction`, `plot`, `project`, `result`, and `dialog` own
+optional or specialized concepts. Layout nodes own direct callbacks and
+renderers; Apps maintain no
+parallel handler, renderer, or capability registries. Native adapters,
+layout-node values, stores, queues, and reconciliation remain under
+`labkit.app.internal`. There are no aliases from the new SDK back to old
+`labkit.ui` symbols.
 
 The replacement may rewrite the current runtime kernel, definition model,
 protocol, interaction system, event transport, capability injection, renderer
@@ -233,10 +236,9 @@ below.
 - Required product metadata remains explicit in the definition signature.
 - Replace open `Project`, `Actions`, `Renderers`, and `Utilities` structs with
   validated public values or owned builder methods.
-- A StateHandler has an ID, one named event, and one documented signature.
-  Duplicate handler IDs and missing handler references fail during contract
-  compilation.
-- Renderer IDs and preview targets are checked before UI creation.
+- A layout control binds one concrete callback with one documented signature.
+  Plot areas bind their concrete renderer. Callback roles, target IDs, and
+  plot targets are checked before UI creation.
 - Static Apps do not need empty placeholder registries or presenter functions.
 
 #### Layout and the right-side workspace

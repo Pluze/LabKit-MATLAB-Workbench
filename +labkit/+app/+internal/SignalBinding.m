@@ -44,7 +44,8 @@ payloadClass = "";
 switch signal
     case {"pressed", "started"}
         inputCount = 2;
-    case {"valueChanged", "pageChanged", "interactionChanged"}
+    case {"valueChanged", "pageChanged", "interactionChanged", ...
+            "backgroundPressed", "scrolled"}
         inputCount = 3;
     case "cellEdited"
         inputCount = 3;
@@ -52,6 +53,9 @@ switch signal
     case "cellSelectionChanged"
         inputCount = 3;
         payloadClass = "labkit.app.event.TableCellSelection";
+    case "listSelectionChanged"
+        inputCount = 3;
+        payloadClass = "labkit.app.event.ListSelection";
     otherwise
         error("labkit:app:runtime:InvariantFailure", ...
             "Internal layout signal is unsupported: %s.", signal);

@@ -15,6 +15,13 @@ classdef (Sealed) Snapshot
     %   view = view.tableData(target, data, Name=Value)
     %   view = view.renderPlot(target, model)
     %   view = view.workspacePage(target, Name=Value)
+    %   view = view.anchorPath(interaction, points, Name=Value)
+    %   view = view.pairedAnchors(interaction, pointSets, Name=Value)
+    %   view = view.pointSlots(interaction, value, Name=Value)
+    %   view = view.rectangle(interaction, position, Name=Value)
+    %   view = view.regionSelection(interaction, Name=Value)
+    %   view = view.interval(interaction, range, Name=Value)
+    %   view = view.scaleReference(interaction, endpoints, Name=Value)
     %   view = view.include(fragment)
     %
     % Description:
@@ -185,6 +192,41 @@ classdef (Sealed) Snapshot
                 struct("Enabled", enabled, "Status", status));
         end
 
+        function obj = anchorPath(obj, interaction, points, varargin)
+            obj = appendInteraction( ...
+                obj, "anchorPath", interaction, points, varargin{:});
+        end
+
+        function obj = pairedAnchors(obj, interaction, pointSets, varargin)
+            obj = appendInteraction( ...
+                obj, "pairedAnchors", interaction, pointSets, varargin{:});
+        end
+
+        function obj = pointSlots(obj, interaction, value, varargin)
+            obj = appendInteraction( ...
+                obj, "pointSlots", interaction, value, varargin{:});
+        end
+
+        function obj = rectangle(obj, interaction, position, varargin)
+            obj = appendInteraction( ...
+                obj, "rectangle", interaction, position, varargin{:});
+        end
+
+        function obj = regionSelection(obj, interaction, varargin)
+            obj = appendInteraction( ...
+                obj, "regionSelection", interaction, [], varargin{:});
+        end
+
+        function obj = interval(obj, interaction, range, varargin)
+            obj = appendInteraction( ...
+                obj, "interval", interaction, range, varargin{:});
+        end
+
+        function obj = scaleReference(obj, interaction, endpoints, varargin)
+            obj = appendInteraction( ...
+                obj, "scaleReference", interaction, endpoints, varargin{:});
+        end
+
         function obj = include(obj, fragment)
             %INCLUDE Compose a feature-owned snapshot fragment.
             if ~isa(fragment, "labkit.app.view.Snapshot")
@@ -250,6 +292,26 @@ classdef (Sealed) Snapshot
             result.Operations = operations;
         end
     end
+end
+
+function obj = appendInteraction(obj, kind, interaction, value, varargin)
+options = labkit.app.internal.OptionParser.parse( ...
+    "labkit.app.view.Snapshot." + kind, ...
+    ["ImageSize", "Enabled"], varargin{:});
+imageSize = optionValue(options, "ImageSize", []);
+if ~isempty(imageSize) && ...
+        ~(isnumeric(imageSize) && isvector(imageSize) && ...
+          numel(imageSize) >= 2 && all(isfinite(imageSize(1:2))) && ...
+          all(imageSize(1:2) >= 1))
+    error("labkit:app:contract:InvalidValue", ...
+        "View snapshot interaction ImageSize must contain finite " + ...
+        "positive height and width.");
+end
+enabled = optionValue(options, "Enabled", true);
+enabled = logicalScalar(enabled, "interaction Enabled");
+obj = append(obj, kind, interaction, struct( ...
+    "Value", {value}, "ImageSize", double(imageSize(:).'), ...
+    "Enabled", enabled));
 end
 
 function value = scalarId(value, label)

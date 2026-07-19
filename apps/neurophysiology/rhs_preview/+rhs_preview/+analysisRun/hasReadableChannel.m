@@ -1,9 +1,9 @@
-% Expected caller: rhs_preview.definitionActions. Input is app state. Output indicates
+% Expected caller: RHS Preview direct callbacks. Input is app state. Output indicates
 % whether the selected RHS, family, and preview rows can read a waveform.
 function tf = hasReadableChannel(S)
 %HASREADABLECHANNEL True when preview reading has at least one channel.
 
-    selection = rhs_preview.userInterface.channelSelection(S.info, S.family, "");
+    selection = rhs_preview.analysisRun.channelSelection(S.info, S.family, "");
     tf = strlength(string(S.rhsFile)) > 0 && selection.hasChannels && ...
         isfield(S, "previewChannelRows") && istable(S.previewChannelRows) && ...
         height(S.previewChannelRows) > 0 && any(logical(S.previewChannelRows.preview));

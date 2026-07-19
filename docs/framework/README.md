@@ -20,32 +20,34 @@ depend on `labkit.app`.
 
 ## SDK Map
 
-The required path has four concepts:
+The required path has three concepts:
 
 | API | Purpose |
 | --- | --- |
 | `labkit.app.Definition` | App identity, lifecycle callbacks, layout, and launch |
 | `labkit.app.layout.*` | Semantic inputs, displays, containers, and workbench structure |
-| `labkit.app.StateHandler` | One declared event and its state transition |
 | `labkit.app.view.Snapshot` | Derived visible state and App-owned rendering |
 
 Read an App in this order: `definition.m` shows its complete contract,
-`buildWorkbenchLayout.m` shows what the user can see and do, and
-`stateHandlers.m` shows App-owned state transitions. Open `projectSpec.m`,
-`createSession.m`, view builders, or renderers only when the definition names
-those optional capabilities.
+`+workbench/buildLayout.m` shows the user workflow, and its capability
+packages show the controls, state transitions, presentation, and rendering
+owned by each feature. Open `projectSpec.m` or `createSession.m` only when the
+definition names those optional capabilities.
 
-SDK objects are not relayed through app-local function parameters. A layout
-builder obtains the App-local handlers it references. The only SDK values
-normally injected into App functions are `labkit.app.CallbackContext` and
-typed `labkit.app.event.*` payloads; callback `arguments` blocks declare those
-types for MATLAB help, editor navigation, and completion.
+Layout controls bind directly to named App callbacks, and plot areas bind
+directly to their renderer. Apps do not maintain handler, renderer, or
+capability registries. Runtime-injected values are
+`labkit.app.CallbackContext` and typed `labkit.app.event.*` payloads.
+Callbacks name those boundary values explicitly and delegate domain work
+through narrow inputs.
 
 Optional capabilities are grouped by purpose:
 
 | Package | Purpose |
 | --- | --- |
 | `labkit.app.event.*` | Typed callback payloads |
+| `labkit.app.interaction.*` | Managed plot gestures with direct callbacks |
+| `labkit.app.plot.*` | Domain-neutral axes redraw, message, fit, and annotation mechanics |
 | `labkit.app.project.*` | Durable project schema and migration |
 | `labkit.app.result.*` | Exported files and result packages |
 | `labkit.app.dialog.*` | Explicit dialog outcomes |
@@ -55,11 +57,10 @@ Optional capabilities are grouped by purpose:
 
 ```matlab
 function app = definition()
-    run = labkit.app.StateHandler("run", @runAnalysis);
     workbench = labkit.app.layout.workbench({ ...
         labkit.app.layout.field("gain", Label="Gain", ...
             Kind="numeric", Bind="project.parameters.gain"), ...
-        labkit.app.layout.button("run", "Run", run)});
+        labkit.app.layout.button("run", "Run", @runAnalysis)});
     app = labkit.app.Definition( ...
         Entrypoint="labkit_Example_app", AppId="example", ...
         Title="Example", Family="Examples", ...
@@ -70,14 +71,15 @@ end
 ```
 
 The entrypoint calls `definition().launch(...)`. Definition compiles the
-immutable semantic graph before creating a figure, collects referenced
-handlers, validates event and renderer references, and builds one private
-native platform plan.
+immutable semantic graph before creating a figure, validates direct callback
+and renderer signatures, and builds one private native platform plan.
 
 ## Paved Road
 
 - Bind ordinary state with `Bind="project..."` or `Bind="session..."`.
 - Use `labkit.app.layout.fileList` for portable file records and selection.
+  Source changes rebuild the transient session; Apps do not mirror choose,
+  remove, clear, or selection UI events.
 - Rebuild transient data with
   `session = createSession(project,context)` and resolve opaque source records
   with `context.resolveSourcePaths`.
@@ -87,8 +89,13 @@ native platform plan.
   `labkit.app.event.TableCellEdit` and
   `labkit.app.event.TableCellSelection`; Apps never decode native events.
 - Use `labkit.app.layout.plotArea` and a fixed
-  `renderer(axes,model)` callback.
-- Omit `StrictCapabilities` on the ordinary path.
+  `renderer(axesById,model)` callback. `axesById` is always a named struct,
+  even when the plot area declares only one axis.
+- Declare editable overlays with `labkit.app.interaction.*` on the plot area;
+  supply their current values with same-named Snapshot methods.
+- Use `labkit.app.plot.clearAxes`, `showMessage`, and `fitAxesToGraphics`
+  for renderer mechanics; Apps still decide message wording and viewport
+  policy.
 - Use `labkit.app.project.Schema`, `labkit.app.result.File`, and
   `labkit.app.result.Package` only when those optional capabilities exist.
 

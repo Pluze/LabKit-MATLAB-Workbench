@@ -61,14 +61,14 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
 - The App runtime composes complete `labkit.app.view.Snapshot` values from
   `labkit.app.layout.*` defaults, strict state bindings, framework-owned state,
   and the App's dynamic view fragment; private reconciliation owns diffs.
-- Layout signals reference `labkit.app.StateHandler` values and Definition
-  collects them. `ExtraHandlers` is only for programmatic dispatch. Ordinary
-  Apps omit the capability list; `StrictCapabilities` is advanced audit
-  metadata.
+- Layout controls own direct function-handle callbacks and plot renderers.
+  Definition privately compiles those links; Apps never maintain a second
+  handler, renderer, or capability registry. File-list source and selection
+  lifecycle is binding-driven rather than mirrored by App callbacks.
 - App examples do not relay SDK values through untyped app-local parameters.
-  Layout builders obtain the handlers they reference; runtime-injected
-  contexts and event payloads use concrete types in callback `arguments`
-  blocks.
+  Runtime callbacks name the complete application state, concrete event
+  payload, and `CallbackContext` at their boundary, then delegate domain work
+  through narrow explicit inputs.
 - Compile the immutable static Definition graph once. View commits
   validate against the cached graph and must not re-flatten layout on every
   update.

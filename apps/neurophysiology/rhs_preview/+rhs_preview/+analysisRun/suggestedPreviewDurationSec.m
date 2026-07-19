@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.definitionActions. Inputs are RHS index, channel rows, and
+% Expected caller: RHS Preview direct callbacks. Inputs are RHS index, channel rows, and
 % maximum plotted channels. Output is an adaptive initial preview duration.
 function durationSec = suggestedPreviewDurationSec(index, channelRows, maxPreviewChannels)
 %SUGGESTEDPREVIEWDURATIONSEC Estimate initial preview window length.

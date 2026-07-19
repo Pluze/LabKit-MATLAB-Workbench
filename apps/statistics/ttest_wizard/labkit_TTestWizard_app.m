@@ -24,6 +24,6 @@ function varargout = labkit_TTestWizard_app(varargin)
 %
 % See also labkit.app.Definition
 
-    app = ttest_wizard.definition();
-    [varargout{1:nargout}] = app.launch(varargin{:});
+    [varargout{1:nargout}] = ...
+        ttest_wizard.definition().launch(varargin{:});
 end
