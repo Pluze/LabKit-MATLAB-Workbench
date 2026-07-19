@@ -2,6 +2,7 @@ classdef (Sealed) ProjectContract
     %PROJECTCONTRACT Declare one durable App project contract.
     %
     % Usage:
+    %   contract = labkit.ui.ProjectContract()
     %   contract = labkit.ui.ProjectContract(Name=Value)
     %
     % Description:
@@ -10,7 +11,12 @@ classdef (Sealed) ProjectContract
     %   signatures. App-specific fields and scientific meaning remain inside
     %   the payload and are not interpreted by this value.
     %
-    % Required Name-Value Arguments:
+    % Default Contract:
+    %   With no arguments, Version is 1, Create returns struct(), and
+    %   Validate accepts any scalar struct. This is the standard path for a
+    %   simple App with no migration or specialized project invariants.
+    %
+    % Required Name-Value Arguments (custom contract):
     %   Version - Positive integer payload version.
     %   Create - Fixed callback project = create().
     %   Validate - Fixed callback accepted = validate(project).
@@ -61,6 +67,10 @@ classdef (Sealed) ProjectContract
             names = ["Version", "Create", "Validate", "Migrate", ...
                 "LegacyImports", "CreateResume", "ApplyResume", ...
                 "RelinkSources"];
+            if isempty(varargin)
+                varargin = {"Version", 1, "Create", @createProject, ...
+                    "Validate", @validateProject};
+            end
             options = parseContractOptions( ...
                 "labkit.ui.ProjectContract", names, varargin{:});
             for name = ["Version", "Create", "Validate"]
@@ -143,6 +153,6 @@ function project = createProject()
     project = struct();
 end
 
-function accepted = validateProject(~)
-    accepted = true;
+function accepted = validateProject(project)
+    accepted = isstruct(project) && isscalar(project);
 end

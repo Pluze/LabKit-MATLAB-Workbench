@@ -16,12 +16,14 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         Resources
         Adapter
         Documents
+        Sources
     end
 
     methods (Access = ?labkit.ui.Application)
         function obj = RuntimeKernel(application, initialProject, backend)
             obj.Application = application;
             obj.Resources = labkit.ui.ResourceStore();
+            obj.Sources = labkit.ui.PortableSourceStore();
             obj.Adapter = labkit.ui.HeadlessPlatformAdapter();
             if ~isempty(application.Project)
                 obj.Documents = labkit.ui.ProjectDocumentStore(application);
@@ -142,6 +144,113 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             written = writer.write(folder, result);
         end
 
+        function record = sourceRecord(obj, id, role, path, required)
+            record = obj.Sources.create(id, role, path, required);
+        end
+
+        function paths = sourcePaths(obj, sources, ids)
+            if isempty(ids)
+                paths = obj.Sources.sourcePaths(sources);
+            else
+                paths = obj.Sources.sourcePaths(sources, ids);
+            end
+        end
+
+        function sources = upsertSource(obj, sources, record)
+            sources = obj.Sources.upsert(sources, record);
+        end
+
+        function sources = reconcileSources(obj, current, incoming)
+            sources = obj.Sources.reconcile(current, incoming);
+        end
+
+        function applyBinding(obj, target, value)
+            obj.assertOpen();
+            plan = obj.Application.platformPlanForRuntime();
+            index = find(string({plan.Nodes.Id}) == string(target), 1);
+            if isempty(index) || ~isfield(plan.Nodes(index).Configuration, "Bind")
+                error("labkit:ui:contract:UnknownReference", ...
+                    "Layout target has no state binding: %s.", target);
+            end
+            path = plan.Nodes(index).Configuration.Bind;
+            if strlength(path) == 0
+                error("labkit:ui:contract:UnknownReference", ...
+                    "Layout target has no state binding: %s.", target);
+            end
+            previousState = obj.State;
+            previousPresentation = obj.Presentation;
+            try
+                candidate = setBoundValue(previousState, path, value);
+                obj.validateState(candidate);
+                view = obj.present(candidate);
+                obj.Adapter.reconcile(previousPresentation, view);
+                obj.State = candidate;
+                obj.Presentation = view;
+            catch cause
+                obj.State = previousState;
+                obj.Presentation = previousPresentation;
+                failure = MException("labkit:ui:runtime:ActionFailed", ...
+                    "Bound update for %s failed transactionally.", target);
+                failure = addCause(failure, cause);
+                throwAsCaller(failure);
+            end
+        end
+
+        function applyFileSelection(obj, target, paths, indices)
+            obj.assertOpen();
+            plan = obj.Application.platformPlanForRuntime();
+            index = find(string({plan.Nodes.Id}) == string(target), 1);
+            if isempty(index) || plan.Nodes(index).Kind ~= "filePanel"
+                error("labkit:ui:contract:UnknownReference", ...
+                    "Layout target is not a filePanel: %s.", target);
+            end
+            config = plan.Nodes(index).Configuration;
+            if strlength(config.Bind) == 0
+                error("labkit:ui:contract:UnknownReference", ...
+                    "filePanel target has no source binding: %s.", target);
+            end
+            current = getBoundValue(obj.State, config.Bind);
+            sources = obj.Sources.reconcilePaths( ...
+                current, paths, config.SourceRole, ...
+                config.SourceIdPrefix, config.Required);
+            if nargin < 4
+                indices = 1:numel(sources);
+            end
+            if ~(isnumeric(indices) && isrow(indices) && ...
+                    all(isfinite(indices)) && all(indices == fix(indices)) && ...
+                    all(indices >= 1) && all(indices <= numel(sources)))
+                error("labkit:ui:contract:InvalidValue", ...
+                    "filePanel selection indices are invalid.");
+            end
+            candidate = setBoundValue(obj.State, config.Bind, sources);
+            if strlength(config.SelectionBind) > 0
+                ids = strings(1, 0);
+                if ~isempty(indices)
+                    ids = string({sources(indices).id});
+                end
+                selection = labkit.ui.Selection( ...
+                    Ids=ids, Indices=indices);
+                candidate = setBoundValue( ...
+                    candidate, config.SelectionBind, selection);
+            end
+            previousState = obj.State;
+            previousPresentation = obj.Presentation;
+            try
+                obj.validateState(candidate);
+                view = obj.present(candidate);
+                obj.Adapter.reconcile(previousPresentation, view);
+                obj.State = candidate;
+                obj.Presentation = view;
+            catch cause
+                obj.State = previousState;
+                obj.Presentation = previousPresentation;
+                failure = MException("labkit:ui:runtime:ActionFailed", ...
+                    "filePanel update for %s failed transactionally.", target);
+                failure = addCause(failure, cause);
+                throwAsCaller(failure);
+            end
+        end
+
         function close(obj)
             if obj.Closed
                 return;
@@ -165,8 +274,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
             builtins = struct( ...
                 "dispatch", @(command, payload) obj.dispatch(command, payload), ...
-                "appendStatus", @(state, message) ...
-                    obj.appendStatus(state, message), ...
+                "appendStatus", @(message) obj.appendStatus(message), ...
                 "reportError", @(operation, exception) ...
                     obj.reportError(operation, exception), ...
                 "setResource", @(scope, id, value, cleanup) ...
@@ -180,6 +288,14 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.saveRecovery(state, filepath);
             builtins.writeResult = @(folder, result) ...
                 obj.writeResult(folder, result);
+            builtins.sourceRecord = @(id, role, path, required) ...
+                obj.sourceRecord(id, role, path, required);
+            builtins.sourcePaths = @(sources, ids) ...
+                obj.sourcePaths(sources, ids);
+            builtins.upsertSource = @(sources, record) ...
+                obj.upsertSource(sources, record);
+            builtins.reconcileSources = @(current, incoming) ...
+                obj.reconcileSources(current, incoming);
             names = string(fieldnames(builtins));
             for k = 1:numel(names)
                 backend.(names(k)) = builtins.(names(k));
@@ -263,19 +379,60 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function view = present(obj, state)
+            view = obj.defaultPresentation(state);
             if isempty(obj.Application.Present)
-                view = labkit.ui.Presentation();
-                if ~isempty(obj.Application.TargetIds)
-                    error("labkit:ui:runtime:InvariantFailure", ...
-                        "A nonstatic Application requires Present.");
-                end
+                custom = labkit.ui.Presentation();
             else
-                view = obj.Application.Present(state);
+                custom = obj.Application.Present(state);
             end
+            view = view.overlayForRuntime(custom);
             obj.Application.validatePresentation(view);
         end
 
-        function state = appendStatus(obj, state, message)
+        function view = defaultPresentation(obj, state)
+            plan = obj.Application.platformPlanForRuntime();
+            view = labkit.ui.Presentation();
+            for k = 1:numel(plan.Nodes)
+                node = plan.Nodes(k);
+                if isempty(node.Capabilities)
+                    continue;
+                end
+                config = node.Configuration;
+                switch node.Kind
+                    case "action"
+                        view = view.enabled(node.Id, config.Enabled);
+                    case {"field", "rangeField", "panner"}
+                        value = config.Value;
+                        if isfield(config, "Bind") && ...
+                                strlength(config.Bind) > 0
+                            value = getBoundValue(state, config.Bind);
+                        end
+                        view = view.value(node.Id, value);
+                    case "filePanel"
+                        paths = strings(0, 1);
+                        if isfield(config, "Bind") && ...
+                                strlength(config.Bind) > 0
+                            sources = getBoundValue(state, config.Bind);
+                            paths = obj.Sources.sourcePaths(sources);
+                        end
+                        view = view.files(node.Id, paths);
+                    case "previewArea"
+                        view = view.visible(node.Id, true);
+                    case "resultTable"
+                        view = view.table(node.Id, table());
+                    case {"logPanel", "statusPanel"}
+                        view = view.text(node.Id, "");
+                    case "workspacePage"
+                        view = view.workspacePage(node.Id);
+                    otherwise
+                        error("labkit:ui:runtime:InvariantFailure", ...
+                            "No default presentation for Layout kind %s.", ...
+                            node.Kind);
+                end
+            end
+        end
+
+        function appendStatus(obj, message)
             obj.StatusLog(end + 1) = message;
         end
 
@@ -301,5 +458,36 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     "Application has no project contract.");
             end
         end
+    end
+end
+
+function value = getBoundValue(state, path)
+    parts = split(path, ".");
+    value = state;
+    for k = 1:numel(parts)
+        name = char(parts(k));
+        if ~isstruct(value) || ~isscalar(value) || ~isfield(value, name)
+            error("labkit:ui:contract:UnknownReference", ...
+                "Binding path is absent from state: %s.", path);
+        end
+        value = value.(name);
+    end
+end
+
+function state = setBoundValue(state, path, value)
+    parts = cellstr(split(path, "."));
+    state = assignField(state, parts, value, path);
+end
+
+function owner = assignField(owner, parts, value, path)
+    name = parts{1};
+    if ~isstruct(owner) || ~isscalar(owner) || ~isfield(owner, name)
+        error("labkit:ui:contract:UnknownReference", ...
+            "Binding path is absent from state: %s.", path);
+    end
+    if numel(parts) == 1
+        owner.(name) = value;
+    else
+        owner.(name) = assignField(owner.(name), parts(2:end), value, path);
     end
 end

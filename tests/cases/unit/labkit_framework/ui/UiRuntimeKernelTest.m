@@ -15,7 +15,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
 
             function state = dispatchIncrement(state, context)
                 context.dispatch(increment, []);
-                state = context.appendStatus(state, "queued");
+                context.appendStatus("queued");
             end
         end
 
@@ -106,6 +106,31 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
                 counts(name) = counts(name) + 1;
             end
         end
+
+        function boundFieldNeedsNoCommandOrPresenter(testCase)
+            setupLabKitTestPath();
+            project = labkit.ui.ProjectContract( ...
+                Version=1, Create=@createBoundProject, ...
+                Validate=@validateBoundProject);
+            layout = labkit.ui.Layout.workbench({ ...
+                labkit.ui.Layout.field("threshold", Kind="numeric", ...
+                    Bind="project.parameters.threshold")});
+            app = labkit.ui.Application( ...
+                Command="labkit_BoundProbe_app", Id="probe.bound", ...
+                Title="Bound probe", Family="Tests", AppVersion="1.0.0", ...
+                Updated="2026-07-19", Requirements=[], ...
+                Project=project, Layout=layout);
+            runtime = app.createRuntimeForTesting();
+
+            runtime.applyBinding("threshold", 2.5);
+
+            testCase.verifyEqual( ...
+                runtime.State.project.parameters.threshold, 2.5);
+            testCase.verifyEqual(runtime.commitCount(), 2);
+            testCase.verifyError(@() labkit.ui.Layout.field( ...
+                "bad", Bind="project.values(1)"), ...
+                "labkit:ui:contract:InvalidValue");
+        end
     end
 end
 
@@ -119,7 +144,7 @@ function app = counterApplication(commands, capabilities)
         Session=@createSession, ...
         Layout=labkit.ui.Layout.workbench({ ...
             labkit.ui.Layout.field("value")}), ...
-        Present=@present, Commands=commands, Capabilities=capabilities);
+        Present=@present, ExtraCommands=commands, Capabilities=capabilities);
 end
 
 function project = createProject()
@@ -147,4 +172,18 @@ end
 
 function state = selectRows(state, selection, ~)
     state.session.selection = selection.Indices;
+end
+
+function project = createBoundProject()
+    project = struct("parameters", struct("threshold", 1));
+end
+
+function accepted = validateBoundProject(project)
+    accepted = isstruct(project) && isscalar(project) && ...
+        isfield(project, "parameters") && ...
+        isstruct(project.parameters) && isscalar(project.parameters) && ...
+        isfield(project.parameters, "threshold") && ...
+        isnumeric(project.parameters.threshold) && ...
+        isscalar(project.parameters.threshold) && ...
+        isfinite(project.parameters.threshold);
 end

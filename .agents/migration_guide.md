@@ -175,6 +175,12 @@ The following decisions apply before exact MATLAB symbol names are frozen:
     should learn a new optional constructor or method when using a genuinely
     new concept, not a new registry shape, dispatch convention, or hidden
     service protocol.
+13. **The paved road minimizes App wiring.** Layout owns strict field
+    bindings, Application collects signal Commands, runtime combines defaults
+    and bindings with App-provided dynamic presentation, and ordinary Apps do
+    not repeat capability metadata. Internal SDK complexity is acceptable when
+    it removes repeated App callbacks, presenters, lifecycle code, or
+    synchronized registries.
 
 ### Target architecture
 

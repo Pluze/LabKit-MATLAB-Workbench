@@ -64,6 +64,12 @@ version-aware migrate functions when durable state exists; Runtime owns the
 migration loop. Root `createSession.m` rebuilds only App-specific transient
 data. Layout is data-only; presentation is a pure state-to-view mapping.
 
+On the explicit-contract paved road, bind ordinary project/session fields
+directly in Layout, let Application collect signal Commands, omit capability
+metadata unless strict auditing is needed, and let runtime defaults complete
+the presentation. Add a Command and presenter operation only for real
+business effects or derived UI state.
+
 Do not add separate `requirements.m`, `version.m`, generic `+appLifecycle` or
 `+appState` packages, per-version migration files, or a Start callback that
 only constructs default state. Add a semantically named Start function only

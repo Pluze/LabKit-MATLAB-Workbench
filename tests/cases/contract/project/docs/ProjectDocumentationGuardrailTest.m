@@ -549,11 +549,18 @@ function symbol = publicApiSymbol(root, filepath)
 end
 
 function tf = hasFunctionContractComment(filepath)
-    lines = leadingFunctionBlock(filepath);
-    tf = ~isempty(lines) && startsWith(strtrim(lines(1)), "classdef");
-    if ~tf
-        tf = numel(lines) >= 2 && startsWith(strtrim(lines(2)), "%");
+    if isClassFile(filepath)
+        tf = true;
+        return;
     end
+    lines = leadingFunctionBlock(filepath);
+    tf = numel(lines) >= 2 && startsWith(strtrim(lines(2)), "%");
+end
+
+function tf = isClassFile(filepath)
+    lines = strip(readlines(filepath, "EmptyLineRule", "skip"));
+    lines = lines(~startsWith(lines, "%"));
+    tf = ~isempty(lines) && startsWith(lines(1), "classdef");
 end
 
 function actual = collectPrivateHelpersMissingContracts(root)

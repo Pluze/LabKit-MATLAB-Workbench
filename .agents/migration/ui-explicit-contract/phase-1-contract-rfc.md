@@ -27,7 +27,7 @@ fields and service operations:
 
 | Concept | Construction and readable surface | Purpose |
 | --- | --- | --- |
-| Application | `labkit.ui.Application(...)` with explicit owned Commands, renderers, startup, and debug sample | One validated App definition and product contract |
+| Application | `labkit.ui.Application(...)` with Layout-collected Commands, optional programmatic commands, renderers, startup, and debug sample | One validated App definition and product contract |
 | Project contract | `labkit.ui.ProjectContract(...)` | Payload creation, validation, migration, resume, relink, and named legacy import |
 | Command | `labkit.ui.Command(id, callback, Role=...)` | Declared callback role and stable reference |
 | Layout | `labkit.ui.Layout.<semanticKind>(...)` static constructors returning immutable values | Controls, sections, pages, workspace, and declarative signals |
@@ -67,16 +67,17 @@ function app = definition()
         Session=@ttest_wizard.createSession, ...
         Layout=ttest_wizard.userInterface.layout(), ...
         Present=@ttest_wizard.userInterface.present, ...
-        Commands=ttest_wizard.commands(), ...
         Renderers=struct("resultPreview", ...
             @ttest_wizard.userInterface.drawResultPreview));
 end
 ```
 
-`application` rejects an unknown name, duplicate command or renderer, empty
+`Application` collects Commands from Layout signals and Start, then accepts
+`ExtraCommands` only for programmatic dispatch. It rejects an unknown name,
+conflicting Command values sharing an ID, duplicate renderer IDs, empty
 required metadata, invalid version/date, unsupported requirement, callback
-role mismatch, and missing referenced command/renderer before figure creation.
-Static Apps omit commands, session, presenter, renderer, and startup work.
+role mismatch, and missing renderer before figure creation. Static Apps omit
+commands, session, presenter, renderer, and startup work.
 
 `ProjectContract` accepts only named `Version`, `Create`, `Validate`, `Migrate`,
 `CreateResume`, `ApplyResume`, `RelinkSources`, and `LegacyImport` operations.
@@ -254,7 +255,7 @@ changes.
 ```text
 Application value
   +-- Project contract
-  +-- Commands and renderers
+  +-- Layout-collected Commands, optional ExtraCommands, and renderers
   `-- Immutable layout
         `-- owned targets/signals
                  |

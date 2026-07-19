@@ -184,6 +184,34 @@ classdef (Sealed) Presentation
             operations = obj.Operations;
         end
     end
+
+    methods (Access = ?labkit.ui.RuntimeKernel)
+        function result = overlayForRuntime(base, custom)
+            if ~isa(custom, "labkit.ui.Presentation")
+                error("labkit:ui:contract:InvalidValue", ...
+                    "Presentation overlay requires a Presentation value.");
+            end
+            operations = base.Operations;
+            for k = 1:numel(custom.Operations)
+                incoming = custom.Operations{k};
+                replaced = false;
+                for n = 1:numel(operations)
+                    current = operations{n};
+                    if current.Kind == incoming.Kind && ...
+                            current.Target == incoming.Target
+                        operations{n} = incoming;
+                        replaced = true;
+                        break;
+                    end
+                end
+                if ~replaced
+                    operations{end + 1} = incoming;
+                end
+            end
+            result = labkit.ui.Presentation();
+            result.Operations = operations;
+        end
+    end
 end
 
 function value = scalarId(value, label)

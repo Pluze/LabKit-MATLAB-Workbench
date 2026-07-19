@@ -45,6 +45,12 @@ Public API additions require a complete MATLAB help contract, focused tests,
 facade version update, owning docs, and component history. Internal refactors
 that preserve the public boundary do not require a new API or governance rule.
 
+For the UI SDK, also apply the authoring extension gate: require repeated need
+from at least two Apps or one framework-owned lifecycle/consistency problem.
+Measure the paved-road effect. Prefer a strict binding, inferred registration,
+or framework default when it removes repeated App callbacks/presenter glue;
+do not make ordinary authors maintain a second command or capability list.
+
 ## Validation and handoff
 
 Run the owning framework suite, project boundary guardrails, and downstream app

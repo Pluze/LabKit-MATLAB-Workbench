@@ -7,7 +7,8 @@ classdef (Sealed) Application
     %       Requirements=requirements, Layout=layout, Name=Value)
     %
     % Description:
-    %   Application validates product metadata, Commands, renderer ownership,
+    %   Application validates product metadata, Commands collected from Layout
+    %   signals, renderer ownership,
     %   declared RuntimeContext capabilities, Layout ownership, global IDs,
     %   signal roles, and references in one atomic constructor. The immutable
     %   static target graph is cached once. validatePresentation checks a
@@ -31,13 +32,16 @@ classdef (Sealed) Application
     %   Session - Fixed callback session = createSession(project). Default:
     %       empty.
     %   Present - Fixed callback view = present(state). Default: empty.
-    %   Commands - Row cell array of unique labkit.ui.Command values used by
-    %       Layout signals. Default: {}.
+    %   ExtraCommands - Row cell array of labkit.ui.Command values available
+    %       only to programmatic dispatch. Layout signals are collected
+    %       automatically. Default: {}.
     %   Renderers - Scalar struct mapping renderer IDs to function handles.
     %       Default: struct().
     %   Capabilities - Unique row string array drawn from "dispatch",
     %       "workflow", "diagnostics", "dialogs", "project", "render",
-    %       "resources", and "results". Default: an empty string row.
+    %       "resources", and "results". Omit this option on the standard
+    %       authoring path; all context groups are then available. Supply an
+    %       explicit row only for advanced strict capability auditing.
     %   Start - Declared Role="invoke" Command queued after the first
     %       presentation. Default: empty.
     %   DebugSample - Fixed callback pack = writeSample(context). Default:
@@ -55,10 +59,10 @@ classdef (Sealed) Application
     %   labkit:ui:contract:UnknownArgument - A required argument is missing or
     %       an argument is unknown, duplicated, or unpaired.
     %   labkit:ui:contract:InvalidValue - Metadata, requirements, Layout,
-    %       Commands, renderers, or capabilities are malformed.
+    %       ExtraCommands, renderers, or capabilities are malformed.
     %   labkit:ui:contract:DuplicateId - A Layout, Command, or renderer ID is
     %       duplicated.
-    %   labkit:ui:contract:UnknownReference - A signal, renderer, or
+    %   labkit:ui:contract:UnknownReference - A renderer or
     %       presentation target is undeclared.
     %   labkit:ui:contract:UnsupportedOperation - A presentation operation is
     %       not legal for its target.
@@ -70,8 +74,7 @@ classdef (Sealed) Application
     %   app = labkit.ui.Application( ...
     %       Command="labkit_Example_app", Id="example.app", ...
     %       Title="Example", Family="Examples", AppVersion="1.0.0", ...
-    %       Updated="2026-07-19", Requirements=[], Layout=layout, ...
-    %       Commands={run});
+    %       Updated="2026-07-19", Requirements=[], Layout=layout);
     %   view = labkit.ui.Presentation().enabled("run", true);
     %
     % See also labkit.ui.Command, labkit.ui.Layout,
@@ -99,6 +102,7 @@ classdef (Sealed) Application
         TargetNodes (1, :) cell
         Commands (1, :) cell
         RendererIds (1, :) string
+        PlatformPlan (1, 1) struct
     end
 
     methods
@@ -106,7 +110,7 @@ classdef (Sealed) Application
             names = [ ...
                 "Command", "Id", "Title", "DisplayName", "Family", ...
                 "AppVersion", "Updated", "Requirements", "Layout", ...
-                "Project", "Session", "Present", "Commands", "Renderers", ...
+                "Project", "Session", "Present", "ExtraCommands", "Renderers", ...
                 "Capabilities", "Start", "DebugSample"];
             options = parseContractOptions( ...
                 "labkit.ui.Application", names, varargin{:});
@@ -140,11 +144,11 @@ classdef (Sealed) Application
             obj.Present = optionalFixedCallback( ...
                 options, "Present", 1, 1);
             obj.Capabilities = validateCapabilities( ...
-                optionValue(options, "Capabilities", strings(1, 0)));
-            obj.Commands = validateCommands( ...
-                optionValue(options, "Commands", {}));
+                optionValue(options, "Capabilities", allCapabilities()));
+            extraCommands = validateExtraCommands( ...
+                optionValue(options, "ExtraCommands", {}));
             obj.Start = validateStart( ...
-                optionValue(options, "Start", []), obj.Commands);
+                optionValue(options, "Start", []));
             obj.DebugSample = optionalFixedCallback( ...
                 options, "DebugSample", 1, 1);
             [renderers, rendererIds] = validateRenderers( ...
@@ -165,8 +169,9 @@ classdef (Sealed) Application
                 ~isempty(value.Capabilities), nodes);
             obj.TargetNodes = nodes(targetMask);
             obj.TargetIds = ids(targetMask);
-            validateSignals(nodes, obj.Commands);
+            obj.Commands = collectCommands(nodes, extraCommands, obj.Start);
             validateRendererReferences(nodes, rendererIds, renderers);
+            obj.PlatformPlan = compilePlatformPlan(nodes, renderers);
         end
 
         function accepted = validatePresentation(obj, view)
@@ -230,7 +235,33 @@ classdef (Sealed) Application
             runtime = labkit.ui.RuntimeKernel( ...
                 obj, initialProject, backend);
         end
+
+        function plan = platformPlanForRuntime(obj)
+            plan = obj.PlatformPlan;
+        end
     end
+end
+
+function plan = compilePlatformPlan(nodes, renderers)
+    compiled = repmat(struct( ...
+        "Kind", "", "Id", "", "ChildIds", strings(1, 0), ...
+        "Capabilities", strings(1, 0), "Signals", {{}}, ...
+        "RendererIds", strings(1, 0), "AxisIds", strings(1, 0), ...
+        "PageIds", strings(1, 0), "InitialPage", "", ...
+        "Configuration", struct()), 1, numel(nodes));
+    for k = 1:numel(nodes)
+        node = nodes{k};
+        childIds = string(cellfun(@(child) child.Id, node.Children, ...
+            "UniformOutput", false));
+        compiled(k) = struct( ...
+            "Kind", node.Kind, "Id", node.Id, "ChildIds", childIds, ...
+            "Capabilities", node.Capabilities, ...
+            "Signals", {node.Signals}, ...
+            "RendererIds", node.RendererIds, "AxisIds", node.AxisIds, ...
+            "PageIds", node.PageIds, "InitialPage", node.InitialPage, ...
+            "Configuration", node.configurationForCompiler());
+    end
+    plan = struct("Nodes", compiled, "Renderers", renderers);
 end
 
 function value = optionValue(options, name, defaultValue)
@@ -329,18 +360,13 @@ function callback = optionalFixedCallback(options, name, inputs, outputs)
     end
 end
 
-function value = validateStart(value, commands)
+function value = validateStart(value)
     if isempty(value)
         return;
     end
     if ~isa(value, "labkit.ui.Command") || value.Role ~= "invoke"
         error("labkit:ui:contract:CallbackRoleMismatch", ...
             "Application Start must be a Role=invoke Command.");
-    end
-    matches = cellfun(@(command) isequaln(command, value), commands);
-    if ~any(matches)
-        error("labkit:ui:contract:UnknownReference", ...
-            "Application Start must reference a declared Command.");
     end
 end
 
@@ -354,9 +380,7 @@ function values = validateCapabilities(values)
             "Application Capabilities must be text.");
     end
     values = reshape(values, 1, []);
-    allowed = [ ...
-        "dispatch", "workflow", "diagnostics", "dialogs", ...
-        "project", "render", "resources", "results"];
+    allowed = allCapabilities();
     if numel(unique(values)) ~= numel(values) || ...
             any(~ismember(values, allowed))
         error("labkit:ui:contract:InvalidValue", ...
@@ -364,15 +388,18 @@ function values = validateCapabilities(values)
     end
 end
 
-function values = validateCommands(values)
+function values = allCapabilities()
+    values = [ ...
+        "dispatch", "workflow", "diagnostics", "dialogs", ...
+        "project", "render", "resources", "results"];
+end
+
+function values = validateExtraCommands(values)
     if ~iscell(values) || (~isempty(values) && ~isrow(values)) || ...
             ~all(cellfun(@(value) isa(value, "labkit.ui.Command"), values))
         error("labkit:ui:contract:InvalidValue", ...
-            "Application Commands must be a row cell array of Command values.");
+            "Application ExtraCommands must be a row cell array of Command values.");
     end
-    ids = string(cellfun(@(value) value.Id, values, ...
-        "UniformOutput", false));
-    assertUnique(ids, "Command");
 end
 
 function [renderers, ids] = validateRenderers(renderers)
@@ -399,21 +426,35 @@ function assertUnique(values, label)
     end
 end
 
-function validateSignals(nodes, commands)
-    commandIds = string(cellfun(@(value) value.Id, commands, ...
-        "UniformOutput", false));
+function commands = collectCommands(nodes, extraCommands, start)
+    commands = {};
     for k = 1:numel(nodes)
         signals = nodes{k}.Signals;
         for s = 1:numel(signals)
-            signal = signals{s};
-            index = find(commandIds == signal.Id, 1);
-            if isempty(index) || ~isequaln(commands{index}, signal)
-                error("labkit:ui:contract:UnknownReference", ...
-                    "Layout signal references an undeclared Command: %s.", ...
-                    signal.Id);
-            end
+            commands{end + 1} = signals{s};
         end
     end
+    commands = [commands, extraCommands];
+    if ~isempty(start)
+        commands{end + 1} = start;
+    end
+    commands = uniqueCommands(commands);
+end
+
+function values = uniqueCommands(values)
+    uniqueValues = {};
+    for k = 1:numel(values)
+        value = values{k};
+        sameId = find(cellfun(@(candidate) candidate.Id == value.Id, ...
+            uniqueValues), 1);
+        if isempty(sameId)
+            uniqueValues{end + 1} = value;
+        elseif ~isequaln(uniqueValues{sameId}, value)
+            error("labkit:ui:contract:DuplicateId", ...
+                "Command ID %s has conflicting Command values.", value.Id);
+        end
+    end
+    values = uniqueValues;
 end
 
 function validateRendererReferences(nodes, rendererIds, ~)

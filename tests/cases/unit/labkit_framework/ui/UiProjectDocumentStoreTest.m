@@ -108,6 +108,65 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
             testCase.verifyEqual(runtime.State, originalState);
             testCase.verifyEqual(runtime.documentMetadata(), originalMetadata);
         end
+
+        function filePanelBindingOwnsPortableProjectSources(testCase)
+            setupLabKitTestPath();
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            projectFolder = fullfile(string(folder.Folder), "projects");
+            sourceFolder = fullfile(string(folder.Folder), "sources");
+            mkdir(projectFolder);
+            mkdir(sourceFolder);
+            sourcePath = fullfile(sourceFolder, "trace.csv");
+            file = fopen(sourcePath, "w");
+            cleaner = onCleanup(@() fclose(file));
+            fprintf(file, "time,value\n0,1\n");
+            clear cleaner
+            projectPath = fullfile(projectFolder, "bound.mat");
+            runtime = sourceDocumentApplication().createRuntimeForTesting();
+            state = runtime.State;
+            state.project.inputs.sources = runtime.sourceRecord( ...
+                "trace", "recording", sourcePath, true);
+
+            runtime.saveProject(state, projectPath);
+            saved = load(projectPath, "labkitProject");
+            runtime.restoreProject(projectPath, false);
+            paths = runtime.sourcePaths( ...
+                runtime.State.project.inputs.sources, strings(0, 1));
+
+            testCase.verifyEqual( ...
+                saved.labkitProject.sources.reference.relativePath, ...
+                "../sources/trace.csv");
+            testCase.verifyEqual( ...
+                saved.labkitProject.payload.inputs.sources.reference.relativePath, ...
+                "../sources/trace.csv");
+            testCase.verifyEqual(paths, string(sourcePath));
+        end
+
+        function missingRequiredBoundSourceRejectsRestore(testCase)
+            setupLabKitTestPath();
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            sourcePath = fullfile(string(folder.Folder), "temporary.csv");
+            file = fopen(sourcePath, "w");
+            cleaner = onCleanup(@() fclose(file));
+            fprintf(file, "synthetic");
+            clear cleaner
+            projectPath = fullfile(string(folder.Folder), "bound.mat");
+            runtime = sourceDocumentApplication().createRuntimeForTesting();
+            state = runtime.State;
+            state.project.inputs.sources = runtime.sourceRecord( ...
+                "trace", "recording", sourcePath, true);
+            runtime.saveProject(state, projectPath);
+            delete(sourcePath);
+            restored = sourceDocumentApplication().createRuntimeForTesting();
+            original = restored.State;
+
+            testCase.verifyError(@() ...
+                restored.restoreProject(projectPath, false), ...
+                "labkit:ui:runtime:MissingProjectSource");
+            testCase.verifyEqual(restored.State, original);
+        end
     end
 end
 
@@ -156,6 +215,29 @@ end
 
 function view = present(state)
 view = labkit.ui.Presentation().value("value", state.project.value);
+end
+
+function app = sourceDocumentApplication()
+project = labkit.ui.ProjectContract(Version=1, ...
+    Create=@createSourceProject, Validate=@validateSourceProject);
+layout = labkit.ui.Layout.workbench({ ...
+    labkit.ui.Layout.filePanel("sources", ...
+        Bind="project.inputs.sources")});
+app = labkit.ui.Application(Command="labkit_SourceDocumentProbe_app", ...
+    Id="probe.source.document", Title="Source document", Family="Tests", ...
+    AppVersion="1.0.0", Updated="2026-07-19", Requirements=[], ...
+    Project=project, Layout=layout);
+end
+
+function project = createSourceProject()
+project = struct("inputs", struct("sources", struct([])));
+end
+
+function accepted = validateSourceProject(project)
+accepted = isstruct(project) && isscalar(project) && ...
+    isfield(project, "inputs") && isstruct(project.inputs) && ...
+    isscalar(project.inputs) && isfield(project.inputs, "sources") && ...
+    isstruct(project.inputs.sources);
 end
 
 function envelope = currentEnvelope(appId, payloadVersion, payload)

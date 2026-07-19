@@ -28,6 +28,24 @@ files, records byte counts and SHA-256 values, derives aggregate status, and
 atomically writes the fixed `Result.ManifestName`; output creation remains
 App-owned.
 
+The platform inventory found one contract omission before App migration:
+opaque portable records had creation/reconciliation methods but no supported
+way for App code to obtain resolved paths. `RuntimeContext.sourcePaths`
+therefore joins the existing declared `project` capability after a cross-App
+inventory confirmed that source-path reads are required by the file-backed
+Apps. It returns a column string array and does not expose the portable
+reference representation.
+
+The authoring-ergonomics hardening pass also establishes the paved road:
+Layout signals are collected automatically instead of being repeated in
+Application, strict `project.*`/`session.*` bindings remove mechanical
+callbacks and presenter operations, runtime defaults plus bindings form the
+complete snapshot, `ProjectContract()` supplies the simple version-1 scalar
+struct contract, omitted capability metadata selects the standard capability
+set, and `appendStatus(message)` is unambiguously framework-owned. The
+executable budgets live in `UiAuthoringErgonomicsTest` and
+`authoring-ergonomics.md`.
+
 The implementation classes are sealed and hidden. MATLAB does not permit
 package class definitions in a `private` directory, so the files live at the
 `labkit.ui` package root with constructors and adapter operations restricted
@@ -37,13 +55,16 @@ without treating them as App-facing contracts.
 
 Focused evidence:
 
-- `UiRuntimeKernelTest`: 5 of 5 tests passed, covering FIFO reentrancy,
+- `UiRuntimeKernelTest`: 6 of 6 tests passed, covering FIFO reentrancy,
   commit rollback, typed dispatch payloads, replacement/close cleanup, and
-  cleanup-failure continuation.
+  cleanup-failure continuation plus bound updates.
 - `UiRuntimeContextContractTest`: 2 of 2 tests passed.
-- `UiProjectDocumentStoreTest`: 5 of 5 tests passed, including atomic save,
+- `UiAuthoringErgonomicsTest`: 5 of 5 executable paved-road budgets passed.
+- `UiPortableSourceStoreTest`: 3 of 3 runtime-boundary tests passed.
+- `UiProjectDocumentStoreTest`: 7 of 7 tests passed, including atomic save,
   migration/import, wrong/newer rejection, recovery identity, failed-save
-  metadata isolation, and adapter-commit rollback.
+  metadata isolation, adapter-commit rollback, bound-source rebasing, and
+  missing-required-source rejection.
 - `UiResultWriterTest`: 4 of 4 tests passed, covering verified output
   metadata, missing output failure, aggregate status, and atomic cleanup.
 - `PublicApiDocumentationContractTest`: 8 of 8 tests passed.

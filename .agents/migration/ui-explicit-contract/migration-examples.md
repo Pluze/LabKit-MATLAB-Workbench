@@ -20,17 +20,22 @@ def = labkit.ui.runtime.define( ...
 After:
 
 ```matlab
-app = labkit.ui.application( ...
-    Id="example", ...
-    Project=projectContract(), ...
-    Layout=@buildLayout, ...
-    Present=@present);
-app = app.command(labkit.ui.command("run", @onRun, Role="invoke"));
-app = app.renderer("preview", @drawPreview);
+run = labkit.ui.Command("run", @onRun);
+layout = labkit.ui.Layout.workbench({ ...
+    labkit.ui.Layout.action("run", "Run", run)}, ...
+    Workspace=labkit.ui.Layout.workspace( ...
+        labkit.ui.Layout.previewArea( ...
+            "preview", Renderers="preview")));
+app = labkit.ui.Application( ...
+    Command="labkit_Example_app", Id="example", ...
+    Title="Example", Family="Examples", AppVersion="1.0.0", ...
+    Updated="2026-07-19", Requirements=[], ...
+    Project=projectContract(), Layout=layout, Present=@present, ...
+    Renderers=struct("preview", @drawPreview));
 ```
 
-The complete product metadata remains explicit; it is omitted here only to
-keep the seam comparison readable.
+Layout signals are collected automatically; no duplicate Command registry is
+maintained by the App.
 
 ## Presentation
 
@@ -46,7 +51,7 @@ view.previews.image = struct( ...
 After:
 
 ```matlab
-view = labkit.ui.presentation();
+view = labkit.ui.Presentation();
 view = view.enabled("run", state.session.canRun);
 view = view.text("status", state.session.status);
 view = view.plot("image", "preview", state.session.preview);
@@ -65,7 +70,7 @@ view.interactions.roi = struct( ...
     "Options", struct("color", [1 1 1]));
 ```
 
-After:
+Accepted semantic target (not production syntax until Phase 4 closes):
 
 ```matlab
 roi = labkit.ui.interaction.rectangle( ...
@@ -75,6 +80,11 @@ roi = labkit.ui.interaction.rectangle( ...
     Color=[1 1 1]);
 view = view.interaction(roi);
 ```
+
+The interaction example remains deliberately labelled as a target because the
+production interaction constructors and `Presentation.interaction` operation
+are not implemented yet. It must become an executable example when Phase 4
+closes; it is not currently an API promise.
 
 ## Callback and context
 
@@ -94,7 +104,7 @@ After:
 ```matlab
 function state = onFilesSelected(state, selection, context)
     state.session.selection.files = selection.Indices;
-    state = context.appendStatus(state, "Selection changed.");
+    context.appendStatus("Selection changed.");
 end
 ```
 

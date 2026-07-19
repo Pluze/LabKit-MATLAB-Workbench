@@ -4,7 +4,7 @@ classdef (Sealed) RuntimeContext < handle
     % Usage:
     %   context = labkit.ui.RuntimeContext()
     %   context.dispatch(command, payload)
-    %   state = context.appendStatus(state, message)
+    %   context.appendStatus(message)
     %   context.reportError(operation, exception)
     %   context.alert(message, title)
     %   result = context.choose(prompt, choices)
@@ -15,6 +15,8 @@ classdef (Sealed) RuntimeContext < handle
     %   result = context.saveProject(state, filepath)
     %   context.saveRecovery(state, filepath)
     %   record = context.sourceRecord(id, role, path, required)
+    %   paths = context.sourcePaths(sources)
+    %   paths = context.sourcePaths(sources, ids)
     %   sources = context.upsertSource(sources, record)
     %   sources = context.reconcileSources(current, incoming)
     %   surface = context.acquireRenderSurface(target)
@@ -67,6 +69,7 @@ classdef (Sealed) RuntimeContext < handle
     %       writing.
     %   record - Opaque runtime-owned portable source value.
     %   sources - Updated runtime-owned portable source collection.
+    %   paths - Column string array of resolved source paths.
     %   surface - Event-scoped restricted render surface.
     %   value - Stored resource value.
     %
@@ -115,10 +118,9 @@ classdef (Sealed) RuntimeContext < handle
             obj.invoke("dispatch", "dispatch", {command, payload}, 0);
         end
 
-        function state = appendStatus(obj, state, message)
+        function appendStatus(obj, message)
             message = scalarText(message, "message");
-            state = obj.invoke("appendStatus", "workflow", ...
-                {state, message}, 1);
+            obj.invoke("appendStatus", "workflow", {message}, 0);
         end
 
         function reportError(obj, operation, exception)
@@ -193,6 +195,24 @@ classdef (Sealed) RuntimeContext < handle
         function sources = reconcileSources(obj, current, incoming)
             sources = obj.invoke("reconcileSources", "project", ...
                 {current, incoming}, 1);
+        end
+
+        function paths = sourcePaths(obj, sources, ids)
+            if nargin < 3
+                ids = strings(0, 1);
+            elseif ~(ischar(ids) || isstring(ids) || iscellstr(ids))
+                error("labkit:ui:contract:InvalidValue", ...
+                    "RuntimeContext source ids must be text.");
+            else
+                ids = string(ids(:));
+            end
+            paths = obj.invoke("sourcePaths", "project", ...
+                {sources, ids}, 1);
+            if ~isstring(paths) || ~iscolumn(paths)
+                error("labkit:ui:runtime:InvariantFailure", ...
+                    "RuntimeContext sourcePaths backend must return " + ...
+                    "a column string array.");
+            end
         end
 
         function surface = acquireRenderSurface(obj, target)

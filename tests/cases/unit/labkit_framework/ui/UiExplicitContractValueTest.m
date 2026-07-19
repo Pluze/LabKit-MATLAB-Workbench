@@ -85,6 +85,16 @@ classdef UiExplicitContractValueTest < matlab.unittest.TestCase
             testCase.verifyEqual(app.Project.Version, 1);
         end
 
+        function simpleProjectContractNeedsNoCallbacks(testCase)
+            setupLabKitTestPath();
+            contract = labkit.ui.ProjectContract();
+
+            testCase.verifyEqual(contract.Version, 1);
+            testCase.verifyEqual(contract.Create(), struct());
+            testCase.verifyTrue(contract.Validate(struct("value", 1)));
+            testCase.verifyFalse(contract.Validate([]));
+        end
+
         function applicationValidatesLifecycleCallbacks(testCase)
             setupLabKitTestPath();
             start = labkit.ui.Command("start", @startApp);
@@ -93,7 +103,7 @@ classdef UiExplicitContractValueTest < matlab.unittest.TestCase
                 Title="Probe", Family="Tests", AppVersion="1.0.0", ...
                 Updated="2026-07-19", Requirements=[], ...
                 Layout=labkit.ui.Layout.workbench({}), ...
-                Commands={start}, Start=start, ...
+                Start=start, ...
                 Session=@createSession, Present=@present, ...
                 DebugSample=@debugSample);
 

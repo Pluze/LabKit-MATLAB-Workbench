@@ -6,6 +6,7 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
 
     properties (Access = private)
         Application
+        Sources
     end
 
     methods (Access = ?labkit.ui.RuntimeKernel)
@@ -16,6 +17,7 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
                     "Project document storage requires an Application with Project.");
             end
             obj.Application = application;
+            obj.Sources = labkit.ui.PortableSourceStore();
             nowUtc = utcNow();
             obj.Metadata = struct( ...
                 "id", newId(), ...
@@ -37,7 +39,9 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
 
         function saveRecovery(obj, state, filepath)
             filepath = projectPath(filepath);
-            envelope = obj.envelope(state, obj.Metadata);
+            candidate = obj.Metadata;
+            candidate.path = filepath;
+            envelope = obj.envelope(state, candidate);
             writeProjectFile(filepath, envelope);
         end
 
@@ -52,6 +56,7 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
             end
             [project, resume, document] = obj.readProject(filepath);
             project = obj.migrate(project, document.payloadVersion);
+            project = obj.resolveBoundSources(project, filepath);
             obj.validateProject(project);
             session = obj.createSession(project, resume);
             state = struct("project", project, "session", session);
@@ -82,6 +87,8 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
                 end
             end
             ui = labkit.ui.version();
+            [project, sources] = obj.rebaseBoundSources( ...
+                state.project, metadata.path);
             envelope = struct( ...
                 "format", "labkit.project", ...
                 "formatVersion", struct("major", 1, "minor", 0), ...
@@ -93,7 +100,8 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
                     "labkitUiVersion", string(ui.current), ...
                     "matlabRelease", string(version("-release")), ...
                     "platform", string(computer)), ...
-                "payload", state.project, ...
+                "sources", sources, ...
+                "payload", project, ...
                 "resume", resume);
         end
 
@@ -164,6 +172,69 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
             end
         end
 
+        function [project, collected] = rebaseBoundSources( ...
+                obj, project, filepath)
+            bindings = obj.projectSourceBindings();
+            collected = struct([]);
+            for path = bindings
+                sources = getProjectBinding(project, path);
+                sources = obj.Sources.rebase(sources, filepath);
+                project = setProjectBinding(project, path, sources);
+                if isempty(collected)
+                    collected = sources;
+                elseif ~isempty(sources)
+                    collected = [collected; sources];
+                end
+            end
+        end
+
+        function project = resolveBoundSources(obj, project, filepath)
+            for path = obj.projectSourceBindings()
+                sources = getProjectBinding(project, path);
+                [resolved, unresolved] = obj.Sources.resolve( ...
+                    sources, filepath);
+                project = setProjectBinding(project, path, resolved);
+                if isempty(unresolved)
+                    continue;
+                end
+                callback = obj.Application.Project.RelinkSources;
+                if isempty(callback)
+                    error("labkit:ui:runtime:MissingProjectSource", ...
+                        "Project has unresolved required source files.");
+                end
+                project = callback(project, unresolved, filepath);
+                if isempty(project)
+                    error("labkit:ui:runtime:ProjectLoadCancelled", ...
+                        "Project source relinking was cancelled.");
+                end
+                sources = getProjectBinding(project, path);
+                [resolved, remaining] = obj.Sources.resolve( ...
+                    sources, filepath);
+                if ~isempty(remaining)
+                    error("labkit:ui:runtime:MissingProjectSource", ...
+                        "Project source relinking left required files unresolved.");
+                end
+                project = setProjectBinding(project, path, resolved);
+            end
+        end
+
+        function bindings = projectSourceBindings(obj)
+            plan = obj.Application.platformPlanForRuntime();
+            bindings = strings(1, 0);
+            for k = 1:numel(plan.Nodes)
+                node = plan.Nodes(k);
+                if node.Kind ~= "filePanel" || ...
+                        ~isfield(node.Configuration, "Bind")
+                    continue;
+                end
+                path = node.Configuration.Bind;
+                if startsWith(path, "project.")
+                    bindings(end + 1) = extractAfter(path, "project.");
+                end
+            end
+            bindings = unique(bindings, "stable");
+        end
+
         function validateProject(obj, project)
             if ~isstruct(project) || ~isscalar(project)
                 invalidProject("Project payload must be a scalar struct.");
@@ -219,6 +290,35 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
                 "path", "", "dirty", true);
         end
     end
+end
+
+function value = getProjectBinding(project, path)
+parts = cellstr(split(path, "."));
+value = project;
+for k = 1:numel(parts)
+    name = parts{k};
+    if ~isstruct(value) || ~isscalar(value) || ~isfield(value, name)
+        invalidProject("Bound source path is absent: project.%s.", path);
+    end
+    value = value.(name);
+end
+end
+
+function project = setProjectBinding(project, path, value)
+project = assignProjectField(project, cellstr(split(path, ".")), value, path);
+end
+
+function owner = assignProjectField(owner, parts, value, path)
+name = parts{1};
+if ~isstruct(owner) || ~isscalar(owner) || ~isfield(owner, name)
+    invalidProject("Bound source path is absent: project.%s.", path);
+end
+if numel(parts) == 1
+    owner.(name) = value;
+else
+    owner.(name) = assignProjectField( ...
+        owner.(name), parts(2:end), value, path);
+end
 end
 
 function writeProjectFile(filepath, labkitProject)

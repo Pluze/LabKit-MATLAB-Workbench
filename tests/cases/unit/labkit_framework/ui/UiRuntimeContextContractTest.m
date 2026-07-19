@@ -14,26 +14,29 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             command = labkit.ui.Command("run", @runCommand);
             app = applicationWith(command, ...
-                ["dispatch", "workflow", "dialogs", "resources"]);
+                ["dispatch", "workflow", "dialogs", "project", "resources"]);
             store = containers.Map("KeyType", "char", "ValueType", "any");
             backend = struct( ...
                 "dispatch", @dispatch, ...
                 "appendStatus", @appendStatus, ...
                 "choose", @choose, ...
+                "sourcePaths", @sourcePaths, ...
                 "setResource", @setResource, ...
                 "getResource", @getResource, ...
                 "removeResource", @removeResource, ...
                 "clearResourceScope", @clearResourceScope);
             context = labkit.ui.RuntimeContext.createForRuntime(app, backend);
-            state = context.appendStatus(struct(), "ready");
+            context.appendStatus("ready");
             choice = context.choose("Continue?", ["yes", "no"]);
             context.setResource("document", "reader", 42, []);
             value = context.getResource("document", "reader");
             context.dispatch(command, []);
+            paths = context.sourcePaths(struct(), ["first", "second"]);
 
-            testCase.verifyEqual(state.status, "ready");
             testCase.verifyEqual(choice.Value, "yes");
             testCase.verifyEqual(value, 42);
+            testCase.verifyEqual(store("status"), "ready");
+            testCase.verifyEqual(paths, ["first"; "second"] + ".dat");
             testCase.verifyError(@() context.reportError( ...
                 "operation", MException("probe:error", "failure")), ...
                 "labkit:ui:runtime:InvariantFailure");
@@ -44,12 +47,16 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
             function dispatch(~, ~)
             end
 
-            function state = appendStatus(state, message)
-                state.status = message;
+            function appendStatus(message)
+                store("status") = message;
             end
 
             function result = choose(~, choices)
                 result = labkit.ui.DialogResult(choices(1));
+            end
+
+            function paths = sourcePaths(~, ids)
+                paths = ids + ".dat";
             end
 
             function setResource(scope, id, resource, ~)
@@ -79,7 +86,7 @@ function app = applicationWith(command, capabilities)
         Title="Probe", Family="Tests", AppVersion="1.0.0", ...
         Updated="2026-07-19", Requirements=[], ...
         Layout=labkit.ui.Layout.workbench({}), ...
-        Commands={command}, Capabilities=capabilities);
+        ExtraCommands={command}, Capabilities=capabilities);
 end
 
 function state = runCommand(state, ~)

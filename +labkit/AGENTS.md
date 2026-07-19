@@ -55,12 +55,18 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
   remain legal and unique; references must resolve before UI mutation.
 - Presentation must preserve unchanged graphics and viewports. Renderers own
   incremental overlay changes; interaction specs own user gestures.
-- New explicit-contract presentation values are complete snapshots; private
-  runtime reconciliation owns diffs. Signals reference Command values, and
-  Apps declare context capabilities instead of receiving an open service bag.
+- The explicit runtime composes complete presentation snapshots from Layout
+  defaults, strict state bindings, framework-owned state, and the App's
+  dynamic Presentation fragment; private reconciliation owns diffs.
+- Layout signals reference Command values and Application collects them.
+  `ExtraCommands` is only for programmatic dispatch. Ordinary Apps omit the
+  capability list; an explicit list is advanced strict-audit metadata.
 - Compile the immutable static Application graph once. Presentation commits
   validate against the cached graph and must not re-flatten layout on every
   update.
+- A new public UI capability needs repeated evidence from at least two Apps or
+  one framework-owned lifecycle/consistency requirement. Prefer framework
+  automation when repeated App callback or presenter glue is the evidence.
 - Persistence writes only the current project envelope. Ordered app migrations
   and declared legacy importers are read-only compatibility hooks and must not
   introduce app-id branches in the framework.
