@@ -55,7 +55,7 @@ function plan = scalePlan(items, opts)
 %   labkit_BatchImageCrop_app:InvalidScaleUnit - scaleUnit is unsupported.
 %
 % Example:
-%   cal = labkit.ui.interaction.scaleBarCalibration(20, 10, "um");
+%   cal = labkit.app.interaction.scaleCalibration(20, 10, "um");
 %   items = struct("scaleCalibration", cal);
 %   opts = struct("physicalWidth", 5, "physicalHeight", 3, ...
 %       "scaleUnit", "um", "targetPixelsPerUnit", 4);
@@ -63,7 +63,7 @@ function plan = scalePlan(items, opts)
 %   assert(plan.outputWidth == 20 && plan.outputHeight == 12)
 %
 % See also batch_crop.cropGeometry.cropScaledImage,
-%   labkit.ui.interaction.scaleBarCalibration
+%   labkit.app.interaction.scaleCalibration
 
     if nargin < 2
         opts = struct();

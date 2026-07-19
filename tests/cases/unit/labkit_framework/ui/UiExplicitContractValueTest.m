@@ -102,6 +102,19 @@ classdef UiExplicitContractValueTest < matlab.unittest.TestCase
             testCase.verifyFalse(contract.Validate([]));
         end
 
+        function projectMigrationCanCreatePortableSourceValue(testCase)
+            setupLabKitTestPath();
+            source = labkit.app.project.sourceRecord( ...
+                "image1", "cropSource", "synthetic.png");
+
+            testCase.verifyEqual(source.id, "image1");
+            testCase.verifyEqual(source.role, "cropSource");
+            testCase.verifyTrue(source.required);
+            testCase.verifyError(@() labkit.app.project.sourceRecord( ...
+                "", "cropSource", "synthetic.png"), ...
+                "labkit:app:contract:InvalidValue");
+        end
+
         function applicationValidatesLifecycleCallbacks(testCase)
             setupLabKitTestPath();
             app = labkit.app.Definition( ...

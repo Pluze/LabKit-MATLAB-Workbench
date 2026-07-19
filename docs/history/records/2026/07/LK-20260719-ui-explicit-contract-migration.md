@@ -12,6 +12,7 @@ component: `labkit_ChronoOverlay_app` | `1.4.7 -> 1.5.0`
 component: `labkit_VTResistance_app` | `1.4.7 -> 1.5.0`
 component: `labkit_GaitAnalysis_app` | `2.0.8 -> 2.1.0`
 component: `labkit_DICPreprocess_app` | `1.5.8 -> 1.6.0`
+component: `labkit_BatchImageCrop_app` | `1.7.7 -> 1.8.0`
 component: `labkit_TTestWizard_app` | `1.0.1 -> 1.1.0`
 scope: App Framework
 scope: Electrochem
@@ -83,6 +84,12 @@ requiring the later managed-interaction vocabulary.
   registration, managed crop and mask editors, two-axis rendering, edit replay,
   and result-package exports owned by its analysis, mask, and result
   capabilities.
+- Migrated Batch Image Crop to framework-owned source selection plus
+  App-owned duplicate crop tasks, direct crop-center and scale-reference
+  interactions, capability snapshots, and result-package export.
+- Added `labkit.app.project.sourceRecord` so pure payload migrations can
+  convert legacy paths into portable sources without constructing the
+  framework-owned reference representation.
 - Corrected folder chooser dispatch to its one-path backend contract and
   applied table data before table selection during native reconciliation, so
   a selection may legally target rows introduced by the same snapshot.
@@ -105,7 +112,10 @@ Gait Analysis retains its Video Marker payload contract, project migrations,
 step segmentation, gait metrics, CSV set, and version-3 project payload. File
 identities and portable paths remain runtime-owned. DIC Preprocess retains its
 rigid registration, common crop, mask editing, image/mask exports, and
-version-1 project payload. Existing payload migrations remain App-owned.
+version-1 project payload. Batch Image Crop retains duplicate tasks per source,
+fixed-pixel and physical crops, rotation/padding, scale calibration, scale-bar
+placement, image/CSV exports, and its version-2 payload. Existing payload
+migrations remain App-owned.
 
 ## Compatibility and migration
 
@@ -133,6 +143,9 @@ registration/crop/mask helpers, export manifests, native two-axis layout,
 paired-anchor alignment, and managed crop interaction. Framework regression
 tests cover cell-valued event payloads and native multi-axis interaction
 bridging.
+Batch Image Crop focused tests cover crop geometry, padding, physical scaling,
+project migration, duplicate tasks, output planning/writes, native semantic
+layout, current-center editing, and standard result manifests.
 
 ## Evidence
 
@@ -140,6 +153,7 @@ bridging.
 - [VT Resistance](../../../../apps/electrochemistry/vt-resistance/README.md)
 - [Gait Analysis](../../../../apps/gait/gait-analysis/README.md)
 - [DIC Preprocess](../../../../apps/dic/dic-preprocess/README.md)
+- [Batch Image Crop](../../../../apps/image-measurement/batch-crop/README.md)
 - [LabKit App Framework](../../../../framework/README.md)
 - [Build a Complete App](../../../../development/build-apps/complete-app.md)
 

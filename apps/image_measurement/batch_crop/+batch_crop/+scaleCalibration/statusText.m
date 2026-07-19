@@ -1,7 +1,7 @@
 % App-owned scale status view helper. Expected caller: batch-crop app summary
 % refresh. Inputs are state, current index, mode, physical size, and unit.
 % Output is display text only.
-function text = scaleStatusText(state, currentIndex, mode, physicalSize, unitName)
+function text = statusText(state, currentIndex, mode, physicalSize, unitName)
 %SCALESTATUSTEXT Build the Scale tab status line.
 
     if ~strcmpi(string(mode), "Physical")

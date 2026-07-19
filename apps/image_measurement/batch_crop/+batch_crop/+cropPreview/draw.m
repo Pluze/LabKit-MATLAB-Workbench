@@ -1,8 +1,9 @@
-% Expected caller: the registered Batch Crop V2 renderer. Inputs are a
+% Expected caller: the Batch Crop App SDK plot declaration. Inputs are a
 % target axes and prepared preview/crosshair/scale-bar model. Side effects
 % are limited to the supplied axes.
-function renderCropPreview(ax, model)
-    labkit.ui.plot.clear(ax, "ResetScale", true);
+function draw(axesById, model)
+    ax = axesById.main;
+    labkit.app.plot.clearAxes(ax);
     if isempty(model.imageData)
         title(ax, char(model.title));
         xlabel(ax, '');

@@ -1,7 +1,7 @@
 % Expected caller: batch crop UI preview drawing and view-capture paths.
 % Input is one crop-canvas geometry struct. Output is display placement data
 % used to align padded canvas coordinates to source-image coordinates.
-function placement = previewPlacement(geometry)
+function placement = placement(geometry)
 %PREVIEWPLACEMENT Compute preview x/y data and canvas offset.
 
     sourceCenter = batch_crop.cropGeometry.sourceCenterFromSize( ...

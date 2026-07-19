@@ -1,7 +1,7 @@
 % App-owned file-list view helper. Expected caller: batch-crop runner refresh
 % logic and package tests. Inputs are crop items and the current scale mode.
 % Output is filePanel entry structs with user-facing workflow status labels.
-function entries = filePanelEntries(items, scaleMode)
+function entries = taskEntries(items, scaleMode)
 %FILEPANELENTRIES Build filePanel entries with crop readiness status labels.
 
     entries = repmat(struct('path', "", 'status', ""), numel(items), 1);

@@ -2,7 +2,7 @@
 % redraw logic. Inputs are the full crop geometry and placement metadata.
 % Output preserves full canvas coordinate extents while optionally lowering
 % preview CData resolution for responsive GUI rendering.
-function render = previewRenderData(geometry, placement, opts)
+function render = renderData(geometry, placement, opts)
 %PREVIEWRENDERDATA Prepare a lightweight preview image for axes rendering.
 
     if nargin < 3

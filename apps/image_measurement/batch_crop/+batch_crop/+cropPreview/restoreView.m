@@ -1,7 +1,7 @@
 % App-owned preview view helper. Expected caller: batch-crop app redraw logic.
 % Inputs are preview axes, a captured view state, crop geometry, and placement.
 % Side effect is limited to restoring axes limits when the state is valid.
-function restorePreviewView(previewAxes, state, geometry, placement)
+function restoreView(previewAxes, state, geometry, placement)
 %RESTOREPREVIEWVIEW Restore source-coordinate preview limits after redraw.
 
     if isempty(state) || ~isstruct(state) || ~isfield(state, 'valid') || ~state.valid

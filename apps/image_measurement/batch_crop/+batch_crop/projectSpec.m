@@ -1,18 +1,16 @@
-% App-owned durable Batch Crop contract. Runtime V2 calls the one-step
+% App-owned durable Batch Crop contract. The App SDK calls the one-step
 % migration entry for version-1 payloads, then validates the version-2 task
 % and source-record structure.
 function spec = projectSpec()
-    spec = struct( ...
-        "Version", 2, ...
-        "Create", @createProject, ...
-        "Validate", @validateProject, ...
-        "Migrate", @migrateProject);
+    spec = labkit.app.project.Schema(Version=2, ...
+        Create=@createProject, Validate=@validateProject, ...
+        Migrate=@migrateProject);
 end
 
 function project = createProject()
     project = struct();
     project.inputs = struct( ...
-        "sources", labkit.ui.runtime.emptySourceRecords(), ...
+        "sources", emptySources(), ...
         "items", repmat(batch_crop.cropTasks.emptyTask(), 0, 1));
     project.parameters = struct( ...
         "cropWidth", 1024, ...
@@ -34,6 +32,14 @@ function project = createProject()
         "lastExportFingerprint", "", ...
         "resultManifestPath", "");
     project.extensions = struct();
+end
+
+function sources = emptySources()
+reference = struct("schemaVersion", 1, "relativePath", "", ...
+    "originalPath", "", "fileName", "");
+prototype = struct("id", "", "required", true, "role", "", ...
+    "reference", {reference});
+sources = repmat(prototype, 0, 1);
 end
 
 function project = migrateProject(project, fromVersion)
@@ -58,32 +64,25 @@ function project = migrateVersionOne(project)
         return;
     end
     items = project.inputs.items;
-    sources = project.inputs.sources;
-    sourcePaths = labkit.ui.runtime.sourcePaths(sources);
-    addedSources = cell(numel(items), 1);
-    addedPaths = strings(numel(items), 1);
-    addedCount = 0;
+    sources = struct([]);
+    sourcePaths = strings(0, 1);
     for k = 1:numel(items)
         path = string(items(k).path);
-        paths = [sourcePaths; addedPaths(1:addedCount)];
-        match = find(paths == path, 1, 'first');
+        match = find(sourcePaths == path, 1, 'first');
         if isempty(match)
-            addedCount = addedCount + 1;
-            sourceId = "image" + string(numel(sources) + addedCount);
-            source = labkit.ui.runtime.sourceRecord( ...
+            sourceId = "image" + string(numel(sources) + 1);
+            source = labkit.app.project.sourceRecord( ...
                 sourceId, "cropSource", path, true);
-            addedSources{addedCount} = source;
-            addedPaths(addedCount) = path;
-        elseif match <= numel(sources)
-            sourceId = string(sources(match).id);
+            if isempty(sources)
+                sources = source;
+            else
+                sources(end + 1, 1) = source;
+            end
+            sourcePaths(end + 1, 1) = path;
         else
-            added = addedSources{match - numel(sources)};
-            sourceId = string(added.id);
+            sourceId = string(sources(match).id);
         end
         items(k).sourceId = sourceId;
-    end
-    if addedCount > 0
-        sources = [sources(:); vertcat(addedSources{1:addedCount})];
     end
     project.inputs.items = rmfield(items, 'path');
     project.inputs.sources = sources;

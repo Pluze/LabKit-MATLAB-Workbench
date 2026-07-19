@@ -1,185 +1,83 @@
 classdef GuiLayoutBatchCropTest < matlab.unittest.TestCase
-    %GUILAYOUTBATCHCROPTEST Verify batch crop GUI layout contracts.
-
+    % Verify Batch Crop through the explicit App SDK runtime.
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
-        function batch_crop_workflow_exports_synthetic_crop(testCase)
+        function nativeLayoutUsesSemanticTargets(testCase)
             setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
+            helpers = guiTestHelpers();
+            helpers.assertUifigureAvailable();
+            backend = struct("alert", @(~, ~) []);
+            runtime = batch_crop.definition().createMatlabRuntime([], backend);
+            cleanup = onCleanup(@() runtime.close());
+            figure = runtime.figureHandle();
+            ids = ["images", "duplicateImage", "removeCurrentTask", ...
+                "cropWidth", "rotation", "centerX", ...
+                "measureScaleReference", "scaleReferencePixels", ...
+                "placeScaleBar", "exportCrops", "resultTable", ...
+                "preview"];
+            for id = ids
+                testCase.verifyEqual(numel(findall( ...
+                    figure, "Tag", id)), 1);
+            end
+            clear cleanup
+        end
 
-            folder = tempname;
+        function cropTasksCenterAndExportSyntheticImages(testCase)
+            setupLabKitTestPath();
+            helpers = guiTestHelpers();
+            helpers.assertUifigureAvailable();
+            folder = string(tempname);
             mkdir(folder);
             folderCleanup = onCleanup(@() removeTempFolder(folder));
-            sourcePath = fullfile(folder, 'source.png');
-            secondSourcePath = fullfile(folder, 'source_second.png');
-            imwrite(syntheticCropImage(), sourcePath);
-            imwrite(rot90(syntheticCropImage()), secondSourcePath);
+            sourcePath = fullfile(folder, "source.png");
+            imageData = syntheticCropImage();
+            imwrite(imageData, sourcePath);
+            backend = struct("alert", @(~, ~) []);
+            runtime = batch_crop.definition().createMatlabRuntime([], backend);
+            runtimeCleanup = onCleanup(@() runtime.close());
+            figure = runtime.figureHandle();
 
-            [fig, debug] = labkit_BatchImageCrop_app("debug");
-            drawnow;
-            assertBatchCropLayout(h, fig);
-            assert(debug.enabled && debug.traceEnabled, ...
-                'Batch crop debug launch should return an enabled trace logger.');
-            assertAnyTextAreaContains(h, fig, 'Debug sample generation enabled', ...
-                'Batch crop debug launch should mirror trace lines into the visible Log tab.');
-            driver = labkitWorkflowDriver(fig);
-            testCase.verifyTrue(isfile(debug.manifestFile), ...
-                'Batch crop debug launch should record a sample manifest.');
-            testCase.verifyEqual(char(driver.fileStatus('images')), 'No images loaded', ...
-                'Batch crop debug launch should not preload generated samples.');
-
-            driver.chooseFiles('images', sourcePath);
-
-            driver.click('Add images or folder');
-            assert(driver.enabled('useImageCenter') && ...
-                driver.enabled('useImageXCenter') && driver.enabled('useImageYCenter'), ...
-                'Center alignment buttons should enable after a source image loads.');
-            assert(driver.enabled('exportCrops'), ...
-                'Batch crop export should enable after a source image loads.');
-            assert(contains(driver.fileStatus('images'), '1'), ...
-                'Batch crop image file status should report the loaded image count.');
-            assert(any(contains(driver.fileListItems('images'), 'source.png')), ...
-                'Batch crop file list should show the synthetic source image.');
-            ui = getappdata(fig, 'labkitUiRegistry');
-            testCase.verifyEqual(string(ui.controls.rotation.slider.Enable), "on");
-            testCase.verifyEqual(ui.controls.rotation.valueSpinner.Step, 0.1);
-            testCase.verifyEqual(string(ui.controls.paddingPercent.slider.Enable), "on");
-            testCase.verifyEqual(string(ui.controls.centerX.slider.Enable), "on");
-            testCase.verifyEqual(string(ui.controls.centerY.slider.Enable), "on");
-            testCase.verifyEqual(ui.controls.cropWidth.slider.Limits, [1 120]);
-            testCase.verifyEqual(ui.controls.cropHeight.slider.Limits, [1 120]);
-            testui.control.setValue(ui, 'cropWidth', 20);
-            ui.controls.cropWidth.valueSpinner.ValueChangedFcn( ...
-                ui.controls.cropWidth.valueSpinner, struct('PreviousValue', 34));
-            h.waitForUiIdle(fig);
-            testCase.verifyEqual(testui.control.getValue(ui, 'cropWidth'), 20, ...
-                'User crop-size edits should survive the migrated runtime render pass.');
-            testui.control.setValue(ui, 'scaleMode', 'Physical');
-            ui.controls.scaleMode.valueHandle.ValueChangedFcn( ...
-                ui.controls.scaleMode.valueHandle, struct());
-            h.waitForUiIdle(fig);
-            testCase.verifyEqual(string(ui.controls.physicalWidth.slider.Enable), "on");
-            testCase.verifyEqual(string(ui.controls.physicalHeight.slider.Enable), "on");
-            testCase.verifyEqual(string(ui.controls.targetPixelsPerUnit.slider.Enable), "on");
-            testCase.verifyEqual(string(ui.controls.maxUpsamplePercent.slider.Enable), "on");
-            testui.control.setValue(ui, 'scaleMode', 'Pixels');
-            ui.controls.scaleMode.valueHandle.ValueChangedFcn( ...
-                ui.controls.scaleMode.valueHandle, struct());
-            h.waitForUiIdle(fig);
-
-            driver.click('Use XY center');
-            data = driver.tableData('resultTable');
-            assert(any(strcmp(string(data(:, 1)), 'Confirmed centers') & ...
-                strcmp(string(data(:, 2)), '1 / 1')), ...
-                'Using the image center should confirm the current crop center.');
-
-            driver.click('Export cropped images');
-            outputFolder = fullfile(folder, 'batch_crop');
-            manifestFiles = dir(fullfile(outputFolder, '*manifest*.csv'));
-            cropFiles = dir(fullfile(outputFolder, '*_crop.png'));
-            assert(~isempty(manifestFiles), ...
-                'Batch crop workflow should write a manifest CSV.');
-            assert(~isempty(cropFiles), ...
-                'Batch crop workflow should write a cropped image.');
-            assert(any(contains(string(driver.textAreaValue('details')), 'Last manifest')), ...
-                'Batch crop details should show the last manifest after export.');
-            resultManifestPath = fullfile(outputFolder, ...
-                'batch_crop_results.labkit.json');
-            testCase.verifyTrue(isfile(resultManifestPath), ...
-                'Batch crop workflow should write a standard LabKit result manifest.');
-            resultManifest = jsondecode(fileread(resultManifestPath));
-            testCase.verifyEqual(string(resultManifest.format), "labkit.result");
-            testCase.verifyGreaterThanOrEqual(numel(resultManifest.outputs), 2);
-
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
-                'Batch crop workflow must execute through runtime V2.');
-            testCase.verifyFalse(isfield(runtime.state, 'tools'), ...
-                'Batch crop canonical state must not own live interaction tools.');
-            testCase.verifyTrue(any([runtime.resources.scope] == "interaction"), ...
-                'Batch crop ROI placement should be runtime-owned.');
-            cropResource = runtime.resources( ...
-                [runtime.resources.scope] == "interaction" & ...
-                [runtime.resources.id] == "cropCenter").value;
-            testCase.verifyEqual(cropResource.spec.Kind, "pointSlots", ...
-                'Crop placement should use the Imager-style center drag handle.');
+            runtime.applyFileSelection("images", sourcePath, 1);
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.inputs.items), 1);
             testCase.verifyTrue( ...
-                cropResource.spec.Options.placeSelectedOnBackground, ...
-                'Crop background clicks should remain a one-step placement action.');
-            projectPath = fullfile(folder, 'batch-crop-project.mat');
-            labkit.ui.runtime.saveState(fig, projectPath);
-            saved = load(projectPath, 'labkitProject');
-            testCase.verifyEqual(string(saved.labkitProject.format), ...
-                "labkit.project");
-            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 2);
-            testCase.verifyFalse(isfield( ...
-                saved.labkitProject.payload.inputs.items, 'image'), ...
-                'Batch crop projects must not persist decoded image pixels.');
-            testCase.verifyFalse(isfield( ...
-                saved.labkitProject.payload.inputs.items, 'path'), ...
-                'Crop tasks should reference the canonical source record.');
-            testCase.verifyFalse(isfield(saved.labkitProject.payload, 'session'), ...
-                'Batch crop project files should exclude session/cache state.');
+                batch_crop.sourceFiles.hasCurrentImage(runtime.State));
+            runtime.applyBinding("cropWidth", 20);
+            runtime.invokeAction("useImageCenter");
+            runtime.invokeAction("duplicateImage");
+            runtime.invokeAction("useImageCenter");
 
-            testui.control.setValue(ui, 'cropWidth', 30);
-            ui.controls.cropWidth.valueSpinner.ValueChangedFcn( ...
-                ui.controls.cropWidth.valueSpinner, struct('PreviousValue', 20));
-            h.waitForUiIdle(fig);
-            labkit.ui.runtime.loadState(fig, projectPath);
-            h.waitForUiIdle(fig);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(runtime.state.project.parameters.cropWidth, 20, ...
-                'Project reopen should restore durable crop parameters.');
-            testCase.verifyEqual(numel(runtime.state.project.inputs.items), 1, ...
-                'Project reopen should restore durable crop tasks.');
-            testCase.verifyTrue(runtime.state.project.inputs.items(1).centerSet, ...
-                'Project reopen should preserve confirmed crop centers.');
-            testCase.verifyFalse(isfield(runtime.state.session.cache, 'tools'), ...
-                'Project reopen should construct a fresh resource-free session cache.');
-            testCase.verifyGreaterThan(numel(ui.controls.preview.primaryAxes.Children), 0, ...
-                'Project reopen should rebuild the preview from durable image data.');
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.inputs.items), 2);
+            testCase.verifyTrue(all( ...
+                [runtime.State.project.inputs.items.centerSet]));
+            testCase.verifyEqual( ...
+                runtime.State.project.parameters.cropWidth, 20);
+            testCase.verifyNotEmpty(findall( ...
+                figure, "Tag", "preview").Children);
 
-            driver.chooseFiles('images', secondSourcePath);
-            driver.click('Add images or folder');
-            assert(contains(driver.fileStatus('images'), '2'), ...
-                'Batch crop append should preserve the existing crop task.');
-            assert(contains(driver.fileSelection('images'), 'source_second.png'), ...
-                'Batch crop append should select the newly added image.');
+            runtime.invokeAction("exportCrops");
 
-            driver.click('Duplicate image');
-            h.waitForUiIdle(fig);
-            assert(contains(driver.fileStatus('images'), '3'), ...
-                'Duplicating the current crop task should redraw without invalid overlay coordinates.');
+            outputFolder = fullfile(folder, "batch_crop");
+            testCase.verifyNotEmpty(dir(fullfile( ...
+                outputFolder, "*_crop.png")));
+            testCase.verifyNotEmpty(dir(fullfile( ...
+                outputFolder, "*manifest*.csv")));
+            testCase.verifyTrue(isfile(fullfile( ...
+                outputFolder, "batch_crop_results.labkit.json")));
+            testCase.verifyTrue(strlength( ...
+                runtime.State.project.results.resultManifestPath) > 0);
+            clear runtimeCleanup folderCleanup
         end
     end
 end
 
-function assertBatchCropLayout(h, fig)
-    h.assertStandardWorkbenchLayout(fig);
-    h.assertButtonContract(fig, {'Add images or folder', ...
-        'Remove selected', 'Clear images', ...
-        'Duplicate image', 'Previous image', 'Next image', 'Use XY center', ...
-        'Use X center', 'Use Y center', ...
-        'Choose export folder', 'Export cropped images', ...
-        'Measure reference pixels', 'Place scale bar'});
-    h.assertDropdownGroups(fig, [ ...
-        h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1), ...
-        h.dropdownGroup({'Pixels', 'Physical'}, 1), ...
-        h.dropdownGroup({'m', 'cm', 'mm', 'um', 'nm'}, 2), ...
-        h.dropdownGroup({'Bottom center', 'Bottom left', 'Bottom right', ...
-            'Top center', 'Top left', 'Top right'}, 1), ...
-        h.dropdownGroup({'Black', 'White'}, 1)]);
-    h.assertTabTitles(fig, {'Files + Analysis', 'Scale', 'Summary + Results', 'Log'});
-end
-
-function img = syntheticCropImage()
-    [x, y] = meshgrid(1:48, 1:36);
-    img = uint8(mod(x .* 5 + y .* 7, 256));
+function imageData = syntheticCropImage()
+[x, y] = meshgrid(1:48, 1:36);
+imageData = uint8(mod(x .* 5 + y .* 7, 256));
 end
 
 function removeTempFolder(folder)
-    if exist(folder, 'dir') == 7
-        rmdir(folder, 's');
-    end
+if exist(folder, "dir") == 7
+    rmdir(folder, "s");
+end
 end

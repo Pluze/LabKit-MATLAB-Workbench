@@ -98,6 +98,9 @@ and renderer signatures, and builds one private native platform plan.
   policy.
 - Use `labkit.app.project.Schema`, `labkit.app.result.File`, and
   `labkit.app.result.Package` only when those optional capabilities exist.
+- Use `labkit.app.project.sourceRecord` only in pure project creation or
+  migration code that must turn a legacy path into a portable source value;
+  runtime callbacks still resolve paths through `CallbackContext`.
 
 Runtime validates candidate state and the complete view snapshot before
 publishing either. The private MATLAB adapter maps semantic IDs to native

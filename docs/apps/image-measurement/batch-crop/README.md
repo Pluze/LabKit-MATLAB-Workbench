@@ -87,7 +87,7 @@ source-reconciliation workflow rather than by Batch Crop-specific path code.
 
 <!-- labkit-runnable-example -->
 ```matlab
-calibration = labkit.ui.interaction.scaleBarCalibration(20, 10, "um");
+calibration = labkit.app.interaction.scaleCalibration(20, 10, "um");
 items = struct("scaleCalibration", calibration);
 physicalOptions = struct( ...
     "physicalWidth", 5, "physicalHeight", 3, ...
@@ -126,30 +126,31 @@ when reproducing a physical-scale export outside the GUI.
 
 ## Framework Compatibility
 
-This App requires `labkit.ui >=7 <8` and `labkit.image >=2 <3`. Its single
-`definition.m` owns product metadata, dependencies, layout, actions,
-presentation, renderers, and optional capabilities. Durable creation,
-validation, and migration are concentrated in `projectSpec.m`; root
-`createSession.m` reconstructs transient state and lazily loads only the first
-selected image.
+This App requires `labkit.app >=1 <2` and `labkit.image >=2 <3`. Its single
+`definition.m` owns product metadata and the immutable App SDK contract.
+Durable creation, validation, and migration are concentrated in
+`projectSpec.m`; root `createSession.m` resolves task sources, reconstructs
+transient state, and lazily loads only the selected image.
 
 The project validator requires the App's item and source collections, validates
 their relationship and crop parameters, and leaves canonical bucket and source
 record shape to Runtime.
 
 Workflow helpers are owned by the capabilities they describe:
-`+sourceFiles`, `+cropTasks`, `+cropGeometry`, `+scaleCalibration`,
-`+resultFiles`, and `+userInterface`. There is no generic App lifecycle or
-state package. Busy state, source serialization, migration iteration, and
-portable-path reconciliation remain framework responsibilities.
+`+sourceFiles`, `+cropTasks`, `+cropGeometry`, `+cropPreview`,
+`+scaleCalibration`, and `+resultFiles`; `+workbench` is the only product
+assembly boundary. There is no generic App lifecycle, state, handler, or
+renderer registry. Source serialization, migration iteration, and
+portable-path resolution remain framework responsibilities.
 
-Variable-length crop manifest outputs begin with the framework's canonical
-empty output array, so zero-result and multi-result exports never construct an
-invalid placeholder ID.
+One source may own multiple durable crop tasks. Source removal reconciles
+those tasks, while duplicate and current-task removal remain explicit
+App-owned workflow decisions.
 
 Its session factory returns only App-specific selection, crop workflow, view,
-and image-cache fields. Runtime supplies absent canonical buckets and owns
-workflow-log initialization.
+resolved task paths, and image-cache fields. Runtime owns lifecycle and
+workflow status.
 
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+The semantic layout follows the [App Framework](../../../framework/README.md):
+controls and managed interactions reference their concrete capability-owned
+callbacks directly and resolve during definition construction.
