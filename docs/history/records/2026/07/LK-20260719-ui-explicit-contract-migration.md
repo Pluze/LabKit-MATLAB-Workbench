@@ -11,6 +11,7 @@ component: `labkit.app` | `new -> 1.0.0`
 component: `labkit_ChronoOverlay_app` | `1.4.7 -> 1.5.0`
 component: `labkit_VTResistance_app` | `1.4.7 -> 1.5.0`
 component: `labkit_GaitAnalysis_app` | `2.0.8 -> 2.1.0`
+component: `labkit_DICPreprocess_app` | `1.5.8 -> 1.6.0`
 component: `labkit_TTestWizard_app` | `1.0.1 -> 1.1.0`
 scope: App Framework
 scope: Electrochem
@@ -78,9 +79,16 @@ requiring the later managed-interaction vocabulary.
 - Migrated Gait Analysis to capability-owned source adoption, option
   invalidation, deterministic analysis, step selection/navigation, three-axis
   rendering, CSV-set export, and result packaging.
+- Migrated DIC Preprocess to two role-bound image sources, paired-anchor
+  registration, managed crop and mask editors, two-axis rendering, edit replay,
+  and result-package exports owned by its analysis, mask, and result
+  capabilities.
 - Corrected folder chooser dispatch to its one-path backend contract and
   applied table data before table selection during native reconciliation, so
   a selection may legally target rows introduced by the same snapshot.
+- Preserved cell-valued interaction payloads in the transactional event queue
+  and kept multi-target interaction bridge specifications scalar, enabling
+  paired-anchor gestures across two semantic axes.
 - Removed handler objects, callback tables, renderer registries, and their
   forwarding from the App authoring contract. Layout controls and plot areas
   reference concrete functions directly.
@@ -95,8 +103,9 @@ detection, resistance calculations, plot semantics, CSV schema, and version-1
 project payload while recomputing the decoded batch under shared settings.
 Gait Analysis retains its Video Marker payload contract, project migrations,
 step segmentation, gait metrics, CSV set, and version-3 project payload. File
-identities and portable paths remain runtime-owned. Existing payload migrations
-remain App-owned.
+identities and portable paths remain runtime-owned. DIC Preprocess retains its
+rigid registration, common crop, mask editing, image/mask exports, and
+version-1 project payload. Existing payload migrations remain App-owned.
 
 ## Compatibility and migration
 
@@ -119,12 +128,18 @@ rendering, result packaging, and project restore. Gait focused tests cover
 project migration, pose decoding, scientific calculations, CSV compatibility,
 typed table navigation, three-axis rendering, folder selection, result
 packaging, and project restore.
+DIC Preprocess focused tests cover project state, image loading, edit replay,
+registration/crop/mask helpers, export manifests, native two-axis layout,
+paired-anchor alignment, and managed crop interaction. Framework regression
+tests cover cell-valued event payloads and native multi-axis interaction
+bridging.
 
 ## Evidence
 
 - [Chrono Overlay](../../../../apps/electrochemistry/chrono-overlay/README.md)
 - [VT Resistance](../../../../apps/electrochemistry/vt-resistance/README.md)
 - [Gait Analysis](../../../../apps/gait/gait-analysis/README.md)
+- [DIC Preprocess](../../../../apps/dic/dic-preprocess/README.md)
 - [LabKit App Framework](../../../../framework/README.md)
 - [Build a Complete App](../../../../development/build-apps/complete-app.md)
 

@@ -68,7 +68,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.assertOpen();
             obj.validateDispatch(binding, payload);
             obj.Queue{end + 1} = struct( ...
-                "Binding", binding, "Payload", payload);
+                "Binding", binding, "Payload", {payload});
             if obj.Processing
                 return;
             end

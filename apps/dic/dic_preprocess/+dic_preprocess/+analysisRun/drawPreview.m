@@ -1,9 +1,14 @@
 % Expected caller: the registered DIC Preprocess V2 renderer. Inputs are one
 % semantic preview axes and prepared image/overlay model. Side effects are
 % limited to the supplied axes; overlays never become semantic state.
-function renderPreviewImage(ax, model)
+function drawPreview(axesById, model)
+drawOne(axesById.reference, model.reference);
+drawOne(axesById.moving, model.moving);
+end
+
+function drawOne(ax, model)
     if isempty(model.imageData)
-        labkit.ui.plot.clear(ax, "ResetScale", true);
+        labkit.app.plot.clearAxes(ax);
         title(ax, char(model.title));
         box(ax, 'on');
         return;
@@ -13,7 +18,7 @@ function renderPreviewImage(ax, model)
     sameImage = isscalar(background) && isvalid(background) && ...
         isequaln(background.CData, model.imageData);
     if ~sameImage
-        labkit.ui.plot.clear(ax, "ResetScale", true);
+        labkit.app.plot.clearAxes(ax);
         if ndims(model.imageData) == 2
             background = imagesc(ax, model.imageData);
             colormap(ax, gray(256));

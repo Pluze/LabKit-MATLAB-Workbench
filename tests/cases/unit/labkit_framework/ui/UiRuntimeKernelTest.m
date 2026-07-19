@@ -172,6 +172,31 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
             testCase.verifyEqual(string({sources.id}), ...
                 ["reference-1", "mask-1"]);
         end
+
+        function dispatchPreservesCellInteractionPayload(testCase)
+            setupLabKitTestPath();
+            interaction = labkit.app.interaction.pairedAnchors( ...
+                "pairs", @storePointPairs, Axes=["left", "right"]);
+            workspace = labkit.app.layout.workspace( ...
+                labkit.app.layout.plotArea("preview", @drawNothing, ...
+                    AxisIds=["left", "right"], ...
+                    Interactions={interaction}));
+            app = labkit.app.Definition( ...
+                Entrypoint="labkit_PairProbe_app", AppId="probe.pairs", ...
+                Title="Pair probe", Family="Tests", ...
+                AppVersion="1.0.0", Updated="2026-07-19", ...
+                Requirements=[], CreateSession=@createPairSession, ...
+                Workbench=labkit.app.layout.workbench({}, ...
+                    Workspace=workspace), ...
+                PresentWorkbench=@presentPairs);
+            runtime = app.createRuntimeForTesting();
+            pairs = {[1 2; 3 4], [5 6; 7 8]};
+
+            runtime.applyInteraction( ...
+                "pairs", "interactionChanged", pairs);
+
+            testCase.verifyEqual(runtime.State.session.pairs, pairs);
+        end
     end
 end
 
@@ -255,4 +280,21 @@ end
 
 function state = selectCells(state, selection, ~)
 state.session.cells = selection.CellIndices;
+end
+
+function session = createPairSession(~, ~)
+session = struct("pairs", {{zeros(0, 2), zeros(0, 2)}});
+end
+
+function view = presentPairs(state)
+view = labkit.app.view.Snapshot() ...
+    .renderPlot("preview", struct()) ...
+    .pairedAnchors("pairs", state.session.pairs, ImageSize=[10 10]);
+end
+
+function state = storePointPairs(state, pairs, ~)
+state.session.pairs = pairs;
+end
+
+function drawNothing(~, ~)
 end

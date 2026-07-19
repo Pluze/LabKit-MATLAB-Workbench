@@ -125,7 +125,7 @@ end
 
 function project = baseProject()
     definition = dic_preprocess.definition();
-    project = definition.project.Create();
+    project = definition.ProjectSchema.Create();
 end
 
 function project = populatedProject()

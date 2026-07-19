@@ -163,13 +163,13 @@ assumptions, output shape, limitations, failure behavior, and related APIs.
 
 ## Framework Compatibility
 
-The single `definition.m` owns product metadata, requirements, layout, and
-optional runtime capabilities. `projectSpec.m` keeps the complete durable
-version-1 schema, creation defaults, and validation together. `createSession.m`
-rebuilds decoded source images and replays applied alignment/crop steps because
-those images are transient caches rather than project data. The App requires
-`labkit.ui >=7 <8` and `labkit.image >=2 <3`; busy-state, managed interactions,
-optional source-slot lookup, and portable-reference serialization remain
+The single `definition.m` owns product metadata and the immutable App SDK
+contract. `projectSpec.m` keeps the complete durable version-1 schema,
+creation defaults, and validation together. `createSession.m` rebuilds decoded
+source images and replays applied alignment/crop steps because those images
+are transient caches rather than project data. The App requires
+`labkit.app >=1 <2` and `labkit.image >=2 <3`; managed interactions, portable
+source resolution, lifecycle, and presentation reconciliation remain
 framework-owned.
 
 The project validator requires the DIC image-source collection and checks
@@ -183,8 +183,10 @@ image cache is ready. There is no generic app-state service or alternate
 lifecycle layer.
 
 Its session factory returns only App-specific editing workflow and decoded
-cache fields. Runtime supplies absent canonical buckets and owns workflow-log
-initialization.
+cache fields. Layout controls bind directly to capability-owned callbacks,
+while `+workbench` composes the complete layout and presentation.
 
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+The semantic layout follows the
+[App callback contract](../../../framework/README.md): each control and managed
+interaction references its concrete callback directly and resolves during
+definition construction.

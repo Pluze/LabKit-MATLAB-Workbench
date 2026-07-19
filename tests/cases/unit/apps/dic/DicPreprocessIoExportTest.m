@@ -45,7 +45,7 @@ classdef DicPreprocessIoExportTest < matlab.unittest.TestCase
             testCase.verifyEqual(imread(maskPath), mask);
         end
 
-        function runtimeV2ProjectSessionAndPresenterContracts(testCase)
+        function appSdkProjectSessionAndPresenterContracts(testCase)
             setupLabKitTestPath();
 
             folder = string(tempname);
@@ -59,34 +59,31 @@ classdef DicPreprocessIoExportTest < matlab.unittest.TestCase
             imwrite(moving, movingPath);
 
             definition = dic_preprocess.definition();
-            testCase.verifyEqual(definition.contractVersion, 2);
-            project = definition.project.Create();
+            project = definition.ProjectSchema.Create();
             project.inputs.sources = [sourceRecord( ...
-                "referenceImage", "reference", referencePath); ...
-                sourceRecord("movingImage", "moving", movingPath)];
+                "referenceImage", "referenceImage", referencePath); ...
+                sourceRecord("movingImage", "movingImage", movingPath)];
             project.annotations.editSteps = struct( ...
                 "kind", "crop", "transform", [], ...
                 "rect", [1 1 2 2], "description", "crop");
 
-            testCase.verifyTrue(definition.project.Validate(project));
-            testCase.verifyEmpty(definition.project.Migrate, ...
+            testCase.verifyTrue(definition.ProjectSchema.Validate(project));
+            testCase.verifyEmpty(definition.ProjectSchema.Migrate, ...
                 'Payload version 1 should not invent a migration callback.');
             testCase.verifyFalse(hasDurableImagePixels(project), ...
                 'Decoded and derived image pixels belong to session cache.');
 
-            session = dic_preprocess.createSession(project);
+            runtime = definition.createRuntimeForTesting(project);
+            runtimeCleanup = onCleanup(@() runtime.close());
+            session = runtime.State.session;
             testCase.verifyEqual(session.cache.referenceImage, reference);
             testCase.verifyEqual(session.cache.movingImage, moving);
             testCase.verifySize(session.cache.currentReferenceImage, [3 3 3]);
-            state = struct('project', project, 'session', session);
-            presentation = dic_preprocess.userInterface.presentWorkbench(state);
-            testCase.verifyTrue(isscalar(presentation));
-            testCase.verifyNotEmpty( ...
-                presentation.previews.previewAxes.Axes.reference.Model.imageData);
-            testCase.verifyNotEmpty( ...
-                presentation.previews.previewAxes.Axes.current.Model.imageData);
-            testCase.verifyFalse(isfield(presentation, 'interactions'), ...
-                'Idle presentation should not construct an interaction runtime.');
+            presentation = runtime.Presentation;
+            testCase.verifyClass(presentation, "labkit.app.view.Snapshot");
+            testCase.verifyTrue( ...
+                definition.validateViewSnapshot(presentation));
+            clear runtimeCleanup
         end
     end
 end
