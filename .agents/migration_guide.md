@@ -24,7 +24,7 @@ ui-migration-debt: ui-explicit-contract-redesign
 - **Target boundary:** the next incompatible `labkit.ui` contract and every
   tracked App that consumes it
 - **Status:** Phase 0 inventory and Phase 1 contract gates complete; Phase 2
-  strict-kernel implementation ready to begin
+  strict-kernel implementation in progress
 - **User-visible reason:** App authors must be able to discover the framework
   from function, constructor, method, and parameter names. Invalid App code
   must fail at the contract boundary instead of being ignored, guessed, or
@@ -226,7 +226,7 @@ below.
   concrete `uigridlayout`, pixel, component, or registry fields.
 - Every layout constructor declares its complete name-value set and rejects
   unknown names.
-- `labkit.ui.layout.workspace` remains the single public entry for organizing
+- `labkit.ui.Layout.workspace` remains the single public entry for organizing
   the right-side workspace. A single-page App supplies one content layout.
   A multi-page App adds named pages through the returned workspace value or
   another operation owned by `workspace`; the replacement must not expose a parallel
@@ -243,9 +243,9 @@ below.
 A provisional shape, used only to test the concept count, is:
 
 ```matlab
-workspace = labkit.ui.layout.workspace(singleContent);
+workspace = labkit.ui.Layout.workspace(singleContent);
 
-workspace = labkit.ui.layout.workspace();
+workspace = labkit.ui.Layout.workspace();
 workspace = workspace.page("data", "Data", dataContent);
 workspace = workspace.page("plot", "Plot", plotContent);
 workspace = workspace.initialPage("data");
@@ -276,7 +276,7 @@ A provisional discoverable value-style API is:
 
 ```matlab
 function view = present(state)
-    view = labkit.ui.presentation();
+    view = labkit.ui.Presentation();
     view = view.value("worksheet", state.session.sheet);
     view = view.choices("group", state.session.groupNames);
     view = view.table("dataTable", state.session.tableModel);

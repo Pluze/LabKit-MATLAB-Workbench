@@ -516,10 +516,19 @@ function item = readApiItem(repoRoot, filepath, origin, owner)
     symbol = strjoin([packageParts; functionName], ".");
 
     lines = readlines(filepath, "EmptyLineRule", "read");
-    start = find(startsWith(strtrim(lines), "function"), 1);
+    functionStart = find(startsWith(strtrim(lines), "function"), 1);
+    classStart = find(startsWith(strtrim(lines), "classdef"), 1);
+    starts = [functionStart, classStart];
+    starts = starts(~isnan(starts) & starts > 0);
+    if isempty(starts)
+        start = [];
+    else
+        start = min(starts);
+    end
     if isempty(start)
-        error("LabKit:Docs:MissingFunction", ...
-            "Public API file has no function declaration: %s", relative);
+        error("LabKit:Docs:MissingDeclaration", ...
+            "Public API file has no function or class declaration: %s", ...
+            relative);
     end
     finish = start;
     while finish < numel(lines) && endsWith(strip(lines(finish)), "...")

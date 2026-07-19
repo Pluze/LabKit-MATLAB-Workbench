@@ -1,0 +1,179 @@
+classdef (Sealed) Presentation
+    %PRESENTATION Build one immutable complete visible-state snapshot.
+    %
+    % Usage:
+    %   view = labkit.ui.Presentation()
+    %   view = view.value(target, value)
+    %   view = view.choices(target, choices)
+    %   view = view.limits(target, limits)
+    %   view = view.enabled(target, enabled)
+    %   view = view.visible(target, visible)
+    %   view = view.text(target, text)
+    %   view = view.files(target, paths)
+    %   view = view.selection(target, selection)
+    %   view = view.table(target, model)
+    %   view = view.plot(target, renderer, model)
+    %
+    % Description:
+    %   Presentation is a closed immutable operation vocabulary. One value
+    %   describes the complete current visible state; Application validates
+    %   targets, capabilities, renderer references, and completeness before a
+    %   runtime may reconcile it. Apps do not author patches or generic
+    %   target/property setters.
+    %
+    % Inputs:
+    %   target - Nonempty Layout target ID.
+    %   value - Target value owned by the App state.
+    %   choices - Text array or cellstr of legal choices.
+    %   limits - Increasing finite two-element numeric row.
+    %   enabled - Logical scalar availability.
+    %   visible - Logical scalar visibility.
+    %   text - Scalar text.
+    %   paths - String or cell array of file paths.
+    %   selection - Selection value accepted by the target.
+    %   model - App-owned table or renderer model.
+    %   renderer - Declared renderer ID.
+    %
+    % Outputs:
+    %   view - New immutable labkit.ui.Presentation snapshot.
+    %
+    % Errors:
+    %   labkit:ui:contract:InvalidValue - An operation argument is malformed.
+    %   labkit:ui:contract:DuplicateId - The same operation is supplied twice
+    %       for one target.
+    %
+    % Example:
+    %   view = labkit.ui.Presentation();
+    %   view = view.choices("group", ["A", "B"]);
+    %   view = view.value("group", "A");
+    %   assert(isa(view, "labkit.ui.Presentation"))
+    %
+    % See also labkit.ui.Application, labkit.ui.Layout
+
+    properties (SetAccess = private, GetAccess = private)
+        Operations (1, :) cell
+    end
+
+    methods
+        function obj = Presentation()
+            obj.Operations = {};
+        end
+
+        function obj = value(obj, target, value)
+            obj = append(obj, "value", target, value, "");
+        end
+
+        function obj = choices(obj, target, choices)
+            if ischar(choices)
+                choices = string(choices);
+            elseif iscellstr(choices)
+                choices = string(choices);
+            elseif ~isstring(choices)
+                error("labkit:ui:contract:InvalidValue", ...
+                    "Presentation choices must be text.");
+            end
+            obj = append(obj, "choices", target, reshape(choices, 1, []), "");
+        end
+
+        function obj = limits(obj, target, limits)
+            if ~(isnumeric(limits) && isequal(size(limits), [1 2]) && ...
+                    all(isfinite(limits)) && limits(1) <= limits(2))
+                error("labkit:ui:contract:InvalidValue", ...
+                    "Presentation limits must be an increasing finite 1-by-2 row.");
+            end
+            obj = append(obj, "limits", target, limits, "");
+        end
+
+        function obj = enabled(obj, target, enabled)
+            obj = append(obj, "enabled", target, ...
+                logicalScalar(enabled, "enabled"), "");
+        end
+
+        function obj = visible(obj, target, visible)
+            obj = append(obj, "visible", target, ...
+                logicalScalar(visible, "visible"), "");
+        end
+
+        function obj = text(obj, target, text)
+            if ~(ischar(text) || (isstring(text) && isscalar(text)))
+                error("labkit:ui:contract:InvalidValue", ...
+                    "Presentation text must be scalar text.");
+            end
+            obj = append(obj, "text", target, string(text), "");
+        end
+
+        function obj = files(obj, target, paths)
+            if ischar(paths)
+                paths = string(paths);
+            elseif iscellstr(paths)
+                paths = string(paths);
+            elseif ~isstring(paths)
+                error("labkit:ui:contract:InvalidValue", ...
+                    "Presentation files must be a string or cell array.");
+            end
+            obj = append(obj, "files", target, reshape(paths, 1, []), "");
+        end
+
+        function obj = selection(obj, target, selection)
+            obj = append(obj, "selection", target, selection, "");
+        end
+
+        function obj = table(obj, target, model)
+            if ~(istable(model) || isnumeric(model) || iscell(model) || ...
+                    (isstruct(model) && isscalar(model)))
+                error("labkit:ui:contract:InvalidValue", ...
+                    "Presentation table model has an unsupported type.");
+            end
+            obj = append(obj, "table", target, model, "");
+        end
+
+        function obj = plot(obj, target, renderer, model)
+            renderer = scalarId(renderer, "renderer");
+            obj = append(obj, "plot", target, model, renderer);
+        end
+    end
+
+    methods (Access = private)
+        function obj = append(obj, kind, target, value, reference)
+            target = scalarId(target, "target");
+            for k = 1:numel(obj.Operations)
+                operation = obj.Operations{k};
+                if operation.Kind == kind && operation.Target == target
+                    error("labkit:ui:contract:DuplicateId", ...
+                        "Presentation repeats %s for target %s.", ...
+                        kind, target);
+                end
+            end
+            obj.Operations{end + 1} = struct( ...
+                "Kind", kind, ...
+                "Target", target, ...
+                "Value", value, ...
+                "Reference", reference);
+        end
+    end
+
+    methods (Access = ?labkit.ui.Application)
+        function operations = operationsForCompiler(obj)
+            operations = obj.Operations;
+        end
+    end
+end
+
+function value = scalarId(value, label)
+    if ~(ischar(value) || (isstring(value) && isscalar(value)))
+        error("labkit:ui:contract:InvalidValue", ...
+            "Presentation %s must be scalar text.", label);
+    end
+    value = string(value);
+    if strlength(value) == 0 || ~isvarname(char(value))
+        error("labkit:ui:contract:InvalidValue", ...
+            "Presentation %s must be a MATLAB identifier.", label);
+    end
+end
+
+function value = logicalScalar(value, label)
+    if ~(islogical(value) && isscalar(value))
+        error("labkit:ui:contract:InvalidValue", ...
+            "Presentation %s must be a logical scalar.", label);
+    end
+end

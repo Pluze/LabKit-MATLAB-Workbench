@@ -3,7 +3,9 @@
 Status: Phase 1A representation and Phase 1B end-to-end contract gates
 accepted on 2026-07-19. Phase 2 production implementation may begin. This is
 not yet a released API; the contract remains migration-scoped until the Phase
-2 kernel gate passes.
+2 kernel gate passes. The first production slice now implements the accepted
+`Application`, `Command`, `Layout`, and `Presentation` values without
+connecting them to the retired runtime.
 
 ## Decision summary
 
@@ -25,12 +27,12 @@ fields and service operations:
 
 | Concept | Construction and readable surface | Purpose |
 | --- | --- | --- |
-| Application | `labkit.ui.application(...)` plus owned `command`, `renderer`, `start`, and `debugSample` composition | One validated App definition and product contract |
+| Application | `labkit.ui.Application(...)` with explicit owned Commands, renderers, startup, and debug sample | One validated App definition and product contract |
 | Project contract | `labkit.ui.project(...)` | Payload creation, validation, migration, resume, relink, and named legacy import |
-| Command | `labkit.ui.command(id, callback, Role=...)` | Declared callback role and stable reference |
-| Layout | Existing semantic layout constructor names returning immutable values | Controls, sections, pages, workspace, and declarative signals |
+| Command | `labkit.ui.Command(id, callback, Role=...)` | Declared callback role and stable reference |
+| Layout | `labkit.ui.Layout.<semanticKind>(...)` static constructors returning immutable values | Controls, sections, pages, workspace, and declarative signals |
 | Workspace | `workspace(content)` or `workspace().page(...).initialPage(...)` | Single or multi-page right-side ownership |
-| Presentation | `labkit.ui.presentation()` and role-specific operations | Deterministic target-checked visible state |
+| Presentation | `labkit.ui.Presentation()` and role-specific methods | Deterministic target-checked visible state |
 | Interactions | Named functions under `labkit.ui.interaction` | One value/signal contract per editor type |
 | Runtime context | `labkit.ui.RuntimeContext` readable method surface | App-neutral dialogs, dispatch, workflow, sources, resources, persistence, and results |
 | Result output/manifest | `labkit.ui.resultOutput(...)`, `labkit.ui.result(...)` | Validated output and provenance values |
@@ -52,7 +54,7 @@ Proposed definition:
 
 ```matlab
 function app = definition()
-    app = labkit.ui.application( ...
+    app = labkit.ui.Application( ...
         Command="labkit_TTestWizard_app", ...
         Id="ttest_wizard", ...
         Title="T-Test Wizard", ...
@@ -64,10 +66,10 @@ function app = definition()
         Project=ttest_wizard.projectContract(), ...
         Session=@ttest_wizard.createSession, ...
         Layout=@ttest_wizard.userInterface.layout, ...
-        Present=@ttest_wizard.userInterface.present);
-    app = app.commands(ttest_wizard.commands());
-    app = app.renderer("resultPreview", ...
-        @ttest_wizard.userInterface.drawResultPreview);
+        Present=@ttest_wizard.userInterface.present, ...
+        Commands=ttest_wizard.commands(), ...
+        Renderers=struct("resultPreview", ...
+            @ttest_wizard.userInterface.drawResultPreview));
 end
 ```
 
@@ -127,9 +129,9 @@ workspace page references without creating a figure.
 Workspace shapes:
 
 ```matlab
-workspace = labkit.ui.layout.workspace(content);
+workspace = labkit.ui.Layout.workspace(content);
 
-workspace = labkit.ui.layout.workspace();
+workspace = labkit.ui.Layout.workspace();
 workspace = workspace.page("data", "Data", dataContent);
 workspace = workspace.page("plot", "Plot", plotContent);
 workspace = workspace.initialPage("data");
@@ -146,7 +148,7 @@ presentation call describes the full current visible state; the runtime owns
 diffing and reconciliation. Apps do not send incremental patches:
 
 ```matlab
-view = labkit.ui.presentation();
+view = labkit.ui.Presentation();
 view = view.value("worksheet", state.session.sheet);
 view = view.choices("group", state.session.groupNames);
 view = view.limits("gain", [0 10]);

@@ -385,6 +385,9 @@ function evidence = summarizeApps(repoRoot, apps, matches)
 end
 
 function symbols = discoverPublicUiSymbols(repoRoot)
+    % Phase 0 is a frozen inventory of the retired function boundary. New
+    % replacement value classes are governed by the Phase 2 contract
+    % inventory and must not rewrite the historical baseline.
     root = fullfile(repoRoot, "+labkit", "+ui");
     entries = dir(fullfile(root, "**", "*.m"));
     symbols = strings(numel(entries), 1);
@@ -394,6 +397,11 @@ function symbols = discoverPublicUiSymbols(repoRoot)
         relative = replace(extractAfter(filepath, ...
             string(fullfile(repoRoot, "+labkit")) + filesep), filesep, "/");
         if contains("/" + relative + "/", "/private/")
+            continue;
+        end
+        source = strip(readlines(filepath, "EmptyLineRule", "skip"));
+        source = source(~startsWith(source, "%"));
+        if isempty(source) || startsWith(source(1), "classdef")
             continue;
         end
         parts = split(relative, "/");

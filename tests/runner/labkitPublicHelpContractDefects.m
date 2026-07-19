@@ -1,7 +1,7 @@
 function defects = labkitPublicHelpContractDefects(root, filepath)
 %LABKITPUBLICHELPCONTRACTDEFECTS Audit one public MATLAB help contract.
 % Expected caller: documentation guardrails. Inputs are the repository root
-% and one public function file. Output is a string column of missing sections,
+% and one public function or class file. Output is a string column of missing sections,
 % signature names, or option-field explanations. Side effects: reads source.
 
     [signature, helpLines] = publicFunctionHelp(filepath);
@@ -23,7 +23,10 @@ function defects = labkitPublicHelpContractDefects(root, filepath)
     end
 
     usage = helpSection(helpLines, "Usage");
-    if ~any(contains(usage, symbol + "(")) || any(contains(usage, "function "))
+    classApi = startsWith(strip(signature), "classdef");
+    publicCall = any(contains(usage, symbol + "(")) || ...
+        (classApi && any(contains(usage, symbol + ".")));
+    if ~publicCall || any(contains(usage, "function "))
         defects(end + 1, 1) = rel + ...
             " -> Usage must show a public call, not a source declaration";
     end
@@ -182,7 +185,16 @@ end
 
 function [signature, helpLines] = publicFunctionHelp(filepath)
     lines = readlines(filepath, "EmptyLineRule", "read");
-    first = find(startsWith(strtrim(lines), "function "), 1);
+    functionStart = find(startsWith(strtrim(lines), "function "), 1);
+    classStart = find(startsWith(strtrim(lines), "classdef"), 1);
+    starts = [functionStart, classStart];
+    starts = starts(~isnan(starts) & starts > 0);
+    if isempty(starts)
+        error("LabKit:Docs:MissingDeclaration", ...
+            "Public API file has no function or class declaration: %s", ...
+            filepath);
+    end
+    first = min(starts);
     finish = first;
     while finish < numel(lines) && endsWith(strip(lines(finish)), "...")
         finish = finish + 1;
@@ -219,6 +231,10 @@ function content = helpSection(lines, name)
 end
 
 function names = signatureInputs(signature)
+    if startsWith(strip(signature), "classdef")
+        names = strings(0, 1);
+        return;
+    end
     token = regexp(char(signature), '\(([^)]*)\)', "tokens", "once");
     if isempty(token) || strlength(strip(string(token{1}))) == 0
         names = strings(0, 1);
@@ -230,6 +246,10 @@ function names = signatureInputs(signature)
 end
 
 function names = signatureOutputs(signature)
+    if startsWith(strip(signature), "classdef")
+        names = strings(0, 1);
+        return;
+    end
     left = extractBefore(string(signature), "=");
     if left == signature
         names = strings(0, 1);
