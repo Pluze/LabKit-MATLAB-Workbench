@@ -36,5 +36,6 @@ function plan = compile(application, presentation)
         end
     end
     plan = struct("ApplicationId", app.Id, ...
-        "TargetIds", ids, "Operations", {view.Operations});
+        "TargetIds", ids, "Operations", {view.Operations}, ...
+        "Capabilities", app.Capabilities);
 end

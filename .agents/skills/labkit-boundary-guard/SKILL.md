@@ -33,12 +33,13 @@ storage, and lifecycle handles stay private. App metadata stays in app-owned
 retired. `labkit.contract` validates facade ranges; it is not an App metadata
 registry.
 
-For the active UI explicit-contract migration, distinguish representation
-approval from contract approval. Sealed immutable values passed Phase 1A;
-production API freeze waits for the Phase 1B end-to-end and
-runtime/performance gates. Presentation is a complete snapshot, command links
-use Command values, Apps declare context capabilities, and acquired render
-surfaces cannot escape their event scope.
+For the active UI explicit-contract migration, distinguish contract approval
+from release approval. Sealed immutable values and the end-to-end contract
+passed Phase 1; the production API remains migration-scoped until the Phase 2
+kernel gate. Presentation is a complete snapshot, command links use Command
+values, Apps declare context capabilities, acquired render surfaces cannot
+escape their event scope, and static layout compilation is cached rather than
+repeated per presentation.
 
 Public API additions require a complete MATLAB help contract, focused tests,
 facade version update, owning docs, and component history. Internal refactors

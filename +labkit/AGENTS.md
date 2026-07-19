@@ -37,13 +37,13 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
   not app discovery or package management.
 - Do not introduce MATLAB classes or a third-party runtime dependency without
   explicit approval.
-- The active UI explicit-contract migration has Phase 1A approval for the
-  small sealed immutable value vocabulary accepted in
+- The active UI explicit-contract migration has Phase 1 approval for the small
+  sealed immutable value vocabulary accepted in
   `.agents/migration/ui-explicit-contract/phase-1-contract-rfc.md`. Keep it
   composition-only: no public inheritance hierarchy, mutable handle-state
   model, version-named namespace, or adapter back to retired transport
-  structs. Do not freeze or ship the production contract until the Phase 1B
-  end-to-end and runtime/performance gates pass.
+  structs. Phase 2 may implement the production kernel, but do not release the
+  contract until its own compile/help/error gate passes.
 
 ## Runtime contracts
 
@@ -58,6 +58,9 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
 - New explicit-contract presentation values are complete snapshots; private
   runtime reconciliation owns diffs. Signals reference Command values, and
   Apps declare context capabilities instead of receiving an open service bag.
+- Compile the immutable static Application graph once. Presentation commits
+  validate against the cached graph and must not re-flatten layout on every
+  update.
 - Persistence writes only the current project envelope. Ordered app migrations
   and declared legacy importers are read-only compatibility hooks and must not
   introduce app-id branches in the framework.

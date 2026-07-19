@@ -1,9 +1,9 @@
 # UI explicit-contract replacement RFC
 
-Status: Phase 1A representation decision accepted on 2026-07-19. Phase 1B
-end-to-end contract prototype and runtime/performance acceptance are pending.
-This is not yet a released API or authorization to freeze the production
-contract.
+Status: Phase 1A representation and Phase 1B end-to-end contract gates
+accepted on 2026-07-19. Phase 2 production implementation may begin. This is
+not yet a released API; the contract remains migration-scoped until the Phase
+2 kernel gate passes.
 
 ## Decision summary
 
@@ -298,11 +298,12 @@ Video Marker. Measure:
 - ability to prevent App mutation/inspection of backing representation;
 - Phase 0 performance thresholds.
 
-The accepted Phase 1A representation is the sealed immutable value-class
-form. The representation comparison evidence is complete, and the repository
-owner delegated the architecture choice after reviewing the small value-class
-versus opaque-value comparison. Phase 1B must still prove one end-to-end
-contract, identical comparison graphs, stable public errors, and the
-runtime/performance gates before Phase 2 production implementation begins.
-This approval does not authorize a mutable handle model or public inheritance
-hierarchy.
+The accepted representation is the sealed immutable value-class form. The
+representation comparison uses identical target graphs and stable public
+unknown-argument errors. The Phase 1B hidden T-Test-style experiment proves a
+complete snapshot, private diff/reconciliation, declared context
+capabilities, transaction rollback, render-surface escape rejection, and all
+Phase-0-derived timing gates. Static layout compilation is cached at
+Application construction; repeated presentation does not re-flatten the
+layout. Phase 2 production implementation may proceed. This approval does not
+authorize a mutable handle model or public inheritance hierarchy.

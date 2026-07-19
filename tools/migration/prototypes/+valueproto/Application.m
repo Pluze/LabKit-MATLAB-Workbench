@@ -7,15 +7,22 @@ classdef (Sealed) Application
         Layout
         Commands (1, :) cell
         Renderers (1, :) string
+        Capabilities (1, :) string
+    end
+
+    properties (SetAccess = immutable, GetAccess = private)
+        CompiledNodes (1, :) cell
+        CompiledTargetIds (1, :) string
     end
 
     methods
-        function obj = Application(id, layout, commands, renderers)
+        function obj = Application(id, layout, commands, renderers, capabilities)
             arguments
                 id (1, 1) string
                 layout (1, 1) valueproto.Layout
                 commands (1, :) cell = {}
                 renderers (1, :) string = strings(1, 0)
+                capabilities (1, :) string = strings(1, 0)
             end
             if strlength(id) == 0 || ~isvarname(char(id))
                 error("prototype:ui:InvalidValue", ...
@@ -30,11 +37,20 @@ classdef (Sealed) Application
                 "UniformOutput", false));
             assertUnique(commandIds, "command");
             assertUnique(renderers, "renderer");
+            assertUnique(capabilities, "capability");
             obj.Id = id;
             obj.Layout = layout;
             obj.Commands = commands;
             obj.Renderers = renderers;
-            validateLayout(layout);
+            obj.Capabilities = capabilities;
+            nodes = layout.flatten();
+            ids = string(cellfun(@(value) value.Id, nodes, ...
+                "UniformOutput", false));
+            assertUnique(ids, "layout");
+            targetMask = cellfun(@(value) ...
+                ~isempty(value.Capabilities), nodes);
+            obj.CompiledNodes = nodes(targetMask);
+            obj.CompiledTargetIds = ids(targetMask);
         end
 
         function plan = compile(obj, presentation)
@@ -42,11 +58,8 @@ classdef (Sealed) Application
                 obj (1, 1) valueproto.Application
                 presentation (1, 1) valueproto.Presentation
             end
-            nodes = obj.Layout.flatten();
-            nodes = nodes(cellfun(@(value) ...
-                ~isempty(value.Capabilities), nodes));
-            ids = string(cellfun(@(value) value.Id, nodes, ...
-                "UniformOutput", false));
+            nodes = obj.CompiledNodes;
+            ids = obj.CompiledTargetIds;
             operations = presentation.operations();
             for k = 1:numel(operations)
                 operation = operations{k};
@@ -76,16 +89,10 @@ classdef (Sealed) Application
                 end
             end
             plan = struct("ApplicationId", obj.Id, ...
-                "TargetIds", ids, "Operations", {operations});
+                "TargetIds", ids, "Operations", {operations}, ...
+                "Capabilities", obj.Capabilities);
         end
     end
-end
-
-function validateLayout(layout)
-    nodes = layout.flatten();
-    ids = string(cellfun(@(value) value.Id, nodes, ...
-        "UniformOutput", false));
-    assertUnique(ids, "layout");
 end
 
 function assertUnique(values, label)

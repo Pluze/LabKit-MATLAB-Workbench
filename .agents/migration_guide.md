@@ -23,8 +23,8 @@ ui-migration-debt: ui-explicit-contract-redesign
 - **Owner:** `labkit.ui`
 - **Target boundary:** the next incompatible `labkit.ui` contract and every
   tracked App that consumes it
-- **Status:** Phase 0 inventory complete; Phase 1A representation accepted;
-  Phase 1B end-to-end contract and runtime/performance acceptance in progress
+- **Status:** Phase 0 inventory and Phase 1 contract gates complete; Phase 2
+  strict-kernel implementation ready to begin
 - **User-visible reason:** App authors must be able to discover the framework
   from function, constructor, method, and parameter names. Invalid App code
   must fail at the contract boundary instead of being ignored, guessed, or
@@ -599,6 +599,13 @@ Prototype acceptance:
 
 The prototypes are evidence, not compatibility shims. Reject and redesign the
 contract if they require per-App exceptions.
+
+Phase 1 acceptance evidence is
+`.agents/migration/ui-explicit-contract/phase-1-prototype-evidence.*` and
+`phase-1-end-to-end-evidence.*`. The end-to-end experiment establishes the
+implementation route: compile the static Application graph once, validate
+complete presentation snapshots against that graph, and keep diff/reconcile
+private to the runtime.
 
 #### Phase 2 - strict contract kernel
 

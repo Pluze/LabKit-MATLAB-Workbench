@@ -8,21 +8,21 @@
         "targetCount": 4,
         "operationCount": 4,
         "deterministic": true,
-        "compileMedianSeconds": 0.0002768
+        "compileMedianSeconds": 7.19E-5
       },
       {
         "name": "Curvature Measurement",
         "targetCount": 2,
         "operationCount": 3,
         "deterministic": true,
-        "compileMedianSeconds": 0.0002898
+        "compileMedianSeconds": 0.0001453
       },
       {
         "name": "Video Marker",
         "targetCount": 3,
         "operationCount": 3,
         "deterministic": true,
-        "compileMedianSeconds": 0.0002637
+        "compileMedianSeconds": 0.0001126
       }
     ],
     "failures": {
@@ -43,21 +43,21 @@
         "targetCount": 4,
         "operationCount": 4,
         "deterministic": true,
-        "compileMedianSeconds": 0.000492
+        "compileMedianSeconds": 0.0004929
       },
       {
         "name": "Curvature Measurement",
         "targetCount": 2,
         "operationCount": 3,
         "deterministic": true,
-        "compileMedianSeconds": 0.0001465
+        "compileMedianSeconds": 0.000463
       },
       {
         "name": "Video Marker",
         "targetCount": 3,
         "operationCount": 3,
         "deterministic": true,
-        "compileMedianSeconds": 0.0001199
+        "compileMedianSeconds": 0.0004736
       }
     ],
     "failures": {

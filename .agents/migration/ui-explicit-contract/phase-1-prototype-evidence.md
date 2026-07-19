@@ -9,7 +9,7 @@ Decision: `sealed-immutable-value-classes`.
 
 Both forms can reject invalid contracts and compile deterministic plans. Value methods are discoverable and compose without a large global function vocabulary. MATLAB functions() exposes closure workspaces, so function-handle tokens are conventionally opaque rather than representation-safe.
 
-GUI-free compile medians (value/opaque, milliseconds): T-Test Wizard 0.277/0.492; Curvature Measurement 0.290/0.147; Video Marker 0.264/0.120.
+GUI-free compile medians (value/opaque, milliseconds): T-Test Wizard 0.072/0.493; Curvature Measurement 0.145/0.463; Video Marker 0.113/0.474.
 
 Prototype-covered seam lines (current/value/opaque): 506/52/48.
 

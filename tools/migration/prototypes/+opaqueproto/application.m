@@ -1,9 +1,10 @@
-function value = application(id, targets, commands, renderers)
+function value = application(id, targets, commands, renderers, capabilities)
     arguments
         id (1, 1) string
         targets (1, :) cell
         commands (1, :) cell = {}
         renderers (1, :) string = strings(1, 0)
+        capabilities (1, :) string = strings(1, 0)
     end
     if strlength(id) == 0 || ~isvarname(char(id))
         error("prototype:ui:InvalidValue", ...
@@ -20,8 +21,10 @@ function value = application(id, targets, commands, renderers)
     assertUnique(targetIds, "target");
     assertUnique(commandIds, "command");
     assertUnique(renderers, "renderer");
+    assertUnique(capabilities, "capability");
     payload = struct("Id", id, "Targets", {targets}, ...
-        "Commands", {commands}, "Renderers", renderers);
+        "Commands", {commands}, "Renderers", renderers, ...
+        "Capabilities", capabilities);
     value = makeToken("application", payload);
 end
 
