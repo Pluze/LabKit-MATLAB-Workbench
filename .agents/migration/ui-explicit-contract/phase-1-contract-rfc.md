@@ -28,14 +28,14 @@ fields and service operations:
 | Concept | Construction and readable surface | Purpose |
 | --- | --- | --- |
 | Application | `labkit.ui.Application(...)` with explicit owned Commands, renderers, startup, and debug sample | One validated App definition and product contract |
-| Project contract | `labkit.ui.project(...)` | Payload creation, validation, migration, resume, relink, and named legacy import |
+| Project contract | `labkit.ui.ProjectContract(...)` | Payload creation, validation, migration, resume, relink, and named legacy import |
 | Command | `labkit.ui.Command(id, callback, Role=...)` | Declared callback role and stable reference |
 | Layout | `labkit.ui.Layout.<semanticKind>(...)` static constructors returning immutable values | Controls, sections, pages, workspace, and declarative signals |
 | Workspace | `workspace(content)` or `workspace().page(...).initialPage(...)` | Single or multi-page right-side ownership |
 | Presentation | `labkit.ui.Presentation()` and role-specific methods | Deterministic target-checked visible state |
 | Interactions | Named functions under `labkit.ui.interaction` | One value/signal contract per editor type |
 | Runtime context | `labkit.ui.RuntimeContext` readable method surface | App-neutral dialogs, dispatch, workflow, sources, resources, persistence, and results |
-| Result output/manifest | `labkit.ui.resultOutput(...)`, `labkit.ui.result(...)` | Validated output and provenance values |
+| Result output/manifest | `labkit.ui.ResultOutput(...)`, `labkit.ui.Result(...)` | Validated output and provenance values |
 | Named payload values | Table edit, selection, dialog result, and source selection | Multi-field signal results without generic event structs |
 
 The aggregate classes are `Application`, `ProjectContract`, `Command`,
@@ -65,7 +65,7 @@ function app = definition()
         Requirements=labkit.contract.requirements("ui", ">=8 <9"), ...
         Project=ttest_wizard.projectContract(), ...
         Session=@ttest_wizard.createSession, ...
-        Layout=@ttest_wizard.userInterface.layout, ...
+        Layout=ttest_wizard.userInterface.layout(), ...
         Present=@ttest_wizard.userInterface.present, ...
         Commands=ttest_wizard.commands(), ...
         Renderers=struct("resultPreview", ...
@@ -78,7 +78,7 @@ required metadata, invalid version/date, unsupported requirement, callback
 role mismatch, and missing referenced command/renderer before figure creation.
 Static Apps omit commands, session, presenter, renderer, and startup work.
 
-`project` accepts only named `Version`, `Create`, `Validate`, `Migrate`,
+`ProjectContract` accepts only named `Version`, `Create`, `Validate`, `Migrate`,
 `CreateResume`, `ApplyResume`, `RelinkSources`, and `LegacyImport` operations.
 Payload version is independent of the `labkit.ui` facade range. Existing valid
 payloads and legacy imports retain their current meaning.

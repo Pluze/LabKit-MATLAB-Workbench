@@ -22,10 +22,15 @@ classdef (Sealed) Application
     %   AppVersion - Semantic version in X.Y.Z form.
     %   Updated - Product date in YYYY-MM-DD form.
     %   Requirements - Empty value or labkit.contract.requirements result.
-    %   Layout - Root labkit.ui.Layout value.
+    %   Layout - Root workbench labkit.ui.Layout value.
     %
     % Optional Name-Value Arguments:
     %   DisplayName - Nonempty scalar text. Default: Title.
+    %   Project - labkit.ui.ProjectContract value or empty for a static App.
+    %       Default: empty.
+    %   Session - Fixed callback session = createSession(project). Default:
+    %       empty.
+    %   Present - Fixed callback view = present(state). Default: empty.
     %   Commands - Row cell array of unique labkit.ui.Command values used by
     %       Layout signals. Default: {}.
     %   Renderers - Scalar struct mapping renderer IDs to function handles.
@@ -33,6 +38,10 @@ classdef (Sealed) Application
     %   Capabilities - Unique row string array drawn from "dispatch",
     %       "workflow", "diagnostics", "dialogs", "project", "render",
     %       "resources", and "results". Default: an empty string row.
+    %   Start - Declared Role="invoke" Command queued after the first
+    %       presentation. Default: empty.
+    %   DebugSample - Fixed callback pack = writeSample(context). Default:
+    %       empty.
     %
     % Outputs:
     %   app - Immutable compiled labkit.ui.Application value.
@@ -56,7 +65,7 @@ classdef (Sealed) Application
     %
     % Typical Call:
     %   run = labkit.ui.Command("run", @runAnalysis);
-    %   layout = labkit.ui.Layout.root({ ...
+    %   layout = labkit.ui.Layout.workbench({ ...
     %       labkit.ui.Layout.action("run", "Run", run)});
     %   app = labkit.ui.Application( ...
     %       Command="labkit_Example_app", Id="example.app", ...
@@ -77,6 +86,11 @@ classdef (Sealed) Application
         AppVersion (1, 1) string
         Updated (1, 1) string
         Requirements
+        Project
+        Session
+        Present
+        Start
+        DebugSample
         TargetIds (1, :) string
         Capabilities (1, :) string
     end
@@ -92,7 +106,8 @@ classdef (Sealed) Application
             names = [ ...
                 "Command", "Id", "Title", "DisplayName", "Family", ...
                 "AppVersion", "Updated", "Requirements", "Layout", ...
-                "Commands", "Renderers", "Capabilities"];
+                "Project", "Session", "Present", "Commands", "Renderers", ...
+                "Capabilities", "Start", "DebugSample"];
             options = parseContractOptions( ...
                 "labkit.ui.Application", names, varargin{:});
             required = [ ...
@@ -118,18 +133,29 @@ classdef (Sealed) Application
             obj.AppVersion = semanticVersion(options.AppVersion);
             obj.Updated = isoDate(options.Updated);
             obj.Requirements = validateRequirements(options.Requirements);
+            obj.Project = validateProjectContract( ...
+                optionValue(options, "Project", []));
+            obj.Session = optionalFixedCallback( ...
+                options, "Session", 1, 1);
+            obj.Present = optionalFixedCallback( ...
+                options, "Present", 1, 1);
             obj.Capabilities = validateCapabilities( ...
                 optionValue(options, "Capabilities", strings(1, 0)));
             obj.Commands = validateCommands( ...
                 optionValue(options, "Commands", {}));
+            obj.Start = validateStart( ...
+                optionValue(options, "Start", []), obj.Commands);
+            obj.DebugSample = optionalFixedCallback( ...
+                options, "DebugSample", 1, 1);
             [renderers, rendererIds] = validateRenderers( ...
                 optionValue(options, "Renderers", struct()));
             obj.RendererIds = rendererIds;
 
             layout = options.Layout;
-            if ~isa(layout, "labkit.ui.Layout") || layout.Kind ~= "root"
+            if ~isa(layout, "labkit.ui.Layout") || ...
+                    layout.Kind ~= "workbench"
                 error("labkit:ui:contract:InvalidValue", ...
-                    "Application Layout must be a root Layout value.");
+                    "Application Layout must be a workbench Layout value.");
             end
             nodes = layout.flattenForCompiler();
             ids = string(cellfun(@(value) value.Id, nodes, ...
@@ -258,6 +284,42 @@ function value = validateRequirements(value)
     end
 end
 
+function value = validateProjectContract(value)
+    if ~isempty(value) && ~isa(value, "labkit.ui.ProjectContract")
+        error("labkit:ui:contract:InvalidValue", ...
+            "Application Project must be a ProjectContract value or empty.");
+    end
+end
+
+function callback = optionalFixedCallback(options, name, inputs, outputs)
+    callback = [];
+    if ~isfield(options, name) || isempty(options.(name))
+        return;
+    end
+    callback = options.(name);
+    if ~isa(callback, "function_handle") || ~isscalar(callback) || ...
+            nargin(callback) ~= inputs || nargout(callback) ~= outputs
+        error("labkit:ui:contract:CallbackRoleMismatch", ...
+            "Application %s requires %d inputs and %d outputs.", ...
+            name, inputs, outputs);
+    end
+end
+
+function value = validateStart(value, commands)
+    if isempty(value)
+        return;
+    end
+    if ~isa(value, "labkit.ui.Command") || value.Role ~= "invoke"
+        error("labkit:ui:contract:CallbackRoleMismatch", ...
+            "Application Start must be a Role=invoke Command.");
+    end
+    matches = cellfun(@(command) isequaln(command, value), commands);
+    if ~any(matches)
+        error("labkit:ui:contract:UnknownReference", ...
+            "Application Start must reference a declared Command.");
+    end
+end
+
 function values = validateCapabilities(values)
     if ischar(values)
         values = string(values);
@@ -296,9 +358,12 @@ function [renderers, ids] = validateRenderers(renderers)
     end
     ids = string(fieldnames(renderers)).';
     for k = 1:numel(ids)
-        if ~isa(renderers.(ids(k)), "function_handle")
+        callback = renderers.(ids(k));
+        if ~isa(callback, "function_handle") || ~isscalar(callback) || ...
+                nargin(callback) ~= 2 || nargout(callback) ~= 0
             error("labkit:ui:contract:InvalidValue", ...
-                "Application renderer %s must be a function handle.", ids(k));
+                "Application renderer %s must be a fixed two-input, " + ...
+                "zero-output function.", ids(k));
         end
     end
 end
@@ -314,15 +379,15 @@ function validateSignals(nodes, commands)
     commandIds = string(cellfun(@(value) value.Id, commands, ...
         "UniformOutput", false));
     for k = 1:numel(nodes)
-        signal = nodes{k}.Signal;
-        if isempty(signal)
-            continue;
-        end
-        index = find(commandIds == signal.Id, 1);
-        if isempty(index) || ~isequaln(commands{index}, signal)
-            error("labkit:ui:contract:UnknownReference", ...
-                "Layout signal references an undeclared Command: %s.", ...
-                signal.Id);
+        signals = nodes{k}.Signals;
+        for s = 1:numel(signals)
+            signal = signals{s};
+            index = find(commandIds == signal.Id, 1);
+            if isempty(index) || ~isequaln(commands{index}, signal)
+                error("labkit:ui:contract:UnknownReference", ...
+                    "Layout signal references an undeclared Command: %s.", ...
+                    signal.Id);
+            end
         end
     end
 end

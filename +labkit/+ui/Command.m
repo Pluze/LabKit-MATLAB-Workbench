@@ -39,6 +39,7 @@ classdef (Sealed) Command
     properties (SetAccess = immutable)
         Id (1, 1) string
         Role (1, 1) string
+        PayloadClass (1, 1) string
         Callback
     end
 
@@ -64,8 +65,18 @@ classdef (Sealed) Command
             end
             obj.Id = id;
             obj.Role = role;
+            obj.PayloadClass = payloadClass(role);
             obj.Callback = callback;
         end
+    end
+end
+
+function value = payloadClass(role)
+    value = "";
+    if role == "tableEdit"
+        value = "labkit.ui.TableEdit";
+    elseif role == "selection"
+        value = "labkit.ui.Selection";
     end
 end
 

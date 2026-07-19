@@ -13,6 +13,7 @@ classdef (Sealed) Presentation
     %   view = view.selection(target, selection)
     %   view = view.table(target, model)
     %   view = view.plot(target, renderer, model)
+    %   view = view.workspacePage(target, Name=Value)
     %
     % Description:
     %   Presentation is a closed immutable operation vocabulary. One value
@@ -115,6 +116,10 @@ classdef (Sealed) Presentation
         end
 
         function obj = selection(obj, target, selection)
+            if ~isa(selection, "labkit.ui.Selection")
+                error("labkit:ui:contract:InvalidValue", ...
+                    "Presentation selection must be a Selection value.");
+            end
             obj = append(obj, "selection", target, selection, "");
         end
 
@@ -130,6 +135,28 @@ classdef (Sealed) Presentation
         function obj = plot(obj, target, renderer, model)
             renderer = scalarId(renderer, "renderer");
             obj = append(obj, "plot", target, model, renderer);
+        end
+
+        function obj = workspacePage(obj, target, varargin)
+            options = parseContractOptions( ...
+                "labkit.ui.Presentation.workspacePage", ...
+                ["Enabled", "Status"], varargin{:});
+            enabled = true;
+            if isfield(options, "Enabled")
+                enabled = logicalScalar(options.Enabled, "Enabled");
+            end
+            status = "";
+            if isfield(options, "Status")
+                supplied = options.Status;
+                if ~(ischar(supplied) || ...
+                        (isstring(supplied) && isscalar(supplied)))
+                    error("labkit:ui:contract:InvalidValue", ...
+                        "Presentation workspace Status must be scalar text.");
+                end
+                status = string(supplied);
+            end
+            obj = append(obj, "workspacePage", target, ...
+                struct("Enabled", enabled, "Status", status), "");
         end
     end
 
