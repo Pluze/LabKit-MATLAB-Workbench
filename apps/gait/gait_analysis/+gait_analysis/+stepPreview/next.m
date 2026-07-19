@@ -1,0 +1,6 @@
+function applicationState = next(applicationState, ~)
+%NEXT Select the following detected gait step.
+applicationState.session.selection.currentStepIndex = ...
+    gait_analysis.stepPreview.boundedIndex(applicationState, ...
+        applicationState.session.selection.currentStepIndex + 1);
+end

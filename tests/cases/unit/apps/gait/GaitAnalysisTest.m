@@ -171,8 +171,8 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
 
             testCase.verifyEqual(migrated.inputs.sources, expected);
             testCase.verifyFalse(isfield(migrated.inputs, "source"));
-            testCase.verifyEqual(definition.project.Version, 3);
-            testCase.verifyTrue(isa(definition.project.Migrate, ...
+            testCase.verifyEqual(definition.ProjectSchema.Version, 3);
+            testCase.verifyTrue(isa(definition.ProjectSchema.Migrate, ...
                 'function_handle'));
         end
 
@@ -231,7 +231,7 @@ function [labkitProject, coords] = consumerMarkerProject()
         "anchorRevision", zeros(12, 1, "uint64"));
     project = struct();
     project.inputs = struct( ...
-        "sources", labkit.ui.runtime.emptySourceRecords(), ...
+        "sources", struct([]), ...
         "videoMetadata", markerVideoMetadata());
     project.parameters = struct();
     project.annotations = struct( ...
@@ -242,7 +242,7 @@ function [labkitProject, coords] = consumerMarkerProject()
         "edges", [1 2; 2 3; 3 4; 4 5]), ...
         "frames", frames, ...
         "calibration", ...
-        labkit.ui.interaction.scaleBarCalibration(20, 2, "mm"));
+        labkit.app.interaction.scaleCalibration(20, 2, "mm"));
     project.results = struct();
     project.extensions = struct();
     labkitProject = markerEnvelope(project);
@@ -260,7 +260,7 @@ function [labkitProject, coords] = producerMarkerProject()
     project.annotations.frames.coords = coords;
     project.inputs.videoMetadata = markerVideoMetadata();
     project.annotations.calibration = ...
-        labkit.ui.interaction.scaleBarCalibration(20, 2, "mm");
+        labkit.app.interaction.scaleCalibration(20, 2, "mm");
     assert(spec.Validate(project));
     labkitProject = markerEnvelope(project);
 end

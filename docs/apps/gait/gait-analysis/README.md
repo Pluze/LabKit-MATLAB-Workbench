@@ -52,14 +52,14 @@ length time series use conventional plot axes.
 validation, and the single migration entry for versions 1 and 2. Version 1
 renames the legacy step/stride options and invalidates results whose scientific
 meaning changed. Version 2 moves its singular source into the canonical source
-collection. Runtime V2 selects each missing step and validates the final
+collection. The App runtime selects each missing step and validates the final
 project.
 
 The pose source, analysis options, computed tables/events, and export record
 are durable. Decoded pose data, selected step, output-folder convenience,
 workflow log, and duplicate-run fingerprint are transient and rebuilt by
 `gait_analysis.createSession`. Source paths are resolved by the Runtime before
-session construction and are read through `sourcePaths`.
+session construction through the sealed `labkit.app.CallbackContext`.
 
 ## Two-Stage Workflow
 
@@ -203,11 +203,10 @@ writetable(result.stepTable, "steps.csv");
 
 ## Framework Compatibility
 
-This App requires `labkit.ui >=7 <8`. Its single `definition.m` owns product
-metadata, requirements, layout, actions, presentation, renderer, and debug
-capability. `projectSpec.m` concentrates durable creation, validation, and both
-historical migration steps; root `createSession.m` rebuilds transient decoded
-pose state.
+This App requires `labkit.app >=1 <2`. Its single `definition.m` owns product
+metadata and the immutable App SDK contract. `projectSpec.m` concentrates
+durable creation, validation, and both historical migration steps; root
+`createSession.m` rebuilds transient decoded pose state.
 
 The project validator requires the pose-project source collection and checks
 gait options, numeric limits, and result fields; Runtime validates canonical
@@ -215,9 +214,11 @@ buckets and each source record first.
 
 Analysis defaults, source-fact normalization, result construction, duplicate
 run fingerprints, and gait calculations are co-located under `+analysisRun`.
-There is no generic App lifecycle or state package. Migration iteration,
-portable source references, callback queues, busy state, source relinking, and
-serialization remain framework-owned.
+The `+workbench` package assembles capability-owned callbacks and a complete
+snapshot; analysis, step navigation, gait rendering, source adoption, and
+result export remain with their semantic owners. Migration iteration, portable
+source references, callback queues, source relinking, project documents,
+result manifests, and serialization remain framework-owned.
 
 Its synthetic debug fixture writes the documented Video Marker payload shape
 without loading a sibling App package. A separate producer-consumer integration
@@ -226,8 +227,6 @@ saved MAT through Gait, so producer drift is detected without making the
 consumer's normal launch depend on Video Marker source code.
 
 Its session factory returns only App-specific step selection, output-folder
-workflow, and decoded pose cache fields. Runtime supplies absent canonical
-buckets and owns workflow-log initialization.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+workflow, and decoded pose cache fields. Layout controls bind directly to
+concrete semantic callbacks; there is no App-authored action or renderer
+registry.

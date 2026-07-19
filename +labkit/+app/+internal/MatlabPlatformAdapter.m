@@ -631,7 +631,7 @@ end
 priority = zeros(1, numel(operations));
 for k = 1:numel(operations)
     switch operations{k}.Kind
-        case {"choices", "limits", "filePaths"}
+        case {"choices", "limits", "filePaths", "tableData"}
             priority(k) = 1;
         case "value"
             priority(k) = 2;

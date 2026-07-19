@@ -17,6 +17,8 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
             backend = struct( ...
                 "appendStatus", @appendStatus, ...
                 "choose", @choose, ...
+                "chooseInputFolder", @chooseFolder, ...
+                "chooseOutputFolder", @chooseFolder, ...
                 "sourcePaths", @sourcePaths, ...
                 "setResource", @setResource, ...
                 "getResource", @getResource, ...
@@ -25,11 +27,15 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
             context = labkit.app.CallbackContext.createForRuntime(app, backend);
             context.appendStatus("ready");
             choice = context.chooseOption("Continue?", ["yes", "no"]);
+            inputFolder = context.chooseInputFolder("input");
+            outputFolder = context.chooseOutputFolder("output");
             context.setResource("document", "reader", 42, []);
             value = context.getResource("document", "reader");
             paths = context.resolveSourcePaths(struct(), ["first", "second"]);
 
             testCase.verifyEqual(choice.Value, "yes");
+            testCase.verifyEqual(inputFolder.Value, "input/selected");
+            testCase.verifyEqual(outputFolder.Value, "output/selected");
             testCase.verifyEqual(value, 42);
             testCase.verifyEqual(store("status"), "ready");
             testCase.verifyEqual(paths, ["first"; "second"] + ".dat");
@@ -42,6 +48,11 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
 
             function result = choose(~, choices)
                 result = labkit.app.dialog.Choice(choices(1));
+            end
+
+            function result = chooseFolder(startPath)
+                result = labkit.app.dialog.Choice( ...
+                    string(startPath) + "/selected");
             end
 
             function paths = sourcePaths(~, ids)

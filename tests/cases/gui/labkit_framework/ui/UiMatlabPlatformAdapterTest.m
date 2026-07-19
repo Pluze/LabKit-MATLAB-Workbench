@@ -72,6 +72,7 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             width.ValueChangedFcn(width, struct());
             run = component(figure, "run");
             run.ButtonPushedFcn(run, struct());
+            testCase.verifyEqual(component(figure, "data").Selection, [3 1]);
             runtime.applyFileSelection("files", ["one.DTA", "two.DTA"], [1 2]);
             files = component(figure, "files");
             files.Value = files.Items(2);
@@ -188,6 +189,8 @@ view = labkit.app.view.Snapshot() ...
     .filePaths("files", ["first.DTA", "second.DTA"]) ...
     .tableData("data", state.session.tableData, ...
         Columns=["Group", "Value"], ColumnEditable=[true true]) ...
+    .tableCellSelection("data", ...
+        labkit.app.event.TableCellSelection(state.session.tableCells)) ...
     .text("log", "Loaded two files") ...
     .text("status", "Ready") ...
     .workspacePage("analysis", Enabled=true, Status="Ready") ...
@@ -222,6 +225,8 @@ end
 
 function state = runAnalysis(state, ~)
 state.project.actionCount = state.project.actionCount + 1;
+state.session.tableData = {'A', 1; 'B', 2; 'C', 3};
+state.session.tableCells = [3 1];
 end
 
 function state = lineWidthChanged(state, ~, ~)
@@ -242,6 +247,7 @@ end
 
 function state = tableEdited(state, edit, ~)
 state.session.tableData = edit.Data;
+state.session.tableCells = zeros(0, 2);
 state.project.tableEditCount = state.project.tableEditCount + 1;
 end
 

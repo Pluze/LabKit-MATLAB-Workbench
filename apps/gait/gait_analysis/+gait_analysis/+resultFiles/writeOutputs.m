@@ -1,5 +1,5 @@
 %WRITEOUTPUTS Write gait analysis CSV outputs.
-% Expected caller: export action and tests. Creates a frame table, step table,
+% Expected caller: export callback and tests. Creates a frame table, step table,
 % coordinate table, and summary table using the provided filename stem.
 function outputs = writeOutputs(outputFolder, stem, result)
     outputFolder = string(outputFolder);

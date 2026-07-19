@@ -130,8 +130,9 @@ classdef (Sealed) CallbackContext < handle
         end
 
         function result = chooseInputFolder(obj, startPath)
-            result = obj.dialogPath( ...
-                "chooseInputFolder", [], startPath);
+            result = obj.invoke("chooseInputFolder", "dialogs", ...
+                {scalarText(startPath, "startPath")}, 1);
+            requireChoice(result, "chooseInputFolder");
         end
 
         function result = chooseOutputFile(obj, filters, startPath)
@@ -139,8 +140,9 @@ classdef (Sealed) CallbackContext < handle
         end
 
         function result = chooseOutputFolder(obj, startPath)
-            result = obj.dialogPath( ...
-                "chooseOutputFolder", [], startPath);
+            result = obj.invoke("chooseOutputFolder", "dialogs", ...
+                {scalarText(startPath, "startPath")}, 1);
+            requireChoice(result, "chooseOutputFolder");
         end
 
         function result = saveProjectDocument(obj, state, filepath)

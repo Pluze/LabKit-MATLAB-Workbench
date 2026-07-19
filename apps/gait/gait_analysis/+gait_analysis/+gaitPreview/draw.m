@@ -1,19 +1,30 @@
-% Expected caller: Runtime V2 registered renderer. Inputs are one axes and a
-% pure gait preview model. Side effect is limited to redrawing that axes.
-function drawGaitPreview(ax, model)
-    labkit.ui.plot.clear(ax, "ResetScale", true);
+% Expected caller: Gait Analysis plot-area renderer. Inputs are axes by ID
+% and a pure gait preview model. Side effects are limited to those axes.
+function draw(axesById, model)
+drawOne(axesById.skeleton, withKind(model, "skeleton"));
+drawOne(axesById.angles, withKind(model, "angles"));
+drawOne(axesById.segments, withKind(model, "segments"));
+end
+
+function model = withKind(model, kind)
+model.kind = string(kind);
+end
+
+function drawOne(ax, model)
+    labkit.app.plot.clearAxes(ax, "ResetScale", true);
     if ~model.pose.ok
         ax.YDir = "normal";
-        labkit.ui.plot.message(ax, "Load pose data to preview gait analysis.");
+        labkit.app.plot.showMessage(ax, ...
+            "Load pose data to preview gait analysis.");
     elseif model.kind == "skeleton"
         drawSkeletons(ax, model);
     elseif ~model.result.ok
         ax.YDir = "normal";
-        labkit.ui.plot.message(ax, ...
+        labkit.app.plot.showMessage(ax, ...
             "Run analysis to inspect one segmented step cycle.");
     elseif isempty(model.result.stepTable)
         ax.YDir = "normal";
-        labkit.ui.plot.message(ax, ...
+        labkit.app.plot.showMessage(ax, ...
             "No complete lift-off to landing step was detected.");
     elseif model.kind == "angles"
         drawAngles(ax, model);

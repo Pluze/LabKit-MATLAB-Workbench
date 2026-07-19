@@ -10,6 +10,7 @@ compatibility: breaking
 component: `labkit.app` | `new -> 1.0.0`
 component: `labkit_ChronoOverlay_app` | `1.4.7 -> 1.5.0`
 component: `labkit_VTResistance_app` | `1.4.7 -> 1.5.0`
+component: `labkit_GaitAnalysis_app` | `2.0.8 -> 2.1.0`
 component: `labkit_TTestWizard_app` | `1.0.1 -> 1.1.0`
 scope: App Framework
 scope: Electrochem
@@ -74,6 +75,12 @@ requiring the later managed-interaction vocabulary.
   complete summary/table/two-axis snapshot, and an App-owned result-package
   export. Plot renderers and scientific choices now live with their owning
   analysis capabilities instead of a technical UI package.
+- Migrated Gait Analysis to capability-owned source adoption, option
+  invalidation, deterministic analysis, step selection/navigation, three-axis
+  rendering, CSV-set export, and result packaging.
+- Corrected folder chooser dispatch to its one-path backend contract and
+  applied table data before table selection during native reconciliation, so
+  a selection may legally target rows introduced by the same snapshot.
 - Removed handler objects, callback tables, renderer registries, and their
   forwarding from the App authoring contract. Layout controls and plot areas
   reference concrete functions directly.
@@ -86,8 +93,10 @@ retains its source formats, group/test calculations, plot meaning, two CSV
 exports, and version-2 project payload. VT Resistance retains its pulse
 detection, resistance calculations, plot semantics, CSV schema, and version-1
 project payload while recomputing the decoded batch under shared settings.
-File identities and portable paths remain runtime-owned. Existing payload
-migrations remain App-owned.
+Gait Analysis retains its Video Marker payload contract, project migrations,
+step segmentation, gait metrics, CSV set, and version-3 project payload. File
+identities and portable paths remain runtime-owned. Existing payload migrations
+remain App-owned.
 
 ## Compatibility and migration
 
@@ -106,12 +115,16 @@ side effects, standard file lifecycle, transient session rebuild, two-axis
 rendering, viewport preservation, renderer rollback, Chrono export, and
 project restore. VT Resistance focused tests cover resistance calculations,
 CSV compatibility, native layout, shared batch recomputation, two-axis
-rendering, result packaging, and project restore.
+rendering, result packaging, and project restore. Gait focused tests cover
+project migration, pose decoding, scientific calculations, CSV compatibility,
+typed table navigation, three-axis rendering, folder selection, result
+packaging, and project restore.
 
 ## Evidence
 
 - [Chrono Overlay](../../../../apps/electrochemistry/chrono-overlay/README.md)
 - [VT Resistance](../../../../apps/electrochemistry/vt-resistance/README.md)
+- [Gait Analysis](../../../../apps/gait/gait-analysis/README.md)
 - [LabKit App Framework](../../../../framework/README.md)
 - [Build a Complete App](../../../../development/build-apps/complete-app.md)
 
