@@ -26,10 +26,12 @@ function drawResultPreview(ax, model)
     count = numel(groups);
     x = 1:count;
     colors = groupColors(count);
+    plotChoices = ttest_wizard.userInterface.plotChoices();
+    boxPlotLabel = plotChoices.types(2);
     hold(ax, 'on');
 
     plotType = string(parameters.type);
-    drawGroups(ax, groups, model, parameters, colors, plotType);
+    drawGroups(ax, groups, model, parameters, colors, plotType, boxPlotLabel);
     if parameters.showPoints
         for groupIndex = 1:count
             values = double(groups(groupIndex).values(:));
@@ -40,11 +42,8 @@ function drawResultPreview(ax, model)
         end
     end
 
-    values = zeros(0, 1);
-    for groupIndex = 1:count
-        values = [values; double(groups(groupIndex).values(:))]; %#ok<AGROW>
-    end
-    if plotType == "Box plot"
+    values = double(vertcat(groups.values));
+    if plotType == boxPlotLabel
         dataLow = min(values);
         dataTop = max(values);
     else
@@ -73,7 +72,7 @@ function drawResultPreview(ax, model)
         end
     end
     upperPad = 0.12 * span;
-    if plotType ~= "Box plot" && dataLow >= 0
+    if plotType ~= boxPlotLabel && dataLow >= 0
         lowerLimit = 0;
     else
         lowerLimit = dataLow - 0.08 * span;
@@ -111,10 +110,11 @@ function drawResultPreview(ax, model)
     hold(ax, 'off');
 end
 
-function drawGroups(ax, groups, model, parameters, colors, plotType)
+function drawGroups(ax, groups, model, parameters, colors, plotType, ...
+        boxPlotLabel)
     count = numel(groups);
     x = 1:count;
-    if plotType == "Box plot"
+    if plotType == boxPlotLabel
         for groupIndex = 1:count
             values = double(groups(groupIndex).values(:));
             boxchart(ax, repmat(groupIndex, numel(values), 1), values, ...
@@ -180,6 +180,7 @@ function offsets = deterministicJitter(count)
         offsets = zeros(count, 1);
     else
         phase = (1:count).';
+        % Constant: golden-angle radians distribute deterministic marker jitter.
         offsets = 0.075 * sin(phase * 2.399963229728653);
         offsets = offsets - mean(offsets);
     end
@@ -196,6 +197,7 @@ function drawSignificanceBracket(ax, x1, x2, y, height, textPad, label)
 end
 
 function textValue = significanceText(result)
+    % Constant: conventional star thresholds for reported p-values.
     if result.pValue < 1e-4
         textValue = '****';
     elseif result.pValue < 1e-3

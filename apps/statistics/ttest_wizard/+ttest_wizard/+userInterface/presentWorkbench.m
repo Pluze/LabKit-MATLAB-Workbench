@@ -213,6 +213,7 @@ function text = plotFreshnessText(results, isCurrent)
 end
 
 function text = significanceText(result)
+    % Constant: conventional star thresholds for reported p-values.
     if ~result.ok
         text = "";
     elseif result.pValue < 1e-4
