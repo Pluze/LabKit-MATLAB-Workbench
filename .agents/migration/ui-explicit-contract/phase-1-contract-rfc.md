@@ -1,7 +1,9 @@
 # UI explicit-contract replacement RFC
 
-Status: accepted for phased production implementation on 2026-07-19 after the
-executable representation comparison. This is not yet a released API.
+Status: Phase 1A representation decision accepted on 2026-07-19. Phase 1B
+end-to-end contract prototype and runtime/performance acceptance are pending.
+This is not yet a released API or authorization to freeze the production
+contract.
 
 ## Decision summary
 
@@ -96,8 +98,9 @@ value. `Selection` exposes stable item IDs/indices. Dialog results expose
 `Cancelled` and the typed chosen value. No callback receives an open event,
 `meta`, registry, source handle, or raw MATLAB event.
 
-Layout signals bind directly to a `Command` value or a command ID resolved
-during compilation. Callback role is declared by the originating control and
+Layout signals bind directly to a `Command` value; raw string command IDs are
+not part of the App-facing contract. Callback role is declared by the
+originating control and
 must match the command. Construction uses MATLAB's read-only `nargin(handle)`
 and `nargout(handle)` definition queries to require the role's one fixed input
 and output shape; variable-arity handles are rejected. Runtime dispatch does
@@ -128,8 +131,7 @@ workspace = labkit.ui.layout.workspace(content);
 
 workspace = labkit.ui.layout.workspace();
 workspace = workspace.page("data", "Data", dataContent);
-workspace = workspace.page("plot", "Plot", plotContent, ...
-    AvailableWhen="session.hasResult");
+workspace = workspace.page("plot", "Plot", plotContent);
 workspace = workspace.initialPage("data");
 ```
 
@@ -139,7 +141,9 @@ private platform-adapter choices.
 
 ## Presentation
 
-Presentation is a value with a closed operation set:
+Presentation is a complete snapshot with a closed operation set. Every
+presentation call describes the full current visible state; the runtime owns
+diffing and reconciliation. Apps do not send incremental patches:
 
 ```matlab
 view = labkit.ui.presentation();
@@ -196,9 +200,14 @@ open structs:
   `chooseOutputFile`, and `chooseOutputFolder`;
 - `saveProject`, `saveRecovery`, `sourceRecord`, `upsertSource`, and
   `reconcileSources`;
-- `previewTarget` for a declared advanced target only;
+- `acquireRenderSurface` for a declared renderer target; the returned
+  event-scoped surface cannot be stored in App state or resources;
 - `setResource`, `getResource`, `removeResource`, and `clearResourceScope`;
 - `writeResult`.
+
+Each Application declares the context capabilities it needs. Adding a context
+method requires a fresh cross-App inventory and an ownership decision; the
+context is not an open service collection.
 
 The runtime constructs the concrete context; tests construct a contract-equal
 test context. It never exposes figure, debug object, launch request, registry,
@@ -289,9 +298,11 @@ Video Marker. Measure:
 - ability to prevent App mutation/inspection of backing representation;
 - Phase 0 performance thresholds.
 
-The accepted representation is the sealed immutable value-class form. The
-prototype evidence is complete, and the repository owner delegated the
-architecture choice after reviewing the small value-class versus opaque-value
-comparison. Production implementation may proceed through the Phase 2 gates;
-this approval does not authorize a mutable handle model or public inheritance
+The accepted Phase 1A representation is the sealed immutable value-class
+form. The representation comparison evidence is complete, and the repository
+owner delegated the architecture choice after reviewing the small value-class
+versus opaque-value comparison. Phase 1B must still prove one end-to-end
+contract, identical comparison graphs, stable public errors, and the
+runtime/performance gates before Phase 2 production implementation begins.
+This approval does not authorize a mutable handle model or public inheritance
 hierarchy.

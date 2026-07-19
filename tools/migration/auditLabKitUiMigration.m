@@ -60,7 +60,7 @@ function report = auditLabKitUiMigration(repoRoot, options)
     frameworkMatches = scanFrameworkContracts(repoRoot);
     versionPaths = discoverVersionNamedPaths(repoRoot);
     report = struct( ...
-        "schemaVersion", 2, ...
+        "schemaVersion", 3, ...
         "debtId", "ui-explicit-contract-redesign", ...
         "publicUiSymbols", publicSymbols, ...
         "apps", appEvidence, ...
@@ -150,8 +150,20 @@ function [disposition, owner, rationale, testStrategy] = ...
             testStrategy = "static App boundary guardrail";
         case "callback-signature"
             disposition = "replace";
-            rationale = ...
-                "Declare and validate callback roles before launch.";
+            name = extractBefore(value + ".", ".");
+            if startsWith(name, "on")
+                rationale = ...
+                    "Declare and validate the UI command role before launch.";
+            elseif name == "createSession"
+                rationale = ...
+                    "Retain as the declared Application session factory.";
+            elseif name == "initializeWorkbench"
+                rationale = ...
+                    "Retain as the declared Application startup callback.";
+            else
+                rationale = ...
+                    "Retain as a typed ProjectContract callback.";
+            end
             testStrategy = "callback-role compilation test";
         otherwise
             disposition = "unclassified";
@@ -229,6 +241,8 @@ function matches = scanApps(repoRoot, apps)
             string({matches.value}).';
         [~, order] = sort(keys);
         matches = matches(order);
+        keys = keys(order);
+        matches = matches([true; keys(2:end) ~= keys(1:end-1)]);
     end
 end
 
@@ -253,12 +267,17 @@ function matches = appendLineMatches(matches, appId, source, lineNumber, line)
         for iToken = 1:numel(tokens)
             cursor = cursor + 1;
             value = strjoin(string(tokens{iToken}), ".");
+            [confidence, semanticRole, reviewed] = matchSemantics( ...
+                specs(k).category, value);
             found(cursor) = struct( ...
                 "appId", char(appId), ...
                 "category", char(specs(k).category), ...
                 "value", char(value), ...
                 "source", char(source), ...
-                "line", double(lineNumber));
+                "line", double(lineNumber), ...
+                "confidence", char(confidence), ...
+                "semanticRole", char(semanticRole), ...
+                "reviewed", reviewed);
         end
     end
     matches = [matches; found];
@@ -287,7 +306,7 @@ function specs = patternSpecs()
         patternSpec("layout-constructor", ...
             'labkit[.]ui[.]layout[.]([A-Za-z][A-Za-z0-9_]*)')
         patternSpec("definition-field", ...
-            '["'']([A-Z][A-Za-z0-9_]*)["'']\s*,')
+            '["''](Command|Id|Title|DisplayName|Family|AppVersion|Updated|Requirements|Project|CreateSession|Layout|Actions|Present|Renderers|Start|DebugSample)["'']\s*,')
         patternSpec("presentation-transport", ...
             'view[.](controls|previews|interactions)')
         patternSpec("interaction-kind", ...
@@ -299,7 +318,7 @@ function specs = patternSpecs()
         patternSpec("registry-access", ...
             '(services[.]figure|registry|componentHandles)')
         patternSpec("callback-signature", ...
-            '^\s*function\s+(?:\[[^\]]*\]|[^=]+)?=?\s*([A-Za-z][A-Za-z0-9_]*)\s*\(([^)]*)\)')];
+            '^\s*function\s+(?:\[[^\]]*\]|[^=]+)?=?\s*((?:on[A-Z][A-Za-z0-9_]*|createProject|validateProject|migrateProject|importLegacyProject|createResume|applyResume|createSession|initializeWorkbench))\s*\(([^)]*)\)')];
 end
 
 function spec = patternSpec(category, pattern)
@@ -308,7 +327,31 @@ end
 
 function item = emptyMatch()
     item = struct("appId", "", "category", "", "value", "", ...
-        "source", "", "line", 0);
+        "source", "", "line", 0, "confidence", "", ...
+        "semanticRole", "", "reviewed", false);
+end
+
+function [confidence, semanticRole, reviewed] = matchSemantics(category, value)
+    confidence = "exact";
+    reviewed = true;
+    switch string(category)
+        case "callback-signature"
+            confidence = "probable";
+            name = extractBefore(string(value) + ".", ".");
+            if startsWith(name, "on")
+                semanticRole = "ui-command";
+            elseif name == "createSession"
+                semanticRole = "session-factory";
+            elseif name == "initializeWorkbench"
+                semanticRole = "startup-callback";
+            else
+                semanticRole = "project-callback";
+            end
+        case "definition-field"
+            semanticRole = "metadata";
+        otherwise
+            semanticRole = "ui-boundary";
+    end
 end
 
 function evidence = summarizeApps(repoRoot, apps, matches)

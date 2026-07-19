@@ -23,8 +23,8 @@ ui-migration-debt: ui-explicit-contract-redesign
 - **Owner:** `labkit.ui`
 - **Target boundary:** the next incompatible `labkit.ui` contract and every
   tracked App that consumes it
-- **Status:** Phase 0 complete; Phase 1 RFC accepted; Phase 2 strict-kernel
-  implementation in progress
+- **Status:** Phase 0 inventory complete; Phase 1A representation accepted;
+  Phase 1B end-to-end contract and runtime/performance acceptance in progress
 - **User-visible reason:** App authors must be able to discover the framework
   from function, constructor, method, and parameter names. Invalid App code
   must fail at the contract boundary instead of being ignored, guessed, or
@@ -552,6 +552,10 @@ Gate:
 
 #### Phase 1 - contract RFC and executable prototypes
 
+Phase 1A selects the public representation. Phase 1B proves the complete
+contract through an end-to-end prototype and runtime/performance evidence.
+Representation acceptance alone does not open the Phase 2 production gate.
+
 Create a reviewed replacement-contract RFC with:
 
 - the complete proposed public vocabulary;
@@ -586,6 +590,12 @@ Prototype acceptance:
   contract explicit;
 - presentation remains deterministic and testable without a visible GUI;
 - performance thresholds are set from Phase 0 evidence before implementation.
+- value and alternative representations compile identical target graphs;
+- public programming errors use stable `labkit:ui:contract:*` identifiers;
+- presentation is a complete snapshot reconciled by the runtime, never an
+  App-authored patch protocol;
+- Apps declare required runtime-context capabilities and cannot retain an
+  acquired render surface.
 
 The prototypes are evidence, not compatibility shims. Reject and redesign the
 contract if they require per-App exceptions.

@@ -19,6 +19,11 @@ pages are discovered from `docs/`; public Apps come from
 from complete public help contracts. `site/` is tracked generated output.
 Never hand-edit HTML, CSS, JavaScript, or search indexes.
 
+Migration evidence summaries are generated views of one machine-readable
+inventory. When an audit schema or classifier changes, regenerate the
+baseline, capability matrix, behavior classification, and worksheet together,
+then run their aggregate-consistency test; do not reconcile counts by hand.
+
 ## Page design
 
 - Organize by reader task and component ownership: getting started, apps,

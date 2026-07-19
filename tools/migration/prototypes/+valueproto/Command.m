@@ -16,11 +16,12 @@ classdef (Sealed) Command
                 options.Role (1, 1) string {mustBeRole} = "invoke"
             end
             expected = 2 + (options.Role ~= "invoke");
-            actual = nargin(callback);
-            if actual >= 0 && actual ~= expected
+            actualInputs = nargin(callback);
+            actualOutputs = nargout(callback);
+            if actualInputs ~= expected || actualOutputs ~= 1
                 error("prototype:ui:CallbackRoleMismatch", ...
-                    "Command %s role %s requires %d inputs; callback has %d.", ...
-                    id, options.Role, expected, actual);
+                    "Command %s role %s requires %d inputs and one output.", ...
+                    id, options.Role, expected);
             end
             obj.Id = id;
             obj.Role = options.Role;

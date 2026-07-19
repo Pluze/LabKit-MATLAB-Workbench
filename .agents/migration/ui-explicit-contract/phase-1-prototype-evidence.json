@@ -1,34 +1,36 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "valueClass": {
     "publicPrototypeFileCount": 5,
     "scenarios": [
       {
         "name": "T-Test Wizard",
-        "targetCount": 5,
+        "targetCount": 4,
         "operationCount": 4,
         "deterministic": true,
-        "compileMedianSeconds": 6.34E-5
+        "compileMedianSeconds": 0.0002768
       },
       {
         "name": "Curvature Measurement",
-        "targetCount": 3,
+        "targetCount": 2,
         "operationCount": 3,
         "deterministic": true,
-        "compileMedianSeconds": 6.61E-5
+        "compileMedianSeconds": 0.0002898
       },
       {
         "name": "Video Marker",
-        "targetCount": 4,
+        "targetCount": 3,
         "operationCount": 3,
         "deterministic": true,
-        "compileMedianSeconds": 8.21E-5
+        "compileMedianSeconds": 0.0002637
       }
     ],
     "failures": {
       "unknownTarget": "prototype:ui:UnknownReference",
       "callbackRole": "prototype:ui:CallbackRoleMismatch",
-      "unknownArgument": "MATLAB:TooManyInputs"
+      "variableArity": "prototype:ui:CallbackRoleMismatch",
+      "callbackOutput": "prototype:ui:CallbackRoleMismatch",
+      "unknownArgument": "labkit:ui:contract:UnknownArgument"
     },
     "backingRepresentationPubliclyMutable": false,
     "helpAndMethodsDiscoverable": true
@@ -41,35 +43,37 @@
         "targetCount": 4,
         "operationCount": 4,
         "deterministic": true,
-        "compileMedianSeconds": 0.0001224
+        "compileMedianSeconds": 0.000492
       },
       {
         "name": "Curvature Measurement",
         "targetCount": 2,
         "operationCount": 3,
         "deterministic": true,
-        "compileMedianSeconds": 0.0001149
+        "compileMedianSeconds": 0.0001465
       },
       {
         "name": "Video Marker",
         "targetCount": 3,
         "operationCount": 3,
         "deterministic": true,
-        "compileMedianSeconds": 0.0001121
+        "compileMedianSeconds": 0.0001199
       }
     ],
     "failures": {
       "unknownTarget": "prototype:ui:UnknownReference",
       "callbackRole": "prototype:ui:CallbackRoleMismatch",
-      "unknownArgument": "MATLAB:TooManyInputs"
+      "variableArity": "prototype:ui:CallbackRoleMismatch",
+      "callbackOutput": "prototype:ui:CallbackRoleMismatch",
+      "unknownArgument": "labkit:ui:contract:UnknownArgument"
     },
     "backingRepresentationVisibleThroughFunctions": true,
     "helpAndMethodsDiscoverable": false
   },
   "seamComparison": {
-    "currentDistinctSeamLines": 564,
-    "valuePrototypeSeamLines": 52,
-    "opaquePrototypeSeamLines": 48
+    "currentDistinctSeamLines": 506,
+    "valuePrototypeCoveredSeamLines": 52,
+    "opaquePrototypeCoveredSeamLines": 48
   },
   "decision": "sealed-immutable-value-classes",
   "decisionRationale": "Both forms can reject invalid contracts and compile deterministic plans. Value methods are discoverable and compose without a large global function vocabulary. MATLAB functions() exposes closure workspaces, so function-handle tokens are conventionally opaque rather than representation-safe."

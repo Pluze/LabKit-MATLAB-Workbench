@@ -43,6 +43,8 @@ classdef (Sealed) Application
                 presentation (1, 1) valueproto.Presentation
             end
             nodes = obj.Layout.flatten();
+            nodes = nodes(cellfun(@(value) ...
+                ~isempty(value.Capabilities), nodes));
             ids = string(cellfun(@(value) value.Id, nodes, ...
                 "UniformOutput", false));
             operations = presentation.operations();

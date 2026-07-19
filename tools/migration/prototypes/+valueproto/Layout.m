@@ -75,21 +75,19 @@ classdef (Sealed) Layout
     end
 
     methods
-        function obj = page(obj, id, title, content, options)
+        function obj = page(obj, id, title, content)
             arguments
                 obj (1, 1) valueproto.Layout
                 id (1, 1) string {mustBeValidId}
                 title (1, 1) string {mustBeNonempty}
                 content (1, 1) valueproto.Layout
-                options.AvailableWhen (1, 1) string = ""
             end
             mustBeWorkspace(obj);
             if any(cellfun(@(page) page.Id == id, obj.Pages))
                 error("prototype:ui:DuplicateId", ...
                     "Workspace page ID is duplicated: %s", id);
             end
-            page = struct("Id", id, "Title", title, "Content", content, ...
-                "AvailableWhen", options.AvailableWhen);
+            page = struct("Id", id, "Title", title, "Content", content);
             obj.Pages{end + 1} = page;
         end
 

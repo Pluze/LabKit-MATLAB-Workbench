@@ -5,10 +5,12 @@ on 2026-07-19. This folder is the compact evidence source for later phases;
 generated `site/` output and ignored profiler artifacts are not design state.
 
 After merging the release-blocking main CI repair at `a13e91d8`, the audit was
-refreshed. The inventory totals and classifications were unchanged; seven
-T-Test callback source locations moved by one line after bounded collection
-replaced dynamic array growth. No new public symbol or transport field was
-introduced.
+refreshed. A later Phase 0 hardening pass removed lexical false positives,
+deduplicated identical source matches, and added `confidence` and
+`semanticRole` plus explicit review state to every App-side match. Callback
+roles inferred from the bounded naming/file convention are reviewed
+`probable`; direct syntax matches are `exact`. No new public symbol or
+transport field was introduced.
 
 ## Freeze
 
@@ -21,7 +23,7 @@ must update the audit and explain why it cannot wait for the replacement.
 ## Inventory
 
 - `baseline.json` is the machine-readable source-location inventory. It covers
-  35 public `labkit.ui` callables, 2,812 App-side uses, 310 framework
+  35 public `labkit.ui` callables, 2,430 App-side uses, 310 framework
   shadow-contract reads across 16 categories, and all 21 public Apps.
 - `capability-matrix.md` is the compact per-App view.
 - `behavior-classification.md` classifies each distinct App call pattern as
@@ -40,6 +42,11 @@ auditLabKitUiMigration(pwd, Write=true);
 `UiMigrationBaselineTest` compares a fresh audit with the tracked JSON and
 fails if an App disappears, a required shadow-contract category is missed, a
 call pattern lacks a decision, or a prohibited architecture name appears.
+`MigrationSummaryConsistencyTest` additionally proves that audit and analyzer
+category totals/App unions agree. It guards the reviewed facts that interaction
+kinds span seven Apps, definition fields are the 16 actual contract keys, and
+ordinary local helpers are not UI callbacks. Lifecycle callbacks retain their
+own semantic roles instead of being mislabeled as Commands.
 
 ## Required behavior and accidental behavior
 
@@ -108,7 +115,10 @@ plot/export behavior; Curvature point/scale/overlay/viewport behavior; and
 Video resource/recovery/current-and-legacy project behavior. All files and
 values are synthetic and temporary.
 
-The exact audit consistency test separately passed 2 of 2 tests.
+The final migration-evidence run passed all seven focused tests: two baseline
+tests, the analyzer test, the cross-summary consistency test, and three
+representation-prototype tests. After adding explicit review metadata, the
+narrow baseline/summary rerun passed 3 of 3 tests.
 
 ## Performance baseline and thresholds
 
