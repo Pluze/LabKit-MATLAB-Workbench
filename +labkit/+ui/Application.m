@@ -207,6 +207,13 @@ classdef (Sealed) Application
             accepted = true;
         end
     end
+
+    methods (Hidden)
+        function ids = commandIdsForRuntime(obj)
+            ids = string(cellfun(@(command) command.Id, obj.Commands, ...
+                "UniformOutput", false));
+        end
+    end
 end
 
 function value = optionValue(options, name, defaultValue)

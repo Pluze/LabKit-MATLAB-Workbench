@@ -23,8 +23,8 @@ ui-migration-debt: ui-explicit-contract-redesign
 - **Owner:** `labkit.ui`
 - **Target boundary:** the next incompatible `labkit.ui` contract and every
   tracked App that consumes it
-- **Status:** Phase 0 inventory and Phase 1 contract gates complete; Phase 2
-  strict-kernel implementation in progress
+- **Status:** Phase 0 inventory, Phase 1 contract gates, and Phase 2 strict
+  kernel complete; Phase 3 runtime and platform implementation in progress
 - **User-visible reason:** App authors must be able to discover the framework
   from function, constructor, method, and parameter names. Invalid App code
   must fail at the contract boundary instead of being ignored, guessed, or
