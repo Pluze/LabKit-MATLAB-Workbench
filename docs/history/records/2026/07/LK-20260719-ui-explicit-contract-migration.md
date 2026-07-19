@@ -47,6 +47,10 @@ requiring the later managed-interaction vocabulary.
 - Added `Application.launch`, fixed renderer `(axes,model)` dispatch, semantic
   labels, runtime-owned file add/remove/clear and selection, and transient
   session rebuild after source collection changes.
+- Added strict table presentation options, typed complete-data edits, and
+  two-dimensional cell selection through the existing `TableEdit` and
+  `Selection` values; the private adapter absorbs native MATLAB table-value
+  differences.
 - Fixed session construction to `Session(project,context)` so Apps resolve
   opaque portable sources without reading their representation.
 - Migrated Chrono Overlay to one export Command, four direct bindings, one
@@ -73,7 +77,8 @@ their format and App payload versions independently of the UI facade major.
 
 Focused headless tests cover strict values, transactional runtime behavior,
 project save/restore, authoring defaults, and Chrono calculations/exports.
-Hidden GUI tests cover native semantic construction, typed callbacks, bound
+Hidden GUI tests cover native semantic construction, typed control and table
+callbacks, bound
 side effects, standard file lifecycle, transient session rebuild, two-axis
 rendering, viewport preservation, renderer rollback, Chrono export, and
 project restore.

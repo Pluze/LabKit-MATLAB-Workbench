@@ -42,7 +42,14 @@ classdef (Sealed) Layout
     %       selection. Default: empty.
     %   Edited - Role="tableEdit" Command for resultTable. Default: empty.
     %   SelectionChanged - Role="selection" Command for filePanel or
-    %       resultTable. Default: empty.
+    %       resultTable. Table selections arrive in Selection.Cells.
+    %       Default: empty.
+    %   Columns - Row text array of initial resultTable column labels.
+    %       Default: empty.
+    %   RowNames - Row text array of initial resultTable row labels.
+    %       Default: empty.
+    %   ColumnEditable - Logical scalar or row marking editable resultTable
+    %       columns. Default: false.
     %   Renderers - Unique renderer-ID row for previewArea. Default: empty.
     %   AxisIds - Unique axes-ID row for previewArea. Default: "main".
     %   Workspace - One workspace Layout for workbench. Default: empty.
@@ -294,15 +301,26 @@ classdef (Sealed) Layout
 
         function obj = resultTable(id, varargin)
             options = parseContractOptions("labkit.ui.Layout.resultTable", ...
-                ["Edited", "SelectionChanged"], varargin{:});
+                ["Columns", "RowNames", "ColumnEditable", ...
+                 "Edited", "SelectionChanged"], varargin{:});
             signals = {
                 roleSignal(options, "Edited", "tableEdit", "resultTable")
                 roleSignal(options, "SelectionChanged", ...
                     "selection", "resultTable")}.';
             signals = signals(~cellfun(@isempty, signals));
+            columns = textRow(optionValue( ...
+                options, "Columns", strings(1, 0)), "Columns");
+            editable = logicalRow(optionValue( ...
+                options, "ColumnEditable", false), "ColumnEditable");
+            assertEditableWidth(editable, columns);
+            configuration = struct( ...
+                "Columns", columns, ...
+                "RowNames", textRow(optionValue( ...
+                    options, "RowNames", strings(1, 0)), "RowNames"), ...
+                "ColumnEditable", editable);
             obj = makeLeaf("resultTable", id, ...
                 ["table", "selection", "enabled", "visible"], ...
-                signals, struct());
+                signals, configuration);
         end
 
         function obj = logPanel(id)
@@ -593,6 +611,22 @@ function value = logicalValue(value, label)
     if ~(islogical(value) && isscalar(value))
         error("labkit:ui:contract:InvalidValue", ...
             "Layout %s must be a logical scalar.", label);
+    end
+end
+
+function values = logicalRow(values, label)
+    if ~(islogical(values) && (isscalar(values) || isrow(values)))
+        error("labkit:ui:contract:InvalidValue", ...
+            "Layout %s must be a logical scalar or row.", label);
+    end
+    values = reshape(values, 1, []);
+end
+
+function assertEditableWidth(editable, columns)
+    if ~isscalar(editable) && ~isempty(columns) && ...
+            numel(editable) ~= numel(columns)
+        error("labkit:ui:contract:InvalidValue", ...
+            "Layout ColumnEditable must be scalar or match Columns.");
     end
 end
 

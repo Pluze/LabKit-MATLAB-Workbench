@@ -11,7 +11,7 @@ classdef (Sealed) Presentation
     %   view = view.text(target, text)
     %   view = view.files(target, paths)
     %   view = view.selection(target, selection)
-    %   view = view.table(target, model)
+    %   view = view.table(target, data, Name=Value)
     %   view = view.plot(target, renderer, model)
     %   view = view.workspacePage(target, Name=Value)
     %
@@ -32,7 +32,7 @@ classdef (Sealed) Presentation
     %   text - Scalar text.
     %   paths - String or cell array of file paths.
     %   selection - Selection value accepted by the target.
-    %   model - App-owned table or renderer model.
+    %   data - App-owned table, numeric array, or cell array.
     %   renderer - Declared renderer ID.
     %
     % Outputs:
@@ -123,13 +123,25 @@ classdef (Sealed) Presentation
             obj = append(obj, "selection", target, selection, "");
         end
 
-        function obj = table(obj, target, model)
-            if ~(istable(model) || isnumeric(model) || iscell(model) || ...
-                    (isstruct(model) && isscalar(model)))
+        function obj = table(obj, target, data, varargin)
+            if ~(istable(data) || isnumeric(data) || iscell(data))
                 error("labkit:ui:contract:InvalidValue", ...
-                    "Presentation table model has an unsupported type.");
+                    "Presentation table data has an unsupported type.");
             end
-            obj = append(obj, "table", target, model, "");
+            options = parseContractOptions( ...
+                "labkit.ui.Presentation.table", ...
+                ["Columns", "RowNames", "ColumnEditable"], varargin{:});
+            columns = textRow(optionValue( ...
+                options, "Columns", strings(1, 0)), "Columns");
+            editable = logicalRow(optionValue( ...
+                options, "ColumnEditable", false), "ColumnEditable");
+            assertEditableWidth(editable, columns);
+            value = struct( ...
+                "Data", {data}, "Columns", columns, ...
+                "RowNames", textRow(optionValue( ...
+                    options, "RowNames", strings(1, 0)), "RowNames"), ...
+                "ColumnEditable", editable);
+            obj = append(obj, "table", target, value, "");
         end
 
         function obj = plot(obj, target, renderer, model)
@@ -230,5 +242,40 @@ function value = logicalScalar(value, label)
     if ~(islogical(value) && isscalar(value))
         error("labkit:ui:contract:InvalidValue", ...
             "Presentation %s must be a logical scalar.", label);
+    end
+end
+
+function values = textRow(values, label)
+    if ischar(values)
+        values = string(values);
+    elseif iscellstr(values)
+        values = string(values);
+    elseif ~isstring(values)
+        error("labkit:ui:contract:InvalidValue", ...
+            "Presentation %s must be text.", label);
+    end
+    values = reshape(values, 1, []);
+end
+
+function values = logicalRow(values, label)
+    if ~(islogical(values) && (isscalar(values) || isrow(values)))
+        error("labkit:ui:contract:InvalidValue", ...
+            "Presentation %s must be a logical scalar or row.", label);
+    end
+    values = reshape(values, 1, []);
+end
+
+function assertEditableWidth(editable, columns)
+    if ~isscalar(editable) && ~isempty(columns) && ...
+            numel(editable) ~= numel(columns)
+        error("labkit:ui:contract:InvalidValue", ...
+            "Presentation ColumnEditable must be scalar or match Columns.");
+    end
+end
+
+function value = optionValue(options, name, defaultValue)
+    value = defaultValue;
+    if isfield(options, name)
+        value = options.(name);
     end
 end

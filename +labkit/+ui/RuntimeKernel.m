@@ -219,6 +219,23 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.dispatch(command, []);
         end
 
+        function applyTableEdit(obj, target, edit)
+            obj.assertOpen();
+            if ~isa(edit, "labkit.ui.TableEdit")
+                error("labkit:ui:contract:InvalidValue", ...
+                    "Table edit payload must be a TableEdit value.");
+            end
+            command = obj.signalForTarget(target, "tableEdit");
+            obj.dispatch(command, edit);
+        end
+
+        function applyTableSelection(obj, target, cells)
+            obj.assertOpen();
+            selection = labkit.ui.Selection(Cells=cells);
+            command = obj.signalForTarget(target, "selection");
+            obj.dispatch(command, selection);
+        end
+
         function applyFilePanelSelection(obj, target, indices)
             obj.assertOpen();
             [config, current] = obj.filePanelState(target);
@@ -582,7 +599,10 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     case "previewArea"
                         view = view.visible(node.Id, true);
                     case "resultTable"
-                        view = view.table(node.Id, table());
+                        view = view.table(node.Id, cell(0, 0), ...
+                            Columns=config.Columns, ...
+                            RowNames=config.RowNames, ...
+                            ColumnEditable=config.ColumnEditable);
                     case {"logPanel", "statusPanel"}
                         view = view.text(node.Id, "");
                     case "workspacePage"

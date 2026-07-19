@@ -1,7 +1,7 @@
 # UI explicit-contract Phase 3 runtime evidence
 
-Status: first GUI-free runtime checkpoint accepted on 2026-07-19; platform,
-project, result, and interaction completion remain in progress.
+Status: runtime, native platform, project, result, and basic table paths
+accepted on 2026-07-19; managed interactions remain in progress.
 
 The replacement runtime now executes a compiled `Application` without the
 retired dispatcher, service bag, presentation commit schema, or control
@@ -53,11 +53,18 @@ to their owning replacement classes. Documentation discovery explicitly
 excludes hidden classes, and the package surface guard records their presence
 without treating them as App-facing contracts.
 
+The private MATLAB adapter now constructs the semantic workbench, fields,
+file panels, workspace pages, tables, previews, and axes. Table presentation
+uses strict named options instead of a raw struct. Existing `Selection` and
+`TableEdit` values carry N-by-2 cell selection and complete proposed table
+data, so Apps do not learn native event fields and no additional public table
+model types are required.
+
 Focused evidence:
 
-- `UiRuntimeKernelTest`: 6 of 6 tests passed, covering FIFO reentrancy,
+- `UiRuntimeKernelTest`: 7 of 7 tests passed, covering FIFO reentrancy,
   commit rollback, typed dispatch payloads, replacement/close cleanup, and
-  cleanup-failure continuation plus bound updates.
+  cleanup-failure continuation, bound updates, and typed table events.
 - `UiRuntimeContextContractTest`: 2 of 2 tests passed.
 - `UiAuthoringErgonomicsTest`: 5 of 5 executable paved-road budgets passed.
 - `UiPortableSourceStoreTest`: 3 of 3 runtime-boundary tests passed.
@@ -72,11 +79,10 @@ Focused evidence:
   distinguishes public value classes from function files.
 - `PackagePublicSurfaceTest`: the three hidden implementation files are
   explicitly governed.
-- `renderLabKitDocs`: 195 narrative pages and 146 public API pages generated
-  with no tracked site diff; hidden runtime implementation classes produced no
-  reference pages.
+- `UiMatlabPlatformAdapterTest`: 4 of 4 tests passed, covering semantic
+  construction, typed native control/table callbacks, viewport preservation,
+  and native rollback after renderer failure.
 
-This checkpoint does not close Phase 3. The next slice must replace the
-headless adapter with the private MATLAB component/layout adapter and connect
-dialogs, portable sources, renderer, and viewport contracts before the RFC
-examples are independent of the retired runtime.
+The next slice uses T-Test Wizard as the real table/workspace consumer, then
+adds managed interactions with Curvature as a narrow native sample before
+Video Marker exercises resource and recovery ownership.

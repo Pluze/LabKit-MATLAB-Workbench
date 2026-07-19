@@ -63,6 +63,10 @@ framework lifecycle state.
   `context.sourcePaths`.
 - Runtime combines Layout defaults, bindings, framework-owned state, and the
   App's dynamic `Presentation` fragment into one complete snapshot.
+- Declare tables with `Layout.resultTable`. `Presentation.table` owns strict
+  data, column-label, row-label, and editable-column options; table callbacks
+  receive `TableEdit` with the complete proposed data or `Selection.Cells`
+  with N-by-2 row/column indices. Apps never decode native table events.
 - A renderer has the fixed shape `renderer(axes,model)`. For a multi-axis
   preview, `axes` follows the declared `AxisIds` order.
 - Omit `Capabilities` on the ordinary path. An explicit allow-list is advanced
@@ -82,8 +86,8 @@ or failure.
 
 The MATLAB adapter is private. It maps semantic IDs to native components,
 routes native callbacks only through typed runtime entrypoints, preserves
-manual plot viewports, and never exposes a registry or general component
-mutation API to Apps.
+manual plot viewports, normalizes MATLAB table-value differences, and never
+exposes a registry or general component mutation API to Apps.
 
 ## Extension Gate
 

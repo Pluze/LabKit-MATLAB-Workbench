@@ -52,6 +52,7 @@ end</code></pre>
 <li>A standard <code>filePanel</code> owns portable records, add/remove/clear, selection, and transient session rebuild. App code declares <code>Bind</code> and <code>SelectionBind</code>.</li>
 <li><code>Session</code> has one fixed shape: <code>session = createSession(project,context)</code>. Resolve opaque source paths with <code>context.sourcePaths</code>.</li>
 <li>Runtime combines Layout defaults, bindings, framework-owned state, and the App's dynamic <code>Presentation</code> fragment into one complete snapshot.</li>
+<li>Declare tables with <code>Layout.resultTable</code>. <code>Presentation.table</code> owns strict data, column-label, row-label, and editable-column options; table callbacks receive <code>TableEdit</code> with the complete proposed data or <code>Selection.Cells</code> with N-by-2 row/column indices. Apps never decode native table events.</li>
 <li>A renderer has the fixed shape <code>renderer(axes,model)</code>. For a multi-axis preview, <code>axes</code> follows the declared <code>AxisIds</code> order.</li>
 <li>Omit <code>Capabilities</code> on the ordinary path. An explicit allow-list is advanced audit metadata.</li>
 <li>Use <code>ProjectContract()</code> for a default version-1 scalar-struct project, or provide fixed create/validate/migrate callbacks for a domain schema.</li>
@@ -59,7 +60,7 @@ end</code></pre>
 </ul>
 <h2 id="transaction-and-platform-boundary">Transaction And Platform Boundary</h2>
 <p>Runtime validates candidate state and the complete presentation before publishing either. A failed command, project restore, native component update, or renderer restores the prior state and replays the prior native view. Queued commands are FIFO and event-scoped resources are cleaned after success or failure.</p>
-<p>The MATLAB adapter is private. It maps semantic IDs to native components, routes native callbacks only through typed runtime entrypoints, preserves manual plot viewports, and never exposes a registry or general component mutation API to Apps.</p>
+<p>The MATLAB adapter is private. It maps semantic IDs to native components, routes native callbacks only through typed runtime entrypoints, preserves manual plot viewports, normalizes MATLAB table-value differences, and never exposes a registry or general component mutation API to Apps.</p>
 <h2 id="extension-gate">Extension Gate</h2>
 <p>A new public UI capability needs evidence from at least two Apps or one framework-owned lifecycle/consistency requirement. Repeated App callback or presenter glue is evidence for framework automation; App-specific scientific behavior remains in the owning App.</p>
 <p>Framework concepts and source names are versionless. Compatibility belongs to <code>labkit.ui.version</code> and App requirements; saved-data versions belong to <code>ProjectContract</code>.</p>

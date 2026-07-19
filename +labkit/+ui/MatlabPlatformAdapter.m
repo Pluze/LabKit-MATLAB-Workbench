@@ -165,7 +165,10 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 case "filePanel"
                     component = obj.createFilePanel(node, parent);
                 case "resultTable"
-                    component = uitable(parent);
+                    component = uitable(parent, ...
+                        ColumnName=cellstr(config.Columns), ...
+                        RowName=cellstr(config.RowNames), ...
+                        ColumnEditable=config.ColumnEditable);
                 case {"logPanel", "statusPanel"}
                     component = uitextarea(parent, Editable="off");
                 case "previewArea"
@@ -252,7 +255,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 case "selection"
                     obj.applySelection(component, operation.Value);
                 case "table"
-                    setIfProperty(component, "Data", operation.Value);
+                    obj.applyTable(component, operation.Value);
                 case "plot"
                     obj.applyPlot(operation);
                 case "workspacePage"
@@ -262,6 +265,10 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function applySelection(~, component, selection)
+            if isprop(component, "Selection") && ~isempty(selection.Cells)
+                component.Selection = selection.Cells;
+                return;
+            end
             if ~isprop(component, "Items") || ~isprop(component, "Value")
                 return;
             end
@@ -269,6 +276,17 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             indices = selection.Indices;
             indices = indices(indices >= 1 & indices <= numel(items));
             component.Value = items(indices);
+        end
+
+        function applyTable(~, component, model)
+            component.Data = nativeTableData(model.Data);
+            if ~isempty(model.Columns)
+                component.ColumnName = cellstr(model.Columns);
+            end
+            if ~isempty(model.RowNames)
+                component.RowName = cellstr(model.RowNames);
+            end
+            component.ColumnEditable = model.ColumnEditable;
         end
 
         function applyText(~, component, value)
@@ -353,8 +371,42 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                         end
                     case "filePanel"
                         obj.installFilePanelCallbacks(node, component);
+                    case "resultTable"
+                        obj.installTableCallbacks(node, component);
                 end
             end
+        end
+
+        function installTableCallbacks(obj, node, component)
+            roles = string(cellfun(@(value) value.Role, node.Signals, ...
+                "UniformOutput", false));
+            if any(roles == "tableEdit")
+                component.CellEditCallback = @(src, event) ...
+                    obj.dispatchTableEdit(node.Id, src, event);
+            end
+            if any(roles == "selection")
+                if isprop(component, "SelectionChangedFcn")
+                    component.SelectionChangedFcn = @(~, event) ...
+                        obj.Runtime.applyTableSelection( ...
+                            node.Id, tableSelectionCells(event));
+                else
+                    component.CellSelectionCallback = @(~, event) ...
+                        obj.Runtime.applyTableSelection( ...
+                            node.Id, tableSelectionCells(event));
+                end
+            end
+        end
+
+        function dispatchTableEdit(obj, target, component, event)
+            indices = event.Indices;
+            rowId = tableLabel(component.RowName, indices(1));
+            columnId = tableLabel(component.ColumnName, indices(2));
+            edit = labkit.ui.TableEdit( ...
+                RowIndex=indices(1), ColumnIndex=indices(2), ...
+                RowId=rowId, ColumnId=columnId, ...
+                PreviousValue=event.PreviousData, ...
+                NewValue=editedValue(event), Data=component.Data);
+            obj.Runtime.applyTableEdit(target, edit);
         end
 
         function installFilePanelCallbacks(obj, node, list)
@@ -525,6 +577,73 @@ items = string(list.Items);
 values = string(list.Value);
 indices = find(ismember(items, values));
 indices = reshape(indices, 1, []);
+end
+
+function cells = tableSelectionCells(event)
+if isstruct(event)
+    if isfield(event, "Selection")
+        cells = event.Selection;
+    elseif isfield(event, "Indices")
+        cells = event.Indices;
+    else
+        cells = zeros(0, 2);
+    end
+elseif isprop(event, "Selection")
+    cells = event.Selection;
+elseif isprop(event, "Indices")
+    cells = event.Indices;
+else
+    cells = zeros(0, 2);
+end
+if isempty(cells)
+    cells = zeros(0, 2);
+elseif ~isnumeric(cells)
+    rows = [cells.Row];
+    columns = [cells.Column];
+    cells = [rows(:), columns(:)];
+end
+cells = double(cells);
+end
+
+function value = editedValue(event)
+if isstruct(event)
+    if isfield(event, "NewData")
+        value = event.NewData;
+    else
+        value = event.EditData;
+    end
+elseif isprop(event, "NewData")
+    value = event.NewData;
+else
+    value = event.EditData;
+end
+end
+
+function value = tableLabel(labels, index)
+value = "";
+if index < 1 || index > numel(labels)
+    return;
+end
+candidate = string(labels(index));
+if isscalar(candidate)
+    value = candidate;
+end
+end
+
+function value = nativeTableData(value)
+if ~iscell(value)
+    return;
+end
+for k = 1:numel(value)
+    if isstring(value{k})
+        if isscalar(value{k})
+            value{k} = char(value{k});
+        else
+            error("labkit:ui:contract:InvalidValue", ...
+                "Table cell string values must be scalar.");
+        end
+    end
+end
 end
 
 function value = multiSelectValue(selectionMode)

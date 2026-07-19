@@ -6,7 +6,9 @@ classdef (Sealed) TableEdit
     %
     % Description:
     %   TableEdit replaces raw MATLAB CellEditData and event metadata with
-    %   stable row/column identity plus the previous and proposed values.
+    %   stable row/column identity, the previous and proposed values, and the
+    %   complete proposed table data when the callback must interpret pasted
+    %   or related rows atomically.
     %
     % Required Name-Value Arguments:
     %   RowIndex - Positive integer row index.
@@ -19,6 +21,7 @@ classdef (Sealed) TableEdit
     %       empty.
     %   ColumnId - Empty or nonempty scalar text stable across display-name
     %       changes. Default: empty.
+    %   Data - Complete proposed table data after the edit. Default: empty.
     %
     % Outputs:
     %   edit - Immutable labkit.ui.TableEdit value.
@@ -42,12 +45,13 @@ classdef (Sealed) TableEdit
         ColumnIndex (1, 1) double
         PreviousValue
         NewValue
+        Data
     end
 
     methods
         function obj = TableEdit(varargin)
             names = ["RowId", "RowIndex", "ColumnId", "ColumnIndex", ...
-                "PreviousValue", "NewValue"];
+                "PreviousValue", "NewValue", "Data"];
             options = parseContractOptions( ...
                 "labkit.ui.TableEdit", names, varargin{:});
             for name = ["RowIndex", "ColumnIndex", ...
@@ -64,7 +68,15 @@ classdef (Sealed) TableEdit
                 options.ColumnIndex, "ColumnIndex");
             obj.PreviousValue = options.PreviousValue;
             obj.NewValue = options.NewValue;
+            obj.Data = optionValue(options, "Data", []);
         end
+    end
+end
+
+function value = optionValue(options, name, defaultValue)
+    value = defaultValue;
+    if isfield(options, name)
+        value = options.(name);
     end
 end
 

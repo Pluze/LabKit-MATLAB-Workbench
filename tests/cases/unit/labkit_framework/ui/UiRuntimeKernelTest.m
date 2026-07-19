@@ -131,6 +131,34 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
                 "bad", Bind="project.values(1)"), ...
                 "labkit:ui:contract:InvalidValue");
         end
+
+        function dispatchesTypedTableEditAndCellSelection(testCase)
+            setupLabKitTestPath();
+            edited = labkit.ui.Command( ...
+                "edited", @editTable, Role="tableEdit");
+            selected = labkit.ui.Command( ...
+                "selected", @selectCells, Role="selection");
+            layout = labkit.ui.Layout.workbench({ ...
+                labkit.ui.Layout.resultTable("data", ...
+                    Columns=["Group", "Value"], ...
+                    ColumnEditable=[true true], ...
+                    Edited=edited, SelectionChanged=selected)});
+            app = labkit.ui.Application( ...
+                Command="labkit_TableProbe_app", Id="probe.table", ...
+                Title="Table probe", Family="Tests", AppVersion="1.0.0", ...
+                Updated="2026-07-19", Requirements=[], Layout=layout, ...
+                Session=@createTableSession, Present=@presentTable);
+            runtime = app.createRuntimeForTesting();
+            data = {"A", 1; "B", 2};
+
+            runtime.applyTableEdit("data", labkit.ui.TableEdit( ...
+                RowIndex=2, ColumnIndex=2, PreviousValue=2, ...
+                NewValue=3, Data=data));
+            runtime.applyTableSelection("data", [1 1; 2 2]);
+
+            testCase.verifyEqual(runtime.State.session.data, data);
+            testCase.verifyEqual(runtime.State.session.cells, [1 1; 2 2]);
+        end
     end
 end
 
@@ -186,4 +214,22 @@ function accepted = validateBoundProject(project)
         isnumeric(project.parameters.threshold) && ...
         isscalar(project.parameters.threshold) && ...
         isfinite(project.parameters.threshold);
+end
+
+function session = createTableSession(~, ~)
+session = struct("data", {cell(0, 2)}, "cells", zeros(0, 2));
+end
+
+function view = presentTable(state)
+view = labkit.ui.Presentation().table( ...
+    "data", state.session.data, Columns=["Group", "Value"], ...
+    ColumnEditable=[true true]);
+end
+
+function state = editTable(state, edit, ~)
+state.session.data = edit.Data;
+end
+
+function state = selectCells(state, selection, ~)
+state.session.cells = selection.Cells;
 end

@@ -43,6 +43,7 @@ scope: Result provenance</code></pre>
 <ul>
 <li>Added the private native MATLAB adapter with semantic component ownership, typed RuntimeKernel callbacks, native dialog results, complete-presentation reconciliation, and rollback to the previous native view after a failed renderer commit.</li>
 <li>Added <code>Application.launch</code>, fixed renderer <code>(axes,model)</code> dispatch, semantic labels, runtime-owned file add/remove/clear and selection, and transient session rebuild after source collection changes.</li>
+<li>Added strict table presentation options, typed complete-data edits, and two-dimensional cell selection through the existing <code>TableEdit</code> and <code>Selection</code> values; the private adapter absorbs native MATLAB table-value differences.</li>
 <li>Fixed session construction to <code>Session(project,context)</code> so Apps resolve opaque portable sources without reading their representation.</li>
 <li>Migrated Chrono Overlay to one export Command, four direct bindings, one two-axis renderer call, and a two-operation App presentation.</li>
 <li>Reduced Chrono's noncomment layout/action/presenter code from 277 lines to 86 while preserving its DTA alignment, plot options, project schema, CSV columns, and result provenance.</li>
@@ -52,7 +53,7 @@ scope: Result provenance</code></pre>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <p>UI 8 is a source-breaking replacement contract. Apps migrate on the branch before the UI 7 <code>runtime/layout</code> boundary is deleted; the two public authoring surfaces are not a permanent compatibility layer. Project documents retain their format and App payload versions independently of the UI facade major.</p>
 <h2 id="validation">Validation</h2>
-<p>Focused headless tests cover strict values, transactional runtime behavior, project save/restore, authoring defaults, and Chrono calculations/exports. Hidden GUI tests cover native semantic construction, typed callbacks, bound side effects, standard file lifecycle, transient session rebuild, two-axis rendering, viewport preservation, renderer rollback, Chrono export, and project restore.</p>
+<p>Focused headless tests cover strict values, transactional runtime behavior, project save/restore, authoring defaults, and Chrono calculations/exports. Hidden GUI tests cover native semantic construction, typed control and table callbacks, bound side effects, standard file lifecycle, transient session rebuild, two-axis rendering, viewport preservation, renderer rollback, Chrono export, and project restore.</p>
 <h2 id="evidence">Evidence</h2>
 <ul>
 <li><a href="../../../../apps/electrochemistry/chrono-overlay.html">Chrono Overlay</a></li>
