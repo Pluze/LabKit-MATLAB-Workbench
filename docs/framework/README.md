@@ -33,6 +33,11 @@ startup consume it, while its stable MATLAB namespace remains separate: it
 checks compatibility for UI and domain facades rather than becoming a UI-only
 dependency.
 
+Framework concepts and source names are versionless. Compatibility belongs to
+`labkit.ui.version` and App requirements; saved-data versions belong to project
+migration contracts. Do not add version-named runtimes, packages, functions,
+types, tests, or manual sections when the framework contract changes.
+
 This package division is the supported public surface. Primitive MATLAB UI
 handles, registry mutation, concrete grid geometry, event queues, renderer
 internals, and resource cleanup implementations stay private.
@@ -107,7 +112,7 @@ requested order and returns an empty path for an optional semantic source slot
 that has not been selected yet.
 
 A persistent App exposes one `projectSpec.m` entry containing its project
-version plus local create, validate, and migrate functions. Runtime V2 owns the
+version plus local create, validate, and migrate functions. Runtime owns the
 loop across missing versions and validates each returned payload; App packages
 do not publish one migration file per historical step.
 

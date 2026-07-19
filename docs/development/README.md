@@ -10,8 +10,8 @@ only [Getting started](../getting-started/README.md) and the
 | --- | --- |
 | Understand repository and package ownership | [Architecture](architecture.md) |
 | Create or refactor an app | [App development](app-development.md) and [complete app tutorial](complete-app.md) |
-| Design interoperable scalar scientific CSV files or migrate an App export | [Scientific CSV interchange](scientific-csv-interchange.md) |
-| Develop the proposed Group Comparison App | [Group Comparison App design](group-comparison-app-design.md) |
+| Exchange simple scientific tables or gradually improve an App CSV export | [Simple scientific CSV exchange](scientific-csv-interchange.md) |
+| Develop the proposed cell-selection-based t-test App | [T-Test Wizard design](group-comparison-app-design.md) |
 | Work with an ignored private app repository | [Private apps](private-apps.md) |
 | Select tests, GUI checks, or profiling | [Testing](testing.md) |
 | Call source-checkout packaging, profiling, codecheck, or documentation tools | [Maintainer tools](tools/README.md) |

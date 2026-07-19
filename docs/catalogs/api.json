@@ -37,6 +37,8 @@
     {"source":"apps/neurophysiology/response_review_stats/+response_review_stats/+analysisRun/measureAlignedSegments.m","app":"response_review_stats","family":"Neurophysiology"},
     {"source":"apps/neurophysiology/response_review_stats/+response_review_stats/+analysisRun/summarizeMetrics.m","app":"response_review_stats","family":"Neurophysiology"},
     {"source":"apps/neurophysiology/rhs_preview/+rhs_preview/+analysisRun/readPreviewWindow.m","app":"rhs_preview","family":"Neurophysiology"},
+    {"source":"apps/statistics/ttest_wizard/+ttest_wizard/+testRun/runGroupTTests.m","app":"ttest_wizard","family":"Statistics"},
+    {"source":"apps/statistics/ttest_wizard/+ttest_wizard/+testRun/runTTest.m","app":"ttest_wizard","family":"Statistics"},
     {"source":"apps/wearable/ecg_print/+ecg_print/+analysisRun/analyzeSignal.m","app":"ecg_print","family":"Wearable"}
   ]
 }

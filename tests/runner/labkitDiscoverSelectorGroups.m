@@ -60,6 +60,9 @@ function roots = selectorSearchRoots(casesRoot, opts)
             roots(end+1) = string(fullfile(casesRoot, "gui"));
         elseif startsWith(target, "gui/")
             roots(end+1) = string(fullfile(casesRoot, target));
+        elseif startsWith(target, "unit/") || ...
+                startsWith(target, "contract/")
+            roots(end+1) = string(fullfile(casesRoot, target));
         else
             roots(end+1) = string(fullfile(casesRoot, "unit", target));
             roots(end+1) = string(fullfile(casesRoot, "contract", target));

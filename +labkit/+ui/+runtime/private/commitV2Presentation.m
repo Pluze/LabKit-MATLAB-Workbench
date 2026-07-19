@@ -197,9 +197,20 @@ function applyControlSpec(ui, id, spec)
     if found
         setControlEnabled(ui, id, value);
     end
+    [found, value] = propertyValue(spec, "Visible");
+    if found
+        applyControlVisibility(ui, id, value);
+    end
     [found, value] = propertyValue(spec, "Text");
     if found
         applyControlText(ui, id, value);
+    end
+    tableProperties = ["ColumnName", "RowName"];
+    for k = 1:numel(tableProperties)
+        [found, value] = propertyValue(spec, tableProperties(k));
+        if found
+            applyResultTableProperty(ui, id, tableProperties(k), value);
+        end
     end
     names = ["Value", "Data"];
     for k = 1:numel(names)
@@ -228,6 +239,73 @@ function applyControlText(ui, id, value)
         end
     end
     setControlValue(ui, id, value);
+end
+
+function applyResultTableProperty(ui, id, propertyName, value)
+    field = char(id);
+    if ~isfield(ui.controls, field)
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Presentation references unknown control "%s".', id);
+    end
+    control = ui.controls.(field);
+    if ~isfield(control, 'kind') || ~strcmp(control.kind, 'resultTable') || ...
+            ~isfield(control, 'table') || isempty(control.table) || ...
+            ~isvalid(control.table)
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Control "%s" does not expose result-table properties.', id);
+    end
+    propertyName = char(propertyName);
+    if isequaln(control.table.(propertyName), value)
+        return;
+    end
+    control.table.(propertyName) = value;
+end
+
+function applyControlVisibility(ui, id, value)
+    field = char(id);
+    if ~isfield(ui.controls, field)
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Presentation references unknown control "%s".', id);
+    end
+    control = ui.controls.(field);
+    if ~isfield(control, 'panel') || isempty(control.panel) || ...
+            ~isvalid(control.panel)
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Control "%s" does not expose panel visibility.', id);
+    end
+    visible = logical(value);
+    if ~isscalar(visible)
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Control "%s" visibility must be a logical scalar.', id);
+    end
+    if visible
+        control.panel.Visible = 'on';
+    else
+        control.panel.Visible = 'off';
+    end
+    parent = control.panel.Parent;
+    if ~isequal(parent, ui.rightGrid)
+        return;
+    end
+    row = control.panel.Layout.Row;
+    if ~isscalar(row) || row < 1 || row > numel(parent.RowHeight)
+        return;
+    end
+    heights = parent.RowHeight;
+    key = 'labkitVisibleRowHeight';
+    if visible
+        if isappdata(control.panel, key)
+            heights{row} = getappdata(control.panel, key);
+        else
+            heights{row} = '1x';
+        end
+    else
+        if ~isappdata(control.panel, key)
+            setappdata(control.panel, key, heights{row});
+        end
+        heights{row} = 0;
+    end
+    parent.RowHeight = heights;
 end
 
 function applyFilePanelStatus(ui, id, value)

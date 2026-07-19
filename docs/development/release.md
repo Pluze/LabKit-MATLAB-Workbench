@@ -25,6 +25,9 @@ the next patch, the next minor with patch zero, or the next major with minor
 and patch zero. The related component history record should describe that
 direct `main baseline -> branch final` transition. This prevents temporary
 branch versions from accumulating into artificial public version jumps.
+Maintain user documentation with the same squash-oriented view: it describes
+the final branch behavior and one net compatibility transition, not the
+sequence of intermediate commits used to develop it.
 
 ## Tags
 

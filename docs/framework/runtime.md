@@ -205,7 +205,7 @@ yet present returns an empty string. This pure accessor is valid inside
 `CreateSession`, actions, presenters, and GUI-free workflow functions, so App
 code does not depend on the portable-reference schema.
 
-Immediately before each write, Runtime V2 copies the durable project and
+Immediately before each write, Runtime copies the durable project and
 rebases its portable references from that write's actual MAT-file destination.
 It preserves additive reference data and does not mutate the live project
 merely to serialize it.
@@ -576,7 +576,7 @@ and `Layout`. It may add `Project`, `CreateSession`, `Actions`, `Present`,
 `labkit.ui.runtime.launch`, which owns lightweight request dispatch, contract
 checks, runtime creation, output normalization, and the versioned title.
 
-V2 state has exactly two roots, `project` and `session`. Project contains
+Runtime state has exactly two roots, `project` and `session`. Project contains
 `inputs`, `parameters`, `annotations`, `results`, and `extensions`; session
 contains `selection`, `workflow`, `view`, and `cache`. Both slices contain only
 plain serializable MATLAB data. Graphics, listeners, timers, tools, callbacks,
@@ -586,11 +586,11 @@ Project factories use `labkit.ui.runtime.emptySourceRecords()`; the runtime owns
 that shape, handlers populate it through `services.project` operations, and
 all App layers read paths through `labkit.ui.runtime.sourcePaths()`.
 
-The V2 `Project` declaration owns its version, factory, validator, migrations,
+The `Project` declaration owns its version, factory, validator, migrations,
 and named read-only legacy imports. Optional `CreateResume` and `ApplyResume`
 hooks may restore conveniences such as the current frame, never durable data.
 
-V2 events run through one non-recursive FIFO queue per figure. A handler has
+Events run through one non-recursive FIFO queue per figure. A handler has
 the signature `state = handler(state, event, services)`. Nested
 `services.dispatch` calls enqueue a later transaction, so the current handler
 finishes one state commit and one presentation commit first. A failed handler,
@@ -603,11 +603,11 @@ after the value is staged. Omit `Event` when the bound value is the complete
 state change; the runtime still validates and commits the transaction, and the
 App does not need a no-op handler. `Present(state)` returns control properties and
 prepared preview models by semantic id. Registered renderers receive an axes
-and model; presenters and actions do not receive the raw UI registry on the v2
-path. A renderer runs only when its declared renderer/model request changes;
+and model; presenters and actions never receive the raw UI registry. A
+renderer runs only when its declared renderer/model request changes;
 state-only commits preserve existing graphics and viewports. Plot utilities are
 inferred from the layout. Dynamic `Items` and `Limits`
-are applied before bound values. V2 saves one `labkitProject`; named legacy
+are applied before bound values. Runtime saves one `labkitProject`; named legacy
 variables import read-only.
 
 `Event` is meaningful only on a control that also declares `Bind`. An unbound
@@ -618,7 +618,7 @@ while silently discarding user changes.
 After shell, state, first presentation, and interaction hub exist, the runtime
 queues optional `Start` with injected app-neutral `services`. An optional
 `DebugSample` writer runs only for debug launches, without app startup glue.
-V2 commits mirror `session.workflow.logLines` into semantic `logPanel` controls.
+Commits mirror `session.workflow.logLines` into semantic `logPanel` controls.
 Injected `services.dialogs` provides input-file, input-folder, output-file, and
 output-folder selection with safe defaults and test-injectable choosers. App
 handlers therefore do not call `uigetfile`, `uigetdir`, or save-dialog helpers
@@ -634,7 +634,7 @@ Replacing the same scope and id disposes the prior value before registration.
 
 Each figure owns one private interaction hub. Preview targets register as
 `previewId` or `previewId.axisId`; the hub owns hover wheel/zoom routing,
-drag callbacks, and atomic groups. V2 apps never set figure callbacks.
+drag callbacks, and atomic groups. Apps never set figure callbacks.
 `Present` may declare `anchors`, `pairedAnchors`, `pointSlots`, `rectangle`, `regionSelection`, or
 `scaleBarReference` with semantic targets, values, events, and image sizes. `regionSelection`
 emits a dragged rectangle to `Event` or clicked point to `BackgroundEvent`.
@@ -718,6 +718,21 @@ models, and controlled interaction specs. The runtime applies dynamic items and
 limits before values, suppresses callbacks during the commit, mirrors workflow
 logs, and invokes changed renderer/model requests with only `(axes, model)`.
 Unchanged preview requests retain their graphics handles and axes limits.
+
+For a `resultTable`, the presenter may supply `Data`, `ColumnName`, and
+`RowName`. The runtime applies headers before data so one table can display
+different imported CSV or worksheet shapes without predeclaring placeholder
+columns. A presenter may also set a semantic control's `Visible` property.
+Hidden workspace panels collapse their rows so another table or preview can
+use the full right-side workspace.
+
+A workspace normally contains panels directly. When an App needs several
+user-selectable right-side pages, the same `workspace` node may instead contain
+two or more `tab` nodes, each containing workspace panels. Runtime builds one
+native tab group and owns page selection and geometry. Direct panels and tab
+pages cannot be mixed, a single tab is rejected as unnecessary structure, and
+every workspace tab must contain at least one panel. Existing single-workspace
+Apps keep their direct-panel form.
 
 Renderers may use ordinary MATLAB graphics plus the small advanced plot surface:
 `clear`, `fit`, `fitCanvas`, `message`, `offsetData`, and `clampData`.

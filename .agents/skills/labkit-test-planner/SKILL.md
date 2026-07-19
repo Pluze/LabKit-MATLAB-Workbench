@@ -15,12 +15,31 @@ shared context already inspected for another active skill.
 
 Keep the calling model small:
 
-- use `buildtool changedFast` while a coherent change is still evolving;
-- use `buildtool changed` for the stable handoff gate;
+- before PR preparation, use focused tests for the current small branch step;
+  reserve `changedFast` and `changed` for the review-ready or explicitly final
+  gate described in `docs/development/testing.md`;
 - use `runLabKitTests("Files", path)` to reproduce one or more known test
   files;
 - use `Suites` only for a folder scope and `Tests` only for a class or method
   name.
+
+Choose by execution cost as well as matched-test count. One GUI method may
+launch a real App, parse files, redraw several times, and export outputs, so it
+is not a cheap iteration test merely because the runner reports one match.
+
+Use this escalation order:
+
+1. pure helper or calculation test;
+2. direct presenter, renderer, state-transition, or callback test;
+3. one structural GUI method for wiring that cannot be proved below the UI;
+4. one complete App workflow after the smaller behaviors are stable;
+5. branch/repository gates only during PR or final integration preparation.
+
+When a GUI workflow longer than roughly 20 seconds fails, use its stack and
+artifacts to reproduce the failing helper, renderer, callback, or presentation
+value directly. Do not rerun the whole workflow until that narrower check
+passes. Combine corrected behaviors into one final GUI run instead of
+rerunning after every edit.
 
 Common folder scopes are:
 
@@ -34,10 +53,11 @@ project/<topic>                   repository contracts
 ```
 
 Do not make callers learn internal validation-plan names, shard commands, or
-test-discovery implementation. Pair facade changes with
-downstream apps when their contract can be affected. After a failure, repair
-and rerun the narrowest failed test; broaden again only when the fix crosses
-another boundary or final policy requires it.
+test-discovery implementation. Pair facade changes with downstream apps when
+their contract can be affected. After a failure, repair and rerun the
+narrowest failed behavior, which may be a smaller direct test than the method
+that exposed it; broaden again only when the fix crosses another boundary or
+final policy requires it.
 
 For private workspaces, run private tests first. The acceptance sentinel opts
 private source into public scans but does not expose its Git diff to the public

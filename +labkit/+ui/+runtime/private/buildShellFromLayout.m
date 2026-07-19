@@ -13,7 +13,7 @@ function ui = buildShellFromLayout(layout, debug)
         struct('controlsPanel', 'Controls', ...
         'rightPanel', optionValue(workspaceLayout.props, 'title', 'Workspace')), ...
         tabShellLayouts(tabs), ...
-        [max(1, numel(workspaceChildren)) 1], ...
+        workspaceGridSize(workspaceChildren), ...
         workspaceRowHeights(workspaceChildren), ...
         8, ...
         debug, ...
@@ -74,11 +74,28 @@ function tf = isGrowableTabChild(child)
 end
 
 function rowHeight = workspaceRowHeights(children)
+    if workspaceUsesTabs(children)
+        rowHeight = {'1x'};
+        return;
+    end
     count = max(1, numel(children));
     rowHeight = repmat({'1x'}, 1, count);
     for k = 1:numel(children)
         rowHeight{k} = workspaceRowHeight(children{k});
     end
+end
+
+function value = workspaceGridSize(children)
+    if workspaceUsesTabs(children)
+        value = [1 1];
+    else
+        value = [max(1, numel(children)) 1];
+    end
+end
+
+function tf = workspaceUsesTabs(children)
+    tf = numel(children) >= 2 && ...
+        all(cellfun(@(child) strcmp(child.kind, 'tab'), children));
 end
 
 function value = workspaceRowHeight(~)

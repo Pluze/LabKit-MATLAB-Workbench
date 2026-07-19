@@ -388,8 +388,12 @@ function callback = semanticTableSelectionCallback(id, appCallback)
         control = ui.controls.(id);
         event = semanticEvent(control, source, rawEvent, 'user');
         event.value = source.Data;
-        event.indices = rawEventValue(rawEvent, 'Indices', []);
-        runSemanticAppCallback(ui, control, event, appCallback, id);
+        event.indices = rawEventValue(rawEvent, 'Selection', []);
+        if isempty(event.indices)
+            event.indices = rawEventValue(rawEvent, 'Indices', []);
+        end
+        runSemanticAppCallback( ...
+            ui, control, event, appCallback, id, "debounced", 0.120);
     end
 end
 

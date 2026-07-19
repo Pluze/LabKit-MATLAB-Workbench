@@ -1,0 +1,29 @@
+function varargout = labkit_TTestWizard_app(varargin)
+%LABKIT_TTESTWIZARD_APP Launch the T-Test Wizard.
+%
+% Usage:
+%   labkit_TTestWizard_app
+%   fig = labkit_TTestWizard_app
+%   info = labkit_TTestWizard_app("version")
+%   [fig, debug] = labkit_TTestWizard_app("debug")
+%
+% Description:
+%   Opens tabular CSV or workbook sources, captures two or more visible numeric
+%   groups, compares every later group with the first using explicit Welch,
+%   equal-variance, or paired t-tests, and draws a grouped mean/SD plot.
+%
+% Inputs:
+%   varargin - Launch requests accepted by labkit.ui.runtime.launch.
+%
+% Outputs:
+%   varargout - Launch, version, requirements, or debug outputs returned by the
+%   LabKit runtime.
+%
+% Typical Call:
+%   labkit_TTestWizard_app
+%
+% See also labkit.ui.runtime.launch
+
+    [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
+        @ttest_wizard.definition, varargin{:});
+end

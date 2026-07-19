@@ -7,7 +7,8 @@
     {"id":"image-measurement","title":"Image Measurement","source":"apps/image-measurement/README.md","output":"apps/image-measurement/index.html","order":4},
     {"id":"labkit-core","title":"LabKit Core","source":"apps/labkit-core/README.md","output":"apps/labkit-core/index.html","order":5},
     {"id":"neurophysiology","title":"Neurophysiology","source":"apps/neurophysiology/README.md","output":"apps/neurophysiology/index.html","order":6},
-    {"id":"wearable","title":"Wearable","source":"apps/wearable/README.md","output":"apps/wearable/index.html","order":7}
+    {"id":"statistics","title":"Statistics","source":"apps/statistics/README.md","output":"apps/statistics/index.html","order":7},
+    {"id":"wearable","title":"Wearable","source":"apps/wearable/README.md","output":"apps/wearable/index.html","order":8}
   ],
   "apps": [
     {"id":"dic-postprocess","title":"DIC Postprocess","command":"labkit_DICPostprocess_app","family":"dic","folder":"apps/dic/dic_postprocess","source":"apps/dic/dic-postprocess/README.md","output":"apps/dic/dic-postprocess.html","description":"Create strain overlays and summaries from Ncorr results.","keywords":["Ncorr","strain","EXX","EYY"]},
@@ -29,6 +30,7 @@
     {"id":"nerve-response-analysis","title":"Nerve Response Analysis","command":"labkit_NerveResponseAnalysis_app","family":"neurophysiology","folder":"apps/neurophysiology/nerve_response_analysis","source":"apps/neurophysiology/nerve-response-analysis/README.md","output":"apps/neurophysiology/nerve-response-analysis.html","description":"Detect stimulation trains and measure CAP responses.","keywords":["RHS","CAP","events","trains"]},
     {"id":"response-review-stats","title":"Response Review and Stats","command":"labkit_ResponseReviewStats_app","family":"neurophysiology","folder":"apps/neurophysiology/response_review_stats","source":"apps/neurophysiology/response-review-stats/README.md","output":"apps/neurophysiology/response-review-stats.html","description":"Review aligned response segments and descriptive statistics.","keywords":["segments","SNR","metrics","statistics"]},
     {"id":"rhs-preview","title":"RHS Preview","command":"labkit_RHSPreview_app","family":"neurophysiology","folder":"apps/neurophysiology/rhs_preview","source":"apps/neurophysiology/rhs-preview/README.md","output":"apps/neurophysiology/rhs-preview.html","description":"Inspect Intan RHS recordings and draft channel protocols.","keywords":["Intan","RHS","waveform","protocol"]},
+    {"id":"ttest-wizard","title":"T-Test Wizard","command":"labkit_TTestWizard_app","family":"statistics","folder":"apps/statistics/ttest_wizard","source":"apps/statistics/ttest-wizard/README.md","output":"apps/statistics/ttest-wizard.html","description":"Compare every later group with the first and draw a mean/SD significance plot.","keywords":["t-test","Welch","paired","multiple groups","reference","CSV","workbook","cell selection"]},
     {"id":"ecg-print","title":"ECG Print","command":"labkit_ECGPrint_app","family":"wearable","folder":"apps/wearable/ecg_print","source":"apps/wearable/ecg-print/README.md","output":"apps/wearable/ecg-print.html","description":"Filter ECG, detect peaks, and measure segment SNR.","keywords":["ECG","peaks","SNR","template"]}
   ]
 }

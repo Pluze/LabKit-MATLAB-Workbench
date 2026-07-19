@@ -176,8 +176,11 @@ function cleanup = setGuiTestModeForTest(mode)
 end
 
 function verifyBusyNonActionWrappers()
+    h = guiTestHelpers();
     pathCount = 0;
     tableCount = 0;
+    selectionCount = 0;
+    selectedIndices = zeros(0, 2);
     duplicateCount = 0;
     layout = labkit.ui.layout.workbench('busyNonActionProbe', 'Busy Non-Action Probe', ...
         'controlTabs', {labkit.ui.layout.tab('main', 'Main', { ...
@@ -188,10 +191,11 @@ function verifyBusyNonActionWrappers()
         'onChoose', @onPathChoose), ...
         labkit.ui.layout.action('otherProbe', 'Other probe', @onOtherProbe)})})}, ...
         'workspace', labkit.ui.layout.workspace('workspace', 'Preview', { ...
-        labkit.ui.layout.resultTable('tableProbe', 'Table', ...
-        'columns', {'A'}, ...
-        'data', {1}, ...
-        'onCellEdit', @onTableEdit)}));
+            labkit.ui.layout.resultTable('tableProbe', 'Table', ...
+                'columns', {'A'}, ...
+                'data', {1; 2; 3}, ...
+                'onCellEdit', @onTableEdit, ...
+                'onSelectionChange', @onTableSelection)}));
     ui = labkit.ui.runtime.create(layout);
     cleaner = onCleanup(@() delete(ui.figure));
 
@@ -213,6 +217,26 @@ function verifyBusyNonActionWrappers()
         'Table edit busy transaction should drop duplicate action callbacks.');
     assert(~isappdata(ui.figure, 'labkitUiBusy'), ...
         'Table edit busy transaction should clear busy state after completion.');
+
+    if isprop(ui.controls.tableProbe.table, 'SelectionChangedFcn')
+        selectionCallback = ui.controls.tableProbe.table.SelectionChangedFcn;
+        selectionField = 'Selection';
+    else
+        selectionCallback = ui.controls.tableProbe.table.CellSelectionCallback;
+        selectionField = 'Indices';
+    end
+    selectionCallback(ui.controls.tableProbe.table, ...
+        struct(selectionField, [1 1]));
+    selectionCallback(ui.controls.tableProbe.table, ...
+        struct(selectionField, [1 1; 2 1]));
+    selectionCallback(ui.controls.tableProbe.table, ...
+        struct(selectionField, [1 1; 2 1; 3 1]));
+    assert(selectionCount == 0, ...
+        'Rapid table selection changes should not commit synchronously.');
+    h.waitForUiIdle(ui.figure);
+    assert(selectionCount == 1 && ...
+        isequal(selectedIndices, [1 1; 2 1; 3 1]), ...
+        'Table selection should commit only the final coalesced range.');
 
     function onPathChoose(~, event)
         pathCount = pathCount + 1;
@@ -237,6 +261,11 @@ function verifyBusyNonActionWrappers()
             'Table callback should run while the figure is marked busy.');
         otherCallback = ui.controls.otherProbe.button.ButtonPushedFcn;
         otherCallback(ui.controls.otherProbe.button, struct());
+    end
+
+    function onTableSelection(~, event)
+        selectionCount = selectionCount + 1;
+        selectedIndices = event.indices;
     end
 
     function onOtherProbe(~, ~)

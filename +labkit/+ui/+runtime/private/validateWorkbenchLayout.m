@@ -62,8 +62,7 @@ function validateTreeShape(node)
             end
             validateTreeShape(node.props.workspace);
         case 'workspace'
-            validateChildKinds(node, {'previewArea', 'resultTable', ...
-                'statusPanel', 'usagePanel', 'logPanel'});
+            validateWorkspaceChildren(node);
         case 'tab'
             validateChildKinds(node, {'section'});
         case 'section'
@@ -79,6 +78,38 @@ function validateTreeShape(node)
         otherwise
             validateChildKinds(node, {});
     end
+end
+
+function validateWorkspaceChildren(node)
+    if isempty(node.children)
+        return;
+    end
+    kinds = string(cellfun(@(child) child.kind, ...
+        node.children, 'UniformOutput', false));
+    if any(kinds == "tab")
+        if ~all(kinds == "tab") || numel(node.children) < 2
+            error('labkit:ui:runtime:InvalidChildKind', ...
+                ['Workspace "%s" must contain either direct panels or ' ...
+                'at least two tab pages, without mixing them.'], node.id);
+        end
+        for k = 1:numel(node.children)
+            validateWorkspaceTab(node.children{k});
+        end
+        return;
+    end
+    validateChildKinds(node, {'previewArea', 'resultTable', ...
+        'statusPanel', 'usagePanel', 'logPanel'});
+end
+
+function validateWorkspaceTab(node)
+    assertCommonLayoutNode(node);
+    validateNoAppLayoutProps(node);
+    if isempty(node.children)
+        error('labkit:ui:runtime:EmptyWorkspaceTab', ...
+            'Workspace tab "%s" must contain at least one panel.', node.id);
+    end
+    validateChildKinds(node, {'previewArea', 'resultTable', ...
+        'statusPanel', 'usagePanel', 'logPanel'});
 end
 
 function validateNonEmptySection(node)

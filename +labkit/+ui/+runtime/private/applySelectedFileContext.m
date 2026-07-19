@@ -143,6 +143,9 @@ function suffix = fileContextSuffix(context)
 end
 
 function titleText = stripFileContextSuffix(titleText)
-    titleText = regexprep(char(string(titleText)), ...
+    titleText = char(string(titleText));
+    titleText = regexprep(titleText, ...
+        '^file\s+\d+/\d+:\s.*$', '');
+    titleText = regexprep(titleText, ...
         '\s\|\sfile\s+\d+/\d+:\s.*$', '');
 end

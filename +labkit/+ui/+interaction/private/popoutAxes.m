@@ -38,9 +38,13 @@ function newFig = popoutAxes(srcAx, varargin)
     dstAx = axes('Parent', newFig);
     copyAxesState(srcAx, dstAx);
 
-    children = flipud(srcAx.Children(:));
+    children = srcAx.Children(:);
     if ~isempty(children)
-        copyobj(children, dstAx);
+        copiedChildren = copyobj(children, dstAx);
+        try
+            dstAx.Children = copiedChildren;
+        catch
+        end
     end
     applyAxesState(srcAx, dstAx);
     if opts.Toolbar
@@ -118,16 +122,37 @@ function applyAxesState(srcAx, dstAx)
     xlabel(dstAx, axisLabelText(srcAx.XLabel));
     ylabel(dstAx, axisLabelText(srcAx.YLabel));
     zlabel(dstAx, axisLabelText(srcAx.ZLabel));
+    copyTickState(srcAx, dstAx);
 
     try
         dstAx.XLimMode = srcAx.XLimMode;
         dstAx.YLimMode = srcAx.YLimMode;
         dstAx.ZLimMode = srcAx.ZLimMode;
         dstAx.CLimMode = srcAx.CLimMode;
+        dstAx.XTickMode = srcAx.XTickMode;
+        dstAx.YTickMode = srcAx.YTickMode;
+        dstAx.ZTickMode = srcAx.ZTickMode;
+        dstAx.XTickLabelMode = srcAx.XTickLabelMode;
+        dstAx.YTickLabelMode = srcAx.YTickLabelMode;
+        dstAx.ZTickLabelMode = srcAx.ZTickLabelMode;
     catch
     end
     applyAspectRatio(srcAx, dstAx);
     addLegendIfNeeded(dstAx);
+end
+
+function copyTickState(srcAx, dstAx)
+    props = { ...
+        'XTick', 'YTick', 'ZTick', ...
+        'XTickLabel', 'YTickLabel', 'ZTickLabel', ...
+        'XTickLabelRotation', 'YTickLabelRotation', 'ZTickLabelRotation', ...
+        'TickLabelInterpreter', 'TickDir', 'TickLength'};
+    for k = 1:numel(props)
+        try
+            dstAx.(props{k}) = srcAx.(props{k});
+        catch
+        end
+    end
 end
 
 function applyAspectRatio(srcAx, dstAx)

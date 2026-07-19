@@ -98,9 +98,11 @@ tests, history, and details out of the public repository.
 
 ## Validation
 
-- Run the smallest source-aligned test during iteration. Use `changedFast` at a
-  coherent checkpoint and `buildtool changed` once for a stable handoff unless
-  the user requested a narrower strategy or a broader completed gate covers it.
+- Run the smallest source-aligned test during branch iteration. Before a branch
+  is ready for PR review, do not run broad changed-file or full-suite gates;
+  use focused fast tests for the current small step. Run `changedFast` and
+  `buildtool changed` only when preparing the branch for PR review, direct-main
+  integration, or another explicitly final handoff.
 - After failure, fix and rerun the narrowest failed file, method, or suite; do not repeatedly
   invoke the planner. Exact commands and scope live in
   `docs/development/testing.md`.
@@ -122,9 +124,15 @@ tests, history, and details out of the public repository.
 1. Inspect status and alignment before editing. Preserve unrelated user work.
 2. Work directly on aligned `main` for focused changes; use `codex/` branches
    for larger, risky, multi-commit, or review-heavy work.
-3. Make logical purpose-based commits, review the diff, and report validation.
-4. Push coherent checkpoints. For direct-main work, fetch/prune afterward and
-   verify local `main` equals `origin/main`.
+3. Keep branch work stable with small logical purpose-based commits and focused
+   validation. Prepare user docs, component versions, and structured history as
+   the single net change that the PR will squash into; do not accumulate
+   release semantics from intermediate branch commits.
+4. Push each completed, committed checkpoint promptly so finished work is not
+   left only on the local machine. Do not defer a safe branch push merely
+   because PR preparation or broader validation will happen later. For
+   direct-main work, fetch/prune afterward and verify local `main` equals
+   `origin/main`.
 5. Inspect the final direct-main CI run once. For branch work, inspect required
    CI before merge rather than polling after every push. Read only failing logs
    and fix the underlying issue.
@@ -139,6 +147,11 @@ explicit compliant squash subject; do not rely on GitHub defaults.
 
 ## Versions, history, and releases
 
+- Version semantics belong only in dedicated facade/App version metadata,
+  dependency requirements, saved-data migration branches, structured history,
+  and release records. Do not encode versions in package, folder, file,
+  function, class, type, protocol, test, or current-architecture names; use one
+  stable semantic name and let the version contract express compatibility.
 - Before direct-main push or merge, source changes to a versioned app/facade or
   launcher update its source version, owning manual, and one structured
   component history record. Cross-component changes use one record listing all

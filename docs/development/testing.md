@@ -107,8 +107,9 @@ Common choices:
 | Change area | Build task |
 | --- | --- |
 | Tight local iteration on one known component | Focused `runLabKitTests` folder or test-name selection |
-| Coherent local checkpoint while files are still changing | `buildtool changedFast` |
-| Before commit, PR, or handoff | `buildtool changed` |
+| Stable branch work before PR preparation | Focused `runLabKitTests` selection |
+| Preparing a branch for PR review | `buildtool changedFast`, then `buildtool changed` |
+| Direct-main integration or explicitly final handoff | `buildtool changed` |
 | Rebuild documentation after editing sources or public help contracts | `buildtool docs` |
 | Verify generated documentation is current | `buildtool docsCheck` |
 | Full broad non-GUI validation | `buildtool headless` |
@@ -203,25 +204,51 @@ pay the cost of broad changed-file planning:
    wiring, use the affected app GUI suite with
    `IncludeGui=true`, `GuiMode="hidden"`, and `HtmlReport=false` during
    iteration.
-2. After a coherent checkpoint, run `buildtool changedFast` once to verify the
-   diff-based plan before broader cleanup or review.
-3. Treat `buildtool changed` as the final changed-file gate for a logical
-   commit or handoff. Run it once when the diff is stable before commit, PR,
-   release, or direct-main handoff unless a recently completed broader gate
-   fully covers the current diff.
+2. Before the branch is ready for PR review, keep checkpoints small and stable
+   and continue using focused tests. Do not run `changedFast`, `changed`, full
+   headless, or full GUI gates merely because an intermediate commit is ready.
+3. When preparing the completed branch for PR review, run `changedFast` once
+   to inspect the diff-based plan, then treat `buildtool changed` as the final
+   changed-file gate. Also use `changed` for direct-main integration or another
+   explicitly final handoff unless a recently completed broader gate fully
+   covers the current diff.
 4. After push, inspect CI for the final pushed commit. If another user-requested
    follow-up supersedes an in-progress run, continue the follow-up locally and
    inspect CI for the newest pushed commit instead of waiting for the
    superseded run.
 
 Do not rerun `changedFast`, `changed`, or CI after every small edit when the
-same focused suite can validate the changed behavior more directly. Escalate
-back to a changed-file build task when the fix touches additional ownership
-areas, changes validation routing, updates docs/AGENTS, or is ready for final
-handoff. After a final `buildtool changed` run exposes a failure, repair with
+same focused suite can validate the changed behavior more directly. Changes to
+additional ownership areas, validation routing, docs, or AGENTS still use
+focused checks while the branch is evolving; escalate to changed-file gates
+when the branch is being prepared for review or final integration. After a
+final `buildtool changed` run exposes a failure, repair with
 the narrowest failed suite or test selector, then reserve another
 `buildtool changed` run for the final stable diff instead of using it as the
 iteration loop.
+
+### Keep Iteration Tests Cheap
+
+A runner result of “one matched test” does not imply a cheap test. One GUI
+method may launch a real App, read and write files, commit presentation many
+times, render plots, and wait for asynchronous UI work.
+
+Use this cost ladder while fixing behavior:
+
+1. pure helper or calculation test;
+2. direct presenter, renderer, state-transition, or callback test;
+3. one structural GUI method when handle wiring is the behavior;
+4. one complete App GUI workflow after the smaller behaviors are stable;
+5. changed-file and broad gates only when preparing for PR review or final
+   integration.
+
+When a GUI workflow taking roughly 20 seconds or more fails, diagnose its stack
+and reproduce the failed helper, renderer, callback, or presentation value
+directly. Do not repeatedly rerun the whole workflow after each small edit.
+Accumulate the narrow fixes, then run that workflow once as the integration
+confirmation. Before starting an unusually long focused test, state what it
+actually exercises and its expected order of runtime so “one test” is not
+mistaken for a quick check.
 
 ## CI Scope
 

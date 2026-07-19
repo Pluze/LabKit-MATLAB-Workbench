@@ -24,7 +24,11 @@ function adapter = buildResultTableControl(tableSpec, parentGrid, row, callbacks
 
     table.CellEditCallback = callbacks.cellEdit;
     callbacks.setOriginalCallbackName(table, optionValue(props, 'onCellEdit', []));
-    table.CellSelectionCallback = callbacks.selection;
+    if isprop(table, 'SelectionChangedFcn')
+        table.SelectionChangedFcn = callbacks.selection;
+    else
+        table.CellSelectionCallback = callbacks.selection;
+    end
     table.Layout.Row = 1;
     table.Layout.Column = 1;
 
@@ -78,6 +82,16 @@ function data = tableDataForUi(data)
 end
 
 function value = tableCellValueForUi(value)
+    if isempty(value)
+        return;
+    end
+    try
+        if isscalar(value) && ismissing(value)
+            value = '';
+            return;
+        end
+    catch
+    end
     if isnumeric(value) || islogical(value) || ischar(value)
         return;
     end

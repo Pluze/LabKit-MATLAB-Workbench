@@ -9,16 +9,18 @@ function layout = workspace(id, titleText, children, varargin)
 %       variable name and unique within the workbench.
 %   titleText - Text displayed above the right-side workspace.
 %   children - Cell row vector of previewArea, resultTable, statusPanel, or
-%       logPanel nodes in display order. Default: {}.
+%       logPanel nodes in display order. To expose multiple user-selectable
+%       workspace pages, supply two or more tab nodes instead. Default: {}.
 %
 % Outputs:
 %   layout - Scalar workspace node with kind, id, props, children, and slots
 %       fields.
 %
 % Description:
-%   workspace defines the app's right-hand content area. The workbench assigns
-%   rows and sizing from the child types; apps choose only the semantic content
-%   and order.
+%   workspace defines the app's right-hand content area. Direct panel children
+%   form one vertical workspace. Two or more tab children form user-selectable
+%   workspace pages. The workbench assigns rows, page selection, and sizing;
+%   apps choose only semantic content and order.
 %
 % Errors:
 %   labkit:ui:layout:InvalidId, InvalidOptions, or InvalidOptionName - id or
@@ -31,7 +33,9 @@ function layout = workspace(id, titleText, children, varargin)
 %       labkit.ui.layout.previewArea("image", "Image")});
 %   assert(preview.kind == "workspace")
 %
-% See also labkit.ui.layout.previewArea, labkit.ui.layout.workbench
+% See also labkit.ui.layout.tab,
+%   labkit.ui.layout.previewArea,
+%   labkit.ui.layout.workbench
 
     if nargin < 3
         children = {};

@@ -48,6 +48,7 @@ interactive and programmatic surface.
 | Inspect RHS recordings and define channels | [RHS Preview](neurophysiology/rhs-preview/README.md) | RHS file or folder | Preview, protocol JSON, filter record |
 | Detect trains and measure neural responses | [Nerve Response Analysis](neurophysiology/nerve-response-analysis/README.md) | Filter record and protocol JSON | Analysis JSON and CAP metrics |
 | Review aligned responses and statistics | [Response Review and Stats](neurophysiology/response-review-stats/README.md) | Analysis JSON or segment CSV | Metrics CSV and summary |
+| Compare multiple groups with the first using t-tests and one mean/SD plot | [T-Test Wizard](statistics/ttest-wizard/README.md) | CSV, TSV, workbook, or entered values | Result family, CSVs, and comparison plot |
 | Inspect ECG and measure segment SNR | [ECG Print](wearable/ecg-print/README.md) | MAT or delimited table | Segment SNR CSV and waveform image |
 
 ## Browse By Family
@@ -61,6 +62,8 @@ interactive and programmatic surface.
 - [LabKit Core](labkit-core/README.md) - the launcher and general MATLAB graphics tools.
 - [Neurophysiology](neurophysiology/README.md) - RHS inspection, response
   analysis, and review.
+- [Statistics](statistics/README.md) - explicit first-versus-each t-tests and
+  result-based group plotting.
 - [Wearable](wearable/README.md) - wearable biosignal workflows.
 
 ## How To Read An App Page

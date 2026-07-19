@@ -26,6 +26,11 @@ requests change. Discard workspace plumbing, hard-coded paths, debug staging,
 globals, `evalin/assignin`, repeated dialogs, pauses, and exploratory branches.
 Do not invent missing scientific definitions.
 
+If the user asks to correct behavior in an existing App, keep the current App
+shape and public boundary unless the defect itself proves a boundary change is
+necessary. Do not relabel a bug fix or UX correction as a refactor, and do not
+use the full architecture build sequence to justify unrelated cleanup.
+
 ## Design
 
 Write a short working brief with app/family, inputs, project/session shape,
@@ -81,8 +86,9 @@ control mutation facades, or helpers merely to meet a line budget.
    work from original-resolution Run/Export.
 6. Add portable project references, relinking, current-envelope save, and only
    the read-only compatibility imports/migrations actually required.
-7. Test calculation/export contracts directly and the bounded GUI workflow
-   semantically.
+7. Test calculations, state transitions, renderers, and exports directly.
+   Run the bounded GUI workflow once after those smaller checks are stable;
+   do not use a long end-to-end GUI method as the edit-fail-edit loop.
 8. Update the App definition version, manual, and component history.
 
 Use `labkit-boundary-guard` before adding a public facade API,

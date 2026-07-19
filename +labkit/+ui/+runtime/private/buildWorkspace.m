@@ -2,6 +2,10 @@
 % current UI registry, one validated workspace spec, and debug context. Output
 % is the updated registry after workspace children are built.
 function ui = buildWorkspace(ui, workspaceSpec, debug)
+    if workspaceUsesTabs(workspaceSpec.children)
+        ui = buildWorkspaceTabs(ui, workspaceSpec.children, debug);
+        return;
+    end
     for iChild = 1:numel(workspaceSpec.children)
         childSpec = workspaceSpec.children{iChild};
         switch childSpec.kind
@@ -16,13 +20,60 @@ function ui = buildWorkspace(ui, workspaceSpec, debug)
     end
 end
 
+function tf = workspaceUsesTabs(children)
+    tf = numel(children) >= 2 && ...
+        all(cellfun(@(child) strcmp(child.kind, 'tab'), children));
+end
+
+function ui = buildWorkspaceTabs(ui, tabSpecs, debug)
+    tabGroup = uitabgroup(ui.rightGrid);
+    tabGroup.Layout.Row = 1;
+    tabGroup.Layout.Column = 1;
+    ui.workspace.tabGroup = tabGroup;
+    ui.workspace.pages = struct();
+    for tabIndex = 1:numel(tabSpecs)
+        tabSpec = tabSpecs{tabIndex};
+        tab = uitab(tabGroup, ...
+            'Title', optionValue(tabSpec.props, 'title', tabSpec.id));
+        childCount = numel(tabSpec.children);
+        grid = uigridlayout(tab, [childCount 2]);
+        grid.RowHeight = repmat({'1x'}, 1, childCount);
+        grid.ColumnWidth = {'1x', '1x'};
+        grid.RowSpacing = 8;
+        grid.Padding = [8 8 8 8];
+        ui.workspace.pages.(tabSpec.id) = struct( ...
+            'tab', tab, 'grid', grid, 'layout', tabSpec);
+        for childIndex = 1:childCount
+            childSpec = tabSpec.children{childIndex};
+            switch childSpec.kind
+                case 'previewArea'
+                    ui = buildPreviewArea( ...
+                        ui, childSpec, grid, childIndex);
+                case {'resultTable', 'statusPanel', ...
+                        'usagePanel', 'logPanel'}
+                    ui = buildControl( ...
+                        ui, childSpec, grid, childIndex, debug);
+                otherwise
+                    error('labkit:ui:runtime:UnsupportedWorkspaceChild', ...
+                        'Unsupported workspace-tab child kind "%s".', ...
+                        childSpec.kind);
+            end
+        end
+    end
+end
+
 function ui = buildPreviewArea(ui, previewSpec, parentGrid, row)
     props = previewSpec.props;
     axisIds = previewAxisIds(props);
     count = numel(axisIds);
     panel = uipanel(parentGrid, 'Title', optionValue(props, 'title', previewSpec.id));
     panel.Layout.Row = row;
-    panel.Layout.Column = 1;
+    columnCount = numel(parentGrid.ColumnWidth);
+    if columnCount == 1
+        panel.Layout.Column = 1;
+    else
+        panel.Layout.Column = [1 columnCount];
+    end
 
     hasModes = isfield(props, 'viewModes') && ~isempty(props.viewModes);
     gridRows = 1 + double(hasModes);

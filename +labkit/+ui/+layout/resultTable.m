@@ -20,8 +20,12 @@ function layout = resultTable(id, titleText, varargin)
 %   onCellEdit - Function handle called as onCellEdit(control,event) after an
 %       edit. event.value is the complete table data; event.indices,
 %       previousData, newData, and editData describe the edited cell.
-%   onSelectionChange - Function handle called after cell selection.
-%       event.value is the complete data and event.indices identifies cells.
+%   onSelectionChange - Function handle called after a completed cell
+%       selection change. event.value is the complete data and event.indices
+%       identifies cells. Rapid intermediate selection changes are coalesced
+%       so the callback receives the latest completed range. A presenter may
+%       update the displayed Data, ColumnName, and RowName properties through
+%       the table control's presentation spec.
 %
 % Outputs:
 %   layout - Scalar resultTable node with kind, id, props, children, and slots

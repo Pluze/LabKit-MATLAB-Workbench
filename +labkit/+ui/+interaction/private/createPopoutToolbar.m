@@ -8,9 +8,9 @@ function toolbar = createPopoutToolbar(fig, ax)
         'BorderType', 'none', 'Units', 'normalized', ...
         'Position', [0.00 0.93 1.00 0.07], ...
         'BackgroundColor', [0.94 0.94 0.94]);
-    set(ax, 'Units', 'normalized', 'Position', [0.10 0.10 0.84 0.70]);
     labels = ["Font +", "Font -", "Line +", "Line -", ...
-        "Axes +", "Axes -", "Grid +", "Grid -", "Send to Studio"];
+        "Axes +", "Axes -", "Grid +", "Grid -", "X labels /", ...
+        "Send to Studio"];
     tags = ["labkitAxesPopoutFontIncreaseTool", ...
         "labkitAxesPopoutFontDecreaseTool", ...
         "labkitAxesPopoutLineIncreaseTool", ...
@@ -19,20 +19,26 @@ function toolbar = createPopoutToolbar(fig, ax)
         "labkitAxesPopoutAxesDecreaseTool", ...
         "labkitAxesPopoutGridIncreaseTool", ...
         "labkitAxesPopoutGridDecreaseTool", ...
+        "labkitAxesPopoutXLabelRotationTool", ...
         "labkitAxesPopoutStudioTool"];
     callbacks = {
-        @(~,~) applyAxesStyleCommand(ax, "fontIncrease")
-        @(~,~) applyAxesStyleCommand(ax, "fontDecrease")
-        @(~,~) applyAxesStyleCommand(ax, "lineIncrease")
-        @(~,~) applyAxesStyleCommand(ax, "lineDecrease")
-        @(~,~) applyAxesStyleCommand(ax, "axesIncrease")
-        @(~,~) applyAxesStyleCommand(ax, "axesDecrease")
-        @(~,~) applyAxesStyleCommand(ax, "gridIncrease")
-        @(~,~) applyAxesStyleCommand(ax, "gridDecrease")
+        @(~,~) applyStyleAndLayout(fig, toolbar, ax, "fontIncrease")
+        @(~,~) applyStyleAndLayout(fig, toolbar, ax, "fontDecrease")
+        @(~,~) applyStyleAndLayout(fig, toolbar, ax, "lineIncrease")
+        @(~,~) applyStyleAndLayout(fig, toolbar, ax, "lineDecrease")
+        @(~,~) applyStyleAndLayout(fig, toolbar, ax, "axesIncrease")
+        @(~,~) applyStyleAndLayout(fig, toolbar, ax, "axesDecrease")
+        @(~,~) applyStyleAndLayout(fig, toolbar, ax, "gridIncrease")
+        @(~,~) applyStyleAndLayout(fig, toolbar, ax, "gridDecrease")
+        @(tool,~) toggleXLabelRotation(tool, fig, toolbar, ax)
         @(~,~) sendToStudio(fig, ax)};
     for k = 1:numel(labels)
         addTool(toolbar, labels(k), tags(k), k, numel(labels), callbacks{k});
     end
+    rotationTool = findobj(toolbar, 'Tag', 'labkitAxesPopoutXLabelRotationTool');
+    updateXLabelRotationTool(rotationTool, ax);
+    layoutPopoutAxes(fig, toolbar, ax);
+    fig.SizeChangedFcn = @(~,~) layoutPopoutAxes(fig, toolbar, ax);
 end
 
 function tool = addTool(parent, label, tag, index, count, callback)
@@ -46,6 +52,44 @@ function tool = addTool(parent, label, tag, index, count, callback)
         'FontWeight', 'normal', ...
         'BackgroundColor', [0.96 0.96 0.96], ...
         'Callback', callback);
+end
+
+function applyStyleAndLayout(fig, toolbar, ax, command)
+    applyAxesStyleCommand(ax, command);
+    layoutPopoutAxes(fig, toolbar, ax);
+end
+
+function toggleXLabelRotation(tool, fig, toolbar, ax)
+    if abs(ax.XTickLabelRotation) < eps
+        ax.XTickLabelRotation = 45;
+    else
+        ax.XTickLabelRotation = 0;
+    end
+    updateXLabelRotationTool(tool, ax);
+    layoutPopoutAxes(fig, toolbar, ax);
+end
+
+function updateXLabelRotationTool(tool, ax)
+    if abs(ax.XTickLabelRotation) < eps
+        tool.String = 'X labels /';
+    else
+        tool.String = 'X labels -';
+    end
+    tool.TooltipString = ...
+        'Switch X-axis tick labels between angled and horizontal.';
+end
+
+function layoutPopoutAxes(fig, toolbar, ax)
+    if isempty(fig) || ~isvalid(fig) || isempty(toolbar) || ...
+            ~isvalid(toolbar) || isempty(ax) || ~isvalid(ax)
+        return;
+    end
+    toolbar.Units = 'normalized';
+    toolbar.Position = [0.00 0.93 1.00 0.07];
+    ax.Units = 'normalized';
+    ax.OuterPosition = [0.02 0.02 0.96 0.89];
+    ax.ActivePositionProperty = 'outerposition';
+    drawnow limitrate;
 end
 
 function sendToStudio(fig, ax)

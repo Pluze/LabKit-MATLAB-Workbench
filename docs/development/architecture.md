@@ -51,6 +51,19 @@ Adding any third-party runtime remains an architecture and deployment decision
 requiring explicit approval; it is not an ordinary app-local implementation
 choice.
 
+## Version Ownership
+
+Facade and App compatibility is expressed by the existing version metadata and
+dependency-requirement components. Saved-data schemas keep explicit numeric
+versions only inside their persistence and migration contracts. Release and
+history records preserve the versions needed as evidence.
+
+Architecture concepts themselves are versionless. Packages, folders, files,
+functions, classes, type tags, protocol names, tests, and current manuals use
+stable semantic names. An incompatible redesign replaces the owning contract
+and updates version metadata; it does not create a second version-named
+architecture.
+
 ## Runtime Entrypoints
 
 Users normally start with:
@@ -92,7 +105,7 @@ Direct syntax, options, outputs, and artifact behavior are documented in
 
 | Area | Owns |
 | --- | --- |
-| App entry point | Public launch name delegated to one Runtime V2 definition, including lightweight requirements/version/debug requests. |
+| App entry point | Public launch name delegated to one runtime definition, including lightweight requirements/version/debug requests. |
 | App package | App definition, workflow state, command handlers, presenters, calculations, summaries, exports, and app-local helpers. |
 | `labkit.ui` | Declarative app runtime, app shell, readiness/busy state, data-only workbench layouts, semantic view updates, reusable tools, and diagnostics. |
 | `labkit.image` | GUI-free image file IO, display normalization, resizing, mean filtering, and basic enhancement primitives. |

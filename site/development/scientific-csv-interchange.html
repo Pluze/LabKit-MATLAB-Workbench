@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="generator" content="LabKit MATLAB documentation compiler">
-<title>Scientific CSV Interchange - LabKit MATLAB Workbench</title>
+<title>Simple Scientific CSV Exchange - LabKit MATLAB Workbench</title>
 <link rel="stylesheet" href="../assets/style.css">
 </head>
 <body data-site-root="../">
@@ -18,317 +18,177 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../apps/index.html">Apps</a><a class="product-nav-link" href="../reference/index.html">Functions</a><a class="product-nav-link" href="../framework/index.html">Framework</a><a class="product-nav-link active" href="index.html">Development</a><a class="product-nav-link" href="../history/index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../index.html">Documentation Home</a><a class="context-parent" href="index.html">Development</a><p class="current-page">Scientific CSV Interchange</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>General</h3><div class="local-branch"><a class="local-link local-parent-link" href="index.html">Development</a></div></div><div class="local-subgroup"><h3>Build Apps</h3><div class="local-branch"><a class="local-link" href="architecture.html">Architecture</a><a class="local-link" href="app-development.html">App Development</a><a class="local-link" href="complete-app.html">Build a Complete App</a></div></div><div class="local-subgroup"><h3>Data and Designs</h3><div class="local-branch"><a class="local-link" href="group-comparison-app-design.html">Group Comparison App Design</a></div></div><div class="local-subgroup"><h3>Maintain and Release</h3><div class="local-branch"><a class="local-link" href="private-apps.html">Private Apps</a><a class="local-link" href="testing.html">Testing</a><a class="local-link" href="documentation.html">Documentation System</a><a class="local-link" href="release.html">Release Process</a></div></div><div class="local-subgroup"><h3>Tools</h3><div class="local-branch"><a class="local-link local-parent-link" href="tools/index.html">Maintainer Tools</a><a class="local-link local-child-link" href="tools/codecheck.html">Code Analyzer Reports</a><a class="local-link local-child-link" href="tools/deployment.html">App Deployment Packages</a><a class="local-link local-child-link" href="tools/documentation.html">Documentation Build Tools</a><a class="local-link local-child-link" href="tools/profiling.html">Performance Profiling</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#status-and-intent">Status And Intent</a><a class="toc-link" href="#practical-recording-model">Practical Recording Model</a><a class="toc-link" href="#three-producer-paths">Three Producer Paths</a><a class="toc-link" href="#primary-format-measurement-wide-csv">Primary Format: Measurement-Wide CSV</a><a class="toc-link" href="#secondary-format-simple-long-csv">Secondary Format: Simple Long CSV</a><a class="toc-link" href="#file-and-value-rules">File And Value Rules</a><a class="toc-link" href="#statistical-identity">Statistical Identity</a><a class="toc-link" href="#daily-recording-guidance">Daily Recording Guidance</a><a class="toc-link" href="#recognition-and-mapping">Recognition And Mapping</a><a class="toc-link" href="#table-roles-stay-separate">Table Roles Stay Separate</a><a class="toc-link" href="#compatibility-with-existing-labkit-outputs">Compatibility With Existing LabKit Outputs</a><a class="toc-link" href="#migration-policy-for-apps">Migration Policy For Apps</a><a class="toc-link" href="#validation-expectations">Validation Expectations</a><a class="toc-link" href="#related-guidance">Related Guidance</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../index.html">Documentation Home</a><a class="context-parent" href="index.html">Development</a><p class="current-page">Simple Scientific CSV Exchange</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>General</h3><div class="local-branch"><a class="local-link local-parent-link" href="index.html">Development</a></div></div><div class="local-subgroup"><h3>Build Apps</h3><div class="local-branch"><a class="local-link" href="architecture.html">Architecture</a><a class="local-link" href="app-development.html">App Development</a><a class="local-link" href="complete-app.html">Build a Complete App</a></div></div><div class="local-subgroup"><h3>Data and Designs</h3><div class="local-branch"><a class="local-link" href="group-comparison-app-design.html">T-Test Wizard Design</a></div></div><div class="local-subgroup"><h3>Maintain and Release</h3><div class="local-branch"><a class="local-link" href="private-apps.html">Private Apps</a><a class="local-link" href="testing.html">Testing</a><a class="local-link" href="documentation.html">Documentation System</a><a class="local-link" href="release.html">Release Process</a></div></div><div class="local-subgroup"><h3>Tools</h3><div class="local-branch"><a class="local-link local-parent-link" href="tools/index.html">Maintainer Tools</a><a class="local-link local-child-link" href="tools/codecheck.html">Code Analyzer Reports</a><a class="local-link local-child-link" href="tools/deployment.html">App Deployment Packages</a><a class="local-link local-child-link" href="tools/documentation.html">Documentation Build Tools</a><a class="local-link local-child-link" href="tools/profiling.html">Performance Profiling</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#status-and-purpose">Status And Purpose</a><a class="toc-link" href="#the-boundary-between-source-and-exchange-data">The Boundary Between Source And Exchange Data</a><a class="toc-link" href="#minimum-file-contract">Minimum File Contract</a><a class="toc-link" href="#three-useful-table-shapes">Three Useful Table Shapes</a><a class="toc-link" href="#reading-unknown-files">Reading Unknown Files</a><a class="toc-link" href="#standard-export-from-a-two-vector-tool">Standard Export From A Two-Vector Tool</a><a class="toc-link" href="#manual-experimental-recording">Manual Experimental Recording</a><a class="toc-link" href="#existing-app-exports">Existing App Exports</a><a class="toc-link" href="#what-this-contract-deliberately-does-not-encode">What This Contract Deliberately Does Not Encode</a><a class="toc-link" href="#validation-expectations">Validation Expectations</a><a class="toc-link" href="#related-guidance">Related Guidance</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">design</p>
-<h1 id="scientific-csv-interchange">Scientific CSV Interchange</h1>
-<p><a href="index.html">Development index</a> | <a href="app-development.html">App development</a> | <a href="architecture.html">Architecture</a> | <a href="group-comparison-app-design.html">Group Comparison App design</a></p>
-<h2 id="status-and-intent">Status And Intent</h2>
-<p>This page defines the proposed LabKit CSV interchange foundation for scalar scientific measurements. It is the lowest common data layer for new Apps and a gradual migration target for existing Apps. It does not change any released App's export contract by itself.</p>
-<p>The foundation must be:</p>
+<h1 id="simple-scientific-csv-exchange">Simple Scientific CSV Exchange</h1>
+<p><a href="index.html">Development index</a> | <a href="../apps/statistics/ttest-wizard.html">T-Test Wizard</a> | <a href="group-comparison-app-design.html">T-Test Wizard design</a> | <a href="app-development.html">App development</a> | <a href="architecture.html">Architecture</a></p>
+<h2 id="status-and-purpose">Status And Purpose</h2>
+<p>This page defines the minimum CSV exchange contract for LabKit Apps. It guides new exports and gradual improvement of existing exports; adopting it does not change another released App contract by itself.</p>
+<p>The contract is intentionally a table format, not a universal scientific data model. It provides a dependable lowest layer when two Apps do not share a richer schema:</p>
 <ul>
-<li>simple enough to write directly in Excel or a text editor;</li>
-<li>rectangular and predictable enough for scripts to recognize;</li>
-<li>compact enough that a row does not repeat every metric name and unit;</li>
-<li>less restrictive than any one App's internal data model;</li>
-<li>explicit about the statistical meaning of a row.</li>
+<li>a person can type or repair it in Excel or a text editor;</li>
+<li>a script can read it without LabKit;</li>
+<li>an App can display it without first understanding its scientific meaning;</li>
+<li>different experiments may use different column names and row meanings;</li>
+<li>consumers can fall back to explicit column or cell-range selection;</li>
+<li>an App may add useful columns without asking the common format for permission.</li>
 </ul>
-<p>It uses an open core:</p>
-<ul>
-<li>any number of scalar metric columns;</li>
-<li>user-chosen metric names and optional units;</li>
-<li>optional reserved metadata;</li>
-<li>extensible <code>Meta:</code> columns;</li>
-<li>producer-chosen column order;</li>
-<li>wide and long representations with defined conversion.</li>
-</ul>
-<p>Only the small set of cross-App meanings is standardized. A particular analysis may require a field, but the file convention does not require every producer to populate fields it does not know.</p>
-<p>An App may keep richer validation state, provenance, parameters, or domain-specific tables. It participates in interchange by mapping its boundary to or from this simpler table. The Group Comparison App may use a stricter private representation; that choice does not define the shared format.</p>
-<p>Version 1 standardizes scalar measurements only. It does not force summaries, hypothesis-test results, time series, curve points, images, or plotting data into the same row model.</p>
-<h2 id="practical-recording-model">Practical Recording Model</h2>
-<p>Handwritten laboratory workbooks often optimize for rapid entry:</p>
-<ul>
-<li>a date or run label starts a section;</li>
-<li>conditions appear as adjacent horizontal blocks;</li>
-<li>each block repeats the same short metric headers;</li>
-<li>several rows hold repeated measurements;</li>
-<li>formula rows below hold mean and variability.</li>
-</ul>
-<p>That layout is readable and efficient during an experiment, but it is not a rectangular CSV because dates, group labels, headers, observations, and summaries occupy different row roles.</p>
-<p>Conversion should preserve the convenient entry layout. It only needs to flatten each raw-measurement block into rows of one rectangular wide table. Formula summary rows remain summaries and are not copied into the measurement exchange file.</p>
-<p>For example, several adjacent blocks can become:</p>
-<pre><code class="language-csv">Dataset,Group,SampleID,Threshold [mA],Tolerance [mA],Width [mA]
-demo_day,Control,s01,1.10,7.40,6.30
-demo_day,Control,s02,1.20,7.10,6.10
-demo_day,Treatment,s03,1.55,8.10,6.50
-demo_day,Treatment,s04,1.60,8.00,6.40</code></pre>
-<p>The labels and values above are synthetic. Repository documentation, fixtures, and tests must not contain real laboratory paths, filenames, subjects, device IDs, timestamps, or recognizable source measurements.</p>
-<h2 id="three-producer-paths">Three Producer Paths</h2>
-<p>The same wide exchange table can be produced from three common laboratory workflows. Their import mechanics differ, but their exported data contract does not.</p>
-<h3 id="repeated-experimental-blocks">Repeated Experimental Blocks</h3>
-<p>A workbook may define one visually convenient block for one experimental round, then repeat that block horizontally or vertically for later rounds, dates, or conditions.</p>
-<p>The user defines a reusable block recipe once:</p>
-<ul>
-<li>block height and width;</li>
-<li>cells or rows that contain dataset and group labels;</li>
-<li>the metric-header row;</li>
-<li>raw measurement rows;</li>
-<li>formula or summary rows to ignore;</li>
-<li>whether repeated raw rows are independent samples or repeats;</li>
-<li>horizontal and vertical spacing to the next block.</li>
-</ul>
-<p>The importer detects candidate blocks, shows their boundaries, and previews the flattened wide rows. It must tolerate an incomplete final block without silently shifting cell meanings. A user can correct one block's mapping without changing the source workbook.</p>
-<p>The block recipe belongs to App project or import state, not to the exchange CSV. This keeps the output simple and lets the same recipe be reused for future workbooks with the same layout.</p>
-<h3 id="batches-of-same-shape-csv-files">Batches Of Same-Shape CSV Files</h3>
-<p>An experiment may also use one small CSV per sample, session, or repeated run. When all selected files share the same headers, the importer reads them as one batch and appends their normalized rows. If some headers differ, it groups files by detected shape and lets the user map each subgroup; one unusual file does not invalidate the rest of the batch.</p>
-<p>File-level meaning is entered once in a batch map:</p>
-<pre><code class="language-csv">Source,Dataset,Group,SampleID,RepeatID,Include,Note
-source_01.csv,demo_day,Control,s01,,true,
-source_02.csv,demo_day,Treatment,s02,,true,</code></pre>
-<p>The source names above are synthetic. A batch map is an import aid, not the scientific measurement table. It prevents users from copying the same dataset, group, or sample fields into every measurement row of every source file.</p>
-<p>The batch workflow:</p>
-<ol>
-<li>confirms that files have the same recognized shape;</li>
-<li>displays one row per file in the batch map;</li>
-<li>accepts paste, fill-down, and filename-pattern suggestions;</li>
-<li>requires the user to confirm any inferred group, sample, or repeat value;</li>
-<li>appends the files in a deterministic visible order;</li>
-<li>reports missing, duplicated, changed-header, and unreadable files;</li>
-<li>exports one self-contained normalized exchange CSV.</li>
-</ol>
-<p>Filename-pattern suggestions are conveniences, never scientific truth. The saved normalized output contains explicit metadata and remains usable after the original files are renamed or moved.</p>
-<h3 id="metadata-encoded-in-inconsistent-filenames">Metadata Encoded In Inconsistent Filenames</h3>
-<p>Information may appear in either the selected CSV filename or a source-name column such as <code>File</code>. Filenames may change structure between experiments, days, operators, or instruments. Filename parsing is therefore an optional editing aid, not a required profile.</p>
-<p>The default interface is one editable row per unique source name. The user may type or paste destination metadata directly. Optional transformations include:</p>
-<ul>
-<li>split by a chosen delimiter;</li>
-<li>take text before, after, or between selected tokens;</li>
-<li>find and replace;</li>
-<li>copy and fill down;</li>
-<li>apply a regular expression to selected rows;</li>
-<li>combine parsed tokens into a new value.</li>
-</ul>
-<p>Each transformation creates candidate columns that can map to:</p>
-<ul>
-<li><code>Dataset</code>;</li>
-<li><code>Group</code>;</li>
-<li><code>SampleID</code>;</li>
-<li><code>RepeatID</code>;</li>
-<li>one or more <code>Meta:</code> columns;</li>
-<li>ignored provenance tokens.</li>
-</ul>
-<p>Parsing or editing runs once per unique source name, not once per measurement row. This matters when an App result contains several cycles or segments for the same source: file-level captures remain sample metadata, while the cycle or segment column normally becomes <code>RepeatID</code>.</p>
-<p>The mapping screen shows:</p>
-<ul>
-<li>the original basename without its local path;</li>
-<li>each captured token in a separate editable column;</li>
-<li>the proposed destination field and an editable final value;</li>
-<li>unmatched names, missing tokens, and collisions;</li>
-<li>how many measurement rows inherit each mapping.</li>
-</ul>
-<p>No captured value becomes a group, sample, or pair identity until the user confirms the preview. A trailing number might mean sample, session, channel, or file sequence; the importer cannot decide that from syntax alone.</p>
-<p>A single batch may use several transformations or no pattern at all. Unmatched filenames remain editable and do not make the source unreadable. A generic recipe is saved only when the user believes a naming convention is stable enough to reuse; otherwise the confirmed one-off mapping stays with the import report.</p>
-<p>A saved recipe stores transformations and destination mappings, not real source names. The normalized exchange CSV stores confirmed scientific metadata and may keep a generic provenance key, but it must not require the original path or filename for interpretation.</p>
-<h3 id="existing-app-exports">Existing App Exports</h3>
-<p>An App output that already has one row per analyzed source and one numeric column per scalar metric is close to the wide foundation. A generic mapper selects metric columns and assigns row identity. A named App profile can add known unit and status rules.</p>
-<p>Summary, series, and plotting exports do not become measurements merely because they are CSV. They require a scientifically valid scalar-feature step or remain in their original table role.</p>
-<h3 id="import-recipes-are-not-exchange-data">Import Recipes Are Not Exchange Data</h3>
-<p>A reusable import recipe may store block coordinates, header mappings, filename patterns, units, validity rules, and source-profile IDs. Those are instructions for converting a source, not observations.</p>
-<p>Recipes should be saved in the importing App's durable project or a dedicated configuration file. Portable analysis export records the applied recipe identity and mapping in its manifest, then includes the normalized CSV. A downstream consumer needs only the normalized CSV, not the recipe or original workbook.</p>
-<h2 id="primary-format-measurement-wide-csv">Primary Format: Measurement-Wide CSV</h2>
-<h3 id="row-meaning">Row Meaning</h3>
-<p>One row represents one set of scalar metrics measured for one experimental sample or repeat. Metadata appears once in the row; each metric occupies one numeric column. This is the preferred hand-entry and cross-App form.</p>
-<p>There is no required <code>Schema</code> column, sidecar, preamble, or repeated metric name. Recognition comes from the single header row.</p>
-<h3 id="reserved-metadata-columns">Reserved Metadata Columns</h3>
-<p>All reserved columns are optional at the file level. An analysis may require some of them.</p>
-<div class="table-wrap"><table><thead><tr><th>Column</th><th>Meaning</th></tr></thead><tbody><tr><td><code>Dataset</code></td><td>Partition that must not be pooled with another experiment or comparison family. Default: <code>Dataset 1</code>.</td></tr><tr><td><code>Group</code></td><td>Condition or group label. Required when an analysis compares groups.</td></tr><tr><td><code>SampleID</code></td><td>Independent experimental unit that contributes to statistical sample size.</td></tr><tr><td><code>RepeatID</code></td><td>Technical or repeated measurement within one <code>SampleID</code>; not an independent sample.</td></tr><tr><td><code>PairID</code></td><td>Explicit matching key across groups for a paired analysis.</td></tr><tr><td><code>Include</code></td><td>Whether the row is eligible for analysis. Default: <code>true</code>.</td></tr><tr><td><code>Note</code></td><td>Human-readable context or exclusion reason; never drives calculation.</td></tr></tbody></table></div>
-<p>Every non-reserved column is a scalar metric column and must contain numeric or blank cells. A valid file has at least one metric column with a numeric value.</p>
-<p>Canonical writers place available metadata first:</p>
-<pre><code class="language-text">Dataset,Group,SampleID,RepeatID,&lt;metric columns&gt;,PairID,Include,Note</code></pre>
-<p>They omit metadata columns that are unused. A reader must not require empty optional columns merely to make every file look identical.</p>
-<h3 id="metric-headers-and-units">Metric Headers And Units</h3>
-<p>The most readable metric header is:</p>
-<pre><code class="language-text">Metric name [unit]</code></pre>
-<p>Examples:</p>
-<pre><code class="language-text">Threshold [mA]
-Latency [ms]
-Correlation [dimensionless]</code></pre>
-<p>Square brackets at the end of a header carry the unit. Without brackets, the unit is unspecified. The unit is not repeated in every row.</p>
-<p>The metric identity is the trimmed text before the final bracketed unit. Writers must not create two columns that normalize to the same metric name. A reader preserves header case and spelling and may warn about near-duplicate names. It must not infer units from informal suffixes unless a documented source-specific adapter defines that rule.</p>
-<h3 id="smallest-useful-files">Smallest Useful Files</h3>
-<p>Ungrouped descriptive measurements can be:</p>
-<pre><code class="language-csv">SampleID,Response [mV]
-s01,2.10
-s02,2.35</code></pre>
-<p>A grouped experiment can be:</p>
-<pre><code class="language-csv">Group,SampleID,Response [mV],Latency [ms]
-Control,s01,2.10,18.0
-Control,s02,2.35,17.5
-Treatment,s03,2.80,16.0
-Treatment,s04,2.65,16.5</code></pre>
-<p>The format does not require placeholder values for unused concepts.</p>
-<h3 id="optional-extra-metadata">Optional Extra Metadata</h3>
-<p>An App-specific metadata column uses the readable prefix:</p>
-<pre><code class="language-text">Meta:&lt;name&gt;</code></pre>
-<p>For example, <code>Meta:BatchPosition</code> is preserved as metadata and is not treated as a numeric metric. Generic consumers do not use <code>Meta:</code> columns in calculations unless the user maps them explicitly.</p>
-<p>On permissive import, an unrecognized text column may be offered as metadata, and an unrecognized numeric column may be offered as either a metric or metadata. The preview resolves that ambiguity. Standardized export prefixes non-reserved metadata with <code>Meta:</code> so the next consumer does not need to guess.</p>
-<p>New shared semantics should not be introduced through arbitrary metadata. A field becomes reserved only after multiple Apps need the same stable meaning.</p>
-<h2 id="secondary-format-simple-long-csv">Secondary Format: Simple Long CSV</h2>
-<p>Long form remains useful when rows contain different metrics, when metrics are appended incrementally, or when a statistics tool needs one value per row:</p>
-<pre><code class="language-csv">Dataset,Group,SampleID,Metric,Value,Unit
-demo_day,Control,s01,Threshold,1.10,mA
-demo_day,Control,s01,Tolerance,7.40,mA</code></pre>
-<p>The required long-form headers are <code>Metric</code> and <code>Value</code>. It may also contain the same metadata columns plus <code>Unit</code>:</p>
-<pre><code class="language-text">Dataset,Group,SampleID,RepeatID,Metric,Value,Unit,PairID,Include,Note</code></pre>
-<p>Long form is a supported interchange representation, not the preferred manual recording template. A routine wide row with five metrics should not be expanded into five repetitive rows unless a consumer needs it.</p>
-<p>Wide and long tables are mechanically convertible:</p>
-<ul>
-<li>wide to long: each row and populated metric column becomes one value row;</li>
-<li>long to wide: values sharing the same metadata keys become metric columns;</li>
-<li>a duplicate long value for the same metadata keys and metric blocks the pivot until repeat identity or aggregation is resolved.</li>
-</ul>
-<p>Apps may normalize wide input to long form internally without exposing that repetition to the user or other producers.</p>
-<h2 id="file-and-value-rules">File And Value Rules</h2>
-<p>Writers use:</p>
+<p>There are no required <code>Schema</code>, <code>Dataset</code>, <code>SampleID</code>, <code>Group</code>, <code>PairID</code>, <code>Include</code>, or <code>Note</code> columns. There is no required filename pattern or JSON sidecar. Repeating such fields in every row would make the lowest layer harder to write without making an unfamiliar experiment unambiguous.</p>
+<h2 id="the-boundary-between-source-and-exchange-data">The Boundary Between Source And Exchange Data</h2>
+<p>A laboratory source does not need to comply with this contract before LabKit can open it.</p>
+<p>Source workbooks may contain repeated blocks, dates between sections, formulas, summary rows, blank separators, inconsistent filenames, and several tables on one sheet. Existing App CSVs may mix text identifiers with numeric result columns. A compatible reader first opens these files as cell grids. It then lets the user select the cells or columns that matter.</p>
+<p>Exchange data is the simple rectangular table saved after that selection or after an App has produced a well-defined table. This distinction allows a fast, human-friendly experimental worksheet to remain useful without forcing every downstream App to reverse-engineer its layout.</p>
+<pre><code class="language-text">Existing file -&gt; open cell grid -&gt; select data -&gt; copy values -&gt; simple CSV</code></pre>
+<h2 id="minimum-file-contract">Minimum File Contract</h2>
+<p>A conforming exchange CSV has:</p>
 <ul>
 <li>UTF-8 text;</li>
-<li>comma delimiters and one header row;</li>
-<li><code>.</code> as the decimal separator and no thousands separators;</li>
-<li>ordinary CSV quoting for commas, quotes, and line breaks in text;</li>
-<li>exact reserved header spelling;</li>
-<li>lowercase <code>true</code> and <code>false</code> for <code>Include</code>;</li>
-<li>empty optional cells instead of placeholders such as <code>N/A</code>;</li>
-<li>evaluated values rather than spreadsheet formulas.</li>
+<li>comma delimiters;</li>
+<li>exactly one nonempty header row;</li>
+<li>a unique, nonempty name for every column;</li>
+<li>one rectangular table and no second header or table below it;</li>
+<li>ordinary CSV quoting for text containing commas, quotes, or line breaks;</li>
+<li><code>.</code> as the decimal separator and no thousands separators in numeric cells;</li>
+<li>empty cells for missing values;</li>
+<li>evaluated values rather than spreadsheet formulas;</li>
+<li>no merged cells, color-dependent meaning, preamble, or comment lines.</li>
 </ul>
-<p>Readers:</p>
-<ul>
-<li>trim header whitespace and match reserved headers case-insensitively;</li>
-<li>reject duplicate headers after normalization;</li>
-<li>accept <code>true</code>/<code>false</code>, <code>1</code>/<code>0</code>, and <code>yes</code>/<code>no</code> for <code>Include</code>;</li>
-<li>ignore fully blank trailing rows;</li>
-<li>preserve label case and spelling rather than silently merging groups;</li>
-<li>show incomplete or invalid rows instead of silently dropping them.</li>
-</ul>
-<p>An included metric cell must be a finite number. A blank metric cell means that metric was not recorded in that row; it does not create an observation. Nonfinite values and spreadsheet errors are invalid measurements.</p>
-<p>A failed acquisition may remain as a row with <code>Include=false</code> and a useful <code>Note</code>, but portable writers should normally keep processing failures in a separate warnings or log table rather than manufacture numeric observations.</p>
-<h2 id="statistical-identity">Statistical Identity</h2>
-<p>The critical distinction is between a CSV row and an independent experimental unit.</p>
-<ul>
-<li><code>SampleID</code> identifies the unit that contributes to sample size.</li>
-<li><code>RepeatID</code> identifies multiple measurements within that unit.</li>
-<li><code>PairID</code> identifies an explicit cross-group match.</li>
-</ul>
-<p>Rows sharing <code>Dataset</code>, <code>Group</code>, and <code>SampleID</code> are not automatically independent. If their <code>RepeatID</code> differs, a basic t-test must aggregate them using a declared rule or stop and request an appropriate repeated-measure method. It must not count technical repeats as independent samples.</p>
-<p>For a paired analysis, every selected metric and pair must resolve to exactly one analysis value per group. Equal row counts, row order, similar filenames, or a shared sample label do not establish pairing.</p>
-<p>When <code>SampleID</code> is absent, descriptive work may continue. Before inferential analysis, a consumer must ask what one row represents or visibly warn that independence cannot be verified. An adapter must not invent statistical independence silently.</p>
-<h2 id="daily-recording-guidance">Daily Recording Guidance</h2>
-<p>For a new manual sheet:</p>
+<p>Text and numeric columns may coexist. A file is not invalid merely because it contains text, blanks, status messages, or columns that a particular analysis does not use.</p>
+<p>Headers are user-facing labels. Writers should keep them short and stable. When a unit is useful, the recommended spelling is:</p>
+<pre><code class="language-text">Charge [mC]
+Time [s]
+Resistance [ohm]</code></pre>
+<p>The bracketed unit is a readable convention, not a prerequisite for opening the file. A generic reader preserves headers exactly and does not silently infer scientific roles from them.</p>
+<h2 id="three-useful-table-shapes">Three Useful Table Shapes</h2>
+<p>The following shapes are examples of the same contract, not separate schemas. Apps may use other rectangular tables when their row meaning is documented.</p>
+<h3 id="vector-table">Vector Table</h3>
+<p>A vector table places one numeric vector in each column. It is the preferred exchange shape for t-tests and other small comparisons:</p>
+<pre><code class="language-csv">Condition A,Condition B
+1.2,1.7
+1.4,1.8
+1.3,2.0</code></pre>
+<p>Independent vectors may have different lengths. Shorter columns end with blank cells:</p>
+<pre><code class="language-csv">Condition A,Condition B
+1.2,1.7
+1.4,1.8
+,2.0</code></pre>
+<p>For a paired analysis, values on the same visible row form a candidate pair only after the user selects a paired test. The CSV does not force one statistical interpretation. An optional first column may give readable row labels:</p>
+<pre><code class="language-csv">Row,Before,After
+1,2.1,2.5
+2,2.0,2.4
+3,2.2,2.6</code></pre>
+<p>The same file can still be analyzed as two independent vectors. <code>Row</code> is an ordinary column, not a reserved identity system.</p>
+<h3 id="record-table">Record Table</h3>
+<p>A record table places one result, sample, cycle, image, segment, or other producer-defined record on each row. Text columns describe the row and numeric columns contain measurements:</p>
+<pre><code class="language-csv">Source,Cycle,Charge [mC],Duration [s],Status
+sample_a,1,2.4,10,ok
+sample_a,2,2.5,10,ok
+sample_b,1,2.9,10,ok</code></pre>
+<p>This is already a useful cross-App table. A statistics App can display it and the user can select cells from <code>Charge [mC]</code>. It does not need a conversion to a repeated <code>Metric,Value</code> representation first.</p>
+<h3 id="series-table">Series Table</h3>
+<p>A time series or curve is also a normal table:</p>
+<pre><code class="language-csv">Time [s],Signal A [mV],Signal B [mV]
+0.00,0.12,0.09
+0.01,0.18,0.13
+0.02,0.14,0.11</code></pre>
+<p>The exchange layer preserves it. Whether curve points are valid observations for a t-test is a scientific decision made by the user or the consuming App, not by the CSV reader.</p>
+<h2 id="reading-unknown-files">Reading Unknown Files</h2>
+<p>A LabKit table reader follows a compatibility ladder:</p>
 <ol>
-<li>Use one header row such as <code>Dataset,Group,SampleID,&lt;metric [unit] columns&gt;</code>.</li>
-<li>Enter one sample or repeat per row and one metric per column.</li>
-<li>Give each independent experimental unit a stable generic <code>SampleID</code>.</li>
-<li>Reuse that <code>SampleID</code> and add <code>RepeatID</code> for technical repeats.</li>
-<li>Add <code>PairID</code> only for a genuine matched design.</li>
-<li>Start a new <code>Dataset</code> when measurements must not be pooled.</li>
-<li>Keep units in metric headers, not in numeric cells.</li>
-<li>Put exclusions in <code>Include</code> and <code>Note</code>, not in cell color.</li>
-<li>Keep mean, SD, SEM, confidence intervals, and plots outside the raw table.</li>
-<li>If a block-style workbook is faster during acquisition, keep using it and run an explicit block-to-wide conversion before exchange.</li>
+<li>Read the file without requiring known headers.</li>
+<li>Display the table with spreadsheet row and column coordinates.</li>
+<li>If an obvious numeric column or vector exists, offer it as a convenience.</li>
+<li>Always allow the user to select or revise the exact cells.</li>
+<li>Copy the confirmed values into the App's own state.</li>
+<li>Offer export as a simple vector or record table.</li>
 </ol>
-<p>The conversion screen for a block-style workbook should let the user identify:</p>
+<p>Automatic recognition is optional assistance. It must never be the only route through the App.</p>
+<p>The reader must not show a file-level error such as “file contains nonnumeric text” merely because some cells are labels. When a selected range contains mixed cells, report the actual selection in plain language, for example:</p>
+<pre><code class="language-text">12 cells selected: 10 numbers will be used; 1 blank and 1 label will be skipped.</code></pre>
+<p>The numeric preview is authoritative. The user can change the selection before continuing.</p>
+<h3 id="cell-selection-rules">Cell Selection Rules</h3>
+<p>For a numeric vector:</p>
 <ul>
-<li>the date or dataset cell;</li>
-<li>each group-label cell;</li>
-<li>the shared metric-header row;</li>
-<li>raw measurement rows;</li>
-<li>summary rows to ignore;</li>
-<li>whether raw rows are independent samples or repeats within a sample.</li>
+<li>a single row or single column is the clearest selection;</li>
+<li>disjoint cells may be accepted when their order is shown in the preview;</li>
+<li>finite numeric cells are copied in visible row-major order;</li>
+<li>blanks and text are counted and shown, not silently mistaken for zero;</li>
+<li><code>NaN</code>, positive infinity, and negative infinity are rejected as observations;</li>
+<li>the source is never overwritten during extraction.</li>
 </ul>
-<p>It then previews one rectangular wide table before saving CSV.</p>
-<p>For a repeated-block template, the App also offers <strong>Save import recipe</strong> and <strong>Apply recipe to new file</strong>. For a same-shape file batch, it offers a spreadsheet-like batch map with fill-down and paste rather than a dialog for every file.</p>
-<h2 id="recognition-and-mapping">Recognition And Mapping</h2>
-<p>A reader follows this order:</p>
+<p>A paired test displays the copied A and B vectors side by side and pairs them by their displayed order. Unequal lengths block the paired test but do not block an independent test.</p>
+<h2 id="standard-export-from-a-two-vector-tool">Standard Export From A Two-Vector Tool</h2>
+<p>A two-vector App writes the data actually used in a compact table:</p>
+<pre><code class="language-csv">Row,Condition A,Condition B
+1,1.2,1.7
+2,1.4,1.8
+3,1.3,2.0</code></pre>
+<p>It may omit <code>Row</code> when no row labels are useful. It pads unequal independent vectors with blanks. It writes labels chosen by the user as headers and units in those headers when known.</p>
+<p>Statistical results belong in a separate CSV because a completed test and its input observations have different row meanings:</p>
+<pre><code class="language-csv">Test,Alternative,N A,N B,Mean A,Mean B,Difference A-B,T,DF,P
+Welch independent,Two-sided,3,3,1.3,1.833333,-0.533333,-5.237,3.812,0.0077</code></pre>
+<p>The values above are synthetic. Repository examples and fixtures must not contain real laboratory filenames, paths, identifiers, timestamps, or recognizable measurements.</p>
+<p>Result writers may add effect sizes, confidence intervals, warnings, or App-specific fields. They document those columns as that App's export contract; the common CSV layer does not standardize every statistical result.</p>
+<h2 id="manual-experimental-recording">Manual Experimental Recording</h2>
+<p>When a simple table fits the experiment, use it directly:</p>
+<ul>
+<li>put one stable header in each column;</li>
+<li>put raw numeric observations in ordinary cells;</li>
+<li>use one vector per column or one record per row;</li>
+<li>use blank cells for values not recorded;</li>
+<li>keep mean, SD, SEM, p-values, and notes outside the raw numeric range or in a separate table;</li>
+<li>start a new file when that is easier than making one very wide table.</li>
+</ul>
+<p>When repeated visual blocks are faster during acquisition, keep the block layout. The user can later select the relevant raw cells and export a simple table. The exchange contract must not make experimental entry slower merely to simplify one future importer.</p>
+<p>Several same-shape CSV files are also valid. A consuming App may open them one at a time, combine them, or let the user select one vector from each. Meaning encoded in filenames can be offered as editable text, but a filename pattern is never required and never silently becomes a group or pair assignment.</p>
+<h2 id="existing-app-exports">Existing App Exports</h2>
+<p>An existing CSV is already compatible with the lowest layer when it has one header row and one rectangular table. Migration does not require renaming all columns or expanding each numeric cell into a long observation row.</p>
+<p>Use these migration rules:</p>
 <ol>
-<li>Read one header row and reject duplicate normalized names.</li>
-<li>If <code>Metric</code> and <code>Value</code> exist, offer the simple-long reader.</li>
-<li>Otherwise, classify reserved and <code>Meta:</code> columns.</li>
-<li>Treat remaining consistently numeric-or-blank columns as candidate metrics.</li>
-<li>Offer unknown text columns as metadata and ambiguous numeric columns for explicit metric-or-metadata mapping.</li>
-<li>Require at least one candidate metric and show the detected row meaning.</li>
-<li>If headers, row roles, or metric columns are ambiguous, open explicit mapping rather than guess.</li>
+<li>Document what one row represents.</li>
+<li>Keep released column names stable unless a normal compatibility change is justified.</li>
+<li>Split genuinely different tables—raw data, summaries, test results, and logs—into separate CSVs when practical.</li>
+<li>Use readable headers and include units where they are known.</li>
+<li>Avoid absolute local paths in portable output. A basename or user label is usually enough.</li>
+<li>Preserve useful text and status columns; do not delete them merely to make a file “numeric.”</li>
+<li>Add an optional companion vector table only when it materially simplifies a common downstream workflow.</li>
 </ol>
-<p>Filename is never part of recognition.</p>
-<p>The reader must not automatically treat these as measurement-wide data:</p>
+<p>A generic consumer reads the table and exposes manual selection. A producer-specific adapter is justified only when it removes repeated work and its scientific meaning is stable. The adapter still shows its proposed selection before use.</p>
+<p>No public <code>+labkit</code> facade is justified by this design alone. Reading, selection, and writing remain App-owned until several Apps demonstrate a stable, domain-neutral implementation.</p>
+<h2 id="what-this-contract-deliberately-does-not-encode">What This Contract Deliberately Does Not Encode</h2>
+<p>The lowest layer does not claim to determine:</p>
 <ul>
-<li>multiple header rows or merged block headings;</li>
-<li>one group per numeric column without an explicit mapping;</li>
-<li>tables mixing raw rows with mean, SD, or SEM rows;</li>
-<li>meaning encoded only by color or blank separator rows;</li>
-<li>arbitrary aliases such as <code>Condition</code>, <code>Treatment</code>, or <code>Y</code>;</li>
-<li>time-series or curve points presented as independent samples.</li>
+<li>which rows are statistically independent;</li>
+<li>whether equal-length vectors are paired;</li>
+<li>whether cycles or segments are samples or repeated measurements;</li>
+<li>whether a numeric column is raw data, a feature, or a summary;</li>
+<li>which group is control;</li>
+<li>which hypothesis test is appropriate;</li>
+<li>whether a filename token is a subject, condition, channel, or date.</li>
 </ul>
-<p>A saved import report records source headers, detected shape, metric and unit mappings, row counts, exclusions, warnings, and the reader version. Portable export contains the normalized wide or long CSV so downstream tools no longer need the original adapter.</p>
-<h2 id="table-roles-stay-separate">Table Roles Stay Separate</h2>
-<div class="table-wrap"><table><thead><tr><th>Role</th><th>Example row meaning</th><th>Direct t-test input</th></tr></thead><tbody><tr><td>Scalar measurements</td><td>one sample or repeat with one or more scalar metrics</td><td>yes, after identity validation</td></tr><tr><td>Descriptive summary</td><td>mean or SD for a group</td><td>no</td></tr><tr><td>Statistical result</td><td>one completed hypothesis test</td><td>no</td></tr><tr><td>Series point</td><td>one time, voltage, or curve point</td><td>no</td></tr><tr><td>Plot data</td><td>one visible graphics point</td><td>no</td></tr><tr><td>Processing log</td><td>one success, warning, or failure</td><td>no</td></tr></tbody></table></div>
-<p>Apps should export separate files for separate roles. A statistics App may export <code>observations.csv</code>, <code>group_summary.csv</code>, and <code>ttest_results.csv</code>; only the observations file maps to this foundation. Summary statistics must not be reverse-engineered into raw observations.</p>
-<p>Another shared profile should be added only after at least two independent producers and consumers need the same stable row semantics. The foundation should not become a universal table with dozens of mostly empty columns.</p>
-<h2 id="compatibility-with-existing-labkit-outputs">Compatibility With Existing LabKit Outputs</h2>
-<p>Most existing CSVs predate this convention. Compatibility depends on row meaning, not superficial tabularity:</p>
-<div class="table-wrap"><table><thead><tr><th>Existing output</th><th>Current row meaning</th><th>Compatibility path</th></tr></thead><tbody><tr><td>CIC results</td><td>one analyzed source file with scalar metrics and status</td><td>already close to wide form; map selected metrics and explicitly assign dataset, group, sample, and validity</td></tr><tr><td>VT Resistance results</td><td>one analyzed source file with scalar metrics and status</td><td>wide mapping; exclude failed rows through a documented status rule</td></tr><tr><td>CSC all-cycles results</td><td>one curve or cycle with scalar metrics</td><td>wide mapping, plus a required decision whether cycles are samples or repeats</td></tr><tr><td>Curvature results</td><td>one image with fitted scalar metrics</td><td>concatenate if needed, map metrics and units, and assign sample/group explicitly</td></tr><tr><td>ECG Print segment analysis</td><td>one segment with signal, noise, and SNR metrics</td><td>map metrics; segments from one recording are normally repeats</td></tr><tr><td>Response Review Stats metrics</td><td>one named segment with scalar metrics</td><td>map metrics; do not assume a segment name is a group or independent sample</td></tr><tr><td>Gait step table</td><td>one step with scalar gait metrics and validity</td><td>map valid metrics; recording or subject is the sample and step is normally a repeat</td></tr><tr><td>Gait summary or DIC strain summary</td><td>one precomputed statistic</td><td>retain as summary output; never import as measurements</td></tr><tr><td>EIS or Chrono Overlay export</td><td>one curve or time-series point</td><td>extract a scientifically defined scalar feature first</td></tr><tr><td>Figure Studio plot-data export</td><td>one visible graphics point</td><td>presentation data only; never treat as authoritative measurements</td></tr></tbody></table></div>
-<p>The generic wide mapper covers most scalar result tables. A named legacy profile adds safe defaults but still shows the normalized preview. It matches a distinctive header set, never a filename, and declares:</p>
-<ul>
-<li>what one source row means;</li>
-<li>eligible metric columns and unit mappings;</li>
-<li>status or validity columns and exact exclusion rules;</li>
-<li>candidate sample and repeat identities;</li>
-<li>required user mappings for dataset and group;</li>
-<li>any independence or pseudoreplication warning.</li>
-</ul>
-<p><code>File</code>, <code>Image</code>, <code>CurveName</code>, <code>SegmentName</code>, and graphics object names are provenance candidates, not automatic group labels. Local absolute paths must not become portable sample IDs.</p>
-<h2 id="migration-policy-for-apps">Migration Policy For Apps</h2>
-<p>Migration is additive:</p>
-<ol>
-<li><strong>Document row meaning.</strong> Keep the legacy export unchanged.</li>
-<li><strong>Add a reader profile.</strong> Do this only for a real producer-consumer workflow and test the header mapping.</li>
-<li><strong>Add a wide companion export.</strong> When legitimate scalar measurements exist, optionally write a second interchange CSV.</li>
-<li><strong>Prefer interchange at the boundary.</strong> Keep richer or presentation-focused legacy tables for their original users.</li>
-<li><strong>Retire deliberately.</strong> Remove an old format only through normal compatibility, version, documentation, and history work.</li>
-</ol>
-<p>Do not append required columns to a released legacy CSV merely to claim compliance; scripts may rely on its current headers. Prefer an additional, clearly named export or package member.</p>
-<p>When an App exports summaries, curves, or logs rather than scalar measurements, migration does not mean relabeling those rows. Add an interchange companion only at a point where a legitimate scalar experimental measurement exists.</p>
-<p>New scalar-producing Apps should:</p>
-<ul>
-<li>own an App-local function that builds the wide interchange table;</li>
-<li>document what one row and <code>SampleID</code> represent;</li>
-<li>expose dataset, group, unit, and repeat semantics explicitly;</li>
-<li>test CSV write/read round trips without GUI state;</li>
-<li>avoid absolute paths and source-local identifiers in portable IDs;</li>
-<li>export summaries, tests, series, and logs separately.</li>
-</ul>
-<p>An App need not use these columns internally. Interchange tests exercise the boundary conversion, not the private representation.</p>
-<p>No public <code>+labkit</code> facade is justified yet. Promote a domain-neutral reader or writer only after repeated, stable use by multiple Apps demonstrates the contract.</p>
+<p>Those decisions require experimental context. A richer App export may record them, but an unknown CSV remains usable because the fallback is visible cell selection rather than rejection.</p>
 <h2 id="validation-expectations">Validation Expectations</h2>
-<p>Synthetic fixtures should cover:</p>
+<p>Synthetic tests for a compatible reader and writer cover:</p>
 <ul>
-<li>minimal ungrouped wide input;</li>
-<li>recommended grouped multi-metric input;</li>
-<li>multiple metrics and blank metric cells;</li>
-<li>technical repeats within a sample;</li>
-<li>paired rows;</li>
-<li>exclusions and malformed numeric cells;</li>
-<li><code>Meta:</code> columns;</li>
-<li>wide-to-long and long-to-wide conversion;</li>
-<li>block-style acquisition conversion with summary rows omitted;</li>
-<li>reusable repeated-block recipes, including an incomplete final block;</li>
-<li>same-header multi-file batches and their one-row-per-file batch map;</li>
-<li>manual and mixed-rule filename mapping, parse failures, and duplicate inferred sample IDs;</li>
-<li>summary and series tables rejected as independent measurements;</li>
-<li>every named legacy profile added to production.</li>
+<li>vector tables with equal and unequal column lengths;</li>
+<li>record tables containing both text and numeric columns;</li>
+<li>series tables;</li>
+<li>quoted headers and text;</li>
+<li>blank cells and fully blank trailing rows;</li>
+<li>duplicate or empty headers;</li>
+<li>mixed selections with a visible accepted/skipped count;</li>
+<li>nonfinite numeric values;</li>
+<li>CSV write/read round trips preserving column order and displayed values;</li>
+<li>extraction from two different source files;</li>
+<li>paired preview order and unequal-length blocking;</li>
+<li>source files that do not match any known App profile.</li>
 </ul>
-<p>Producer-consumer tests compare normalized content, not just whether the CSV opens. Units, sample identity, repeat identity, inclusion, metric values, and row counts must survive the round trip.</p>
+<p>Manual checks use representative private laboratory files without copying their names, paths, identifiers, or values into the repository.</p>
 <h2 id="related-guidance">Related Guidance</h2>
 <ul>
-<li><a href="group-comparison-app-design.html">Group Comparison App Design</a></li>
+<li><a href="group-comparison-app-design.html">T-Test Wizard Design</a></li>
+<li><a href="../apps/statistics/ttest-wizard.html">T-Test Wizard</a></li>
 <li><a href="app-development.html">App Development</a></li>
 <li><a href="architecture.html">Architecture</a></li>
 <li><a href="testing.html">Testing</a></li>

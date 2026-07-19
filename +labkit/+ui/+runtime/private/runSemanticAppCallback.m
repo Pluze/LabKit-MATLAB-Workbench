@@ -1,13 +1,24 @@
 % Private UI runtime helper. Expected caller: semantic callback wrappers.
 % Inputs are the current UI registry, control adapter, event payload, app
-% callback, and control id. Side effects: runs the callback in app busy state.
-function runSemanticAppCallback(ui, control, event, appCallback, id)
+% callback, control id, optional delivery mode, and optional debounce delay.
+% Side effects: runs the callback in app busy state or replaces one pending
+% callback timer for the same control id.
+function runSemanticAppCallback( ...
+        ui, control, event, appCallback, id, delivery, delaySeconds)
     if isempty(appCallback)
         return;
     end
+    if nargin < 6
+        delivery = "auto";
+    end
+    if nargin < 7
+        delaySeconds = [];
+    end
 
-    if shouldDebounce(control)
-        scheduleDebouncedCallback(ui, control, event, appCallback, id);
+    if delivery == "debounced" || ...
+            (delivery == "auto" && shouldDebounce(control))
+        scheduleDebouncedCallback( ...
+            ui, control, event, appCallback, id, delaySeconds);
         return;
     end
 
@@ -19,11 +30,12 @@ function runCallbackNow(fig, control, event, appCallback, id)
         @() appCallback(control, event));
 end
 
-function scheduleDebouncedCallback(ui, control, event, appCallback, id)
+function scheduleDebouncedCallback( ...
+        ui, control, event, appCallback, id, delaySeconds)
     fig = ui.figure;
     key = debounceKey(id);
     clearExistingTimer(fig, key);
-    delay = debounceDelaySec(control.props);
+    delay = debounceDelaySec(control.props, delaySeconds);
     if delay <= 0
         runCallbackNow(fig, control, event, appCallback, id);
         return;
@@ -33,6 +45,7 @@ function scheduleDebouncedCallback(ui, control, event, appCallback, id)
         'event', event, ...
         'appCallback', appCallback, ...
         'id', id, ...
+        'delaySeconds', delaySeconds, ...
         'timer', []);
     state.timer = timer( ...
         'ExecutionMode', 'singleShot', ...
@@ -55,7 +68,7 @@ function fireDebouncedCallback(fig, key, timerObj)
     end
     if isFigureBusy(fig)
         scheduleDebouncedCallback(struct('figure', fig), state.control, ...
-            state.event, state.appCallback, state.id);
+            state.event, state.appCallback, state.id, state.delaySeconds);
         return;
     end
     runCallbackNow(fig, state.control, state.event, state.appCallback, state.id);
@@ -90,9 +103,13 @@ function tf = shouldDebounce(control)
         {'field', 'rangeField', 'panner'}));
 end
 
-function delay = debounceDelaySec(props)
-    delay = double(optionValue(props, 'debounceMs', 500)) / 1000;
-    if ~isfinite(delay) || delay < 0
+function delay = debounceDelaySec(props, delaySeconds)
+    if isempty(delaySeconds)
+        delay = double(optionValue(props, 'debounceMs', 500)) / 1000;
+    else
+        delay = double(delaySeconds);
+    end
+    if ~isscalar(delay) || ~isfinite(delay) || delay < 0
         delay = 0.500;
     end
 end
