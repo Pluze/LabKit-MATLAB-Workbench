@@ -1,35 +1,47 @@
-function points = clampPointToAxes(axesHandle, points, varargin)
-%CLAMPPOINTTOAXES Keep data points inside the visible axes box.
+function xy = clampPointToAxes(ax, xy, varargin)
+%CLAMPPOINTTOAXES Keep data coordinates inside the visible axes box.
 %
 % Usage:
-%   points = labkit.app.plot.clampPointToAxes( ...
-%       axesHandle,points,Name=Value)
+%   xyOut = labkit.app.plot.clampPointToAxes(ax, xy)
+%   xyOut = labkit.app.plot.clampPointToAxes(ax, xy, Name=Value)
 %
 % Inputs:
-%   axesHandle - Valid scalar axes or uiaxes.
-%   points - N-by-2 numeric [x y] data coordinates.
+%   ax - Valid scalar MATLAB axes or uiaxes handle. Its XLim, YLim, XScale,
+%       YScale, XDir, and YDir properties define the visible box.
+%   xy - N-by-2 numeric matrix of [x y] data coordinates.
 %
-% Options:
-%   Padding - Fractional distance from each edge in [0,0.49]. Default: 0.04.
+% Name-Value Arguments:
+%   Padding - Minimum distance from each axes edge, expressed as a fraction of
+%       the visible width or height. Values are limited to [0, 0.49]. Default:
+%       0.04.
 %
 % Outputs:
-%   points - Clamped N-by-2 data coordinates.
+%   xy - N-by-2 data coordinates, shown as xyOut in the usage syntax. Each
+%       point is moved only as far as needed to satisfy Padding.
 %
 % Description:
-%   Converts through normalized visual axes space for consistent behavior on
-%   linear, logarithmic, and reversed axes.
+%   clampData is useful for labels and annotations that must remain readable
+%   near an axes boundary. Conversion through normalized axes coordinates keeps
+%   the result visually consistent on logarithmic or reversed axes.
 %
 % Errors:
-%   Throws labkit:app:plot:* for invalid axes, points, or options.
+%   labkit:app:plot:InvalidAxes - ax is not a valid scalar axes handle.
+%   labkit:app:plot:InvalidPointPairs - xy is not an N-by-2 numeric array.
+%   labkit:app:plot:InvalidOptions or labkit:app:plot:InvalidOption -
+%   Name-value arguments are malformed or unsupported.
 %
 % Example:
-%   fig = figure(Visible="off");
+%   fig = figure("Visible", "off");
 %   cleanup = onCleanup(@() close(fig));
-%   ax = axes(fig, XLim=[0 10], YLim=[0 20]);
-%   point = labkit.app.plot.clampPointToAxes( ...
-%       ax, [-2 25], Padding=0.1);
-%   assert(isequal(point, [1 18]))
+%   ax = axes(fig, "XLim", [0 10], "YLim", [0 20]);
+%   xy = labkit.app.plot.clampPointToAxes(ax, [-2 25], "Padding", 0.1);
+%   assert(isequal(xy, [1 18]))
 %
 % See also labkit.app.plot.offsetPointByAxesFraction
-points = labkit.ui.plot.clampData(axesHandle, points, varargin{:});
+
+    opts = parseAxesOptions(varargin, struct('Padding', 0.04));
+    pad = max(0, min(0.49, double(opts.Padding)));
+    uv = dataToFraction(ax, xy);
+    uv = min(max(uv, pad), 1 - pad);
+    xy = fractionToData(ax, uv);
 end

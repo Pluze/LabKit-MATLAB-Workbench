@@ -16,7 +16,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         WorkbenchControls
         WorkbenchWorkspace
         Runtime
-        InteractionBridge
+        InteractionController
         InteractionDeclarations (1, :) cell = {}
     end
 
@@ -44,8 +44,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             obj.installCallbacks();
             obj.InteractionDeclarations = obj.collectInteractionDeclarations();
             if ~isempty(obj.InteractionDeclarations)
-                obj.InteractionBridge = ...
-                    labkit.ui.runtime.appSdkInteractionBridge( ...
+                obj.InteractionController = InteractionController( ...
                     obj.Figure, obj.interactionTargetAxes(), ...
                     @(id, signal, value) ...
                     runtime.applyInteraction(id, signal, value));
@@ -77,9 +76,9 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function close(obj)
-            if ~isempty(obj.InteractionBridge)
-                obj.InteractionBridge.delete();
-                obj.InteractionBridge = [];
+            if ~isempty(obj.InteractionController)
+                obj.InteractionController.delete();
+                obj.InteractionController = [];
             end
             if ~isempty(obj.Figure) && isvalid(obj.Figure)
                 delete(obj.Figure);
@@ -268,8 +267,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             for k = 1:numel(operations)
                 obj.apply(operations{k});
             end
-            if ~isempty(obj.InteractionBridge)
-                obj.InteractionBridge.reconcile( ...
+            if ~isempty(obj.InteractionController)
+                obj.InteractionController.reconcile( ...
                     obj.InteractionDeclarations, interactionOperations);
             end
         end
@@ -378,8 +377,12 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 end
                 for axisId = node.AxisIds
                     key = axisKey(node.Id, axisId);
+                    targetId = key;
+                    if numel(node.AxisIds) == 1
+                        targetId = node.Id;
+                    end
                     targets(end + 1) = struct( ...
-                        "id", key, "axes", obj.Axes(char(key)));
+                        "id", targetId, "axes", obj.Axes(char(key)));
                 end
             end
         end
