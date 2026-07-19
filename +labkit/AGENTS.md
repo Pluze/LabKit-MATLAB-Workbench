@@ -5,8 +5,8 @@ than the apps that consume it.
 
 ## Read before editing
 
-Read `docs/development/architecture.md`, the affected source and tests, and the
-one owning manual:
+Read `docs/development/build-apps/architecture.md`, the affected source and
+tests, and the one owning manual:
 
 - UI: `docs/framework/README.md`
 - image: `docs/libraries/image/README.md`
@@ -70,4 +70,4 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
 Use the affected `labkit_framework/<area>` suite and add downstream app-family
 or hidden-GUI coverage when the app-facing contract can change. Package
 boundary and public-surface changes also run project guardrails. Exact commands
-belong in `docs/development/testing.md`.
+belong in `docs/development/maintain-and-release/testing.md`.
