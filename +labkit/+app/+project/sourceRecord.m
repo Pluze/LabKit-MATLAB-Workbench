@@ -13,7 +13,8 @@ function record = sourceRecord(id, role, filepath, required)
 % Inputs:
 %   id - Nonempty scalar text stable within the project.
 %   role - Nonempty scalar semantic source role.
-%   filepath - Nonempty scalar source path.
+%   filepath - Nonempty scalar source path, or an existing scalar opaque
+%       reference struct during legacy migration.
 %   required - Optional logical scalar relinking requirement. Default: true.
 %
 % Outputs:
@@ -33,15 +34,37 @@ if nargin < 4
 end
 id = nonemptyText(id, "id");
 role = nonemptyText(role, "role");
-filepath = nonemptyText(filepath, "filepath");
 if ~(islogical(required) && isscalar(required))
     invalid("required must be a logical scalar.");
 end
-[~, name, extension] = fileparts(filepath);
-reference = struct("schemaVersion", 1, "relativePath", "", ...
-    "originalPath", filepath, "fileName", string(name) + string(extension));
+if isstruct(filepath)
+    reference = portableReference(filepath);
+else
+    filepath = nonemptyText(filepath, "filepath");
+    [~, name, extension] = fileparts(filepath);
+    reference = struct("schemaVersion", 1, "relativePath", "", ...
+        "originalPath", filepath, "fileName", string(name) + string(extension));
+end
 record = struct("id", id, "required", required, "role", role, ...
     "reference", {reference});
+end
+
+function reference = portableReference(value)
+required = ["schemaVersion", "relativePath", "originalPath", "fileName"];
+if ~isscalar(value) || ~all(isfield(value, cellstr(required)))
+    invalid("filepath reference must be a scalar portable source reference.");
+end
+reference = struct( ...
+    "schemaVersion", double(value.schemaVersion), ...
+    "relativePath", string(value.relativePath), ...
+    "originalPath", string(value.originalPath), ...
+    "fileName", string(value.fileName));
+if ~(isscalar(reference.schemaVersion) && ...
+        isfinite(reference.schemaVersion) && reference.schemaVersion == 1) || ...
+        ~all(arrayfun(@(name) isscalar(reference.(name)), ...
+        ["relativePath", "originalPath", "fileName"]))
+    invalid("filepath reference is malformed.");
+end
 end
 
 function value = nonemptyText(value, name)

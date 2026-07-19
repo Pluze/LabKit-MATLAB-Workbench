@@ -4,7 +4,7 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
     methods (Test, TestTags = {'Unit'})
         function first_skeleton_preset_is_legacy_five_point_leg(testCase)
             setupLabKitTestPath();
-            presets = video_marker.userInterface.skeletonPresets();
+            presets = video_marker.skeletonSetup.presets();
             testCase.verifyEqual(presets(1).label, "Legacy leg (5 points)");
             testCase.verifyEqual(presets(1).pointNames, ...
                 ["iliac"; "hip"; "knee"; "ankle"; "foot"]);
@@ -67,7 +67,7 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
 
             videoInfo = struct("path", "synthetic.avi", "frameCount", 4, ...
                 "frameRate", 20, "duration", 0.2, "height", 72, "width", 96);
-            calibration = labkit.ui.interaction.scaleBarCalibration(40, 2, "mm");
+            calibration = labkit.app.interaction.scaleCalibration(40, 2, "mm");
             csvPath = fullfile(folder, "markers.csv");
             video_marker.markerCsv.writeFile(csvPath, annotations, skeleton, videoInfo, calibration);
             payload = video_marker.markerCsv.readFile(csvPath);
@@ -233,7 +233,7 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
                 annotations, 2, [13 25; 35 45], "confirmed");
             videoInfo = struct("path", "synthetic.avi", "frameCount", 2, ...
                 "frameRate", 10, "duration", 0.2, "height", 60, "width", 80);
-            calibration = labkit.ui.interaction.scaleBarCalibration(20, 2, "mm");
+            calibration = labkit.app.interaction.scaleCalibration(20, 2, "mm");
 
             opts = video_marker.coordinateExport.options( ...
                 "startFrame", 1, "endFrame", 2, ...
@@ -251,33 +251,31 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyEqual(T.origin_point_id, ["hip"; "hip"]);
         end
 
-        function runtime_v2_project_presenter_and_resume_contracts(testCase)
+        function app_sdk_project_presenter_and_resume_contracts(testCase)
             setupLabKitTestPath();
             definition = video_marker.definition();
-            testCase.verifyEqual(definition.contractVersion, 2);
-            project = definition.project.Create();
+            testCase.verifyClass(definition, "labkit.app.Definition");
+            project = definition.ProjectSchema.Create();
             project.annotations.skeleton = video_marker.skeletonDefinition.fromText( ...
                 "a, b, c, d, e", "a-b, b-c, c-d, d-e");
             project.annotations.frames = ...
                 video_marker.frameAnnotations.emptyAnnotations(0, 5);
-            testCase.verifyTrue(definition.project.Validate(project));
-            testCase.verifyTrue(isa(definition.project.Migrate, ...
+            testCase.verifyTrue(definition.ProjectSchema.Validate(project));
+            testCase.verifyTrue(isa(definition.ProjectSchema.Migrate, ...
                 'function_handle'));
             testCase.verifyEqual(project.inputs.videoMetadata, ...
                 video_marker.videoSource.emptyMetadata());
             testCase.verifyFalse(isfield(project, 'currentImage'));
 
-            session = video_marker.createSession(project);
+            session = video_marker.createSession( ...
+                project, labkit.app.CallbackContext());
             state = struct('project', project, 'session', session);
-            presentation = video_marker.userInterface.presentWorkbench(state);
-            testCase.verifyTrue(isscalar(presentation));
-            testCase.verifyEqual( ...
-                presentation.controls.keypointTable.Data(:, 2), ...
-                {'a'; 'b'; 'c'; 'd'; 'e'});
-            testCase.verifyEmpty( ...
-                presentation.previews.videoAxes.Axes.video.Model.imageData);
+            presentation = video_marker.workbench.present(state);
+            testCase.verifyClass(presentation, "labkit.app.view.Snapshot");
+            testCase.verifyTrue( ...
+                definition.validateViewSnapshot(presentation));
             session.selection.currentFrame = 7;
-            resume = definition.project.CreateResume(session, project);
+            resume = definition.ProjectSchema.CreateResume(session, project);
             testCase.verifyEqual(resume.currentFrame, 7);
         end
 
@@ -325,7 +323,7 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             legacy.annotations = video_marker.frameAnnotations.setFramePoints( ...
                 legacy.annotations, 1, [10 20; 30 40], "confirmed");
             legacy.calibration = ...
-                labkit.ui.interaction.scaleBarCalibration(20, 2, "mm");
+                labkit.app.interaction.scaleCalibration(20, 2, "mm");
             legacy.exportPreferences = struct( ...
                 "unitMode", "calibrated_physical", ...
                 "originMode", "first_point", "yAxisMode", "up", ...

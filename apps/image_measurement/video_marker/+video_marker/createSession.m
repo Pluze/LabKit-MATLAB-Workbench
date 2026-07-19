@@ -1,17 +1,20 @@
 % Rebuild transient Video Marker navigation and decoded-frame state from one
-% validated project after Runtime V2 resolves its video source.
-function session = createSession(project)
+% validated project after the App SDK resolves its video source.
+function session = createSession(project, context)
     currentFrame = 1;
     info = infoFromProject(project);
     imageData = [];
-    videoPath = labkit.ui.runtime.sourcePaths( ...
-        project.inputs.sources, "video");
+    paths = strings(0, 1);
+    if ~isempty(project.inputs.sources)
+        paths = context.resolveSourcePaths(project.inputs.sources);
+    end
+    videoPath = "";
+    if ~isempty(paths), videoPath = paths(1); end
     if strlength(videoPath) > 0 && isfile(videoPath)
         [reader, info] = video_marker.videoSource.openVideo(videoPath);
-        verifyAnnotationShape(project.annotations, info);
         imageData = video_marker.videoSource.readFrame(reader, currentFrame);
     end
-    presets = video_marker.userInterface.skeletonPresets();
+    presets = video_marker.skeletonSetup.presets();
     session = struct( ...
         "selection", struct( ...
             "currentFrame", currentFrame, ...
@@ -26,6 +29,7 @@ function session = createSession(project)
         "view", struct("scaleBar", []), ...
         "cache", struct( ...
             "videoInfo", info, ...
+            "videoPath", videoPath, ...
             "currentImage", imageData, ...
             "frameIndex", currentFrame));
 end
@@ -41,20 +45,6 @@ function info = infoFromProject(project)
                 info.(name) = metadata.(name);
             end
         end
-    end
-end
-
-function verifyAnnotationShape(annotations, info)
-    frames = annotations.frames;
-    if isempty(frames.coords)
-        return;
-    end
-    expectedPoints = numel(annotations.skeleton.pointIds);
-    if size(frames.coords, 1) ~= info.frameCount || ...
-            size(frames.coords, 2) ~= expectedPoints
-        error('video_marker:AnnotationShapeMismatch', ...
-            ['Saved annotations do not match the current video frame count ' ...
-            'and skeleton.']);
     end
 end
 
