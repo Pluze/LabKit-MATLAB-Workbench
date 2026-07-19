@@ -374,25 +374,26 @@ end
 
 function groups = reassignObservationRows(groups, selectedRows, target)
     visibleRows = cell(numel(groups), 1);
+    movedValueParts = repmat({zeros(0, 1)}, numel(groups), 1);
+    movedAddressParts = repmat({strings(0, 1)}, numel(groups), 1);
     rowOffset = 0;
-    movedValues = zeros(0, 1);
-    movedAddresses = strings(0, 1);
     for groupIndex = 1:numel(groups)
         count = numel(groups(groupIndex).values);
         visibleRows{groupIndex} = rowOffset + (1:count);
         rowOffset = rowOffset + count;
         move = ismember(visibleRows{groupIndex}, selectedRows);
         if groups(groupIndex).label ~= target
-            movedValues = [movedValues; ...
-                groups(groupIndex).values(move)]; %#ok<AGROW>
+            movedValueParts{groupIndex} = groups(groupIndex).values(move);
             addresses = string(groups(groupIndex).cellAddresses(:));
             if numel(addresses) == count
-                movedAddresses = [movedAddresses; addresses(move)]; %#ok<AGROW>
+                movedAddressParts{groupIndex} = addresses(move);
                 groups(groupIndex).cellAddresses = addresses(~move);
             end
             groups(groupIndex).values = groups(groupIndex).values(~move);
         end
     end
+    movedValues = vertcat(movedValueParts{:});
+    movedAddresses = vertcat(movedAddressParts{:});
     targetIndex = find([groups.label] == target, 1);
     groups(targetIndex).values = [ ...
         groups(targetIndex).values(:); movedValues];

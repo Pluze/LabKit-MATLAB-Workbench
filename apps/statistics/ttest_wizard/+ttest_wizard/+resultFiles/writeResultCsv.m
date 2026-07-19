@@ -40,6 +40,7 @@ function writeResultCsv(filepath, results)
 end
 
 function value = significanceText(result)
+    % Constant: conventional star thresholds for reported p-values.
     if ~result.ok
         value = '';
     elseif result.pValue < 1e-4

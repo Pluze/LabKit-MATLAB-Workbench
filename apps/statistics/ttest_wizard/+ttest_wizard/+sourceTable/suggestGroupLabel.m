@@ -37,20 +37,23 @@ function label = suggestGroupLabel(cells, indices, existingLabels)
 end
 
 function parts = nearbyHeaderParts(cells, firstDataRow, column)
-    parts = strings(0, 1);
+    parts = strings(2, 1);
+    count = 0;
     firstHeaderRow = min(size(cells, 1), firstDataRow - 1);
     lastHeaderRow = max(1, firstHeaderRow - 7);
     for row = firstHeaderRow:-1:lastHeaderRow
         candidate = nearestHeaderAtOrLeft(cells, row, column);
         if ~isSemanticHeader(candidate) || ...
-                any(strcmpi(candidate, parts))
+                any(strcmpi(candidate, parts(1:count)))
             continue;
         end
-        parts(end + 1, 1) = strip(string(candidate)); %#ok<AGROW>
-        if numel(parts) == 2
+        count = count + 1;
+        parts(count) = strip(string(candidate));
+        if count == numel(parts)
             break;
         end
     end
+    parts = parts(1:count);
 end
 
 function candidate = nearestHeaderAtOrLeft(cells, row, column)

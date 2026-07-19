@@ -16,6 +16,8 @@ labkit_TTestWizard_app
 The App requires Base MATLAB and the LabKit App Framework. It does not require
 Statistics and Machine Learning Toolbox.
 
+Current App version: **1.0.1**.
+
 ## Workflow
 
 The left controls use three short pages:

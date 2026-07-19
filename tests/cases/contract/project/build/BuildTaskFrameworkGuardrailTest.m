@@ -20,7 +20,8 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             catalog = labkitBuildTaskCatalog();
             catalogNames = [catalog([catalog.Visibility] == "public").Name];
 
-            testingDoc = fullfile(root, "docs", "development", "testing.md");
+            testingDoc = fullfile(root, "docs", "development", ...
+                "maintain-and-release", "testing.md");
             matrixTasks = extractPrimaryTestingCommandMatrix(fileread(testingDoc));
             testCase.verifyFalse(isempty(matrixTasks), ...
                 "docs/development/maintain-and-release/testing.md task matrix should be parseable.");
