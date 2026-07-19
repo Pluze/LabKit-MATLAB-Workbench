@@ -18756,49 +18756,49 @@
       "category": "callback-signature",
       "value": "deleteObservationRows.groups, selectedRows",
       "source": "apps/statistics/ttest_wizard/+ttest_wizard/definitionActions.m",
-      "line": 404
+      "line": 405
     },
     {
       "appId": "ttest-wizard",
       "category": "callback-signature",
       "value": "selectedObservationRows.state",
       "source": "apps/statistics/ttest_wizard/+ttest_wizard/definitionActions.m",
-      "line": 422
+      "line": 423
     },
     {
       "appId": "ttest-wizard",
       "category": "callback-signature",
       "value": "isBlankValue.value",
       "source": "apps/statistics/ttest_wizard/+ttest_wizard/definitionActions.m",
-      "line": 429
+      "line": 430
     },
     {
       "appId": "ttest-wizard",
       "category": "callback-signature",
       "value": "finiteScalar.value",
       "source": "apps/statistics/ttest_wizard/+ttest_wizard/definitionActions.m",
-      "line": 435
+      "line": 436
     },
     {
       "appId": "ttest-wizard",
       "category": "callback-signature",
       "value": "emptyGroup.label",
       "source": "apps/statistics/ttest_wizard/+ttest_wizard/definitionActions.m",
-      "line": 446
+      "line": 447
     },
     {
       "appId": "ttest-wizard",
       "category": "callback-signature",
       "value": "currentTestOptions.state",
       "source": "apps/statistics/ttest_wizard/+ttest_wizard/definitionActions.m",
-      "line": 455
+      "line": 456
     },
     {
       "appId": "ttest-wizard",
       "category": "callback-signature",
       "value": "ensureCsvExtension.filepath",
       "source": "apps/statistics/ttest_wizard/+ttest_wizard/definitionActions.m",
-      "line": 462
+      "line": 463
     },
     {
       "appId": "ttest-wizard",

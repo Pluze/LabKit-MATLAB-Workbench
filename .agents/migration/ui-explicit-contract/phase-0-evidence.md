@@ -4,6 +4,12 @@ Captured from `main` at `7b906cbb721d81282f40a45502c7082a85fca25f`
 on 2026-07-19. This folder is the compact evidence source for later phases;
 generated `site/` output and ignored profiler artifacts are not design state.
 
+After merging the release-blocking main CI repair at `a13e91d8`, the audit was
+refreshed. The inventory totals and classifications were unchanged; seven
+T-Test callback source locations moved by one line after bounded collection
+replaced dynamic array growth. No new public symbol or transport field was
+introduced.
+
 ## Freeze
 
 Until the replacement contract is accepted, do not add a public

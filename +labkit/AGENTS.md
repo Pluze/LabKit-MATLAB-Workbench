@@ -37,6 +37,11 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
   not app discovery or package management.
 - Do not introduce MATLAB classes or a third-party runtime dependency without
   explicit approval.
+- The active UI explicit-contract migration has approval for the small sealed
+  immutable value vocabulary accepted in
+  `.agents/migration/ui-explicit-contract/phase-1-contract-rfc.md`. Keep it
+  composition-only: no public inheritance hierarchy, mutable handle-state
+  model, version-named namespace, or adapter back to retired transport structs.
 
 ## Runtime contracts
 

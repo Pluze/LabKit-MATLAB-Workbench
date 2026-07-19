@@ -23,8 +23,8 @@ ui-migration-debt: ui-explicit-contract-redesign
 - **Owner:** `labkit.ui`
 - **Target boundary:** the next incompatible `labkit.ui` contract and every
   tracked App that consumes it
-- **Status:** architecture and migration planning; no replacement
-  implementation is accepted yet
+- **Status:** Phase 0 complete; Phase 1 RFC accepted; Phase 2 strict-kernel
+  implementation in progress
 - **User-visible reason:** App authors must be able to discover the framework
   from function, constructor, method, and parameter names. Invalid App code
   must fail at the contract boundary instead of being ignored, guessed, or
@@ -56,8 +56,8 @@ The following are explicitly rejected as end states:
 - new aliases that silently route old spellings or old interaction `Kind`
   values to new behavior;
 - a nominally small function list whose real public contract still lives in
-  arbitrary struct fields, string keys, callback arity probing, or private
-  implementation files;
+  arbitrary struct fields, string keys, runtime callback-shape probing, or
+  private implementation files;
 - keeping an unsuitable current boundary only to avoid editing tracked Apps;
 - a framework rewrite that also rewrites stable App science without cause;
 - two public UI runtimes shipped indefinitely.
@@ -350,6 +350,10 @@ equivalent in the replacement contract.
   transactional presentation, and rollback on failed actions.
 - Callback arity is not guessed by catching invocation errors. Any supported
   role variation is declared at construction and validated before launch.
+  A command may query the fixed function definition with `nargin(handle)` and
+  `nargout(handle)` exactly once during strict construction; negative
+  variable-arity results are rejected. Runtime dispatch never probes or
+  retries a callback with another shape.
 
 The contract prototype must choose one of these two explicit models:
 
@@ -411,13 +415,15 @@ The contract prototype must compare:
   and methods; and
 - opaque values created only by strict public constructor/accessor functions.
 
-The recommended direction is immutable value objects because MATLAB can expose
-their methods and properties through help and introspection, and each object
-can reject invalid state at construction. Repository policy requires explicit
-approval before introducing production `classdef` APIs, so Phase 1 ends with a
-representation decision and approval before implementation begins. The
-function-only alternative is acceptable only if Apps never author, mutate, or
-inspect its internal struct representation.
+The accepted direction is a small set of sealed immutable value objects
+because MATLAB exposes their methods and properties through help and
+introspection, and each object rejects invalid state at construction. The
+repository owner delegated the architecture decision after reviewing the
+disposable value-class and opaque-function evidence on 2026-07-19. This
+authorizes production `classdef` contract values for this migration, but not a
+public inheritance hierarchy or mutable handle-state model. The function-only
+alternative remains rejected because Apps could inspect closure backing state
+through `functions`.
 
 ### Error, default, and recovery policy
 

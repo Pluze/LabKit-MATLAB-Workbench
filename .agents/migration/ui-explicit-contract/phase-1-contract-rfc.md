@@ -1,7 +1,7 @@
 # UI explicit-contract replacement RFC
 
-Status: proposed for executable prototype validation. This is not a released
-API and does not authorize production `classdef` files.
+Status: accepted for phased production implementation on 2026-07-19 after the
+executable representation comparison. This is not yet a released API.
 
 ## Decision summary
 
@@ -98,8 +98,10 @@ value. `Selection` exposes stable item IDs/indices. Dialog results expose
 
 Layout signals bind directly to a `Command` value or a command ID resolved
 during compilation. Callback role is declared by the originating control and
-must match the command. `nargin`, `nargout`, exception retry, and alternate
-shape guessing are forbidden in the production compiler/runtime.
+must match the command. Construction uses MATLAB's read-only `nargin(handle)`
+and `nargout(handle)` definition queries to require the role's one fixed input
+and output shape; variable-arity handles are rejected. Runtime dispatch does
+not inspect arity, retry after an exception, or guess an alternate shape.
 
 Programmatic dispatch receives a compiled command reference and its declared
 payload. FIFO order, whole-state validation, presentation transaction,
@@ -287,7 +289,9 @@ Video Marker. Measure:
 - ability to prevent App mutation/inspection of backing representation;
 - Phase 0 performance thresholds.
 
-The provisional recommendation is the sealed value-class form. Production
-implementation remains blocked until the prototype evidence is complete and
-the repository owner explicitly approves introducing these production
-`classdef` APIs.
+The accepted representation is the sealed immutable value-class form. The
+prototype evidence is complete, and the repository owner delegated the
+architecture choice after reviewing the small value-class versus opaque-value
+comparison. Production implementation may proceed through the Phase 2 gates;
+this approval does not authorize a mutable handle model or public inheritance
+hierarchy.
