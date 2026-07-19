@@ -18,6 +18,16 @@ cleanup removes entries before invoking cleanup callbacks, continues after
 individual failures, and reports the collected failure only after all selected
 resources have been attempted. Closing a runtime is idempotent.
 
+`ProjectDocumentStore` now writes and restores the accepted
+`labkit.project` envelope without exposing document metadata to App callbacks.
+It accepts only the current envelope or an import explicitly declared by
+`ProjectContract`, migrates payloads sequentially, rebuilds session/resume
+state, and publishes restored state and document identity only after
+presentation reconciliation succeeds. `ResultWriter` verifies declared output
+files, records byte counts and SHA-256 values, derives aggregate status, and
+atomically writes the fixed `Result.ManifestName`; output creation remains
+App-owned.
+
 The implementation classes are sealed and hidden. MATLAB does not permit
 package class definitions in a `private` directory, so the files live at the
 `labkit.ui` package root with constructors and adapter operations restricted
@@ -31,6 +41,11 @@ Focused evidence:
   commit rollback, typed dispatch payloads, replacement/close cleanup, and
   cleanup-failure continuation.
 - `UiRuntimeContextContractTest`: 2 of 2 tests passed.
+- `UiProjectDocumentStoreTest`: 5 of 5 tests passed, including atomic save,
+  migration/import, wrong/newer rejection, recovery identity, failed-save
+  metadata isolation, and adapter-commit rollback.
+- `UiResultWriterTest`: 4 of 4 tests passed, covering verified output
+  metadata, missing output failure, aggregate status, and atomic cleanup.
 - `PublicApiDocumentationContractTest`: 8 of 8 tests passed.
 - `ProjectDocumentationGuardrailTest`: the public-function contract check
   distinguishes public value classes from function files.
@@ -42,5 +57,5 @@ Focused evidence:
 
 This checkpoint does not close Phase 3. The next slice must replace the
 headless adapter with the private MATLAB component/layout adapter and connect
-accepted project/recovery, result-writing, renderer, and viewport contracts
-before the RFC examples are independent of the retired runtime.
+dialogs, portable sources, renderer, and viewport contracts before the RFC
+examples are independent of the retired runtime.

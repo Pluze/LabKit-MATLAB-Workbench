@@ -15,6 +15,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         Processing (1, 1) logical = false
         Resources
         Adapter
+        Documents
     end
 
     methods (Access = ?labkit.ui.Application)
@@ -22,6 +23,9 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.Application = application;
             obj.Resources = labkit.ui.ResourceStore();
             obj.Adapter = labkit.ui.HeadlessPlatformAdapter();
+            if ~isempty(application.Project)
+                obj.Documents = labkit.ui.ProjectDocumentStore(application);
+            end
             backend = obj.completeBackend(backend);
             obj.Context = labkit.ui.RuntimeContext.createForRuntime( ...
                 application, backend);
@@ -87,6 +91,57 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             count = obj.Adapter.CommitCount;
         end
 
+        function result = saveProject(obj, state, filepath)
+            obj.assertProjectStore();
+            result = obj.Documents.save(state, filepath);
+        end
+
+        function saveRecovery(obj, state, filepath)
+            obj.assertProjectStore();
+            obj.Documents.saveRecovery(state, filepath);
+        end
+
+        function restoreProject(obj, filepath, asRecovery)
+            if nargin < 3
+                asRecovery = false;
+            end
+            obj.assertOpen();
+            obj.assertProjectStore();
+            previousState = obj.State;
+            previousPresentation = obj.Presentation;
+            [candidate, metadata] = obj.Documents.restore(filepath, asRecovery);
+            try
+                obj.validateState(candidate);
+                view = obj.present(candidate);
+                obj.Adapter.reconcile(previousPresentation, view);
+                obj.State = candidate;
+                obj.Presentation = view;
+                obj.Documents.acceptRestore(metadata);
+            catch cause
+                obj.State = previousState;
+                obj.Presentation = previousPresentation;
+                failure = MException( ...
+                    "labkit:ui:runtime:ProjectRestoreFailed", ...
+                    "Project restore failed transactionally.");
+                failure = addCause(failure, cause);
+                throwAsCaller(failure);
+            end
+        end
+
+        function metadata = documentMetadata(obj)
+            obj.assertProjectStore();
+            metadata = obj.Documents.Metadata;
+        end
+
+        function written = writeResult(obj, folder, result)
+            metadata = [];
+            if ~isempty(obj.Documents)
+                metadata = obj.Documents.Metadata;
+            end
+            writer = labkit.ui.ResultWriter(obj.Application, metadata);
+            written = writer.write(folder, result);
+        end
+
         function close(obj)
             if obj.Closed
                 return;
@@ -119,6 +174,12 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "getResource", @(scope, id) obj.getResource(scope, id), ...
                 "removeResource", @(scope, id) obj.removeResource(scope, id), ...
                 "clearResourceScope", @(scope) obj.clearResourceScope(scope));
+            builtins.saveProject = @(state, filepath) ...
+                obj.saveProject(state, filepath);
+            builtins.saveRecovery = @(state, filepath) ...
+                obj.saveRecovery(state, filepath);
+            builtins.writeResult = @(folder, result) ...
+                obj.writeResult(folder, result);
             names = string(fieldnames(builtins));
             for k = 1:numel(names)
                 backend.(names(k)) = builtins.(names(k));
@@ -231,6 +292,13 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if obj.Closed
                 error("labkit:ui:runtime:InvariantFailure", ...
                     "Application runtime is closed.");
+            end
+        end
+
+        function assertProjectStore(obj)
+            if isempty(obj.Documents)
+                error("labkit:ui:runtime:InvariantFailure", ...
+                    "Application has no project contract.");
             end
         end
     end
