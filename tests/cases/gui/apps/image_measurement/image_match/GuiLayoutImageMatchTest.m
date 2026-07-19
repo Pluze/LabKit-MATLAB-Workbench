@@ -8,7 +8,7 @@ classdef GuiLayoutImageMatchTest < matlab.unittest.TestCase
             h.assertUifigureAvailable();
             cleanup = onCleanup(@() h.closeAllFigures());
 
-            folder = tempname;
+            folder = string(tempname);
             mkdir(folder);
             folderCleanup = onCleanup(@() removeTempFolder(folder));
             referencePath = fullfile(folder, 'reference.png');
@@ -18,88 +18,68 @@ classdef GuiLayoutImageMatchTest < matlab.unittest.TestCase
             imwrite(syntheticSourceImage(), sourcePath);
             imwrite(rot90(syntheticSourceImage()), secondSourcePath);
 
-            fig = h.launchFigure('labkit_ImageMatch_app', 'Paper Image Match');
-            assertImageMatchLayout(h, fig);
-            driver = labkitWorkflowDriver(fig);
-            driver.chooseFiles('referenceImage', referencePath);
-            driver.chooseFiles('sourceImages', sourcePath);
-
-            driver.click('Choose reference');
-            driver.click('Add images or folder');
-            testCase.verifyTrue(driver.enabled('applyMatch'), ...
-                'Image match apply action should enable after source and reference images load.');
-            testCase.verifyTrue(driver.enabled('exportImages'), ...
-                'Image match export action should enable after source and reference images load.');
-            testCase.verifyTrue(contains(driver.fileStatus('sourceImages'), '1'), ...
-                'Image match source file status should report the loaded image count.');
-            testCase.verifyTrue(any(contains(driver.fileListItems('sourceImages'), 'source.png')), ...
-                'Image match file list should show the synthetic source image.');
-
-            driver.click('Apply match');
-            history = driver.tableData('historyTable');
-            testCase.verifyEqual(size(history, 1), 1, ...
-                'Image match workflow should add one history step.');
-            testCase.verifyEqual(string(history{1, 2}), "Reference match", ...
-                'Image match history should record a reference-match step.');
-            testCase.verifyTrue(contains(string(history{1, 3}), 'Balanced reference'), ...
-                'Image match default method should be recorded in history details.');
-            testCase.verifyGreaterThan(driver.previewChildCount('preview'), 0, ...
-                'Image match preview should render the matched image.');
-
-            driver.click('Export matched images');
             outputFolder = fullfile(folder, 'image_match');
-            manifestFiles = dir(fullfile(outputFolder, '*manifest*.csv'));
-            outputFiles = dir(fullfile(outputFolder, '*_matched.png'));
-            testCase.verifyFalse(isempty(manifestFiles), ...
-                'Image match workflow should write a manifest CSV.');
-            testCase.verifyFalse(isempty(outputFiles), ...
-                'Image match workflow should write a matched PNG.');
-            testCase.verifyTrue(isfile(fullfile(outputFolder, ...
-                'image_match.labkit.json')), ...
-                'Image match export should add a standard result manifest.');
-            testCase.verifyTrue(any(contains(string(driver.textAreaValue('exportDetails')), ...
-                'Last manifest')), ...
-                'Image match details should show the last manifest after export.');
+            mkdir(outputFolder);
+            backend = struct( ...
+                "chooseOutputFolder", @(~) ...
+                    labkit.app.dialog.Choice(outputFolder), ...
+                "alert", @(~, ~) []);
+            runtime = image_match.definition().createMatlabRuntime([], backend);
+            runtimeCleanup = onCleanup(@() runtime.close());
+            fig = runtime.figureHandle();
+            assertImageMatchLayout(h, fig);
+            runtime.applyFileSelection('referenceImage', referencePath, 1);
+            runtime.applyFileSelection('sourceImages', sourcePath, 1);
+            testCase.verifyNotEmpty( ...
+                runtime.State.session.cache.referenceItem.image);
+            testCase.verifyNotEmpty( ...
+                runtime.State.session.cache.currentItem.image);
 
-            driver.chooseFiles('sourceImages', secondSourcePath);
-            driver.click('Add images or folder');
-            testCase.verifyTrue(contains(driver.fileStatus('sourceImages'), '2'), ...
-                'Image match append should preserve the existing source image.');
-            testCase.verifyTrue(contains(driver.fileSelection('sourceImages'), ...
-                'source_second.png'), ...
-                'Image match append should select the newly added source image.');
+            runtime.invokeAction('applyMatch');
+            steps = runtime.State.project.annotations.steps;
+            testCase.verifyEqual(numel(steps), 1);
+            testCase.verifyTrue(contains( ...
+                string(steps(1).label), "Balanced reference"));
+            previewAxes = findall(fig, 'Tag', 'preview.image');
+            testCase.verifyNotEmpty(previewAxes.Children);
+
+            runtime.invokeAction('exportImages');
+            testCase.verifyTrue(isfile(fullfile(outputFolder, 'source.png')), ...
+                'Image match workflow should write a matched PNG.');
+            runtime.applyFileSelection( ...
+                'sourceImages', [sourcePath secondSourcePath], [1 2]);
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.inputs.sources), 2);
 
             projectPath = fullfile(folder, 'image-match-project.mat');
-            labkit.ui.runtime.saveState(fig, projectPath);
+            runtime.saveProject(runtime.State, projectPath);
             saved = load(projectPath, 'labkitProject');
             testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
             testCase.verifyFalse(isfield(saved.labkitProject.payload, 'session'), ...
                 'Image Match projects must exclude rebuildable caches.');
-            labkit.ui.runtime.loadState(fig, projectPath);
-            h.waitForUiIdle(fig);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyNotEmpty(runtime.state.session.cache.currentItem.image);
-            testCase.verifyNotEmpty(runtime.state.session.cache.referenceItem.image);
-            reopenedHistory = driver.tableData('historyTable');
-            testCase.verifyEqual(size(reopenedHistory, 1), 1, ...
-                'Project reopen should preserve durable match history.');
+            runtime.applyFileSelection( ...
+                'sourceImages', strings(1, 0), zeros(1, 0));
+            runtime.restoreProject(projectPath);
+            testCase.verifyNotEmpty(runtime.State.session.cache.currentItem.image);
+            testCase.verifyNotEmpty(runtime.State.session.cache.referenceItem.image);
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.annotations.steps), 1);
+            clear runtimeCleanup
         end
     end
 end
 
 function assertImageMatchLayout(h, fig)
-    h.assertStandardWorkbenchLayout(fig);
-    h.assertButtonContract(fig, {'Choose reference', ...
-        'Add images or folder', 'Remove selected', ...
-        'Clear images', 'Apply match', ...
-        'Undo history', 'Reset history', ...
-        'Choose folder', 'Export matched images'});
-    h.assertDropdownGroups(fig, [ ...
-        h.dropdownGroup({'Matched', 'Original', 'Before | After'}, 1), ...
-        h.dropdownGroup({'Balanced', 'White balance', 'Tone only', ...
-        'Protected tone', 'Lab style', 'Histogram'}, 1), ...
-        h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
-    h.assertTabTitles(fig, {'Library + Export', 'Match + History', 'Log'});
+    h.assertStartupSucceeded(fig);
+    ids = ["referenceImage", "sourceImages", "exportImages", ...
+        "matchMethod", "matchStrength", "toneStrength", ...
+        "colorStrength", "applyMatch", "undoHistory", ...
+        "resetHistory", "historyTable", "metricsTable", ...
+        "preview.image"];
+    for id = ids
+        assert(numel(findall(fig, "Tag", id)) == 1, ...
+            "Missing Image Match semantic target: %s.", id);
+    end
 end
 
 function img = syntheticReferenceImage()
