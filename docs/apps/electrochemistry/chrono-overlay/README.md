@@ -17,9 +17,9 @@ labkit_ChronoOverlay_app
 Use **Add DTA files** to select one or more `.DTA` files from one directory.
 The app parses each file as chrono data and reports unreadable items. The file
 list controls curve order, legend labels, and removal; selection does not
-discard other loaded curves. Runtime V2 reconciles durable source records with
-the successfully decoded list, preserving the identity of retained files and
-allocating collision-free identities after removal and later additions.
+discard other loaded curves. The UI runtime owns durable source identities,
+portable project references, add/remove/clear behavior, and selection. It
+rebuilds the transient decoded session only when the file collection changes.
 
 ## Basic Workflow
 
@@ -93,17 +93,12 @@ listed as stable public APIs; reusable DTA reading is supported through
 
 ## Framework Compatibility
 
-The single `definition.m` owns product metadata, requirements, layout, and
-optional runtime capabilities. `projectSpec.m` owns the current version-2
-domain schema plus one version-aware migration entry; its validator requires
-the App's source collection. Runtime V2 advances older payloads one version at
-a time and validates canonical buckets and each source record before the App
-checks its parameter rules. `createSession.m` rebuilds
-decoded DTA items and selection because curves are transient caches. Runtime
-supplies omitted empty workflow and view buckets. The App requires
-`labkit.ui >=7 <8` and `labkit.dta >=2 <3`; busy-state, source identity,
-resolved-path access, and portable-reference serialization remain
-framework-owned.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+`definition.m` returns one validated `labkit.ui.Application`.
+`projectSpec.m` returns the current version-2 `ProjectContract` plus its
+version-aware migration entry. `createSession(project,context)` resolves the
+runtime-owned portable sources and rebuilds decoded DTA items because curves
+remain transient caches. Layout bindings provide all four plot parameters and
+the file collection without App callbacks or presenter duplication. The only
+App Command is CSV/result export; one renderer receives the voltage and
+current axes in declared order. The App requires `labkit.ui >=8 <9` and
+`labkit.dta >=2 <3`.

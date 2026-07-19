@@ -201,7 +201,7 @@ project = struct("value", value);
 resume = struct("token", "legacy");
 end
 
-function session = createSession(~)
+function session = createSession(~, ~)
 session = struct("token", "fresh");
 end
 

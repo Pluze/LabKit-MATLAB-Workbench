@@ -47,7 +47,9 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
 
 ## Runtime contracts
 
-- Apps launch through `labkit.ui.runtime.launch/define`. The runtime owns
+- Migrated Apps return one `labkit.ui.Application` and launch it through
+  `Application.launch`; do not adapt explicit values back into
+  `labkit.ui.runtime.launch/define`. The runtime owns
   startup readiness, busy state, queued events, atomic presentation, close
   guards, diagnostics, persistence, recovery, resources, and interactions.
 - Semantic ids are developer-owned and framework-validated. App ids are stable

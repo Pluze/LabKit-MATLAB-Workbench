@@ -16,11 +16,29 @@ road are. `UiAuthoringErgonomicsTest` protects the first executable budgets.
 | Framework log | `context.appendStatus(message)` | No false App-state return value |
 | Standard file collection | `filePanel(..., Bind=..., SelectionBind=...)` | No Command or presenter; runtime owns records, selection, and project rebasing |
 
-The next measured rows are project menu/recovery, one plot, and one result
-package. They close only after a real Chrono Overlay
-migration records definition/layout/callback/presenter/context-call counts.
-T-Test Wizard and Curvature or Video Marker then supply the table/workspace
-and interaction/resource comparisons.
+Chrono Overlay is the first real migrated App:
+
+| Chrono author surface | Runtime V2 | Explicit contract |
+| --- | ---: | ---: |
+| Definition code lines | 20 | 20 |
+| Layout code lines | 73 | 33 |
+| Action/callback code lines | 149 | 38 |
+| Presenter code lines | 55 | 15 |
+| App callbacks | 5 | 1 |
+| App-authored presenter operations | 5 | 2 |
+
+Counts exclude blank/comment-only MATLAB lines and use commit `5a87bdd2` as
+the Runtime V2 baseline. The remaining callback is the scientific CSV/result
+export. Runtime owns file add/remove/clear, stable source identities,
+selection, transient session rebuild, project source portability, binding
+updates, and native component reconciliation. One renderer receives the two
+declared axes in order.
+
+This closes the one-plot and one-result-package rows. Project save/restore is
+covered through the declared `ProjectContract` without App menu code; the
+production project menu and recovery UX remain a framework item. T-Test
+Wizard and Curvature or Video Marker next supply the table/workspace and
+interaction/resource comparisons.
 
 Public capability extensions require either repeated need in at least two Apps
 or one framework-owned lifecycle/consistency problem. A capability is not

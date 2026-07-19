@@ -5,6 +5,9 @@ classdef (Sealed) Application
     %   app = labkit.ui.Application(Command=command, Id=id, Title=title, ...
     %       Family=family, AppVersion=version, Updated=date, ...
     %       Requirements=requirements, Layout=layout, Name=Value)
+    %   fig = app.launch()
+    %   requirements = app.launch("requirements")
+    %   version = app.launch("version")
     %
     % Description:
     %   Application validates product metadata, Commands collected from Layout
@@ -29,8 +32,9 @@ classdef (Sealed) Application
     %   DisplayName - Nonempty scalar text. Default: Title.
     %   Project - labkit.ui.ProjectContract value or empty for a static App.
     %       Default: empty.
-    %   Session - Fixed callback session = createSession(project). Default:
-    %       empty.
+    %   Session - Fixed callback session = createSession(project,context).
+    %       Portable project sources remain opaque; use context.sourcePaths
+    %       while rebuilding transient session data. Default: empty.
     %   Present - Fixed callback view = present(state). Default: empty.
     %   ExtraCommands - Row cell array of labkit.ui.Command values available
     %       only to programmatic dispatch. Layout signals are collected
@@ -51,6 +55,11 @@ classdef (Sealed) Application
     %   app - Immutable compiled labkit.ui.Application value.
     %
     % Application Methods:
+    %   launch() - Build and show the native MATLAB App figure.
+    %   launch("requirements") - Return declared facade requirements without
+    %       creating a figure.
+    %   launch("version") - Return product version metadata without creating
+    %       a figure.
     %   validatePresentation(view) - Validate target references, target
     %       capabilities, renderer ownership, and complete target coverage.
     %       Returns true or throws before any runtime UI mutation.
@@ -66,6 +75,8 @@ classdef (Sealed) Application
     %       presentation target is undeclared.
     %   labkit:ui:contract:UnsupportedOperation - A presentation operation is
     %       not legal for its target.
+    %   labkit:ui:contract:InvalidValue - A launch request or output count is
+    %       unsupported.
     %
     % Typical Call:
     %   run = labkit.ui.Command("run", @runAnalysis);
@@ -140,7 +151,7 @@ classdef (Sealed) Application
             obj.Project = validateProjectContract( ...
                 optionValue(options, "Project", []));
             obj.Session = optionalFixedCallback( ...
-                options, "Session", 1, 1);
+                options, "Session", 2, 1);
             obj.Present = optionalFixedCallback( ...
                 options, "Present", 1, 1);
             obj.Capabilities = validateCapabilities( ...
@@ -211,6 +222,51 @@ classdef (Sealed) Application
             end
             accepted = true;
         end
+
+        function varargout = launch(obj, varargin)
+            %LAUNCH Answer metadata requests or show the native MATLAB App.
+            if ~isempty(varargin)
+                if numel(varargin) ~= 1 || ...
+                        ~(ischar(varargin{1}) || ...
+                        (isstring(varargin{1}) && isscalar(varargin{1})))
+                    error("labkit:ui:contract:InvalidValue", ...
+                        "Application launch accepts one optional request.");
+                end
+                request = lower(string(varargin{1}));
+                if nargout > 1
+                    error("labkit:ui:contract:InvalidValue", ...
+                        "Application metadata requests return one output.");
+                end
+                switch request
+                    case "requirements"
+                        varargout = {obj.Requirements};
+                    case "version"
+                        varargout = {struct( ...
+                            "command", obj.Command, ...
+                            "displayName", obj.DisplayName, ...
+                            "family", obj.Family, ...
+                            "version", obj.AppVersion, ...
+                            "updated", obj.Updated)};
+                    otherwise
+                        error("labkit:ui:contract:InvalidValue", ...
+                            "Application launch request is unsupported: %s.", ...
+                            request);
+                end
+                return;
+            end
+            if nargout > 1
+                error("labkit:ui:contract:InvalidValue", ...
+                    "Application launch returns at most one figure.");
+            end
+            runtime = obj.createMatlabRuntime();
+            runtime.showFigure();
+            figure = runtime.figureHandle();
+            if nargout == 1
+                varargout = {figure};
+            else
+                varargout = {};
+            end
+        end
     end
 
     methods (Hidden)
@@ -234,6 +290,17 @@ classdef (Sealed) Application
             end
             runtime = labkit.ui.RuntimeKernel( ...
                 obj, initialProject, backend);
+        end
+
+        function runtime = createMatlabRuntime(obj, initialProject, backend)
+            if nargin < 2
+                initialProject = [];
+            end
+            if nargin < 3
+                backend = struct();
+            end
+            runtime = labkit.ui.RuntimeKernel( ...
+                obj, initialProject, backend, "matlab");
         end
 
         function plan = platformPlanForRuntime(obj)

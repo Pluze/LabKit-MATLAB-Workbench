@@ -113,7 +113,7 @@ classdef UiExplicitContractValueTest < matlab.unittest.TestCase
                 Title="Probe", Family="Tests", AppVersion="1.0.0", ...
                 Updated="2026-07-19", Requirements=[], ...
                 Layout=labkit.ui.Layout.workbench({}), ...
-                Session=@wrongValidate), ...
+                Session=@wrongSession), ...
                 "labkit:ui:contract:CallbackRoleMismatch");
         end
     end
@@ -124,6 +124,10 @@ function project = createProject()
 end
 
 function accepted = validateProject(~)
+    accepted = true;
+end
+
+function accepted = wrongSession(~)
     accepted = true;
 end
 
@@ -152,7 +156,7 @@ end
 function state = startApp(state, ~)
 end
 
-function session = createSession(~)
+function session = createSession(~, ~)
     session = struct();
 end
 

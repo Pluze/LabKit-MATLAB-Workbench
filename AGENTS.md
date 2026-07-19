@@ -29,8 +29,9 @@ retirement. A zero-debt ledger is not an everyday checklist.
 - App-facing packages are `labkit.ui`, `image`, `thermal`, `dta`, `rhs`, and
   `biosignal`. Do not create public `analysis`, `data`, `io`, `util`, or
   app-specific helper surfaces.
-- Apps use `labkit.ui.runtime.launch/define`, semantic layouts, presenter
-  models, injected services, and managed interactions/resources. They do not
+- Apps use `labkit.ui.Application`, semantic Layout values, strict bindings,
+  Command roles, Presentation fragments, RuntimeContext, and managed
+  interactions/resources. Entrypoints call `definition().launch(...)`. Apps do not
   receive registries or own lifecycle timers, readiness, callback queues, or
   concrete framework layout.
 - Keep app entrypoints thin and app helpers under the owning app package. Name

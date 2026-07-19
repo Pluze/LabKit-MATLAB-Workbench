@@ -179,7 +179,7 @@ classdef (Sealed) Presentation
         end
     end
 
-    methods (Access = ?labkit.ui.Application)
+    methods (Access = {?labkit.ui.Application, ?labkit.ui.MatlabPlatformAdapter})
         function operations = operationsForCompiler(obj)
             operations = obj.Operations;
         end

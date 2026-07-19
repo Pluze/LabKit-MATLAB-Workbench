@@ -79,6 +79,12 @@ required metadata, invalid version/date, unsupported requirement, callback
 role mismatch, and missing renderer before figure creation. Static Apps omit
 commands, session, presenter, renderer, and startup work.
 
+The one session factory shape is
+`session = createSession(project,context)`. Portable source records remain
+opaque; a source-backed App resolves paths through `context.sourcePaths`
+while rebuilding transient decoded data. The runtime uses the same fixed
+shape during initial construction and project restore.
+
 `ProjectContract` accepts only named `Version`, `Create`, `Validate`, `Migrate`,
 `CreateResume`, `ApplyResume`, `RelinkSources`, and `LegacyImport` operations.
 Payload version is independent of the `labkit.ui` facade range. Existing valid

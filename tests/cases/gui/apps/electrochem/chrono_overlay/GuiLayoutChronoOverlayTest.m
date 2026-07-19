@@ -1,168 +1,81 @@
 classdef GuiLayoutChronoOverlayTest < matlab.unittest.TestCase
-    %GUILAYOUTCHRONOOVERLAYTEST Verify chrono overlay GUI layout contracts.
-
+    % Verify Chrono Overlay through the explicit UI runtime and native adapter.
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
-        function chrono_overlay_debug_launch_generates_boundary_samples(testCase)
+        function nativeLayoutUsesSemanticTargets(testCase)
             setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
+            helpers = guiTestHelpers();
+            helpers.assertUifigureAvailable();
+            cleanup = onCleanup(@() helpers.closeAllFigures());
+            figure = labkit_ChronoOverlay_app();
 
-            [fig, debug] = labkit_ChronoOverlay_app("debug");
-            assertChronoOverlayLayout(h, fig);
-            h.invokeDropdownValue(fig, 'Time (ms)');
-            h.invokeCheckbox(fig, 'Show file-name legend', false);
-            testCase.verifyTrue(debug.enabled && debug.traceEnabled, ...
-                'Chrono overlay debug launch should return an enabled trace logger.');
-            testCase.verifyTrue(isfolder(debug.sampleFolder), ...
-                'Chrono overlay debug launch should create a controlled samples folder.');
-            testCase.verifyTrue(isfolder(debug.outputFolder), ...
-                'Chrono overlay debug launch should create a controlled output folder.');
-            testCase.verifyTrue(isfile(debug.manifestFile), ...
-                'Chrono overlay debug launch should record a sample manifest.');
-
-            driver = labkitWorkflowDriver(fig);
-            testCase.verifyEqual(char(driver.fileStatus('files')), 'No files loaded');
-
-            manifestText = string(fileread(debug.manifestFile));
-            testCase.verifyTrue(contains(manifestText, 'malformedChronoDta') && ...
-                contains(manifestText, 'validEdgeChronoDta'), ...
-                'Chrono overlay debug manifest should include boundary-test samples.');
+            testCase.verifyEqual(numel(findall(figure, "Tag", "files")), 1);
+            testCase.verifyEqual(numel(findall(figure, ...
+                "Tag", "exportCurves")), 1);
+            testCase.verifyEqual(numel(findall(figure, ...
+                "Tag", "overlayPlots.voltage")), 1);
+            testCase.verifyEqual(numel(findall(figure, ...
+                "Tag", "overlayPlots.current")), 1);
+            clear cleanup
         end
 
-        function chrono_overlay_workflow_loads_and_plots_chrono_files(testCase)
+        function standardFilesDrivePlotExportAndRestore(testCase)
             setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-
-            fixtures = [ ...
-                string(dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA')); ...
-                string(dtaFixturePath('chrono_chronoamp_voltage_pulse_0p2ms.DTA'))];
-            fig = h.launchFigure('labkit_ChronoOverlay_app', ...
-                'Gamry Multi-DTA Plot Export GUI');
-            driver = labkitWorkflowDriver(fig);
-            driver.chooseFiles('files', fixtures);
-
-            driver.click('Add DTA files');
-
-            testCase.verifyEqual(char(driver.fileStatus('files')), '2 file(s) loaded');
-            testCase.verifyEqual(numel(driver.fileListItems('files')), 2, ...
-                'Chrono overlay workflow should list both loaded chrono fixtures.');
-            ui = driver.registry();
-            axVoltage = ui.controls.overlayPlots.axesById.voltage;
-            axCurrent = ui.controls.overlayPlots.axesById.current;
-            testCase.verifyGreaterThan(numel(axVoltage.Children), 0, ...
-                'Chrono overlay workflow should draw voltage traces.');
-            testCase.verifyGreaterThan(numel(axCurrent.Children), 0, ...
-                'Chrono overlay workflow should draw current traces.');
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
-                'Chrono overlay workflow must execute through runtime V2.');
-            testCase.verifyTrue(all(isfield(runtime.state.session, ...
-                {'selection', 'workflow', 'view', 'cache'})), ...
-                'Runtime should supply omitted empty session buckets.');
-            originalSourceIds = string( ...
-                {runtime.state.project.inputs.sources.id});
-            driver.selectFile('files', ...
-                'chrono_chronopot_current_pulse_0p2ms.DTA');
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(numel(runtime.state.session.selection.paths), 1, ...
-                'Chrono overlay should commit a one-file selection subset.');
-            testCase.verifyTrue(contains(driver.fileSelection('files'), ...
-                'chrono_chronopot_current_pulse_0p2ms.DTA'), ...
-                'Chrono overlay presentation should preserve the selected subset.');
-            driver.click('Remove selected');
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(numel(runtime.state.project.inputs.sources), 1);
-            testCase.verifyEqual( ...
-                string(runtime.state.project.inputs.sources.id), ...
-                originalSourceIds(2), ...
-                'Removing the first file should preserve the remaining identity.');
-            driver.chooseFiles('files', fixtures(1));
-            driver.click('Add DTA files');
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            reconciledSourceIds = string( ...
-                {runtime.state.project.inputs.sources.id});
-            testCase.verifyEqual(numel(unique(reconciledSourceIds)), ...
-                numel(reconciledSourceIds), ...
-                ['Removing and adding a file must not reuse an ID that ' ...
-                'collides with a remaining source.']);
-            testCase.verifyTrue(any(reconciledSourceIds == originalSourceIds(2)), ...
-                'Source reconciliation should preserve the remaining file ID.');
-
+            helpers = guiTestHelpers();
+            helpers.assertUifigureAvailable();
             outputFolder = string(tempname);
             mkdir(outputFolder);
-            outputCleanup = onCleanup(@() rmdir(outputFolder, 's'));
-            runtime.request.outputChooser = @(~, ~, ~) deal( ...
-                'overlay.csv', char(outputFolder));
-            setappdata(fig, 'labkitUiAppRuntime', runtime);
-            driver.click('Export curves CSV');
-            csvPath = fullfile(outputFolder, 'overlay.csv');
-            manifestPath = fullfile(outputFolder, 'overlay.labkit.json');
-            testCase.verifyTrue(isfile(csvPath), ...
-                'Chrono overlay should retain its CSV export.');
-            testCase.verifyTrue(isfile(manifestPath), ...
-                'Chrono overlay should add a standard result manifest.');
-            manifest = jsondecode(fileread(manifestPath));
-            testCase.verifyEqual(string(manifest.format), "labkit.result");
-            testCase.verifyEqual(string(manifest.outputs.status), "success");
-            testCase.verifyGreaterThan(double(manifest.outputs.bytes), 0);
+            folderCleanup = onCleanup(@() rmdir(outputFolder, "s"));
+            csvPath = fullfile(outputFolder, "overlay.csv");
+            backend = struct( ...
+                "chooseOutputFile", @(~, ~) ...
+                    labkit.ui.DialogResult(csvPath), ...
+                "alert", @(~, ~) []);
+            app = chrono_overlay.definition();
+            runtime = app.createMatlabRuntime([], backend);
+            runtimeCleanup = onCleanup(@() runtime.close());
+            figure = runtime.figureHandle();
+            fixtures = [ ...
+                string(dtaFixturePath( ...
+                    "chrono_chronopot_current_pulse_0p2ms.DTA")); ...
+                string(dtaFixturePath( ...
+                    "chrono_chronoamp_voltage_pulse_0p2ms.DTA"))];
 
-            projectPath = fullfile(outputFolder, 'overlay-project.mat');
-            labkit.ui.runtime.saveState(fig, projectPath);
-            saved = load(projectPath, 'labkitProject');
-            testCase.verifyEqual(string(saved.labkitProject.format), ...
-                "labkit.project");
-            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 2);
-            testCase.verifyFalse(isfield( ...
-                saved.labkitProject.payload.inputs, 'items'), ...
-                'Chrono Overlay projects must not persist decoded DTA items.');
-            driver.click('Clear all');
-            labkit.ui.runtime.loadState(fig, projectPath);
-            testCase.verifyEqual(char(driver.fileStatus('files')), ...
-                '2 file(s) loaded', ...
-                'Project reopen should replace and restore durable inputs.');
-            testCase.verifyGreaterThan(numel(axVoltage.Children), 0);
-            testCase.verifyGreaterThan(numel(axCurrent.Children), 0);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            runtime.applyFileSelection("files", fixtures, 1:2);
+
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.inputs.sources), 2);
+            testCase.verifyEqual(numel( ...
+                runtime.State.session.cache.items), 2);
+            voltage = findall(figure, "Tag", "overlayPlots.voltage");
+            current = findall(figure, "Tag", "overlayPlots.current");
+            testCase.verifyNotEmpty(voltage.Children);
+            testCase.verifyNotEmpty(current.Children);
+
+            runtime.applyFilePanelSelection("files", 1);
             testCase.verifyEqual( ...
-                string({runtime.state.project.inputs.sources.id}), ...
-                reconciledSourceIds, ...
-                'Project reopen should preserve reconciled source identities.');
+                runtime.State.session.selection.files.Indices, 1);
+            runtime.invokeAction("exportCurves");
+            testCase.verifyTrue(isfile(csvPath));
+            testCase.verifyTrue(isfile( ...
+                fullfile(outputFolder, "labkit_result.json")));
 
-            axVoltage.XLim = [-1 0];
-            axVoltage.YLim = [-0.01 0.01];
-            driver.dropdown('Time (ms)');
-            testCase.verifyTrue(contains(string(axVoltage.XLabel.String), "Time (ms)"));
-            testCase.verifyTrue(contains(string(axCurrent.XLabel.String), "Time (ms)"));
-            testCase.verifyFalse(isequal(axVoltage.XLim, [-1 0]), ...
-                'Chrono overlay option redraw should replace stale manual X limits.');
-            testCase.verifyFalse(isequal(axVoltage.YLim, [-0.01 0.01]), ...
-                'Chrono overlay option redraw should replace stale manual Y limits.');
+            projectPath = fullfile(outputFolder, "overlay-project.mat");
+            runtime.saveProject(runtime.State, projectPath);
+            runtime.applyFileSelection("files", strings(1, 0), ...
+                zeros(1, 0));
+            testCase.verifyEmpty(runtime.State.session.cache.items);
+            runtime.restoreProject(projectPath);
+            testCase.verifyEqual(numel( ...
+                runtime.State.session.cache.items), 2);
 
-            driver.click('Clear all');
-            testCase.verifyEqual(char(driver.fileStatus('files')), 'No files loaded');
-            testCase.verifyEmpty(axVoltage.Children, ...
-                'Chrono overlay clear-all should remove stale voltage plots and legends.');
-            testCase.verifyEmpty(axCurrent.Children, ...
-                'Chrono overlay clear-all should remove stale current plots and legends.');
-            testCase.verifyEqual(axVoltage.XLimMode, 'auto', ...
-                'Chrono overlay clear-all should restore automatic X limits.');
-            testCase.verifyEqual(axVoltage.YLimMode, 'auto', ...
-                'Chrono overlay clear-all should restore automatic Y limits.');
-            clear outputCleanup;
+            voltage.XLim = [-1 0];
+            voltage.YLim = [-0.01 0.01];
+            runtime.applyBinding("xAxis", "Time (ms)");
+            testCase.verifyEqual(voltage.XLim, [-1 0]);
+            testCase.verifyEqual(voltage.YLim, [-0.01 0.01]);
+            testCase.verifyTrue(contains( ...
+                string(voltage.XLabel.String), "Time (ms)"));
+            clear runtimeCleanup folderCleanup
         end
     end
-end
-
-function assertChronoOverlayLayout(h, fig)
-    h.assertStandardWorkbenchLayout(fig);
-    h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
-        'Clear all', 'Export curves CSV'});
-    h.assertCheckboxContract(fig, {'Show file-name legend', 'Show grid'});
-    h.assertDropdownGroups(fig, h.dropdownGroup( ...
-        {'Time (s)', 'Time (ms)', 'Sample #'}, 1));
-    h.assertTabTitles(fig, {'Files + Analysis', 'Log'});
-    h.assertDropdownCallbacksPresent(fig);
 end

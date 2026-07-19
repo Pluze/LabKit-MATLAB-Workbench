@@ -1,13 +1,11 @@
 %CREATESESSION Rebuild transient Chrono Overlay DTA items and selection.
-% Expected caller: Runtime V2 through chrono_overlay.definition. Input is a
-% validated current project; decoded DTA curves remain outside persistence.
-function session = createSession(project)
-    items = chrono_overlay.sourceFiles.loadProjectItems(project.inputs.sources);
-    selectedPaths = strings(0, 1);
-    if ~isempty(items)
-        selectedPaths = string({items.filepath}).';
-    end
+% Expected caller: LabKit UI runtime through chrono_overlay.definition.
+% Portable sources remain opaque; context resolves their current paths.
+function session = createSession(project, context)
+    paths = context.sourcePaths(project.inputs.sources);
+    items = chrono_overlay.sourceFiles.loadProjectItems(paths);
     session = struct( ...
-        "selection", struct("paths", selectedPaths), ...
+        "selection", struct("files", labkit.ui.Selection( ...
+            Indices=1:numel(paths))), ...
         "cache", struct("items", items));
 end

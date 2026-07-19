@@ -21,5 +21,8 @@ classdef (Hidden, Sealed) HeadlessPlatformAdapter < handle
         function failNextCommit(obj)
             obj.FailNext = true;
         end
+
+        function close(~)
+        end
     end
 end

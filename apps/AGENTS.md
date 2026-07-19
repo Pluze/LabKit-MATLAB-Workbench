@@ -13,20 +13,23 @@ library manual for APIs the app actually uses. App tests live under
 ## Required app shape
 
 - Keep `labkit_*_app.m` as a thin wrapper around
-  `labkit.ui.runtime.launch`.
+  `definition().launch(...)`.
 - `definition.m` is the single product contract. It declares stable identity,
   version, requirements, layout, and references to optional project, session,
-  action, presenter, renderer, debug-sample, utility, and Start capabilities.
+  Command, presenter, renderer, debug-sample, and Start capabilities.
   It performs no IO, computation, export, handle creation, or lifecycle
   mutation.
 - A static App needs only the entrypoint, definition, and
   `+userInterface/buildWorkbenchLayout.m`. Add `definitionActions.m` only for
-  semantic commands or bound events, and keep short callback glue local.
-- Add one `projectSpec.m` only for durable App-owned state. It owns local
+  real App-owned business behavior; bindings and standard lifecycle need no
+  placeholder Command. Keep short callback glue local.
+- Add one `projectSpec.m` only for durable App-owned state. It returns a
+  `ProjectContract` owning local
   create, validate, version-aware migrate, resume, relink, and declared
   read-only legacy-import functions as needed; Runtime owns the migration loop.
-- Add root `createSession.m` only to reconstruct App-specific transient data.
-  Runtime supplies the canonical selection, workflow, view, and cache buckets.
+- Add root `createSession.m` only to reconstruct App-specific transient data
+  with the fixed `(project,context)` signature. Resolve opaque portable
+  sources through `context.sourcePaths`.
 - `+userInterface/buildWorkbenchLayout.m` returns a data-only semantic layout.
   Add `presentWorkbench.m` only for dynamic views; it maps state to control,
   preview, renderer, and interaction models without IO or heavy computation.
@@ -66,20 +69,19 @@ library manual for APIs the app actually uses. App tests live under
 
 ## UI and persistence
 
-- Use framework callbacks, presenter-owned interactions, and injected services.
+- Use Commands, strict bindings, Presentation, and RuntimeContext.
   Do not mutate registries, restore figure callbacks, create interaction
   runtimes, or add startup timers/readiness flags.
 - Interactive rectangles use managed `rectangle` or `regionSelection` specs.
   Display-only rectangles disable hit testing.
 - Placing or editing overlays must preserve the user's viewport unless the
   user explicitly requests fit/reset.
-- File and folder dialogs outside `filePanel` use `services.dialogs`; alerts use
-  `services.dialogs.alert`.
+- File and folder dialogs outside `filePanel` and alerts use RuntimeContext.
 - External files in saved projects use portable references and field-specific
   relinking. Current saves use the project envelope; compatibility importers
   are read-only.
 - Caught exceptions that allow the app to continue are reported through the
-  injected diagnostic service before alerting or logging recovery.
+  RuntimeContext before alerting or logging recovery.
 
 ## Version, docs, and tests
 

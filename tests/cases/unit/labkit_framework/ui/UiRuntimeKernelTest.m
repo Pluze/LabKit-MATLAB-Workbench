@@ -157,7 +157,7 @@ function accepted = validateProject(project)
         isscalar(project.value) && isfinite(project.value);
 end
 
-function session = createSession(~)
+function session = createSession(~, ~)
     session = struct();
 end
 

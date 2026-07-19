@@ -108,7 +108,7 @@ accepted = isstruct(project) && isscalar(project) && ...
     isfield(project.inputs, "sources") && isstruct(project.inputs.sources);
 end
 
-function session = createFileSession(~)
+function session = createFileSession(~, ~)
 session = struct("selection", struct( ...
     "files", labkit.ui.Selection()));
 end

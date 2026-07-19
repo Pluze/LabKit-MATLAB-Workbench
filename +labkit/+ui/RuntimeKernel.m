@@ -20,32 +20,44 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
     end
 
     methods (Access = ?labkit.ui.Application)
-        function obj = RuntimeKernel(application, initialProject, backend)
+        function obj = RuntimeKernel(application, initialProject, backend, platform)
             obj.Application = application;
             obj.Resources = labkit.ui.ResourceStore();
             obj.Sources = labkit.ui.PortableSourceStore();
-            obj.Adapter = labkit.ui.HeadlessPlatformAdapter();
-            if ~isempty(application.Project)
-                obj.Documents = labkit.ui.ProjectDocumentStore(application);
+            if nargin < 4
+                platform = "headless";
             end
-            backend = obj.completeBackend(backend);
-            obj.Context = labkit.ui.RuntimeContext.createForRuntime( ...
-                application, backend);
-            project = obj.initialProject(initialProject);
-            session = struct();
-            if ~isempty(application.Session)
-                session = application.Session(project);
-            end
-            if ~isstruct(session) || ~isscalar(session)
-                error("labkit:ui:runtime:InvariantFailure", ...
-                    "Application Session must return a scalar struct.");
-            end
-            obj.State = struct("project", project, "session", session);
-            obj.validateState(obj.State);
-            obj.Presentation = obj.present(obj.State);
-            obj.Adapter.reconcile([], obj.Presentation);
-            if ~isempty(application.Start)
-                obj.dispatch(application.Start, []);
+            obj.Adapter = obj.createAdapter(platform);
+            try
+                backend = obj.completeBackend(backend);
+                obj.Context = labkit.ui.RuntimeContext.createForRuntime( ...
+                    application, backend);
+                if ~isempty(application.Project)
+                    obj.Documents = labkit.ui.ProjectDocumentStore( ...
+                        application, obj.Context);
+                end
+                project = obj.initialProject(initialProject);
+                session = struct();
+                if ~isempty(application.Session)
+                    session = application.Session(project, obj.Context);
+                end
+                if ~isstruct(session) || ~isscalar(session)
+                    error("labkit:ui:runtime:InvariantFailure", ...
+                        "Application Session must return a scalar struct.");
+                end
+                obj.State = struct("project", project, "session", session);
+                obj.validateState(obj.State);
+                if isa(obj.Adapter, "labkit.ui.MatlabPlatformAdapter")
+                    obj.Adapter.attachRuntime(obj);
+                end
+                obj.Presentation = obj.present(obj.State);
+                obj.Adapter.reconcile([], obj.Presentation);
+                if ~isempty(application.Start)
+                    obj.dispatch(application.Start, []);
+                end
+            catch cause
+                obj.close();
+                rethrow(cause);
             end
         end
     end
@@ -91,6 +103,20 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function count = commitCount(obj)
             count = obj.Adapter.CommitCount;
+        end
+
+        function figure = figureHandle(obj)
+            if ~isa(obj.Adapter, "labkit.ui.MatlabPlatformAdapter")
+                error("labkit:ui:runtime:InvariantFailure", ...
+                    "Headless runtime has no MATLAB figure.");
+            end
+            figure = obj.Adapter.figureForRuntime();
+        end
+
+        function showFigure(obj)
+            if isa(obj.Adapter, "labkit.ui.MatlabPlatformAdapter")
+                obj.Adapter.show(obj.Application.Title);
+            end
         end
 
         function result = saveProject(obj, state, filepath)
@@ -165,7 +191,45 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function applyBinding(obj, target, value)
+            obj.applyBoundControl(target, value, false);
+        end
+
+        function applyControlValue(obj, target, value)
+            plan = obj.Application.platformPlanForRuntime();
+            index = find(string({plan.Nodes.Id}) == string(target), 1);
+            if isempty(index)
+                error("labkit:ui:contract:UnknownReference", ...
+                    "Layout target is undeclared: %s.", target);
+            end
+            if strlength(plan.Nodes(index).Configuration.Bind) > 0
+                obj.applyBoundControl(target, value, true);
+            else
+                command = obj.signalForTarget(target, "value", false);
+                if isempty(command)
+                    error("labkit:ui:contract:UnknownReference", ...
+                        "Layout target has no value behavior: %s.", target);
+                end
+                obj.dispatch(command, value);
+            end
+        end
+
+        function invokeAction(obj, target)
             obj.assertOpen();
+            command = obj.signalForTarget(target, "invoke");
+            obj.dispatch(command, []);
+        end
+
+        function applyFilePanelSelection(obj, target, indices)
+            obj.assertOpen();
+            [config, current] = obj.filePanelState(target);
+            obj.commitFilePanel(target, config, current, indices, false);
+        end
+
+        function applyBoundControl(obj, target, value, dispatchChanged)
+            obj.assertOpen();
+            if nargin < 4
+                dispatchChanged = false;
+            end
             plan = obj.Application.platformPlanForRuntime();
             index = find(string({plan.Nodes.Id}) == string(target), 1);
             if isempty(index) || ~isfield(plan.Nodes(index).Configuration, "Bind")
@@ -181,6 +245,12 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             previousPresentation = obj.Presentation;
             try
                 candidate = setBoundValue(previousState, path, value);
+                if dispatchChanged
+                    command = obj.signalForTarget(target, "value", false);
+                    if ~isempty(command)
+                        candidate = command.Callback(candidate, value, obj.Context);
+                    end
+                end
                 obj.validateState(candidate);
                 view = obj.present(candidate);
                 obj.Adapter.reconcile(previousPresentation, view);
@@ -198,18 +268,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function applyFileSelection(obj, target, paths, indices)
             obj.assertOpen();
-            plan = obj.Application.platformPlanForRuntime();
-            index = find(string({plan.Nodes.Id}) == string(target), 1);
-            if isempty(index) || plan.Nodes(index).Kind ~= "filePanel"
-                error("labkit:ui:contract:UnknownReference", ...
-                    "Layout target is not a filePanel: %s.", target);
-            end
-            config = plan.Nodes(index).Configuration;
-            if strlength(config.Bind) == 0
-                error("labkit:ui:contract:UnknownReference", ...
-                    "filePanel target has no source binding: %s.", target);
-            end
-            current = getBoundValue(obj.State, config.Bind);
+            [config, current] = obj.filePanelState(target);
             sources = obj.Sources.reconcilePaths( ...
                 current, paths, config.SourceRole, ...
                 config.SourceIdPrefix, config.Required);
@@ -222,16 +281,86 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 error("labkit:ui:contract:InvalidValue", ...
                     "filePanel selection indices are invalid.");
             end
+            obj.commitFilePanel(target, config, sources, indices, true);
+        end
+
+        function close(obj)
+            if obj.Closed
+                return;
+            end
+            obj.Queue = {};
+            obj.Closed = true;
+            if ~isempty(obj.Resources)
+                obj.Resources.clearAll();
+            end
+            if ~isempty(obj.Adapter)
+                obj.Adapter.close();
+            end
+        end
+
+        function delete(obj)
+            obj.close();
+        end
+    end
+
+    methods (Access = private)
+        function command = signalForTarget(obj, target, role, required)
+            if nargin < 4
+                required = true;
+            end
+            plan = obj.Application.platformPlanForRuntime();
+            index = find(string({plan.Nodes.Id}) == string(target), 1);
+            command = [];
+            if ~isempty(index)
+                signals = plan.Nodes(index).Signals;
+                match = find(cellfun(@(value) value.Role == role, signals), 1);
+                if ~isempty(match)
+                    command = signals{match};
+                end
+            end
+            if required && isempty(command)
+                error("labkit:ui:contract:UnknownReference", ...
+                    "Layout target has no %s Command: %s.", role, target);
+            end
+        end
+
+        function [config, current] = filePanelState(obj, target)
+            plan = obj.Application.platformPlanForRuntime();
+            index = find(string({plan.Nodes.Id}) == string(target), 1);
+            if isempty(index) || plan.Nodes(index).Kind ~= "filePanel"
+                error("labkit:ui:contract:UnknownReference", ...
+                    "Layout target is not a filePanel: %s.", target);
+            end
+            config = plan.Nodes(index).Configuration;
+            if strlength(config.Bind) == 0
+                error("labkit:ui:contract:UnknownReference", ...
+                    "filePanel target has no source binding: %s.", target);
+            end
+            current = getBoundValue(obj.State, config.Bind);
+        end
+
+        function commitFilePanel(obj, target, config, sources, indices, rebuildSession)
+            if nargin < 6
+                rebuildSession = false;
+            end
+            if ~(isnumeric(indices) && isrow(indices) && ...
+                    all(isfinite(indices)) && all(indices == fix(indices)) && ...
+                    all(indices >= 1) && all(indices <= numel(sources)))
+                error("labkit:ui:contract:InvalidValue", ...
+                    "filePanel selection indices are invalid.");
+            end
             candidate = setBoundValue(obj.State, config.Bind, sources);
+            if rebuildSession && ~isempty(obj.Application.Session)
+                candidate.session = obj.Application.Session( ...
+                    candidate.project, obj.Context);
+            end
             if strlength(config.SelectionBind) > 0
                 ids = strings(1, 0);
                 if ~isempty(indices)
                     ids = string({sources(indices).id});
                 end
-                selection = labkit.ui.Selection( ...
-                    Ids=ids, Indices=indices);
-                candidate = setBoundValue( ...
-                    candidate, config.SelectionBind, selection);
+                candidate = setBoundValue(candidate, config.SelectionBind, ...
+                    labkit.ui.Selection(Ids=ids, Indices=indices));
             end
             previousState = obj.State;
             previousPresentation = obj.Presentation;
@@ -251,23 +380,24 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
         end
 
-        function close(obj)
-            if obj.Closed
-                return;
+        function adapter = createAdapter(obj, platform)
+            if ~(ischar(platform) || ...
+                    (isstring(platform) && isscalar(platform)))
+                error("labkit:ui:runtime:InvariantFailure", ...
+                    "Runtime platform must be scalar text.");
             end
-            obj.Queue = {};
-            obj.Closed = true;
-            if ~isempty(obj.Resources)
-                obj.Resources.clearAll();
+            switch string(platform)
+                case "headless"
+                    adapter = labkit.ui.HeadlessPlatformAdapter();
+                case "matlab"
+                    plan = obj.Application.platformPlanForRuntime();
+                    adapter = labkit.ui.MatlabPlatformAdapter(plan);
+                otherwise
+                    error("labkit:ui:runtime:InvariantFailure", ...
+                        "Runtime platform is unsupported: %s.", platform);
             end
         end
 
-        function delete(obj)
-            obj.close();
-        end
-    end
-
-    methods (Access = private)
         function backend = completeBackend(obj, backend)
             if nargin < 2 || isempty(backend)
                 backend = struct();
@@ -296,9 +426,22 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.upsertSource(sources, record);
             builtins.reconcileSources = @(current, incoming) ...
                 obj.reconcileSources(current, incoming);
+            if isa(obj.Adapter, "labkit.ui.MatlabPlatformAdapter")
+                builtins.alert = @(message, title) obj.Adapter.alert(message, title);
+                builtins.chooseInputFile = @(filters, startPath) ...
+                    obj.Adapter.chooseInputFile(filters, startPath);
+                builtins.chooseInputFolder = @(startPath) ...
+                    obj.Adapter.chooseInputFolder(startPath);
+                builtins.chooseOutputFile = @(filters, startPath) ...
+                    obj.Adapter.chooseOutputFile(filters, startPath);
+                builtins.chooseOutputFolder = @(startPath) ...
+                    obj.Adapter.chooseOutputFolder(startPath);
+            end
             names = string(fieldnames(builtins));
             for k = 1:numel(names)
-                backend.(names(k)) = builtins.(names(k));
+                if ~isfield(backend, names(k))
+                    backend.(names(k)) = builtins.(names(k));
+                end
             end
         end
 
@@ -401,21 +544,41 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 switch node.Kind
                     case "action"
                         view = view.enabled(node.Id, config.Enabled);
-                    case {"field", "rangeField", "panner"}
+                    case "field"
                         value = config.Value;
-                        if isfield(config, "Bind") && ...
-                                strlength(config.Bind) > 0
+                        if strlength(config.Bind) > 0
                             value = getBoundValue(state, config.Bind);
                         end
                         view = view.value(node.Id, value);
+                        if ~isempty(config.Choices)
+                            view = view.choices(node.Id, config.Choices);
+                        end
+                        if ~isempty(config.Limits)
+                            view = view.limits(node.Id, config.Limits);
+                        end
+                        view = view.enabled(node.Id, config.Enabled);
+                    case {"rangeField", "panner"}
+                        value = config.Value;
+                        if strlength(config.Bind) > 0
+                            value = getBoundValue(state, config.Bind);
+                        end
+                        view = view.value(node.Id, value);
+                        if ~isempty(config.Limits)
+                            view = view.limits(node.Id, config.Limits);
+                        end
+                        view = view.enabled(node.Id, config.Enabled);
                     case "filePanel"
                         paths = strings(0, 1);
-                        if isfield(config, "Bind") && ...
-                                strlength(config.Bind) > 0
+                        if strlength(config.Bind) > 0
                             sources = getBoundValue(state, config.Bind);
                             paths = obj.Sources.sourcePaths(sources);
                         end
                         view = view.files(node.Id, paths);
+                        if strlength(config.SelectionBind) > 0
+                            selection = getBoundValue( ...
+                                state, config.SelectionBind);
+                            view = view.selection(node.Id, selection);
+                        end
                     case "previewArea"
                         view = view.visible(node.Id, true);
                     case "resultTable"

@@ -56,13 +56,17 @@ Add only capabilities the product needs:
 +<slug>/+<workflowCapability>/...
 ```
 
-The entrypoint only launches one definition. `definition.m` owns identity,
+The entrypoint only calls `definition().launch(...)`. `definition.m` owns identity,
 version, requirements, layout, and references to optional capabilities.
-`definitionActions.m` registers semantic commands and coordinates app-owned
-workflow code. One `projectSpec.m` owns local create, validate, and
+`definitionActions.m` returns only semantic Commands for App-owned business
+behavior; Layout bindings and runtime lifecycle behavior require no
+placeholder Commands. One `projectSpec.m` returns a `ProjectContract` owning
+local create, validate, and
 version-aware migrate functions when durable state exists; Runtime owns the
-migration loop. Root `createSession.m` rebuilds only App-specific transient
-data. Layout is data-only; presentation is a pure state-to-view mapping.
+migration loop. Root `createSession.m` uses the fixed `(project,context)`
+signature and rebuilds only App-specific transient data; opaque source paths
+are resolved with `context.sourcePaths`. Layout is data-only; presentation is
+a pure state-to-view mapping.
 
 On the explicit-contract paved road, bind ordinary project/session fields
 directly in Layout, let Application collect signal Commands, omit capability

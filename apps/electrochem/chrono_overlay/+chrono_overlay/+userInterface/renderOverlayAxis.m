@@ -1,12 +1,21 @@
-% Expected caller: the registered Chrono Overlay V2 renderer. Inputs are one
-% axes and a prepared model containing items, plot options, and signal kind.
+% Expected caller: the registered Chrono Overlay renderer. Inputs are the
+% voltage/current axes in Layout AxisIds order and one prepared overlay model.
 % Side effects are limited to redrawing the supplied axes.
-function renderOverlayAxis(ax, model)
+function renderOverlayAxis(axes, model)
+    if numel(axes) ~= 2
+        error("chrono_overlay:InvalidRenderSurface", ...
+            "Chrono Overlay requires voltage and current axes.");
+    end
+    renderSignal(axes(1), model, "voltage");
+    renderSignal(axes(2), model, "current");
+end
+
+function renderSignal(ax, model, signal)
     options = model.options;
     items = model.items;
     labkit.ui.plot.clear(ax, "ResetScale", true);
     if isempty(items)
-        renderEmpty(ax, model.signal);
+        renderEmpty(ax, signal);
         return;
     end
 
@@ -17,14 +26,14 @@ function renderOverlayAxis(ax, model)
     for k = 1:numel(items)
         item = items(k);
         plotLines(k) = plot(ax, chooseX(item, options.xAxis), ...
-            signalValues(item, model.signal), ...
+            signalValues(item, signal), ...
             'LineWidth', options.lineWidth, 'Color', colorMap(k, :));
         labels{k} = char(item.name);
     end
     hold(ax, 'off');
     labkit.ui.plot.fit(ax, plotLines(isgraphics(plotLines)));
     xlabel(ax, axisLabel(options.xAxis));
-    [titleText, yLabel] = signalLabels(model.signal, numel(items));
+    [titleText, yLabel] = signalLabels(signal, numel(items));
     ylabel(ax, yLabel);
     title(ax, titleText);
     setGrid(ax, options.showGrid);

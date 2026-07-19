@@ -6,17 +6,20 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
 
     properties (Access = private)
         Application
+        Context
         Sources
     end
 
     methods (Access = ?labkit.ui.RuntimeKernel)
-        function obj = ProjectDocumentStore(application)
+        function obj = ProjectDocumentStore(application, context)
             if ~isa(application, "labkit.ui.Application") || ...
-                    isempty(application.Project)
+                    isempty(application.Project) || ...
+                    ~isa(context, "labkit.ui.RuntimeContext")
                 error("labkit:ui:runtime:InvariantFailure", ...
                     "Project document storage requires an Application with Project.");
             end
             obj.Application = application;
+            obj.Context = context;
             obj.Sources = labkit.ui.PortableSourceStore();
             nowUtc = utcNow();
             obj.Metadata = struct( ...
@@ -249,7 +252,7 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
             if isempty(obj.Application.Session)
                 session = struct();
             else
-                session = obj.Application.Session(project);
+                session = obj.Application.Session(project, obj.Context);
             end
             if ~isstruct(session) || ~isscalar(session)
                 error("labkit:ui:runtime:InvariantFailure", ...
