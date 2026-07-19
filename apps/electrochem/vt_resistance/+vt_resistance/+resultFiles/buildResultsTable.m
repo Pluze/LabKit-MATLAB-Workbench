@@ -1,4 +1,4 @@
-% Expected caller: VT resistance app runner and export tests. Input is item
+% Expected caller: VT resistance export and tests. Input is item
 % structs. Output is the stable VT resistance CSV result table. No file side
 % effects.
 

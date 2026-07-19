@@ -1,4 +1,4 @@
-% Expected caller: VT resistance app runner and unit tests. Input is item structs.
+% Expected caller: VT resistance presenter and unit tests. Input is item structs.
 % Output is the stable UI table cell data. No file side effects.
 
 function C = buildBatchTableData(items)

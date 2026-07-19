@@ -1,8 +1,13 @@
-% Expected caller: registered VT Resistance Runtime V2 renderer. Inputs are
+% Expected caller: VT Resistance plot area renderer. Inputs are
 % one axes and a prepared app-owned model. Side effects are limited to
 % replacing graphics on the supplied axes.
-function renderResistanceAxis(ax, model)
-    labkit.ui.plot.clear(ax, "ResetScale", true);
+function draw(axesById, model)
+drawOne(axesById.top, model.top);
+drawOne(axesById.bottom, model.bottom);
+end
+
+function drawOne(ax, model)
+    labkit.app.plot.clearAxes(ax, "ResetScale", true);
     if ~model.valid
         title(ax, model.title);
         if strlength(model.message) > 0
@@ -14,7 +19,7 @@ function renderResistanceAxis(ax, model)
 
     a = model.analysis;
     c = plotCoordinates(a, model.xChoice);
-    choices = vt_resistance.userInterface.analysisChoices();
+    choices = vt_resistance.analysisRun.analysisChoices();
     if model.yChoice == choices.yAxes(1)
         lineHandle = plot(ax, c.x, a.Vf, 'LineWidth', 1.25, ...
             'Color', [0 0.4470 0.7410]);
@@ -30,7 +35,7 @@ function renderResistanceAxis(ax, model)
             model.itemName, a.Ic_est_A, a.Ia_est_A);
         isVoltage = false;
     end
-    labkit.ui.plot.fit(ax, lineHandle);
+    labkit.app.plot.fitAxesToGraphics(ax, lineHandle);
     hold(ax, 'on');
     if model.showShading
         addShading(ax, c);
@@ -38,14 +43,14 @@ function renderResistanceAxis(ax, model)
     if model.showMarkers
         addMarkers(ax, c);
         if isVoltage
-            vt_resistance.userInterface.addResistanceVTAnnotations(ax, a, ...
+            vt_resistance.analysisPlot.addResistanceVTAnnotations(ax, a, ...
                 c.cathBaseStart, c.cathBaseEnd, ...
                 c.anodBaseStart, c.anodBaseEnd, ...
                 c.cathSteadyStart, c.cathSteadyEnd, ...
                 c.anodSteadyStart, c.anodSteadyEnd, ...
                 c.cathStart, c.cathEnd, c.anodStart, c.anodEnd);
         else
-            vt_resistance.userInterface.addResistanceITAnnotations(ax, a, ...
+            vt_resistance.analysisPlot.addResistanceITAnnotations(ax, a, ...
                 c.cathSteadyStart, c.cathSteadyEnd, ...
                 c.anodSteadyStart, c.anodSteadyEnd, ...
                 c.cathStart, c.cathEnd, c.anodStart, c.anodEnd);
@@ -59,7 +64,7 @@ function renderResistanceAxis(ax, model)
 end
 
 function c = plotCoordinates(a, xChoice)
-    choices = vt_resistance.userInterface.analysisChoices();
+    choices = vt_resistance.analysisRun.analysisChoices();
     useSamples = string(xChoice) == choices.xAxes(2);
     c.x = a.t;
     c.xLabel = choices.xAxes(1);
@@ -88,13 +93,13 @@ function c = plotCoordinates(a, xChoice)
 end
 
 function addShading(ax, c)
-    vt_resistance.userInterface.shadeWindow(ax, c.cathStart, c.cathEnd, ...
+    vt_resistance.analysisPlot.shadeWindow(ax, c.cathStart, c.cathEnd, ...
         [0.90 0.95 1.00], 0.12);
-    vt_resistance.userInterface.shadeWindow(ax, c.anodStart, c.anodEnd, ...
+    vt_resistance.analysisPlot.shadeWindow(ax, c.anodStart, c.anodEnd, ...
         [1.00 0.94 0.88], 0.12);
-    vt_resistance.userInterface.shadeWindow(ax, ...
+    vt_resistance.analysisPlot.shadeWindow(ax, ...
         c.cathSteadyStart, c.cathSteadyEnd, [0.65 0.82 1.00], 0.22);
-    vt_resistance.userInterface.shadeWindow(ax, ...
+    vt_resistance.analysisPlot.shadeWindow(ax, ...
         c.anodSteadyStart, c.anodSteadyEnd, [1.00 0.75 0.55], 0.22);
 end
 

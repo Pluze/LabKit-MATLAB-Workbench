@@ -1,4 +1,4 @@
-% Expected caller: VT resistance app actions and tests. Inputs are loaded DTA
+% Expected caller: VT analysis callbacks and tests. Inputs are loaded DTA
 % item structs and one shared resistance option struct. Output contains every
 % item recomputed with exactly those options. Side effects are none.
 function items = recomputeItems(items, opts)

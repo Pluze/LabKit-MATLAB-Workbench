@@ -192,7 +192,7 @@ function A = computeResistance(item, opts)
     A.Rc_dV_ohm = safeDivide(A.dVc_V, A.Ic_est_A);
     A.Ra_dV_ohm = safeDivide(A.dVa_V, A.Ia_est_A);
 
-    choices = vt_resistance.userInterface.analysisChoices();
+    choices = vt_resistance.analysisRun.analysisChoices();
     if string(A.voltageMode) == choices.voltageModes(2)
         A.Rc_ohm = A.Rc_raw_ohm;
         A.Ra_ohm = A.Ra_raw_ohm;
@@ -214,7 +214,7 @@ function A = computeResistance(item, opts)
 end
 
 function opts = fillResistanceOptions(opts)
-    choices = vt_resistance.userInterface.analysisChoices();
+    choices = vt_resistance.analysisRun.analysisChoices();
     if ~isfield(opts, 'windowMode')
         opts.windowMode = choices.steadyWindows(1);
     end
@@ -262,7 +262,7 @@ end
 function [t1, t2] = selectSteadyWindow(p1, p2, modeText)
     t1 = p1;
     t2 = p2;
-    choices = vt_resistance.userInterface.analysisChoices();
+    choices = vt_resistance.analysisRun.analysisChoices();
     if string(modeText) == choices.steadyWindows(2) && ...
             isfinite(p1) && isfinite(p2) && p2 > p1
         dt = p2 - p1;

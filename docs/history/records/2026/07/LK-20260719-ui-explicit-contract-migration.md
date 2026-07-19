@@ -9,6 +9,7 @@ type: refactor
 compatibility: breaking
 component: `labkit.app` | `new -> 1.0.0`
 component: `labkit_ChronoOverlay_app` | `1.4.7 -> 1.5.0`
+component: `labkit_VTResistance_app` | `1.4.7 -> 1.5.0`
 component: `labkit_TTestWizard_app` | `1.0.1 -> 1.1.0`
 scope: App Framework
 scope: Electrochem
@@ -69,6 +70,10 @@ requiring the later managed-interaction vocabulary.
   multi-page workspace proof: table selections and edits have explicit payload
   classes, `+workbench` exposes product assembly, workflow packages own their
   layout/presentation/actions, and the private adapter owns concrete layout.
+- Migrated VT Resistance to direct file and analysis-setting bindings, a
+  complete summary/table/two-axis snapshot, and an App-owned result-package
+  export. Plot renderers and scientific choices now live with their owning
+  analysis capabilities instead of a technical UI package.
 - Removed handler objects, callback tables, renderer registries, and their
   forwarding from the App authoring contract. Layout controls and plot areas
   reference concrete functions directly.
@@ -78,8 +83,11 @@ requiring the later managed-interaction vocabulary.
 Chrono Overlay retains its input formats, pulse-gap alignment, plot meanings,
 parameter defaults, CSV table, and version-2 project payload. T-Test Wizard
 retains its source formats, group/test calculations, plot meaning, two CSV
-exports, and version-2 project payload. File identities and portable paths
-remain runtime-owned. Existing payload migrations remain App-owned.
+exports, and version-2 project payload. VT Resistance retains its pulse
+detection, resistance calculations, plot semantics, CSV schema, and version-1
+project payload while recomputing the decoded batch under shared settings.
+File identities and portable paths remain runtime-owned. Existing payload
+migrations remain App-owned.
 
 ## Compatibility and migration
 
@@ -96,11 +104,14 @@ Hidden GUI tests cover native semantic construction, typed control and table
 callbacks, bound
 side effects, standard file lifecycle, transient session rebuild, two-axis
 rendering, viewport preservation, renderer rollback, Chrono export, and
-project restore.
+project restore. VT Resistance focused tests cover resistance calculations,
+CSV compatibility, native layout, shared batch recomputation, two-axis
+rendering, result packaging, and project restore.
 
 ## Evidence
 
 - [Chrono Overlay](../../../../apps/electrochemistry/chrono-overlay/README.md)
+- [VT Resistance](../../../../apps/electrochemistry/vt-resistance/README.md)
 - [LabKit App Framework](../../../../framework/README.md)
 - [Build a Complete App](../../../../development/build-apps/complete-app.md)
 

@@ -1,4 +1,4 @@
-% Expected caller: VT resistance app runner. Input is a duration in seconds.
+% Expected caller: VT resistance summary builder. Input is seconds.
 % Output is the stable microsecond display text. No side effects.
 
 function txt = formatDurationUs(dt_s)
