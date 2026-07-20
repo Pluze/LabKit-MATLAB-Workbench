@@ -22,15 +22,9 @@ function output = runLabKitTests(varargin)
     end
 
     suite = discoverOfficialSuite(root, opts);
-    suite = labkitSelectTestShard(suite, opts);
 
     fprintf("LabKit official test run: %s\n", opts.RunName);
     fprintf("Official tests matched: %d\n", numel(suite));
-    if opts.ShardCount > 1
-        fprintf("Official test shard: %d/%d\n", ...
-            opts.ShardIndex + 1, opts.ShardCount);
-    end
-
     if isempty(suite) && opts.FailIfNoTests
         error("LabKit:Tests:NoOfficialTests", ...
             "No official matlab.unittest tests matched the requested selection.");
@@ -167,9 +161,7 @@ function output = runValidationPlan(root, opts)
             "PrintList", opts.PrintList, ...
             "OutputDetail", opts.OutputDetail, ...
             "LoggingLevel", opts.LoggingLevel, ...
-            "IncludeCoverage", opts.IncludeCoverage, ...
-            "ShardCount", opts.ShardCount, ...
-            "ShardIndex", opts.ShardIndex);
+            "IncludeCoverage", opts.IncludeCoverage);
         if isfield(childOutputs{k}, "count")
             totalCount = totalCount + childOutputs{k}.count;
         else

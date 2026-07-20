@@ -12,7 +12,7 @@ current git diff and print why each selected scope is being run.
 `buildfile.m` owns the stable human and CI commands. Those tasks select a
 validation plan and call `tests/runLabKitTests.m`, which discovers official
 `matlab.unittest` tests beneath `tests/cases/`, applies folder, exact-file,
-name, tag, GUI, and shard selectors, then runs them with progress, JUnit,
+name, tag, and GUI selectors, then runs them with progress, JUnit,
 optional HTML, and optional coverage plugins.
 
 ```text
@@ -68,20 +68,12 @@ single `START`, `RUN`, `PASS`, or `DONE` line for humans. CI gives the MATLAB
 execution step a shorter timeout than the containing job so the always-run
 summary and artifact upload steps can still publish these diagnostics when a
 test stalls before JUnit is complete.
-When a local broad task uses parallel internal shards, the orchestrator relays
-each shard's human-readable active-test line at a fixed interval. It clears
-the prior run's transient snapshot before worker startup, so startup cannot
-look like an already completed run. A failed run prints only the failing shard
-log; complete logs remain under `artifacts/logs/<run-name>-orchestrator/`.
-Each active line includes that shard's elapsed time and estimated remaining
-time once at least one test has completed. Local child MATLAB processes are
-started through one MATLAB/Java process wrapper on macOS, Linux, and Windows;
-the buildfile does not generate platform shell scripts. GitHub Actions remains
-single-process because concurrent hosted MATLAB license behavior is not part
-of the validated CI contract.
-The probe also partitions complete test-class files among workers. Each worker
-discovers only its assigned files, so methods from one class stay together and
-the full test tree is not rediscovered once per shard.
+
+Broad tasks use one MATLAB process. This keeps local and CI behavior aligned
+and avoids worker startup, license, platform, status-aggregation, and
+tail-latency costs. The progress plugin emits the active test and estimated
+remaining time directly; a long-test heartbeat updates the same structured and
+human-readable artifacts.
 
 ## Build Tasks
 
@@ -296,12 +288,10 @@ GitHub Release. Ordinary CI has read-only repository permissions and cannot
 create tags.
 
 Workflow YAML calls public buildfile tasks through
-`matlab-actions/run-build`; it does not maintain test-class lists, owner shard
-lists, CI-only build tasks, shard environment variables, or call the lower-level
-runner directly. CI checkouts fetch the candidate and its parent so version and
-changed-file contracts have a stable `HEAD^` baseline. GitHub Actions remains
-single-process because the parent MATLAB action's license does not imply that
-child MATLAB workers can start.
+`matlab-actions/run-build`; it does not maintain test-class lists, CI-only
+build tasks, parallel-worker settings, or call the lower-level runner directly.
+CI checkouts fetch the candidate and its parent so version and changed-file
+contracts have a stable `HEAD^` baseline.
 
 When adding a test, place it under the correct ownership tree and give it the
 right stage tag: `Unit`, `Integration`, or `GUI`. GUI tests may add secondary
@@ -387,13 +377,9 @@ runLabKitTests("Files", ...
     "HtmlReport", false)
 ```
 
-Use `buildtool` for broad validation. The buildfile owns execution mode
-decisions, including whether a large non-GUI run is worth splitting across
-multiple MATLAB worker processes after a lightweight probe. GitHub Actions and
-Windows runs remain serial; supported local broad runs use the repository's
-deterministic shard policy. Probe or worker failures are reported instead of
-being hidden behind an implicit serial retry. Users and CI should not maintain
-separate shard commands.
+Use `buildtool` for broad validation. The buildfile owns stable task selection
+while the runner owns discovery, progress, reports, and artifacts. Local and
+CI broad tasks use the same single-process execution model.
 
 ## GUI Validation
 

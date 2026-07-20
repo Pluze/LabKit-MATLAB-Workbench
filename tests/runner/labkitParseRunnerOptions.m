@@ -27,8 +27,6 @@ function opts = labkitParseRunnerOptions(root, varargin)
     p.addParameter("PrintList", true, @isLogicalScalar);
     p.addParameter("OutputDetail", "Concise", @isTextScalar);
     p.addParameter("LoggingLevel", "Concise", @isTextScalar);
-    p.addParameter("ShardCount", 1, @isPositiveIntegerScalar);
-    p.addParameter("ShardIndex", 0, @isNonnegativeIntegerScalar);
     p.parse(varargin{:});
 
     opts = p.Results;
@@ -47,15 +45,9 @@ function opts = labkitParseRunnerOptions(root, varargin)
     opts.Plan = lower(string(opts.Plan));
     opts.ArtifactsRoot = char(opts.ArtifactsRoot);
     opts.RunName = string(opts.RunName);
-    opts.ShardCount = double(opts.ShardCount);
-    opts.ShardIndex = double(opts.ShardIndex);
     if ~isempty(opts.Suites) && ~isempty(opts.Files)
         error("LabKit:Tests:ConflictingSelectors", ...
             "Suites and Files are alternative scopes; specify only one.");
-    end
-    if opts.ShardIndex >= opts.ShardCount
-        error("LabKit:Tests:InvalidShard", ...
-            "ShardIndex must be less than ShardCount.");
     end
 end
 
@@ -84,16 +76,6 @@ end
 function tf = isLogicalScalar(value)
     tf = (islogical(value) || isnumeric(value)) && isscalar(value) && ...
         isfinite(double(value));
-end
-
-function tf = isPositiveIntegerScalar(value)
-    tf = isnumeric(value) && isscalar(value) && isfinite(value) && ...
-        value >= 1 && fix(value) == value;
-end
-
-function tf = isNonnegativeIntegerScalar(value)
-    tf = isnumeric(value) && isscalar(value) && isfinite(value) && ...
-        value >= 0 && fix(value) == value;
 end
 
 function files = labkitNormalizeTestFileSelectors(root, values)

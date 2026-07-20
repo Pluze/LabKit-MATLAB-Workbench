@@ -115,14 +115,86 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
         function startHeartbeat(plugin)
             plugin.stopHeartbeat();
             try
+                callback = @emitLoadedHeartbeat;
                 plugin.HeartbeatTimer = timer( ...
                     "ExecutionMode", "fixedSpacing", ...
                     "Period", 30, ...
                     "BusyMode", "drop", ...
-                    "TimerFcn", @(~, ~) plugin.emitHeartbeat());
+                    "TimerFcn", callback);
                 start(plugin.HeartbeatTimer);
             catch
                 plugin.HeartbeatTimer = [];
+            end
+
+            function emitLoadedHeartbeat(~, ~)
+                % Keep the active callback resident while path-isolation tests
+                % temporarily remove the runner folder from MATLAB's path.
+                if strlength(plugin.ActiveTestName) == 0 || ...
+                        isempty(plugin.TestTimer)
+                    return;
+                end
+                testElapsed = toc(plugin.TestTimer);
+                suiteElapsed = toc(plugin.SuiteTimer);
+                if plugin.CompletedTests <= 0
+                    eta = "unknown";
+                else
+                    remaining = suiteElapsed / double(plugin.CompletedTests) * ...
+                        double(plugin.TotalTests - plugin.CompletedTests);
+                    eta = loadedFormatSeconds(remaining);
+                end
+                fprintf("HEARTBEAT [%d/%d elapsed=%s test_elapsed=%s] %s\n", ...
+                    plugin.StartedTests, plugin.TotalTests, ...
+                    loadedFormatSeconds(suiteElapsed), ...
+                    loadedFormatSeconds(testElapsed), ...
+                    plugin.ActiveTestName);
+                payload = struct( ...
+                    "timestamp", char(datetime("now", "TimeZone", "UTC", ...
+                        "Format", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")), ...
+                    "event", "heartbeat", ...
+                    "test", char(plugin.ActiveTestName), ...
+                    "started", plugin.StartedTests, ...
+                    "completed", plugin.CompletedTests, ...
+                    "total", plugin.TotalTests, ...
+                    "suiteElapsedSeconds", suiteElapsed, ...
+                    "testElapsedSeconds", testElapsed);
+                if strlength(plugin.ProgressFile) > 0
+                    loadedWriteJson(plugin.ProgressFile, payload, "a");
+                    loadedWriteJson(plugin.ActiveTestFile, payload, "w");
+                    fid = fopen(plugin.ActiveTestTextFile, "w");
+                    if fid < 0
+                        error("LabKit:Tests:ProgressArtifactWrite", ...
+                            "Could not write active test summary: %s", ...
+                            plugin.ActiveTestTextFile);
+                    end
+                    cleanup = onCleanup(@() fclose(fid));
+                    fprintf(fid, ...
+                        "RUN %d/%d elapsed=%s eta=%s test_elapsed=%s %s\n", ...
+                        plugin.StartedTests, plugin.TotalTests, ...
+                        loadedFormatSeconds(suiteElapsed), eta, ...
+                        loadedFormatSeconds(testElapsed), ...
+                        plugin.ActiveTestName);
+                    clear cleanup
+                end
+            end
+
+            function text = loadedFormatSeconds(secondsValue)
+                secondsValue = max(0, floor(double(secondsValue)));
+                hours = floor(secondsValue / 3600);
+                minutes = floor(mod(secondsValue, 3600) / 60);
+                secondsValue = mod(secondsValue, 60);
+                text = string(sprintf( ...
+                    "%02d:%02d:%02d", hours, minutes, secondsValue));
+            end
+
+            function loadedWriteJson(filepath, payload, mode)
+                fid = fopen(filepath, mode);
+                if fid < 0
+                    error("LabKit:Tests:ProgressArtifactWrite", ...
+                        "Could not write test progress artifact: %s", filepath);
+                end
+                cleanup = onCleanup(@() fclose(fid));
+                fprintf(fid, "%s\n", jsonencode(payload));
+                clear cleanup
             end
         end
 
@@ -139,18 +211,6 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
                 end
             catch
             end
-        end
-
-        function emitHeartbeat(plugin)
-            if strlength(plugin.ActiveTestName) == 0 || isempty(plugin.TestTimer)
-                return;
-            end
-            elapsed = toc(plugin.TestTimer);
-            fprintf("HEARTBEAT [%d/%d elapsed=%s test_elapsed=%s] %s\n", ...
-                plugin.StartedTests, plugin.TotalTests, plugin.elapsedText(), ...
-                labkitProgressPlugin.formatSeconds(elapsed), plugin.ActiveTestName);
-            plugin.recordEvent("heartbeat", plugin.ActiveTestName, elapsed);
-            plugin.writeActiveTest("running", plugin.ActiveTestName, elapsed);
         end
 
         function recordEvent(plugin, eventName, testName, testElapsed)

@@ -127,6 +127,12 @@ publishing either. The private MATLAB adapter maps semantic IDs to native
 components, preserves plot viewports, normalizes native event differences, and
 never exposes component registries to Apps.
 
+Normal App launches show the completed native window. Official GUI validation
+uses the same launch path with a framework-owned visibility policy: `hidden`
+keeps the final window off screen and `minimized` minimizes it after startup.
+Tests therefore exercise real controls without individual Apps or test methods
+having to hide the window after launch.
+
 ## Built-in App Tools
 
 The native runtime installs one top-level **Tools** menu so framework-owned

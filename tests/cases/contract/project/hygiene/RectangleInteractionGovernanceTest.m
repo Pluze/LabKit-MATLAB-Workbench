@@ -12,6 +12,8 @@ classdef RectangleInteractionGovernanceTest < matlab.unittest.TestCase
                 "+labkit/+app/+internal/private/reconcileInteractions.m"
                 "+labkit/+app/+view/Snapshot.m"
                 "apps/dic/dic_preprocess/+dic_preprocess/+analysisRun/drawPreview.m"
+                "apps/labkit_core/figure_studio/+figure_studio/+resultFiles/generateAxesScript.m"
+                "apps/labkit_core/figure_studio/+figure_studio/+sourceAxes/drawPreview.m"
                 "apps/image_measurement/batch_crop/+batch_crop/+cropPreview/draw.m"
                 "apps/image_measurement/flir_thermal/+flir_thermal/+thermalPreview/+presentationData/drawTemperatureReadings.m"
                 "apps/image_measurement/image_enhance/+image_enhance/+imagePreview/draw.m"
@@ -24,9 +26,11 @@ classdef RectangleInteractionGovernanceTest < matlab.unittest.TestCase
             for k = 1:numel(appDirectFiles)
                 source = fileread(fullfile(root, char(appDirectFiles(k))));
                 hitTestOff = contains(source, "'HitTest', 'off'") || ...
-                    contains(source, 'HitTest="off"');
+                    contains(source, 'HitTest="off"') || ...
+                    contains(source, '"HitTest", "off"');
                 pickingOff = contains(source, "'PickableParts', 'none'") || ...
-                    contains(source, 'PickableParts="none"');
+                    contains(source, 'PickableParts="none"') || ...
+                    contains(source, '"PickableParts", "none"');
                 testCase.verifyTrue(hitTestOff && pickingOff, ...
                     appDirectFiles(k) + ...
                     " must keep direct rectangle overlays non-pickable.");

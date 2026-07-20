@@ -121,7 +121,14 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         function show(obj, title)
             if ~isempty(obj.Figure) && isvalid(obj.Figure)
                 obj.setWindowTitle(title);
+                mode = labkit.app.internal.NativeAdapterValues.startupGuiMode();
+                if mode == "hidden"
+                    return
+                end
                 obj.Figure.Visible = "on";
+                if mode == "minimized" && isprop(obj.Figure, "WindowState")
+                    obj.Figure.WindowState = "minimized";
+                end
             end
         end
 

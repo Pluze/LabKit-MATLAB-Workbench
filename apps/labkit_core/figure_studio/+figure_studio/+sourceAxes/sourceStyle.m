@@ -29,23 +29,39 @@ function style = sourceStyle(srcAx, opts)
     end
     style.canvasWidth = width;
     style.canvasHeight = height;
+    style.referenceCanvasWidth = width;
+    style.referenceCanvasHeight = height;
     style.fontName = string(optionalAxesValue(srcAx, 'FontName'));
     if strlength(style.fontName) == 0
         style.fontName = "Arial";
     end
-    style.baseFontSize = finiteValue(optionalAxesValue(srcAx, 'FontSize'), 36);
+    style.baseFontSize = finiteValue(optionalAxesValue( ...
+        srcAx, 'FontSize'), style.baseFontSize);
     style.titleFontSize = sourceLabelFont(srcAx.Title, style.baseFontSize);
     style.labelFontSize = max([sourceLabelFont(srcAx.XLabel, style.baseFontSize), ...
         sourceLabelFont(srcAx.YLabel, style.baseFontSize), ...
         sourceLabelFont(srcAx.ZLabel, style.baseFontSize)]);
     style.tickFontSize = style.baseFontSize;
-    style.dataLineWidth = sourceDataLineWidth(srcAx, 1.5);
-    style.axesLineWidth = finiteValue(optionalAxesValue(srcAx, 'LineWidth'), 1.25);
+    style.annotationFontSize = sourceAnnotationFontSize(srcAx, ...
+        style.annotationFontSize);
+    style.xTickLabelAngle = sourceTickAngle(srcAx);
+    style.dataLineWidth = sourceLineWidth(srcAx, ...
+        ["line", "scatter", "surface"], style.dataLineWidth);
+    style.uncertaintyLineWidth = sourceLineWidth(srcAx, ...
+        "errorbar", style.uncertaintyLineWidth);
+    style.boundaryLineWidth = sourceLineWidth(srcAx, ...
+        ["bar", "area", "patch", "rectangle"], ...
+        style.boundaryLineWidth);
+    style.referenceLineWidth = sourceLineWidth(srcAx, ...
+        "constantline", style.referenceLineWidth);
+    style.axesLineWidth = finiteValue(optionalAxesValue( ...
+        srcAx, 'LineWidth'), style.axesLineWidth);
     style.gridVisible = string(optionalAxesValue(srcAx, 'XGrid')) == "on" || ...
         string(optionalAxesValue(srcAx, 'YGrid')) == "on";
     style.gridAlpha = finiteValue(optionalAxesValue(srcAx, 'GridAlpha'), 0.12);
     style.boxVisible = string(optionalAxesValue(srcAx, 'Box')) == "on";
     style.boundaryLines = style.boxVisible;
+    style = sourceLegendStyle(srcAx, style);
 end
 
 function value = sourceLabelFont(labelHandle, fallback)
@@ -58,7 +74,7 @@ function value = sourceLabelFont(labelHandle, fallback)
     end
 end
 
-function value = sourceDataLineWidth(ax, fallback)
+function value = sourceLineWidth(ax, types, fallback)
     value = fallback;
     try
         children = findall(ax, '-property', 'LineWidth');
@@ -70,6 +86,9 @@ function value = sourceDataLineWidth(ax, fallback)
                 continue;
             end
             try
+                if ~any(lower(string(child.Type)) == lower(string(types)))
+                    continue;
+                end
                 count = count + 1;
                 widths(count) = double(child.LineWidth);
             catch
@@ -81,6 +100,62 @@ function value = sourceDataLineWidth(ax, fallback)
             value = median(widths);
         end
     catch
+    end
+end
+
+function value = sourceAnnotationFontSize(ax, fallback)
+    value = fallback;
+    labels = {ax.Title, ax.XLabel, ax.YLabel, ax.ZLabel};
+    texts = findall(ax, 'Type', 'text');
+    sizes = zeros(0, 1);
+    for k = 1:numel(texts)
+        if any(cellfun(@(label) texts(k) == label, labels))
+            continue;
+        end
+        sizeValue = finiteValue(optionalAxesValue( ...
+            texts(k), 'FontSize'), NaN);
+        if isfinite(sizeValue)
+            sizes(end + 1, 1) = sizeValue;
+        end
+    end
+    if ~isempty(sizes)
+        value = median(sizes);
+    end
+end
+
+function choice = sourceTickAngle(ax)
+    angle = finiteValue(optionalAxesValue(ax, 'XTickLabelRotation'), NaN);
+    if angle == 0
+        choice = "Horizontal";
+    elseif angle == 45
+        choice = "45 deg";
+    else
+        choice = "Source";
+    end
+end
+
+function style = sourceLegendStyle(ax, style)
+    if ~isprop(ax, 'Legend') || isempty(ax.Legend) || ~isvalid(ax.Legend)
+        return;
+    end
+    lgd = ax.Legend;
+    style.legendVisible = titleCase(optionalAxesValue(lgd, 'Visible'));
+    style.legendLocation = string(optionalAxesValue(lgd, 'Location'));
+    style.legendFontSize = finiteValue(optionalAxesValue( ...
+        lgd, 'FontSize'), style.legendFontSize);
+    style.legendNumColumns = finiteValue(optionalAxesValue( ...
+        lgd, 'NumColumns'), style.legendNumColumns);
+    style.legendBox = titleCase(optionalAxesValue(lgd, 'Box'));
+end
+
+function value = titleCase(value)
+    value = lower(string(value));
+    if value == "on"
+        value = "On";
+    elseif value == "off"
+        value = "Off";
+    else
+        value = "Source";
     end
 end
 

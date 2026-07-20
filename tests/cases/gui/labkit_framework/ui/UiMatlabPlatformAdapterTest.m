@@ -389,6 +389,23 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
                 "Chrono probe v1.0.0 (2026-07-19) *");
             clear cleanupFile cleanup
         end
+
+        function hiddenGuiModeKeepsLaunchedAppOffScreen(testCase)
+            setupLabKitTestPath();
+            helpers = guiTestHelpers();
+            helpers.assertUifigureAvailable();
+            modeCleanup = useGuiTestMode("hidden");
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                chronoLikeApplication());
+            runtimeCleanup = onCleanup(@() runtime.close());
+
+            runtime.showFigure();
+
+            testCase.verifyEqual( ...
+                string(runtime.figureHandle().Visible), "off", ...
+                "The final App show step must preserve hidden test mode.");
+            clear runtimeCleanup modeCleanup
+        end
     end
 end
 
@@ -687,4 +704,10 @@ function deleteIfPresent(filepath)
 if isfile(filepath)
     delete(filepath);
 end
+end
+
+function cleanup = useGuiTestMode(mode)
+previous = getenv("LABKIT_GUI_TEST_MODE");
+setenv("LABKIT_GUI_TEST_MODE", char(mode));
+cleanup = onCleanup(@() setenv("LABKIT_GUI_TEST_MODE", previous));
 end

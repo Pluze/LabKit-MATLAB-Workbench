@@ -74,7 +74,7 @@ gh run watch</code></pre>
 <li>rebuild the generated site and verify the record appears on each affected component page.</li>
 </ol>
 <p>Write a cross-component change once and list every affected component in its metadata. Do not copy its narrative into multiple app pages. Current versions come from launcher, facade, and app source metadata, so there is no separate lookup table to synchronize. Git branches, PRs, tags, and commits express delivery state; do not add a second pending/unreleased hierarchy.</p>
-<p>Before tagging a release that adds, renames, or removes release-blocking guardrail tests, verify that the buildfile CI shard tasks still discover the intended suite and tag coverage. The workflow should call those build tasks through <code>matlab-actions/run-build</code> rather than maintaining long-lived test class selectors.</p>
+<p>Before tagging a release that adds, renames, or removes release-blocking guardrail tests, verify that the buildfile CI tasks still discover the intended suite and tag coverage. The workflow should call those build tasks through <code>matlab-actions/run-build</code> rather than maintaining long-lived test class selectors.</p>
 <h2 id="launcher-asset-reproducibility">Launcher Asset Reproducibility</h2>
 <p>Generate the launcher asset from the release tag, not from an editor buffer, copied file, or platform-dependent checkout. This keeps the release asset byte for byte identical to the tagged source file, including line endings.</p>
 <p>Use a tag-specific staging folder:</p>

@@ -71,10 +71,6 @@ function runCatalogTask(runName)
     end
 
     args = taskRunArguments(spec);
-    root = fileparts(mfilename("fullpath"));
-    if labkitRunInternalShards(root, spec, args)
-        return;
-    end
     runBuildTests(spec.Name, args{:});
 end
 

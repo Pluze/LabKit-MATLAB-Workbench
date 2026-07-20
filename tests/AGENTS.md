@@ -22,13 +22,12 @@ Tests mirror source ownership and use MATLAB's official test framework.
   selector. Do not add a parallel runner, per-app build tasks, or selector
   lists in workflow YAML.
 - Keep public tasks compact. Improve changed-file routing before adding a task.
-- CI calls public build tasks. Internal local sharding must cover each selected
-  test exactly once and use distinct artifact run names; GitHub Actions stays
-  single-process unless licensing for child MATLAB processes is proven.
-- Local worker orchestration is a MATLAB-owned, platform-neutral runner
-  capability. Do not put process management or generated shell scripts back
-  into `buildfile.m`; status output keeps structured artifacts plus concise
-  per-shard progress and ETA for humans.
+- Broad build tasks and CI use the same single-process runner. Do not add
+  worker orchestration without a reproducible end-to-end wall-clock benefit
+  large enough to justify extra CPU, licensing, platform validation, status,
+  and failure-diagnosis costs.
+- Progress output keeps structured artifacts plus concise current-test and ETA
+  updates for humans.
 - Focused iteration normally uses `runLabKitTests("Files", ...)`; use `Suites`
   for folders and `Tests` for class or method names. Run `changedFast` at a
   coherent checkpoint and `changed` once for a stable handoff. After a

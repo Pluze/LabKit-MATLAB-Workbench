@@ -17,34 +17,46 @@ end
 
 function style = baseStyle(name, colorOrder)
     style = struct();
-    style.name = "LabKit figure";
+    style.name = string(name);
     style.fontName = preferredFont(name);
-    style.baseFontSize = 36;
-    style.titleFontOffset = 0;
-    style.labelFontOffset = 0;
+    style.baseFontSize = 20;
+    style.titleFontOffset = 4;
+    style.labelFontOffset = 4;
     style.tickFontOffset = 0;
-    style.titleFontSize = 36;
-    style.labelFontSize = 36;
-    style.tickFontSize = 36;
+    style.titleFontSize = 24;
+    style.labelFontSize = 24;
+    style.tickFontSize = 20;
+    style.annotationFontSize = 20;
+    style.xTickLabelAngle = "Horizontal";
     style.fontOverrides = struct( ...
         'title', false, ...
         'label', false, ...
         'tick', false);
-    style.dataLineWidth = 3;
-    style.axesLineWidth = 3;
+    style.dataLineWidth = 1.2;
+    style.uncertaintyLineWidth = 1.1;
+    style.boundaryLineWidth = 1.1;
+    style.referenceLineWidth = 1.2;
+    style.axesLineWidth = 1.2;
     style.gridAlpha = 0.12;
     style.gridVisible = false;
     style.boxVisible = true;
     style.boundaryLines = true;
+    style.legendVisible = "Source";
+    style.legendLocation = "Source";
+    style.legendFontSize = 15;
+    style.legendNumColumns = 0;
+    style.legendBox = "On";
     style.canvasWidth = 720;
-    style.canvasHeight = 540;
+    style.canvasHeight = 600;
+    style.referenceCanvasWidth = 720;
+    style.referenceCanvasHeight = 600;
     style.exportScale = 2;
     style.colorOrder = colorOrder;
 end
 
 function fontName = preferredFont(~)
     names = listfonts;
-    preferred = ["Arial", "Liberation Sans", "DejaVu Sans"];
+    preferred = ["Helvetica", "Arial", "Liberation Sans", "DejaVu Sans"];
     fontName = "Arial";
     for k = 1:numel(preferred)
         if any(strcmpi(names, preferred(k)))

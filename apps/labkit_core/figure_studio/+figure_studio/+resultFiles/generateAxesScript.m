@@ -25,9 +25,21 @@ function scriptPath = generateAxesScript(folder, plotData)
     fprintf(fid, 'applyAxesMetadata(ax, plotData.axes);\n');
     fprintf(fid, 'for k = 1:numel(plotData.objects)\n');
     fprintf(fid, '    object = plotData.objects(k);\n');
+    fprintf(fid, '    h = gobjects(0);\n');
     fprintf(fid, '    switch string(object.type)\n');
     fprintf(fid, '        case "line"\n');
     fprintf(fid, '            h = plot(ax, object.x, object.y, "DisplayName", char(object.displayName));\n');
+    fprintf(fid, '            applyObjectCoordinates(h, object);\n');
+    fprintf(fid, '            applyStyle(h, object.style);\n');
+    fprintf(fid, '        case "bar"\n');
+    fprintf(fid, '            h = bar(ax, object.x, object.y, "DisplayName", char(object.displayName));\n');
+    fprintf(fid, '            applyObjectCoordinates(h, object);\n');
+    fprintf(fid, '            applyStyle(h, object.style);\n');
+    fprintf(fid, '        case "errorbar"\n');
+    fprintf(fid, '            h = createErrorBar(ax, object);\n');
+    fprintf(fid, '            applyStyle(h, object.style);\n');
+    fprintf(fid, '        case "area"\n');
+    fprintf(fid, '            h = area(ax, object.x, object.y, "DisplayName", char(object.displayName));\n');
     fprintf(fid, '            applyObjectCoordinates(h, object);\n');
     fprintf(fid, '            applyStyle(h, object.style);\n');
     fprintf(fid, '        case "scatter"\n');
@@ -59,15 +71,19 @@ function scriptPath = generateAxesScript(folder, plotData)
     fprintf(fid, '        case "constantline"\n');
     fprintf(fid, '            h = createConstantLine(ax, object);\n');
     fprintf(fid, '            applyStyle(h, object.style);\n');
+    fprintf(fid, '        case "rectangle"\n');
+    fprintf(fid, '            h = createRectangle(ax, object);\n');
+    fprintf(fid, '            applyStyle(h, object.style);\n');
     fprintf(fid, '        otherwise\n');
     fprintf(fid, '            warning("LabKit:UnsupportedObject", "Skipped unsupported object type %%s.", object.type);\n');
+    fprintf(fid, '    end\n');
+    fprintf(fid, '    if ~isempty(h) && isgraphics(h)\n');
+    fprintf(fid, '        safeSet(h, "HandleVisibility", metadataValue(object, "handleVisibility", "on"));\n');
     fprintf(fid, '    end\n');
     fprintf(fid, 'end\n');
     fprintf(fid, 'hold(ax, "off");\n');
     fprintf(fid, 'applyAxesMetadata(ax, plotData.axes);\n');
-    fprintf(fid, 'if any(strlength(string({plotData.objects.displayName})) > 0)\n');
-    fprintf(fid, '    legend(ax, "show", "Interpreter", "none");\n');
-    fprintf(fid, 'end\n');
+    fprintf(fid, 'applyLegendMetadata(ax, plotData);\n');
     writeLocalFunctions(fid);
 end
 
@@ -88,6 +104,19 @@ function writeLocalFunctions(fid)
     fprintf(fid, 'if numel(meta.zLim) == 2\n');
     fprintf(fid, '    safeSet(ax, "ZLim", meta.zLim);\n');
     fprintf(fid, 'end\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "XTick", "xTick");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "YTick", "yTick");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "ZTick", "zTick");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "XTickLabel", "xTickLabel");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "YTickLabel", "yTickLabel");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "ZTickLabel", "zTickLabel");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "XTickLabelRotation", "xTickLabelRotation");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "YTickLabelRotation", "yTickLabelRotation");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "ZTickLabelRotation", "zTickLabelRotation");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "TickLabelInterpreter", "tickLabelInterpreter");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "XAxisLocation", "xAxisLocation");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "YAxisLocation", "yAxisLocation");\n');
+    fprintf(fid, 'safeSetIfField(ax, meta, "TickLength", "tickLength");\n');
     fprintf(fid, 'safeSet(ax, "CLim", meta.cLim);\n');
     fprintf(fid, 'safeSet(ax, "Layer", meta.view);\n');
     fprintf(fid, 'safeSet(ax, "Color", meta.color);\n');
@@ -115,6 +144,32 @@ function writeLocalFunctions(fid)
     fprintf(fid, 'end\n');
     fprintf(fid, 'end\n');
 
+    fprintf(fid, '\nfunction applyLegendMetadata(ax, plotData)\n');
+    fprintf(fid, 'hasNames = any(strlength(string({plotData.objects.displayName})) > 0);\n');
+    fprintf(fid, 'if isfield(plotData.axes, "legend")\n');
+    fprintf(fid, '    meta = plotData.axes.legend;\n');
+    fprintf(fid, '    if ~logical(structValue(meta, "enabled", false))\n');
+    fprintf(fid, '        return;\n');
+    fprintf(fid, '    end\n');
+    fprintf(fid, 'elseif hasNames\n');
+    fprintf(fid, '    meta = struct();\n');
+    fprintf(fid, 'else\n');
+    fprintf(fid, '    return;\n');
+    fprintf(fid, 'end\n');
+    fprintf(fid, 'lgd = legend(ax, "show", "Interpreter", "none");\n');
+    fprintf(fid, 'mapping = {"String", "strings"; "Location", "location"; ...\n');
+    fprintf(fid, '    "Orientation", "orientation"; "NumColumns", "numColumns"; ...\n');
+    fprintf(fid, '    "FontName", "fontName"; "FontSize", "fontSize"; ...\n');
+    fprintf(fid, '    "Box", "box"; "Interpreter", "interpreter"; ...\n');
+    fprintf(fid, '    "Visible", "visible"};\n');
+    fprintf(fid, 'for k = 1:size(mapping, 1)\n');
+    fprintf(fid, '    fieldName = char(mapping{k, 2});\n');
+    fprintf(fid, '    if isfield(meta, fieldName)\n');
+    fprintf(fid, '        safeSet(lgd, mapping{k, 1}, meta.(fieldName));\n');
+    fprintf(fid, '    end\n');
+    fprintf(fid, 'end\n');
+    fprintf(fid, 'end\n');
+
     fprintf(fid, '\nfunction applyObjectCoordinates(h, object)\n');
     fprintf(fid, 'if ~isempty(object.x)\n');
     fprintf(fid, '    safeSet(h, "XData", object.x);\n');
@@ -133,10 +188,29 @@ function writeLocalFunctions(fid)
     fprintf(fid, 'end\n');
     fprintf(fid, 'end\n');
 
+    fprintf(fid, '\nfunction value = structValue(owner, name, fallback)\n');
+    fprintf(fid, 'value = fallback;\n');
+    fprintf(fid, 'if isstruct(owner) && isfield(owner, name) && ~isempty(owner.(name))\n');
+    fprintf(fid, '    value = owner.(name);\n');
+    fprintf(fid, 'end\n');
+    fprintf(fid, 'end\n');
+
     fprintf(fid, '\nfunction applyStyle(h, style)\n');
     fprintf(fid, 'fields = fieldnames(style);\n');
     fprintf(fid, 'for i = 1:numel(fields)\n');
     fprintf(fid, '    safeSet(h, fields{i}, style.(fields{i}));\n');
+    fprintf(fid, 'end\n');
+    fprintf(fid, 'end\n');
+
+    fprintf(fid, '\nfunction h = createErrorBar(ax, object)\n');
+    fprintf(fid, 'yn = metadataValue(object, "yNegativeDelta", []);\n');
+    fprintf(fid, 'yp = metadataValue(object, "yPositiveDelta", []);\n');
+    fprintf(fid, 'xn = metadataValue(object, "xNegativeDelta", []);\n');
+    fprintf(fid, 'xp = metadataValue(object, "xPositiveDelta", []);\n');
+    fprintf(fid, 'if ~isempty(xn) || ~isempty(xp)\n');
+    fprintf(fid, '    h = errorbar(ax, object.x, object.y, yn, yp, xn, xp, "DisplayName", char(object.displayName));\n');
+    fprintf(fid, 'else\n');
+    fprintf(fid, '    h = errorbar(ax, object.x, object.y, yn, yp, "DisplayName", char(object.displayName));\n');
     fprintf(fid, 'end\n');
     fprintf(fid, 'end\n');
 
@@ -154,9 +228,23 @@ function writeLocalFunctions(fid)
     fprintf(fid, '    axisName = lower(string(object.metadata.interceptAxis));\n');
     fprintf(fid, 'end\n');
     fprintf(fid, 'if axisName == "y"\n');
-    fprintf(fid, '    h = yline(ax, value, char(label), "DisplayName", char(object.displayName));\n');
+    fprintf(fid, '    h = yline(ax, value, "DisplayName", char(object.displayName));\n');
     fprintf(fid, 'else\n');
-    fprintf(fid, '    h = xline(ax, value, char(label), "DisplayName", char(object.displayName));\n');
+    fprintf(fid, '    h = xline(ax, value, "DisplayName", char(object.displayName));\n');
+    fprintf(fid, 'end\n');
+    fprintf(fid, 'h.Label = char(label);\n');
+    fprintf(fid, 'end\n');
+
+    fprintf(fid, '\nfunction h = createRectangle(ax, object)\n');
+    fprintf(fid, 'position = metadataValue(object, "position", [0 0 1 1]);\n');
+    fprintf(fid, 'curvature = metadataValue(object, "curvature", [0 0]);\n');
+    fprintf(fid, 'h = rectangle(ax, "Position", position, "Curvature", curvature, "HitTest", "off", "PickableParts", "none");\n');
+    fprintf(fid, 'end\n');
+
+    fprintf(fid, '\nfunction value = metadataValue(object, name, fallback)\n');
+    fprintf(fid, 'value = fallback;\n');
+    fprintf(fid, 'if isfield(object.metadata, name) && ~isempty(object.metadata.(name))\n');
+    fprintf(fid, '    value = object.metadata.(name);\n');
     fprintf(fid, 'end\n');
     fprintf(fid, 'end\n');
 

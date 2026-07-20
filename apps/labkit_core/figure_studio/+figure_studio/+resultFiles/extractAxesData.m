@@ -14,7 +14,7 @@ function plotData = extractAxesData(ax)
     plotData.objects = emptyObject();
     plotData.warnings = strings(0, 1);
 
-    children = flipud(ax.Children(:));
+    children = visiblePlotChildren(ax);
     for k = 1:numel(children)
         [object, warningText] = graphicsObjectData(children(k), ax);
         if strlength(warningText) > 0
@@ -23,6 +23,19 @@ function plotData = extractAxesData(ax)
         if isSupportedObject(object)
             plotData.objects(end + 1, 1) = object;
         end
+    end
+end
+
+function children = visiblePlotChildren(ax)
+    children = flipud(allchild(ax));
+    children = children(:);
+    labelProperties = ["Title", "Subtitle", "XLabel", "YLabel", "ZLabel"];
+    for property = labelProperties
+        if ~isprop(ax, property)
+            continue;
+        end
+        label = ax.(property);
+        children(children == label) = [];
     end
 end
 
@@ -42,6 +55,19 @@ function meta = axesMetadata(ax)
     meta.yLim = ax.YLim;
     meta.zLim = ax.ZLim;
     meta.cLim = ax.CLim;
+    meta.xTick = ax.XTick;
+    meta.yTick = ax.YTick;
+    meta.zTick = ax.ZTick;
+    meta.xTickLabel = ax.XTickLabel;
+    meta.yTickLabel = ax.YTickLabel;
+    meta.zTickLabel = ax.ZTickLabel;
+    meta.xTickLabelRotation = ax.XTickLabelRotation;
+    meta.yTickLabelRotation = ax.YTickLabelRotation;
+    meta.zTickLabelRotation = ax.ZTickLabelRotation;
+    meta.tickLabelInterpreter = string(ax.TickLabelInterpreter);
+    meta.xAxisLocation = string(ax.XAxisLocation);
+    meta.yAxisLocation = string(ax.YAxisLocation);
+    meta.tickLength = ax.TickLength;
     meta.view = ax.Layer;
     meta.color = ax.Color;
     meta.box = string(ax.Box);
@@ -63,11 +89,40 @@ function meta = axesMetadata(ax)
     meta.fontName = string(ax.FontName);
     meta.fontSize = ax.FontSize;
     meta.lineWidth = ax.LineWidth;
+    meta.legend = legendMetadata(ax);
     try
         meta.colormap = colormap(ax);
     catch
         meta.colormap = [];
     end
+end
+
+function meta = legendMetadata(ax)
+    meta = struct( ...
+        "enabled", false, ...
+        "visible", "off", ...
+        "strings", strings(0, 1), ...
+        "location", "best", ...
+        "orientation", "vertical", ...
+        "numColumns", 1, ...
+        "fontName", string(ax.FontName), ...
+        "fontSize", ax.FontSize, ...
+        "box", "off", ...
+        "interpreter", "none");
+    if ~isprop(ax, 'Legend') || isempty(ax.Legend) || ~isvalid(ax.Legend)
+        return;
+    end
+    owner = ax.Legend;
+    meta.enabled = true;
+    meta.visible = string(optionalValue(owner, 'Visible'));
+    meta.strings = string(optionalValue(owner, 'String'));
+    meta.location = string(optionalValue(owner, 'Location'));
+    meta.orientation = string(optionalValue(owner, 'Orientation'));
+    meta.numColumns = optionalValue(owner, 'NumColumns');
+    meta.fontName = string(optionalValue(owner, 'FontName'));
+    meta.fontSize = optionalValue(owner, 'FontSize');
+    meta.box = string(optionalValue(owner, 'Box'));
+    meta.interpreter = string(optionalValue(owner, 'Interpreter'));
 end
 
 function object = emptyObject()
@@ -96,6 +151,12 @@ function [object, warningText] = graphicsObjectData(handle, ax)
     end
     if isgraphics(handle, 'line')
         object = lineData(handle);
+    elseif isgraphics(handle, 'bar')
+        object = barData(handle);
+    elseif isgraphics(handle, 'errorbar')
+        object = errorBarData(handle);
+    elseif isgraphics(handle, 'area')
+        object = areaData(handle);
     elseif isgraphics(handle, 'scatter')
         object = scatterData(handle);
     elseif isgraphics(handle, 'image')
@@ -108,10 +169,46 @@ function [object, warningText] = graphicsObjectData(handle, ax)
         object = textData(handle);
     elseif isgraphics(handle, 'constantline')
         object = constantLineData(handle);
+    elseif isgraphics(handle, 'rectangle')
+        object = rectangleData(handle);
     else
         warningText = "Skipped unsupported graphics object: " + ...
             string(class(handle));
     end
+end
+
+function object = barData(handle)
+    object = baseObject("bar", handle);
+    object.x = optionalValue(handle, 'XData');
+    object.y = optionalValue(handle, 'YData');
+    object.c = optionalValue(handle, 'CData');
+    object.style = styleProps(handle, ...
+        ["FaceColor", "FaceAlpha", "EdgeColor", "EdgeAlpha", ...
+        "LineStyle", "LineWidth", "BarWidth", "BaseValue", ...
+        "Horizontal", "CDataMapping"]);
+end
+
+function object = errorBarData(handle)
+    object = baseObject("errorbar", handle);
+    object.x = optionalValue(handle, 'XData');
+    object.y = optionalValue(handle, 'YData');
+    object.metadata.yNegativeDelta = optionalValue(handle, 'YNegativeDelta');
+    object.metadata.yPositiveDelta = optionalValue(handle, 'YPositiveDelta');
+    object.metadata.xNegativeDelta = optionalValue(handle, 'XNegativeDelta');
+    object.metadata.xPositiveDelta = optionalValue(handle, 'XPositiveDelta');
+    object.style = styleProps(handle, ...
+        ["Color", "LineStyle", "LineWidth", "Marker", "MarkerSize", ...
+        "MarkerEdgeColor", "MarkerFaceColor", "CapSize"]);
+end
+
+function object = areaData(handle)
+    object = baseObject("area", handle);
+    object.x = optionalValue(handle, 'XData');
+    object.y = optionalValue(handle, 'YData');
+    object.c = optionalValue(handle, 'CData');
+    object.style = styleProps(handle, ...
+        ["FaceColor", "FaceAlpha", "EdgeColor", "EdgeAlpha", ...
+        "LineStyle", "LineWidth", "BaseValue", "CDataMapping"]);
 end
 
 function object = lineData(handle)
@@ -191,11 +288,21 @@ function object = constantLineData(handle)
         "FontName", "FontSize"]);
 end
 
+function object = rectangleData(handle)
+    object = baseObject("rectangle", handle);
+    object.metadata.position = optionalValue(handle, 'Position');
+    object.metadata.curvature = optionalValue(handle, 'Curvature');
+    object.style = styleProps(handle, ...
+        ["EdgeColor", "FaceColor", "LineStyle", "LineWidth"]);
+end
+
 function object = baseObject(type, handle)
     object = objectTemplate();
     object.type = string(type);
     object.displayName = displayName(handle);
     object.metadata.class = string(class(handle));
+    object.metadata.handleVisibility = string(optionalValue( ...
+        handle, 'HandleVisibility'));
 end
 
 function value = displayName(handle)

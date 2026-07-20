@@ -9,18 +9,21 @@ function applyFigureStyle(ax, preset)
 %   preset - optional scalar text or struct. Supported text values are
 %       "nature" and "labkit". Struct presets may provide fontName,
 %       baseFontSize, titleFontOffset, labelFontOffset, tickFontOffset,
-%       titleFontSize, labelFontSize, tickFontSize,
-%       dataLineWidth, axesLineWidth, gridAlpha, gridVisible, boxVisible,
-%       boundaryLines, canvasWidth, canvasHeight, previewScale, and
-%       colorOrder fields.
+%       titleFontSize, labelFontSize, tickFontSize, annotationFontSize,
+%       dataLineWidth, uncertaintyLineWidth, boundaryLineWidth,
+%       referenceLineWidth, axesLineWidth,
+%       gridAlpha, gridVisible, boxVisible,
+%       boundaryLines, canvasWidth, canvasHeight, referenceCanvasWidth,
+%       referenceCanvasHeight, previewScale, legend controls, and colorOrder
+%       fields.
 %
 % Output:
 %   None. The copied graphics state is changed in place.
 %
 % Behavior:
-%   Uses editable sans-serif text, hides the top/right box where MATLAB allows
-%   it, strengthens axes/tick/data lines, removes legend boxes, and applies a
-%   restrained semantic color order suitable for later SVG/PDF export.
+%   Uses editable sans-serif text and applies semantic text and stroke
+%   categories. Category sizes scale with the output canvas relative to the
+%   style's reference canvas; preview fitting compensates for display scale.
 
     if nargin < 2
         preset = "nature";
@@ -45,13 +48,15 @@ end
 function applyStyleStruct(ax, style)
     style = fillStyle(style);
     viewScale = applyCanvasGeometry(ax, style);
-    style = scaledStyle(style, viewScale);
+    style = scaledStyle(style, ...
+        canvasStyleScale(style) * viewScale);
     ax.FontName = char(style.fontName);
     ax.FontSize = style.tickFontSize;
     ax.LineWidth = style.axesLineWidth;
     ax.Box = onOff(style.boxVisible || style.boundaryLines);
     ax.TickDir = 'out';
     ax.ColorOrder = style.colorOrder;
+    applyTickLabelAngle(ax, style.xTickLabelAngle);
     if style.gridVisible
         grid(ax, 'on');
         ax.GridAlpha = style.gridAlpha;
@@ -61,7 +66,8 @@ function applyStyleStruct(ax, style)
     styleLabels(ax);
     styleLabelsFromStyle(ax, style);
     styleDataChildren(ax, style);
-    styleLegend(ax);
+    unifyAnnotationFont(ax, style);
+    styleLegend(ax, style);
 end
 
 function style = defaultNatureStyle()
@@ -71,14 +77,26 @@ function style = defaultNatureStyle()
         "titleFontSize", 14, ...
         "labelFontSize", 12, ...
         "tickFontSize", 11, ...
+        "annotationFontSize", 10, ...
+        "xTickLabelAngle", "Source", ...
         "dataLineWidth", 1.75, ...
+        "uncertaintyLineWidth", 1.25, ...
+        "boundaryLineWidth", 1.25, ...
+        "referenceLineWidth", 1.25, ...
         "axesLineWidth", 1.5, ...
         "gridAlpha", 0.12, ...
         "gridVisible", false, ...
         "boxVisible", false, ...
         "boundaryLines", false, ...
+        "legendVisible", "Source", ...
+        "legendLocation", "Source", ...
+        "legendFontSize", 10, ...
+        "legendNumColumns", 0, ...
+        "legendBox", "Source", ...
         "canvasWidth", 1200, ...
         "canvasHeight", 900, ...
+        "referenceCanvasWidth", 1200, ...
+        "referenceCanvasHeight", 900, ...
         "previewScale", false, ...
         "colorOrder", natureColorOrder());
 end
@@ -105,22 +123,53 @@ function style = fillStyle(style)
         style.baseFontSize + style.labelFontOffset);
     style.tickFontSize = finiteScalar(style.tickFontSize, ...
         style.baseFontSize + style.tickFontOffset);
+    style.annotationFontSize = finiteScalar(style.annotationFontSize, ...
+        defaults.annotationFontSize);
     style.dataLineWidth = finiteScalar(style.dataLineWidth, defaults.dataLineWidth);
+    style.uncertaintyLineWidth = finiteScalar( ...
+        style.uncertaintyLineWidth, defaults.uncertaintyLineWidth);
+    style.boundaryLineWidth = finiteScalar(style.boundaryLineWidth, ...
+        defaults.boundaryLineWidth);
+    style.referenceLineWidth = finiteScalar(style.referenceLineWidth, ...
+        defaults.referenceLineWidth);
     style.axesLineWidth = finiteScalar(style.axesLineWidth, defaults.axesLineWidth);
+    style.legendFontSize = finiteScalar(style.legendFontSize, ...
+        defaults.legendFontSize);
+    style.legendNumColumns = max(0, round(finiteScalar( ...
+        style.legendNumColumns, defaults.legendNumColumns)));
     style.gridAlpha = min(max(finiteScalar(style.gridAlpha, defaults.gridAlpha), 0), 1);
     style.gridVisible = logical(style.gridVisible);
     style.boxVisible = logical(style.boxVisible);
     style.boundaryLines = logical(style.boundaryLines);
     style.canvasWidth = finiteScalar(style.canvasWidth, defaults.canvasWidth);
     style.canvasHeight = finiteScalar(style.canvasHeight, defaults.canvasHeight);
+    style.referenceCanvasWidth = finiteScalar( ...
+        style.referenceCanvasWidth, style.canvasWidth);
+    style.referenceCanvasHeight = finiteScalar( ...
+        style.referenceCanvasHeight, style.canvasHeight);
     style.previewScale = logical(style.previewScale);
+end
+
+function scale = canvasStyleScale(style)
+    scale = min( ...
+        style.canvasWidth / max(style.referenceCanvasWidth, 1), ...
+        style.canvasHeight / max(style.referenceCanvasHeight, 1));
+    scale = min(16, max(0.1, scale));
 end
 
 function style = scaledStyle(style, scale)
     style.titleFontSize = max(1, style.titleFontSize * scale);
     style.labelFontSize = max(1, style.labelFontSize * scale);
     style.tickFontSize = max(1, style.tickFontSize * scale);
+    style.annotationFontSize = max(1, style.annotationFontSize * scale);
+    style.legendFontSize = max(1, style.legendFontSize * scale);
     style.dataLineWidth = max(0.1, style.dataLineWidth * scale);
+    style.uncertaintyLineWidth = max(0.1, ...
+        style.uncertaintyLineWidth * scale);
+    style.boundaryLineWidth = max(0.1, ...
+        style.boundaryLineWidth * scale);
+    style.referenceLineWidth = max(0.1, ...
+        style.referenceLineWidth * scale);
     style.axesLineWidth = max(0.1, style.axesLineWidth * scale);
 end
 
@@ -182,8 +231,16 @@ function styleDataChildren(ax, style)
         if isempty(child) || ~isvalid(child) || child == ax
             continue;
         end
-        if isDataGraphic(child)
-            child.LineWidth = style.dataLineWidth;
+        kind = graphicStrokeKind(child);
+        switch kind
+            case "data"
+                child.LineWidth = style.dataLineWidth;
+            case "boundary"
+                child.LineWidth = style.boundaryLineWidth;
+            case "reference"
+                child.LineWidth = style.referenceLineWidth;
+            case "uncertainty"
+                child.LineWidth = style.uncertaintyLineWidth;
         end
     end
 end
@@ -196,12 +253,52 @@ function styleLabelsFromStyle(ax, style)
     ax.ZLabel.FontSize = style.labelFontSize;
 end
 
-function tf = isDataGraphic(handle)
-    tf = isa(handle, 'matlab.graphics.chart.primitive.Line') || ...
-        isa(handle, 'matlab.graphics.chart.primitive.Scatter') || ...
-        isa(handle, 'matlab.graphics.chart.primitive.ErrorBar') || ...
-        isa(handle, 'matlab.graphics.primitive.Patch') || ...
-        isa(handle, 'matlab.graphics.primitive.Surface');
+function kind = graphicStrokeKind(handle)
+    kind = "";
+    try
+        type = lower(string(handle.Type));
+    catch
+        return;
+    end
+    if any(type == ["line", "scatter", "surface"])
+        kind = "data";
+    elseif type == "errorbar"
+        kind = "uncertainty";
+    elseif any(type == ["bar", "area", "patch", "rectangle"])
+        kind = "boundary";
+    elseif type == "constantline"
+        kind = "reference";
+    end
+end
+
+function unifyAnnotationFont(ax, style)
+    labels = {ax.Title, ax.XLabel, ax.YLabel, ax.ZLabel};
+    texts = findall(ax, 'Type', 'text');
+    for k = 1:numel(texts)
+        if any(cellfun(@(label) texts(k) == label, labels))
+            continue;
+        end
+        texts(k).FontName = char(style.fontName);
+        texts(k).FontSize = style.annotationFontSize;
+    end
+    references = findall(ax, 'Type', 'constantline');
+    for k = 1:numel(references)
+        if isprop(references(k), 'FontName')
+            references(k).FontName = char(style.fontName);
+        end
+        if isprop(references(k), 'FontSize')
+            references(k).FontSize = style.annotationFontSize;
+        end
+    end
+end
+
+function applyTickLabelAngle(ax, choice)
+    switch string(choice)
+        case "Horizontal"
+            ax.XTickLabelRotation = 0;
+        case "45 deg"
+            ax.XTickLabelRotation = 45;
+    end
 end
 
 function value = onOff(tf)
@@ -212,15 +309,34 @@ function value = onOff(tf)
     end
 end
 
-function styleLegend(ax)
-    legends = findall(ancestor(ax, 'figure'), 'Type', 'legend');
-    for k = 1:numel(legends)
+function styleLegend(ax, style)
+    lgd = [];
+    if isprop(ax, 'Legend')
+        lgd = ax.Legend;
+    end
+    if isempty(lgd) && string(style.legendVisible) == "On"
         try
-            legends(k).Box = 'off';
-            legends(k).FontName = ax.FontName;
-            legends(k).FontSize = ax.FontSize;
+            lgd = legend(ax, 'show');
         catch
+            return;
         end
+    end
+    if isempty(lgd) || ~isvalid(lgd)
+        return;
+    end
+    lgd.FontName = ax.FontName;
+    lgd.FontSize = style.legendFontSize;
+    if string(style.legendVisible) ~= "Source"
+        lgd.Visible = lower(char(style.legendVisible));
+    end
+    if string(style.legendLocation) ~= "Source"
+        lgd.Location = char(style.legendLocation);
+    end
+    if style.legendNumColumns > 0 && isprop(lgd, 'NumColumns')
+        lgd.NumColumns = round(style.legendNumColumns);
+    end
+    if string(style.legendBox) ~= "Source"
+        lgd.Box = lower(char(style.legendBox));
     end
 end
 
@@ -233,7 +349,8 @@ function scale = applyCanvasGeometry(ax, style)
     catch
     end
     fig = ancestor(ax, 'figure');
-    if isempty(fig) || ~isvalid(fig) || isa(fig, 'matlab.ui.Figure')
+    if isempty(fig) || ~isvalid(fig) || ...
+            isa(ax, 'matlab.ui.control.UIAxes')
         scale = previewScale(ax, style, width, height);
         return;
     end
@@ -275,7 +392,6 @@ function applyAxesCanvasFrame(ax, width, height)
 end
 
 function tf = applyGridCanvasFrame(ax, width, height)
-    tf = false;
     try
         [tf, frame] = labkit.app.plot.fitCanvasToSource(ax, width, height);
         if ~tf

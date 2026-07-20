@@ -69,11 +69,16 @@ gui/project/launcher              launcher behavior
 project/<topic>                   repository contracts
 ```
 
-Do not make callers learn internal validation-plan names, shard commands, or
-test-discovery implementation. Pair facade changes with downstream apps when
+Do not make callers learn internal validation-plan names or test-discovery
+implementation. Pair facade changes with downstream apps when
 their contract can be affected. After a failure, copy the canonical
 `Class/method` name from runner output and use `run-test`; the wrapper resolves
 the unique owning file from the class name.
+Keep broad execution single-process unless a repeatable end-to-end benchmark
+shows a material wall-clock gain after worker startup, discovery, reporting,
+and tail latency. Estimated per-test parallelism is not evidence by itself;
+include CPU, licensing, platform behavior, live status, and failure diagnosis
+in the decision, and remove orchestration that does not repay those costs.
 Repair and rerun the narrowest failed behavior, which may be a smaller direct
 test than the method that exposed it; broaden again only when the fix crosses
 another boundary or final policy requires it. A zero-match result is a

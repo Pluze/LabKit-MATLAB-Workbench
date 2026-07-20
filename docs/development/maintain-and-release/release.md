@@ -137,10 +137,10 @@ lookup table to synchronize. Git branches, PRs, tags, and commits express
 delivery state; do not add a second pending/unreleased hierarchy.
 
 Before tagging a release that adds, renames, or removes release-blocking
-guardrail tests, verify that the buildfile CI shard tasks still discover the
-intended suite and tag coverage. The workflow should call those build tasks
-through `matlab-actions/run-build` rather than maintaining long-lived test
-class selectors.
+guardrail tests, verify that the buildfile CI tasks still discover the intended
+suite and tag coverage. The workflow should call those build tasks through
+`matlab-actions/run-build` rather than maintaining long-lived test class
+selectors.
 
 ## Launcher Asset Reproducibility
 

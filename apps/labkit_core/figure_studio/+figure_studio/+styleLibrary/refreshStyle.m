@@ -11,6 +11,8 @@ if changedId == "baseFontSize"
     p.style.titleFontSize = p.style.baseFontSize;
     p.style.labelFontSize = p.style.baseFontSize;
     p.style.tickFontSize = p.style.baseFontSize;
+    p.style.annotationFontSize = p.style.baseFontSize;
+    p.style.legendFontSize = p.style.baseFontSize;
     p.style = clearFontOverrides(p.style);
 elseif any(changedId == ...
         ["titleFontSize", "labelFontSize", "tickFontSize"])
@@ -30,16 +32,26 @@ end
 function style = sanitizeStyle(style)
 defaults = figure_studio.styleLibrary.styleForPreset("LabKit figure");
 names = ["baseFontSize", "titleFontSize", "labelFontSize", ...
-    "tickFontSize", "dataLineWidth", "axesLineWidth", ...
-    "gridAlpha", "canvasWidth", "canvasHeight", "exportScale"];
+    "tickFontSize", "annotationFontSize", "dataLineWidth", ...
+    "uncertaintyLineWidth", "boundaryLineWidth", ...
+    "referenceLineWidth", "axesLineWidth", ...
+    "gridAlpha", "canvasWidth", "canvasHeight", "exportScale", ...
+    "referenceCanvasWidth", "referenceCanvasHeight", ...
+    "legendFontSize", "legendNumColumns"];
 for name = names
     field = char(name);
     style.(field) = finiteValue(style.(field), defaults.(field));
 end
 style.gridAlpha = min(max(style.gridAlpha, 0), 1);
-style.canvasWidth = min(max(style.canvasWidth, 400), 8000);
-style.canvasHeight = min(max(style.canvasHeight, 300), 8000);
+style.canvasWidth = min(max(style.canvasWidth, 320), 8000);
+style.canvasHeight = min(max(style.canvasHeight, 240), 8000);
+style.referenceCanvasWidth = min(max( ...
+    style.referenceCanvasWidth, 1), 8000);
+style.referenceCanvasHeight = min(max( ...
+    style.referenceCanvasHeight, 1), 8000);
 style.exportScale = min(max(style.exportScale, 1), 8);
+style.legendFontSize = min(max(style.legendFontSize, 4), 96);
+style.legendNumColumns = round(min(max(style.legendNumColumns, 0), 12));
 end
 
 function style = clearFontOverrides(style)
@@ -77,6 +89,8 @@ end
 
 function ratio = aspectRatio(preset)
 switch string(preset)
+    case "6:5"
+        ratio = 6 / 5;
     case "4:3"
         ratio = 4 / 3;
     case "16:9"

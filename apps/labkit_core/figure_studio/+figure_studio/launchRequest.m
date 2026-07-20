@@ -17,9 +17,24 @@ function [initialProject, dispatchArgs] = launchRequest(args)
         initialProject.annotations.embeddedPlot = ...
             figure_studio.resultFiles.extractAxesData(ax);
         initialProject.annotations.sourceDefaultStyle = sourceStyle;
-        initialProject.parameters.style = sourceStyle;
-        initialProject.parameters.aspectPreset = "Custom";
+        labkitStyle = figure_studio.styleLibrary.styleForPreset( ...
+            "LabKit figure");
+        initialProject.parameters.preset = "LabKit figure";
+        initialProject.parameters.style = labkitStyle;
+        initialProject.parameters.gridChoice = onOff( ...
+            labkitStyle.gridVisible);
+        initialProject.parameters.boundaryChoice = onOff( ...
+            labkitStyle.boundaryLines);
+        initialProject.parameters.aspectPreset = "6:5";
         dispatchArgs = {};
+    end
+end
+
+function value = onOff(tf)
+    if tf
+        value = "On";
+    else
+        value = "Off";
     end
 end
 

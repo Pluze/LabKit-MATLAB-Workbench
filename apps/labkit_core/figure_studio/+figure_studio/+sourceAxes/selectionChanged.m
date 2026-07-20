@@ -41,9 +41,6 @@ function state = adoptSourceStyle(state, sourceStyle)
 p = state.project.parameters;
 if p.preset == "FIG default"
     p.style = sourceStyle;
-else
-    p.style.canvasWidth = sourceStyle.canvasWidth;
-    p.style.canvasHeight = sourceStyle.canvasHeight;
     p.aspectPreset = "Custom";
 end
 p.gridChoice = onOff(p.style.gridVisible);
