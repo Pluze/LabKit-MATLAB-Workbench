@@ -10,6 +10,7 @@ classdef (Sealed) Snapshot
     %   view = view.visible(target, visible)
     %   view = view.text(target, text)
     %   view = view.filePaths(target, paths)
+    %   view = view.fileItemStatuses(target, statuses)
     %   view = view.listSelection(target, selection)
     %   view = view.tableCellSelection(target, selection)
     %   view = view.tableData(target, data, Name=Value)
@@ -40,6 +41,7 @@ classdef (Sealed) Snapshot
     %   visible - Logical scalar visibility.
     %   text - Scalar text.
     %   paths - String or cell array of file paths.
+    %   statuses - Empty or one reader-facing status per file-list row.
     %   selection - Selection value accepted by the target.
     %   data - App-owned table, numeric array, or cell array.
     %   model - App-owned model passed to the renderer declared by plotArea.
@@ -125,6 +127,11 @@ classdef (Sealed) Snapshot
             end
             obj = append(obj, "filePaths", ...
                 target, reshape(paths, 1, []));
+        end
+
+        function obj = fileItemStatuses(obj, target, statuses)
+            statuses = textRow(statuses, "file item statuses");
+            obj = append(obj, "fileItemStatuses", target, statuses);
         end
 
         function obj = listSelection(obj, target, selection)

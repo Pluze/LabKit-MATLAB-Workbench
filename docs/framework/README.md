@@ -78,6 +78,9 @@ and renderer signatures, and builds one private native platform plan.
 
 - Bind ordinary state with `Bind="project..."` or `Bind="session..."`.
 - Use `labkit.app.layout.fileList` for portable file records and selection.
+  Set `AllowDuplicatePaths=true` only when separate workflow tasks may share
+  one resolved path, and present row-level workflow state with
+  `Snapshot.fileItemStatuses`.
   Source changes rebuild the transient session; Apps do not mirror choose,
   remove, clear, or selection UI events.
 - Rebuild transient data with

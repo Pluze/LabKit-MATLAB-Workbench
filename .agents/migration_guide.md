@@ -49,6 +49,8 @@ Restored in the replacement SDK worktree:
 - old panner, range, readonly, adaptive action-grid, file/folder/recursive
   file selection, friendly file labels, multiline control sizing, status,
   log-follow, table, and distinct Usage presentations;
+- task-oriented file lists that preserve distinct portable source records for
+  repeated paths and render App-owned per-row workflow statuses;
 - transparent semantic groups that preserve full native button height, and
   bound range controls whose initial values come from App state rather than
   falling back to their legal limits;

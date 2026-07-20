@@ -577,6 +577,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                     obj.applyText(component, operation.Value);
                 case "filePaths"
                     obj.applyFilePaths(component, operation.Value);
+                case "fileItemStatuses"
+                    obj.applyFileItemStatuses(component, operation.Value);
                 case "listSelection"
                     obj.applyListSelection(component, operation.Value);
                 case "tableCellSelection"
@@ -604,8 +606,11 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         function applyFilePaths(~, component, paths)
             data = component.UserData;
             data.Paths = reshape(string(paths), 1, []);
+            if numel(data.ItemStatuses) ~= numel(data.Paths)
+                data.ItemStatuses = strings(1, 0);
+            end
             component.UserData = data;
-            labels = formatFileLabels(paths);
+            labels = formatFileLabels(paths, data.ItemStatuses);
             if isempty(labels) && ~data.Compact
                 labels = data.EmptyText;
             end
@@ -631,6 +636,22 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             else
                 component.UserData.Status.Value = cellstr(string(text));
             end
+        end
+
+        function applyFileItemStatuses(~, component, statuses)
+            data = component.UserData;
+            statuses = reshape(string(statuses), 1, []);
+            if ~isempty(statuses) && numel(statuses) ~= numel(data.Paths)
+                error("labkit:app:contract:InvalidValue", ...
+                    "File item statuses must be empty or match file paths.");
+            end
+            data.ItemStatuses = statuses;
+            component.UserData = data;
+            labels = formatFileLabels(data.Paths, statuses);
+            if isempty(labels) && ~data.Compact
+                labels = data.EmptyText;
+            end
+            setIfProperty(component, "Items", labels);
         end
 
         function applyTableCellSelection(~, component, selection)
@@ -1131,7 +1152,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                     "RecursiveFolder", [], "Remove", [], "Clear", [], ...
                     "Status", status, "EmptyText", config.EmptyText, ...
                     "Target", node.Id, "Compact", true, ...
-                    "Paths", strings(1, 0));
+                    "Paths", strings(1, 0), ...
+                    "ItemStatuses", strings(1, 0));
                 return
             end
             statusHeight = 0;
@@ -1182,7 +1204,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 "Folder", folder, "RecursiveFolder", recursive, ...
                 "Remove", remove, "Clear", clear, "Status", status, ...
                 "EmptyText", config.EmptyText, "Target", node.Id, ...
-                "Compact", false, "Paths", strings(1, 0));
+                "Compact", false, "Paths", strings(1, 0), ...
+                "ItemStatuses", strings(1, 0));
         end
 
         function textArea = createTextPanel(obj, node, parent, config, isLog)
@@ -1681,6 +1704,8 @@ for k = 1:numel(operations)
     switch operations{k}.Kind
         case {"choices", "limits", "filePaths", "tableData"}
             priority(k) = 1;
+        case "fileItemStatuses"
+            priority(k) = 2;
         case "value"
             priority(k) = 2;
         case {"listSelection", "tableCellSelection"}
@@ -2057,8 +2082,17 @@ y = max(12, figurePosition(4) - height - 44);
 position = [x y promptWidth height];
 end
 
-function labels = formatFileLabels(paths)
+function labels = formatFileLabels(paths, statuses)
 paths = string(paths(:));
+if nargin < 2 || isempty(statuses)
+    statuses = strings(size(paths));
+else
+    statuses = string(statuses(:));
+end
+if numel(statuses) ~= numel(paths)
+    error("labkit:app:contract:InvalidValue", ...
+        "File item statuses must be empty or match file paths.");
+end
 names = strings(size(paths));
 parents = strings(size(paths));
 for k = 1:numel(paths)
@@ -2075,6 +2109,9 @@ for k = 1:numel(paths)
     end
     labels(k) = compose("%0" + width + "d %s%s", ...
         k, names(k), suffix);
+    if strlength(statuses(k)) > 0
+        labels(k) = labels(k) + " [" + statuses(k) + "]";
+    end
 end
 labels = reshape(labels, 1, []);
 end

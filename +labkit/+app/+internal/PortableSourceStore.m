@@ -60,20 +60,35 @@ classdef (Hidden, Sealed) PortableSourceStore < handle
             records = canonicalCollection(incoming);
         end
 
-        function records = reconcilePaths(obj, current, paths, role, prefix, required)
+        function records = reconcilePaths(obj, current, paths, role, prefix, ...
+                required, allowDuplicatePaths)
             validateRecords(current);
             paths = normalizePaths(paths);
             role = requiredText(role, "Project source role");
             prefix = requiredText(prefix, "Project source id prefix");
+            if nargin < 7
+                allowDuplicatePaths = false;
+            end
+            allowDuplicatePaths = logicalScalar( ...
+                allowDuplicatePaths, "Allow duplicate source paths");
+            if ~allowDuplicatePaths
+                paths = unique(paths, "stable");
+            end
             records = emptyRecords();
+            currentPaths = obj.sourcePaths(current);
+            retained = false(numel(current), 1);
             for k = 1:numel(paths)
-                currentPaths = obj.sourcePaths(current);
-                match = find(currentPaths == paths(k), 1);
+                candidates = currentPaths == paths(k);
+                if allowDuplicatePaths
+                    candidates = candidates & ~retained;
+                end
+                match = find(candidates, 1);
                 if isempty(match)
                     id = nextId(current, records, prefix);
                     record = obj.create(id, role, paths(k), required);
                 else
                     record = current(match);
+                    retained(match) = true;
                 end
                 records = appendRecord(records, record);
             end
@@ -91,12 +106,16 @@ classdef (Hidden, Sealed) PortableSourceStore < handle
         end
 
         function records = reconcileRolePaths(obj, current, paths, ...
-                role, prefix, required)
+                role, prefix, required, allowDuplicatePaths)
             validateRecords(current);
             role = requiredText(role, "Project source role");
+            if nargin < 7
+                allowDuplicatePaths = false;
+            end
             currentRole = obj.recordsForRole(current, role);
             replacement = obj.reconcilePaths( ...
-                currentRole, paths, role, prefix, required);
+                currentRole, paths, role, prefix, required, ...
+                allowDuplicatePaths);
             if isempty(current)
                 records = replacement;
                 return;
@@ -343,6 +362,14 @@ paths = string(value(:));
 if any(strlength(paths) == 0)
     invalid("Source paths must be nonempty.");
 end
+end
+
+function value = logicalScalar(value, label)
+if ~((islogical(value) || isnumeric(value)) && isscalar(value) && ...
+        isfinite(double(value)) && any(double(value) == [0 1]))
+    invalid("%s must be scalar logical.", label);
+end
+value = logical(value);
 end
 
 function id = nextId(current, pending, prefix)

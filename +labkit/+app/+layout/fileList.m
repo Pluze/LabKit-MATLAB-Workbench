@@ -26,6 +26,9 @@ function node = fileList(id, varargin)
 %   RemoveLabel - Remove button text. Default: "Remove".
 %   ClearLabel - Clear button text. Default: "Clear".
 %   EmptyText - Empty-list text. Default: "No files selected".
+%   AllowDuplicatePaths - Preserve separate portable source records that
+%       resolve to the same path. Use this when each list row is a distinct
+%       workflow task. Default: false.
 %   Bind - Project source-record field path. Default: "".
 %   SelectionBind - ListSelection field path. Default: "".
 %   OnSelectionChanged - Optional callback
@@ -48,6 +51,6 @@ function node = fileList(id, varargin)
 %       Bind="project.inputs.sources");
 %
 % See also labkit.app.event.ListSelection,
-%   labkit.app.CallbackContext
+%   labkit.app.CallbackContext, labkit.app.view.Snapshot
 node = labkit.app.internal.LayoutNode.fileList(id, varargin{:});
 end
