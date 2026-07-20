@@ -33,6 +33,7 @@ classdef GuiLayoutImageEnhanceTest < matlab.unittest.TestCase
             testCase.verifyEqual(numel( ...
                 runtime.State.project.annotations.items(1).steps), 1);
 
+            runtime.invokeAction('chooseOutputFolder');
             runtime.invokeAction('exportImages');
             manifestFiles = dir(fullfile(outputFolder, '*manifest*.csv'));
             outputFiles = dir(fullfile(outputFolder, '*_enhanced.png'));
@@ -40,6 +41,18 @@ classdef GuiLayoutImageEnhanceTest < matlab.unittest.TestCase
                 'Image enhance workflow should write a manifest CSV.');
             testCase.verifyFalse(isempty(outputFiles), ...
                 'Image enhance workflow should write an enhanced PNG.');
+            testCase.verifyTrue(isfile(fullfile( ...
+                outputFolder, 'image_enhance.labkit.json')));
+            runtime.applyControlValue('preview', 'Original');
+            testCase.verifyEqual( ...
+                runtime.State.session.view.previewMode, "Original");
+            runtime.applyControlValue('toolKind', 'White ROI calibration');
+            runtime.invokeAction('setWhiteRoi');
+            testCase.verifyTrue(runtime.State.session.view.roiEditing);
+            runtime.applyInteraction( ...
+                'whiteRoi', 'interactionChanged', [5 5 14 12]);
+            runtime.invokeAction('applyTool');
+            testCase.verifyFalse(runtime.State.session.view.roiEditing);
             runtime.applyFileSelection( ...
                 'sourceImages', [sourcePath secondSourcePath], 2);
             runtime.applyControlValue('toolKind', 'Sharpen');
@@ -51,12 +64,21 @@ classdef GuiLayoutImageEnhanceTest < matlab.unittest.TestCase
                 runtime.State.project.inputs.sources(2).id);
             testCase.verifyTrue(contains( ...
                 string(second.steps(1).label), 'Sharpen'));
+            runtime.invokeAction('undoHistory');
+            testCase.verifyEmpty(image_enhance.analysisRun.activeSteps( ...
+                runtime.State));
+            runtime.invokeAction('applyTool');
             runtime.applyFilePanelSelection('sourceImages', 1);
             first = image_enhance.sourceLibrary.annotationForSource( ...
                 runtime.State.project.annotations.items, ...
                 runtime.State.project.inputs.sources(1).id);
             testCase.verifyTrue(contains( ...
                 string(first.steps(1).label), 'Brightness'));
+            runtime.invokeAction('resetHistory');
+            testCase.verifyEmpty(image_enhance.analysisRun.activeSteps( ...
+                runtime.State));
+            runtime.applyControlValue('toolKind', 'Brightness/contrast');
+            runtime.invokeAction('applyTool');
 
             projectPath = fullfile(folder, 'image-enhance-project.mat');
             runtime.saveProject(runtime.State, projectPath);
@@ -82,14 +104,20 @@ end
 
 function assertImageEnhanceLayout(h, fig)
     h.assertStartupSucceeded(fig);
-    ids = ["sourceImages", "exportFormat", "exportImages", ...
-        "batchMode", "toolKind", "toolAmount", "toolSecondary", ...
-        "applyTool", "undoHistory", "resetHistory", "resultTable", ...
-        "details", "preview.image"];
+    ids = ["sourceImages", "imageStatus", "outputFolder", ...
+        "exportFormat", "chooseOutputFolder", "exportImages", ...
+        "exportDetails", "batchMode", "batchModeStatus", "toolKind", ...
+        "toolAmount", "toolSecondary", "toolStatus", "setWhiteRoi", ...
+        "applyTool", "undoHistory", "resetHistory", "historyTable", ...
+        "historyStatus", "metricsTable", "preview", "preview.image"];
     for id = ids
         assert(numel(findall(fig, "Tag", id)) == 1, ...
             "Missing Image Enhance semantic target: %s.", id);
     end
+    tabs = findall(fig, "Type", "uitab");
+    assert(isequal(sort(string({tabs.Title})), ...
+        sort(["Library + Export", "Tools + History", "Log"])));
+    assert(numel(findall(fig, "Title", "Preview")) >= 2);
 end
 
 function img = syntheticPaperImage()

@@ -1,31 +1,23 @@
 function state=applyDraft(state,context)
 %APPLYDRAFT Commit the selected enhancement draft to the active history.
-if isempty(state.session.cache.item)
-    context.alert("Load an image before applying an enhancement.","No image loaded"); return
+availability = ...
+    image_enhance.imagePreview.presentationData.toolAvailability( ...
+        state, state.session.view.toolKind);
+if ~availability.canApply
+    context.alert(availability.status, "Tool unavailable");
+    return;
 end
 step=image_enhance.analysisRun.makeStep(state.session.view.toolKind, ...
     state.session.view.toolAmount,state.session.view.toolSecondary,0);
-if state.project.parameters.batchMode
-    state.project.annotations.sharedSteps(end+1,1)=step;
-else
-    index=state.session.selection.currentIndex;
-    sourceId=state.project.inputs.sources(index).id;
-    annotation=image_enhance.sourceLibrary.annotationForSource( ...
-        state.project.annotations.items,sourceId);
-    annotation.steps(end+1,1)=step;
-    state.project.annotations.items=image_enhance.sourceLibrary.storeAnnotation( ...
-        state.project.annotations.items,annotation);
-end
+steps = image_enhance.analysisRun.activeSteps(state);
+steps = steps(:);
+steps(end + 1, 1) = step;
+state = image_enhance.analysisRun.setActiveSteps(state, steps);
 state.session.workflow.pendingDirty=false;
-state.session.cache.previewResult=image_enhance.analysisRun.previewResult( ...
-    state.session.cache.previewSource,image_enhance.analysisRun.activeSteps(state), ...
-    activeRoi(state),state.session.cache.previewScale);
-context.appendStatus("Applied enhancement: "+string(step.label));
-end
-
-function roi=activeRoi(state)
-roi=[]; index=state.session.selection.currentIndex;
-if ~state.project.parameters.batchMode && index>=1 && index<=numel(state.project.annotations.items)
-    roi=state.project.annotations.items(index).whiteRoi;
-end
+state.session.view.roiEditing = false;
+state = image_enhance.enhancementPipeline.invalidateResults(state);
+state.session.cache.previewResult = [];
+state.session.cache.previewResultKey = "";
+state = image_enhance.enhancementPipeline.rebuildPreview(state);
+context.appendStatus("Applied tool: " + string(step.label));
 end

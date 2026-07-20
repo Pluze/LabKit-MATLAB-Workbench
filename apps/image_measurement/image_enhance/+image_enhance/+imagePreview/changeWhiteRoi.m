@@ -1,10 +1,26 @@
-function state=changeWhiteRoi(state,position,~)
-index=state.session.selection.currentIndex;
-if index<1 || index>numel(state.project.inputs.sources),return,end
-sourceId=state.project.inputs.sources(index).id;
-annotation=image_enhance.sourceLibrary.annotationForSource( ...
-    state.project.annotations.items,sourceId);
-annotation.whiteRoi=double(position)./max(eps,state.session.cache.previewScale);
-state.project.annotations.items=image_enhance.sourceLibrary.storeAnnotation( ...
-    state.project.annotations.items,annotation);
+function applicationState = changeWhiteRoi( ...
+        applicationState, position, callbackContext)
+%CHANGEWHITEROI Store one managed ROI in source-image coordinates.
+index = applicationState.session.selection.currentIndex;
+sources = applicationState.project.inputs.sources;
+position = double(position);
+if index < 1 || index > numel(sources) || ...
+        numel(position) ~= 4 || any(~isfinite(position)) || ...
+        any(position(3:4) <= 0)
+    callbackContext.appendStatus("Ignored an invalid white ROI edit.");
+    return;
+end
+sourceId = sources(index).id;
+annotation = image_enhance.sourceLibrary.annotationForSource( ...
+    applicationState.project.annotations.items, sourceId);
+annotation.whiteRoi = position ./ ...
+    max(eps, applicationState.session.cache.previewScale);
+applicationState.project.annotations.items = ...
+    image_enhance.sourceLibrary.storeAnnotation( ...
+        applicationState.project.annotations.items, annotation);
+applicationState.session.workflow.pendingDirty = true;
+applicationState = ...
+    image_enhance.enhancementPipeline.invalidateResults(applicationState);
+applicationState.session.cache.previewResult = [];
+applicationState.session.cache.previewResultKey = "";
 end

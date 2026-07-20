@@ -6,8 +6,10 @@ function state = toolAvailability(S, toolKind)
     batchMode = S.project.parameters.batchMode;
     current = image_enhance.enhancementAnnotations.empty();
     if hasImages
-        current = S.project.annotations.items( ...
-            S.session.selection.currentIndex);
+        index = S.session.selection.currentIndex;
+        sourceId = S.project.inputs.sources(index).id;
+        current = image_enhance.sourceLibrary.annotationForSource( ...
+            S.project.annotations.items, sourceId);
     end
     isWhiteRoi = strcmpi(regexprep(char(string(toolKind)), ...
         '[^a-zA-Z0-9]', ''), 'whiteroicalibration');
