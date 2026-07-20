@@ -45,7 +45,8 @@ Restored in the replacement SDK worktree:
   guarded close behavior, keyboard close, delayed startup progress, and GUI
   test visibility modes;
 - fixed control-pane sizing, draggable column and row dividers, scrollable
-  control tabs, framework utility menus, and complete-text fitting;
+  mixed-content control tabs, full-height single-surface tabs, framework
+  utility menus, and complete-text fitting;
 - old panner, range, readonly, adaptive action-grid, file/folder/recursive
   file selection, friendly file labels, multiline control sizing, status,
   log-follow, table, and distinct Usage presentations;
@@ -102,7 +103,8 @@ Current product audit progress:
 | Curvature Measurement | Complete | Files + Analysis/Summary + Results/Log tabs, exact image/curve/scale/fit/export controls, mutually exclusive curve/reference edit modes and dynamic action text, typed or measured calibration, scale-bar placement, densified circle fit, traced length, seven-row summary/details, complete residual/circle/center/scale overlay, paired exports and manifests, source-change invalidation, v1-to-v2 project migration, focused unit/GUI tests, and every-tab visual comparison with `main` |
 | FLIR Thermal | Complete | Files + Display + Export/Details/Log tabs, FLIR source actions and navigation, exact palette/mapping/gamma/range controls, independent manual/hot/cold/mean readings, summary/details, paired clean-image/scale preview, current/all exports with CSV and standard manifests, transient decode/project restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
 | Gait Analysis | Complete | Source/Roles + Detection/Results + Export/Log tabs, compact Video Marker source, exact role/time/scale/detection fields, Workflow Notes, horizontal step navigation, summary/step tables, three labeled scroll-zoom previews, display-only plot graphics, current SamplePack debug fixture, CSV set and standard manifest, project restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
-| Remaining 2 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; ECG Print and Video Marker still require control/function/state audit and focused validation |
+| ECG Print | Complete | Files + Analysis/Summary + Results/Log tabs, exact Recording/Import Parsing/Channel + ROI/Signal Processing + SNR/Exports sections, compact readonly import state, ten paired numeric panners, Workflow Notes, four stacked labeled previews, complete analysis invalidation and parameter sanitation, recoverable refresh failure with atomic reconstruction failures, paired CSV/PNG exports with standard manifests, project restore, focused unit/framework/App GUI tests, and every-tab visual comparison with `main` |
+| Remaining 1 tracked App | Pending | Captured `main` and replacement all-tab baselines exist; Video Marker still requires control/function/state audit and focused validation |
 
 The accepted public structure is capability-partitioned:
 `labkit.app.Definition` and `CallbackContext` form the small root; `layout`,

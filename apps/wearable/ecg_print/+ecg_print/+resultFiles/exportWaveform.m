@@ -1,6 +1,43 @@
-function state = exportWaveform(state, context)
-request = ecg_print.analysisRun.waveformPlotRequest(state.session.cache.workingSignal, state.session.cache.filteredSignal, state.session.cache.events);
-if ~request.ok, context.alert("Open a recording before exporting a waveform.", "No waveform"); return; end
-chosen = context.chooseOutputFile(["*.png", "PNG files (*.png)"], "ecg_waveform.png"); if chosen.Cancelled, return; end
-path = string(chosen.Value); ecg_print.resultFiles.writeWaveformPng(request, path); state.project.results.lastWaveformExport = struct("pngPath", path);
+function applicationState = exportWaveform( ...
+        applicationState, callbackContext)
+%EXPORTWAVEFORM Write the prepared ECG waveform and a result manifest.
+request = ecg_print.analysisRun.waveformPlotRequest( ...
+    applicationState.session.cache.workingSignal, ...
+    applicationState.session.cache.filteredSignal, ...
+    applicationState.session.cache.events);
+if ~request.ok
+    callbackContext.alert( ...
+        "Open a recording before exporting a waveform.", "No waveform");
+    return;
+end
+chosen = callbackContext.chooseOutputFile( ...
+    ["*.png", "PNG files (*.png)"], "ecg_waveform.png");
+if chosen.Cancelled
+    callbackContext.appendStatus("Waveform export cancelled.");
+    return;
+end
+filepath = string(chosen.Value);
+ecg_print.resultFiles.writeWaveformPng(request, filepath);
+[folder, name, extension] = fileparts(filepath);
+folder = outputFolder(folder);
+output = labkit.app.result.File( ...
+    "ecgWaveform", "primary", string(name) + string(extension), ...
+    MediaType="image/png");
+package = labkit.app.result.Package(Outputs={output}, ...
+    Inputs=applicationState.project.inputs, ...
+    Parameters=applicationState.project.parameters, ...
+    Summary=ecg_print.resultFiles.manifestSummary( ...
+    applicationState.project.results.lastAnalysis), ...
+    ManifestName="ecg_waveform.labkit.json");
+written = callbackContext.writeResultPackage(folder, package);
+applicationState.project.results.lastWaveformExport = struct( ...
+    "pngPath", filepath, "manifestPath", string(written.Value));
+callbackContext.appendStatus("Exported waveform PNG: " + filepath);
+end
+
+function folder = outputFolder(folder)
+folder = string(folder);
+if strlength(folder) == 0
+    folder = string(pwd);
+end
 end

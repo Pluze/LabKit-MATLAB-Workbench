@@ -1,6 +1,45 @@
-function state = exportSegments(state, context)
-if isempty(state.session.cache.measurements) || isempty(state.session.cache.measurements.perSegment), context.alert("Analyze a signal before exporting segment SNR.", "No segment SNR"); return; end
-chosen = context.chooseOutputFile(["*.csv", "CSV files (*.csv)"], "ecg_segment_snr.csv"); if chosen.Cancelled, return; end
-path = string(chosen.Value); writetable(ecg_print.resultFiles.analysisTable(state.session.cache.measurements.perSegment, state.project.parameters.smoothBeats), path);
-state.project.results.lastSegmentExport = struct("csvPath", path);
+function applicationState = exportSegments( ...
+        applicationState, callbackContext)
+%EXPORTSEGMENTS Write per-segment ECG measurements and a result manifest.
+measurements = applicationState.session.cache.measurements;
+if isempty(measurements) || isempty(measurements.perSegment)
+    callbackContext.alert( ...
+        "Analyze a signal before exporting segment SNR.", ...
+        "No segment SNR");
+    return;
+end
+chosen = callbackContext.chooseOutputFile( ...
+    ["*.csv", "CSV files (*.csv)"], "ecg_segment_snr.csv");
+if chosen.Cancelled
+    callbackContext.appendStatus("Segment SNR export cancelled.");
+    return;
+end
+filepath = string(chosen.Value);
+analysis = ecg_print.resultFiles.analysisTable( ...
+    measurements.perSegment, ...
+    applicationState.project.parameters.smoothBeats);
+writetable(analysis, filepath);
+[folder, name, extension] = fileparts(filepath);
+folder = outputFolder(folder);
+output = labkit.app.result.File( ...
+    "ecgSegmentSnr", "primary", string(name) + string(extension), ...
+    MediaType="text/csv");
+package = labkit.app.result.Package(Outputs={output}, ...
+    Inputs=applicationState.project.inputs, ...
+    Parameters=applicationState.project.parameters, ...
+    Summary=ecg_print.resultFiles.manifestSummary( ...
+    applicationState.project.results.lastAnalysis), ...
+    ManifestName="ecg_segment_snr.labkit.json");
+written = callbackContext.writeResultPackage(folder, package);
+applicationState.project.results.lastSegmentExport = struct( ...
+    "csvPath", filepath, "manifestPath", string(written.Value));
+callbackContext.appendStatus( ...
+    "Exported segment SNR CSV: " + filepath);
+end
+
+function folder = outputFolder(folder)
+folder = string(folder);
+if strlength(folder) == 0
+    folder = string(pwd);
+end
 end

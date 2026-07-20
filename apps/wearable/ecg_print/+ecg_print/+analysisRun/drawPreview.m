@@ -26,6 +26,7 @@ function drawOne(ax, model)
         case "template"
             drawTemplate(ax, model.request);
     end
+    makeDisplayGraphicsNonPickable(ax);
 end
 
 function drawWave(ax, request)
@@ -118,4 +119,16 @@ function drawWindow(ax, windowSec, limits, color)
         [limits(1) limits(1) limits(2) limits(2)], color, ...
         "FaceAlpha", 0.08, "EdgeColor", "none", ...
         "HitTest", "off", "PickableParts", "none");
+end
+
+function makeDisplayGraphicsNonPickable(ax)
+graphics = allchild(ax);
+for k = 1:numel(graphics)
+    if isprop(graphics(k), "HitTest")
+        graphics(k).HitTest = "off";
+    end
+    if isprop(graphics(k), "PickableParts")
+        graphics(k).PickableParts = "none";
+    end
+end
 end

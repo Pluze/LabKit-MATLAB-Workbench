@@ -173,6 +173,42 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
                 'AbsTol', 1e-12);
         end
 
+        function sanitizeParametersRestoresFiniteLegalAnalysisInputs(testCase)
+            setupLabKitTestPath();
+            parameters = struct( ...
+                "roiStart", NaN, "roiEnd", Inf, ...
+                "lowCut", -2, "highCut", 500, ...
+                "peakDistance", 0, "segmentWindow", NaN, ...
+                "templateTopN", 2.6, "smoothBeats", Inf);
+
+            actual = ecg_print.analysisRun.sanitizeParameters( ...
+                parameters, 100);
+
+            testCase.verifyEqual(actual.roiStart, 0);
+            testCase.verifyEqual(actual.roiEnd, 0);
+            testCase.verifyEqual(actual.lowCut, 0);
+            testCase.verifyEqual(actual.highCut, 45);
+            testCase.verifyGreaterThan(actual.peakDistance, 0);
+            testCase.verifyEqual(actual.segmentWindow, 0.7);
+            testCase.verifyEqual(actual.templateTopN, 3);
+            testCase.verifyEqual(actual.smoothBeats, 15);
+        end
+
+        function manifestSummaryExcludesPerSegmentTable(testCase)
+            setupLabKitTestPath();
+            lastAnalysis = struct( ...
+                "channel", "ECG", "eventCount", 4, ...
+                "segmentCount", 3, "summary", struct("mean", 2), ...
+                "perSegment", table((1:3).', ...
+                'VariableNames', {'Index'}));
+
+            summary = ecg_print.resultFiles.manifestSummary(lastAnalysis);
+
+            testCase.verifyFalse(isfield(summary, "perSegment"));
+            testCase.verifyEqual(summary.channel, "ECG");
+            testCase.verifyEqual(summary.eventCount, 4);
+        end
+
         function waveformPlotRequestPrefersFilteredSignalAndPeakCoordinates(testCase)
             setupLabKitTestPath();
 
