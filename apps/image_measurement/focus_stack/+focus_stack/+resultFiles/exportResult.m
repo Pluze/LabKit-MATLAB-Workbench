@@ -1,3 +1,4 @@
+% App-owned implementation for focus_stack.resultFiles.exportResult within the focus_stack product workflow.
 function applicationState = exportResult( ...
         applicationState, kind, callbackContext)
 %EXPORTRESULT Write one Focus Stack output and its standard result manifest.

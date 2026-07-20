@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.sessionControl.newSetup within the video_marker product workflow.
 function applicationState = newSetup(applicationState, callbackContext)
 %NEWSETUP Clear the current video, skeleton, and annotations after confirmation.
 choice = callbackContext.chooseOption( ...

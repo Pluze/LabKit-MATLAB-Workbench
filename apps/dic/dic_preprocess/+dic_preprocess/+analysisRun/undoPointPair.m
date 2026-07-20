@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.analysisRun.undoPointPair within the dic_preprocess product workflow.
 function applicationState = undoPointPair(applicationState, ~)
 reference = applicationState.project.annotations.matchReferencePoints;
 moving = applicationState.project.annotations.matchMovingPoints;

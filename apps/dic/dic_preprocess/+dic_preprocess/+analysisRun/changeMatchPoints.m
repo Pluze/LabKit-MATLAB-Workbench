@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.analysisRun.changeMatchPoints within the dic_preprocess product workflow.
 function state = changeMatchPoints(state, endpoints, ~)
 %CHANGEMATCHPOINTS Preserve ordered reference/moving pair acquisition.
 if ~iscell(endpoints) || numel(endpoints) ~= 2

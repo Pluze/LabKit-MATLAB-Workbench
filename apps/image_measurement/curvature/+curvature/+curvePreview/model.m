@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.curvePreview.model within the curvature product workflow.
 function value = model(imageData, points, fit, showDensePoints, scaleBar)
 %MODEL Build the shared live/export Curvature overlay model.
 value = struct( ...

@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.analysisRun.runFromWorkbench within the gait_analysis product workflow.
 function state = runFromWorkbench(state, context)
 %RUNFROMWORKBENCH Compute gait results from the rebuilt pose session.
 arguments

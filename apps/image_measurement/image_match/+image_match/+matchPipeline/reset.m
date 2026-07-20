@@ -1,3 +1,4 @@
+% App-owned implementation for image_match.matchPipeline.reset within the image_match product workflow.
 function applicationState = reset(applicationState, callbackContext)
 %RESET Clear every saved match step.
 steps = repmat(image_match.analysisRun.emptyStep(), 0, 1);

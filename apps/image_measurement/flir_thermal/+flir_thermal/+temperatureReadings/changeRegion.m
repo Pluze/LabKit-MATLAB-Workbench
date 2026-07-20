@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.temperatureReadings.changeRegion within the flir_thermal product workflow.
 function state=changeRegion(state,position,context)
 %CHANGEREGION Store the chosen thermal ROI and its configured statistic.
 item=state.session.cache.currentItem; position=double(position(:).');

@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.testRun.runComparisons within the ttest_wizard product workflow.
 function state = runComparisons(state, context)
 %RUNCOMPARISONS Compute every first-group comparison from current settings.
 %

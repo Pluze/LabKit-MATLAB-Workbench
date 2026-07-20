@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.workbench.present within the video_marker product workflow.
 function view = present(state)
 %PRESENT Compose the complete Video Marker semantic snapshot.
 skeleton = state.project.annotations.skeleton;

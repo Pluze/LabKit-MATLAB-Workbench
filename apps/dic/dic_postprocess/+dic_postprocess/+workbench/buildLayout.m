@@ -1,3 +1,4 @@
+% App-owned implementation for dic_postprocess.workbench.buildLayout within the dic_postprocess product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Assemble DIC inputs, overlay controls, results, and exports.
 inputs = { ...

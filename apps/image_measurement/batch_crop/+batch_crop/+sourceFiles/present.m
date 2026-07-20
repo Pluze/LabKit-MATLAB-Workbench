@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.sourceFiles.present within the batch_crop product workflow.
 function view = present(applicationState)
 %PRESENT Describe crop-task navigation and current source.
 items = batch_crop.sourceFiles.workingItems( ...

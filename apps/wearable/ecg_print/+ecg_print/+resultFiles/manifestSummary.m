@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.resultFiles.manifestSummary within the ecg_print product workflow.
 function summary = manifestSummary(lastAnalysis)
 %MANIFESTSUMMARY Remove per-beat table data from ECG result provenance.
 % The returned scalar struct keeps compact counts and aggregate metrics that

@@ -1,3 +1,4 @@
+% App-owned implementation for cic.createSession within the cic product workflow.
 function session = createSession(project, context)
 %CREATESESSION Rebuild CIC's lazy selected preview from portable sources.
 arguments

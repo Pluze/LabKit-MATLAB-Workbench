@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.sourceFiles.present within the curvature product workflow.
 function view = present(imagePath, hasImage, pointCount)
 %PRESENT Describe the image-source status and curve point count.
 status = "No image loaded";

@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.sourceFiles.selectIndex within the batch_crop product workflow.
 function applicationState = selectIndex( ...
         applicationState, index, callbackContext)
 items = applicationState.project.inputs.items;

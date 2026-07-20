@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.resultFiles.chooseOutputFolder within the flir_thermal product workflow.
 function applicationState = chooseOutputFolder( ...
         applicationState, callbackContext)
 %CHOOSEOUTPUTFOLDER Select the durable FLIR export destination.

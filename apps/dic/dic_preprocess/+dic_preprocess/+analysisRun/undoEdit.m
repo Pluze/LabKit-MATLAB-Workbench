@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.analysisRun.undoEdit within the dic_preprocess product workflow.
 function applicationState = undoEdit(applicationState, callbackContext)
 %UNDOEDIT Restore the latest registration or crop snapshot.
 history = applicationState.project.annotations.history;

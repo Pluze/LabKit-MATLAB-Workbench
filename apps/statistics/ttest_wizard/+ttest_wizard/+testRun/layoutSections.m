@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.testRun.layoutSections within the ttest_wizard product workflow.
 function sections = layoutSections()
 %LAYOUTSECTIONS Build test settings and latest-result controls.
 %

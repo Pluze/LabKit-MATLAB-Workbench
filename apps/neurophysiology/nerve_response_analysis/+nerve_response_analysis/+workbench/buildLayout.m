@@ -1,3 +1,4 @@
+% App-owned implementation for nerve_response_analysis.workbench.buildLayout within the nerve_response_analysis product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Compose the five Nerve Response Analysis workflow pages.
 controls = { ...

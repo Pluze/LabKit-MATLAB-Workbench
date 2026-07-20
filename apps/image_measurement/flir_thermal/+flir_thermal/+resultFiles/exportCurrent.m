@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.resultFiles.exportCurrent within the flir_thermal product workflow.
 function applicationState = exportCurrent( ...
         applicationState, callbackContext)
 %EXPORTCURRENT Export the selected FLIR image and its numeric products.

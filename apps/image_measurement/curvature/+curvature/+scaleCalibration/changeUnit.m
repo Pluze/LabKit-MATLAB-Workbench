@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.scaleCalibration.changeUnit within the curvature product workflow.
 function applicationState = changeUnit( ...
         applicationState, unitName, callbackContext)
 %CHANGEUNIT Update the physical calibration unit.

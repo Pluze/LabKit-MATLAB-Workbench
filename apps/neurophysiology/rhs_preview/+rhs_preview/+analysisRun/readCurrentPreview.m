@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.readCurrentPreview within the rhs_preview product workflow.
 function [session, ok, logMessage] = readCurrentPreview( ...
         session, parameters, actionLabel, preserveRoi)
 %READCURRENTPREVIEW Read selected channels from the current transient window.

@@ -1,3 +1,4 @@
+% App-owned implementation for nerve_response_analysis.analysisRun.runSession within the nerve_response_analysis product workflow.
 function state = runSession(state, context)
 if isempty(state.session.cache.filterRecord)
     context.alert("Select a filter record first.", "Nerve response analysis");

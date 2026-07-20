@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.analysisRun.sanitizeOptions within the gait_analysis product workflow.
 function options = sanitizeOptions(options)
 %SANITIZEOPTIONS Replace invalid numeric UI values with App defaults.
 defaults = gait_analysis.analysisRun.defaultOptions();

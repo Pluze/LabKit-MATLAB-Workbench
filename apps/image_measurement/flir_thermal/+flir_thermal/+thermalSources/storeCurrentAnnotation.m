@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.thermalSources.storeCurrentAnnotation within the flir_thermal product workflow.
 function state=storeCurrentAnnotation(state,item)
 index=state.session.selection.currentIndex;
 if index<1||index>numel(state.project.inputs.sources),return,end

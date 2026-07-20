@@ -1,3 +1,4 @@
+% App-owned implementation for csc.workbench.present within the csc product workflow.
 function view = present(applicationState)
 %PRESENT Adapt CSC runtime state into choices, comparison, and named axes.
 items = applicationState.session.cache.items;

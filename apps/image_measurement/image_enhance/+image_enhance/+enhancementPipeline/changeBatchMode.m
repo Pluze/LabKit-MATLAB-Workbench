@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.enhancementPipeline.changeBatchMode within the image_enhance product workflow.
 function applicationState = changeBatchMode( ...
         applicationState, batchMode, callbackContext)
 %CHANGEBATCHMODE Switch between shared and per-image history.

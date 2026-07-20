@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.curveEdit.layoutSection within the curvature product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare curve-edit mode and point actions.
 actions = labkit.app.layout.group("curveEditActions", { ...

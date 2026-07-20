@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.skeletonSetup.moveUp within the video_marker product workflow.
 function state = moveUp(state, context)
 %MOVEUP Move the selected keypoint one position earlier.
 if state.session.cache.videoInfo.frameCount > 0

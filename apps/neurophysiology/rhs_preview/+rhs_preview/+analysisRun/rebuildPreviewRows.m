@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.rebuildPreviewRows within the rhs_preview product workflow.
 function session = rebuildPreviewRows(session, parameters, savedRows)
 %REBUILDPREVIEWROWS Reconcile indexed channels, protocol, and durable drafts.
 if nargin < 3 || ~istable(savedRows)

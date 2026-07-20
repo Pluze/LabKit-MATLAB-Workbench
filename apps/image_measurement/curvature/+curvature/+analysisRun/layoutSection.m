@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.analysisRun.layoutSection within the curvature product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare fit, length, and result export controls.
 section = labkit.app.layout.section("fitExport", "Fit + Export", { ...

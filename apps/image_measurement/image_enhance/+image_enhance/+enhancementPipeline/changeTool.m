@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.enhancementPipeline.changeTool within the image_enhance product workflow.
 function applicationState = changeTool( ...
         applicationState, toolKind, callbackContext)
 %CHANGETOOL Select one enhancement draft and its default values.

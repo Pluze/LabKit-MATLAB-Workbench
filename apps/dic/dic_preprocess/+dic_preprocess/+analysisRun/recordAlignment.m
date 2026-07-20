@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.analysisRun.recordAlignment within the dic_preprocess product workflow.
 function state = recordAlignment(state, transform, description)
 %RECORDALIGNMENT Persist one alignment step and replay the transient images.
 state.project = dic_preprocess.editHistory.appendEditHistory(state.project, description);

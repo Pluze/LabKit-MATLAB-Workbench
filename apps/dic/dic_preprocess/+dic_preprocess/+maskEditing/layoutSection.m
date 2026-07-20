@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.maskEditing.layoutSection within the dic_preprocess product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare ROI mask editing controls.
 section = labkit.app.layout.section("maskSection", "Mask ROI", { ...

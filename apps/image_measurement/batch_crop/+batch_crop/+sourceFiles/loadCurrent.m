@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.sourceFiles.loadCurrent within the batch_crop product workflow.
 function [applicationState, loaded] = loadCurrent( ...
         applicationState, callbackContext)
 %LOADCURRENT Lazily decode the selected crop task through resolved paths.

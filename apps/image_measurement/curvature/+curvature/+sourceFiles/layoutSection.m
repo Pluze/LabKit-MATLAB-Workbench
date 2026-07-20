@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.sourceFiles.layoutSection within the curvature product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare the single portable image source.
 image = labkit.app.layout.fileList("imageFile", ...

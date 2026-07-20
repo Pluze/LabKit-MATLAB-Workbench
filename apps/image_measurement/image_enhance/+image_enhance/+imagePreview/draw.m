@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.imagePreview.draw within the image_enhance product workflow.
 function draw(axesById, model)
 %DRAW Render the selected Image Enhance preview and display-only ROI.
 axesHandle = axesById.image;

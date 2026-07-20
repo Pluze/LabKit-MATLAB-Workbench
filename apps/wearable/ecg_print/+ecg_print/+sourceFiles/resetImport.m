@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.sourceFiles.resetImport within the ecg_print product workflow.
 function applicationState = resetImport( ...
         applicationState, ~, ~)
 %RESETIMPORT Mark decoded analysis stale after an import option changes.

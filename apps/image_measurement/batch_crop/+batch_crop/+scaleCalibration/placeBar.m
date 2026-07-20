@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.scaleCalibration.placeBar within the batch_crop product workflow.
 function applicationState = placeBar(applicationState, callbackContext)
 if ~batch_crop.sourceFiles.hasCurrentImage(applicationState)
     callbackContext.alert("Open an image before placing a scale bar.", ...

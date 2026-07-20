@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.displayMapping.changePalette within the flir_thermal product workflow.
 function applicationState = changePalette( ...
         applicationState, palette, callbackContext)
 %CHANGEPALETTE Normalize the thermal display palette.

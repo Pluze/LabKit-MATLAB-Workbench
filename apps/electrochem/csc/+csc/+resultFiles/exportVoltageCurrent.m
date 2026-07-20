@@ -1,3 +1,4 @@
+% App-owned implementation for csc.resultFiles.exportVoltageCurrent within the csc product workflow.
 function applicationState = exportVoltageCurrent( ...
         applicationState, callbackContext)
 %EXPORTVOLTAGECURRENT Write column-oriented CV data and provenance.

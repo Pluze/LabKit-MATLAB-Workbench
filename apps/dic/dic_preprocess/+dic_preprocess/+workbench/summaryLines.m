@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.workbench.summaryLines within the dic_preprocess product workflow.
 function lines = summaryLines(applicationState)
 %SUMMARYLINES Build the DIC preprocessing summary shown by workbench.present.
 % Input is canonical App state. Output is a string column containing source,

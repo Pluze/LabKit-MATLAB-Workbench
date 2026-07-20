@@ -1,3 +1,4 @@
+% App-owned implementation for dic_postprocess.analysisRun.refreshOutputs within the dic_postprocess product workflow.
 function applicationState = refreshOutputs( ...
         applicationState, ~, callbackContext)
 %REFRESHOUTPUTS Recompute prepared overlays after a display option changes.

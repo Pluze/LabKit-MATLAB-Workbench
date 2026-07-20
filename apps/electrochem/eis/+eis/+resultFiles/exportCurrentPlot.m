@@ -1,3 +1,4 @@
+% App-owned implementation for eis.resultFiles.exportCurrentPlot within the eis product workflow.
 function state = exportCurrentPlot(state, context)
 %EXPORTCURRENTPLOT Write the selected EIS X/Y overlay data and result package.
 arguments

@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.resultFiles.formatChanged within the flir_thermal product workflow.
 function applicationState = formatChanged( ...
         applicationState, formatName, callbackContext)
 %FORMATCHANGED Normalize the rendered thermal-image export format.

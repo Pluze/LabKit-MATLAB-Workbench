@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.displayMapping.autoRange within the flir_thermal product workflow.
 function applicationState = autoRange( ...
         applicationState, callbackContext)
 %AUTORANGE Fit the selected image range to finite thermal values.

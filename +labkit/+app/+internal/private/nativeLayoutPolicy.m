@@ -1,3 +1,4 @@
+% Private App SDK native-adapter implementation for nativeLayoutPolicy; called only by the internal runtime.
 function policy = nativeLayoutPolicy()
 % Private native visual policy. Expected callers are App SDK MATLAB adapters.
 % The returned immutable-by-convention struct centralizes cross-App sizing,

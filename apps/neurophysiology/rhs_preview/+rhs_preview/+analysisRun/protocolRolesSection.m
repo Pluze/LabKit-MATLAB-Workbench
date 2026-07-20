@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.protocolRolesSection within the rhs_preview product workflow.
 function section = protocolRolesSection()
 %PROTOCOLROLESSECTION Declare the editable channel-role draft.
 roles = labkit.app.layout.dataTable("previewChannelsTable", ...

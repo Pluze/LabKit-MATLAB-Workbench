@@ -1,3 +1,4 @@
+% App-owned implementation for nerve_response_analysis.analysisRun.actionSection within the nerve_response_analysis product workflow.
 function section = actionSection()
 %ACTIONSECTION Declare analysis and reset actions.
 actions = labkit.app.layout.group("analysisActions", { ...

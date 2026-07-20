@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.workbench.present within the batch_crop product workflow.
 function view = present(applicationState)
 %PRESENT Compose the complete Batch Crop semantic snapshot.
 index = batch_crop.sourceFiles.currentIndex(applicationState);

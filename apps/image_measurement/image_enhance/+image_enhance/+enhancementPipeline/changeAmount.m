@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.enhancementPipeline.changeAmount within the image_enhance product workflow.
 function applicationState = changeAmount( ...
         applicationState, value, callbackContext)
 %CHANGEAMOUNT Update and preview the primary tool parameter.

@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.resultFiles.exportComparisons within the ttest_wizard product workflow.
 function state = exportComparisons(state, context)
 %EXPORTCOMPARISONS Choose and write a CSV of the latest comparison family.
 %

@@ -6,7 +6,8 @@ transactions, project documents, portable sources, resources, and cleanup.
 
 ## Definition And Launch
 
-Each entrypoint delegates to one immutable definition:
+Each App-owned `definition.m` is the single immutable product contract, and
+each entrypoint delegates to it:
 
 ```matlab
 function varargout = labkit_Example_app(varargin)

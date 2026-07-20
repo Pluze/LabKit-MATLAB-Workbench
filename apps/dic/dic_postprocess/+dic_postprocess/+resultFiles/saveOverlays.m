@@ -1,3 +1,4 @@
+% App-owned implementation for dic_postprocess.resultFiles.saveOverlays within the dic_postprocess product workflow.
 function applicationState = saveOverlays( ...
         applicationState, callbackContext)
 %SAVEOVERLAYS Write both prepared overlay PNGs and their result manifest.

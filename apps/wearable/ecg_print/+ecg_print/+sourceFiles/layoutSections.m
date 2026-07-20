@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.sourceFiles.layoutSections within the ecg_print product workflow.
 function sections = layoutSections()
 %LAYOUTSECTIONS Declare ECG recording and text-import controls.
 recording = labkit.app.layout.section("recordingSection", "Recording", { ...

@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.scaleCalibration.present within the video_marker product workflow.
 function view = present(state)
 %PRESENT Describe calibration controls and the reference interaction.
 hasVideo = ~isempty(state.session.cache.currentImage);

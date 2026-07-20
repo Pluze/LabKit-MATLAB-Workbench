@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.displayMapping.changeMinimum within the flir_thermal product workflow.
 function applicationState = changeMinimum( ...
         applicationState, minimumC, callbackContext)
 %CHANGEMINIMUM Update the current image's display minimum.

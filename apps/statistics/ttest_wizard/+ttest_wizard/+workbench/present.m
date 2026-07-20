@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.workbench.present within the ttest_wizard product workflow.
 function view = present(state)
 %PRESENT Compose feature-owned T-Test Wizard view fragments.
 %

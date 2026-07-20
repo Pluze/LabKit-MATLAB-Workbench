@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.scaleCalibration.settingsChanged within the batch_crop product workflow.
 function applicationState = settingsChanged(applicationState, ~, ~)
 parameters = applicationState.project.parameters;
 parameters.physicalWidth = positive(parameters.physicalWidth, eps);

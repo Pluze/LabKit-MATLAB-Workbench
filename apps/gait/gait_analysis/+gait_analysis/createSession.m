@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.createSession within the gait_analysis product workflow.
 function session = createSession(project, context)
 %CREATESESSION Rebuild decoded pose and transient analysis state from project.
 arguments

@@ -1,3 +1,4 @@
+% App-owned implementation for image_match.sourceFiles.referenceSelected within the image_match product workflow.
 function applicationState = referenceSelected( ...
         applicationState, listSelection, callbackContext)
 %REFERENCESELECTED Rebuild preview state for the selected reference image.

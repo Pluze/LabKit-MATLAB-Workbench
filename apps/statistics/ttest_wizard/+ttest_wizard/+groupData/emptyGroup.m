@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.groupData.emptyGroup within the ttest_wizard product workflow.
 function group = emptyGroup(label)
 %EMPTYGROUP Create one canonical empty T-Test Wizard group.
 %

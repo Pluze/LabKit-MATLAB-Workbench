@@ -1,3 +1,4 @@
+% App-owned implementation for eis.createSession within the eis product workflow.
 function session = createSession(project, context)
 %CREATESESSION Rebuild EIS overlay curves from portable source references.
 arguments

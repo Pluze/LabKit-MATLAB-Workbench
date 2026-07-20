@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.resultFiles.exportMarkers within the video_marker product workflow.
 function state = exportMarkers(state, context)
 %EXPORTMARKERS Write the self-describing marker CSV and result manifest.
 if isempty(state.session.cache.currentImage)

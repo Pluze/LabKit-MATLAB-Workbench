@@ -1,3 +1,4 @@
+% App-owned implementation for focus_stack.focusPreview.draw within the focus_stack product workflow.
 function draw(axesById, model)
 %DRAW Render the declared fused-image and focus-map axes.
 fused = axesById.fused;

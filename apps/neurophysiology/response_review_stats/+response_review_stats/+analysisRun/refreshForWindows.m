@@ -1,3 +1,4 @@
+% App-owned implementation for response_review_stats.analysisRun.refreshForWindows within the response_review_stats product workflow.
 function state = refreshForWindows(state, ~, context)
 state.project.parameters.baselineWindowSec = validRange( ...
     state.project.parameters.baselineWindowSec, [0.007 0.009]);

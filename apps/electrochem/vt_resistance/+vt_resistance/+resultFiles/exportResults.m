@@ -1,3 +1,4 @@
+% App-owned implementation for vt_resistance.resultFiles.exportResults within the vt_resistance product workflow.
 function applicationState = exportResults( ...
         applicationState, callbackContext)
 %EXPORTRESULTS Write the VT batch CSV and provenance manifest.

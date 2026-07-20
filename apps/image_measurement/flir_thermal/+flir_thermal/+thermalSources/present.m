@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.thermalSources.present within the flir_thermal product workflow.
 function view = present(sources, annotations, index, item)
 %PRESENT Describe source rows, navigation, and current image status.
 sourceCount = numel(sources);

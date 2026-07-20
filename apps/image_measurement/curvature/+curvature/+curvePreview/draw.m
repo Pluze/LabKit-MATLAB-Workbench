@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.curvePreview.draw within the curvature product workflow.
 function draw(axesById, model)
 %DRAW Render the image, curve, circle fit, residuals, and scale bar.
 ax = axesById.image;

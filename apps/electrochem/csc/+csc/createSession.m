@@ -1,3 +1,4 @@
+% App-owned implementation for csc.createSession within the csc product workflow.
 function session = createSession(project, context)
 %CREATESESSION Rebuild transient CSC curves from portable source references.
 arguments

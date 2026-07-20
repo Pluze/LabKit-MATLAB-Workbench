@@ -1,3 +1,4 @@
+% App-owned implementation for nerve_response_analysis.sourceFiles.protocolSection within the nerve_response_analysis product workflow.
 function section = protocolSection()
 %PROTOCOLSECTION Declare the optional protocol source.
 file = labkit.app.layout.fileList("protocolFile", ...

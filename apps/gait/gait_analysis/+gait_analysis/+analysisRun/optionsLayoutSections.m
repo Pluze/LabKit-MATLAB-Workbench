@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.analysisRun.optionsLayoutSections within the gait_analysis product workflow.
 function sections = optionsLayoutSections()
 %OPTIONSLAYOUTSECTIONS Declare gait roles, calibration, and detection rules.
 roles = labkit.app.layout.section("roleSection", "Keypoint Roles", { ...

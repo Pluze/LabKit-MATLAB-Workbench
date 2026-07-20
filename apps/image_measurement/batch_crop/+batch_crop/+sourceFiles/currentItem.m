@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.sourceFiles.currentItem within the batch_crop product workflow.
 function item = currentItem(applicationState)
 index = batch_crop.sourceFiles.currentIndex(applicationState);
 item = batch_crop.sourceFiles.workingItems( ...

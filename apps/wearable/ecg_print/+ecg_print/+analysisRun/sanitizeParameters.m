@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.analysisRun.sanitizeParameters within the ecg_print product workflow.
 function parameters = sanitizeParameters(parameters, sampleRate)
 %SANITIZEPARAMETERS Normalize ECG analysis controls before calculation.
 % Inputs are one App-owned parameter struct and the selected signal sample

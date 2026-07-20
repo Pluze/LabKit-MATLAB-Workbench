@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.editPreviewChannels within the rhs_preview product workflow.
 function applicationState = editPreviewChannels( ...
         applicationState, edit, callbackContext)
 %EDITPREVIEWCHANNELS Apply one typed table edit and refresh selected traces.

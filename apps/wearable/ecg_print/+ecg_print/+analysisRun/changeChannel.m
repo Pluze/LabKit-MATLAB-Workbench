@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.analysisRun.changeChannel within the ecg_print product workflow.
 function applicationState = changeChannel( ...
         applicationState, channel, callbackContext)
 %CHANGECHANNEL Adopt one decoded channel and invalidate dependent products.

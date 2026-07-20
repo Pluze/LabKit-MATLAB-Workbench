@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.skeletonSetup.selectConnection within the video_marker product workflow.
 function state = selectConnection(state, selection, ~)
 %SELECTCONNECTION Store the selected connection row.
 state.session.selection.selectedEdgeIndex = 0;

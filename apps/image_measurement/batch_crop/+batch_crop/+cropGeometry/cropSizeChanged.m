@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.cropGeometry.cropSizeChanged within the batch_crop product workflow.
 function applicationState = cropSizeChanged(applicationState, ~, callbackContext)
 parameters = applicationState.project.parameters;
 parameters.cropWidth = positiveInteger(parameters.cropWidth, 1);

@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.workbench.buildLayout within the ecg_print product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Assemble the visible ECG Print product workflow.
 sourceSections = ecg_print.sourceFiles.layoutSections();

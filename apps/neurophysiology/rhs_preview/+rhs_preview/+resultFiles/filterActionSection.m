@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.resultFiles.filterActionSection within the rhs_preview product workflow.
 function section = filterActionSection()
 %FILTERACTIONSECTION Declare filter refresh and export actions.
 actions = labkit.app.layout.group("filterActions", { ...

@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.thermalSources.next within the flir_thermal product workflow.
 function applicationState = next(applicationState, callbackContext)
 %NEXT Select and decode the following FLIR source.
 sources = applicationState.project.inputs.sources;

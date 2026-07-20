@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.scaleCalibration.changeReference within the video_marker product workflow.
 function state = changeReference(state, endpoints, ~)
 %CHANGEREFERENCE Store a measured pixel reference line.
 if state.session.cache.videoInfo.frameCount <= 0 || size(endpoints, 2) ~= 2

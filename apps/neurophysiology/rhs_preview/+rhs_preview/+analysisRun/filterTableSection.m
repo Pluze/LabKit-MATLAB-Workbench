@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.filterTableSection within the rhs_preview product workflow.
 function section = filterTableSection()
 %FILTERTABLESECTION Declare editable filter labels and comments.
 files = labkit.app.layout.dataTable("fileFilterTable", ...

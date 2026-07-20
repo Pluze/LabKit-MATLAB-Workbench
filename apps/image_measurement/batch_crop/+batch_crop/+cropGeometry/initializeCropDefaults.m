@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.cropGeometry.initializeCropDefaults within the batch_crop product workflow.
 function applicationState = initializeCropDefaults(applicationState)
 if applicationState.session.workflow.cropDefaultsInitialized || ...
         ~batch_crop.sourceFiles.hasCurrentImage(applicationState)

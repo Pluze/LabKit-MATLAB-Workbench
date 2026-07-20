@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.groupData.selectRows within the ttest_wizard product workflow.
 function state = selectRows(state, selection, context)
 %SELECTROWS Remember editable analysis-table cells selected by the user.
 %

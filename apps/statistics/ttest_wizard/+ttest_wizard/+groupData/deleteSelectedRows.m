@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.groupData.deleteSelectedRows within the ttest_wizard product workflow.
 function state = deleteSelectedRows(state, context)
 %DELETESELECTEDROWS Remove selected observations from durable group data.
 %

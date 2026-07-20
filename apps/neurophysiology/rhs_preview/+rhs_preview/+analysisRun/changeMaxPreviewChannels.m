@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.changeMaxPreviewChannels within the rhs_preview product workflow.
 function applicationState = changeMaxPreviewChannels( ...
         applicationState, value, callbackContext)
 %CHANGEMAXPREVIEWCHANNELS Normalize the channel cap and refresh the preview.

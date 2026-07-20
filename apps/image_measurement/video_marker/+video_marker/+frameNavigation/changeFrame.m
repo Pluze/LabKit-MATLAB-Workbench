@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.frameNavigation.changeFrame within the video_marker product workflow.
 function state = changeFrame(state, value, context)
 %CHANGEFRAME Decode the requested frame from the portable video source.
 info = state.session.cache.videoInfo;

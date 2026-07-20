@@ -1,3 +1,4 @@
+% App-owned implementation for figure_studio.resultFiles.exportGraphic within the figure_studio product workflow.
 function state = exportGraphic(state, callbackContext, format)
 %EXPORTGRAPHIC Write one styled graphic and its standard result manifest.
 arguments

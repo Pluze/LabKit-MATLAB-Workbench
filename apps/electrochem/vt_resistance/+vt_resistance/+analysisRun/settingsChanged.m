@@ -1,3 +1,4 @@
+% App-owned implementation for vt_resistance.analysisRun.settingsChanged within the vt_resistance product workflow.
 function applicationState = settingsChanged( ...
         applicationState, ~, callbackContext)
 %SETTINGSCHANGED Recompute every loaded item with shared VT parameters.

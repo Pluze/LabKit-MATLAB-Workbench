@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.displayMapping.changeColorMapping within the flir_thermal product workflow.
 function applicationState = changeColorMapping( ...
         applicationState, mapping, callbackContext)
 %CHANGECOLORMAPPING Normalize linear, logarithmic, or gamma display mapping.

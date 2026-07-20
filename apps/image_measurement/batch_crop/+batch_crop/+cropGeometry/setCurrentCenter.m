@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.cropGeometry.setCurrentCenter within the batch_crop product workflow.
 function applicationState = setCurrentCenter( ...
         applicationState, center, confirmed)
 index = batch_crop.sourceFiles.currentIndex(applicationState);

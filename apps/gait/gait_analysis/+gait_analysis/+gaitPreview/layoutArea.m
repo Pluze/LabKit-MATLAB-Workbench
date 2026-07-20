@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.gaitPreview.layoutArea within the gait_analysis product workflow.
 function area = layoutArea()
 %LAYOUTAREA Declare the three stacked Gait Preview axes.
 area = labkit.app.layout.plotArea("gaitAxes", ...

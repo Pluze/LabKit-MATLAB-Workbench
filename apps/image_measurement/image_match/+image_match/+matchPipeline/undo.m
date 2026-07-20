@@ -1,3 +1,4 @@
+% App-owned implementation for image_match.matchPipeline.undo within the image_match product workflow.
 function applicationState = undo(applicationState, callbackContext)
 %UNDO Remove the most recent match step.
 steps = applicationState.project.annotations.steps;

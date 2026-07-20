@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.resultPlot.present within the ttest_wizard product workflow.
 function view = present(results, parameters, resultsCurrent)
 %PRESENT Describe plot freshness, renderer model, and style availability.
 %

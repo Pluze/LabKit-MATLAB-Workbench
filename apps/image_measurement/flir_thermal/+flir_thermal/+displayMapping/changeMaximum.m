@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.displayMapping.changeMaximum within the flir_thermal product workflow.
 function applicationState = changeMaximum( ...
         applicationState, maximumC, callbackContext)
 %CHANGEMAXIMUM Update the current image's display maximum.

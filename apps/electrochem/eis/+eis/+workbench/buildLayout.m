@@ -1,3 +1,4 @@
+% App-owned implementation for eis.workbench.buildLayout within the eis product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Assemble EIS file-bound overlay controls.
 axes = eis.overlayPlot.axisItems();

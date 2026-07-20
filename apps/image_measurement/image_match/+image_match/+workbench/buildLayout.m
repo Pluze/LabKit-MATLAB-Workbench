@@ -1,3 +1,4 @@
+% App-owned implementation for image_match.workbench.buildLayout within the image_match product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Assemble the Image Match library, match flow, and preview.
 reference = labkit.app.layout.fileList( ...

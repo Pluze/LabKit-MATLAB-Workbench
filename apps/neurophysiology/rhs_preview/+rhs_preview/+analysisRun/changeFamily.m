@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.changeFamily within the rhs_preview product workflow.
 function applicationState = changeFamily( ...
         applicationState, value, callbackContext)
 %CHANGEFAMILY Rebuild rows and preview for a selected RHS channel family.

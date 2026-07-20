@@ -1,3 +1,4 @@
+% App-owned implementation for image_match.imagePreview.draw within the image_match product workflow.
 function draw(axesById, model)
 %DRAW Render one selected Image Match preview.
 axesHandle = axesById.image;

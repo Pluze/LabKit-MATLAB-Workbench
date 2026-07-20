@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.analysisRun.changeCropRectangle within the dic_preprocess product workflow.
 function applicationState = changeCropRectangle( ...
         applicationState, position, ~)
 %CHANGECROPRECTANGLE Store one managed square crop position.

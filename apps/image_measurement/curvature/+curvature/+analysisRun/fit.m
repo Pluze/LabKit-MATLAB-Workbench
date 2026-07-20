@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.analysisRun.fit within the curvature product workflow.
 function applicationState = fit(applicationState, callbackContext)
 %FIT Execute one fingerprinted circle-fit task.
 points = applicationState.project.annotations.curvePoints;

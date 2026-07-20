@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.scaleCalibration.changeReference within the curvature product workflow.
 function applicationState = changeReference( ...
         applicationState, endpoints, callbackContext)
 %CHANGEREFERENCE Commit the managed two-point reference measurement.

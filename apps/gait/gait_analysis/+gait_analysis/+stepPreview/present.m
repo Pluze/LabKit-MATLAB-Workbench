@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.stepPreview.present within the gait_analysis product workflow.
 function view = present(result, selectedStep)
 %PRESENT Describe result tables and selected-step navigation.
 [summary, steps] = resultTables(result);

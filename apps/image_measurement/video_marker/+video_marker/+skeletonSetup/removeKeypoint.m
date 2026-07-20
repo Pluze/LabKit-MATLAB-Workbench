@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.skeletonSetup.removeKeypoint within the video_marker product workflow.
 function state = removeKeypoint(state, context)
 %REMOVEKEYPOINT Remove the selected editable skeleton point.
 index = state.session.selection.selectedPointIndex;

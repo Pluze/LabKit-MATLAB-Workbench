@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.enhancementPipeline.applyDraft within the image_enhance product workflow.
 function state=applyDraft(state,context)
 %APPLYDRAFT Commit the selected enhancement draft to the active history.
 availability = ...

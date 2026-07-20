@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.resultFiles.exportResults within the gait_analysis product workflow.
 function applicationState = exportResults( ...
         applicationState, callbackContext)
 %EXPORTRESULTS Write gait CSV outputs and their result manifest.

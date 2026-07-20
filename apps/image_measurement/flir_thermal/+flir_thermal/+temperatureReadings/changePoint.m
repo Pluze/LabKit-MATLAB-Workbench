@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.temperatureReadings.changePoint within the flir_thermal product workflow.
 function state=changePoint(state,points,context)
 %CHANGEPOINT Store an app-owned manual temperature reading.
 item=state.session.cache.currentItem;

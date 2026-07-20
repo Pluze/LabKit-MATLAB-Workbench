@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.scaleCalibration.present within the curvature product workflow.
 function view = present(hasImage, calibration, parameters, editMode)
 %PRESENT Describe calibration values, edit mode, and bar availability.
 referenceEditing = editMode == "reference";

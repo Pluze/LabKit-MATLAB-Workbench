@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.resultFiles.saveFilterRecord within the rhs_preview product workflow.
 function applicationState = saveFilterRecord( ...
         applicationState, callbackContext)
 %SAVEFILTERRECORD Write manual file labels and a standard result manifest.

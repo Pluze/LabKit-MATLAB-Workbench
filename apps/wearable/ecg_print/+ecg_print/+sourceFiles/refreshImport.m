@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.sourceFiles.refreshImport within the ecg_print product workflow.
 function applicationState = refreshImport(applicationState, callbackContext)
 %REFRESHIMPORT Reparse the selected recording with current import settings.
 paths = callbackContext.resolveSourcePaths( ...

@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.enhancementPipeline.rebuildPreview within the image_enhance product workflow.
 function applicationState = rebuildPreview(applicationState)
 %REBUILDPREVIEW Recompute the selected display-resolution enhancement.
 cache = applicationState.session.cache;

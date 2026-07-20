@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.workbench.present within the ecg_print product workflow.
 function view = present(state)
 cache = state.session.cache;
 parameters = state.project.parameters;

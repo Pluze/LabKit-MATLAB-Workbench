@@ -1,3 +1,4 @@
+% App-owned implementation for image_match.matchPipeline.apply within the image_match product workflow.
 function applicationState = apply(applicationState, callbackContext)
 %APPLY Append the selected semantic match step to this project's pipeline.
 cache = applicationState.session.cache;

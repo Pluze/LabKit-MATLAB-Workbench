@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.sourceFiles.present within the gait_analysis product workflow.
 function view = present(sources, selection, filepath, pose)
 %PRESENT Describe the selected pose source and decoded summary.
 if isempty(sources)

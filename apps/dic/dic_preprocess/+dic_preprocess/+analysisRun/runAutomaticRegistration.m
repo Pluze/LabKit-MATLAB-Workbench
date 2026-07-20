@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.analysisRun.runAutomaticRegistration within the dic_preprocess product workflow.
 function state = runAutomaticRegistration(state, context)
 %RUNAUTOMATICREGISTRATION Estimate and record a rigid registration transform.
 cache = state.session.cache;

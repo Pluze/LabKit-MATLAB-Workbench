@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.sessionControl.saveAutosave within the video_marker product workflow.
 function applicationState = saveAutosave(applicationState, callbackContext)
 %SAVEAUTOSAVE Write the deterministic source-adjacent autosave document.
 videoPath = applicationState.session.cache.videoPath;

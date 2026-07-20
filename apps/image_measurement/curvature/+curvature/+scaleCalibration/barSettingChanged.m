@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.scaleCalibration.barSettingChanged within the curvature product workflow.
 function applicationState = barSettingChanged( ...
         applicationState, changedValue, callbackContext)
 %BARSETTINGCHANGED Normalize display-bar settings and invalidate its geometry.

@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.skeletonSetup.moveDown within the video_marker product workflow.
 function state = moveDown(state, context)
 %MOVEDOWN Move the selected keypoint one position later.
 if state.session.cache.videoInfo.frameCount > 0

@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.groupData.assignSelectedRows within the ttest_wizard product workflow.
 function state = assignSelectedRows(state, context)
 %ASSIGNSELECTEDROWS Move selected observations into the chosen group.
 %

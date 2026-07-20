@@ -1,3 +1,4 @@
+% App-owned implementation for vt_resistance.workbench.buildLayout within the vt_resistance product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Compose VT Resistance's file, analysis, plot, and export flow.
 choices = vt_resistance.analysisRun.analysisChoices();

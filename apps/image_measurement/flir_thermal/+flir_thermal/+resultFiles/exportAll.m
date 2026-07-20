@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.resultFiles.exportAll within the flir_thermal product workflow.
 function applicationState = exportAll( ...
         applicationState, callbackContext)
 %EXPORTALL Export every registered FLIR image and its numeric products.

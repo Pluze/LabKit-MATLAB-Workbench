@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.scaleCalibration.present within the batch_crop product workflow.
 function view = present(applicationState)
 %PRESENT Describe scale settings and current-image calibration.
 hasImage = batch_crop.sourceFiles.hasCurrentImage(applicationState);

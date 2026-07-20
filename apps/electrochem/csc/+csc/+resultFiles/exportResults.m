@@ -1,3 +1,4 @@
+% App-owned implementation for csc.resultFiles.exportResults within the csc product workflow.
 function applicationState = exportResults( ...
         applicationState, callbackContext)
 %EXPORTRESULTS Write the all-cycle CSC table and provenance manifest.

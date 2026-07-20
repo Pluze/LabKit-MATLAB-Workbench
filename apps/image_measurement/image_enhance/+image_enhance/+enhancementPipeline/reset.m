@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.enhancementPipeline.reset within the image_enhance product workflow.
 function applicationState = reset(applicationState, callbackContext)
 %RESET Clear the shared or selected per-image history.
 if isempty(image_enhance.analysisRun.activeSteps(applicationState))

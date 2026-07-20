@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.resultPlot.layoutSection within the ttest_wizard product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Build plot-style controls for the latest comparison family.
 %

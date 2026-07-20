@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.resultFiles.settingsChanged within the video_marker product workflow.
 function state = settingsChanged(state, ~, ~)
 %SETTINGSCHANGED Sanitize coordinate export range and invalidate its manifest.
 count = max(1, state.session.cache.videoInfo.frameCount);

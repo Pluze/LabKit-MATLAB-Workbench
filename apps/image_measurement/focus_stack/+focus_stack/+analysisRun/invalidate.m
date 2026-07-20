@@ -1,3 +1,4 @@
+% App-owned implementation for focus_stack.analysisRun.invalidate within the focus_stack product workflow.
 function state = invalidate(state, ~, ~)
 %INVALIDATE Discard a result after one fusion setting changes.
 state.session.cache.alignedImages = {};

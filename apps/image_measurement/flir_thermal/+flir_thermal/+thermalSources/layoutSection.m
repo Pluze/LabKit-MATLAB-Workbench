@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.thermalSources.layoutSection within the flir_thermal product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare the FLIR source library and image navigation.
 files = labkit.app.layout.fileList("thermalFiles", ...

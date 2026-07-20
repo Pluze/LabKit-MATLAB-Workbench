@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.workbench.buildLayout within the flir_thermal product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Assemble FLIR sources, display, readings, and result export.
 controls = { ...

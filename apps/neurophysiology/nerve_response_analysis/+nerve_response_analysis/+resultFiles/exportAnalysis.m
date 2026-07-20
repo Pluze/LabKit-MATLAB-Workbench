@@ -1,3 +1,4 @@
+% App-owned implementation for nerve_response_analysis.resultFiles.exportAnalysis within the nerve_response_analysis product workflow.
 function state = exportAnalysis(state, context)
 analysis = state.session.cache.analysis;
 if ~isstruct(analysis) || isempty(fieldnames(analysis))

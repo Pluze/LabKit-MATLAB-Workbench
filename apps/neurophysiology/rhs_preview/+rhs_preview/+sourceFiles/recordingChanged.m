@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.sourceFiles.recordingChanged within the rhs_preview product workflow.
 function applicationState = recordingChanged( ...
         applicationState, selection, callbackContext)
 %RECORDINGCHANGED Normalize family and durable rows after source rebuilding.

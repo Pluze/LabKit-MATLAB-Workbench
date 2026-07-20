@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.sourceFiles.adoptPose within the gait_analysis product workflow.
 function applicationState = adoptPose( ...
         applicationState, selection, callbackContext)
 %ADOPTPOSE Apply source-owned timing, scale, and role facts after import.

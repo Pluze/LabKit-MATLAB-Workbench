@@ -1,3 +1,4 @@
+% Private App SDK native-adapter implementation for applyTextFit; called only by the internal runtime.
 function applyTextFit(handle, varargin)
 % Private native adapter helper. Keeps complete reader-facing text available
 % when a component is narrower than its preferred size.

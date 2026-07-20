@@ -1,3 +1,4 @@
+% App-owned implementation for figure_studio.styleLibrary.refreshStyle within the figure_studio product workflow.
 function state = refreshStyle(state, changedId)
 %REFRESHSTYLE Reconcile one bound style edit with linked Figure Studio state.
 arguments

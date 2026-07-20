@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.resultFiles.exportSegments within the ecg_print product workflow.
 function applicationState = exportSegments( ...
         applicationState, callbackContext)
 %EXPORTSEGMENTS Write per-segment ECG measurements and a result manifest.

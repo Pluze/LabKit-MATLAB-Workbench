@@ -1,3 +1,4 @@
+% App-owned implementation for csc.workbench.buildLayout within the csc product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Compose the CSC source, comparison, plot, and export workflow.
 choices = csc.analysisRun.analysisChoices();

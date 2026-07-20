@@ -1,3 +1,4 @@
+% App-owned implementation for nerve_response_analysis.analysisRun.presentationModel within the nerve_response_analysis product workflow.
 function model = presentationModel(state)
 analysis = state.session.cache.analysis;
 hasAnalysis = isstruct(analysis) && ~isempty(fieldnames(analysis));

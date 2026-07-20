@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.sourceFiles.protocolSection within the rhs_preview product workflow.
 function section = protocolSection()
 %PROTOCOLSECTION Declare the optional protocol JSON selector.
 file = labkit.app.layout.fileList("protocolFile", ...

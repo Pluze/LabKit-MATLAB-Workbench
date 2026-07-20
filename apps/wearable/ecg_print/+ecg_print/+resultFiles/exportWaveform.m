@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.resultFiles.exportWaveform within the ecg_print product workflow.
 function applicationState = exportWaveform( ...
         applicationState, callbackContext)
 %EXPORTWAVEFORM Write the prepared ECG waveform and a result manifest.

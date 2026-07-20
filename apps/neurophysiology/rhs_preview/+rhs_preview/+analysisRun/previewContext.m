@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.previewContext within the rhs_preview product workflow.
 function context = previewContext(session, parameters)
 %PREVIEWCONTEXT Build the app-owned model consumed by preview calculations.
 context = struct( ...

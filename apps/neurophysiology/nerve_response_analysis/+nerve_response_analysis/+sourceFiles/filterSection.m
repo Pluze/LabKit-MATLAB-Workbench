@@ -1,3 +1,4 @@
+% App-owned implementation for nerve_response_analysis.sourceFiles.filterSection within the nerve_response_analysis product workflow.
 function section = filterSection()
 %FILTERSECTION Declare the required filter-record source.
 file = labkit.app.layout.fileList("sessionFile", ...

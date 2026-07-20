@@ -1,3 +1,4 @@
+% App-owned implementation for response_review_stats.analysisRun.actionSection within the response_review_stats product workflow.
 function section = actionSection()
 %ACTIONSECTION Declare metric refresh and whole-workflow reset actions.
 section = labkit.app.layout.section("actionsSection", "Actions", { ...

@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.resultFiles.layoutSection within the flir_thermal product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare output folder, image format, and export scope.
 actions = labkit.app.layout.group("exportActions", { ...

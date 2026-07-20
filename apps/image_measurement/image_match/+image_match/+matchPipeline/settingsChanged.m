@@ -1,3 +1,4 @@
+% App-owned implementation for image_match.matchPipeline.settingsChanged within the image_match product workflow.
 function applicationState = settingsChanged( ...
         applicationState, changedValue, callbackContext)
 %SETTINGSCHANGED Preview one bounded draft without committing history.

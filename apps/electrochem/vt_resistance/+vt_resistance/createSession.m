@@ -1,3 +1,4 @@
+% App-owned implementation for vt_resistance.createSession within the vt_resistance product workflow.
 function session = createSession(project, context)
 %CREATESESSION Rebuild VT Resistance's lazy selected preview.
 arguments

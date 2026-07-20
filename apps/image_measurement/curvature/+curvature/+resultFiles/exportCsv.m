@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.resultFiles.exportCsv within the curvature product workflow.
 function applicationState = exportCsv( ...
         applicationState, callbackContext)
 %EXPORTCSV Write curvature measurements and a standard result manifest.

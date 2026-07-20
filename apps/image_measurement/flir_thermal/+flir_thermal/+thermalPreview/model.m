@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.thermalPreview.model within the flir_thermal product workflow.
 function model = model(item, parameters, range)
 %MODEL Build the shared paired-axis FLIR preview model.
 values = [];

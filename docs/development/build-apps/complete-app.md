@@ -173,7 +173,8 @@ end
 ```
 
 `+workbench/present.m` is a short assembly boundary. It extracts exact inputs
-and composes feature fragments; it does not perform IO or calculation.
+and composes feature fragments with `Snapshot.include`; it does not perform IO
+or calculation.
 
 ```matlab
 function view = present(trace, gain)

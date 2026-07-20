@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.editRange within the rhs_preview product workflow.
 function applicationState = editRange( ...
         applicationState, range, ~)
 %EDITRANGE Commit one dragged ROI inside the current preview samples.

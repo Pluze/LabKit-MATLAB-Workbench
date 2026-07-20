@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.analysisRun.layoutSection within the dic_preprocess product workflow.
 function section = layoutSection()
 labels = dic_preprocess.analysisRun.registrationLabels();
 section = labkit.app.layout.section( ...

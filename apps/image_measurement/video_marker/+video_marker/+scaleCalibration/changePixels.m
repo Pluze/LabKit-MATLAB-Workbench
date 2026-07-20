@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.scaleCalibration.changePixels within the video_marker product workflow.
 function state = changePixels(state, value, ~)
 %CHANGEPIXELS Set the reference pixel length directly.
 calibration = state.project.annotations.calibration;

@@ -1,3 +1,4 @@
+% App-owned implementation for response_review_stats.resultFiles.chooseOutputFolder within the response_review_stats product workflow.
 function state = chooseOutputFolder(state, context)
 %CHOOSEOUTPUTFOLDER Select the explicit destination for metrics exports.
 startPath = state.session.workflow.outputFolder;

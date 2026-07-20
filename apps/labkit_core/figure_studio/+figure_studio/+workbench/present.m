@@ -1,3 +1,4 @@
+% App-owned implementation for figure_studio.workbench.present within the figure_studio product workflow.
 function view = present(state)
 hasFigure = ~isempty(state.session.cache.plotData);
 view = labkit.app.view.Snapshot() ...

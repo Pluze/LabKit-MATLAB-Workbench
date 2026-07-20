@@ -1,3 +1,4 @@
+% App-owned implementation for image_match.matchPipeline.refreshPreview within the image_match product workflow.
 function cache = refreshPreview(cache, steps)
 %REFRESHPREVIEW Replay explicit match steps into the transient preview cache.
 %

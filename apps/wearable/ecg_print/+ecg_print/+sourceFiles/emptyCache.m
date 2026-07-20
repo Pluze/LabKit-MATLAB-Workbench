@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.sourceFiles.emptyCache within the ecg_print product workflow.
 function cache = emptyCache()
 %EMPTYCACHE Create the transient ECG recording and analysis cache.
 % Expected callers are createSession and parse-recovery callbacks. The

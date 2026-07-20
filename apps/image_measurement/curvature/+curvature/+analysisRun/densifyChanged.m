@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.analysisRun.densifyChanged within the curvature product workflow.
 function applicationState = densifyChanged( ...
         applicationState, enabled, callbackContext)
 %DENSIFYCHANGED Normalize the fit sampling mode and invalidate results.

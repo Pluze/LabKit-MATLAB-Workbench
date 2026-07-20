@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.sourceLibrary.selectPreview within the image_enhance product workflow.
 function applicationState = selectPreview( ...
         applicationState, listSelection, callbackContext)
 %SELECTPREVIEW Lazily decode and present the selected portable source.

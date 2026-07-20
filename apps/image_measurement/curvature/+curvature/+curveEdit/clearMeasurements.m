@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.curveEdit.clearMeasurements within the curvature product workflow.
 function applicationState = clearMeasurements(applicationState)
 %CLEARMEASUREMENTS Invalidate curve-derived results and export evidence.
 applicationState.project.results.fit = ...

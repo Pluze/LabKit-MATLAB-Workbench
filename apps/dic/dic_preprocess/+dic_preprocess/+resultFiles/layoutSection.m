@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.resultFiles.layoutSection within the dic_preprocess product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare current-pair and ROI mask exports.
 section = labkit.app.layout.section("resultsSection", "Results", { ...

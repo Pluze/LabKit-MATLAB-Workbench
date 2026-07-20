@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.scaleCalibration.toggleReferenceEditing within the batch_crop product workflow.
 function applicationState = toggleReferenceEditing( ...
         applicationState, callbackContext)
 if ~batch_crop.sourceFiles.hasCurrentImage(applicationState)

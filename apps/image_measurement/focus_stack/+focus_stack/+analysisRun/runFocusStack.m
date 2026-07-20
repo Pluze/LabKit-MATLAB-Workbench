@@ -1,3 +1,4 @@
+% App-owned implementation for focus_stack.analysisRun.runFocusStack within the focus_stack product workflow.
 function state = runFocusStack(state, context)
 %RUNFOCUSSTACK Compute one deterministic fusion from the rebuilt source cache.
 images = state.session.cache.images;

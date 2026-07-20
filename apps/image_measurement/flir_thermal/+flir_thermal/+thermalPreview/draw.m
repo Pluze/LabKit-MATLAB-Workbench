@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.thermalPreview.draw within the flir_thermal product workflow.
 function draw(axesById, model)
 %DRAW Render the clean thermal image, readings, and dedicated scale axis.
 drawThermalImage(axesById.thermalImage, model);

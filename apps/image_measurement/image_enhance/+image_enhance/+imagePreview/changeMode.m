@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.imagePreview.changeMode within the image_enhance product workflow.
 function applicationState = changeMode( ...
         applicationState, mode, callbackContext)
 %CHANGEMODE Select the original, enhanced, or before/after preview.

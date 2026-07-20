@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.scrollWindow within the rhs_preview product workflow.
 function applicationState = scrollWindow( ...
         applicationState, scrollEvent, callbackContext)
 %SCROLLWINDOW Zoom the lazily decoded window around the pointer anchor.

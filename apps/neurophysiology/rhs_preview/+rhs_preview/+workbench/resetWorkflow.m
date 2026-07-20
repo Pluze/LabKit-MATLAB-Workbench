@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.workbench.resetWorkflow within the rhs_preview product workflow.
 function applicationState = resetWorkflow( ...
         applicationState, callbackContext)
 %RESETWORKFLOW Restore a new RHS Preview project and transient session.

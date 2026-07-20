@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.markerEditing.clear within the video_marker product workflow.
 function state = clear(state, context)
 %CLEAR Remove every point on the active frame.
 if state.session.cache.videoInfo.frameCount <= 0

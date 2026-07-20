@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.groupData.layoutSection within the ttest_wizard product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Build controls that create, move, and delete observations.
 %

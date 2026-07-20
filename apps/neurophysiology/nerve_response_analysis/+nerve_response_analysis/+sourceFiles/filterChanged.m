@@ -1,3 +1,4 @@
+% App-owned implementation for nerve_response_analysis.sourceFiles.filterChanged within the nerve_response_analysis product workflow.
 function state = filterChanged(state, selection, context)
 %FILTERCHANGED Record reader-facing filter selection state after rebuild.
 arguments

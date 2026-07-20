@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.testRun.present within the ttest_wizard product workflow.
 function view = present(groups, results, options, resultsCurrent)
 %PRESENT Describe test readiness and the latest comparison family.
 %

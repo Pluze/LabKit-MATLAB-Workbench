@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.analysisRun.applyPointAlignment within the dic_preprocess product workflow.
 function state = applyPointAlignment(state, context)
 reference = state.project.annotations.matchReferencePoints;
 moving = state.project.annotations.matchMovingPoints;

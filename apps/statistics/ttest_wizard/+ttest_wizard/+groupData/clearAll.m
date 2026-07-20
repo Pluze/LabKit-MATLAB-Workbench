@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.groupData.clearAll within the ttest_wizard product workflow.
 function state = clearAll(state, context)
 %CLEARALL Remove every analysis group and reset related transient choices.
 %

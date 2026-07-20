@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.sourceFiles.filterSection within the rhs_preview product workflow.
 function section = filterSection()
 %FILTERSECTION Declare the editable RHS filter-file collection.
 files = labkit.app.layout.fileList("rhsFolder", ...

@@ -107,6 +107,13 @@ Current public-boundary checkpoint:
   behavior. The sequence-138 cross-component history record lists the facade
   and all 21 exact App version transitions; the generated site is synchronized
   from an isolated source tree that excludes unrelated Launcher edits.
+- The first full `origin/main`-to-branch `changedFast` routing pass exposed
+  documentation-only guardrail gaps rather than another runtime seam:
+  non-public App capability files and five private native adapters now carry
+  path-specific file-level ownership contracts, while the runtime and
+  complete-App guides name `definition.m` and `Snapshot.include` explicitly.
+  The four previously failing documentation methods pass; the full-diff gate
+  must be rebuilt from the new checkpoint and rerun.
 
 Still open before compatibility retirement:
 

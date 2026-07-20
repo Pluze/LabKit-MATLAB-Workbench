@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.sourceFiles.previewHeader within the ecg_print product workflow.
 function applicationState = previewHeader(applicationState, callbackContext)
 %PREVIEWHEADER Read the first lines of the selected text recording.
 paths = callbackContext.resolveSourcePaths( ...

@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.scaleCalibration.barSettingsChanged within the video_marker product workflow.
 function state = barSettingsChanged(state, ~, ~)
 %BARSETTINGSCHANGED Sanitize scale-bar settings and clear transient geometry.
 value = state.project.parameters.scaleBarLength;

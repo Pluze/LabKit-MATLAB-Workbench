@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.skeletonSetup.usePreset within the video_marker product workflow.
 function state = usePreset(state, context)
 %USEPRESET Replace the editable skeleton with the selected preset.
 if state.session.cache.videoInfo.frameCount > 0

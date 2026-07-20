@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.workbench.buildLayout within the batch_crop product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Assemble source selection, crop geometry, scale, and exports.
 controls = { ...

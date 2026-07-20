@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.sourceTable.workspaceTable within the ttest_wizard product workflow.
 function tableNode = workspaceTable()
 %WORKSPACETABLE Build the selectable source-table workspace node.
 %

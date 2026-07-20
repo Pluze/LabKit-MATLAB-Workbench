@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.resultFiles.present within the dic_preprocess product workflow.
 function view = present(applicationState)
 %PRESENT Describe DIC output availability.
 cache = applicationState.session.cache;

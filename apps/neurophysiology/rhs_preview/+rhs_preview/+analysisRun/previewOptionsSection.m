@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.previewOptionsSection within the rhs_preview product workflow.
 function section = previewOptionsSection()
 %PREVIEWOPTIONSSECTION Declare preview family, pan, size, and status controls.
 section = labkit.app.layout.section( ...

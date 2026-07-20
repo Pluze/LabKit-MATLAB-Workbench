@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.temperatureReadings.selectMeanMode within the flir_thermal product workflow.
 function applicationState = selectMeanMode( ...
         applicationState, callbackContext)
 %SELECTMEANMODE Configure dragged regions to report their mean temperature.

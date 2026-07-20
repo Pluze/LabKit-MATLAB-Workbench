@@ -1,3 +1,4 @@
+% App-owned implementation for focus_stack.focusPreview.present within the focus_stack product workflow.
 function view = present(state)
 %PRESENT Build the Focus Stack result summary and paired preview model.
 cacheResult = state.session.cache.result;

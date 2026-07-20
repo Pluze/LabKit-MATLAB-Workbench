@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.workbench.present within the gait_analysis product workflow.
 function view = present(applicationState)
 %PRESENT Compose the complete Gait Analysis semantic snapshot.
 pose = applicationState.session.cache.pose;

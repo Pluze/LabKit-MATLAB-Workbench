@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.sourceFiles.filterChanged within the rhs_preview product workflow.
 function applicationState = filterChanged( ...
         applicationState, selection, callbackContext)
 %FILTERCHANGED Persist label/comment ordering after bound source changes.

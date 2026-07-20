@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.workbench.present within the rhs_preview product workflow.
 function view = present(applicationState)
 %PRESENT Build the complete derived RHS Preview visible state.
 context = presentationContext(applicationState);

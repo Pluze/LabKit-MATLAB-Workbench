@@ -1,3 +1,4 @@
+% Private App SDK native-adapter implementation for installColumnResize; called only by the internal runtime.
 function separator = installColumnResize( ...
         figureHandle, grid, leftColumn, separatorColumn, varargin)
 % Private workbench splitter. Expected caller: MatlabPlatformAdapter.

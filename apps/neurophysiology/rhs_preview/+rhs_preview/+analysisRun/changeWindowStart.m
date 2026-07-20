@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.changeWindowStart within the rhs_preview product workflow.
 function applicationState = changeWindowStart( ...
         applicationState, value, callbackContext)
 %CHANGEWINDOWSTART Clamp the pan position and lazily read the new window.

@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.resultFiles.exportOverlay within the curvature product workflow.
 function applicationState = exportOverlay( ...
         applicationState, callbackContext)
 %EXPORTOVERLAY Write the shared preview model and a standard manifest.

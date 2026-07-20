@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.groupData.workspaceTable within the ttest_wizard product workflow.
 function tableNode = workspaceTable()
 %WORKSPACETABLE Build the editable analysis-data workspace node.
 %

@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.scaleCalibration.layoutSections within the batch_crop product workflow.
 function sections = layoutSections()
 %LAYOUTSECTIONS Declare global scale mode and current-image calibration.
 settings = labkit.app.layout.section("scaleSettings", "Scale Mode", { ...

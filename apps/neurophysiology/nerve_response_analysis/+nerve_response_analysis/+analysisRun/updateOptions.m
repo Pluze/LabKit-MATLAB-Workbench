@@ -1,3 +1,4 @@
+% App-owned implementation for nerve_response_analysis.analysisRun.updateOptions within the nerve_response_analysis product workflow.
 function state = updateOptions(state, ~, ~)
 state.project.parameters.maxRecordings = finiteNonnegative( ...
     state.project.parameters.maxRecordings);

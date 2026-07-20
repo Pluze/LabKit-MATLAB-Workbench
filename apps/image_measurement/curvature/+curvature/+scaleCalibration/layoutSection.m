@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.scaleCalibration.layoutSection within the curvature product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare reference calibration and display scale-bar controls.
 section = labkit.app.layout.section("scaleBarSection", "Scale Bar", { ...

@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.sourceFiles.hasCurrentImage within the batch_crop product workflow.
 function accepted = hasCurrentImage(applicationState)
 index = batch_crop.sourceFiles.currentIndex(applicationState);
 accepted = index >= 1 && ...

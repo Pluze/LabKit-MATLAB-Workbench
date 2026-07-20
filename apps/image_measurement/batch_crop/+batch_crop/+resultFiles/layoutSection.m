@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.resultFiles.layoutSection within the batch_crop product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare export format, destination, and write action.
 section = labkit.app.layout.section("exportSection", "Export", { ...

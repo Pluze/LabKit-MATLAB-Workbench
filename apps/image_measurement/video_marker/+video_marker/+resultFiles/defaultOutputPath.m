@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.resultFiles.defaultOutputPath within the video_marker product workflow.
 function filepath = defaultOutputPath(videoPath, filename)
 %DEFAULTOUTPUTPATH Return the source-adjacent Video Marker export path.
 % Expected callers are the marker and coordinate export callbacks. Inputs

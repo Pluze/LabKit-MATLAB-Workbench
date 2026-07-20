@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.workbench.present within the dic_preprocess product workflow.
 function view = present(state)
 %PRESENT Assemble DIC feature fragments at the only application-state view boundary.
 view = dic_preprocess.analysisRun.present(state) ...

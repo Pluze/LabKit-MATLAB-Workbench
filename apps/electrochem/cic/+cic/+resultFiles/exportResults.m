@@ -1,3 +1,4 @@
+% App-owned implementation for cic.resultFiles.exportResults within the cic product workflow.
 function applicationState = exportResults( ...
         applicationState, callbackContext)
 %EXPORTRESULTS Write the loaded CIC batch and its provenance manifest.

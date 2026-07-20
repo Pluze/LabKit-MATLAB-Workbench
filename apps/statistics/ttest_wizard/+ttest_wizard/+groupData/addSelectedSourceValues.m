@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.groupData.addSelectedSourceValues within the ttest_wizard product workflow.
 function state = addSelectedSourceValues(state, context)
 %ADDSELECTEDSOURCEVALUES Append selected numeric source cells to one group.
 %

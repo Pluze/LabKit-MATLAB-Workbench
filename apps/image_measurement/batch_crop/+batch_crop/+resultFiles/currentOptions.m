@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.resultFiles.currentOptions within the batch_crop product workflow.
 function options = currentOptions(applicationState)
 parameters = applicationState.project.parameters;
 padding = 0;

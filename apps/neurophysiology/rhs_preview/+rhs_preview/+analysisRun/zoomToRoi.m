@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.zoomToRoi within the rhs_preview product workflow.
 function applicationState = zoomToRoi( ...
         applicationState, callbackContext)
 %ZOOMTOROI Make the current ROI the lazily decoded preview window.

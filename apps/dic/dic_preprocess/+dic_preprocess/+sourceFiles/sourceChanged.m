@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.sourceFiles.sourceChanged within the dic_preprocess product workflow.
 function applicationState = sourceChanged( ...
         applicationState, selection, callbackContext)
 %SOURCECHANGED Reset pair-derived annotations after either source changes.

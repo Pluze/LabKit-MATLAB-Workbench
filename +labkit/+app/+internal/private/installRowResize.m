@@ -1,3 +1,4 @@
+% Private App SDK native-adapter implementation for installRowResize; called only by the internal runtime.
 function separator = installRowResize( ...
         figureHandle, grid, contentRow, separatorRow, varargin)
 % Private control-panel splitter. Expected caller: MatlabPlatformAdapter.

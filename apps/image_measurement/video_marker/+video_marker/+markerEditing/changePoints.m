@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.markerEditing.changePoints within the video_marker product workflow.
 function state = changePoints(state, points, context)
 %CHANGEPOINTS Persist all keypoint slots for the active video frame.
 if state.session.cache.videoInfo.frameCount <= 0

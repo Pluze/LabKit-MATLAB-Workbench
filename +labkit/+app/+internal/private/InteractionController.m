@@ -1,3 +1,4 @@
+% Private App SDK native-adapter implementation for InteractionController; called only by the internal runtime.
 function controller = InteractionController(figureHandle, targets, dispatch)
 % Private MATLAB adapter child that owns managed interaction editors.
 resources = containers.Map("KeyType", "char", "ValueType", "any");

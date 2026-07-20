@@ -1,3 +1,4 @@
+% App-owned implementation for response_review_stats.analysisRun.present within the response_review_stats product workflow.
 function view = present(model)
 hasInput = strlength(model.inputFile) > 0;
 view = labkit.app.view.Snapshot() ...

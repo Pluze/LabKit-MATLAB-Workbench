@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.applyPreviewContext within the rhs_preview product workflow.
 function session = applyPreviewContext(session, context)
 %APPLYPREVIEWCONTEXT Commit preview calculation outputs to transient session.
 session.view.windowStartSec = context.windowStartSec;

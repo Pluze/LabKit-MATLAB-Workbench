@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.scaleCalibration.placeBar within the video_marker product workflow.
 function state = placeBar(state, context)
 %PLACEBAR Build display-only scale-bar geometry for the current frame.
 calibration = state.project.annotations.calibration;

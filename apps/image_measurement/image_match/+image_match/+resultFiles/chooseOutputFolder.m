@@ -1,3 +1,4 @@
+% App-owned implementation for image_match.resultFiles.chooseOutputFolder within the image_match product workflow.
 function applicationState = chooseOutputFolder( ...
         applicationState, callbackContext)
 %CHOOSEOUTPUTFOLDER Select the matched-image batch destination.

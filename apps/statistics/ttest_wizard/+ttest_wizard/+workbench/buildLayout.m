@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.workbench.buildLayout within the ttest_wizard product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Compose the T-Test Wizard workflow capabilities.
 %

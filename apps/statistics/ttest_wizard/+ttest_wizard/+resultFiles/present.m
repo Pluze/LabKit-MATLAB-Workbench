@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.resultFiles.present within the ttest_wizard product workflow.
 function view = present(groups, results, lastDataExport, lastResultExport)
 %PRESENT Describe export availability and last destinations.
 %

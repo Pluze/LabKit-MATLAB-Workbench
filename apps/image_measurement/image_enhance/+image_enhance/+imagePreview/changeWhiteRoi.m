@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.imagePreview.changeWhiteRoi within the image_enhance product workflow.
 function applicationState = changeWhiteRoi( ...
         applicationState, position, callbackContext)
 %CHANGEWHITEROI Store one managed ROI in source-image coordinates.

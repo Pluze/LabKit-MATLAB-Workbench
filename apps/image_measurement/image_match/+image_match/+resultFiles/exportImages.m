@@ -1,3 +1,4 @@
+% App-owned implementation for image_match.resultFiles.exportImages within the image_match product workflow.
 function applicationState = exportImages( ...
         applicationState, callbackContext)
 %EXPORTIMAGES Apply committed matches and write CSV and LabKit manifests.

@@ -1,3 +1,4 @@
+% App-owned implementation for image_match.imagePreview.changeMode within the image_match product workflow.
 function applicationState = changeMode( ...
         applicationState, previewMode, callbackContext)
 %CHANGEMODE Store the selected preview mode declared by the plot area.

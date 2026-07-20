@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.analysisRun.analyze within the ecg_print product workflow.
 function applicationState = analyze(applicationState, callbackContext)
 %ANALYZE Filter, detect, segment, template, and measure the current ECG ROI.
 if isempty(applicationState.session.cache.signal)

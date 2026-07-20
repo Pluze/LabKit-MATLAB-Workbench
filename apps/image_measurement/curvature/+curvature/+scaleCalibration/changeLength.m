@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.scaleCalibration.changeLength within the curvature product workflow.
 function applicationState = changeLength( ...
         applicationState, referenceLength, callbackContext)
 %CHANGELENGTH Update the known physical reference length.

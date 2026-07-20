@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.cropGeometry.clearDerived within the batch_crop product workflow.
 function applicationState = clearDerived(applicationState, clearCanvas)
 if nargin < 2
     clearCanvas = false;

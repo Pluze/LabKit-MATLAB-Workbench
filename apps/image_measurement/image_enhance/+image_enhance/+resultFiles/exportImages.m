@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.resultFiles.exportImages within the image_enhance product workflow.
 function applicationState = exportImages( ...
         applicationState, callbackContext)
 %EXPORTIMAGES Render every source and write CSV and LabKit manifests.

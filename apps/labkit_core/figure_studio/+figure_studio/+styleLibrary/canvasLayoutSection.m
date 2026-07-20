@@ -1,3 +1,4 @@
+% App-owned implementation for figure_studio.styleLibrary.canvasLayoutSection within the figure_studio product workflow.
 function section = canvasLayoutSection()
 %CANVASLAYOUTSECTION Declare Figure Studio canvas and export-scale controls.
 section = labkit.app.layout.section("canvasSection", "Canvas", { ...

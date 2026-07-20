@@ -1,3 +1,4 @@
+% App-owned implementation for figure_studio.initializeWorkbench within the figure_studio product workflow.
 function state = initializeWorkbench(state, callbackContext)
 %INITIALIZEWORKBENCH Complete startup-only Figure Studio defaults.
 arguments

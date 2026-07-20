@@ -1,3 +1,4 @@
+% App-owned implementation for focus_stack.analysisRun.applyPreset within the focus_stack product workflow.
 function state = applyPreset(state, ~, context)
 %APPLYPRESET Apply the selected named fusion preset and clear its result.
 settings = focus_stack.analysisRun.fusionPresetSettings( ...

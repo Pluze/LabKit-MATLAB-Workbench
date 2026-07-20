@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.sourceFiles.protocolChanged within the rhs_preview product workflow.
 function applicationState = protocolChanged( ...
         applicationState, selection, callbackContext)
 %PROTOCOLCHANGED Persist the selected protocol and rebuild role rows.

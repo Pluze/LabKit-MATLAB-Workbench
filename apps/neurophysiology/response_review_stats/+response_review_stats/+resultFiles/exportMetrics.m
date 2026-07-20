@@ -1,3 +1,4 @@
+% App-owned implementation for response_review_stats.resultFiles.exportMetrics within the response_review_stats product workflow.
 function state = exportMetrics(state, context)
 %EXPORTMETRICS Write the rebuilt metrics table and its portable manifest.
 metrics = state.session.cache.metrics;

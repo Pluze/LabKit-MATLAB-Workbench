@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.workbench.buildLayout within the gait_analysis product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Assemble the visible Gait Analysis product surface.
 source = labkit.app.layout.tab("source", "Source", { ...

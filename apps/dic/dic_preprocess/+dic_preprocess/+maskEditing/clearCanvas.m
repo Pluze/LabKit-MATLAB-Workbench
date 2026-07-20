@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.maskEditing.clearCanvas within the dic_preprocess product workflow.
 function applicationState = clearCanvas(applicationState, callbackContext)
 if isempty(applicationState.project.annotations.maskImage)
     return

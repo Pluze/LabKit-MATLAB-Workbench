@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.temperatureReadings.selectHotMode within the flir_thermal product workflow.
 function applicationState = selectHotMode( ...
         applicationState, callbackContext)
 %SELECTHOTMODE Configure dragged regions to report their hottest pixel.

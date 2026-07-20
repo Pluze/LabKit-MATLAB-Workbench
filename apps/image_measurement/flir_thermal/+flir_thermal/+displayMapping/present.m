@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.displayMapping.present within the flir_thermal product workflow.
 function view = present( ...
         parameters, annotations, hasItem, range, bounds, preset)
 %PRESENT Describe display settings and range-action availability.

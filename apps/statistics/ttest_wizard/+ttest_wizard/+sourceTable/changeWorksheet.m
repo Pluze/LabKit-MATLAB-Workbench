@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.sourceTable.changeWorksheet within the ttest_wizard product workflow.
 function state = changeWorksheet(state, requested, context)
 %CHANGEWORKSHEET Load the requested worksheet and reset its cell selection.
 %

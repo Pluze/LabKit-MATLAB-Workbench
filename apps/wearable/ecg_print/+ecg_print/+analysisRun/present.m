@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.analysisRun.present within the ecg_print product workflow.
 function view = present(cache, parameters, ~, hasSignal)
 choices = string(cache.channelItems);
 value = string(parameters.channel);

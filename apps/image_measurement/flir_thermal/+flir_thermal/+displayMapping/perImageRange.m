@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.displayMapping.perImageRange within the flir_thermal product workflow.
 function applicationState = perImageRange( ...
         applicationState, callbackContext)
 %PERIMAGERANGE Apply an independent finite range to every registered image.

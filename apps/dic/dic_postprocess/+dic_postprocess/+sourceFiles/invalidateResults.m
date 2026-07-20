@@ -1,3 +1,4 @@
+% App-owned implementation for dic_postprocess.sourceFiles.invalidateResults within the dic_postprocess product workflow.
 function applicationState = invalidateResults( ...
         applicationState, ~, callbackContext)
 %INVALIDATERESULTS Clear outputs after any source collection changes.

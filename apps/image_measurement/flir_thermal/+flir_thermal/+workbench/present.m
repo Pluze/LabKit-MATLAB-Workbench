@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.workbench.present within the flir_thermal product workflow.
 function view = present(applicationState)
 %PRESENT Compose FLIR Thermal's complete semantic snapshot.
 project = applicationState.project;

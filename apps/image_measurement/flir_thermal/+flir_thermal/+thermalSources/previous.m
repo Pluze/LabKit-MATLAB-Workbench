@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.thermalSources.previous within the flir_thermal product workflow.
 function applicationState = previous( ...
         applicationState, callbackContext)
 %PREVIOUS Select and decode the preceding FLIR source.

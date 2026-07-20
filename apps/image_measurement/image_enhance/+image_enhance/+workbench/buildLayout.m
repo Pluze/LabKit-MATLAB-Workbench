@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.workbench.buildLayout within the image_enhance product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Assemble the Image Enhance library, tools, history, and preview.
 files = labkit.app.layout.fileList("sourceImages", ...

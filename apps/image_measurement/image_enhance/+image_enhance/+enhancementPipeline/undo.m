@@ -1,3 +1,4 @@
+% App-owned implementation for image_enhance.enhancementPipeline.undo within the image_enhance product workflow.
 function applicationState = undo(applicationState, callbackContext)
 %UNDO Remove the newest shared or selected per-image history step.
 steps = image_enhance.analysisRun.activeSteps(applicationState);

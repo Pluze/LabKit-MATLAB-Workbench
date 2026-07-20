@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.scaleCalibration.changeCalibrationField within the batch_crop product workflow.
 function applicationState = changeCalibrationField( ...
         applicationState, field, value)
 if ~batch_crop.sourceFiles.hasCurrentImage(applicationState)

@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.groupData.replaceFromTableEdit within the ttest_wizard product workflow.
 function state = replaceFromTableEdit(state, edit, context)
 %REPLACEFROMTABLEEDIT Validate and store the complete editable group table.
 %

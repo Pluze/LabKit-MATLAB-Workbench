@@ -1,3 +1,4 @@
+% App-owned implementation for nerve_response_analysis.resultFiles.actionSection within the nerve_response_analysis product workflow.
 function section = actionSection()
 %ACTIONSECTION Declare the analysis export action.
 section = labkit.app.layout.section( ...

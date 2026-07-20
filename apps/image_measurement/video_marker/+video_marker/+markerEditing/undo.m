@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.markerEditing.undo within the video_marker product workflow.
 function state = undo(state, context)
 %UNDO Remove the last point on the active frame.
 points = video_marker.markerEditing.currentPoints(state);

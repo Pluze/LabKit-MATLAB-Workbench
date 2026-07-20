@@ -1,3 +1,4 @@
+% App-owned implementation for chrono_overlay.resultFiles.exportSelectedCurves within the chrono_overlay product workflow.
 function state = exportSelectedCurves(state, context)
 %EXPORTSELECTEDCURVES Let the user write the selected curves and manifest.
 %

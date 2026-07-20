@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.videoPreview.draw within the video_marker product workflow.
 function draw(axesById, model)
 %DRAW Render one frame with display-only skeleton and scale overlays.
 ax = axesById.video;

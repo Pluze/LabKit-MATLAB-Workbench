@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.sourceFiles.layoutSection within the batch_crop product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare source collection and crop-task navigation.
 files = labkit.app.layout.fileList("images", ...

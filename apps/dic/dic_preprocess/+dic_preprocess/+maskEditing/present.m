@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.maskEditing.present within the dic_preprocess product workflow.
 function view = present(applicationState)
 %PRESENT Describe ROI mask controls and managed anchor interaction.
 annotations = applicationState.project.annotations;

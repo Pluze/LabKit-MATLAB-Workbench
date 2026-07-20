@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.resultFiles.protocolActionSection within the rhs_preview product workflow.
 function section = protocolActionSection()
 %PROTOCOLACTIONSECTION Declare protocol-draft export.
 actions = labkit.app.layout.group("protocolActions", { ...

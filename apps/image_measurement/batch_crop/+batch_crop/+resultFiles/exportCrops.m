@@ -1,3 +1,4 @@
+% App-owned implementation for batch_crop.resultFiles.exportCrops within the batch_crop product workflow.
 function applicationState = exportCrops(applicationState, callbackContext)
 %EXPORTCROPS Write crop files, CSV detail manifest, and result provenance.
 tasks = applicationState.project.inputs.items;

@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.analysisRun.optionsChanged within the gait_analysis product workflow.
 function applicationState = optionsChanged(applicationState, ~, ~)
 %OPTIONSCHANGED Sanitize options and invalidate derived gait results.
 applicationState.project.parameters = ...

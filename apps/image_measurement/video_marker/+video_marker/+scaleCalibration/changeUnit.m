@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.scaleCalibration.changeUnit within the video_marker product workflow.
 function state = changeUnit(state, value, ~)
 %CHANGEUNIT Set the physical calibration unit.
 calibration = state.project.annotations.calibration;

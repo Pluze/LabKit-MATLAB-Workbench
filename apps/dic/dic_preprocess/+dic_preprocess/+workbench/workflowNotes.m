@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.workbench.workflowNotes within the dic_preprocess product workflow.
 function lines = workflowNotes()
 %WORKFLOWNOTES Return the static DIC preprocessing workflow instructions.
 % Expected caller: workbench.present. Output is a string column and has no

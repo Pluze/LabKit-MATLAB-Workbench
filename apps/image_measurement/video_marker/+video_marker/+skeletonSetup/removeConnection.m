@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.skeletonSetup.removeConnection within the video_marker product workflow.
 function state = removeConnection(state, context)
 %REMOVECONNECTION Remove the selected editable skeleton edge.
 index = state.session.selection.selectedEdgeIndex;

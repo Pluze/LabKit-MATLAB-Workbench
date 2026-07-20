@@ -1,3 +1,4 @@
+% App-owned implementation for response_review_stats.workbench.present within the response_review_stats product workflow.
 function view = present(state)
 %PRESENT Compose feature-owned Response Review Stats view fragments.
 

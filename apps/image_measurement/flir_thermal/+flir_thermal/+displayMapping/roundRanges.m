@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.displayMapping.roundRanges within the flir_thermal product workflow.
 function applicationState = roundRanges( ...
         applicationState, callbackContext)
 %ROUNDRANGES Round every explicitly set range outward to whole Celsius.

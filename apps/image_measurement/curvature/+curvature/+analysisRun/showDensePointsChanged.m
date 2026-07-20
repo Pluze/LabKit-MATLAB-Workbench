@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.analysisRun.showDensePointsChanged within the curvature product workflow.
 function applicationState = showDensePointsChanged( ...
         applicationState, visible, callbackContext)
 %SHOWDENSEPOINTSCHANGED Update presentation-only dense-point visibility.

@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.curveEdit.present within the curvature product workflow.
 function view = present(hasImage, points, editMode)
 %PRESENT Describe curve-edit availability and dynamic action text.
 curveEditing = editMode == "curve";

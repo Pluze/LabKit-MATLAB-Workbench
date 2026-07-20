@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.temperatureReadings.present within the flir_thermal product workflow.
 function view = present(hasItem)
 %PRESENT Describe ROI mode-button availability.
 view = labkit.app.view.Snapshot() ...

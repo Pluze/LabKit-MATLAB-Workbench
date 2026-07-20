@@ -1,3 +1,4 @@
+% App-owned implementation for ecg_print.analysisRun.layoutSections within the ecg_print product workflow.
 function sections = layoutSections()
 %LAYOUTSECTIONS Declare channel, ROI, processing, and SNR controls.
 channel = labkit.app.layout.section( ...

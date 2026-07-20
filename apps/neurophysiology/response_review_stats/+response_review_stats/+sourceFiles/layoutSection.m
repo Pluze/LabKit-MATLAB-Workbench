@@ -1,3 +1,4 @@
+% App-owned implementation for response_review_stats.sourceFiles.layoutSection within the response_review_stats product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare source selection; session reconstruction loads metrics.
 section = labkit.app.layout.section("inputSection", "Input", { ...

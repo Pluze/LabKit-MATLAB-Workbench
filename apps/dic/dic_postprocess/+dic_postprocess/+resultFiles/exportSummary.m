@@ -1,3 +1,4 @@
+% App-owned implementation for dic_postprocess.resultFiles.exportSummary within the dic_postprocess product workflow.
 function applicationState = exportSummary( ...
         applicationState, callbackContext)
 %EXPORTSUMMARY Write the ROI strain summary CSV and result manifest.

@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.analysisRun.cancelPointMatching within the dic_preprocess product workflow.
 function applicationState = cancelPointMatching( ...
         applicationState, callbackContext)
 if applicationState.session.workflow.mode ~= "matching"

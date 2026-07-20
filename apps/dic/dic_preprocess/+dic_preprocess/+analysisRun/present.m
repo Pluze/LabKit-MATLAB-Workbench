@@ -1,3 +1,4 @@
+% App-owned implementation for dic_preprocess.analysisRun.present within the dic_preprocess product workflow.
 function view = present(applicationState)
 %PRESENT Describe registration, crop, and preview state.
 cache = applicationState.session.cache;

@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.sourceFiles.rhsSection within the rhs_preview product workflow.
 function section = rhsSection()
 %RHSSECTION Declare the primary RHS recording selector.
 file = labkit.app.layout.fileList("rhsFile", ...

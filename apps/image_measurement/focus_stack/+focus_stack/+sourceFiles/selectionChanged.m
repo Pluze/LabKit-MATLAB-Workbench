@@ -1,3 +1,4 @@
+% App-owned implementation for focus_stack.sourceFiles.selectionChanged within the focus_stack product workflow.
 function applicationState = selectionChanged( ...
         applicationState, listSelection, callbackContext)
 %SELECTIONCHANGED Reconcile source-derived result and output state.

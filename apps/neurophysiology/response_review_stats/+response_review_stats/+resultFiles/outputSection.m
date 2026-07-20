@@ -1,3 +1,4 @@
+% App-owned implementation for response_review_stats.resultFiles.outputSection within the response_review_stats product workflow.
 function section = outputSection()
 %OUTPUTSECTION Declare the explicit metrics destination controls.
 section = labkit.app.layout.section("outputsSection", "Outputs", { ...

@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.thermalSources.selectCurrent within the flir_thermal product workflow.
 function applicationState = selectCurrent( ...
         applicationState, selection, callbackContext)
 %SELECTCURRENT Reconcile annotations and decode the selected FLIR source.

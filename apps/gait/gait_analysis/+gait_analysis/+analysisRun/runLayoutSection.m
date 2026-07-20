@@ -1,3 +1,4 @@
+% App-owned implementation for gait_analysis.analysisRun.runLayoutSection within the gait_analysis product workflow.
 function section = runLayoutSection()
 %RUNLAYOUTSECTION Declare analysis execution and status controls.
 section = labkit.app.layout.section("runSection", "Run", { ...

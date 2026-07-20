@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.temperatureReadings.layoutSection within the flir_thermal product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare the three ROI statistic modes.
 labels = ...

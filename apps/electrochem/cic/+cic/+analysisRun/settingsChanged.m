@@ -1,3 +1,4 @@
+% App-owned implementation for cic.analysisRun.settingsChanged within the cic product workflow.
 function applicationState = settingsChanged( ...
         applicationState, ~, callbackContext)
 %SETTINGSCHANGED Recompute every loaded CIC item with current parameters.

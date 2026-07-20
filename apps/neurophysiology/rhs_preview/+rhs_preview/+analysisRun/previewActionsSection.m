@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.previewActionsSection within the rhs_preview product workflow.
 function section = previewActionsSection()
 %PREVIEWACTIONSSECTION Declare preview read, ROI zoom, and reset actions.
 actions = labkit.app.layout.group("rhsActions", { ...

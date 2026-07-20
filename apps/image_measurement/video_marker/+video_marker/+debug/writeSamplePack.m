@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.debug.writeSamplePack within the video_marker product workflow.
 function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Create a typed synthetic Video Marker reproduction.
 % Expected caller: diagnostic startup and focused sample-pack tests. The

@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.resultFiles.present within the flir_thermal product workflow.
 function view = present(parameters, hasItem, hasSources)
 %PRESENT Describe export destination, format, and action availability.
 view = labkit.app.view.Snapshot() ...

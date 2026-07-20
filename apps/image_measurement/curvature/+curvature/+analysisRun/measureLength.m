@@ -1,3 +1,4 @@
+% App-owned implementation for curvature.analysisRun.measureLength within the curvature product workflow.
 function applicationState = measureLength( ...
         applicationState, callbackContext)
 %MEASURELENGTH Execute one fingerprinted traced-length task.

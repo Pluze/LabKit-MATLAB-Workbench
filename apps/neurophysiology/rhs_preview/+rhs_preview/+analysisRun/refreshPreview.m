@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.analysisRun.refreshPreview within the rhs_preview product workflow.
 function applicationState = refreshPreview( ...
         applicationState, callbackContext)
 %REFRESHPREVIEW Reread the current bounded preview window.

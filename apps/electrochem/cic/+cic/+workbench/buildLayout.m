@@ -1,3 +1,4 @@
+% App-owned implementation for cic.workbench.buildLayout within the cic product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Compose the complete CIC file, analysis, plot, and export flow.
 choices = cic.analysisRun.analysisChoices();

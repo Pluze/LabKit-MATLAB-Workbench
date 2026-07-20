@@ -1,3 +1,4 @@
+% App-owned implementation for eis.workbench.present within the eis product workflow.
 function view = present(state)
 model = struct("items", state.session.cache.items, "options", state.project.parameters, "hasItems", ~isempty(state.session.cache.items));
 summary = "No files loaded.";

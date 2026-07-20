@@ -1,3 +1,4 @@
+% App-owned implementation for rhs_preview.resultFiles.saveProtocol within the rhs_preview product workflow.
 function applicationState = saveProtocol( ...
         applicationState, callbackContext)
 %SAVEPROTOCOL Write the channel-role draft and standard result manifest.

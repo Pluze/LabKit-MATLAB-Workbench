@@ -1,3 +1,4 @@
+% App-owned implementation for ttest_wizard.resultPlot.workspacePlot within the ttest_wizard product workflow.
 function plotNode = workspacePlot()
 %WORKSPACEPLOT Build the comparison-plot workspace node and renderer link.
 %

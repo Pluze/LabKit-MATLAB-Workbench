@@ -1,3 +1,4 @@
+% App-owned implementation for video_marker.videoSource.selectionChanged within the video_marker product workflow.
 function state = selectionChanged(state, ~, context)
 %SELECTIONCHANGED Initialize durable annotations for the selected video.
 state.session = video_marker.createSession(state.project, context);

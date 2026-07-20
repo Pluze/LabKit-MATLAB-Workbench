@@ -1,3 +1,4 @@
+% App-owned implementation for flir_thermal.resultFiles.writeSelection within the flir_thermal product workflow.
 function [payload, manifestPath, ok] = writeSelection( ...
         sources, annotations, parameters, callbackContext)
 %WRITESELECTION Decode, export, and register one FLIR result package.

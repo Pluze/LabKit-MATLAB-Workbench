@@ -1,3 +1,4 @@
+% App-owned implementation for dic_postprocess.workbench.present within the dic_postprocess product workflow.
 function view = present(applicationState)
 %PRESENT Map DIC state into one complete semantic snapshot fragment.
 project = applicationState.project;

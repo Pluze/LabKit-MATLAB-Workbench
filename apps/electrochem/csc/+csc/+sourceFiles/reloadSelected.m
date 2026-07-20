@@ -1,3 +1,4 @@
+% App-owned implementation for csc.sourceFiles.reloadSelected within the csc product workflow.
 function applicationState = reloadSelected( ...
         applicationState, callbackContext)
 %RELOADSELECTED Decode the currently selected portable DTA source again.

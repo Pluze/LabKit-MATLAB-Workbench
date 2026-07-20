@@ -1,3 +1,4 @@
+% App-owned implementation for focus_stack.workbench.buildLayout within the focus_stack product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Declare the Focus Stack workbench and its direct callbacks.
 files = labkit.app.layout.fileList("sourceImages", ...
