@@ -26,7 +26,9 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
                 "clearResourceScope", @clearResourceScope);
             context = labkit.app.CallbackContext.createForRuntime(app, backend);
             context.appendStatus("ready");
-            choice = context.chooseOption("Continue?", ["yes", "no"]);
+            choice = context.chooseOption("Continue?", ["yes", "no"], ...
+                Title="Continue operation?", DefaultChoice="no", ...
+                CancelChoice="no");
             inputFolder = context.chooseInputFolder("input");
             outputFolder = context.chooseOutputFolder("output");
             context.setResource("document", "reader", 42, []);
@@ -34,6 +36,16 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
             paths = context.resolveSourcePaths(struct(), ["first", "second"]);
 
             testCase.verifyEqual(choice.Value, "yes");
+            testCase.verifyEqual(store("choiceTitle"), ...
+                "Continue operation?");
+            testCase.verifyEqual(store("choiceDefault"), "no");
+            testCase.verifyEqual(store("choiceCancel"), "no");
+            testCase.verifyError(@() context.chooseOption( ...
+                "Continue?", ["yes", "no"], DefaultChoice="later"), ...
+                "labkit:app:contract:InvalidValue");
+            testCase.verifyError(@() context.chooseOption( ...
+                "Continue?", ["yes", "yes"]), ...
+                "labkit:app:contract:InvalidValue");
             testCase.verifyEqual(inputFolder.Value, "input/selected");
             testCase.verifyEqual(outputFolder.Value, "output/selected");
             testCase.verifyEqual(value, 42);
@@ -46,7 +58,11 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
                 store("status") = message;
             end
 
-            function result = choose(~, choices)
+            function result = choose(~, choices, title, ...
+                    defaultChoice, cancelChoice)
+                store("choiceTitle") = title;
+                store("choiceDefault") = defaultChoice;
+                store("choiceCancel") = cancelChoice;
                 result = labkit.app.dialog.Choice(choices(1));
             end
 

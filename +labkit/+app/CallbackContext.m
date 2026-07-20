@@ -8,7 +8,7 @@ classdef (Sealed) CallbackContext < handle
     %   context.diagnosticCheckpoint(id)
     %   context.diagnosticCount(id, count)
     %   context.alert(message, title)
-    %   result = context.chooseOption(prompt, choices)
+    %   result = context.chooseOption(prompt, choices, Name=Value)
     %   result = context.chooseInputFile(filters, startPath)
     %   result = context.chooseInputFolder(startPath)
     %   result = context.chooseOutputFile(filters, startPath)
@@ -46,6 +46,12 @@ classdef (Sealed) CallbackContext < handle
     %   title - Scalar reader-facing dialog title.
     %   prompt - Scalar reader-facing choice prompt.
     %   choices - Row string or cellstr array.
+    %   Title - Reader-facing choice-dialog title. Default:
+    %       "Choose an option".
+    %   DefaultChoice - Choice selected by pressing Enter. Default: the
+    %       first choice.
+    %   CancelChoice - Choice returned when the dialog is dismissed.
+    %       Default: the first choice.
     %   filters - Runtime-supported file-dialog filter value.
     %   startPath - Scalar starting file or folder path.
     %   filepath - Scalar project or recovery source or destination path.
@@ -142,10 +148,26 @@ classdef (Sealed) CallbackContext < handle
                  scalarText(title, "title")}, 0);
         end
 
-        function result = chooseOption(obj, prompt, choices)
+        function result = chooseOption(obj, prompt, choices, varargin)
             choices = textRow(choices, "choices");
+            if isempty(choices) || numel(unique(choices)) ~= numel(choices)
+                error("labkit:app:contract:InvalidValue", ...
+                    "CallbackContext choices must be nonempty and unique.");
+            end
+            options = labkit.app.internal.OptionParser.parse( ...
+                "labkit.app.CallbackContext.chooseOption", ...
+                ["Title", "DefaultChoice", "CancelChoice"], varargin{:});
+            title = scalarText(optionValue( ...
+                options, "Title", "Choose an option"), "title");
+            defaultChoice = choiceValue(optionValue( ...
+                options, "DefaultChoice", choices(1)), ...
+                choices, "DefaultChoice");
+            cancelChoice = choiceValue(optionValue( ...
+                options, "CancelChoice", choices(1)), ...
+                choices, "CancelChoice");
             result = obj.invoke("choose", "dialogs", ...
-                {scalarText(prompt, "prompt"), choices}, 1);
+                {scalarText(prompt, "prompt"), choices, title, ...
+                 defaultChoice, cancelChoice}, 1);
             requireChoice(result, "chooseOption");
         end
 
@@ -380,4 +402,19 @@ function requireChoice(value, operation)
         error("labkit:app:runtime:InvariantFailure", ...
             "CallbackContext %s backend must return Choice.", operation);
     end
+end
+
+function value = choiceValue(value, choices, name)
+value = scalarText(value, name);
+if ~any(choices == value)
+    error("labkit:app:contract:InvalidValue", ...
+        "CallbackContext %s must name one declared choice.", name);
+end
+end
+
+function value = optionValue(options, name, fallback)
+value = fallback;
+if isfield(options, name)
+    value = options.(name);
+end
 end
