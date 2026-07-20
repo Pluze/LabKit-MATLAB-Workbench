@@ -450,6 +450,9 @@ function api = discoverLabKitPublicApi(repoRoot)
         if contains(filepath, filesep + "private" + filesep)
             continue;
         end
+        if contains(filepath, filesep + "@")
+            continue;
+        end
         if isHiddenClassFile(filepath)
             continue;
         end

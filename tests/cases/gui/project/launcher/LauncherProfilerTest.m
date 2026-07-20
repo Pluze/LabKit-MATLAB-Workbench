@@ -102,7 +102,7 @@ function createProfileProbeApp(root)
 end
 
 function assertInfoContains(fig, expectedText)
-    ui = getappdata(fig, 'labkitUiRegistry');
+    ui = getappdata(fig, 'labkitLauncherView');
     value = string(ui.controls.statusLine.textArea.Value);
     assert(any(contains(value, expectedText)), ...
         'Launcher info text should include: %s', expectedText);

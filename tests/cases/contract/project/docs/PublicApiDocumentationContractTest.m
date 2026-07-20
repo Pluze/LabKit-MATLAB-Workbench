@@ -192,6 +192,7 @@ function files = publicApiContractFiles(root)
     for k = 1:numel(entries)
         filepath = string(fullfile(entries(k).folder, entries(k).name));
         if ~contains(filepath, filesep + "private" + filesep) && ...
+                ~contains(filepath, filesep + "@") && ...
                 ~isHiddenClassFile(filepath)
             files(end + 1, 1) = filepath;
         end

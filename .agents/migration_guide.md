@@ -145,11 +145,24 @@ Current public-boundary checkpoint:
   monolith or one-file-per-trivial-method fragmentation. All ten focused
   native-adapter GUI tests pass with the same qualified class name and no new
   App-facing API.
+- The Launcher migration now targets the replacement SDK directly: ordinary
+  launch and profiling call the App entrypoint without runtime injection,
+  while **Open Debug** passes one typed verbose diagnostic configuration,
+  persists an isolated artifact session, and requests the App-owned synthetic
+  sample. Static catalog discovery still reads the single `definition.m`
+  metadata owner so a damaged SDK does not prevent Launcher repair actions.
+- The first clean full-diff gate exposed one documentation-boundary defect in
+  the native-adapter class-folder split: external methods of a hidden internal
+  class were being treated as public APIs. Public help and site discovery now
+  exclude class-folder implementation methods consistently; the focused
+  documentation checks and rebuilt final gates remain to be rerun.
 
 Still open before compatibility retirement:
 
 - complete developer-led manual validation of native dialogs, editable tables,
   pointer interactions, long-lived resources, and representative exports;
+- complete visible Launcher debug-session validation and inspect one generated
+  diagnostic bundle;
 - run the final `changedFast` and stable `buildtool changed` repository gates,
   then record their exact evidence in the cross-component history record.
 

@@ -1,7 +1,7 @@
 function assertLauncherPackageCheckboxSelection(fig, guiHelpers)
 % Verify launcher package checkboxes update details and survive app refresh.
 
-    ui = getappdata(fig, 'labkitUiRegistry');
+    ui = getappdata(fig, 'labkitLauncherView');
     tableHandle = ui.controls.appTable.table;
     assert(tableHandle.ColumnEditable(1), ...
         'Launcher Package column should be editable.');
