@@ -19,8 +19,8 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
 
             testCase.verifyEqual(migrated.inputs.sources, ...
                 [rhsSource, protocolSource, filterSources]);
-            testCase.verifyEqual(definition.project.Version, 2);
-            testCase.verifyEqual(definition.project.Migrate, spec.Migrate);
+            testCase.verifyEqual(definition.ProjectSchema.Version, 2);
+            testCase.verifyEqual(definition.ProjectSchema.Migrate, spec.Migrate);
             testCase.verifyFalse(any(isfield(migrated.inputs, ...
                 {"rhsSource", "protocolSource", "filterSources"})));
         end
@@ -40,8 +40,8 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
         function summaryAndDetailsRenderDefaultState(testCase)
             setupLabKitTestPath();
 
-            rows = rhs_preview.userInterface.summaryTableData(struct());
-            lines = rhs_preview.userInterface.detailLines(struct());
+            rows = rhs_preview.analysisRun.summaryTableData(struct());
+            lines = rhs_preview.analysisRun.detailLines(struct());
 
             testCase.verifyTrue(iscell(rows));
             testCase.verifyGreaterThanOrEqual(size(rows, 1), 4);
@@ -59,7 +59,7 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
             S.info.channelFamilies.amplifier = struct( ...
                 "nativeName", {"C-001", "C-002"});
             S.rhsFile = fullfile("synthetic", "primary.rhs");
-            lines = rhs_preview.userInterface.detailLines(S);
+            lines = rhs_preview.analysisRun.detailLines(S);
 
             joined = string(strjoin(lines, newline));
             testCase.verifyTrue(contains(joined, "C-001"));
@@ -134,7 +134,8 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
             testCase.verifyEqual(height(rows), 2);
             testCase.verifyTrue(all(rows.label == "good"));
 
-            data = rhs_preview.userInterface.fileFilterTableData(struct("filterRows", rows));
+            data = rhs_preview.analysisRun.fileFilterTableData( ...
+                struct("filterRows", rows));
             data{2, 1} = "bad";
             data{2, 3} = "manual reject";
             rows = rhs_preview.analysisRun.applyFileFilterTableData(rows, data);
@@ -167,6 +168,23 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
             bounds = rhs_preview.analysisRun.previewWindowBounds(S);
             testCase.verifyFalse(bounds.hasIndexedDuration);
             testCase.verifyEqual(bounds.durationSec, 0);
+        end
+
+        function definitionDeclaresCompleteFivePageSurface(testCase)
+            setupLabKitTestPath();
+            definition = rhs_preview.definition();
+            expected = ["rhsFile", "rhsFolder", "channelFamily", ...
+                "windowStartPanner", "windowSummary", ...
+                "maxPreviewChannels", "statusField", ...
+                "refreshPreviewWindow", "zoomToRoiWindow", ...
+                "resetWorkflow", "protocolFile", "saveProtocol", ...
+                "previewChannelsTable", "refreshFolderFiles", ...
+                "saveFilterRecord", "fileFilterTable", ...
+                "summaryTable", "details", "logPanel", ...
+                "preview", "previewRange"];
+
+            testCase.verifyTrue(all(ismember(expected, ...
+                definition.TargetIds)));
         end
     end
 end

@@ -1,3 +1,42 @@
-function state = scrollWindow(state, delta, ~)
-state.session.view.windowStartSec = max(0, state.session.view.windowStartSec + double(delta));
+function applicationState = scrollWindow( ...
+        applicationState, scrollEvent, callbackContext)
+%SCROLLWINDOW Zoom the lazily decoded window around the pointer anchor.
+arguments
+    applicationState (1, 1) struct
+    scrollEvent (1, 1) labkit.app.event.IntervalScroll
+    callbackContext (1, 1) labkit.app.CallbackContext
+end
+parameters = applicationState.project.parameters;
+context = rhs_preview.analysisRun.previewContext( ...
+    applicationState.session, parameters);
+if ~rhs_preview.analysisRun.hasReadableChannel(context)
+    return;
+end
+bounds = rhs_preview.analysisRun.previewWindowBounds(context);
+if ~bounds.hasIndexedDuration
+    return;
+end
+oldDuration = max(context.windowDurationSec, bounds.minDurationSec);
+fraction = min(1, max(0, ...
+    (scrollEvent.Anchor - context.windowStartSec) / oldDuration));
+context.windowDurationSec = min( ...
+    rhs_preview.analysisRun.maxInteractivePreviewDurationSec(context), ...
+    max(bounds.minDurationSec, ...
+        oldDuration * (1.25 .^ scrollEvent.Count)));
+context.windowStartSec = scrollEvent.Anchor - ...
+    fraction * context.windowDurationSec;
+context.windowStartSec = ...
+    rhs_preview.analysisRun.clampWindowStartSec( ...
+        context.windowStartSec, context);
+applicationState.session = rhs_preview.analysisRun.applyPreviewContext( ...
+    applicationState.session, context);
+applicationState.session.view.autoWindow = false;
+[applicationState.session, ~, message] = ...
+    rhs_preview.analysisRun.readCurrentPreview( ...
+        applicationState.session, parameters, ...
+        "Zoom preview window", false);
+applicationState.session.workflow.statusMessage = "Preview zoom updated.";
+if strlength(message) > 0
+    callbackContext.appendStatus(message);
+end
 end

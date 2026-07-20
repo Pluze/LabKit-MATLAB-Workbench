@@ -8,7 +8,7 @@ component history.
 
 ## Active debt
 
-Last audited: 2026-07-19.
+Last audited: 2026-07-20.
 
 ```text
 toolbox-product-debt: none
@@ -55,7 +55,9 @@ Restored in the replacement SDK worktree:
 - workspace pages and initial selection, plot view modes, single/pair/stack
   axes layouts, axis titles and labels, unequal axes sizing, per-axis wheel
   zoom, viewport preservation, managed fixed-canvas resize reflow, and plot
-  pop-out/export behavior.
+  pop-out/export behavior;
+- typed interval-scroll payloads carrying the normalized data anchor and
+  scroll count instead of an undocumented runtime struct.
 
 Still open before compatibility retirement:
 
@@ -87,7 +89,8 @@ Current product audit progress:
 | Figure Studio | Complete | Figures/Export/Log tabs, FIG source actions, multiline status, quick exports, Canvas and Style panners, linked font/aspect behavior, fixed-canvas preview, axes handoff, package exports/manifests, and focused unit/GUI tests compared with `main` |
 | Response Review and Stats | Complete | Setup/Review/Export/Log tabs, numeric metric windows, status and action rows, nonduplicated summary/details, explicit output selection/clear, reset, default output subfolder, manifest name, Stats/Preview workspace, project restore, and focused unit/GUI tests compared with `main` |
 | Nerve Response Analysis | Complete | Setup/Protocol/Review/Export/Log tabs, filter and optional protocol sources, analysis limits/status/actions, nonduplicated summary/details, explicit output selection/clear, reset, default output subfolder, manifest name, Counts/Issues preview, source-identity validation, project restore, and focused unit/GUI tests compared with `main` |
-| Remaining 12 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
+| RHS Preview | Complete | Setup/Protocol/Filter/Review/Log tabs, primary/filter/protocol source panels, preview panner/summary/status/actions, editable role and filter tables, lazy refresh, ROI edit/zoom and typed anchored scroll, full review details, standard protocol/filter manifests, annotation/source identity persistence, reset/restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
+| Remaining 11 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
 
 The accepted public structure is capability-partitioned:
 `labkit.app.Definition` and `CallbackContext` form the small root; `layout`,

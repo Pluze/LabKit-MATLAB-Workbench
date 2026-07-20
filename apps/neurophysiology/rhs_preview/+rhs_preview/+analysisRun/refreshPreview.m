@@ -1,3 +1,11 @@
-function state = refreshPreview(state, ~)
-state.session = rhs_preview.createSession(state.project, labkit.app.CallbackContext());
+function applicationState = refreshPreview( ...
+        applicationState, callbackContext)
+%REFRESHPREVIEW Reread the current bounded preview window.
+[applicationState.session, ~, message] = ...
+    rhs_preview.analysisRun.readCurrentPreview( ...
+        applicationState.session, applicationState.project.parameters, ...
+        "Refresh preview window", false);
+if strlength(message) > 0
+    callbackContext.appendStatus(message);
+end
 end

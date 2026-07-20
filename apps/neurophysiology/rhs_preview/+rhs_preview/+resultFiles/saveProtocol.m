@@ -1,4 +1,53 @@
-function state = saveProtocol(state, context)
-chosen = context.chooseOutputFile(["*.json", "JSON files"], "rhs_protocol.json"); if chosen.Cancelled, return; end
-rhs_preview.resultFiles.writeProtocolJson(state.project.annotations.protocol, chosen.Value);
+function applicationState = saveProtocol( ...
+        applicationState, callbackContext)
+%SAVEPROTOCOL Write the channel-role draft and standard result manifest.
+rows = applicationState.session.cache.previewChannelRows;
+if ~istable(rows) || height(rows) == 0
+    applicationState.session.workflow.statusMessage = ...
+        "Select an RHS file before saving a protocol.";
+    return;
+end
+chosen = callbackContext.chooseOutputFile( ...
+    ["*.json", "Protocol JSON"], "rhs_protocol_draft.json");
+if chosen.Cancelled
+    return;
+end
+[folder, name, extension] = outputParts(chosen.Value);
+outputPath = fullfile(folder, name + extension);
+model = struct( ...
+    "previewChannelRows", rows, ...
+    "protocol", applicationState.session.cache.protocol);
+rhs_preview.resultFiles.writeProtocolJson(model, outputPath);
+protocol = rhs_preview.resultFiles.protocolJsonStruct(model);
+applicationState.project.annotations.protocol = protocol;
+applicationState.session.cache.protocol = protocol;
+output = labkit.app.result.File( ...
+    "rhsProtocol", "primary", name + extension, ...
+    MediaType="application/json");
+package = labkit.app.result.Package( ...
+    Outputs={output}, ...
+    Inputs=struct("sources", applicationState.project.inputs.sources), ...
+    Parameters=applicationState.project.parameters, ...
+    Summary=struct("channelRoleCount", ...
+        numel(protocol.channels.roles)), ...
+    ManifestName="rhs_protocol_draft.labkit.json");
+written = callbackContext.writeResultPackage(folder, package);
+applicationState.project.results.lastProtocolExport = struct( ...
+    "jsonPath", string(outputPath), ...
+    "manifestPath", string(written.Value));
+applicationState.session.workflow.statusMessage = ...
+    "Saved protocol draft.";
+applicationState.session.workflow.lastAction = "Saved protocol";
+callbackContext.appendStatus( ...
+    "Saved protocol JSON: " + string(outputPath));
+end
+
+function [folder, name, extension] = outputParts(path)
+[folder, name, extension] = fileparts(string(path));
+folder = string(folder);
+name = string(name);
+extension = string(extension);
+if strlength(folder) == 0
+    folder = string(pwd);
+end
 end

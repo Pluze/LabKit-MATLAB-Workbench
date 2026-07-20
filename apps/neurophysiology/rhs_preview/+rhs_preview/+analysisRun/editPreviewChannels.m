@@ -1,0 +1,26 @@
+function applicationState = editPreviewChannels( ...
+        applicationState, edit, callbackContext)
+%EDITPREVIEWCHANNELS Apply one typed table edit and refresh selected traces.
+arguments
+    applicationState (1, 1) struct
+    edit (1, 1) labkit.app.event.TableCellEdit
+    callbackContext (1, 1) labkit.app.CallbackContext
+end
+rows = rhs_preview.analysisRun.applyPreviewChannelsTableData( ...
+    applicationState.session.cache.previewChannelRows, edit.Data);
+applicationState.session.cache.previewChannelRows = rows;
+applicationState.project.annotations.previewChannelRows = rows;
+if applicationState.session.view.autoWindow
+    applicationState.session = rhs_preview.analysisRun.applyAdaptiveWindow( ...
+        applicationState.session, applicationState.project.parameters);
+end
+[applicationState.session, ~, message] = ...
+    rhs_preview.analysisRun.readCurrentPreview( ...
+        applicationState.session, applicationState.project.parameters, ...
+        "Updated preview channel window", false);
+applicationState.session.workflow.lastAction = ...
+    "Updated preview channels";
+if strlength(message) > 0
+    callbackContext.appendStatus(message);
+end
+end
