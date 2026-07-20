@@ -3,6 +3,8 @@ function draw(axesById, model)
 fused = axesById.fused;
 map = axesById.focusMap;
 cla(fused); cla(map);
+title(fused, "Fused all-in-focus image");
+title(map, "Focus-depth index map");
 if model.result.ok
     imshow(model.result.fused, "Parent", fused);
     title(fused, "Fused all-in-focus image");
@@ -12,9 +14,5 @@ if model.result.ok
 elseif ~isempty(model.images)
     imshow(model.images{1}, "Parent", fused);
     title(fused, "First source image");
-    text(map, 0.5, 0.5, "Run focus stack", HorizontalAlignment="center");
-else
-    text(fused, 0.5, 0.5, "Load focus images", HorizontalAlignment="center");
-    text(map, 0.5, 0.5, "Focus map", HorizontalAlignment="center");
 end
 end

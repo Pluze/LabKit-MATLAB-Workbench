@@ -30,11 +30,17 @@ catch ME
 end
 state.session.cache.alignedImages = aligned;
 state.session.cache.result = result;
+state.session.cache.currentFingerprint = task.fingerprint;
 state.session.workflow.registrationLines = lines;
 state.project.results.lastRun = compact(result);
 state.project.results.lastRunFingerprint = task.fingerprint;
 state.project.results.registrationLines = lines;
+state.project.results.lastExport = [];
+state.project.results.resultManifestPath = "";
 context.appendStatus(sprintf("Focus stack complete: %d images fused with %s.", result.inputCount, result.method));
+for line = lines(:).'
+    context.appendStatus(line);
+end
 end
 
 function value = compact(value)
