@@ -51,6 +51,21 @@ classdef UiExplicitContractValueTest < matlab.unittest.TestCase
                 "labkit:app:contract:InvalidValue");
         end
 
+        function intervalScrollIsTypedAndStrict(testCase)
+            setupLabKitTestPath();
+            event = labkit.app.event.IntervalScroll( ...
+                Anchor=0.25, Count=-2);
+
+            testCase.verifyEqual(event.Anchor, 0.25);
+            testCase.verifyEqual(event.Count, -2);
+            testCase.verifyError(@() labkit.app.event.IntervalScroll( ...
+                Anchor=0.25, Count=0), ...
+                "labkit:app:contract:InvalidValue");
+            testCase.verifyError(@() labkit.app.event.IntervalScroll( ...
+                Anchor=NaN, Count=1), ...
+                "labkit:app:contract:InvalidValue");
+        end
+
         function resultValuesValidatePathsAndUniqueness(testCase)
             setupLabKitTestPath();
             output = labkit.app.result.File( ...

@@ -13,8 +13,8 @@ function spec = interval(id, onChanged, varargin)
 %   Style - Scalar visual-option struct. Default: struct().
 %   Instruction - Scalar guidance text. Default: "".
 %   ViewportPolicy - "preserve" or "fit". Default: "preserve".
-%   OnScrolled - Optional callback state = callback(state,event,context).
-%       Default: [].
+%   OnScrolled - Optional callback state = callback(state,event,context),
+%       where event is labkit.app.event.IntervalScroll. Default: [].
 %
 % Outputs:
 %   spec - Immutable interaction declaration.
@@ -25,7 +25,8 @@ function spec = interval(id, onChanged, varargin)
 % Typical Call:
 %   spec = labkit.app.interaction.interval("window",@changeWindow);
 %
-% See also labkit.app.layout.plotArea
+% See also labkit.app.layout.plotArea,
+%   labkit.app.event.IntervalScroll
 options = labkit.app.internal.OptionParser.parse( ...
     "labkit.app.interaction.interval", ...
     ["Axis", "Style", "Instruction", "ViewportPolicy", "OnScrolled"], ...

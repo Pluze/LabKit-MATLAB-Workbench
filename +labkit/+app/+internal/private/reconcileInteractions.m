@@ -477,7 +477,8 @@ function editor = createIntervalEditor(runtime, spec, onChanged, onScroll)
         point = axesPoint();
         count = scrollCount(event);
         if count ~= 0
-            onScroll(struct("anchor", point, "count", count));
+            onScroll(labkit.app.event.IntervalScroll( ...
+                Anchor=point, Count=count));
         end
     end
 
