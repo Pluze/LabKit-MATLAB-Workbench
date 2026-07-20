@@ -19,7 +19,8 @@ classdef GuiLayoutCscTest < matlab.unittest.TestCase
                 "chooseOutputFile", @(~, ~) labkit.app.dialog.Choice( ...
                     fullfile(outputFolder, "csc_all_cycles.csv")), ...
                 "alert", @(~, ~) []);
-            runtime = csc.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                csc.definition(), [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
             assertCscLayout(h, fig);

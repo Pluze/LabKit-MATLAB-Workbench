@@ -22,7 +22,8 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
                 "chooseOutputFile", @(~, ~) labkit.app.dialog.Choice( ...
                     fullfile(outputFolder, "cic_results.csv")), ...
                 "alert", @(~, ~) []);
-            runtime = cic.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                cic.definition(), [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
             assertCicLayout(h, fig);

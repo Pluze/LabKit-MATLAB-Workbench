@@ -25,7 +25,8 @@ classdef GuiLayoutEisTest < matlab.unittest.TestCase
                 "chooseOutputFile", @(~, ~) ...
                     labkit.app.dialog.Choice(exportPath), ...
                 "alert", @(~, ~) []);
-            runtime = eis.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                eis.definition(), [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
             assertEisLayout(h, fig);

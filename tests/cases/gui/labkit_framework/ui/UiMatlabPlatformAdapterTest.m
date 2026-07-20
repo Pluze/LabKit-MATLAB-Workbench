@@ -5,7 +5,7 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             helpers = guiTestHelpers();
             helpers.assertUifigureAvailable();
             app = chronoLikeApplication();
-            runtime = app.createMatlabRuntime();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab(app);
             cleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
 
@@ -31,7 +31,7 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             helpers = guiTestHelpers();
             helpers.assertUifigureAvailable();
             app = chronoLikeApplication();
-            runtime = app.createMatlabRuntime();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab(app);
             cleanup = onCleanup(@() runtime.close());
             ax = component(runtime.figureHandle(), "preview.main");
             ax.XLim = [-1 4];
@@ -49,7 +49,8 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             helpers = guiTestHelpers();
             helpers.assertUifigureAvailable();
-            runtime = chronoLikeApplication().createMatlabRuntime();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                chronoLikeApplication());
             cleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
 
@@ -66,7 +67,7 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             helpers = guiTestHelpers();
             helpers.assertUifigureAvailable();
             app = chronoLikeApplication();
-            runtime = app.createMatlabRuntime();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab(app);
             cleanup = onCleanup(@() runtime.close());
             ax = component(runtime.figureHandle(), "preview.main");
 
@@ -83,7 +84,8 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             helpers = guiTestHelpers();
             helpers.assertUifigureAvailable();
-            runtime = chronoLikeApplication().createMatlabRuntime();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                chronoLikeApplication());
             cleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
 
@@ -123,7 +125,8 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             helpers = guiTestHelpers();
             helpers.assertUifigureAvailable();
-            runtime = interactionApplication().createMatlabRuntime();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                interactionApplication());
             cleanup = onCleanup(@() runtime.close());
             ax = component(runtime.figureHandle(), "preview.main");
 
@@ -139,7 +142,8 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             helpers = guiTestHelpers();
             helpers.assertUifigureAvailable();
-            runtime = pointSlotsApplication().createMatlabRuntime();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                pointSlotsApplication());
             cleanup = onCleanup(@() runtime.close());
 
             runtime.applyInteraction( ...
@@ -153,7 +157,8 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             helpers = guiTestHelpers();
             helpers.assertUifigureAvailable();
-            runtime = visualPolicyApplication().createMatlabRuntime();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                visualPolicyApplication());
             cleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
             testCase.verifyEmpty(findall(figure, ...
@@ -282,7 +287,8 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             helpers = guiTestHelpers();
             helpers.assertUifigureAvailable();
-            runtime = chronoLikeApplication().createMatlabRuntime();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                chronoLikeApplication());
             cleanup = onCleanup(@() runtime.close());
             filepath = string(tempname) + ".mat";
             cleanupFile = onCleanup(@() deleteIfPresent(filepath));

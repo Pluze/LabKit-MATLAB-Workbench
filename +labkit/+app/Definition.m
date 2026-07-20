@@ -312,11 +312,6 @@ classdef (Sealed) Definition
                 isequaln(candidate, binding), obj.SignalBindings));
         end
 
-        function runtime = createMatlabRuntime(obj, varargin)
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                obj, varargin{:});
-        end
-
         function plan = platformPlanForRuntime(obj)
             plan = obj.PlatformPlan;
         end

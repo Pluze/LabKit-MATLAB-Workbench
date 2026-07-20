@@ -24,7 +24,8 @@ classdef GuiLayoutImageMatchTest < matlab.unittest.TestCase
                 "chooseOutputFolder", @(~) ...
                     labkit.app.dialog.Choice(outputFolder), ...
                 "alert", @(~, ~) []);
-            runtime = image_match.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                image_match.definition(), [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
             assertImageMatchLayout(h, fig);

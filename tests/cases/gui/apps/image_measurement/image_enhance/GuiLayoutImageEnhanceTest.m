@@ -21,7 +21,8 @@ classdef GuiLayoutImageEnhanceTest < matlab.unittest.TestCase
                 "chooseOutputFolder", @(~) ...
                     labkit.app.dialog.Choice(outputFolder), ...
                 "alert", @(~, ~) []);
-            runtime = image_enhance.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                image_enhance.definition(), [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
             assertImageEnhanceLayout(h, fig);

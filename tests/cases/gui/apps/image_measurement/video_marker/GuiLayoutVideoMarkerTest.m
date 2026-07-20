@@ -5,7 +5,8 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             helpers = guiTestHelpers();
             helpers.assertUifigureAvailable();
-            runtime = video_marker.definition().createMatlabRuntime();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                video_marker.definition());
             cleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
 
@@ -101,7 +102,8 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
                 "choose", @(~, choices, ~, ~, ~) ...
                     labkit.app.dialog.Choice(choices(3)), ...
                 "alert", @(~, ~) []);
-            runtime = video_marker.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                video_marker.definition(), [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
 
             runtime.invokeAction("useSkeletonPreset");

@@ -22,7 +22,8 @@ classdef GuiLayoutTTestWizardTest < matlab.unittest.TestCase
             backend = struct( ...
                 "chooseOutputFile", @chooseOutput, ...
                 "alert", @(~, ~) []);
-            runtime = ttest_wizard.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                ttest_wizard.definition(), [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
             drawnow;

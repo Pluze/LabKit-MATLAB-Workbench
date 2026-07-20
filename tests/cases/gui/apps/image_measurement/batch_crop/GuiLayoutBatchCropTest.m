@@ -6,7 +6,8 @@ classdef GuiLayoutBatchCropTest < matlab.unittest.TestCase
             helpers = guiTestHelpers();
             helpers.assertUifigureAvailable();
             backend = struct("alert", @(~, ~) []);
-            runtime = batch_crop.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                batch_crop.definition(), [], backend);
             cleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
             ids = ["images", "duplicateImage", ...
@@ -64,7 +65,8 @@ classdef GuiLayoutBatchCropTest < matlab.unittest.TestCase
             imageData = syntheticCropImage();
             imwrite(imageData, sourcePath);
             backend = struct("alert", @(~, ~) []);
-            runtime = batch_crop.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                batch_crop.definition(), [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
 

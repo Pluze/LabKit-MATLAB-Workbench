@@ -31,7 +31,8 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
             imwrite(imageData, referencePath);
             imwrite(imageData, movingPath);
             backend = struct("alert", @(~, ~) []);
-            runtime = dic_preprocess.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                dic_preprocess.definition(), [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
 

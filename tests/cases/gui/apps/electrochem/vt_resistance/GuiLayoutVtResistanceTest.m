@@ -32,7 +32,8 @@ classdef GuiLayoutVtResistanceTest < matlab.unittest.TestCase
                     labkit.app.dialog.Choice(csvPath), ...
                 "alert", @(~, ~) []);
             app = vt_resistance.definition();
-            runtime = app.createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                app, [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
             fixtures = [ ...

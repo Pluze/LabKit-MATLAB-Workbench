@@ -29,7 +29,8 @@ classdef GuiLayoutFocusStackTest < matlab.unittest.TestCase
                 "chooseOutputFile", @(~, startPath) ...
                     labkit.app.dialog.Choice(startPath), ...
                 "alert", @(~, ~) []);
-            runtime = focus_stack.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                focus_stack.definition(), [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
             assertFocusStackLayout(h, fig);

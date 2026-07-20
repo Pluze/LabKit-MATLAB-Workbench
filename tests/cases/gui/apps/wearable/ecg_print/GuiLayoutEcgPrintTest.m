@@ -32,7 +32,8 @@ classdef GuiLayoutEcgPrintTest < matlab.unittest.TestCase
             backend = struct( ...
                 "chooseOutputFile", @chooseOutput, ...
                 "alert", @(~, ~) []);
-            runtime = ecg_print.definition().createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                ecg_print.definition(), [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
             h.assertStartupSucceeded(fig);

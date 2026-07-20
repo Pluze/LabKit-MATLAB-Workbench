@@ -24,7 +24,8 @@ classdef GuiLayoutGaitAnalysisTest < matlab.unittest.TestCase
                     labkit.app.dialog.Choice(outputFolder), ...
                 "alert", @(~, ~) []);
             app = gait_analysis.definition();
-            runtime = app.createMatlabRuntime([], backend);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                app, [], backend);
             runtimeCleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
             sampleContext = labkit.app.diagnostic.SampleContext( ...
