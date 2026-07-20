@@ -1,45 +1,53 @@
 % Expected caller: nerve_response_analysis.definition and unit tests.
-% tests. Input is a LabKit debug context. Output is a deterministic synthetic
+% tests. Input is a bounded diagnostic SampleContext. Output is a deterministic synthetic
 % filter-record/protocol/RHS sample pack. Side effects: writes anonymous debug
-% files and records a session manifest when available.
-function pack = writeSamplePack(debugLog)
+% files beneath the diagnostic root.
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write Nerve Response Analysis debug files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "nerve_response_analysis");
-    sampleFolder = fullfile(char(folders.sampleFolder), "nerve_response_analysis");
-    rhsFolder = fullfile(sampleFolder, "rhs");
-    ensureFolder(rhsFolder);
-
-    rhsA = string(fullfile(rhsFolder, "nerve_response_recording_001_debug.rhs"));
-    rhsB = string(fullfile(rhsFolder, "nerve_response_recording_002_debug.rhs"));
-    malformedRhs = string(fullfile(rhsFolder, "nerve_response_malformed_debug.rhs"));
-    filterRecordPath = string(fullfile(sampleFolder, "nerve_response_filter_record_debug.json"));
-    protocolPath = string(fullfile(sampleFolder, "nerve_response_protocol_debug.json"));
-    malformedFilterPath = string(fullfile(sampleFolder, "nerve_response_malformed_filter_record_debug.json"));
+    rhsA = sampleContext.samplePath( ...
+        "nerve_response_analysis/rhs/recording_001.rhs");
+    rhsB = sampleContext.samplePath( ...
+        "nerve_response_analysis/rhs/recording_002.rhs");
+    malformedRhs = sampleContext.samplePath( ...
+        "nerve_response_analysis/rhs/malformed.rhs");
+    filterRecordPath = sampleContext.samplePath( ...
+        "nerve_response_analysis/filter_record.json");
+    protocolPath = sampleContext.samplePath( ...
+        "nerve_response_analysis/protocol.json");
+    malformedFilterPath = sampleContext.samplePath( ...
+        "nerve_response_analysis/malformed_filter_record.json");
 
     channels = ["PrimaryChannel", "ReferenceChannel", "ReturnChannel", "AuxChannel"];
     writeSyntheticRhs(rhsA, channels, [210 980 1710], 18);
     writeSyntheticRhs(rhsB, channels, [300 1280], 16);
     writeTextFile(malformedRhs, ["not an rhs binary"; "boundary=malformed rhs"]);
     writeProtocol(protocolPath);
-    writeFilterRecord(filterRecordPath, [rhsA; rhsB], string(rhsFolder));
+    writeFilterRecord(filterRecordPath, [rhsA; rhsB], ...
+        string(fileparts(rhsA)));
     writeTextFile(malformedFilterPath, ["{""recordings"": "; "  ""not complete"""]);
 
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_NerveResponseAnalysis_app", ...
-        "description", "Anonymous nerve-response RHS/filter-record boundary pack for debug launch.", ...
-        "sampleFolder", string(sampleFolder), ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", struct( ...
-            "filterRecordJson", filterRecordPath, ...
-            "protocolJson", protocolPath, ...
-            "rhsFiles", [rhsA; rhsB]), ...
-        "boundaryFiles", struct( ...
-            "malformedFilterRecordJson", malformedFilterPath, ...
-            "malformedRhs", malformedRhs));
-    recordManifest(debugLog, manifest);
-    pack = manifest;
+    project = nerve_response_analysis.projectSpec().Create();
+    project.inputs.sources = [ ...
+        sampleContext.sourceRecord( ...
+            "filterRecord", "filterRecord", filterRecordPath, true), ...
+        sampleContext.sourceRecord( ...
+            "protocol", "protocol", protocolPath, false)];
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-nerve-response", ...
+        InitialProject=project, Artifacts={ ...
+            sampleContext.artifact( ...
+                "filterRecord", "filterRecord", filterRecordPath), ...
+            sampleContext.artifact("protocol", "protocol", protocolPath), ...
+            sampleContext.artifact("recording1", "recording", rhsA), ...
+            sampleContext.artifact("recording2", "recording", rhsB), ...
+            sampleContext.artifact("malformedFilter", "boundaryInput", ...
+                malformedFilterPath, Expectation="rejects"), ...
+            sampleContext.artifact("malformedRhs", "boundaryInput", ...
+                malformedRhs, Expectation="rejects")});
 end
 
 function writeFilterRecord(filepath, rhsFiles, rootFolder)
@@ -171,30 +179,6 @@ function writeQString(fid, value)
     fwrite(fid, uint16(value), "uint16");
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeJson(filepath, payload)
     fid = fopen(char(filepath), "w");
     if fid < 0
@@ -213,10 +197,4 @@ function writeTextFile(filepath, lines)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s\n", lines);
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end
