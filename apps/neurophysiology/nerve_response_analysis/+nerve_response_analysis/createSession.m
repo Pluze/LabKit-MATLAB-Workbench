@@ -31,11 +31,7 @@ function folder = defaultOutputFolder(filepath)
     if exist(folder, "dir") == 7
         return;
     end
-    try
-        [created, ~, ~] = mkdir(folder);
-    catch
-        created = false;
-    end
+    [created, ~, ~] = mkdir(folder);
     if ~created
         folder = parent;
     end
