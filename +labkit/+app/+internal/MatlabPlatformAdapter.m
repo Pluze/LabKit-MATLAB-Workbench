@@ -672,7 +672,19 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function applyText(~, component, value)
-            if isprop(component, "Text")
+            if isstruct(component.UserData) && ...
+                    isfield(component.UserData, "Status") && ...
+                    isfield(component.UserData, "Compact") && ...
+                    ~isempty(component.UserData.Status) && ...
+                    isvalid(component.UserData.Status)
+                if component.UserData.Compact
+                    component.UserData.Status.Value = char(string(value));
+                else
+                    component.UserData.Status.Value = cellstr(string(value));
+                end
+                applyTextFit(component.UserData.Status);
+                return
+            elseif isprop(component, "Text")
                 component.Text = value;
             elseif isprop(component, "Value")
                 component.Value = value;
