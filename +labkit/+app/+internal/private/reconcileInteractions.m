@@ -139,7 +139,11 @@ function controlled = createControlledInteraction(hub, id, spec)
     end
 
     function updatePointSlots(value)
-        withSuppression(@() editors{1}.setValue(value));
+        editorValue = struct( ...
+            "points", double(value), ...
+            "selectedIndex", 1, ...
+            "locked", false);
+        withSuppression(@() editors{1}.setValue(editorValue));
     end
 
     function setAnchorValue(targetEditor, value)
@@ -149,6 +153,10 @@ function controlled = createControlledInteraction(hub, id, spec)
 
     function emitValue(value, varargin)
         if ~suppressed
+            if spec.Kind == "pointSlots" && isstruct(value) && ...
+                    isfield(value, "points")
+                value = value.points;
+            end
             hub.dispatch(spec.Event, id, value, spec.ChangePolicy);
         end
     end

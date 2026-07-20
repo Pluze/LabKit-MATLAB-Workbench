@@ -13,5 +13,5 @@ function state=storeAll(state,items)
 for k=1:numel(items),state.session.selection.currentIndex=k;state=flir_thermal.thermalSources.storeCurrentAnnotation(state,items(k));end
 end
 function r=auto(item)
-v=double(item.values);r=[min(v,[],"all") max(v,[],"all")];if r(1)==r(2),r=r+[-.5 .5];end
+v=double(item.temperatureC);r=[min(v,[],"all") max(v,[],"all")];if r(1)==r(2),r=r+[-.5 .5];end
 end

@@ -627,7 +627,19 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                             view = view.limits(node.Id, config.Limits);
                         end
                         view = view.enabled(node.Id, config.Enabled);
-                    case {"rangeField", "slider"}
+                    case "rangeField"
+                        limits = config.Limits;
+                        if isempty(limits)
+                            limits = [0 1];
+                        end
+                        value = config.Value;
+                        if isempty(value)
+                            value = limits;
+                        end
+                        view = view.value(node.Id, value);
+                        view = view.limits(node.Id, limits);
+                        view = view.enabled(node.Id, config.Enabled);
+                    case "slider"
                         value = config.Value;
                         if strlength(config.Bind) > 0
                             value = getBoundValue(state, config.Bind);
