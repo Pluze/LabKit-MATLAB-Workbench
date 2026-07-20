@@ -5,7 +5,8 @@ function node = group(id, children, varargin)
 %   node = labkit.app.layout.group(id, children, Name=Value)
 %
 % Description:
-%   Groups compatible control nodes into one semantic arrangement.
+%   Groups compatible control nodes into one semantic arrangement. A titled
+%   group draws a nested reader-facing boundary inside its owning section.
 %
 % Inputs:
 %   id - Unique MATLAB identifier for the layout target.
@@ -13,6 +14,7 @@ function node = group(id, children, varargin)
 %
 % Options:
 %   Layout - "auto", "vertical", or "horizontal". Default: "auto".
+%   Title - Reader-facing nested-group title or blank. Default: blank.
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by containers.

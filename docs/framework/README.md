@@ -97,6 +97,8 @@ and renderer signatures, and builds one private native platform plan.
 - Pass one workspace node or a row cell array of vertically arranged nodes to
   `workspace.page`; growable tables and plots share the available page height
   without an App-authored wrapper section.
+- Use `layout.group(..., Title="...")` for a nested reader-facing control
+  boundary inside a section; leave `Title` blank for arrangement-only groups.
 - A control tab containing one growable file list, table, log, status, or
   plot surface fills the available tab height. Tabs with longer mixed content
   remain scrollable.

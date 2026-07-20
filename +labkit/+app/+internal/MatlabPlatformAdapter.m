@@ -308,7 +308,9 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                     end
                     border = "line";
                     if node.Kind == "group"
-                        border = "none";
+                        if strlength(title) == 0
+                            border = "none";
+                        end
                     elseif ~obj.sectionDrawsOwnTitle(node)
                         title = "";
                         border = "none";
