@@ -1,8 +1,5 @@
 # RHS Preview
 
-Every action and input-selection button provides hover help describing its
-RHS/protocol input, waveform window, response ROI, filter, or JSON output.
-
 RHS Preview lets you inspect an Intan RHS recording without loading the entire
 waveform into memory. Use it to check channels, move through short waveform
 windows, choose the channels to plot, and prepare protocol or file-filter JSON
@@ -59,34 +56,20 @@ copy the RHS recordings or contain decoded waveforms.
 
 ## Saved Project Sources
 
-The preview recording, optional protocol, and filter recordings share the
-standard project `inputs.sources` collection. Each record keeps its
-`recording`, `protocol`, or `filterRecording` role, so reopening restores the
-correct control without teaching the framework app-specific field names.
-Version 1 RHS Preview projects stored three separate source fields; they are
-combined on load and the next save writes payload version 2.
+The preview recording, optional protocol, and filter recordings are saved as
+distinct portable project sources. Older projects that stored these sources
+separately are combined automatically on load.
 
 ## Project And Session State
 
 The durable project stores portable references for one preview recording, one
 optional protocol, and an ordered collection of filter recordings. It also
 stores preview settings, channel-role drafts, manual filter labels/comments,
-and compact export records. The App owns the `recording`, `protocol`, and
-`filterRecording` roles; App SDK runtime owns each reference's portable path data.
+and compact export records.
 
 Header indices, decoded preview windows, table presentation state, current ROI
 and window position, status text, and log messages are transient session data.
 They are reconstructed from the project sources when a project is opened.
-
-For developers, `rhs_preview.definition` is the complete product contract.
-`rhs_preview.projectSpec` owns project creation, validation, and the version-1
-upgrade; `rhs_preview.createSession` rebuilds transient state. Fixed recording
-and protocol sources, plus the variable filter collection, are updated as
-ordinary App-owned portable source values. Framework file-list bindings
-preserve stable source IDs while files are added, removed, or rediscovered. The App-local
-`rhs_preview.sourceFiles.pathsForRole` function selects its role ordering and
-delegates portable-reference decoding to the sealed
-`CallbackContext.resolveSourcePaths` operation.
 
 ## Review Recording Information
 
@@ -130,23 +113,3 @@ interpret the waveform matrix.
 - `rhs_preview.analysisRun.readPreviewWindow`
 - [Nerve Response Analysis](../nerve-response-analysis/README.md)
 - [RHS library](../../../libraries/rhs/README.md)
-
-## Framework Compatibility
-
-This App uses the App SDK runtime lifecycle and requires `labkit.app >=1 <2` and
-`labkit.rhs >=1.0 <2`. App code uses semantic actions, managed interval
-interaction, direct layout callbacks, and `resolveSourcePaths`; migration
-iteration, busy state, and portable-reference serialization remain
-framework-private.
-
-The project validator requires the source collection and retains recording,
-protocol, and filter role/cardinality rules plus preview and annotation fields;
-Runtime validates canonical buckets and each source record first.
-
-Its session factory returns only App-specific status, time-window view, and
-indexed preview cache fields. Runtime supplies absent canonical buckets and
-owns workflow-log initialization.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

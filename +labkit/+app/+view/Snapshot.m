@@ -14,7 +14,7 @@ classdef (Sealed) Snapshot
     %   view = view.listSelection(target, selection)
     %   view = view.tableCellSelection(target, selection)
     %   view = view.tableData(target, data, Name=Value)
-    %   view = view.renderPlot(target, model)
+    %   view = view.renderPlot(target, model, Name=Value)
     %   view = view.workspacePage(target, Name=Value)
     %   view = view.anchorPath(interaction, points, Name=Value)
     %   view = view.pairedAnchors(interaction, pointSets, Name=Value)
@@ -45,6 +45,12 @@ classdef (Sealed) Snapshot
     %   selection - Selection value accepted by the target.
     %   data - App-owned table, numeric array, or cell array.
     %   model - App-owned model passed to the renderer declared by plotArea.
+    %
+    % Options:
+    %   ViewRevision - Nonnegative integer identifying the requested initial
+    %       viewport. The adapter preserves user zoom while the value is
+    %       unchanged and accepts renderer limits once when it changes.
+    %       Default: 0.
     %
     % Outputs:
     %   view - New immutable labkit.app.view.Snapshot snapshot.
@@ -173,8 +179,22 @@ classdef (Sealed) Snapshot
             obj = append(obj, "tableData", target, value);
         end
 
-        function obj = renderPlot(obj, target, model)
-            obj = append(obj, "renderPlot", target, model);
+        function obj = renderPlot(obj, target, model, varargin)
+            options = labkit.app.internal.OptionParser.parse( ...
+                "labkit.app.view.Snapshot.renderPlot", ...
+                "ViewRevision", varargin{:});
+            revision = optionValue(options, "ViewRevision", 0);
+            if ~isnumeric(revision) || ~isscalar(revision) || ...
+                    ~isfinite(revision) || revision < 0 || ...
+                    revision ~= fix(revision)
+                error("labkit:app:contract:InvalidValue", ...
+                    "View snapshot ViewRevision must be a " + ...
+                    "nonnegative integer.");
+            end
+            value = struct( ...
+                "Model", {model}, ...
+                "ViewRevision", double(revision));
+            obj = append(obj, "renderPlot", target, value);
         end
 
         function obj = workspacePage(obj, target, varargin)

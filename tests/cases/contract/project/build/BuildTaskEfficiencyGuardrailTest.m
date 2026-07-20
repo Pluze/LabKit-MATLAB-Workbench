@@ -42,6 +42,48 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
                 "Runner shards should not overlap.");
         end
 
+        function broadWorkersDiscoverDisjointOwningFiles(testCase)
+            root = setupLabKitTestPath();
+            output = listLabKitTestsQuietly( ...
+                "RunName", "file_partition_probe");
+            partitions = labkitPartitionTestFiles( ...
+                root, output.tests.Name, 3);
+
+            files = [partitions.Files];
+            testCase.verifyEqual(numel(unique(files)), numel(files), ...
+                "Each test class file should belong to exactly one worker.");
+            testCase.verifyEqual(sum([partitions.TestCount]), output.count);
+            expectedClasses = unique(extractBefore( ...
+                output.tests.Name + "/", "/"), "stable");
+            actualClasses = strings(size(files));
+            for k = 1:numel(files)
+                [~, actualClasses(k)] = fileparts(files(k));
+            end
+            testCase.verifyEqual( ...
+                sort(actualClasses), sort(expectedClasses(:).'));
+        end
+
+        function filePartitionsRejectMissingAndAmbiguousOwners(testCase)
+            root = string(tempname);
+            first = fullfile(root, "tests", "cases", "unit", "first");
+            second = fullfile(root, "tests", "cases", "unit", "second");
+            mkdir(first);
+            mkdir(second);
+            cleanup = onCleanup(@() rmdir(root, "s"));
+            writelines("classdef ProbeTest < matlab.unittest.TestCase" + ...
+                newline + "end", fullfile(first, "ProbeTest.m"));
+            writelines("classdef ProbeTest < matlab.unittest.TestCase" + ...
+                newline + "end", fullfile(second, "ProbeTest.m"));
+
+            testCase.verifyError(@() labkitPartitionTestFiles( ...
+                root, "ProbeTest/example", 2), ...
+                "LabKit:Tests:AmbiguousTestOwner");
+            testCase.verifyError(@() labkitPartitionTestFiles( ...
+                root, "MissingTest/example", 2), ...
+                "LabKit:Tests:TestOwnerNotFound");
+            clear cleanup
+        end
+
         function changedFastValidationPlanUsesRepresentativeAppGuiCoverage(testCase)
             root = setupLabKitTestPath();
 

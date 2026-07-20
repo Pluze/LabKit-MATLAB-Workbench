@@ -1,8 +1,5 @@
 # Response Review And Stats
 
-Every action and input-selection button provides hover help describing its
-response metrics, statistical refresh, reset, or export effect.
-
 Response Review and Stats opens a Nerve Response Analysis result or a segment
 table, displays the measurements, and exports a clean CSV for review or
 downstream statistics. Segment tables can also be aligned and measured again
@@ -45,18 +42,14 @@ When no window is specified, the grid spans the intersection of the time
 ranges after each segment's alignment-time shift. Samples outside an aligned
 segment's original range remain `NaN`.
 
-The selected input is stored in the standard project `inputs.sources`
-collection. Version 1 projects using the former singular `inputs.source`
-field are upgraded on load and saved as payload version 2.
+The selected input is saved as a portable project source. Older projects are
+upgraded on load.
 
 ## Project And Session State
 
-`response_review_stats.projectSpec` owns durable schema version 2, default
-baseline/noise windows, validation, and the single version-1 source migration.
-The source record, time windows, and last export reference are durable.
-Loaded metric tables, aligned waveforms, summaries, preview mode, output-folder
-convenience, and workflow messages are transient and rebuilt by
-`response_review_stats.createSession` after source resolution.
+The project saves the source, baseline/noise windows, and last export
+reference. Metric tables, aligned waveforms, and summaries are recalculated
+from that source after load.
 
 ## Measurements And Summary
 
@@ -130,27 +123,3 @@ behavior, output table columns, failures, examples, and related APIs.
 - `response_review_stats.analysisRun.measureAlignedSegments`
 - `response_review_stats.analysisRun.summarizeMetrics`
 - [Nerve Response Analysis](../nerve-response-analysis/README.md)
-
-## Framework Compatibility
-
-This App requires `labkit.app >=1 <2`. Its single `definition.m` owns product
-metadata, requirements, layout, actions, presentation, renderer, and debug
-capability. `projectSpec.m` concentrates durable creation, validation, and
-migration; root `createSession.m` rebuilds transient analysis tables.
-
-Source paths are read through `CallbackContext.resolveSourcePaths`; no App
-code inspects portable-reference fields. Callback queues, busy state, migration
-iteration, source relinking, serialization, and resource lifetime remain
-framework-owned.
-
-The project validator requires the response source collection and checks
-metric windows and export state; Runtime validates canonical buckets and each
-source record first.
-
-Its session factory returns only App-specific workflow, preview view, and
-decoded metrics cache fields. Runtime supplies absent canonical buckets and
-owns workflow-log initialization.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

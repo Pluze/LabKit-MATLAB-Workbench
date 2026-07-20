@@ -10,6 +10,10 @@ for k = 1:2:numel(varargin)
         options.(name) = varargin{k + 1};
     end
 end
+if isappdata(handle, "labkitAppTextFitMinFontSize")
+    options.MinFontSize = max(options.MinFontSize, ...
+        getappdata(handle, "labkitAppTextFitMinFontSize"));
+end
 text = componentText(handle);
 if strlength(text) == 0
     return

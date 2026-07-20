@@ -36,7 +36,7 @@ interactive and programmatic surface.
 | Compare cyclic and time-domain CSC | [CSC](electrochemistry/csc/README.md) | CV/CT DTA | Per-cycle CSC and CV data |
 | Inspect impedance curves | [EIS](electrochemistry/eis/README.md) | EIS DTA | Nyquist/Bode plots and CSV |
 | Estimate voltage-transient resistance | [VT Resistance](electrochemistry/vt-resistance/README.md) | Chrono DTA | Resistance table and CSV |
-| Convert tracked points into gait metrics | [Gait Analysis](gait/gait-analysis/README.md) | Coordinate table or marker MAT | Frame, step, coordinate, and summary tables |
+| Convert tracked points into gait metrics | [Gait Analysis](gait/gait-analysis/README.md) | Current Video Marker project MAT | Frame, step, coordinate, and summary tables |
 | Crop image batches at repeatable geometry | [Batch Image Crop](image-measurement/batch-crop/README.md) | Image files | Same-size crops and manifest |
 | Measure curve radius, curvature, and length | [Curvature Measurement](image-measurement/curvature/README.md) | Image | Overlay and measurement CSV |
 | Decode and measure radiometric images | [FLIR Thermal](image-measurement/flir-thermal/README.md) | FLIR radiometric image | Temperature data, measurements, rendered image |
@@ -82,12 +82,21 @@ The app page documents stable user-visible behavior. Exact callable syntax and
 data shapes live on the linked API reference pages. Internal callbacks and
 private implementation helpers are intentionally omitted.
 
+Shared framework contracts are documented once in the
+[App Framework](../framework/README.md), not repeated in every App page. An
+App page mentions shared behavior only when that App changes it or when the
+behavior is necessary to complete the App's workflow.
+
 ## Common App Behavior
 
 The App Framework owns lifecycle, busy state, file selection, state snapshots,
 screenshot actions, plot tools, and managed interactions. Apps own scientific
 choices, workflow-specific defaults, result schemas, and exports. See the
 [App Framework](../framework/README.md) for behavior shared across apps.
+
+Action and input-selection buttons provide concise hover help. The shared
+**Tools** menu contains plot, screenshot, and project-state actions when the
+corresponding capability is available.
 
 Input data and exported results should remain outside the replaceable LabKit
 runtime folder. Apps do not overwrite source files unless an app page states

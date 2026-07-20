@@ -1,8 +1,5 @@
 # Gait Analysis
 
-Every action and input-selection button provides hover help describing its
-pose input, detected-step navigation, gait calculation, or export effect.
-
 Gait Analysis 2 converts a current Video Marker project into independently
 segmented treadmill swing steps, per-frame kinematics, per-step gait
 parameters, visual step reports, and reproducible CSV outputs. Loading and
@@ -41,9 +38,8 @@ not jointly own timing, skeleton, calibration, and annotation provenance.
 `computeGait` still accepts an in-memory normalized pose for deterministic
 tests and programmatic calculations.
 
-The app stores this input in the standard project `inputs.sources` collection.
-Version 2 Gait Analysis projects are upgraded on load from the former singular
-`inputs.source` field; the next save writes project payload version 3.
+The Video Marker document is stored as a portable project source. Older Gait
+Analysis projects are upgraded on load.
 
 Coordinates use image convention: the origin is at the upper left and Y
 increases downward. The skeleton preview preserves that convention. Angle and
@@ -51,18 +47,10 @@ length time series use conventional plot axes.
 
 ## Project And Session State
 
-`gait_analysis.projectSpec` owns durable schema version 3, project creation and
-validation, and the single migration entry for versions 1 and 2. Version 1
-renames the legacy step/stride options and invalidates results whose scientific
-meaning changed. Version 2 moves its singular source into the canonical source
-collection. The App runtime selects each missing step and validates the final
-project.
-
 The pose source, analysis options, computed tables/events, and export record
-are durable. Decoded pose data, selected step, output-folder convenience,
-workflow log, and duplicate-run fingerprint are transient and rebuilt by
-`gait_analysis.createSession`. Source paths are resolved by the Runtime before
-session construction through the sealed `labkit.app.CallbackContext`.
+are saved. Decoded pose data and the currently selected step are reconstructed
+after load. Projects from the older stride-naming contract invalidate results
+whose scientific meaning changed, so rerun the analysis before export.
 
 ## Two-Stage Workflow
 
@@ -203,33 +191,3 @@ writetable(result.stepTable, "steps.csv");
 - `gait_analysis.analysisRun.computeGait`
 - [Video Marker](../../image-measurement/video-marker/README.md)
 - [Gait apps](../README.md)
-
-## Framework Compatibility
-
-This App requires `labkit.app >=1 <2`. Its single `definition.m` owns product
-metadata and the immutable App SDK contract. `projectSpec.m` concentrates
-durable creation, validation, and both historical migration steps; root
-`createSession.m` rebuilds transient decoded pose state.
-
-The project validator requires the pose-project source collection and checks
-gait options, numeric limits, and result fields; Runtime validates canonical
-buckets and each source record first.
-
-Analysis defaults, source-fact normalization, result construction, duplicate
-run fingerprints, and gait calculations are co-located under `+analysisRun`.
-The `+workbench` package assembles capability-owned callbacks and a complete
-snapshot; analysis, step navigation, gait rendering, source adoption, and
-result export remain with their semantic owners. Migration iteration, portable
-source references, callback queues, source relinking, project documents,
-result manifests, and serialization remain framework-owned.
-
-Its synthetic debug fixture writes the documented Video Marker payload shape
-without loading a sibling App package. A separate producer-consumer integration
-test builds a project with the current Video Marker contract and reads the
-saved MAT through Gait, so producer drift is detected without making the
-consumer's normal launch depend on Video Marker source code.
-
-Its session factory returns only App-specific step selection, output-folder
-workflow, and decoded pose cache fields. Layout controls bind directly to
-concrete semantic callbacks; there is no App-authored action or renderer
-registry.

@@ -13,13 +13,11 @@ function output = runLabKitTests(varargin)
     setupLabKitTestPath();
 
     opts = labkitParseRunnerOptions(root, varargin{:});
-    restoreRunName = setRunNameEnvironment(opts.RunName);
-    restoreArtifactsRoot = setArtifactsRootEnvironment(opts.ArtifactsRoot);
-    restoreGuiMode = labkitGuiTestMode(opts.GuiMode);
+    environmentCleanup = setRunEnvironment(opts);
 
     if strlength(opts.Plan) > 0
         output = runValidationPlan(root, opts);
-        clear restoreRunName restoreArtifactsRoot restoreGuiMode
+        delete(environmentCleanup);
         return;
     end
 
@@ -40,7 +38,9 @@ function output = runLabKitTests(varargin)
 
     if opts.ListOnly
         listing = suiteListingTable(suite);
-        printSuiteListing(listing);
+        if opts.PrintList
+            printSuiteListing(listing);
+        end
         output = struct( ...
             "official", matlab.unittest.Test.empty(1, 0), ...
             "artifacts", struct(), ...
@@ -48,7 +48,7 @@ function output = runLabKitTests(varargin)
             "listOnly", true, ...
             "count", height(listing), ...
             "tests", listing);
-        clear restoreRunName restoreArtifactsRoot restoreGuiMode
+        delete(environmentCleanup);
         return;
     end
 
@@ -98,19 +98,24 @@ function output = runLabKitTests(varargin)
         "official", officialResults, ...
         "artifacts", paths, ...
         "runName", opts.RunName);
-    clear restoreRunName restoreArtifactsRoot restoreGuiMode
+    delete(environmentCleanup);
 end
 
-function cleanup = setRunNameEnvironment(runName)
+function cleanup = setRunEnvironment(opts)
     previousRunName = getenv("LABKIT_RUN_NAME");
-    setenv("LABKIT_RUN_NAME", char(runName));
-    cleanup = onCleanup(@() setenv("LABKIT_RUN_NAME", previousRunName));
+    previousArtifactsRoot = getenv("LABKIT_ARTIFACTS");
+    setenv("LABKIT_RUN_NAME", char(opts.RunName));
+    setenv("LABKIT_ARTIFACTS", char(opts.ArtifactsRoot));
+    guiCleanup = labkitGuiTestMode(opts.GuiMode);
+    cleanup = onCleanup(@() restoreRunEnvironment( ...
+        previousRunName, previousArtifactsRoot, guiCleanup));
 end
 
-function cleanup = setArtifactsRootEnvironment(artifactsRoot)
-    previousArtifactsRoot = getenv("LABKIT_ARTIFACTS");
-    setenv("LABKIT_ARTIFACTS", char(artifactsRoot));
-    cleanup = onCleanup(@() setenv("LABKIT_ARTIFACTS", previousArtifactsRoot));
+function restoreRunEnvironment( ...
+        previousRunName, previousArtifactsRoot, guiCleanup)
+    setenv("LABKIT_RUN_NAME", previousRunName);
+    setenv("LABKIT_ARTIFACTS", previousArtifactsRoot);
+    delete(guiCleanup);
 end
 
 function ensureDirectory(folder)
@@ -159,6 +164,7 @@ function output = runValidationPlan(root, opts)
             "RunName", stepRunName, ...
             "GuiMode", opts.GuiMode, ...
             "ListOnly", opts.ListOnly, ...
+            "PrintList", opts.PrintList, ...
             "OutputDetail", opts.OutputDetail, ...
             "LoggingLevel", opts.LoggingLevel, ...
             "IncludeCoverage", opts.IncludeCoverage, ...
@@ -338,25 +344,34 @@ function groups = discoverOfficialGroups(casesRoot, opts)
         return;
     end
 
-    groups = struct("key", {}, "suite", {});
     roots = ["unit", "contract", "gui"];
+    folderSets = cell(1, numel(roots));
     for r = 1:numel(roots)
         sectionRoot = fullfile(casesRoot, roots(r));
         if exist(sectionRoot, "dir") ~= 7
+            folderSets{r} = strings(1, 0);
             continue;
         end
-        folders = foldersWithMFiles(sectionRoot);
-        for f = 1:numel(folders)
-            suite = matlab.unittest.TestSuite.fromFolder(folders(f), ...
-                "IncludingSubfolders", false, ...
-                "InvalidFileFoundAction", "warn");
-            if isempty(suite)
-                continue;
-            end
-            key = relativeTestKey(folders(f), casesRoot);
-            groups(end+1) = struct("key", key, "suite", suite);
-        end
+        folderSets{r} = foldersWithMFiles(sectionRoot);
     end
+    folders = [folderSets{:}];
+    groups = repmat(struct( ...
+        "key", "", ...
+        "suite", matlab.unittest.Test.empty(1, 0)), 1, numel(folders));
+    groupCount = 0;
+    for f = 1:numel(folders)
+        suite = matlab.unittest.TestSuite.fromFolder(folders(f), ...
+            "IncludingSubfolders", false, ...
+            "InvalidFileFoundAction", "warn");
+        if isempty(suite)
+            continue;
+        end
+        groupCount = groupCount + 1;
+        groups(groupCount) = struct( ...
+            "key", relativeTestKey(folders(f), casesRoot), ...
+            "suite", suite);
+    end
+    groups = groups(1:groupCount);
 
     cachedCasesRoot = string(casesRoot);
     cachedSignature = signature;

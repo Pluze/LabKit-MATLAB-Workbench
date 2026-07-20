@@ -9,33 +9,32 @@ function root = setupLabKitTestPath()
 
     pathEntries = strsplit(path, pathsep);
 
-    pathEntries = addPathIfMissing(root, pathEntries);
-    pathEntries = addPathIfMissing(fullfile(root, "apps"), pathEntries, "-end");
+    pathEntries = addPathsIfMissing(root, pathEntries);
+    pathEntries = addPathsIfMissing( ...
+        fullfile(root, "apps"), pathEntries, "-end");
     appFolders = publicAppEntryFolders(root);
-    for k = 1:numel(appFolders)
-        pathEntries = addPathIfMissing(char(appFolders(k)), pathEntries, "-end");
-    end
-    pathEntries = addPathIfMissing(fullfile(root, "tests"), pathEntries);
-    pathEntries = addPathIfMissing(fullfile(root, "tests", "runner"), pathEntries);
-    addPathIfMissing(fullfile(root, "tests", "shared"), pathEntries);
+    pathEntries = addPathsIfMissing(appFolders, pathEntries, "-end");
+    pathEntries = addPathsIfMissing( ...
+        fullfile(root, "tests"), pathEntries);
+    pathEntries = addPathsIfMissing( ...
+        fullfile(root, "tests", "runner"), pathEntries);
+    addPathsIfMissing(fullfile(root, "tests", "shared"), pathEntries);
 end
 
 function folders = publicAppEntryFolders(root)
-    persistent cachedRoot cachedFolders
-    if isequal(cachedRoot, string(root)) && ~isempty(cachedFolders)
-        folders = cachedFolders;
-        return;
-    end
     entries = dir(fullfile(root, "apps", "**", "labkit_*_app.m"));
     folders = unique(string({entries.folder}), "stable");
     folders = sort(folders);
-    cachedRoot = string(root);
-    cachedFolders = folders;
 end
 
-function pathEntries = addPathIfMissing(folder, pathEntries, varargin)
-    if exist(folder, "dir") == 7 && ~any(strcmp(pathEntries, folder))
-        addpath(folder, varargin{:});
-        pathEntries{end + 1} = folder;
+function pathEntries = addPathsIfMissing(folders, pathEntries, varargin)
+    folders = string(folders);
+    folders = folders(arrayfun(@(folder) ...
+        exist(folder, "dir") == 7, folders));
+    folders = folders(~ismember(folders, string(pathEntries)));
+    if isempty(folders)
+        return;
     end
+    addpath(char(strjoin(folders, pathsep)), varargin{:});
+    pathEntries = [pathEntries, cellstr(folders)];
 end

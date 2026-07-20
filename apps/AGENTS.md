@@ -61,6 +61,11 @@ library manual for APIs the app actually uses. App tests live under
 
 - Keep formulas, units, thresholds, defaults, result fields, plot labels,
   exports, failure policy, alert text, and workflow order app-local.
+- Solve new behavior inside its owning capability first. If framework support
+  is necessary, prefer a natural extension to an existing focused SDK
+  contract or private runtime behavior. Request a new public API only for a
+  stable need shared by multiple Apps or when the existing API would otherwise
+  become an ambiguous bucket.
 - Use `labkit.dta`, `rhs`, `biosignal`, `image`, and `thermal` only for their
   documented reusable contracts. Do not duplicate a facade primitive in an
   app or push app policy into the facade.

@@ -1,15 +1,10 @@
 # Batch Image Crop
 
-Every action and input-selection button provides hover help describing its
-crop task, geometry, physical calibration, scale bar, or export effect.
-
 Batch Image Crop defines one crop task per image, previews rotation and
 edge-continuous padding, and exports repeatable same-size crops in pixel or
 physical-scale mode.
 
 ## Requirements And Launch
-
-The app uses the LabKit UI framework and Image library.
 
 ```matlab
 labkit_BatchImageCrop_app
@@ -70,24 +65,18 @@ center, rotation, padding, source/output scale, requested physical geometry,
 format, and output filename. A second LabKit result JSON records project-wide
 parameters and identifies each output file.
 
-## Project And State
+## Project And Recovery
 
-Saved projects use durable schema version 3. `inputs.sources` contains one
-portable source record per crop task, while `inputs.items` contains the
-aligned task values that refer to those records by `sourceId`. Repeated crop
-tasks may therefore keep distinct source identities while resolving to the
-same image path. Crop dimensions, physical
-scale settings, output format, output folder, and scale-bar choices are durable
-project parameters. Loaded image pixels, the current selection, interaction
-flags, preview graphics, and rotated-canvas caches are transient session state
-and are reconstructed after load.
+Saved projects preserve one independent task per list row, so duplicated tasks
+can resolve to the same image while retaining separate crop geometry and
+calibration. Crop dimensions, physical-scale settings, output format, output
+folder, and scale-bar choices are also saved. Image pixels and preview caches
+are reconstructed from the sources after load rather than embedded in the
+project.
 
-Version-1 and version-2 projects are upgraded sequentially by the single
-migration entry in `batch_crop.projectSpec`. It removes embedded image pixels,
-converts item paths to source records, expands shared records into aligned
-task records, and preserves each task's crop center, rotation, padding, and
-calibration. Missing required sources are handled by the Runtime's shared
-source-reconciliation workflow rather than by Batch Crop-specific path code.
+Older projects are upgraded on open while preserving each task's center,
+rotation, padding, and calibration. If a source moved, the standard relinking
+flow asks for its new location.
 
 ## Use Without The GUI
 
@@ -129,34 +118,3 @@ when reproducing a physical-scale export outside the GUI.
 - [Image Measurement family](../README.md)
 - [Image Library](../../../libraries/image/README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-This App requires `labkit.app >=1 <2` and `labkit.image >=2 <3`. Its single
-`definition.m` owns product metadata and the immutable App SDK contract.
-Durable creation, validation, and migration are concentrated in
-`projectSpec.m`; root `createSession.m` resolves task sources, reconstructs
-transient state, and lazily loads only the selected image.
-
-The project validator requires the App's item and source collections, validates
-their relationship and crop parameters, and leaves canonical bucket and source
-record shape to Runtime.
-
-Workflow helpers are owned by the capabilities they describe:
-`+sourceFiles`, `+cropTasks`, `+cropGeometry`, `+cropPreview`,
-`+scaleCalibration`, and `+resultFiles`; `+workbench` is the only product
-assembly boundary. There is no generic App lifecycle, state, handler, or
-renderer registry. Source serialization, migration iteration, and
-portable-path resolution remain framework responsibilities.
-
-Each durable crop task owns one portable source identity. Duplicate tasks may
-resolve to the same image path, remain independently selectable, and can be
-removed without removing their siblings.
-
-Its session factory returns only App-specific selection, crop workflow, view,
-resolved task paths, and image-cache fields. Runtime owns lifecycle and
-workflow status.
-
-The semantic layout follows the [App Framework](../../../framework/README.md):
-controls and managed interactions reference their concrete capability-owned
-callbacks directly and resolve during definition construction.

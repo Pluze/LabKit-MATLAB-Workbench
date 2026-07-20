@@ -227,6 +227,14 @@ columns, formulas, units, and error behavior must match their current code
 owners. If code and documentation disagree, resolve the product contract
 rather than documenting both as alternatives.
 
+App manuals are reader-oriented product pages. Keep App-specific requirements,
+the shortest successful workflow, scientific semantics, outputs, recovery,
+limitations, and supported GUI-free APIs. Do not append implementation
+inventories or repeat framework contracts such as callback ownership, runtime
+lifecycle, hover-help coverage, source serialization, or layout binding.
+Document those contracts once under `docs/framework/`; link there only when a
+reader needs the shared behavior to use the App.
+
 ### Public Function Help
 
 A public function help block is part of the tested API. It states public call

@@ -31,6 +31,11 @@ then run their aggregate-consistency test; do not reconcile counts by hand.
 - One API page resolves to one concrete public MATLAB function. Explain syntax,
   inputs, outputs, options, defaults, legal values, units, assumptions, errors,
   examples, and related APIs; link symbols to their reference pages.
+- Documentation or discoverability pressure does not by itself justify a new
+  public API. Prefer documenting a natural extension to an existing focused
+  contract or internal framework behavior; route a proposed new name through
+  the boundary guard when multiple consumers or anti-bucket clarity justify
+  it.
 - App manuals explain workflow, interaction, state/projects, outputs, GUI-free
   APIs, limitations, troubleshooting, and component history.
 - Private implementation helpers do not need public reference pages.

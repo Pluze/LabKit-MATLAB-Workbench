@@ -71,7 +71,8 @@ function runCatalogTask(runName)
     end
 
     args = taskRunArguments(spec);
-    if runWithInternalShards(spec, args)
+    root = fileparts(mfilename("fullpath"));
+    if labkitRunInternalShards(root, spec, args)
         return;
     end
     runBuildTests(spec.Name, args{:});
@@ -138,138 +139,6 @@ function runDocumentationTask(checkOnly)
             result.pageCount, result.apiCount, result.outputRoot);
     end
     clear cleanup
-end
-
-function handled = runWithInternalShards(spec, args)
-    handled = false;
-    if ~any(spec.Name == ["headless", "gui"]) || isInternalShardWorker() || ...
-            isGitHubActions() || ispc
-        return;
-    end
-
-    root = fileparts(mfilename("fullpath"));
-    addpath(fullfile(root, "tests"));
-    probe = runLabKitTests(args{:}, ...
-        "ListOnly", true, ...
-        "FailIfNoTests", false, ...
-        "RunName", spec.Name + "_probe", ...
-        "ArtifactsRoot", fullfile(root, "artifacts"));
-
-    shardPlan = labkitInternalShardPlan(spec.Name, probe.count);
-    if shardPlan.Count <= 1
-        return;
-    end
-
-    fprintf(['LabKit shard probe: %d test(s) matched; running %d ' ...
-        'internal %s shard(s).\n'], probe.count, shardPlan.Count, ...
-        shardPlan.ExecutionLabel);
-    runInternalShardWorkers(root, spec.Name, args, shardPlan.Count, ...
-        shardPlan.RunInParallel);
-    handled = true;
-end
-
-function tf = isInternalShardWorker()
-    tf = string(getenv("LABKIT_INTERNAL_SHARD_WORKER")) == "1";
-end
-
-function tf = isGitHubActions()
-    tf = string(getenv("GITHUB_ACTIONS")) == "true";
-end
-
-function runInternalShardWorkers(root, runName, args, shardCount, runInParallel)
-    logsRoot = fullfile(root, "artifacts", "logs", runName + "-orchestrator");
-    ensureFolder(logsRoot);
-    scriptPath = fullfile(logsRoot, "run_shards.sh");
-    fid = fopen(scriptPath, "w");
-    if fid < 0
-        error("LabKit:Build:ShardScript", "Could not create shard script.");
-    end
-    cleanup = onCleanup(@() fclose(fid));
-
-    fprintf(fid, "#!/bin/sh\n");
-    fprintf(fid, "status=0\n");
-    matlabExe = fullfile(matlabroot, "bin", "matlab");
-    for k = 0:(shardCount - 1)
-        shardName = sprintf("%s-shard-%d", runName, k);
-        workerLog = fullfile(logsRoot, shardName + ".log");
-        batch = shardBatchCommand(root, args, shardName, shardCount, k);
-        if runInParallel
-            fprintf(fid, "LABKIT_INTERNAL_SHARD_WORKER=1 %s -batch %s > %s 2>&1 &\n", ...
-                shellQuote(matlabExe), shellQuote(batch), shellQuote(workerLog));
-            fprintf(fid, "pids_%d=$!\n", k + 1);
-        else
-            fprintf(fid, "LABKIT_INTERNAL_SHARD_WORKER=1 %s -batch %s > %s 2>&1 || status=1\n", ...
-                shellQuote(matlabExe), shellQuote(batch), shellQuote(workerLog));
-        end
-    end
-    if runInParallel
-        for k = 1:shardCount
-            fprintf(fid, "wait $pids_%d || status=1\n", k);
-        end
-    end
-    fprintf(fid, 'if [ "$status" -ne 0 ]; then\n');
-    fprintf(fid, "  cat %s/*.log\n", shellQuote(logsRoot));
-    fprintf(fid, "fi\n");
-    fprintf(fid, "exit $status\n");
-    clear cleanup;
-    fileattrib(scriptPath, "+x");
-
-    [status, output] = system(shellQuote(scriptPath));
-    if strlength(string(output)) > 0
-        fprintf("%s", output);
-    end
-    if status ~= 0
-        error("LabKit:Build:ShardFailure", ...
-            "One or more internal test shards failed. Logs: %s", logsRoot);
-    end
-end
-
-function batch = shardBatchCommand(root, args, runName, shardCount, shardIndex)
-    shardArgs = [args, { ...
-        "ShardCount", shardCount, ...
-        "ShardIndex", shardIndex, ...
-        "RunName", string(runName), ...
-        "ArtifactsRoot", fullfile(root, "artifacts")}];
-    batch = "addpath(" + matlabLiteral(fullfile(root, "tests")) + "); " + ...
-        "runLabKitTests(" + matlabArgumentList(shardArgs) + ");";
-end
-
-function text = matlabArgumentList(args)
-    parts = strings(1, numel(args));
-    for k = 1:numel(args)
-        parts(k) = matlabLiteral(args{k});
-    end
-    text = strjoin(parts, ", ");
-end
-
-function text = matlabLiteral(value)
-    if islogical(value)
-        if value
-            text = "true";
-        else
-            text = "false";
-        end
-    elseif isnumeric(value)
-        text = string(value);
-    else
-        value = string(value);
-        if isscalar(value)
-            text = """" + replace(value, """", """""") + """";
-        else
-            quoted = """" + replace(value, """", """""") + """";
-            text = "[" + strjoin(quoted, ", ") + "]";
-        end
-    end
-end
-
-function text = shellQuote(value)
-    text = "'" + replace(string(value), "'", "'\''") + "'";
-end
-
-function ensureFolder(folder)
-    if exist(folder, "dir") ~= 7
-        mkdir(folder);
-    end
 end
 
 function printTaskCatalog(catalog)

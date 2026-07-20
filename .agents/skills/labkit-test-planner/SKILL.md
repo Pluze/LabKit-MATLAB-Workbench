@@ -19,10 +19,22 @@ Keep the calling model small:
 - before PR preparation, use focused tests for the current small branch step;
   reserve `changedFast` and `changed` for the review-ready or explicitly final
   gate described in `docs/development/maintain-and-release/testing.md`;
-- use `runLabKitTests("Files", path)` to reproduce one or more known test
-  files;
-- use `Suites` only for a folder scope and `Tests` only for a class or method
-  name.
+- use the platform-independent
+  `scripts/runLabKitTestTarget.m` wrapper instead of rebuilding runner
+  argument lists. Add its folder to the MATLAB path once, then call:
+  - `runLabKitTestTarget("list-file", File=path)` to print canonical names;
+  - `runLabKitTestTarget("run-file", File=path)` for one exact file;
+  - `runLabKitTestTarget("run-test", Test="Class/method")` for an exact
+    method; add `File=path` only to constrain an ambiguous owner;
+  - `runLabKitTestTarget("run-suite", Suite=path, Gui=true)` only when a
+    folder scope is necessary.
+
+The wrapper locates the repository from its own path, infers GUI inclusion for
+files and `gui/` suites, uses hidden GUI mode, disables focused HTML reports,
+and preserves the official runner's fail-on-zero-match behavior. Read the
+script only when changing or diagnosing the wrapper. Use the existing
+cross-platform `buildtool changedFast` and `buildtool changed` commands for
+final gates; do not wrap them.
 
 Choose by execution cost as well as matched-test count. One GUI method may
 launch a real App, parse files, redraw several times, and export outputs, so it
@@ -59,10 +71,14 @@ project/<topic>                   repository contracts
 
 Do not make callers learn internal validation-plan names, shard commands, or
 test-discovery implementation. Pair facade changes with downstream apps when
-their contract can be affected. After a failure, repair and rerun the
-narrowest failed behavior, which may be a smaller direct test than the method
-that exposed it; broaden again only when the fix crosses another boundary or
-final policy requires it.
+their contract can be affected. After a failure, copy the canonical
+`Class/method` name from runner output and use `run-test`; the wrapper resolves
+the unique owning file from the class name.
+Repair and rerun the narrowest failed behavior, which may be a smaller direct
+test than the method that exposed it; broaden again only when the fix crosses
+another boundary or final policy requires it. A zero-match result is a
+selection failure, not passing evidence: use `list-file`, then rerun with the
+printed name.
 
 For private workspaces, run private tests first. The acceptance sentinel opts
 private source into public scans but does not expose its Git diff to the public

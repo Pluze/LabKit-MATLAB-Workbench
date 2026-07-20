@@ -21,7 +21,8 @@ function height = preferredRowHeight(obj, node)
             if node.Id == "applicationUsage"
                 height = policy.UsageHeight;
             else
-                height = policy.StatusHeight;
+                height = policy.StatusChromeHeight + ...
+                    node.Configuration.Lines * policy.StatusLineHeight;
             end
         case "button"
             height = labkit.app.internal.NativeAdapterValues.estimatedControlHeight( ...

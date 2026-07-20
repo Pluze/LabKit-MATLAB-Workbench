@@ -91,12 +91,18 @@ and renderer signatures, and builds one private native platform plan.
   with `context.resolveSourcePaths`.
 - Return only derived view state from `labkit.app.view.Snapshot`; runtime
   supplies layout defaults, bindings, file state, log text, and status text.
+- Give short `statusPanel` summaries an explicit `Lines` hint so the native
+  layout reserves detail height only for genuinely multiline content.
 - Use `labkit.app.layout.dataTable` with
   `labkit.app.event.TableCellEdit` and
   `labkit.app.event.TableCellSelection`; Apps never decode native events.
 - Use `labkit.app.layout.plotArea` and a fixed
   `renderer(axesById,model)` callback. `axesById` is always a named struct,
   even when the plot area declares only one axis.
+- Pass a transient `ViewRevision` to `Snapshot.renderPlot` when an App exposes
+  an explicit reset-view action. The adapter preserves user zoom while the
+  revision is unchanged and accepts renderer-fitted limits once when it
+  changes.
 - Pass one workspace node or a row cell array of vertically arranged nodes to
   `workspace.page`; growable tables and plots share the available page height
   without an App-authored wrapper section.
@@ -120,6 +126,21 @@ Runtime validates candidate state and the complete view snapshot before
 publishing either. The private MATLAB adapter maps semantic IDs to native
 components, preserves plot viewports, normalizes native event differences, and
 never exposes component registries to Apps.
+
+## Built-in App Tools
+
+The native runtime installs one top-level **Tools** menu so framework-owned
+utilities do not compete with the App's workflow controls:
+
+- **Plots** opens, copies, or saves the App's plot surfaces.
+- **Screenshot** copies the complete App surface to the system clipboard or
+  saves it to an image file.
+- **Project State** saves or loads the current project document when the App
+  declares a project schema.
+
+These actions are framework-owned native behavior. Apps do not declare menu
+items, implement clipboard integration, or duplicate project persistence
+callbacks.
 
 Framework concepts and source names are versionless. Compatibility belongs to
 `labkit.app.version`; saved-data versions belong to

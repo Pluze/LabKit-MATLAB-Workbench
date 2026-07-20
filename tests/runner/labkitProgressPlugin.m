@@ -13,6 +13,7 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
         ActiveTestName = ""
         ProgressFile = ""
         ActiveTestFile = ""
+        ActiveTestTextFile = ""
         HeartbeatTimer = []
     end
 
@@ -23,6 +24,7 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
             end
             plugin.ProgressFile = fullfile(string(logFolder), "test-progress.jsonl");
             plugin.ActiveTestFile = fullfile(string(logFolder), "active-test.json");
+            plugin.ActiveTestTextFile = fullfile(string(logFolder), "active-test.txt");
         end
     end
 
@@ -35,10 +37,12 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
             fprintf("LabKit test progress: 0/%d elapsed=00:00:00 eta=unknown\n", ...
                 plugin.TotalTests);
             plugin.recordEvent("suite_start", "", 0);
+            plugin.writeActiveTest("starting", "", 0);
             plugin.startHeartbeat();
             cleanup = onCleanup(@() plugin.stopHeartbeat());
             runTestSuite@matlab.unittest.plugins.TestRunnerPlugin(plugin, pluginData);
             plugin.recordEvent("suite_done", "", toc(plugin.SuiteTimer));
+            plugin.writeActiveTest("finished", "", 0);
             clear cleanup
         end
 
@@ -163,6 +167,7 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
             end
             payload = plugin.progressPayload(status, testName, testElapsed);
             plugin.writeJson(plugin.ActiveTestFile, payload, "w");
+            plugin.writeStatusText(payload);
         end
 
         function payload = progressPayload(plugin, eventName, testName, testElapsed)
@@ -194,6 +199,40 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
             end
             cleanup = onCleanup(@() fclose(fid));
             fprintf(fid, "%s\n", jsonencode(payload));
+            clear cleanup
+        end
+
+        function writeStatusText(plugin, payload)
+            status = string(payload.event);
+            elapsed = labkitProgressPlugin.formatSeconds( ...
+                payload.suiteElapsedSeconds);
+            testElapsed = labkitProgressPlugin.formatSeconds( ...
+                payload.testElapsedSeconds);
+            eta = plugin.etaText();
+            if status == "starting"
+                text = sprintf("START 0/%d elapsed=%s eta=unknown", ...
+                    payload.total, elapsed);
+            elseif status == "running"
+                text = sprintf( ...
+                    "RUN %d/%d elapsed=%s eta=%s test_elapsed=%s %s", ...
+                    payload.started, payload.total, elapsed, eta, ...
+                    testElapsed, payload.test);
+            elseif status == "completed"
+                text = sprintf("PASS %d/%d elapsed=%s eta=%s test=%s", ...
+                    payload.completed, payload.total, elapsed, eta, ...
+                    payload.test);
+            else
+                text = sprintf("DONE %d/%d elapsed=%s eta=00:00:00", ...
+                    payload.completed, payload.total, elapsed);
+            end
+            fid = fopen(plugin.ActiveTestTextFile, "w");
+            if fid < 0
+                error("LabKit:Tests:ProgressArtifactWrite", ...
+                    "Could not write active test summary: %s", ...
+                    plugin.ActiveTestTextFile);
+            end
+            cleanup = onCleanup(@() fclose(fid));
+            fprintf(fid, "%s\n", text);
             clear cleanup
         end
     end

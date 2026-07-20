@@ -62,7 +62,7 @@ scope: All tracked Apps</code></pre>
 <li>Preserved char row vectors as one text line during native text fitting, eliminating the injected character-by-character newlines.</li>
 <li>Added <code>Tooltip</code> support with a nonempty label fallback to <code>layout.button</code> and dedicated file-list tooltips for choose, folder, recursive folder, remove, and clear actions.</li>
 <li>Added scientific and workflow-specific text for all 138 tracked App business buttons and all 26 App input selectors.</li>
-<li>Updated each owning App manual and the framework authoring examples.</li>
+<li>Centralized the shared tooltip contract in the App Framework and App catalog instead of repeating it in every App manual.</li>
 </ul>
 <h2 id="compatibility-and-user-impact">Compatibility and user impact</h2>
 <p>Existing tracked Apps and third-party layouts retain their actions and calculations. Hovering now always shows readable text; tracked Apps additionally carry domain-specific explanations.</p>
@@ -74,7 +74,7 @@ scope: All tracked Apps</code></pre>
 <li>DIC Postprocess GUI coverage for scientific action and Ncorr input help.</li>
 </ul>
 <h2 id="follow-up">Follow-up</h2>
-<p>Developer-led interactive checks should confirm tooltip timing, width, and line wrapping on supported MATLAB releases and desktop platforms.</p><nav class="history-sequence-nav" aria-label="Adjacent history records"><a class="history-sequence-link older" href="LK-20260720-launcher-app-sdk-diagnostics.html"><span>Previous change</span><strong>Launcher adopts the App SDK diagnostic launch contract</strong></a></nav>
+<p>Developer-led interactive checks should confirm tooltip timing, width, and line wrapping on supported MATLAB releases and desktop platforms.</p><nav class="history-sequence-nav" aria-label="Adjacent history records"><a class="history-sequence-link older" href="LK-20260720-launcher-app-sdk-diagnostics.html"><span>Previous change</span><strong>Launcher adopts the App SDK diagnostic launch contract</strong></a><a class="history-sequence-link newer" href="LK-20260720-app-tools-menu-and-screenshot-clipboard.html"><span>Next change</span><strong>App tools and presentation controls become more deliberate</strong></a></nav>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

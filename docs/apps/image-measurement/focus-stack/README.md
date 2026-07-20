@@ -1,15 +1,11 @@
 # Focus Stack
 
-Every action and input-selection button provides hover help describing its
-z-stack input, local-focus fusion, depth map, or export effect.
-
 Focus Stack fuses at least two focal planes into one all-in-focus image using
 multilevel Laplacian focus evidence and exports a focus-depth index map.
 
 ## Requirements And Launch
 
-The app uses the LabKit UI framework and Image library. Inputs should show the same
-field of view at different focus positions.
+Inputs should show the same field of view at different focus positions.
 
 ```matlab
 labkit_FocusStack_app
@@ -98,29 +94,3 @@ imwrite(result.fused, "stacked.png");
 - [Image Measurement family](../README.md)
 - [Image Library](../../../libraries/image/README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-The single `definition.m` owns product metadata, requirements, layout, actions,
-presentation, renderers, and debug-sample capability. `projectSpec.m` is the
-only durable-project entry; the version-1 project needs creation and validation
-but no migration. Root `createSession.m` rebuilds decoded images after the App
-SDK runtime resolves sources.
-
-The project validator requires the image-source collection and checks fusion
-parameters; Runtime validates canonical buckets and each source record first.
-
-Fusion result defaults, preset values, and deterministic run fingerprints live
-with the computation under `+analysisRun`; there is no generic `+appState`
-package. A new empty project performs no App-specific startup callback and
-chooses an output location only after sources are added or the user exports.
-The App requires `labkit.app >=1 <2` and `labkit.image >=2 <3`; source-path
-access, persistence, busy state, and debug lifecycle remain framework-owned.
-
-Its session factory returns only App-specific registration workflow and image
-cache fields. Runtime supplies absent canonical buckets and owns workflow-log
-initialization.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

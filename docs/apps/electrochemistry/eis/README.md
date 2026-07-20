@@ -1,15 +1,10 @@
 # EIS
 
-Every action and input-selection button provides hover help describing its
-impedance input, plotted quantities, or exported EIS data.
-
 EIS overlays impedance data from one or more Gamry `ZCURVE` tables, supports
 Nyquist and Bode-style axis combinations, and exports the values currently
 selected for plotting.
 
 ## Requirements And Launch
-
-The app uses the LabKit UI framework and DTA library.
 
 ```matlab
 labkit_EIS_app
@@ -19,10 +14,8 @@ labkit_EIS_app
 
 Add one or more `.DTA` files containing a readable EIS `ZCURVE`. Files that do
 not contain the required curve are reported and omitted from the plot. The
-source list is preserved in project state through portable references. The App
-SDK runtime reconciles those records with the successfully decoded file list, preserves
-the identity of files that remain loaded, and assigns unique identities to new
-files; EIS does not maintain its own source-ID counter.
+successfully decoded source list and its order are preserved in project state
+through portable references.
 
 ## Basic Workflow
 
@@ -56,8 +49,8 @@ intended.
 | Legend / Grid | on / on |
 
 Axis and styling changes preserve the current source set. The plot refits when
-the selected data quantities change; ordinary interaction zoom is otherwise
-owned by the App Framework.
+the selected data quantities change; ordinary zoom is preserved for styling
+changes.
 
 ## Output
 
@@ -94,20 +87,3 @@ catalog. The DTA loader and `getZCurve` are supported reusable APIs.
 - [Electrochemistry family](../README.md)
 - [DTA Library](../../../libraries/dta/README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-The single `definition.m` owns product metadata, requirements, layout, and
-optional runtime capabilities. `projectSpec.m` owns the complete version-1
-domain schema, defaults, plot-parameter validation, and the required source
-collection; Runtime validates canonical buckets and each source record first.
-`createSession.m` rebuilds decoded ZCURVE items and selected paths because they
-are transient runtime data. Empty workflow and view buckets are supplied by
-App SDK runtime rather than repeated in the App factory. The App requires
-`labkit.app >=1 <2` and
-`labkit.dta >=2 <3`; busy-state, viewport-preserving rendering, resolved-path
-access, and portable-reference serialization remain framework-owned.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

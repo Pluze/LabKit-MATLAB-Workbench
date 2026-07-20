@@ -23,6 +23,11 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
 - Promote an API only when it is domain-neutral, independently testable, and
   useful beyond one app workflow. Duplication or line-count reduction is not
   sufficient.
+- New public names are the last resort. First keep product behavior App-local;
+  then prefer a cohesive option, method, or operation on an existing focused
+  contract; then prefer private adapter/runtime support when Apps need not
+  call it. Add a public name only for stable multi-App use or when extending
+  the nearest API would make that API an ambiguous bucket.
 - Keep experiment formulas, thresholds, units, result schemas, plot wording,
   exports, file queues, and workflow decisions in apps.
 - Do not add public helper-dump packages such as `analysis`, `data`, `io`, or
@@ -72,6 +77,9 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
 - A new public UI capability needs repeated evidence from at least two Apps or
   one framework-owned lifecycle/consistency requirement. Prefer framework
   automation when repeated App callback or presenter glue is the evidence.
+- Do not interpret framework ownership as requiring a public function.
+  Lifecycle, reconciliation, layout, and native behavior normally remain
+  internal unless App authors need a clear stable contract.
 - Persistence writes only the current project envelope. Ordered app migrations
   and declared legacy importers are read-only compatibility hooks and must not
   introduce app-id branches in the framework.

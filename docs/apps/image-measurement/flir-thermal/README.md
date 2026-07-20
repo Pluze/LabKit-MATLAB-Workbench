@@ -1,17 +1,13 @@
 # FLIR Thermal
 
-Every action and input-selection button provides hover help describing its
-radiometric input, calibrated temperature statistic, color mapping, or export.
-
 FLIR Thermal decodes radiometric FLIR JPEG/RJPEG files, displays calibrated
 temperature maps, measures rectangular ROI hot/cold/mean values, and exports
 rendered images with Celsius data.
 
 ## Requirements And Launch
 
-The app uses the LabKit UI framework and Thermal library. A `.jpg`, `.jpeg`, or
-`.rjpg` extension alone is insufficient; the file must contain a readable FLIR
-raw thermal record and calibration metadata.
+A `.jpg`, `.jpeg`, or `.rjpg` extension alone is insufficient; the file must
+contain a readable FLIR raw thermal record and calibration metadata.
 
 ```matlab
 labkit_FLIRThermal_app
@@ -82,10 +78,9 @@ outputs remain Celsius regardless of palette or mapping mode.
 
 Saved projects keep portable source references, display parameters, export
 settings, and lightweight per-image ranges and readings. Raw sensor matrices
-and decoded Celsius matrices are transient session data: App SDK runtime resolves
-the source references and the App decodes only the selected image again when a
-project opens. Missing source files therefore use the framework's relinking
-flow rather than embedding local absolute paths in the project.
+and decoded Celsius matrices are loaded again from the selected source when a
+project opens. Missing source files use the standard relinking flow rather
+than relying on a local absolute path.
 An existing source that is no longer a readable radiometric file aborts the
 restore and preserves the current document. Batch import may still report and
 skip rejected selections before they become project sources.
@@ -130,35 +125,3 @@ conversion failures, and related measurement APIs.
 - [Thermal Library](../../../libraries/thermal/README.md)
 - [Image Measurement family](../README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-`definition.m` is the App composition root. It declares product metadata,
-requirements, project/session/presentation callbacks, the composed workbench,
-and debug-sample capability through `labkit.app.Definition`.
-`+workbench/buildLayout.m` is the visible product assembly boundary:
-source navigation, display mapping, reading tools, exports, and preview are
-composed from their owning capability packages. `projectSpec.m` is the only
-durable-project schema entry; the version-1 payload needs creation and
-validation but no migration. Root `createSession.m` rebuilds only the selected
-decoded thermal item after the runtime resolves portable sources.
-
-The project validator requires the thermal-source collection and checks
-thermal parameters and annotations; Runtime validates canonical buckets and
-each source record first.
-
-Decoded record shape lives with `+sourceFiles`, point and ROI calculations live
-with `+analysisRun`, and lightweight durable readings live with
-`+thermalAnnotations`; there is no generic `+appState` package. The App
-requires `labkit.app >=1 <2`, `labkit.image >=2 <3`, and
-`labkit.thermal >=1.1 <2`. Runtime callbacks name the complete application
-state and injected `labkit.app.CallbackContext` explicitly. Source-path access,
-persistence, callback lifetime, diagnostic recording, managed region
-interaction, render surfaces, and result-manifest writing remain
-framework-owned.
-
-Its session factory returns only App-specific image selection and decoded
-thermal cache fields. Presentation produces one complete
-`labkit.app.view.Snapshot`; controls bind directly to concrete semantic
-callbacks and the paired preview owns its renderer and managed reading
-interaction. No App-authored handler or renderer registry remains.

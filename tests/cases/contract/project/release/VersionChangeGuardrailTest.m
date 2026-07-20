@@ -65,6 +65,23 @@ classdef VersionChangeGuardrailTest < matlab.unittest.TestCase
             testCase.verifyFalse(isSingleSemverStep("1.2.8", "1.4.0"));
             testCase.verifyFalse(isSingleSemverStep("1.2.8", "2.1.0"));
         end
+
+        function definitionMetadataIsAnAppVersionSource(testCase)
+            root = setupLabKitTestPath();
+            appRoot = "apps/electrochem/chrono_overlay";
+            versionPath = appVersionSourcePath( ...
+                root, appRoot, "chrono_overlay");
+
+            testCase.verifyEqual(versionPath, ...
+                appRoot + "/+chrono_overlay/definition.m");
+            testCase.verifyEqual( ...
+                versionInWorkingTree(root, versionPath), ...
+                chrono_overlay.definition().AppVersion);
+            artifact = makeArtifact(appRoot, versionPath);
+            testCase.verifyEqual( ...
+                versionedComponentName(root, artifact), ...
+                "labkit_ChronoOverlay_app");
+        end
     end
 end
 
@@ -272,11 +289,16 @@ function versionPath = appVersionSourcePath(root, appRoot, appSlug)
     definitionPath = appRoot + "/+" + appSlug + "/definition.m";
     parts = [{char(root)}; cellstr(split(definitionPath, "/"))];
     if exist(fullfile(parts{:}), "file") == 2 && ...
-            contains(string(fileread(fullfile(parts{:}))), '"AppVersion"')
+            hasDefinitionAppVersion(string(fileread(fullfile(parts{:}))))
         versionPath = definitionPath;
     else
         versionPath = appRoot + "/+" + appSlug + "/version.m";
     end
+end
+
+function tf = hasDefinitionAppVersion(text)
+    tf = ~isempty(regexp(text, ...
+        '(?<![A-Za-z0-9_])AppVersion\s*(?:=|,)', "once"));
 end
 
 function tf = facadeHasVersion(root, versionPath)
@@ -323,7 +345,17 @@ function component = versionedComponentName(root, artifact)
     parts = [{char(root)}; cellstr(split(artifact.versionPath, "/"))];
     source = string(fileread(fullfile(parts{:})));
     name = regexp(source, ...
-        '["'']Command["'']\s*,\s*["'']([^"'']+)["'']', "tokens", "once");
+        'Entrypoint\s*=\s*["'']([^"'']+)["'']', "tokens", "once");
+    if isempty(name)
+        name = regexp(source, ...
+            '["'']Entrypoint["'']\s*,\s*["'']([^"'']+)["'']', ...
+            "tokens", "once");
+    end
+    if isempty(name)
+        name = regexp(source, ...
+            '["'']Command["'']\s*,\s*["'']([^"'']+)["'']', ...
+            "tokens", "once");
+    end
     if isempty(name)
         name = regexp(source, ...
             '["'']name["'']\s*,\s*["'']([^"'']+)["'']', "tokens", "once");
@@ -357,7 +389,8 @@ function version = versionInGit(root, ref, relPath)
 end
 
 function version = versionInText(text)
-    version = regexp(text, '["'']AppVersion["'']\s*,\s*["'']([^"'']+)["'']', ...
+    version = regexp(text, ...
+        '(?<![A-Za-z0-9_])AppVersion\s*(?:=|,)\s*["'']([^"'']+)["'']', ...
         "tokens", "once");
     if isempty(version)
         version = regexp(text, '["'']version["'']\s*,\s*["'']([^"'']+)["'']', ...

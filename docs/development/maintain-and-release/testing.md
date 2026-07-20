@@ -60,12 +60,28 @@ If MATLAB exits before printing a build-task banner such as
 MATLAB launcher or runtime access failure before diagnosing source or test
 failures.
 
-Every official run writes `test-progress.jsonl` and `active-test.json` under
-its `artifacts/logs/<run-name>/` folder. The first file records suite, test,
-and long-test heartbeat events; the second records the last active test and
-elapsed time. CI gives the MATLAB execution step a shorter timeout than the
-containing job so the always-run summary and artifact upload steps can still
-publish these diagnostics when a test stalls before JUnit is complete.
+Every official run writes `test-progress.jsonl`, `active-test.json`, and
+`active-test.txt` under its `artifacts/logs/<run-name>/` folder. The first file
+records suite, test, and long-test heartbeat events. The JSON snapshot records
+the latest structured state; the TXT snapshot presents the same state as a
+single `START`, `RUN`, `PASS`, or `DONE` line for humans. CI gives the MATLAB
+execution step a shorter timeout than the containing job so the always-run
+summary and artifact upload steps can still publish these diagnostics when a
+test stalls before JUnit is complete.
+When a local broad task uses parallel internal shards, the orchestrator relays
+each shard's human-readable active-test line at a fixed interval. It clears
+the prior run's transient snapshot before worker startup, so startup cannot
+look like an already completed run. A failed run prints only the failing shard
+log; complete logs remain under `artifacts/logs/<run-name>-orchestrator/`.
+Each active line includes that shard's elapsed time and estimated remaining
+time once at least one test has completed. Local child MATLAB processes are
+started through one MATLAB/Java process wrapper on macOS, Linux, and Windows;
+the buildfile does not generate platform shell scripts. GitHub Actions remains
+single-process because concurrent hosted MATLAB license behavior is not part
+of the validated CI contract.
+The probe also partitions complete test-class files among workers. Each worker
+discovers only its assigned files, so methods from one class stay together and
+the full test tree is not rediscovered once per shard.
 
 ## Build Tasks
 

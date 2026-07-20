@@ -37,8 +37,10 @@ ax = axesById.main;
         for groupIndex = 1:count
             values = double(groups(groupIndex).values(:));
             scatter(ax, groupIndex + deterministicJitter(numel(values)), ...
-                values, 24, colors(groupIndex, :), 'filled', ...
-                'MarkerEdgeColor', 'black', 'LineWidth', 0.5, ...
+                values, 30, colors(groupIndex, :), 'filled', ...
+                'MarkerFaceAlpha', 0.9, ...
+                'MarkerEdgeColor', [0.2 0.2 0.2], ...
+                'MarkerEdgeAlpha', 0.85, 'LineWidth', 0.6, ...
                 'HitTest', 'off');
         end
     end
@@ -47,52 +49,76 @@ ax = axesById.main;
     if plotType == boxPlotLabel
         dataLow = min(values);
         dataTop = max(values);
+        annotationBase = dataTop;
     else
-        dataLow = min([0; values]);
-        dataTop = max(model.means);
+        graphicLow = min(model.means(:));
+        graphicTop = max(model.means(:));
         if parameters.showSummary
-            dataTop = max(model.means + model.standardDeviations);
+            graphicLow = min([graphicLow; ...
+                model.means(:) - model.standardDeviations(:)]);
+            graphicTop = max([graphicTop; ...
+                model.means(:) + model.standardDeviations(:)]);
         end
+        if parameters.showPoints
+            graphicLow = min(graphicLow, min(values));
+            graphicTop = max(graphicTop, max(values));
+        end
+        dataLow = min(0, graphicLow);
+        dataTop = max(0, graphicTop);
+        annotationBase = graphicTop;
     end
-    if parameters.showPoints
-        dataTop = max(dataTop, max(values));
+    dataRange = dataTop - dataLow;
+    dataScale = max(abs([dataLow, dataTop]));
+    if dataScale == 0
+        minimumSpan = 1;
+    else
+        minimumSpan = 0.1 * dataScale;
     end
-    span = max(dataTop - dataLow, max(1, abs(dataTop)));
+    span = max(dataRange, minimumSpan);
     basePad = max(0.075 * span, eps);
     levelStep = max(0.12 * span, eps);
     capHeight = max(0.022 * span, eps);
     textPad = max(0.024 * span, eps);
-    annotationTop = dataTop;
+    annotationTop = annotationBase;
     if parameters.showPValue
         for resultIndex = 1:numel(results)
             if ~results(resultIndex).ok
                 continue;
             end
-            y = dataTop + basePad + (resultIndex - 1) * levelStep;
+            y = annotationBase + basePad + (resultIndex - 1) * levelStep;
             annotationTop = max(annotationTop, y + capHeight + textPad);
         end
     end
-    upperPad = 0.12 * span;
-    if plotType ~= boxPlotLabel && dataLow >= 0
+    upperPad = 0.09 * span;
+    zeroEdge = "none";
+    if plotType ~= boxPlotLabel && dataLow == 0 && dataTop > 0
         lowerLimit = 0;
+        zeroEdge = "lower";
     else
         lowerLimit = dataLow - 0.08 * span;
     end
-    upperLimit = annotationTop + upperPad;
+    if plotType ~= boxPlotLabel && dataTop == 0 && ...
+            annotationTop + upperPad <= 0
+        upperLimit = 0;
+        zeroEdge = "upper";
+    else
+        upperLimit = annotationTop + upperPad;
+    end
     ax.YLim = [lowerLimit, upperLimit];
+    configureZeroEdge(ax, zeroEdge);
     ax.YTick = readableTicks(lowerLimit, upperLimit);
     if parameters.showPValue
         for resultIndex = 1:numel(results)
             if ~results(resultIndex).ok
                 continue;
             end
-            y = dataTop + basePad + (resultIndex - 1) * levelStep;
+            y = annotationBase + basePad + (resultIndex - 1) * levelStep;
             drawSignificanceBracket(ax, 1, resultIndex + 1, y, ...
                 capHeight, textPad, significanceText(results(resultIndex)));
         end
     end
 
-    ax.XLim = [0.5 count + 0.5];
+    ax.XLim = [0.4 count + 0.6];
     ax.XTick = x;
     ax.XTickLabel = cellstr(string({groups.label}));
     ax.XTickLabelRotation = 0;
@@ -105,6 +131,8 @@ ax = axesById.main;
     ax.XGrid = 'off';
     ax.YGrid = 'off';
     ax.TickLength = [0.018 0.018];
+    ax.TickDir = 'out';
+    ax.Layer = 'top';
     ax.YAxis.Exponent = 0;
     ylabel(ax, char(string(parameters.yLabel)), 'FontSize', 18);
     title(ax, char(string(parameters.title)));
@@ -112,6 +140,7 @@ ax = axesById.main;
 end
 
 function clearAxes(ax)
+    configureZeroEdge(ax, "none");
     delete(allchild(ax));
     cla(ax);
     ax.Visible = "on";
@@ -141,15 +170,20 @@ function drawGroups(ax, groups, model, parameters, colors, plotType, ...
     if plotType == boxPlotLabel
         for groupIndex = 1:count
             values = double(groups(groupIndex).values(:));
+            markerStyle = 'o';
+            if parameters.showPoints
+                markerStyle = 'none';
+            end
             boxchart(ax, repmat(groupIndex, numel(values), 1), values, ...
-                'BoxWidth', 0.48, ...
+                'BoxWidth', 0.4, ...
                 'BoxFaceColor', colors(groupIndex, :), ...
-                'BoxFaceAlpha', 0.75, ...
-                'BoxEdgeColor', 'black', ...
-                'BoxMedianLineColor', 'black', ...
-                'WhiskerLineColor', 'black', ...
+                'BoxFaceAlpha', 0.58, ...
+                'BoxEdgeColor', [0.18 0.18 0.18], ...
+                'BoxMedianLineColor', [0.1 0.1 0.1], ...
+                'WhiskerLineColor', [0.25 0.25 0.25], ...
+                'MarkerStyle', markerStyle, ...
                 'MarkerColor', colors(groupIndex, :), ...
-                'LineWidth', 1.1, ...
+                'LineWidth', 1.35, ...
                 'HitTest', 'off');
         end
         return;
@@ -157,12 +191,62 @@ function drawGroups(ax, groups, model, parameters, colors, plotType, ...
 
     bars = bar(ax, x, model.means, 0.48, ...
         'FaceColor', 'flat', 'EdgeColor', 'black', ...
-        'LineWidth', 1.1, 'HitTest', 'off');
+        'FaceAlpha', 0.82, 'LineWidth', 1.15, 'HitTest', 'off');
     bars.CData = colors;
     if parameters.showSummary
         errorbar(ax, x, model.means, model.standardDeviations, ...
-            'LineStyle', 'none', 'Color', 'black', ...
-            'LineWidth', 1.1, 'CapSize', 8, 'HitTest', 'off');
+            'LineStyle', 'none', 'Color', [0.15 0.15 0.15], ...
+            'LineWidth', 1.35, 'CapSize', 12, 'HitTest', 'off');
+    end
+end
+
+function configureZeroEdge(ax, edge)
+    listenerKey = "ttestWizardZeroEdgeListener";
+    edgeKey = "ttestWizardZeroEdge";
+    guardKey = "ttestWizardZeroEdgeGuard";
+    if isappdata(ax, listenerKey)
+        listener = getappdata(ax, listenerKey);
+        if ~isempty(listener) && isvalid(listener)
+            delete(listener);
+        end
+        rmappdata(ax, listenerKey);
+    end
+    removeAppData(ax, edgeKey);
+    removeAppData(ax, guardKey);
+    if edge == "none"
+        return;
+    end
+    setappdata(ax, edgeKey, edge);
+    listener = addlistener(ax, "YLim", "PostSet", ...
+        @(~, ~) enforceZeroEdge(ax, edgeKey, guardKey));
+    setappdata(ax, listenerKey, listener);
+    enforceZeroEdge(ax, edgeKey, guardKey);
+end
+
+function enforceZeroEdge(ax, edgeKey, guardKey)
+    if ~isgraphics(ax, "axes") || ~isappdata(ax, edgeKey) || ...
+            (isappdata(ax, guardKey) && getappdata(ax, guardKey))
+        return;
+    end
+    limits = double(ax.YLim);
+    edge = string(getappdata(ax, edgeKey));
+    if edge == "lower"
+        updated = [0, max(limits(2), sqrt(eps))];
+    else
+        updated = [min(limits(1), -sqrt(eps)), 0];
+    end
+    if isequal(limits, updated)
+        return;
+    end
+    setappdata(ax, guardKey, true);
+    cleanup = onCleanup(@() setappdata(ax, guardKey, false));
+    ax.YLim = updated;
+    clear cleanup
+end
+
+function removeAppData(handle, key)
+    if isappdata(handle, key)
+        rmappdata(handle, key);
     end
 end
 

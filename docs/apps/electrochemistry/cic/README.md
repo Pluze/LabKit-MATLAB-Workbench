@@ -1,16 +1,12 @@
 # Charge-Injection Capacity
 
-Every action and input-selection button provides hover help describing its
-pulse data, injected-charge/CIC result, or export effect.
-
 The CIC app measures charge delivered by a biphasic current pulse, normalizes
 charge by electrode area, and reports voltage-transient polarization metrics
 at a controlled delay after each pulse phase.
 
 ## Requirements And Launch
 
-The app uses the LabKit UI framework and DTA library and requires a chrono DTA curve with
-valid `T`, `Vf`, and `Im` columns.
+The app requires a chrono DTA curve with valid `T`, `Vf`, and `Im` columns.
 
 ```matlab
 labkit_CIC_app
@@ -21,9 +17,8 @@ labkit_CIC_app
 Add one or more chrono `.DTA` files. The selected row is decoded for immediate
 preview; batch calculation is performed with the same analysis settings when
 results are exported. This avoids repeatedly decoding every large file while
-the user is only switching previews. App SDK runtime reconciles the ordered path
-list with durable source records, so retained files keep stable identities and
-new files receive collision-free identities without an App-owned counter.
+the user is only switching previews. Saved projects preserve file order and
+portable source identity through removal, later additions, and reopen.
 
 Electrode area comes from a positive UI override when supplied, otherwise from
 the parsed DTA metadata. Without a valid positive area, charge in coulombs can
@@ -122,20 +117,3 @@ assert(result.ok, result.message);
 - [DTA pulse detection](../../../libraries/dta/README.md)
 - [VT Resistance](../vt-resistance/README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-The single `definition.m` owns product metadata, requirements, layout, and
-optional runtime capabilities. `projectSpec.m` owns the complete version-1
-domain schema, defaults, parameter validation, and the required source
-collection; Runtime validates canonical buckets and each source record first.
-`createSession.m` deliberately decodes only the first source for immediate
-preview; remaining batch files stay lazy until selection or export. The App
-requires `labkit.app >=1 <2` and
-`labkit.dta >=2 <3`; Runtime also supplies omitted empty session buckets and
-owns workflow-log initialization. Busy-state, source identity, resolved-path
-access, and portable-reference serialization remain framework-owned.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

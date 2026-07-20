@@ -1,15 +1,12 @@
 # Chrono Overlay
 
-Every action and input-selection button provides hover help describing its
-chrono trace alignment, voltage/current data, or export effect.
-
 Chrono Overlay compares voltage and current transients from multiple Gamry DTA
 files on a common pulse-centered time axis and exports the aligned curves.
 
 ## Requirements And Launch
 
-The app uses the LabKit App SDK and DTA library. Each source must contain a
-readable chrono curve with time, voltage, and current data.
+Each source must contain a readable chrono curve with time, voltage, and
+current data.
 
 ```matlab
 labkit_ChronoOverlay_app
@@ -20,9 +17,8 @@ labkit_ChronoOverlay_app
 Use **Add DTA files** to select one or more `.DTA` files from one directory.
 The app parses each file as chrono data and reports unreadable items. The file
 list controls curve order, legend labels, and removal; selection does not
-discard other loaded curves. The App runtime owns durable source identities,
-portable project references, add/remove/clear behavior, and selection. It
-rebuilds the transient decoded session only when the file collection changes.
+discard other loaded curves. Saved projects preserve the ordered file list and
+reopen it through portable source references.
 
 ## Basic Workflow
 
@@ -93,16 +89,3 @@ listed as stable public APIs; reusable DTA reading is supported through
 - [DTA Library](../../../libraries/dta/README.md)
 - [CIC](../cic/README.md)
 - [VT Resistance](../vt-resistance/README.md)
-
-## Framework Compatibility
-
-`definition.m` returns one validated `labkit.app.Definition`.
-`projectSpec.m` returns the current version-2 `labkit.app.project.Schema` plus its
-version-aware migration entry. `createSession(project,context)` resolves the
-runtime-owned portable sources and rebuilds decoded DTA items because curves
-remain transient caches. Layout bindings provide all four plot parameters and
-the file collection without App callbacks or presenter duplication.
-`+workbench/buildLayout.m` binds CSV export directly to
-`+resultFiles/exportSelectedCurves.m`, while `+overlayPlot/draw.m` receives the
-voltage and current axes in declared order. The App requires
-`labkit.app >=1 <2` and `labkit.dta >=2 <3`.

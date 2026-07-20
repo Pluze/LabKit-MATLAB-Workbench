@@ -1,8 +1,5 @@
 # Figure Studio
 
-Every action and input-selection button provides hover help describing its
-FIG source, editable styling artifact, plotted data, or graphics export.
-
 Figure Studio restyles MATLAB figures, exports presentation copies, and
 extracts supported visible graphics into a portable data package. It changes
 presentation properties, not the calculation that produced the plot.
@@ -19,20 +16,12 @@ labkit_FigureStudio_app
 A LabKit plot can also send its current axes to Figure Studio through the plot
 context menu. That handoff embeds a serializable plot snapshot in the project.
 
-## Initialization And Runtime Context
+## Project And Handoff
 
-`figure_studio.definition` declares an optional App SDK `OnStart` capability
-named `figure_studio.initializeWorkbench`. Runtime calls it after the semantic
-layout and first complete view exist but before startup readiness is released.
-The entrypoint converts an optional axes handoff into the normal
-`InitialProject` launch value. `createSession(project,callbackContext)` then
-rebuilds only transient FIG data, and the initializer establishes the default
-output folder and records restored-source status.
-
-The initializer receives canonical `applicationState` and the sealed
-`labkit.app.CallbackContext`. It does not receive axes, a service bag, native
-components, or a launch-request object. Fixed-canvas resize reflow, callback
-queueing, busy state, and readiness remain runtime-owned.
+A plot-context-menu handoff creates the same editable project state as loading
+a FIG file. Saved projects retain portable FIG sources, embedded plot
+snapshots, style settings, and canvas settings. Decoded FIG graphics are
+rebuilt after load, and the default output folder follows the restored source.
 
 ## Load And Select Figures
 
@@ -116,27 +105,3 @@ objects.
 - `figure_studio.resultFiles.createStyledFigure`
 - [LabKit Core apps](../README.md)
 - [Plotting framework](../../../framework/README.md)
-
-## Framework Compatibility
-
-This App's `definition.m` owns its product metadata, `labkit.app >=1 <2`
-requirement, layout, and optional capabilities. `projectSpec.m` is the single
-durable-schema entry and keeps project creation and validation local;
-`createSession.m` separately rebuilds decoded FIG data because it is transient
-runtime state. The entrypoint only adapts the optional axes handoff and
-delegates to App SDK runtime. App code binds controls directly to semantic
-callbacks and uses the sealed callback context for status, dialogs, project
-operations, resources, and resolved paths; busy-state and portable-reference
-serialization mechanics remain framework-owned.
-
-The project validator requires the figure-source collection and checks style
-and embedded-plot fields; Runtime validates canonical buckets and each source
-record first.
-
-Its session factory returns only App-specific source selection, status
-workflow, and decoded plot cache fields. Runtime supplies absent canonical
-buckets and owns workflow-log initialization.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

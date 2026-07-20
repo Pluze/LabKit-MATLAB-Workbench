@@ -1,16 +1,13 @@
 # Charge-Storage Capacity
 
-Every action and input-selection button provides hover help describing its
-CV/CT data, charge-storage comparison, or export effect.
-
 The CSC app compares charge obtained from time-domain current integration with
 charge obtained from cyclic-voltammetry integration for every readable CV/CT
 cycle in one or more Gamry DTA files.
 
 ## Requirements And Launch
 
-The app uses the LabKit UI framework and DTA library. Each analyzed cycle must expose
-exact `T`, `Vf`, and `Im` columns and a positive scan rate.
+Each analyzed cycle must expose exact `T`, `Vf`, and `Im` columns and a
+positive scan rate.
 
 ```matlab
 labkit_CSC_app
@@ -19,11 +16,10 @@ labkit_CSC_app
 ## Inputs And Selection
 
 Add one or more CV/CT `.DTA` files. The selected file determines the current
-curve list, readout, and plots. Selecting another file resets the curve selection and
-default plot quantities to that file; it does not silently keep a cycle from
-the previous source. App SDK runtime reconciles durable source identities from the
-successfully decoded file order, preserving retained identities through
-removal, later additions, save, and reopen.
+curve list, readout, and plots. Selecting another file resets the curve
+selection and default plot quantities to that file; it does not silently keep
+a cycle from the previous source. Saved projects preserve the successfully
+decoded file order through removal, later additions, and reopen.
 
 The default curve selection is **All cycles**. Individual cycle selection
 updates the comparison readout for that cycle.
@@ -120,20 +116,3 @@ behavior, executable examples, and related APIs used outside the GUI.
 - [Electrochemistry family](../README.md)
 - [DTA Library](../../../libraries/dta/README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-The single `definition.m` owns product metadata, requirements, layout, and
-optional runtime capabilities. `projectSpec.m` owns the complete version-1
-domain schema, defaults, parameter/result validation, and the required source
-collection; Runtime validates canonical buckets and each source record first.
-`createSession.m` rebuilds decoded CV/CT curves and active selection because
-they are transient runtime data. The
-App omits empty workflow and view buckets because Runtime canonicalizes them.
-It requires `labkit.app >=1 <2` and `labkit.dta >=2 <3`; busy-state, source
-identity, resolved-path access, and portable-reference serialization remain
-framework-owned.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

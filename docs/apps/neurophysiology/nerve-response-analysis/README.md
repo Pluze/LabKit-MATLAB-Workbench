@@ -1,8 +1,5 @@
 # Nerve Response Analysis
 
-Every action and input-selection button provides hover help describing its
-protocol/filter input, nerve-response calculation, reset, or exported evidence.
-
 Nerve Response Analysis reads the recording list prepared in RHS Preview,
 finds stimulation events, groups them into trains, and measures compound action
 potential responses in the assigned channels.
@@ -31,18 +28,13 @@ labkit_NerveResponseAnalysis_app
 Changing the filter, protocol, or limits clears the previous analysis so that
 an export cannot silently use outdated settings.
 
-The filter record and optional protocol share the standard project
-`inputs.sources` collection and retain distinct `filterRecord` and `protocol`
-roles. Version 1 projects with separate role-specific fields are combined on
-load and the next save writes payload version 2. This lets common project
-save/load and missing-file relinking inspect every external dependency.
+The filter record and optional protocol are saved as distinct portable project
+sources. Older projects with separate source fields are upgraded on load.
 
 ## Project And Session State
 
 The durable project stores portable references for the filter record and
-optional protocol, the two run limits, and the last export paths. The fixed
-source IDs are `filterRecord` and `protocol`; each uses the same value as its
-role so loading, presentation, and relinking address one unambiguous record.
+optional protocol, the two run limits, and the last export paths.
 
 Parsed JSON, analysis tables, issue details, preview selection, log messages,
 and output-folder convenience are transient session state. Opening a project
@@ -50,12 +42,6 @@ reparses its JSON sources but does not persist or silently reuse old analysis
 tables; choose **Analyze Filtered Files** to calculate them again.
 If an existing selected JSON file is malformed, project restore stops and
 preserves the current document. An absent optional protocol remains valid.
-
-For developers, `nerve_response_analysis.definition` is the complete product
-contract. `nerve_response_analysis.projectSpec` owns project creation,
-validation, and the version-1 upgrade in one file, while
-`nerve_response_analysis.createSession` rebuilds transient state. App SDK runtime
-owns the migration loop and source-reference representation.
 
 ## What The Analysis Does
 
@@ -151,22 +137,3 @@ schemas, units, partial-recording failure policy, and related APIs.
 - `nerve_response_analysis.analysisRun.measureCapMetrics`
 - [RHS Preview](../rhs-preview/README.md)
 - [Response Review and Stats](../response-review-stats/README.md)
-
-## Framework Compatibility
-
-This App uses the App SDK runtime lifecycle and requires `labkit.app >=1 <2` and
-`labkit.rhs >=1.0 <2`. App code uses semantic actions, `sourcePaths`, and the
-sealed callback context; migration iteration, busy state, and portable
-reference serialization remain framework-private.
-
-The project validator requires the source collection and retains the
-App-specific `filterRecord`/`protocol` ID-role rules, run limits, and export
-state; Runtime validates canonical buckets and each source record first.
-
-Its session factory returns only App-specific workflow, preview view, and
-decoded analysis cache fields. Runtime supplies absent canonical buckets and
-owns workflow-log initialization.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

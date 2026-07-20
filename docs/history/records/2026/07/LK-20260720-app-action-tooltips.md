@@ -63,7 +63,8 @@ visible action label and also requires an explanatory input-selection tooltip.
   remove, and clear actions.
 - Added scientific and workflow-specific text for all 138 tracked App business
   buttons and all 26 App input selectors.
-- Updated each owning App manual and the framework authoring examples.
+- Centralized the shared tooltip contract in the App Framework and App catalog
+  instead of repeating it in every App manual.
 
 ## Compatibility and user impact
 

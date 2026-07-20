@@ -1,11 +1,12 @@
 % App-owned implementation for ttest_wizard.resultPlot.present within the ttest_wizard product workflow.
-function view = present(results, parameters, resultsCurrent)
+function view = present(results, parameters, resultsCurrent, viewRevision)
 %PRESENT Describe plot freshness, renderer model, and style availability.
 %
 % Inputs:
 %   results - Latest comparison result struct array.
 %   parameters - Current plot-parameter struct.
 %   resultsCurrent - Logical scalar indicating data/test freshness.
+%   viewRevision - Nonnegative transient revision for explicit view resets.
 %
 % Outputs:
 %   view - Snapshot fragment for plot controls and resultPlot.
@@ -13,12 +14,25 @@ function view = present(results, parameters, resultsCurrent)
 hasResult = ~isempty(results) && any([results.ok]);
 view = labkit.app.view.Snapshot() ...
     .text("plotFreshness", freshnessText(results, resultsCurrent)) ...
-    .renderPlot("resultPlot", plotModel(results, parameters));
+    .renderPlot("resultPlot", plotModel(results, parameters), ...
+        ViewRevision=effectiveViewRevision( ...
+        parameters, viewRevision, hasResult));
 controlIds = ["plotType", "showPoints", "showSummary", ...
-    "showPValue", "plotTitle", "yLabel"];
+    "showPValue", "plotTitle", "yLabel", "resetPlotView"];
 for id = controlIds
     view = view.enabled(id, hasResult);
 end
+end
+
+function revision = effectiveViewRevision(parameters, resetRevision, hasResult)
+choices = ttest_wizard.resultPlot.choices();
+typeIndex = find(string(parameters.type) == choices.types, 1) - 1;
+styleBits = typeIndex + ...
+    2 * double(parameters.showPoints) + ...
+    4 * double(parameters.showSummary) + ...
+    8 * double(parameters.showPValue);
+revision = 32 * double(resetRevision) + ...
+    16 * double(hasResult) + styleBits;
 end
 
 function text = freshnessText(results, isCurrent)

@@ -1,15 +1,11 @@
 # Image Enhance
 
-Every action and input-selection button provides hover help describing its
-pixel-processing history, white-balance ROI, or batch export effect.
-
 Image Enhance builds an ordered, reversible processing history for one image
 or a batch and exports the resulting images with the exact step sequence.
 
 ## Requirements And Launch
 
-The app uses the LabKit UI framework and Image library. All processing is implemented
-with MATLAB and repository-owned code.
+All processing uses MATLAB and repository-owned code.
 
 ```matlab
 labkit_ImageEnhance_app
@@ -90,9 +86,8 @@ imwrite(output{1}, "enhanced.png");
 
 Saved projects keep portable source references, shared and per-image step
 histories, white-reference ROIs, export settings, and compact result metadata.
-Decoded full-size pixels and downsampled previews remain transient. App SDK runtime
-resolves source references first; `createSession.m` then rebuilds only the
-selected source and its preview when a project opens.
+Full-size pixels and downsampled previews are loaded again from the selected
+source when a project opens rather than embedded in the project.
 
 An empty launch does not choose an output directory. Adding images establishes
 the source-adjacent default; **Choose folder** remains available before export.
@@ -112,33 +107,3 @@ the source-adjacent default; **Choose folder** remains available before export.
 - [Image Match](../image-match/README.md)
 - [Image Library](../../../libraries/image/README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-The single `definition.m` owns product metadata, requirements, layout, actions,
-presentation, renderer, and debug-sample capability. `projectSpec.m` is the
-only durable-project entry; the version-1 payload needs creation and validation
-but no migration. Root `createSession.m` rebuilds the selected image cache after
-App SDK runtime resolves sources.
-
-The project validator requires the image-source collection and checks export,
-shared-history, and per-image annotation relationships; Runtime validates
-canonical buckets and each source record first.
-
-Decoded items and lazy preview loading live with `+sourceFiles`; step shapes,
-active histories, pipeline replay, and preview-coordinate scaling live with
-`+analysisRun`; durable per-image histories live with
-`+enhancementAnnotations`; export fingerprints live with `+resultFiles`.
-There is no generic `+appState` package. The App requires
-`labkit.app >=1 <2` and `labkit.image >=2 <3`; persistence, source-path access,
-busy state, and managed ROI interaction remain framework-owned. Batch manifest
-outputs use the framework's canonical empty output array, so export validation
-applies only to real enhanced-image records.
-
-Its session factory returns only App-specific selection, draft workflow, view,
-and preview-cache fields. Runtime supplies absent canonical buckets and owns
-workflow-log initialization.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

@@ -1,15 +1,10 @@
 # Curvature Measurement
 
-Every action and input-selection button provides hover help describing its
-curve trace, calibration, curvature/length calculation, or export effect.
-
 Curvature Measurement fits a circle to an ordered image curve, reports radius
 and curvature, measures traced arc length, and supports pixel-to-physical scale
 calibration.
 
 ## Requirements And Launch
-
-The app uses the LabKit UI framework and Image library.
 
 ```matlab
 labkit_CurvatureMeasurement_app
@@ -40,9 +35,8 @@ fit center, and pixels per selected unit. **Details** explains the next valid
 step before a result exists and reports the current measurement afterward.
 The **Log** tab records file, edit, fit, calibration, and export actions.
 
-The chosen image is stored in the standard project `inputs.sources`
-collection. Version 1 projects using the former singular `inputs.source`
-field are upgraded on load and saved as payload version 2.
+The chosen image is saved as a portable project source. Older projects are
+upgraded on load without changing the curve, calibration, or result meaning.
 
 ## Curve Editing
 
@@ -107,38 +101,3 @@ lengthResult = curvature.analysisRun.computeCurveLength(points, struct());
 - [Image Measurement family](../README.md)
 - [Image Library](../../../libraries/image/README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-The single `definition.m` owns product metadata, requirements, the composed
-workbench, project/session boundaries, presentation, and debug-sample
-capability. `+workbench/buildLayout.m` composes source selection, curve
-editing, scale calibration, analysis/export, summary, log, and preview
-surfaces from their owning capability packages. Layout nodes bind their
-concrete callbacks and renderer directly; the App has no handler or renderer
-registry.
-
-`projectSpec.m` is the only durable-project entry and keeps current creation,
-validation, and the version-1 source migration together. The runtime owns the
-migration loop. Root `createSession.m` reconstructs the decoded image and
-transient edit state after source relinking.
-
-The project validator requires the image-source collection and checks
-curvature parameters, annotations, and results; Runtime validates canonical
-buckets and each source record first.
-
-Fit/length result shapes and deterministic task fingerprints live with their
-calculations under `+analysisRun`; there is no generic state or action
-package. The App requires `labkit.app >=1 <2` and `labkit.image >=2 <3`;
-source-path access, persistence, callback lifetime, result manifests, and
-managed anchor/reference interactions remain framework-owned.
-
-Its session factory returns only App-specific edit workflow, scale-bar view,
-and decoded image cache fields. Runtime supplies absent canonical buckets and
-owns workflow-log initialization.
-
-The semantic layout follows the
-[App framework contract](../../../framework/README.md): callbacks name the
-complete application state, typed event value when present, and
-`CallbackContext` at their direct boundary, then delegate scientific work
-through narrow inputs.

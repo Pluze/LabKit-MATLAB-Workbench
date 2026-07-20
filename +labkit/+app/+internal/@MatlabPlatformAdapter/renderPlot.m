@@ -9,9 +9,17 @@ function renderPlot(obj, operation)
         axesById.(char(node.AxisIds(k))) = axes(k);
     end
     viewport = labkit.app.internal.NativeAdapterValues.captureViewport(axes);
-    renderer(axesById, operation.Value);
+    value = operation.Value;
+    revisionKey = "labkitAppPlotViewRevision";
+    preserveViewport = all(arrayfun(@(ax) ...
+        isappdata(ax, revisionKey) && ...
+        isequal(getappdata(ax, revisionKey), value.ViewRevision), axes));
+    renderer(axesById, value.Model);
     for k = 1:numel(axes)
         labkit.app.plot.enablePopout(axes(k));
+        setappdata(axes(k), revisionKey, value.ViewRevision);
     end
-    labkit.app.internal.NativeAdapterValues.restoreViewport(axes, viewport);
+    if preserveViewport
+        labkit.app.internal.NativeAdapterValues.restoreViewport(axes, viewport);
+    end
 end

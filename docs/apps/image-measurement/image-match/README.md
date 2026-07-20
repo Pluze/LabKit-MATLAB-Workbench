@@ -1,15 +1,12 @@
 # Image Match
 
-Every action and input-selection button provides hover help describing its
-reference distribution, match history, source pixels, or batch export effect.
-
 Image Match transfers tone and color statistics from one reference image to
 one or more source images while preserving each source image's geometry.
 
 ## Requirements And Launch
 
-The app uses the LabKit UI framework and Image library. It performs appearance
-matching only; it does not geometrically register images.
+The app performs appearance matching only; it does not geometrically register
+images.
 
 ```matlab
 labkit_ImageMatch_app
@@ -101,34 +98,3 @@ geometry, empty-input behavior, failures, examples, and related APIs.
 - [Image Enhance](../image-enhance/README.md)
 - [Image Library](../../../libraries/image/README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-The single `definition.m` owns product metadata, requirements, layout, actions,
-presentation, renderers, and debug-sample capability. `projectSpec.m` is the
-only durable-project entry; the version-1 project needs creation and validation
-but no migration. Root `createSession.m` reconstructs only the selected source,
-reference, and preview caches after App SDK runtime resolves sources.
-
-The project validator requires the image-source collection and checks matching
-parameters and durable steps; Runtime validates canonical buckets and each
-source record first.
-
-Source item records live in `+sourceFiles`, matching steps in `+analysisRun`,
-and deterministic export tasks in `+resultFiles`; there is no generic
-`+appState` package. A new empty project performs no App-specific startup
-callback and chooses its output directory after source selection or explicit
-user choice. The App requires `labkit.app >=1 <2` and `labkit.image >=2 <3`;
-source-path access, persistence, busy state, and debug lifecycle remain
-framework-owned.
-
-Matched-image manifest outputs use the framework's canonical empty output
-array, so export validation applies only to real output records.
-
-Its session factory returns only App-specific selection, draft workflow, view,
-and matched-preview cache fields. Runtime supplies absent canonical buckets and
-owns workflow-log initialization.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

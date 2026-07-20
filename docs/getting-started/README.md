@@ -55,16 +55,20 @@ input and output formats.
 
 ## Common App Commands
 
-Every current LabKit app exposes these top-level entries:
+Every current LabKit app exposes one top-level **Tools** menu:
 
-- **Screenshot** captures the active app surface.
-- **Save State** writes the current project document.
-- **Load State** opens a compatible project document.
-- **Plot** contains plot-specific actions such as opening a larger editable
-  view when the current axes supports them.
+- **Tools > Plots** contains plot-specific actions such as opening larger
+  editable views, copying plots, and saving plots.
+- **Tools > Screenshot > Copy to Clipboard** copies the complete active App
+  surface as an image.
+- **Tools > Screenshot > Save to File...** saves the complete App surface.
+- **Tools > Project State > Save State...** writes the current project
+  document.
+- **Tools > Project State > Load State...** opens a compatible project
+  document.
 
 State files preserve app projects. They are different from exported result
-files and from ignored debug manifests under `artifacts/debug/`.
+files and from ignored diagnostic manifests under `artifacts/diagnostics/`.
 
 ## Source Checkout
 

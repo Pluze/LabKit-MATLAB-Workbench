@@ -22,14 +22,11 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="t-test-wizard">T-Test Wizard</h1>
-<p>Every action and input-selection button provides hover help describing its group assignment, hypothesis test, alpha decision, or portable export.</p>
 <p>T-Test Wizard captures two or more numeric groups, compares every group after the first with the first group, and draws one publication-oriented mean and standard-deviation plot. The first group is always the reference group.</p>
 <h2 id="open-t-test-wizard">Open T-Test Wizard</h2>
 <p>From the LabKit launcher, select <strong>T-Test Wizard</strong> and choose <strong>Open</strong>. From a source checkout, run:</p>
 <pre><code class="language-matlab">labkit_TTestWizard_app</code></pre>
 <p>The App requires Base MATLAB and the LabKit App Framework. It does not require Statistics and Machine Learning Toolbox.</p>
-<p>Current App version: <strong>1.1.0</strong>.</p>
-<p>The App uses <code>labkit.app</code> 1.x. Its definition names the project schema, transient session factory, semantic workbench, derived view, and plot renderer. Runtime-injected callback context and table payload types are declared in MATLAB <code>arguments</code> blocks; the App does not receive a component registry or an untyped service bag.</p>
 <h2 id="workflow">Workflow</h2>
 <p>The left controls use three short pages:</p>
 <ol>
@@ -42,7 +39,7 @@
 <li><strong>Data</strong> keeps the opened source table above the editable analysis table, each using half of the workspace.</li>
 <li><strong>Plot</strong> gives the completed statistical figure the full workspace.</li>
 </ul>
-<p>Changing data or test settings does not silently recalculate the plot. A compact status beside the plot controls reports <strong>OUT OF DATE</strong> until <strong>Run / refresh comparisons</strong> is used again.</p>
+<p>Changing data or test settings does not silently recalculate the plot. A compact status beside the plot controls reports <strong>OUT OF DATE</strong> until <strong>Run / refresh comparisons</strong> is used again. The short <strong>What will run</strong> and <strong>Result family</strong> summaries stay compact so the result table and plot controls receive most of the vertical space.</p>
 <h2 id="add-groups-from-a-table">Add Groups From A Table</h2>
 <p>The Data step accepts <code>.csv</code>, <code>.tsv</code>, <code>.xlsx</code>, and <code>.xls</code>. Workbook worksheets can be selected from the dropdown. Headers and labels remain visible in the source grid.</p>
 <p>For each group:</p>
@@ -85,13 +82,15 @@
 <ul>
 <li>one pastel bar per group;</li>
 <li>bar height equal to the group mean;</li>
-<li>black-capped sample-standard-deviation error bars;</li>
+<li>dark, capped sample-standard-deviation error bars;</li>
+<li>a zero-anchored y-axis for all-positive or all-negative bars, including after wheel or toolbar zoom;</li>
 <li>black boxed axes on a white background;</li>
 <li>Helvetica labels and no grid;</li>
 <li>stacked brackets from the first bar to every later successful comparison;</li>
 <li>significance shorthand on each bracket.</li>
 </ul>
-<p>The first four colors are soft green, orange, blue, and yellow; the palette cycles for additional groups. The box style uses the same group colors with black outlines, whiskers, and medians. Optional controls overlay individual values, hide SD bars on bar plots, hide brackets, and edit the title or y-axis label.</p>
+<p>The first four colors are soft green, orange, blue, and yellow; the palette cycles for additional groups. The box style uses the same group colors with subtler fill, dark outlines, whiskers, and medians. When individual values are shown, the box chart's own outlier markers are suppressed so observations are not drawn twice. Optional controls overlay individual values, hide SD bars on bar plots, hide brackets, and edit the title or y-axis label.</p>
+<p>Initial limits include bars or boxes, visible individual values, error bars, and significance brackets. <strong>Reset plot view</strong> recomputes that fitted viewport without rerunning the tests or changing project data. Switching between bar and box styles also accepts the new style's fitted limits; ordinary redraws otherwise preserve the user's current zoom.</p>
 <p>Use <strong>Plot &gt; Pop out all plots</strong> for a standalone MATLAB figure. The popout can be passed to <a href="../labkit-core/figure-studio.html">Figure Studio</a> for further visual styling without recalculating the tests.</p>
 <h2 id="csv-outputs">CSV Outputs</h2>
 <p><strong>Export group data CSV</strong> writes one group per column and pads unequal groups with blank cells:</p>
@@ -134,7 +133,7 @@ results = ttest_wizard.testRun.runGroupTTests(groups, options);</code></pre>
 <li><a href="../../development/data-and-designs/scientific-csv-interchange.html">Simple Scientific CSV Exchange</a></li>
 <li><a href="../labkit-core/figure-studio.html">Figure Studio</a></li>
 <li><a href="../../framework/index.html">App Framework</a></li>
-</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/ttest_wizard/testRun/runGroupTTests.html"><code>ttest_wizard.testRun.runGroupTTests</code></a></td><td>Compare every group after the first with the first group.</td></tr><tr><td><a href="../../reference/api/ttest_wizard/testRun/runTTest.html"><code>ttest_wizard.testRun.runTTest</code></a></td><td>Run one independent Welch, pooled, or paired t-test.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../history/records/2026/07/LK-20260720-app-action-tooltips.html">2026-07-20 - App actions require explanatory hover help</a><small>feat | compatible</small></li><li><a href="../../history/records/2026/07/LK-20260719-ui-explicit-contract-migration.html">2026-07-19 - App SDK explicit contract replaces the retired UI runtime</a><small>refactor | breaking</small></li><li><a href="../../history/records/2026/07/LK-20260719-headless-validation-repair.html">2026-07-19 - Headless validation follows current documentation and App contracts</a><small>fix | behavior-preserving</small></li><li><a href="../../history/records/2026/07/LK-20260718-ttest-wizard-and-table-workspace.html">2026-07-19 - T-Test Wizard adds table selection and first-versus-each comparisons</a><small>feat | additive</small></li></ul></section>
+</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/ttest_wizard/testRun/runGroupTTests.html"><code>ttest_wizard.testRun.runGroupTTests</code></a></td><td>Compare every group after the first with the first group.</td></tr><tr><td><a href="../../reference/api/ttest_wizard/testRun/runTTest.html"><code>ttest_wizard.testRun.runTTest</code></a></td><td>Run one independent Welch, pooled, or paired t-test.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../history/records/2026/07/LK-20260720-ttest-plot-viewport-and-density.html">2026-07-20 - T-Test plots gain truthful limits and an explicit view reset</a><small>feat | compatible</small></li><li><a href="../../history/records/2026/07/LK-20260720-app-action-tooltips.html">2026-07-20 - App actions require explanatory hover help</a><small>feat | compatible</small></li><li><a href="../../history/records/2026/07/LK-20260719-ui-explicit-contract-migration.html">2026-07-19 - App SDK explicit contract replaces the retired UI runtime</a><small>refactor | breaking</small></li><li><a href="../../history/records/2026/07/LK-20260719-headless-validation-repair.html">2026-07-19 - Headless validation follows current documentation and App contracts</a><small>fix | behavior-preserving</small></li><li><a href="../../history/records/2026/07/LK-20260718-ttest-wizard-and-table-workspace.html">2026-07-19 - T-Test Wizard adds table selection and first-versus-each comparisons</a><small>feat | additive</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

@@ -63,6 +63,18 @@ classdef GuiLayoutTTestWizardTest < matlab.unittest.TestCase
             buttonPosition = getpixelposition( ...
                 component(figure, "captureGroup"), true);
             testCase.verifyGreaterThan(buttonPosition(4), 20);
+            analysisTab = component(figure, "analysis");
+            analysisTab.Parent.SelectedTab = analysisTab;
+            drawnow;
+            for id = ["pendingTest", "resultStatus"]
+                summary = component(figure, id);
+                panel = summary.UserData.Panel;
+                assignedHeight = panel.Parent.RowHeight{panel.Layout.Row};
+                testCase.verifyLessThanOrEqual(assignedHeight, 82, ...
+                    id + " should use the compact summary layout.");
+                testCase.verifyGreaterThanOrEqual(summary.FontSize, 14, ...
+                    id + " should use the summary reading size.");
+            end
             runtime.applyFileSelection("sourceFile", sourcePath, 1);
 
             sourceTable = component(figure, "sourceGrid");
@@ -111,14 +123,39 @@ classdef GuiLayoutTTestWizardTest < matlab.unittest.TestCase
                 0.00222460334889963, RelTol=1e-11);
             testCase.verifySize(component(figure, "resultTable").Data, [2 5]);
 
+            plotPage = component(figure, "plotPage");
+            plotPage.Parent.SelectedTab = plotPage;
+            drawnow;
             axesHandle = component(figure, "resultPlot.main");
             testCase.verifyGreaterThan(numel(axesHandle.Children), 0);
             testCase.verifyEqual(string(axesHandle.Box), "on");
             testCase.verifyEqual(axesHandle.YLim(1), 0);
+            testCase.verifyEqual(axesHandle.XLim, [0.4 3.6], ...
+                AbsTol=1e-12);
             testCase.verifyEqual(string(axesHandle.XTickLabel), ...
                 ["Reference"; "Treatment 1"; "Treatment 2"]);
             testCase.verifyTrue(contains(string( ...
                 component(figure, "plotFreshness").Value), "Current"));
+
+            axesHandle.XLim = [1.2 2.2];
+            axesHandle.YLim = [0.5 1.5];
+            testCase.verifyEqual(axesHandle.YLim, [0 1.5], ...
+                "Positive bar plots should keep zero at the lower edge.", ...
+                AbsTol=0);
+            click(figure, "resetPlotView");
+            testCase.verifyEqual(axesHandle.XLim, [0.4 3.6], ...
+                AbsTol=1e-12);
+            testCase.verifyEqual(axesHandle.YLim(1), 0);
+
+            plotChoices = ttest_wizard.resultPlot.choices();
+            changeValue(figure, "plotType", plotChoices.types(2));
+            testCase.verifyGreaterThan(axesHandle.YLim(1), 0, ...
+                "Box plots should fit their distribution instead of forcing zero.");
+            axesHandle.YLim = [1.3 1.7];
+            testCase.verifyEqual(axesHandle.YLim, [1.3 1.7], ...
+                "Box plots should not retain the bar-chart zero constraint.", ...
+                AbsTol=0);
+            changeValue(figure, "plotType", plotChoices.types(1));
 
             testChoices = ttest_wizard.testRun.choices();
             changeValue(figure, "testMethod", testChoices.methodLabels(2));

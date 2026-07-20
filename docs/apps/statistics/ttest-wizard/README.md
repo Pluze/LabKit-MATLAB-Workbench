@@ -1,8 +1,5 @@
 # T-Test Wizard
 
-Every action and input-selection button provides hover help describing its
-group assignment, hypothesis test, alpha decision, or portable export.
-
 T-Test Wizard captures two or more numeric groups, compares every group after
 the first with the first group, and draws one publication-oriented mean and
 standard-deviation plot. The first group is always the reference group.
@@ -18,14 +15,6 @@ labkit_TTestWizard_app
 
 The App requires Base MATLAB and the LabKit App Framework. It does not require
 Statistics and Machine Learning Toolbox.
-
-Current App version: **1.1.0**.
-
-The App uses `labkit.app` 1.x. Its definition names the project schema,
-transient session factory, semantic workbench, derived view, and plot
-renderer. Runtime-injected callback context and table payload types are
-declared in MATLAB `arguments` blocks; the App does not receive a component
-registry or an untyped service bag.
 
 ## Workflow
 
@@ -45,6 +34,8 @@ The right workspace has two user-selectable pages:
 Changing data or test settings does not silently recalculate the plot. A compact
 status beside the plot controls reports **OUT OF DATE** until
 **Run / refresh comparisons** is used again.
+The short **What will run** and **Result family** summaries stay compact so
+the result table and plot controls receive most of the vertical space.
 
 ## Add Groups From A Table
 
@@ -159,7 +150,9 @@ The bar visual contract is:
 
 - one pastel bar per group;
 - bar height equal to the group mean;
-- black-capped sample-standard-deviation error bars;
+- dark, capped sample-standard-deviation error bars;
+- a zero-anchored y-axis for all-positive or all-negative bars, including
+  after wheel or toolbar zoom;
 - black boxed axes on a white background;
 - Helvetica labels and no grid;
 - stacked brackets from the first bar to every later successful comparison;
@@ -167,9 +160,16 @@ The bar visual contract is:
 
 The first four colors are soft green, orange, blue, and yellow; the palette
 cycles for additional groups. The box style uses the same group colors with
-black outlines, whiskers, and medians. Optional controls overlay individual
-values, hide SD bars on bar plots, hide brackets, and edit the title or y-axis
-label.
+subtler fill, dark outlines, whiskers, and medians. When individual values are
+shown, the box chart's own outlier markers are suppressed so observations are
+not drawn twice. Optional controls overlay individual values, hide SD bars on
+bar plots, hide brackets, and edit the title or y-axis label.
+
+Initial limits include bars or boxes, visible individual values, error bars,
+and significance brackets. **Reset plot view** recomputes that fitted viewport
+without rerunning the tests or changing project data. Switching between bar
+and box styles also accepts the new style's fitted limits; ordinary redraws
+otherwise preserve the user's current zoom.
 
 Use **Plot > Pop out all plots** for a standalone MATLAB figure. The popout can
 be passed to

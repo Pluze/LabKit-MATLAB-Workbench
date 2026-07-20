@@ -1,8 +1,5 @@
 # ECG Print
 
-Every action and input-selection button provides hover help describing its
-ECG import, ROI processing, beat/template analysis, SNR, or export effect.
-
 ECG Print reads a wearable recording, filters one channel, detects beats,
 builds event-centered segments and a representative template, and reports
 signal quality over time. It can export the segment measurements and a
@@ -35,9 +32,8 @@ For a difficult text file, choose **Preview file header**, then set:
 Choose **Parse / refresh file** after changing import settings. The app reports
 the detected channels and lets you select one for analysis.
 
-The recording reference is stored in the standard project `inputs.sources`
-collection. Version 1 ECG Print projects using the former singular
-`inputs.source` field are upgraded on load and saved as payload version 2.
+The recording is saved as a portable project source. Older projects are
+upgraded on load.
 
 ## Project And Session State
 
@@ -51,12 +47,6 @@ Decoded recordings, signal arrays, events, segments, templates, measurements,
 header previews, and plot models are transient session data. They are rebuilt
 from the recording and durable parameters when a project is opened. This keeps
 saved projects portable and avoids duplicating large waveform caches.
-
-For developers, `ecg_print.definition` is the complete product contract.
-`ecg_print.projectSpec` keeps project creation, validation, and the version-1
-upgrade in one file; `ecg_print.createSession` reconstructs transient state.
-The App SDK runtime performs the version loop and calls the migration entry
-once for each older payload version.
 
 ## Analyze ECG
 
@@ -139,6 +129,8 @@ segments, template, and measurements. For a more customized pipeline, call
   event spacing.
 - Automatic parsing should be checked when a text file has long preambles,
   unusual headers, or mixed metadata rows.
+- A failed **Parse / refresh file** keeps the selected source and header
+  preview available so import settings can be corrected in place.
 - Automatic peak polarity and thresholds still require visual review when
   morphology or noise changes within a recording.
 - Filtering and detection settings must accompany any reported heart rate or
@@ -151,28 +143,3 @@ segments, template, and measurements. For a more customized pipeline, call
 - `labkit.biosignal.detectEcgPeaks`
 - `labkit.biosignal.measureSegments`
 - [Biosignal library](../../../libraries/biosignal/README.md)
-
-## Framework Compatibility
-
-This App uses `labkit.app.Definition`, semantic `labkit.app.layout.*`
-controls, complete `labkit.app.view.Snapshot` presentation, typed events, and
-the injected `labkit.app.CallbackContext`. It requires `labkit.app >=1 <2`
-and `labkit.biosignal >=1.0 <2`. The runtime owns launch, busy state,
-portable-source serialization, project migration, result-manifest
-provenance, log presentation, and native component lifecycle.
-
-The project validator requires the recording source collection and checks
-import, filter, detection, and result fields; Runtime validates canonical
-buckets and each source record first.
-
-Its session factory resolves the portable recording through
-`CallbackContext`, then returns only App-specific import workflow and decoded
-signal cache fields. A failed project/session reconstruction reaches the
-runtime's atomic failure boundary. A failed user-requested
-**Parse / refresh file** operation keeps the source and header preview
-available so import settings can be corrected in place.
-
-Layout controls bind directly to ECG capability callbacks and the four-axis
-plot area binds directly to its renderer; there is no App-authored action or
-renderer registry. See the
-[App SDK runtime contract](../../../framework/guides/runtime.md).

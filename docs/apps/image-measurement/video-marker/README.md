@@ -1,8 +1,5 @@
 # Video Marker
 
-Every action and input-selection button provides hover help describing its
-landmark/skeleton state, frame annotation, calibration, or coordinate export.
-
 Video Marker defines an ordered landmark skeleton, records coordinates across
 video frames, predicts forward positions between manual anchors, and saves a
 portable project with an explicit source-adjacent autosave copy.
@@ -77,25 +74,16 @@ conversion. Raw pixel coordinates remain available in the project.
 source video. It is an explicit action, not a background timer. Autosave and
 named project MAT files contain the same project data: frame count, frame rate,
 duration, image dimensions, skeleton edges, annotation status/source,
-calibration, and durable coordinates. Portable source records let the runtime
-resolve or relink the video while rebuilding the transient reader and decoded
-frame cache.
+calibration, and durable coordinates. The video itself remains an external
+portable source and can be relinked without discarding annotations.
 
 When a project tree moves between folders, users, or operating systems, the
-relative reference is tried first. If no candidate exists, the runtime asks
-the user to locate the video without discarding skeleton or annotations. A
+relative reference is tried first. If no candidate exists, the app asks the
+user to locate the video without discarding skeleton or annotations. A
 compatible old Video Marker project or autosave opens through **Open MAT** or
-the top-level **Load State** action. Saving it writes the current
-`labkitProject` envelope.
+**Tools > Project State > Load State...**.
 
 ## Project And Session State
-
-`video_marker.projectSpec` is the single durable-project contract. It owns the
-current schema factory and validator, the version-1 payload upgrade, the former
-`videoMarkerProject` MAT-variable importer, and the lightweight current-frame
-resume policy. The App SDK performs migration iteration, validates the imported
-payload, resolves required video sources, and only then calls
-`video_marker.createSession`.
 
 Durable state consists of video metadata, the portable video source, skeleton,
 frame annotations and provenance, calibration, export parameters, and output
@@ -103,6 +91,9 @@ manifest paths. The video reader, decoded frame, current interaction,
 selection, preview graphics, and frame cache are transient session resources.
 Only the current frame number is saved as navigation convenience; annotations
 remain the authoritative scientific data.
+
+Older compatible project and autosave formats are upgraded when opened. Save
+the upgraded project before moving it into another workflow.
 
 ## Outputs
 
@@ -171,38 +162,3 @@ page documents the repository-owned prediction contract separately.
 - [Gait Analysis](../../gait/gait-analysis/README.md)
 - [Image Measurement family](../README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-This App requires `labkit.app >=1 <2`. Its single `definition.m` creates one
-immutable `labkit.app.Definition`; feature-owned layout nodes bind directly to
-semantic callbacks, `workbench.present` returns a complete
-`labkit.app.view.Snapshot`, and plot rendering stays with the video-preview
-capability. `projectSpec.m` concentrates durable creation, validation,
-migration, legacy import, and resume hooks; root `createSession.m` rebuilds
-transient video state.
-
-The project validator requires the video-source collection and checks metadata,
-coordinate parameters, skeleton, and frame-array relationships; Runtime
-validates canonical buckets and each source record first.
-
-Callbacks receive `labkit.app.CallbackContext` as an injected runtime port.
-They resolve portable sources, register the document-scoped video reader/cache,
-open dialogs, restore or create project documents, write result packages, and
-record diagnostics through specifically named methods. No App helper reads a
-runtime registry or nested source schema. Busy state, callback queues,
-resource cleanup, source relinking, serialization envelopes, and migration
-iteration remain framework-owned.
-
-Its session factory returns only App-specific frame selection, editing
-workflow, scale-bar view, and decoded video cache fields. Runtime supplies
-absent canonical buckets and owns workflow-log initialization.
-
-The skeleton preset selector is a direct session binding; choosing a label
-does not require an App callback until **Use preset** applies the selected
-schema. The decoded-video cache is a document-scoped runtime resource reused
-across frame navigation and cleared by project replacement or runtime close.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

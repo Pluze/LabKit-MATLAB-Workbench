@@ -1,15 +1,12 @@
 # VT Resistance
 
-Every action and input-selection button provides hover help describing its
-pulse voltage/current input, resistance result, or export effect.
-
 VT Resistance estimates cathodic and anodic steady resistance from a biphasic
 voltage transient and reports the mean of their absolute values.
 
 ## Requirements And Launch
 
-The app uses the LabKit App framework and DTA library and requires a chrono
-DTA curve with valid time, voltage, and current columns.
+The app requires a chrono DTA curve with valid time, voltage, and current
+columns.
 
 ```matlab
 labkit_VTResistance_app
@@ -20,9 +17,8 @@ labkit_VTResistance_app
 Add one or more chrono `.DTA` files. The transient session decodes and analyzes
 the registered batch so shared setting changes update every result together.
 No electrode-area normalization is performed because the reported quantity is
-electrical resistance in ohms. The App runtime reconciles the ordered source
-list with durable source records, preserving retained identities and allocating
-collision-free identities for later additions.
+electrical resistance in ohms. Saved projects preserve source order and
+portable identity through removal, later additions, and reopen.
 
 ## Basic Workflow
 
@@ -99,15 +95,3 @@ assert(result.ok, result.message);
 - [CIC](../cic/README.md)
 - [DTA Library](../../../libraries/dta/README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-The single `definition.m` owns product metadata and the immutable App SDK
-contract. `projectSpec.m` owns the complete version-1 domain schema, defaults,
-analysis-parameter validation, and required source collection.
-`+workbench/buildLayout.m` binds fields and buttons directly to concrete
-capability callbacks, while `+workbench/present.m` produces a complete
-`labkit.app.view.Snapshot`. The App requires `labkit.app >=1 <2` and
-`labkit.dta >=2 <3`. Lifecycle, callback dispatch, source identity,
-resolved-path access, project documents, result manifests, and native layout
-remain framework-owned.

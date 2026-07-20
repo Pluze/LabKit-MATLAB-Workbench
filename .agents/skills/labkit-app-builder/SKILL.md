@@ -31,6 +31,12 @@ shape and public boundary unless the defect itself proves a boundary change is
 necessary. Do not relabel a bug fix or UX correction as a refactor, and do not
 use the full architecture build sequence to justify unrelated cleanup.
 
+Treat a new framework public API as the last solution. Keep App-specific
+meaning local, prefer a natural extension of an existing focused SDK contract,
+and prefer private framework mechanics when no App-authored call is needed.
+Add a new public name only after repeated multi-App need is demonstrated or
+when extending the nearest API would make it an ambiguous bucket.
+
 ## Design
 
 Write a short working brief with app/family, inputs, project/session shape,
@@ -111,7 +117,7 @@ names must state their capability directly; do not add general buckets such as
    do not use a long end-to-end GUI method as the edit-fail-edit loop.
 8. Update the App definition version, manual, and component history.
 
-Use `labkit-boundary-guard` before adding a public facade API,
+Use `labkit-boundary-guard` before changing a public facade API,
 record active compatibility retirement directly in `.agents/migration_guide.md`,
 and use `labkit-test-planner` for validation. Report preserved science, changed flow,
 files, tests, manual checks, and anything intentionally left app-local.

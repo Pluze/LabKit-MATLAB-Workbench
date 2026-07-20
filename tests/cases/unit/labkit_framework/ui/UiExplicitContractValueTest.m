@@ -107,6 +107,21 @@ classdef UiExplicitContractValueTest < matlab.unittest.TestCase
             testCase.verifyEqual(app.ProjectSchema.Version, 1);
         end
 
+        function presentationHintsValidateNarrowContracts(testCase)
+            setupLabKitTestPath();
+            testCase.verifyClass(labkit.app.layout.statusPanel( ...
+                "summary", Lines=2), "labkit.app.internal.LayoutNode");
+            testCase.verifyError(@() labkit.app.layout.statusPanel( ...
+                "summary", Lines=0), "labkit:app:contract:InvalidValue");
+            snapshot = labkit.app.view.Snapshot();
+            testCase.verifyClass(snapshot.renderPlot( ...
+                "plot", struct(), ViewRevision=3), ...
+                "labkit.app.view.Snapshot");
+            testCase.verifyError(@() snapshot.renderPlot( ...
+                "plot", struct(), ViewRevision=0.5), ...
+                "labkit:app:contract:InvalidValue");
+        end
+
         function simpleProjectContractNeedsNoCallbacks(testCase)
             setupLabKitTestPath();
             contract = labkit.app.project.Schema();

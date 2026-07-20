@@ -449,6 +449,10 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             end
         end
 
+        function copyScreenshot(obj)
+            copygraphics(obj.Figure, ContentType="image");
+        end
+
         function tf = hasProjectDocument(obj)
             tf = true;
             try

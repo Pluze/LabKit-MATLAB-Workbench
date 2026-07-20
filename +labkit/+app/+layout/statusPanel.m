@@ -14,6 +14,9 @@ function node = statusPanel(id, varargin)
 %   Title - Visible panel title. Default: "Status".
 %   Text - Static text lines. When omitted, the runtime's latest status is
 %       displayed. Default: strings(1,0).
+%   Lines - Approximate visible text lines. The native layout uses this hint
+%       to size short summaries without consuming detail-panel height.
+%       Integer from 1 through 12. Default: 5.
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by containers.

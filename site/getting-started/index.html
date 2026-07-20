@@ -50,14 +50,15 @@
 <p>Select one row in the launcher and choose <strong>Open</strong>. The launcher prepares the MATLAB path, checks the app's LabKit version requirements, and displays startup progress until the app is ready.</p>
 <p>Use the <a href="../apps/index.html">app catalog</a> to choose a workflow and confirm its input and output formats.</p>
 <h2 id="common-app-commands">Common App Commands</h2>
-<p>Every current LabKit app exposes these top-level entries:</p>
+<p>Every current LabKit app exposes one top-level <strong>Tools</strong> menu:</p>
 <ul>
-<li><strong>Screenshot</strong> captures the active app surface.</li>
-<li><strong>Save State</strong> writes the current project document.</li>
-<li><strong>Load State</strong> opens a compatible project document.</li>
-<li><strong>Plot</strong> contains plot-specific actions such as opening a larger editable view when the current axes supports them.</li>
+<li><strong>Tools &gt; Plots</strong> contains plot-specific actions such as opening larger editable views, copying plots, and saving plots.</li>
+<li><strong>Tools &gt; Screenshot &gt; Copy to Clipboard</strong> copies the complete active App surface as an image.</li>
+<li><strong>Tools &gt; Screenshot &gt; Save to File...</strong> saves the complete App surface.</li>
+<li><strong>Tools &gt; Project State &gt; Save State...</strong> writes the current project document.</li>
+<li><strong>Tools &gt; Project State &gt; Load State...</strong> opens a compatible project document.</li>
 </ul>
-<p>State files preserve app projects. They are different from exported result files and from ignored debug manifests under <code>artifacts/debug/</code>.</p>
+<p>State files preserve app projects. They are different from exported result files and from ignored diagnostic manifests under <code>artifacts/diagnostics/</code>.</p>
 <h2 id="source-checkout">Source Checkout</h2>
 <p>Clone the repository only when you need source development, tests, profiling, or review:</p>
 <pre><code class="language-bash">git clone https://github.com/Pluze/LabKit-MATLAB-Workbench.git

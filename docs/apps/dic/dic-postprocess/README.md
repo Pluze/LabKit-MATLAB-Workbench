@@ -1,16 +1,13 @@
 # DIC Postprocess
 
-Every action and input-selection button provides hover help describing its
-DIC inputs, ROI/strain processing, display-only effects, or exported evidence.
-
 DIC Postprocess converts Ncorr strain fields into EXX and EYY overlays on an
 optical reference image and calculates descriptive strain statistics over a
 validated ROI. It is a rendering and summary tool; it does not rerun DIC.
 
 ## Requirements And Launch
 
-The app uses the LabKit UI framework and Image library. Input MAT files must contain
-the Ncorr result structure recognized by the app loader.
+Input MAT files must contain the Ncorr result structure recognized by the app
+loader.
 
 ```matlab
 labkit_DICPostprocess_app
@@ -137,25 +134,3 @@ failure behavior, and related APIs.
 - [DIC family](../README.md)
 - [Image Library](../../../libraries/image/README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-The single `definition.m` owns product metadata, requirements, layout, and
-optional runtime capabilities. `projectSpec.m` keeps the complete version-1
-durable schema, creation defaults, and validation together. `createSession.m`
-rebuilds file-backed strain, image, mask, and overlay caches because those are
-transient runtime data rather than saved project fields. The App requires
-`labkit.app >=1 <2` and `labkit.image >=2 <3`; busy-state, optional source-slot
-lookup, and portable-reference serialization remain framework-owned.
-
-The project validator requires the DIC source collection and checks summary
-table and parameter fields; Runtime validates canonical buckets and each
-source record first.
-
-Its session factory returns only App-specific selection and decoded cache
-fields. Runtime supplies absent canonical buckets and owns workflow-log
-initialization.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every control and plot names its concrete callback or renderer, and the
-definition validates those bindings before creating a figure.

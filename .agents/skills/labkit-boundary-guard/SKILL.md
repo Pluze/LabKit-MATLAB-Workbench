@@ -25,6 +25,21 @@ Before moving code into `+labkit`, prove that it:
 Otherwise keep it in the app. Duplication, helper length, and a desire to make
 an App callback file shorter are not sufficient evidence.
 
+Use this escalation order for new behavior:
+
+1. keep product meaning in the owning App capability;
+2. extend an existing focused public contract when the option, method, or
+   operation is a natural part of that contract;
+3. add private framework/runtime capability when implementation must be shared
+   but App authors do not need a callable contract;
+4. add a new public API only for stable use by multiple Apps, or when putting
+   the behavior into the nearest API would make that API an ambiguous bucket.
+
+Do not create a narrow public helper merely because the implementation lives
+in `+labkit`. Conversely, do not overload an existing API with unrelated modes
+to avoid every new name; a cohesive new capability is clearer once the
+multi-consumer or anti-bucket threshold is met.
+
 Keep domain facades GUI-free and app-free. `labkit.app` is the sole App SDK.
 Concrete controls, registries, queues, interaction runtimes, persistence
 storage, and lifecycle handles stay private. App metadata stays in app-owned

@@ -1,8 +1,5 @@
 # DIC Preprocess
 
-Every action and input-selection button provides hover help describing its
-registration, crop, binary ROI-mask, or downstream DIC effect.
-
 DIC Preprocess registers a moving optical image to a reference image, applies
 repeatable crop operations to the pair, and creates a binary analysis mask.
 Use it when camera motion or framing differences must be removed before an
@@ -10,8 +7,8 @@ external DIC solver is run.
 
 ## Requirements And Launch
 
-The app uses the LabKit UI framework and Image library. Image IO and
-registration run in MATLAB; no external registration package is installed.
+Image IO and registration use MATLAB and repository-owned code; no external
+registration package is installed.
 
 ```matlab
 labkit_DICPreprocess_app
@@ -163,33 +160,3 @@ assumptions, output shape, limitations, failure behavior, and related APIs.
 - [DIC family](../README.md)
 - [Image Library](../../../libraries/image/README.md)
 - [API Reference](../../../reference/README.md)
-
-## Framework Compatibility
-
-The single `definition.m` owns product metadata and the immutable App SDK
-contract. `projectSpec.m` keeps the complete durable version-1 schema,
-creation defaults, and validation together. `createSession.m` rebuilds decoded
-source images and replays applied alignment/crop steps because those images
-are transient caches rather than project data. The App requires
-`labkit.app >=1 <2` and `labkit.image >=2 <3`; managed interactions, portable
-source resolution, lifecycle, and presentation reconciliation remain
-framework-owned.
-
-The project validator requires the DIC image-source collection and checks
-alignment, crop, mask, history, and preview fields; Runtime validates canonical
-buckets and each source record first.
-
-App-owned state operations are grouped by capability: `editHistory` owns
-align/crop undo and reset semantics, `maskEditing` owns mask canvas and mask
-undo semantics, and `sourceFiles.hasImagePair` reports whether the transient
-image cache is ready. There is no generic app-state service or alternate
-lifecycle layer.
-
-Its session factory returns only App-specific editing workflow and decoded
-cache fields. Layout controls bind directly to capability-owned callbacks,
-while `+workbench` composes the complete layout and presentation.
-
-The semantic layout follows the
-[App callback contract](../../../framework/README.md): each control and managed
-interaction references its concrete callback directly and resolves during
-definition construction.

@@ -24,6 +24,7 @@ function opts = labkitParseRunnerOptions(root, varargin)
     p.addParameter("ArtifactsRoot", fullfile(root, "artifacts"), @isTextScalar);
     p.addParameter("RunName", "local", @isTextScalar);
     p.addParameter("ListOnly", false, @isLogicalScalar);
+    p.addParameter("PrintList", true, @isLogicalScalar);
     p.addParameter("OutputDetail", "Concise", @isTextScalar);
     p.addParameter("LoggingLevel", "Concise", @isTextScalar);
     p.addParameter("ShardCount", 1, @isPositiveIntegerScalar);
@@ -37,6 +38,7 @@ function opts = labkitParseRunnerOptions(root, varargin)
     opts.HtmlReport = logical(opts.HtmlReport);
     opts.FailIfNoTests = logical(opts.FailIfNoTests);
     opts.ListOnly = logical(opts.ListOnly);
+    opts.PrintList = logical(opts.PrintList);
     opts.Suites = labkitNormalizeSuiteTargets(opts.Suites);
     opts.Files = labkitNormalizeTestFileSelectors(root, opts.Files);
     opts.Tests = normalizeTextList(opts.Tests);

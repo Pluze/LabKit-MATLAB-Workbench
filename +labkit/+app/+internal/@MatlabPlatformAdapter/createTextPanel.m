@@ -37,6 +37,12 @@ function textArea = createTextPanel(obj, node, parent, config, isLog)
     else
         grid = uigridlayout(panel, [1 1], Padding=[7 7 7 7]);
         textArea = uitextarea(grid, Editable="off");
+        if isfield(config, "Lines") && config.Lines <= 2
+            policy = labkit.app.internal.NativeAdapterValues.layoutPolicy();
+            textArea.FontSize = policy.SummaryFontSize;
+            setappdata(textArea, ...
+                "labkitAppTextFitMinFontSize", policy.SummaryFontSize);
+        end
     end
     textArea.UserData = struct("Panel", panel);
     panel.Tag = char(node.Id + ".panel");

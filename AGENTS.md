@@ -20,12 +20,35 @@ affected source/tests/docs. Read component manuals only for changed contracts:
 Read `.agents/migration_guide.md` only for active migration or compatibility
 retirement. A zero-debt ledger is not an everyday checklist.
 
+## Agent skills and automation
+
+- Treat repeated reasoning, command assembly, selector discovery, and
+  trial-and-error as signals to improve the responsible skill or its scripts.
+  Prefer one reusable improvement over carrying the same procedural burden
+  into later tasks.
+- Skill guidance and automation express stable concepts, user intent,
+  ownership boundaries, and semantic operations. Do not encode a transient CI
+  failure, current repository contents, one App's details, a fixed product
+  version, or a one-off filename as general workflow.
+- Add convenience only when it removes recurring inference or retry cost
+  without hiding important choices, weakening validation, or inventing a
+  parallel product interface. Keep scripts platform-independent when the
+  underlying workflow is platform-independent.
+- Validate an edited skill and exercise the changed script path. Record
+  durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
+  agent procedure in skills rather than duplicating it in human manuals.
+
 ## Architecture and implementation
 
 - Preserve behavior unless the user asks to change it.
 - Apps own formulas, thresholds, units, workflow decisions, plots, results,
   exports, failures, and wording. Promote code into `+labkit` only when it is a
   stable domain-neutral contract useful beyond one app.
+- Treat a new public framework API as the last boundary option. Prefer, in
+  order, App-local ownership, a natural extension of an existing focused API,
+  or a private framework capability. Add a public API only when multiple Apps
+  need the stable contract or extending an existing API would turn it into an
+  ambiguous bucket.
 - App-facing packages are `labkit.app`, `image`, `thermal`, `dta`, `rhs`,
   and `biosignal`. Do not
   create public `analysis`, `data`, `io`, `util`, or app-specific helper
