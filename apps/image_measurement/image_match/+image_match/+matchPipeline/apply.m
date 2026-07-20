@@ -14,10 +14,13 @@ step = image_match.analysisRun.makeStep( ...
     parameters.toneStrength, ...
     parameters.colorStrength);
 steps = applicationState.project.annotations.steps;
+steps = steps(:);
 steps(end + 1, 1) = step;
 
 applicationState.project.annotations.steps = steps;
 applicationState.session.workflow.pendingDirty = false;
+applicationState = ...
+    image_match.matchPipeline.invalidateResults(applicationState);
 applicationState.session.cache = ...
     image_match.matchPipeline.refreshPreview(cache, steps);
 callbackContext.appendStatus("Applied match: " + string(step.label));

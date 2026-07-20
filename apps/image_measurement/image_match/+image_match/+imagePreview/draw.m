@@ -1,15 +1,11 @@
 function draw(axesById, model)
-%DRAW Render the selected image-match preview without owning app state.
-ax = axesById.image;
-labkit.app.plot.clearAxes(ax);
-if isempty(model.source)
-    labkit.app.plot.showMessage(ax, "Load source images");
-    return
+%DRAW Render one selected Image Match preview.
+axesHandle = axesById.image;
+labkit.app.plot.clearAxes(axesHandle);
+title(axesHandle, model.title);
+if isempty(model.imageData)
+    return;
 end
-imageData = model.source.image;
-if model.mode == "Matched" && ~isempty(model.result)
-    imageData = model.result;
-end
-imshow(imageData, Parent=ax);
-title(ax, model.mode);
+imshow(model.imageData, Parent=axesHandle);
+title(axesHandle, model.title);
 end
