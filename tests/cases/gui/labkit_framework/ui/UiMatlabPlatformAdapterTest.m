@@ -135,6 +135,20 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function reconcilesStructuredPointSlotsValue(testCase)
+            setupLabKitTestPath();
+            helpers = guiTestHelpers();
+            helpers.assertUifigureAvailable();
+            runtime = pointSlotsApplication().createMatlabRuntime();
+            cleanup = onCleanup(@() runtime.close());
+
+            runtime.applyInteraction( ...
+                "markers", "interactionChanged", [2 3; 4 5]);
+
+            testCase.verifyEqual(runtime.State.project.points, [2 3; 4 5]);
+            clear cleanup
+        end
+
         function enforcesSharedWorkbenchVisualPolicy(testCase)
             setupLabKitTestPath();
             helpers = guiTestHelpers();
@@ -383,6 +397,35 @@ end
 view = labkit.app.view.Snapshot() ...
     .renderPlot("preview", struct()) ...
     .rectangle("cropRegion", position, ImageSize=[10 10]);
+end
+
+function app = pointSlotsApplication()
+interaction = labkit.app.interaction.pointSlots( ...
+    "markers", @changePoints);
+plot = labkit.app.layout.plotArea( ...
+    "preview", @drawInteractionImage, Interactions={interaction});
+app = labkit.app.Definition( ...
+    Entrypoint="labkit_PointSlotsProbe_app", ...
+    AppId="probe.point-slots", Title="Point slots probe", ...
+    Family="Tests", AppVersion="1.0.0", Updated="2026-07-19", ...
+    Requirements=[], Workbench=labkit.app.layout.workbench({}, ...
+        Workspace=labkit.app.layout.workspace(plot)), ...
+    PresentWorkbench=@presentPointSlots);
+end
+
+function state = changePoints(state, points, ~)
+state.project.points = points;
+end
+
+function view = presentPointSlots(state)
+points = NaN(2, 2);
+if isfield(state.project, "points")
+    points = state.project.points;
+end
+value = struct("points", points, "selectedIndex", 2, "locked", false);
+view = labkit.app.view.Snapshot() ...
+    .renderPlot("preview", struct()) ...
+    .pointSlots("markers", value, ImageSize=[10 10]);
 end
 
 function app = chronoLikeApplication()
