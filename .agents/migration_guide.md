@@ -52,10 +52,11 @@ Restored in the replacement SDK worktree:
 - transparent semantic groups that preserve full native button height, and
   bound range controls whose initial values come from App state rather than
   falling back to their legal limits;
-- workspace pages and initial selection, plot view modes, single/pair/stack
-  axes layouts, axis titles and labels, unequal axes sizing, per-axis wheel
-  zoom, viewport preservation, managed fixed-canvas resize reflow, and plot
-  pop-out/export behavior;
+- workspace pages and initial selection, multiple vertically composed
+  workspace-page surfaces, plot view modes, single/pair/stack axes layouts,
+  axis titles and labels, unequal axes sizing, per-axis wheel zoom, viewport
+  preservation, managed fixed-canvas resize reflow, and plot pop-out/export
+  behavior;
 - typed interval-scroll payloads carrying the normalized data anchor and
   scroll count instead of an undocumented runtime struct.
 
@@ -94,7 +95,8 @@ Current product audit progress:
 | Focus Stack | Complete | Files + Analysis/Summary + Results/Log tabs, source summary, file/folder/tree actions and independent folder workflow, exact fusion presets and panners, workflow notes, full result summary/details, paired labeled previews, source-aware result invalidation, all three standard exports and manifest, durable-summary restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
 | Image Enhance | Complete | Library + Export/Tools + History/Log tabs, file/folder/tree source library, source/mode/tool/history/export status, output selection and format, dynamic preview modes and tool limits, managed per-image white ROI, shared and per-image apply/undo/reset histories, current-image metrics, deterministic batch export with CSV and standard manifests, project restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
 | Image Match | Complete | Library + Export/Match + History/Log tabs, compact reference and file/folder/tree source controls, selected-source lazy preview, source/reference-aware export invalidation, output selection and format, pending match preview, Match Flow, apply/undo/reset history, current-image metrics, Matched/Original/Before + After views, deterministic batch export with CSV and standard manifests, project restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
-| Remaining 7 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
+| T-Test Wizard | Complete | Data/Test + Plot/Export/Log tabs, table and selection labels, Fast workflow, direct multi-surface Data workspace composition, equal growable source/analysis tables, exact table/plot/status/export titles, ordered multi-group editing, first-versus-each tests, plot freshness, paired CSV exports, focused framework/App unit and GUI tests, and every-tab visual comparison with `main` |
+| Remaining 6 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
 
 The accepted public structure is capability-partitioned:
 `labkit.app.Definition` and `CallbackContext` form the small root; `layout`,
