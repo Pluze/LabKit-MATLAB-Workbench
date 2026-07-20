@@ -75,15 +75,14 @@ function output = renderNarrativePages(model, stagingRoot)
             body = body + apiLinksBody;
             plainText = plainText + " " + apiLinksText;
         end
-        [historyBody, historyText] = renderLabKitHistoryLinks(model, page);
+        [historyBody, ~] = renderLabKitHistoryLinks(model, page);
         body = body + historyBody;
-        plainText = plainText + " " + historyText;
         body = body + renderLabKitHistorySequenceNavigation(model, page);
         html = renderLabKitPage(model, page.title, page.output, ...
             page.kind, body);
         writeDocText(fullfile(stagingRoot, page.output), html);
         entries(end + 1, 1) = searchEntry(page.title, page.output, ...
-            page.kind, strjoin(page.keywords, " ") + " " + plainText);
+            page.kind, page.keywords, plainText);
     end
     output = struct("searchEntries", entries);
 end
@@ -98,23 +97,54 @@ function output = renderPublicApiPages(model, stagingRoot)
             "reference", body);
         writeDocText(fullfile(stagingRoot, outputPath), html);
         entries(end + 1, 1) = searchEntry(item.symbol, outputPath, ...
-            "reference", item.summary + " " + item.helpText);
+            "reference", item.symbol, item.summary + " " + item.helpText);
     end
     output = struct("searchEntries", entries);
 end
 
-function entry = searchEntry(title, url, kind, text)
+function entry = searchEntry(title, url, kind, keywords, text)
     entry = struct("title", char(title), "url", char(url), ...
-        "kind", char(kind), "text", char(normalizeSearchText(text)));
+        "kind", char(kind), "section", char(searchSection(url, kind)), ...
+        "keywords", char(normalizeSearchText(keywords)), ...
+        "text", char(normalizeSearchText(text)));
 end
 
 function entry = emptySearchEntry()
-    entry = struct("title", "", "url", "", "kind", "", "text", "");
+    entry = struct("title", "", "url", "", "kind", "", ...
+        "section", "", "keywords", "", "text", "");
 end
 
 function text = normalizeSearchText(text)
+    if ischar(text)
+        text = string(cellstr(text));
+    else
+        text = string(text);
+    end
+    text = strjoin(text(:).', " ");
     text = regexprep(string(text), '\s+', ' ');
     text = strip(text);
+end
+
+function section = searchSection(url, kind)
+    url = string(url);
+    kind = string(kind);
+    if kind == "history" || startsWith(url, "history/")
+        section = "history";
+    elseif kind == "reference" || startsWith(url, "reference/")
+        section = "reference";
+    elseif startsWith(url, "apps/")
+        section = "apps";
+    elseif startsWith(url, "framework/")
+        section = "framework";
+    elseif startsWith(url, "libraries/")
+        section = "libraries";
+    elseif startsWith(url, "development/")
+        section = "development";
+    elseif startsWith(url, "getting-started/")
+        section = "getting-started";
+    else
+        section = "general";
+    end
 end
 
 function removeDocFolder(folder)

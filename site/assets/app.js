@@ -1,6 +1,7 @@
 (() => {
   const input = document.getElementById('doc-search');
   const panel = document.getElementById('search-results');
+  const section = document.getElementById('doc-search-section');
   const toggle = document.querySelector('.nav-toggle');
   const sidebar = document.getElementById('local-navigation');
   const setNavigation = open => { document.body.classList.toggle('nav-open', open); if (toggle) toggle.setAttribute('aria-expanded', String(open)); };
@@ -16,18 +17,48 @@
     const observer = new IntersectionObserver(entries => { entries.filter(entry => entry.isIntersecting).forEach(entry => { tocLinks.forEach(link => link.classList.remove('active')); const link = byId.get(entry.target.id); if (link) link.classList.add('active'); }); }, {rootMargin:'-15% 0px -75% 0px'});
     headings.forEach(heading => observer.observe(heading));
   }
-  if (!input || !panel) return;
+  if (!input || !panel || !section) return;
   const root = document.body.dataset.siteRoot || '';
   const index = Array.isArray(window.LABKIT_SEARCH_INDEX) ? window.LABKIT_SEARCH_INDEX : [];
   const escape = value => { const node = document.createElement('span'); node.textContent = String(value); return node.innerHTML; };
   const hide = () => { panel.hidden = true; panel.innerHTML = ''; };
-  input.addEventListener('input', () => {
-    const terms = input.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const normalize = value => String(value || '').toLowerCase();
+  const special = '.^$*+?()[]{}|\\';
+  const escapePattern = value => String(value).split('').map(character => special.includes(character) ? '\\' + character : character).join('');
+  const wholeWord = (text, term) => new RegExp('(^|[^a-z0-9])' + escapePattern(term) + '(?=$|[^a-z0-9])').test(text);
+  const fieldScore = (text, term, weight) => {
+    const value = normalize(text); const index = value.indexOf(term);
+    if (index < 0) return 0;
+    return weight + (wholeWord(value, term) ? 30 : 0) + Math.max(0, 12 - Math.min(index, 12));
+  };
+  const scoreItem = (item, query, terms) => {
+    const title = normalize(item.title); const keywords = normalize(item.keywords); const text = normalize(item.text);
+    let score = 0;
+    for (const term of terms) {
+      const termScore = Math.max(fieldScore(title, term, 400), fieldScore(keywords, term, 180), fieldScore(text, term, 60));
+      if (!termScore) return -1; score += termScore;
+    }
+    if (title === query) score += 2000; else if (title.startsWith(query)) score += 1200; else if (title.includes(query)) score += 700;
+    else if (keywords.includes(query)) score += 350; else if (text.includes(query)) score += 120;
+    return score;
+  };
+  const excerpt = (item, terms) => {
+    const text = String(item.text || ''); const lower = text.toLowerCase();
+    const index = terms.map(term => lower.indexOf(term)).filter(position => position >= 0).sort((left, right) => left - right)[0];
+    if (index === undefined) return '';
+    const start = Math.max(0, index - 54); const end = Math.min(text.length, index + 126);
+    return (start ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '');
+  };
+  const search = () => {
+    const query = normalize(input.value).trim();
+    const terms = query.split(/\s+/).filter(Boolean);
     if (!terms.length) { hide(); return; }
-    const matches = index.filter(item => terms.every(term => (item.title + ' ' + item.text).toLowerCase().includes(term))).slice(0, 12);
-    panel.innerHTML = matches.length ? matches.map(item => `<a href='${root + item.url}'><strong>${escape(item.title)}</strong><small>${escape(item.kind)}</small></a>`).join('') : '<span class=nav-link>No matching documentation.</span>';
+    const matches = index.filter(item => section.value === 'all' || item.section === section.value).map(item => ({item, score: scoreItem(item, query, terms)})).filter(match => match.score >= 0).sort((left, right) => right.score - left.score || String(left.item.title).localeCompare(String(right.item.title)) || String(left.item.url).localeCompare(String(right.item.url))).slice(0, 12);
+    panel.innerHTML = matches.length ? matches.map(match => { const item = match.item; return "<a href='" + root + item.url + "'><strong>" + escape(item.title) + "</strong><small>" + escape(item.kind) + " · " + escape(item.section) + "</small><span>" + escape(excerpt(item, terms)) + "</span></a>"; }).join('') : '<span class=nav-link>No matching documentation.</span>';
     panel.hidden = false;
-  });
+  };
+  input.addEventListener('input', search);
+  section.addEventListener('change', search);
   input.addEventListener('keydown', event => { if (event.key === 'Escape') { input.value = ''; hide(); } });
-  document.addEventListener('click', event => { if (!panel.contains(event.target) && event.target !== input) hide(); });
+  document.addEventListener('click', event => { if (!panel.contains(event.target) && event.target !== input && event.target !== section) hide(); });
 })();
