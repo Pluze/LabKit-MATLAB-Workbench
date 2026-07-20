@@ -7,7 +7,7 @@ function draw(axesById, model)
         return;
     end
     p = model.options;
-    cla(ax, "reset");
+    labkit.app.plot.clearAxes(ax, ResetScale=true);
     ax.XScale = scaleName(p.logX);
     ax.YScale = scaleName(p.logY);
     axis(ax, 'normal');

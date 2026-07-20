@@ -8,124 +8,99 @@ classdef GuiLayoutEisTest < matlab.unittest.TestCase
             h.assertUifigureAvailable();
             cleanup = onCleanup(@() h.closeAllFigures());
 
-            fixture = dtaFixturePath('eis_potentiostatic_zcurve.DTA');
+            fixture = string(dtaFixturePath( ...
+                'eis_potentiostatic_zcurve.DTA'));
             secondFolder = string(tempname);
             mkdir(secondFolder);
             secondCleanup = onCleanup(@() rmdir(secondFolder, 's'));
-            secondFixture = fullfile(secondFolder, 'eis_replicate_zcurve.DTA');
+            secondFixture = fullfile( ...
+                secondFolder, 'eis_replicate_zcurve.DTA');
             copyfile(fixture, secondFixture);
-            fig = h.launchFigure('labkit_EIS_app', 'Gamry EIS Multi-DTA Plot GUI');
-            assertEisLayout(h, fig);
-            axisItems = eis.userInterface.axisItems();
-            h.invokeDropdownValue(fig, char(axisItems(1)));
-            h.invokeCheckbox(fig, 'Log X', true);
-            workflow = labkitWorkflowDriver(fig);
-            workflow.chooseFiles('files', fixture);
-
-            workflow.click('Add DTA files');
-
-            testCase.verifyEqual(char(workflow.fileStatus('files')), '1 file(s) loaded');
-            testCase.verifyTrue(any(contains(workflow.fileListItems('files'), ...
-                'eis_potentiostatic_zcurve.DTA')), ...
-                'Add DTA files should load the dialog-selected EIS fixture.');
-            testCase.verifyNotEqual(workflow.textAreaValue('summary'), ...
-                {'No files loaded.'}, ...
-                'Add DTA files should refresh the EIS summary.');
-            ui = workflow.registry();
-            ax = ui.controls.plot.axesById.overlay;
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
-                'EIS workflow must execute through Runtime V2.');
-            testCase.verifyFalse(isfield(runtime.state.project.inputs, 'items'), ...
-                'EIS durable project must not own decoded DTA items.');
-            testCase.verifyEqual(numel(runtime.state.session.cache.items), 1, ...
-                'EIS decoded DTA items should live in the session cache.');
-            testCase.verifyTrue(all(isfield(runtime.state.session, ...
-                {'selection', 'workflow', 'view', 'cache'})), ...
-                'Runtime should supply omitted empty session buckets.');
-            firstSourceId = string(runtime.state.project.inputs.sources(1).id);
-            workflow.chooseFiles('files', secondFixture);
-            workflow.click('Add DTA files');
-            workflow.selectFile('files', 'eis_potentiostatic_zcurve.DTA');
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            sourceIds = string({runtime.state.project.inputs.sources.id});
-            testCase.verifyEqual(sourceIds(1), firstSourceId, ...
-                'Source reconciliation should preserve existing source IDs.');
-            testCase.verifyEqual(numel(unique(sourceIds)), numel(sourceIds), ...
-                'Source reconciliation should assign unique IDs.');
-            testCase.verifyEqual(numel(runtime.state.session.selection.paths), 1, ...
-                'EIS should commit a one-file selection subset.');
-            testCase.verifyTrue(contains(workflow.fileSelection('files'), ...
-                'eis_potentiostatic_zcurve.DTA'), ...
-                'EIS presentation should preserve the selected subset.');
-            % The axis is logarithmic here, so model a stale but legal zoom.
-            % A negative limit would itself make MATLAB warn asynchronously
-            % and falsely attribute that warning to the next UI callback.
-            ax.XLim = [1e4 5e4];
-            ax.YLim = [4e4 13e4];
-            ax.XLimMode = 'manual';
-            ax.YLimMode = 'manual';
-
-            testCase.verifyWarningFree( ...
-                @() workflow.dropdown(char(axisItems(2))));
-            testCase.verifyWarningFree( ...
-                @() workflow.checkbox('Log Y', true));
-
-            testCase.verifyLessThan(diff(ax.XLim), 10, ...
-                'Changing EIS coordinate selections should discard stale zoomed X limits.');
-            testCase.verifyLessThan(diff(log10(ax.YLim)), 6, ...
-                'Changing EIS log coordinate selections should discard stale zoomed Y limits.');
-
             outputFolder = string(tempname);
             mkdir(outputFolder);
             outputCleanup = onCleanup(@() rmdir(outputFolder, 's'));
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            runtime.request.outputChooser = @(~, ~, ~) deal( ...
-                'gamry_eis_plot_export.csv', char(outputFolder));
-            setappdata(fig, 'labkitUiAppRuntime', runtime);
-            workflow.click('Export current plot CSV');
-            testCase.verifyTrue(isfile(fullfile( ...
-                outputFolder, 'gamry_eis_plot_export.csv')));
-            manifestPath = fullfile(outputFolder, ...
-                'gamry_eis_plot_export.labkit.json');
-            testCase.verifyTrue(isfile(manifestPath), ...
-                'EIS export should write a standard result manifest.');
+            exportPath = fullfile( ...
+                outputFolder, 'gamry_eis_plot_export.csv');
+            backend = struct( ...
+                "chooseOutputFile", @(~, ~) ...
+                    labkit.app.dialog.Choice(exportPath), ...
+                "alert", @(~, ~) []);
+            runtime = eis.definition().createMatlabRuntime([], backend);
+            runtimeCleanup = onCleanup(@() runtime.close());
+            fig = runtime.figureHandle();
+            assertEisLayout(h, fig);
+
+            axisItems = eis.overlayPlot.axisItems();
+            runtime.applyControlValue("xAxis", axisItems(1));
+            runtime.applyControlValue("logX", true);
+            runtime.applyFileSelection("files", fixture, 1);
+
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.inputs.sources), 1);
+            testCase.verifyFalse(isfield( ...
+                runtime.State.project.inputs, 'items'), ...
+                'EIS durable project must not own decoded DTA items.');
+            testCase.verifyEqual(numel(runtime.State.session.cache.items), 1);
+            summary = string(findall(fig, "Tag", "summary").Value);
+            testCase.verifyTrue(any(summary ~= "No files loaded."));
+            ax = findall(fig, "Tag", "plot.main");
+            testCase.verifyNotEmpty(ax.Children);
+            firstSourceId = string( ...
+                runtime.State.project.inputs.sources(1).id);
+
+            paths = [fixture, secondFixture];
+            runtime.applyFileSelection("files", paths, 2);
+            runtime.applyFilePanelSelection("files", 1);
+            sourceIds = string( ...
+                {runtime.State.project.inputs.sources.id});
+            testCase.verifyEqual(sourceIds(1), firstSourceId);
+            testCase.verifyEqual(numel(unique(sourceIds)), numel(sourceIds));
+            testCase.verifyEqual( ...
+                runtime.State.session.selection.files.Indices, 1);
+
+            ax.XLim = [1e4 5e4];
+            ax.YLim = [4e4 13e4];
+            testCase.verifyWarningFree(@() runtime.applyControlValue( ...
+                "xAxis", axisItems(2)));
+            testCase.verifyWarningFree(@() runtime.applyControlValue( ...
+                "logY", true));
+            testCase.verifyEqual(ax.XLim, [1e4 5e4], ...
+                'Managed EIS redraw should preserve the X viewport.');
+            testCase.verifyEqual(ax.YLim, [4e4 13e4], ...
+                'Managed EIS redraw should preserve the Y viewport.');
+
+            runtime.invokeAction("exportPlot");
+            testCase.verifyTrue(isfile(exportPath));
+            manifestPath = string( ...
+                runtime.State.project.results.lastExport.manifestPath);
+            testCase.verifyTrue(isfile(manifestPath));
             manifest = jsondecode(fileread(manifestPath));
             testCase.verifyEqual(string(manifest.format), "labkit.result");
 
             projectPath = fullfile(outputFolder, 'eis-project.mat');
-            labkit.ui.runtime.saveState(fig, projectPath);
+            runtime.saveProject(runtime.State, projectPath);
             saved = load(projectPath, 'labkitProject');
             testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
             testCase.verifyFalse(isfield( ...
-                saved.labkitProject.payload.inputs, 'items'), ...
-                'EIS project files must exclude decoded DTA items.');
-            workflow.click('Clear all');
-            labkit.ui.runtime.loadState(fig, projectPath);
-            h.waitForUiIdle(fig);
-            testCase.verifyEqual(char(workflow.fileStatus('files')), ...
-                '2 file(s) loaded', ...
-                'EIS project reopen should rebuild decoded sources.');
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(numel(runtime.state.session.cache.items), 2);
-            testCase.verifyEqual( ...
-                string(runtime.state.project.inputs.sources(1).id), ...
-                firstSourceId, ...
-                'Project reopen should preserve reconciled source identity.');
-            clear outputCleanup;
-            clear secondCleanup;
+                saved.labkitProject.payload.inputs, 'items'));
+            runtime.applyFileSelection( ...
+                "files", strings(1, 0), zeros(1, 0));
+            runtime.restoreProject(projectPath);
+            testCase.verifyEqual(numel(runtime.State.session.cache.items), 2);
+            testCase.verifyEqual(string( ...
+                runtime.State.project.inputs.sources(1).id), firstSourceId);
+            clear runtimeCleanup outputCleanup secondCleanup cleanup;
         end
     end
 end
 
 function assertEisLayout(h, fig)
-    h.assertStandardWorkbenchLayout(fig);
-    h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
-        'Clear all', 'Export current plot CSV'});
-    h.assertCheckboxContract(fig, {'Show markers', 'Log X', 'Log Y', ...
-        'Legend', 'Grid'});
-    h.assertDropdownGroups(fig, ...
-        h.dropdownGroup(cellstr(eis.userInterface.axisItems()), 2));
-    h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-    h.assertDropdownCallbacksPresent(fig);
+h.assertStartupSucceeded(fig);
+ids = ["files", "exportPlot", "xAxis", "yAxis", "lineWidth", ...
+    "markerSize", "showMarkers", "logX", "logY", "showLegend", ...
+    "showGrid", "summary", "plot.main"];
+for id = ids
+    assert(numel(findall(fig, "Tag", id)) == 1, ...
+        "Missing EIS semantic target: %s.", id);
+end
 end

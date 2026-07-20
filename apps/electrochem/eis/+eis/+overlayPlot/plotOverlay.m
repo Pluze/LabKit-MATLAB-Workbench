@@ -1,4 +1,4 @@
-% Expected callers: the Runtime V2 axis renderer and plot export. Inputs are
+% Expected callers: the App SDK axis renderer and plot export. Inputs are
 % an axes, EIS items, and plot options. Output is legend labels. Side effects
 % are limited to redrawing axes.
 
@@ -8,7 +8,7 @@ function labels = plotOverlay(ax, items, opts)
     end
     opts = fillPlotOptions(opts);
 
-    cla(ax, "reset");
+    labkit.app.plot.clearAxes(ax, ResetScale=true);
     axis(ax, 'normal');
 
     cmap = lines(numel(items));
