@@ -9,7 +9,12 @@ if state.project.parameters.batchMode
     state.project.annotations.sharedSteps(end+1,1)=step;
 else
     index=state.session.selection.currentIndex;
-    state.project.annotations.items(index).steps(end+1,1)=step;
+    sourceId=state.project.inputs.sources(index).id;
+    annotation=image_enhance.sourceLibrary.annotationForSource( ...
+        state.project.annotations.items,sourceId);
+    annotation.steps(end+1,1)=step;
+    state.project.annotations.items=image_enhance.sourceLibrary.storeAnnotation( ...
+        state.project.annotations.items,annotation);
 end
 state.session.workflow.pendingDirty=false;
 state.session.cache.previewResult=image_enhance.analysisRun.previewResult( ...

@@ -614,7 +614,8 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     case "button"
                         view = view.enabled(node.Id, config.Enabled);
                     case "field"
-                        value = config.Value;
+                        value = neutralControlValue( ...
+                            config.Value, config.Kind, config.Choices);
                         if strlength(config.Bind) > 0
                             value = getBoundValue(state, config.Bind);
                         end
@@ -703,6 +704,26 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
         end
     end
+end
+
+function value = neutralControlValue(value, kind, choices)
+if ~isempty(value)
+    return;
+end
+switch kind
+    case "numeric"
+        value = 0;
+    case "choice"
+        if isempty(choices)
+            value = "";
+        else
+            value = choices(1);
+        end
+    case "logical"
+        value = false;
+    otherwise
+        value = "";
+end
 end
 
 function value = getBoundValue(state, path)

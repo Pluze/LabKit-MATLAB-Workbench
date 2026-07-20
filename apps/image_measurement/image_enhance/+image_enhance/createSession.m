@@ -27,14 +27,16 @@ function cache = rebuildSelectedResult(project, index, cache)
     end
     if project.parameters.batchMode
         steps = project.annotations.sharedSteps;
+        whiteRoi = [];
     else
         annotation = image_enhance.sourceLibrary.annotationForSource( ...
             project.annotations.items, project.inputs.sources(index).id);
         steps = annotation.steps;
+        whiteRoi = annotation.whiteRoi;
     end
     cache.previewResult = image_enhance.analysisRun.previewResult( ...
         cache.previewSource, steps, ...
-        annotation.whiteRoi, cache.previewScale);
+        whiteRoi, cache.previewScale);
     cache.previewResultKey = "restored";
 end
 
