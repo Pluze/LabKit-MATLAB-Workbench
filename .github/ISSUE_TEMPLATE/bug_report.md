@@ -27,9 +27,9 @@ Choose one:
 - Documentation
 - Unsure
 
-## App command or file
+## Target
 
-<!-- Example: labkit_CIC_app -->
+<!-- App command, public function, documentation page, or affected file. Example: labkit_CIC_app -->
 
 ## LabKit source
 
@@ -60,6 +60,10 @@ Choose one:
 ## Actual behavior
 
 <!-- What happened instead? Include the visible error text if there is one. -->
+
+## Impact and workaround
+
+<!-- Who is blocked, whether results or saved projects are affected, and any safe workaround. -->
 
 ## Logs or artifacts
 

@@ -31,7 +31,7 @@ Choose one:
 
 <!-- Describe the manual or current LabKit workflow in user terms. -->
 
-## Desired workflow
+## Goal and desired workflow
 
 <!-- Describe what the user should be able to do and what should be easier afterward. -->
 
@@ -42,6 +42,14 @@ Choose one:
 ## Outputs
 
 <!-- List expected plots, tables, images, CSV/JSON exports, or summary fields. -->
+
+## Acceptance criteria
+
+<!-- List observable outcomes that show the request is complete. -->
+
+## Out of scope
+
+<!-- Name workflows, data formats, or scientific decisions this request must not change. -->
 
 ## Synthetic example or notes
 

@@ -176,6 +176,16 @@ tests, history, and details out of the public repository.
 7. After PR merge, fast-forward local `main`, prune refs, delete the merged
    branch, and leave the worktree synchronized.
 
+When creating a public GitHub Issue or pull request, use the matching template
+under `.github/` as the required structure. A bug report names its target,
+reproduction, expected/actual behavior, impact, and redacted evidence; a
+workflow request names its target App, user goal, inputs, outputs, acceptance
+criteria, and out-of-scope behavior. A pull request records goal/scope,
+user-visible behavior, exact validation evidence, remaining manual checks,
+documentation/boundary decisions, delivery state, and data hygiene. Do not
+invent a parallel issue or PR format, and do not include sensitive lab data or
+local paths.
+
 Commit and squash subjects use exactly one lowercase Conventional Commit type:
 `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `ci`, or `chore`. Pass an
 explicit compliant squash subject; do not rely on GitHub defaults.
