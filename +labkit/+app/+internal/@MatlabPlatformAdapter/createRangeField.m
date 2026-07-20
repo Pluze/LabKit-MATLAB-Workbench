@@ -1,0 +1,23 @@
+function first = createRangeField(~, node, parent)
+% Class-folder implementation of MatlabPlatformAdapter.createRangeField.
+    config = node.Configuration;
+    [limits, value] = labkit.app.internal.NativeAdapterValues.rangeSliderInitialValue(config);
+    outer = labkit.app.internal.NativeAdapterValues.labeledParent(parent, config.Label, node.Id);
+    grid = uigridlayout(outer, [1 2], ...
+        Padding=[0 0 0 0], ColumnSpacing=6, ...
+        ColumnWidth={'1x', '1x'}, ...
+        Tag=char(node.Id + ".range"));
+    grid.Layout.Row = 1;
+    grid.Layout.Column = 2;
+    first = uieditfield(grid, "numeric", Limits=limits, ...
+        Value=value(1), Enable=labkit.app.internal.NativeAdapterValues.onOff(config.Enabled));
+    first.Layout.Row = 1;
+    first.Layout.Column = 1;
+    second = uieditfield(grid, "numeric", Limits=limits, ...
+        Value=value(2), Enable=labkit.app.internal.NativeAdapterValues.onOff(config.Enabled), ...
+        Tag=char(node.Id + ".end"));
+    second.Layout.Row = 1;
+    second.Layout.Column = 2;
+    first.UserData = struct( ...
+        "LayoutContainer", outer, "EndField", second);
+end

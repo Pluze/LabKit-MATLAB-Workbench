@@ -527,6 +527,7 @@ function files = collectPublicLibraryFiles(root)
     for k = 1:numel(allFiles)
         filepath = fullfile(allFiles(k).folder, allFiles(k).name);
         if ~contains(filepath, [filesep 'private' filesep]) && ...
+                ~contains(filepath, [filesep '@']) && ...
                 ~isHiddenClassFile(filepath)
             files(end+1) = string(filepath);
         end

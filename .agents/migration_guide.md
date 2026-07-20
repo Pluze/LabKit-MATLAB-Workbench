@@ -136,6 +136,15 @@ Current public-boundary checkpoint:
   effective lines; the runtime suite passed eight unaffected cases and the two
   initially exposed source-access cases passed after source-store access was
   kept behind a RuntimeKernel-owned callback.
+- `MatlabPlatformAdapter` keeps lifecycle, callback entry, dialog, document,
+  and close behavior in a 571-line class definition; its class folder owns 40
+  substantial native layout/reconciliation methods while hidden
+  `NativeAdapterValues` owns 482 lines of pure native value normalization.
+  Small lifecycle and callback glue is deliberately not externalized, and the
+  surface guardrail caps class-folder method count to prevent a return to
+  monolith or one-file-per-trivial-method fragmentation. All ten focused
+  native-adapter GUI tests pass with the same qualified class name and no new
+  App-facing API.
 
 Still open before compatibility retirement:
 
