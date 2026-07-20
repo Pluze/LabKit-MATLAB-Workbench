@@ -1,12 +1,16 @@
-% Expected caller: Runtime V2 registered renderer and waveform PNG export.
+% Expected caller: App SDK registered renderer and waveform PNG export.
 % Inputs are one axes and an app-owned axis model. Side effects are limited to
 % redrawing that axes; no runtime controls or app state are read.
 function drawPreview(axesById, model)
+    if isgraphics(axesById, "axes")
+        labkit.app.plot.clearAxes(axesById, ResetScale=true);
+        drawOne(axesById, model);
+        return;
+    end
     axisIds = ["wave", "noise", "snr", "template"];
     for k = 1:numel(axisIds)
         ax = axesById.(axisIds(k));
-        delete(allchild(ax));
-        cla(ax);
+        labkit.app.plot.clearAxes(ax, ResetScale=true);
         drawOne(ax, model(k));
     end
 end

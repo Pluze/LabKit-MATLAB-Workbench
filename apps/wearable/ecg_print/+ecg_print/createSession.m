@@ -4,8 +4,11 @@ function session = createSession(project, context)
     cache = emptyCache();
     workflow = struct("importStatus", ...
         "Open a recording to inspect import settings.");
-    paths = context.resolveSourcePaths(project.inputs.sources, "recording");
-    filepath = paths(1);
+    paths = context.resolveSourcePaths(project.inputs.sources);
+    filepath = "";
+    if ~isempty(paths)
+        filepath = paths(1);
+    end
     if strlength(filepath) > 0
         [cache, workflow.importStatus] = ecg_print.sourceFiles.loadRecording( ...
             filepath, project.parameters, project.parameters.channel);

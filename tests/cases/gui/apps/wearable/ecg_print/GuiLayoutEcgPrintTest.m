@@ -8,126 +8,108 @@ classdef GuiLayoutEcgPrintTest < matlab.unittest.TestCase
             h.assertUifigureAvailable();
             cleanup = onCleanup(@() h.closeAllFigures());
 
-            folder = tempname;
+            folder = string(tempname);
             mkdir(folder);
             folderCleanup = onCleanup(@() removeTempFolder(folder));
             recordingPath = fullfile(folder, 'synthetic_ecg.csv');
             writeSyntheticEcgCsv(recordingPath);
-
-            fig = h.launchFigure('labkit_ECGPrint_app', ...
-                'ECG Signal Print + SNR Explorer');
-            assertEcgPrintLayout(h, fig);
-            driver = labkitWorkflowDriver(fig);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
-                'ECG Print must execute through Runtime V2.');
-            driver.chooseFiles('recording', recordingPath);
-
-            driver.click('Open recording');
-            driver.dropdown('Local peaks');
-            driver.click('Analyze current ROI');
-
-            ui = driver.registry();
-            testCase.verifyTrue(contains(string(ui.controls.recording.status.Value), ...
-                'synthetic_ecg.csv'), ...
-                'ECG Print workflow should show the loaded recording path.');
-            importStatus = string(ui.controls.importStatus.valueHandle.Value);
-            testCase.verifyFalse(contains(importStatus, 'Parse failed'), ...
-                'ECG Print workflow should parse the synthetic recording.');
-            testCase.verifyFalse(contains(importStatus, 'Open a recording'), ...
-                'ECG Print workflow should leave the empty import state after loading.');
-            testCase.verifyTrue(any(strcmp(ui.controls.channel.valueHandle.Items, 'ECG')), ...
-                'ECG Print workflow should populate the ECG channel choice.');
-
-            data = driver.tableData('summaryTable');
-            metricNames = string(data(:, 1));
-            testCase.verifyTrue(any(metricNames == "Detected peaks"), ...
-                'ECG Print workflow should report detected peaks after analysis.');
-            testCase.verifyTrue(any(metricNames == "Mean SNR (dB)"), ...
-                'ECG Print workflow should report SNR summary after analysis.');
-            testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.wave.Children), 0, ...
-                'ECG Print workflow should draw the waveform plot.');
-            testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.noise.Children), 0, ...
-                'ECG Print workflow should draw the noise plot.');
-            testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.snr.Children), 0, ...
-                'ECG Print workflow should draw the SNR plot.');
-            testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.template.Children), 0, ...
-                'ECG Print workflow should draw the template plot.');
-
             outputFolder = string(tempname);
             mkdir(outputFolder);
             outputCleanup = onCleanup(@() removeTempFolder(outputFolder));
             outputs = ["ecg_segment_snr.csv", "ecg_waveform.png"];
             outputIndex = 0;
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            runtime.request.outputChooser = @chooseOutput;
-            setappdata(fig, 'labkitUiAppRuntime', runtime);
-            driver.click('Export segment SNR CSV');
-            driver.click('Export waveform PNG');
+            backend = struct( ...
+                "chooseOutputFile", @chooseOutput, ...
+                "alert", @(~, ~) []);
+            runtime = ecg_print.definition().createMatlabRuntime([], backend);
+            runtimeCleanup = onCleanup(@() runtime.close());
+            fig = runtime.figureHandle();
+            assertEcgPrintLayout(h, fig);
+
+            runtime.applyFileSelection("recording", recordingPath, 1);
+            runtime.applyControlValue("peakMethod", "Local peaks");
+            runtime.invokeAction("analyze");
+
+            testCase.verifyTrue(contains( ...
+                runtime.State.session.cache.filepath, 'synthetic_ecg.csv'));
+            importStatus = string( ...
+                findall(fig, "Tag", "importStatus").Value);
+            testCase.verifyFalse(any(contains(importStatus, 'Parse failed')));
+            testCase.verifyFalse(any(contains( ...
+                importStatus, 'Open a recording')));
+            channel = findall(fig, "Tag", "channel");
+            testCase.verifyTrue(any(string(channel.Items) == "ECG"));
+
+            summary = findall(fig, "Tag", "summaryTable").Data;
+            metricNames = string(summary(:, 1));
+            testCase.verifyTrue(any(metricNames == "Detected peaks"));
+            testCase.verifyTrue(any(metricNames == "Mean SNR (dB)"));
+            for id = ["wave", "noise", "snr", "template"]
+                ax = findall(fig, "Tag", "previewAxes." + id);
+                testCase.verifyNotEmpty(ax.Children, ...
+                    "ECG Print should draw the " + id + " preview.");
+            end
+
+            runtime.invokeAction("exportSegments");
+            runtime.invokeAction("exportWaveform");
             testCase.verifyTrue(isfile(fullfile(outputFolder, outputs(1))));
             testCase.verifyTrue(isfile(fullfile(outputFolder, outputs(2))));
-            testCase.verifyTrue(isfile(fullfile(outputFolder, ...
-                'ecg_segment_snr.labkit.json')));
-            testCase.verifyTrue(isfile(fullfile(outputFolder, ...
-                'ecg_waveform.labkit.json')));
 
-            projectPath = fullfile(outputFolder, 'ecg-print-project.mat');
-            labkit.ui.runtime.saveState(fig, projectPath);
+            projectPath = fullfile( ...
+                outputFolder, 'ecg-print-project.mat');
+            runtime.saveProject(runtime.State, projectPath);
             saved = load(projectPath, 'labkitProject');
             testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 2);
             testCase.verifyFalse(isfield(saved.labkitProject.payload, 'cache'));
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
             testCase.verifyFalse(isfield( ...
-                runtime.state.project.results.lastAnalysis, 'recording'));
-            labkit.ui.runtime.loadState(fig, projectPath);
-            h.waitForUiIdle(fig);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyNotEmpty(runtime.state.session.cache.recording, ...
-                'Project reopen should rebuild the decoded recording cache.');
-            testCase.verifyNotEmpty(runtime.state.session.cache.measurements, ...
-                'Project reopen should rebuild analyzed ECG caches.');
-            clear outputCleanup;
+                runtime.State.project.results.lastAnalysis, 'recording'));
+            runtime.restoreProject(projectPath);
+            testCase.verifyNotEmpty( ...
+                runtime.State.session.cache.recording);
+            testCase.verifyNotEmpty( ...
+                runtime.State.session.cache.measurements);
+            clear runtimeCleanup outputCleanup folderCleanup cleanup;
 
-            function [filename, folderPath] = chooseOutput(~, ~, ~)
+            function choice = chooseOutput(~, ~)
                 outputIndex = outputIndex + 1;
-                filename = char(outputs(outputIndex));
-                folderPath = char(outputFolder);
+                choice = labkit.app.dialog.Choice( ...
+                    fullfile(outputFolder, outputs(outputIndex)));
             end
         end
     end
 end
 
 function assertEcgPrintLayout(h, fig)
-    h.assertStandardWorkbenchLayout(fig);
-    h.assertButtonContract(fig, {'Open recording', 'Analyze current ROI', ...
-        'Preview file header', 'Parse / refresh file', ...
-        'Export segment SNR CSV', 'Export waveform PNG'});
-    h.assertDropdownGroups(fig, [ ...
-        h.dropdownGroup({'Auto', 'Yes', 'No'}, 1), ...
-        h.dropdownGroup({'Auto', 'seconds', 'milliseconds', ...
-        'microseconds', 'nanoseconds'}, 1), ...
-        h.dropdownGroup({'(none)'}, 1), ...
-        h.dropdownGroup({'QRS streaming', 'Pan-Tompkins', 'Local peaks'}, 1), ...
-        h.dropdownGroup({'Template + residual band', 'Template + segments'}, 1)]);
-    h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+h.assertStartupSucceeded(fig);
+ids = ["recording", "previewHeader", "importStatus", "headerLine", ...
+    "hasHeader", "timeColumn", "timeUnit", "signalColumns", ...
+    "fallbackFs", "refreshImport", "channel", "peakMethod", ...
+    "analyze", "exportSegments", "exportWaveform", "summaryTable", ...
+    "previewAxes.wave", "previewAxes.noise", "previewAxes.snr", ...
+    "previewAxes.template"];
+for id = ids
+    assert(numel(findall(fig, "Tag", id)) == 1, ...
+        "Missing ECG Print semantic target: %s.", id);
+end
 end
 
 function writeSyntheticEcgCsv(filepath)
-    fs = 500;
-    durationSec = 4;
-    time = (0:(durationSec * fs - 1)).' ./ fs;
-    ecg = 0.05 .* sin(2 .* pi .* 1.7 .* time) + ...
-        0.02 .* sin(2 .* pi .* 23 .* time);
-    for peakTime = 1:durationSec - 1
-        ecg = ecg + 1.8 .* exp(-((time - peakTime) ./ 0.018).^2);
-        ecg = ecg - 0.25 .* exp(-((time - peakTime - 0.045) ./ 0.026).^2);
-    end
-    T = table(time, ecg, 'VariableNames', {'time_s', 'ECG'});
-    writetable(T, filepath);
+fs = 500;
+durationSec = 4;
+time = (0:(durationSec * fs - 1)).' ./ fs;
+ecg = 0.05 .* sin(2 .* pi .* 1.7 .* time) + ...
+    0.02 .* sin(2 .* pi .* 23 .* time);
+for peakTime = 1:durationSec - 1
+    ecg = ecg + 1.8 .* exp(-((time - peakTime) ./ 0.018).^2);
+    ecg = ecg - 0.25 .* exp( ...
+        -((time - peakTime - 0.045) ./ 0.026).^2);
+end
+T = table(time, ecg, 'VariableNames', {'time_s', 'ECG'});
+writetable(T, filepath);
 end
 
 function removeTempFolder(folder)
-    if exist(folder, 'dir') == 7
-        rmdir(folder, 's');
-    end
+if exist(folder, 'dir') == 7
+    rmdir(folder, 's');
+end
 end

@@ -285,7 +285,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 case "value"
                     setIfProperty(component, "Value", operation.Value);
                 case "choices"
-                    setIfProperty(component, "Items", operation.Value);
+                    applyChoices(component, operation.Value);
                 case "limits"
                     setIfProperty(component, "Limits", operation.Value);
                 case "enabled"
@@ -679,6 +679,21 @@ function setIfProperty(component, name, value)
 if isprop(component, name)
     component.(name) = value;
 end
+end
+
+function applyChoices(component, choices)
+if ~isprop(component, "Items")
+    return;
+end
+incoming = reshape(string(choices), 1, []);
+if isprop(component, "Value") && ~isempty(incoming)
+    current = string(component.Value);
+    if isscalar(current) && ~any(incoming == current)
+        component.Items = unique([current, incoming], "stable");
+        component.Value = incoming(1);
+    end
+end
+component.Items = choices;
 end
 
 function [limits, value] = sliderInitialValue(config)

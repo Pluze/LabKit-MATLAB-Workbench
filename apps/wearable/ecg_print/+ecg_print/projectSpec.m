@@ -1,4 +1,4 @@
-% App-owned durable ECG Print contract. Runtime V2 applies the single
+% App-owned durable ECG Print contract. The App SDK applies the single
 % migration entry until version 2, then validates sources, parameters, and
 % compact result records before rebuilding decoded signal state.
 function spec = projectSpec()

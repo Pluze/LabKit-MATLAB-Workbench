@@ -15,8 +15,9 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
 
             testCase.verifyEqual(migrated.inputs.sources, expected);
             testCase.verifyFalse(isfield(migrated.inputs, "source"));
-            testCase.verifyEqual(definition.project.Version, 2);
-            testCase.verifyEqual(definition.project.Migrate, spec.Migrate);
+            testCase.verifyEqual(definition.ProjectSchema.Version, 2);
+            testCase.verifyEqual( ...
+                definition.ProjectSchema.Migrate, spec.Migrate);
         end
 
         function importOptionsNormalizeUiValues(testCase)
@@ -109,7 +110,7 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
                     'repairedBackwardCount', 3, ...
                     'largeGapCount', 1));
 
-            text = ecg_print.userInterface.importStatusText(recording, 2);
+            text = ecg_print.sourceFiles.importStatusText(recording, 2);
 
             testCase.verifyEqual(text, ...
                 ['2 channel(s) | time: time_s | unit: seconds | source: column | ' ...
@@ -133,7 +134,8 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
                 'SNRdBStd', 0.9876, ...
                 'TemplateCorrelationMean', 0.8765));
 
-            rows = ecg_print.userInterface.summaryRows(signal, events, segments, measurements);
+            rows = ecg_print.analysisRun.summaryRows( ...
+                signal, events, segments, measurements);
 
             testCase.verifyEqual(rowValue(rows, 'Status'), 'No signal analyzed');
             testCase.verifyEqual(rowValue(rows, 'Channel'), 'Lead I');
@@ -184,7 +186,7 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
                 'name', 'filtered');
             events = struct('index', [2 4]);
 
-            request = ecg_print.userInterface.waveformPlotRequest( ...
+            request = ecg_print.analysisRun.waveformPlotRequest( ...
                 workingSignal, filteredSignal, events);
 
             testCase.verifyTrue(request.ok);
@@ -207,7 +209,7 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
                 'signalWindowSec', [-0.04 0.04], ...
                 'noiseWindowsSec', [-0.2 -0.1; 0.1 0.2]));
 
-            request = ecg_print.userInterface.templatePlotRequest(segments, template, ...
+            request = ecg_print.analysisRun.templatePlotRequest(segments, template, ...
                 measurements, 'Template + residual band');
 
             testCase.verifyTrue(request.ok);
@@ -233,7 +235,7 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
                 'timeOffset', [-0.1 0 0.1]);
             template = struct('values', [2; 4; 6]);
 
-            request = ecg_print.userInterface.templatePlotRequest(segments, template, ...
+            request = ecg_print.analysisRun.templatePlotRequest(segments, template, ...
                 struct(), 'Template + segments');
 
             testCase.verifyTrue(request.ok);

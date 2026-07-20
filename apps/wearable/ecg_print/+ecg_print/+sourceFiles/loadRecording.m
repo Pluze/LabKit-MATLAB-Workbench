@@ -1,4 +1,4 @@
-% Expected callers: Runtime V2 session creation and ECG actions. Inputs are a
+% Expected callers: App SDK session creation and ECG actions. Inputs are a
 % recording path, durable import parameters, and preferred channel. Outputs
 % are the decoded session cache and app-facing import status.
 function [cache, importStatus] = loadRecording(filepath, parameters, preferredChannel)
