@@ -6,6 +6,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         StatusLog (1, :) string = "Ready."
         Diagnostics (1, :) cell = {}
         Closed (1, 1) logical = false
+        StartupFailed (1, 1) logical = false
     end
 
     properties (Access = private)
@@ -83,6 +84,12 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             catch cause
                 obj.Recorder.finish( ...
                     startupOperation, "failed", cause);
+                if isa(obj.Adapter, ...
+                        "labkit.app.internal.MatlabPlatformAdapter")
+                    obj.StartupFailed = true;
+                    obj.Adapter.failStartup(cause);
+                    return
+                end
                 obj.close();
                 rethrow(cause);
             end
@@ -862,6 +869,10 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function assertOpen(obj)
+            if obj.StartupFailed
+                error("labkit:app:runtime:StartupFailed", ...
+                    "Application runtime did not complete startup.");
+            end
             if obj.Closed
                 error("labkit:app:runtime:InvariantFailure", ...
                     "Application runtime is closed.");

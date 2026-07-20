@@ -206,6 +206,31 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             end
         end
 
+        function failStartup(obj, cause)
+            obj.Starting = false;
+            obj.Busy = false;
+            if isempty(obj.Figure) || ~isvalid(obj.Figure)
+                return
+            end
+            message = "Startup failed: " + deepestCauseMessage(cause);
+            if ~isempty(obj.StartupLabel) && isvalid(obj.StartupLabel)
+                obj.StartupLabel.Text = char(message);
+            end
+            if ~isempty(obj.StartupPanel) && isvalid(obj.StartupPanel)
+                obj.StartupPanel.Visible = "on";
+            end
+            obj.Figure.Pointer = char(obj.PriorPointer);
+            if isappdata(obj.Figure, "labkitAppBusy")
+                rmappdata(obj.Figure, "labkitAppBusy");
+            end
+            setappdata(obj.Figure, "labkitAppStartupFailure", struct( ...
+                "failed", true, ...
+                "message", message, ...
+                "identifier", string(cause.identifier)));
+            obj.Figure.CloseRequestFcn = @(~, ~) obj.close();
+            drawnow limitrate
+        end
+
         function alert(obj, message, title)
             uialert(obj.Figure, char(string(message)), char(string(title)));
         end
@@ -2175,6 +2200,14 @@ function mode = startupGuiMode()
 mode = lower(strip(string(getenv("LABKIT_GUI_TEST_MODE"))));
 if strlength(mode) == 0
     mode = "visible";
+end
+end
+
+function message = deepestCauseMessage(cause)
+message = string(cause.message);
+while ~isempty(cause.cause)
+    cause = cause.cause{1};
+    message = string(cause.message);
 end
 end
 

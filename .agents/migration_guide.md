@@ -94,11 +94,13 @@ Current public-boundary checkpoint:
   immutable author metadata/configuration, snapshot validation, and launch.
   `TargetIds` and every runtime/compiler/test-only method are absent from its
   public and hidden method surface.
+- Synchronous startup failures retain the App window and readiness surface,
+  show the deepest actionable failure message, release busy state, and keep
+  the complete exception chain in diagnostics; the native adapter contract
+  now covers this behavior alongside successful startup and versioned titles.
 
 Still open before compatibility retirement:
 
-- verify the restored window/startup/close contracts against every App and
-  cover startup failure presentation;
 - complete developer-led manual validation of native dialogs, editable tables,
   pointer interactions, long-lived resources, and representative exports;
 - remove remaining App-local visual compensations after their stable behavior

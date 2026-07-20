@@ -153,6 +153,31 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function presentsStartupFailureInTheAppWindow(testCase)
+            setupLabKitTestPath();
+            helpers = guiTestHelpers();
+            helpers.assertUifigureAvailable();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                startupFailureApplication());
+            cleanup = onCleanup(@() runtime.close());
+            figure = runtime.figureHandle();
+
+            failure = getappdata(figure, "labkitAppStartupFailure");
+            testCase.verifyTrue(runtime.StartupFailed);
+            testCase.verifyTrue(failure.failed);
+            testCase.verifyEqual(failure.identifier, ...
+                "labkit:app:runtime:ActionFailed");
+            testCase.verifyEqual(failure.message, ...
+                "Startup failed: Synthetic startup probe failed.");
+            testCase.verifyEqual(string(component( ...
+                figure, "labkitAppStartupStatus").Visible), "on");
+            testCase.verifyEqual(string(component( ...
+                figure, "labkitAppStartupStatusLabel").Text), ...
+                failure.message);
+            testCase.verifyFalse(isappdata(figure, "labkitAppBusy"));
+            clear cleanup
+        end
+
         function enforcesSharedWorkbenchVisualPolicy(testCase)
             setupLabKitTestPath();
             helpers = guiTestHelpers();
@@ -307,6 +332,20 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             clear cleanupFile cleanup
         end
     end
+end
+
+function app = startupFailureApplication()
+app = labkit.app.Definition( ...
+    Entrypoint="labkit_StartupFailureProbe_app", ...
+    AppId="probe.startup-failure", Title="Startup failure probe", ...
+    Family="Tests", AppVersion="1.0.0", Updated="2026-07-20", ...
+    Requirements=[], Workbench=labkit.app.layout.workbench({}), ...
+    OnStart=@failStartup);
+end
+
+function state = failStartup(~, ~)
+error("probe:StartupFailure", "Synthetic startup probe failed.");
+state = struct();
 end
 
 function app = visualPolicyApplication()
