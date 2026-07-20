@@ -64,6 +64,14 @@ Still open before compatibility retirement:
 - finish diagnostic samples, project/recovery/result/dialog behavior, focused
   App tests, final changed-file gates, documentation, versions, and history.
 
+Current product audit progress:
+
+| App scope | Status | Evidence |
+| --- | --- | --- |
+| DIC Preprocess | Complete | All three control tabs, workspace, controls, actions, notes, summary, details, log, and focused GUI workflow compared with `main` |
+| CIC | Complete | All three control tabs, old panner geometry, files panel, summary rows, batch table, plot stack, menus, title, exports, project save/restore, and focused GUI workflow compared with `main` |
+| Remaining 19 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
+
 The accepted public structure is capability-partitioned:
 `labkit.app.Definition` and `CallbackContext` form the small root; `layout`,
 `view`, `event`, `interaction`, `plot`, `project`, `result`, and `dialog` own
