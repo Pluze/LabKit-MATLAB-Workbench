@@ -14,16 +14,28 @@ labkit_CurvatureMeasurement_app
 
 ## Basic Workflow
 
-1. Choose an image.
-2. Measure a known scale reference and enter its length/unit when physical
-   values are required.
-3. Start curve editing and place ordered anchors along the feature.
-4. Drag anchors to refine the trace; undo or clear as needed.
-5. Fit the circle and measure curve length.
-6. Export the result CSV and overlay PNG.
+The **Files + Analysis** tab contains the complete workflow:
 
-The canvas title/subtitle identifies curve-edit mode and its placement/removal
-gesture. Anchor edits and result overlays preserve the current axes zoom.
+1. Choose an image in the **Image** section.
+2. Use **Measure reference pixels**, or enter **Reference pixels** directly,
+   then enter the known reference length and unit.
+3. Configure and place the optional display scale bar.
+4. Use **Start curve edit** and place ordered anchors along the feature.
+5. Drag anchors to refine the trace; undo or clear as needed, then finish
+   curve editing.
+6. Choose the densification settings, fit the circle, and measure curve
+   length.
+7. Export the result CSV and overlay PNG.
+
+The edit buttons change to **Finish curve edit** or **Finish reference edit**
+while their managed interaction is active. Curve and reference edits are
+mutually exclusive. Anchor edits and result overlays preserve the current
+axes zoom.
+
+The **Summary + Results** tab reports curve length, radius, curvature, RMSE,
+fit center, and pixels per selected unit. **Details** explains the next valid
+step before a result exists and reports the current measurement afterward.
+The **Log** tab records file, edit, fit, calibration, and export actions.
 
 The chosen image is stored in the standard project `inputs.sources`
 collection. Version 1 projects using the former singular `inputs.source`
@@ -67,8 +79,9 @@ moving the display bar does not modify the fit.
 
 The CSV records point count, fit settings, center, radius, curvature, traced
 length, calibration, units, and status. The overlay PNG contains the source
-image, curve, fitted circle, and configured scale bar when available. A result
-manifest records source and parameter provenance.
+image, ordered curve, optional dense samples, fit residuals, fitted circle,
+center, and configured scale bar when available. Each export writes its
+standard result manifest with source and parameter provenance.
 
 ## Use Without The GUI
 
@@ -94,26 +107,35 @@ lengthResult = curvature.analysisRun.computeCurveLength(points, struct());
 
 ## Framework Compatibility
 
-The single `definition.m` owns product metadata, requirements, layout, actions,
-presentation, renderer, and debug-sample capability. `projectSpec.m` is the
-only durable-project entry and keeps current creation, validation, and the
-version-1 source migration together. Runtime V2 owns the migration loop. Root
-`createSession.m` reconstructs the decoded image and transient edit state after
-source relinking.
+The single `definition.m` owns product metadata, requirements, the composed
+workbench, project/session boundaries, presentation, and debug-sample
+capability. `+workbench/buildLayout.m` composes source selection, curve
+editing, scale calibration, analysis/export, summary, log, and preview
+surfaces from their owning capability packages. Layout nodes bind their
+concrete callbacks and renderer directly; the App has no handler or renderer
+registry.
+
+`projectSpec.m` is the only durable-project entry and keeps current creation,
+validation, and the version-1 source migration together. The runtime owns the
+migration loop. Root `createSession.m` reconstructs the decoded image and
+transient edit state after source relinking.
 
 The project validator requires the image-source collection and checks
 curvature parameters, annotations, and results; Runtime validates canonical
 buckets and each source record first.
 
 Fit/length result shapes and deterministic task fingerprints live with their
-calculations under `+analysisRun`; there is no generic `+appState` package. The
-App requires `labkit.ui >=7 <8` and `labkit.image >=2 <3`; source-path access,
-persistence, callback lifetime, and managed anchor interactions remain
-framework-owned.
+calculations under `+analysisRun`; there is no generic state or action
+package. The App requires `labkit.app >=1 <2` and `labkit.image >=2 <3`;
+source-path access, persistence, callback lifetime, result manifests, and
+managed anchor/reference interactions remain framework-owned.
 
 Its session factory returns only App-specific edit workflow, scale-bar view,
 and decoded image cache fields. Runtime supplies absent canonical buckets and
 owns workflow-log initialization.
 
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+The semantic layout follows the
+[App framework contract](../../../framework/README.md): callbacks name the
+complete application state, typed event value when present, and
+`CallbackContext` at their direct boundary, then delegate scientific work
+through narrow inputs.

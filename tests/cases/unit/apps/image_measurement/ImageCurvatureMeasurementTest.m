@@ -23,10 +23,11 @@ end
 
 function checkProjectSourceMigration()
     definition = curvature.definition();
-    project = definition.project.Create();
-    assert(definition.project.Validate(project), ...
+    project = definition.ProjectSchema.Create();
+    assert(definition.ProjectSchema.Validate(project), ...
         'Curvature projectSpec should accept its current project.');
-    session = definition.createSession(project);
+    session = definition.CreateSession( ...
+        project, labkit.app.CallbackContext());
     assert(isempty(session.cache.image) && ...
         session.workflow.editMode == "none", ...
         'Curvature empty-session reconstruction changed.');
@@ -34,13 +35,13 @@ function checkProjectSourceMigration()
     project.inputs.source = expected;
     project.inputs = rmfield(project.inputs, "sources");
 
-    migrated = definition.project.Migrate(project, 1);
+    migrated = definition.ProjectSchema.Migrate(project, 1);
 
     assert(isequal(migrated.inputs.sources, expected), ...
         'Curvature source migration changed the source record.');
     assert(~isfield(migrated.inputs, 'source'), ...
         'Curvature source migration retained the retired field.');
-    assert(definition.project.Version == 2, ...
+    assert(definition.ProjectSchema.Version == 2, ...
         'Curvature project version did not advance.');
 end
 

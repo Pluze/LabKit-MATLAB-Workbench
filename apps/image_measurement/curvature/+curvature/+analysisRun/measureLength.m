@@ -1,7 +1,36 @@
-function state = measureLength(state, context)
-points = state.project.annotations.curvePoints;
-if size(points,1) < 2, context.alert("At least 2 curve points are required.", "Not enough points"); return, end
-path = curvature.curvePreview.visiblePath(points, state.session.cache.image);
-state.project.results.length = curvature.analysisRun.computeCurveLength( ...
-    path(:,1),path(:,2),state.project.annotations.calibration);
+function applicationState = measureLength( ...
+        applicationState, callbackContext)
+%MEASURELENGTH Execute one fingerprinted traced-length task.
+points = applicationState.project.annotations.curvePoints;
+if size(points, 1) < 2
+    callbackContext.alert( ...
+        "At least 2 curve points are required to measure curve length.", ...
+        "Not enough points");
+    return
+end
+path = curvature.curvePreview.visiblePath( ...
+    points, applicationState.session.cache.image);
+try
+    task = curvature.analysisRun.lengthTask( ...
+        points, path, applicationState.project.annotations.calibration);
+    if applicationState.project.results.length.ok && ...
+            applicationState.session.cache.lengthFingerprint == ...
+            task.fingerprint
+        callbackContext.appendStatus( ...
+            "Curve length already matches current curve and scale.");
+        return
+    end
+    lengthResult = curvature.analysisRun.computeCurveLength( ...
+        task.lengthPath(:, 1), task.lengthPath(:, 2), task.calibration);
+catch ME
+    callbackContext.reportError("Measure Curvature curve length", ME);
+    callbackContext.alert(ME.message, "Curve length failed");
+    return
+end
+applicationState.project.results.length = lengthResult;
+applicationState.project.results.lastCsvExport = [];
+applicationState.session.cache.lengthFingerprint = task.fingerprint;
+callbackContext.appendStatus(sprintf( ...
+    "Curve length measured: %.6g %s.", ...
+    lengthResult.length_show, lengthResult.unitLen));
 end

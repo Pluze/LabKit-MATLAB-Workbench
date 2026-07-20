@@ -1,6 +1,11 @@
-function state = undo(state, ~)
-points = state.project.annotations.curvePoints;
-if ~isempty(points), points(end,:) = []; end
-state.project.annotations.curvePoints = points;
-state = curvature.curveEdit.clearMeasurements(state);
+function applicationState = undo(applicationState, callbackContext)
+%UNDO Remove the newest curve anchor and invalidate measurements.
+points = applicationState.project.annotations.curvePoints;
+if isempty(points)
+    return
+end
+points(end, :) = [];
+applicationState.project.annotations.curvePoints = points;
+applicationState = curvature.curveEdit.clearMeasurements(applicationState);
+callbackContext.appendStatus("Undid last curve point.");
 end
