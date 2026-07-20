@@ -1,5 +1,5 @@
 classdef DicPreprocessStateTest < matlab.unittest.TestCase
-    %DICPREPROCESSSTATETEST Verify native V2 DIC project/cache contracts.
+    %DICPREPROCESSSTATETEST Verify current DIC project/cache contracts.
 
     methods (Test, TestTags = {'Unit'})
         function editHistoryStoresDurableStepsAndTrimsSnapshots(testCase)

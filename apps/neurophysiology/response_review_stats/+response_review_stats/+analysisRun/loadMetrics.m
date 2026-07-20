@@ -1,4 +1,4 @@
-% Expected callers: Runtime V2 session creation and definition actions. Input
+% Expected callers: App SDK runtime session creation and definition actions. Input
 % is one analysis JSON or segment CSV path plus metric windows. Outputs are
 % the rebuildable metric, summary, and aligned-signal caches.
 function [metrics, summary, aligned] = loadMetrics(filepath, parameters)

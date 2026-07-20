@@ -1,4 +1,4 @@
-% Expected caller: DIC preprocess V2 actions and unit tests. Input/output is the
+% Expected caller: DIC preprocess App SDK actions and unit tests. Input/output is the
 % canonical durable project with current images restored from originals.
 
 function project = resetToOriginals(project)

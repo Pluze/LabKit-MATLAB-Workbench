@@ -1,4 +1,4 @@
-% Expected caller: the Runtime V2 registered renderer. Inputs are a UI axes
+% Expected caller: the App SDK runtime registered renderer. Inputs are a UI axes
 % and a presentation model. Side effect is redrawing analysis counts/issues.
 function drawPreview(axesById, S)
 %DRAWANALYSISPREVIEW Draw a compact nerve-response analysis preview.

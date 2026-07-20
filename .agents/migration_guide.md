@@ -21,10 +21,12 @@ app-sdk-migration-debt: ui-explicit-contract-redesign
 
 - **Debt ID:** `ui-explicit-contract-redesign`
 - **Owner:** `labkit.app`
-- **Target boundary:** stable `labkit.app` 1.x and every tracked App currently
+- **Target boundary:** stable `labkit.app` 1.x and every tracked App formerly
   consuming legacy `labkit.ui`
-- **Status:** Phases 0-6 complete for all 21 tracked Apps; Phase 7 public
-  boundary audit and compatibility retirement in progress
+- **Status:** Phases 0-6 complete for all 21 tracked Apps; the retired
+  production facade and migration-only tools/tests are removed in Phase 7,
+  with final public-boundary, documentation, version/history, and validation
+  work in progress
 - **User-visible reason:** App authors must be able to discover the framework
   from function, constructor, method, and parameter names. Invalid App code
   must fail at the contract boundary instead of being ignored, guessed, or
@@ -61,6 +63,17 @@ Restored in the replacement SDK worktree:
   behavior;
 - typed interval-scroll payloads carrying the normalized data anchor and
   scroll count instead of an undocumented runtime struct.
+
+Retired during Phase 7:
+
+- the complete 161-file `+labkit/+ui` implementation after source scans proved
+  that no production App or reusable facade still called it;
+- the offline analyzer, baseline/prototype generators, prototype packages, and
+  migration-only contract/GUI tests that existed only to reach the replacement;
+- current source comments, framework ownership rules, test-routing fixtures,
+  and documentation discovery that still named the retired facade. Historical
+  records and this active debt rationale remain until the final
+  cross-component history record is complete.
 
 Still open before compatibility retirement:
 

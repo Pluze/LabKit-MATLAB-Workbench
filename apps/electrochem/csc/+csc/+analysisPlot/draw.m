@@ -1,4 +1,4 @@
-% Expected caller: registered CSC Runtime V2 renderer. Inputs are one axes
+% Expected caller: registered CSC App SDK runtime renderer. Inputs are one axes
 % and a prepared axis model. Side effects are limited to supplied graphics.
 function draw(axesById, model)
 renderCscAxis(axesById.top, model.top);

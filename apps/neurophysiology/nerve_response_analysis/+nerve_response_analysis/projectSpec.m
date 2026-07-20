@@ -1,4 +1,4 @@
-% App-owned durable Nerve Response Analysis contract. Runtime V2 applies the
+% App-owned durable Nerve Response Analysis contract. App SDK runtime applies the
 % one source-schema migration, then validates fixed filter/protocol source
 % identities, run limits, and compact export state.
 function spec = projectSpec()

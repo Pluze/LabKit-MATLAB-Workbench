@@ -18,7 +18,7 @@ context menu. That handoff embeds a serializable plot snapshot in the project.
 
 ## Initialization And Runtime Services
 
-`figure_studio.definition` declares an optional Runtime V2 `Start` capability
+`figure_studio.definition` declares an optional App SDK `OnStart` capability
 named `figure_studio.initializeWorkbench`. Runtime calls it after the semantic
 layout and preview axes exist but before startup readiness is released. This is
 why axes handoff and resize-resource registration do not belong in
@@ -118,12 +118,12 @@ objects.
 
 ## Framework Compatibility
 
-This App's `definition.m` owns its product metadata, `labkit.ui >=7 <8`
+This App's `definition.m` owns its product metadata, `labkit.app >=1 <2`
 requirement, layout, and optional capabilities. `projectSpec.m` is the single
 durable-schema entry and keeps project creation and validation local;
 `createSession.m` separately rebuilds decoded FIG data because it is transient
 runtime state. The entrypoint only adapts the optional axes handoff and
-delegates to Runtime V2. App code uses semantic actions, injected project
+delegates to App SDK runtime. App code uses semantic actions, injected project
 services, and the stable resolved-path accessor; busy-state and
 portable-reference serialization mechanics remain framework-owned.
 

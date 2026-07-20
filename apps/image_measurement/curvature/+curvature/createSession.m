@@ -1,5 +1,5 @@
 % Rebuild the decoded image and transient interaction state from one validated
-% Curvature project. Runtime V2 calls this after source relinking.
+% Curvature project. App SDK runtime calls this after source relinking.
 function session = createSession(project, context)
     paths = strings(0, 1);
     if ~isempty(project.inputs.sources)

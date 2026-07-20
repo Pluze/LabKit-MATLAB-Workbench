@@ -1,5 +1,5 @@
 classdef UiRuntimeKernelTest < matlab.unittest.TestCase
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function invokesLayoutCallbackAndCommitsState(testCase)
             setupLabKitTestPath();
             app = counterApplication(@incrementValue);

@@ -30,10 +30,8 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
 - `labkit.image`, `thermal`, `dta`, `rhs`, and `biosignal` stay GUI-free and
   app-free. Each owns its documented file/data/scientific primitive contract,
   not an app's task orchestration.
-- `labkit.app` owns the future App SDK; `labkit.ui` stays parser- and
-  analysis-free while its legacy public layers are
-  `runtime`, `layout`, `plot`, `interaction`, and `debug`; registry mutation,
-  queueing, concrete controls, and lifecycle handles remain private.
+- `labkit.app` owns the App SDK. Registry mutation, queueing, concrete
+  controls, native adapters, and lifecycle handles remain private.
 - `labkit.contract` owns MATLAB-native version requirements and range checks,
   not app discovery or package management.
 - Do not introduce MATLAB classes or a third-party runtime dependency without
@@ -48,9 +46,8 @@ Framework tests live under `tests/cases/unit/labkit_framework/` and
 
 ## Runtime contracts
 
-- Migrated Apps return one `labkit.app.Definition` and launch it through
-  `Definition.launch`; do not adapt explicit values back into
-  `labkit.ui.runtime.launch/define`. The runtime owns
+- Apps return one `labkit.app.Definition` and launch it through
+  `Definition.launch`. The runtime owns
   startup readiness, busy state, queued events, atomic presentation, close
   guards, diagnostics, persistence, recovery, resources, and interactions.
 - Semantic ids are developer-owned and framework-validated. App ids are stable

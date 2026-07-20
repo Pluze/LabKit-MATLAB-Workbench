@@ -107,7 +107,7 @@ Direct syntax, options, outputs, and artifact behavior are documented in
 | --- | --- |
 | App entry point | Public launch name delegated to one runtime definition, including lightweight requirements/version/debug requests. |
 | App package | App definition, workflow state, command handlers, presenters, calculations, summaries, exports, and app-local helpers. |
-| `labkit.ui` | Declarative app runtime, app shell, readiness/busy state, data-only workbench layouts, semantic view updates, reusable tools, and diagnostics. |
+| `labkit.app` | App definition and launch, semantic layout and view snapshots, typed events, callback capabilities, projects, diagnostics, results, interactions, and private native runtime lifecycle. |
 | `labkit.image` | GUI-free image file IO, display normalization, resizing, mean filtering, and basic enhancement primitives. |
 | `labkit.thermal` | GUI-free thermal source-file parsing, raw thermal matrices, embedded calibration metadata, raw-to-temperature conversion, and thermal colormap rendering. |
 | `labkit.dta` | GUI-free Gamry DTA discovery, loading, parsed curves, and pulse helpers. |

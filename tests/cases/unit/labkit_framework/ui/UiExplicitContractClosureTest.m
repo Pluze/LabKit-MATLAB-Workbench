@@ -1,5 +1,5 @@
 classdef UiExplicitContractClosureTest < matlab.unittest.TestCase
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function exposesOnlyAcceptedLayoutAndPresentationVocabulary(testCase)
             setupLabKitTestPath();
             required = ["button", "field", "rangeField", "slider", ...
@@ -17,6 +17,14 @@ classdef UiExplicitContractClosureTest < matlab.unittest.TestCase
                 ["set", "patch", "property"], presentationMethods));
             testCase.verifyTrue(ismember( ...
                 "workspacePage", presentationMethods));
+        end
+
+        function retiredFacadeIsNotCallable(testCase)
+            setupLabKitTestPath();
+
+            testCase.verifyEmpty(which("labkit.ui.version"));
+            testCase.verifyEmpty(which("labkit.ui.runtime.launch"));
+            testCase.verifyEmpty(which("labkit.ui.layout.workbench"));
         end
 
         function rejectsAliasesStringsAndUntypedPayloads(testCase)

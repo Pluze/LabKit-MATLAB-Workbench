@@ -1,4 +1,4 @@
-% App-owned durable Response Review Stats contract. Runtime V2 upgrades the
+% App-owned durable Response Review Stats contract. App SDK runtime upgrades the
 % former singular source through the one migration entry, then validates metric
 % windows and durable export state.
 function spec = projectSpec()

@@ -1,4 +1,4 @@
-% Expected caller: the registered DIC Preprocess V2 renderer. Inputs are one
+% Expected caller: the registered DIC Preprocess App SDK renderer. Inputs are one
 % semantic preview axes and prepared image/overlay model. Side effects are
 % limited to the supplied axes; overlays never become semantic state.
 function drawPreview(axesById, model)

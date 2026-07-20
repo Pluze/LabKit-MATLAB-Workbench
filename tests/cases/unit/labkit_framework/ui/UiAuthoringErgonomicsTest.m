@@ -1,6 +1,6 @@
 classdef UiAuthoringErgonomicsTest < matlab.unittest.TestCase
     % Verify the replacement SDK's standard authoring path stays low-boilerplate.
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function staticAppNeedsOnlyApplicationAndLayout(testCase)
             setupLabKitTestPath();
             app = minimalApplication(labkit.app.layout.workbench({}));

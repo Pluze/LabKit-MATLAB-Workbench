@@ -32,11 +32,10 @@ LabKit-MATLAB-Workbench/
           labkit_<PrivateAppName>_app.m
           +<app_slug>/
             definition.m
-            +userInterface/buildWorkbenchLayout.m
-            definitionActions.m                 optional
+            +workbench/buildLayout.m
             projectSpec.m                       optional
             createSession.m                     optional
-            +userInterface/presentWorkbench.m   optional
+            +workbench/present.m                optional
             +sourceFiles/...                    as needed
             +analysisRun/...                    as needed
             +resultFiles/...                    as needed
@@ -96,15 +95,15 @@ Private apps should follow the same app-owned package shape as public apps:
 - keep app workflow code under the owning `+<app_slug>/` package
 - use one `definition.m` for product identity, version, requirements, layout,
   and references to optional capabilities
-- start with only the entrypoint, definition, and data-only layout
-- add `definitionActions.m` only for semantic interactions and a pure
-  presenter only for dynamic views
+- start with only the entrypoint, definition, and semantic workbench layout
+- bind callbacks and plot renderers directly on their owning layout controls;
+  add `+workbench/present.m` only for dynamic visible state
 - add one `projectSpec.m` only for durable App-owned state; keep create,
   validate, and version-aware migrate functions local to that file
 - add root `createSession.m` only for App-specific transient reconstruction
 - group workflow code by concrete user capability, such as `+sourceFiles`,
   `+analysisRun`, `+resultFiles`, or another app-owned domain package
-- use shared LabKit facades such as `labkit.ui.*`, `labkit.image.*`,
+- use shared LabKit facades such as `labkit.app.*`, `labkit.image.*`,
   `labkit.thermal.*`, `labkit.dta.*`, `labkit.rhs.*`, and
   `labkit.biosignal.*`
 

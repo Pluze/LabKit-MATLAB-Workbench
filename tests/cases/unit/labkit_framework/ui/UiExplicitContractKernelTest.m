@@ -1,5 +1,5 @@
 classdef UiExplicitContractKernelTest < matlab.unittest.TestCase
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function compilesAndValidatesCompleteTablePlotContract(testCase)
             setupLabKitTestPath();
             [app, view] = representativeContract();

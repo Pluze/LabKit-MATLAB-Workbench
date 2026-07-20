@@ -1,4 +1,4 @@
-% Expected caller: Runtime V2 registered renderer. Inputs are a UI axes handle
+% Expected caller: App SDK runtime registered renderer. Inputs are a UI axes handle
 % and presentation model. Side effect is redrawing summary/aligned waveforms.
 function drawPreview(axesById, S)
 %DRAWSTATSPREVIEW Draw response-review metrics or aligned segments.

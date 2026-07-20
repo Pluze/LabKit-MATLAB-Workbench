@@ -1,5 +1,5 @@
 classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function savesAndRestoresCurrentEnvelope(testCase)
             setupLabKitTestPath();
             folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);

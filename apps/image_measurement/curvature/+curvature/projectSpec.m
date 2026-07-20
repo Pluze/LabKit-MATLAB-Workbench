@@ -1,4 +1,4 @@
-% App-owned durable Curvature contract. Runtime V2 calls this single entry for
+% App-owned durable Curvature contract. App SDK runtime calls this single entry for
 % project creation, validation, and each required version migration step.
 function spec = projectSpec()
     spec = labkit.app.project.Schema(Version=2, Create=@createProject, ...

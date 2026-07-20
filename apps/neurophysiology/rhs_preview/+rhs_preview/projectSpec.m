@@ -1,4 +1,4 @@
-% App-owned durable RHS Preview contract. Runtime V2 applies the single
+% App-owned durable RHS Preview contract. App SDK runtime applies the single
 % source-schema migration, then validates preview settings, role-based source
 % collections, durable annotations, and compact export state.
 function spec = projectSpec()

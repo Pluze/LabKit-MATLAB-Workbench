@@ -69,7 +69,7 @@ The durable project stores portable references for one preview recording, one
 optional protocol, and an ordered collection of filter recordings. It also
 stores preview settings, channel-role drafts, manual filter labels/comments,
 and compact export records. The App owns the `recording`, `protocol`, and
-`filterRecording` roles; Runtime V2 owns each reference's portable path data.
+`filterRecording` roles; App SDK runtime owns each reference's portable path data.
 
 Header indices, decoded preview windows, table presentation state, current ROI
 and window position, status text, and log messages are transient session data.
@@ -82,7 +82,8 @@ and protocol sources use the injected upsert service. The variable filter
 collection uses the injected reconcile service so existing source IDs remain
 stable when files are added, removed, or rediscovered. The App-local
 `rhs_preview.sourceFiles.pathsForRole` function selects its role ordering and
-delegates portable-reference decoding to `labkit.ui.runtime.sourcePaths`.
+delegates portable-reference decoding to the injected
+`CallbackContext.resolveSourcePaths` operation.
 
 ## Review Recording Information
 
@@ -129,7 +130,7 @@ interpret the waveform matrix.
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8` and
+This App uses the App SDK runtime lifecycle and requires `labkit.app >=1 <2` and
 `labkit.rhs >=1.0 <2`. App code uses semantic actions, managed interval
 interaction, `sourcePaths`, and injected upsert/reconcile services; migration
 iteration, busy state, and portable-reference serialization remain

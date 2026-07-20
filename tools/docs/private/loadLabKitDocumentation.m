@@ -165,7 +165,7 @@ function [id, output, kind, nav, components] = ...
         id = "framework";
         kind = "explanation";
         nav = "App Framework";
-        components = "labkit.ui";
+        components = "labkit.app";
     elseif startsWith(source, "framework/")
         group = pathGroup(source, "framework");
         if group == "Guides"
@@ -222,11 +222,11 @@ end
 
 function components = frameworkComponents(source)
     if contains(source, "/runtime")
-        components = "labkit.ui.runtime";
+        components = "labkit.app";
     elseif contains(source, "/contracts")
         components = "labkit.contract";
     else
-        components = "labkit.ui";
+        components = "labkit.app";
     end
 end
 

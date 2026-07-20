@@ -142,7 +142,7 @@ optional runtime capabilities. `projectSpec.m` keeps the complete version-1
 durable schema, creation defaults, and validation together. `createSession.m`
 rebuilds file-backed strain, image, mask, and overlay caches because those are
 transient runtime data rather than saved project fields. The App requires
-`labkit.ui >=7 <8` and `labkit.image >=2 <3`; busy-state, optional source-slot
+`labkit.app >=1 <2` and `labkit.image >=2 <3`; busy-state, optional source-slot
 lookup, and portable-reference serialization remain framework-owned.
 
 The project validator requires the DIC source collection and checks summary

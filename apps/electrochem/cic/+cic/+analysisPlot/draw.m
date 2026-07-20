@@ -1,4 +1,4 @@
-% Expected caller: registered CIC Runtime V2 renderer. Inputs are one axes
+% Expected caller: registered CIC App SDK runtime renderer. Inputs are one axes
 % and a prepared app-owned axis model. Side effects are limited to replacing
 % graphics on the supplied axes.
 function draw(axesById, model)

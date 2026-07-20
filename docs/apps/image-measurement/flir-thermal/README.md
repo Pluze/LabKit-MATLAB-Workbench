@@ -79,7 +79,7 @@ outputs remain Celsius regardless of palette or mapping mode.
 
 Saved projects keep portable source references, display parameters, export
 settings, and lightweight per-image ranges and readings. Raw sensor matrices
-and decoded Celsius matrices are transient session data: Runtime V2 resolves
+and decoded Celsius matrices are transient session data: App SDK runtime resolves
 the source references and the App decodes only the selected image again when a
 project opens. Missing source files therefore use the framework's relinking
 flow rather than embedding local absolute paths in the project.

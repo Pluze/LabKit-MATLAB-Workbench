@@ -130,13 +130,13 @@ behavior, output table columns, failures, examples, and related APIs.
 
 ## Framework Compatibility
 
-This App requires `labkit.ui >=7 <8`. Its single `definition.m` owns product
+This App requires `labkit.app >=1 <2`. Its single `definition.m` owns product
 metadata, requirements, layout, actions, presentation, renderer, and debug
 capability. `projectSpec.m` concentrates durable creation, validation, and
 migration; root `createSession.m` rebuilds transient analysis tables.
 
-Source paths are read through `labkit.ui.runtime.sourcePaths`; no App code
-inspects portable-reference fields. Callback queues, busy state, migration
+Source paths are read through `CallbackContext.resolveSourcePaths`; no App
+code inspects portable-reference fields. Callback queues, busy state, migration
 iteration, source relinking, serialization, and resource lifetime remain
 framework-owned.
 

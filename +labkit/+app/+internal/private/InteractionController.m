@@ -11,10 +11,9 @@ controller = struct("reconcile", @reconcile, "delete", @deleteController);
         reconcileInteractions(hub, resources, specs, actionIds);
     end
 
-    function dispatchEvent(event)
-        id = string(event.id);
+    function dispatchEvent(id, value)
         parts = split(id, "__");
-        dispatch(parts(1), parts(2), event.value);
+        dispatch(parts(1), parts(2), value);
     end
 
     function removeTargetResources(target)

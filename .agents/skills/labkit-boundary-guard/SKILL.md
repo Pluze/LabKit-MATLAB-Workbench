@@ -25,8 +25,7 @@ Before moving code into `+labkit`, prove that it:
 Otherwise keep it in the app. Duplication, helper length, and a desire to make
 an App callback file shorter are not sufficient evidence.
 
-Keep domain facades GUI-free and app-free. `labkit.app` owns the future App
-SDK; `labkit.ui` stays parser/science-free during legacy migration.
+Keep domain facades GUI-free and app-free. `labkit.app` is the sole App SDK.
 Concrete controls, registries, queues, interaction runtimes, persistence
 storage, and lifecycle handles stay private. App metadata stays in app-owned
 `definition.m`; separate App `version.m` and requirements registries are

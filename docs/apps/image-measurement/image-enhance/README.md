@@ -87,7 +87,7 @@ imwrite(output{1}, "enhanced.png");
 
 Saved projects keep portable source references, shared and per-image step
 histories, white-reference ROIs, export settings, and compact result metadata.
-Decoded full-size pixels and downsampled previews remain transient. Runtime V2
+Decoded full-size pixels and downsampled previews remain transient. App SDK runtime
 resolves source references first; `createSession.m` then rebuilds only the
 selected source and its preview when a project opens.
 
@@ -116,7 +116,7 @@ The single `definition.m` owns product metadata, requirements, layout, actions,
 presentation, renderer, and debug-sample capability. `projectSpec.m` is the
 only durable-project entry; the version-1 payload needs creation and validation
 but no migration. Root `createSession.m` rebuilds the selected image cache after
-Runtime V2 resolves sources.
+App SDK runtime resolves sources.
 
 The project validator requires the image-source collection and checks export,
 shared-history, and per-image annotation relationships; Runtime validates
@@ -127,7 +127,7 @@ active histories, pipeline replay, and preview-coordinate scaling live with
 `+analysisRun`; durable per-image histories live with
 `+enhancementAnnotations`; export fingerprints live with `+resultFiles`.
 There is no generic `+appState` package. The App requires
-`labkit.ui >=7 <8` and `labkit.image >=2 <3`; persistence, source-path access,
+`labkit.app >=1 <2` and `labkit.image >=2 <3`; persistence, source-path access,
 busy state, and managed ROI interaction remain framework-owned. Batch manifest
 outputs use the framework's canonical empty output array, so export validation
 applies only to real enhanced-image records.

@@ -5,9 +5,6 @@ Apps own scientific workflow, calculations, units, wording, plots, and exports.
 The SDK owns semantic layout, transactions, project documents, portable
 sources, dialogs, resources, results, and native component lifecycle.
 
-`labkit.ui` is the legacy framework during migration. New and migrated Apps
-depend on `labkit.app`.
-
 ## Start Here
 
 | Goal | Documentation |

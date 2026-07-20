@@ -1,5 +1,5 @@
 classdef UiExplicitContractValueTest < matlab.unittest.TestCase
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function projectContractValidatesEveryFixedCallback(testCase)
             setupLabKitTestPath();
             contract = labkit.app.project.Schema( ...

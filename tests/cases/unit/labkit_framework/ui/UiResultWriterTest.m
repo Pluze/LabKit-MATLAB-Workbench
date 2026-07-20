@@ -1,5 +1,5 @@
 classdef UiResultWriterTest < matlab.unittest.TestCase
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function writesVerifiedManifestAtomically(testCase)
             setupLabKitTestPath();
             folder = testCase.applyFixture( ...

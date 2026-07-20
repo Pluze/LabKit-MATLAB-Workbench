@@ -1,5 +1,5 @@
 % Rebuild transient decoded images and preview caches from one validated
-% Image Match project. Runtime V2 calls this after source relinking.
+% Image Match project. App SDK runtime calls this after source relinking.
 function session = createSession(project, context)
     index = double(~isempty(project.inputs.sources));
     cache = emptyCache();

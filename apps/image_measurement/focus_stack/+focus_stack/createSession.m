@@ -1,5 +1,5 @@
 % Rebuild transient decoded images and full result caches from one validated
-% Focus Stack project. Runtime V2 calls this after source relinking.
+% Focus Stack project. App SDK runtime calls this after source relinking.
 function session = createSession(project, context)
     [images, sourcePaths] = loadImages(project.inputs.sources, context);
     currentFingerprint = fingerprint(project.parameters, sourcePaths, images);

@@ -26,8 +26,8 @@ retirement. A zero-debt ledger is not an everyday checklist.
 - Apps own formulas, thresholds, units, workflow decisions, plots, results,
   exports, failures, and wording. Promote code into `+labkit` only when it is a
   stable domain-neutral contract useful beyond one app.
-- App-facing packages are `labkit.app`, `ui`, `image`, `thermal`, `dta`, `rhs`,
-  and `biosignal`; `labkit.ui` is legacy until migration completes. Do not
+- App-facing packages are `labkit.app`, `image`, `thermal`, `dta`, `rhs`,
+  and `biosignal`. Do not
   create public `analysis`, `data`, `io`, `util`, or app-specific helper
   surfaces.
 - Migrated Apps use `labkit.app.Definition`, `labkit.app.layout.*`,

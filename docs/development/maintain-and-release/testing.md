@@ -493,22 +493,24 @@ artifacts/debug/<RunName>/<AppName>/<SessionId>/
 
 Coverage is report-only and not part of the default local check.
 
-## Runtime V2 Contract Coverage
+## App SDK Runtime Contract Coverage
 
 The workflow-first app contract is covered by layered tests, not by a single
 launch-only suite:
 
 - `AppPackageStructureGuardrailTest` discovers every `apps/**/labkit_*_app.m`
   entrypoint, requires the canonical `definition.m` and
-  `+userInterface/buildWorkbenchLayout.m`, verifies references to optional
+  `+workbench/buildLayout.m`, verifies references to optional
   action/project/session/presentation capabilities when present, and rejects
   retired metadata files, generic lifecycle/state packages, per-version
   migration files, package-root app runners, and broad app buckets such as
   `+actions`, `+state`, `+ui`, `+view`, `+ops`, `+io`, and `+export`.
-- `GuiLayoutUiRuntimeV2Test` owns queued dispatch, canonical state,
-  presentation commits, service injection, rollback, and `Start` behavior.
-  `GuiLayoutUiRuntimeV2ProjectTest` owns project persistence, migrations,
-  source relinking, and read-only legacy snapshot imports.
+- `UiRuntimeKernelTest` owns queued dispatch, canonical state, presentation
+  commits, callback-capability injection, rollback, and `OnStart` behavior.
+  `UiProjectDocumentStoreTest` owns project persistence, migrations, source
+  relinking, and read-only legacy snapshot imports.
+  `UiMatlabPlatformAdapterTest` owns the native component and interaction
+  adapter boundary.
 - `AppOwnedWorkflowBoundariesTest` and `AppLibraryCompatibilityTest` keep app
   workflow code under the owning app tree and prevent apps from depending on
   removed helper-dump or old UI surfaces.

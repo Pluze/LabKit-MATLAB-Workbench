@@ -1,5 +1,5 @@
 % Return resolved source paths for one RHS Preview source role. The App owns
-% role selection and ordering; Runtime V2 owns portable-reference decoding.
+% role selection and ordering; App SDK runtime owns portable-reference decoding.
 function paths = pathsForRole(sources, role, callbackContext)
     if isempty(sources)
         paths = strings(0, 1);

@@ -28,10 +28,10 @@ function verify_imageEnhance()
     checkPerImageExportSteps();
     checkExportTaskFingerprintTracksInputsOptionsAndSteps();
     checkExportTaskPreservesPerImageSteps();
-    checkRuntimeV2ProjectAndPresenterContracts();
+    checkAppSdkProjectAndPresenterContracts();
 end
 
-function checkRuntimeV2ProjectAndPresenterContracts()
+function checkAppSdkProjectAndPresenterContracts()
     definition = image_enhance.definition();
     assert(isa(definition, 'labkit.app.Definition'), ...
         'Image Enhance must use the explicit App SDK definition contract.');

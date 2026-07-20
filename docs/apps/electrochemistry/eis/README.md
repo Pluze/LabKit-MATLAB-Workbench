@@ -16,8 +16,8 @@ labkit_EIS_app
 
 Add one or more `.DTA` files containing a readable EIS `ZCURVE`. Files that do
 not contain the required curve are reported and omitted from the plot. The
-source list is preserved in project state through portable references. Runtime
-V2 reconciles those records with the successfully decoded file list, preserves
+source list is preserved in project state through portable references. The App
+SDK runtime reconciles those records with the successfully decoded file list, preserves
 the identity of files that remain loaded, and assigns unique identities to new
 files; EIS does not maintain its own source-ID counter.
 
@@ -100,8 +100,8 @@ domain schema, defaults, plot-parameter validation, and the required source
 collection; Runtime validates canonical buckets and each source record first.
 `createSession.m` rebuilds decoded ZCURVE items and selected paths because they
 are transient runtime data. Empty workflow and view buckets are supplied by
-Runtime V2 rather than repeated in the App factory. The App requires
-`labkit.ui >=7 <8` and
+App SDK runtime rather than repeated in the App factory. The App requires
+`labkit.app >=1 <2` and
 `labkit.dta >=2 <3`; busy-state, viewport-preserving rendering, resolved-path
 access, and portable-reference serialization remain framework-owned.
 

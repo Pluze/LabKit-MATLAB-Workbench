@@ -23,10 +23,10 @@ function verify_imageMatch()
     checkPreviewImageDownsamplesLargeInputs();
     checkManifestAndExportContract();
     checkExportTaskFingerprintTracksReferenceOptionsAndSteps();
-    checkRuntimeV2ProjectAndPresenterContracts();
+    checkAppSdkProjectAndPresenterContracts();
 end
 
-function checkRuntimeV2ProjectAndPresenterContracts()
+function checkAppSdkProjectAndPresenterContracts()
     definition = image_match.definition();
     assert(isa(definition, 'labkit.app.Definition'), ...
         'Image Match must use the explicit App SDK definition contract.');

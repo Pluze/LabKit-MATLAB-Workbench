@@ -1,5 +1,5 @@
 classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function noCapabilityContextRejectsOperations(testCase)
             setupLabKitTestPath();
             context = labkit.app.CallbackContext();

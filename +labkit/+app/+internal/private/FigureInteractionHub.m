@@ -234,17 +234,11 @@ function hub = FigureInteractionHub( ...
             "ZoomAxes", scrollZoomAxes(ax));
     end
 
-    function dispatchSemanticEvent(id, target, value, phase)
+    function dispatchSemanticEvent(id, ~, value, ~)
         if state.suppressed || isempty(dispatchEvent)
             return;
         end
-        event = struct();
-        event.id = string(id);
-        event.source = "interaction";
-        event.target = string(target);
-        event.value = value;
-        event.meta = struct("phase", string(phase));
-        dispatchEvent(event);
+        dispatchEvent(string(id), value);
     end
 
     function setSuppressed(value)

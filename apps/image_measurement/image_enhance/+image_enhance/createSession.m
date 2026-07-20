@@ -1,5 +1,5 @@
 % Rebuild transient selection, draft controls, and the selected preview from
-% one validated Image Enhance project after Runtime V2 resolves sources.
+% one validated Image Enhance project after App SDK runtime resolves sources.
 function session = createSession(project, context)
     index = double(~isempty(project.inputs.sources));
     kinds = image_enhance.imagePreview.presentationData.toolKinds();

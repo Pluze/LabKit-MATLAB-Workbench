@@ -1,4 +1,4 @@
-% Expected caller: DIC preprocess V2 presenter and unit tests. Inputs are the
+% Expected caller: DIC preprocess App SDK presenter and unit tests. Inputs are the
 % canonical state and preview choice. Output is prepared image data.
 
 function request = previewRequest(state, previewValue)
