@@ -747,6 +747,14 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         function applyEnabled(~, component, enabled)
             value = onOff(enabled);
             setIfProperty(component, "Enable", value);
+            if isprop(component, "Tag") && strlength(string(component.Tag)) > 0
+                figure = ancestor(component, "figure");
+                labels = findall(figure, "Tag", ...
+                    char(string(component.Tag) + ".label"));
+                for k = 1:numel(labels)
+                    setIfProperty(labels(k), "Enable", value);
+                end
+            end
             mode = linkedPlotMode(component);
             if ~isempty(mode)
                 mode.Enable = value;
