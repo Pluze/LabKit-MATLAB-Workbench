@@ -1,0 +1,28 @@
+% App-owned implementation for image_match.matchPipeline.apply within the image_match product workflow.
+function applicationState = apply(applicationState, callbackContext)
+%APPLY Append the selected semantic match step to this project's pipeline.
+cache = applicationState.session.cache;
+if isempty(cache.referenceItem) || isempty(cache.currentItem)
+    callbackContext.alert( ...
+        "Load source and reference images before applying a match.", ...
+        "Match unavailable");
+    return
+end
+parameters = applicationState.project.parameters;
+step = image_match.analysisRun.makeStep( ...
+    parameters.matchMethod, ...
+    parameters.matchStrength, ...
+    parameters.toneStrength, ...
+    parameters.colorStrength);
+steps = applicationState.project.annotations.steps;
+steps = steps(:);
+steps(end + 1, 1) = step;
+
+applicationState.project.annotations.steps = steps;
+applicationState.session.workflow.pendingDirty = false;
+applicationState = ...
+    image_match.matchPipeline.invalidateResults(applicationState);
+applicationState.session.cache = ...
+    image_match.matchPipeline.refreshPreview(cache, steps);
+callbackContext.appendStatus("Applied match: " + string(step.label));
+end

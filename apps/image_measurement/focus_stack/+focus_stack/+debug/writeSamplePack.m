@@ -2,45 +2,44 @@
 % is a LabKit debug context. Output is a deterministic synthetic focus-stack
 % sample pack. Side effects: writes anonymous debug images and records a
 % session manifest when available.
-function pack = writeSamplePack(debugLog)
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write Focus Stack debug image files.
-
-    folders = debugFolders(debugLog, "focus_stack");
-    imageFolder = fullfile(char(folders.sampleFolder), "images");
-    ensureFolder(imageFolder);
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
     [base, detailMask] = baseScene();
     slicePaths = strings(4, 1);
     focusCenters = [52 108 164 220];
     for k = 1:numel(slicePaths)
         image = focusSlice(base, detailMask, focusCenters(k));
-        slicePaths(k) = string(fullfile(imageFolder, sprintf("focus_slice_%02d.png", k)));
+        slicePaths(k) = sampleContext.samplePath( ...
+            sprintf("focus_stack/slice_%02d.png", k));
         imwrite(image, char(slicePaths(k)));
     end
 
-    lowTexturePath = string(fullfile(imageFolder, "focus_valid_low_texture.png"));
+    lowTexturePath = sampleContext.samplePath("focus_stack/low_texture.png");
     imwrite(lowTextureImage(), char(lowTexturePath));
-    malformedPath = string(fullfile(imageFolder, "focus_malformed_not_image.png"));
+    malformedPath = sampleContext.samplePath("focus_stack/malformed.png");
     writeTextFile(malformedPath, "not an image payload" + newline);
 
-    pack = struct( ...
-        "sampleFolder", folders.sampleFolder, ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", slicePaths, ...
-        "boundaryFiles", struct( ...
-            "validEdge", lowTexturePath, ...
-            "malformed", malformedPath));
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_FocusStack_app", ...
-        "description", "Anonymous textured focus-stack boundary image pack.", ...
-        "inputs", struct( ...
-            "representativeFocusSlices", slicePaths, ...
-            "validEdgeImage", lowTexturePath, ...
-            "malformedImage", malformedPath), ...
-        "outputFolder", folders.outputFolder);
-    pack.manifest = manifest;
-    recordManifest(debugLog, manifest);
+    project = focus_stack.projectSpec().Create();
+    artifacts = cell(1, numel(slicePaths) + 2);
+    for k = 1:numel(slicePaths)
+        sourceId = "image" + k;
+        project.inputs.sources(k) = sampleContext.sourceRecord( ...
+            sourceId, "focus-image", slicePaths(k), true);
+        artifacts{k} = sampleContext.artifact( ...
+            sourceId, "focus-image", slicePaths(k));
+    end
+    artifacts{end - 1} = sampleContext.artifact( ...
+        "lowTexture", "boundaryInput", lowTexturePath);
+    artifacts{end} = sampleContext.artifact( ...
+        "malformed", "boundaryInput", malformedPath, ...
+        Expectation="rejects");
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-focus-stack", ...
+        InitialProject=project, Artifacts=artifacts);
 end
 
 function [image, detailMask] = baseScene()
@@ -85,30 +84,6 @@ function image = toUint8(image)
     image = uint8(round(255 .* min(max(image, 0), 1)));
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, text)
     fid = fopen(char(filepath), "w", "n", "UTF-8");
     if fid < 0
@@ -117,10 +92,4 @@ function writeTextFile(filepath, text)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s", char(text));
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end

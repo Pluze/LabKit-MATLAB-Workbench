@@ -1,437 +1,322 @@
 classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
-    %APPPACKAGESTRUCTUREGUARDRAILTEST Guardrails for app package layout.
+    %APPPACKAGESTRUCTUREGUARDRAILTEST Enforce the final App SDK package shape.
 
     methods (Test, TestTags = {'Integration', 'Style'})
         function supportedAppsUseCanonicalAppPackageStructure(testCase)
             root = setupLabKitTestPath();
-            layouts = discoveredAppLayouts(root);
-            testCase.assertFalse(isempty(layouts), ...
-                'App package structure guardrail should discover app entrypoints.');
+            apps = discoveredApps(root);
+            testCase.assertFalse(isempty(apps), ...
+                "App package guardrail should discover entrypoints.");
 
-            for k = 1:size(layouts, 1)
-                assertCanonicalAppPackageStructure(testCase, root, ...
-                    layouts{k, 1}, layouts{k, 2}, layouts{k, 3});
+            for k = 1:size(apps, 1)
+                assertCanonicalShape(testCase, root, ...
+                    apps{k, 1}, apps{k, 2}, apps{k, 3});
+            end
+        end
+
+        function definitionsCompileAsExplicitSdkContracts(testCase)
+            setupLabKitTestPath();
+            apps = discoveredApps(pwd);
+            for k = 1:size(apps, 1)
+                packageName = string(apps{k, 2});
+                definition = feval(packageName + ".definition");
+                testCase.verifyClass(definition, "labkit.app.Definition", ...
+                    packageName + ...
+                    ".definition must return labkit.app.Definition.");
             end
         end
 
         function appFoldersDoNotMixFileAndFolderForms(testCase)
             root = setupLabKitTestPath();
-            layouts = discoveredAppLayouts(root);
-            for k = 1:size(layouts, 1)
-                appDir = fullfile(root, layouts{k, 1});
+            apps = discoveredApps(root);
+            for k = 1:size(apps, 1)
+                appDir = fullfile(root, apps{k, 1});
                 assertNoSameStemFileFolder(testCase, root, appDir);
-                packageName = layouts{k, 2};
-                if strlength(string(packageName)) > 0
-                    assertNoSameStemFileFolder(testCase, root, ...
-                        fullfile(appDir, ['+' packageName]));
-                end
-            end
-        end
-
-        function appLayoutsResolveOnlyRegisteredActions(testCase)
-            root = setupLabKitTestPath();
-            layouts = discoveredAppLayouts(root);
-            for k = 1:size(layouts, 1)
-                packageName = string(layouts{k, 2});
-                definitionFcn = str2func(packageName + ".definition");
-                definition = definitionFcn();
-                callbacks = runtimeCallbackStubs(definition.actions);
-
-                layout = invokeDefinitionLayout(definition, callbacks);
-
-                testCase.verifyTrue(isstruct(layout), ...
-                    [char(packageName) ...
-                    ' layout should resolve every Runtime callback.']);
+                assertNoSameStemFileFolder(testCase, root, ...
+                    fullfile(appDir, ['+' apps{k, 2}]));
             end
         end
 
         function appCodeDoesNotCallSiblingAppPackages(testCase)
             root = setupLabKitTestPath();
-            layouts = discoveredAppLayouts(root);
-            packageNames = string(layouts(:, 2));
-            for k = 1:size(layouts, 1)
-                appDir = fullfile(root, layouts{k, 1});
+            apps = discoveredApps(root);
+            packageNames = string(apps(:, 2));
+            for k = 1:size(apps, 1)
+                appDir = fullfile(root, apps{k, 1});
                 owner = packageNames(k);
-                siblings = packageNames(packageNames ~= owner);
-                assertNoSiblingAppCalls( ...
-                    testCase, root, appDir, owner, siblings);
+                assertNoSiblingAppCalls(testCase, root, appDir, owner, ...
+                    packageNames(packageNames ~= owner));
             end
         end
 
         function sessionFactoriesDoNotSwallowRestoreFailures(testCase)
             root = setupLabKitTestPath();
-            layouts = discoveredAppLayouts(root);
-            for k = 1:size(layouts, 1)
-                filepath = fullfile(root, layouts{k, 1}, ...
-                    ['+' layouts{k, 2}], 'createSession.m');
+            apps = discoveredApps(root);
+            for k = 1:size(apps, 1)
+                filepath = fullfile(root, apps{k, 1}, ...
+                    ['+' apps{k, 2}], 'createSession.m');
                 if ~isfile(filepath)
                     continue;
                 end
                 source = string(fileread(filepath));
                 testCase.verifyEmpty(regexp(source, ...
                     '(?m)^\s*catch(?:\s+\w+)?\s*$', 'once'), ...
-                    [relativePath(root, filepath) ...
-                    ' must let project reconstruction failures reach Runtime.']);
+                    relativePath(root, filepath) + ...
+                    " must let reconstruction failures reach Runtime.");
             end
         end
 
+        function completeRuntimeStateStopsAtDeclaredAdapters(testCase)
+            root = setupLabKitTestPath();
+            apps = discoveredApps(root);
+            for k = 1:size(apps, 1)
+                assertRuntimeStateFunnel(testCase, root, ...
+                    apps{k, 1}, apps{k, 2});
+            end
+        end
     end
+end
+
+function assertCanonicalShape(testCase, root, appRelDir, ...
+        packageName, entrypointName)
+appDir = fullfile(root, appRelDir);
+packageDir = fullfile(appDir, ['+' packageName]);
+workbenchDir = fullfile(packageDir, '+workbench');
+entrypointFile = fullfile(appDir, entrypointName);
+definitionFile = fullfile(packageDir, 'definition.m');
+layoutFile = fullfile(workbenchDir, 'buildLayout.m');
+label = string(relativePath(root, appDir));
+
+testCase.verifyTrue(isfile(entrypointFile), ...
+    "Missing App entrypoint: " + relativePath(root, entrypointFile));
+testCase.verifyTrue(isfile(definitionFile), ...
+    "Missing App definition: " + relativePath(root, definitionFile));
+testCase.verifyTrue(isfile(layoutFile), ...
+    "Missing canonical workbench assembly: " + ...
+    relativePath(root, layoutFile));
+
+testCase.verifyFalse(isfile(fullfile(packageDir, 'run.m')), ...
+    label + " must not own package-root launch orchestration.");
+testCase.verifyFalse(isfile(fullfile(packageDir, 'definitionActions.m')), ...
+    label + " must bind semantic callbacks directly from layout.");
+testCase.verifyFalse(isfile(fullfile(packageDir, 'stateHandlers.m')), ...
+    label + " must not maintain a handler registry.");
+for folder = ["+userInterface", "+actions", "+renderers", "+ops", ...
+        "+io", "+ui", "+view", "+state", "+export", "+appLifecycle", ...
+        "+appState", "+core"]
+    testCase.verifyFalse(packageContainsMFile( ...
+        fullfile(packageDir, char(folder))), ...
+        label + " contains retired technical package " + folder + ".");
+end
+
+entrypointSource = string(fileread(entrypointFile));
+definitionSource = string(fileread(definitionFile));
+layoutSource = string(fileread(layoutFile));
+testCase.verifyTrue(contains(entrypointSource, ...
+    packageName + ".definition().launch("), ...
+    label + " entrypoint must delegate directly to Definition.launch.");
+testCase.verifyTrue(contains(definitionSource, ...
+    "labkit.app.Definition("), ...
+    label + " definition must use the explicit App SDK.");
+testCase.verifyTrue(contains(definitionSource, ...
+    packageName + ".workbench.buildLayout()"), ...
+    label + " definition must name its workbench assembly.");
+testCase.verifyTrue(contains(layoutSource, ...
+    "labkit.app.layout.workbench("), ...
+    relativePath(root, layoutFile) + ...
+    " must return a semantic App SDK workbench.");
+
+assertSourceDoesNotContain(testCase, layoutSource, ...
+    concreteLayoutWords(), relativePath(root, layoutFile));
+assertNoGenericHelperNames(testCase, root, packageDir);
+
+for filename = ["requirements.m", "version.m", "startup.m"]
+    testCase.verifyFalse(isfile(fullfile(packageDir, filename)), ...
+        label + " must not own " + filename + ".");
+end
+projectSpec = fullfile(packageDir, 'projectSpec.m');
+if isfile(projectSpec)
+    testCase.verifyTrue(contains(definitionSource, ...
+        packageName + ".projectSpec()"), ...
+        label + " owns projectSpec.m but definition does not declare it.");
+end
+createSession = fullfile(packageDir, 'createSession.m');
+if isfile(createSession)
+    testCase.verifyTrue(contains(definitionSource, ...
+        "@" + packageName + ".createSession"), ...
+        label + " owns createSession.m but definition does not declare it.");
+end
+end
+
+function apps = discoveredApps(root)
+entries = dir(fullfile(root, 'apps', '**', 'labkit_*_app.m'));
+[~, order] = sort(string(fullfile({entries.folder}, {entries.name})));
+entries = entries(order);
+apps = cell(numel(entries), 3);
+for k = 1:numel(entries)
+    appDir = entries(k).folder;
+    packageDirs = dir(fullfile(appDir, '+*'));
+    packageDirs = packageDirs([packageDirs.isdir]);
+    packageNames = sort(extractAfter(string({packageDirs.name}), 1));
+    packageName = "";
+    if ~isempty(packageNames)
+        packageName = packageNames(1);
+    end
+    apps{k, 1} = relativePath(root, appDir);
+    apps{k, 2} = char(packageName);
+    apps{k, 3} = entries(k).name;
+end
 end
 
 function assertNoSiblingAppCalls(testCase, root, appDir, owner, siblings)
-    files = dir(fullfile(appDir, "**", "*.m"));
-    for k = 1:numel(files)
-        filepath = fullfile(files(k).folder, files(k).name);
-        source = string(fileread(filepath));
-        code = regexprep(source, "(?m)^\s*%[^\n]*", "");
-        for sibling = siblings.'
-            pattern = "(?<![A-Za-z0-9_])" + sibling + ...
-                "(?:\.[A-Za-z]\w*)+\s*\(";
-            testCase.verifyEmpty(regexp(code, pattern, "once"), ...
-                relativePath(root, filepath) + ...
-                " must exchange a saved data contract with " + sibling + ...
-                ", not call that sibling App package from " + owner + ".");
+files = dir(fullfile(appDir, "**", "*.m"));
+for k = 1:numel(files)
+    filepath = fullfile(files(k).folder, files(k).name);
+    source = string(fileread(filepath));
+    code = regexprep(source, "(?m)^\s*%[^\n]*", "");
+    for sibling = siblings.'
+        pattern = "(?<![A-Za-z0-9_])" + sibling + ...
+            "(?:\.[A-Za-z]\w*)+\s*\(";
+        testCase.verifyEmpty(regexp(code, pattern, "once"), ...
+            relativePath(root, filepath) + ...
+            " must exchange a saved contract with " + sibling + ...
+            ", not call it from " + owner + ".");
+    end
+end
+end
+
+function assertRuntimeStateFunnel(testCase, root, appRelDir, packageName)
+appDir = fullfile(root, appRelDir);
+packageDir = fullfile(appDir, ['+' packageName]);
+files = dir(fullfile(packageDir, '**', '*.m'));
+adapterFunctions = packageName + ".workbench.present";
+layoutHandles = cell(numel(files), 1);
+
+for k = 1:numel(files)
+    filepath = fullfile(files(k).folder, files(k).name);
+    source = string(fileread(filepath));
+    if contains(source, "labkit.app.layout.") || ...
+            files(k).name == "definition.m"
+        handles = regexp(source, ...
+            '@([A-Za-z]\w*(?:\.[A-Za-z]\w*)+)', 'tokens');
+        if ~isempty(handles)
+            layoutHandles{k} = string(cellfun(@(value) value{1}, handles, ...
+                'UniformOutput', false));
         end
     end
 end
+adapterFunctions = unique([adapterFunctions, layoutHandles{:}]);
 
-function callbacks = runtimeCallbackStubs(actions)
-    callbacks = struct();
-    ids = fieldnames(actions);
-    for k = 1:numel(ids)
-        callbacks.(ids{k}) = @(varargin) [];
+for k = 1:numel(files)
+    filepath = fullfile(files(k).folder, files(k).name);
+    source = string(fileread(filepath));
+    if ~contains(source, ".project") && ~contains(source, ".session")
+        continue;
     end
-    callbacks.runtimeLoadState = @(varargin) [];
+    declarations = regexp(source, ...
+        '(?m)^\s*function[^\n]*\(\s*(?:applicationState|state)\b[^\n]*', ...
+        'match');
+    if isempty(declarations)
+        continue;
+    end
+    qualified = qualifiedFunctionName(packageDir, packageName, filepath);
+    testCase.verifyTrue(any(qualified == adapterFunctions), ...
+        relativePath(root, filepath) + ...
+        " accepts complete runtime state outside a declared adapter.");
+    testCase.verifyNumElements(declarations, 1, ...
+        relativePath(root, filepath) + ...
+        " forwards complete runtime state into a local helper.");
+    testCase.verifyTrue(contains(string(declarations{1}), ...
+        "(applicationState"), ...
+        relativePath(root, filepath) + ...
+        " must name the SDK transaction envelope applicationState.");
 end
 
-function layout = invokeDefinitionLayout(definition, callbacks)
-    argumentCount = nargin(definition.layout);
-    if argumentCount == 0
-        layout = definition.layout();
-    elseif argumentCount == 1
-        layout = definition.layout(callbacks);
-    else
-        state = struct( ...
-            "project", definition.project.Create(), ...
-            "session", struct());
-        layout = definition.layout(callbacks, state);
+featurePresenters = dir(fullfile(packageDir, '+*', 'present.m'));
+for k = 1:numel(featurePresenters)
+    filepath = fullfile(featurePresenters(k).folder, ...
+        featurePresenters(k).name);
+    if string(featurePresenters(k).folder) == ...
+            string(fullfile(packageDir, '+workbench'))
+        continue;
     end
+    source = string(fileread(filepath));
+    testCase.verifyEmpty(regexp(source, ...
+        '(?m)^\s*function[^\n]*\(\s*(?:applicationState|state)\b', ...
+        'once'), ...
+        relativePath(root, filepath) + ...
+        " must receive explicit display inputs, not runtime state.");
+end
+end
+
+function name = qualifiedFunctionName(packageDir, packageName, filepath)
+relative = erase(string(filepath), string(packageDir) + filesep);
+parts = split(relative, filesep);
+parts = erase(parts, "+");
+parts(end) = erase(parts(end), ".m");
+name = packageName + "." + strjoin(parts, ".");
 end
 
 function assertNoSameStemFileFolder(testCase, root, folder)
-    if ~isfolder(folder)
-        return;
-    end
-    files = dir(fullfile(folder, '*.m'));
-    dirs = dir(folder);
-    dirs = dirs([dirs.isdir]);
-    dirs = dirs(~ismember({dirs.name}, {'.', '..'}));
-    fileStems = erase(string({files.name}), ".m");
-    dirStems = erase(string({dirs.name}), "+");
-    conflicts = intersect(fileStems, dirStems);
-    testCase.verifyTrue(isempty(conflicts), ...
-        [relativePath(root, folder) ' mixes file and folder forms for the ' ...
-        'same app role: ' strjoin(cellstr(conflicts), ', ')]);
+if ~isfolder(folder)
+    return;
+end
+files = dir(fullfile(folder, '*.m'));
+dirs = dir(folder);
+dirs = dirs([dirs.isdir]);
+dirs = dirs(~ismember({dirs.name}, {'.', '..'}));
+conflicts = intersect(erase(string({files.name}), ".m"), ...
+    erase(string({dirs.name}), "+"));
+testCase.verifyTrue(isempty(conflicts), ...
+    relativePath(root, folder) + ...
+    " mixes file and folder forms for: " + strjoin(conflicts, ", "));
 end
 
-function layouts = discoveredAppLayouts(root)
-    entries = dir(fullfile(root, 'apps', '**', 'labkit_*_app.m'));
-    [~, order] = sort(string(fullfile({entries.folder}, {entries.name})));
-    entries = entries(order);
-    layouts = cell(numel(entries), 3);
-    for k = 1:numel(entries)
-        appDir = entries(k).folder;
-        packageDirs = dir(fullfile(appDir, '+*'));
-        packageDirs = packageDirs([packageDirs.isdir]);
-        packageNames = extractAfter(string({packageDirs.name}), 1);
-        packageNames = sort(packageNames);
-        if isempty(packageNames)
-            packageName = "";
-        else
-            packageName = char(packageNames(1));
-        end
-        layouts{k, 1} = relativePath(root, appDir);
-        layouts{k, 2} = packageName;
-        layouts{k, 3} = entries(k).name;
-    end
-end
-
-function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageName, entrypointName)
-    appDir = fullfile(root, appRelDir);
-    packageDir = fullfile(appDir, ['+' packageName]);
-    uiDir = fullfile(packageDir, '+ui');
-    userInterfaceDir = fullfile(packageDir, '+userInterface');
-    entrypointFile = fullfile(appDir, entrypointName);
-    runFile = fullfile(packageDir, 'run.m');
-    definitionFile = fullfile(packageDir, 'definition.m');
-    buildLayoutFile = fullfile(userInterfaceDir, 'buildWorkbenchLayout.m');
-    appLabel = relativePath(root, appDir);
-
-    testCase.verifyGreaterThan(strlength(string(packageName)), 0, ...
-        ['App entrypoint should have one app-owned package namespace: ' appLabel]);
-    testCase.verifyFalse(isfolder(fullfile(appDir, 'private')), ...
-        [appLabel ' should use an app-owned package, not private/.']);
-    testCase.verifyFalse(isfolder(fullfile(appDir, '+app')), ...
-        [appLabel ' should not use a fixed +app namespace.']);
-    workflowFiles = dir(fullfile(appDir, '*Workflow.m'));
-    testCase.verifyTrue(isempty(workflowFiles), ...
-        [appLabel ' should not keep workflow dispatch adapters.']);
-
-    testCase.verifyTrue(isfile(buildLayoutFile), ...
-        ['Apps must keep the ordinary data-only layout at ' ...
-        relativePath(root, buildLayoutFile)]);
-    testCase.verifyTrue(isfile(entrypointFile), ...
-        ['Missing app entrypoint: ' relativePath(root, entrypointFile)]);
-    testCase.verifyTrue(isfile(definitionFile), ...
-        ['App package must provide a definition runtime: ' ...
-        relativePath(root, packageDir)]);
-    testCase.verifyFalse(isfile(runFile), ...
-        [appLabel ' should not keep package-root run.m orchestration.']);
-    testCase.verifyFalse(isfile(fullfile(uiDir, 'runApp.m')), ...
-        [appLabel ' should not keep app lifecycle orchestration in +ui/runApp.m.']);
-    definitionSource = fileread(definitionFile);
-    assertWorkflowFirstPackageShape(testCase, root, packageDir, ...
-        string(packageName), definitionSource);
-
-    orchestrationSource = appOrchestrationSource(entrypointFile, runFile, ...
-        definitionFile);
-    usesBuildLayoutCall = contains(orchestrationSource, ...
-        [packageName '.userInterface.buildWorkbenchLayout(']) || ...
-        contains(orchestrationSource, ...
-        ['@' packageName '.userInterface.buildWorkbenchLayout']);
-    testCase.verifyTrue(usesBuildLayoutCall, ...
-        [appLabel ' should call its canonical UI layout builder.']);
-    usesLaunch = contains(orchestrationSource, 'labkit.ui.runtime.launch(') && ...
-        contains(orchestrationSource, ['@' packageName '.definition']);
-    testCase.verifyTrue(usesLaunch, ...
-        [appLabel ' entrypoints should use the standard LabKit launch facade.']);
-
-    buildLayoutSource = fileread(buildLayoutFile);
-    testCase.verifyTrue(contains(buildLayoutSource, 'labkit.ui.layout.workbench'), ...
-        [relativePath(root, buildLayoutFile) ' should return a semantic LabKit app layout.']);
-    assertSourceDoesNotContain(testCase, buildLayoutSource, ...
-        buildLayoutForbiddenWords(), relativePath(root, buildLayoutFile));
-    testCase.verifyFalse(contains(buildLayoutSource, 'callbackValue('), ...
-        [relativePath(root, buildLayoutFile) ...
-        ' must reference Runtime callbacks directly. Missing actions ' ...
-        'should fail during layout construction, not create silent controls.']);
-    assertNoAppOwnedLayoutProps(testCase, buildLayoutSource, ...
-        relativePath(root, buildLayoutFile));
-    assertNoEmptyUiSections(testCase, buildLayoutSource, ...
-        relativePath(root, buildLayoutFile));
-
-    assertNoGenericHelperNames(testCase, root, packageDir);
-    assertAppOwnedPackageCapability(testCase, root, appDir, packageDir);
-end
-
-function assertWorkflowFirstPackageShape(testCase, root, packageDir, ...
-        packageName, definitionSource)
-    oldBuckets = ["+actions", "+renderers", "+ops", "+io", "+export", ...
-        "+state", "+view", "+ui"];
-    conflicts = strings(size(oldBuckets));
-    hasConflict = false(size(oldBuckets));
-    for k = 1:numel(oldBuckets)
-        candidate = fullfile(packageDir, char(oldBuckets(k)));
-        if isfolder(candidate)
-            conflicts(k) = string(relativePath(root, candidate));
-            hasConflict(k) = true;
-        end
-    end
-    conflicts = conflicts(hasConflict);
-    testCase.verifyTrue(isempty(conflicts), ...
-        ['Workflow-first app packages should not reintroduce overlapping ' ...
-        'technical role buckets: ' strjoin(cellstr(conflicts), ', ')]);
-
-    assertOptionalCapability(testCase, packageDir, 'definitionActions.m', ...
-        definitionSource, packageName + ".definitionActions()", 'Actions');
-    assertOptionalCapability(testCase, packageDir, 'createSession.m', ...
-        definitionSource, "@" + packageName + ".createSession", ...
-        'CreateSession');
-    assertSessionFactoryOwnsOnlyAppState(testCase, root, packageDir);
-    assertOptionalCapability(testCase, ...
-        fullfile(packageDir, '+userInterface'), 'presentWorkbench.m', ...
-        definitionSource, ...
-        "@" + packageName + ".userInterface.presentWorkbench", 'Present');
-    presenterFile = fullfile( ...
-        packageDir, '+userInterface', 'presentWorkbench.m');
-    if isfile(presenterFile)
-        presenterSource = string(fileread(presenterFile));
-        testCase.verifyFalse(contains(presenterSource, 'workflow.logLines'), ...
-            [relativePath(root, presenterFile) ...
-            ' must leave log-panel presentation to Runtime.']);
-    end
-
-    label = relativePath(root, packageDir);
-    testCase.verifyFalse(isfile(fullfile(packageDir, 'requirements.m')), ...
-        [label ' must keep requirements in definition.m.']);
-    testCase.verifyFalse(isfile(fullfile(packageDir, 'version.m')), ...
-        [label ' must keep App version metadata in definition.m.']);
-    testCase.verifyFalse(isfile(fullfile(packageDir, 'startup.m')), ...
-        [label ' must name an optional Start callback by its owned capability.']);
-    testCase.verifyFalse(packageContainsMFile( ...
-        fullfile(packageDir, '+appLifecycle')), ...
-        [label ' must keep durable schema callbacks in projectSpec.m ' ...
-        'and transient reconstruction in root createSession.m.']);
-    testCase.verifyFalse(packageContainsMFile( ...
-        fullfile(packageDir, '+appState')), ...
-        [label ' must not maintain a second App-owned runtime state layer.']);
-    migrationFiles = dir(fullfile(packageDir, '**', 'migrateProjectV*.m'));
-    testCase.verifyEmpty(migrationFiles, ...
-        [label ' must keep version-aware migration logic inside projectSpec.m.']);
-
-    projectSpecFile = fullfile(packageDir, 'projectSpec.m');
-    if isfile(projectSpecFile)
-        testCase.verifyTrue(contains(definitionSource, ...
-            packageName + ".projectSpec()"), ...
-            [label ' owns projectSpec.m but definition.m does not use it.']);
-    end
-end
-
-function assertSessionFactoryOwnsOnlyAppState(testCase, root, packageDir)
-    filepath = fullfile(packageDir, 'createSession.m');
-    if ~isfile(filepath)
-        return;
-    end
-    source = string(fileread(filepath));
-    label = relativePath(root, filepath);
-    emptyBucket = regexp(source, ...
-        '["''](?:selection|workflow|view|cache)["'']\s*,\s*struct\(\s*\)', ...
-        'once');
-    testCase.verifyEmpty(emptyBucket, ...
-        [label ' must omit empty canonical session buckets; Runtime adds them.']);
-    testCase.verifyFalse(contains(source, '"logLines"') || ...
-        contains(source, "'logLines'"), ...
-        [label ' must not initialize Runtime-owned workflow logLines.']);
-end
-
-function assertOptionalCapability(testCase, folder, filename, ...
-        definitionSource, reference, capability)
-    if ~isfile(fullfile(folder, filename))
-        return;
-    end
-    testCase.verifyTrue(contains(definitionSource, reference), ...
-        [capability ' exists but definition.m does not declare it.']);
-end
-
-function source = appOrchestrationSource(entrypointFile, runFile, definitionFile)
-    parts = {fileread(entrypointFile)};
-    if isfile(runFile)
-        parts{end + 1} = fileread(runFile);
-    end
-    if isfile(definitionFile)
-        parts{end + 1} = fileread(definitionFile);
-    end
-    source = strjoin(parts, newline);
-end
-
-function words = buildLayoutForbiddenWords()
-    words = {'uifigure(', 'uigridlayout(', 'uibutton(', 'uilabel(', ...
-        'uidropdown(', 'uispinner(', 'uieditfield(', 'uitable(', ...
-        'uiaxes(', 'uitextarea(', 'labkit.ui.runtime.create', ...
-        'Layout.Row', 'Layout.Column', 'uigetfile(', 'uigetdir(', ...
-        'uiputfile(', 'uialert(', 'writetable(', 'imwrite(', 'S.'};
-end
-
-function assertNoAppOwnedLayoutProps(testCase, source, label)
-    layoutProps = {'height', 'minRows', 'minHeight', 'maxColumns', ...
-        'rowSpacing', 'columnSpacing', 'padding', 'chrome', ...
-        'columnWidth', 'rowHeight', 'position', 'leftWidth'};
-    matches = strings(size(layoutProps));
-    matched = false(size(layoutProps));
-    for k = 1:numel(layoutProps)
-        prop = layoutProps{k};
-        if contains(source, ['''' prop ''',']) || ...
-                contains(source, ['"' prop '",'])
-            matches(k) = string(prop);
-            matched(k) = true;
-        end
-    end
-    matches = matches(matched);
-
-    testCase.verifyTrue(isempty(matches), ...
-        [label ' declares concrete layout props. Apps may declare pages, ' ...
-        'sections, controls, order, semantic values, and callbacks; LabKit ' ...
-        'owns concrete layout: ' strjoin(cellstr(matches), ', ')]);
-end
-
-function assertNoEmptyUiSections(testCase, source, label)
-    matches = regexp(source, ...
-        'labkit\.ui\.layout\.section[\s\S]*?\{\s*\}\s*\)', 'match');
-    testCase.verifyTrue(isempty(matches), ...
-        [label ' declares an empty UI section. Sections should contain ' ...
-        'real semantic controls; do not leave titled empty placeholders ' ...
-        'in app layouts.']);
+function words = concreteLayoutWords()
+words = ["uifigure(", "uigridlayout(", "uibutton(", "uilabel(", ...
+    "uidropdown(", "uispinner(", "uieditfield(", "uitable(", ...
+    "uiaxes(", "uitextarea(", "Layout.Row", "Layout.Column", ...
+    "uigetfile(", "uigetdir(", "uiputfile(", "uialert(", ...
+    "writetable(", "imwrite(", "labkit.app.internal."];
 end
 
 function assertNoGenericHelperNames(testCase, root, packageDir)
-    forbidden = {'helpers.m', 'utils.m', 'common.m', 'misc.m', ...
-        'functions.m', 'callbacks.m', 'manager.m', 'processor.m', ...
-        'layout.m', 'createUI.m', 'createUi.m', 'makeUI.m', 'place.m'};
-    files = dir(fullfile(packageDir, '**', '*.m'));
-    bad = strings(1, numel(files));
-    isBad = false(1, numel(files));
-    for k = 1:numel(files)
-        if any(strcmp(files(k).name, forbidden))
-            bad(k) = string(relativePath(root, ...
-                fullfile(files(k).folder, files(k).name)));
-            isBad(k) = true;
-        end
+forbidden = ["helpers.m", "utils.m", "common.m", "misc.m", ...
+    "functions.m", "callbacks.m", "manager.m", "processor.m", ...
+    "layout.m", "createUI.m", "createUi.m", "makeUI.m", "place.m"];
+files = dir(fullfile(packageDir, '**', '*.m'));
+bad = strings(1, 0);
+for k = 1:numel(files)
+    if any(string(files(k).name) == forbidden)
+        bad(end + 1) = relativePath(root, ...
+            fullfile(files(k).folder, files(k).name));
     end
-    bad = bad(isBad);
-
-    testCase.verifyTrue(isempty(bad), ...
-        ['Migrated app packages should name files by stable role/output, not ' ...
-        'generic helper buckets: ' strjoin(cellstr(bad), ', ')]);
+end
+testCase.verifyTrue(isempty(bad), ...
+    "App files must name owned capabilities: " + strjoin(bad, ", "));
 end
 
-function assertSourceDoesNotContain(testCase, source, forbiddenWords, label)
-    matches = strings(1, numel(forbiddenWords));
-    matched = false(1, numel(forbiddenWords));
-    for k = 1:numel(forbiddenWords)
-        word = forbiddenWords{k};
-        if contains(source, word)
-            matches(k) = string(word);
-            matched(k) = true;
-        end
-    end
-    matches = matches(matched);
-
-    testCase.verifyTrue(isempty(matches), ...
-        [label ' contains code outside its app structure boundary: ' ...
-        strjoin(cellstr(matches), ', ')]);
-end
-
-function assertAppOwnedPackageCapability(testCase, root, appDir, packageDir)
-    testCase.verifyTrue(isfolder(packageDir), ...
-        ['Missing app-owned package namespace: ' relativePath(root, packageDir)]);
-    testCase.verifyFalse(isfolder(fullfile(packageDir, '+core')), ...
-        ['App-owned package should not route through +core: ' relativePath(root, packageDir)]);
-    testCase.verifyFalse(isfile(fullfile(packageDir, '+core', 'dispatch.m')), ...
-        ['App-owned package should not keep +core/dispatch.m: ' relativePath(root, packageDir)]);
-
-    packageFiles = dir(fullfile(packageDir, '**', '*.m'));
-    testCase.verifyFalse(isempty(packageFiles), ...
-        ['App-owned package should contain helper files: ' relativePath(root, packageDir)]);
-
-    testCase.verifyFalse(isfile(fullfile(packageDir, '+ui', 'runApp.m')), ...
-        ['App-owned package should not keep app lifecycle orchestration in +ui/runApp.m: ' ...
-        relativePath(root, appDir)]);
+function assertSourceDoesNotContain(testCase, source, words, label)
+matches = words(arrayfun(@(word) contains(source, word), words));
+testCase.verifyTrue(isempty(matches), ...
+    label + " contains code outside layout assembly: " + ...
+    strjoin(matches, ", "));
 end
 
 function tf = packageContainsMFile(folder)
-    if ~isfolder(folder)
-        tf = false;
-        return;
-    end
-    files = dir(fullfile(folder, '**', '*.m'));
-    tf = any(~[files.isdir]);
+if ~isfolder(folder)
+    tf = false;
+    return;
+end
+files = dir(fullfile(folder, '**', '*.m'));
+tf = any(~[files.isdir]);
 end
 
 function rel = relativePath(root, filepath)
-    rel = filepath;
-    prefix = [root filesep];
-    if startsWith(filepath, prefix)
-        rel = filepath(numel(prefix)+1:end);
-    end
-    rel = strrep(rel, filesep, '/');
+rel = string(filepath);
+prefix = string(root) + filesep;
+if startsWith(rel, prefix)
+    rel = extractAfter(rel, strlength(prefix));
+end
+rel = replace(rel, filesep, "/");
 end

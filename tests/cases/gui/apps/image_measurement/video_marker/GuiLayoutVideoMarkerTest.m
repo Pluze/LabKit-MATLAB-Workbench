@@ -1,344 +1,207 @@
 classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
-    %GUILAYOUTVIDEOMARKERTEST Verify Video Marker GUI launch and layout contract.
-
-    methods (Test, TestTags = {'GUI', 'Structural'})
-        function video_marker_launches_with_expected_controls(testCase)
+    % Verify Video Marker through the explicit App SDK runtime.
+    methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
+        function nativeLayoutUsesSemanticTargets(testCase)
             setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
+            helpers = guiTestHelpers();
+            helpers.assertUifigureAvailable();
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                video_marker.definition());
+            cleanup = onCleanup(@() runtime.close());
+            figure = runtime.figureHandle();
 
-            [fig, debug] = labkit_VideoMarker_app("debug");
-            drawnow;
-
-            h.assertStandardWorkbenchLayout(fig);
-            sessionChoices = video_marker.userInterface.sessionChoices();
-            h.assertButtonContract(fig, {'Open video', 'Previous frame', ...
-                'Next frame', 'Undo last point', 'Clear frame points', ...
-                'Add keypoint', 'Remove keypoint', 'Move up', 'Move down', ...
-                'Use preset', 'Add connection', 'Connect in order', ...
-                'Remove connection', char(sessionChoices.openProject), ...
-                char(sessionChoices.saveAutosave), ...
-                char(sessionChoices.newSetup), ...
-                'Measure reference pixels', ...
-                'Place scale bar', 'Import marker CSV', 'Export marker CSV', ...
-                'Export coordinate CSV'});
-            h.assertDropdownGroups(fig, [ ...
-                h.dropdownGroup({'Legacy leg (5 points)', 'Three-point chain', ...
-                'Five-point chain'}, 1), ...
-                h.dropdownGroup({'pixels', 'calibrated_physical'}, 1), ...
-                h.dropdownGroup({'top_left_pixel_center', 'first_point'}, 1), ...
-                h.dropdownGroup({'up', 'down'}, 1), ...
-                h.dropdownGroup({'m', 'cm', 'mm', 'um', 'nm'}, 1), ...
-                h.dropdownGroup({'Bottom center', 'Bottom left', 'Bottom right', ...
-                'Top center', 'Top left', 'Top right'}, 1), ...
-                h.dropdownGroup({'Black', 'White'}, 1)]);
-            h.assertTabTitles(fig, {'Setup + Scale', 'Video', 'Import + Export', 'Log'});
-            testCase.verifyEmpty(findall(fig, 'Type', 'uibutton', 'Text', 'Start point edit'));
-            testCase.verifyEmpty(findall(fig, 'Type', 'uibutton', 'Text', 'Confirm frame'));
-            testCase.verifyEmpty(findall(fig, 'Type', 'uibutton', 'Text', 'Interpolate frame'));
-            testCase.verifyEmpty(findall(fig, 'Type', 'uibutton', 'Text', 'Track from previous'));
-            testCase.verifyTrue(debug.enabled && debug.traceEnabled);
-            assertAnyTextAreaContains(h, fig, 'Debug sample generation enabled', ...
-                'Debug trace should be mirrored into the visible Log tab.');
-        end
-
-
-        function skeleton_setup_and_frame_change_use_continuous_marking(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-            [fig, debug] = labkit_VideoMarker_app("debug");
-            drawnow;
-            h.assertStandardWorkbenchLayout(fig);
-
-            ui = getappdata(fig, 'labkitUiRegistry');
-            invoke(ui.controls.useSkeletonPreset.button);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(runtime.state.project.annotations.skeleton.pointNames, ...
-                ["iliac"; "hip"; "knee"; "ankle"; "foot"]);
-            setChoiceAnswer(fig, ...
-                video_marker.userInterface.sessionChoices().discardAndStart);
-            invoke(ui.controls.newSetup.button);
-            ui = getappdata(fig, 'labkitUiRegistry');
-            invoke(ui.controls.addKeypoint.button);
-            invoke(ui.controls.addKeypoint.button);
-            ui = getappdata(fig, 'labkitUiRegistry');
-            editName(ui.controls.keypointTable.table, 1, 'hip');
-            editName(ui.controls.keypointTable.table, 2, 'knee');
-            ui = getappdata(fig, 'labkitUiRegistry');
-            testui.control.setValue(ui, 'connectionFrom', 'hip');
-            ui.controls.connectionFrom.valueHandle.ValueChangedFcn( ...
-                ui.controls.connectionFrom.valueHandle, struct());
-            ui = getappdata(fig, 'labkitUiRegistry');
-            testCase.verifyFalse(any(string(ui.controls.connectionTo.valueHandle.Items) == "hip"));
-            testui.control.setValue(ui, 'connectionTo', 'knee');
-            invoke(ui.controls.connectInOrder.button);
-
-            pack = video_marker.debug.writeSamplePack(debug);
-            ui = getappdata(fig, 'labkitUiRegistry');
-            ui.controls.videoFile.choosePaths = @(varargin) cellstr(pack.representativeFiles);
-            setappdata(fig, 'labkitUiRegistry', ui);
-            invoke(ui.controls.videoFile.chooseButton);
-            drawnow;
-
-            ui = getappdata(fig, 'labkitUiRegistry');
-            testCase.verifyEqual(string(ui.controls.saveAutosave.button.Enable), ...
-                "on");
-            invoke(ui.controls.saveAutosave.button);
-            expectedAutosave = video_marker.autosave.filePath( ...
-                pack.representativeFiles(1));
-            testCase.verifyTrue(isfile(expectedAutosave), ...
-                'Save autosave should use the visible source-adjacent path.');
-            savedAutosave = load(expectedAutosave, 'labkitProject');
-            savedReference = ...
-                savedAutosave.labkitProject.payload.inputs.sources.reference;
-            testCase.verifyEqual(savedReference.relativePath, ...
-                "../" + string(savedReference.fileName), ...
-                ['Explicit autosave must rebase its source reference from ' ...
-                'the actual source-adjacent autosave destination.']);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(string(runtime.document.path), "", ...
-                'An autosave must not become the named project file.');
-            registered = getappdata(ui.controls.videoAxes.primaryAxes, ...
-                'labkit_ui_activeAnchorEditor');
-            ax = ui.controls.videoAxes.primaryAxes;
-            testCase.verifyTrue(contains(string(ax.Subtitle.String), ...
-                'Click blank image space to add points'), ...
-                'Video Marker should show its point-mode gestures on the preview.');
-            xlim(ax, [10 70]);
-            ylim(ax, [10 60]);
-            scrollCallback = fig.WindowScrollWheelFcn;
-            registered.editor.insertPoint([20 30]);
-            testCase.verifyEqual(xlim(ax), [10 70], 'AbsTol', 1e-12);
-            testCase.verifyEqual(ylim(ax), [10 60], 'AbsTol', 1e-12);
-            testCase.verifyFalse(isempty(fig.WindowScrollWheelFcn));
-            testCase.verifyEqual(fig.WindowScrollWheelFcn, scrollCallback);
-            stillRegistered = getappdata(ax, 'labkit_ui_activeAnchorEditor');
-            testCase.verifyEqual(stillRegistered.token, registered.token);
-            registered.editor.insertPoint([40 50]);
-            invoke(ui.controls.nextFrame.button);
-            testCase.verifyEqual(xlim(ax), [10 70], 'AbsTol', 1e-12);
-            testCase.verifyEqual(ylim(ax), [10 60], 'AbsTol', 1e-12);
-
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(runtime.state.session.selection.currentFrame, 2);
-            testCase.verifyEqual( ...
-                runtime.state.project.annotations.skeleton.pointNames, ...
-                ["hip"; "knee"]);
-            testCase.verifyEqual( ...
-                runtime.state.project.annotations.skeleton.edges, [1 2]);
-            predicted = video_marker.frameAnnotations.framePoints( ...
-                runtime.state.project.annotations.frames, 2);
-            testCase.verifySize(predicted, [2 2]);
-            testCase.verifyTrue(all(isfinite(predicted), 'all'));
-            testCase.verifyEqual(video_marker.frameAnnotations.statusName( ...
-                runtime.state.project.annotations.frames.frameStatus(1)), "confirmed");
-            testCase.verifyEqual(video_marker.frameAnnotations.statusName( ...
-                runtime.state.project.annotations.frames.frameStatus(2)), "draft");
-            testCase.verifyEqual(video_marker.frameAnnotations.sourceName( ...
-                runtime.state.project.annotations.frames.frameSource(1)), "manual");
-            testCase.verifyEqual(video_marker.frameAnnotations.sourceName( ...
-                runtime.state.project.annotations.frames.frameSource(2)), "predicted");
-
-            predictedRevision = ...
-                runtime.state.project.annotations.frames.anchorRevision(2);
-            invoke(ui.controls.previousFrame.button);
-            invoke(ui.controls.nextFrame.button);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(video_marker.frameAnnotations.framePoints( ...
-                runtime.state.project.annotations.frames, 2), ...
-                predicted, 'AbsTol', 1e-12);
-            testCase.verifyEqual( ...
-                runtime.state.project.annotations.frames.anchorRevision(2), ...
-                predictedRevision);
-        end
-
-
-        function session_actions_confirm_save_discard_and_open_mat(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-            fig = labkit_VideoMarker_app();
-            drawnow;
-            ui = getappdata(fig, 'labkitUiRegistry');
-            choices = video_marker.userInterface.sessionChoices();
-            invoke(ui.controls.useSkeletonPreset.button);
-
-            setChoiceAnswer(fig, choices.cancel);
-            invoke(ui.controls.newSetup.button);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(numel( ...
-                runtime.state.project.annotations.skeleton.pointIds), 5, ...
-                'Cancel should preserve the current Video Marker project.');
-
-            folder = string(tempname);
-            mkdir(folder);
-            folderCleanup = onCleanup(@() removeTempFolder(folder));
-            projectPath = fullfile(folder, "saved-project.mat");
-            labkit.ui.runtime.saveState(fig, projectPath);
-            setChoiceAnswer(fig, choices.discardAndStart);
-            invoke(ui.controls.newSetup.button);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEmpty( ...
-                runtime.state.project.annotations.skeleton.pointIds, ...
-                'Discard and start new should clear the project.');
-
-            setappdata(fig, 'labkitUiUtilityStateFile', projectPath);
-            ui = getappdata(fig, 'labkitUiRegistry');
-            invoke(ui.controls.openProject.button);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(numel( ...
-                runtime.state.project.annotations.skeleton.pointIds), 5, ...
-                'Open MAT should invoke the same framework load-state path.');
-
-            savedBeforeReset = fullfile(folder, "saved-before-reset.mat");
-            setChoiceAnswer(fig, choices.saveAndStart);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            runtime.request.projectStateFile = savedBeforeReset;
-            setappdata(fig, 'labkitUiAppRuntime', runtime);
-            invoke(ui.controls.newSetup.button);
-            testCase.verifyTrue(isfile(savedBeforeReset), ...
-                'Save and start new should persist the current project first.');
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEmpty( ...
-                runtime.state.project.annotations.skeleton.pointIds);
-            clear folderCleanup;
-        end
-
-
-        function framework_recovery_restores_annotations_and_current_frame(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-            [fig, debug] = labkit_VideoMarker_app("debug");
-            drawnow;
-            ui = getappdata(fig, 'labkitUiRegistry');
-            invoke(ui.controls.useSkeletonPreset.button);
-
-            pack = video_marker.debug.writeSamplePack(debug);
-            videoPath = pack.representativeFiles(1);
-            expected = [10 20; 20 25; 30 30; 40 35; 50 40];
-            ui = getappdata(fig, 'labkitUiRegistry');
-            ui.controls.videoFile.choosePaths = @(varargin) cellstr(videoPath);
-            setappdata(fig, 'labkitUiRegistry', ui);
-            invoke(ui.controls.videoFile.chooseButton);
-            ui = getappdata(fig, 'labkitUiRegistry');
-            registered = getappdata(ui.controls.videoAxes.primaryAxes, ...
-                'labkit_ui_activeAnchorEditor');
-            for k = 1:size(expected, 1)
-                registered.editor.insertPoint(expected(k, :));
+            ids = ["skeletonPreset", "useSkeletonPreset", ...
+                "keypointTable", "connectionTable", "videoFile", ...
+                "openProject", "saveAutosave", "newSetup", ...
+                "currentFrame", "previousFrame", "nextFrame", ...
+                "undoPoint", "clearFramePoints", ...
+                "measureScaleReference", "placeScaleBar", ...
+                "importMarkerCsv", "exportMarkerCsv", ...
+                "exportCoordinateCsv", "videoPreview.video"];
+            for id = ids
+                testCase.verifyEqual(numel(findall( ...
+                    figure, "Tag", id)), 1);
             end
-            invoke(ui.controls.nextFrame.button);
-            projectPath = fullfile(string(tempname), "recovery.mat");
-            mkdir(fileparts(projectPath));
-            folderCleanup = onCleanup(@() removeTempFolder(fileparts(projectPath)));
-            labkit.ui.runtime.saveState(fig, projectPath);
-            delete(fig);
-
-            recovered = labkit.ui.runtime.launch(@video_marker.definition, ...
-                "RequestAdapter", @(args) recoveryRequest( ...
-                args, debug, projectPath));
-            runtime = getappdata(recovered, 'labkitUiAppRuntime');
-            testCase.verifyEqual(video_marker.frameAnnotations.framePoints( ...
-                runtime.state.project.annotations.frames, 1), expected);
-            testCase.verifyEqual( ...
-                runtime.state.session.selection.currentFrame, 2);
-            testCase.verifyTrue(runtime.document.dirty, ...
-                'Recovered documents should reopen as unsaved work.');
-            clear folderCleanup
+            testCase.verifyEqual(string(one( ...
+                figure, "skeletonPresetActions").Title), ...
+                "Start from preset");
+            testCase.verifyEqual(string(one( ...
+                figure, "connectionEndpoints").Title), "Add connection");
+            testCase.verifyEqual(string(one( ...
+                figure, "keypointTable.panel").Title), ...
+                "Ordered keypoints");
+            testCase.verifyEqual(string(one( ...
+                figure, "connectionTable.panel").Title), "Connections");
+            testCase.verifyEqual(string(one( ...
+                figure, "summaryTable.panel").Title), ...
+                "Annotation Summary");
+            testCase.verifyEqual(string(one( ...
+                figure, "labkitAppWorkspacePanel").Title), ...
+                "Video Preview");
+            testCase.verifyEqual(string(one( ...
+                figure, "videoPreview").Title), "Video Preview");
+            testCase.verifyEqual(string(one( ...
+                figure, "videoPreview.video").Title.String), ...
+                "Frame + Skeleton");
+            testCase.verifyTrue(contains(string(class(one( ...
+                figure, "scaleReferencePixels"))), "Spinner"));
+            testCase.verifyEqual(numel(findall( ...
+                figure, "Tag", "scaleReferencePixels.slider")), 1);
+            testCase.verifyEqual(one( ...
+                figure, "scaleReferencePixels").Limits, [0 5000]);
+            testCase.verifyEqual(one( ...
+                figure, "scaleReferencePixels").Step, 1);
+            testCase.verifyEqual(one( ...
+                figure, "scaleReferenceLength").Limits, [0 1e6]);
+            testCase.verifyEqual(one( ...
+                figure, "scaleReferenceLength").Step, 10);
+            testCase.verifyEqual(one( ...
+                figure, "scaleBarLength").Limits, [0 1e6]);
+            testCase.verifyEqual(one( ...
+                figure, "scaleBarLength").Step, 10);
+            testCase.verifyEqual(string(one( ...
+                figure, "scaleCalibrationUnit").Items), ...
+                ["m" "cm" "mm" "um" "nm"]);
+            testCase.verifyEqual(string(one( ...
+                figure, "scaleBarPosition").Items), ...
+                ["Bottom center" "Bottom left" "Bottom right" ...
+                 "Top center" "Top left" "Top right"]);
+            testCase.verifyEqual(string(one( ...
+                figure, "videoFile.status").Value), "No video loaded");
+            testCase.verifyEqual(string(one( ...
+                figure, "coordinateStartFrame.label").Enable), "off");
+            testCase.verifyEqual(string(one( ...
+                figure, "coordinateEndFrame.label").Enable), "off");
+            testCase.verifyEqual(string(one(figure, "appLog").Value), ...
+                "Ready.");
+            testCase.verifyEqual(string(one( ...
+                figure, "applicationUsage").Value), [ ...
+                "1. Use an editable preset or add and name ordered keypoints, then add connections."; ...
+                "2. Open a video, click points in table order, and drag existing points to refine."; ...
+                "3. Moving forward predicts points automatically; dragging any point creates a new manual anchor."; ...
+                "4. Export marker CSV for round-trip editing or coordinate CSV for plotting."]);
+            clear cleanup
         end
 
-        function legacy_project_loads_read_only_and_saves_current_format(testCase)
+        function videoDrivesMarkingPredictionScaleAndExport(testCase)
             setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-            [fig, debug] = labkit_VideoMarker_app("debug");
-            pack = video_marker.debug.writeSamplePack(debug);
-            videoPath = pack.representativeFiles(1);
+            helpers = guiTestHelpers();
+            helpers.assertUifigureAvailable();
             folder = string(tempname);
             mkdir(folder);
             folderCleanup = onCleanup(@() removeTempFolder(folder));
-            legacyPath = fullfile(folder, "legacy_video_marker.mat");
+            videoPath = fullfile(folder, "synthetic.avi");
+            coordinatePath = fullfile(folder, "coordinates.csv");
+            projectPath = fullfile(folder, "video-marker-project.mat");
+            writeSyntheticVideo(videoPath);
+            backend = struct( ...
+                "chooseOutputFile", @(~, ~) ...
+                    labkit.app.dialog.Choice(coordinatePath), ...
+                "chooseInputFile", @(~, ~) ...
+                    labkit.app.dialog.Choice(projectPath), ...
+                "choose", @(~, choices, ~, ~, ~) ...
+                    labkit.app.dialog.Choice(choices(3)), ...
+                "alert", @(~, ~) []);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                video_marker.definition(), [], backend);
+            runtimeCleanup = onCleanup(@() runtime.close());
 
-            skeleton = video_marker.skeletonDefinition.fromParts( ...
-                ["iliac"; "hip"; "knee"; "ankle"; "foot"], ...
-                [1 2; 2 3; 3 4; 4 5]);
-            annotations = video_marker.frameAnnotations.emptyAnnotations(6, 5);
-            expected = [10 20; 20 25; 30 30; 40 35; 50 40];
-            annotations = video_marker.frameAnnotations.setFramePoints( ...
-                annotations, 1, expected, "confirmed");
-            [~, legacyName, legacyExtension] = fileparts(videoPath);
-            legacyReference = struct( ...
-                "schemaVersion", 1, "relativePath", "", ...
-                "originalPath", videoPath, ...
-                "fileName", string(legacyName) + string(legacyExtension));
-            videoMarkerProject = struct( ...
-                "schemaVersion", 1, ...
-                "videoPath", videoPath, ...
-                "videoReference", legacyReference, ...
-                "skeleton", skeleton, ...
-                "annotations", annotations, ...
-                "calibration", ...
-                labkit.ui.interaction.scaleBarCalibration(20, 2, "mm"), ...
-                "exportPreferences", struct( ...
-                "unitMode", "calibrated_physical", ...
-                "originMode", "first_point", ...
-                "yAxisMode", "up", ...
-                "startFrame", 1, "endFrame", 6), ...
-                "currentFrame", 2);
-            save(legacyPath, 'videoMarkerProject');
-
-            labkit.ui.runtime.loadState(fig, legacyPath);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(video_marker.frameAnnotations.framePoints( ...
-                runtime.state.project.annotations.frames, 1), expected);
+            runtime.invokeAction("useSkeletonPreset");
             testCase.verifyEqual( ...
-                runtime.state.session.selection.currentFrame, 2);
-            testCase.verifyEqual(labkit.ui.runtime.sourcePaths( ...
-                runtime.state.project.inputs.sources, "video"), videoPath);
-            testCase.verifyEqual(string(who('-file', legacyPath)), ...
-                "videoMarkerProject");
+                runtime.State.project.annotations.skeleton.pointNames, ...
+                ["iliac"; "hip"; "knee"; "ankle"; "foot"]);
+            runtime.applyFileSelection("videoFile", videoPath, 1);
+            testCase.verifyEqual(runtime.State.session.cache.videoInfo.frameCount, 6);
+            testCase.verifySize(runtime.State.project.annotations.frames.coords, ...
+                [6 5 2]);
+            videoResource = runtime.getResource("document", "video");
+            testCase.verifyEqual(videoResource.path, string(videoPath));
 
-            currentPath = fullfile(folder, "current_video_marker.mat");
-            labkit.ui.runtime.saveState(fig, currentPath);
-            testCase.verifyEqual(string(who('-file', currentPath)), ...
-                "labkitProject");
-            clear folderCleanup
+            points = [24 34; 32 38; 40 42; 48 46; 56 50];
+            runtime.applyInteraction( ...
+                "framePoints", "interactionChanged", points);
+            testCase.verifyEqual(video_marker.frameAnnotations.statusName( ...
+                runtime.State.project.annotations.frames.frameStatus(1)), ...
+                "confirmed");
+            runtime.invokeAction("nextFrame");
+            testCase.verifyEqual(runtime.State.session.selection.currentFrame, 2);
+            predicted = video_marker.frameAnnotations.framePoints( ...
+                runtime.State.project.annotations.frames, 2);
+            testCase.verifySize(predicted, [5 2]);
+            testCase.verifyTrue(all(isfinite(predicted), "all"));
+            testCase.verifyEqual(video_marker.frameAnnotations.sourceName( ...
+                runtime.State.project.annotations.frames.frameSource(2)), ...
+                "predicted");
+            nextResource = runtime.getResource("document", "video");
+            testCase.verifyTrue(isequal( ...
+                videoResource.cache.readFrame, nextResource.cache.readFrame));
+
+            runtime.invokeAction("measureScaleReference");
+            runtime.applyInteraction("scaleReference", ...
+                "interactionChanged", [10 10; 30 10]);
+            runtime.applyControlValue("scaleReferenceLength", 2);
+            runtime.applyControlValue("scaleCalibrationUnit", "mm");
+            runtime.applyControlValue("scaleBarLength", 5);
+            runtime.invokeAction("placeScaleBar");
+            testCase.verifyTrue( ...
+                runtime.State.project.annotations.calibration.isCalibrated);
+            testCase.verifyNotEmpty(runtime.State.session.view.scaleBar);
+
+            runtime.applyControlValue("coordinateEndFrame", 1);
+            runtime.invokeAction("exportCoordinateCsv");
+            testCase.verifyTrue(isfile(coordinatePath));
+            testCase.verifyTrue(isfile(fullfile( ...
+                folder, "video_marker_coordinates.labkit.json")));
+            testCase.verifyNotEmpty( ...
+                runtime.State.project.results.coordinateManifestPath);
+            runtime.invokeAction("saveAutosave");
+            testCase.verifyTrue(isfile( ...
+                video_marker.autosave.filePath(videoPath)));
+
+            runtime.saveProject(runtime.State, projectPath);
+            runtime.applyFileSelection( ...
+                "videoFile", strings(1, 0), zeros(1, 0));
+            testCase.verifyEmpty(runtime.State.session.cache.currentImage);
+            runtime.invokeAction("openProject");
+            testCase.verifyEqual( ...
+                runtime.State.session.selection.currentFrame, 2);
+            testCase.verifyEqual(video_marker.frameAnnotations.framePoints( ...
+                runtime.State.project.annotations.frames, 1), points);
+            runtime.invokeAction("newSetup");
+            testCase.verifyEmpty( ...
+                runtime.State.project.annotations.skeleton.pointNames);
+            testCase.verifyEmpty(runtime.getResource("document", "video"));
+            metadata = runtime.documentMetadata();
+            testCase.verifyEqual(metadata.path, "");
+            testCase.verifyTrue(metadata.dirty);
+            clear videoResource nextResource
+            clear runtimeCleanup folderCleanup
         end
     end
 end
 
-function [request, dispatchArgs] = recoveryRequest(~, debug, projectPath)
-    request = struct("debug", debug, "recoveryFile", projectPath, ...
-        "autosave", false);
-    dispatchArgs = {};
+function value = one(figure, tag)
+value = findall(figure, "Tag", char(tag));
+assert(isscalar(value), "Expected one component with Tag %s.", tag);
 end
 
-function invoke(button)
-    button.ButtonPushedFcn(button, struct());
+function writeSyntheticVideo(filepath)
+writer = VideoWriter(char(filepath), "Motion JPEG AVI");
+writer.FrameRate = 10;
+open(writer);
+cleanup = onCleanup(@() close(writer));
+for k = 1:6
+    [x, y] = meshgrid(1:96, 1:72);
+    frame = uint8(80 + 35 .* sin((x + 2 * k) ./ 7) + ...
+        30 .* cos((y - k) ./ 6));
+    frame = repmat(frame, 1, 1, 3);
+    writeVideo(writer, frame);
 end
-
-function setChoiceAnswer(fig, answer)
-    runtime = getappdata(fig, 'labkitUiAppRuntime');
-    runtime.request.choiceDialog = @(varargin) answer;
-    setappdata(fig, 'labkitUiAppRuntime', runtime);
-end
-
-function editName(tableHandle, row, value)
-    previous = tableHandle.Data{row, 2};
-    tableHandle.Data{row, 2} = value;
-    tableHandle.CellEditCallback(tableHandle, struct( ...
-        'Indices', [row 2], 'PreviousData', previous, ...
-        'NewData', value, 'EditData', value));
+clear cleanup
 end
 
 function removeTempFolder(folder)
-    if exist(folder, 'dir') == 7
-        rmdir(folder, 's');
-    end
+if exist(folder, "dir") == 7
+    rmdir(folder, "s");
+end
 end

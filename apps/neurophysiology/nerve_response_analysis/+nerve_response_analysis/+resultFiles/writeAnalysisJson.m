@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.definitionActions. Input is an analysis struct
+% Expected caller: nerve_response_analysis.resultFiles.exportAnalysis. Input is an analysis struct
 % and target JSON path. Output is the written path. Side effect is one file.
 function outputPath = writeAnalysisJson(analysis, outputPath)
 %WRITEANALYSISJSON Write nerve-response analysis JSON.

@@ -6,12 +6,14 @@ classdef WearableDebugSamplePackTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             root = string(tempname);
             cleanup = onCleanup(@() cleanupFolder(root));
-            mkdir(char(root));
-            debug = labkit.ui.debug.context("wearable_debug_sample_test", struct( ...
-                "logFile", fullfile(char(root), "trace.log")));
+            context = labkit.app.diagnostic.SampleContext(root);
 
-            pack = ecg_print.debug.writeSamplePack(debug);
-            [recording, status] = labkit.biosignal.readRecording(char(pack.representativeFiles), ...
+            pack = ecg_print.debug.writeSamplePack(context);
+            testCase.verifyClass(pack, "labkit.app.diagnostic.SamplePack");
+            testCase.verifyEqual(string( ...
+                pack.InitialProject.inputs.sources.role), "recording");
+            [recording, status] = labkit.biosignal.readRecording( ...
+                artifactPath(context, pack, "recording"), ...
                 ecg_print.sourceFiles.importOptions(500, 1, "Yes", "time_s", "seconds", "ECG,Motion"));
             testCase.verifyTrue(status.ok, status.message);
             channels = labkit.biosignal.listChannels(recording);
@@ -20,18 +22,24 @@ classdef WearableDebugSamplePackTest < matlab.unittest.TestCase
             testCase.verifyGreaterThan(numel(signal.time), 1000);
 
             [headerless, headerlessStatus] = labkit.biosignal.readRecording( ...
-                char(pack.boundaryFiles.validHeaderlessText), ...
+                artifactPath(context, pack, "headerless"), ...
                 ecg_print.sourceFiles.importOptions(500, 1, "No", "1", "seconds", "2,3"));
             testCase.verifyTrue(headerlessStatus.ok);
             testCase.verifyGreaterThan(numel(labkit.biosignal.listChannels(headerless)), 0);
 
             [~, malformedStatus] = labkit.biosignal.readRecording( ...
-                char(pack.boundaryFiles.malformedCsv), ...
+                artifactPath(context, pack, "malformed"), ...
                 ecg_print.sourceFiles.importOptions(500, 1, "Yes", "time_s", "seconds", "ECG"));
             testCase.verifyFalse(malformedStatus.ok, ...
                 "Malformed ECG debug sample should fail cleanly through the biosignal facade.");
         end
     end
+end
+
+function filepath = artifactPath(context, pack, id)
+matches = cellfun(@(artifact) artifact.Id == id, pack.Artifacts);
+filepath = char(fullfile(context.ArtifactFolder, ...
+    pack.Artifacts{matches}.RelativePath));
 end
 
 function cleanupFolder(folder)

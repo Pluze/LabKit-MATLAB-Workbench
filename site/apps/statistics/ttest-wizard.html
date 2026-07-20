@@ -22,12 +22,14 @@
 <main class="content">
 <p class="page-kind">app</p>
 <h1 id="t-test-wizard">T-Test Wizard</h1>
+<p>Every action and input-selection button provides hover help describing its group assignment, hypothesis test, alpha decision, or portable export.</p>
 <p>T-Test Wizard captures two or more numeric groups, compares every group after the first with the first group, and draws one publication-oriented mean and standard-deviation plot. The first group is always the reference group.</p>
 <h2 id="open-t-test-wizard">Open T-Test Wizard</h2>
 <p>From the LabKit launcher, select <strong>T-Test Wizard</strong> and choose <strong>Open</strong>. From a source checkout, run:</p>
 <pre><code class="language-matlab">labkit_TTestWizard_app</code></pre>
 <p>The App requires Base MATLAB and the LabKit App Framework. It does not require Statistics and Machine Learning Toolbox.</p>
-<p>Current App version: <strong>1.0.1</strong>.</p>
+<p>Current App version: <strong>1.1.0</strong>.</p>
+<p>The App uses <code>labkit.app</code> 1.x. Its definition names the project schema, transient session factory, semantic workbench, derived view, and plot renderer. Runtime-injected callback context and table payload types are declared in MATLAB <code>arguments</code> blocks; the App does not receive a component registry or an untyped service bag.</p>
 <h2 id="workflow">Workflow</h2>
 <p>The left controls use three short pages:</p>
 <ol>
@@ -132,7 +134,7 @@ results = ttest_wizard.testRun.runGroupTTests(groups, options);</code></pre>
 <li><a href="../../development/data-and-designs/scientific-csv-interchange.html">Simple Scientific CSV Exchange</a></li>
 <li><a href="../labkit-core/figure-studio.html">Figure Studio</a></li>
 <li><a href="../../framework/index.html">App Framework</a></li>
-</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/ttest_wizard/testRun/runGroupTTests.html"><code>ttest_wizard.testRun.runGroupTTests</code></a></td><td>Compare every group after the first with the first group.</td></tr><tr><td><a href="../../reference/api/ttest_wizard/testRun/runTTest.html"><code>ttest_wizard.testRun.runTTest</code></a></td><td>Run one independent Welch, pooled, or paired t-test.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../history/records/2026/07/LK-20260719-headless-validation-repair.html">2026-07-19 - Headless validation follows current documentation and App contracts</a><small>fix | behavior-preserving</small></li><li><a href="../../history/records/2026/07/LK-20260718-ttest-wizard-and-table-workspace.html">2026-07-19 - T-Test Wizard adds table selection and first-versus-each comparisons</a><small>feat | additive</small></li></ul></section>
+</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/ttest_wizard/testRun/runGroupTTests.html"><code>ttest_wizard.testRun.runGroupTTests</code></a></td><td>Compare every group after the first with the first group.</td></tr><tr><td><a href="../../reference/api/ttest_wizard/testRun/runTTest.html"><code>ttest_wizard.testRun.runTTest</code></a></td><td>Run one independent Welch, pooled, or paired t-test.</td></tr></tbody></table></section><section class="component-history"><h2>Change history</h2><ul><li><a href="../../history/records/2026/07/LK-20260720-app-action-tooltips.html">2026-07-20 - App actions require explanatory hover help</a><small>feat | compatible</small></li><li><a href="../../history/records/2026/07/LK-20260719-ui-explicit-contract-migration.html">2026-07-19 - App SDK explicit contract replaces the retired UI runtime</a><small>refactor | breaking</small></li><li><a href="../../history/records/2026/07/LK-20260719-headless-validation-repair.html">2026-07-19 - Headless validation follows current documentation and App contracts</a><small>fix | behavior-preserving</small></li><li><a href="../../history/records/2026/07/LK-20260718-ttest-wizard-and-table-workspace.html">2026-07-19 - T-Test Wizard adds table selection and first-versus-each comparisons</a><small>feat | additive</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

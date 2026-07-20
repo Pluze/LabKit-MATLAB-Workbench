@@ -1,5 +1,8 @@
 # RHS Preview
 
+Every action and input-selection button provides hover help describing its
+RHS/protocol input, waveform window, response ROI, filter, or JSON output.
+
 RHS Preview lets you inspect an Intan RHS recording without loading the entire
 waveform into memory. Use it to check channels, move through short waveform
 windows, choose the channels to plot, and prepare protocol or file-filter JSON
@@ -69,7 +72,7 @@ The durable project stores portable references for one preview recording, one
 optional protocol, and an ordered collection of filter recordings. It also
 stores preview settings, channel-role drafts, manual filter labels/comments,
 and compact export records. The App owns the `recording`, `protocol`, and
-`filterRecording` roles; Runtime V2 owns each reference's portable path data.
+`filterRecording` roles; App SDK runtime owns each reference's portable path data.
 
 Header indices, decoded preview windows, table presentation state, current ROI
 and window position, status text, and log messages are transient session data.
@@ -78,11 +81,12 @@ They are reconstructed from the project sources when a project is opened.
 For developers, `rhs_preview.definition` is the complete product contract.
 `rhs_preview.projectSpec` owns project creation, validation, and the version-1
 upgrade; `rhs_preview.createSession` rebuilds transient state. Fixed recording
-and protocol sources use the injected upsert service. The variable filter
-collection uses the injected reconcile service so existing source IDs remain
-stable when files are added, removed, or rediscovered. The App-local
+and protocol sources, plus the variable filter collection, are updated as
+ordinary App-owned portable source values. Framework file-list bindings
+preserve stable source IDs while files are added, removed, or rediscovered. The App-local
 `rhs_preview.sourceFiles.pathsForRole` function selects its role ordering and
-delegates portable-reference decoding to `labkit.ui.runtime.sourcePaths`.
+delegates portable-reference decoding to the sealed
+`CallbackContext.resolveSourcePaths` operation.
 
 ## Review Recording Information
 
@@ -129,9 +133,9 @@ interpret the waveform matrix.
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8` and
+This App uses the App SDK runtime lifecycle and requires `labkit.app >=1 <2` and
 `labkit.rhs >=1.0 <2`. App code uses semantic actions, managed interval
-interaction, `sourcePaths`, and injected upsert/reconcile services; migration
+interaction, direct layout callbacks, and `resolveSourcePaths`; migration
 iteration, busy state, and portable-reference serialization remain
 framework-private.
 
@@ -144,4 +148,5 @@ indexed preview cache fields. Runtime supplies absent canonical buckets and
 owns workflow-log initialization.
 
 The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+every control and plot names its concrete callback or renderer, and the
+definition validates those bindings before creating a figure.

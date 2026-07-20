@@ -4,7 +4,7 @@
 function items = loadProjectItems(sources, parameters)
     items = struct([]);
     opts = cic.analysisRun.optionsFromParameters(parameters);
-    paths = labkit.ui.runtime.sourcePaths(sources);
+    paths = string(sources);
     for k = 1:numel(sources)
         filepath = paths(k);
         [item, status] = labkit.dta.loadFile(filepath, "chrono");

@@ -263,7 +263,7 @@ function opts = fillCICOptions(opts)
         opts.area_cm2 = NaN;
     end
     if ~isfield(opts, 'pulseMode')
-        choices = cic.userInterface.analysisChoices();
+        choices = cic.analysisRun.analysisChoices();
         opts.pulseMode = char(choices.pulseModes(1));
     end
     if ~isfield(opts, 'usedMeasuredCurrent')

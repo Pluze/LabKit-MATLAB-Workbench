@@ -15,7 +15,7 @@ function verify_computeVTResistance()
     item = makeChronoFixtureItem();
 
     opts = struct();
-    choices = vt_resistance.userInterface.analysisChoices();
+    choices = vt_resistance.analysisRun.analysisChoices();
     opts.windowMode = choices.steadyWindows(1);
     opts.voltageMode = choices.voltageModes(1);
     opts.pulseMode = choices.pulseModes(1);

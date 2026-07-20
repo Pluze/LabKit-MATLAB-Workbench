@@ -1,41 +1,34 @@
-% Expected caller: chrono_overlay.definitionActions startup action and unit tests.
+% Expected caller: Chrono Overlay debug-sample tooling and unit tests.
 % Input is a LabKit debug context. Output is a deterministic synthetic DTA
 % sample pack. Side effects: writes anonymous debug input files under the
 % debug samples folder and records a session manifest when available.
-function pack = writeSamplePack(debugLog)
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write Chrono Overlay debug DTA files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "chrono_overlay");
-    dtaFolder = fullfile(char(folders.sampleFolder), "dta");
-    ensureFolder(dtaFolder);
-
-    currentPath = string(fullfile(dtaFolder, "chrono_current_pulse_debug.DTA"));
-    voltagePath = string(fullfile(dtaFolder, "chrono_voltage_pulse_debug.DTA"));
-    flatPath = string(fullfile(dtaFolder, "chrono_valid_no_pulse_debug.DTA"));
-    malformedPath = string(fullfile(dtaFolder, "chrono_malformed_missing_table_debug.DTA"));
+    currentPath = sampleContext.samplePath("chrono_overlay/current.DTA");
+    voltagePath = sampleContext.samplePath("chrono_overlay/voltage.DTA");
+    flatPath = sampleContext.samplePath("chrono_overlay/no_pulse.DTA");
+    malformedPath = sampleContext.samplePath("chrono_overlay/malformed.DTA");
     writeTextFile(currentPath, chronoText("current"));
     writeTextFile(voltagePath, chronoText("voltage"));
     writeTextFile(flatPath, flatChronoText());
     writeTextFile(malformedPath, malformedChronoText());
 
-    pack = struct( ...
-        "sampleFolder", folders.sampleFolder, ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", [currentPath; voltagePath], ...
-        "boundaryFiles", struct( ...
-            "validEdge", flatPath, ...
-            "malformed", malformedPath));
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_ChronoOverlay_app", ...
-        "description", "Anonymous chrono DTA boundary pack for overlay debug launch.", ...
-        "inputs", struct( ...
-            "representativeChronoDta", pack.representativeFiles, ...
-            "validEdgeChronoDta", flatPath, ...
-            "malformedChronoDta", malformedPath), ...
-        "outputFolder", folders.outputFolder);
-    pack.manifest = manifest;
-    recordManifest(debugLog, manifest);
+    project = chrono_overlay.projectSpec().Create();
+    project.inputs.sources = [ ...
+        sampleContext.sourceRecord("dta1", "chrono", currentPath, true), ...
+        sampleContext.sourceRecord("dta2", "chrono", voltagePath, true)];
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-chrono-overlay", InitialProject=project, ...
+        Artifacts={ ...
+            sampleContext.artifact("currentPulse", "chrono", currentPath), ...
+            sampleContext.artifact("voltagePulse", "chrono", voltagePath), ...
+            sampleContext.artifact("noPulse", "boundaryInput", flatPath), ...
+            sampleContext.artifact("malformed", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function text = flatChronoText()
@@ -130,35 +123,6 @@ function rows = chronoRows(mode)
     end
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder")
-            sampleFolder = string(debugLog.sampleFolder);
-        end
-        if isfield(debugLog, "outputFolder")
-            outputFolder = string(debugLog.outputFolder);
-        end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && ...
-            isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, text)
     fid = fopen(char(filepath), "w", "n", "UTF-8");
     if fid < 0
@@ -167,12 +131,6 @@ function writeTextFile(filepath, text)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s", char(text));
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end
 
 function value = tab()

@@ -2,11 +2,11 @@ function req = requirements(varargin)
 %REQUIREMENTS Describe the LabKit API versions required by a caller.
 %
 % Usage:
-%   req = labkit.contract.requirements("ui", ">=2.0 <3", ...)
+%   req = labkit.contract.requirements("app", ">=1.0 <2", ...)
 %
 % Description:
 %   Builds a normalized requirement structure from facade/range pairs. A
-%   facade name may be written as "ui" or "labkit.ui". Names are converted to
+%   facade name may be written as "app" or "labkit.app". Names are converted to
 %   lowercase and the optional "labkit." prefix is removed. No compatibility
 %   check is performed until checkRequirements or assertRequirements is called.
 %
@@ -29,7 +29,7 @@ function req = requirements(varargin)
 %
 % Example:
 %   req = labkit.contract.requirements( ...
-%       "ui", ">=7 <8", ...
+%       "app", ">=1 <2", ...
 %       "image", ">=4.0 <5");
 %   report = labkit.contract.checkRequirements(req);
 %

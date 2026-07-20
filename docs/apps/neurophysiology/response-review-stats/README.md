@@ -1,5 +1,8 @@
 # Response Review And Stats
 
+Every action and input-selection button provides hover help describing its
+response metrics, statistical refresh, reset, or export effect.
+
 Response Review and Stats opens a Nerve Response Analysis result or a segment
 table, displays the measurements, and exports a clean CSV for review or
 downstream statistics. Segment tables can also be aligned and measured again
@@ -130,13 +133,13 @@ behavior, output table columns, failures, examples, and related APIs.
 
 ## Framework Compatibility
 
-This App requires `labkit.ui >=7 <8`. Its single `definition.m` owns product
+This App requires `labkit.app >=1 <2`. Its single `definition.m` owns product
 metadata, requirements, layout, actions, presentation, renderer, and debug
 capability. `projectSpec.m` concentrates durable creation, validation, and
 migration; root `createSession.m` rebuilds transient analysis tables.
 
-Source paths are read through `labkit.ui.runtime.sourcePaths`; no App code
-inspects portable-reference fields. Callback queues, busy state, migration
+Source paths are read through `CallbackContext.resolveSourcePaths`; no App
+code inspects portable-reference fields. Callback queues, busy state, migration
 iteration, source relinking, serialization, and resource lifetime remain
 framework-owned.
 
@@ -149,4 +152,5 @@ decoded metrics cache fields. Runtime supplies absent canonical buckets and
 owns workflow-log initialization.
 
 The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+every control and plot names its concrete callback or renderer, and the
+definition validates those bindings before creating a figure.

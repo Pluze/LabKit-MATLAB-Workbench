@@ -4,7 +4,8 @@
 % recalculation-grade scientific exports.
 function plotData = extractAxesData(ax)
     if isempty(ax) || ~isvalid(ax)
-        error('labkit:ui:InvalidAxes', 'Axes handle is not valid.');
+        error('figure_studio:resultFiles:InvalidAxes', ...
+            'Axes handle is not valid.');
     end
     plotData = struct();
     plotData.schema = "figure_studio.resultFiles.axesData.v1";

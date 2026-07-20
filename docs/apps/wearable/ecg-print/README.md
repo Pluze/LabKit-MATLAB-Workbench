@@ -1,5 +1,8 @@
 # ECG Print
 
+Every action and input-selection button provides hover help describing its
+ECG import, ROI processing, beat/template analysis, SNR, or export effect.
+
 ECG Print reads a wearable recording, filters one channel, detects beats,
 builds event-centered segments and a representative template, and reports
 signal quality over time. It can export the segment measurements and a
@@ -52,8 +55,8 @@ saved projects portable and avoids duplicating large waveform caches.
 For developers, `ecg_print.definition` is the complete product contract.
 `ecg_print.projectSpec` keeps project creation, validation, and the version-1
 upgrade in one file; `ecg_print.createSession` reconstructs transient state.
-Runtime V2 performs the version loop and calls the migration entry once for
-each older payload version.
+The App SDK runtime performs the version loop and calls the migration entry
+once for each older payload version.
 
 ## Analyze ECG
 
@@ -69,6 +72,14 @@ each older payload version.
 
 The filter is applied to the full selected channel before the time region is
 cropped. This reduces boundary artifacts at the region edges.
+
+The **Files + Analysis** tab keeps the workflow in five ordered sections:
+**Recording**, **Import Parsing**, **Channel + ROI**,
+**Signal Processing + SNR**, and **Exports**. Bounded numeric settings use
+paired spinner-and-slider controls. **Summary + Results** contains the
+analysis summary and file-header preview, while **Log** records the current
+session workflow. The **ECG Preview** workspace keeps four vertically stacked
+time-series axes available on every tab.
 
 ## Analysis Parameters
 
@@ -143,18 +154,25 @@ segments, template, and measurements. For a more customized pipeline, call
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8` and
-`labkit.biosignal >=1.0 <2`. App code uses semantic actions, `sourcePaths`, and
-injected project services; migration iteration, busy state, and portable
-reference serialization remain framework-private.
+This App uses `labkit.app.Definition`, semantic `labkit.app.layout.*`
+controls, complete `labkit.app.view.Snapshot` presentation, typed events, and
+the injected `labkit.app.CallbackContext`. It requires `labkit.app >=1 <2`
+and `labkit.biosignal >=1.0 <2`. The runtime owns launch, busy state,
+portable-source serialization, project migration, result-manifest
+provenance, log presentation, and native component lifecycle.
 
 The project validator requires the recording source collection and checks
 import, filter, detection, and result fields; Runtime validates canonical
 buckets and each source record first.
 
-Its session factory returns only App-specific import workflow and decoded
-signal cache fields. Runtime supplies absent canonical buckets and owns
-workflow-log initialization.
+Its session factory resolves the portable recording through
+`CallbackContext`, then returns only App-specific import workflow and decoded
+signal cache fields. A failed project/session reconstruction reaches the
+runtime's atomic failure boundary. A failed user-requested
+**Parse / refresh file** operation keeps the source and header preview
+available so import settings can be corrected in place.
 
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+Layout controls bind directly to ECG capability callbacks and the four-axis
+plot area binds directly to its renderer; there is no App-authored action or
+renderer registry. See the
+[App SDK runtime contract](../../../framework/guides/runtime.md).

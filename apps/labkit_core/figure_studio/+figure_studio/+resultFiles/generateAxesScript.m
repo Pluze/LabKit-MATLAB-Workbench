@@ -6,7 +6,7 @@ function scriptPath = generateAxesScript(folder, plotData)
     scriptPath = fullfile(string(folder), "recreate_plot.m");
     fid = fopen(scriptPath, 'w');
     if fid < 0
-        error('labkit:ui:ExportWriteFailed', ...
+        error('figure_studio:resultFiles:ExportWriteFailed', ...
             'Could not write recreate_plot.m.');
     end
     cleanup = onCleanup(@() fclose(fid));

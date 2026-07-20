@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.definitionActions and unit tests. Inputs are current filter
+% Expected caller: RHS Preview direct callbacks and unit tests. Inputs are current filter
 % rows plus GUI table data. Output is updated rows preserving file paths and
 % recording ids.
 function rows = applyFileFilterTableData(rows, data)

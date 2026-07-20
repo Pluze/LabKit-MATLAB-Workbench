@@ -1,4 +1,4 @@
-% Expected caller: ecg_print.definitionActions and direct unit tests. Input is the UI
+% Expected caller: ecg_print direct callbacks and direct unit tests. Input is the UI
 % dropdown label. Output is the method string accepted by
 % labkit.biosignal.detectEcgPeaks. Side effects: none.
 

@@ -1,21 +1,22 @@
 % Rebuild the selected transient decoded image from one validated FLIR
-% project. Runtime V2 calls this after portable source relinking.
-function session = createSession(project)
+% project. App SDK runtime calls this after portable source relinking.
+function session = createSession(project, context)
     index = double(~isempty(project.inputs.sources));
     item = [];
     if index > 0
-        item = loadSelected(project, index);
+        item = loadSelected(project, index, context);
     end
     session = struct( ...
-        "selection", struct("currentIndex", index), ...
+        "selection", struct("currentIndex", index, ...
+            "thermalSources", labkit.app.event.ListSelection()), ...
         "cache", struct("currentItem", item));
 end
 
-function item = loadSelected(project, index)
+function item = loadSelected(project, index, context)
     item = [];
     source = project.inputs.sources(index);
     loaded = flir_thermal.sourceFiles.readImages( ...
-        labkit.ui.runtime.sourcePaths(source), ...
+        context.resolveSourcePaths(source), ...
         struct("SkipInvalid", false));
     if ~isempty(loaded)
         annotation = annotationFor(project.annotations.items, source.id);

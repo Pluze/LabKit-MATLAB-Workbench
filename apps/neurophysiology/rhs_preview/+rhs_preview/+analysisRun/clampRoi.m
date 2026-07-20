@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.definitionActions. Inputs are requested ROI seconds and the
+% Expected caller: RHS Preview direct callbacks. Inputs are requested ROI seconds and the
 % current preview time vector. Output is a sorted ROI clamped to preview time.
 function roiSec = clampRoi(roiSec, timeSec)
 %CLAMPROI Clamp dragged ROI to preview samples.

@@ -20,7 +20,7 @@ function verify_computeCSC()
     curves = item.curves;
     assert(~isempty(curves), 'CV/CT fixture should contain at least one curve.');
     curve = curves(1);
-    choices = csc.userInterface.analysisChoices();
+    choices = csc.analysisRun.analysisChoices();
 
     opts = struct('scanRate', scanRate, ...
         'mode', char(choices.modes(1)), 'area_cm2', '2');

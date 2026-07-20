@@ -1,0 +1,13 @@
+% App-owned implementation for batch_crop.cropGeometry.setCurrentCenter within the batch_crop product workflow.
+function applicationState = setCurrentCenter( ...
+        applicationState, center, confirmed)
+index = batch_crop.sourceFiles.currentIndex(applicationState);
+item = batch_crop.sourceFiles.currentItem(applicationState);
+[geometry, ~] = batch_crop.cropGeometry.currentGeometry( ...
+    applicationState.session.cache.canvas, index, item, ...
+    batch_crop.cropGeometry.itemPaddingPercent(item, 0));
+center = batch_crop.cropGeometry.clampCropCenterToCanvas( ...
+    geometry, center, batch_crop.cropGeometry.currentCropSize(applicationState));
+applicationState.project.inputs.items(index).centerXY = center;
+applicationState.project.inputs.items(index).centerSet = logical(confirmed);
+end

@@ -1,5 +1,8 @@
 # Charge-Injection Capacity
 
+Every action and input-selection button provides hover help describing its
+pulse data, injected-charge/CIC result, or export effect.
+
 The CIC app measures charge delivered by a biphasic current pulse, normalizes
 charge by electrode area, and reports voltage-transient polarization metrics
 at a controlled delay after each pulse phase.
@@ -18,7 +21,7 @@ labkit_CIC_app
 Add one or more chrono `.DTA` files. The selected row is decoded for immediate
 preview; batch calculation is performed with the same analysis settings when
 results are exported. This avoids repeatedly decoding every large file while
-the user is only switching previews. Runtime V2 reconciles the ordered path
+the user is only switching previews. App SDK runtime reconciles the ordered path
 list with durable source records, so retained files keep stable identities and
 new files receive collision-free identities without an App-owned counter.
 
@@ -128,10 +131,11 @@ domain schema, defaults, parameter validation, and the required source
 collection; Runtime validates canonical buckets and each source record first.
 `createSession.m` deliberately decodes only the first source for immediate
 preview; remaining batch files stay lazy until selection or export. The App
-requires `labkit.ui >=7 <8` and
+requires `labkit.app >=1 <2` and
 `labkit.dta >=2 <3`; Runtime also supplies omitted empty session buckets and
 owns workflow-log initialization. Busy-state, source identity, resolved-path
 access, and portable-reference serialization remain framework-owned.
 
 The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+every control and plot names its concrete callback or renderer, and the
+definition validates those bindings before creating a figure.

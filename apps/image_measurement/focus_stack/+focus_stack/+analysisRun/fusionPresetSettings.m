@@ -13,7 +13,7 @@ function settings = fusionPresetSettings(preset)
 % Side effects:
 %   None.
 
-    items = focus_stack.userInterface.fusionPresetItems();
+    items = focus_stack.focusPreview.fusionPresetItems();
     index = find(items == string(preset), 1);
     if isempty(index)
         index = 1;

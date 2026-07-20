@@ -2,39 +2,33 @@
 % is a LabKit debug context. Output is a deterministic synthetic crop sample
 % pack. Side effects: writes anonymous debug images and records a session
 % manifest when available.
-function pack = writeSamplePack(debugLog)
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write Batch Crop debug image files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "batch_crop");
-    imageFolder = fullfile(char(folders.sampleFolder), "images");
-    ensureFolder(imageFolder);
-
-    imageA = string(fullfile(imageFolder, "batch_crop_targets_a.png"));
-    imageB = string(fullfile(imageFolder, "batch_crop_targets_b.png"));
-    edgePath = string(fullfile(imageFolder, "batch_crop_valid_small_target.png"));
-    malformedPath = string(fullfile(imageFolder, "batch_crop_malformed_not_image.png"));
+    imageA = sampleContext.samplePath("batch_crop/source_a.png");
+    imageB = sampleContext.samplePath("batch_crop/source_b.png");
+    edgePath = sampleContext.samplePath("batch_crop/small_target.png");
+    malformedPath = sampleContext.samplePath("batch_crop/malformed.png");
     imwrite(targetImage(0), char(imageA));
     imwrite(targetImage(1), char(imageB));
     imwrite(targetImage(2), char(edgePath));
     writeTextFile(malformedPath, "not an image payload" + newline);
 
-    representativeFiles = [imageA; imageB];
-    pack = struct( ...
-        "sampleFolder", folders.sampleFolder, ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", representativeFiles, ...
-        "boundaryFiles", struct("validEdge", edgePath, "malformed", malformedPath));
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_BatchImageCrop_app", ...
-        "description", "Anonymous crop-target boundary image pack.", ...
-        "inputs", struct( ...
-            "representativeImages", representativeFiles, ...
-            "validEdgeImage", edgePath, ...
-            "malformedImage", malformedPath), ...
-        "outputFolder", folders.outputFolder);
-    pack.manifest = manifest;
-    recordManifest(debugLog, manifest);
+    project = batch_crop.projectSpec().Create();
+    project.inputs.sources = [ ...
+        sampleContext.sourceRecord("image1", "cropSource", imageA, true), ...
+        sampleContext.sourceRecord("image2", "cropSource", imageB, true)];
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-crop-targets", InitialProject=project, ...
+        Artifacts={ ...
+            sampleContext.artifact("sourceA", "cropSource", imageA), ...
+            sampleContext.artifact("sourceB", "cropSource", imageB), ...
+            sampleContext.artifact("smallTarget", "boundaryInput", edgePath), ...
+            sampleContext.artifact("malformed", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function image = targetImage(variant)
@@ -60,30 +54,6 @@ function image = targetImage(variant)
     image = uint8(round(255 .* min(max(image, 0), 1)));
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, text)
     fid = fopen(char(filepath), "w", "n", "UTF-8");
     if fid < 0
@@ -92,10 +62,4 @@ function writeTextFile(filepath, text)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s", char(text));
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end

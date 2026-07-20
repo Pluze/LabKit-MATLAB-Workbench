@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.definitionActions. Input is an optional protocol JSON path.
+% Expected caller: RHS Preview direct callbacks. Input is an optional protocol JSON path.
 % Output is the decoded protocol struct or an empty struct. No UI handles are
 % touched.
 function protocol = loadProtocol(protocolFile)

@@ -1,19 +1,23 @@
-% Expected caller: dic_postprocess.definitionActions startup action and unit tests.
-% Input is a LabKit debug context. Output is a deterministic synthetic Ncorr
-% MAT/reference/mask sample pack. Side effects: writes anonymous debug inputs
-% and records a session manifest when available.
-function pack = writeSamplePack(debugLog)
+% Expected caller: the App SDK debug-sample capability and unit tests.
+% Input is a bounded diagnostic SampleContext. Output is a deterministic
+% synthetic Ncorr SamplePack with a current project. Side effects: writes
+% anonymous synthetic inputs beneath the context sample folder.
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write DIC postprocess debug files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "dic_postprocess");
-    sampleFolder = fullfile(char(folders.sampleFolder), "dic_postprocess");
-    ensureFolder(sampleFolder);
-
-    matPath = string(fullfile(sampleFolder, "dic_valid_ncorr_strain_debug.mat"));
-    referencePath = string(fullfile(sampleFolder, "dic_reference_debug.png"));
-    maskPath = string(fullfile(sampleFolder, "dic_mask_debug.png"));
-    edgeMatPath = string(fullfile(sampleFolder, "dic_valid_edge_sparse_roi_debug.mat"));
-    malformedMatPath = string(fullfile(sampleFolder, "dic_malformed_missing_strains_debug.mat"));
+    matPath = sampleContext.samplePath( ...
+        "dic_postprocess/strain.mat");
+    referencePath = sampleContext.samplePath( ...
+        "dic_postprocess/reference.png");
+    maskPath = sampleContext.samplePath( ...
+        "dic_postprocess/mask.png");
+    edgeMatPath = sampleContext.samplePath( ...
+        "dic_postprocess/sparse_roi.mat");
+    malformedMatPath = sampleContext.samplePath( ...
+        "dic_postprocess/malformed.mat");
 
     [reference, mask, exx, eyy] = syntheticDicPostprocessData(180, 240, false);
     imwrite(reference, char(referencePath));
@@ -25,22 +29,26 @@ function pack = writeSamplePack(debugLog)
     data_dic_save = struct("metadata", struct("note", "malformed synthetic boundary"));
     save(char(malformedMatPath), "data_dic_save");
 
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_DICPostprocess_app", ...
-        "description", "Anonymous Ncorr-style DIC strain boundary pack for debug launch.", ...
-        "sampleFolder", string(sampleFolder), ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", struct("mat", matPath, "reference", referencePath, "mask", maskPath), ...
-        "boundaryFiles", struct( ...
-            "validEdgeSparseRoiMat", edgeMatPath, ...
-            "malformedMissingStrainsMat", malformedMatPath));
-    recordManifest(debugLog, manifest);
-
-    pack = manifest;
-    pack.matFile = matPath;
-    pack.referenceFile = referencePath;
-    pack.maskFile = maskPath;
+    project = dic_postprocess.projectSpec().Create();
+    project.inputs.sources = [ ...
+        sampleContext.sourceRecord("dicMat", "strain", matPath, true), ...
+        sampleContext.sourceRecord( ...
+            "referenceImage", "reference", referencePath, true), ...
+        sampleContext.sourceRecord( ...
+            "maskImage", "mask", maskPath, true)];
+    artifacts = { ...
+        sampleContext.artifact("strain", "strain", matPath), ...
+        sampleContext.artifact( ...
+            "referenceImage", "reference", referencePath), ...
+        sampleContext.artifact("maskImage", "mask", maskPath), ...
+        sampleContext.artifact( ...
+            "sparseRoiStrain", "boundaryInput", edgeMatPath), ...
+        sampleContext.artifact( ...
+            "malformedStrain", "boundaryInput", malformedMatPath, ...
+            Expectation="rejects")};
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-strain-overlay", ...
+        InitialProject=project, Artifacts=artifacts);
 end
 
 function [reference, mask, exx, eyy] = syntheticDicPostprocessData(h, w, sparseRoi)
@@ -66,34 +74,4 @@ function writeNcorrMat(filepath, exx, eyy, mask)
         "plot_eyy_ref_formatted", eyy, ...
         "roi_ref_formatted", struct("mask", mask));
     save(char(filepath), "data_dic_save");
-end
-
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end

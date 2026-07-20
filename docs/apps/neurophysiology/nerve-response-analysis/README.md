@@ -1,5 +1,8 @@
 # Nerve Response Analysis
 
+Every action and input-selection button provides hover help describing its
+protocol/filter input, nerve-response calculation, reset, or exported evidence.
+
 Nerve Response Analysis reads the recording list prepared in RHS Preview,
 finds stimulation events, groups them into trains, and measures compound action
 potential responses in the assigned channels.
@@ -51,7 +54,7 @@ preserves the current document. An absent optional protocol remains valid.
 For developers, `nerve_response_analysis.definition` is the complete product
 contract. `nerve_response_analysis.projectSpec` owns project creation,
 validation, and the version-1 upgrade in one file, while
-`nerve_response_analysis.createSession` rebuilds transient state. Runtime V2
+`nerve_response_analysis.createSession` rebuilds transient state. App SDK runtime
 owns the migration loop and source-reference representation.
 
 ## What The Analysis Does
@@ -151,9 +154,9 @@ schemas, units, partial-recording failure policy, and related APIs.
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8` and
+This App uses the App SDK runtime lifecycle and requires `labkit.app >=1 <2` and
 `labkit.rhs >=1.0 <2`. App code uses semantic actions, `sourcePaths`, and the
-injected source-upsert service; migration iteration, busy state, and portable
+sealed callback context; migration iteration, busy state, and portable
 reference serialization remain framework-private.
 
 The project validator requires the source collection and retains the
@@ -165,4 +168,5 @@ decoded analysis cache fields. Runtime supplies absent canonical buckets and
 owns workflow-log initialization.
 
 The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+every control and plot names its concrete callback or renderer, and the
+definition validates those bindings before creating a figure.

@@ -1,18 +1,21 @@
-% Expected caller: response_review_stats.definitionActions startup action and unit
-% tests. Input is a LabKit debug context. Output is a deterministic segment
+% Expected caller: response_review_stats.definition and unit tests.
+% tests. Input is a bounded diagnostic SampleContext. Output is a deterministic segment
 % and analysis-metrics sample pack. Side effects: writes anonymous debug files
-% and records a session manifest when available.
-function pack = writeSamplePack(debugLog)
+% beneath the diagnostic root.
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write Response Review Stats debug files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "response_review_stats");
-    sampleFolder = fullfile(char(folders.sampleFolder), "response_review_stats");
-    ensureFolder(sampleFolder);
-
-    segmentPath = string(fullfile(sampleFolder, "response_segments_representative_debug.csv"));
-    analysisPath = string(fullfile(sampleFolder, "response_analysis_metrics_debug.json"));
-    sparsePath = string(fullfile(sampleFolder, "response_segments_valid_sparse_debug.csv"));
-    malformedPath = string(fullfile(sampleFolder, "response_segments_malformed_debug.csv"));
+    segmentPath = sampleContext.samplePath( ...
+        "response_review_stats/representative_segments.csv");
+    analysisPath = sampleContext.samplePath( ...
+        "response_review_stats/analysis_metrics.json");
+    sparsePath = sampleContext.samplePath( ...
+        "response_review_stats/valid_sparse_segments.csv");
+    malformedPath = sampleContext.samplePath( ...
+        "response_review_stats/malformed_segments.csv");
 
     T = segmentTable(9, 0.0002, 0.030);
     writetable(T, char(segmentPath));
@@ -22,16 +25,20 @@ function pack = writeSamplePack(debugLog)
     writetable(sparse, char(sparsePath));
     writeTextFile(malformedPath, ["Time_s,Segment_A"; "0,1"; "bad,2"]);
 
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_ResponseReviewStats_app", ...
-        "description", "Anonymous response segment and metrics boundary pack for debug launch.", ...
-        "sampleFolder", string(sampleFolder), ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", struct("segmentCsv", segmentPath, "analysisJson", analysisPath), ...
-        "boundaryFiles", struct("validSparseSegmentCsv", sparsePath, "malformedCsv", malformedPath));
-    recordManifest(debugLog, manifest);
-    pack = manifest;
+    project = response_review_stats.projectSpec().Create();
+    project.inputs.sources = sampleContext.sourceRecord( ...
+        "reviewInput", "reviewInput", segmentPath, true);
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-response-review", ...
+        InitialProject=project, Artifacts={ ...
+            sampleContext.artifact( ...
+                "representativeSegments", "reviewInput", segmentPath), ...
+            sampleContext.artifact( ...
+                "analysisMetrics", "alternateInput", analysisPath), ...
+            sampleContext.artifact( ...
+                "sparseSegments", "boundaryInput", sparsePath), ...
+            sampleContext.artifact("malformedSegments", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function T = segmentTable(count, dt, spanSec)
@@ -75,30 +82,6 @@ function writeAnalysisJson(filepath)
     fprintf(fid, "%s", jsonencode(payload));
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, lines)
     fid = fopen(char(filepath), "w");
     if fid < 0
@@ -107,10 +90,4 @@ function writeTextFile(filepath, lines)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s\n", lines);
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end

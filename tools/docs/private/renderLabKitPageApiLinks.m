@@ -10,15 +10,11 @@ function [html, plainText] = renderLabKitPageApiLinks(model, page)
         owner = replace(extractAfter(page.id, "app-"), "-", "_");
         matches = string({api.origin}).' == "app" & ...
             string({api.owner}).' == owner;
-    elseif ~isempty(page.components)
-        components = string(page.components(:));
+    else
+        sourceText = string(fileread(page.sourcePath));
         symbols = string({api.symbol}).';
-        for k = 1:numel(components)
-            component = components(k);
-            if startsWith(component, "labkit.")
-                matches = matches | symbols == component | ...
-                    startsWith(symbols, component + ".");
-            end
+        for k = 1:numel(symbols)
+            matches(k) = contains(sourceText, symbols(k));
         end
     end
     items = api(matches);

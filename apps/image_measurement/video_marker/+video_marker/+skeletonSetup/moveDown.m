@@ -1,0 +1,16 @@
+% App-owned implementation for video_marker.skeletonSetup.moveDown within the video_marker product workflow.
+function state = moveDown(state, context)
+%MOVEDOWN Move the selected keypoint one position later.
+if state.session.cache.videoInfo.frameCount > 0
+    return
+end
+[state.project.annotations.skeleton, ...
+    state.session.selection.selectedPointIndex] = ...
+    video_marker.skeletonDefinition.movePoint( ...
+        state.project.annotations.skeleton, ...
+        state.session.selection.selectedPointIndex, 1);
+state = video_marker.skeletonSetup.normalizeSelection(state);
+state = video_marker.resultFiles.clearExportState(state);
+context.appendStatus("Moved keypoint to position " + ...
+    string(state.session.selection.selectedPointIndex) + ".");
+end

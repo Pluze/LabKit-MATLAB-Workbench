@@ -18,7 +18,7 @@ function verify_scaleBarCalibration()
 end
 
 function checkTypedCalibration()
-    cal = labkit.ui.interaction.scaleBarCalibration(80, 20, "mm");
+    cal = labkit.app.interaction.scaleCalibration(80, 20, "mm");
     assert(cal.isCalibrated, 'Positive reference pixels and length should calibrate.');
     assert(cal.pixelsPerUnit == 4, 'Pixels per unit calculation changed.');
     assert(strcmp(cal.unit, 'mm'), 'Selected scale unit should be preserved.');
@@ -27,7 +27,7 @@ function checkTypedCalibration()
 end
 
 function checkReferenceLineCalibration()
-    cal = labkit.ui.interaction.scaleBarCalibration(NaN, 2, "cm", ...
+    cal = labkit.app.interaction.scaleCalibration(NaN, 2, "cm", ...
         struct('referenceLine', [0 0; 3 4]));
     assert(cal.isCalibrated, 'Two reference endpoints should provide reference pixels.');
     assert(cal.referencePixels == 5, 'Reference line pixel distance changed.');
@@ -37,7 +37,7 @@ function checkReferenceLineCalibration()
 end
 
 function checkFallbackUnitAndMissingScale()
-    cal = labkit.ui.interaction.scaleBarCalibration(NaN, 0, "inch");
+    cal = labkit.app.interaction.scaleCalibration(NaN, 0, "inch");
     assert(~cal.isCalibrated, 'Missing reference scale should remain uncalibrated.');
     assert(cal.pixelsPerUnit == 0, 'Missing reference scale should produce zero pixels/unit.');
     assert(strcmp(cal.unit, 'm'), 'Unsupported units should fall back to the default unit.');

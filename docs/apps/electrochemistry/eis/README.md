@@ -1,5 +1,8 @@
 # EIS
 
+Every action and input-selection button provides hover help describing its
+impedance input, plotted quantities, or exported EIS data.
+
 EIS overlays impedance data from one or more Gamry `ZCURVE` tables, supports
 Nyquist and Bode-style axis combinations, and exports the values currently
 selected for plotting.
@@ -16,8 +19,8 @@ labkit_EIS_app
 
 Add one or more `.DTA` files containing a readable EIS `ZCURVE`. Files that do
 not contain the required curve are reported and omitted from the plot. The
-source list is preserved in project state through portable references. Runtime
-V2 reconciles those records with the successfully decoded file list, preserves
+source list is preserved in project state through portable references. The App
+SDK runtime reconciles those records with the successfully decoded file list, preserves
 the identity of files that remain loaded, and assigns unique identities to new
 files; EIS does not maintain its own source-ID counter.
 
@@ -100,10 +103,11 @@ domain schema, defaults, plot-parameter validation, and the required source
 collection; Runtime validates canonical buckets and each source record first.
 `createSession.m` rebuilds decoded ZCURVE items and selected paths because they
 are transient runtime data. Empty workflow and view buckets are supplied by
-Runtime V2 rather than repeated in the App factory. The App requires
-`labkit.ui >=7 <8` and
+App SDK runtime rather than repeated in the App factory. The App requires
+`labkit.app >=1 <2` and
 `labkit.dta >=2 <3`; busy-state, viewport-preserving rendering, resolved-path
 access, and portable-reference serialization remain framework-owned.
 
 The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+every control and plot names its concrete callback or renderer, and the
+definition validates those bindings before creating a figure.

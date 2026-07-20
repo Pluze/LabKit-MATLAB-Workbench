@@ -1,11 +1,10 @@
-% Rebuild transient selection and only the first selected image from one
-% validated Batch Crop project after Runtime V2 resolves sources.
-function session = createSession(project)
+% Rebuild transient task paths and the first selected image.
+function session = createSession(project, context)
     currentIndex = double(~isempty(project.inputs.items));
     images = cell(numel(project.inputs.items), 1);
+    paths = taskPaths(project.inputs.items, project.inputs.sources, context);
     if currentIndex > 0
-        sourceId = string(project.inputs.items(currentIndex).sourceId);
-        path = labkit.ui.runtime.sourcePaths(project.inputs.sources, sourceId);
+        path = paths(currentIndex);
         if strlength(path) > 0
             loaded = batch_crop.sourceFiles.readItems(path);
             if ~isempty(loaded)
@@ -21,5 +20,21 @@ function session = createSession(project)
         "view", struct("scaleBar", []), ...
         "cache", struct( ...
             "images", {images}, ...
+            "paths", paths, ...
             "canvas", batch_crop.cropGeometry.emptyCanvasCache()));
+end
+
+function paths = taskPaths(tasks, sources, context)
+paths = strings(numel(tasks), 1);
+for k = 1:numel(tasks)
+    sourceId = string(tasks(k).sourceId);
+    match = find(string({sources.id}) == sourceId, 1);
+    if isempty(match)
+        continue
+    end
+    resolved = context.resolveSourcePaths(sources(match));
+    if ~isempty(resolved)
+        paths(k) = resolved(1);
+    end
+end
 end

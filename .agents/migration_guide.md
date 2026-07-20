@@ -8,29 +8,199 @@ component history.
 
 ## Active debt
 
-Last audited: 2026-07-19.
+Last audited: 2026-07-20.
 
 ```text
 toolbox-product-debt: none
-ui-migration-debt: ui-explicit-contract-redesign
+app-sdk-migration-debt: ui-explicit-contract-redesign
 ```
 
-## UI explicit-contract redesign
+## App SDK explicit-contract migration
 
 ### Decision and scope
 
 - **Debt ID:** `ui-explicit-contract-redesign`
-- **Owner:** `labkit.ui`
-- **Target boundary:** the next incompatible `labkit.ui` contract and every
-  tracked App that consumes it
-- **Status:** architecture and migration planning; no replacement
-  implementation is accepted yet
+- **Owner:** `labkit.app`
+- **Target boundary:** stable `labkit.app` 1.x and every tracked App formerly
+  consuming legacy `labkit.ui`
+- **Status:** Phases 0-6 complete for all 21 tracked Apps; the retired
+  production facade and migration-only tools/tests are removed in Phase 7,
+  and Phase 8 public-boundary, documentation, version/history work is
+  complete; final repository gates and developer-led interactive validation
+  remain
 - **User-visible reason:** App authors must be able to discover the framework
   from function, constructor, method, and parameter names. Invalid App code
   must fail at the contract boundary instead of being ignored, guessed, or
   rendered in an unintended form.
 - **Release model:** a deliberate incompatible-contract replacement, not an
   additive compatibility layer on the current runtime
+
+### User-visible UI parity audit
+
+The 2026-07-19 `main` baseline remains the behavioral and visual reference
+until every tracked App has been reviewed in every control tab and workspace
+page. Startup-only screenshots are insufficient.
+
+Restored in the replacement SDK worktree:
+
+- versioned window titles, project dirty markers, callback busy feedback,
+  guarded close behavior, keyboard close, delayed startup progress, and GUI
+  test visibility modes;
+- fixed control-pane sizing, draggable column and row dividers, scrollable
+  mixed-content control tabs, full-height single-surface tabs, framework
+  utility menus, and complete-text fitting;
+- old panner, range, readonly, adaptive action-grid, file/folder/recursive
+  file selection, friendly file labels, multiline control sizing, status,
+  log-follow, table, and distinct Usage presentations;
+- task-oriented file lists that preserve distinct portable source records for
+  repeated paths and render App-owned per-row workflow statuses;
+- transparent semantic groups that preserve full native button height, and
+  bound range controls whose initial values come from App state rather than
+  falling back to their legal limits;
+- workspace pages and initial selection, multiple vertically composed
+  workspace-page surfaces, plot view modes, single/pair/stack axes layouts,
+  axis titles and labels, unequal axes sizing, per-axis wheel zoom, viewport
+  preservation, managed fixed-canvas resize reflow, and plot pop-out/export
+  behavior;
+- typed interval-scroll payloads carrying the normalized data anchor and
+  scroll count instead of an undocumented runtime struct.
+
+Retired during Phase 7:
+
+- the complete 161-file `+labkit/+ui` implementation after source scans proved
+  that no production App or reusable facade still called it;
+- the offline analyzer, baseline/prototype generators, prototype packages, and
+  migration-only contract/GUI tests that existed only to reach the replacement;
+- current source comments, framework ownership rules, test-routing fixtures,
+  and documentation discovery that still named the retired facade. Historical
+  records and this active debt rationale remain until the final
+  cross-component history record is complete.
+
+Current public-boundary checkpoint:
+
+- `CallbackContext` is runtime-created and callback-injected; Apps can no
+  longer construct it as a second root object.
+- Pure portable-source value creation moved to `labkit.app.project`, while
+  unused source mutation and render-surface operations were removed from the
+  callback port.
+- Runtime construction no longer passes the complete `Definition` into
+  `CallbackContext`; the port retains only its named backend operations.
+- Runtime creation and synthetic-sample execution now belong to the internal
+  `RuntimeFactory`; headless and MATLAB GUI tests construct runtimes there
+  instead of adding test-only construction methods to `Definition`.
+- Layout targets, signal bindings, interaction targets, and native platform
+  plans now compile into internal `CompiledDefinition`; tests inspect that
+  result through internal `DefinitionInspector`.
+- `Definition` is the sole author-created aggregate root and exposes only
+  immutable author metadata/configuration, snapshot validation, and launch.
+  `TargetIds` and every runtime/compiler/test-only method are absent from its
+  public and hidden method surface.
+- Synchronous startup failures retain the App window and readiness surface,
+  show the deepest actionable failure message, release busy state, and keep
+  the complete exception chain in diagnostics; the native adapter contract
+  now covers this behavior alongside successful startup and versioned titles.
+- `labkit.app` 1.0.0 is the stable replacement facade. All 21 App definitions
+  declare `>=1 <2`, advance exactly one product-version step from
+  `origin/main`, and use the 2026-07-20 completion date.
+- Every App manual and the framework manuals describe direct layout callbacks,
+  sealed callback context, complete snapshots, and runtime-owned native
+  behavior. The sequence-138 cross-component history record lists the facade
+  and all 21 exact App version transitions; the generated site is synchronized
+  from an isolated source tree that excludes unrelated Launcher edits.
+- The first full `origin/main`-to-branch `changedFast` routing pass exposed
+  documentation-only guardrail gaps rather than another runtime seam:
+  non-public App capability files and five private native adapters now carry
+  path-specific file-level ownership contracts, while the runtime and
+  complete-App guides name `definition.m` and `Snapshot.include` explicitly.
+  The four previously failing documentation methods pass; the full-diff gate
+  must be rebuilt from the new checkpoint and rerun.
+- The root public layer remains deliberately limited to `Definition`,
+  runtime-injected `CallbackContext`, and `version`. `Definition` is the sole
+  App-authored aggregate root; `CallbackContext` is a sealed callback protocol
+  port, not a constructible service root. Optional concepts stay in named
+  `layout`, `view`, `event`, `interaction`, `plot`, `project`, `result`,
+  `dialog`, and `diagnostic` packages. The public-surface guardrail now locks
+  this replacement vocabulary and rejects any return of the retired
+  `labkit.ui` files.
+- `LayoutNode` now owns immutable semantic layout composition while hidden
+  internal `LayoutNodeValues` owns the shared option normalization and strict
+  value validation used by those constructors. This reduces the two cohesive
+  files to 446 and 274 effective code lines without changing the qualified
+  `LayoutNode` name or adding an App-facing entry; the complete explicit-layout
+  contract suite passes this split.
+- `RuntimeKernel` now keeps queueing, transaction order, lifecycle, resource,
+  document, and capability injection ownership, while hidden internal
+  `RuntimeContractBoundary`, `RuntimePresentation`, and `RuntimeStatePath`
+  own compiled-reference validation, default Snapshot derivation, and strict
+  project/session field paths. The four files measure 635, 149, 120, and 37
+  effective lines; the runtime suite passed eight unaffected cases and the two
+  initially exposed source-access cases passed after source-store access was
+  kept behind a RuntimeKernel-owned callback.
+- `MatlabPlatformAdapter` keeps lifecycle, callback entry, dialog, document,
+  and close behavior in a 571-line class definition; its class folder owns 40
+  substantial native layout/reconciliation methods while hidden
+  `NativeAdapterValues` owns 482 lines of pure native value normalization.
+  Small lifecycle and callback glue is deliberately not externalized, and the
+  surface guardrail caps class-folder method count to prevent a return to
+  monolith or one-file-per-trivial-method fragmentation. All ten focused
+  native-adapter GUI tests pass with the same qualified class name and no new
+  App-facing API.
+- The Launcher migration now targets the replacement SDK directly: ordinary
+  launch and profiling call the App entrypoint without runtime injection,
+  while **Open Debug** passes one typed verbose diagnostic configuration,
+  persists an isolated artifact session, and requests the App-owned synthetic
+  sample. Static catalog discovery still reads the single `definition.m`
+  metadata owner so a damaged SDK does not prevent Launcher repair actions.
+- The first clean full-diff gate exposed one documentation-boundary defect in
+  the native-adapter class-folder split: external methods of a hidden internal
+  class were being treated as public APIs. Public help and site discovery now
+  exclude class-folder implementation methods consistently; the focused
+  documentation checks and rebuilt final gates remain to be rerun.
+
+Still open before compatibility retirement:
+
+- complete developer-led manual validation of native dialogs, editable tables,
+  pointer interactions, long-lived resources, and representative exports;
+- complete visible Launcher debug-session validation and inspect one generated
+  diagnostic bundle;
+- run the final `changedFast` and stable `buildtool changed` repository gates,
+  then record their exact evidence in the cross-component history record.
+
+Current product audit progress:
+
+| App scope | Status | Evidence |
+| --- | --- | --- |
+| DIC Preprocess | Complete | All three control tabs, workspace, controls, actions, notes, summary, details, log, and focused GUI workflow compared with `main` |
+| CIC | Complete | All three control tabs, old panner geometry, files panel, summary rows, batch table, plot stack, menus, title, exports, project save/restore, and focused GUI workflow compared with `main` |
+| Chrono Overlay | Complete | Both control tabs, file actions, Usage, panner, plot options, stacked labeled axes, export/restore workflow, and focused GUI tests compared with `main` |
+| CSC | Complete | All three control tabs, file/curve/plot controls, readonly comparison summary, all-cycle table, paired exports, stacked axes, project workflow, and focused GUI test compared with `main` |
+| EIS | Complete | All three control tabs, file actions, panners, plot choices, Usage, summary, labeled plot, export/restore workflow, and focused GUI test compared with `main` |
+| VT Resistance | Complete | All three control tabs, file/export actions, analysis and plot controls, readonly summary, batch table, stacked axes, project workflow, and focused GUI tests compared with `main` |
+| Figure Studio | Complete | Figures/Export/Log tabs, FIG source actions, multiline status, quick exports, Canvas and Style panners, linked font/aspect behavior, fixed-canvas preview, axes handoff, package exports/manifests, and focused unit/GUI tests compared with `main` |
+| Response Review and Stats | Complete | Setup/Review/Export/Log tabs, numeric metric windows, status and action rows, nonduplicated summary/details, explicit output selection/clear, reset, default output subfolder, manifest name, Stats/Preview workspace, project restore, and focused unit/GUI tests compared with `main` |
+| Nerve Response Analysis | Complete | Setup/Protocol/Review/Export/Log tabs, filter and optional protocol sources, analysis limits/status/actions, nonduplicated summary/details, explicit output selection/clear, reset, default output subfolder, manifest name, Counts/Issues preview, source-identity validation, project restore, and focused unit/GUI tests compared with `main` |
+| RHS Preview | Complete | Setup/Protocol/Filter/Review/Log tabs, primary/filter/protocol source panels, preview panner/summary/status/actions, editable role and filter tables, lazy refresh, ROI edit/zoom and typed anchored scroll, full review details, standard protocol/filter manifests, annotation/source identity persistence, reset/restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
+| DIC Postprocess | Complete | Files + Analysis/Summary + Results/Log tabs, exact source actions and empty-state text, all 13 overlay and optical-image panners, summary table/status, stacked labeled strain overlays, parameter-driven overlay refresh, exports, project workflow, focused GUI test, and every-tab visual comparison with `main` |
+| Focus Stack | Complete | Files + Analysis/Summary + Results/Log tabs, source summary, file/folder/tree actions and independent folder workflow, exact fusion presets and panners, workflow notes, full result summary/details, paired labeled previews, source-aware result invalidation, all three standard exports and manifest, durable-summary restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
+| Image Enhance | Complete | Library + Export/Tools + History/Log tabs, file/folder/tree source library, source/mode/tool/history/export status, output selection and format, dynamic preview modes and tool limits, managed per-image white ROI, shared and per-image apply/undo/reset histories, current-image metrics, deterministic batch export with CSV and standard manifests, project restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
+| Image Match | Complete | Library + Export/Match + History/Log tabs, compact reference and file/folder/tree source controls, selected-source lazy preview, source/reference-aware export invalidation, output selection and format, pending match preview, Match Flow, apply/undo/reset history, current-image metrics, Matched/Original/Before + After views, deterministic batch export with CSV and standard manifests, project restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
+| T-Test Wizard | Complete | Data/Test + Plot/Export/Log tabs, table and selection labels, Fast workflow, direct multi-surface Data workspace composition, equal growable source/analysis tables, exact table/plot/status/export titles, ordered multi-group editing, first-versus-each tests, plot freshness, paired CSV exports, focused framework/App unit and GUI tests, and every-tab visual comparison with `main` |
+| Batch Image Crop | Complete | Files + Analysis/Scale/Summary + Results/Log tabs, task-oriented repeated-path file list with per-row readiness, exact file/task/navigation actions, old panners, Scale Mode and Current Image Scale sections, reference-edit action text, summary/details and preview titles, duplicate/navigation/single-task removal, physical calibration, export workflow, v1/v2-to-v3 project migration, focused framework/App unit and GUI tests, and every-tab visual comparison with `main` |
+| Curvature Measurement | Complete | Files + Analysis/Summary + Results/Log tabs, exact image/curve/scale/fit/export controls, mutually exclusive curve/reference edit modes and dynamic action text, typed or measured calibration, scale-bar placement, densified circle fit, traced length, seven-row summary/details, complete residual/circle/center/scale overlay, paired exports and manifests, source-change invalidation, v1-to-v2 project migration, focused unit/GUI tests, and every-tab visual comparison with `main` |
+| FLIR Thermal | Complete | Files + Display + Export/Details/Log tabs, FLIR source actions and navigation, exact palette/mapping/gamma/range controls, independent manual/hot/cold/mean readings, summary/details, paired clean-image/scale preview, current/all exports with CSV and standard manifests, transient decode/project restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
+| Gait Analysis | Complete | Source/Roles + Detection/Results + Export/Log tabs, compact Video Marker source, exact role/time/scale/detection fields, Workflow Notes, horizontal step navigation, summary/step tables, three labeled scroll-zoom previews, display-only plot graphics, current SamplePack debug fixture, CSV set and standard manifest, project restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
+| ECG Print | Complete | Files + Analysis/Summary + Results/Log tabs, exact Recording/Import Parsing/Channel + ROI/Signal Processing + SNR/Exports sections, compact readonly import state, ten paired numeric panners, Workflow Notes, four stacked labeled previews, complete analysis invalidation and parameter sanitation, recoverable refresh failure with atomic reconstruction failures, paired CSV/PNG exports with standard manifests, project restore, focused unit/framework/App GUI tests, and every-tab visual comparison with `main` |
+| Video Marker | Complete | Setup + Scale/Video/Import + Export/Log tabs, exact skeleton and connection editing, old numeric panners and scale-bar controls, Session open/autosave/new-document actions, compact video source, frame navigation and prediction, ordered point editing, marker/coordinate imports and source-adjacent exports with manifests, document-scoped video reader/cache reuse, project restore, typed synthetic diagnostics, focused framework/App unit and GUI workflows, and every-tab visual comparison with `main` |
+
+The accepted public structure is capability-partitioned:
+`labkit.app.Definition` and `CallbackContext` form the small root; `layout`,
+`view`, `event`, `interaction`, `plot`, `project`, `result`, and `dialog` own
+optional or specialized concepts. Layout nodes own direct callbacks and
+renderers; Apps maintain no
+parallel handler, renderer, or capability registries. Native adapters,
+layout-node values, stores, queues, and reconciliation remain under
+`labkit.app.internal`. There are no aliases from the new SDK back to old
+`labkit.ui` symbols.
 
 The replacement may rewrite the current runtime kernel, definition model,
 protocol, interaction system, event transport, capability injection, renderer
@@ -56,8 +226,8 @@ The following are explicitly rejected as end states:
 - new aliases that silently route old spellings or old interaction `Kind`
   values to new behavior;
 - a nominally small function list whose real public contract still lives in
-  arbitrary struct fields, string keys, callback arity probing, or private
-  implementation files;
+  arbitrary struct fields, string keys, runtime callback-shape probing, or
+  private implementation files;
 - keeping an unsuitable current boundary only to avoid editing tracked Apps;
 - a framework rewrite that also rewrites stable App science without cause;
 - two public UI runtimes shipped indefinitely.
@@ -175,6 +345,17 @@ The following decisions apply before exact MATLAB symbol names are frozen:
     should learn a new optional constructor or method when using a genuinely
     new concept, not a new registry shape, dispatch convention, or hidden
     service protocol.
+13. **The paved road minimizes App wiring.** Layout owns strict field
+    bindings, Application collects signal Commands, runtime combines defaults
+    and bindings with App-provided dynamic presentation, and ordinary Apps do
+    not repeat capability metadata. Internal SDK complexity is acceptable when
+    it removes repeated App callbacks, presenters, lifecycle code, or
+    synchronized registries.
+14. **Injected types are visible at the function boundary.** Apps do not pass
+    SDK objects through untyped app-local parameters merely to assemble a
+    definition. Runtime callback `arguments` blocks declare
+    `CallbackContext` and the exact event payload type before the body uses
+    their methods or properties.
 
 ### Target architecture
 
@@ -208,16 +389,15 @@ The App-facing layers should be limited to the following stable concepts.
 Exact symbol spelling is accepted only after the contract prototypes described
 below.
 
-#### Application definition
+#### App definition
 
 - Keep one obvious definition entry and one launch entry.
 - Required product metadata remains explicit in the definition signature.
 - Replace open `Project`, `Actions`, `Renderers`, and `Utilities` structs with
   validated public values or owned builder methods.
-- A command has an ID, one callback role, and one documented signature.
-  Duplicate command IDs and missing command references fail during contract
-  compilation.
-- Renderer IDs and preview targets are checked before UI creation.
+- A layout control binds one concrete callback with one documented signature.
+  Plot areas bind their concrete renderer. Callback roles, target IDs, and
+  plot targets are checked before UI creation.
 - Static Apps do not need empty placeholder registries or presenter functions.
 
 #### Layout and the right-side workspace
@@ -226,7 +406,7 @@ below.
   concrete `uigridlayout`, pixel, component, or registry fields.
 - Every layout constructor declares its complete name-value set and rejects
   unknown names.
-- `labkit.ui.layout.workspace` remains the single public entry for organizing
+- `labkit.app.layout.workspace` remains the single public entry for organizing
   the right-side workspace. A single-page App supplies one content layout.
   A multi-page App adds named pages through the returned workspace value or
   another operation owned by `workspace`; the replacement must not expose a parallel
@@ -243,9 +423,9 @@ below.
 A provisional shape, used only to test the concept count, is:
 
 ```matlab
-workspace = labkit.ui.layout.workspace(singleContent);
+workspace = labkit.app.layout.workspace(singleContent);
 
-workspace = labkit.ui.layout.workspace();
+workspace = labkit.app.layout.workspace();
 workspace = workspace.page("data", "Data", dataContent);
 workspace = workspace.page("plot", "Plot", plotContent);
 workspace = workspace.initialPage("data");
@@ -254,9 +434,9 @@ workspace = workspace.initialPage("data");
 This sketch recommends an owned `page` operation rather than another global
 constructor. It does not approve MATLAB classes by itself.
 
-#### Presentation
+#### View snapshot
 
-- Replace arbitrary nested presenter structs with one immutable presentation
+- Replace arbitrary nested presenter structs with one immutable view snapshot
   value.
 - Its public operations should cover stable semantic changes such as control
   value, enabled/visible state, choices, table model, text, plot model,
@@ -276,12 +456,12 @@ A provisional discoverable value-style API is:
 
 ```matlab
 function view = present(state)
-    view = labkit.ui.presentation();
+    view = labkit.app.view.Snapshot();
     view = view.value("worksheet", state.session.sheet);
     view = view.choices("group", state.session.groupNames);
-    view = view.table("dataTable", state.session.tableModel);
+    view = view.tableData("dataTable", state.session.tableModel);
     view = view.enabled("runTest", state.session.canRun);
-    view = view.plot("resultPlot", "groupComparison", state.session.plotModel);
+    view = view.renderPlot("resultPlot", "groupComparison", state.session.plotModel);
     view = view.workspacePage("plot", Enabled=state.session.hasResult, ...
         Status=state.session.plotStatus);
 end
@@ -350,6 +530,10 @@ equivalent in the replacement contract.
   transactional presentation, and rollback on failed actions.
 - Callback arity is not guessed by catching invocation errors. Any supported
   role variation is declared at construction and validated before launch.
+  A command may query the fixed function definition with `nargin(handle)` and
+  `nargout(handle)` exactly once during strict construction; negative
+  variable-arity results are rejected. Runtime dispatch never probes or
+  retries a callback with another shape.
 
 The contract prototype must choose one of these two explicit models:
 
@@ -411,13 +595,15 @@ The contract prototype must compare:
   and methods; and
 - opaque values created only by strict public constructor/accessor functions.
 
-The recommended direction is immutable value objects because MATLAB can expose
-their methods and properties through help and introspection, and each object
-can reject invalid state at construction. Repository policy requires explicit
-approval before introducing production `classdef` APIs, so Phase 1 ends with a
-representation decision and approval before implementation begins. The
-function-only alternative is acceptable only if Apps never author, mutate, or
-inspect its internal struct representation.
+The accepted direction is a small set of sealed immutable value objects
+because MATLAB exposes their methods and properties through help and
+introspection, and each object rejects invalid state at construction. The
+repository owner delegated the architecture decision after reviewing the
+disposable value-class and opaque-function evidence on 2026-07-19. This
+authorizes production `classdef` contract values for this migration, but not a
+public inheritance hierarchy or mutable handle-state model. The function-only
+alternative remains rejected because Apps could inspect closure backing state
+through `functions`.
 
 ### Error, default, and recovery policy
 
@@ -546,6 +732,10 @@ Gate:
 
 #### Phase 1 - contract RFC and executable prototypes
 
+Phase 1A selects the public representation. Phase 1B proves the complete
+contract through an end-to-end prototype and runtime/performance evidence.
+Representation acceptance alone does not open the Phase 2 production gate.
+
 Create a reviewed replacement-contract RFC with:
 
 - the complete proposed public vocabulary;
@@ -580,9 +770,22 @@ Prototype acceptance:
   contract explicit;
 - presentation remains deterministic and testable without a visible GUI;
 - performance thresholds are set from Phase 0 evidence before implementation.
+- value and alternative representations compile identical target graphs;
+- public programming errors use stable `labkit:ui:contract:*` identifiers;
+- presentation is a complete snapshot reconciled by the runtime, never an
+  App-authored patch protocol;
+- Apps declare required runtime-context capabilities and cannot retain an
+  acquired render surface.
 
 The prototypes are evidence, not compatibility shims. Reject and redesign the
 contract if they require per-App exceptions.
+
+Phase 1 acceptance evidence is
+`.agents/migration/ui-explicit-contract/phase-1-prototype-evidence.*` and
+`phase-1-end-to-end-evidence.*`. The end-to-end experiment establishes the
+implementation route: compile the static Application graph once, validate
+complete presentation snapshots against that graph, and keep diff/reconcile
+private to the runtime.
 
 #### Phase 2 - strict contract kernel
 

@@ -2,11 +2,11 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
     %GUILAYOUTFLIRTHERMALTEST Verify FLIR thermal GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
-        function flir_thermal_load_keeps_scale_axis_full_height(testCase)
+        function flir_thermal_restores_full_display_reading_and_export_workflow(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
-            folder = tempname;
+            folder = string(tempname);
             mkdir(folder);
             cleanupFolder = onCleanup(@() removeTempFolder(folder));
             cleanupFigure = onCleanup(@() h.closeAllFigures());
@@ -16,96 +16,112 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
             writeSyntheticFlirRjpegFixture(secondSourcePath, ...
                 struct("raw", uint16(18000 + [50 60; 70 80])));
 
-            [fig, debug] = labkit_FLIRThermal_app("debug");
-            drawnow;
+            outputFolder = fullfile(folder, "flir_thermal");
+            backend = struct( ...
+                "chooseOutputFolder", @(~) ...
+                    labkit.app.dialog.Choice(outputFolder), ...
+                "alert", @(~, ~) []);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                flir_thermal.definition(), [], backend);
+            runtimeCleanup = onCleanup(@() runtime.close());
+            fig = runtime.figureHandle();
             assertFlirLayout(h, fig);
-            assert(debug.enabled && debug.traceEnabled, ...
-                'FLIR Thermal debug launch should return an enabled trace logger.');
-            assertAnyTextAreaContains(h, fig, 'Debug sample generation enabled', ...
-                'FLIR Thermal debug launch should mirror trace lines into the visible Log tab.');
-            ui = getappdata(fig, 'labkitUiRegistry');
-            testCase.verifyTrue(isfile(debug.manifestFile), ...
-                'FLIR Thermal debug launch should record a sample manifest.');
-            testCase.verifyEqual(char(testui.control.getValue(ui, 'fileStatus')), 'Files: 0', ...
-                'FLIR Thermal debug launch should not preload generated samples.');
-            testCase.verifyEqual(char(testui.control.getValue(ui, 'currentImage')), 'No FLIR image loaded', ...
-                'FLIR Thermal debug launch should not preload generated samples.');
-
-            driver = labkitWorkflowDriver(fig);
-            driver.chooseFiles('thermalFiles', sourcePath);
-            h.invokeButton(fig, 'Add FLIR files or folder');
-            drawnow;
-
-            ui = getappdata(fig, 'labkitUiRegistry');
-            scaleAxes = ui.controls.preview.axesById.temperatureScale;
-            labels = flir_thermal.userInterface.rangeControlLabels();
-
-            testCase.verifyEqual(string(testui.control.getValue(ui, 'rangePreset')), ...
-                labels.defaultPreset);
-            testCase.verifyTrue(isempty(ui.controls.thermalFiles.status));
-            testCase.verifyTrue(driver.enabled('rangePreset'));
-            testCase.verifyTrue(driver.enabled('temperatureMin'));
-            testCase.verifyTrue(driver.enabled('temperatureMax'));
-            testCase.verifyEqual(ui.controls.gammaValue.valueSpinner.Value, 2.2);
-            testCase.verifyEqual(ui.controls.gammaValue.valueSpinner.Limits, [0.1 5]);
-            testCase.verifyEqual(ui.controls.gammaValue.valueSpinner.Step, 0.1);
-            testCase.verifyTrue(driver.enabled('autoRange'));
-            testCase.verifyTrue(driver.enabled('groupRange'));
-            testCase.verifyTrue(driver.enabled('perImageRange'));
-            testCase.verifyFalse(driver.enabled('roundRange'));
-            testCase.verifyEqual(scaleAxes.DataAspectRatioMode, 'auto');
-            testCase.verifyEqual(scaleAxes.PlotBoxAspectRatioMode, 'auto');
-            testCase.verifyEmpty(char(string(scaleAxes.Title.String)));
-            testCase.verifyEqual(numel(scaleAxes.Children), 1);
-
-            driver.chooseFiles('thermalFiles', secondSourcePath);
-            h.invokeButton(fig, 'Add FLIR files or folder');
-            testCase.verifyTrue(contains(driver.fileSelection('thermalFiles'), ...
-                'synthetic_flir_second.jpg'), ...
-                'FLIR Thermal append should select the newly added image.');
-            testCase.verifyTrue(contains(string(testui.control.getValue(ui, 'fileStatus')), ...
-                'Files: 2'), ...
-                'FLIR Thermal append should preserve the existing file.');
-
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
-                'FLIR Thermal should run on the Runtime V2 state contract.');
-            testCase.verifyEqual(numel(runtime.state.project.inputs.sources), 2);
-            testCase.verifyFalse(isfield(runtime.state.project.annotations.items, 'raw'));
-            testCase.verifyFalse(isfield(runtime.state.project.annotations.items, 'temperatureC'), ...
+            runtime.applyFileSelection( ...
+                'thermalFiles', [sourcePath secondSourcePath], 2);
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.inputs.sources), 2);
+            testCase.verifyEqual( ...
+                runtime.State.session.selection.currentIndex, 2);
+            runtime.invokeAction("previousImage");
+            testCase.verifyEqual( ...
+                runtime.State.session.selection.currentIndex, 1);
+            runtime.invokeAction("nextImage");
+            testCase.verifyEqual( ...
+                runtime.State.session.selection.currentIndex, 2);
+            testCase.verifyFalse(isfield( ...
+                runtime.State.project.annotations.items, 'raw'));
+            testCase.verifyFalse(isfield( ...
+                runtime.State.project.annotations.items, 'temperatureC'), ...
                 'Durable FLIR annotations must not persist decoded thermal matrices.');
-            testCase.verifyNotEmpty(runtime.state.session.cache.currentItem.temperatureC, ...
+            testCase.verifyNotEmpty( ...
+                runtime.State.session.cache.currentItem.temperatureC, ...
                 'The selected FLIR decode should remain an ephemeral session cache.');
-            resource = interactionResource(runtime.resources, 'temperatureReading');
-            testCase.verifyEqual(resource.spec.Kind, "regionSelection");
-            testCase.verifyEqual(resource.spec.Event, "temperatureRegionSelected");
-            testCase.verifyEqual(resource.spec.BackgroundEvent, ...
-                "temperaturePointSelected");
+            thermalAxes = component(fig, "preview.thermalImage");
+            scaleAxes = component(fig, "preview.temperatureScale");
+            testCase.verifyNotEmpty(thermalAxes.Children);
+            testCase.verifyNotEmpty(scaleAxes.Children);
+            testCase.verifyLessThanOrEqual( ...
+                abs(thermalAxes.Position(4) - scaleAxes.Position(4)), 2);
+
+            runtime.applyControlValue("palette", "iron");
+            runtime.applyControlValue("colorMapping", "Gamma");
+            runtime.applyControlValue("gammaValue", 1.6);
+            labels = ...
+                flir_thermal.thermalPreview.presentationData.rangeControlLabels();
+            runtime.applyControlValue("rangePreset", labels.estimatedPreset);
+            presetRange = ...
+                runtime.State.session.cache.currentItem.displayRange;
+            crossedMinimum = presetRange(2) + 10;
+            crossedMaximum = presetRange(2) - 10;
+            runtime.applyControlValue("temperatureMin", crossedMinimum);
+            runtime.applyControlValue("temperatureMax", crossedMaximum);
+            testCase.verifyEqual( ...
+                runtime.State.session.cache.currentItem.displayRange, ...
+                [crossedMaximum presetRange(2)], AbsTol=1e-12);
+
+            runtime.applyInteraction( ...
+                'temperatureReading', 'backgroundPressed', [1 1]);
+            runtime.invokeAction("roiHotMode");
+            runtime.applyInteraction( ...
+                'temperatureReading', 'interactionChanged', [1 1 1 1]);
+            runtime.invokeAction("roiColdMode");
+            runtime.applyInteraction( ...
+                'temperatureReading', 'interactionChanged', [1 1 1 1]);
+            runtime.invokeAction("roiMeanMode");
+            runtime.applyInteraction( ...
+                'temperatureReading', 'interactionChanged', [1 1 1 1]);
+            item = runtime.State.session.cache.currentItem;
+            testCase.verifyTrue(isfinite(item.manualPoint.temperatureC));
+            testCase.verifyTrue(isfinite(item.roiHotSpot.temperatureC));
+            testCase.verifyTrue(isfinite(item.roiColdSpot.temperatureC));
+            testCase.verifyTrue(isfinite(item.roiMean.temperatureC));
+            testCase.verifyGreaterThan( ...
+                size(component(fig, "summaryTable").Data, 1), 4);
+            testCase.verifyNotEmpty(component(fig, "details").Value);
 
             projectPath = fullfile(folder, 'flir-thermal-project.mat');
-            labkit.ui.runtime.saveState(fig, projectPath);
+            runtime.saveProject(runtime.State, projectPath);
             saved = load(projectPath, 'labkitProject');
             testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
             testCase.verifyFalse(isfield(saved.labkitProject.payload, 'session'), ...
                 'FLIR projects must exclude decoded caches and live interactions.');
-            labkit.ui.runtime.loadState(fig, projectPath);
-            h.waitForUiIdle(fig);
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyNotEmpty(runtime.state.session.cache.currentItem.temperatureC, ...
+            runtime.restoreProject(projectPath);
+            testCase.verifyNotEmpty( ...
+                runtime.State.session.cache.currentItem.temperatureC, ...
                 'Project reopen should lazily rebuild the selected FLIR cache.');
 
-            h.invokeButton(fig, 'Export all');
-            h.waitForUiIdle(fig);
-            testCase.verifyTrue(isfile(fullfile(folder, 'flir_thermal', ...
-                'flir_thermal.labkit.json')), ...
-                'FLIR export should add a standard result manifest.');
+            runtime.invokeAction("chooseOutputFolder");
+            runtime.invokeAction("exportCurrent");
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.results.lastExport.results), 1);
+            runtime.invokeAction("exportAll");
+            testCase.verifyNotEmpty( ...
+                runtime.State.project.results.lastExport);
+            testCase.verifyTrue(isfolder(outputFolder));
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.results.lastExport.results), 2);
+            testCase.verifyTrue(isfile( ...
+                runtime.State.project.results.resultManifestPath));
+            testCase.verifyTrue(isfile( ...
+                fullfile(outputFolder, "flir_thermal_manifest.csv")));
+            clear runtimeCleanup
         end
 
         function flir_shared_range_limits_manual_adjustment_to_shared_bounds(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
-            folder = tempname;
+            folder = string(tempname);
             mkdir(folder);
             cleanupFolder = onCleanup(@() removeTempFolder(folder));
             cleanupFigure = onCleanup(@() h.closeAllFigures());
@@ -114,62 +130,60 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
             writeSyntheticFlirRjpegFixture(coolPath, struct("raw", uint16(18000 + [0 10; 20 30])));
             writeSyntheticFlirRjpegFixture(warmPath, struct("raw", uint16(18000 + [400 420; 450 470])));
 
-            fig = h.launchFigure('labkit_FLIRThermal_app', ...
-                'FLIR Thermal Postprocess');
-            driver = labkitWorkflowDriver(fig);
-            driver.chooseFiles('thermalFiles', [string(coolPath); string(warmPath)]);
-            h.invokeButton(fig, 'Add FLIR files or folder');
-            labels = flir_thermal.userInterface.rangeControlLabels();
-            h.invokeButton(fig, char(labels.setSharedRange));
-            drawnow;
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                flir_thermal.definition(), [], ...
+                struct("alert", @(~, ~) []));
+            runtimeCleanup = onCleanup(@() runtime.close());
+            runtime.applyFileSelection( ...
+                'thermalFiles', [coolPath warmPath], [1 2]);
+            runtime.invokeAction('groupRange');
 
-            ui = getappdata(fig, 'labkitUiRegistry');
-            minLimits = ui.controls.temperatureMin.slider.Limits;
-            maxLimits = ui.controls.temperatureMax.slider.Limits;
-            currentMin = testui.control.getValue(ui, 'temperatureMin');
-            currentMax = testui.control.getValue(ui, 'temperatureMax');
-            testCase.verifyLessThanOrEqual(max(abs(minLimits - [currentMin currentMax])), 0.05);
-            testCase.verifyLessThanOrEqual(max(abs(maxLimits - [currentMin currentMax])), 0.05);
+            items = runtime.State.project.annotations.items;
+            testCase.verifyEqual(numel(items), 2);
+            testCase.verifyEqual(items(1).displayRange, ...
+                items(2).displayRange, AbsTol=0.05);
+            testCase.verifyEqual(items(1).rangeControlBounds, ...
+                items(1).displayRange, AbsTol=0.05);
+            runtime.applyControlValue( ...
+                'temperatureMin', items(1).displayRange(1));
+            runtime.applyControlValue( ...
+                'temperatureMax', items(1).displayRange(2));
+            testCase.verifyEqual( ...
+                runtime.State.session.cache.currentItem.displayRange, ...
+                items(1).displayRange, AbsTol=0.05);
+            clear runtimeCleanup
         end
     end
 end
 
-function resource = interactionResource(resources, id)
-    index = find([resources.scope] == "interaction" & ...
-        [resources.id] == string(id), 1);
-    assert(~isempty(index), 'Expected controlled FLIR interaction resource.');
-    resource = resources(index).value;
-end
-
 function assertFlirLayout(h, fig)
-    h.assertStandardWorkbenchLayout(fig);
-    labels = flir_thermal.userInterface.rangeControlLabels();
-    h.assertButtonContract(fig, {'Add FLIR files or folder', ...
-        'Remove selected', 'Clear files', 'Previous image', ...
-        'Next image', char(labels.setEachRange), ...
-        char(labels.setSharedRange), char(labels.setCurrentRange), ...
-        char(labels.roundSetRanges), ...
-        char(labels.roiHotSpot), char(labels.roiColdSpot), ...
-        char(labels.roiMean), ...
-        'Choose folder', 'Export current', 'Export all'});
-    h.assertDropdownGroups(fig, [ ...
-        h.dropdownGroup({'turbo', 'iron', 'hot', 'parula', 'gray'}, 1), ...
-        h.dropdownGroup({'Linear', 'Log', 'Gamma'}, 1), ...
-        h.dropdownGroup(flir_thermal.userInterface.rangePresetItems(), 1), ...
-        h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
-    h.assertTabTitles(fig, {'Files + Display + Export', 'Details', 'Log'});
+    h.assertStartupSucceeded(fig);
+    ids = ["thermalFiles", "fileStatus", "previousImage", "nextImage", ...
+        "currentImage", "palette", "colorMapping", "gammaValue", ...
+        "rangePreset", "perImageRange", "groupRange", "autoRange", ...
+        "roundRange", "temperatureMin", "temperatureMax", ...
+        "outputFolder", "exportFormat", "chooseOutputFolder", ...
+        "exportCurrent", "exportAll", "summaryTable", ...
+        "roiHotMode", "roiColdMode", "roiMeanMode", "details", ...
+        "logPanel", "preview.thermalImage", "preview.temperatureScale"];
+    for id = ids
+        assert(numel(findall(fig, "Tag", id)) == 1, ...
+            "Missing FLIR Thermal semantic target: %s.", id);
+    end
+    tabs = findall(fig, "Type", "uitab");
+    assert(isequal(sort(string({tabs.Title})), ...
+        sort(["Files + Display + Export", "Details", "Log"])));
+    assert(~isempty(findall(fig, "Title", "Thermal Preview")));
+    assert(~isempty(findall(fig, "Title", "FLIR Images")));
+    assert(~isempty(findall(fig, "Title", "Reading Tools")));
     h.assertAxesContract(fig, { ...
-        h.axesSpec('Clean thermal image', '', ''), ...
-        h.axesSpec('Scale', '', '')});
+        h.axesSpec("Clean thermal image", "", ""), ...
+        h.axesSpec("Scale", "", "")});
 end
 
-function assertAnyTextAreaContains(h, fig, needle, message)
-    areas = h.findControlsByClass(fig, 'TextArea');
-    values = strings(1, numel(areas));
-    for k = 1:numel(areas)
-        values(k) = strjoin(string(areas{k}.Value), newline);
-    end
-    assert(any(contains(values, needle)), message);
+function value = component(figureHandle, tag)
+    value = findall(figureHandle, "Tag", char(tag));
+    assert(isscalar(value), "Expected one component with Tag %s.", tag);
 end
 
 function removeTempFolder(folder)

@@ -1,12 +1,15 @@
 # VT Resistance
 
+Every action and input-selection button provides hover help describing its
+pulse voltage/current input, resistance result, or export effect.
+
 VT Resistance estimates cathodic and anodic steady resistance from a biphasic
 voltage transient and reports the mean of their absolute values.
 
 ## Requirements And Launch
 
-The app uses the LabKit UI framework and DTA library and requires a chrono DTA curve with
-valid time, voltage, and current columns.
+The app uses the LabKit App framework and DTA library and requires a chrono
+DTA curve with valid time, voltage, and current columns.
 
 ```matlab
 labkit_VTResistance_app
@@ -14,11 +17,11 @@ labkit_VTResistance_app
 
 ## Inputs And Batch Behavior
 
-Add one or more chrono `.DTA` files. The selected file is decoded and analyzed
-for preview; exporting applies the current settings to the full source list.
+Add one or more chrono `.DTA` files. The transient session decodes and analyzes
+the registered batch so shared setting changes update every result together.
 No electrode-area normalization is performed because the reported quantity is
-electrical resistance in ohms. Runtime V2 reconciles the ordered lazy path list
-with durable source records, preserving retained identities and allocating
+electrical resistance in ohms. The App runtime reconciles the ordered source
+list with durable source records, preserving retained identities and allocating
 collision-free identities for later additions.
 
 ## Basic Workflow
@@ -99,16 +102,12 @@ assert(result.ok, result.message);
 
 ## Framework Compatibility
 
-The single `definition.m` owns product metadata, requirements, layout, and
-optional runtime capabilities. `projectSpec.m` owns the complete version-1
-domain schema, defaults, analysis-parameter validation, and the required source
-collection; Runtime validates canonical buckets and each source record first.
-`createSession.m` deliberately decodes only the first source for preview; the
-remaining batch stays lazy until selection or export. The App requires
-`labkit.ui >=7 <8` and
-`labkit.dta >=2 <3`; Runtime supplies omitted empty session buckets and owns
-workflow-log initialization. Busy-state, source identity, resolved-path
-access, and portable-reference serialization remain framework-owned.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+The single `definition.m` owns product metadata and the immutable App SDK
+contract. `projectSpec.m` owns the complete version-1 domain schema, defaults,
+analysis-parameter validation, and required source collection.
+`+workbench/buildLayout.m` binds fields and buttons directly to concrete
+capability callbacks, while `+workbench/present.m` produces a complete
+`labkit.app.view.Snapshot`. The App requires `labkit.app >=1 <2` and
+`labkit.dta >=2 <3`. Lifecycle, callback dispatch, source identity,
+resolved-path access, project documents, result manifests, and native layout
+remain framework-owned.

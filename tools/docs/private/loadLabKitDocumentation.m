@@ -165,7 +165,7 @@ function [id, output, kind, nav, components] = ...
         id = "framework";
         kind = "explanation";
         nav = "App Framework";
-        components = "labkit.ui";
+        components = "labkit.app";
     elseif startsWith(source, "framework/")
         group = pathGroup(source, "framework");
         if group == "Guides"
@@ -222,11 +222,11 @@ end
 
 function components = frameworkComponents(source)
     if contains(source, "/runtime")
-        components = "labkit.ui.runtime";
+        components = "labkit.app";
     elseif contains(source, "/contracts")
         components = "labkit.contract";
     else
-        components = "labkit.ui";
+        components = "labkit.app";
     end
 end
 
@@ -450,11 +450,24 @@ function api = discoverLabKitPublicApi(repoRoot)
         if contains(filepath, filesep + "private" + filesep)
             continue;
         end
+        if contains(filepath, filesep + "@")
+            continue;
+        end
+        if isHiddenClassFile(filepath)
+            continue;
+        end
         item = readApiItem(repoRoot, filepath, "library", "labkit");
         api(end + 1, 1) = item;
     end
     [~, order] = sort(string({api.symbol}));
     api = api(order);
+end
+
+function tf = isHiddenClassFile(filepath)
+    lines = strip(readlines(filepath, "EmptyLineRule", "skip"));
+    lines = lines(~startsWith(lines, "%"));
+    tf = ~isempty(lines) && startsWith(lines(1), "classdef") && ...
+        contains(lines(1), "Hidden");
 end
 
 function api = discoverAppPublicApi(repoRoot, apps)
@@ -516,10 +529,19 @@ function item = readApiItem(repoRoot, filepath, origin, owner)
     symbol = strjoin([packageParts; functionName], ".");
 
     lines = readlines(filepath, "EmptyLineRule", "read");
-    start = find(startsWith(strtrim(lines), "function"), 1);
+    functionStart = find(startsWith(strtrim(lines), "function"), 1);
+    classStart = find(startsWith(strtrim(lines), "classdef"), 1);
+    starts = [functionStart, classStart];
+    starts = starts(~isnan(starts) & starts > 0);
+    if isempty(starts)
+        start = [];
+    else
+        start = min(starts);
+    end
     if isempty(start)
-        error("LabKit:Docs:MissingFunction", ...
-            "Public API file has no function declaration: %s", relative);
+        error("LabKit:Docs:MissingDeclaration", ...
+            "Public API file has no function or class declaration: %s", ...
+            relative);
     end
     finish = start;
     while finish < numel(lines) && endsWith(strip(lines(finish)), "...")

@@ -13,30 +13,46 @@ library manual for APIs the app actually uses. App tests live under
 ## Required app shape
 
 - Keep `labkit_*_app.m` as a thin wrapper around
-  `labkit.ui.runtime.launch`.
+  `definition().launch(...)`.
 - `definition.m` is the single product contract. It declares stable identity,
   version, requirements, layout, and references to optional project, session,
-  action, presenter, renderer, debug-sample, utility, and Start capabilities.
+  presenter, debug-sample, and Start capabilities.
   It performs no IO, computation, export, handle creation, or lifecycle
   mutation.
 - A static App needs only the entrypoint, definition, and
-  `+userInterface/buildWorkbenchLayout.m`. Add `definitionActions.m` only for
-  semantic commands or bound events, and keep short callback glue local.
-- Add one `projectSpec.m` only for durable App-owned state. It owns local
+  `+workbench/buildLayout.m`. Layout controls reference concrete semantic
+  callbacks directly; do not create `definitionActions.m`, `stateHandlers.m`,
+  callback bags, or renderer registries.
+- Add one `projectSpec.m` only for durable App-owned state. It returns a
+  `ProjectContract` owning local
   create, validate, version-aware migrate, resume, relink, and declared
   read-only legacy-import functions as needed; Runtime owns the migration loop.
-- Add root `createSession.m` only to reconstruct App-specific transient data.
-  Runtime supplies the canonical selection, workflow, view, and cache buckets.
-- `+userInterface/buildWorkbenchLayout.m` returns a data-only semantic layout.
-  Add `presentWorkbench.m` only for dynamic views; it maps state to control,
-  preview, renderer, and interaction models without IO or heavy computation.
+- Add root `createSession.m` only to reconstruct App-specific transient data
+  with the fixed `(project,context)` signature. Resolve opaque portable
+  sources through `context.resolveSourcePaths`.
+- `+workbench/buildLayout.m` returns the data-only product assembly. Add
+  `+workbench/present.m` only for dynamic views; it composes feature-owned
+  snapshot fragments without IO or heavy computation. Put each renderer in
+  the capability package that owns the plotted meaning.
+- Treat complete runtime state as an adapter value, not a domain model. Only
+  `createSession`, `+workbench/present`, `OnStart`, and functions referenced
+  directly by layout signals may accept it. Name it `applicationState`,
+  destructure it immediately, and pass exact values into feature presenters,
+  calculations, renderers, and writers.
+- Direct callbacks expose `applicationState`, then the typed event value when
+  present, then `callbackContext`. Keep short transactional mutation there;
+  do not forward the complete state or context into a generic action layer.
 - Do not add separate `requirements.m`, `version.m`, generic `+appLifecycle`
   or `+appState` packages, per-version migration files, or a Start callback
   that only constructs default state.
 - Workflow packages use capability names such as `sourceFiles`, `analysisRun`,
   `cropGeometry`, `thermalFrames`, or `resultFiles`. Do not create technical
-  buckets such as `actions`, `ops`, `io`, `ui`, `view`, `export`, `helpers`,
-  `utils`, `manager`, or `processor`.
+  buckets such as `actions`, `ops`, `io`, `ui`, `userInterface`, `view`,
+  `export`, `helpers`, `utils`, `manager`, or `processor`.
+- The package tree follows the product: input capability, edit or analysis
+  capability, preview or result capability, then result files. A capability
+  package may own its layout fragment, direct actions, presentation fragment,
+  and renderer when those files change together.
 - Do not add package-root lifecycle `run.m`, `+ui/runApp.m`, app-family
   `private/` workflow helpers, string dispatchers, or app-specific packages
   outside the owning app tree.
@@ -64,22 +80,24 @@ library manual for APIs the app actually uses. App tests live under
 - Repeatable Run/Export workflows use immutable task snapshots and
   deterministic fingerprints when stale or duplicated work is possible.
 
-## UI and persistence
+## Workbench and persistence
 
-- Use framework callbacks, presenter-owned interactions, and injected services.
+- Use direct semantic callbacks, strict bindings, complete
+  `labkit.app.view.Snapshot` values, and `labkit.app.CallbackContext`.
+  File lists own portable source and selection bindings; `createSession`
+  rebuilds transient data after source changes.
   Do not mutate registries, restore figure callbacks, create interaction
   runtimes, or add startup timers/readiness flags.
 - Interactive rectangles use managed `rectangle` or `regionSelection` specs.
   Display-only rectangles disable hit testing.
 - Placing or editing overlays must preserve the user's viewport unless the
   user explicitly requests fit/reset.
-- File and folder dialogs outside `filePanel` use `services.dialogs`; alerts use
-  `services.dialogs.alert`.
+- File and folder dialogs outside `fileList` and alerts use CallbackContext.
 - External files in saved projects use portable references and field-specific
   relinking. Current saves use the project envelope; compatibility importers
   are read-only.
 - Caught exceptions that allow the app to continue are reported through the
-  injected diagnostic service before alerting or logging recovery.
+  RuntimeContext before alerting or logging recovery.
 
 ## Version, docs, and tests
 

@@ -6,23 +6,23 @@ classdef CscViewTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             testCase.verifyEqual( ...
-                csc.userInterface.formatChargeAndCSC(1.25e-4, NaN), ...
+                csc.analysisRun.formatChargeAndCSC(1.25e-4, NaN), ...
                 sprintf('%.12e C', 1.25e-4));
             testCase.verifyEqual( ...
-                csc.userInterface.formatChargeAndCSC(1.25e-4), ...
+                csc.analysisRun.formatChargeAndCSC(1.25e-4), ...
                 sprintf('%.12e C', 1.25e-4));
             testCase.verifyEqual( ...
-                csc.userInterface.formatChargeAndCSC(1.25e-4, 0), ...
+                csc.analysisRun.formatChargeAndCSC(1.25e-4, 0), ...
                 sprintf('%.12e C', 1.25e-4));
             testCase.verifyEqual( ...
-                csc.userInterface.formatChargeAndCSC(1.25e-4, 2), ...
+                csc.analysisRun.formatChargeAndCSC(1.25e-4, 2), ...
                 sprintf('%.12e C | %.12e mC/cm^2', 1.25e-4, 1e3 * 1.25e-4 / 2));
         end
 
         function defaultPlotSelectionsPreferLegacyCvctColumns(testCase)
             setupLabKitTestPath();
 
-            selections = csc.userInterface.defaultPlotSelections({'T', 'Vf', 'Im', 'Vu'});
+            selections = csc.analysisRun.defaultPlotSelections({'T', 'Vf', 'Im', 'Vu'});
 
             testCase.verifyEqual(selections.topX, 'Vf');
             testCase.verifyEqual(selections.topY, 'Im');
@@ -33,7 +33,7 @@ classdef CscViewTest < matlab.unittest.TestCase
         function defaultPlotSelectionsFallBackToFirstColumn(testCase)
             setupLabKitTestPath();
 
-            selections = csc.userInterface.defaultPlotSelections({'Potential', 'Current'});
+            selections = csc.analysisRun.defaultPlotSelections({'Potential', 'Current'});
 
             testCase.verifyEqual(selections.topX, 'Potential');
             testCase.verifyEqual(selections.topY, 'Potential');
@@ -48,7 +48,7 @@ classdef CscViewTest < matlab.unittest.TestCase
                 'IcathDisp', [NaN -2 -3], ...
                 'IanodDisp', [1 NaN 3]);
 
-            overlay = csc.userInterface.trimOverlayData(true, 'Im', [0 1 2], result);
+            overlay = csc.analysisPlot.trimOverlayData(true, 'Im', [0 1 2], result);
 
             testCase.verifyTrue(overlay.ok);
             testCase.verifyEqual(overlay.x, [0 1 2]);
@@ -63,9 +63,9 @@ classdef CscViewTest < matlab.unittest.TestCase
                 'IcathDisp', [NaN -2 -3], ...
                 'IanodDisp', [1 NaN 3]);
 
-            disabled = csc.userInterface.trimOverlayData(false, 'Im', [0 1 2], result);
-            voltageAxis = csc.userInterface.trimOverlayData(true, 'Vf', [0 1 2], result);
-            mismatchedX = csc.userInterface.trimOverlayData(true, 'Im', [0 1], result);
+            disabled = csc.analysisPlot.trimOverlayData(false, 'Im', [0 1 2], result);
+            voltageAxis = csc.analysisPlot.trimOverlayData(true, 'Vf', [0 1 2], result);
+            mismatchedX = csc.analysisPlot.trimOverlayData(true, 'Im', [0 1], result);
 
             testCase.verifyFalse(disabled.ok);
             testCase.verifyFalse(voltageAxis.ok);
@@ -84,8 +84,8 @@ classdef CscViewTest < matlab.unittest.TestCase
                 'dtErr', 3.25e-6, ...
                 'area_cm2', 2);
 
-            choices = csc.userInterface.analysisChoices();
-            readout = csc.userInterface.comparisonReadout( ...
+            choices = csc.analysisRun.analysisChoices();
+            readout = csc.analysisRun.comparisonReadout( ...
                 result, choices.modes(2));
 
             testCase.verifyTrue(readout.ok);
@@ -117,8 +117,8 @@ classdef CscViewTest < matlab.unittest.TestCase
                 'dtErr', 3.25e-6, ...
                 'area_cm2', NaN);
 
-            choices = csc.userInterface.analysisChoices();
-            readout = csc.userInterface.comparisonReadout( ...
+            choices = csc.analysisRun.analysisChoices();
+            readout = csc.analysisRun.comparisonReadout( ...
                 result, choices.modes(1));
 
             testCase.verifyEqual(readout.qctText, sprintf('%.12e C', result.Qct));
@@ -134,8 +134,8 @@ classdef CscViewTest < matlab.unittest.TestCase
                 'message', 'No matching CV/CT curve data.', ...
                 'logMessage', 'Compare skipped: No matching CV/CT curve data.');
 
-            choices = csc.userInterface.analysisChoices();
-            readout = csc.userInterface.comparisonReadout( ...
+            choices = csc.analysisRun.analysisChoices();
+            readout = csc.analysisRun.comparisonReadout( ...
                 result, choices.modes(1));
 
             testCase.verifyFalse(readout.ok);
@@ -156,7 +156,7 @@ classdef CscViewTest < matlab.unittest.TestCase
                 'headers', {{'T', 'Vf', 'Im'}}, ...
                 'data', [0 0.1 -1; 1 0.2 NaN; 2 0.3 2]);
 
-            request = csc.userInterface.plotRequest(curve, 'Vf', 'Im', 'Top');
+            request = csc.analysisPlot.plotRequest(curve, 'Vf', 'Im', 'Top');
 
             testCase.verifyEqual(request.x, [0.1; 0.3]);
             testCase.verifyEqual(request.y, [-1; 2]);
@@ -175,7 +175,7 @@ classdef CscViewTest < matlab.unittest.TestCase
                 'headers', {{'T', 'Vf', 'Im'}}, ...
                 'data', [0 0.1 -1; 1 0.2 1]);
 
-            request = csc.userInterface.plotRequest(curve, 'Missing', 'Im', 'Bottom');
+            request = csc.analysisPlot.plotRequest(curve, 'Missing', 'Im', 'Bottom');
 
             testCase.verifyEmpty(request.x);
             testCase.verifyEmpty(request.y);

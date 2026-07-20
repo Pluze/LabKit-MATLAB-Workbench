@@ -19,6 +19,11 @@ pages are discovered from `docs/`; public Apps come from
 from complete public help contracts. `site/` is tracked generated output.
 Never hand-edit HTML, CSS, JavaScript, or search indexes.
 
+Migration evidence summaries are generated views of one machine-readable
+inventory. When an audit schema or classifier changes, regenerate the
+baseline, capability matrix, behavior classification, and worksheet together,
+then run their aggregate-consistency test; do not reconcile counts by hand.
+
 ## Page design
 
 - Organize by reader task and component ownership: getting started, apps,
@@ -30,6 +35,11 @@ Never hand-edit HTML, CSS, JavaScript, or search indexes.
   APIs, limitations, troubleshooting, and component history.
 - Private implementation helpers do not need public reference pages.
 - Prefer contextual cross-links and map/index pages over duplicated prose.
+- Organize the UI SDK progressively: minimal Application/Layout first,
+  Command/Presentation/RuntimeContext for normal dynamic Apps, and project,
+  result, resource, interaction, and payload details only in advanced paths.
+- Canonical minimal, standard, and advanced examples must use exact production
+  symbols and be executable tests; do not preserve approximate RFC syntax.
 
 ## History
 

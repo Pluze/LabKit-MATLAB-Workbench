@@ -1,0 +1,69 @@
+% App-owned implementation for cic.workbench.present within the cic product workflow.
+function view = present(applicationState)
+%PRESENT Adapt CIC runtime state into summary, table, and named plot models.
+items = applicationState.session.cache.items;
+parameters = applicationState.project.parameters;
+selection = applicationState.session.selection.files;
+index = selectedIndex(selection, numel(items));
+
+[~, unitLabel] = cic.analysisRun.displayUnit(parameters.cicUnit);
+[tableData, columns] = ...
+    cic.analysisRun.buildBatchTableData(items, unitLabel);
+summary = cic.analysisRun.buildCurrentSummary( ...
+    items, index, parameters.cicMode, parameters.cicUnit);
+plotModel = struct( ...
+    "top", axisModel(items, index, parameters, "top"), ...
+    "bottom", axisModel(items, index, parameters, "bottom"));
+
+view = labkit.app.view.Snapshot() ...
+    .tableData("results", tableData, Columns=string(columns)) ...
+    .renderPlot("plotAxes", plotModel);
+ids = ["controlMode", "detect", "delay", "areaSummary", ...
+    "emc", "ema", "qc", "qa", "qt", "safe", "best"];
+values = {summary.controlMode, summary.detect, summary.delay, summary.area, ...
+    summary.emc, summary.ema, summary.qc, summary.qa, summary.qt, ...
+    summary.safe, summary.bestSafe};
+for k = 1:numel(ids)
+    view = view.text(ids(k), string(values{k}));
+end
+end
+
+function model = axisModel(items, index, parameters, axisId)
+model = struct( ...
+    "valid", false, "message", "", ...
+    "title", upperFirst(axisId) + " Plot", ...
+    "request", struct(), "analysis", struct(), ...
+    "showMarkers", logical(parameters.showMarkers), ...
+    "showLimits", logical(parameters.showLimits), ...
+    "showShading", logical(parameters.showShading), ...
+    "showGrid", logical(parameters.(axisId + "Grid")));
+if index == 0
+    return
+end
+analysis = items(index).analysis;
+if isempty(analysis) || ~analysis.ok
+    model.message = "No valid analysis";
+    return
+end
+model.valid = true;
+model.analysis = analysis;
+model.request = cic.analysisPlot.plotRequest( ...
+    analysis, items(index).name, ...
+    parameters.(axisId + "X"), parameters.(axisId + "Y"));
+end
+
+function index = selectedIndex(selection, count)
+index = 0;
+if count > 0
+    index = 1;
+    if ~isempty(selection.Indices)
+        index = min(max(1, selection.Indices(1)), count);
+    end
+end
+end
+
+function text = upperFirst(value)
+text = char(value);
+text(1) = upper(text(1));
+text = string(text);
+end

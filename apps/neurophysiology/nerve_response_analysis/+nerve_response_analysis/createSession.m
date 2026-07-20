@@ -1,16 +1,15 @@
 % Rebuild parsed filter/protocol JSON, output-folder convenience, preview
 % state, and workflow messages from one validated project.
-function session = createSession(project)
-    paths = labkit.ui.runtime.sourcePaths( ...
-        project.inputs.sources, ["filterRecord", "protocol"]);
-    filterPath = paths(1);
-    protocolPath = paths(2);
+function session = createSession(project, context)
+    filterPath = pathForRole( ...
+        project.inputs.sources, "filterRecord", context);
+    protocolPath = pathForRole( ...
+        project.inputs.sources, "protocol", context);
     filterRecord = loadRequiredJson(filterPath);
     protocol = loadOptionalJson(protocolPath);
     outputFolder = "";
     if strlength(filterPath) > 0
-        outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
-            filterPath, "nerve_response_analysis", ""));
+        outputFolder = defaultOutputFolder(filterPath);
     end
     status = "No filter record selected.";
     if strlength(filterPath) > 0
@@ -24,6 +23,33 @@ function session = createSession(project)
         "cache", struct("filterPath", filterPath, ...
             "protocolPath", protocolPath, "filterRecord", filterRecord, ...
             "protocol", protocol, "analysis", []));
+end
+
+function folder = defaultOutputFolder(filepath)
+    parent = string(fileparts(filepath));
+    folder = string(fullfile(parent, "nerve_response_analysis"));
+    if exist(folder, "dir") == 7
+        return;
+    end
+    [created, ~, ~] = mkdir(folder);
+    if ~created
+        folder = parent;
+    end
+end
+
+function filepath = pathForRole(sources, role, context)
+    filepath = "";
+    if isempty(sources)
+        return;
+    end
+    match = find(string({sources.role}) == role, 1);
+    if isempty(match)
+        return;
+    end
+    paths = context.resolveSourcePaths(sources(match));
+    if ~isempty(paths)
+        filepath = paths(1);
+    end
 end
 
 function value = loadRequiredJson(filepath)

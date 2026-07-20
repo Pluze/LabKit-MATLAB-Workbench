@@ -1,386 +1,248 @@
 # Build A Complete App
 
-[App development](app-development.md) | [Runtime field reference](../../framework/guides/runtime.md#definition-component-contract) | [Testing](../maintain-and-release/testing.md)
+This guide builds a small trace viewer with the production `labkit.app`
+contract. The example keeps durable settings in a project, rebuilds transient
+file data in a session, draws a plot, and exports a result. Each file has one
+visible responsibility.
 
-This tutorial builds one current Runtime V2 App without copying historical
-lifecycle adapters. The example opens one numeric trace, applies a gain,
-previews the result, and keeps a summary in project state.
-
-The important rule is progressive capability: start with three files and add
-state or workflow files only when the product actually needs them.
-
-## The Three-File Starting Point
-
-A static App needs only:
+## File Shape
 
 ```text
-apps/example/trace_viewer/
-|-- labkit_TraceViewer_app.m
-`-- +trace_viewer/
-    |-- definition.m
-    `-- +userInterface/
-        `-- buildWorkbenchLayout.m
-```
-
-`labkit.ui.runtime.define` supplies an empty version-1 project, empty session,
-empty action registry, empty presenter, and no Start callback. A static layout
-therefore launches without `projectSpec.m`, `createSession.m`,
-`definitionActions.m`, or `presentWorkbench.m`.
-
-The trace example is interactive and persistent, so its completed tree is:
-
-```text
-apps/example/trace_viewer/
+apps/examples/trace_viewer/
 |-- labkit_TraceViewer_app.m
 `-- +trace_viewer/
     |-- definition.m
     |-- projectSpec.m
     |-- createSession.m
-    |-- definitionActions.m
-    |-- +sourceFiles/
-    |   `-- readTrace.m
-    |-- +analysisRun/
-    |   `-- applyGain.m
-    `-- +userInterface/
-        |-- buildWorkbenchLayout.m
-        |-- presentWorkbench.m
-        `-- renderTrace.m
+    |-- +workbench/
+    |   |-- buildLayout.m
+    |   `-- present.m
+    |-- +sourceTrace/
+    |   |-- readTrace.m
+    |   |-- layoutSection.m
+    |   |-- workspacePlot.m
+    |   |-- present.m
+    |   `-- draw.m
+    `-- +resultFiles/
+        |-- layoutSection.m
+        `-- exportTrace.m
 ```
 
-There is no separate `requirements.m`, `version.m`, `+appLifecycle`,
-`+appState`, or migration-file collection. Product metadata and optional
-capabilities live in `definition.m`; durable schema callbacks are local
-functions inside one `projectSpec.m`.
+There is no handler table, renderer registry, or `+userInterface` bucket.
+`+workbench` is the product assembly boundary. Capability packages own their
+part of the user workflow.
 
-## 1. Add The Thin Entrypoint
-
-`labkit_TraceViewer_app.m` delegates every request to the definition:
+## 1. Thin Entrypoint
 
 ```matlab
 function varargout = labkit_TraceViewer_app(varargin)
-%LABKIT_TRACEVIEWER_APP Inspect a scaled numeric trace.
-    [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
-        @trace_viewer.definition, varargin{:});
+[varargout{1:nargout}] = trace_viewer.definition().launch(varargin{:});
 end
 ```
 
-The entrypoint does not add paths, create figures, parse files, or route
-callbacks. The same command handles normal launch, `debug`, `requirements`,
-and `version` requests through Runtime V2.
+The entrypoint does not build state, controls, services, or figures.
 
-## 2. Declare One Product Contract
-
-`+trace_viewer/definition.m` owns product metadata, facade compatibility, and
-the capabilities this App actually uses:
+## 2. One App Definition
 
 ```matlab
-function def = definition()
-    def = labkit.ui.runtime.define( ...
-        "Command", "labkit_TraceViewer_app", ...
-        "Id", "trace_viewer", ...
-        "Title", "Trace Viewer", ...
-        "Family", "Example", ...
-        "AppVersion", "1.0.0", ...
-        "Updated", "2026-07-16", ...
-        "Requirements", labkit.contract.requirements("ui", ">=7 <8"), ...
-        "Project", trace_viewer.projectSpec(), ...
-        "CreateSession", @trace_viewer.createSession, ...
-        "Layout", @trace_viewer.userInterface.buildWorkbenchLayout, ...
-        "Actions", trace_viewer.definitionActions(), ...
-        "Present", @trace_viewer.userInterface.presentWorkbench, ...
-        "Renderers", struct( ...
-            "trace", @trace_viewer.userInterface.renderTrace));
+function app = definition()
+app = labkit.app.Definition( ...
+    Entrypoint="labkit_TraceViewer_app", ...
+    AppId="examples.trace-viewer", ...
+    Title="Trace Viewer", ...
+    Family="Examples", ...
+    AppVersion="1.0.0", ...
+    Updated="2026-07-19", ...
+    Requirements=labkit.contract.requirements("app", ">=1 <2"), ...
+    ProjectSchema=trace_viewer.projectSpec(), ...
+    CreateSession=@trace_viewer.createSession, ...
+    Workbench=trace_viewer.workbench.buildLayout(), ...
+    PresentWorkbench=@trace_viewer.workbench.present);
 end
 ```
 
-`Id` is the permanent persistence identity, not a display label. Do not change
-it after project files exist. `AppVersion` versions the product; project
-payload `Version` below versions only the durable data schema.
+Definition is a readable inventory, not an execution script. It validates the
+static layout, direct callback signatures, plot renderers, target IDs, project
+schema, and presentation contract before native UI mutation.
 
-For the three-file static form, omit `Project`, `CreateSession`, `Actions`,
-`Present`, and `Renderers` from this call.
-
-## 3. Own Durable Data In One Project Spec
-
-`+trace_viewer/projectSpec.m` contains the public project-spec entry and local
-schema functions:
+## 3. Durable Project
 
 ```matlab
-function spec = projectSpec()
-    spec = struct( ...
-        "Version", 1, ...
-        "Create", @createProject, ...
-        "Validate", @validateProject, ...
-        "Migrate", []);
+function schema = projectSpec()
+schema = labkit.app.project.Schema( ...
+    Version=1, ...
+    Create=@createProject, ...
+    Validate=@validateProject);
 end
 
 function project = createProject()
-    project = struct();
-    project.inputs = struct( ...
-        "sources", labkit.ui.runtime.emptySourceRecords());
-    project.parameters = struct("gain", 1);
-    project.annotations = struct();
-    project.results = struct("summary", table());
-    project.extensions = struct();
+project = struct( ...
+    "inputs", struct("sources", struct([])), ...
+    "parameters", struct("gain", 1), ...
+    "results", struct("lastExport", []));
 end
 
 function accepted = validateProject(project)
-    gain = project.parameters.gain;
-    assert(isnumeric(gain) && isscalar(gain) && isfinite(gain), ...
-        "trace_viewer:InvalidProject", ...
-        "Trace Viewer gain must be one finite numeric scalar.");
-    assert(istable(project.results.summary), ...
-        "trace_viewer:InvalidProject", ...
-        "Trace Viewer summary must be a table.");
-    accepted = true;
+accepted = isstruct(project) && isscalar(project) && ...
+    isfield(project, "inputs") && isfield(project.inputs, "sources") && ...
+    isfield(project, "parameters") && ...
+    isnumeric(project.parameters.gain) && ...
+    isscalar(project.parameters.gain) && ...
+    isfinite(project.parameters.gain);
 end
 ```
 
-Runtime validates the scalar project, its five canonical buckets, and standard
-source-record structure before this callback. The App callback therefore
-checks only Trace Viewer fields and invariants: gain and summary in this
-example. Runtime validates the complete value after creation, load, migration,
-and every action transaction. A validator checks; it does not repeat
-framework checks, repair, prompt, or access graphics.
+The project contains only durable App meaning. External files are portable
+source records owned by the runtime, not raw paths.
 
-When the schema later advances to version 2, change `Version` and provide one
-local version-aware function:
+## 4. Transient Session
 
 ```matlab
-function project = migrateProject(project, fromVersion)
-    switch fromVersion
-        case 1
-            project.annotations.note = "";
-        otherwise
-            error("trace_viewer:UnsupportedProjectVersion", ...
-                "Cannot migrate payload version %d.", fromVersion);
-    end
+function session = createSession(project, callbackContext)
+paths = callbackContext.resolveSourcePaths(project.inputs.sources);
+trace = struct("x", [], "y", []);
+if ~isempty(paths)
+    trace = trace_viewer.sourceTrace.readTrace(paths(1));
+end
+session = struct("trace", trace);
 end
 ```
 
-Set `"Migrate", @migrateProject`. Runtime calls it once per missing version and
-validates every returned payload. Do not create `migrateProjectV1ToV2.m`,
-`migrateProjectV2ToV3.m`, and similar files.
+`createSession(project,callbackContext)` is the one reconstruction boundary.
+The runtime calls it after project restore and file-list source changes.
+Session data is reconstructible and is not written into the project envelope.
 
-## 4. Rebuild Only App-Specific Session Data
-
-`+trace_viewer/createSession.m` reconstructs data that should not be saved:
+## 5. Product Layout
 
 ```matlab
-function session = createSession(project)
-    sourcePath = labkit.ui.runtime.sourcePaths( ...
-        project.inputs.sources, "trace");
-    rawTrace = zeros(0, 1);
-    if strlength(sourcePath) > 0
-        rawTrace = trace_viewer.sourceFiles.readTrace(sourcePath);
-    end
-    [scaledTrace, ~] = trace_viewer.analysisRun.applyGain( ...
-        rawTrace, project.parameters.gain);
-    session = struct("cache", struct( ...
-        "sourcePath", sourcePath, ...
-        "rawTrace", rawTrace, ...
-        "scaledTrace", scaledTrace));
+function layout = buildLayout()
+controls = { ...
+    trace_viewer.sourceTrace.layoutSection(), ...
+    trace_viewer.resultFiles.layoutSection()};
+workspace = labkit.app.layout.workspace( ...
+    trace_viewer.sourceTrace.workspacePlot());
+layout = labkit.app.layout.workbench( ...
+    controls, Workspace=workspace);
 end
 ```
 
-Runtime supplies missing `selection`, `workflow`, `view`, and `cache` buckets.
-Return only App-specific fields. During project load, required portable sources
-are resolved or interactively relinked before this function runs.
+The assembly reads in user order. A complex App can use tabs and workspace
+pages here without flattening every feature into one file.
 
-Graphics handles, readers, listeners, timers, and cleanup callbacks do not
-belong in project or session values. Register them with Runtime resources.
-
-## 5. Implement GUI-Free Workflow Functions
-
-`+trace_viewer/+sourceFiles/readTrace.m` owns the accepted input:
+The source capability owns its controls:
 
 ```matlab
-function trace = readTrace(filepath)
-    filepath = string(filepath);
-    if ~isscalar(filepath) || strlength(filepath) == 0 || ~isfile(filepath)
-        error("trace_viewer:SourceNotFound", ...
-            "The selected trace file was not found.");
-    end
-    value = readmatrix(filepath);
-    if ~isnumeric(value) || isempty(value)
-        error("trace_viewer:InvalidSource", ...
-            "The trace file must contain numeric values.");
-    end
-    trace = double(value(:, 1));
+function section = layoutSection()
+section = labkit.app.layout.section("sourceTrace", "Trace", { ...
+    labkit.app.layout.fileList("traceFiles", ...
+        Label="Trace file", ...
+        SelectionMode="single", ...
+        Bind="project.inputs.sources", ...
+        SourceRole="trace", ...
+        SourceIdPrefix="trace"), ...
+    labkit.app.layout.slider("gain", ...
+        Label="Gain", Limits=[0.1 10], ...
+        Bind="project.parameters.gain")});
 end
 ```
 
-`+trace_viewer/+analysisRun/applyGain.m` owns the deterministic calculation:
+Standard fields and file lists need no App callback. Their bindings update
+canonical state transactionally.
+
+The result capability binds a real business action directly:
 
 ```matlab
-function [scaled, summary] = applyGain(trace, gain)
-    trace = double(trace(:));
-    gain = double(gain);
-    if ~isscalar(gain) || ~isfinite(gain)
-        error("trace_viewer:InvalidGain", ...
-            "Gain must be one finite scalar.");
-    end
-    scaled = trace .* gain;
-    summary = table(numel(scaled), mean(scaled, "omitnan"), ...
-        "VariableNames", {"sample_count", "mean_value"});
+function section = layoutSection()
+section = labkit.app.layout.section("resultFiles", "Results", { ...
+    labkit.app.layout.button("exportTrace", ...
+        "Export trace", @trace_viewer.resultFiles.exportTrace, ...
+        Tooltip="Export the calibrated trace and its sampling metadata.")});
 end
 ```
 
-Both functions are directly testable without launching the GUI.
-
-## 6. Register Semantic Actions
-
-`+trace_viewer/definitionActions.m` maps layout event IDs to transactions:
+## 6. Complete View Snapshot
 
 ```matlab
-function actions = definitionActions()
-    actions = struct( ...
-        "openTrace", @onOpenTrace, ...
-        "gainChanged", @onGainChanged, ...
-        "runAnalysis", @onRunAnalysis);
-end
-
-function state = onOpenTrace(state, ~, services)
-    [filepath, cancelled] = services.dialogs.inputFile( ...
-        "*.txt;*.csv", "Open numeric trace", ...
-        services.dialogs.defaultFolder("input"));
-    if cancelled
-        return;
-    end
-    rawTrace = trace_viewer.sourceFiles.readTrace(filepath);
-    state.project.inputs.sources = services.project.upsertSource( ...
-        state.project.inputs.sources, ...
-        "trace", "trace", filepath, true);
-    state.session.cache.sourcePath = filepath;
-    state.session.cache.rawTrace = rawTrace;
-    state = recompute(state);
-    state = services.workflow.log(state, "Opened trace: " + filepath);
-end
-
-function state = onGainChanged(state, ~, ~)
-    state = recompute(state);
-end
-
-function state = onRunAnalysis(state, ~, services)
-    state = recompute(state);
-    state = services.workflow.log(state, "Updated trace summary.");
-end
-
-function state = recompute(state)
-    [scaled, summary] = trace_viewer.analysisRun.applyGain( ...
-        state.session.cache.rawTrace, state.project.parameters.gain);
-    state.session.cache.scaledTrace = scaled;
-    state.project.results.summary = summary;
+function view = present(applicationState)
+view = labkit.app.view.Snapshot();
+view = view.include(trace_viewer.sourceTrace.present( ...
+    applicationState.session.trace, ...
+    applicationState.project.parameters.gain));
+view = view.enabled("exportTrace", ...
+    ~isempty(applicationState.session.trace.x));
 end
 ```
 
-The App owns what each command means. Runtime owns queueing, busy state,
-rollback, validation, presentation commit, and error propagation. Use injected
-services for dialogs, logging, source identity, results, diagnostics, previews,
-and managed resources; do not read registries or UI controls.
-
-## 7. Build A Data-Only Layout
-
-`+trace_viewer/+userInterface/buildWorkbenchLayout.m` describes semantics:
+`+workbench/present.m` is a short assembly boundary. It extracts exact inputs
+and composes feature fragments with `Snapshot.include`; it does not perform IO
+or calculation.
 
 ```matlab
-function layout = buildWorkbenchLayout()
-    commands = labkit.ui.layout.section("commands", "Commands", { ...
-        labkit.ui.layout.action("openTrace", "Open trace", "openTrace"), ...
-        labkit.ui.layout.field("gain", "Gain", ...
-            "kind", "number", ...
-            "value", 1, ...
-            "Bind", "project.parameters.gain", ...
-            "Event", "gainChanged"), ...
-        labkit.ui.layout.action( ...
-            "runAnalysis", "Run analysis", "runAnalysis")});
-    tab = labkit.ui.layout.tab("main", "Trace", {commands});
-    workspace = labkit.ui.layout.workspace("workspace", "Trace", { ...
-        labkit.ui.layout.previewArea("tracePlot", "Scaled trace"), ...
-        labkit.ui.layout.resultTable("summary", "Summary"), ...
-        labkit.ui.layout.logPanel("appLog", "Log")});
-    layout = labkit.ui.layout.workbench( ...
-        "traceViewer", "Trace Viewer", ...
-        "controlTabs", {tab}, "workspace", workspace);
+function view = present(trace, gain)
+model = struct("x", trace.x, "y", trace.y .* gain);
+view = labkit.app.view.Snapshot().renderPlot("tracePlot", model);
 end
 ```
 
-The layout does not create handles, read files, mutate state, choose pixel
-geometry, or schedule callbacks. IDs are stable semantic references shared by
-the layout, action registry, and presenter.
-
-## 8. Present One Committed View
-
-`+trace_viewer/+userInterface/presentWorkbench.m` converts canonical state to
-declarative view models:
+## 7. Feature-Owned Renderer
 
 ```matlab
-function view = presentWorkbench(state)
-    trace = state.session.cache.scaledTrace;
-    view = struct();
-    view.controls.summary = struct( ...
-        "Data", state.project.results.summary);
-    view.previews.tracePlot = struct( ...
-        "Renderer", "trace", ...
-        "Model", struct( ...
-            "x", (1:numel(trace)).', ...
-            "y", trace, ...
-            "hasData", ~isempty(trace)));
+function node = workspacePlot()
+node = labkit.app.layout.plotArea( ...
+    "tracePlot", @trace_viewer.sourceTrace.draw);
+end
+
+function draw(axesById, model)
+ax = axesById.main;
+cla(ax);
+plot(ax, model.x, model.y);
+xlabel(ax, "Time (s)");
+ylabel(ax, "Signal");
+grid(ax, "on");
 end
 ```
 
-`+trace_viewer/+userInterface/renderTrace.m` owns drawing only:
+The plot area references the concrete renderer. The model carries prepared
+App meaning; drawing does not read project state or dispatch workflow actions.
+
+## 8. Direct Business Callback
 
 ```matlab
-function renderTrace(ax, model)
-    labkit.ui.plot.clear(ax, "ResetScale", true);
-    if ~model.hasData
-        labkit.ui.plot.message(ax, "Open a trace to begin.");
-        return;
-    end
-    plot(ax, model.x, model.y, "LineWidth", 1.2);
-    xlabel(ax, "Sample");
-    ylabel(ax, "Scaled value");
-    grid(ax, "on");
-    labkit.ui.plot.fit(ax);
+function applicationState = exportTrace( ...
+        applicationState, callbackContext)
+trace = applicationState.session.trace;
+gain = applicationState.project.parameters.gain;
+choice = callbackContext.chooseOutputFile( ...
+    {"*.csv", "CSV files"}, "");
+if choice.Cancelled
+    return;
+end
+
+tableValue = table(trace.x(:), trace.y(:) .* gain, ...
+    VariableNames=["Time", "Signal"]);
+writetable(tableValue, choice.Value);
+applicationState.project.results.lastExport = string(choice.Value);
 end
 ```
 
-Presenters do not write files or mutate state. Renderers do not choose
-scientific options or reset zoom for overlay-only edits.
+The callback signature exposes its runtime boundary. For larger exports,
+delegate table construction and result packaging to functions that accept
+only the trace, gain, and destination they require.
 
-## 9. Validate The Product
+## Validation
 
-At minimum, add:
+Test readers, calculations, project validation, snapshot fragments, renderers,
+and exports directly with synthetic values. Construct `definition()` in a
+headless test to validate the whole static contract. Run the App's bounded
+hidden-GUI workflow after smaller tests are stable; native dialogs and visual
+quality still require developer-led interactive validation.
 
-- GUI-free tests for `readTrace` and `applyGain`
-- definition tests for metadata, project creation, validation, and session
-  reconstruction
-- one hidden GUI workflow covering launch, open, gain change, analysis, save,
-  clear, and reopen
-- migration tests for every supported prior payload version
-- documentation examples that run in a clean MATLAB session
+Before merge, update the App version, owning manual, structured component
+history, generated documentation site, and the final branch validation gates.
 
-During iteration, run the exact affected files. Use the project test planner
-only at a coherent checkpoint; follow [Testing](../maintain-and-release/testing.md) for supported
-commands and the distinction between hidden GUI coverage and manual native
-dialog/interaction checks.
+## Related Documentation
 
-## Capability Checklist
-
-Add a file only when the answer is yes:
-
-| Need | Add |
-| --- | --- |
-| Static product metadata and layout | `definition.m`, layout builder |
-| User commands or bound events | `definitionActions.m` |
-| Dynamic control/preview models | presenter and any renderers |
-| Durable App-owned data | `projectSpec.m` |
-| Rebuilt decoded/cache/selection state | `createSession.m` |
-| Saved schema has changed | local `migrateProject` in `projectSpec.m` |
-| Legacy top-level MAT variable is supported | local importer declared by `LegacyImports` |
-| Post-layout request/resource initialization | a semantically named optional `Start` function |
-
-This is the current Runtime V2 architecture. Older split metadata files,
-generic lifecycle packages, and per-version migration files are retired, not
-alternative supported styles.
+- [App Development](app-development.md)
+- [Architecture](architecture.md)
+- [LabKit App SDK](../../framework/README.md)
+- [Testing](../maintain-and-release/testing.md)

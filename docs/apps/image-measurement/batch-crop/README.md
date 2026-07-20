@@ -1,5 +1,8 @@
 # Batch Image Crop
 
+Every action and input-selection button provides hover help describing its
+crop task, geometry, physical calibration, scale bar, or export effect.
+
 Batch Image Crop defines one crop task per image, previews rotation and
 edge-continuous padding, and exports repeatable same-size crops in pixel or
 physical-scale mode.
@@ -69,25 +72,28 @@ parameters and identifies each output file.
 
 ## Project And State
 
-Saved projects use durable schema version 2. `inputs.sources` contains the
-framework's portable source records, while `inputs.items` contains the crop
-tasks that refer to those sources by `sourceId`. Crop dimensions, physical
+Saved projects use durable schema version 3. `inputs.sources` contains one
+portable source record per crop task, while `inputs.items` contains the
+aligned task values that refer to those records by `sourceId`. Repeated crop
+tasks may therefore keep distinct source identities while resolving to the
+same image path. Crop dimensions, physical
 scale settings, output format, output folder, and scale-bar choices are durable
 project parameters. Loaded image pixels, the current selection, interaction
 flags, preview graphics, and rotated-canvas caches are transient session state
 and are reconstructed after load.
 
-Version-1 projects are upgraded by the single migration entry in
-`batch_crop.projectSpec`. It removes embedded image pixels, converts item paths
-to source records, and preserves each task's crop center, rotation, padding,
-and calibration. Missing required sources are handled by the Runtime's shared
+Version-1 and version-2 projects are upgraded sequentially by the single
+migration entry in `batch_crop.projectSpec`. It removes embedded image pixels,
+converts item paths to source records, expands shared records into aligned
+task records, and preserves each task's crop center, rotation, padding, and
+calibration. Missing required sources are handled by the Runtime's shared
 source-reconciliation workflow rather than by Batch Crop-specific path code.
 
 ## Use Without The GUI
 
 <!-- labkit-runnable-example -->
 ```matlab
-calibration = labkit.ui.interaction.scaleBarCalibration(20, 10, "um");
+calibration = labkit.app.interaction.scaleCalibration(20, 10, "um");
 items = struct("scaleCalibration", calibration);
 physicalOptions = struct( ...
     "physicalWidth", 5, "physicalHeight", 3, ...
@@ -126,30 +132,31 @@ when reproducing a physical-scale export outside the GUI.
 
 ## Framework Compatibility
 
-This App requires `labkit.ui >=7 <8` and `labkit.image >=2 <3`. Its single
-`definition.m` owns product metadata, dependencies, layout, actions,
-presentation, renderers, and optional capabilities. Durable creation,
-validation, and migration are concentrated in `projectSpec.m`; root
-`createSession.m` reconstructs transient state and lazily loads only the first
-selected image.
+This App requires `labkit.app >=1 <2` and `labkit.image >=2 <3`. Its single
+`definition.m` owns product metadata and the immutable App SDK contract.
+Durable creation, validation, and migration are concentrated in
+`projectSpec.m`; root `createSession.m` resolves task sources, reconstructs
+transient state, and lazily loads only the selected image.
 
 The project validator requires the App's item and source collections, validates
 their relationship and crop parameters, and leaves canonical bucket and source
 record shape to Runtime.
 
 Workflow helpers are owned by the capabilities they describe:
-`+sourceFiles`, `+cropTasks`, `+cropGeometry`, `+scaleCalibration`,
-`+resultFiles`, and `+userInterface`. There is no generic App lifecycle or
-state package. Busy state, source serialization, migration iteration, and
-portable-path reconciliation remain framework responsibilities.
+`+sourceFiles`, `+cropTasks`, `+cropGeometry`, `+cropPreview`,
+`+scaleCalibration`, and `+resultFiles`; `+workbench` is the only product
+assembly boundary. There is no generic App lifecycle, state, handler, or
+renderer registry. Source serialization, migration iteration, and
+portable-path resolution remain framework responsibilities.
 
-Variable-length crop manifest outputs begin with the framework's canonical
-empty output array, so zero-result and multi-result exports never construct an
-invalid placeholder ID.
+Each durable crop task owns one portable source identity. Duplicate tasks may
+resolve to the same image path, remain independently selectable, and can be
+removed without removing their siblings.
 
 Its session factory returns only App-specific selection, crop workflow, view,
-and image-cache fields. Runtime supplies absent canonical buckets and owns
-workflow-log initialization.
+resolved task paths, and image-cache fields. Runtime owns lifecycle and
+workflow status.
 
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+The semantic layout follows the [App Framework](../../../framework/README.md):
+controls and managed interactions reference their concrete capability-owned
+callbacks directly and resolve during definition construction.

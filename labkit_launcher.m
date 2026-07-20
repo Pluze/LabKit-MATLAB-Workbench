@@ -112,8 +112,8 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.5.2", ...
-        "updated", "2026-07-19");
+        "version", "1.6.0", ...
+        "updated", "2026-07-20");
 end
 
 function titleText = launcherVersionTitle()
@@ -304,7 +304,7 @@ function fig = runLauncher(root)
     ui.controls.selectedDetails = struct('textArea', txtInfo);
     ui.controls.statusLine = struct('textArea', txtInfo);
     ui.controls.appTable = struct('table', appTable);
-    setappdata(fig, 'labkitUiRegistry', ui);
+    setappdata(fig, 'labkitLauncherView', ui);
 
     state = struct('apps', emptyAppStruct(), 'visibleApps', emptyAppStruct(), ...
         'selectedRow', 1, 'status', "Loading app list...", ...
@@ -422,8 +422,8 @@ function fig = runLauncher(root)
         end
         row = min(max(state.selectedRow, 1), numel(state.visibleApps));
         app = state.visibleApps(row);
-        beginLauncherAction(profileStartStatus(app, false));
-        profileSelectedApp(app, false);
+        beginLauncherAction(profileStartStatus(app));
+        profileSelectedApp(app);
         endLauncherAction();
     end
 
@@ -671,12 +671,14 @@ function fig = runLauncher(root)
             setStatus(launchHandOffStatus(app, debugMode));
             updateProgressDialog(dlg, sprintf('Initializing %s...', app.command), NaN);
             drawnow limitrate;
-            progressFcn = @(message) updateLauncherStartupProgress( ...
-                dlg, message);
-            requestAdapter = @(args) launcherStartupRequest( ...
-                args, progressFcn, debugMode);
-            feval(app.command, "RequestAdapter", requestAdapter);
-            setStatus(launchSuccessStatus(app, debugMode));
+            diagnosticFolder = "";
+            if debugMode
+                [diagnostics, diagnosticFolder] = launcherDiagnosticOptions(root, app);
+                feval(app.command, "Diagnostics", diagnostics);
+            else
+                feval(app.command);
+            end
+            setStatus(launchSuccessStatus(root, app, debugMode, diagnosticFolder));
         catch err
             setStatus(sprintf(['Failed to launch %s: %s. If project files are missing ' ...
                 'or damaged, use GitHub Update to repair this install.'], ...
@@ -686,13 +688,13 @@ function fig = runLauncher(root)
         endLauncherAction();
     end
 
-    function profileSelectedApp(app, debugMode)
-        setStatus(profileStartStatus(app, debugMode));
+    function profileSelectedApp(app)
+        setStatus(profileStartStatus(app));
         drawnow;
         dlg = [];
         try
             dlg = uiprogressdlg(fig, 'Title', 'Profile LabKit App', ...
-                'Message', char(profileStartStatus(app, debugMode)), ...
+                'Message', char(profileStartStatus(app)), ...
                 'Indeterminate', 'on');
         catch
         end
@@ -700,7 +702,7 @@ function fig = runLauncher(root)
             dlgCleanup = onCleanup(@() close(dlg));
         end
         try
-            result = runLauncherAppProfile(root, app, debugMode);
+            result = runLauncherAppProfile(root, app);
             setStatus(profileSuccessStatus(app, result));
         catch err
             setStatus(sprintf('Performance profile failed for %s: %s', ...
@@ -1353,15 +1355,17 @@ end
 
 function message = launchStartStatus(app, debugMode)
     if debugMode
-        message = sprintf('Launching %s in debug mode...', app.command);
+        message = sprintf('Launching %s with verbose diagnostics and its synthetic sample...', ...
+            app.command);
     else
         message = sprintf('Launching %s...', app.command);
     end
 end
 
-function message = launchSuccessStatus(app, debugMode)
+function message = launchSuccessStatus(root, app, debugMode, diagnosticFolder)
     if debugMode
-        message = sprintf('Launched %s in debug mode.', app.command);
+        message = sprintf('Launched %s in debug mode. Diagnostic session: %s', ...
+            app.command, relativePath(root, diagnosticFolder));
     else
         message = sprintf('Launched %s.', app.command);
     end
@@ -1369,25 +1373,30 @@ end
 
 function message = launchHandOffStatus(app, debugMode)
     if debugMode
-        message = sprintf('Opening %s in debug mode. Startup phases appear in the progress dialog.', app.command);
+        message = sprintf(['Opening %s with App SDK verbose diagnostics ' ...
+            'and its synthetic sample...'], app.command);
     else
-        message = sprintf('Opening %s. Startup phases appear in the progress dialog.', app.command);
+        message = sprintf('Opening %s with the App SDK runtime...', app.command);
     end
 end
 
-function message = profileStartStatus(app, debugMode)
-    if debugMode
-        message = sprintf(['Profiling %s in debug mode. Close the app window ' ...
-            'to finish the report...'], app.command);
-    else
-        message = sprintf(['Profiling %s. Close the app window to finish ' ...
-            'the report...'], app.command);
-    end
+function message = profileStartStatus(app)
+    message = sprintf(['Profiling %s. Close the app window to finish ' ...
+        'the report...'], app.command);
 end
 
 function message = profileSuccessStatus(app, result)
     message = sprintf('Profile complete for %s: %s', app.command, ...
         char(result.relativeHtmlFile));
+end
+
+function [diagnostics, folder] = launcherDiagnosticOptions(root, app)
+    baseFolder = fullfile(root, 'artifacts', 'diagnostics', 'launcher', ...
+        safeFilename(app.command));
+    ensureFolder(baseFolder);
+    folder = string(tempname(baseFolder));
+    diagnostics = labkit.app.diagnostic.Options( ...
+        Level="verbose", ArtifactFolder=folder, Sample="synthetic");
 end
 
 function message = cleanArtifactsStatus(result)
@@ -1562,10 +1571,15 @@ end
 
 function value = stringLiteralField(text, fieldName)
     value = "";
-    pattern = ['"' char(fieldName) '"\s*,\s*"([^"]+)"'];
-    tokens = regexp(char(text), pattern, 'tokens', 'once');
-    if ~isempty(tokens)
-        value = string(tokens{1});
+    patterns = { ...
+        [char(fieldName) '\s*=\s*"([^"]+)"'], ...
+        ['"' char(fieldName) '"\s*,\s*"([^"]+)"']};
+    for k = 1:numel(patterns)
+        tokens = regexp(char(text), patterns{k}, 'tokens', 'once');
+        if ~isempty(tokens)
+            value = string(tokens{1});
+            return;
+        end
     end
 end
 
@@ -1831,7 +1845,7 @@ end
 
 %% Section: Performance profile action
 
-function result = runLauncherAppProfile(root, app, debugMode)
+function result = runLauncherAppProfile(root, app)
     profileTool = profileToolFile(root);
     if strlength(string(profileTool)) == 0
         error('labkit_launcher:ProfilerUnavailable', ...
@@ -1851,7 +1865,7 @@ function result = runLauncherAppProfile(root, app, debugMode)
     htmlFile = fullfile(outputRoot, sprintf('profile_%s_%s.html', ...
         safeFilename(app.command), datestr(now, 'yyyymmdd_HHMMSS')));
     targetFile = fullfile(root, char(app.relativePath));
-    target = @() launchProfileTarget(app, debugMode);
+    target = @() launchProfileTarget(app);
     [htmlFile, artifacts] = profileLabKitTarget(target, htmlFile, ...
         'OpenReport', launcherGuiTestMode() ~= "hidden", ...
         'WaitForGuiClose', true, ...
@@ -1872,12 +1886,8 @@ function toolFile = profileToolFile(root)
     toolFile = matlabCodeFile(fullfile(root, 'tools', 'profiling', 'profileLabKitTarget'));
 end
 
-function launchProfileTarget(app, debugMode)
-    if debugMode
-        feval(app.command, "debug");
-    else
-        feval(app.command);
-    end
+function launchProfileTarget(app)
+    feval(app.command);
 end
 
 function name = safeFilename(value)
@@ -2463,23 +2473,6 @@ function notifyProgress(progressFcn, message, value)
         progressFcn(string(message), value);
     catch
     end
-end
-
-function [request, dispatchArgs] = launcherStartupRequest(args, progressFcn, debugMode)
-    if ~isempty(args)
-        error('LabKit:Launcher:UnexpectedStartupArguments', ...
-            'Launcher startup request does not accept additional arguments.');
-    end
-    request = struct('startupProgress', progressFcn);
-    dispatchArgs = {};
-    if debugMode
-        dispatchArgs = {"debug"};
-    end
-end
-
-function updateLauncherStartupProgress(dlg, message)
-    updateProgressDialog(dlg, char(string(message)), NaN);
-    drawnow limitrate;
 end
 
 function updateProgressDialog(dlg, message, value)

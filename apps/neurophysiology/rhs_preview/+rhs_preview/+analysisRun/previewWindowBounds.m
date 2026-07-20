@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.definitionActions and preview-window ops. Input is app
+% Expected caller: RHS Preview direct callbacks and preview-window ops. Input is app
 % state. Output summarizes indexed duration and legal interactive window
 % bounds without modifying state.
 function bounds = previewWindowBounds(S)

@@ -1,18 +1,16 @@
-% App-owned durable Batch Crop contract. Runtime V2 calls the one-step
-% migration entry for version-1 payloads, then validates the version-2 task
-% and source-record structure.
+% App-owned durable Batch Crop contract. The App SDK calls the one-step
+% migration entry for older payloads, then validates the version-3
+% one-task-per-source structure.
 function spec = projectSpec()
-    spec = struct( ...
-        "Version", 2, ...
-        "Create", @createProject, ...
-        "Validate", @validateProject, ...
-        "Migrate", @migrateProject);
+    spec = labkit.app.project.Schema(Version=3, ...
+        Create=@createProject, Validate=@validateProject, ...
+        Migrate=@migrateProject);
 end
 
 function project = createProject()
     project = struct();
     project.inputs = struct( ...
-        "sources", labkit.ui.runtime.emptySourceRecords(), ...
+        "sources", emptySources(), ...
         "items", repmat(batch_crop.cropTasks.emptyTask(), 0, 1));
     project.parameters = struct( ...
         "cropWidth", 1024, ...
@@ -36,14 +34,68 @@ function project = createProject()
     project.extensions = struct();
 end
 
+function sources = emptySources()
+reference = struct("schemaVersion", 1, "relativePath", "", ...
+    "originalPath", "", "fileName", "");
+prototype = struct("id", "", "required", true, "role", "", ...
+    "reference", {reference});
+sources = repmat(prototype, 0, 1);
+end
+
 function project = migrateProject(project, fromVersion)
     switch double(fromVersion)
         case 1
             project = migrateVersionOne(project);
+        case 2
+            project = migrateVersionTwo(project);
         otherwise
             error('batch_crop:UnsupportedProjectMigration', ...
                 'Batch Crop cannot migrate project version %d.', fromVersion);
     end
+end
+
+function project = migrateVersionTwo(project)
+if ~isfield(project, 'inputs') || ...
+        ~isfield(project.inputs, 'items') || ...
+        ~isfield(project.inputs, 'sources') || ...
+        isempty(project.inputs.items)
+    return
+end
+items = project.inputs.items;
+sources = project.inputs.sources;
+taskSources = emptySources();
+usedSourceIds = strings(0, 1);
+for k = 1:numel(items)
+    match = find(string({sources.id}) == string(items(k).sourceId), 1);
+    if isempty(match)
+        continue
+    end
+    source = sources(match);
+    sourceId = string(source.id);
+    if any(usedSourceIds == sourceId)
+        sourceId = nextSourceId(sources, taskSources);
+        source.id = sourceId;
+        items(k).sourceId = sourceId;
+    end
+    if isempty(taskSources)
+        taskSources = source;
+    else
+        taskSources(end + 1, 1) = source;
+    end
+    usedSourceIds(end + 1, 1) = sourceId;
+end
+project.inputs.items = items;
+project.inputs.sources = taskSources;
+end
+
+function id = nextSourceId(existing, pending)
+ids = [string({existing.id}), string({pending.id})];
+number = 1;
+id = "image-" + string(number);
+while any(ids == id)
+    number = number + 1;
+    id = "image-" + string(number);
+end
 end
 
 function project = migrateVersionOne(project)
@@ -58,32 +110,25 @@ function project = migrateVersionOne(project)
         return;
     end
     items = project.inputs.items;
-    sources = project.inputs.sources;
-    sourcePaths = labkit.ui.runtime.sourcePaths(sources);
-    addedSources = cell(numel(items), 1);
-    addedPaths = strings(numel(items), 1);
-    addedCount = 0;
+    sources = struct([]);
+    sourcePaths = strings(0, 1);
     for k = 1:numel(items)
         path = string(items(k).path);
-        paths = [sourcePaths; addedPaths(1:addedCount)];
-        match = find(paths == path, 1, 'first');
+        match = find(sourcePaths == path, 1, 'first');
         if isempty(match)
-            addedCount = addedCount + 1;
-            sourceId = "image" + string(numel(sources) + addedCount);
-            source = labkit.ui.runtime.sourceRecord( ...
+            sourceId = "image" + string(numel(sources) + 1);
+            source = labkit.app.project.sourceRecord( ...
                 sourceId, "cropSource", path, true);
-            addedSources{addedCount} = source;
-            addedPaths(addedCount) = path;
-        elseif match <= numel(sources)
-            sourceId = string(sources(match).id);
+            if isempty(sources)
+                sources = source;
+            else
+                sources(end + 1, 1) = source;
+            end
+            sourcePaths(end + 1, 1) = path;
         else
-            added = addedSources{match - numel(sources)};
-            sourceId = string(added.id);
+            sourceId = string(sources(match).id);
         end
         items(k).sourceId = sourceId;
-    end
-    if addedCount > 0
-        sources = [sources(:); vertcat(addedSources{1:addedCount})];
     end
     project.inputs.items = rmfield(items, 'path');
     project.inputs.sources = sources;
@@ -103,13 +148,13 @@ function accepted = validateProject(project)
     assert(isempty(items) || all(isfield(items, cellstr(requiredItemFields))), ...
         'batch_crop:InvalidProject', ...
         'Batch crop project items do not match the crop-task contract.');
-    if ~isempty(items)
-        sourceIds = string({sources.id});
-        taskSourceIds = string({items.sourceId});
-        assert(all(ismember(taskSourceIds, sourceIds)), ...
-            'batch_crop:InvalidProject', ...
-            'Every crop task must reference one canonical source record.');
-    end
+    sourceIds = reshape(string({sources.id}), 1, []);
+    taskSourceIds = reshape(string({items.sourceId}), 1, []);
+    assert(numel(items) == numel(sources) && ...
+        isequal(taskSourceIds, sourceIds), ...
+        'batch_crop:InvalidProject', ...
+        ['Every crop task must align with one distinct portable ' ...
+         'source record.']);
     requiredParameters = ["cropWidth", "cropHeight", "scaleMode", ...
         "scaleUnit", "physicalWidth", "physicalHeight", ...
         "targetPixelsPerUnit", "maxUpsamplePercent", "format", ...

@@ -2,16 +2,15 @@
 % a LabKit debug context. Output is a deterministic synthetic ECG recording
 % sample pack. Side effects: writes anonymous debug files and records a
 % session manifest when available.
-function pack = writeSamplePack(debugLog)
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write ECG Print debug recording files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "ecg_print");
-    sampleFolder = fullfile(char(folders.sampleFolder), "ecg_print");
-    ensureFolder(sampleFolder);
-
-    csvPath = string(fullfile(sampleFolder, "ecg_representative_debug.csv"));
-    headerlessPath = string(fullfile(sampleFolder, "ecg_valid_headerless_debug.txt"));
-    malformedPath = string(fullfile(sampleFolder, "ecg_malformed_text_debug.csv"));
+    csvPath = sampleContext.samplePath("ecg_print/recording.csv");
+    headerlessPath = sampleContext.samplePath("ecg_print/headerless.txt");
+    malformedPath = sampleContext.samplePath("ecg_print/malformed.csv");
 
     fs = 500;
     durationSec = 3;
@@ -27,18 +26,17 @@ function pack = writeSamplePack(debugLog)
     writematrix(headerless, char(headerlessPath), "Delimiter", "\t");
     writeTextFile(malformedPath, ["time_s,ECG"; "0,ok"; "1,not_numeric"]);
 
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_ECGPrint_app", ...
-        "description", "Anonymous ECG CSV boundary pack for debug launch.", ...
-        "sampleFolder", string(sampleFolder), ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", csvPath, ...
-        "boundaryFiles", struct( ...
-            "validHeaderlessText", headerlessPath, ...
-            "malformedCsv", malformedPath));
-    recordManifest(debugLog, manifest);
-    pack = manifest;
+    project = ecg_print.projectSpec().Create();
+    project.inputs.sources = sampleContext.sourceRecord( ...
+        "recording1", "recording", csvPath, true);
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-ecg", InitialProject=project, ...
+        Artifacts={ ...
+            sampleContext.artifact("recording", "recording", csvPath), ...
+            sampleContext.artifact("headerless", ...
+                "boundaryInput", headerlessPath), ...
+            sampleContext.artifact("malformed", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function y = syntheticEcg(time, gain)
@@ -60,30 +58,6 @@ function noise = syntheticNoise(time, phase)
         0.5 .* sin(2 .* pi .* 41.7 .* time + 2 .* phase);
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, lines)
     fid = fopen(char(filepath), "w");
     if fid < 0
@@ -91,10 +65,4 @@ function writeTextFile(filepath, lines)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s\n", lines);
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end

@@ -1,18 +1,21 @@
-% Expected caller: dic_preprocess.definitionActions during debug launch and unit tests.
-% Input is a LabKit debug context. Output is a deterministic synthetic DIC
-% image-pair sample pack. Side effects: writes anonymous debug images and
-% records a session manifest when available.
-function pack = writeSamplePack(debugLog)
+% Expected caller: the App SDK debug-sample capability and unit tests.
+% Input is a bounded diagnostic SampleContext. Output is a deterministic
+% synthetic DIC image-pair SamplePack with a current project. Side effects:
+% writes anonymous synthetic images beneath the context sample folder.
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write DIC preprocess debug image files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "dic_preprocess");
-    sampleFolder = fullfile(char(folders.sampleFolder), "dic_preprocess");
-    ensureFolder(sampleFolder);
-
-    referencePath = string(fullfile(sampleFolder, "dic_reference_speckle_debug.png"));
-    movingPath = string(fullfile(sampleFolder, "dic_moving_shifted_speckle_debug.png"));
-    lowTexturePath = string(fullfile(sampleFolder, "dic_valid_low_texture_debug.png"));
-    malformedPath = string(fullfile(sampleFolder, "dic_malformed_not_an_image.png"));
+    referencePath = sampleContext.samplePath( ...
+        "dic_preprocess/reference.png");
+    movingPath = sampleContext.samplePath( ...
+        "dic_preprocess/moving.png");
+    lowTexturePath = sampleContext.samplePath( ...
+        "dic_preprocess/low_texture.png");
+    malformedPath = sampleContext.samplePath( ...
+        "dic_preprocess/malformed.png");
 
     ref = syntheticSpeckleImage(192, 256, 0, 0, 1);
     moving = syntheticSpeckleImage(192, 256, 4.2, -2.8, 0.96);
@@ -23,21 +26,25 @@ function pack = writeSamplePack(debugLog)
     imwrite(lowTexture, char(lowTexturePath));
     writeTextFile(malformedPath, ["not a png payload"; "boundary=malformed image"]);
 
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_DICPreprocess_app", ...
-        "description", "Anonymous DIC image-pair boundary pack for debug launch.", ...
-        "sampleFolder", string(sampleFolder), ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", struct("reference", referencePath, "moving", movingPath), ...
-        "boundaryFiles", struct( ...
-            "validEdgeLowTexture", lowTexturePath, ...
-            "malformedImage", malformedPath));
-    recordManifest(debugLog, manifest);
-
-    pack = manifest;
-    pack.referenceFile = referencePath;
-    pack.movingFile = movingPath;
+    project = dic_preprocess.projectSpec().Create();
+    project.inputs.sources = [ ...
+        sampleContext.sourceRecord( ...
+            "referenceImage", "referenceImage", referencePath, true), ...
+        sampleContext.sourceRecord( ...
+            "movingImage", "movingImage", movingPath, true)];
+    artifacts = { ...
+        sampleContext.artifact( ...
+            "referenceImage", "referenceImage", referencePath), ...
+        sampleContext.artifact( ...
+            "movingImage", "movingImage", movingPath), ...
+        sampleContext.artifact( ...
+            "lowTextureImage", "boundaryInput", lowTexturePath), ...
+        sampleContext.artifact( ...
+            "malformedImage", "boundaryInput", malformedPath, ...
+            Expectation="rejects")};
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-image-pair", ...
+        InitialProject=project, Artifacts=artifacts);
 end
 
 function img = syntheticSpeckleImage(h, w, shiftX, shiftY, gain)
@@ -57,30 +64,6 @@ function field = syntheticField(h, w)
         0.21 .* cos((2 .* x - y) ./ 11.0);
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, lines)
     fid = fopen(char(filepath), "w");
     if fid < 0
@@ -88,10 +71,4 @@ function writeTextFile(filepath, lines)
     end
     cleanup = onCleanup(@() fclose(fid));
     fprintf(fid, "%s\n", lines);
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end

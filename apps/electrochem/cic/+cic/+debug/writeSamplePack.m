@@ -1,37 +1,30 @@
-% Expected caller: Runtime V2 DebugSample lifecycle and unit tests. Input is a
+% Expected caller: App SDK runtime DebugSample lifecycle and unit tests. Input is a
 % LabKit debug context. Output is a deterministic synthetic chrono DTA sample
 % pack. Side effects: writes anonymous debug input files and records a session
 % manifest when available.
-function pack = writeSamplePack(debugLog)
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write CIC debug chrono DTA files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "cic");
-    dtaFolder = fullfile(char(folders.sampleFolder), "dta");
-    ensureFolder(dtaFolder);
-
-    currentPath = string(fullfile(dtaFolder, "chrono_cic_current_debug.DTA"));
-    weakPath = string(fullfile(dtaFolder, "chrono_cic_valid_weak_response_debug.DTA"));
-    malformedPath = string(fullfile(dtaFolder, "chrono_cic_malformed_missing_columns_debug.DTA"));
+    currentPath = sampleContext.samplePath("cic/representative.DTA");
+    weakPath = sampleContext.samplePath("cic/weak_response.DTA");
+    malformedPath = sampleContext.samplePath("cic/malformed.DTA");
     writeTextFile(currentPath, chronoText());
     writeTextFile(weakPath, weakChronoText());
     writeTextFile(malformedPath, malformedChronoText());
 
-    pack = struct( ...
-        "sampleFolder", folders.sampleFolder, ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", currentPath, ...
-        "boundaryFiles", struct("validEdge", weakPath, "malformed", malformedPath));
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_CIC_app", ...
-        "description", "Anonymous current-controlled chrono DTA boundary pack for CIC debug launch.", ...
-        "inputs", struct( ...
-            "representativeChronoDta", currentPath, ...
-            "validEdgeChronoDta", weakPath, ...
-            "malformedChronoDta", malformedPath), ...
-        "outputFolder", folders.outputFolder);
-    pack.manifest = manifest;
-    recordManifest(debugLog, manifest);
+    project = cic.projectSpec().Create();
+    project.inputs.sources = sampleContext.sourceRecord( ...
+        "dta1", "chrono", currentPath, true);
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-chrono", InitialProject=project, ...
+        Artifacts={ ...
+            sampleContext.artifact("representative", "chrono", currentPath), ...
+            sampleContext.artifact("weakResponse", "boundaryInput", weakPath), ...
+            sampleContext.artifact("malformed", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function text = weakChronoText()
@@ -117,28 +110,6 @@ function rows = chronoRows()
     end
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = ""; outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder); ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, text)
     fid = fopen(char(filepath), "w", "n", "UTF-8");
     if fid < 0
@@ -146,12 +117,6 @@ function writeTextFile(filepath, text)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s", char(text));
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end
 
 function value = tab()

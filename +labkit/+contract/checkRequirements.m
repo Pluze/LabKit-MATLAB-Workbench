@@ -8,7 +8,7 @@ function report = checkRequirements(req, versions)
 % Description:
 %   Checks each requested facade in two ways: its current version must satisfy
 %   the caller's range, and that range must overlap at least one compatibility
-%   range advertised by the facade. When versions is omitted, the current ui,
+%   range advertised by the facade. When versions is omitted, the current app,
 %   dta, rhs, biosignal, image, and thermal version functions are queried.
 %
 % Inputs:
@@ -96,7 +96,7 @@ end
 
 function versions = currentFacadeVersions()
     versions = [
-        labkit.ui.version()
+        labkit.app.version()
         labkit.dta.version()
         labkit.rhs.version()
         labkit.biosignal.version()

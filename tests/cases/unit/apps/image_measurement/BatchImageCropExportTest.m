@@ -112,7 +112,7 @@ end
 
 function checkPhysicalScaleUnitsAreConvertedWithoutMutatingCalibration()
     item = physicalItem("source_mm.png", uint8(80 * ones(120, 120)), 4);
-    item.scaleCalibration = labkit.ui.interaction.scaleBarCalibration(40, 10, "mm", ...
+    item.scaleCalibration = labkit.app.interaction.scaleCalibration(40, 10, "mm", ...
         struct('defaultUnit', 'mm', 'referenceLine', [1 1; 41 1]));
 
     plan = batch_crop.cropGeometry.scalePlan(item, struct( ...
@@ -182,8 +182,8 @@ function checkMissingWorkflowPromptNamesAffectedFiles()
     items(3).scaleCalibration = ...
         batch_crop.scaleCalibration.emptyCalibration("um");
 
-    centerText = batch_crop.userInterface.missingWorkflowItemsText(items, "center");
-    scaleText = batch_crop.userInterface.missingWorkflowItemsText(items, "scale");
+    centerText = batch_crop.resultFiles.missingWorkflowItemsText(items, "center");
+    scaleText = batch_crop.resultFiles.missingWorkflowItemsText(items, "scale");
 
     assert(contains(centerText, "needs_center.png") && ~contains(centerText, "ready.png"), ...
         'Missing-center prompt should name only items without confirmed centers.');
@@ -200,8 +200,8 @@ function checkFilePanelEntriesExposeWorkflowStatus()
     items(3).scaleCalibration = ...
         batch_crop.scaleCalibration.emptyCalibration("um");
 
-    pixelEntries = batch_crop.userInterface.filePanelEntries(items, "Pixels");
-    physicalEntries = batch_crop.userInterface.filePanelEntries(items, "Physical");
+    pixelEntries = batch_crop.sourceFiles.taskEntries(items, "Pixels");
+    physicalEntries = batch_crop.sourceFiles.taskEntries(items, "Physical");
 
     assert(isequal(string({pixelEntries.status}).', ...
         ["ready"; "needs center"; "ready"]), ...
@@ -324,7 +324,7 @@ function item = physicalItem(pathValue, imageData, pixelsPerUnit)
     item.angleDeg = 0;
     item.centerXY = [(size(imageData, 2) + 1) / 2, (size(imageData, 1) + 1) / 2];
     item.centerSet = true;
-    item.scaleCalibration = labkit.ui.interaction.scaleBarCalibration(pixelsPerUnit, 1, "um", ...
+    item.scaleCalibration = labkit.app.interaction.scaleCalibration(pixelsPerUnit, 1, "um", ...
         struct('defaultUnit', 'um', 'referenceLine', [1 1; 1 + pixelsPerUnit, 1]));
 end
 

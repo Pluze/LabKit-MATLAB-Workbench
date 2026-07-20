@@ -5,7 +5,7 @@
 function manifest = writeAxesDataExport(ax, folder)
     folder = string(folder);
     if ~isscalar(folder) || strlength(folder) == 0
-        error('labkit:ui:InvalidExportFolder', ...
+        error('figure_studio:resultFiles:InvalidExportFolder', ...
             'Export folder must be nonempty scalar text.');
     end
     if ~isfolder(folder)
@@ -91,7 +91,7 @@ function readmePath = writeReadme(plotData, folder, csvPath)
     readmePath = fullfile(folder, "README.txt");
     fid = fopen(readmePath, 'w');
     if fid < 0
-        error('labkit:ui:ExportWriteFailed', ...
+        error('figure_studio:resultFiles:ExportWriteFailed', ...
             'Could not write export README.');
     end
     cleanup = onCleanup(@() fclose(fid));

@@ -15,16 +15,16 @@ it actually uses:
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
 apps/<family>/<app_slug>/+<app_slug>/definition.m
-apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchLayout.m
+apps/<family>/<app_slug>/+<app_slug>/+workbench/buildLayout.m
 ```
 
-`runtime.define` supplies an empty version-1 project, empty session, empty
-action registry, and empty presenter model when those components are omitted.
-Add `definitionActions.m` for interactions, a presenter for dynamic views,
+`labkit.app.Definition` supplies empty project/session and default presentation
+behavior when optional components are omitted. Bind real business callbacks
+directly from the layout. Add `+workbench/present.m` for derived visible state,
 `createSession.m` for transient decoded/cache state, and `projectSpec.m` only
 when the App owns durable data. That single project file contains local create,
-validate, and migrate functions. Its migrate callback exists only after a saved
-project schema has actually changed; Runtime owns the version loop.
+validate, and migrate functions. Its migrate callback exists only after a
+saved project schema has actually changed; Runtime owns the version loop.
 
 Runtime and App architecture names remain versionless. Put facade/App
 compatibility in the existing version and requirement metadata, and put saved
@@ -44,11 +44,12 @@ example `+sourceFiles`, `+analysisRun`, `+resultFiles`, `+cropGeometry`, or
 
 ## Define The Runtime Contract
 
-`definition.m` returns a plain struct created by
-`labkit.ui.runtime.define`. It is the App's single product contract and names
-the public command, stable ID, display metadata, App version, compatible
-LabKit facades, and layout builder. Project schema, session factory, action
-registry, presenter, renderers, and startup event are opt-in capabilities.
+`definition.m` returns one immutable `labkit.app.Definition`. It is the App's
+single product contract and names the public command, stable ID, display
+metadata, App version, compatible LabKit facades, and workbench. Project
+schema, session factory, presenter, post-layout start callback, and debug
+sample are opt-in capabilities. Callbacks and renderers are owned directly by
+their layout nodes.
 
 The complete field tables, callback signatures, canonical project/session
 buckets, presenter shape, and renderer contract are documented in
@@ -64,19 +65,34 @@ The framework owns:
 - managed interactions and resources
 - debug tracing and result manifests
 
-The app owns durable `state.project`, transient `state.session`, workflow
-handlers, presentation models, and scientific behavior.
+The app owns durable `state.project`, transient `state.session`, semantic
+callbacks, presentation models, and scientific behavior.
 
 ## Build The Workbench
 
-`+userInterface/buildWorkbenchLayout.m` returns a data-only
-`labkit.ui.layout.*` tree. Keep tab, section, and workspace builders in the
-same order users see them. It must not create graphics handles, read files,
-run calculations, mutate state, or schedule startup work.
+`+workbench/buildLayout.m` returns a data-only `labkit.app.layout.*` tree.
+Keep tabs, sections, and workspace pages in the same order users see them.
+For a complex App, compose capability-owned layout fragments instead of
+flattening every control into this file. It must not create graphics handles,
+read files, run calculations, mutate state, or schedule startup work.
 
-`+userInterface/presentWorkbench.m` is the pure bridge from canonical state to
-semantic control properties, prepared plot models, and managed interaction
-specs. Renderers draw prepared models and should not own workflow decisions.
+`+workbench/present.m` is the pure assembly bridge from canonical state to a
+complete `labkit.app.view.Snapshot`. Compose feature-owned fragments with
+`Snapshot.include`. Renderers live with the capability they draw, receive only
+axes and a prepared model, and do not own workflow decisions.
+
+Use the complete runtime value only at this assembly bridge and at callbacks
+referenced directly by layout signals. Name it `applicationState`, unpack
+`project` and `session` at the top, and call feature presenters with the exact
+values they display. A feature presenter should look like
+`present(results, selection, displayOptions)`, not `present(state)`.
+
+A direct callback is the transaction adapter. Its signature is
+`(applicationState, callbackContext)` for a button or
+`(applicationState, typedEventValue, callbackContext)` for a value-bearing
+signal. It may perform short, visible state mutation in workflow order, then
+delegate calculations and writes through explicit inputs. Do not pass the
+complete state or callback context into a generic second action layer.
 
 ## Name Workflow Code
 

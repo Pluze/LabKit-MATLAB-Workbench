@@ -1,4 +1,4 @@
-% Expected caller: VT resistance app runner and export tests. Inputs are item
+% Expected caller: VT resistance export callback and tests. Inputs are item
 % structs and output filepath. Side effect is writing the stable VT CSV file.
 
 function [ok, msg] = writeResultsCSV(items, filepath)

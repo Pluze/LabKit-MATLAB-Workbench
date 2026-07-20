@@ -1,20 +1,22 @@
-% Expected caller: rhs_preview.definitionActions during debug launch and unit tests. Input
-% is a LabKit debug context. Output is a deterministic synthetic RHS sample
-% pack. Side effects: writes anonymous debug RHS/protocol files and records a
-% session manifest when available.
-function pack = writeSamplePack(debugLog)
+% Expected caller: RHS Preview direct callbacks during debug launch and unit tests. Input
+% is a bounded diagnostic SampleContext. Output is a deterministic synthetic
+% RHS sample pack. Side effects: writes anonymous debug RHS/protocol files
+% beneath the diagnostic root.
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write RHS Preview debug acquisition files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "rhs_preview");
-    sampleFolder = fullfile(char(folders.sampleFolder), "rhs_preview");
-    rhsFolder = fullfile(sampleFolder, "acquisition");
-    ensureFolder(rhsFolder);
-
-    primaryPath = string(fullfile(rhsFolder, "rhs_representative_primary_debug.rhs"));
-    repeatPath = string(fullfile(rhsFolder, "rhs_representative_repeat_debug.rhs"));
-    edgePath = string(fullfile(rhsFolder, "rhs_valid_short_debug.rhs"));
-    malformedPath = string(fullfile(rhsFolder, "rhs_malformed_header_debug.rhs"));
-    protocolPath = string(fullfile(sampleFolder, "rhs_protocol_debug.json"));
+    primaryPath = sampleContext.samplePath( ...
+        "rhs_preview/acquisition/representative_primary.rhs");
+    repeatPath = sampleContext.samplePath( ...
+        "rhs_preview/acquisition/representative_repeat.rhs");
+    edgePath = sampleContext.samplePath( ...
+        "rhs_preview/acquisition/valid_short.rhs");
+    malformedPath = sampleContext.samplePath( ...
+        "rhs_preview/acquisition/malformed_header.rhs");
+    protocolPath = sampleContext.samplePath("rhs_preview/protocol.json");
 
     channels = ["PrimaryChannel", "ReferenceChannel", "ReturnChannel", "AuxChannel"];
     writeSyntheticRhs(primaryPath, struct("nBlocks", 18, "amplifierNames", channels, ...
@@ -26,21 +28,25 @@ function pack = writeSamplePack(debugLog)
     writeTextFile(malformedPath, ["not an rhs binary"; "boundary=malformed header"]);
     writeProtocol(protocolPath);
 
-    representative = [primaryPath; repeatPath];
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_RHSPreview_app", ...
-        "description", "Anonymous RHS acquisition boundary pack for debug launch.", ...
-        "sampleFolder", string(sampleFolder), ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", struct( ...
-            "primaryRhs", primaryPath, ...
-            "rhsFiles", representative, ...
-            "rhsFolder", string(rhsFolder), ...
-            "protocolJson", protocolPath), ...
-        "boundaryFiles", struct("validShortRhs", edgePath, "malformedRhs", malformedPath));
-    recordManifest(debugLog, manifest);
-    pack = manifest;
+    project = rhs_preview.projectSpec().Create();
+    project.inputs.sources = [ ...
+        sampleContext.sourceRecord( ...
+            "recording", "recording", primaryPath, true), ...
+        sampleContext.sourceRecord( ...
+            "protocol", "protocol", protocolPath, false)];
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-rhs-preview", InitialProject=project, ...
+        Artifacts={ ...
+            sampleContext.artifact( ...
+                "representativePrimary", "recording", primaryPath), ...
+            sampleContext.artifact( ...
+                "representativeRepeat", "alternateRecording", repeatPath), ...
+            sampleContext.artifact( ...
+                "protocol", "protocol", protocolPath), ...
+            sampleContext.artifact( ...
+                "validShort", "boundaryInput", edgePath), ...
+            sampleContext.artifact("malformedHeader", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function writeProtocol(filepath)
@@ -148,30 +154,6 @@ function writeQString(fid, value)
     fwrite(fid, uint16(value), "uint16");
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeJson(filepath, payload)
     fid = fopen(char(filepath), "w");
     if fid < 0
@@ -196,11 +178,5 @@ function value = optionValue(opts, fieldName, defaultValue)
     value = defaultValue;
     if isstruct(opts) && isfield(opts, fieldName)
         value = opts.(fieldName);
-    end
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
     end
 end

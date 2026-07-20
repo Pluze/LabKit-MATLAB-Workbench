@@ -1,4 +1,4 @@
-% Expected caller: eis.definitionActions and export tests. Inputs are EIS item
+% Expected caller: EIS result export and export tests. Inputs are EIS item
 % structs, axis labels, and log flags. Output is the stable EIS export table.
 % No file side effects.
 

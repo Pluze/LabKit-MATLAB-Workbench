@@ -1,18 +1,16 @@
-%CREATESESSION Rebuild transient CSC curves and active selection.
-% Expected caller: Runtime V2 through csc.definition. Decoded DTA curves and
-% file/curve selection remain outside the durable project.
-function session = createSession(project)
-    items = csc.sourceFiles.loadProjectItems(project.inputs.sources);
-    currentIndex = 0;
-    choices = csc.userInterface.analysisChoices();
-    currentCurve = choices.empty;
-    if ~isempty(items)
-        currentIndex = 1;
-        currentCurve = choices.allCycles;
-    end
-    session = struct( ...
-        "selection", struct( ...
-            "currentIndex", currentIndex, ...
-            "currentCurve", currentCurve), ...
-        "cache", struct("items", items));
+% App-owned implementation for csc.createSession within the csc product workflow.
+function session = createSession(project, context)
+%CREATESESSION Rebuild transient CSC curves from portable source references.
+arguments
+    project (1, 1) struct
+    context (1, 1) labkit.app.CallbackContext
+end
+paths = context.resolveSourcePaths(project.inputs.sources);
+items = csc.sourceFiles.loadProjectItems(paths);
+fileSelection = labkit.app.event.ListSelection( ...
+    Indices=1:min(1, numel(paths)));
+choices = csc.analysisRun.analysisChoices();
+session = struct("selection", struct( ...
+    "files", fileSelection, "currentCurve", choices.allCycles), ...
+    "cache", struct("items", items));
 end

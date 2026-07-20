@@ -79,18 +79,26 @@ function title = libraryTitle(key)
     switch key
         case "labkit.contract"
             title = "Framework Compatibility (labkit.contract)";
-        case "labkit.ui.runtime"
-            title = "Framework Runtime (labkit.ui.runtime)";
-        case "labkit.ui.layout"
-            title = "Framework Layout (labkit.ui.layout)";
-        case "labkit.ui.plot"
-            title = "Framework Plot (labkit.ui.plot)";
-        case "labkit.ui.interaction"
-            title = "Framework Interaction (labkit.ui.interaction)";
-        case "labkit.ui.debug"
-            title = "Framework Debug (labkit.ui.debug)";
-        case "labkit.ui"
-            title = "Framework Version (labkit.ui)";
+        case "labkit.app"
+            title = "App SDK Core (labkit.app)";
+        case "labkit.app.diagnostic"
+            title = "App SDK Diagnostics (labkit.app.diagnostic)";
+        case "labkit.app.dialog"
+            title = "App SDK Dialogs (labkit.app.dialog)";
+        case "labkit.app.event"
+            title = "App SDK Events (labkit.app.event)";
+        case "labkit.app.interaction"
+            title = "App SDK Interactions (labkit.app.interaction)";
+        case "labkit.app.layout"
+            title = "App SDK Layout (labkit.app.layout)";
+        case "labkit.app.plot"
+            title = "App SDK Plot Mechanics (labkit.app.plot)";
+        case "labkit.app.project"
+            title = "App SDK Projects (labkit.app.project)";
+        case "labkit.app.result"
+            title = "App SDK Results (labkit.app.result)";
+        case "labkit.app.view"
+            title = "App SDK Views (labkit.app.view)";
         otherwise
             title = key;
     end
@@ -100,18 +108,26 @@ function description = libraryDescription(key)
     switch key
         case "labkit.contract"
             description = "Version and MathWorks-product requirement contracts.";
-        case "labkit.ui.runtime"
-            description = "App definition, launch, lifecycle, busy work, persistence, and portable file references.";
-        case "labkit.ui.layout"
-            description = "Data-only workbench, panel, field, action, and results specifications.";
-        case "labkit.ui.plot"
-            description = "Axes presentation, fit, clearing, messages, and coordinate helpers.";
-        case "labkit.ui.interaction"
-            description = "Managed anchors, popouts, and scale-bar geometry.";
-        case "labkit.ui.debug"
-            description = "Runtime debug context exposed to app callbacks.";
-        case "labkit.ui"
-            description = "UI facade version metadata.";
+        case "labkit.app"
+            description = "App identity, launch, callback capabilities, and facade version metadata.";
+        case "labkit.app.diagnostic"
+            description = "Sanitized standard and verbose runtime diagnostic contracts.";
+        case "labkit.app.dialog"
+            description = "Typed outcomes for native user-choice and path dialogs.";
+        case "labkit.app.event"
+            description = "Typed semantic callback payloads independent of native controls.";
+        case "labkit.app.interaction"
+            description = "Managed plot gestures, editors, and typed interaction payloads.";
+        case "labkit.app.layout"
+            description = "Semantic controls, containers, workspaces, callbacks, and renderers.";
+        case "labkit.app.plot"
+            description = "Domain-neutral axes clearing, fitting, messages, and annotation mechanics.";
+        case "labkit.app.project"
+            description = "Durable project schemas, portable sources, and synthetic sample contracts.";
+        case "labkit.app.result"
+            description = "Validated result files and package manifest requests.";
+        case "labkit.app.view"
+            description = "Complete immutable visible-state snapshots.";
         case "labkit.image"
             description = "Generic image file IO, normalization, resizing, filtering, and enhancement primitives.";
         case "labkit.thermal"

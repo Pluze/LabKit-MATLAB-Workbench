@@ -15,9 +15,9 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             [items, importReport] = flir_thermal.sourceFiles.readImages( ...
                 [string(ordinaryPath); string(sourcePath)]);
             range = items(1).displayRange;
-            rows = flir_thermal.userInterface.summaryTableData(items(1), range, "turbo");
-            details = flir_thermal.userInterface.detailLines(items, 1, folder);
-            entries = flir_thermal.userInterface.filePanelEntries(items);
+            rows = flir_thermal.thermalPreview.presentationData.summaryTableData(items(1), range, "turbo");
+            details = flir_thermal.thermalPreview.presentationData.detailLines(items, 1, folder);
+            entries = flir_thermal.thermalPreview.presentationData.filePanelEntries(items);
             payload = flir_thermal.resultFiles.writeOutputs(items, struct( ...
                 "outputFolder", folder, ...
                 "format", "PNG", ...
@@ -25,7 +25,7 @@ classdef FlirThermalTest < matlab.unittest.TestCase
                 "colorMapping", "Gamma", ...
                 "gammaValue", 1.6, ...
                 "range", []));
-            labels = flir_thermal.userInterface.rangeControlLabels();
+            labels = flir_thermal.thermalPreview.presentationData.rangeControlLabels();
 
             testCase.verifyEqual(numel(items), 1);
             testCase.verifyEqual(importReport.requested, 2);
@@ -79,13 +79,13 @@ classdef FlirThermalTest < matlab.unittest.TestCase
 
             gradient = [10 20; 40 90];
             unchanged = gradient;
-            linearRgb = flir_thermal.userInterface.renderThermalImage( ...
+            linearRgb = flir_thermal.thermalPreview.presentationData.renderThermalImage( ...
                 gradient, [10 90], "turbo", "Linear");
-            logRgb = flir_thermal.userInterface.renderThermalImage( ...
+            logRgb = flir_thermal.thermalPreview.presentationData.renderThermalImage( ...
                 gradient, [10 90], "turbo", "Log");
-            gammaRgb = flir_thermal.userInterface.renderThermalImage( ...
+            gammaRgb = flir_thermal.thermalPreview.presentationData.renderThermalImage( ...
                 gradient, [10 90], "turbo", "Gamma", 1.6);
-            strongerGammaRgb = flir_thermal.userInterface.renderThermalImage( ...
+            strongerGammaRgb = flir_thermal.thermalPreview.presentationData.renderThermalImage( ...
                 gradient, [10 90], "turbo", "Gamma", 4.0);
             testCase.verifyEqual(gradient, unchanged, ...
                 'Nonlinear color mapping should not mutate source temperature data.');
@@ -108,10 +108,10 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             item.units = "raw";
             item.displayRange = [1 4];
 
-            [values, units, label] = flir_thermal.userInterface.valueMatrix(item);
-            rows = flir_thermal.userInterface.summaryTableData(item, ...
+            [values, units, label] = flir_thermal.thermalPreview.presentationData.valueMatrix(item);
+            rows = flir_thermal.thermalPreview.presentationData.summaryTableData(item, ...
                 item.displayRange, "gray");
-            entries = flir_thermal.userInterface.filePanelEntries(item);
+            entries = flir_thermal.thermalPreview.presentationData.filePanelEntries(item);
 
             testCase.verifyEqual(values, item.raw);
             testCase.verifyEqual(units, "raw");
@@ -121,7 +121,7 @@ classdef FlirThermalTest < matlab.unittest.TestCase
                 "needs range; temperature unavailable");
 
             item.rangeAdjusted = true;
-            entries = flir_thermal.userInterface.filePanelEntries(item);
+            entries = flir_thermal.thermalPreview.presentationData.filePanelEntries(item);
             testCase.verifyEqual(entries.status, ...
                 "range set; temperature unavailable");
         end
@@ -135,8 +135,8 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             writeSyntheticFlirRjpegFixture(sourcePath, struct("emissivity", 0));
 
             items = flir_thermal.sourceFiles.readImages(sourcePath);
-            details = flir_thermal.userInterface.detailLines(items, 1, folder);
-            entries = flir_thermal.userInterface.filePanelEntries(items);
+            details = flir_thermal.thermalPreview.presentationData.detailLines(items, 1, folder);
+            entries = flir_thermal.thermalPreview.presentationData.filePanelEntries(items);
 
             conversion = items.metadata.temperatureConversion;
             testCase.verifyTrue(conversion.usedDefaults);
@@ -154,16 +154,16 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             item.name = "bounds_fixture.rjpg";
             item.temperatureC = [20 25; 35 40];
             item.units = "C";
-            labels = flir_thermal.userInterface.rangeControlLabels();
+            labels = flir_thermal.thermalPreview.presentationData.rangeControlLabels();
 
-            items = flir_thermal.userInterface.rangePresetItems();
-            defaultBounds = flir_thermal.userInterface.rangeControlBounds(item, ...
+            items = flir_thermal.thermalPreview.presentationData.rangePresetItems();
+            defaultBounds = flir_thermal.thermalPreview.presentationData.rangeControlBounds(item, ...
                 labels.standardPreset, [0 1]);
-            estimatedBounds = flir_thermal.userInterface.rangeControlBounds(item, ...
+            estimatedBounds = flir_thermal.thermalPreview.presentationData.rangeControlBounds(item, ...
                 labels.estimatedPreset, [-20 120]);
-            highBounds = flir_thermal.userInterface.rangeControlBounds(item, ...
+            highBounds = flir_thermal.thermalPreview.presentationData.rangeControlBounds(item, ...
                 labels.highPreset, [-20 120]);
-            wideBounds = flir_thermal.userInterface.rangeControlBounds(item, ...
+            wideBounds = flir_thermal.thermalPreview.presentationData.rangeControlBounds(item, ...
                 labels.widePreset, [-20 120]);
 
             testCase.verifyTrue(any(strcmp(items, char(labels.estimatedPreset))));
@@ -201,14 +201,14 @@ classdef FlirThermalTest < matlab.unittest.TestCase
                 flir_thermal.analysisRun.roiTemperatureMeanReading( ...
                 item.temperatureC, [1 3], [3 3]);
 
-            details = flir_thermal.userInterface.detailLines(item, 1, folder);
+            details = flir_thermal.thermalPreview.presentationData.detailLines(item, 1, folder);
             payload = flir_thermal.resultFiles.writeOutputs(item, struct( ...
                 "outputFolder", folder, ...
                 "format", "PNG", ...
                 "palette", "turbo", ...
                 "range", []));
             manifest = payload.manifest;
-            labels = flir_thermal.userInterface.rangeControlLabels();
+            labels = flir_thermal.thermalPreview.presentationData.rangeControlLabels();
 
             testCase.verifyTrue(any(contains(string(details), labels.roiHotSpot)));
             testCase.verifyTrue(any(contains(string(details), "Temperature differences")));

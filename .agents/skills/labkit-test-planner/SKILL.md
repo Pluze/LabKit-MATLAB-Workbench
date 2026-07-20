@@ -42,6 +42,10 @@ value directly. Do not rerun the whole workflow until that narrower check
 passes. Combine corrected behaviors into one final GUI run instead of
 rerunning after every edit.
 
+Migration source scanners require semantic fixtures: ordinary local helpers
+must not become UI callbacks, definition values must not become field names,
+and every generated aggregate must agree on category uses and App unions.
+
 Common folder scopes are:
 
 ```text

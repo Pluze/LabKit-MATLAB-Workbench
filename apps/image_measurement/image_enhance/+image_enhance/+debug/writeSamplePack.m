@@ -1,41 +1,37 @@
-% Expected caller: image_enhance.definitionActions during debug launch and unit tests.
+% Expected caller: image_enhance.definition during debug launch and unit tests.
 % Input is a LabKit debug context. Output is a deterministic synthetic image
 % enhancement sample pack. Side effects: writes anonymous debug images and
 % records a session manifest when available.
-function pack = writeSamplePack(debugLog)
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write Image Enhance debug image files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "image_enhance");
-    imageFolder = fullfile(char(folders.sampleFolder), "images");
-    ensureFolder(imageFolder);
-
-    sourceA = string(fullfile(imageFolder, "enhance_source_uneven_illumination.png"));
-    sourceB = string(fullfile(imageFolder, "enhance_source_color_cast.png"));
-    edgePath = string(fullfile(imageFolder, "enhance_valid_low_contrast_16bit.tif"));
-    malformedPath = string(fullfile(imageFolder, "enhance_malformed_not_image.png"));
+    sourceA = sampleContext.samplePath("image_enhance/uneven.png");
+    sourceB = sampleContext.samplePath("image_enhance/color_cast.png");
+    edgePath = sampleContext.samplePath("image_enhance/low_contrast.tif");
+    malformedPath = sampleContext.samplePath("image_enhance/malformed.png");
 
     imwrite(toUint8(sceneImage("uneven")), char(sourceA));
     imwrite(toUint8(sceneImage("colorCast")), char(sourceB));
     imwrite(uint16(round(65535 .* lowContrastScene())), char(edgePath));
     writeTextFile(malformedPath, "not an image payload" + newline);
 
-    representativeFiles = [sourceA; sourceB];
-    pack = struct( ...
-        "sampleFolder", folders.sampleFolder, ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", representativeFiles, ...
-        "boundaryFiles", struct("validEdge", edgePath, "malformed", malformedPath));
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_ImageEnhance_app", ...
-        "description", "Anonymous detailed image-enhancement boundary pack.", ...
-        "inputs", struct( ...
-            "representativeImages", representativeFiles, ...
-            "validEdgeImage", edgePath, ...
-            "malformedImage", malformedPath), ...
-        "outputFolder", folders.outputFolder);
-    pack.manifest = manifest;
-    recordManifest(debugLog, manifest);
+    project = image_enhance.projectSpec().Create();
+    project.inputs.sources = [ ...
+        sampleContext.sourceRecord( ...
+            "image1", "source-image", sourceA, true), ...
+        sampleContext.sourceRecord( ...
+            "image2", "source-image", sourceB, true)];
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-enhancement", InitialProject=project, ...
+        Artifacts={ ...
+            sampleContext.artifact("uneven", "source-image", sourceA), ...
+            sampleContext.artifact("colorCast", "source-image", sourceB), ...
+            sampleContext.artifact("lowContrast", "boundaryInput", edgePath), ...
+            sampleContext.artifact("malformed", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function image = sceneImage(kind)
@@ -68,30 +64,6 @@ function image = toUint8(image)
     image = uint8(round(255 .* min(max(image, 0), 1)));
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, text)
     fid = fopen(char(filepath), "w", "n", "UTF-8");
     if fid < 0
@@ -100,10 +72,4 @@ function writeTextFile(filepath, text)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s", char(text));
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end

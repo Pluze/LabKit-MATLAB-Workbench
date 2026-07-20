@@ -1,9 +1,9 @@
-% Expected caller: Chrono Overlay session creation. Input is canonical source
-% records. Output is the rebuildable decoded and pulse-aligned DTA item vector.
-function items = loadProjectItems(sources)
+% Expected caller: Chrono Overlay session creation. Input is runtime-resolved
+% paths. Output is the rebuildable decoded and pulse-aligned DTA item vector.
+function items = loadProjectItems(paths)
     items = struct([]);
-    paths = labkit.ui.runtime.sourcePaths(sources);
-    for k = 1:numel(sources)
+    paths = string(paths(:));
+    for k = 1:numel(paths)
         filepath = paths(k);
         [item, status] = labkit.dta.loadFile(filepath, "chrono");
         if ~status.ok

@@ -26,13 +26,22 @@ retirement. A zero-debt ledger is not an everyday checklist.
 - Apps own formulas, thresholds, units, workflow decisions, plots, results,
   exports, failures, and wording. Promote code into `+labkit` only when it is a
   stable domain-neutral contract useful beyond one app.
-- App-facing packages are `labkit.ui`, `image`, `thermal`, `dta`, `rhs`, and
-  `biosignal`. Do not create public `analysis`, `data`, `io`, `util`, or
-  app-specific helper surfaces.
-- Apps use `labkit.ui.runtime.launch/define`, semantic layouts, presenter
-  models, injected services, and managed interactions/resources. They do not
-  receive registries or own lifecycle timers, readiness, callback queues, or
-  concrete framework layout.
+- App-facing packages are `labkit.app`, `image`, `thermal`, `dta`, `rhs`,
+  and `biosignal`. Do not
+  create public `analysis`, `data`, `io`, `util`, or app-specific helper
+  surfaces.
+- Migrated Apps use `labkit.app.Definition`, `labkit.app.layout.*`,
+  `labkit.app.view.Snapshot`, typed `labkit.app.event.*` payloads, and
+  `labkit.app.CallbackContext`. Layout controls bind directly to concrete
+  semantic callbacks; there is no App-authored handler or renderer registry.
+  Entrypoints call `definition().launch(...)`. Apps do not own lifecycle
+  timers, readiness, callback queues, or concrete framework layout.
+- `+workbench/buildLayout.m` is the visible product assembly boundary.
+  Complex Apps compose feature-owned layout and snapshot fragments from
+  capability packages; renderers live with the plot capability they draw.
+  Runtime callbacks name `applicationState`, typed event values, and
+  `callbackContext` explicitly, then delegate scientific work through narrow
+  inputs rather than forwarding SDK objects or a generic App object.
 - Keep app entrypoints thin and app helpers under the owning app package. Name
   packages and functions for the capability they own, not `helpers`, `utils`,
   `process`, `handle`, or `manage`.

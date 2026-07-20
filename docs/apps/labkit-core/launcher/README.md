@@ -1,8 +1,8 @@
 # LabKit Launcher
 
 The LabKit Launcher is the installed workbench entry point. It discovers apps,
-prepares their MATLAB paths, checks requirements, starts normal or debug
-sessions, manages installed versions, opens app documentation, and exposes
+prepares their MATLAB paths, checks requirements, starts App SDK sessions,
+manages installed versions, opens app documentation, and exposes
 source-checkout maintenance tools. It is intentionally self-contained so a
 single surviving `labkit_launcher.m` can repair an incomplete ZIP installation.
 
@@ -20,8 +20,8 @@ tool availability, or the active maintenance operation.
 
 | Group | Action | Behavior |
 | --- | --- | --- |
-| Run Apps | **Open Selected App** | Checks the selected app requirements, adds the app root, and launches normally. |
-| Run Apps | **Open Debug** | Launches the same app with diagnostic tracing enabled. |
+| Run Apps | **Open Selected App** | Checks the selected app requirements, adds the app root, and calls its App SDK entrypoint without retired runtime launch arguments. |
+| Run Apps | **Open Debug** | Starts the same App through its typed SDK diagnostics contract, records verbose structured events under `artifacts/diagnostics/launcher/`, and loads the App-owned anonymous synthetic sample. |
 | Run Apps | **Refresh App List** | Repeats public and configured private-app discovery without restarting the launcher. |
 | Run Apps | **Documentation and History** | Opens the generated manual for the selected app. |
 | Versions and Install | **Latest** | Installs the current `main` branch archive. |
@@ -37,6 +37,12 @@ tool availability, or the active maintenance operation.
 Double-clicking an app row is equivalent to selecting it and opening it
 normally. The checkbox column controls package membership; ordinary launch
 selection does not change the checked set.
+
+Debug sessions use a new isolated artifact folder on every launch. The folder
+contains the runtime event stream, session manifest, synthetic sample manifest,
+and any anonymous fixture files declared by the selected App. Normal launches
+keep the SDK's bounded standard diagnostics in memory and do not create this
+verbose artifact set.
 
 ## Programmatic Calls
 

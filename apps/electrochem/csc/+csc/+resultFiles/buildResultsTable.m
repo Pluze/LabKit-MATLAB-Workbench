@@ -18,7 +18,7 @@ function T = buildResultsTable(items, opts)
 end
 
 function rows = collectRows(items, opts)
-    choices = csc.userInterface.analysisChoices();
+    choices = csc.analysisRun.analysisChoices();
     rowCells = {};
     for iItem = 1:numel(items)
         item = items(iItem);

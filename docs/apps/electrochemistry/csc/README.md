@@ -1,5 +1,8 @@
 # Charge-Storage Capacity
 
+Every action and input-selection button provides hover help describing its
+CV/CT data, charge-storage comparison, or export effect.
+
 The CSC app compares charge obtained from time-domain current integration with
 charge obtained from cyclic-voltammetry integration for every readable CV/CT
 cycle in one or more Gamry DTA files.
@@ -18,7 +21,7 @@ labkit_CSC_app
 Add one or more CV/CT `.DTA` files. The selected file determines the current
 curve list, readout, and plots. Selecting another file resets the curve selection and
 default plot quantities to that file; it does not silently keep a cycle from
-the previous source. Runtime V2 reconciles durable source identities from the
+the previous source. App SDK runtime reconciles durable source identities from the
 successfully decoded file order, preserving retained identities through
 removal, later additions, save, and reopen.
 
@@ -127,9 +130,10 @@ collection; Runtime validates canonical buckets and each source record first.
 `createSession.m` rebuilds decoded CV/CT curves and active selection because
 they are transient runtime data. The
 App omits empty workflow and view buckets because Runtime canonicalizes them.
-It requires `labkit.ui >=7 <8` and `labkit.dta >=2 <3`; busy-state, source
+It requires `labkit.app >=1 <2` and `labkit.dta >=2 <3`; busy-state, source
 identity, resolved-path access, and portable-reference serialization remain
 framework-owned.
 
 The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+every control and plot names its concrete callback or renderer, and the
+definition validates those bindings before creating a figure.

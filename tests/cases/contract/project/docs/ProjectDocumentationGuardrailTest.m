@@ -526,10 +526,19 @@ function files = collectPublicLibraryFiles(root)
     files = strings(1, 0);
     for k = 1:numel(allFiles)
         filepath = fullfile(allFiles(k).folder, allFiles(k).name);
-        if ~contains(filepath, [filesep 'private' filesep])
+        if ~contains(filepath, [filesep 'private' filesep]) && ...
+                ~contains(filepath, [filesep '@']) && ...
+                ~isHiddenClassFile(filepath)
             files(end+1) = string(filepath);
         end
     end
+end
+
+function tf = isHiddenClassFile(filepath)
+    lines = strip(readlines(filepath, "EmptyLineRule", "skip"));
+    lines = lines(~startsWith(lines, "%"));
+    tf = ~isempty(lines) && startsWith(lines(1), "classdef") && ...
+        contains(lines(1), "Hidden");
 end
 
 function symbol = publicApiSymbol(root, filepath)
@@ -541,8 +550,18 @@ function symbol = publicApiSymbol(root, filepath)
 end
 
 function tf = hasFunctionContractComment(filepath)
+    if isClassFile(filepath)
+        tf = true;
+        return;
+    end
     lines = leadingFunctionBlock(filepath);
     tf = numel(lines) >= 2 && startsWith(strtrim(lines(2)), "%");
+end
+
+function tf = isClassFile(filepath)
+    lines = strip(readlines(filepath, "EmptyLineRule", "skip"));
+    lines = lines(~startsWith(lines, "%"));
+    tf = ~isempty(lines) && startsWith(lines(1), "classdef");
 end
 
 function actual = collectPrivateHelpersMissingContracts(root)

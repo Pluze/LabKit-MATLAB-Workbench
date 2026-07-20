@@ -23,26 +23,26 @@ function verify_imageMatch()
     checkPreviewImageDownsamplesLargeInputs();
     checkManifestAndExportContract();
     checkExportTaskFingerprintTracksReferenceOptionsAndSteps();
-    checkRuntimeV2ProjectAndPresenterContracts();
+    checkAppSdkProjectAndPresenterContracts();
 end
 
-function checkRuntimeV2ProjectAndPresenterContracts()
+function checkAppSdkProjectAndPresenterContracts()
     definition = image_match.definition();
-    assert(definition.contractVersion == 2, ...
-        'Image Match must use the Runtime V2 definition contract.');
-    project = definition.project.Create();
-    assert(definition.project.Validate(project), ...
+    assert(isa(definition, 'labkit.app.Definition'), ...
+        'Image Match must use the explicit App SDK definition contract.');
+    project = definition.ProjectSchema.Create();
+    assert(definition.ProjectSchema.Validate(project), ...
         'A new Image Match project should satisfy its durable contract.');
     assert(~isfield(project, 'items') && ~isfield(project, 'referenceItem'), ...
         'The durable project must exclude decoded source/reference pixels.');
     assert(strlength(project.parameters.outputFolder) == 0, ...
         'A new project should avoid startup path side effects.');
-    session = definition.createSession(project);
+    session = definition.CreateSession( ...
+        project, labkit.app.internal.CallbackContextFactory.disconnected());
     state = struct('project', project, 'session', session);
-    presentation = image_match.userInterface.presentWorkbench(state);
-    assert(isscalar(presentation) && ...
-        isfield(presentation.previews.preview, 'Renderer'), ...
-        'The V2 presenter should return one deterministic registered preview.');
+    presentation = image_match.workbench.present(state);
+    assert(isa(presentation, 'labkit.app.view.Snapshot'), ...
+        'The presenter should return one explicit semantic snapshot.');
 end
 
 function checkWhiteBalanceMatchMovesChannelRatiosTowardReference()
@@ -173,7 +173,7 @@ function checkResultTableReportsExportSizeNotPreviewSize()
     item.image = zeros(2600, 3900, 3);
     previewImage = zeros(1500, 2250, 3);
 
-    data = image_match.userInterface.resultTableData(item, previewImage, 0);
+    data = image_match.imagePreview.presentationData.resultTableData(item, previewImage, 0);
     metricNames = string(data(:, 1));
     outputValue = string(data(metricNames == "Output size", 2));
 
@@ -255,7 +255,7 @@ end
 
 function checkPreviewImageDownsamplesLargeInputs()
     img = repmat(linspace(0, 1, 160), 120, 1);
-    preview = image_match.userInterface.previewImage(img, 50);
+    preview = image_match.imagePreview.presentationData.previewImage(img, 50);
     assert(size(preview, 3) == 3, ...
         'Image-match preview should render grayscale inputs as RGB.');
     assert(size(preview, 1) <= 50, ...

@@ -1,0 +1,16 @@
+% App-owned implementation for rhs_preview.analysisRun.applyAdaptiveWindow within the rhs_preview product workflow.
+function session = applyAdaptiveWindow(session, parameters)
+%APPLYADAPTIVEWINDOW Select a bounded preview duration for current channels.
+duration = rhs_preview.analysisRun.suggestedPreviewDurationSec( ...
+    session.cache.index, session.cache.previewChannelRows, ...
+    parameters.maxPreviewChannels);
+if ~(isnumeric(duration) && isscalar(duration) && ...
+        isfinite(duration) && duration > 0)
+    return;
+end
+session.view.windowDurationSec = duration;
+context = rhs_preview.analysisRun.previewContext(session, parameters);
+session.view.windowStartSec = ...
+    rhs_preview.analysisRun.clampWindowStartSec( ...
+        context.windowStartSec, context);
+end

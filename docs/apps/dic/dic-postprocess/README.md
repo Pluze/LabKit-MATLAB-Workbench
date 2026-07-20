@@ -1,5 +1,8 @@
 # DIC Postprocess
 
+Every action and input-selection button provides hover help describing its
+DIC inputs, ROI/strain processing, display-only effects, or exported evidence.
+
 DIC Postprocess converts Ncorr strain fields into EXX and EYY overlays on an
 optical reference image and calculates descriptive strain statistics over a
 validated ROI. It is a rendering and summary tool; it does not rerun DIC.
@@ -142,7 +145,7 @@ optional runtime capabilities. `projectSpec.m` keeps the complete version-1
 durable schema, creation defaults, and validation together. `createSession.m`
 rebuilds file-backed strain, image, mask, and overlay caches because those are
 transient runtime data rather than saved project fields. The App requires
-`labkit.ui >=7 <8` and `labkit.image >=2 <3`; busy-state, optional source-slot
+`labkit.app >=1 <2` and `labkit.image >=2 <3`; busy-state, optional source-slot
 lookup, and portable-reference serialization remain framework-owned.
 
 The project validator requires the DIC source collection and checks summary
@@ -154,4 +157,5 @@ fields. Runtime supplies absent canonical buckets and owns workflow-log
 initialization.
 
 The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+every control and plot names its concrete callback or renderer, and the
+definition validates those bindings before creating a figure.

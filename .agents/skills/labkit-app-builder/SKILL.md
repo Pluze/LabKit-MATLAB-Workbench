@@ -42,46 +42,66 @@ Begin with the smallest complete shape:
 ```text
 labkit_<Name>_app.m
 +<slug>/definition.m
-+<slug>/+userInterface/buildWorkbenchLayout.m
++<slug>/+workbench/buildLayout.m
 ```
 
 Add only capabilities the product needs:
 
 ```text
-+<slug>/definitionActions.m
 +<slug>/projectSpec.m
 +<slug>/createSession.m
-+<slug>/+userInterface/presentWorkbench.m
-+<slug>/+userInterface/<renderer>.m
++<slug>/+workbench/present.m
 +<slug>/+<workflowCapability>/...
 ```
 
-The entrypoint only launches one definition. `definition.m` owns identity,
-version, requirements, layout, and references to optional capabilities.
-`definitionActions.m` registers semantic commands and coordinates app-owned
-workflow code. One `projectSpec.m` owns local create, validate, and
+The entrypoint only calls `definition().launch(...)`. `definition.m` owns
+identity, version, requirements, layout, and references to optional
+capabilities. Layout controls bind concrete semantic callbacks directly;
+there is no handler or renderer registry. `labkit.app.layout.*` bindings and
+runtime lifecycle behavior require no placeholder callbacks. One `projectSpec.m`
+returns a `labkit.app.project.Schema` owning
+local create, validate, and
 version-aware migrate functions when durable state exists; Runtime owns the
-migration loop. Root `createSession.m` rebuilds only App-specific transient
-data. Layout is data-only; presentation is a pure state-to-view mapping.
+migration loop. Root `createSession.m` uses the fixed `(project,context)`
+signature and rebuilds only App-specific transient data; opaque source paths
+are resolved with `context.resolveSourcePaths`. File lists bind portable
+sources and selection directly. Layout nodes are data-only;
+`labkit.app.view.Snapshot` is a pure state-to-view mapping.
+
+`+workbench/buildLayout.m` should read as the product's user workflow. For a
+complex App it composes layout fragments from capability packages in user
+order. `+workbench/present.m` composes their snapshot fragments with
+`Snapshot.include`. Renderers live with the plot capability they draw.
+
+On the App SDK paved road, bind ordinary project/session fields directly in
+`labkit.app.layout.*` and let runtime defaults complete the view snapshot.
+Add a direct callback only for real business effects and a view operation only
+for derived visible state. At callback boundaries name `applicationState`,
+the exact typed event value, and `callbackContext`; delegate calculations,
+state transforms, and exports through narrow explicit inputs rather than
+passing the full state or context deeper than needed.
 
 Do not add separate `requirements.m`, `version.m`, generic `+appLifecycle` or
-`+appState` packages, per-version migration files, or a Start callback that
+`+appState` packages, per-version migration files, or a `StartupHandler` that
 only constructs default state. Add a semantically named Start function only
 for real post-layout request or resource initialization.
 
 Use concrete workflow packages such as `sourceFiles`, `analysisRun`,
 `cropGeometry`, or `resultFiles`. Keep small callback glue local. Do not create
 technical buckets, package-root runners, alternate interaction runtimes,
-control mutation facades, or helpers merely to meet a line budget.
+control mutation facades, or helpers merely to meet a line budget. Public SDK
+names must state their capability directly; do not add general buckets such as
+`Manager`, `Service`, `Helper`, or `Data`.
 
 ## Build order
 
 1. Define identity, version, requirements, layout, and only the optional
    project/session capabilities the App needs.
-2. Declare the semantic layout and action registry.
+2. Declare the semantic layout with direct business callbacks.
 3. Implement GUI-free readers/calculations/result builders with synthetic
    tests.
-4. Implement the presenter, registered renderers, and managed interactions.
+4. Implement feature-owned snapshot fragments, renderers, and managed
+   interactions.
 5. Keep selection cheap and batch loading lazy; separate preview-resolution
    work from original-resolution Run/Export.
 6. Add portable project references, relinking, current-envelope save, and only

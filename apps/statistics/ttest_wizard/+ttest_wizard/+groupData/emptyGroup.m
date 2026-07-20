@@ -1,0 +1,17 @@
+% App-owned implementation for ttest_wizard.groupData.emptyGroup within the ttest_wizard product workflow.
+function group = emptyGroup(label)
+%EMPTYGROUP Create one canonical empty T-Test Wizard group.
+%
+% Inputs:
+%   label - Scalar group label text.
+%
+% Outputs:
+%   group - Scalar project-compatible group struct with no observations.
+
+group = struct( ...
+    "label", string(label), ...
+    "values", zeros(0, 1), ...
+    "sourceDisplayName", "", ...
+    "sheet", "", ...
+    "cellAddresses", strings(0, 1));
+end

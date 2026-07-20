@@ -1,0 +1,14 @@
+% App-owned implementation for dic_preprocess.analysisRun.changeCropRectangle within the dic_preprocess product workflow.
+function applicationState = changeCropRectangle( ...
+        applicationState, position, ~)
+%CHANGECROPRECTANGLE Store one managed square crop position.
+if applicationState.session.workflow.mode ~= "crop" || numel(position) ~= 4
+    return
+end
+rectangle = dic_preprocess.analysisRun.squareRectInsideImage( ...
+    double(position), ...
+    size(applicationState.session.cache.currentReferenceImage));
+applicationState.project.annotations.cropRect = rectangle;
+applicationState.session.workflow.details = ...
+    dic_preprocess.analysisRun.cropSelectionSummary(rectangle);
+end

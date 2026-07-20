@@ -13,7 +13,7 @@ function varargout = labkit_TTestWizard_app(varargin)
 %   equal-variance, or paired t-tests, and draws a grouped mean/SD plot.
 %
 % Inputs:
-%   varargin - Launch requests accepted by labkit.ui.runtime.launch.
+%   varargin - Launch requests accepted by labkit.app.Definition.launch.
 %
 % Outputs:
 %   varargout - Launch, version, requirements, or debug outputs returned by the
@@ -22,8 +22,8 @@ function varargout = labkit_TTestWizard_app(varargin)
 % Typical Call:
 %   labkit_TTestWizard_app
 %
-% See also labkit.ui.runtime.launch
+% See also labkit.app.Definition
 
-    [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
-        @ttest_wizard.definition, varargin{:});
+    [varargout{1:nargout}] = ...
+        ttest_wizard.definition().launch(varargin{:});
 end

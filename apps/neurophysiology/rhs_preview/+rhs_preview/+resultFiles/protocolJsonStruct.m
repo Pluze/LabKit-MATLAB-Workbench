@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.definitionActions and tests. Inputs are app state/channel
+% Expected caller: RHS Preview direct callbacks and tests. Inputs are app state/channel
 % rows. Output is a jsonencode-compatible channel protocol draft.
 function payload = protocolJsonStruct(S)
 %PROTOCOLJSONSTRUCT Build a protocol draft from Preview channel-role rows.

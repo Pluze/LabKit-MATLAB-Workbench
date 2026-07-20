@@ -53,7 +53,7 @@ function processed = applyPipeline(images, steps, referenceImage)
 %   assert(numel(processed) == 2 && isequal(size(processed{2}), [4 5 3]))
 %
 % See also image_match.analysisRun.applyMatch,
-%   image_match.analysisRun.makeStep, image_match.userInterface.matchMethods
+%   image_match.analysisRun.makeStep, image_match.imagePreview.presentationData.matchMethods
 
     images = normalizeImages(images);
     if nargin < 3

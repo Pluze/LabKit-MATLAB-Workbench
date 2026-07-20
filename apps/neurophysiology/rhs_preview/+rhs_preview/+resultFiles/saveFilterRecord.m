@@ -1,0 +1,59 @@
+% App-owned implementation for rhs_preview.resultFiles.saveFilterRecord within the rhs_preview product workflow.
+function applicationState = saveFilterRecord( ...
+        applicationState, callbackContext)
+%SAVEFILTERRECORD Write manual file labels and a standard result manifest.
+rows = applicationState.session.cache.filterRows;
+if ~istable(rows) || height(rows) == 0
+    applicationState.session.workflow.statusMessage = ...
+        "Select RHS filter files before saving a filter record.";
+    return;
+end
+chosen = callbackContext.chooseOutputFile( ...
+    ["*.json", "Filter JSON"], "rhs_filter_record.json");
+if chosen.Cancelled
+    return;
+end
+[folder, name, extension] = outputParts(chosen.Value);
+outputPath = fullfile(folder, name + extension);
+model = struct( ...
+    "rhsFolder", commonParent(string(rows.filePath)), ...
+    "filterRows", rows);
+rhs_preview.resultFiles.writeFilterRecordJson(model, outputPath);
+output = labkit.app.result.File( ...
+    "rhsFilterRecord", "primary", name + extension, ...
+    MediaType="application/json");
+package = labkit.app.result.Package( ...
+    Outputs={output}, ...
+    Inputs=struct("sources", applicationState.project.inputs.sources), ...
+    Parameters=applicationState.project.parameters, ...
+    Summary=struct("recordingCount", height(rows), ...
+        "goodCount", sum(string(rows.label) == "good"), ...
+        "badCount", sum(string(rows.label) == "bad")), ...
+    ManifestName="rhs_filter_record.labkit.json");
+written = callbackContext.writeResultPackage(folder, package);
+applicationState.project.results.lastFilterExport = struct( ...
+    "jsonPath", string(outputPath), ...
+    "manifestPath", string(written.Value));
+applicationState.session.workflow.statusMessage = ...
+    "Saved filter record.";
+applicationState.session.workflow.lastAction = "Saved filter record";
+callbackContext.appendStatus( ...
+    "Saved filter record JSON: " + string(outputPath));
+end
+
+function [folder, name, extension] = outputParts(path)
+[folder, name, extension] = fileparts(string(path));
+folder = string(folder);
+name = string(name);
+extension = string(extension);
+if strlength(folder) == 0
+    folder = string(pwd);
+end
+end
+
+function folder = commonParent(paths)
+folder = "";
+if ~isempty(paths)
+    folder = string(fileparts(char(paths(1))));
+end
+end

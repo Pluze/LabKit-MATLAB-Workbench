@@ -20,7 +20,7 @@ classdef NeuroProjectSpecTest < matlab.unittest.TestCase
 
         function appSpecificSourceRolesRemainValidated(testCase)
             setupLabKitTestPath();
-            source = labkit.ui.runtime.sourceRecord( ...
+            source = labkit.app.project.sourceRecord( ...
                 "unexpected", "unexpected", "synthetic.dat", false);
 
             nerveSpec = nerve_response_analysis.projectSpec();

@@ -13,7 +13,7 @@ function verify_computeCIC()
 %TEST_COMPUTECIC Verify app-side CIC / voltage-transient analysis.
 
     item = makeChronoFixtureItem();
-    choices = cic.userInterface.analysisChoices();
+    choices = cic.analysisRun.analysisChoices();
 
     opts = struct();
     opts.delay_s = 10e-6;

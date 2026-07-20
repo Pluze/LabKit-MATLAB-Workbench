@@ -1,4 +1,4 @@
-% Expected caller: ecg_print.definitionActions and direct unit tests. Inputs are raw
+% Expected caller: ecg_print direct callbacks and direct unit tests. Inputs are raw
 % UI control values. Output is a struct accepted by labkit.biosignal.readRecording.
 % Side effects: none.
 

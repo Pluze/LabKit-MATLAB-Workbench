@@ -1,44 +1,21 @@
-% Initialize request-dependent Figure Studio state after Runtime V2 has built
-% the workbench. The Start hook adopts an axes handoff and registers the
-% preview resize resource; it does not own runtime readiness or queueing.
-function state = initializeWorkbench(state, ~, services)
-    if strlength(state.project.parameters.outputFolder) == 0
-        state.project.parameters.outputFolder = string( ...
-            services.dialogs.defaultFolder("output"));
-    end
-    launch = struct("hasAxes", false);
-    if isstruct(services.request) && isfield(services.request, 'launch')
-        launch = services.request.launch;
-    end
-    if isstruct(launch) && isfield(launch, 'hasAxes') && launch.hasAxes
-        state.project.inputs.sources = state.project.inputs.sources([]);
-        state.project.annotations.embeddedPlot = launch.plotData;
-        state.project.annotations.sourceDefaultStyle = launch.sourceStyle;
-        state.session.cache.plotData = launch.plotData;
-        state.session.cache.sourceDefaultStyle = launch.sourceStyle;
-        state.session.cache.currentSource = "Popout axes";
-        state = adoptSourceStyle(state, launch.sourceStyle);
-        state.session.workflow.status = "Received copied axes from popout.";
-        state = services.workflow.log(state, ...
-            "Received axes from popout window.");
-    end
-    ax = services.previews.axes("preview", "main");
-    resource = figure_studio.userInterface.installPreviewResize(ax);
-    services.resources.set("session", "figureStudioResize", resource, ...
-        @figure_studio.userInterface.cleanupPreviewResize);
-    if services.debug.enabled
-        state = services.workflow.log(state, ...
-            "Figure Studio debug trace enabled.");
-    end
+% App-owned implementation for figure_studio.initializeWorkbench within the figure_studio product workflow.
+function state = initializeWorkbench(state, callbackContext)
+%INITIALIZEWORKBENCH Complete startup-only Figure Studio defaults.
+arguments
+    state (1, 1) struct
+    callbackContext (1, 1) labkit.app.CallbackContext
 end
-
-function state = adoptSourceStyle(state, sourceStyle)
-    state.project.annotations.sourceDefaultStyle = sourceStyle;
-    if state.project.parameters.preset == "FIG default"
-        state.project.parameters.style = sourceStyle;
-    else
-        state.project.parameters.style.canvasWidth = sourceStyle.canvasWidth;
-        state.project.parameters.style.canvasHeight = sourceStyle.canvasHeight;
-        state.project.parameters.aspectPreset = "Custom";
+if strlength(state.project.parameters.outputFolder) == 0
+    folder = string(getenv("USERPROFILE"));
+    if strlength(folder) == 0 || ~isfolder(folder)
+        folder = string(getenv("HOME"));
     end
+    if strlength(folder) == 0 || ~isfolder(folder)
+        folder = string(pwd);
+    end
+    state.project.parameters.outputFolder = folder;
+end
+if ~isempty(state.session.cache.plotData)
+    callbackContext.appendStatus("Restored Figure Studio source.");
+end
 end

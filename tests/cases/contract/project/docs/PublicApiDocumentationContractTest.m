@@ -91,7 +91,7 @@ classdef PublicApiDocumentationContractTest < matlab.unittest.TestCase
         function generatedNameValueSectionsUseDefinitionLists(testCase)
             root = setupLabKitTestPath();
             filepath = fullfile(root, "site", "reference", "api", ...
-                "labkit", "ui", "runtime", "define.html");
+                "labkit", "app", "Definition.html");
             html = string(fileread(filepath));
             for id = ["required-name-value-arguments", ...
                     "optional-name-value-arguments"]
@@ -108,10 +108,10 @@ classdef PublicApiDocumentationContractTest < matlab.unittest.TestCase
         function generatedMethodSectionsUseDefinitionLists(testCase)
             root = setupLabKitTestPath();
             filepath = fullfile(root, "site", "reference", "api", ...
-                "labkit", "ui", "debug", "context.html");
+                "labkit", "app", "Definition.html");
             html = string(fileread(filepath));
             section = extractAfter(html, ...
-                '<section class="api-section"><h2 id="context-methods">');
+                '<section class="api-section"><h2 id="definition-methods">');
             section = extractBefore(section, "</section>");
             testCase.verifyTrue(contains(section, ...
                 '<dl class="argument-list">'), ...
@@ -191,10 +191,19 @@ function files = publicApiContractFiles(root)
     files = strings(0, 1);
     for k = 1:numel(entries)
         filepath = string(fullfile(entries(k).folder, entries(k).name));
-        if ~contains(filepath, filesep + "private" + filesep)
+        if ~contains(filepath, filesep + "private" + filesep) && ...
+                ~contains(filepath, filesep + "@") && ...
+                ~isHiddenClassFile(filepath)
             files(end + 1, 1) = filepath;
         end
     end
     files = sort(files);
     files = [files; discoverLabKitAppApiFiles(root)];
+end
+
+function tf = isHiddenClassFile(filepath)
+    lines = strip(readlines(filepath, "EmptyLineRule", "skip"));
+    lines = lines(~startsWith(lines, "%"));
+    tf = ~isempty(lines) && startsWith(lines(1), "classdef") && ...
+        contains(lines(1), "Hidden");
 end

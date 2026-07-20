@@ -161,8 +161,10 @@ function html = renderSiblingApis(api, item, outputPath)
     packagePrefix = strjoin(parts(1:end - 1), ".");
     if packagePrefix == "labkit.contract"
         groupTitle = "Framework Compatibility";
-    elseif startsWith(packagePrefix, "labkit.ui")
-        groupTitle = "Framework " + titleCasePackage(parts(end - 1));
+    elseif packagePrefix == "labkit.app"
+        groupTitle = "App SDK Core";
+    elseif startsWith(packagePrefix, "labkit.app.")
+        groupTitle = "App SDK " + titleCasePackage(parts(end - 1));
     end
     html = localSubgroup(groupTitle, strjoin(links, ""));
 end

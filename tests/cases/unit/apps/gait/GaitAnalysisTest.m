@@ -171,12 +171,14 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
 
             testCase.verifyEqual(migrated.inputs.sources, expected);
             testCase.verifyFalse(isfield(migrated.inputs, "source"));
-            testCase.verifyEqual(definition.project.Version, 3);
-            testCase.verifyTrue(isa(definition.project.Migrate, ...
+            testCase.verifyEqual(definition.ProjectSchema.Version, 3);
+            testCase.verifyTrue(isa(definition.ProjectSchema.Migrate, ...
                 'function_handle'));
         end
 
         function debug_sample_runs_on_an_isolated_gait_path(testCase)
+            folder = makeFolder();
+            cleanup = onCleanup(@() cleanupFolder(folder));
             [root, appRoot] = gaitRoots();
             previousPath = path;
             pathCleanup = onCleanup(@() path(previousPath));
@@ -185,15 +187,21 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
             addpath(appRoot);
             rehash path
 
-            pack = gait_analysis.debug.writeSamplePack();
+            context = labkit.app.diagnostic.SampleContext(folder);
+            pack = gait_analysis.debug.writeSamplePack(context);
+            posePath = pack.InitialProject.inputs.sources(1) ...
+                .reference.originalPath;
             pose = gait_analysis.sourceFiles.readPoseFile( ...
-                pack.representativeFiles);
+                posePath);
 
             testCase.verifyTrue(pose.ok);
             testCase.verifyEqual(pose.frameRate, 30);
+            testCase.verifyEqual(pack.Scenario, ...
+                "representative-pose-coordinates");
+            testCase.verifyEqual(numel(pack.Artifacts), 1);
             testCase.verifyEmpty(which("video_marker.projectSpec"));
 
-            clear pathCleanup
+            clear pathCleanup cleanup
         end
     end
 
@@ -231,7 +239,7 @@ function [labkitProject, coords] = consumerMarkerProject()
         "anchorRevision", zeros(12, 1, "uint64"));
     project = struct();
     project.inputs = struct( ...
-        "sources", labkit.ui.runtime.emptySourceRecords(), ...
+        "sources", struct([]), ...
         "videoMetadata", markerVideoMetadata());
     project.parameters = struct();
     project.annotations = struct( ...
@@ -242,7 +250,7 @@ function [labkitProject, coords] = consumerMarkerProject()
         "edges", [1 2; 2 3; 3 4; 4 5]), ...
         "frames", frames, ...
         "calibration", ...
-        labkit.ui.interaction.scaleBarCalibration(20, 2, "mm"));
+        labkit.app.interaction.scaleCalibration(20, 2, "mm"));
     project.results = struct();
     project.extensions = struct();
     labkitProject = markerEnvelope(project);
@@ -260,7 +268,7 @@ function [labkitProject, coords] = producerMarkerProject()
     project.annotations.frames.coords = coords;
     project.inputs.videoMetadata = markerVideoMetadata();
     project.annotations.calibration = ...
-        labkit.ui.interaction.scaleBarCalibration(20, 2, "mm");
+        labkit.app.interaction.scaleCalibration(20, 2, "mm");
     assert(spec.Validate(project));
     labkitProject = markerEnvelope(project);
 end

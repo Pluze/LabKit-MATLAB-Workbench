@@ -62,7 +62,7 @@ classdef LauncherGuiTest < matlab.unittest.TestCase
             h.invokeButton(fig, "Update Documentation");
             drawnow;
 
-            ui = getappdata(fig, 'labkitUiRegistry');
+            ui = getappdata(fig, 'labkitLauncherView');
             status = string(ui.controls.statusLine.textArea.Value);
             testCase.verifyTrue(any(contains(status, ...
                 "Documentation updated:")), ...
@@ -124,6 +124,73 @@ classdef LauncherGuiTest < matlab.unittest.TestCase
             h.closeAllFigures();
             clear labkit_launcher;
             cd(originalFolder);
+        end
+
+        function launcher_opens_app_sdk_entrypoint_without_retired_arguments(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            h.closeAllFigures();
+            cleanupFigures = onCleanup(@() h.closeAllFigures());
+
+            fig = labkit_launcher();
+            drawnow;
+            tables = findall(fig, 'Type', 'uitable');
+            testCase.verifyNumElements(tables, 1);
+            commands = string(tables(1).Data(:, 7));
+            row = find(commands == "labkit_DICPreprocess_app", 1);
+            testCase.assertNotEmpty(row, ...
+                "Launcher catalog must include DIC Preprocess.");
+
+            invokeTableSelection(tables(1), row);
+            h.invokeButton(fig, 'Open Selected App');
+            drawnow;
+
+            textAreas = findall(fig, 'Type', 'uitextarea');
+            messages = strings(0, 1);
+            for k = 1:numel(textAreas)
+                messages = [messages; string(textAreas(k).Value(:))];
+            end
+            testCase.verifyTrue(any(contains(messages, ...
+                "Launched labkit_DICPreprocess_app.")), ...
+                "Launcher must call the App SDK entrypoint without retired arguments.");
+            clear cleanupFigures
+            h.closeAllFigures();
+        end
+
+        function launcher_debug_uses_verbose_sdk_diagnostics_and_sample(testCase)
+            root = setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            h.closeAllFigures();
+            cleanupFigures = onCleanup(@() h.closeAllFigures());
+            debugRoot = fullfile(root, "artifacts", "diagnostics", ...
+                "launcher", "labkit_DICPreprocess_app");
+            existing = folderNames(debugRoot);
+
+            fig = labkit_launcher();
+            drawnow;
+            tables = findall(fig, 'Type', 'uitable');
+            commands = string(tables(1).Data(:, 7));
+            row = find(commands == "labkit_DICPreprocess_app", 1);
+            testCase.assertNotEmpty(row);
+            invokeTableSelection(tables(1), row);
+            h.invokeButton(fig, 'Open Debug');
+            drawnow;
+
+            created = setdiff(folderNames(debugRoot), existing, "stable");
+            testCase.verifyNumElements(created, 1, ...
+                "Debug launch should create one isolated diagnostic session.");
+            sessionFolder = fullfile(debugRoot, created(1));
+            testCase.addTeardown(@() removeFolderIfPresent(sessionFolder));
+            testCase.verifyTrue(isfile(fullfile(sessionFolder, "events.jsonl")), ...
+                "Verbose diagnostics should write structured runtime events.");
+            testCase.verifyTrue(isfile(fullfile(sessionFolder, "sample-pack.json")), ...
+                "Debug launch should build the App-owned synthetic sample.");
+            assertInfoContains(fig, ...
+                "Launched labkit_DICPreprocess_app in debug mode.");
+            clear cleanupFigures
+            h.closeAllFigures();
         end
 
         function clean_artifacts_has_static_safety_guards(testCase)
@@ -282,7 +349,7 @@ classdef LauncherGuiTest < matlab.unittest.TestCase
 
             fig = labkit_launcher();
             drawnow;
-            ui = getappdata(fig, 'labkitUiRegistry');
+            ui = getappdata(fig, 'labkitLauncherView');
             tableHandle = ui.controls.appTable.table;
             betaRow = find(string(tableHandle.Data(:, 7)) == "labkit_Beta_app", 1);
             invokeTableSelection(tableHandle, betaRow);
@@ -380,7 +447,7 @@ function verify_launcher_layout()
 end
 
 function assertRefreshPreservesSelectedApp(fig, h)
-    ui = getappdata(fig, 'labkitUiRegistry');
+    ui = getappdata(fig, 'labkitLauncherView');
     tableHandle = ui.controls.appTable.table;
     if size(tableHandle.Data, 1) < 2
         return;
@@ -395,7 +462,7 @@ function assertRefreshPreservesSelectedApp(fig, h)
         'Refreshing the launcher app list should preserve the selected app when it still exists.');
 end
 function assertDetailsCommand(fig, expectedCommand, message)
-    ui = getappdata(fig, 'labkitUiRegistry');
+    ui = getappdata(fig, 'labkitLauncherView');
     details = string(ui.controls.selectedDetails.textArea.Value);
     assert(any(contains(details, "Command: " + string(expectedCommand))), message);
 end
@@ -460,7 +527,7 @@ function assertLauncherTextAreasHaveRoom(fig)
     drawnow;
     pause(0.5);
     drawnow;
-    ui = getappdata(fig, 'labkitUiRegistry');
+    ui = getappdata(fig, 'labkitLauncherView');
     assert(isvalid(ui.controls.selectedDetails.textArea) && ...
         ~isempty(ui.controls.selectedDetails.textArea.Value), ...
         'Selected App details should preserve a readable status panel.');
@@ -527,11 +594,15 @@ function assertLauncherActionGroups(fig)
         "Documentation and History"]);
     assert(all(arrayfun(@(button) isequal(button.Parent, runButtons(1).Parent), ...
         runButtons)), 'Run actions should share one titled action group.');
-    runRows = arrayfun(@(button) button.Layout.Row, runButtons);
-    runColumns = arrayfun(@(button) button.Layout.Column, runButtons);
-    assert(isequal(runRows, [1 1 2 2]) && ...
-        isequal(runColumns, [1 2 1 2]), ...
-        'Run actions should use a two-by-two task-oriented layout.');
+    assert(isequal(runButtons(1).Layout.Row, 1) && ...
+        isequal(runButtons(1).Layout.Column, 1) && ...
+        isequal(runButtons(2).Layout.Row, 1) && ...
+        isequal(runButtons(2).Layout.Column, 2) && ...
+        isequal(runButtons(3).Layout.Row, 2) && ...
+        isequal(runButtons(3).Layout.Column, 1) && ...
+        isequal(runButtons(4).Layout.Row, 2) && ...
+        isequal(runButtons(4).Layout.Column, 2), ...
+        'Run actions should separate normal and diagnostic App SDK launches.');
 
     maintenanceButtons = arrayfun(@(text) findLauncherButton(fig, text), ...
         ["Update Documentation", "Run Code Analyzer", ...
@@ -573,7 +644,7 @@ function button = findLauncherButton(fig, text)
 end
 
 function assertInfoContains(fig, expectedText)
-    ui = getappdata(fig, 'labkitUiRegistry');
+    ui = getappdata(fig, 'labkitLauncherView');
     value = string(ui.controls.statusLine.textArea.Value);
     assert(any(contains(value, expectedText)), ...
         'Launcher info text should include: %s', expectedText);
@@ -623,6 +694,17 @@ function removeFolderIfPresent(folder)
         end
         rmdir(folder, "s");
     end
+end
+
+function names = folderNames(folder)
+    names = strings(0, 1);
+    if exist(folder, "dir") ~= 7
+        return;
+    end
+    entries = dir(folder);
+    entries = entries([entries.isdir]);
+    names = string({entries.name});
+    names = names(~ismember(names, [".", ".."]));
 end
 
 function removePathIfPresent(folder)

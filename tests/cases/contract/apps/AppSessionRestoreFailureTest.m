@@ -15,13 +15,16 @@ classdef AppSessionRestoreFailureTest < matlab.unittest.TestCase
                 writeBytes(filepath, uint8([13 37 0 255]));
                 definition = str2func(item.package + ".definition");
                 def = definition();
-                project = def.project.Create();
-                project.inputs.sources = labkit.ui.runtime.sourceRecord( ...
+                project = def.ProjectSchema.Create();
+                project.inputs.sources = labkit.app.project.sourceRecord( ...
                     item.id, item.role, filepath, item.required);
 
                 caught = [];
                 try
-                    def.createSession(project);
+                    runtime = ...
+                        labkit.app.internal.RuntimeFactory.createHeadless( ...
+                            def, project);
+                    runtime.close();
                 catch ME
                     caught = ME;
                 end

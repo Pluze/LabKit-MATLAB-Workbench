@@ -222,7 +222,8 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 end
             end
             testCase.verifyEmpty(findings, ...
-                "Apps should use filePanel and handler services.dialogs instead " + ...
+                "Apps should use layout file selection and CallbackContext " + ...
+                "dialog operations instead " + ...
                 "of creating MATLAB dialogs directly: " + ...
                 strjoin(findings, "; "));
         end
@@ -240,7 +241,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             end
 
             testCase.verifyEmpty(findings, ...
-                "Apps should route alerts through handler services.dialogs.alert so " + ...
+                "Apps should route alerts through CallbackContext.alert so " + ...
                 "hidden GUI tests can record error paths without modal stalls: " + ...
                 strjoin(findings, "; "));
         end
@@ -272,23 +273,6 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 strjoin(findings, "; "));
         end
 
-        function appPackagesDoNotOwnCloseGuardState(testCase)
-            root = setupLabKitTestPath();
-            appFiles = collectAppMFiles(root);
-            findings = strings(0, 1);
-
-            for k = 1:numel(appFiles)
-                content = string(fileread(appFiles(k)));
-                if contains(content, "labkit.ui.runtime.setCloseGuard")
-                    findings(end+1, 1) = string(localRelativePath(root, appFiles(k)));
-                end
-            end
-
-            testCase.verifyEmpty(findings, ...
-                "Close confirmation is framework-owned; app files must not " + ...
-                "maintain close guard dirty state through removed runtime APIs: " + ...
-                strjoin(findings, "; "));
-        end
     end
 end
 

@@ -1,4 +1,4 @@
-% Expected callers: VT Resistance actions and session reconstruction. Input is
+% Expected callers: VT callbacks and session reconstruction. Input is
 % the durable parameter struct. Output is the calculation option contract.
 function opts = optionsFromParameters(parameters)
     opts = struct( ...

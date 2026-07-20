@@ -1,0 +1,6 @@
+% App-owned implementation for batch_crop.cropGeometry.centerYChanged within the batch_crop product workflow.
+function applicationState = centerYChanged( ...
+        applicationState, value, callbackContext)
+applicationState = batch_crop.cropGeometry.changeCoordinate( ...
+    applicationState, value, 2, callbackContext);
+end

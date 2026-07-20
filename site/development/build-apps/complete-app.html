@@ -18,262 +18,174 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../apps/index.html">Apps</a><a class="product-nav-link" href="../../reference/index.html">Functions</a><a class="product-nav-link" href="../../framework/index.html">Framework</a><a class="product-nav-link active" href="../index.html">Development</a><a class="product-nav-link" href="../../history/index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../index.html">Documentation Home</a><a class="context-parent" href="../index.html">Development</a><p class="current-page">Build A Complete App</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>General</h3><div class="local-branch"><a class="local-link local-parent-link" href="../index.html">Development</a></div></div><div class="local-subgroup"><h3>Build Apps</h3><div class="local-branch"><a class="local-link" href="app-development.html">App Development</a><a class="local-link" href="architecture.html">Architecture</a></div></div><div class="local-subgroup"><h3>Data and Designs</h3><div class="local-branch"><a class="local-link" href="../data-and-designs/group-comparison-app-design.html">T-Test Wizard Design</a><a class="local-link" href="../data-and-designs/scientific-csv-interchange.html">Simple Scientific CSV Exchange</a></div></div><div class="local-subgroup"><h3>Maintain and Release</h3><div class="local-branch"><a class="local-link" href="../maintain-and-release/documentation.html">Documentation Architecture</a><a class="local-link" href="../maintain-and-release/private-apps.html">Private Apps</a><a class="local-link" href="../maintain-and-release/release.html">Release Policy</a><a class="local-link" href="../maintain-and-release/testing.html">Testing</a></div></div><div class="local-subgroup"><h3>Tools</h3><div class="local-branch"><a class="local-link local-parent-link" href="../tools/index.html">Maintainer Tools</a><a class="local-link local-child-link" href="../tools/codecheck.html">Code Analyzer Reports</a><a class="local-link local-child-link" href="../tools/deployment.html">App Deployment Packages</a><a class="local-link local-child-link" href="../tools/documentation.html">Documentation Build Tools</a><a class="local-link local-child-link" href="../tools/profiling.html">Performance Profiling</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#the-three-file-starting-point">The Three-File Starting Point</a><a class="toc-link" href="#1-add-the-thin-entrypoint">1. Add The Thin Entrypoint</a><a class="toc-link" href="#2-declare-one-product-contract">2. Declare One Product Contract</a><a class="toc-link" href="#3-own-durable-data-in-one-project-spec">3. Own Durable Data In One Project Spec</a><a class="toc-link" href="#4-rebuild-only-app-specific-session-data">4. Rebuild Only App-Specific Session Data</a><a class="toc-link" href="#5-implement-gui-free-workflow-functions">5. Implement GUI-Free Workflow Functions</a><a class="toc-link" href="#6-register-semantic-actions">6. Register Semantic Actions</a><a class="toc-link" href="#7-build-a-data-only-layout">7. Build A Data-Only Layout</a><a class="toc-link" href="#8-present-one-committed-view">8. Present One Committed View</a><a class="toc-link" href="#9-validate-the-product">9. Validate The Product</a><a class="toc-link" href="#capability-checklist">Capability Checklist</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../index.html">Documentation Home</a><a class="context-parent" href="../index.html">Development</a><p class="current-page">Build A Complete App</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>General</h3><div class="local-branch"><a class="local-link local-parent-link" href="../index.html">Development</a></div></div><div class="local-subgroup"><h3>Build Apps</h3><div class="local-branch"><a class="local-link" href="app-development.html">App Development</a><a class="local-link" href="architecture.html">Architecture</a></div></div><div class="local-subgroup"><h3>Data and Designs</h3><div class="local-branch"><a class="local-link" href="../data-and-designs/group-comparison-app-design.html">T-Test Wizard Design</a><a class="local-link" href="../data-and-designs/scientific-csv-interchange.html">Simple Scientific CSV Exchange</a></div></div><div class="local-subgroup"><h3>Maintain and Release</h3><div class="local-branch"><a class="local-link" href="../maintain-and-release/documentation.html">Documentation Architecture</a><a class="local-link" href="../maintain-and-release/private-apps.html">Private Apps</a><a class="local-link" href="../maintain-and-release/release.html">Release Policy</a><a class="local-link" href="../maintain-and-release/testing.html">Testing</a></div></div><div class="local-subgroup"><h3>Tools</h3><div class="local-branch"><a class="local-link local-parent-link" href="../tools/index.html">Maintainer Tools</a><a class="local-link local-child-link" href="../tools/codecheck.html">Code Analyzer Reports</a><a class="local-link local-child-link" href="../tools/deployment.html">App Deployment Packages</a><a class="local-link local-child-link" href="../tools/documentation.html">Documentation Build Tools</a><a class="local-link local-child-link" href="../tools/profiling.html">Performance Profiling</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#file-shape">File Shape</a><a class="toc-link" href="#1-thin-entrypoint">1. Thin Entrypoint</a><a class="toc-link" href="#2-one-app-definition">2. One App Definition</a><a class="toc-link" href="#3-durable-project">3. Durable Project</a><a class="toc-link" href="#4-transient-session">4. Transient Session</a><a class="toc-link" href="#5-product-layout">5. Product Layout</a><a class="toc-link" href="#6-complete-view-snapshot">6. Complete View Snapshot</a><a class="toc-link" href="#7-feature-owned-renderer">7. Feature-Owned Renderer</a><a class="toc-link" href="#8-direct-business-callback">8. Direct Business Callback</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#related-documentation">Related Documentation</a><a class="toc-link" href="#functions-and-api">Functions And API</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">guide</p>
 <h1 id="build-a-complete-app">Build A Complete App</h1>
-<p><a href="app-development.html">App development</a> | <a href="../../framework/guides/runtime.html#definition-component-contract">Runtime field reference</a> | <a href="../maintain-and-release/testing.html">Testing</a></p>
-<p>This tutorial builds one current Runtime V2 App without copying historical lifecycle adapters. The example opens one numeric trace, applies a gain, previews the result, and keeps a summary in project state.</p>
-<p>The important rule is progressive capability: start with three files and add state or workflow files only when the product actually needs them.</p>
-<h2 id="the-three-file-starting-point">The Three-File Starting Point</h2>
-<p>A static App needs only:</p>
-<pre><code class="language-text">apps/example/trace_viewer/
-|-- labkit_TraceViewer_app.m
-`-- +trace_viewer/
-    |-- definition.m
-    `-- +userInterface/
-        `-- buildWorkbenchLayout.m</code></pre>
-<p><code>labkit.ui.runtime.define</code> supplies an empty version-1 project, empty session, empty action registry, empty presenter, and no Start callback. A static layout therefore launches without <code>projectSpec.m</code>, <code>createSession.m</code>, <code>definitionActions.m</code>, or <code>presentWorkbench.m</code>.</p>
-<p>The trace example is interactive and persistent, so its completed tree is:</p>
-<pre><code class="language-text">apps/example/trace_viewer/
+<p>This guide builds a small trace viewer with the production <code>labkit.app</code> contract. The example keeps durable settings in a project, rebuilds transient file data in a session, draws a plot, and exports a result. Each file has one visible responsibility.</p>
+<h2 id="file-shape">File Shape</h2>
+<pre><code class="language-text">apps/examples/trace_viewer/
 |-- labkit_TraceViewer_app.m
 `-- +trace_viewer/
     |-- definition.m
     |-- projectSpec.m
     |-- createSession.m
-    |-- definitionActions.m
-    |-- +sourceFiles/
-    |   `-- readTrace.m
-    |-- +analysisRun/
-    |   `-- applyGain.m
-    `-- +userInterface/
-        |-- buildWorkbenchLayout.m
-        |-- presentWorkbench.m
-        `-- renderTrace.m</code></pre>
-<p>There is no separate <code>requirements.m</code>, <code>version.m</code>, <code>+appLifecycle</code>, <code>+appState</code>, or migration-file collection. Product metadata and optional capabilities live in <code>definition.m</code>; durable schema callbacks are local functions inside one <code>projectSpec.m</code>.</p>
-<h2 id="1-add-the-thin-entrypoint">1. Add The Thin Entrypoint</h2>
-<p><code>labkit_TraceViewer_app.m</code> delegates every request to the definition:</p>
+    |-- +workbench/
+    |   |-- buildLayout.m
+    |   `-- present.m
+    |-- +sourceTrace/
+    |   |-- readTrace.m
+    |   |-- layoutSection.m
+    |   |-- workspacePlot.m
+    |   |-- present.m
+    |   `-- draw.m
+    `-- +resultFiles/
+        |-- layoutSection.m
+        `-- exportTrace.m</code></pre>
+<p>There is no handler table, renderer registry, or <code>+userInterface</code> bucket. <code>+workbench</code> is the product assembly boundary. Capability packages own their part of the user workflow.</p>
+<h2 id="1-thin-entrypoint">1. Thin Entrypoint</h2>
 <pre><code class="language-matlab">function varargout = labkit_TraceViewer_app(varargin)
-%LABKIT_TRACEVIEWER_APP Inspect a scaled numeric trace.
-    [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
-        @trace_viewer.definition, varargin{:});
+[varargout{1:nargout}] = trace_viewer.definition().launch(varargin{:});
 end</code></pre>
-<p>The entrypoint does not add paths, create figures, parse files, or route callbacks. The same command handles normal launch, <code>debug</code>, <code>requirements</code>, and <code>version</code> requests through Runtime V2.</p>
-<h2 id="2-declare-one-product-contract">2. Declare One Product Contract</h2>
-<p><code>+trace_viewer/definition.m</code> owns product metadata, facade compatibility, and the capabilities this App actually uses:</p>
-<pre><code class="language-matlab">function def = definition()
-    def = labkit.ui.runtime.define( ...
-        &quot;Command&quot;, &quot;labkit_TraceViewer_app&quot;, ...
-        &quot;Id&quot;, &quot;trace_viewer&quot;, ...
-        &quot;Title&quot;, &quot;Trace Viewer&quot;, ...
-        &quot;Family&quot;, &quot;Example&quot;, ...
-        &quot;AppVersion&quot;, &quot;1.0.0&quot;, ...
-        &quot;Updated&quot;, &quot;2026-07-16&quot;, ...
-        &quot;Requirements&quot;, labkit.contract.requirements(&quot;ui&quot;, &quot;&gt;=7 &lt;8&quot;), ...
-        &quot;Project&quot;, trace_viewer.projectSpec(), ...
-        &quot;CreateSession&quot;, @trace_viewer.createSession, ...
-        &quot;Layout&quot;, @trace_viewer.userInterface.buildWorkbenchLayout, ...
-        &quot;Actions&quot;, trace_viewer.definitionActions(), ...
-        &quot;Present&quot;, @trace_viewer.userInterface.presentWorkbench, ...
-        &quot;Renderers&quot;, struct( ...
-            &quot;trace&quot;, @trace_viewer.userInterface.renderTrace));
+<p>The entrypoint does not build state, controls, services, or figures.</p>
+<h2 id="2-one-app-definition">2. One App Definition</h2>
+<pre><code class="language-matlab">function app = definition()
+app = labkit.app.Definition( ...
+    Entrypoint=&quot;labkit_TraceViewer_app&quot;, ...
+    AppId=&quot;examples.trace-viewer&quot;, ...
+    Title=&quot;Trace Viewer&quot;, ...
+    Family=&quot;Examples&quot;, ...
+    AppVersion=&quot;1.0.0&quot;, ...
+    Updated=&quot;2026-07-19&quot;, ...
+    Requirements=labkit.contract.requirements(&quot;app&quot;, &quot;&gt;=1 &lt;2&quot;), ...
+    ProjectSchema=trace_viewer.projectSpec(), ...
+    CreateSession=@trace_viewer.createSession, ...
+    Workbench=trace_viewer.workbench.buildLayout(), ...
+    PresentWorkbench=@trace_viewer.workbench.present);
 end</code></pre>
-<p><code>Id</code> is the permanent persistence identity, not a display label. Do not change it after project files exist. <code>AppVersion</code> versions the product; project payload <code>Version</code> below versions only the durable data schema.</p>
-<p>For the three-file static form, omit <code>Project</code>, <code>CreateSession</code>, <code>Actions</code>, <code>Present</code>, and <code>Renderers</code> from this call.</p>
-<h2 id="3-own-durable-data-in-one-project-spec">3. Own Durable Data In One Project Spec</h2>
-<p><code>+trace_viewer/projectSpec.m</code> contains the public project-spec entry and local schema functions:</p>
-<pre><code class="language-matlab">function spec = projectSpec()
-    spec = struct( ...
-        &quot;Version&quot;, 1, ...
-        &quot;Create&quot;, @createProject, ...
-        &quot;Validate&quot;, @validateProject, ...
-        &quot;Migrate&quot;, []);
+<p>Definition is a readable inventory, not an execution script. It validates the static layout, direct callback signatures, plot renderers, target IDs, project schema, and presentation contract before native UI mutation.</p>
+<h2 id="3-durable-project">3. Durable Project</h2>
+<pre><code class="language-matlab">function schema = projectSpec()
+schema = labkit.app.project.Schema( ...
+    Version=1, ...
+    Create=@createProject, ...
+    Validate=@validateProject);
 end
 
 function project = createProject()
-    project = struct();
-    project.inputs = struct( ...
-        &quot;sources&quot;, labkit.ui.runtime.emptySourceRecords());
-    project.parameters = struct(&quot;gain&quot;, 1);
-    project.annotations = struct();
-    project.results = struct(&quot;summary&quot;, table());
-    project.extensions = struct();
+project = struct( ...
+    &quot;inputs&quot;, struct(&quot;sources&quot;, struct([])), ...
+    &quot;parameters&quot;, struct(&quot;gain&quot;, 1), ...
+    &quot;results&quot;, struct(&quot;lastExport&quot;, []));
 end
 
 function accepted = validateProject(project)
-    gain = project.parameters.gain;
-    assert(isnumeric(gain) &amp;&amp; isscalar(gain) &amp;&amp; isfinite(gain), ...
-        &quot;trace_viewer:InvalidProject&quot;, ...
-        &quot;Trace Viewer gain must be one finite numeric scalar.&quot;);
-    assert(istable(project.results.summary), ...
-        &quot;trace_viewer:InvalidProject&quot;, ...
-        &quot;Trace Viewer summary must be a table.&quot;);
-    accepted = true;
+accepted = isstruct(project) &amp;&amp; isscalar(project) &amp;&amp; ...
+    isfield(project, &quot;inputs&quot;) &amp;&amp; isfield(project.inputs, &quot;sources&quot;) &amp;&amp; ...
+    isfield(project, &quot;parameters&quot;) &amp;&amp; ...
+    isnumeric(project.parameters.gain) &amp;&amp; ...
+    isscalar(project.parameters.gain) &amp;&amp; ...
+    isfinite(project.parameters.gain);
 end</code></pre>
-<p>Runtime validates the scalar project, its five canonical buckets, and standard source-record structure before this callback. The App callback therefore checks only Trace Viewer fields and invariants: gain and summary in this example. Runtime validates the complete value after creation, load, migration, and every action transaction. A validator checks; it does not repeat framework checks, repair, prompt, or access graphics.</p>
-<p>When the schema later advances to version 2, change <code>Version</code> and provide one local version-aware function:</p>
-<pre><code class="language-matlab">function project = migrateProject(project, fromVersion)
-    switch fromVersion
-        case 1
-            project.annotations.note = &quot;&quot;;
-        otherwise
-            error(&quot;trace_viewer:UnsupportedProjectVersion&quot;, ...
-                &quot;Cannot migrate payload version %d.&quot;, fromVersion);
-    end
+<p>The project contains only durable App meaning. External files are portable source records owned by the runtime, not raw paths.</p>
+<h2 id="4-transient-session">4. Transient Session</h2>
+<pre><code class="language-matlab">function session = createSession(project, callbackContext)
+paths = callbackContext.resolveSourcePaths(project.inputs.sources);
+trace = struct(&quot;x&quot;, [], &quot;y&quot;, []);
+if ~isempty(paths)
+    trace = trace_viewer.sourceTrace.readTrace(paths(1));
+end
+session = struct(&quot;trace&quot;, trace);
 end</code></pre>
-<p>Set <code>&quot;Migrate&quot;, @migrateProject</code>. Runtime calls it once per missing version and validates every returned payload. Do not create <code>migrateProjectV1ToV2.m</code>, <code>migrateProjectV2ToV3.m</code>, and similar files.</p>
-<h2 id="4-rebuild-only-app-specific-session-data">4. Rebuild Only App-Specific Session Data</h2>
-<p><code>+trace_viewer/createSession.m</code> reconstructs data that should not be saved:</p>
-<pre><code class="language-matlab">function session = createSession(project)
-    sourcePath = labkit.ui.runtime.sourcePaths( ...
-        project.inputs.sources, &quot;trace&quot;);
-    rawTrace = zeros(0, 1);
-    if strlength(sourcePath) &gt; 0
-        rawTrace = trace_viewer.sourceFiles.readTrace(sourcePath);
-    end
-    [scaledTrace, ~] = trace_viewer.analysisRun.applyGain( ...
-        rawTrace, project.parameters.gain);
-    session = struct(&quot;cache&quot;, struct( ...
-        &quot;sourcePath&quot;, sourcePath, ...
-        &quot;rawTrace&quot;, rawTrace, ...
-        &quot;scaledTrace&quot;, scaledTrace));
+<p><code>createSession(project,callbackContext)</code> is the one reconstruction boundary. The runtime calls it after project restore and file-list source changes. Session data is reconstructible and is not written into the project envelope.</p>
+<h2 id="5-product-layout">5. Product Layout</h2>
+<pre><code class="language-matlab">function layout = buildLayout()
+controls = { ...
+    trace_viewer.sourceTrace.layoutSection(), ...
+    trace_viewer.resultFiles.layoutSection()};
+workspace = labkit.app.layout.workspace( ...
+    trace_viewer.sourceTrace.workspacePlot());
+layout = labkit.app.layout.workbench( ...
+    controls, Workspace=workspace);
 end</code></pre>
-<p>Runtime supplies missing <code>selection</code>, <code>workflow</code>, <code>view</code>, and <code>cache</code> buckets. Return only App-specific fields. During project load, required portable sources are resolved or interactively relinked before this function runs.</p>
-<p>Graphics handles, readers, listeners, timers, and cleanup callbacks do not belong in project or session values. Register them with Runtime resources.</p>
-<h2 id="5-implement-gui-free-workflow-functions">5. Implement GUI-Free Workflow Functions</h2>
-<p><code>+trace_viewer/+sourceFiles/readTrace.m</code> owns the accepted input:</p>
-<pre><code class="language-matlab">function trace = readTrace(filepath)
-    filepath = string(filepath);
-    if ~isscalar(filepath) || strlength(filepath) == 0 || ~isfile(filepath)
-        error(&quot;trace_viewer:SourceNotFound&quot;, ...
-            &quot;The selected trace file was not found.&quot;);
-    end
-    value = readmatrix(filepath);
-    if ~isnumeric(value) || isempty(value)
-        error(&quot;trace_viewer:InvalidSource&quot;, ...
-            &quot;The trace file must contain numeric values.&quot;);
-    end
-    trace = double(value(:, 1));
+<p>The assembly reads in user order. A complex App can use tabs and workspace pages here without flattening every feature into one file.</p>
+<p>The source capability owns its controls:</p>
+<pre><code class="language-matlab">function section = layoutSection()
+section = labkit.app.layout.section(&quot;sourceTrace&quot;, &quot;Trace&quot;, { ...
+    labkit.app.layout.fileList(&quot;traceFiles&quot;, ...
+        Label=&quot;Trace file&quot;, ...
+        SelectionMode=&quot;single&quot;, ...
+        Bind=&quot;project.inputs.sources&quot;, ...
+        SourceRole=&quot;trace&quot;, ...
+        SourceIdPrefix=&quot;trace&quot;), ...
+    labkit.app.layout.slider(&quot;gain&quot;, ...
+        Label=&quot;Gain&quot;, Limits=[0.1 10], ...
+        Bind=&quot;project.parameters.gain&quot;)});
 end</code></pre>
-<p><code>+trace_viewer/+analysisRun/applyGain.m</code> owns the deterministic calculation:</p>
-<pre><code class="language-matlab">function [scaled, summary] = applyGain(trace, gain)
-    trace = double(trace(:));
-    gain = double(gain);
-    if ~isscalar(gain) || ~isfinite(gain)
-        error(&quot;trace_viewer:InvalidGain&quot;, ...
-            &quot;Gain must be one finite scalar.&quot;);
-    end
-    scaled = trace .* gain;
-    summary = table(numel(scaled), mean(scaled, &quot;omitnan&quot;), ...
-        &quot;VariableNames&quot;, {&quot;sample_count&quot;, &quot;mean_value&quot;});
+<p>Standard fields and file lists need no App callback. Their bindings update canonical state transactionally.</p>
+<p>The result capability binds a real business action directly:</p>
+<pre><code class="language-matlab">function section = layoutSection()
+section = labkit.app.layout.section(&quot;resultFiles&quot;, &quot;Results&quot;, { ...
+    labkit.app.layout.button(&quot;exportTrace&quot;, ...
+        &quot;Export trace&quot;, @trace_viewer.resultFiles.exportTrace, ...
+        Tooltip=&quot;Export the calibrated trace and its sampling metadata.&quot;)});
 end</code></pre>
-<p>Both functions are directly testable without launching the GUI.</p>
-<h2 id="6-register-semantic-actions">6. Register Semantic Actions</h2>
-<p><code>+trace_viewer/definitionActions.m</code> maps layout event IDs to transactions:</p>
-<pre><code class="language-matlab">function actions = definitionActions()
-    actions = struct( ...
-        &quot;openTrace&quot;, @onOpenTrace, ...
-        &quot;gainChanged&quot;, @onGainChanged, ...
-        &quot;runAnalysis&quot;, @onRunAnalysis);
+<h2 id="6-complete-view-snapshot">6. Complete View Snapshot</h2>
+<pre><code class="language-matlab">function view = present(applicationState)
+view = labkit.app.view.Snapshot();
+view = view.include(trace_viewer.sourceTrace.present( ...
+    applicationState.session.trace, ...
+    applicationState.project.parameters.gain));
+view = view.enabled(&quot;exportTrace&quot;, ...
+    ~isempty(applicationState.session.trace.x));
+end</code></pre>
+<p><code>+workbench/present.m</code> is a short assembly boundary. It extracts exact inputs and composes feature fragments with <code>Snapshot.include</code>; it does not perform IO or calculation.</p>
+<pre><code class="language-matlab">function view = present(trace, gain)
+model = struct(&quot;x&quot;, trace.x, &quot;y&quot;, trace.y .* gain);
+view = labkit.app.view.Snapshot().renderPlot(&quot;tracePlot&quot;, model);
+end</code></pre>
+<h2 id="7-feature-owned-renderer">7. Feature-Owned Renderer</h2>
+<pre><code class="language-matlab">function node = workspacePlot()
+node = labkit.app.layout.plotArea( ...
+    &quot;tracePlot&quot;, @trace_viewer.sourceTrace.draw);
 end
 
-function state = onOpenTrace(state, ~, services)
-    [filepath, cancelled] = services.dialogs.inputFile( ...
-        &quot;*.txt;*.csv&quot;, &quot;Open numeric trace&quot;, ...
-        services.dialogs.defaultFolder(&quot;input&quot;));
-    if cancelled
-        return;
-    end
-    rawTrace = trace_viewer.sourceFiles.readTrace(filepath);
-    state.project.inputs.sources = services.project.upsertSource( ...
-        state.project.inputs.sources, ...
-        &quot;trace&quot;, &quot;trace&quot;, filepath, true);
-    state.session.cache.sourcePath = filepath;
-    state.session.cache.rawTrace = rawTrace;
-    state = recompute(state);
-    state = services.workflow.log(state, &quot;Opened trace: &quot; + filepath);
+function draw(axesById, model)
+ax = axesById.main;
+cla(ax);
+plot(ax, model.x, model.y);
+xlabel(ax, &quot;Time (s)&quot;);
+ylabel(ax, &quot;Signal&quot;);
+grid(ax, &quot;on&quot;);
+end</code></pre>
+<p>The plot area references the concrete renderer. The model carries prepared App meaning; drawing does not read project state or dispatch workflow actions.</p>
+<h2 id="8-direct-business-callback">8. Direct Business Callback</h2>
+<pre><code class="language-matlab">function applicationState = exportTrace( ...
+        applicationState, callbackContext)
+trace = applicationState.session.trace;
+gain = applicationState.project.parameters.gain;
+choice = callbackContext.chooseOutputFile( ...
+    {&quot;*.csv&quot;, &quot;CSV files&quot;}, &quot;&quot;);
+if choice.Cancelled
+    return;
 end
 
-function state = onGainChanged(state, ~, ~)
-    state = recompute(state);
-end
-
-function state = onRunAnalysis(state, ~, services)
-    state = recompute(state);
-    state = services.workflow.log(state, &quot;Updated trace summary.&quot;);
-end
-
-function state = recompute(state)
-    [scaled, summary] = trace_viewer.analysisRun.applyGain( ...
-        state.session.cache.rawTrace, state.project.parameters.gain);
-    state.session.cache.scaledTrace = scaled;
-    state.project.results.summary = summary;
+tableValue = table(trace.x(:), trace.y(:) .* gain, ...
+    VariableNames=[&quot;Time&quot;, &quot;Signal&quot;]);
+writetable(tableValue, choice.Value);
+applicationState.project.results.lastExport = string(choice.Value);
 end</code></pre>
-<p>The App owns what each command means. Runtime owns queueing, busy state, rollback, validation, presentation commit, and error propagation. Use injected services for dialogs, logging, source identity, results, diagnostics, previews, and managed resources; do not read registries or UI controls.</p>
-<h2 id="7-build-a-data-only-layout">7. Build A Data-Only Layout</h2>
-<p><code>+trace_viewer/+userInterface/buildWorkbenchLayout.m</code> describes semantics:</p>
-<pre><code class="language-matlab">function layout = buildWorkbenchLayout()
-    commands = labkit.ui.layout.section(&quot;commands&quot;, &quot;Commands&quot;, { ...
-        labkit.ui.layout.action(&quot;openTrace&quot;, &quot;Open trace&quot;, &quot;openTrace&quot;), ...
-        labkit.ui.layout.field(&quot;gain&quot;, &quot;Gain&quot;, ...
-            &quot;kind&quot;, &quot;number&quot;, ...
-            &quot;value&quot;, 1, ...
-            &quot;Bind&quot;, &quot;project.parameters.gain&quot;, ...
-            &quot;Event&quot;, &quot;gainChanged&quot;), ...
-        labkit.ui.layout.action( ...
-            &quot;runAnalysis&quot;, &quot;Run analysis&quot;, &quot;runAnalysis&quot;)});
-    tab = labkit.ui.layout.tab(&quot;main&quot;, &quot;Trace&quot;, {commands});
-    workspace = labkit.ui.layout.workspace(&quot;workspace&quot;, &quot;Trace&quot;, { ...
-        labkit.ui.layout.previewArea(&quot;tracePlot&quot;, &quot;Scaled trace&quot;), ...
-        labkit.ui.layout.resultTable(&quot;summary&quot;, &quot;Summary&quot;), ...
-        labkit.ui.layout.logPanel(&quot;appLog&quot;, &quot;Log&quot;)});
-    layout = labkit.ui.layout.workbench( ...
-        &quot;traceViewer&quot;, &quot;Trace Viewer&quot;, ...
-        &quot;controlTabs&quot;, {tab}, &quot;workspace&quot;, workspace);
-end</code></pre>
-<p>The layout does not create handles, read files, mutate state, choose pixel geometry, or schedule callbacks. IDs are stable semantic references shared by the layout, action registry, and presenter.</p>
-<h2 id="8-present-one-committed-view">8. Present One Committed View</h2>
-<p><code>+trace_viewer/+userInterface/presentWorkbench.m</code> converts canonical state to declarative view models:</p>
-<pre><code class="language-matlab">function view = presentWorkbench(state)
-    trace = state.session.cache.scaledTrace;
-    view = struct();
-    view.controls.summary = struct( ...
-        &quot;Data&quot;, state.project.results.summary);
-    view.previews.tracePlot = struct( ...
-        &quot;Renderer&quot;, &quot;trace&quot;, ...
-        &quot;Model&quot;, struct( ...
-            &quot;x&quot;, (1:numel(trace)).', ...
-            &quot;y&quot;, trace, ...
-            &quot;hasData&quot;, ~isempty(trace)));
-end</code></pre>
-<p><code>+trace_viewer/+userInterface/renderTrace.m</code> owns drawing only:</p>
-<pre><code class="language-matlab">function renderTrace(ax, model)
-    labkit.ui.plot.clear(ax, &quot;ResetScale&quot;, true);
-    if ~model.hasData
-        labkit.ui.plot.message(ax, &quot;Open a trace to begin.&quot;);
-        return;
-    end
-    plot(ax, model.x, model.y, &quot;LineWidth&quot;, 1.2);
-    xlabel(ax, &quot;Sample&quot;);
-    ylabel(ax, &quot;Scaled value&quot;);
-    grid(ax, &quot;on&quot;);
-    labkit.ui.plot.fit(ax);
-end</code></pre>
-<p>Presenters do not write files or mutate state. Renderers do not choose scientific options or reset zoom for overlay-only edits.</p>
-<h2 id="9-validate-the-product">9. Validate The Product</h2>
-<p>At minimum, add:</p>
+<p>The callback signature exposes its runtime boundary. For larger exports, delegate table construction and result packaging to functions that accept only the trace, gain, and destination they require.</p>
+<h2 id="validation">Validation</h2>
+<p>Test readers, calculations, project validation, snapshot fragments, renderers, and exports directly with synthetic values. Construct <code>definition()</code> in a headless test to validate the whole static contract. Run the App's bounded hidden-GUI workflow after smaller tests are stable; native dialogs and visual quality still require developer-led interactive validation.</p>
+<p>Before merge, update the App version, owning manual, structured component history, generated documentation site, and the final branch validation gates.</p>
+<h2 id="related-documentation">Related Documentation</h2>
 <ul>
-<li>GUI-free tests for <code>readTrace</code> and <code>applyGain</code></li>
-<li>definition tests for metadata, project creation, validation, and session reconstruction</li>
-<li>one hidden GUI workflow covering launch, open, gain change, analysis, save, clear, and reopen</li>
-<li>migration tests for every supported prior payload version</li>
-<li>documentation examples that run in a clean MATLAB session</li>
-</ul>
-<p>During iteration, run the exact affected files. Use the project test planner only at a coherent checkpoint; follow <a href="../maintain-and-release/testing.html">Testing</a> for supported commands and the distinction between hidden GUI coverage and manual native dialog/interaction checks.</p>
-<h2 id="capability-checklist">Capability Checklist</h2>
-<p>Add a file only when the answer is yes:</p>
-<div class="table-wrap"><table><thead><tr><th>Need</th><th>Add</th></tr></thead><tbody><tr><td>Static product metadata and layout</td><td><code>definition.m</code>, layout builder</td></tr><tr><td>User commands or bound events</td><td><code>definitionActions.m</code></td></tr><tr><td>Dynamic control/preview models</td><td>presenter and any renderers</td></tr><tr><td>Durable App-owned data</td><td><code>projectSpec.m</code></td></tr><tr><td>Rebuilt decoded/cache/selection state</td><td><code>createSession.m</code></td></tr><tr><td>Saved schema has changed</td><td>local <code>migrateProject</code> in <code>projectSpec.m</code></td></tr><tr><td>Legacy top-level MAT variable is supported</td><td>local importer declared by <code>LegacyImports</code></td></tr><tr><td>Post-layout request/resource initialization</td><td>a semantically named optional <code>Start</code> function</td></tr></tbody></table></div>
-<p>This is the current Runtime V2 architecture. Older split metadata files, generic lifecycle packages, and per-version migration files are retired, not alternative supported styles.</p>
+<li><a href="app-development.html">App Development</a></li>
+<li><a href="architecture.html">Architecture</a></li>
+<li><a href="../../framework/index.html">LabKit App SDK</a></li>
+<li><a href="../maintain-and-release/testing.html">Testing</a></li>
+</ul><section class="page-api-links"><h2 id="functions-and-api">Functions And API</h2><p>Open a function for exact MATLAB syntax, arguments, outputs, behavior, and source.</p><table class="api-table"><thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody><tr><td><a href="../../reference/api/labkit/app/Definition.html"><code>labkit.app.Definition</code></a></td><td>Compile and launch one immutable App SDK contract.</td></tr><tr><td><a href="../../reference/api/labkit/app/layout/button.html"><code>labkit.app.layout.button</code></a></td><td>Add a push button with one explicit pressed callback.</td></tr><tr><td><a href="../../reference/api/labkit/app/layout/fileList.html"><code>labkit.app.layout.fileList</code></a></td><td>Add file selection and portable-source controls.</td></tr><tr><td><a href="../../reference/api/labkit/app/layout/plotArea.html"><code>labkit.app.layout.plotArea</code></a></td><td>Add one or more axes rendered by an App-owned renderer.</td></tr><tr><td><a href="../../reference/api/labkit/app/layout/section.html"><code>labkit.app.layout.section</code></a></td><td>Arrange related child elements under a visible title.</td></tr><tr><td><a href="../../reference/api/labkit/app/layout/slider.html"><code>labkit.app.layout.slider</code></a></td><td>Add a bounded numeric slider.</td></tr><tr><td><a href="../../reference/api/labkit/app/layout/workbench.html"><code>labkit.app.layout.workbench</code></a></td><td>Assemble controls and a central workspace into the root layout.</td></tr><tr><td><a href="../../reference/api/labkit/app/layout/workspace.html"><code>labkit.app.layout.workspace</code></a></td><td>Define the App's central working area and optional pages.</td></tr><tr><td><a href="../../reference/api/labkit/app/project/Schema.html"><code>labkit.app.project.Schema</code></a></td><td>Declare one durable App project contract.</td></tr><tr><td><a href="../../reference/api/labkit/app/view/Snapshot.html"><code>labkit.app.view.Snapshot</code></a></td><td>Build one immutable complete visible-state snapshot.</td></tr><tr><td><a href="../../reference/api/labkit/contract/requirements.html"><code>labkit.contract.requirements</code></a></td><td>Describe the LabKit API versions required by a caller.</td></tr></tbody></table></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>
