@@ -8,7 +8,8 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
             runtime.invokeAction("increment");
 
             testCase.verifyEqual(runtime.State.project.value, 1);
-            testCase.verifyEqual(runtime.StatusLog, "incremented");
+            testCase.verifyEqual( ...
+                runtime.StatusLog, ["Ready.", "incremented"]);
             testCase.verifyEqual(runtime.commitCount(), 2);
         end
 

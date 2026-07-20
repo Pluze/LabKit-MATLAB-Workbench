@@ -21,7 +21,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         PendingDocumentMetadata = []
     end
 
-    methods (Access = ?labkit.app.Definition)
+    methods (Access = ?labkit.app.internal.RuntimeFactory)
         function obj = RuntimeKernel( ...
                 application, initialProject, backend, platform, diagnostics, ...
                 recorder)

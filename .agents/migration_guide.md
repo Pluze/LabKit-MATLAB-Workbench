@@ -84,9 +84,12 @@ Current public-boundary checkpoint:
   callback port.
 - Runtime construction no longer passes the complete `Definition` into
   `CallbackContext`; the port retains only its named backend operations.
-- Remaining work is to move runtime factories, synthetic-sample execution,
-  compiler products, and test construction off the `Definition` facade while
-  preserving `Definition` as the App authoring aggregate root.
+- Runtime creation and synthetic-sample execution now belong to the internal
+  `RuntimeFactory`; temporary hidden `Definition` test delegates remain only
+  until their test consumers are switched.
+- Remaining work is to move compiler products and test inspection/construction
+  off the `Definition` facade while preserving it as the App authoring
+  aggregate root.
 
 Still open before compatibility retirement:
 
