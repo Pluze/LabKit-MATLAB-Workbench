@@ -33,8 +33,8 @@ function verify_cscExport()
     project.parameters.topY = string(defaults.topY);
     project.parameters.bottomX = string(defaults.bottomX);
     project.parameters.bottomY = string(defaults.bottomY);
-    session = definition.CreateSession( ...
-        project, labkit.app.CallbackContext());
+    runtime = definition.createRuntimeForTesting(project);
+    session = runtime.State.session;
     session.cache.items = item;
     session.selection.files = ...
         labkit.app.event.ListSelection(Indices=1);
@@ -81,12 +81,12 @@ function verify_cscExport()
         'CSC export CV normalized charge');
     assertClose(T.CSCctCath_mCcm2(1), A.Qct_mC_cm2, 1e-13, ...
         'CSC export CT normalized charge');
-    data = csc.userInterface.cycleResultsTableData(T, choices.modes(2));
+    data = csc.analysisRun.cycleResultsTableData(T, choices.modes(2));
     assert(isequal(size(data), [height(T) 6]), ...
         'CSC compact cycle table should preserve six visible columns.');
     assertClose(data{1, 3}, A.Qcv_mC_cm2, 1e-13, ...
         'CSC compact table should follow selected display mode.');
-    names = csc.userInterface.cycleResultsColumnNames(choices.modes(2));
+    names = csc.analysisRun.cycleResultsColumnNames(choices.modes(2));
     assert(contains(names{3}, 'cathodic'), ...
         'CSC compact table headers should name the selected display mode.');
 

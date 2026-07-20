@@ -40,7 +40,8 @@ function checkAppSdkProjectAndPresenterContracts()
         'A new Image Enhance project should satisfy its durable contract.');
     assert(~isfield(project, 'items') && ~isfield(project, 'previewImages'), ...
         'The durable project must not contain decoded pixels or preview caches.');
-    session = image_enhance.createSession(project, labkit.app.CallbackContext());
+    session = image_enhance.createSession( ...
+        project, labkit.app.internal.CallbackContextFactory.disconnected());
     state = struct('project', project, 'session', session);
     presentation = image_enhance.workbench.present(state);
     assert(isa(presentation, 'labkit.app.view.Snapshot'), ...
@@ -176,7 +177,8 @@ end
 function checkWhiteRoiToolAvailabilityFollowsBatchMode()
     spec = image_enhance.projectSpec();
     project = spec.Create();
-    session = image_enhance.createSession(project, labkit.app.CallbackContext());
+    session = image_enhance.createSession( ...
+        project, labkit.app.internal.CallbackContextFactory.disconnected());
     project.inputs.sources = struct('id', "image-1", 'required', true, ...
         'role', "source-image", 'reference', struct());
     annotation = image_enhance.enhancementAnnotations.empty();

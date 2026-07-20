@@ -2,7 +2,8 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
     methods (Test, TestTags = {'Unit'})
         function noCapabilityContextRejectsOperations(testCase)
             setupLabKitTestPath();
-            context = labkit.app.CallbackContext();
+            context = ...
+                labkit.app.internal.CallbackContextFactory.disconnected();
 
             testCase.verifyTrue(meta.class.fromName( ...
                 "labkit.app.CallbackContext").Sealed);
@@ -12,7 +13,6 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
 
         function namedOperationsUseOneSealedBackend(testCase)
             setupLabKitTestPath();
-            app = application();
             store = containers.Map("KeyType", "char", "ValueType", "any");
             backend = struct( ...
                 "appendStatus", @appendStatus, ...
@@ -24,7 +24,7 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
                 "getResource", @getResource, ...
                 "removeResource", @removeResource, ...
                 "clearResourceScope", @clearResourceScope);
-            context = labkit.app.CallbackContext.createForRuntime(app, backend);
+            context = labkit.app.internal.CallbackContextFactory.create(backend);
             context.appendStatus("ready");
             choice = context.chooseOption("Continue?", ["yes", "no"], ...
                 Title="Continue operation?", DefaultChoice="no", ...
@@ -94,12 +94,4 @@ classdef UiRuntimeContextContractTest < matlab.unittest.TestCase
             end
         end
     end
-end
-
-function app = application()
-    app = labkit.app.Definition( ...
-        Entrypoint="labkit_Probe_app", AppId="probe.context", ...
-        Title="Probe", Family="Tests", AppVersion="1.0.0", ...
-        Updated="2026-07-19", Requirements=[], ...
-        Workbench=labkit.app.layout.workbench({}));
 end

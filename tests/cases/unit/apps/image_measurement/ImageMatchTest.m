@@ -37,7 +37,8 @@ function checkAppSdkProjectAndPresenterContracts()
         'The durable project must exclude decoded source/reference pixels.');
     assert(strlength(project.parameters.outputFolder) == 0, ...
         'A new project should avoid startup path side effects.');
-    session = definition.CreateSession(project, labkit.app.CallbackContext());
+    session = definition.CreateSession( ...
+        project, labkit.app.internal.CallbackContextFactory.disconnected());
     state = struct('project', project, 'session', session);
     presentation = image_match.workbench.present(state);
     assert(isa(presentation, 'labkit.app.view.Snapshot'), ...

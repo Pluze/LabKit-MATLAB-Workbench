@@ -75,6 +75,19 @@ Retired during Phase 7:
   records and this active debt rationale remain until the final
   cross-component history record is complete.
 
+Current public-boundary checkpoint:
+
+- `CallbackContext` is runtime-created and callback-injected; Apps can no
+  longer construct it as a second root object.
+- Pure portable-source value creation moved to `labkit.app.project`, while
+  unused source mutation and render-surface operations were removed from the
+  callback port.
+- Runtime construction no longer passes the complete `Definition` into
+  `CallbackContext`; the port retains only its named backend operations.
+- Remaining work is to move runtime factories, synthetic-sample execution,
+  compiler products, and test construction off the `Definition` facade while
+  preserving `Definition` as the App authoring aggregate root.
+
 Still open before compatibility retirement:
 
 - audit the final public `labkit.app` surface for authoring-level hierarchy:

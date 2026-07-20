@@ -306,7 +306,8 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(project, 'currentImage'));
 
             session = video_marker.createSession( ...
-                project, labkit.app.CallbackContext());
+                project, ...
+                labkit.app.internal.CallbackContextFactory.disconnected());
             state = struct('project', project, 'session', session);
             presentation = video_marker.workbench.present(state);
             testCase.verifyClass(presentation, "labkit.app.view.Snapshot");
