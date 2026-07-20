@@ -1,5 +1,5 @@
 %CREATESESSION Rebuild Figure Studio's transient view and decoded plot cache.
-% Expected caller: Runtime V2 through figure_studio.definition. Input is a
+% Expected caller: App SDK through figure_studio.definition. Input is a
 % validated current project. Existing source decode failures propagate so a
 % damaged project cannot replace the live document with an empty cache.
 function session = createSession(project, context)

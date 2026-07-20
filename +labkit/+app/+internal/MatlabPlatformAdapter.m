@@ -956,6 +956,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                     if node.Configuration.SelectionMode == "single" && ...
                             node.Configuration.MaxFiles == 1
                         height = policy.CompactFileHeight;
+                    elseif ~node.Configuration.ShowStatus
+                        height = policy.FileListNoStatusHeight;
                     else
                         height = policy.FileListHeight;
                     end
@@ -970,10 +972,27 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                         height = policy.StatusHeight;
                     end
                 case "button"
-                    height = policy.ButtonHeight;
+                    height = estimatedControlHeight( ...
+                        node.Configuration.Label, 22, 2, ...
+                        policy.ButtonHeight);
                 case "slider"
                     height = policy.SliderHeight;
-                case {"field", "rangeField", "panner"}
+                case "field"
+                    if node.Configuration.Kind == "readonly"
+                        text = [string(node.Configuration.Label), ...
+                            string(node.Configuration.Value)];
+                        height = estimatedControlHeight( ...
+                            text, 34, 3, policy.FieldHeight);
+                    elseif node.Configuration.Kind == "logical"
+                        height = estimatedControlHeight( ...
+                            node.Configuration.Label, 42, 2, ...
+                            policy.FieldHeight);
+                    else
+                        height = estimatedControlHeight( ...
+                            node.Configuration.Label, 30, 2, ...
+                            policy.FieldHeight);
+                    end
+                case {"rangeField", "panner"}
                     height = policy.FieldHeight;
                 case {"section", "group"}
                     children = obj.nodes(node.ChildIds);
@@ -2050,6 +2069,18 @@ for k = 1:numel(paths)
         k, names(k), suffix);
 end
 labels = reshape(labels, 1, []);
+end
+
+function height = estimatedControlHeight(text, charsPerLine, maxLines, minimum)
+text = string(text);
+if isempty(text)
+    height = minimum;
+    return
+end
+lines = splitlines(text(:));
+lineCount = max(1, ceil(double(max(strlength(lines))) / charsPerLine));
+lineCount = min(maxLines, lineCount);
+height = max(minimum, 20 * lineCount + 6);
 end
 
 function folder = userDialogFolder()

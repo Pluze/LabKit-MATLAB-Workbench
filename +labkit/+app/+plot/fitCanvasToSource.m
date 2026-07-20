@@ -23,9 +23,11 @@ function [applied, frame] = fitCanvasToSource(ax, width, height, varargin)
 %
 % Description:
 %   fitCanvas centers the axes in the middle row and column of a three-by-three
-%   flexible grid and preserves the requested aspect ratio. It returns false
-%   instead of throwing when the host has not been laid out yet or is smaller
-%   than the minimum usable preview area.
+%   flexible grid and preserves the requested aspect ratio. The helper keeps
+%   one managed parent-position listener with the axes and reapplies the most
+%   recent canvas request after host resizing. It returns false instead of
+%   throwing when the host has not been laid out yet or is smaller than the
+%   minimum usable preview area.
 %
 % Failure Behavior:
 %   Invalid axes, host grids, source dimensions, or insufficient available
@@ -56,6 +58,7 @@ function [applied, frame] = fitCanvasToSource(ax, width, height, varargin)
             canvasWidth <= 0 || canvasHeight <= 0
         return;
     end
+    rememberResizeRequest(ax, canvasWidth, canvasHeight, opts);
 
     try
         drawnow;
@@ -88,6 +91,49 @@ function [applied, frame] = fitCanvasToSource(ax, width, height, varargin)
         frame = struct();
         applied = false;
     end
+end
+
+function rememberResizeRequest(ax, width, height, opts)
+key = "labkitAppCanvasResize";
+request = struct("width", width, "height", height, ...
+    "margin", finiteScalar(opts.margin, 24), ...
+    "maxScale", finiteScalar(opts.maxScale, 1), ...
+    "listener", []);
+if isappdata(ax, key)
+    current = getappdata(ax, key);
+    if isstruct(current) && isfield(current, "listener") && ...
+            ~isempty(current.listener) && isvalid(current.listener)
+        request.listener = current.listener;
+        setappdata(ax, key, request);
+        return
+    end
+end
+try
+    request.listener = addlistener(ax.Parent, "Position", "PostSet", ...
+        @(~, ~) reflowRememberedCanvas(ax, key));
+catch
+    request.listener = [];
+end
+setappdata(ax, key, request);
+end
+
+function reflowRememberedCanvas(ax, key)
+guard = key + "InProgress";
+if isempty(ax) || ~isvalid(ax) || ~isappdata(ax, key) || ...
+        (isappdata(ax, guard) && getappdata(ax, guard))
+    return
+end
+setappdata(ax, guard, true);
+cleanup = onCleanup(@() clearResizeGuard(ax, guard));
+request = getappdata(ax, key);
+fitCanvasToSource(ax, request.width, request.height, ...
+    "margin", request.margin, "maxScale", request.maxScale);
+end
+
+function clearResizeGuard(ax, key)
+if ~isempty(ax) && isvalid(ax) && isappdata(ax, key)
+    rmappdata(ax, key);
+end
 end
 
 function opts = parseOptions(args)

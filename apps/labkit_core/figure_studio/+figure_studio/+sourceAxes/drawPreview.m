@@ -1,11 +1,11 @@
-% Expected caller: the registered Figure Studio V2 renderer and export helper.
+% Expected caller: the registered Figure Studio App SDK renderer and export
+% helper.
 % Inputs are target axes plus a serializable plot/style model. Side effects
 % are limited to drawing and styling the target axes.
 function drawPreview(axesById, model)
     ax = axesById.main;
     if isempty(model.plotData)
         labkit.app.plot.clearAxes(ax);
-        labkit.app.plot.showMessage(ax, "No figure loaded");
         if isappdata(ax, 'labkitFigureStudioPlotData')
             rmappdata(ax, 'labkitFigureStudioPlotData');
         end

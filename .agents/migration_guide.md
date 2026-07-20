@@ -47,11 +47,12 @@ Restored in the replacement SDK worktree:
 - fixed control-pane sizing, draggable column and row dividers, scrollable
   control tabs, framework utility menus, and complete-text fitting;
 - old panner, range, readonly, adaptive action-grid, file/folder/recursive
-  file selection, friendly file labels, status, log-follow, table, and Usage
-  presentations;
+  file selection, friendly file labels, multiline control sizing, status,
+  log-follow, table, and distinct Usage presentations;
 - workspace pages and initial selection, plot view modes, single/pair/stack
   axes layouts, axis titles and labels, unequal axes sizing, per-axis wheel
-  zoom, viewport preservation, and plot pop-out/export behavior.
+  zoom, viewport preservation, managed fixed-canvas resize reflow, and plot
+  pop-out/export behavior.
 
 Still open before compatibility retirement:
 
@@ -80,7 +81,8 @@ Current product audit progress:
 | CSC | Complete | All three control tabs, file/curve/plot controls, readonly comparison summary, all-cycle table, paired exports, stacked axes, project workflow, and focused GUI test compared with `main` |
 | EIS | Complete | All three control tabs, file actions, panners, plot choices, Usage, summary, labeled plot, export/restore workflow, and focused GUI test compared with `main` |
 | VT Resistance | Complete | All three control tabs, file/export actions, analysis and plot controls, readonly summary, batch table, stacked axes, project workflow, and focused GUI tests compared with `main` |
-| Remaining 15 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
+| Figure Studio | Complete | Figures/Export/Log tabs, FIG source actions, multiline status, quick exports, Canvas and Style panners, linked font/aspect behavior, fixed-canvas preview, axes handoff, package exports/manifests, and focused unit/GUI tests compared with `main` |
+| Remaining 14 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
 
 The accepted public structure is capability-partitioned:
 `labkit.app.Definition` and `CallbackContext` form the small root; `layout`,
