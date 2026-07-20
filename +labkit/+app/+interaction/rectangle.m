@@ -4,6 +4,10 @@ function spec = rectangle(id, onChanged, varargin)
 % Usage:
 %   spec = labkit.app.interaction.rectangle(id,onChanged,Name=Value)
 %
+% Description:
+%   Creates the semantic declaration for a persistent editable rectangle,
+%   including an optional background-point callback on the same axis.
+%
 % Inputs:
 %   id - Unique MATLAB identifier.
 %   onChanged - Callback state = callback(state,position,context).

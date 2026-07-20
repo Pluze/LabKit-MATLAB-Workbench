@@ -114,6 +114,14 @@ Current public-boundary checkpoint:
   complete-App guides name `definition.m` and `Snapshot.include` explicitly.
   The four previously failing documentation methods pass; the full-diff gate
   must be rebuilt from the new checkpoint and rerun.
+- The root public layer remains deliberately limited to `Definition`,
+  runtime-injected `CallbackContext`, and `version`. `Definition` is the sole
+  App-authored aggregate root; `CallbackContext` is a sealed callback protocol
+  port, not a constructible service root. Optional concepts stay in named
+  `layout`, `view`, `event`, `interaction`, `plot`, `project`, `result`,
+  `dialog`, and `diagnostic` packages. The public-surface guardrail now locks
+  this replacement vocabulary and rejects any return of the retired
+  `labkit.ui` files.
 
 Still open before compatibility retirement:
 

@@ -4,6 +4,10 @@ function spec = regionSelection(id, onSelected, varargin)
 % Usage:
 %   spec = labkit.app.interaction.regionSelection(id,onSelected,Name=Value)
 %
+% Description:
+%   Creates the semantic declaration for a transient click-or-drag selection
+%   whose result is delivered without exposing native interaction objects.
+%
 % Inputs:
 %   id - Unique MATLAB identifier.
 %   onSelected - Callback state = callback(state,position,context).

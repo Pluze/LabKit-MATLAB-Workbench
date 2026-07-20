@@ -24,7 +24,7 @@
 <h1 id="runtime-and-lifecycle">Runtime And Lifecycle</h1>
 <p><code>labkit.app</code> is the App-facing runtime contract. Apps declare product meaning; the private runtime owns native MATLAB components, event serialization, transactions, project documents, portable sources, resources, and cleanup.</p>
 <h2 id="definition-and-launch">Definition And Launch</h2>
-<p>Each entrypoint delegates to one immutable definition:</p>
+<p>Each App-owned <code>definition.m</code> is the single immutable product contract, and each entrypoint delegates to it:</p>
 <pre><code class="language-matlab">function varargout = labkit_Example_app(varargin)
 [varargout{1:nargout}] = example.definition().launch(varargin{:});
 end</code></pre>

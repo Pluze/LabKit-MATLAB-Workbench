@@ -4,6 +4,10 @@ function spec = pointSlots(id, onChanged, varargin)
 % Usage:
 %   spec = labkit.app.interaction.pointSlots(id,onChanged,Name=Value)
 %
+% Description:
+%   Creates the semantic declaration for a fixed, labeled set of editable
+%   points whose structured value is committed by the runtime.
+%
 % Inputs:
 %   id - Unique MATLAB identifier.
 %   onChanged - Callback state = callback(state,value,context).

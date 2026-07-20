@@ -4,6 +4,10 @@ function spec = interval(id, onChanged, varargin)
 % Usage:
 %   spec = labkit.app.interaction.interval(id,onChanged,Name=Value)
 %
+% Description:
+%   Creates the semantic declaration for a managed interval editor and its
+%   optional typed scroll callback on one plot axis.
+%
 % Inputs:
 %   id - Unique MATLAB identifier.
 %   onChanged - Callback state = callback(state,range,context).

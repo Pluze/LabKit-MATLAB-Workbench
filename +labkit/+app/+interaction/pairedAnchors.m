@@ -4,6 +4,10 @@ function spec = pairedAnchors(id, onChanged, varargin)
 % Usage:
 %   spec = labkit.app.interaction.pairedAnchors(id,onChanged,Name=Value)
 %
+% Description:
+%   Creates the semantic declaration for corresponding editable points across
+%   two or more axes while the runtime owns their native editors.
+%
 % Inputs:
 %   id - Unique MATLAB identifier.
 %   onChanged - Callback state = callback(state,pointSets,context).

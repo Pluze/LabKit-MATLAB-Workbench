@@ -138,7 +138,7 @@ view = view.include(trace_viewer.sourceTrace.present( ...
 view = view.enabled(&quot;exportTrace&quot;, ...
     ~isempty(applicationState.session.trace.x));
 end</code></pre>
-<p><code>+workbench/present.m</code> is a short assembly boundary. It extracts exact inputs and composes feature fragments; it does not perform IO or calculation.</p>
+<p><code>+workbench/present.m</code> is a short assembly boundary. It extracts exact inputs and composes feature fragments with <code>Snapshot.include</code>; it does not perform IO or calculation.</p>
 <pre><code class="language-matlab">function view = present(trace, gain)
 model = struct(&quot;x&quot;, trace.x, &quot;y&quot;, trace.y .* gain);
 view = labkit.app.view.Snapshot().renderPlot(&quot;tracePlot&quot;, model);

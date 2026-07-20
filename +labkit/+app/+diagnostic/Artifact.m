@@ -5,6 +5,10 @@ classdef (Sealed) Artifact
     %   artifact = labkit.app.diagnostic.Artifact( ...
     %       id,role,relativePath,Name=Value)
     %
+    % Description:
+    %   Identifies one synthetic input, expected export, or support file
+    %   beneath a diagnostic sample root without exposing a user file path.
+    %
     % Inputs:
     %   id - Nonempty semantic identifier unique within a SamplePack.
     %   role - Nonempty App-owned artifact purpose.

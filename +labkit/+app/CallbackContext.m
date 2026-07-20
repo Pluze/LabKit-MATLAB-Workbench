@@ -2,6 +2,7 @@ classdef (Sealed) CallbackContext < handle
     %CALLBACKCONTEXT Provide declared App-neutral runtime capabilities.
     %
     % Usage:
+    %   labkit.app.CallbackContext.appendStatus(context, message)
     %   context.appendStatus(message)
     %   context.reportError(operation, exception)
     %   context.diagnosticCheckpoint(id)

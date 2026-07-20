@@ -190,6 +190,7 @@ appDir = fullfile(root, appRelDir);
 packageDir = fullfile(appDir, ['+' packageName]);
 files = dir(fullfile(packageDir, '**', '*.m'));
 adapterFunctions = packageName + ".workbench.present";
+layoutHandles = cell(numel(files), 1);
 
 for k = 1:numel(files)
     filepath = fullfile(files(k).folder, files(k).name);
@@ -199,13 +200,12 @@ for k = 1:numel(files)
         handles = regexp(source, ...
             '@([A-Za-z]\w*(?:\.[A-Za-z]\w*)+)', 'tokens');
         if ~isempty(handles)
-            adapterFunctions = [adapterFunctions, ...
-                string(cellfun(@(value) value{1}, handles, ...
-                'UniformOutput', false))]; %#ok<AGROW>
+            layoutHandles{k} = string(cellfun(@(value) value{1}, handles, ...
+                'UniformOutput', false));
         end
     end
 end
-adapterFunctions = unique(adapterFunctions);
+adapterFunctions = unique([adapterFunctions, layoutHandles{:}]);
 
 for k = 1:numel(files)
     filepath = fullfile(files(k).folder, files(k).name);

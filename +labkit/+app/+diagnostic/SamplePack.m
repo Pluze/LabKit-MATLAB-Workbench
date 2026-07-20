@@ -5,6 +5,10 @@ classdef (Sealed) SamplePack
     %   pack = labkit.app.diagnostic.SamplePack( ...
     %       Scenario=scenario,InitialProject=project,Artifacts=artifacts)
     %
+    % Description:
+    %   Couples one App-authored synthetic project with its anonymous artifact
+    %   declarations so verbose diagnostics can reproduce a named scenario.
+    %
     % Required Name-Value Arguments:
     %   Scenario - Nonempty stable scenario identifier.
     %   InitialProject - Scalar current App project struct.

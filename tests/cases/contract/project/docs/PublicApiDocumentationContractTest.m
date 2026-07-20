@@ -91,7 +91,7 @@ classdef PublicApiDocumentationContractTest < matlab.unittest.TestCase
         function generatedNameValueSectionsUseDefinitionLists(testCase)
             root = setupLabKitTestPath();
             filepath = fullfile(root, "site", "reference", "api", ...
-                "labkit", "ui", "runtime", "define.html");
+                "labkit", "app", "Definition.html");
             html = string(fileread(filepath));
             for id = ["required-name-value-arguments", ...
                     "optional-name-value-arguments"]
@@ -108,10 +108,10 @@ classdef PublicApiDocumentationContractTest < matlab.unittest.TestCase
         function generatedMethodSectionsUseDefinitionLists(testCase)
             root = setupLabKitTestPath();
             filepath = fullfile(root, "site", "reference", "api", ...
-                "labkit", "ui", "debug", "context.html");
+                "labkit", "app", "Definition.html");
             html = string(fileread(filepath));
             section = extractAfter(html, ...
-                '<section class="api-section"><h2 id="context-methods">');
+                '<section class="api-section"><h2 id="definition-methods">');
             section = extractBefore(section, "</section>");
             testCase.verifyTrue(contains(section, ...
                 '<dl class="argument-list">'), ...

@@ -4,6 +4,10 @@ function spec = anchorPath(id, onChanged, varargin)
 % Usage:
 %   spec = labkit.app.interaction.anchorPath(id, onChanged, Name=Value)
 %
+% Description:
+%   Creates the semantic declaration for a managed multi-anchor path editor;
+%   the runtime owns native graphics, viewport preservation, and dispatch.
+%
 % Inputs:
 %   id - Unique MATLAB identifier for this interaction.
 %   onChanged - Callback state = callback(state,points,context).

@@ -4,6 +4,10 @@ function spec = scaleReference(id, onChanged, varargin)
 % Usage:
 %   spec = labkit.app.interaction.scaleReference(id,onChanged,Name=Value)
 %
+% Description:
+%   Creates the semantic declaration for an editable two-endpoint physical
+%   scale reference while the runtime owns its native editor lifecycle.
+%
 % Inputs:
 %   id - Unique MATLAB identifier.
 %   onChanged - Callback state = callback(state,endpoints,context).

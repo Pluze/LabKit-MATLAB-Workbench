@@ -13,6 +13,10 @@ function records = emptySourceRecords()
 % Outputs:
 %   records - Empty column collection of portable source records.
 %
+% Failure Behavior:
+%   None - The function accepts no inputs and returns the canonical empty
+%   collection deterministically.
+%
 % Example:
 %   project.inputs.sources = labkit.app.project.emptySourceRecords();
 %   assert(isempty(project.inputs.sources))
