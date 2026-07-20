@@ -808,7 +808,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                     RowSpacing=policy.ContentSpacing, ...
                     ColumnSpacing=policy.ContentSpacing);
                 heights = obj.childRowHeights(node.ChildIds);
-                if numel(node.ChildIds) == 1 && ...
+                if node.Kind == "workspacePage"
+                    for k = 1:numel(node.ChildIds)
+                        if obj.isGrowableTabChild(obj.node(node.ChildIds(k)))
+                            heights{k} = "1x";
+                        end
+                    end
+                elseif numel(node.ChildIds) == 1 && ...
                         obj.isGrowableTabChild(obj.node(node.ChildIds(1)))
                     heights{1} = "1x";
                 end

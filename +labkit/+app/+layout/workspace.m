@@ -7,10 +7,14 @@ function node = workspace(varargin)
 %
 % Description:
 %   Declares a single-content workspace or a workspace extended with
-%   node.page(id,title,content) and node.initialPage(id).
+%   node.page(id,title,content) and node.initialPage(id). A named page accepts
+%   one workspace node or a nonempty row cell array of nodes arranged
+%   vertically; growable tables and plots share the available page height.
 %
 % Inputs:
 %   content - Optional plotArea, dataTable, group, or section node.
+%       For node.page, content may also be a nonempty row cell array of
+%       workspace nodes.
 %
 % Options:
 %   Title - Reader-facing workspace title. Default: "Workspace".

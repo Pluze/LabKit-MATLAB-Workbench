@@ -75,6 +75,8 @@ classdef (Sealed, Hidden) LayoutNode
     %
     % Layout Methods:
     %   page(id,title,content) - Return a workspace with one additional page.
+    %       content is one workspace Layout value or a nonempty row cell
+    %       array of workspace Layout values arranged vertically.
     %   initialPage(id) - Return a workspace selecting a declared page.
     %
     % Errors:
@@ -495,13 +497,18 @@ classdef (Sealed, Hidden) LayoutNode
                 error("labkit:app:contract:DuplicateId", ...
                     "Workspace page ID repeats: %s.", id);
             end
-            if ~isa(content, "labkit.app.internal.LayoutNode")
-                error("labkit:app:contract:InvalidValue", ...
-                    "Workspace page content must be a Layout value.");
+            if isa(content, "labkit.app.internal.LayoutNode")
+                content = {content};
+            else
+                content = normalizeChildren(content);
             end
-            validateChildKinds({content}, workspaceContentKinds(), ...
+            if isempty(content)
+                error("labkit:app:contract:InvalidValue", ...
+                    "Workspace page content must not be empty.");
+            end
+            validateChildKinds(content, workspaceContentKinds(), ...
                 "workspace page");
-            pageNode = labkit.app.internal.LayoutNode("workspacePage", id, {content}, ...
+            pageNode = labkit.app.internal.LayoutNode("workspacePage", id, content, ...
                 ["workspacePage"], {}, [], strings(1, 0), ...
                 struct("Title", nonemptyText(title, "workspace page title")));
             obj.Children{end + 1} = pageNode;

@@ -91,6 +91,9 @@ and renderer signatures, and builds one private native platform plan.
 - Use `labkit.app.layout.plotArea` and a fixed
   `renderer(axesById,model)` callback. `axesById` is always a named struct,
   even when the plot area declares only one axis.
+- Pass one workspace node or a row cell array of vertically arranged nodes to
+  `workspace.page`; growable tables and plots share the available page height
+  without an App-authored wrapper section.
 - Declare editable overlays with `labkit.app.interaction.*` on the plot area;
   supply their current values with same-named Snapshot methods.
 - Use `labkit.app.plot.clearAxes`, `showMessage`, and `fitAxesToGraphics`
