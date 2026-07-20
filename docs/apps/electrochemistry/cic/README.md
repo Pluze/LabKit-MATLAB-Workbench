@@ -1,5 +1,8 @@
 # Charge-Injection Capacity
 
+Every action and input-selection button provides hover help describing its
+pulse data, injected-charge/CIC result, or export effect.
+
 The CIC app measures charge delivered by a biphasic current pulse, normalizes
 charge by electrode area, and reports voltage-transient polarization metrics
 at a controlled delay after each pulse phase.

@@ -112,6 +112,12 @@ function assertDicPostprocessLayout(h, fig)
     assert(isequal(sort(string({tabs.Title})), ...
         sort(["Files + Analysis", "Summary + Results", "Log"])));
     assert(numel(findall(fig, "Title", "Strain Overlays")) >= 2);
+    generate = findall(fig, "Tag", "generate");
+    chooseMat = findall(fig, "Tag", "matFile.choose");
+    assert(contains(string(generate.Tooltip), "finite EXX/EYY"));
+    assert(contains(string(chooseMat.Tooltip), "Ncorr MAT"));
+    assert(~contains(string(generate.Tooltip), newline));
+    assert(~contains(string(chooseMat.Tooltip), newline));
 end
 
 function writeSyntheticDicMat(filepath)

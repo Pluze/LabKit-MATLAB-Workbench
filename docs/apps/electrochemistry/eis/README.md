@@ -1,5 +1,8 @@
 # EIS
 
+Every action and input-selection button provides hover help describing its
+impedance input, plotted quantities, or exported EIS data.
+
 EIS overlays impedance data from one or more Gamry `ZCURVE` tables, supports
 Nyquist and Bode-style axis combinations, and exports the values currently
 selected for plotting.

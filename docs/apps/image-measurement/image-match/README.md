@@ -1,5 +1,8 @@
 # Image Match
 
+Every action and input-selection button provides hover help describing its
+reference distribution, match history, source pixels, or batch export effect.
+
 Image Match transfers tone and color statistics from one reference image to
 one or more source images while preserving each source image's geometry.
 

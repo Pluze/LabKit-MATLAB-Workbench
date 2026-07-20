@@ -1,5 +1,8 @@
 # Gait Analysis
 
+Every action and input-selection button provides hover help describing its
+pose input, detected-step navigation, gait calculation, or export effect.
+
 Gait Analysis 2 converts a current Video Marker project into independently
 segmented treadmill swing steps, per-frame kinematics, per-step gait
 parameters, visual step reports, and reproducible CSV outputs. Loading and

@@ -155,7 +155,8 @@ The result capability binds a real business action directly:
 function section = layoutSection()
 section = labkit.app.layout.section("resultFiles", "Results", { ...
     labkit.app.layout.button("exportTrace", ...
-        "Export trace", @trace_viewer.resultFiles.exportTrace)});
+        "Export trace", @trace_viewer.resultFiles.exportTrace, ...
+        Tooltip="Export the calibrated trace and its sampling metadata.")});
 end
 ```
 

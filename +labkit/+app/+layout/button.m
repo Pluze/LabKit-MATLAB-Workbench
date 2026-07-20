@@ -16,6 +16,8 @@ function node = button(id, label, onPressed, varargin)
 % Options:
 %   BusyMessage - Status text while the action runs. Default: "".
 %   Enabled - Initial logical enabled state. Default: true.
+%   Tooltip - Nonempty hover text explaining the action's scientific or
+%       workflow effect. Default: label.
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by layout containers.
@@ -24,7 +26,8 @@ function node = button(id, label, onPressed, varargin)
 %   Throws labkit:app:contract:* for invalid IDs, options, or handlers.
 %
 % Typical Call:
-%   node = labkit.app.layout.button("run", "Run", @runAnalysis);
+%   node = labkit.app.layout.button("run", "Run", @runAnalysis, ...
+%       Tooltip="Compute the current analysis from the selected inputs.");
 %
 % See also labkit.app.layout.workbench, labkit.app.CallbackContext
 node = labkit.app.internal.LayoutNode.button( ...

@@ -1,5 +1,8 @@
 # FLIR Thermal
 
+Every action and input-selection button provides hover help describing its
+radiometric input, calibrated temperature statistic, color mapping, or export.
+
 FLIR Thermal decodes radiometric FLIR JPEG/RJPEG files, displays calibrated
 temperature maps, measures rectangular ROI hot/cold/mean values, and exports
 rendered images with Celsius data.

@@ -1,5 +1,8 @@
 # RHS Preview
 
+Every action and input-selection button provides hover help describing its
+RHS/protocol input, waveform window, response ROI, filter, or JSON output.
+
 RHS Preview lets you inspect an Intan RHS recording without loading the entire
 waveform into memory. Use it to check channels, move through short waveform
 windows, choose the channels to plot, and prepare protocol or file-filter JSON

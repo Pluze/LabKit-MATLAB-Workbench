@@ -17,7 +17,7 @@ end
 if isprop(handle, "WordWrap")
     handle.WordWrap = "on";
 end
-if isprop(handle, "Tooltip")
+if isprop(handle, "Tooltip") && strlength(string(handle.Tooltip)) == 0
     handle.Tooltip = char(text);
 end
 if ~isprop(handle, "FontSize")
@@ -39,8 +39,20 @@ end
 function text = componentText(handle)
 text = "";
 if isprop(handle, "Text")
-    text = join(string(handle.Text(:)), newline);
+    text = normalizedComponentText(handle.Text);
 elseif isprop(handle, "Value")
-    text = join(string(handle.Value(:)), newline);
+    text = normalizedComponentText(handle.Value);
+end
+end
+
+function text = normalizedComponentText(value)
+if ischar(value)
+    if isrow(value) || isempty(value)
+        text = string(value);
+    else
+        text = join(string(value), newline);
+    end
+else
+    text = join(string(value(:)), newline);
 end
 end

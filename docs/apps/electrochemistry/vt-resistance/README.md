@@ -1,5 +1,8 @@
 # VT Resistance
 
+Every action and input-selection button provides hover help describing its
+pulse voltage/current input, resistance result, or export effect.
+
 VT Resistance estimates cathodic and anodic steady resistance from a biphasic
 voltage transient and reports the mean of their absolute values.
 

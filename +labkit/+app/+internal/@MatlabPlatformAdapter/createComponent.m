@@ -32,7 +32,8 @@ function component = createComponent(obj, node, parent)
             obj.installContentGrid(node, component);
         case "button"
             component = uibutton(parent, Text=config.Label, ...
-                Enable=labkit.app.internal.NativeAdapterValues.onOff(config.Enabled));
+                Enable=labkit.app.internal.NativeAdapterValues.onOff(config.Enabled), ...
+                Tooltip=char(config.Tooltip));
             labkit.app.internal.NativeAdapterValues.fitText(component, ...
                 CharsPerStep=18, MaxShrinkSteps=3);
         case "field"

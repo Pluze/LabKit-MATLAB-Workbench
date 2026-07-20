@@ -127,7 +127,8 @@ end</code></pre>
 <pre><code class="language-matlab">function section = layoutSection()
 section = labkit.app.layout.section(&quot;resultFiles&quot;, &quot;Results&quot;, { ...
     labkit.app.layout.button(&quot;exportTrace&quot;, ...
-        &quot;Export trace&quot;, @trace_viewer.resultFiles.exportTrace)});
+        &quot;Export trace&quot;, @trace_viewer.resultFiles.exportTrace, ...
+        Tooltip=&quot;Export the calibrated trace and its sampling metadata.&quot;)});
 end</code></pre>
 <h2 id="6-complete-view-snapshot">6. Complete View Snapshot</h2>
 <pre><code class="language-matlab">function view = present(applicationState)

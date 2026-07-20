@@ -1,5 +1,8 @@
 # Focus Stack
 
+Every action and input-selection button provides hover help describing its
+z-stack input, local-focus fusion, depth map, or export effect.
+
 Focus Stack fuses at least two focal planes into one all-in-focus image using
 multilevel Laplacian focus evidence and exports a focus-depth index map.
 

@@ -1,5 +1,8 @@
 # Figure Studio
 
+Every action and input-selection button provides hover help describing its
+FIG source, editable styling artifact, plotted data, or graphics export.
+
 Figure Studio restyles MATLAB figures, exports presentation copies, and
 extracts supported visible graphics into a portable data package. It changes
 presentation properties, not the calculation that produced the plot.

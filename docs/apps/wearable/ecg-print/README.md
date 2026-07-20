@@ -1,5 +1,8 @@
 # ECG Print
 
+Every action and input-selection button provides hover help describing its
+ECG import, ROI processing, beat/template analysis, SNR, or export effect.
+
 ECG Print reads a wearable recording, filters one channel, detects beats,
 builds event-centered segments and a representative template, and reports
 signal quality over time. It can export the segment measurements and a

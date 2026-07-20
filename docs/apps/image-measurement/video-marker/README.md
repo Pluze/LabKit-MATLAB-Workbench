@@ -1,5 +1,8 @@
 # Video Marker
 
+Every action and input-selection button provides hover help describing its
+landmark/skeleton state, frame annotation, calibration, or coordinate export.
+
 Video Marker defines an ordered landmark skeleton, records coordinates across
 video frames, predicts forward positions between manual anchors, and saves a
 portable project with an explicit source-adjacent autosave copy.

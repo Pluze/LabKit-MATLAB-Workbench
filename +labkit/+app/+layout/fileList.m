@@ -25,6 +25,12 @@ function node = fileList(id, varargin)
 %   RecursiveFolderLabel - Recursive button text. Default: "Choose Folder Recursively".
 %   RemoveLabel - Remove button text. Default: "Remove".
 %   ClearLabel - Clear button text. Default: "Clear".
+%   ChooseTooltip - File button hover text. Default: ChooseLabel.
+%   FolderTooltip - Folder button hover text. Default: FolderLabel.
+%   RecursiveFolderTooltip - Recursive-folder button hover text. Default:
+%       RecursiveFolderLabel.
+%   RemoveTooltip - Remove button hover text. Default: RemoveLabel.
+%   ClearTooltip - Clear button hover text. Default: ClearLabel.
 %   EmptyText - Empty-list text. Default: "No files selected".
 %   AllowDuplicatePaths - Preserve separate portable source records that
 %       resolve to the same path. Use this when each list row is a distinct
@@ -48,7 +54,8 @@ function node = fileList(id, varargin)
 %
 % Typical Call:
 %   node = labkit.app.layout.fileList("files", ...
-%       Bind="project.inputs.sources");
+%       Bind="project.inputs.sources", ...
+%       ChooseTooltip="Choose calibrated source images for this analysis.");
 %
 % See also labkit.app.event.ListSelection,
 %   labkit.app.CallbackContext, labkit.app.view.Snapshot

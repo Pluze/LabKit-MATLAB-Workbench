@@ -1,5 +1,8 @@
 # Response Review And Stats
 
+Every action and input-selection button provides hover help describing its
+response metrics, statistical refresh, reset, or export effect.
+
 Response Review and Stats opens a Nerve Response Analysis result or a segment
 table, displays the measurements, and exports a clean CSV for review or
 downstream statistics. Segment tables can also be aligned and measured again

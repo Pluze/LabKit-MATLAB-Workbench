@@ -1,5 +1,8 @@
 # DIC Preprocess
 
+Every action and input-selection button provides hover help describing its
+registration, crop, binary ROI-mask, or downstream DIC effect.
+
 DIC Preprocess registers a moving optical image to a reference image, applies
 repeatable crop operations to the pair, and creates a binary analysis mask.
 Use it when camera motion or framing differences must be removed before an

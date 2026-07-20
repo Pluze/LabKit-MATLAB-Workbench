@@ -1,5 +1,8 @@
 # T-Test Wizard
 
+Every action and input-selection button provides hover help describing its
+group assignment, hypothesis test, alpha decision, or portable export.
+
 T-Test Wizard captures two or more numeric groups, compares every group after
 the first with the first group, and draws one publication-oriented mean and
 standard-deviation plot. The first group is always the reference group.

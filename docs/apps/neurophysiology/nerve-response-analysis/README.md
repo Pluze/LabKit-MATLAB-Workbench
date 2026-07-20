@@ -1,5 +1,8 @@
 # Nerve Response Analysis
 
+Every action and input-selection button provides hover help describing its
+protocol/filter input, nerve-response calculation, reset, or exported evidence.
+
 Nerve Response Analysis reads the recording list prepared in RHS Preview,
 finds stimulation events, groups them into trains, and measures compound action
 potential responses in the assigned channels.

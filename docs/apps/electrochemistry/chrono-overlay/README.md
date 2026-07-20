@@ -1,5 +1,8 @@
 # Chrono Overlay
 
+Every action and input-selection button provides hover help describing its
+chrono trace alignment, voltage/current data, or export effect.
+
 Chrono Overlay compares voltage and current transients from multiple Gamry DTA
 files on a common pulse-centered time axis and exports the aligned curves.
 

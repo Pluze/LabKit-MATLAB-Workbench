@@ -1,5 +1,8 @@
 # Curvature Measurement
 
+Every action and input-selection button provides hover help describing its
+curve trace, calibration, curvature/length calculation, or export effect.
+
 Curvature Measurement fits a circle to an ordered image curve, reports radius
 and curvature, measures traced arc length, and supports pixel-to-physical scale
 calibration.

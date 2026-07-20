@@ -37,7 +37,8 @@ classdef UiAuthoringErgonomicsTest < matlab.unittest.TestCase
         function layoutCallbackNeedsNoHandlerOrCapabilityRegistry(testCase)
             setupLabKitTestPath();
             layout = labkit.app.layout.workbench({ ...
-                labkit.app.layout.button("run", "Run", @runApp)});
+                labkit.app.layout.button("run", "Run", @runApp, ...
+                    Tooltip="Run the authoring probe.")});
             app = minimalApplication(layout);
 
             testCase.verifyEqual( ...

@@ -51,6 +51,38 @@ classdef AppSdkUsageGuardrailTest < matlab.unittest.TestCase
                 "Apps should call labkit.app.plot.clearAxes instead of reimplementing axes cleanup: " + ...
                 strjoin(hits, ", "));
         end
+
+        function appActionsOwnExplanatoryTooltips(testCase)
+            root = setupLabKitTestPath();
+            definitions = dir(fullfile(root, "apps", "**", "definition.m"));
+            hits = strings(0, 1);
+            for k = 1:numel(definitions)
+                packageFolder = string(definitions(k).folder);
+                [~, packageName] = fileparts(packageFolder);
+                packageName = extractAfter(packageName, 1);
+                definition = feval(packageName + ".definition");
+                plan = labkit.app.internal.DefinitionInspector.platformPlan( ...
+                    definition);
+                for n = 1:numel(plan.Nodes)
+                    node = plan.Nodes(n);
+                    config = node.Configuration;
+                    if node.Kind == "button" && ...
+                            config.Tooltip == config.Label
+                        hits(end + 1, 1) = packageName + ":" + node.Id + ...
+                            " repeats its label";
+                    elseif node.Kind == "fileList" && ...
+                            config.ChooseTooltip == config.ChooseLabel
+                        hits(end + 1, 1) = packageName + ":" + node.Id + ...
+                            " repeats its choose label";
+                    end
+                end
+            end
+
+            testCase.verifyEmpty(hits, ...
+                "App actions should explain their scientific or workflow " + ...
+                "effect instead of repeating the visible label: " + ...
+                strjoin(hits, "; "));
+        end
     end
 end
 

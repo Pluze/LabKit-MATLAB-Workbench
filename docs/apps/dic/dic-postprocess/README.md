@@ -1,5 +1,8 @@
 # DIC Postprocess
 
+Every action and input-selection button provides hover help describing its
+DIC inputs, ROI/strain processing, display-only effects, or exported evidence.
+
 DIC Postprocess converts Ncorr strain fields into EXX and EYY overlays on an
 optical reference image and calculates descriptive strain statistics over a
 validated ROI. It is a rendering and summary tool; it does not rerun DIC.

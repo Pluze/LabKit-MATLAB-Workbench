@@ -1,5 +1,8 @@
 # Charge-Storage Capacity
 
+Every action and input-selection button provides hover help describing its
+CV/CT data, charge-storage comparison, or export effect.
+
 The CSC app compares charge obtained from time-domain current integration with
 charge obtained from cyclic-voltammetry integration for every readable CV/CT
 cycle in one or more Gamry DTA files.

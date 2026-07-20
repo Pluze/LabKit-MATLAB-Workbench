@@ -1,5 +1,8 @@
 # Batch Image Crop
 
+Every action and input-selection button provides hover help describing its
+crop task, geometry, physical calibration, scale bar, or export effect.
+
 Batch Image Crop defines one crop task per image, previews rotation and
 edge-continuous padding, and exports repeatable same-size crops in pixel or
 physical-scale mode.

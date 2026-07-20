@@ -1,5 +1,8 @@
 # Image Enhance
 
+Every action and input-selection button provides hover help describing its
+pixel-processing history, white-balance ROI, or batch export effect.
+
 Image Enhance builds an ordered, reversible processing history for one image
 or a batch and exports the resulting images with the exact step sequence.
 
