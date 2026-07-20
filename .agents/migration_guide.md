@@ -128,6 +128,14 @@ Current public-boundary checkpoint:
   files to 446 and 274 effective code lines without changing the qualified
   `LayoutNode` name or adding an App-facing entry; the complete explicit-layout
   contract suite passes this split.
+- `RuntimeKernel` now keeps queueing, transaction order, lifecycle, resource,
+  document, and capability injection ownership, while hidden internal
+  `RuntimeContractBoundary`, `RuntimePresentation`, and `RuntimeStatePath`
+  own compiled-reference validation, default Snapshot derivation, and strict
+  project/session field paths. The four files measure 635, 149, 120, and 37
+  effective lines; the runtime suite passed eight unaffected cases and the two
+  initially exposed source-access cases passed after source-store access was
+  kept behind a RuntimeKernel-owned callback.
 
 Still open before compatibility retirement:
 
