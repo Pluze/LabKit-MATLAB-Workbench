@@ -6,20 +6,38 @@ function session = createSession(project, context)
     [metrics, summary, aligned] = emptyCache();
     outputFolder = "";
     status = "No input selected.";
+    lastAction = "Ready";
     if strlength(filepath) > 0
         [metrics, summary, aligned] = ...
             response_review_stats.analysisRun.loadMetrics( ...
             filepath, project.parameters);
-        outputFolder = string(fileparts(filepath));
+        outputFolder = defaultOutputFolder(filepath);
         status = sprintf("Loaded %d metric row(s).", height(metrics));
+        lastAction = "Auto-loaded metrics";
     end
     session = struct( ...
         "workflow", struct("statusMessage", status, ...
-            "lastAction", "Ready", ...
+            "lastAction", lastAction, ...
             "outputFolder", outputFolder), ...
         "view", struct("previewMode", "Summary"), ...
         "cache", struct("filepath", filepath, "metrics", metrics, ...
             "summary", summary, "aligned", aligned));
+end
+
+function folder = defaultOutputFolder(filepath)
+    parent = string(fileparts(filepath));
+    folder = string(fullfile(parent, "response_review_stats"));
+    if exist(folder, "dir") == 7
+        return;
+    end
+    try
+        [created, ~, ~] = mkdir(folder);
+    catch
+        created = false;
+    end
+    if ~created
+        folder = parent;
+    end
 end
 
 function filepath = pathForRole(sources, role, context)

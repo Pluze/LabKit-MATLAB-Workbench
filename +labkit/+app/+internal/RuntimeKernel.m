@@ -694,6 +694,9 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                         if isempty(value)
                             value = limits;
                         end
+                        if strlength(config.Bind) > 0
+                            value = getBoundValue(state, config.Bind);
+                        end
                         view = view.value(node.Id, value);
                         view = view.limits(node.Id, limits);
                         view = view.enabled(node.Id, config.Enabled);

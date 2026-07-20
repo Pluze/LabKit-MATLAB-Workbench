@@ -178,6 +178,13 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             autoFirst = component(figure, "visualAutoFirst");
             autoSecond = component(figure, "visualAutoSecond");
             autoThird = component(figure, "visualAutoThird");
+            visualRun = component(figure, "visualRun");
+            visualReset = component(figure, "visualReset");
+            drawnow;
+            testCase.verifyGreaterThanOrEqual(visualRun.Position(4), 22);
+            testCase.verifyGreaterThanOrEqual(visualReset.Position(4), 22);
+            testCase.verifyEqual(string(visualRun.Text), "Run");
+            testCase.verifyEqual(string(visualReset.Text), "Reset");
             testCase.verifyEqual(autoFirst.Layout.Column, 1);
             testCase.verifyEqual(autoSecond.Layout.Column, 2);
             testCase.verifyEqual(autoThird.Layout.Column, [1 2]);

@@ -3,7 +3,13 @@ if isempty(state.project.inputs.sources)
     state.session.workflow.statusMessage = "Select an analysis JSON or segment CSV first.";
     return;
 end
-paths = context.resolveSourcePaths(state.project.inputs.sources, "reviewInput");
+sources = state.project.inputs.sources;
+roleMatch = string({sources.role}) == "reviewInput";
+paths = context.resolveSourcePaths(sources(roleMatch));
+if isempty(paths)
+    state.session.workflow.statusMessage = "Select an analysis JSON or segment CSV first.";
+    return;
+end
 try
     [metrics, summary, aligned] = response_review_stats.analysisRun.loadMetrics( ...
         paths(1), state.project.parameters);
@@ -13,11 +19,15 @@ catch ME
     state.session.cache.summary = table();
     state.session.cache.aligned = [];
     state.session.workflow.statusMessage = string(ME.message);
+    state.session.workflow.lastAction = "Metric load failed";
     return;
 end
+state.project.results.lastExport = [];
+state.session.cache.filepath = paths(1);
 state.session.cache.metrics = metrics;
 state.session.cache.summary = summary;
 state.session.cache.aligned = aligned;
 state.session.workflow.statusMessage = sprintf("Loaded %d metric row(s).", height(metrics));
+state.session.workflow.lastAction = "Loaded metrics";
 context.appendStatus(state.session.workflow.statusMessage);
 end

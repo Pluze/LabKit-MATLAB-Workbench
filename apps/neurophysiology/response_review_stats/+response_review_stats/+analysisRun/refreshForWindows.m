@@ -4,6 +4,10 @@ state.project.parameters.baselineWindowSec = validRange( ...
 state.project.parameters.noiseWindowSec = validRange( ...
     state.project.parameters.noiseWindowSec, [0.007 0.009]);
 state = response_review_stats.analysisRun.refreshMetrics(state, context);
+if height(state.session.cache.metrics) > 0
+    state.session.workflow.lastAction = ...
+        "Refreshed metrics after window change";
+end
 end
 
 function value = validRange(value, fallback)

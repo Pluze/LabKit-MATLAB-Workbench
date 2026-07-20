@@ -15,8 +15,8 @@ classdef ResponseReviewStatsOpsTest < matlab.unittest.TestCase
 
             testCase.verifyEqual(migrated.inputs.sources, expected);
             testCase.verifyFalse(isfield(migrated.inputs, "source"));
-            testCase.verifyEqual(definition.project.Version, 2);
-            testCase.verifyTrue(isa(definition.project.Migrate, ...
+            testCase.verifyEqual(definition.ProjectSchema.Version, 2);
+            testCase.verifyTrue(isa(definition.ProjectSchema.Migrate, ...
                 'function_handle'));
         end
 
@@ -75,5 +75,40 @@ classdef ResponseReviewStatsOpsTest < matlab.unittest.TestCase
             testCase.verifyEqual(aligned.timeSec, [0; 1; 2]);
             testCase.verifyEqual(aligned.values, [1 4; 2 5; 3 6]);
         end
+
+        function refreshMetricsResolvesTheDeclaredSourceRole(testCase)
+            setupLabKitTestPath();
+            folder = string(tempname);
+            mkdir(folder);
+            cleanupFolder = onCleanup(@() removeFolder(folder));
+            segmentPath = fullfile(folder, "segments.csv");
+            writeSegmentCsv(segmentPath);
+
+            runtime = response_review_stats.definition().createRuntimeForTesting();
+            cleanupRuntime = onCleanup(@() runtime.close());
+            runtime.applyFileSelection("inputFile", segmentPath, 1);
+            runtime.invokeAction("loadMetrics");
+
+            testCase.verifyEqual(height(runtime.State.session.cache.metrics), 2);
+            testCase.verifyEqual(height(runtime.State.session.cache.summary), 2);
+            clear cleanupRuntime cleanupFolder
+        end
+    end
+end
+
+function writeSegmentCsv(filepath)
+    Time_s = (0:0.001:0.020).';
+    Signal1 = zeros(size(Time_s));
+    Signal2 = zeros(size(Time_s));
+    Signal1(Time_s == 0.006) = 2;
+    Signal1(Time_s == 0.010) = -1;
+    Signal2(Time_s == 0.007) = 3;
+    Signal2(Time_s == 0.011) = -2;
+    writetable(table(Time_s, Signal1, Signal2), filepath);
+end
+
+function removeFolder(folder)
+    if isfolder(folder)
+        rmdir(folder, "s");
     end
 end

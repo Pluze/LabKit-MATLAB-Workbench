@@ -49,6 +49,9 @@ Restored in the replacement SDK worktree:
 - old panner, range, readonly, adaptive action-grid, file/folder/recursive
   file selection, friendly file labels, multiline control sizing, status,
   log-follow, table, and distinct Usage presentations;
+- transparent semantic groups that preserve full native button height, and
+  bound range controls whose initial values come from App state rather than
+  falling back to their legal limits;
 - workspace pages and initial selection, plot view modes, single/pair/stack
   axes layouts, axis titles and labels, unequal axes sizing, per-axis wheel
   zoom, viewport preservation, managed fixed-canvas resize reflow, and plot
@@ -82,7 +85,8 @@ Current product audit progress:
 | EIS | Complete | All three control tabs, file actions, panners, plot choices, Usage, summary, labeled plot, export/restore workflow, and focused GUI test compared with `main` |
 | VT Resistance | Complete | All three control tabs, file/export actions, analysis and plot controls, readonly summary, batch table, stacked axes, project workflow, and focused GUI tests compared with `main` |
 | Figure Studio | Complete | Figures/Export/Log tabs, FIG source actions, multiline status, quick exports, Canvas and Style panners, linked font/aspect behavior, fixed-canvas preview, axes handoff, package exports/manifests, and focused unit/GUI tests compared with `main` |
-| Remaining 14 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
+| Response Review and Stats | Complete | Setup/Review/Export/Log tabs, numeric metric windows, status and action rows, nonduplicated summary/details, explicit output selection/clear, reset, default output subfolder, manifest name, Stats/Preview workspace, project restore, and focused unit/GUI tests compared with `main` |
+| Remaining 13 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
 
 The accepted public structure is capability-partitioned:
 `labkit.app.Definition` and `CallbackContext` form the small root; `layout`,
