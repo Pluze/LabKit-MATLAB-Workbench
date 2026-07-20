@@ -964,7 +964,11 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 case "logPanel"
                     height = policy.LogHeight;
                 case "statusPanel"
-                    height = policy.StatusHeight;
+                    if node.Id == "applicationUsage"
+                        height = policy.UsageHeight;
+                    else
+                        height = policy.StatusHeight;
+                    end
                 case "button"
                     height = policy.ButtonHeight;
                 case "slider"
@@ -987,7 +991,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                     if node.Kind == "section" && ...
                             ~obj.sectionDrawsOwnTitle(node) && ...
                             numel(children) == 1
-                        height = childHeights(1);
+                        height = childHeights(1) + ...
+                            policy.UntitledSectionChromeHeight;
                     elseif obj.usesAdaptiveActionGrid(node)
                         [rows, ~] = obj.actionGridSize(node);
                         height = rows * policy.ButtonHeight + ...

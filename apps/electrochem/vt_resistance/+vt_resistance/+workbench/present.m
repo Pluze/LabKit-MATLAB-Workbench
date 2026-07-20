@@ -12,8 +12,7 @@ columns = ["File", "Ic (A)", "Ia (A)", "Vc ss (V)", "Va ss (V)", ...
     "R cath (ohm)", "R anod (ohm)", "R avg (ohm)", "Detection"];
 view = labkit.app.view.Snapshot() ...
     .tableData("results", tableData, Columns=columns) ...
-    .renderPlot("plotAxes", model) ...
-    .enabled("exportResults", ~isempty(items));
+    .renderPlot("plotAxes", model);
 ids = string(fieldnames(summary));
 for k = 1:numel(ids)
     view = view.text(ids(k), string(summary.(ids(k))));
@@ -21,7 +20,11 @@ end
 end
 
 function model = axisModel(items, index, p, whichAxis)
-model = struct("valid", false, "message", "", "title", string(whichAxis) + " plot", "analysis", struct(), "itemName", "", "xChoice", "", "yChoice", "", "showMarkers", logical(p.showMarkers), "showShading", logical(p.showShading), "showGrid", true);
+model = struct("valid", false, "message", "", ...
+    "title", upperFirst(whichAxis) + " Plot", ...
+    "analysis", struct(), "itemName", "", "xChoice", "", "yChoice", "", ...
+    "showMarkers", logical(p.showMarkers), ...
+    "showShading", logical(p.showShading), "showGrid", true);
 if index == 0 || isempty(items(index).analysis) || ~items(index).analysis.ok
     return
 end
@@ -37,6 +40,12 @@ else
     model.yChoice = string(p.bottomY);
     model.showGrid = logical(p.bottomGrid);
 end
+end
+
+function value = upperFirst(value)
+value = char(string(value));
+value(1) = upper(value(1));
+value = string(value);
 end
 
 function index = selectedIndex(selection, count)

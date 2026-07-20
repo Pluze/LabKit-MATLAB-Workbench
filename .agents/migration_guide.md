@@ -55,6 +55,12 @@ Restored in the replacement SDK worktree:
 
 Still open before compatibility retirement:
 
+- audit the final public `labkit.app` surface for authoring-level hierarchy:
+  keep `Definition` as the single App aggregate root, keep
+  `CallbackContext` as an injected runtime port rather than a second
+  author-created entrypoint, move compiler/runtime/testing implementation out
+  of those facade files, and remove or relocate optional context methods that
+  tracked Apps do not justify;
 - verify the restored window/startup/close contracts against every App and
   cover startup failure presentation;
 - finish the all-App control, menu, button, tab, workspace-page, plot-layout,
@@ -70,7 +76,11 @@ Current product audit progress:
 | --- | --- | --- |
 | DIC Preprocess | Complete | All three control tabs, workspace, controls, actions, notes, summary, details, log, and focused GUI workflow compared with `main` |
 | CIC | Complete | All three control tabs, old panner geometry, files panel, summary rows, batch table, plot stack, menus, title, exports, project save/restore, and focused GUI workflow compared with `main` |
-| Remaining 19 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
+| Chrono Overlay | Complete | Both control tabs, file actions, Usage, panner, plot options, stacked labeled axes, export/restore workflow, and focused GUI tests compared with `main` |
+| CSC | Complete | All three control tabs, file/curve/plot controls, readonly comparison summary, all-cycle table, paired exports, stacked axes, project workflow, and focused GUI test compared with `main` |
+| EIS | Complete | All three control tabs, file actions, panners, plot choices, Usage, summary, labeled plot, export/restore workflow, and focused GUI test compared with `main` |
+| VT Resistance | Complete | All three control tabs, file/export actions, analysis and plot controls, readonly summary, batch table, stacked axes, project workflow, and focused GUI tests compared with `main` |
+| Remaining 15 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
 
 The accepted public structure is capability-partitioned:
 `labkit.app.Definition` and `CallbackContext` form the small root; `layout`,
