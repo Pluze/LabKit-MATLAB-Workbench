@@ -354,6 +354,25 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.commitFilePanel(target, config, sources, indices, true);
         end
 
+        function removeFileSelection(obj, target, indices)
+            obj.assertOpen();
+            [config, current] = obj.fileListState(target);
+            visible = obj.Sources.recordsForRole( ...
+                current, config.SourceRole);
+            if ~(isnumeric(indices) && isrow(indices) && ...
+                    all(isfinite(indices)) && all(indices == fix(indices)) && ...
+                    all(indices >= 1) && all(indices <= numel(visible)))
+                error("labkit:app:contract:InvalidValue", ...
+                    "fileList removal indices are invalid.");
+            end
+            keep = true(1, numel(visible));
+            keep(indices) = false;
+            sources = obj.Sources.replaceRole( ...
+                current, config.SourceRole, visible(keep));
+            obj.commitFilePanel( ...
+                target, config, sources, zeros(1, 0), true);
+        end
+
         function close(obj)
             if obj.Closed
                 return;

@@ -116,6 +116,17 @@ classdef (Hidden, Sealed) PortableSourceStore < handle
             replacement = obj.reconcilePaths( ...
                 currentRole, paths, role, prefix, required, ...
                 allowDuplicatePaths);
+            records = obj.replaceRole(current, role, replacement);
+        end
+
+        function records = replaceRole(~, current, role, replacement)
+            validateRecords(current);
+            validateRecords(replacement);
+            role = requiredText(role, "Project source role");
+            if ~isempty(replacement) && ...
+                    any(string({replacement.role}) ~= role)
+                invalid("Replacement source records must match role %s.", role);
+            end
             if isempty(current)
                 records = replacement;
                 return;

@@ -202,10 +202,10 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
             testCase.verifyEqual(reshape(sourcePaths, 1, []), ...
                 ["shared.png", "shared.png"]);
 
-            runtime.applyFileSelection("tasks", "shared.png");
+            runtime.removeFileSelection("tasks", 1);
             sources = runtime.State.project.inputs.sources;
             testCase.verifyEqual(numel(sources), 1);
-            testCase.verifyEqual(string(sources.id), "task-1");
+            testCase.verifyEqual(string(sources.id), "task-2");
         end
 
         function dispatchPreservesCellInteractionPayload(testCase)

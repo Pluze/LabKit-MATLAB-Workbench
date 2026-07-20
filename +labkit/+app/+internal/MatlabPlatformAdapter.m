@@ -1644,10 +1644,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function removeSelectedFiles(obj, target, list)
-            paths = list.UserData.Paths;
-            keep = true(1, numel(paths));
-            keep(selectedIndices(list)) = false;
-            obj.Runtime.applyFileSelection(target, paths(keep), zeros(1, 0));
+            obj.Runtime.removeFileSelection( ...
+                target, selectedIndices(list));
         end
 
         function folder = dialogStartFolder(obj, target, configured)
