@@ -245,6 +245,12 @@ Use context methods only at a callback or reconstruction boundary. Pure
 readers, calculations, result builders, and render-model builders accept
 ordinary explicit values.
 
+An App-specific project button may choose a MAT file and return
+`callbackContext.restoreProjectDocument(filepath)`. The context prepares the
+same migrated, relinked project/session candidate used by the framework Load
+State menu; the active callback transaction still owns validation, native
+presentation, rollback, document metadata, and title publication.
+
 ## Persistence, Results, And Cleanup
 
 `labkit.app.project.Schema` owns current project creation, validation, and

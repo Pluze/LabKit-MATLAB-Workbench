@@ -109,6 +109,34 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
             testCase.verifyEqual(runtime.documentMetadata(), originalMetadata);
         end
 
+        function callbackContextRestoreUsesTheActiveTransaction(testCase)
+            setupLabKitTestPath();
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            path = fullfile(string(folder.Folder), "callback-candidate.mat");
+            labkitProject = currentEnvelope( ...
+                "probe.document", 2, struct("value", 14));
+            save(path, "labkitProject");
+            runtime = callbackRestoreApplication(path).createRuntimeForTesting();
+
+            runtime.invokeAction("restoreDocument");
+
+            testCase.verifyEqual(runtime.State.project.value, 14);
+            testCase.verifyEqual(runtime.State.session.token, "from-file");
+            metadata = runtime.documentMetadata();
+            testCase.verifyEqual(metadata.path, path);
+            testCase.verifyFalse(metadata.dirty);
+
+            failed = callbackRestoreApplication(path).createRuntimeForTesting();
+            originalState = failed.State;
+            originalMetadata = failed.documentMetadata();
+            failed.failNextCommit();
+            testCase.verifyError(@() failed.invokeAction("restoreDocument"), ...
+                "labkit:app:runtime:ActionFailed");
+            testCase.verifyEqual(failed.State, originalState);
+            testCase.verifyEqual(failed.documentMetadata(), originalMetadata);
+        end
+
         function filePanelBindingOwnsPortableProjectSources(testCase)
             setupLabKitTestPath();
             folder = testCase.applyFixture( ...
@@ -181,6 +209,25 @@ app = labkit.app.Definition(Entrypoint="labkit_DocumentProbe_app", ...
     ProjectSchema=project, CreateSession=@createSession, ...
     Workbench=labkit.app.layout.workbench({labkit.app.layout.field("value")}), ...
     PresentWorkbench=@present);
+end
+
+function app = callbackRestoreApplication(filepath)
+project = labkit.app.project.Schema(Version=2, Create=@createProject, ...
+    Validate=@validateProject, Migrate=@migrateProject, ...
+    LegacyImports=struct("legacyProject", @importLegacy), ...
+    CreateResume=@createResume, ApplyResume=@applyResume);
+layout = labkit.app.layout.workbench({ ...
+    labkit.app.layout.field("value"), ...
+    labkit.app.layout.button("restoreDocument", "Open", @restoreDocument)});
+app = labkit.app.Definition(Entrypoint="labkit_CallbackDocumentProbe_app", ...
+    AppId="probe.document", Title="Document", Family="Tests", ...
+    AppVersion="1.2.3", Updated="2026-07-19", Requirements=[], ...
+    ProjectSchema=project, CreateSession=@createSession, ...
+    Workbench=layout, PresentWorkbench=@present);
+
+    function state = restoreDocument(~, context)
+        state = context.restoreProjectDocument(filepath);
+    end
 end
 
 function project = createProject()

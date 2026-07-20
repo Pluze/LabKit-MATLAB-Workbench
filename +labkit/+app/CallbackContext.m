@@ -14,6 +14,7 @@ classdef (Sealed) CallbackContext < handle
     %   result = context.chooseOutputFile(filters, startPath)
     %   result = context.chooseOutputFolder(startPath)
     %   result = context.saveProjectDocument(state, filepath)
+    %   state = context.restoreProjectDocument(filepath)
     %   context.saveRecoveryDocument(state, filepath)
     %   record = context.createSourceRecord(id, role, path, required)
     %   paths = context.resolveSourcePaths(sources)
@@ -46,7 +47,7 @@ classdef (Sealed) CallbackContext < handle
     %   choices - Row string or cellstr array.
     %   filters - Runtime-supported file-dialog filter value.
     %   startPath - Scalar starting file or folder path.
-    %   filepath - Scalar project or recovery destination path.
+    %   filepath - Scalar project or recovery source or destination path.
     %   id - Nonempty semantic source or resource identifier.
     %   role - Nonempty semantic source role.
     %   path - Scalar source path.
@@ -64,7 +65,8 @@ classdef (Sealed) CallbackContext < handle
     %
     % Outputs:
     %   context - Sealed labkit.app.CallbackContext value.
-    %   state - State returned by the workflow backend.
+    %   state - Complete restored App state prepared for the current runtime
+    %       transaction.
     %   result - labkit.app.dialog.Choice for dialogs, project saves, and result
     %       writing.
     %   record - Opaque runtime-owned portable source value.
@@ -170,6 +172,17 @@ classdef (Sealed) CallbackContext < handle
             result = obj.invoke("saveProject", "project", ...
                 {state, scalarText(filepath, "filepath")}, 1);
             requireChoice(result, "saveProjectDocument");
+        end
+
+        function state = restoreProjectDocument(obj, filepath)
+            state = obj.invoke("restoreProject", "project", ...
+                {scalarText(filepath, "filepath")}, 1);
+            if ~isstruct(state) || ~isscalar(state) || ...
+                    ~all(isfield(state, ["project", "session"]))
+                error("labkit:app:runtime:InvariantFailure", ...
+                    "CallbackContext restoreProjectDocument backend must " + ...
+                    "return scalar project/session state.");
+            end
         end
 
         function saveRecoveryDocument(obj, state, filepath)
