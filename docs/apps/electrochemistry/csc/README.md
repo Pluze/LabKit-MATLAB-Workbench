@@ -132,4 +132,5 @@ identity, resolved-path access, and portable-reference serialization remain
 framework-owned.
 
 The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+every control and plot names its concrete callback or renderer, and the
+definition validates those bindings before creating a figure.

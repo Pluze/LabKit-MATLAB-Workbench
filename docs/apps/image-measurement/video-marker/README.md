@@ -201,4 +201,5 @@ schema. The decoded-video cache is a document-scoped runtime resource reused
 across frame navigation and cleared by project replacement or runtime close.
 
 The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+every control and plot names its concrete callback or renderer, and the
+definition validates those bindings before creating a figure.

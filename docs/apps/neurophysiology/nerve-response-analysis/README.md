@@ -153,7 +153,7 @@ schemas, units, partial-recording failure policy, and related APIs.
 
 This App uses the App SDK runtime lifecycle and requires `labkit.app >=1 <2` and
 `labkit.rhs >=1.0 <2`. App code uses semantic actions, `sourcePaths`, and the
-injected source-upsert service; migration iteration, busy state, and portable
+sealed callback context; migration iteration, busy state, and portable
 reference serialization remain framework-private.
 
 The project validator requires the source collection and retains the
@@ -165,4 +165,5 @@ decoded analysis cache fields. Runtime supplies absent canonical buckets and
 owns workflow-log initialization.
 
 The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+every control and plot names its concrete callback or renderer, and the
+definition validates those bindings before creating a figure.

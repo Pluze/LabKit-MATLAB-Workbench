@@ -108,7 +108,7 @@ classdef DocumentationHistoryGuardrailTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(dicPage, "Change history") && ...
                 contains(dicPage, "dic-rigid-point-editor"));
             testCase.verifyTrue(contains(frameworkPage, "Change history") && ...
-                contains(frameworkPage, "runtime-v2-app-migration"));
+                contains(frameworkPage, "ui-explicit-contract-migration"));
         end
     end
 end

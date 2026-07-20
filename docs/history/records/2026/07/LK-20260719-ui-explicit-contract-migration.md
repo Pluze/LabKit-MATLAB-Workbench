@@ -1,4 +1,4 @@
-# App SDK explicit contract begins real App migration
+# App SDK explicit contract replaces the retired UI runtime
 
 ```labkit-change
 schema: 2
@@ -8,42 +8,64 @@ sequence: 138
 type: refactor
 compatibility: breaking
 component: `labkit.app` | `new -> 1.0.0`
+component: `labkit_DICPostprocess_app` | `1.4.7 -> 1.5.0`
+component: `labkit_DICPreprocess_app` | `1.5.8 -> 1.6.0`
 component: `labkit_ChronoOverlay_app` | `1.4.7 -> 1.5.0`
+component: `labkit_CIC_app` | `1.4.7 -> 1.5.0`
+component: `labkit_CSC_app` | `1.4.8 -> 1.5.0`
+component: `labkit_EIS_app` | `1.4.7 -> 1.5.0`
 component: `labkit_VTResistance_app` | `1.4.7 -> 1.5.0`
 component: `labkit_GaitAnalysis_app` | `2.0.8 -> 2.1.0`
-component: `labkit_DICPreprocess_app` | `1.5.8 -> 1.6.0`
 component: `labkit_BatchImageCrop_app` | `1.7.7 -> 1.8.0`
+component: `labkit_CurvatureMeasurement_app` | `1.4.6 -> 1.5.0`
+component: `labkit_FLIRThermal_app` | `1.4.8 -> 1.5.0`
+component: `labkit_FocusStack_app` | `1.5.6 -> 1.6.0`
+component: `labkit_ImageEnhance_app` | `1.6.7 -> 1.7.0`
+component: `labkit_ImageMatch_app` | `1.6.8 -> 1.7.0`
+component: `labkit_VideoMarker_app` | `1.5.7 -> 1.6.0`
+component: `labkit_FigureStudio_app` | `0.2.9 -> 0.3.0`
+component: `labkit_NerveResponseAnalysis_app` | `1.4.8 -> 1.5.0`
+component: `labkit_ResponseReviewStats_app` | `1.4.7 -> 1.5.0`
+component: `labkit_RHSPreview_app` | `1.4.6 -> 1.5.0`
 component: `labkit_TTestWizard_app` | `1.0.1 -> 1.1.0`
+component: `labkit_ECGPrint_app` | `1.4.6 -> 1.5.0`
 scope: App Framework
+scope: DIC
 scope: Electrochem
+scope: Gait
+scope: Image Measurement
+scope: LabKit Core
+scope: Neurophysiology
 scope: Statistics
+scope: Wearable
 scope: Project persistence
 scope: Result provenance
 ```
 
 ## Context
 
-Runtime V2 removed substantial per-App lifecycle code, but Apps still
+The retired UI runtime removed substantial per-App lifecycle code, but Apps still
 registered callback tables, repeated bound values in presenters, authored
 standard file add/remove/clear behavior, and depended on nested event/service
 structs. A replacement SDK kernel had already established immutable semantic
 values, pre-GUI validation, transactional state/presentation commits, project
-documents, result manifests, resources, and portable sources. It still needed
-evidence from a real source-backed plotting App and a native MATLAB adapter.
+documents, result manifests, resources, and portable sources. The migration
+then had to restore the complete behavior and visual contract of every tracked
+App before the retired production facade could be deleted.
 
 ## Decision and rationale
 
-Create `labkit.app` as the future stable SDK rather than misnaming the expanded
+Create `labkit.app` as the stable SDK rather than misnaming the expanded
 contract `labkit.ui` or adapting it back to Runtime V2 transport structs. Keep
 the public root small, partition authoring by capability, and concentrate
 complexity in a paved path: direct-callback `layout.*` nodes, strict bindings,
 runtime-completed `view.Snapshot` values, standard file lifecycle, fixed
 `CreateSession(project,context)`, and private native adapters.
 
-Chrono Overlay is the first migrated App because it exercises a project,
-portable files, transient decoding, selection, bound controls, two axes,
-native viewport preservation, CSV output, and a result manifest without
-requiring the later managed-interaction vocabulary.
+Migrate all 21 tracked Apps through capability waves, treating their previous
+controls, tabs, layout proportions, interactions, project behavior, results,
+debug samples, and workflow wording as product contracts rather than reducing
+the task to launch compatibility.
 
 ## Changes
 
@@ -99,6 +121,24 @@ requiring the later managed-interaction vocabulary.
 - Removed handler objects, callback tables, renderer registries, and their
   forwarding from the App authoring contract. Layout controls and plot areas
   reference concrete functions directly.
+- Migrated the remaining electrochemistry, DIC, image-measurement,
+  neurophysiology, core, wearable, and high-state workflows, including
+  editable tables, workspace pages, file roles, multi-axis plots, managed
+  point/rectangle/interval/scale interactions, long-lived video resources,
+  project recovery, result packages, and synthetic diagnostic samples.
+- Restored shared product presentation: versioned titles and dirty markers,
+  startup progress and failure surfaces, guarded close behavior, utility
+  menus, adjustable pane dividers, scroll and grow policies, numeric panners,
+  adaptive action grids, usage text, plot navigation, pop-out/export tools,
+  and viewport-preserving overlays.
+- Internalized contract compilation, runtime construction, native platform
+  plans, target inventories, and callback-context creation. `Definition` is
+  the sole author-created root; `CallbackContext` is a sealed runtime-injected
+  port; optional concepts remain grouped under purpose-specific packages.
+- Deleted the complete retired `labkit.ui` production facade and the
+  migration-only analyzer, prototypes, compatibility tools, and debt-only
+  tests after source scans and focused App tests proved that no production
+  consumer remained.
 
 ## User and data impact
 
@@ -117,12 +157,21 @@ fixed-pixel and physical crops, rotation/padding, scale calibration, scale-bar
 placement, image/CSV exports, and its version-2 payload. Existing payload
 migrations remain App-owned.
 
+The other 15 Apps retain their documented source formats, scientific
+calculations, units, thresholds, project payload versions, export schemas, and
+result meanings. Their product versions advance once from the `main` baseline
+to identify the new App SDK source contract and restored complete UI behavior.
+No project payload version was increased merely because the UI framework
+changed.
+
 ## Compatibility and migration
 
-`labkit.app` 1 is a source-breaking replacement contract. Apps migrate on the
-branch before the UI 7 `runtime/layout` boundary is deleted; the two public
-authoring surfaces are not a permanent compatibility layer. Project documents
-retain their format and App payload versions independently of either facade.
+`labkit.app` 1 is a source-breaking replacement contract for App definitions,
+presenters, callbacks, events, and interactions. Every tracked App migrated
+before the retired `labkit.ui` boundary was deleted; there is no runtime
+adapter or dual authoring surface. Public App entrypoint commands remain
+stable. Project documents retain their format and App payload versions
+independently of the facade transition.
 
 ## Validation
 
@@ -146,6 +195,10 @@ bridging.
 Batch Image Crop focused tests cover crop geometry, padding, physical scaling,
 project migration, duplicate tasks, output planning/writes, native semantic
 layout, current-center editing, and standard result manifests.
+Focused framework and App tests additionally cover all 21 semantic layouts,
+typed events, managed interactions, project migration/recovery, result
+writing, synthetic sample packs, diagnostics, resource cleanup, window titles,
+startup success/failure, close behavior, and native adapter reconciliation.
 
 ## Evidence
 
@@ -154,12 +207,14 @@ layout, current-center editing, and standard result manifests.
 - [Gait Analysis](../../../../apps/gait/gait-analysis/README.md)
 - [DIC Preprocess](../../../../apps/dic/dic-preprocess/README.md)
 - [Batch Image Crop](../../../../apps/image-measurement/batch-crop/README.md)
+- [App catalog](../../../../apps/README.md)
 - [LabKit App Framework](../../../../framework/README.md)
 - [Build a Complete App](../../../../development/build-apps/complete-app.md)
 
 ## Known limitations and follow-up
 
-Project menu/recovery UX, managed interactions, table/workspace migration
-evidence, the remaining Apps, and deletion of UI 7 remain in later migration
-phases. Hidden GUI tests do not replace developer-led validation of native
-dialogs, pointer feel, or scientific workflow suitability.
+Automated GUI evidence does not replace developer-led validation of native
+dialogs, editable-table feel, pointer interaction, long-lived resource use,
+representative exports, visual quality, or scientific workflow suitability.
+That interactive validation remains a release input for the exact integrated
+commit.

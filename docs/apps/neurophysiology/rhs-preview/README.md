@@ -78,11 +78,11 @@ They are reconstructed from the project sources when a project is opened.
 For developers, `rhs_preview.definition` is the complete product contract.
 `rhs_preview.projectSpec` owns project creation, validation, and the version-1
 upgrade; `rhs_preview.createSession` rebuilds transient state. Fixed recording
-and protocol sources use the injected upsert service. The variable filter
-collection uses the injected reconcile service so existing source IDs remain
-stable when files are added, removed, or rediscovered. The App-local
+and protocol sources, plus the variable filter collection, are updated as
+ordinary App-owned portable source values. Framework file-list bindings
+preserve stable source IDs while files are added, removed, or rediscovered. The App-local
 `rhs_preview.sourceFiles.pathsForRole` function selects its role ordering and
-delegates portable-reference decoding to the injected
+delegates portable-reference decoding to the sealed
 `CallbackContext.resolveSourcePaths` operation.
 
 ## Review Recording Information
@@ -132,7 +132,7 @@ interpret the waveform matrix.
 
 This App uses the App SDK runtime lifecycle and requires `labkit.app >=1 <2` and
 `labkit.rhs >=1.0 <2`. App code uses semantic actions, managed interval
-interaction, `sourcePaths`, and injected upsert/reconcile services; migration
+interaction, direct layout callbacks, and `resolveSourcePaths`; migration
 iteration, busy state, and portable-reference serialization remain
 framework-private.
 
@@ -145,4 +145,5 @@ indexed preview cache fields. Runtime supplies absent canonical buckets and
 owns workflow-log initialization.
 
 The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+every control and plot names its concrete callback or renderer, and the
+definition validates those bindings before creating a figure.

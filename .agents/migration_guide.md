@@ -25,8 +25,9 @@ app-sdk-migration-debt: ui-explicit-contract-redesign
   consuming legacy `labkit.ui`
 - **Status:** Phases 0-6 complete for all 21 tracked Apps; the retired
   production facade and migration-only tools/tests are removed in Phase 7,
-  with final public-boundary, documentation, version/history, and validation
-  work in progress
+  and Phase 8 public-boundary, documentation, version/history work is
+  complete; final repository gates and developer-led interactive validation
+  remain
 - **User-visible reason:** App authors must be able to discover the framework
   from function, constructor, method, and parameter names. Invalid App code
   must fail at the contract boundary instead of being ignored, guessed, or
@@ -98,15 +99,21 @@ Current public-boundary checkpoint:
   show the deepest actionable failure message, release busy state, and keep
   the complete exception chain in diagnostics; the native adapter contract
   now covers this behavior alongside successful startup and versioned titles.
+- `labkit.app` 1.0.0 is the stable replacement facade. All 21 App definitions
+  declare `>=1 <2`, advance exactly one product-version step from
+  `origin/main`, and use the 2026-07-20 completion date.
+- Every App manual and the framework manuals describe direct layout callbacks,
+  sealed callback context, complete snapshots, and runtime-owned native
+  behavior. The sequence-138 cross-component history record lists the facade
+  and all 21 exact App version transitions; the generated site is synchronized
+  from an isolated source tree that excludes unrelated Launcher edits.
 
 Still open before compatibility retirement:
 
 - complete developer-led manual validation of native dialogs, editable tables,
   pointer interactions, long-lived resources, and representative exports;
-- remove remaining App-local visual compensations after their stable behavior
-  is represented by framework contracts;
-- finish diagnostic samples, project/recovery/result/dialog behavior, focused
-  App tests, final changed-file gates, documentation, versions, and history.
+- run the final `changedFast` and stable `buildtool changed` repository gates,
+  then record their exact evidence in the cross-component history record.
 
 Current product audit progress:
 
