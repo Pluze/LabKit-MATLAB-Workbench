@@ -69,18 +69,21 @@ parameters and identifies each output file.
 
 ## Project And State
 
-Saved projects use durable schema version 2. `inputs.sources` contains the
-framework's portable source records, while `inputs.items` contains the crop
-tasks that refer to those sources by `sourceId`. Crop dimensions, physical
+Saved projects use durable schema version 3. `inputs.sources` contains one
+portable source record per crop task, while `inputs.items` contains the
+aligned task values that refer to those records by `sourceId`. Repeated crop
+tasks may therefore keep distinct source identities while resolving to the
+same image path. Crop dimensions, physical
 scale settings, output format, output folder, and scale-bar choices are durable
 project parameters. Loaded image pixels, the current selection, interaction
 flags, preview graphics, and rotated-canvas caches are transient session state
 and are reconstructed after load.
 
-Version-1 projects are upgraded by the single migration entry in
-`batch_crop.projectSpec`. It removes embedded image pixels, converts item paths
-to source records, and preserves each task's crop center, rotation, padding,
-and calibration. Missing required sources are handled by the Runtime's shared
+Version-1 and version-2 projects are upgraded sequentially by the single
+migration entry in `batch_crop.projectSpec`. It removes embedded image pixels,
+converts item paths to source records, expands shared records into aligned
+task records, and preserves each task's crop center, rotation, padding, and
+calibration. Missing required sources are handled by the Runtime's shared
 source-reconciliation workflow rather than by Batch Crop-specific path code.
 
 ## Use Without The GUI
@@ -143,9 +146,9 @@ assembly boundary. There is no generic App lifecycle, state, handler, or
 renderer registry. Source serialization, migration iteration, and
 portable-path resolution remain framework responsibilities.
 
-One source may own multiple durable crop tasks. Source removal reconciles
-those tasks, while duplicate and current-task removal remain explicit
-App-owned workflow decisions.
+Each durable crop task owns one portable source identity. Duplicate tasks may
+resolve to the same image path, remain independently selectable, and can be
+removed without removing their siblings.
 
 Its session factory returns only App-specific selection, crop workflow, view,
 resolved task paths, and image-cache fields. Runtime owns lifecycle and

@@ -5,12 +5,11 @@ hasImage = ~isempty(model.imageData);
 editing = hasImage && ...
     applicationState.session.workflow.scaleReferenceEditing;
 imageSize = [1 1];
-centerValue = struct("points", zeros(0, 2), ...
-    "selectedIndex", 1, "locked", false);
+centerValue = zeros(0, 2);
 reference = zeros(0, 2);
 if hasImage
     imageSize = [size(geometry.canvas, 1), size(geometry.canvas, 2)];
-    centerValue.points = batch_crop.cropGeometry.originalToCanvas( ...
+    centerValue = batch_crop.cropGeometry.originalToCanvas( ...
         geometry, item.centerXY);
     reference = item.scaleCalibration.referenceLine;
     for k = 1:size(reference, 1)

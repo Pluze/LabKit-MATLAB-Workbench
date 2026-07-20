@@ -5,17 +5,16 @@ sources = applicationState.project.inputs.sources;
 items = applicationState.project.inputs.items;
 wasEmpty = isempty(items);
 sourceIds = string({sources.id});
-if isempty(items)
-    retained = items;
-else
-    retained = items(ismember(string({items.sourceId}), sourceIds));
-end
+retained = repmat(batch_crop.cropTasks.emptyTask(), 0, 1);
 for k = 1:numel(sourceIds)
-    if ~any(string({retained.sourceId}) == sourceIds(k))
+    match = find(string({items.sourceId}) == sourceIds(k), 1);
+    if isempty(match)
         task = batch_crop.cropTasks.emptyTask();
         task.sourceId = sourceIds(k);
-        retained(end + 1, 1) = task;
+    else
+        task = items(match);
     end
+    retained(end + 1, 1) = task;
 end
 applicationState.project.inputs.items = retained;
 applicationState.project.results = ...

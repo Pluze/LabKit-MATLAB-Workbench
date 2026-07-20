@@ -1,8 +1,8 @@
 % App-owned durable Batch Crop contract. The App SDK calls the one-step
-% migration entry for version-1 payloads, then validates the version-2 task
-% and source-record structure.
+% migration entry for older payloads, then validates the version-3
+% one-task-per-source structure.
 function spec = projectSpec()
-    spec = labkit.app.project.Schema(Version=2, ...
+    spec = labkit.app.project.Schema(Version=3, ...
         Create=@createProject, Validate=@validateProject, ...
         Migrate=@migrateProject);
 end
@@ -46,10 +46,56 @@ function project = migrateProject(project, fromVersion)
     switch double(fromVersion)
         case 1
             project = migrateVersionOne(project);
+        case 2
+            project = migrateVersionTwo(project);
         otherwise
             error('batch_crop:UnsupportedProjectMigration', ...
                 'Batch Crop cannot migrate project version %d.', fromVersion);
     end
+end
+
+function project = migrateVersionTwo(project)
+if ~isfield(project, 'inputs') || ...
+        ~isfield(project.inputs, 'items') || ...
+        ~isfield(project.inputs, 'sources') || ...
+        isempty(project.inputs.items)
+    return
+end
+items = project.inputs.items;
+sources = project.inputs.sources;
+taskSources = emptySources();
+usedSourceIds = strings(0, 1);
+for k = 1:numel(items)
+    match = find(string({sources.id}) == string(items(k).sourceId), 1);
+    if isempty(match)
+        continue
+    end
+    source = sources(match);
+    sourceId = string(source.id);
+    if any(usedSourceIds == sourceId)
+        sourceId = nextSourceId(sources, taskSources);
+        source.id = sourceId;
+        items(k).sourceId = sourceId;
+    end
+    if isempty(taskSources)
+        taskSources = source;
+    else
+        taskSources(end + 1, 1) = source;
+    end
+    usedSourceIds(end + 1, 1) = sourceId;
+end
+project.inputs.items = items;
+project.inputs.sources = taskSources;
+end
+
+function id = nextSourceId(existing, pending)
+ids = [string({existing.id}), string({pending.id})];
+number = 1;
+id = "image-" + string(number);
+while any(ids == id)
+    number = number + 1;
+    id = "image-" + string(number);
+end
 end
 
 function project = migrateVersionOne(project)
@@ -102,13 +148,13 @@ function accepted = validateProject(project)
     assert(isempty(items) || all(isfield(items, cellstr(requiredItemFields))), ...
         'batch_crop:InvalidProject', ...
         'Batch crop project items do not match the crop-task contract.');
-    if ~isempty(items)
-        sourceIds = string({sources.id});
-        taskSourceIds = string({items.sourceId});
-        assert(all(ismember(taskSourceIds, sourceIds)), ...
-            'batch_crop:InvalidProject', ...
-            'Every crop task must reference one canonical source record.');
-    end
+    sourceIds = reshape(string({sources.id}), 1, []);
+    taskSourceIds = reshape(string({items.sourceId}), 1, []);
+    assert(numel(items) == numel(sources) && ...
+        isequal(taskSourceIds, sourceIds), ...
+        'batch_crop:InvalidProject', ...
+        ['Every crop task must align with one distinct portable ' ...
+         'source record.']);
     requiredParameters = ["cropWidth", "cropHeight", "scaleMode", ...
         "scaleUnit", "physicalWidth", "physicalHeight", ...
         "targetPixelsPerUnit", "maxUpsamplePercent", "format", ...
