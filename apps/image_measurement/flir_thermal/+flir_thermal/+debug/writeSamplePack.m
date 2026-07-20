@@ -2,17 +2,16 @@
 % is a LabKit debug context. Output is a deterministic synthetic radiometric
 % JPEG-like sample pack. Side effects: writes anonymous debug files and records
 % a session manifest when available.
-function pack = writeSamplePack(debugLog)
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write FLIR Thermal debug radiometric files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "flir_thermal");
-    sampleFolder = fullfile(char(folders.sampleFolder), "flir_thermal");
-    ensureFolder(sampleFolder);
-
-    warmPath = string(fullfile(sampleFolder, "flir_representative_gradient_debug.jpg"));
-    coolPath = string(fullfile(sampleFolder, "flir_representative_cool_spot_debug.jpg"));
-    edgePath = string(fullfile(sampleFolder, "flir_valid_low_contrast_debug.jpg"));
-    malformedPath = string(fullfile(sampleFolder, "flir_malformed_plain_jpeg_debug.jpg"));
+    warmPath = sampleContext.samplePath("flir_thermal/warm.jpg");
+    coolPath = sampleContext.samplePath("flir_thermal/cool.jpg");
+    edgePath = sampleContext.samplePath("flir_thermal/low_contrast.jpg");
+    malformedPath = sampleContext.samplePath("flir_thermal/plain.jpg");
 
     writeSyntheticRjpeg(warmPath, syntheticRaw(96, 128, 18300, 900), struct( ...
         "emissivity", 0.96, "reflectedTemperatureC", 22, ...
@@ -28,17 +27,20 @@ function pack = writeSamplePack(debugLog)
         "relativeHumidity", 0.50));
     imwrite(uint8(repmat(linspace(30, 210, 96), 64, 1)), char(malformedPath));
 
-    representative = [warmPath; coolPath];
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_FLIRThermal_app", ...
-        "description", "Anonymous FLIR radiometric JPEG-like boundary pack for debug launch.", ...
-        "sampleFolder", string(sampleFolder), ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", representative, ...
-        "boundaryFiles", struct("validEdgeLowContrast", edgePath, "malformedPlainJpeg", malformedPath));
-    recordManifest(debugLog, manifest);
-    pack = manifest;
+    project = flir_thermal.projectSpec().Create();
+    project.inputs.sources = [ ...
+        sampleContext.sourceRecord( ...
+            "thermal1", "thermal-image", warmPath, true), ...
+        sampleContext.sourceRecord( ...
+            "thermal2", "thermal-image", coolPath, true)];
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-thermal-images", InitialProject=project, ...
+        Artifacts={ ...
+            sampleContext.artifact("warm", "thermal-image", warmPath), ...
+            sampleContext.artifact("cool", "thermal-image", coolPath), ...
+            sampleContext.artifact("lowContrast", "boundaryInput", edgePath), ...
+            sampleContext.artifact("plainJpeg", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function raw = syntheticRaw(h, w, base, delta)
@@ -198,40 +200,10 @@ function bytes = putU32be(bytes, index, value)
         bitand(value, 255)]);
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function value = optionValue(opts, fieldName, defaultValue)
     value = defaultValue;
     if isstruct(opts) && isfield(opts, fieldName)
         value = opts.(fieldName);
-    end
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
     end
 end
 

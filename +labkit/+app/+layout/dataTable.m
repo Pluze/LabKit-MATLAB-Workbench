@@ -11,6 +11,8 @@ function node = dataTable(id, varargin)
 %   id - Unique MATLAB identifier for the layout target.
 %
 % Options:
+%   Title - Reader-facing panel title or blank. A single-table section
+%       supplies its title when this is blank. Default: blank.
 %   Columns - Column-label text row. Default: strings(1,0).
 %   RowNames - Row-label text row. Default: strings(1,0).
 %   ColumnEditable - Logical scalar or row matching Columns. Default: false.

@@ -8,6 +8,7 @@ classdef (Sealed) Definition
     %       Requirements=requirements, Workbench=workbench, Name=Value)
     %   fig = app.launch()
     %   fig = app.launch(InitialProject=project)
+    %   fig = app.launch(Diagnostics=diagnosticOptions)
     %   requirements = app.launch("requirements")
     %   version = app.launch("version")
     %
@@ -49,6 +50,9 @@ classdef (Sealed) Definition
     %
     % Definition Methods:
     %   launch() - Build and show the native MATLAB App figure.
+    %   launch(Diagnostics=options) - Use one
+    %       labkit.app.diagnostic.Options value for standard or verbose
+    %       sanitized runtime recording.
     %   launch("requirements") - Return declared facade requirements without
     %       creating a figure.
     %   launch("version") - Return product version metadata without creating
@@ -217,21 +221,34 @@ classdef (Sealed) Definition
         function varargout = launch(obj, varargin)
             %LAUNCH Answer metadata requests or show the native MATLAB App.
             initialProject = [];
+            diagnostics = labkit.app.diagnostic.Options();
             if ~isempty(varargin) && ...
                     ~(numel(varargin) == 1 && ...
                       (ischar(varargin{1}) || ...
                        (isstring(varargin{1}) && isscalar(varargin{1}))))
                 options = labkit.app.internal.OptionParser.parse( ...
-                    "labkit.app.Definition.launch", "InitialProject", ...
+                    "labkit.app.Definition.launch", ...
+                    ["InitialProject", "Diagnostics"], ...
                     varargin{:});
-                if ~isfield(options, "InitialProject") || ...
-                        ~isstruct(options.InitialProject) || ...
-                        ~isscalar(options.InitialProject)
-                    error("labkit:app:contract:InvalidValue", ...
-                        "Definition launch InitialProject must be a " + ...
-                        "scalar project struct.");
+                if isfield(options, "InitialProject")
+                    if ~isstruct(options.InitialProject) || ...
+                            ~isscalar(options.InitialProject)
+                        error("labkit:app:contract:InvalidValue", ...
+                            "Definition launch InitialProject must be a " + ...
+                            "scalar project struct.");
+                    end
+                    initialProject = options.InitialProject;
                 end
-                initialProject = options.InitialProject;
+                if isfield(options, "Diagnostics")
+                    if ~isa(options.Diagnostics, ...
+                            "labkit.app.diagnostic.Options") || ...
+                            ~isscalar(options.Diagnostics)
+                        error("labkit:app:contract:InvalidValue", ...
+                            "Definition launch Diagnostics must be one " + ...
+                            "labkit.app.diagnostic.Options value.");
+                    end
+                    diagnostics = options.Diagnostics;
+                end
                 varargin = {};
             end
             if ~isempty(varargin)
@@ -267,7 +284,8 @@ classdef (Sealed) Definition
                 error("labkit:app:contract:InvalidValue", ...
                     "Definition launch returns at most one figure.");
             end
-            runtime = obj.createMatlabRuntime(initialProject);
+            runtime = obj.createMatlabRuntime( ...
+                initialProject, struct(), diagnostics);
             runtime.showFigure();
             figure = runtime.figureHandle();
             if nargout == 1
@@ -294,32 +312,161 @@ classdef (Sealed) Definition
         end
 
         function runtime = createRuntimeForTesting( ...
-                obj, initialProject, backend)
+                obj, initialProject, backend, diagnostics)
             if nargin < 2
                 initialProject = [];
             end
             if nargin < 3
                 backend = struct();
             end
-            runtime = labkit.app.internal.RuntimeKernel( ...
-                obj, initialProject, backend);
+            if nargin < 4
+                diagnostics = labkit.app.diagnostic.Options();
+            end
+            runtime = obj.createRuntimeKernel( ...
+                initialProject, backend, "headless", diagnostics);
         end
 
-        function runtime = createMatlabRuntime(obj, initialProject, backend)
+        function runtime = createMatlabRuntime( ...
+                obj, initialProject, backend, diagnostics)
             if nargin < 2
                 initialProject = [];
             end
             if nargin < 3
                 backend = struct();
             end
-            runtime = labkit.app.internal.RuntimeKernel( ...
-                obj, initialProject, backend, "matlab");
+            if nargin < 4
+                diagnostics = labkit.app.diagnostic.Options();
+            end
+            runtime = obj.createRuntimeKernel( ...
+                initialProject, backend, "matlab", diagnostics);
         end
 
         function plan = platformPlanForRuntime(obj)
             plan = obj.PlatformPlan;
         end
+
+        function runtime = createRuntimeKernel( ...
+                obj, initialProject, backend, platform, diagnostics)
+            recorder = labkit.app.internal.DiagnosticRecorder( ...
+                obj, diagnostics);
+            sampleOperation = [];
+            try
+                if diagnostics.Sample == "synthetic"
+                    sampleOperation = recorder.begin( ...
+                        "sample", "synthetic", "build");
+                    initialProject = obj.buildSyntheticProject( ...
+                        initialProject, diagnostics);
+                    recorder.finish(sampleOperation, "completed", []);
+                    sampleOperation = [];
+                end
+                runtime = labkit.app.internal.RuntimeKernel( ...
+                    obj, initialProject, backend, platform, diagnostics, ...
+                    recorder);
+            catch cause
+                if ~isempty(sampleOperation)
+                    recorder.finish(sampleOperation, "failed", cause);
+                end
+                recorder.close();
+                rethrow(cause);
+            end
+        end
+
+        function initialProject = buildSyntheticProject( ...
+                obj, initialProject, diagnostics)
+            if ~isempty(initialProject)
+                error("labkit:app:contract:InvalidValue", ...
+                    "Definition launch cannot combine InitialProject with " + ...
+                    "a synthetic diagnostic sample.");
+            end
+            if strlength(diagnostics.ArtifactFolder) == 0
+                error("labkit:app:contract:InvalidValue", ...
+                    "A synthetic diagnostic sample requires ArtifactFolder.");
+            end
+            if isempty(obj.BuildDebugSample)
+                error("labkit:app:contract:UnsupportedOperation", ...
+                    "Definition does not declare BuildDebugSample.");
+            end
+            if isempty(obj.ProjectSchema)
+                error("labkit:app:contract:UnsupportedOperation", ...
+                    "A synthetic diagnostic sample requires ProjectSchema.");
+            end
+            context = labkit.app.diagnostic.SampleContext( ...
+                diagnostics.ArtifactFolder);
+            pack = obj.BuildDebugSample(context);
+            if ~isa(pack, "labkit.app.diagnostic.SamplePack") || ...
+                    ~isscalar(pack)
+                error("labkit:app:contract:InvalidValue", ...
+                    "BuildDebugSample must return one " + ...
+                    "labkit.app.diagnostic.SamplePack value.");
+            end
+            try
+                accepted = obj.ProjectSchema.Validate(pack.InitialProject);
+            catch cause
+                failure = MException( ...
+                    "labkit:app:contract:InvalidValue", ...
+                    "BuildDebugSample returned an invalid current project.");
+                failure = addCause(failure, cause);
+                throw(failure);
+            end
+            if ~isequal(accepted, true)
+                error("labkit:app:contract:InvalidValue", ...
+                    "BuildDebugSample returned an invalid current project.");
+            end
+            verifySampleArtifacts(context, pack);
+            writeSampleManifest(context, pack);
+            initialProject = pack.InitialProject;
+        end
     end
+end
+
+function verifySampleArtifacts(context, pack)
+for k = 1:numel(pack.Artifacts)
+    artifact = pack.Artifacts{k};
+    if artifact.Expectation == "exports"
+        continue;
+    end
+    pathParts = cellstr(split(artifact.RelativePath, "/"));
+    filepath = string(fullfile( ...
+        char(context.ArtifactFolder), pathParts{:}));
+    if exist(char(filepath), "file") ~= 2 && ...
+            exist(char(filepath), "dir") ~= 7
+        error("labkit:app:contract:InvalidValue", ...
+            "BuildDebugSample did not create artifact %s.", artifact.Id);
+    end
+end
+end
+
+function writeSampleManifest(context, pack)
+artifacts = repmat(struct( ...
+    "id", "", "role", "", "relativePath", "", ...
+    "expectation", ""), 1, numel(pack.Artifacts));
+for k = 1:numel(pack.Artifacts)
+    artifact = pack.Artifacts{k};
+    artifacts(k) = struct( ...
+        "id", artifact.Id, ...
+        "role", artifact.Role, ...
+        "relativePath", artifact.RelativePath, ...
+        "expectation", artifact.Expectation);
+end
+payload = struct( ...
+    "type", "labkit.diagnostic.sample-pack", ...
+    "scenario", pack.Scenario, ...
+    "artifacts", artifacts);
+filepath = string(fullfile(context.ArtifactFolder, "sample-pack.json"));
+temporary = filepath + ".tmp";
+file = fopen(char(temporary), "w");
+if file < 0
+    error("labkit:app:runtime:DiagnosticWriteFailed", ...
+        "Could not write the diagnostic sample manifest.");
+end
+cleanup = onCleanup(@() fclose(file));
+fprintf(file, "%s\n", jsonencode(payload, PrettyPrint=true));
+clear cleanup
+[moved, message] = movefile(char(temporary), char(filepath), "f");
+if ~moved
+    error("labkit:app:runtime:DiagnosticWriteFailed", ...
+        "Could not publish the diagnostic sample manifest: %s", message);
+end
 end
 
 function plan = compilePlatformPlan(nodes)

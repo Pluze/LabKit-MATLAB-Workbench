@@ -76,6 +76,13 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
         function acceptRestore(obj, metadata)
             obj.Metadata = metadata;
         end
+
+        function markDirty(obj)
+            if ~obj.Metadata.dirty
+                obj.Metadata.dirty = true;
+                obj.Metadata.modifiedAtUtc = utcNow();
+            end
+        end
     end
 
     methods (Access = private)

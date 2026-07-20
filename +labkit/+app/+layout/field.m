@@ -12,7 +12,8 @@ function node = field(id, varargin)
 %
 % Options:
 %   Label - Display text. Default: id.
-%   Kind - "text", "numeric", "choice", or "logical". Default: "text".
+%   Kind - "text", "numeric", "choice", "logical", or "readonly".
+%       Readonly fields display one labeled result value. Default: "text".
 %   Value - Initial value. Default: [].
 %   Choices - Text row for choice fields. Default: strings(1,0).
 %   Limits - Increasing finite numeric 1-by-2 row. Default: [].

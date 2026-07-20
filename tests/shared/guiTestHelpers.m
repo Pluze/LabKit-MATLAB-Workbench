@@ -21,7 +21,6 @@ function h = guiTestHelpers()
     h.assertAnyTableColumns = @assertAnyTableColumns;
     h.assertFigureMinimumSize = @assertFigureMinimumSize;
     h.assertStartupSucceeded = @assertStartupSucceeded;
-    h.assertStandardWorkbenchLayout = @assertStandardWorkbenchLayout;
     h.findControlsByClass = @findControlsByClass;
     h.assertDropdownCallbacksPresent = @assertDropdownCallbacksPresent;
     h.invokeDropdownValue = @invokeDropdownValue;
@@ -199,47 +198,10 @@ function assertFigureMinimumSize(fig, minWidth, minHeight)
     assert(pos(4) >= minHeight, 'Expected figure height >= %d, found %.0f.', minHeight, pos(4));
 end
 
-function assertStandardWorkbenchLayout(fig)
-    assertStartupSucceeded(fig);
-    assert(isappdata(fig, 'labkitUiRegistry'), ...
-        'App should publish the shared LabKit workbench registry.');
-    ui = getappdata(fig, 'labkitUiRegistry');
-    required = {'figure', 'main', 'leftPanel', 'rightPanel'};
-    assert(all(isfield(ui, required)) && isequal(ui.figure, fig), ...
-        'App should expose the semantic LabKit workbench shell.');
-end
-
 function assertStartupSucceeded(fig)
-    [settled, detail] = waitForCondition(fig, @() startupSettled(fig), 5.0);
-    if ~settled
-        error('LabKit:Tests:GuiStartupTimeout', ...
-            'App startup did not settle. %s', waitDiagnostic(detail));
-    end
-    if ~isappdata(fig, 'labkitUiStartup')
-        return;
-    end
-    state = getappdata(fig, 'labkitUiStartup');
-    if isstruct(state) && isfield(state, 'failed') && logical(state.failed)
-        message = "Startup failed without a diagnostic message.";
-        if isfield(state, 'message') && strlength(string(state.message)) > 0
-            message = string(state.message);
-        end
-        error('LabKit:Tests:GuiStartupFailed', '%s', char(message));
-    end
-end
-
-function tf = startupSettled(fig)
-    tf = false;
-    if ~isvalid(fig)
-        return;
-    end
-    if ~isappdata(fig, 'labkitUiStartup')
-        tf = true;
-        return;
-    end
-    state = getappdata(fig, 'labkitUiStartup');
-    tf = isstruct(state) && isfield(state, 'failed') && ...
-        isscalar(state.failed) && logical(state.failed);
+    drawnow;
+    assert(isvalid(fig), ...
+        'The synchronous App SDK launch did not leave a valid figure.');
 end
 
 function controls = findControlsByClass(fig, classNamePart)

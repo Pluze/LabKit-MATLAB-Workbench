@@ -1,14 +1,17 @@
-function node = logPanel(id)
+function node = logPanel(id, varargin)
 %LOGPANEL Add a text display for App log messages.
 %
 % Usage:
-%   node = labkit.app.layout.logPanel(id)
+%   node = labkit.app.layout.logPanel(id, Name=Value)
 %
 % Description:
 %   Declares a runtime-populated multiline App log display.
 %
 % Inputs:
 %   id - Unique MATLAB identifier for the layout target.
+%
+% Options:
+%   Title - Visible panel title. Default: "Log".
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by containers.
@@ -21,5 +24,5 @@ function node = logPanel(id)
 %
 % See also labkit.app.layout.statusPanel,
 %   labkit.app.CallbackContext
-node = labkit.app.internal.LayoutNode.logPanel(id);
+node = labkit.app.internal.LayoutNode.logPanel(id, varargin{:});
 end

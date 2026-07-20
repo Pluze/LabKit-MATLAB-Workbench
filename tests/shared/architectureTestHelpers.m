@@ -31,8 +31,7 @@ function source = assertAppEntrypoint(root, appName)
         [appName ' should expose one public app entry-point source file.']);
     assertUsesGuiFoundation(appOwnedSource, appName);
     delegatesDefinitionToLaunch = ...
-        contains(appSource, 'labkit.ui.runtime.launch(') && ...
-        contains(appSource, '.definition');
+        contains(appSource, '.definition().launch(');
     assert(delegatesDefinitionToLaunch, ...
         [appName ' should delegate product metadata and launch behavior ' ...
         'through its single definition.']);
@@ -177,8 +176,8 @@ function assertGaitAppBoundary(source, appName)
 end
 
 function assertUsesGuiFoundation(source, appName)
-    assert(contains(source, 'labkit.ui.runtime.launch('), ...
-        [appName ' should build from the reusable GUI foundation.']);
+    assert(contains(source, 'labkit.app.Definition('), ...
+        [appName ' should build from the reusable App SDK foundation.']);
 end
 
 function assertTopLevelMFiles(packageDir, expectedFiles, label)
@@ -219,7 +218,7 @@ end
 
 function assertAppUsesManagedImageInteractions(source, appName)
     assert(~contains(source, 'WindowScrollWheelFcn'), ...
-        [appName ' should declare image navigation through Runtime V2.']);
+        [appName ' should declare image navigation through the App SDK.']);
     assert(~contains(source, 'WindowButtonMotionFcn') && ~contains(source, 'WindowButtonUpFcn'), ...
         [appName ' should not own image-tool drag callbacks directly.']);
     assert(~contains(source, '.ButtonDownFcn'), ...

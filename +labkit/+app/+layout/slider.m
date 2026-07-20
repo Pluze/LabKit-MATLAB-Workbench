@@ -15,6 +15,8 @@ function node = slider(id, varargin)
 %   Value - Finite numeric scalar. Default: lower Limits value.
 %   Limits - Increasing finite numeric 1-by-2 row. Default: [0 1].
 %   Step - Positive numeric scalar. Default: [].
+%   ValueDisplayFormat - Optional spinner numeric format such as "%.6g".
+%       Default: "".
 %   ShowTicks - Logical tick visibility. Default: false.
 %   Bind - Project or session field path. Default: "".
 %   Enabled - Initial logical enabled state. Default: true.
@@ -28,7 +30,7 @@ function node = slider(id, varargin)
 %   Throws labkit:app:contract:* for invalid IDs, options, or callbacks.
 %
 % Typical Call:
-%   node = labkit.app.layout.slider("frame", Limits=[1 100]);
+%   node = labkit.app.layout.slider("frame", Limits=[1 100], Step=1);
 %
 % See also labkit.app.layout.field, labkit.app.layout.rangeField
 node = labkit.app.internal.LayoutNode.slider(id, varargin{:});

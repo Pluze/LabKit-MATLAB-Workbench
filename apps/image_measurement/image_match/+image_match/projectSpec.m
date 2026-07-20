@@ -23,7 +23,7 @@ function project = createProject()
 end
 
 function sources = emptySources()
-sources = repmat(struct("id", "", "role", "", "path", "", "required", true), 0, 1);
+sources = labkit.app.project.emptySourceRecords();
 end
 
 function accepted = validateProject(project)

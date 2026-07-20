@@ -5,6 +5,8 @@ classdef (Sealed) CallbackContext < handle
     %   context = labkit.app.CallbackContext()
     %   context.appendStatus(message)
     %   context.reportError(operation, exception)
+    %   context.diagnosticCheckpoint(id)
+    %   context.diagnosticCount(id, count)
     %   context.alert(message, title)
     %   result = context.chooseOption(prompt, choices)
     %   result = context.chooseInputFile(filters, startPath)
@@ -37,6 +39,8 @@ classdef (Sealed) CallbackContext < handle
     %   message - Scalar reader-facing text.
     %   operation - Scalar diagnostic operation text.
     %   exception - Scalar MException.
+    %   id - Stable semantic diagnostic identifier.
+    %   count - Nonnegative integer diagnostic count.
     %   title - Scalar reader-facing dialog title.
     %   prompt - Scalar reader-facing choice prompt.
     %   choices - Row string or cellstr array.
@@ -110,6 +114,23 @@ classdef (Sealed) CallbackContext < handle
             end
             obj.invoke("reportError", "diagnostics", ...
                 {operation, exception}, 0);
+        end
+
+        function diagnosticCheckpoint(obj, id)
+            id = nonemptyText(id, "diagnostic id");
+            obj.invoke("diagnosticCheckpoint", "diagnostics", {id}, 0);
+        end
+
+        function diagnosticCount(obj, id, count)
+            id = nonemptyText(id, "diagnostic id");
+            if ~(isnumeric(count) && isscalar(count) && ...
+                    isfinite(count) && count >= 0 && count == fix(count))
+                error("labkit:app:contract:InvalidValue", ...
+                    "CallbackContext diagnostic count must be a " + ...
+                    "nonnegative integer.");
+            end
+            obj.invoke("diagnosticCount", "diagnostics", ...
+                {id, double(count)}, 0);
         end
 
         function alert(obj, message, title)

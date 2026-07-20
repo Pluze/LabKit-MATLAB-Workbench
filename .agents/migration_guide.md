@@ -33,6 +33,37 @@ app-sdk-migration-debt: ui-explicit-contract-redesign
 - **Release model:** a deliberate incompatible-contract replacement, not an
   additive compatibility layer on the current runtime
 
+### User-visible UI parity audit
+
+The 2026-07-19 `main` baseline remains the behavioral and visual reference
+until every tracked App has been reviewed in every control tab and workspace
+page. Startup-only screenshots are insufficient.
+
+Restored in the replacement SDK worktree:
+
+- versioned window titles, project dirty markers, callback busy feedback,
+  guarded close behavior, keyboard close, delayed startup progress, and GUI
+  test visibility modes;
+- fixed control-pane sizing, draggable column and row dividers, scrollable
+  control tabs, framework utility menus, and complete-text fitting;
+- old panner, range, readonly, adaptive action-grid, file/folder/recursive
+  file selection, friendly file labels, status, log-follow, table, and Usage
+  presentations;
+- workspace pages and initial selection, plot view modes, single/pair/stack
+  axes layouts, axis titles and labels, unequal axes sizing, per-axis wheel
+  zoom, viewport preservation, and plot pop-out/export behavior.
+
+Still open before compatibility retirement:
+
+- verify the restored window/startup/close contracts against every App and
+  cover startup failure presentation;
+- finish the all-App control, menu, button, tab, workspace-page, plot-layout,
+  title, and major-state visual audit against the captured `main` baseline;
+- remove remaining App-local visual compensations after their stable behavior
+  is represented by framework contracts;
+- finish diagnostic samples, project/recovery/result/dialog behavior, focused
+  App tests, final changed-file gates, documentation, versions, and history.
+
 The accepted public structure is capability-partitioned:
 `labkit.app.Definition` and `CallbackContext` form the small root; `layout`,
 `view`, `event`, `interaction`, `plot`, `project`, `result`, and `dialog` own

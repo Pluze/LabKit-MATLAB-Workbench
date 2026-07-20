@@ -15,7 +15,18 @@ function node = plotArea(id, renderer, varargin)
 %       field per declared AxisIds value, including single-axis plots.
 %
 % Options:
+%   Title - Reader-facing panel title or blank. Default: blank.
+%   Layout - Axes arrangement: "single", "pair", or "stack". Default:
+%       "single" for one axis and "stack" for multiple axes.
 %   AxisIds - Unique MATLAB identifier row. Default: "main".
+%   AxisTitles - One title per axis. Default: axis IDs.
+%   XLabels - One x-axis label per axis. Default: blank.
+%   YLabels - One y-axis label per axis. Default: blank.
+%   ColumnWidths - One positive pixel, "fit", or "1x" value per axis for
+%       pair layout. Default: equal flexible widths.
+%   RowHeights - One positive pixel, "fit", or "1x" value per axis for
+%       stack layout. Default: equal flexible heights.
+%   ScrollZoomAxes - One "xy", "x", or "y" value per axis. Default: "xy".
 %   ViewModes - App-owned mode labels. Default: strings(1,0).
 %   OnValueChanged - Scalar callback
 %       state = callback(state,value,context). Default: [].

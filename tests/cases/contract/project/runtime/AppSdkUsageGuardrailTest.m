@@ -1,17 +1,15 @@
-classdef UiFacadeUsageGuardrailTest < matlab.unittest.TestCase
-    %UIFACADEUSAGEGUARDRAIL Guard app code toward the UI5 facade split.
+classdef AppSdkUsageGuardrailTest < matlab.unittest.TestCase
+    %APPSDKUSAGEGUARDRAIL Guard Apps toward the public App SDK boundary.
 
     methods (Test, TestTags = {'Integration', 'Style'})
-        function test_apps_use_ui5_facade_names(testCase)
+        function appsUseOnlyPublicAppSdkNames(testCase)
             setupLabKitTestPath();
             root = testRepoRoot();
             files = appSourceFiles(root);
             forbidden = [
-                "labkit.ui.app."
-                "labkit.ui.spec."
-                "labkit.ui.view."
-                "labkit.ui.tool."
-                "labkit.ui.diag."
+                "labkit.app.internal."
+                "labkitUiRegistry"
+                "labkitUiAppRuntime"
             ];
 
             hits = strings(0, 1);
@@ -26,11 +24,11 @@ classdef UiFacadeUsageGuardrailTest < matlab.unittest.TestCase
             end
 
             testCase.verifyEmpty(hits, ...
-                "Apps should use UI5 runtime/layout/control/plot/interaction/debug facades: " + ...
+                "Apps should use only public App SDK contracts: " + ...
                 strjoin(hits, "; "));
         end
 
-        function test_apps_do_not_reimplement_plot_clear(testCase)
+        function appsDoNotReimplementPlotClear(testCase)
             setupLabKitTestPath();
             root = testRepoRoot();
             files = appSourceFiles(root);
@@ -50,7 +48,7 @@ classdef UiFacadeUsageGuardrailTest < matlab.unittest.TestCase
             end
 
             testCase.verifyEmpty(hits, ...
-                "Apps should call labkit.ui.plot.clear instead of reimplementing axes cleanup: " + ...
+                "Apps should call labkit.app.plot.clearAxes instead of reimplementing axes cleanup: " + ...
                 strjoin(hits, ", "));
         end
     end

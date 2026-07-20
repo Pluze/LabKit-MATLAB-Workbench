@@ -2,36 +2,29 @@
 % is a LabKit debug context. Output is a deterministic synthetic curvature
 % image sample pack. Side effects: writes anonymous debug images and records
 % a session manifest when available.
-function pack = writeSamplePack(debugLog)
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write Curvature debug image files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "curvature");
-    imageFolder = fullfile(char(folders.sampleFolder), "images");
-    ensureFolder(imageFolder);
-
-    arcPath = string(fullfile(imageFolder, "curvature_arc_feature.png"));
-    edgePath = string(fullfile(imageFolder, "curvature_valid_low_contrast_arc.png"));
-    malformedPath = string(fullfile(imageFolder, "curvature_malformed_not_image.png"));
+    arcPath = sampleContext.samplePath("curvature/arc.png");
+    edgePath = sampleContext.samplePath("curvature/low_contrast.png");
+    malformedPath = sampleContext.samplePath("curvature/malformed.png");
     imwrite(arcImage(false), char(arcPath));
     imwrite(arcImage(true), char(edgePath));
     writeTextFile(malformedPath, "not an image payload" + newline);
 
-    pack = struct( ...
-        "sampleFolder", folders.sampleFolder, ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", arcPath, ...
-        "boundaryFiles", struct("validEdge", edgePath, "malformed", malformedPath));
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_CurvatureMeasurement_app", ...
-        "description", "Anonymous arc-feature boundary image pack.", ...
-        "inputs", struct( ...
-            "representativeImage", arcPath, ...
-            "validEdgeImage", edgePath, ...
-            "malformedImage", malformedPath), ...
-        "outputFolder", folders.outputFolder);
-    pack.manifest = manifest;
-    recordManifest(debugLog, manifest);
+    project = curvature.projectSpec().Create();
+    project.inputs.sources = sampleContext.sourceRecord( ...
+        "image1", "image", arcPath, true);
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-arc", InitialProject=project, ...
+        Artifacts={ ...
+            sampleContext.artifact("arc", "image", arcPath), ...
+            sampleContext.artifact("lowContrast", "boundaryInput", edgePath), ...
+            sampleContext.artifact("malformed", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function image = arcImage(lowContrast)
@@ -56,30 +49,6 @@ function image = arcImage(lowContrast)
     image = uint8(round(255 .* min(max(image, 0), 1)));
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, text)
     fid = fopen(char(filepath), "w", "n", "UTF-8");
     if fid < 0
@@ -88,10 +57,4 @@ function writeTextFile(filepath, text)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s", char(text));
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end

@@ -2,18 +2,17 @@
 % is a LabKit debug context. Output is a deterministic synthetic reference
 % matching sample pack. Side effects: writes anonymous debug images and
 % records a session manifest when available.
-function pack = writeSamplePack(debugLog)
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write Image Match debug image files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "image_match");
-    imageFolder = fullfile(char(folders.sampleFolder), "images");
-    ensureFolder(imageFolder);
-
-    referencePath = string(fullfile(imageFolder, "match_reference.png"));
-    sourceWarmPath = string(fullfile(imageFolder, "match_source_warm_shift.png"));
-    sourceDimPath = string(fullfile(imageFolder, "match_source_dim_shift.png"));
-    edgePath = string(fullfile(imageFolder, "match_valid_size_mismatch.png"));
-    malformedPath = string(fullfile(imageFolder, "match_malformed_not_image.png"));
+    referencePath = sampleContext.samplePath("image_match/reference.png");
+    sourceWarmPath = sampleContext.samplePath("image_match/warm.png");
+    sourceDimPath = sampleContext.samplePath("image_match/dim.png");
+    edgePath = sampleContext.samplePath("image_match/size_mismatch.png");
+    malformedPath = sampleContext.samplePath("image_match/malformed.png");
 
     reference = sceneImage("reference", [240 320]);
     imwrite(toUint8(reference), char(referencePath));
@@ -22,25 +21,25 @@ function pack = writeSamplePack(debugLog)
     imwrite(toUint8(sceneImage("warm", [180 260])), char(edgePath));
     writeTextFile(malformedPath, "not an image payload" + newline);
 
-    representativeFiles = [sourceWarmPath; sourceDimPath];
-    pack = struct( ...
-        "sampleFolder", folders.sampleFolder, ...
-        "outputFolder", folders.outputFolder, ...
-        "referenceFile", referencePath, ...
-        "representativeFiles", representativeFiles, ...
-        "boundaryFiles", struct("validEdge", edgePath, "malformed", malformedPath));
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_ImageMatch_app", ...
-        "description", "Anonymous reference-match boundary image pack.", ...
-        "inputs", struct( ...
-            "referenceImage", referencePath, ...
-            "representativeSourceImages", representativeFiles, ...
-            "validEdgeImage", edgePath, ...
-            "malformedImage", malformedPath), ...
-        "outputFolder", folders.outputFolder);
-    pack.manifest = manifest;
-    recordManifest(debugLog, manifest);
+    project = image_match.projectSpec().Create();
+    project.inputs.reference = sampleContext.sourceRecord( ...
+        "reference1", "reference-image", referencePath, true);
+    project.inputs.sources = [ ...
+        sampleContext.sourceRecord( ...
+            "image1", "source-image", sourceWarmPath, true), ...
+        sampleContext.sourceRecord( ...
+            "image2", "source-image", sourceDimPath, true)];
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-image-match", InitialProject=project, ...
+        Artifacts={ ...
+            sampleContext.artifact( ...
+                "reference", "reference-image", referencePath), ...
+            sampleContext.artifact("warm", "source-image", sourceWarmPath), ...
+            sampleContext.artifact("dim", "source-image", sourceDimPath), ...
+            sampleContext.artifact( ...
+                "sizeMismatch", "boundaryInput", edgePath), ...
+            sampleContext.artifact("malformed", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function image = sceneImage(kind, dims)
@@ -69,30 +68,6 @@ function image = toUint8(image)
     image = uint8(round(255 .* min(max(image, 0), 1)));
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = "";
-    outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder);
-    ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, text)
     fid = fopen(char(filepath), "w", "n", "UTF-8");
     if fid < 0
@@ -101,10 +76,4 @@ function writeTextFile(filepath, text)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s", char(text));
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end

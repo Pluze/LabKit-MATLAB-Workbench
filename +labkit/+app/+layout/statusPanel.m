@@ -1,14 +1,19 @@
-function node = statusPanel(id)
+function node = statusPanel(id, varargin)
 %STATUSPANEL Add a text display for current App status.
 %
 % Usage:
-%   node = labkit.app.layout.statusPanel(id)
+%   node = labkit.app.layout.statusPanel(id, Name=Value)
 %
 % Description:
-%   Declares a runtime-populated current-status display.
+%   Declares a current-status or static instruction display.
 %
 % Inputs:
 %   id - Unique MATLAB identifier for the layout target.
+%
+% Options:
+%   Title - Visible panel title. Default: "Status".
+%   Text - Static text lines. When omitted, the runtime's latest status is
+%       displayed. Default: strings(1,0).
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by containers.
@@ -21,5 +26,5 @@ function node = statusPanel(id)
 %
 % See also labkit.app.layout.logPanel,
 %   labkit.app.CallbackContext
-node = labkit.app.internal.LayoutNode.statusPanel(id);
+node = labkit.app.internal.LayoutNode.statusPanel(id, varargin{:});
 end

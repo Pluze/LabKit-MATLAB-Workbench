@@ -5,7 +5,7 @@ classdef PackageFacadeContractTest < matlab.unittest.TestCase
         function facadeVersionsAreValid(testCase)
             setupLabKitTestPath();
             versions = currentVersions();
-            expectedFacades = ["app"; "ui"; "dta"; "rhs"; "biosignal"; "image"; "thermal"];
+            expectedFacades = ["app"; "dta"; "rhs"; "biosignal"; "image"; "thermal"];
 
             testCase.verifyEqual(sort([versions.facade].'), sort(expectedFacades));
             for k = 1:numel(versions)
@@ -57,11 +57,11 @@ classdef PackageFacadeContractTest < matlab.unittest.TestCase
 
         function incompatibleRequirementsProduceClearFailures(testCase)
             setupLabKitTestPath();
-            req = labkit.contract.requirements("ui", ">=99.0 <100");
+            req = labkit.contract.requirements("app", ">=99.0 <100");
             report = labkit.contract.checkRequirements(req);
 
             testCase.verifyFalse(report.ok);
-            testCase.verifyTrue(contains(report.message, "labkit.ui"));
+            testCase.verifyTrue(contains(report.message, "labkit.app"));
             testCase.verifyTrue(contains(report.message, ...
                 "does not satisfy the app requirement >=99.0 <100"));
             testCase.verifyError(@() labkit.contract.assertRequirements("probe_app", req), ...
@@ -81,9 +81,9 @@ classdef PackageFacadeContractTest < matlab.unittest.TestCase
 
         function futureRequirementsFailEvenWhenRangesIntersect(testCase)
             setupLabKitTestPath();
-            versions = labkit.contract.versionInfo("ui", "2.2.1", ">=2.0 <3", ...
-                "stable", "Probe UI contract.");
-            req = labkit.contract.requirements("ui", ">=2.9 <3");
+            versions = labkit.contract.versionInfo("app", "2.2.1", ">=2.0 <3", ...
+                "stable", "Probe App SDK contract.");
+            req = labkit.contract.requirements("app", ">=2.9 <3");
             report = labkit.contract.checkRequirements(req, versions);
 
             testCase.verifyFalse(report.ok);
@@ -115,7 +115,6 @@ end
 function versions = currentVersions()
     versions = [
         labkit.app.version()
-        labkit.ui.version()
         labkit.dta.version()
         labkit.rhs.version()
         labkit.biosignal.version()

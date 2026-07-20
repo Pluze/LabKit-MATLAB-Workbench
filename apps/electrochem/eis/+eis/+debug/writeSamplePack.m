@@ -2,36 +2,29 @@
 % LabKit debug context. Output is a deterministic synthetic EIS DTA sample
 % pack. Side effects: writes anonymous debug input files and records a session
 % manifest when available.
-function pack = writeSamplePack(debugLog)
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write EIS debug ZCURVE DTA files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "eis");
-    dtaFolder = fullfile(char(folders.sampleFolder), "dta");
-    ensureFolder(dtaFolder);
-
-    eisPath = string(fullfile(dtaFolder, "eis_zcurve_debug.DTA"));
-    sparsePath = string(fullfile(dtaFolder, "eis_zcurve_sparse_valid_debug.DTA"));
-    malformedPath = string(fullfile(dtaFolder, "eis_malformed_missing_zcurve_debug.DTA"));
+    eisPath = sampleContext.samplePath("eis/representative.DTA");
+    sparsePath = sampleContext.samplePath("eis/sparse.DTA");
+    malformedPath = sampleContext.samplePath("eis/malformed.DTA");
     writeTextFile(eisPath, eisText());
     writeTextFile(sparsePath, eisText(struct("Sparse", true)));
     writeTextFile(malformedPath, malformedEisText());
 
-    pack = struct( ...
-        "sampleFolder", folders.sampleFolder, ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", eisPath, ...
-        "boundaryFiles", struct("validEdge", sparsePath, "malformed", malformedPath));
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_EIS_app", ...
-        "description", "Anonymous ZCURVE DTA boundary pack for EIS debug launch.", ...
-        "inputs", struct( ...
-            "representativeEisDta", eisPath, ...
-            "validEdgeEisDta", sparsePath, ...
-            "malformedEisDta", malformedPath), ...
-        "outputFolder", folders.outputFolder);
-    pack.manifest = manifest;
-    recordManifest(debugLog, manifest);
+    project = eis.projectSpec().Create();
+    project.inputs.sources = sampleContext.sourceRecord( ...
+        "dta1", "eis", eisPath, true);
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-impedance", InitialProject=project, ...
+        Artifacts={ ...
+            sampleContext.artifact("representative", "eis", eisPath), ...
+            sampleContext.artifact("sparse", "boundaryInput", sparsePath), ...
+            sampleContext.artifact("malformed", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function text = eisText(opts)
@@ -81,28 +74,6 @@ function text = malformedEisText()
     text = join(lines, newline) + newline;
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = ""; outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder); ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, text)
     fid = fopen(char(filepath), "w", "n", "UTF-8");
     if fid < 0
@@ -110,12 +81,6 @@ function writeTextFile(filepath, text)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s", char(text));
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end
 
 function value = tab()

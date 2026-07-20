@@ -2,38 +2,29 @@
 % LabKit debug context. Output is a deterministic synthetic CV/CT DTA sample
 % pack. Side effects: writes anonymous debug input files and records a session
 % manifest when available.
-function pack = writeSamplePack(debugLog)
+function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write CSC debug CV/CT DTA files.
+    arguments
+        sampleContext (1, 1) labkit.app.diagnostic.SampleContext
+    end
 
-    folders = debugFolders(debugLog, "csc");
-    dtaFolder = fullfile(char(folders.sampleFolder), "dta");
-    ensureFolder(dtaFolder);
-
-    cvPath = string(fullfile(dtaFolder, "cvct_csc_debug.DTA"));
-    zeroScanPath = string(fullfile(dtaFolder, "cvct_csc_valid_zero_scanrate_debug.DTA"));
-    malformedPath = string(fullfile(dtaFolder, "cvct_csc_malformed_no_curve_debug.DTA"));
+    cvPath = sampleContext.samplePath("csc/representative.DTA");
+    zeroScanPath = sampleContext.samplePath("csc/zero_scan_rate.DTA");
+    malformedPath = sampleContext.samplePath("csc/malformed.DTA");
     writeTextFile(cvPath, cvctText());
     writeTextFile(zeroScanPath, cvctText(struct("ScanRateMv", 0)));
     writeTextFile(malformedPath, malformedCvctText());
 
-    pack = struct( ...
-        "sampleFolder", folders.sampleFolder, ...
-        "outputFolder", folders.outputFolder, ...
-        "representativeFiles", cvPath, ...
-        "boundaryFiles", struct( ...
-            "validEdge", zeroScanPath, ...
-            "malformed", malformedPath));
-    manifest = struct( ...
-        "type", "labkit.debug.samplePack.v1", ...
-        "app", "labkit_CSC_app", ...
-        "description", "Anonymous CV/CT DTA boundary pack for CSC debug launch.", ...
-        "inputs", struct( ...
-            "representativeCvctDta", cvPath, ...
-            "validEdgeCvctDta", zeroScanPath, ...
-            "malformedCvctDta", malformedPath), ...
-        "outputFolder", folders.outputFolder);
-    pack.manifest = manifest;
-    recordManifest(debugLog, manifest);
+    project = csc.projectSpec().Create();
+    project.inputs.sources = sampleContext.sourceRecord( ...
+        "dta1", "cvct", cvPath, true);
+    pack = labkit.app.diagnostic.SamplePack( ...
+        Scenario="representative-cvct", InitialProject=project, ...
+        Artifacts={ ...
+            sampleContext.artifact("representative", "cvct", cvPath), ...
+            sampleContext.artifact("zeroScanRate", "boundaryInput", zeroScanPath), ...
+            sampleContext.artifact("malformed", "boundaryInput", ...
+                malformedPath, Expectation="rejects")});
 end
 
 function text = cvctText(opts)
@@ -87,28 +78,6 @@ function rows = curveRows(t, vf, im)
     end
 end
 
-function folders = debugFolders(debugLog, appToken)
-    sampleFolder = ""; outputFolder = "";
-    if isstruct(debugLog)
-        if isfield(debugLog, "sampleFolder"), sampleFolder = string(debugLog.sampleFolder); end
-        if isfield(debugLog, "outputFolder"), outputFolder = string(debugLog.outputFolder); end
-    end
-    if strlength(sampleFolder) == 0
-        sampleFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "samples"));
-    end
-    if strlength(outputFolder) == 0
-        outputFolder = string(fullfile(tempdir, "LabKit-MATLAB-Workbench", "debug", appToken, "outputs"));
-    end
-    ensureFolder(sampleFolder); ensureFolder(outputFolder);
-    folders = struct("sampleFolder", sampleFolder, "outputFolder", outputFolder);
-end
-
-function recordManifest(debugLog, manifest)
-    if isstruct(debugLog) && isfield(debugLog, "recordArtifacts") && isa(debugLog.recordArtifacts, "function_handle")
-        debugLog.recordArtifacts(manifest);
-    end
-end
-
 function writeTextFile(filepath, text)
     fid = fopen(char(filepath), "w", "n", "UTF-8");
     if fid < 0
@@ -116,12 +85,6 @@ function writeTextFile(filepath, text)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s", char(text));
-end
-
-function ensureFolder(folder)
-    if exist(char(folder), "dir") ~= 7
-        mkdir(char(folder));
-    end
 end
 
 function value = tab()

@@ -13,6 +13,7 @@ function node = workspace(varargin)
 %   content - Optional plotArea, dataTable, group, or section node.
 %
 % Options:
+%   Title - Reader-facing workspace title. Default: "Workspace".
 %   OnPageChanged - Callback state = callback(state,pageId,context).
 %       Default: [].
 %

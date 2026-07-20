@@ -12,6 +12,9 @@ function node = workbench(children, varargin)
 %
 % Options:
 %   Workspace - Value returned by layout.workspace. Default: [].
+%   Usage - Static workflow instruction lines appended consistently to the
+%       first control tab. Default: strings(1,0).
+%   UsageTitle - Title for generated workflow instructions. Default: "Usage".
 %
 % Outputs:
 %   node - Immutable root layout node.

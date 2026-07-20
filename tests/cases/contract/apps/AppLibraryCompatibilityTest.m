@@ -272,23 +272,6 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 strjoin(findings, "; "));
         end
 
-        function appPackagesDoNotOwnCloseGuardState(testCase)
-            root = setupLabKitTestPath();
-            appFiles = collectAppMFiles(root);
-            findings = strings(0, 1);
-
-            for k = 1:numel(appFiles)
-                content = string(fileread(appFiles(k)));
-                if contains(content, "labkit.ui.runtime.setCloseGuard")
-                    findings(end+1, 1) = string(localRelativePath(root, appFiles(k)));
-                end
-            end
-
-            testCase.verifyEmpty(findings, ...
-                "Close confirmation is framework-owned; app files must not " + ...
-                "maintain close guard dirty state through removed runtime APIs: " + ...
-                strjoin(findings, "; "));
-        end
     end
 end
 
