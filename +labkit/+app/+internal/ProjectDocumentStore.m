@@ -73,6 +73,14 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
             metadata = candidate;
         end
 
+        function [state, metadata] = createNew(obj)
+            project = obj.Application.ProjectSchema.Create();
+            obj.validateProject(project);
+            session = obj.createSession(project, []);
+            state = struct("project", project, "session", session);
+            metadata = obj.newImportedMetadata();
+        end
+
         function acceptRestore(obj, metadata)
             obj.Metadata = metadata;
         end

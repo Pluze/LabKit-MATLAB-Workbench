@@ -18,7 +18,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         Documents
         Sources
         Recorder
-        PendingRestoreMetadata = []
+        PendingDocumentMetadata = []
     end
 
     methods (Access = ?labkit.app.Definition)
@@ -164,8 +164,14 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         function state = prepareProjectRestore(obj, filepath)
             obj.assertOpen();
             obj.assertProjectStore();
-            [state, obj.PendingRestoreMetadata] = ...
+            [state, obj.PendingDocumentMetadata] = ...
                 obj.Documents.restore(filepath, false);
+        end
+
+        function state = prepareNewProject(obj)
+            obj.assertOpen();
+            obj.assertProjectStore();
+            [state, obj.PendingDocumentMetadata] = obj.Documents.createNew();
         end
 
         function saveRecovery(obj, state, filepath)
@@ -566,6 +572,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.saveProject(state, filepath);
             builtins.restoreProject = @(filepath) ...
                 obj.prepareProjectRestore(filepath);
+            builtins.newProject = @() obj.prepareNewProject();
             builtins.saveRecovery = @(state, filepath) ...
                 obj.saveRecovery(state, filepath);
             builtins.writeResult = @(folder, result) ...
@@ -614,7 +621,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         function execute(obj, binding, payload)
             previousState = obj.State;
             previousPresentation = obj.Presentation;
-            obj.PendingRestoreMetadata = [];
+            obj.PendingDocumentMetadata = [];
             operation = obj.Recorder.begin( ...
                 "callback", binding.Id, binding.Signal);
             try
@@ -629,17 +636,17 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.Adapter.reconcile(previousPresentation, view);
                 obj.State = candidate;
                 obj.Presentation = view;
-                if isempty(obj.PendingRestoreMetadata)
+                if isempty(obj.PendingDocumentMetadata)
                     obj.markDocumentChanged();
                 else
-                    obj.Documents.acceptRestore(obj.PendingRestoreMetadata);
+                    obj.Documents.acceptRestore(obj.PendingDocumentMetadata);
                     obj.refreshWindowTitle();
                 end
                 obj.Recorder.finish(operation, "completed", []);
             catch cause
                 obj.State = previousState;
                 obj.Presentation = previousPresentation;
-                obj.PendingRestoreMetadata = [];
+                obj.PendingDocumentMetadata = [];
                 obj.Resources.clearScope("event");
                 obj.Recorder.finish(operation, "rolledBack", cause);
                 failure = MException("labkit:app:runtime:ActionFailed", ...
@@ -647,7 +654,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 failure = addCause(failure, cause);
                 throwAsCaller(failure);
             end
-            obj.PendingRestoreMetadata = [];
+            obj.PendingDocumentMetadata = [];
             obj.Resources.clearScope("event");
         end
 

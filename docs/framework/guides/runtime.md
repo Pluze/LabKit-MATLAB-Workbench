@@ -250,6 +250,9 @@ An App-specific project button may choose a MAT file and return
 same migrated, relinked project/session candidate used by the framework Load
 State menu; the active callback transaction still owns validation, native
 presentation, rollback, document metadata, and title publication.
+`callbackContext.newProjectDocument()` similarly returns the schema's fresh
+project/session state and publishes a new unsaved document identity only when
+that callback transaction commits.
 
 ## Persistence, Results, And Cleanup
 

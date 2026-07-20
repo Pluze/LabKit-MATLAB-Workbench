@@ -137,6 +137,27 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
             testCase.verifyEqual(failed.documentMetadata(), originalMetadata);
         end
 
+        function callbackContextNewProjectResetsDocumentIdentity(testCase)
+            setupLabKitTestPath();
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            path = fullfile(string(folder.Folder), "named.mat");
+            runtime = callbackRestoreApplication(path).createRuntimeForTesting();
+            named = struct("project", struct("value", 9), ...
+                "session", struct("token", "named"));
+            runtime.saveProject(named, path);
+            namedMetadata = runtime.documentMetadata();
+
+            runtime.invokeAction("newDocument");
+
+            testCase.verifyEqual(runtime.State.project.value, 0);
+            testCase.verifyEqual(runtime.State.session.token, "fresh");
+            metadata = runtime.documentMetadata();
+            testCase.verifyEqual(metadata.path, "");
+            testCase.verifyTrue(metadata.dirty);
+            testCase.verifyNotEqual(metadata.id, namedMetadata.id);
+        end
+
         function filePanelBindingOwnsPortableProjectSources(testCase)
             setupLabKitTestPath();
             folder = testCase.applyFixture( ...
@@ -218,7 +239,8 @@ project = labkit.app.project.Schema(Version=2, Create=@createProject, ...
     CreateResume=@createResume, ApplyResume=@applyResume);
 layout = labkit.app.layout.workbench({ ...
     labkit.app.layout.field("value"), ...
-    labkit.app.layout.button("restoreDocument", "Open", @restoreDocument)});
+    labkit.app.layout.button("restoreDocument", "Open", @restoreDocument), ...
+    labkit.app.layout.button("newDocument", "New", @newDocument)});
 app = labkit.app.Definition(Entrypoint="labkit_CallbackDocumentProbe_app", ...
     AppId="probe.document", Title="Document", Family="Tests", ...
     AppVersion="1.2.3", Updated="2026-07-19", Requirements=[], ...
@@ -227,6 +249,10 @@ app = labkit.app.Definition(Entrypoint="labkit_CallbackDocumentProbe_app", ...
 
     function state = restoreDocument(~, context)
         state = context.restoreProjectDocument(filepath);
+    end
+
+    function state = newDocument(~, context)
+        state = context.newProjectDocument();
     end
 end
 

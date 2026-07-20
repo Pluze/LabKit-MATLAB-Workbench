@@ -15,6 +15,7 @@ classdef (Sealed) CallbackContext < handle
     %   result = context.chooseOutputFolder(startPath)
     %   result = context.saveProjectDocument(state, filepath)
     %   state = context.restoreProjectDocument(filepath)
+    %   state = context.newProjectDocument()
     %   context.saveRecoveryDocument(state, filepath)
     %   record = context.createSourceRecord(id, role, path, required)
     %   paths = context.resolveSourcePaths(sources)
@@ -177,12 +178,12 @@ classdef (Sealed) CallbackContext < handle
         function state = restoreProjectDocument(obj, filepath)
             state = obj.invoke("restoreProject", "project", ...
                 {scalarText(filepath, "filepath")}, 1);
-            if ~isstruct(state) || ~isscalar(state) || ...
-                    ~all(isfield(state, ["project", "session"]))
-                error("labkit:app:runtime:InvariantFailure", ...
-                    "CallbackContext restoreProjectDocument backend must " + ...
-                    "return scalar project/session state.");
-            end
+            requireApplicationState(state, "restoreProjectDocument");
+        end
+
+        function state = newProjectDocument(obj)
+            state = obj.invoke("newProject", "project", {}, 1);
+            requireApplicationState(state, "newProjectDocument");
         end
 
         function saveRecoveryDocument(obj, state, filepath)
@@ -327,6 +328,15 @@ classdef (Sealed) CallbackContext < handle
             end
         end
     end
+end
+
+function requireApplicationState(state, operation)
+            if ~isstruct(state) || ~isscalar(state) || ...
+                    ~all(isfield(state, ["project", "session"]))
+                error("labkit:app:runtime:InvariantFailure", ...
+                    "CallbackContext %s backend must return scalar " + ...
+                    "project/session state.", operation);
+            end
 end
 
 function value = scalarText(value, label)
