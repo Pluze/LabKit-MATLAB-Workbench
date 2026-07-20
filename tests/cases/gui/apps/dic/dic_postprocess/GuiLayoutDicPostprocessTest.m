@@ -44,6 +44,13 @@ classdef GuiLayoutDicPostprocessTest < matlab.unittest.TestCase
             eyyAxes = findall(fig, 'Tag', 'overlayAxes.eyy');
             testCase.verifyNotEmpty(exxAxes.Children);
             testCase.verifyNotEmpty(eyyAxes.Children);
+            runtime.applyControlValue("alpha", 0.45);
+            runtime.applyControlValue("brightness", 0.1);
+            testCase.verifyEqual( ...
+                runtime.State.project.parameters.alpha, 0.45);
+            testCase.verifyEqual( ...
+                runtime.State.project.parameters.brightness, 0.1);
+            testCase.verifyNotEmpty(runtime.State.session.cache.overlayExx);
 
             runtime.invokeAction('saveOverlays');
             runtime.invokeAction('exportSummary');
@@ -92,12 +99,19 @@ end
 function assertDicPostprocessLayout(h, fig)
     h.assertStartupSucceeded(fig);
     ids = ["matFile", "referenceFile", "maskFile", "generate", ...
+        "alpha", "colorMin", "colorMax", "oversample", ...
+        "smoothSigma", "edgeTrim", "brightness", "contrast", ...
+        "gamma", "saturation", "redGain", "greenGain", "blueGain", ...
         "saveOverlays", "exportSummary", "resultTable", ...
         "summaryText", "overlayAxes.exx", "overlayAxes.eyy"];
     for id = ids
         assert(numel(findall(fig, "Tag", id)) == 1, ...
             "Missing DIC postprocess semantic target: %s.", id);
     end
+    tabs = findall(fig, "Type", "uitab");
+    assert(isequal(sort(string({tabs.Title})), ...
+        sort(["Files + Analysis", "Summary + Results", "Log"])));
+    assert(numel(findall(fig, "Title", "Strain Overlays")) >= 2);
 end
 
 function writeSyntheticDicMat(filepath)

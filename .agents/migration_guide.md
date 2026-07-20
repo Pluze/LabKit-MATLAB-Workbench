@@ -90,7 +90,8 @@ Current product audit progress:
 | Response Review and Stats | Complete | Setup/Review/Export/Log tabs, numeric metric windows, status and action rows, nonduplicated summary/details, explicit output selection/clear, reset, default output subfolder, manifest name, Stats/Preview workspace, project restore, and focused unit/GUI tests compared with `main` |
 | Nerve Response Analysis | Complete | Setup/Protocol/Review/Export/Log tabs, filter and optional protocol sources, analysis limits/status/actions, nonduplicated summary/details, explicit output selection/clear, reset, default output subfolder, manifest name, Counts/Issues preview, source-identity validation, project restore, and focused unit/GUI tests compared with `main` |
 | RHS Preview | Complete | Setup/Protocol/Filter/Review/Log tabs, primary/filter/protocol source panels, preview panner/summary/status/actions, editable role and filter tables, lazy refresh, ROI edit/zoom and typed anchored scroll, full review details, standard protocol/filter manifests, annotation/source identity persistence, reset/restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
-| Remaining 11 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
+| DIC Postprocess | Complete | Files + Analysis/Summary + Results/Log tabs, exact source actions and empty-state text, all 13 overlay and optical-image panners, summary table/status, stacked labeled strain overlays, parameter-driven overlay refresh, exports, project workflow, focused GUI test, and every-tab visual comparison with `main` |
+| Remaining 10 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
 
 The accepted public structure is capability-partitioned:
 `labkit.app.Definition` and `CallbackContext` form the small root; `layout`,
