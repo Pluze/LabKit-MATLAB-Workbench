@@ -122,6 +122,12 @@ Current public-boundary checkpoint:
   `dialog`, and `diagnostic` packages. The public-surface guardrail now locks
   this replacement vocabulary and rejects any return of the retired
   `labkit.ui` files.
+- `LayoutNode` now owns immutable semantic layout composition while hidden
+  internal `LayoutNodeValues` owns the shared option normalization and strict
+  value validation used by those constructors. This reduces the two cohesive
+  files to 446 and 274 effective code lines without changing the qualified
+  `LayoutNode` name or adding an App-facing entry; the complete explicit-layout
+  contract suite passes this split.
 
 Still open before compatibility retirement:
 
