@@ -56,8 +56,8 @@ classdef (Hidden, Sealed) RuntimeFactory
                     sampleOperation = [];
                 end
                 runtime = labkit.app.internal.RuntimeKernel( ...
-                    definition, initialProject, backend, platform, ...
-                    diagnostics, recorder);
+                    definition, definition.Compiled, initialProject, ...
+                    backend, platform, diagnostics, recorder);
             catch cause
                 if ~isempty(sampleOperation)
                     recorder.finish(sampleOperation, "failed", cause);

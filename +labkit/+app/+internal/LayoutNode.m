@@ -537,7 +537,7 @@ classdef (Sealed, Hidden) LayoutNode
         end
     end
 
-    methods (Access = ?labkit.app.Definition)
+    methods (Access = ?labkit.app.internal.CompiledDefinition)
         function nodes = flattenForCompiler(obj)
             chunks = cell(1, 1 + numel(obj.Children));
             chunks{1} = {obj};

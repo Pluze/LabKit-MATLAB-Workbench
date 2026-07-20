@@ -5,8 +5,15 @@ classdef UiAuthoringErgonomicsTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             app = minimalApplication(labkit.app.layout.workbench({}));
 
-            testCase.verifyEmpty(app.TargetIds);
-            testCase.verifyEmpty(app.signalIdsForRuntime());
+            testCase.verifyEmpty( ...
+                labkit.app.internal.DefinitionInspector.targetIds(app));
+            testCase.verifyEmpty( ...
+                labkit.app.internal.DefinitionInspector.signalIds(app));
+            testCase.verifyFalse(isprop(app, "TargetIds"));
+            testCase.verifyFalse(any(ismember(string(methods(app)), [ ...
+                "createRuntimeForTesting", "createMatlabRuntime", ...
+                "signalIdsForRuntime", "onStartBindingForRuntime", ...
+                "hasSignalForRuntime", "platformPlanForRuntime"])));
         end
 
         function boundFieldNeedsNoCommandOrPresenter(testCase)
@@ -23,7 +30,8 @@ classdef UiAuthoringErgonomicsTest < matlab.unittest.TestCase
             runtime.applyBinding("gain", 3);
 
             testCase.verifyEqual(runtime.State.project.parameters.gain, 3);
-            testCase.verifyEmpty(app.signalIdsForRuntime());
+            testCase.verifyEmpty( ...
+                labkit.app.internal.DefinitionInspector.signalIds(app));
         end
 
         function layoutCallbackNeedsNoHandlerOrCapabilityRegistry(testCase)
@@ -33,7 +41,8 @@ classdef UiAuthoringErgonomicsTest < matlab.unittest.TestCase
             app = minimalApplication(layout);
 
             testCase.verifyEqual( ...
-                app.signalIdsForRuntime(), "run__pressed");
+                labkit.app.internal.DefinitionInspector.signalIds(app), ...
+                "run__pressed");
         end
 
         function simpleProjectContractNeedsNoLocalCallbacks(testCase)
@@ -60,7 +69,8 @@ classdef UiAuthoringErgonomicsTest < matlab.unittest.TestCase
             runtime.applyFileSelection( ...
                 "files", ["first.csv"; "second.csv"], 2);
 
-            testCase.verifyEmpty(app.signalIdsForRuntime());
+            testCase.verifyEmpty( ...
+                labkit.app.internal.DefinitionInspector.signalIds(app));
             testCase.verifyEqual(runtime.sourcePaths( ...
                 runtime.State.project.inputs.sources, strings(0, 1)), ...
                 ["first.csv"; "second.csv"]);

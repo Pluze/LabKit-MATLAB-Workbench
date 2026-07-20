@@ -10,6 +10,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
     properties (Access = private)
         Application
+        Contract
         Context
         Queue (1, :) cell = {}
         Processing (1, 1) logical = false
@@ -23,13 +24,14 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
     methods (Access = ?labkit.app.internal.RuntimeFactory)
         function obj = RuntimeKernel( ...
-                application, initialProject, backend, platform, diagnostics, ...
-                recorder)
+                application, contract, initialProject, backend, platform, ...
+                diagnostics, recorder)
             obj.Application = application;
-            if nargin < 5
+            obj.Contract = contract;
+            if nargin < 6
                 diagnostics = labkit.app.diagnostic.Options();
             end
-            if nargin < 6
+            if nargin < 7
                 recorder = labkit.app.internal.DiagnosticRecorder( ...
                     application, diagnostics);
             end
@@ -49,7 +51,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.updateStartup("Creating app state...");
                 if ~isempty(application.ProjectSchema)
                     obj.Documents = labkit.app.internal.ProjectDocumentStore( ...
-                        application, obj.Context);
+                        application, obj.Context, contract);
                 end
                 project = obj.initialProject(initialProject);
                 session = struct();
@@ -71,7 +73,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 if ~isempty(application.OnStart)
                     obj.updateStartup("Running startup actions...");
                     obj.dispatch( ...
-                        application.onStartBindingForRuntime(), []);
+                        contract.onStartBinding(), []);
                 end
                 obj.Recorder.finish( ...
                     startupOperation, "completed", []);
@@ -246,7 +248,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function applyControlValue(obj, target, value)
-            plan = obj.Application.platformPlanForRuntime();
+            plan = obj.Contract.PlatformPlan;
             index = find(string({plan.Nodes.Id}) == string(target), 1);
             if isempty(index)
                 error("labkit:app:contract:UnknownReference", ...
@@ -307,7 +309,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if nargin < 4
                 dispatchChanged = false;
             end
-            plan = obj.Application.platformPlanForRuntime();
+            plan = obj.Contract.PlatformPlan;
             index = find(string({plan.Nodes.Id}) == string(target), 1);
             if isempty(index) || ~isfield(plan.Nodes(index).Configuration, "Bind")
                 error("labkit:app:contract:UnknownReference", ...
@@ -411,7 +413,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
     methods (Access = private)
         function binding = interactionSignal(obj, interactionId, signal)
-            plan = obj.Application.platformPlanForRuntime();
+            plan = obj.Contract.PlatformPlan;
             binding = [];
             for k = 1:numel(plan.Nodes)
                 config = plan.Nodes(k).Configuration;
@@ -437,7 +439,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if nargin < 4
                 required = true;
             end
-            plan = obj.Application.platformPlanForRuntime();
+            plan = obj.Contract.PlatformPlan;
             index = find(string({plan.Nodes.Id}) == string(target), 1);
             binding = [];
             if ~isempty(index)
@@ -456,7 +458,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function [config, current] = fileListState(obj, target)
-            plan = obj.Application.platformPlanForRuntime();
+            plan = obj.Contract.PlatformPlan;
             index = find(string({plan.Nodes.Id}) == string(target), 1);
             if isempty(index) || plan.Nodes(index).Kind ~= "fileList"
                 error("labkit:app:contract:UnknownReference", ...
@@ -535,7 +537,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 case "headless"
                     adapter = labkit.app.internal.HeadlessPlatformAdapter();
                 case "matlab"
-                    plan = obj.Application.platformPlanForRuntime();
+                    plan = obj.Contract.PlatformPlan;
                     title = obj.Application.Title + " v" + ...
                         obj.Application.AppVersion + " (" + ...
                         obj.Application.Updated + ")";
@@ -658,7 +660,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function validateDispatch(obj, binding, payload)
             if ~isa(binding, "labkit.app.internal.SignalBinding") || ...
-                    ~obj.Application.hasSignalForRuntime(binding)
+                    ~obj.Contract.hasSignal(binding)
                 error("labkit:app:contract:UnknownReference", ...
                     "Runtime dispatch callback is undeclared.");
             end
@@ -703,7 +705,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function view = defaultPresentation(obj, state)
-            plan = obj.Application.platformPlanForRuntime();
+            plan = obj.Contract.PlatformPlan;
             view = labkit.app.view.Snapshot();
             for k = 1:numel(plan.Nodes)
                 node = plan.Nodes(k);
@@ -822,7 +824,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function message = busyMessage(obj, binding)
             message = extractBefore(binding.Id, "__");
-            plan = obj.Application.platformPlanForRuntime();
+            plan = obj.Contract.PlatformPlan;
             index = find(string({plan.Nodes.Id}) == message, 1);
             if isempty(index)
                 return

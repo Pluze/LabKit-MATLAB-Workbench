@@ -98,14 +98,12 @@ classdef (Sealed) Definition
         PresentWorkbench
         OnStart
         BuildDebugSample
-        TargetIds (1, :) string
     end
 
-    properties (SetAccess = immutable, GetAccess = private)
-        TargetNodes (1, :) cell
-        SignalBindings (1, :) cell
-        OnStartBinding
-        PlatformPlan (1, 1) struct
+    properties (SetAccess = immutable, GetAccess = { ...
+            ?labkit.app.internal.RuntimeFactory, ...
+            ?labkit.app.internal.DefinitionInspector})
+        Compiled
     end
 
     methods
@@ -149,73 +147,14 @@ classdef (Sealed) Definition
             startCallback = optionalFixedCallback( ...
                 options, "OnStart", 2, 1);
             obj.OnStart = startCallback;
-            onStartBinding = [];
-            if ~isempty(startCallback)
-                onStartBinding = labkit.app.internal.SignalBinding( ...
-                    "application", "started", startCallback);
-            end
-            obj.OnStartBinding = onStartBinding;
             obj.BuildDebugSample = optionalFixedCallback( ...
                 options, "BuildDebugSample", 1, 1);
-
-            layout = options.Workbench;
-            if ~isa(layout, "labkit.app.internal.LayoutNode") || ...
-                    layout.Kind ~= "workbench"
-                error("labkit:app:contract:InvalidValue", ...
-                    "Definition Workbench must be a workbench Layout value.");
-            end
-            nodes = layout.flattenForCompiler();
-            ids = string(cellfun(@(value) value.Id, nodes, ...
-                "UniformOutput", false));
-            interactions = collectInteractions(nodes);
-            interactionIds = string(cellfun(@(value) value.Id, interactions, ...
-                "UniformOutput", false));
-            assertUnique([ids interactionIds], "Layout and interaction");
-            targetMask = cellfun(@(value) ...
-                ~isempty(value.Capabilities), nodes);
-            obj.TargetNodes = [nodes(targetMask) interactions];
-            obj.TargetIds = string(cellfun(@(value) value.Id, ...
-                obj.TargetNodes, "UniformOutput", false));
-            obj.SignalBindings = collectSignalBindings( ...
-                [nodes interactions], obj.OnStartBinding);
-            obj.PlatformPlan = compilePlatformPlan(nodes);
+            obj.Compiled = labkit.app.internal.CompiledDefinition( ...
+                options.Workbench, startCallback);
         end
 
         function accepted = validateViewSnapshot(obj, view)
-            if ~isa(view, "labkit.app.view.Snapshot")
-                error("labkit:app:contract:InvalidValue", ...
-                    "Definition view snapshot must be a " + ...
-                    "labkit.app.view.Snapshot value.");
-            end
-            operations = view.operationsForCompiler();
-            covered = false(size(obj.TargetIds));
-            for k = 1:numel(operations)
-                operation = operations{k};
-                index = find(obj.TargetIds == operation.Target, 1);
-                if isempty(index)
-                    error("labkit:app:contract:UnknownReference", ...
-                        "Unknown view target: %s.", operation.Target);
-                end
-                node = obj.TargetNodes{index};
-                if ~any(node.Capabilities == operation.Kind)
-                    error("labkit:app:contract:UnsupportedOperation", ...
-                        "Target %s does not support %s.", ...
-                        operation.Target, operation.Kind);
-                end
-                if operation.Kind == "renderPlot" && isempty(node.Renderer)
-                    error("labkit:app:contract:UnknownReference", ...
-                        "Target %s does not declare a renderer.", ...
-                        operation.Target);
-                end
-                covered(index) = true;
-            end
-            missing = obj.TargetIds(~covered);
-            if ~isempty(missing)
-                error("labkit:app:contract:UnknownReference", ...
-                    "Complete view snapshot is missing target: %s.", ...
-                    missing(1));
-            end
-            accepted = true;
+            accepted = obj.Compiled.validateViewSnapshot(view);
         end
 
         function varargout = launch(obj, varargin)
@@ -297,47 +236,6 @@ classdef (Sealed) Definition
         end
     end
 
-    methods (Hidden)
-        function ids = signalIdsForRuntime(obj)
-            ids = string(cellfun(@(binding) binding.Id, obj.SignalBindings, ...
-                "UniformOutput", false));
-        end
-
-        function binding = onStartBindingForRuntime(obj)
-            binding = obj.OnStartBinding;
-        end
-
-        function tf = hasSignalForRuntime(obj, binding)
-            tf = any(cellfun(@(candidate) ...
-                isequaln(candidate, binding), obj.SignalBindings));
-        end
-
-        function plan = platformPlanForRuntime(obj)
-            plan = obj.PlatformPlan;
-        end
-    end
-end
-
-function plan = compilePlatformPlan(nodes)
-    compiled = repmat(struct( ...
-        "Kind", "", "Id", "", "ChildIds", strings(1, 0), ...
-        "Capabilities", strings(1, 0), "Signals", {{}}, ...
-        "Renderer", [], "AxisIds", strings(1, 0), ...
-        "PageIds", strings(1, 0), "InitialPage", "", ...
-        "Configuration", struct()), 1, numel(nodes));
-    for k = 1:numel(nodes)
-        node = nodes{k};
-        childIds = string(cellfun(@(child) child.Id, node.Children, ...
-            "UniformOutput", false));
-        compiled(k) = struct( ...
-            "Kind", node.Kind, "Id", node.Id, "ChildIds", childIds, ...
-            "Capabilities", node.Capabilities, ...
-            "Signals", {node.Signals}, ...
-            "Renderer", node.Renderer, "AxisIds", node.AxisIds, ...
-            "PageIds", node.PageIds, "InitialPage", node.InitialPage, ...
-            "Configuration", node.configurationForCompiler());
-    end
-    plan = struct("Nodes", compiled);
 end
 
 function value = optionValue(options, name, defaultValue)
@@ -436,55 +334,6 @@ function callback = optionalFixedCallback(options, name, inputs, outputs)
     end
 end
 
-function assertUnique(values, label)
-    if numel(unique(values)) ~= numel(values)
-        error("labkit:app:contract:DuplicateId", ...
-            "%s IDs must be globally unique.", label);
-    end
-end
-
-function bindings = collectSignalBindings(nodes, start)
-    bindings = {};
-    for k = 1:numel(nodes)
-        signals = nodes{k}.Signals;
-        for s = 1:numel(signals)
-            bindings{end + 1} = signals{s};
-        end
-    end
-    if ~isempty(start)
-        bindings{end + 1} = start;
-    end
-    bindings = uniqueBindings(bindings);
-end
-
-function interactions = collectInteractions(nodes)
-interactions = {};
-for k = 1:numel(nodes)
-    if nodes{k}.Kind ~= "plotArea"
-        continue;
-    end
-    configuration = nodes{k}.configurationForCompiler();
-    if isfield(configuration, "Interactions")
-        interactions = [interactions configuration.Interactions];
-    end
-end
-end
-
-function values = uniqueBindings(values)
-    uniqueValues = {};
-    for k = 1:numel(values)
-        value = values{k};
-        sameId = find(cellfun(@(candidate) candidate.Id == value.Id, ...
-            uniqueValues), 1);
-        if isempty(sameId)
-            uniqueValues{end + 1} = value;
-        elseif ~isequaln(uniqueValues{sameId}, value)
-            error("labkit:app:contract:DuplicateId", ...
-                "Layout signal ID %s has conflicting callbacks.", value.Id);
-        end
-    end
-    values = uniqueValues;
-end
 
 function state = runAnalysis(state, ~)
     state.finished = true;

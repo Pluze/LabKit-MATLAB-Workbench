@@ -6,19 +6,22 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
 
     properties (Access = private)
         Application
+        Contract
         Context
         Sources
     end
 
     methods (Access = ?labkit.app.internal.RuntimeKernel)
-        function obj = ProjectDocumentStore(application, context)
+        function obj = ProjectDocumentStore(application, context, contract)
             if ~isa(application, "labkit.app.Definition") || ...
                     isempty(application.ProjectSchema) || ...
-                    ~isa(context, "labkit.app.CallbackContext")
+                    ~isa(context, "labkit.app.CallbackContext") || ...
+                    ~isa(contract, "labkit.app.internal.CompiledDefinition")
                 error("labkit:app:runtime:InvariantFailure", ...
                     "Project document storage requires an Application with Project.");
             end
             obj.Application = application;
+            obj.Contract = contract;
             obj.Context = context;
             obj.Sources = labkit.app.internal.PortableSourceStore();
             nowUtc = utcNow();
@@ -237,7 +240,7 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
         end
 
         function bindings = projectSourceBindings(obj)
-            plan = obj.Application.platformPlanForRuntime();
+            plan = obj.Contract.PlatformPlan;
             bindings = strings(1, 0);
             for k = 1:numel(plan.Nodes)
                 node = plan.Nodes(k);

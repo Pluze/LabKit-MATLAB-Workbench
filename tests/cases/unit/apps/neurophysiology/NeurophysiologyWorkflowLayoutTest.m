@@ -8,7 +8,9 @@ classdef NeurophysiologyWorkflowLayoutTest < matlab.unittest.TestCase
 
             expected = ["previewChannelsTable", "fileFilterTable", ...
                 "saveProtocol", "saveFilterRecord", "zoomToRoiWindow"];
-            testCase.verifyTrue(all(ismember(expected, definition.TargetIds)));
+            testCase.verifyTrue(all(ismember(expected, ...
+                labkit.app.internal.DefinitionInspector.targetIds( ...
+                    definition))));
         end
 
         function analysisWorkflowKeepsHeavyAnalyzeExplicit(testCase)
@@ -17,7 +19,9 @@ classdef NeurophysiologyWorkflowLayoutTest < matlab.unittest.TestCase
 
             expected = ["sessionFile", "protocolFile", ...
                 "runAnalysis", "exportAnalysis"];
-            testCase.verifyTrue(all(ismember(expected, definition.TargetIds)));
+            testCase.verifyTrue(all(ismember(expected, ...
+                labkit.app.internal.DefinitionInspector.targetIds( ...
+                    definition))));
         end
 
         function statsWorkflowAutoLoadHasRefreshAndExport(testCase)
@@ -25,7 +29,9 @@ classdef NeurophysiologyWorkflowLayoutTest < matlab.unittest.TestCase
             definition = response_review_stats.definition();
 
             expected = ["loadMetrics", "exportMetrics"];
-            testCase.verifyTrue(all(ismember(expected, definition.TargetIds)));
+            testCase.verifyTrue(all(ismember(expected, ...
+                labkit.app.internal.DefinitionInspector.targetIds( ...
+                    definition))));
         end
     end
 end

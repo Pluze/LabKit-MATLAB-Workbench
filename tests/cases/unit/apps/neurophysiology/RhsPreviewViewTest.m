@@ -184,7 +184,8 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
                 "preview", "previewRange"];
 
             testCase.verifyTrue(all(ismember(expected, ...
-                definition.TargetIds)));
+                labkit.app.internal.DefinitionInspector.targetIds( ...
+                    definition))));
         end
     end
 end

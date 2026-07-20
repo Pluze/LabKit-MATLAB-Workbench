@@ -87,18 +87,16 @@ Current public-boundary checkpoint:
 - Runtime creation and synthetic-sample execution now belong to the internal
   `RuntimeFactory`; headless and MATLAB GUI tests construct runtimes there
   instead of adding test-only construction methods to `Definition`.
-- Remaining work is to move compiler products and test inspection/construction
-  off the `Definition` facade while preserving it as the App authoring
-  aggregate root.
+- Layout targets, signal bindings, interaction targets, and native platform
+  plans now compile into internal `CompiledDefinition`; tests inspect that
+  result through internal `DefinitionInspector`.
+- `Definition` is the sole author-created aggregate root and exposes only
+  immutable author metadata/configuration, snapshot validation, and launch.
+  `TargetIds` and every runtime/compiler/test-only method are absent from its
+  public and hidden method surface.
 
 Still open before compatibility retirement:
 
-- audit the final public `labkit.app` surface for authoring-level hierarchy:
-  keep `Definition` as the single App aggregate root, keep
-  `CallbackContext` as an injected runtime port rather than a second
-  author-created entrypoint, move compiler/runtime/testing implementation out
-  of those facade files, and remove or relocate optional context methods that
-  tracked Apps do not justify;
 - verify the restored window/startup/close contracts against every App and
   cover startup failure presentation;
 - complete developer-led manual validation of native dialogs, editable tables,
