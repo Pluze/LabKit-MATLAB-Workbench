@@ -99,7 +99,7 @@ classdef UiExplicitContractClosureTest < matlab.unittest.TestCase
                 "labkit:app:contract:InvalidValue");
         end
 
-        function compilesNamedManagedInteractionWithoutTransportStruct(testCase)
+        function compilesNamedManagedInteractionDeclaration(testCase)
             setupLabKitTestPath();
             crop = labkit.app.interaction.rectangle( ...
                 "cropRegion", @changeRectangle);

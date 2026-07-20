@@ -47,13 +47,10 @@ storage, and lifecycle handles stay private. App metadata stays in app-owned
 retired. `labkit.contract` validates facade ranges; it is not an App metadata
 registry.
 
-For the active App SDK migration, distinguish contract approval
-from release approval. Sealed immutable values and the end-to-end contract
-passed Phase 1; the production API remains migration-scoped until the Phase 2
-kernel gate. `labkit.app.view.Snapshot` is complete, layout nodes own direct
-callbacks and renderers, acquired render surfaces cannot escape their event
-scope, and static layout compilation is cached rather than repeated per
-presentation.
+The App SDK is a stable replacement contract. `labkit.app.view.Snapshot` is
+complete, layout nodes own direct callbacks and renderers, acquired render
+surfaces cannot escape their event scope, and static layout compilation is
+cached rather than repeated per presentation.
 
 Public API additions require a complete MATLAB help contract, focused tests,
 facade version update, owning docs, and component history. Internal refactors

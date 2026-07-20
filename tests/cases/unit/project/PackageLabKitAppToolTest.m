@@ -86,7 +86,7 @@ classdef PackageLabKitAppToolTest < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile(packageRoot, "labkit_launcher.m")));
             testCase.verifyTrue(isfile(fullfile(packageRoot, "tools", "deployment", "packageLabKitApp.m")));
             testCase.verifyTrue(isfile(fullfile(packageRoot, "tools", "profiling", "profileLabKitTarget.m")));
-            testCase.verifyTrue(isfile(fullfile(packageRoot, "+labkit", "+ui", "version.m")));
+            testCase.verifyTrue(isfile(fullfile(packageRoot, "+labkit", "+app", "version.m")));
             testCase.verifyTrue(isfile(fullfile(packageRoot, "run_labkit_PublicProbe_app.m")));
             testCase.verifyTrue(isfile(fullfile(packageRoot, "apps", "public_family", ...
                 "public_probe", "labkit_PublicProbe_app.m")));
@@ -203,8 +203,8 @@ end
 function root = createMinimalRuntime(testCase, sourceRoot)
     root = createTempFolder(testCase);
     copyfile(fullfile(sourceRoot, "labkit_launcher.m"), fullfile(root, "labkit_launcher.m"));
-    mkdir(fullfile(root, "+labkit", "+ui"));
-    writeText(fullfile(root, "+labkit", "+ui", "version.m"), sprintf([ ...
+    mkdir(fullfile(root, "+labkit", "+app"));
+    writeText(fullfile(root, "+labkit", "+app", "version.m"), sprintf([ ...
         'function info = version()\n' ...
         'info = struct("version", "0.0.0");\n' ...
         'end\n']));

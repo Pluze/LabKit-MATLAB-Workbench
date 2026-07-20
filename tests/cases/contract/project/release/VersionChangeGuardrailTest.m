@@ -132,7 +132,7 @@ function path = documentationSourceForArtifact(root, artifact)
     end
     if startsWith(artifact.label, "labkit.")
         facade = extractAfter(artifact.label, "labkit.");
-        if any(facade == ["app", "ui"])
+        if facade == "app"
             path = "docs/framework/README.md";
         else
             path = "docs/libraries/" + facade + "/README.md";
@@ -376,16 +376,6 @@ function version = versionInGit(root, ref, relPath)
         return;
     end
     version = versionInText(string(output));
-    if strlength(version) == 0 && endsWith(relPath, "/definition.m")
-        legacyPath = replace(relPath, "/definition.m", "/version.m");
-        command = gitCommand(root, "show " + ...
-            shellDoubleQuote(validateGitRef(ref) + ":" + ...
-            normalizePath(legacyPath)));
-        [status, output] = system(char(command));
-        if status == 0
-            version = versionInText(string(output));
-        end
-    end
 end
 
 function version = versionInText(text)

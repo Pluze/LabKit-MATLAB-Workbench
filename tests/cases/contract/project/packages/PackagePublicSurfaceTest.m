@@ -138,10 +138,6 @@ function verify_package_public_surface()
         'Shared parser data-row detection should live under +labkit/+dta/private.');
 end
 
-function assertNoPublicPackage(packageDir, message)
-    assert(exist(packageDir, 'dir') ~= 7, message);
-end
-
 function assertPrivatePackageHasMFiles(packageDir, label)
     assert(exist(packageDir, 'dir') == 7, ...
         [label ' package directory should exist.']);
@@ -167,53 +163,4 @@ function assertNativeAdapterClassFolder(root)
         'Native adapter lifecycle and callback glue should stay in the class definition.');
     assert(numel(files) >= 20 && numel(files) <= 50, ...
         'Native adapter class-folder split should remain cohesive, not monolithic or fragmented.');
-end
-
-function assertNoDuplicateUiPrivateHelperNames(root)
-    privateDirs = {
-        fullfile(root, '+labkit', '+ui', '+runtime', 'private')
-        fullfile(root, '+labkit', '+ui', '+debug', 'private')
-        fullfile(root, '+labkit', '+ui', '+plot', 'private')
-        fullfile(root, '+labkit', '+ui', '+layout', 'private')
-        fullfile(root, '+labkit', '+ui', '+interaction', 'private')};
-    names = strings(0, 1);
-    locations = strings(0, 1);
-    for d = 1:numel(privateDirs)
-        files = dir(fullfile(privateDirs{d}, '*.m'));
-        for k = 1:numel(files)
-            names(end+1, 1) = string(files(k).name);
-            locations(end+1, 1) = localRelativePath(root, ...
-                fullfile(files(k).folder, files(k).name));
-        end
-    end
-
-    uniqueNames = unique(names);
-    duplicateNames = strings(0, 1);
-    for k = 1:numel(uniqueNames)
-        if nnz(names == uniqueNames(k)) > 1
-            duplicateNames(end+1, 1) = uniqueNames(k);
-        end
-    end
-    duplicateDescriptions = strings(0, 1);
-    for k = 1:numel(duplicateNames)
-        duplicateDescriptions(end+1, 1) = duplicateNames(k) + ": " + ...
-            strjoin(locations(names == duplicateNames(k)), ", ");
-    end
-    assert(isempty(duplicateDescriptions), ...
-        ['UI private helpers should not duplicate the same helper name ' ...
-        'across runtime/layout/control/plot/interaction/debug packages. ' ...
-        'Promote shared behavior to an ' ...
-        'appropriate facade or a single owning private package: ' ...
-        strjoin(cellstr(duplicateDescriptions), '; ')]);
-end
-
-function rel = localRelativePath(root, pathValue)
-    root = char(root);
-    pathValue = char(pathValue);
-    prefix = [root filesep];
-    if startsWith(pathValue, prefix)
-        rel = pathValue(numel(prefix)+1:end);
-    else
-        rel = pathValue;
-    end
 end
