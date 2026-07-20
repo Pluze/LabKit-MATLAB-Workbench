@@ -177,6 +177,8 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
         end
 
         function debug_sample_runs_on_an_isolated_gait_path(testCase)
+            folder = makeFolder();
+            cleanup = onCleanup(@() cleanupFolder(folder));
             [root, appRoot] = gaitRoots();
             previousPath = path;
             pathCleanup = onCleanup(@() path(previousPath));
@@ -185,15 +187,21 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
             addpath(appRoot);
             rehash path
 
-            pack = gait_analysis.debug.writeSamplePack();
+            context = labkit.app.diagnostic.SampleContext(folder);
+            pack = gait_analysis.debug.writeSamplePack(context);
+            posePath = pack.InitialProject.inputs.sources(1) ...
+                .reference.originalPath;
             pose = gait_analysis.sourceFiles.readPoseFile( ...
-                pack.representativeFiles);
+                posePath);
 
             testCase.verifyTrue(pose.ok);
             testCase.verifyEqual(pose.frameRate, 30);
+            testCase.verifyEqual(pack.Scenario, ...
+                "representative-pose-coordinates");
+            testCase.verifyEqual(numel(pack.Artifacts), 1);
             testCase.verifyEmpty(which("video_marker.projectSpec"));
 
-            clear pathCleanup
+            clear pathCleanup cleanup
         end
     end
 

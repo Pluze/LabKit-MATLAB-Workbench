@@ -31,6 +31,7 @@ function drawOne(ax, model)
     else
         drawSegments(ax, model);
     end
+    disableHitTesting(ax);
 end
 
 function drawSkeletons(ax, model)
@@ -140,4 +141,16 @@ function addStepAnnotation(ax, row)
         "Units", "normalized", "VerticalAlignment", "top", ...
         "BackgroundColor", [1 1 1], "Margin", 3, ...
         "Interpreter", "none");
+end
+
+function disableHitTesting(ax)
+graphics = allchild(ax);
+for k = 1:numel(graphics)
+    if isprop(graphics(k), "HitTest")
+        graphics(k).HitTest = "off";
+    end
+    if isprop(graphics(k), "PickableParts")
+        graphics(k).PickableParts = "none";
+    end
+end
 end

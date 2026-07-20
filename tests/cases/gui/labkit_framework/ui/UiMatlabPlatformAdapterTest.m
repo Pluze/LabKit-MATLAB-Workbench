@@ -230,6 +230,8 @@ classdef UiMatlabPlatformAdapterTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(mode.Value), "Second");
             leftAxes = component(figure, "visualPlot.left");
             rightAxes = component(figure, "visualPlot.right");
+            testCase.verifyNotEmpty(figure.WindowScrollWheelFcn, ...
+                "Declared plot navigation must work without an ROI editor.");
             testCase.verifyEqual(leftAxes.Layout.Row, 1);
             testCase.verifyEqual(leftAxes.Layout.Column, 1);
             testCase.verifyEqual(rightAxes.Layout.Row, 1);
