@@ -5,5 +5,7 @@ if isempty(points)
     return
 end
 points(end, :) = [];
-state = video_marker.markerEditing.changePoints(state, points, context);
+frame = state.session.cache.frameIndex;
+state = video_marker.markerEditing.setPoints(state, points);
+context.appendStatus("Undid last point on frame " + string(frame) + ".");
 end

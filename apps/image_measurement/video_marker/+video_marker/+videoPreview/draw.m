@@ -4,7 +4,8 @@ ax = axesById.video;
 view = captureView(ax, model.image);
 labkit.app.plot.clearAxes(ax);
 if isempty(model.image)
-    labkit.app.plot.showMessage(ax, "Open a video");
+    title(ax, model.title);
+    box(ax, "on");
     return
 end
 if ndims(model.image) == 2
@@ -43,6 +44,9 @@ if ~isempty(model.scaleBar)
 end
 hold(ax, "off");
 title(ax, model.title);
+xlabel(ax, "");
+ylabel(ax, "");
+box(ax, "on");
 restoreView(ax, view);
 end
 

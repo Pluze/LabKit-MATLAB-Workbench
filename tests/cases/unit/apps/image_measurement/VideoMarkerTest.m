@@ -251,6 +251,44 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyEqual(T.origin_point_id, ["hip"; "hip"]);
         end
 
+        function exports_default_beside_the_video(testCase)
+            setupLabKitTestPath();
+            folder = string(tempname);
+            mkdir(folder);
+            cleanup = onCleanup(@() cleanupFolder(folder));
+            videoPath = fullfile(folder, "synthetic.avi");
+
+            filepath = video_marker.resultFiles.defaultOutputPath( ...
+                videoPath, "video_marker_coordinates.csv");
+
+            testCase.verifyEqual(filepath, string(fullfile( ...
+                folder, "video_marker", ...
+                "video_marker_coordinates.csv")));
+            testCase.verifyTrue(isfolder(fullfile(folder, "video_marker")));
+            clear cleanup
+        end
+
+        function synthetic_diagnostics_launch_through_definition(testCase)
+            setupLabKitTestPath();
+            folder = string(tempname);
+            cleanup = onCleanup(@() cleanupFolder(folder));
+            options = labkit.app.diagnostic.Options( ...
+                Level="verbose", ArtifactFolder=folder, ...
+                Sample="synthetic");
+
+            runtime = video_marker.definition().createRuntimeForTesting( ...
+                [], struct(), options);
+            runtimeCleanup = onCleanup(@() runtime.close());
+
+            testCase.verifyEqual( ...
+                runtime.State.session.cache.videoInfo.frameCount, 6);
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.annotations.skeleton.pointNames), 5);
+            testCase.verifyTrue(isfile(fullfile(folder, "sample-pack.json")));
+            clear runtimeCleanup runtime
+            clear cleanup
+        end
+
         function app_sdk_project_presenter_and_resume_contracts(testCase)
             setupLabKitTestPath();
             definition = video_marker.definition();
@@ -272,11 +310,14 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             state = struct('project', project, 'session', session);
             presentation = video_marker.workbench.present(state);
             testCase.verifyClass(presentation, "labkit.app.view.Snapshot");
+            runtime = definition.createRuntimeForTesting(project);
+            runtimeCleanup = onCleanup(@() runtime.close());
             testCase.verifyTrue( ...
-                definition.validateViewSnapshot(presentation));
+                definition.validateViewSnapshot(runtime.Presentation));
             session.selection.currentFrame = 7;
             resume = definition.ProjectSchema.CreateResume(session, project);
             testCase.verifyEqual(resume.currentFrame, 7);
+            clear runtimeCleanup runtime
         end
 
         function video_metadata_is_durable_validated_and_migrated(testCase)

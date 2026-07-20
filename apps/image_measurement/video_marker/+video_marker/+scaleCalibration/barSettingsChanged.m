@@ -6,4 +6,5 @@ if ~(isnumeric(value) && isscalar(value) && ...
     state.project.parameters.scaleBarLength = 0;
 end
 state.session.view.scaleBar = [];
+state = video_marker.resultFiles.clearExportState(state);
 end

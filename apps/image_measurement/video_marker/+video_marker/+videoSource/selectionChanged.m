@@ -11,6 +11,7 @@ if info.frameCount > 0 && pointCount == 0
     return
 end
 if info.frameCount <= 0
+    context.removeResource("document", "video");
     state.project.inputs.videoMetadata = video_marker.videoSource.emptyMetadata();
     state.project.annotations.frames = ...
         video_marker.frameAnnotations.emptyAnnotations(0, pointCount);

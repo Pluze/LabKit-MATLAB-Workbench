@@ -23,9 +23,8 @@ app-sdk-migration-debt: ui-explicit-contract-redesign
 - **Owner:** `labkit.app`
 - **Target boundary:** stable `labkit.app` 1.x and every tracked App currently
   consuming legacy `labkit.ui`
-- **Status:** Phase 0 inventory, Phase 1 contract gates, and Phase 2 strict
-  kernel complete; Phase 3 runtime/platform implementation and App migration
-  in progress
+- **Status:** Phases 0-6 complete for all 21 tracked Apps; Phase 7 public
+  boundary audit and compatibility retirement in progress
 - **User-visible reason:** App authors must be able to discover the framework
   from function, constructor, method, and parameter names. Invalid App code
   must fail at the contract boundary instead of being ignored, guessed, or
@@ -73,8 +72,8 @@ Still open before compatibility retirement:
   tracked Apps do not justify;
 - verify the restored window/startup/close contracts against every App and
   cover startup failure presentation;
-- finish the all-App control, menu, button, tab, workspace-page, plot-layout,
-  title, and major-state visual audit against the captured `main` baseline;
+- complete developer-led manual validation of native dialogs, editable tables,
+  pointer interactions, long-lived resources, and representative exports;
 - remove remaining App-local visual compensations after their stable behavior
   is represented by framework contracts;
 - finish diagnostic samples, project/recovery/result/dialog behavior, focused
@@ -104,7 +103,7 @@ Current product audit progress:
 | FLIR Thermal | Complete | Files + Display + Export/Details/Log tabs, FLIR source actions and navigation, exact palette/mapping/gamma/range controls, independent manual/hot/cold/mean readings, summary/details, paired clean-image/scale preview, current/all exports with CSV and standard manifests, transient decode/project restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
 | Gait Analysis | Complete | Source/Roles + Detection/Results + Export/Log tabs, compact Video Marker source, exact role/time/scale/detection fields, Workflow Notes, horizontal step navigation, summary/step tables, three labeled scroll-zoom previews, display-only plot graphics, current SamplePack debug fixture, CSV set and standard manifest, project restore, focused unit/GUI tests, and every-tab visual comparison with `main` |
 | ECG Print | Complete | Files + Analysis/Summary + Results/Log tabs, exact Recording/Import Parsing/Channel + ROI/Signal Processing + SNR/Exports sections, compact readonly import state, ten paired numeric panners, Workflow Notes, four stacked labeled previews, complete analysis invalidation and parameter sanitation, recoverable refresh failure with atomic reconstruction failures, paired CSV/PNG exports with standard manifests, project restore, focused unit/framework/App GUI tests, and every-tab visual comparison with `main` |
-| Remaining 1 tracked App | Pending | Captured `main` and replacement all-tab baselines exist; Video Marker still requires control/function/state audit and focused validation |
+| Video Marker | Complete | Setup + Scale/Video/Import + Export/Log tabs, exact skeleton and connection editing, old numeric panners and scale-bar controls, Session open/autosave/new-document actions, compact video source, frame navigation and prediction, ordered point editing, marker/coordinate imports and source-adjacent exports with manifests, document-scoped video reader/cache reuse, project restore, typed synthetic diagnostics, focused framework/App unit and GUI workflows, and every-tab visual comparison with `main` |
 
 The accepted public structure is capability-partitioned:
 `labkit.app.Definition` and `CallbackContext` form the small root; `layout`,

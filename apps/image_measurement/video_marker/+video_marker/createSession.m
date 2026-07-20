@@ -11,8 +11,10 @@ function session = createSession(project, context)
     videoPath = "";
     if ~isempty(paths), videoPath = paths(1); end
     if strlength(videoPath) > 0 && isfile(videoPath)
-        [reader, info] = video_marker.videoSource.openVideo(videoPath);
-        imageData = video_marker.videoSource.readFrame(reader, currentFrame);
+        resource = video_marker.videoSource.openResource(videoPath);
+        info = resource.info;
+        imageData = resource.firstFrame;
+        context.setResource("document", "video", resource, []);
     end
     presets = video_marker.skeletonSetup.presets();
     session = struct( ...
@@ -24,7 +26,6 @@ function session = createSession(project, context)
             "connectionFrom", "", ...
             "connectionTo", ""), ...
         "workflow", struct( ...
-            "statusMessage", initialStatus(info), ...
             "scaleReferenceEditing", false), ...
         "view", struct("scaleBar", []), ...
         "cache", struct( ...
@@ -45,13 +46,5 @@ function info = infoFromProject(project)
                 info.(name) = metadata.(name);
             end
         end
-    end
-end
-
-function value = initialStatus(info)
-    if info.frameCount > 0
-        value = "Project video restored.";
-    else
-        value = "Define keypoints and connections before opening a video.";
     end
 end

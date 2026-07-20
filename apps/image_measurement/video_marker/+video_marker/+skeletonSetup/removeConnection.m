@@ -1,4 +1,4 @@
-function state = removeConnection(state, ~)
+function state = removeConnection(state, context)
 %REMOVECONNECTION Remove the selected editable skeleton edge.
 index = state.session.selection.selectedEdgeIndex;
 count = size(state.project.annotations.skeleton.edges, 1);
@@ -10,4 +10,6 @@ state.project.annotations.skeleton = ...
     state.project.annotations.skeleton, index);
 state.session.selection.selectedEdgeIndex = min(index, ...
     size(state.project.annotations.skeleton.edges, 1));
+state = video_marker.resultFiles.clearExportState(state);
+context.appendStatus("Removed connection " + string(index) + ".");
 end

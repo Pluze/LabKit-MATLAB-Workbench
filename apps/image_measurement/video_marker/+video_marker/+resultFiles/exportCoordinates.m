@@ -4,8 +4,11 @@ if isempty(state.session.cache.currentImage)
     context.alert("Open a video before exporting coordinates.", "No video");
     return
 end
+paths = context.resolveSourcePaths(state.project.inputs.sources, "video");
+startPath = video_marker.resultFiles.defaultOutputPath( ...
+    paths(1), "video_marker_coordinates.csv");
 choice = context.chooseOutputFile( ...
-    ["*.csv", "Coordinate CSV files"], "video_marker_coordinates.csv");
+    ["*.csv", "Coordinate CSV files"], startPath);
 if choice.Cancelled
     context.appendStatus("Coordinate export cancelled.");
     return

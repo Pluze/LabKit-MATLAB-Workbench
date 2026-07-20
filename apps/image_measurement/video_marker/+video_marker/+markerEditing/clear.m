@@ -3,5 +3,7 @@ function state = clear(state, context)
 if state.session.cache.videoInfo.frameCount <= 0
     return
 end
-state = video_marker.markerEditing.changePoints(state, zeros(0, 2), context);
+frame = state.session.cache.frameIndex;
+state = video_marker.markerEditing.setPoints(state, zeros(0, 2));
+context.appendStatus("Cleared frame " + string(frame) + " points.");
 end
