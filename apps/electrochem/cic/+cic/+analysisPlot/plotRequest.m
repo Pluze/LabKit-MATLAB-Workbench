@@ -4,6 +4,9 @@
 
 function request = plotRequest(A, itemName, xChoice, yChoice)
 %PLOTREQUEST Prepare deterministic CIC plot payload for runner drawing.
+% Constant: MATLAB default blue and orange preserve legacy series styling.
+defaultBlue = [0 0.4470 0.7410];
+defaultOrange = [0.8500 0.3250 0.0980];
 
     choices = cic.analysisRun.analysisChoices();
     if nargin < 2 || isempty(itemName)
@@ -26,13 +29,13 @@ function request = plotRequest(A, itemName, xChoice, yChoice)
         request.kind = 'VT';
         request.y = A.Vf;
         request.yLabel = 'Vf (V vs Ref.)';
-        request.baseColor = [0 0.4470 0.7410];
+        request.baseColor = defaultBlue;
         request.title = sprintf('%s | VT | %s', itemName, safeText(A));
     else
         request.kind = 'IT';
         request.y = A.Im;
         request.yLabel = 'Im (A)';
-        request.baseColor = [0.8500 0.3250 0.0980];
+        request.baseColor = defaultOrange;
         request.title = sprintf('%s | IT | |I|max = %.4g A', itemName, A.ampEstimate_A);
     end
 end

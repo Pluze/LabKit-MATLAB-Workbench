@@ -7,13 +7,19 @@ cla(fused); cla(map);
 title(fused, "Fused all-in-focus image");
 title(map, "Focus-depth index map");
 if model.result.ok
-    imshow(model.result.fused, "Parent", fused);
+    showImage(fused, model.result.fused);
     title(fused, "Fused all-in-focus image");
-    imshow(focus_stack.focusPreview.focusIndexRgb( ...
-        model.result.focusIndex, model.result.inputCount), "Parent", map);
+    showImage(map, focus_stack.focusPreview.focusIndexRgb( ...
+        model.result.focusIndex, model.result.inputCount));
     title(map, "Focus-depth index map");
 elseif ~isempty(model.images)
-    imshow(model.images{1}, "Parent", fused);
+    showImage(fused, model.images{1});
     title(fused, "First source image");
 end
+end
+
+function showImage(axesHandle, imageData)
+image(axesHandle, imageData);
+axis(axesHandle, "image");
+axis(axesHandle, "off");
 end

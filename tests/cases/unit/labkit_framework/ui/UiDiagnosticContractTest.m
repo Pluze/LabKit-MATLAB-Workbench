@@ -108,8 +108,10 @@ classdef UiDiagnosticContractTest < matlab.unittest.TestCase
                 string({events.Outcome}) == "rolledBack");
             testCase.verifyNumElements(rollback, 1);
             testCase.verifyEqual(rollback.ErrorId, "probe:SensitiveFailure");
-            testCase.verifyFalse(contains(rollback.ErrorMessage, "Alice"));
-            testCase.verifyFalse(contains(rollback.ErrorMessage, "subject.csv"));
+            testCase.verifyFalse(contains( ...
+                rollback.ErrorMessage, "ExampleUser"));
+            testCase.verifyFalse(contains( ...
+                rollback.ErrorMessage, "sample.csv"));
             clear cleanupRuntime cleanupFolder
         end
 
@@ -206,8 +208,9 @@ context.diagnosticCount("probe.count", state.session.count);
 end
 
 function state = failWithSensitivePath(state, ~)
+syntheticPath = fullfile("C:", "Users", "ExampleUser", "sample.csv");
 error("probe:SensitiveFailure", "%s", ...
-    "Could not read C:\Users\Alice\subject.csv");
+    "Could not read " + syntheticPath);
 end
 
 function value = fieldOrDefault(value, name, fallback)

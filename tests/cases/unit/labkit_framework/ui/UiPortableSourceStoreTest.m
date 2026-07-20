@@ -4,9 +4,9 @@ classdef UiPortableSourceStoreTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             runtime = sourceRuntime();
             first = runtime.sourceRecord( ...
-                "first", "reference", "C:/data/first.tif", true);
+                "first", "reference", "data/first.tif", true);
             second = runtime.sourceRecord( ...
-                "second", "moving", "C:/data/second.tif", false);
+                "second", "moving", "data/second.tif", false);
             records = [first; second];
 
             testCase.verifyEqual(string(fieldnames(first)), ...
@@ -15,7 +15,7 @@ classdef UiPortableSourceStoreTest < matlab.unittest.TestCase
             testCase.verifyFalse(second.required);
             testCase.verifyEqual(runtime.sourcePaths( ...
                 records, ["second"; "missing"; "first"]), ...
-                ["C:/data/second.tif"; ""; "C:/data/first.tif"]);
+                ["data/second.tif"; ""; "data/first.tif"]);
         end
 
         function upsertsAndReconcilesWithoutExposingStore(testCase)

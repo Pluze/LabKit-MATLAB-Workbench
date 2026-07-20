@@ -79,13 +79,17 @@ end
 
 function text = significanceText(result)
 % Conventional star thresholds for reported p-values.
+% Constant: conventional p-value display thresholds for four, three, and two stars.
+fourStarThreshold = 1e-4;
+threeStarThreshold = 1e-3;
+twoStarThreshold = 1e-2;
 if ~result.ok
     text = "";
-elseif result.pValue < 1e-4
+elseif result.pValue < fourStarThreshold
     text = "****";
-elseif result.pValue < 1e-3
+elseif result.pValue < threeStarThreshold
     text = "***";
-elseif result.pValue < 1e-2
+elseif result.pValue < twoStarThreshold
     text = "**";
 elseif result.pValue < result.alpha
     text = "*";

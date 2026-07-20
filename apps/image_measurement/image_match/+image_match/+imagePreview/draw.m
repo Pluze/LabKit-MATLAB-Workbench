@@ -7,6 +7,8 @@ title(axesHandle, model.title);
 if isempty(model.imageData)
     return;
 end
-imshow(model.imageData, Parent=axesHandle);
+image(axesHandle, model.imageData);
+axis(axesHandle, "image");
+axis(axesHandle, "off");
 title(axesHandle, model.title);
 end
