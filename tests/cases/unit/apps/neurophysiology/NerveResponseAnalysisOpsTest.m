@@ -16,8 +16,9 @@ classdef NerveResponseAnalysisOpsTest < matlab.unittest.TestCase
 
             testCase.verifyEqual(migrated.inputs.sources, ...
                 [filterSource, protocolSource]);
-            testCase.verifyEqual(definition.project.Version, 2);
-            testCase.verifyEqual(definition.project.Migrate, spec.Migrate);
+            testCase.verifyEqual(definition.ProjectSchema.Version, 2);
+            testCase.verifyEqual( ...
+                definition.ProjectSchema.Migrate, spec.Migrate);
             testCase.verifyFalse(any(isfield(migrated.inputs, ...
                 {"filterSource", "protocolSource"})));
         end

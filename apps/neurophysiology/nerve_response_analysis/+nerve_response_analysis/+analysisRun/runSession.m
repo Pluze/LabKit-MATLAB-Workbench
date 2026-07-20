@@ -17,10 +17,12 @@ catch ME
     context.reportError("Analyze nerve response", ME);
     state.session.cache.analysis = [];
     state.session.workflow.statusMessage = string(ME.message);
+    state.session.workflow.lastAction = "Analysis failed";
     return;
 end
 state.project.results.lastExport = [];
 state.session.workflow.statusMessage = sprintf("Analyzed %d recording(s).", ...
     state.session.cache.analysis.analyzedCount);
+state.session.workflow.lastAction = "Analyzed filter record";
 context.appendStatus(state.session.workflow.statusMessage);
 end

@@ -86,7 +86,8 @@ Current product audit progress:
 | VT Resistance | Complete | All three control tabs, file/export actions, analysis and plot controls, readonly summary, batch table, stacked axes, project workflow, and focused GUI tests compared with `main` |
 | Figure Studio | Complete | Figures/Export/Log tabs, FIG source actions, multiline status, quick exports, Canvas and Style panners, linked font/aspect behavior, fixed-canvas preview, axes handoff, package exports/manifests, and focused unit/GUI tests compared with `main` |
 | Response Review and Stats | Complete | Setup/Review/Export/Log tabs, numeric metric windows, status and action rows, nonduplicated summary/details, explicit output selection/clear, reset, default output subfolder, manifest name, Stats/Preview workspace, project restore, and focused unit/GUI tests compared with `main` |
-| Remaining 13 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
+| Nerve Response Analysis | Complete | Setup/Protocol/Review/Export/Log tabs, filter and optional protocol sources, analysis limits/status/actions, nonduplicated summary/details, explicit output selection/clear, reset, default output subfolder, manifest name, Counts/Issues preview, source-identity validation, project restore, and focused unit/GUI tests compared with `main` |
+| Remaining 12 tracked Apps | Pending | Captured `main` and replacement all-tab baselines exist; each App still requires control/function/state audit and focused validation |
 
 The accepted public structure is capability-partitioned:
 `labkit.app.Definition` and `CallbackContext` form the small root; `layout`,

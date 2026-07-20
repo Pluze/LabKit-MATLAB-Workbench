@@ -9,7 +9,7 @@ function session = createSession(project, context)
     protocol = loadOptionalJson(protocolPath);
     outputFolder = "";
     if strlength(filterPath) > 0
-        outputFolder = string(fileparts(filterPath));
+        outputFolder = defaultOutputFolder(filterPath);
     end
     status = "No filter record selected.";
     if strlength(filterPath) > 0
@@ -23,6 +23,22 @@ function session = createSession(project, context)
         "cache", struct("filterPath", filterPath, ...
             "protocolPath", protocolPath, "filterRecord", filterRecord, ...
             "protocol", protocol, "analysis", []));
+end
+
+function folder = defaultOutputFolder(filepath)
+    parent = string(fileparts(filepath));
+    folder = string(fullfile(parent, "nerve_response_analysis"));
+    if exist(folder, "dir") == 7
+        return;
+    end
+    try
+        [created, ~, ~] = mkdir(folder);
+    catch
+        created = false;
+    end
+    if ~created
+        folder = parent;
+    end
 end
 
 function filepath = pathForRole(sources, role, context)

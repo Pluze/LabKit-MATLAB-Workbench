@@ -13,14 +13,39 @@ classdef GuiLayoutNerveResponseAnalysisTest < matlab.unittest.TestCase
             folderCleanup = onCleanup(@() removeTempFolder(folder));
             filterPath = fullfile(folder, 'filter_record.json');
             writeFilterRecordJson(filterPath);
+            protocolPath = fullfile(folder, "protocol.json");
+            writeProtocolJson(protocolPath);
+            alternateFolder = fullfile(folder, "alternate");
+            mkdir(alternateFolder);
 
             runtime = nerve_response_analysis.definition().createMatlabRuntime( ...
-                [], struct("alert", @(~, ~) []));
+                [], struct( ...
+                    "alert", @(~, ~) [], ...
+                    "chooseOutputFolder", @(~) ...
+                        labkit.app.dialog.Choice(alternateFolder)));
             runtimeCleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
+            ids = ["sessionFile", "protocolFile", "maxRecordings", ...
+                "maxDurationSec", "statusField", "runAnalysis", ...
+                "resetWorkflow", "summaryTable", "details", ...
+                "outputFolder", "chooseOutputFolder", ...
+                "clearOutputFolder", "exportAnalysis", "logPanel", ...
+                "preview"];
+            for id = ids
+                testCase.verifyEqual(numel(findall(fig, "Tag", id)), 1);
+            end
             runtime.applyFileSelection('sessionFile', filterPath, 1);
             testCase.verifyNotEmpty( ...
                 runtime.State.session.cache.filterRecord);
+            defaultOutputFolder = fullfile( ...
+                folder, "nerve_response_analysis");
+            testCase.verifyEqual( ...
+                runtime.State.session.workflow.outputFolder, ...
+                string(defaultOutputFolder));
+            runtime.applyFileSelection("protocolFile", protocolPath, 1);
+            testCase.verifyEqual( ...
+                runtime.State.session.cache.protocolPath, ...
+                string(protocolPath));
 
             runtime.invokeAction('runAnalysis');
             analysis = runtime.State.session.cache.analysis;
@@ -29,13 +54,21 @@ classdef GuiLayoutNerveResponseAnalysisTest < matlab.unittest.TestCase
             testCase.verifyEqual(height(analysis.issues), 1);
             previewAxes = findall(fig, 'Tag', 'preview');
             testCase.verifyNotEmpty(previewAxes.Children);
+            runtime.applyControlValue("preview", "Issues");
+            testCase.verifyEqual( ...
+                runtime.State.session.view.previewMode, "Issues");
+            testCase.verifyNotEmpty(previewAxes.Children);
 
             runtime.invokeAction('exportAnalysis');
-            outputPath = fullfile(folder, 'nerve_response_analysis.json');
+            outputPath = fullfile( ...
+                defaultOutputFolder, 'nerve_response_analysis.json');
             testCase.verifyTrue(exist(outputPath, 'file') == 2, ...
                 'Nerve-response workflow should export the analysis JSON.');
             manifestPath = ...
                 runtime.State.project.results.lastExport.manifestPath;
+            testCase.verifyEqual(string(manifestPath), string(fullfile( ...
+                defaultOutputFolder, ...
+                "nerve_response_analysis.labkit.json")));
             testCase.verifyTrue(exist(manifestPath, 'file') == 2, ...
                 'Nerve-response export should include a standard result manifest.');
 
@@ -47,8 +80,16 @@ classdef GuiLayoutNerveResponseAnalysisTest < matlab.unittest.TestCase
             saved = load(projectPath, 'labkitProject');
             testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 2);
             testCase.verifyFalse(isfield(saved.labkitProject.payload, 'cache'));
-            runtime.applyFileSelection( ...
-                'sessionFile', strings(1, 0), zeros(1, 0));
+            runtime.invokeAction("clearOutputFolder");
+            testCase.verifyEqual( ...
+                runtime.State.session.workflow.outputFolder, "");
+            runtime.invokeAction("chooseOutputFolder");
+            testCase.verifyEqual( ...
+                runtime.State.session.workflow.outputFolder, ...
+                string(alternateFolder));
+            runtime.invokeAction("resetWorkflow");
+            testCase.verifyEmpty(runtime.State.project.inputs.sources);
+            testCase.verifyEmpty(runtime.State.session.cache.filterRecord);
             runtime.restoreProject(projectPath);
             testCase.verifyNotEmpty(runtime.State.session.cache.filterRecord, ...
                 'Project reopen should rebuild parsed filter-record cache.');
@@ -72,6 +113,12 @@ function writeFilterRecordJson(filepath)
     fid = fopen(filepath, 'w');
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, '%s', jsonencode(payload));
+end
+
+function writeProtocolJson(filepath)
+    fid = fopen(filepath, 'w');
+    cleaner = onCleanup(@() fclose(fid));
+    fprintf(fid, '%s', jsonencode(struct()));
 end
 
 function removeTempFolder(folder)
