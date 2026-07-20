@@ -2,7 +2,7 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
     %GUILAYOUTFLIRTHERMALTEST Verify FLIR thermal GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
-        function flir_thermal_load_keeps_scale_axis_full_height(testCase)
+        function flir_thermal_restores_full_display_reading_and_export_workflow(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
@@ -26,9 +26,17 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
             fig = runtime.figureHandle();
             assertFlirLayout(h, fig);
             runtime.applyFileSelection( ...
-                'thermalSources', [sourcePath secondSourcePath], 2);
+                'thermalFiles', [sourcePath secondSourcePath], 2);
             testCase.verifyEqual(numel( ...
                 runtime.State.project.inputs.sources), 2);
+            testCase.verifyEqual( ...
+                runtime.State.session.selection.currentIndex, 2);
+            runtime.invokeAction("previousImage");
+            testCase.verifyEqual( ...
+                runtime.State.session.selection.currentIndex, 1);
+            runtime.invokeAction("nextImage");
+            testCase.verifyEqual( ...
+                runtime.State.session.selection.currentIndex, 2);
             testCase.verifyFalse(isfield( ...
                 runtime.State.project.annotations.items, 'raw'));
             testCase.verifyFalse(isfield( ...
@@ -37,12 +45,48 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
             testCase.verifyNotEmpty( ...
                 runtime.State.session.cache.currentItem.temperatureC, ...
                 'The selected FLIR decode should remain an ephemeral session cache.');
-            thermalAxes = findall(fig, 'Tag', 'thermalPreview.thermal');
+            thermalAxes = component(fig, "preview.thermalImage");
+            scaleAxes = component(fig, "preview.temperatureScale");
             testCase.verifyNotEmpty(thermalAxes.Children);
+            testCase.verifyNotEmpty(scaleAxes.Children);
+            testCase.verifyLessThanOrEqual( ...
+                abs(thermalAxes.Position(4) - scaleAxes.Position(4)), 2);
+
+            runtime.applyControlValue("palette", "iron");
+            runtime.applyControlValue("colorMapping", "Gamma");
+            runtime.applyControlValue("gammaValue", 1.6);
+            labels = ...
+                flir_thermal.thermalPreview.presentationData.rangeControlLabels();
+            runtime.applyControlValue("rangePreset", labels.estimatedPreset);
+            presetRange = ...
+                runtime.State.session.cache.currentItem.displayRange;
+            crossedMinimum = presetRange(2) + 10;
+            crossedMaximum = presetRange(2) - 10;
+            runtime.applyControlValue("temperatureMin", crossedMinimum);
+            runtime.applyControlValue("temperatureMax", crossedMaximum);
+            testCase.verifyEqual( ...
+                runtime.State.session.cache.currentItem.displayRange, ...
+                [crossedMaximum presetRange(2)], AbsTol=1e-12);
+
             runtime.applyInteraction( ...
-                'temperaturePoint', 'interactionChanged', [1 1]);
+                'temperatureReading', 'backgroundPressed', [1 1]);
+            runtime.invokeAction("roiHotMode");
             runtime.applyInteraction( ...
-                'temperatureRegion', 'interactionChanged', [1 1 1 1]);
+                'temperatureReading', 'interactionChanged', [1 1 1 1]);
+            runtime.invokeAction("roiColdMode");
+            runtime.applyInteraction( ...
+                'temperatureReading', 'interactionChanged', [1 1 1 1]);
+            runtime.invokeAction("roiMeanMode");
+            runtime.applyInteraction( ...
+                'temperatureReading', 'interactionChanged', [1 1 1 1]);
+            item = runtime.State.session.cache.currentItem;
+            testCase.verifyTrue(isfinite(item.manualPoint.temperatureC));
+            testCase.verifyTrue(isfinite(item.roiHotSpot.temperatureC));
+            testCase.verifyTrue(isfinite(item.roiColdSpot.temperatureC));
+            testCase.verifyTrue(isfinite(item.roiMean.temperatureC));
+            testCase.verifyGreaterThan( ...
+                size(component(fig, "summaryTable").Data, 1), 4);
+            testCase.verifyNotEmpty(component(fig, "details").Value);
 
             projectPath = fullfile(folder, 'flir-thermal-project.mat');
             runtime.saveProject(runtime.State, projectPath);
@@ -55,10 +99,20 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
                 runtime.State.session.cache.currentItem.temperatureC, ...
                 'Project reopen should lazily rebuild the selected FLIR cache.');
 
-            runtime.invokeAction('exportImages');
+            runtime.invokeAction("chooseOutputFolder");
+            runtime.invokeAction("exportCurrent");
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.results.lastExport.results), 1);
+            runtime.invokeAction("exportAll");
             testCase.verifyNotEmpty( ...
                 runtime.State.project.results.lastExport);
             testCase.verifyTrue(isfolder(outputFolder));
+            testCase.verifyEqual(numel( ...
+                runtime.State.project.results.lastExport.results), 2);
+            testCase.verifyTrue(isfile( ...
+                runtime.State.project.results.resultManifestPath));
+            testCase.verifyTrue(isfile( ...
+                fullfile(outputFolder, "flir_thermal_manifest.csv")));
             clear runtimeCleanup
         end
 
@@ -79,7 +133,7 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
                 [], struct("alert", @(~, ~) []));
             runtimeCleanup = onCleanup(@() runtime.close());
             runtime.applyFileSelection( ...
-                'thermalSources', [coolPath warmPath], [1 2]);
+                'thermalFiles', [coolPath warmPath], [1 2]);
             runtime.invokeAction('groupRange');
 
             items = runtime.State.project.annotations.items;
@@ -89,7 +143,9 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
             testCase.verifyEqual(items(1).rangeControlBounds, ...
                 items(1).displayRange, AbsTol=0.05);
             runtime.applyControlValue( ...
-                'temperatureRange', items(1).displayRange);
+                'temperatureMin', items(1).displayRange(1));
+            runtime.applyControlValue( ...
+                'temperatureMax', items(1).displayRange(2));
             testCase.verifyEqual( ...
                 runtime.State.session.cache.currentItem.displayRange, ...
                 items(1).displayRange, AbsTol=0.05);
@@ -100,14 +156,32 @@ end
 
 function assertFlirLayout(h, fig)
     h.assertStartupSucceeded(fig);
-    ids = ["thermalSources", "palette", "colorMapping", ...
-        "gammaValue", "autoRange", "roundRanges", "groupRange", ...
-        "perImageRange", "rangePreset", "temperatureRange", ...
-        "readingTable", "exportImages", "thermalPreview.thermal"];
+    ids = ["thermalFiles", "fileStatus", "previousImage", "nextImage", ...
+        "currentImage", "palette", "colorMapping", "gammaValue", ...
+        "rangePreset", "perImageRange", "groupRange", "autoRange", ...
+        "roundRange", "temperatureMin", "temperatureMax", ...
+        "outputFolder", "exportFormat", "chooseOutputFolder", ...
+        "exportCurrent", "exportAll", "summaryTable", ...
+        "roiHotMode", "roiColdMode", "roiMeanMode", "details", ...
+        "logPanel", "preview.thermalImage", "preview.temperatureScale"];
     for id = ids
         assert(numel(findall(fig, "Tag", id)) == 1, ...
             "Missing FLIR Thermal semantic target: %s.", id);
     end
+    tabs = findall(fig, "Type", "uitab");
+    assert(isequal(sort(string({tabs.Title})), ...
+        sort(["Files + Display + Export", "Details", "Log"])));
+    assert(~isempty(findall(fig, "Title", "Thermal Preview")));
+    assert(~isempty(findall(fig, "Title", "FLIR Images")));
+    assert(~isempty(findall(fig, "Title", "Reading Tools")));
+    h.assertAxesContract(fig, { ...
+        h.axesSpec("Clean thermal image", "", ""), ...
+        h.axesSpec("Scale", "", "")});
+end
+
+function value = component(figureHandle, tag)
+    value = findall(figureHandle, "Tag", char(tag));
+    assert(isscalar(value), "Expected one component with Tag %s.", tag);
 end
 
 function removeTempFolder(folder)

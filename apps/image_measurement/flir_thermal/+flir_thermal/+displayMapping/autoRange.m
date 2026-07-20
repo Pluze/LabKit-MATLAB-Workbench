@@ -1,11 +1,36 @@
-function state=autoRange(state,context)
-item=state.session.cache.currentItem;if isempty(item),return,end
-range=automaticRange(item);item.displayRange=range;item.rangeControlBounds=range;item.rangeAdjusted=true;
-state=flir_thermal.thermalSources.storeCurrentAnnotation(state,item);
-context.appendStatus("Set selected thermal image to auto range.");
+function applicationState = autoRange( ...
+        applicationState, callbackContext)
+%AUTORANGE Fit the selected image range to finite thermal values.
+item = applicationState.session.cache.currentItem;
+if isempty(item)
+    return
+end
+values = ...
+    flir_thermal.thermalPreview.presentationData.valueMatrix(item);
+values = double(values(isfinite(values)));
+if isempty(values)
+    return
+end
+range = normalizeRange([min(values), max(values)]);
+item.displayRange = range;
+item.rangeControlBounds = [ ...
+    min(item.rangeControlBounds(1), range(1)), ...
+    max(item.rangeControlBounds(2), range(2))];
+item.rangeAdjusted = true;
+applicationState = flir_thermal.thermalSources.storeCurrentAnnotation( ...
+    applicationState, item);
+applicationState = invalidateResults(applicationState);
+callbackContext.appendStatus("Set the selected FLIR auto range.");
 end
 
-function range=automaticRange(item)
-values=double(item.temperatureC);range=[min(values,[],"all") max(values,[],"all")];
-if range(1)==range(2),range=range+[-0.5 0.5];end
+function range = normalizeRange(range)
+range = sort(double(range(:).'));
+if range(2) <= range(1)
+    range = range + [-0.5 0.5];
+end
+end
+
+function applicationState = invalidateResults(applicationState)
+applicationState.project.results.lastExport = [];
+applicationState.project.results.resultManifestPath = "";
 end

@@ -26,9 +26,10 @@ are read-only.
 1. Load radiometric files and inspect the decoded min/max/metadata summary.
 2. Choose a palette and color mapping.
 3. Set a range preset, per-image range, or shared group range.
-4. Place a rectangular ROI and choose hot spot, cold spot, or mean reading.
-5. Review the numeric result and marker.
-6. Export the current image or the full batch.
+4. Choose ROI hot spot, ROI cold spot, or ROI mean, then drag its rectangle.
+5. Optionally click the image for an independent manual point reading.
+6. Review the numeric results and markers.
+7. Export the current image or the full batch.
 
 Placing or dragging a reading ROI and refreshing its marker preserves the
 current zoom. The reading is recalculated from the thermal matrix, not from
@@ -68,10 +69,11 @@ does not change source data.
 
 ## Outputs
 
-Current or batch export can write PNG, TIFF, or JPEG rendered thermal images,
-color scale graphics, Celsius matrices/tables, measurement values, and a
-manifest. The clean image export excludes interactive toolbar chrome. Numeric
-temperature outputs remain Celsius regardless of palette or mapping mode.
+Current or batch export writes PNG, TIFF, or JPEG rendered thermal images,
+matching color scale graphics, Celsius CSV matrices, measurement values, a
+batch CSV summary, and the standard `flir_thermal.labkit.json` result manifest.
+The clean image export excludes interactive toolbar chrome. Numeric temperature
+outputs remain Celsius regardless of palette or mapping mode.
 
 ## Project And State
 
@@ -128,11 +130,15 @@ conversion failures, and related measurement APIs.
 
 ## Framework Compatibility
 
-The single `definition.m` owns product metadata, requirements, layout, actions,
-presentation, renderers, and debug-sample capability. `projectSpec.m` is the
-only durable-project entry; the version-1 payload needs creation and validation
-but no migration. Root `createSession.m` rebuilds only the selected decoded
-thermal item after Runtime V2 resolves sources.
+`definition.m` is the App composition root. It declares product metadata,
+requirements, project/session/presentation callbacks, the composed workbench,
+and debug-sample capability through `labkit.app.Definition`.
+`+workbench/buildLayout.m` is the visible product assembly boundary:
+source navigation, display mapping, reading tools, exports, and preview are
+composed from their owning capability packages. `projectSpec.m` is the only
+durable-project schema entry; the version-1 payload needs creation and
+validation but no migration. Root `createSession.m` rebuilds only the selected
+decoded thermal item after the runtime resolves portable sources.
 
 The project validator requires the thermal-source collection and checks
 thermal parameters and annotations; Runtime validates canonical buckets and
@@ -141,16 +147,15 @@ each source record first.
 Decoded record shape lives with `+sourceFiles`, point and ROI calculations live
 with `+analysisRun`, and lightweight durable readings live with
 `+thermalAnnotations`; there is no generic `+appState` package. The App
-requires `labkit.ui >=7 <8`, `labkit.image >=2 <3`, and
-`labkit.thermal >=1.1 <2`. Source-path access, persistence, callback lifetime,
-busy state, and managed region interaction remain framework-owned. Thermal
-image, colorbar, and CSV manifest outputs are appended to the framework's
-canonical empty output array; no invalid placeholder result is created before
-batch export.
+requires `labkit.app >=1 <2`, `labkit.image >=2 <3`, and
+`labkit.thermal >=1.1 <2`. Runtime callbacks name the complete application
+state and injected `labkit.app.CallbackContext` explicitly. Source-path access,
+persistence, callback lifetime, diagnostic recording, managed region
+interaction, render surfaces, and result-manifest writing remain
+framework-owned.
 
 Its session factory returns only App-specific image selection and decoded
-thermal cache fields. Runtime supplies absent canonical buckets and owns
-workflow-log initialization.
-
-The semantic layout follows the [Runtime callback contract](../../../framework/guides/runtime.md#layout-and-action-rules):
-every referenced action must be registered and resolves during layout construction.
+thermal cache fields. Presentation produces one complete
+`labkit.app.view.Snapshot`; controls bind directly to concrete semantic
+callbacks and the paired preview owns its renderer and managed reading
+interaction. No App-authored handler or renderer registry remains.
