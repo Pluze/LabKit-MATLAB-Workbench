@@ -21,7 +21,9 @@ classdef AppSessionRestoreFailureTest < matlab.unittest.TestCase
 
                 caught = [];
                 try
-                    runtime = def.createRuntimeForTesting(project);
+                    runtime = ...
+                        labkit.app.internal.RuntimeFactory.createHeadless( ...
+                            def, project);
                     runtime.close();
                 catch ME
                     caught = ME;

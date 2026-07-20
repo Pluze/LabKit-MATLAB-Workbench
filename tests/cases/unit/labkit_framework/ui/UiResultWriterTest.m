@@ -12,7 +12,8 @@ classdef UiResultWriterTest < matlab.unittest.TestCase
                 Inputs=struct("source", "synthetic"), ...
                 Parameters=struct("limit", 1), Summary=struct("rows", 1), ...
                 Warnings="reviewed", ManifestName="result.json");
-            runtime = testApplication().createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                testApplication());
 
             written = runtime.writeResult(folder, result);
             manifest = jsondecode(fileread(written.Value));
@@ -40,7 +41,8 @@ classdef UiResultWriterTest < matlab.unittest.TestCase
                     labkit.app.result.File("present", "primary", "present.txt"), ...
                     labkit.app.result.File("missing", "secondary", "missing.txt")}, ...
                 Inputs=struct(), Parameters=struct(), Summary=struct());
-            runtime = testApplication().createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                testApplication());
 
             written = runtime.writeResult(folder, result);
             manifest = jsondecode(fileread(written.Value));
@@ -66,7 +68,8 @@ classdef UiResultWriterTest < matlab.unittest.TestCase
                     labkit.app.result.File("skipped", "aux", "skip.txt", ...
                         Status="skipped", Message="not requested")}, ...
                 Inputs=struct(), Parameters=struct(), Summary=struct());
-            runtime = testApplication().createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                testApplication());
 
             written = runtime.writeResult(folder, result);
             manifest = jsondecode(fileread(written.Value));
@@ -86,7 +89,8 @@ classdef UiResultWriterTest < matlab.unittest.TestCase
                 Outputs={labkit.app.result.File( ...
                     "missing", "primary", "missing.txt")}, ...
                 Inputs=struct(), Parameters=struct(), Summary=struct());
-            runtime = testApplication().createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                testApplication());
 
             written = runtime.writeResult(folder, result);
             manifest = jsondecode(fileread(written.Value));

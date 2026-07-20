@@ -66,7 +66,8 @@ end
 function runtime = startSynthetic(definition, folder)
 options = labkit.app.diagnostic.Options( ...
     Level="verbose", ArtifactFolder=folder, Sample="synthetic");
-runtime = definition.createRuntimeForTesting([], struct(), options);
+runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+    definition, [], struct(), options);
 end
 
 function filepath = artifactPath(context, pack, id)

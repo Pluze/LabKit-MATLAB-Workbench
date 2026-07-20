@@ -18,7 +18,7 @@ classdef UiAuthoringErgonomicsTest < matlab.unittest.TestCase
                 ProjectSchema=labkit.app.project.Schema( ...
                     Version=1, Create=@createProject, ...
                     Validate=@validateProject));
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
 
             runtime.applyBinding("gain", 3);
 
@@ -55,7 +55,7 @@ classdef UiAuthoringErgonomicsTest < matlab.unittest.TestCase
                     SelectionBind="session.selection.files")});
             app = minimalApplication(layout, ProjectSchema=project, ...
                 CreateSession=@createFileSession);
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
 
             runtime.applyFileSelection( ...
                 "files", ["first.csv"; "second.csv"], 2);

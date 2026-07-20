@@ -73,7 +73,8 @@ classdef DicPreprocessIoExportTest < matlab.unittest.TestCase
             testCase.verifyFalse(hasDurableImagePixels(project), ...
                 'Decoded and derived image pixels belong to session cache.');
 
-            runtime = definition.createRuntimeForTesting(project);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                definition, project);
             runtimeCleanup = onCleanup(@() runtime.close());
             session = runtime.State.session;
             testCase.verifyEqual(session.cache.referenceImage, reference);

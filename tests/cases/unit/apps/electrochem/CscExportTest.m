@@ -33,7 +33,8 @@ function verify_cscExport()
     project.parameters.topY = string(defaults.topY);
     project.parameters.bottomX = string(defaults.bottomX);
     project.parameters.bottomY = string(defaults.bottomY);
-    runtime = definition.createRuntimeForTesting(project);
+    runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+        definition, project);
     session = runtime.State.session;
     session.cache.items = item;
     session.selection.files = ...

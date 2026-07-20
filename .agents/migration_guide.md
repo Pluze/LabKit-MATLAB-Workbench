@@ -85,8 +85,8 @@ Current public-boundary checkpoint:
 - Runtime construction no longer passes the complete `Definition` into
   `CallbackContext`; the port retains only its named backend operations.
 - Runtime creation and synthetic-sample execution now belong to the internal
-  `RuntimeFactory`; temporary hidden `Definition` test delegates remain only
-  until their test consumers are switched.
+  `RuntimeFactory`; headless tests construct runtimes there instead of through
+  `Definition`, and only the temporary MATLAB GUI-test delegate remains.
 - Remaining work is to move compiler products and test inspection/construction
   off the `Definition` facade while preserving it as the App authoring
   aggregate root.

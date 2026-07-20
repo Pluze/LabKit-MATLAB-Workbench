@@ -38,7 +38,7 @@ function verify_eisOverlayExport()
     assert(schema.Validate(project) && ...
         ~isfield(project.inputs, 'items'), ...
         'EIS projects should validate without decoded DTA items.');
-    runtime = definition.createRuntimeForTesting();
+    runtime = labkit.app.internal.RuntimeFactory.createHeadless(definition);
     cleanup = onCleanup(@() runtime.close());
     runtime.applyFileSelection("files", string(fixture), 1);
     state = runtime.State;

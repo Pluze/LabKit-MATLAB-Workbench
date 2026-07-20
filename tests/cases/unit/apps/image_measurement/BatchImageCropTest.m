@@ -76,7 +76,8 @@ function checkAppSdkProjectAndScaleBarGeometry()
         "image1", "cropSource", sourcePath, true);
     project.inputs.items = orderfields( ...
         task, batch_crop.cropTasks.emptyTask());
-    runtime = definition.createRuntimeForTesting(project);
+    runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+        definition, project);
     state = runtime.State;
     runtime.close();
     assert(~contains(evalc('disp(state)'), 'matlab.ui'), ...

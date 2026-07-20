@@ -3,7 +3,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
         function invokesLayoutCallbackAndCommitsState(testCase)
             setupLabKitTestPath();
             app = counterApplication(@incrementValue);
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
 
             runtime.invokeAction("increment");
 
@@ -16,7 +16,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
         function invokesOnStartAfterFirstPresentation(testCase)
             setupLabKitTestPath();
             app = counterApplication(@incrementValue, OnStart=@markStarted);
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
 
             testCase.verifyTrue(runtime.State.session.started);
             testCase.verifyEqual(runtime.commitCount(), 2);
@@ -25,7 +25,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
         function rollsBackStateAndPresentationOnCommitFailure(testCase)
             setupLabKitTestPath();
             app = counterApplication(@incrementValue);
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
             before = runtime.State;
             runtime.failNextCommit();
 
@@ -39,7 +39,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             counts = containers.Map({'event', 'application'}, [0, 0]);
             app = counterApplication(@setResources);
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
             runtime.invokeAction("increment");
             runtime.close();
             runtime.close();
@@ -65,7 +65,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             counts = containers.Map({'failed', 'remaining'}, [0, 0]);
             app = counterApplication(@setResources);
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
             runtime.invokeAction("increment");
 
             testCase.verifyError(@() runtime.close(), ...
@@ -104,7 +104,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
                 Title="Bound probe", Family="Tests", AppVersion="1.0.0", ...
                 Updated="2026-07-19", Requirements=[], ...
                 ProjectSchema=project, Workbench=layout);
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
 
             runtime.applyBinding("threshold", 2.5);
 
@@ -130,7 +130,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
                 Updated="2026-07-19", Requirements=[], Workbench=layout, ...
                 CreateSession=@createTableSession, ...
                 PresentWorkbench=@presentTable);
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
             data = {"A", 1; "B", 2};
 
             runtime.applyTableEdit("data", labkit.app.event.TableCellEdit( ...
@@ -162,7 +162,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
                 Family="Tests", AppVersion="1.0.0", ...
                 Updated="2026-07-19", Requirements=[], ...
                 ProjectSchema=project, Workbench=layout);
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
 
             runtime.applyFileSelection("reference", "reference.png");
             runtime.applyFileSelection("mask", "mask.png");
@@ -190,7 +190,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
                 Family="Tests", AppVersion="1.0.0", ...
                 Updated="2026-07-20", Requirements=[], ...
                 ProjectSchema=project, Workbench=layout);
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
 
             runtime.applyFileSelection( ...
                 "tasks", ["shared.png", "shared.png"], [1 2]);
@@ -225,7 +225,7 @@ classdef UiRuntimeKernelTest < matlab.unittest.TestCase
                 Workbench=labkit.app.layout.workbench({}, ...
                     Workspace=workspace), ...
                 PresentWorkbench=@presentPairs);
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
             pairs = {[1 2; 3 4], [5 6; 7 8]};
 
             runtime.applyInteraction( ...

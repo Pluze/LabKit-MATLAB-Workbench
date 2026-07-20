@@ -102,7 +102,8 @@ classdef DicPostprocessIoExportTest < matlab.unittest.TestCase
             [summary, ~, ~] = dic_postprocess.analysisRun.prepareOutputs( ...
                 cache, project.parameters);
             project.results.summaryTable = summary;
-            runtime = definition.createRuntimeForTesting(project);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                definition, project);
             runtimeCleanup = onCleanup(@() runtime.close());
             testCase.verifyClass(runtime.Presentation, ...
                 "labkit.app.view.Snapshot");

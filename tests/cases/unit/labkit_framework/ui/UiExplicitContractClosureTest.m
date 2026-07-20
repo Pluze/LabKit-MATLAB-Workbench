@@ -115,7 +115,7 @@ classdef UiExplicitContractClosureTest < matlab.unittest.TestCase
                 Workbench=layout, ...
                 PresentWorkbench=@presentInteractionProbe);
 
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
             cleanup = onCleanup(@() runtime.close());
 
             testCase.verifyTrue(any(app.TargetIds == "cropRegion"));

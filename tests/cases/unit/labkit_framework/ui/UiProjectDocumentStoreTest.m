@@ -5,7 +5,7 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
             folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             path = fullfile(string(folder.Folder), "current.mat");
             app = documentApplication();
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
             state = struct("project", struct("value", 7), ...
                 "session", struct("token", "resume-token"));
 
@@ -32,7 +32,7 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             app = documentApplication();
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
             currentPath = fullfile(string(folder.Folder), "v1.mat");
             legacyPath = fullfile(string(folder.Folder), "legacy.mat");
             envelope = currentEnvelope("probe.document", 1, struct("value", 4));
@@ -58,7 +58,7 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture);
             app = documentApplication();
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
             original = runtime.documentMetadata();
             wrongPath = fullfile(string(folder.Folder), "wrong.mat");
             newerPath = fullfile(string(folder.Folder), "newer.mat");
@@ -78,7 +78,7 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
         function failedSaveDoesNotMutateMetadata(testCase)
             setupLabKitTestPath();
             app = documentApplication();
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
             original = runtime.documentMetadata();
             state = struct("project", struct("value", 1), ...
                 "session", struct("token", "unsaved"));
@@ -95,7 +95,7 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture);
             path = fullfile(string(folder.Folder), "candidate.mat");
             app = documentApplication();
-            runtime = app.createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
             originalState = runtime.State;
             originalMetadata = runtime.documentMetadata();
             labkitProject = currentEnvelope( ...
@@ -117,7 +117,8 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
             labkitProject = currentEnvelope( ...
                 "probe.document", 2, struct("value", 14));
             save(path, "labkitProject");
-            runtime = callbackRestoreApplication(path).createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                callbackRestoreApplication(path));
 
             runtime.invokeAction("restoreDocument");
 
@@ -127,7 +128,8 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
             testCase.verifyEqual(metadata.path, path);
             testCase.verifyFalse(metadata.dirty);
 
-            failed = callbackRestoreApplication(path).createRuntimeForTesting();
+            failed = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                callbackRestoreApplication(path));
             originalState = failed.State;
             originalMetadata = failed.documentMetadata();
             failed.failNextCommit();
@@ -142,7 +144,8 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture);
             path = fullfile(string(folder.Folder), "named.mat");
-            runtime = callbackRestoreApplication(path).createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                callbackRestoreApplication(path));
             named = struct("project", struct("value", 9), ...
                 "session", struct("token", "named"));
             runtime.saveProject(named, path);
@@ -172,7 +175,8 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
             fprintf(file, "time,value\n0,1\n");
             clear cleaner
             projectPath = fullfile(projectFolder, "bound.mat");
-            runtime = sourceDocumentApplication().createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                sourceDocumentApplication());
             state = runtime.State;
             state.project.inputs.sources = runtime.sourceRecord( ...
                 "trace", "recording", sourcePath, true);
@@ -202,13 +206,15 @@ classdef UiProjectDocumentStoreTest < matlab.unittest.TestCase
             fprintf(file, "synthetic");
             clear cleaner
             projectPath = fullfile(string(folder.Folder), "bound.mat");
-            runtime = sourceDocumentApplication().createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                sourceDocumentApplication());
             state = runtime.State;
             state.project.inputs.sources = runtime.sourceRecord( ...
                 "trace", "recording", sourcePath, true);
             runtime.saveProject(state, projectPath);
             delete(sourcePath);
-            restored = sourceDocumentApplication().createRuntimeForTesting();
+            restored = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                sourceDocumentApplication());
             original = restored.State;
 
             testCase.verifyError(@() ...

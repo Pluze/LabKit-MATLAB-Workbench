@@ -84,7 +84,8 @@ classdef ResponseReviewStatsOpsTest < matlab.unittest.TestCase
             segmentPath = fullfile(folder, "segments.csv");
             writeSegmentCsv(segmentPath);
 
-            runtime = response_review_stats.definition().createRuntimeForTesting();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                response_review_stats.definition());
             cleanupRuntime = onCleanup(@() runtime.close());
             runtime.applyFileSelection("inputFile", segmentPath, 1);
             runtime.invokeAction("loadMetrics");

@@ -276,8 +276,8 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
                 Level="verbose", ArtifactFolder=folder, ...
                 Sample="synthetic");
 
-            runtime = video_marker.definition().createRuntimeForTesting( ...
-                [], struct(), options);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                video_marker.definition(), [], struct(), options);
             runtimeCleanup = onCleanup(@() runtime.close());
 
             testCase.verifyEqual( ...
@@ -311,7 +311,8 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             state = struct('project', project, 'session', session);
             presentation = video_marker.workbench.present(state);
             testCase.verifyClass(presentation, "labkit.app.view.Snapshot");
-            runtime = definition.createRuntimeForTesting(project);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                definition, project);
             runtimeCleanup = onCleanup(@() runtime.close());
             testCase.verifyTrue( ...
                 definition.validateViewSnapshot(runtime.Presentation));
