@@ -115,8 +115,9 @@ and renderer signatures, and builds one private native platform plan.
 - Declare editable overlays with `labkit.app.interaction.*` on the plot area;
   supply their current values with same-named Snapshot methods.
 - Use `labkit.app.plot.clearAxes`, `showMessage`, and `fitAxesToGraphics`
-  for renderer mechanics; Apps still decide message wording and viewport
-  policy.
+  for renderer mechanics; `EqualDataUnits=true` makes a one-time fitted
+  equal-scale view without changing the axes allocation or locking later
+  zoom. Apps still decide message wording and viewport policy.
 - Use `labkit.app.project.Schema`, `labkit.app.result.File`, and
   `labkit.app.result.Package` only when those optional capabilities exist.
 - Use `labkit.app.project.sourceRecord` only in pure project creation or
