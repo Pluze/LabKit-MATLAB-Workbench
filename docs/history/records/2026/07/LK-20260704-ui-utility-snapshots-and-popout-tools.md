@@ -1,13 +1,13 @@
 # UI utility snapshots and popout tools
 
 ```labkit-change
-schema: 2
 id: LK-20260704-ui-utility-snapshots-and-popout-tools
 date: 2026-07-04
 sequence: 37
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `4.1.0 -> 4.2.0`
+scope: UI utility snapshots and popout tools
 ```
 
 ## Context

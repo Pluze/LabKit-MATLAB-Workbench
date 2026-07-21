@@ -1,7 +1,6 @@
 # Image Apps stop creating invalid placeholder outputs
 
 ```labkit-change
-schema: 2
 id: LK-20260716-image-manifest-output-arrays
 date: 2026-07-16
 sequence: 80
@@ -35,7 +34,7 @@ to duplicate the manifest struct shape.
 - Updated Image Enhance batch outputs.
 - Updated Image Match batch outputs.
 
-## User and developer impact
+## User and data impact
 
 The exported images, numeric CSV data, filenames, roles, statuses, and manifest
 schemas are unchanged. Exports no longer fail during internal output-array

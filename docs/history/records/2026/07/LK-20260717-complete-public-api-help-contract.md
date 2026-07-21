@@ -1,7 +1,6 @@
 # Public API help is complete, discoverable, and behavior checked
 
 ```labkit-change
-schema: 2
 id: LK-20260717-complete-public-api-help-contract
 date: 2026-07-17
 sequence: 127
@@ -61,7 +60,7 @@ instead of merely repeating a short summary.
   instead of silently treating them as bilinear.
 - Linked owning library and App manuals to the detailed generated reference.
 
-## User and developer impact
+## User and data impact
 
 Readers can now determine valid calls, defaults, option domains, outputs,
 empty-result behavior, errors, and adjacent functions from the generated page

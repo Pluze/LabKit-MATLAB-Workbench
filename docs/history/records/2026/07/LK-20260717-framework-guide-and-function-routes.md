@@ -1,7 +1,6 @@
 # Framework guides and function reference keep distinct routes
 
 ```labkit-change
-schema: 2
 id: LK-20260717-framework-guide-and-function-routes
 date: 2026-07-17
 sequence: 134

@@ -1,7 +1,6 @@
 # Launcher reads the single App definition
 
 ```labkit-change
-schema: 2
 id: LK-20260716-launcher-definition-metadata
 date: 2026-07-16
 sequence: 78
@@ -32,7 +31,7 @@ App's `definition.m`; it does not execute the definition or start the App.
 - Added a synthetic private-App catalog test with no `version.m` file.
 - Retained a documented internal fallback only for Apps awaiting migration.
 
-## User and developer impact
+## User and data impact
 
 Launcher catalogs continue to show version and update dates. A migrated App
 does not need a second metadata file solely for discovery.

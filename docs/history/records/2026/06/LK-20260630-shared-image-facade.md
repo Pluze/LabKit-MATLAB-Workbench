@@ -1,13 +1,12 @@
 # Shared image facade
 
 ```labkit-change
-schema: 2
 id: LK-20260630-shared-image-facade
 date: 2026-06-30
 sequence: 24
 type: feat
 compatibility: compatible
-introduced: `labkit.image` | `1.0.0`
+component: `labkit.image` | `new -> 1.0.0`
 component: `labkit_BatchImageCrop_app` | `1.3.9 -> 1.4.0`
 component: `labkit_CurvatureMeasurement_app` | `1.2.3 -> 1.2.4`
 component: `labkit_FocusStack_app` | `1.2.5 -> 1.3.0`

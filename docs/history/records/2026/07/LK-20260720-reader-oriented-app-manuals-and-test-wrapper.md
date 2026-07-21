@@ -1,12 +1,11 @@
 # App manuals become reader-oriented and focused tests gain one wrapper
 
 ```labkit-change
-schema: 2
 id: LK-20260720-reader-oriented-app-manuals-and-test-wrapper
 date: 2026-07-20
 sequence: 142
 type: docs
-compatibility: behavior-preserving
+compatibility: compatible
 scope: App documentation
 scope: Documentation validation
 scope: Agent testing workflow
@@ -73,14 +72,19 @@ or current repository snapshot.
 - Added a root agent rule to improve skills and scripts when reusable
   automation can remove recurring inference or retry cost.
 
-## Compatibility and user impact
+## User and data impact
 
 App behavior, calculations, saved data, and exports are unchanged. Existing
 manual content about scientific meaning and recovery remains available with
 less implementation noise. The wrapper is an agent convenience over the
 official test runner and does not add another CI or public build interface.
 
-## Validation and evidence
+
+## Compatibility and migration
+
+No additional migration applies beyond the compatibility information in the preceding impact section.
+
+## Validation
 
 - Documentation guardrails scan every concrete App manual for shared
   boilerplate.
@@ -96,7 +100,11 @@ official test runner and does not add another CI or public build interface.
   test, accept deeply nested owning files, and preserve explicit failures for
   missing or ambiguous owners.
 
-## Follow-up
+## Evidence
+
+The validation details above are the supporting evidence for this record.
+
+## Known limitations and follow-up
 
 Continue reviewing App manuals when user-visible behavior changes; structural
 guardrails prevent known boilerplate but cannot judge scientific clarity.

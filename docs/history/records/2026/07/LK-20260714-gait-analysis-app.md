@@ -1,13 +1,13 @@
 # Gait Analysis app
 
 ```labkit-change
-schema: 2
 id: LK-20260714-gait-analysis-app
 date: 2026-07-14
 sequence: 55
 type: feat
-compatibility: additive
-introduced: `labkit_GaitAnalysis_app` | `1.0.0`
+compatibility: compatible
+component: `labkit_GaitAnalysis_app` | `new -> 1.0.0`
+scope: Gait Analysis app
 ```
 
 ## Context

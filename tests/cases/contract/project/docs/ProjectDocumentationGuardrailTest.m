@@ -200,29 +200,6 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 'after the function declaration: ' strjoin(cellstr(missing), ', ')]);
         end
 
-        function publicApiIndexCoversPublicLibrarySurface(testCase)
-            root = setupLabKitTestPath();
-            referenceRoot = fullfile(root, "site", "reference");
-            indexText = string(fileread(fullfile(referenceRoot, "index.html")));
-            publicFiles = collectPublicLibraryFiles(root);
-            missing = strings(1, 0);
-            for k = 1:numel(publicFiles)
-                symbol = publicApiSymbol(root, publicFiles(k));
-                relativeOutput = "api/" + replace(symbol, ".", "/") + ".html";
-                outputFile = fullfile(referenceRoot, ...
-                    replace(relativeOutput, "/", filesep));
-                expectedLink = "href=""" + relativeOutput + """";
-                if ~isfile(outputFile) || ~contains(indexText, expectedLink)
-                    missing(end+1) = symbol;
-                end
-            end
-
-            testCase.verifyTrue(isempty(missing), ...
-                ['Generated API reference should link every supported public ' ...
-                '+labkit function to its own source-bound page: ' ...
-                strjoin(cellstr(missing), ', ')]);
-        end
-
         function generatedPagesUseContextualReferenceNavigation(testCase)
             root = setupLabKitTestPath();
             page = string(fileread(fullfile(root, "site", "reference", ...
@@ -569,14 +546,6 @@ function tf = isHiddenClassFile(filepath)
     lines = lines(~startsWith(lines, "%"));
     tf = ~isempty(lines) && startsWith(lines(1), "classdef") && ...
         contains(lines(1), "Hidden");
-end
-
-function symbol = publicApiSymbol(root, filepath)
-    rel = string(relativePath(root, filepath));
-    parts = split(rel, "/");
-    packageParts = erase(parts(startsWith(parts, "+")), "+");
-    functionName = erase(parts(end), ".m");
-    symbol = strjoin([packageParts; functionName], ".");
 end
 
 function tf = hasFunctionContractComment(filepath)

@@ -17,11 +17,18 @@ skill.
 Keep the calling model small:
 
 - before PR preparation, use focused tests for the current small branch step;
-  reserve `changedFast` and `changed` for the review-ready or explicitly final
-  gate described in `docs/development/maintain-and-release/testing.md`;
-- use the platform-independent
-  `scripts/runLabKitTestTarget.m` wrapper instead of rebuilding runner
-  argument lists. Add its folder to the MATLAB path once, then call:
+  run `changedFast` once at the review-ready checkpoint. PR and main-push CI
+  own the complete validation;
+- use the platform-independent skill-owned wrapper at
+  `.agents/skills/labkit-test-planner/scripts/runLabKitTestTarget.m` instead
+  of rebuilding runner argument lists. It is not in the repository-root
+  `scripts/` folder. Add that exact skill folder to the MATLAB path once, then
+  call:
+
+  ```matlab
+  addpath(".agents/skills/labkit-test-planner/scripts")
+  ```
+
   - `runLabKitTestTarget("list-file", File=path)` to print canonical names;
   - `runLabKitTestTarget("run-file", File=path)` for one exact file;
   - `runLabKitTestTarget("run-test", Test="Class/method")` for an exact
@@ -33,8 +40,8 @@ The wrapper locates the repository from its own path, infers GUI inclusion for
 files and `gui/` suites, uses hidden GUI mode, disables focused HTML reports,
 and preserves the official runner's fail-on-zero-match behavior. Read the
 script only when changing or diagnosing the wrapper. Use the existing
-cross-platform `buildtool changedFast` and `buildtool changed` commands for
-final gates; do not wrap them.
+cross-platform `buildtool changedFast` command for the local final gate; do not
+wrap it.
 
 Choose by execution cost as well as matched-test count. One GUI method may
 launch a real App, parse files, redraw several times, and export outputs, so it

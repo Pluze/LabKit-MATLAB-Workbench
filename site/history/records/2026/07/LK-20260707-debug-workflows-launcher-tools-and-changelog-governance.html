@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="debug-workflows-launcher-tools-and-changelog-governance">Debug workflows, launcher tools, and changelog governance</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260707-debug-workflows-launcher-tools-and-changelog-governance
+<pre><code class="language-labkit-change">id: LK-20260707-debug-workflows-launcher-tools-and-changelog-governance
 date: 2026-07-07
 sequence: 39
 type: feat
@@ -36,7 +35,8 @@ component: `labkit.ui` | `5.0.1 -&gt; 5.0.2`
 component: `labkit_DICPreprocess_app` | `1.3.4 -&gt; 1.3.5`
 component: `labkit_BatchImageCrop_app` | `1.6.6 -&gt; 1.6.7`
 component: `labkit_FocusStack_app` | `1.4.5 -&gt; 1.4.6`
-component: `labkit_FigureStudio_app` | `0.1.4 -&gt; 0.1.5`</code></pre>
+component: `labkit_FigureStudio_app` | `0.1.4 -&gt; 0.1.5`
+scope: Debug workflows, launcher tools, and changelog governance</code></pre>
 <h2 id="context">Context</h2>
 <p>The first complete debug sample packs exposed several false failures. A modal file chooser could be mistaken for a stalled callback, DIC could read an older ROI snapshot than the editor displayed, duplicate crops needed confirmation before export, and Focus Stack's folder workflow was hard to reach from its sample instructions.</p>
 <p>The launcher was also becoming a practical maintenance and distribution tool. Code Analyzer reports needed a durable home outside launcher source, individual apps needed an offline package format, and private app workspaces needed to remain discoverable without entering the public repository.</p>

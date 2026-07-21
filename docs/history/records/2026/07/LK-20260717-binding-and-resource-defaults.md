@@ -1,7 +1,6 @@
 # Binding-only controls and default resource cleanup
 
 ```labkit-change
-schema: 2
 id: LK-20260717-binding-and-resource-defaults
 date: 2026-07-17
 sequence: 122

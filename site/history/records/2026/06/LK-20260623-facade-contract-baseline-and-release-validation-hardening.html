@@ -22,21 +22,21 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="facade-contract-baseline-and-release-validation-hardening">Facade contract baseline and release validation hardening</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260623-facade-contract-baseline-and-release-validation-hardening
+<pre><code class="language-labkit-change">id: LK-20260623-facade-contract-baseline-and-release-validation-hardening
 date: 2026-06-23
 sequence: 11
 type: ci
 compatibility: compatible
-introduced: `labkit.biosignal` | `1.0.0`
-introduced: `labkit.dta` | `1.0.0`
-introduced: `labkit.rhs` | `1.0.0`
-introduced: `labkit.ui` | `2.0.0`
+component: `labkit.biosignal` | `new -&gt; 1.0.0`
+component: `labkit.dta` | `new -&gt; 1.0.0`
+component: `labkit.rhs` | `new -&gt; 1.0.0`
+component: `labkit.ui` | `new -&gt; 2.0.0`
 component: `labkit.ui` | `2.0.0 -&gt; 2.1.0`
 component: `labkit.ui` | `2.2.0 -&gt; 2.2.1`
 component: `labkit_DICPostprocess_app` | `1.0.0 -&gt; 1.0.1`
 component: `labkit_DICPreprocess_app` | `1.0.0 -&gt; 1.0.1`
-component: `labkit_CurvatureMeasurement_app` | `1.0.0 -&gt; 1.0.1`</code></pre>
+component: `labkit_CurvatureMeasurement_app` | `1.0.0 -&gt; 1.0.1`
+scope: Facade contract baseline and release validation hardening</code></pre>
 <h2 id="context">Context</h2>
 <p>Reusable packages exposed public MATLAB functions, but apps had no machine-checkable way to state which API versions they required. Release and CI checks also needed one consistent build-task entry path.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

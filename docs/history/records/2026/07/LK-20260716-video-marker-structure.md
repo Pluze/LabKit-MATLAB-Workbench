@@ -1,7 +1,6 @@
 # Video Marker concentrates project history behind one contract
 
 ```labkit-change
-schema: 2
 id: LK-20260716-video-marker-structure
 date: 2026-07-16
 sequence: 103
@@ -43,7 +42,7 @@ source factory and accessor instead of App-owned reference adapters.
 - Updated Gait's synthetic Video Marker fixture to construct the current
   payload through the project contract rather than a retired lifecycle file.
 
-## User and developer impact
+## User and data impact
 
 Skeleton setup, continuous point marking, prediction, calibration, coordinate
 export, explicit autosave, save-before-new confirmation, recovery, source

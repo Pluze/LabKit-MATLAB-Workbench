@@ -1,7 +1,6 @@
 # T-Test plots gain truthful limits and an explicit view reset
 
 ```labkit-change
-schema: 2
 id: LK-20260720-ttest-plot-viewport-and-density
 date: 2026-07-20
 sequence: 143
@@ -45,14 +44,19 @@ rather than adding T-Test-specific pixel sizes.
 - Reduced **What will run** and **Result family** to two-line summary panels
   with the framework's summary reading size.
 
-## Compatibility and user impact
+## User and data impact
 
 Project schema 2, completed comparison values, CSV outputs, formulas, and test
 choices are unchanged. T-Test Wizard 1.2.0 requires `labkit.app` 1.2 or later
 for compact summaries and one-shot plot viewport revisions. Existing projects
 open without migration.
 
-## Validation and evidence
+
+## Compatibility and migration
+
+No additional migration applies beyond the compatibility information in the preceding impact section.
+
+## Validation
 
 - The T-Test hidden-GUI workflow checks fitted limits, zero-edge persistence,
   box-plot independence, compact summary sizing, and explicit view reset.
@@ -60,7 +64,11 @@ open without migration.
   resets.
 - Documentation rendering and history consistency cover the versioned change.
 
-## Follow-up
+## Evidence
+
+The validation details above are the supporting evidence for this record.
+
+## Known limitations and follow-up
 
 Developer-led visual review should compare box, bar, error-bar, and bracket
 appearance at typical desktop sizes and with real scientific label lengths.

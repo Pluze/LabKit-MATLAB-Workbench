@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="base-matlab-image-compatibility">Base-MATLAB image compatibility</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260713-base-matlab-image-compatibility
+<pre><code class="language-labkit-change">id: LK-20260713-base-matlab-image-compatibility
 date: 2026-07-13
 sequence: 45
 type: feat
@@ -33,7 +32,8 @@ component: `labkit_DICPostprocess_app` | `1.3.4 -&gt; 1.3.5`
 component: `labkit_DICPreprocess_app` | `1.3.5 -&gt; 1.3.6`
 component: `labkit_FocusStack_app` | `1.4.7 -&gt; 1.4.8`
 component: `labkit_ImageEnhance_app` | `1.5.6 -&gt; 1.5.7`
-component: `labkit_ImageMatch_app` | `1.5.6 -&gt; 1.5.7`</code></pre>
+component: `labkit_ImageMatch_app` | `1.5.6 -&gt; 1.5.7`
+scope: Base-MATLAB image compatibility</code></pre>
 <h2 id="context">Context</h2>
 <p>Several image workflows appeared toolbox-optional but still called Image Processing Toolbox functions for conversion, grayscale luminance, resizing, smoothing, alignment, or warping. Development machines with the toolbox hid those calls, so a nominally supported Base MATLAB installation could fail only after the user entered a particular workflow.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

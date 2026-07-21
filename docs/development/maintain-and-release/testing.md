@@ -80,7 +80,6 @@ human-readable artifacts.
 Use MATLAB build tasks for the stable official entry points:
 
 ```bash
-buildtool changed
 buildtool changedFast
 buildtool docs
 buildtool docsCheck
@@ -92,8 +91,7 @@ buildtool listTasks
 
 | Task | Use it for |
 | --- | --- |
-| `changedFast` | Tight local iteration from the current diff; substitutes representative GUI coverage for expensive broad GUI scopes. |
-| `changed` | Conservative pre-handoff validation from the current diff. |
+| `changedFast` | Final local changed-file checkpoint before push; substitutes representative GUI coverage for expensive broad GUI scopes. |
 | `docs` | Rebuild the tracked `site/` tree from path-organized Markdown and MATLAB help contracts. |
 | `docsCheck` | Regenerate documentation in a temporary folder and compare it byte-for-byte with tracked `site/`. |
 | `headless` | Full non-GUI validation. |
@@ -116,17 +114,17 @@ Common choices:
 | --- | --- |
 | Tight local iteration on one known component | Focused `runLabKitTests` folder or test-name selection |
 | Stable branch work before PR preparation | Focused `runLabKitTests` selection |
-| Preparing a branch for PR review | `buildtool changedFast`, then `buildtool changed` |
-| Direct-main integration or explicitly final handoff | `buildtool changed` |
+| Preparing a branch for PR review | `buildtool changedFast`, then inspect PR CI |
+| Direct-main integration or explicitly final handoff | `buildtool changedFast`, then inspect main-push CI |
 | Rebuild documentation after editing sources or public help contracts | `buildtool docs` |
 | Verify generated documentation is current | `buildtool docsCheck` |
 | Full broad non-GUI validation | `buildtool headless` |
 | Full automated GUI validation | `buildtool gui` |
 | Coverage report | `buildtool coverage` |
 
-`changedFast` and `changed` require a git checkout. In exported source trees,
-packaged copies, or environments without git state, use `headless` or an
-explicit `runLabKitTests` suite selection instead.
+`changedFast` requires a git checkout. In exported source trees, packaged
+copies, or environments without git state, use `headless` or an explicit
+`runLabKitTests` suite selection instead.
 
 Documentation checks cover more than generated-file freshness. They also
 verify local links, search behavior, public API coverage, executable examples,
@@ -167,8 +165,8 @@ contract, broad product allowlists are rejected, and the Base MATLAB path must
 provide comparable user-visible behavior until the Toolbox branch is deleted.
 
 Private workspaces under `private_apps/` are separate Git repositories, so the
-public `changed` and `changedFast` tasks do not discover their diffs. Validate a
-private change with that workspace's own test entry point, such as
+public `changedFast` task does not discover their diffs. Validate a private
+change with that workspace's own test entry point, such as
 `addpath('private_apps/tests'); run_private_tests`, which can reuse the public
 runner and shared guardrails.
 Do not substitute the full public `headless` task only because the public
@@ -176,8 +174,8 @@ checkout has no changed paths. The `.labkit-accept-main-guardrails` sentinel
 controls quality-scan inclusion; it does not change Git diff discovery. When an
 accepted private workspace has unpushed source, test, documentation, component
 history, or version changes, run that workspace's private tests and the public
-`buildtool changed` guardrail before commit or handoff, or record the exact
-MATLAB/runtime blocker. The public guardrail must be invoked intentionally from
+`buildtool changedFast` guardrail before push, then inspect CI. The public
+guardrail must be invoked intentionally from
 the public checkout because the private Git diff is invisible to the public
 changed-file planner.
 
@@ -213,27 +211,23 @@ pay the cost of broad changed-file planning:
    `IncludeGui=true`, `GuiMode="hidden"`, and `HtmlReport=false` during
    iteration.
 2. Before the branch is ready for PR review, keep checkpoints small and stable
-   and continue using focused tests. Do not run `changedFast`, `changed`, full
-   headless, or full GUI gates merely because an intermediate commit is ready.
-3. When preparing the completed branch for PR review, run `changedFast` once
-   to inspect the diff-based plan, then treat `buildtool changed` as the final
-   changed-file gate. Also use `changed` for direct-main integration or another
-   explicitly final handoff unless a recently completed broader gate fully
-   covers the current diff.
+   and continue using focused tests. Do not run `changedFast`, full headless,
+   or full GUI gates merely because an intermediate commit is ready.
+3. When preparing the completed branch for PR review or direct-main
+   integration, run `changedFast` once to inspect the diff-based plan, then
+   inspect the PR or main-push CI for the complete validation.
 4. After push, inspect CI for the final pushed commit. If another user-requested
    follow-up supersedes an in-progress run, continue the follow-up locally and
    inspect CI for the newest pushed commit instead of waiting for the
    superseded run.
 
-Do not rerun `changedFast`, `changed`, or CI after every small edit when the
-same focused suite can validate the changed behavior more directly. Changes to
-additional ownership areas, validation routing, docs, or AGENTS still use
-focused checks while the branch is evolving; escalate to changed-file gates
-when the branch is being prepared for review or final integration. After a
-final `buildtool changed` run exposes a failure, repair with
-the narrowest failed suite or test selector, then reserve another
-`buildtool changed` run for the final stable diff instead of using it as the
-iteration loop.
+Do not rerun `changedFast` or CI after every small edit when the same focused
+suite can validate the changed behavior more directly. Changes to additional
+ownership areas, validation routing, docs, or AGENTS still use focused checks
+while the branch is evolving; run the changed-file checkpoint only when the
+branch is ready for review or final integration. After CI exposes a failure,
+repair with the narrowest failed suite or test selector, push the correction,
+and inspect CI for the final stable diff.
 
 ### Keep Iteration Tests Cheap
 

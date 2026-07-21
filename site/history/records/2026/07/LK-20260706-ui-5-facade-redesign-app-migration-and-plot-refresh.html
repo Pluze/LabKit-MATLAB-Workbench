@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="ui-5-facade-redesign-app-migration-and-plot-refresh">UI 5 facade redesign, app migration, and plot refresh</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh
+<pre><code class="language-labkit-change">id: LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh
 date: 2026-07-06
 sequence: 38
 type: refactor
@@ -44,14 +43,15 @@ component: `labkit_FLIRThermal_app` | `1.2.7 -&gt; 1.2.8`
 component: `labkit_FocusStack_app` | `1.4.4 -&gt; 1.4.5`
 component: `labkit_ImageEnhance_app` | `1.5.4 -&gt; 1.5.5`
 component: `labkit_ImageMatch_app` | `1.5.4 -&gt; 1.5.5`
-introduced: `labkit_FigureStudio_app` | `0.1.0`
+component: `labkit_FigureStudio_app` | `new -&gt; 0.1.0`
 component: `labkit_FigureStudio_app` | `0.1.0 -&gt; 0.1.1`
 component: `labkit_FigureStudio_app` | `0.1.1 -&gt; 0.1.2`
 component: `labkit_FigureStudio_app` | `0.1.2 -&gt; 0.1.4`
 component: `labkit_NerveResponseAnalysis_app` | `1.3.3 -&gt; 1.3.4`
 component: `labkit_ResponseReviewStats_app` | `1.3.3 -&gt; 1.3.4`
 component: `labkit_RHSPreview_app` | `1.3.3 -&gt; 1.3.4`
-component: `labkit_ECGPrint_app` | `1.3.4 -&gt; 1.3.5`</code></pre>
+component: `labkit_ECGPrint_app` | `1.3.4 -&gt; 1.3.5`
+scope: UI 5 facade redesign, app migration, and plot refresh</code></pre>
 <h2 id="context">Context</h2>
 <p>The declarative runtime had made app structure more consistent, but its public packages still reflected the order in which features had been extracted: <code>app</code>, <code>spec</code>, <code>view</code>, <code>tool</code>, and <code>diag</code> mixed lifecycle, layout, plotting, interaction, and diagnostics. App authors often had to know implementation history to guess where an operation belonged.</p>
 <p>Plot behavior exposed the cost of that ambiguity. Apps independently cleared axes, fitted limits, translated image coordinates, registered previews, and handled empty states. After removing or changing a file, an electrochem plot could retain limits, legends, or annotations from the previous selection.</p>

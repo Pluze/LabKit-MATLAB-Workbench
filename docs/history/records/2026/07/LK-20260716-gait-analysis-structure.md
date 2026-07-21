@@ -1,7 +1,6 @@
 # Gait Analysis keeps schema history in one project contract
 
 ```labkit-change
-schema: 2
 id: LK-20260716-gait-analysis-structure
 date: 2026-07-16
 sequence: 104
@@ -41,7 +40,7 @@ categories that did not explain the workflow.
 - Removed generic lifecycle/state packages and separate requirement/version
   files, and updated GUI-free documentation calls to the owning package.
 
-## User and developer impact
+## User and data impact
 
 Current Video Marker MAT loading, full-trajectory inspection, active-swing
 segmentation, one-step review, joint angles, translations, timing, QC,

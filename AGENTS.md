@@ -34,6 +34,10 @@ retirement. A zero-debt ledger is not an everyday checklist.
   without hiding important choices, weakening validation, or inventing a
   parallel product interface. Keep scripts platform-independent when the
   underlying workflow is platform-independent.
+- Do not create a repository-root `scripts/` directory. Put automation beside
+  its single consumer: GitHub workflow helpers under `.github/scripts/`, test
+  runner support under `tests/runner/`, and agent-only wrappers under the
+  owning skill. Promote a script only when it has multiple stable consumers.
 - Validate an edited skill and exercise the changed script path. Record
   durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
   agent procedure in skills rather than duplicating it in human manuals.
@@ -135,9 +139,9 @@ tests, history, and details out of the public repository.
 
 - Run the smallest source-aligned test during branch iteration. Before a branch
   is ready for PR review, do not run broad changed-file or full-suite gates;
-  use focused fast tests for the current small step. Run `changedFast` and
-  `buildtool changed` only when preparing the branch for PR review, direct-main
-  integration, or another explicitly final handoff.
+  use focused fast tests for the current small step. Run `changedFast` once
+  when preparing a branch for PR review or direct-main integration. There is no
+  conservative local changed task; PR and main-push CI own complete validation.
 - After failure, fix and rerun the narrowest failed file, method, or suite; do not repeatedly
   invoke the planner. Exact commands and scope live in
   `docs/development/maintain-and-release/testing.md`.

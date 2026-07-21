@@ -18,12 +18,11 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../../../apps/index.html">Apps</a><a class="product-nav-link" href="../../../../reference/index.html">Functions</a><a class="product-nav-link" href="../../../../framework/index.html">Framework</a><a class="product-nav-link" href="../../../../development/index.html">Development</a><a class="product-nav-link active" href="../../../index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">App tools and presentation controls become more deliberate</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#compatibility-and-user-impact">Compatibility and user impact</a><a class="toc-link" href="#validation-and-evidence">Validation and evidence</a><a class="toc-link" href="#follow-up">Follow-up</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">App tools and presentation controls become more deliberate</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-data-impact">User and data impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="app-tools-and-presentation-controls-become-more-deliberate">App tools and presentation controls become more deliberate</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260720-app-tools-menu-and-screenshot-clipboard
+<pre><code class="language-labkit-change">id: LK-20260720-app-tools-menu-and-screenshot-clipboard
 date: 2026-07-20
 sequence: 141
 type: feat
@@ -44,15 +43,19 @@ scope: All tracked Apps</code></pre>
 <li>Added a line-count hint for compact status summaries and a general plot-view revision that accepts renderer-fitted limits once while preserving user zoom during ordinary redraws.</li>
 <li>Updated the getting-started and framework manuals.</li>
 </ul>
-<h2 id="compatibility-and-user-impact">Compatibility and user impact</h2>
+<h2 id="user-and-data-impact">User and data impact</h2>
 <p>App calculations, project files, plots, and exports are unchanged. Existing action tags continue to identify save screenshot, save state, load state, and plot commands, but users now reach them through the Tools hierarchy. Clipboard copy uses the operating system clipboard and may be unavailable in a noninteractive MATLAB session.</p>
-<h2 id="validation-and-evidence">Validation and evidence</h2>
+<h2 id="compatibility-and-migration">Compatibility and migration</h2>
+<p>No additional migration applies beyond the compatibility information in the preceding impact section.</p>
+<h2 id="validation">Validation</h2>
 <ul>
 <li>Hidden native-adapter GUI coverage verifies the menu hierarchy, labels, conditional Project State menu, stable action tags, and clipboard callback wiring.</li>
 <li>Focused framework tests validate the App SDK version and native runtime.</li>
 <li>Documentation rendering and consistency checks cover the updated manuals and history record.</li>
 </ul>
-<h2 id="follow-up">Follow-up</h2>
+<h2 id="evidence">Evidence</h2>
+<p>The validation details above are the supporting evidence for this record.</p>
+<h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
 <p>Developer-led interactive checks should confirm clipboard image fidelity and native menu appearance on supported MATLAB desktop platforms.</p><nav class="history-sequence-nav" aria-label="Adjacent history records"><a class="history-sequence-link older" href="LK-20260720-app-action-tooltips.html"><span>Previous change</span><strong>App actions require explanatory hover help</strong></a><a class="history-sequence-link newer" href="LK-20260720-reader-oriented-app-manuals-and-test-wrapper.html"><span>Next change</span><strong>App manuals become reader-oriented and focused tests gain one wrapper</strong></a></nav>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

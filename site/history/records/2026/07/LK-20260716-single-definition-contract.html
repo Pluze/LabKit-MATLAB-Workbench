@@ -18,16 +18,15 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../../../apps/index.html">Apps</a><a class="product-nav-link" href="../../../../reference/index.html">Functions</a><a class="product-nav-link" href="../../../../framework/index.html">Framework</a><a class="product-nav-link" href="../../../../development/index.html">Development</a><a class="product-nav-link active" href="../../../index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">Single-definition App product contract</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-developer-impact">User and developer impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">Single-definition App product contract</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-data-impact">User and data impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="single-definition-app-product-contract">Single-definition App product contract</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260716-single-definition-contract
+<pre><code class="language-labkit-change">id: LK-20260716-single-definition-contract
 date: 2026-07-16
 sequence: 77
 type: feat
-compatibility: additive
+compatibility: compatible
 component: `labkit.ui` | `7.1.0 -&gt; 7.2.0`
 scope: App authoring
 scope: Runtime V2 launch metadata</code></pre>
@@ -42,7 +41,7 @@ scope: Runtime V2 launch metadata</code></pre>
 <li>Kept the previous three-factory launch form only as a temporary bridge while existing Apps move in reviewed family-sized changes.</li>
 <li>Extended the minimal real-GUI launch test to obtain all metadata from the same definition.</li>
 </ul>
-<h2 id="user-and-developer-impact">User and developer impact</h2>
+<h2 id="user-and-data-impact">User and data impact</h2>
 <p>App users see no workflow or scientific change. App authors no longer need to keep three product declarations synchronized after their App is migrated.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <p>The addition is compatible within UI 7. Existing definitions continue to run during the migration window. Each App will move its exact metadata and facade ranges into <code>definition.m</code> before its redundant files are removed. The bridge is not a permanent supported architecture.</p>

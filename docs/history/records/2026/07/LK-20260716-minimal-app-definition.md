@@ -1,12 +1,11 @@
 # Minimal App definitions
 
 ```labkit-change
-schema: 2
 id: LK-20260716-minimal-app-definition
 date: 2026-07-16
 sequence: 76
 type: feat
-compatibility: additive
+compatibility: compatible
 component: `labkit.ui` | `7.0.0 -> 7.1.0`
 scope: App authoring
 scope: Runtime V2 definition defaults
@@ -39,7 +38,7 @@ data, transient cache, actions, or presentation.
 - Rewrote App-development entry guidance around capability tiers instead of a
   fixed list of placeholder files.
 
-## User and developer impact
+## User and data impact
 
 Existing Apps behave unchanged. A new static App does not need
 `createProject.m`, `createSession.m`, `validateProject.m`,

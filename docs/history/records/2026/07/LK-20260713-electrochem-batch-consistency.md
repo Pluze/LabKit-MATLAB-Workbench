@@ -1,14 +1,14 @@
 # Consistent electrochemistry batch analysis
 
 ```labkit-change
-schema: 2
 id: LK-20260713-electrochem-batch-consistency
 date: 2026-07-13
 sequence: 46
 type: fix
-compatibility: additive
+compatibility: compatible
 component: `labkit_CIC_app` | `1.3.7 -> 1.3.8`
 component: `labkit_VTResistance_app` | `1.3.7 -> 1.3.8`
+scope: Consistent electrochemistry batch analysis
 ```
 
 ## Context

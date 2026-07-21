@@ -69,8 +69,8 @@ gh run watch</code></pre>
 <p>When a change bumps <code>labkit_launcher.m</code>, a <code>+labkit/**/version.m</code> facade, or an App's <code>AppVersion</code> metadata in <code>apps/**/definition.m</code>:</p>
 <ol>
 <li>update the owning component documentation;</li>
-<li>add one history record with a stable Change ID, the next global history sequence, ISO date, change type, compatibility value, affected components, and direct version transition;</li>
-<li>explain context, decision and rationale, changes, user/data impact, compatibility, validation, evidence, and known follow-up;</li>
+<li>add one history record using the authoritative <a href="../../history/record-format.html">history record format</a>, including the stable Change ID, next global history sequence, affected components, and direct version transition;</li>
+<li>complete every required narrative section in that format;</li>
 <li>rebuild the generated site and verify the record appears on each affected component page.</li>
 </ol>
 <p>Write a cross-component change once and list every affected component in its metadata. Do not copy its narrative into multiple app pages. Current versions come from launcher, facade, and app source metadata, so there is no separate lookup table to synchronize. Git branches, PRs, tags, and commits express delivery state; do not add a second pending/unreleased hierarchy.</p>

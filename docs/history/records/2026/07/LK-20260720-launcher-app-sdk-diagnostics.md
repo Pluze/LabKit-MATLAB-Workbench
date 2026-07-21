@@ -1,7 +1,6 @@
 # Launcher adopts the App SDK diagnostic launch contract
 
 ```labkit-change
-schema: 2
 id: LK-20260720-launcher-app-sdk-diagnostics
 date: 2026-07-20
 sequence: 139
@@ -46,14 +45,19 @@ role when an installed framework is incomplete or damaged.
 - Excluded hidden class-folder implementation methods from public API and
   generated-documentation discovery.
 
-## Compatibility and user impact
+## User and data impact
 
 Existing normal launch, profiling, packaging, update, and documentation actions
 keep their public behavior. Debug launch now creates explicit diagnostic
 artifacts and opens the App with its synthetic scenario; it no longer invokes
 the retired string-mode or request-adapter contracts.
 
-## Validation and evidence
+
+## Compatibility and migration
+
+No additional migration applies beyond the compatibility information in the preceding impact section.
+
+## Validation
 
 - Focused Launcher GUI, catalog, progress, profiling, and documentation
   contracts.
@@ -61,7 +65,11 @@ the retired string-mode or request-adapter contracts.
   `events.jsonl` and `sample-pack.json` evidence.
 - Documentation source synchronization and public API discovery guardrails.
 
-## Follow-up
+## Evidence
+
+The validation details above are the supporting evidence for this record.
+
+## Known limitations and follow-up
 
 Developer-led interactive validation should confirm the visible debug launch,
 the selected App's synthetic state, and the usefulness of the generated

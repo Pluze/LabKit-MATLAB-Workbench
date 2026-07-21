@@ -1,7 +1,6 @@
 # CIC consolidates its project contract without losing lazy loading
 
 ```labkit-change
-schema: 2
 id: LK-20260716-cic-project-spec
 date: 2026-07-16
 sequence: 87
@@ -36,7 +35,7 @@ performance boundary, not lifecycle boilerplate.
 - Kept pulse detection, CIC formulas, units, limits, plots, and exports
   unchanged.
 
-## User and developer impact
+## User and data impact
 
 Launch, source selection, large-batch behavior, computation, save/load, and CSV
 exports behave unchanged. The App structure is smaller while the reason for

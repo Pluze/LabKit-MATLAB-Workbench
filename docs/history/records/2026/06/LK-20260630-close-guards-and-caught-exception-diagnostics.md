@@ -1,7 +1,6 @@
 # Close guards and caught-exception diagnostics
 
 ```labkit-change
-schema: 2
 id: LK-20260630-close-guards-and-caught-exception-diagnostics
 date: 2026-06-30
 sequence: 21
@@ -21,6 +20,7 @@ component: `labkit_NerveResponseAnalysis_app` | `1.2.3 -> 1.2.4`
 component: `labkit_ResponseReviewStats_app` | `1.2.2 -> 1.2.3`
 component: `labkit_RHSPreview_app` | `1.2.1 -> 1.2.2`
 component: `labkit_ECGPrint_app` | `1.2.0 -> 1.2.1`
+scope: Close guards and caught-exception diagnostics
 ```
 
 ## Context

@@ -1,13 +1,12 @@
 # T-Test Wizard adds table selection and first-versus-each comparisons
 
 ```labkit-change
-schema: 2
 id: LK-20260718-ttest-wizard-and-table-workspace
 date: 2026-07-19
 sequence: 135
 type: feat
-compatibility: additive
-introduced: `labkit_TTestWizard_app` | `1.0.0`
+compatibility: compatible
+component: `labkit_TTestWizard_app` | `new -> 1.0.0`
 component: `labkit.ui` | `7.5.1 -> 7.6.0`
 scope: Statistics
 scope: CSV exchange

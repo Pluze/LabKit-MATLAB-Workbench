@@ -1,7 +1,6 @@
 # UI 5 facade redesign, app migration, and plot refresh
 
 ```labkit-change
-schema: 2
 id: LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh
 date: 2026-07-06
 sequence: 38
@@ -23,7 +22,7 @@ component: `labkit_FLIRThermal_app` | `1.2.7 -> 1.2.8`
 component: `labkit_FocusStack_app` | `1.4.4 -> 1.4.5`
 component: `labkit_ImageEnhance_app` | `1.5.4 -> 1.5.5`
 component: `labkit_ImageMatch_app` | `1.5.4 -> 1.5.5`
-introduced: `labkit_FigureStudio_app` | `0.1.0`
+component: `labkit_FigureStudio_app` | `new -> 0.1.0`
 component: `labkit_FigureStudio_app` | `0.1.0 -> 0.1.1`
 component: `labkit_FigureStudio_app` | `0.1.1 -> 0.1.2`
 component: `labkit_FigureStudio_app` | `0.1.2 -> 0.1.4`
@@ -31,6 +30,7 @@ component: `labkit_NerveResponseAnalysis_app` | `1.3.3 -> 1.3.4`
 component: `labkit_ResponseReviewStats_app` | `1.3.3 -> 1.3.4`
 component: `labkit_RHSPreview_app` | `1.3.3 -> 1.3.4`
 component: `labkit_ECGPrint_app` | `1.3.4 -> 1.3.5`
+scope: UI 5 facade redesign, app migration, and plot refresh
 ```
 
 ## Context

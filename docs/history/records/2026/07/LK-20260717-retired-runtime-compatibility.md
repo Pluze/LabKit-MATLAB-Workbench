@@ -1,7 +1,6 @@
 # Runtime uses one source contract for launch, migration, and layout
 
 ```labkit-change
-schema: 2
 id: LK-20260717-retired-runtime-compatibility
 date: 2026-07-17
 sequence: 126
@@ -45,7 +44,7 @@ legacy MAT imports, and older supported payload versions remains intact.
 - Converted Runtime tests to complete single definitions and added regression
   checks for both retired contracts.
 
-## User and developer impact
+## User and data impact
 
 Current Apps and their project files behave the same. App developers have one
 place to review identity, version, requirements, layout, and optional runtime

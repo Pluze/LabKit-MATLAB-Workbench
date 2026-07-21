@@ -1,12 +1,11 @@
 # Structured evolution records
 
 ```labkit-change
-schema: 2
 id: LK-20260713-structured-evolution-records
 date: 2026-07-13
 sequence: 52
 type: docs
-compatibility: additive
+compatibility: compatible
 scope: repository changelog and release governance
 ```
 

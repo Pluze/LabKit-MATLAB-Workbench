@@ -1,7 +1,6 @@
 # Release validation gate and GUI CI hardening
 
 ```labkit-change
-schema: 2
 id: LK-20260708-release-validation-gate-and-gui-ci-hardening
 date: 2026-07-08
 sequence: 40

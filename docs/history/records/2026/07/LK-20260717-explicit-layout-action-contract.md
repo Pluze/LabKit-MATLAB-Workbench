@@ -1,7 +1,6 @@
 # Explicit layout action contract
 
 ```labkit-change
-schema: 2
 id: LK-20260717-explicit-layout-action-contract
 date: 2026-07-17
 sequence: 123

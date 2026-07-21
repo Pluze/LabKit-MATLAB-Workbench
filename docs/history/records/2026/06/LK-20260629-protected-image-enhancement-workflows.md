@@ -1,7 +1,6 @@
 # Protected image enhancement workflows
 
 ```labkit-change
-schema: 2
 id: LK-20260629-protected-image-enhancement-workflows
 date: 2026-06-29
 sequence: 16

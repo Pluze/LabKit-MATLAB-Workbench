@@ -1,12 +1,11 @@
 # Headless validation follows current documentation and App contracts
 
 ```labkit-change
-schema: 2
 id: LK-20260719-headless-validation-repair
 date: 2026-07-19
 sequence: 137
 type: fix
-compatibility: behavior-preserving
+compatibility: compatible
 component: `labkit_TTestWizard_app` | `1.0.0 -> 1.0.1`
 scope: Continuous integration
 scope: Documentation validation

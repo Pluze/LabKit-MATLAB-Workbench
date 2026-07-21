@@ -1,13 +1,12 @@
 # Minimal App contract and current authoring manuals
 
 ```labkit-change
-schema: 2
 id: LK-20260716-minimal-app-contract
 date: 2026-07-16
 sequence: 115
 type: docs
-compatibility: clarification
-component: `LabKit project` | documentation
+compatibility: compatible
+component: `labkit-project`
 scope: App authoring
 scope: Runtime V2 contract guardrails
 ```
@@ -41,7 +40,7 @@ and startup are added independently only when the product needs them.
 - Made the App package guardrail reject retired metadata, lifecycle, state,
   startup, and per-version migration files for every App shape.
 
-## User and developer impact
+## User and data impact
 
 App behavior and scientific results do not change. A developer can begin with
 three source files and add each larger architectural concept only when a real

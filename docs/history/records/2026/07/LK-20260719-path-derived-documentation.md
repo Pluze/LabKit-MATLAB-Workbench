@@ -1,12 +1,11 @@
 # Documentation structure becomes the navigation contract
 
 ```labkit-change
-schema: 2
 id: LK-20260719-path-derived-documentation
 date: 2026-07-19
 sequence: 136
 type: refactor
-compatibility: behavior-preserving
+compatibility: compatible
 component: `labkit_launcher` | `1.5.1 -> 1.5.2`
 scope: Documentation renderer
 scope: Documentation maintenance

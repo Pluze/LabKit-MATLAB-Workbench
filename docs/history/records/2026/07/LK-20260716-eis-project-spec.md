@@ -1,7 +1,6 @@
 # EIS consolidates its product and project contracts
 
 ```labkit-change
-schema: 2
 id: LK-20260716-eis-project-spec
 date: 2026-07-16
 sequence: 89
@@ -38,7 +37,7 @@ decoded ZCURVE items and source selection is genuine transient work.
 - Kept impedance values, Nyquist/Bode axis semantics, log scaling, zoom
   behavior, and export schemas unchanged.
 
-## User and developer impact
+## User and data impact
 
 Launch, multi-file selection, plotting, zoom, save/load, and export behavior
 remain unchanged. Project and transient state ownership are now adjacent and

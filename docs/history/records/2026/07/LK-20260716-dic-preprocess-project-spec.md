@@ -1,7 +1,6 @@
 # DIC Preprocess consolidates product and project declarations
 
 ```labkit-change
-schema: 2
 id: LK-20260716-dic-preprocess-project-spec
 date: 2026-07-16
 sequence: 84
@@ -36,7 +35,7 @@ state rather than defining persistence.
 - Kept registration, crop, mask, history, managed interactions, export, and
   scientific parameter behavior unchanged.
 
-## User and developer impact
+## User and data impact
 
 Manual and automatic alignment, zoom-preserving point/ROI editing, crop and
 mask history, project save/load, and exports behave unchanged. The durable and

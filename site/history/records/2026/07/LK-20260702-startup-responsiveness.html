@@ -22,14 +22,14 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="startup-responsiveness">Startup responsiveness</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260702-startup-responsiveness
+<pre><code class="language-labkit-change">id: LK-20260702-startup-responsiveness
 date: 2026-07-02
 sequence: 31
 type: perf
 compatibility: compatible
 component: `labkit_launcher` | `1.2.2 -&gt; 1.2.3`
-component: `labkit.ui` | `3.4.2 -&gt; 3.4.4`</code></pre>
+component: `labkit.ui` | `3.4.2 -&gt; 3.4.4`
+scope: Startup responsiveness</code></pre>
 <h2 id="context">Context</h2>
 <p>Profiling showed that a substantial part of perceived startup delay occurred after MATLAB had created the window but before it allowed the operating system to paint it. Launcher discovery and preview scroll setup also ran before their results were needed, leaving users with a blank or apparently frozen window.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

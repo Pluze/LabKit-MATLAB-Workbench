@@ -1,7 +1,6 @@
 # Documentation navigation follows topic hierarchy
 
 ```labkit-change
-schema: 2
 id: LK-20260717-hierarchical-documentation-navigation
 date: 2026-07-17
 sequence: 132

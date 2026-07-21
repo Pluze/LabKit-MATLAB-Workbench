@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="ui-groups-migration">UI groups migration</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260703-ui-groups-migration
+<pre><code class="language-labkit-change">id: LK-20260703-ui-groups-migration
 date: 2026-07-03
 sequence: 34
 type: refactor
@@ -45,7 +44,8 @@ component: `labkit_ImageMatch_app` | `1.5.2 -&gt; 1.5.3`
 component: `labkit_NerveResponseAnalysis_app` | `1.3.1 -&gt; 1.3.2`
 component: `labkit_ResponseReviewStats_app` | `1.3.1 -&gt; 1.3.2`
 component: `labkit_RHSPreview_app` | `1.3.1 -&gt; 1.3.2`
-component: `labkit_ECGPrint_app` | `1.3.2 -&gt; 1.3.3`</code></pre>
+component: `labkit_ECGPrint_app` | `1.3.2 -&gt; 1.3.3`
+scope: UI groups migration</code></pre>
 <h2 id="context">Context</h2>
 <p>The declarative runtime described actions as a mostly flat list with optional group hints. Apps with several phases could not reliably express which controls belonged together, and layout code had to infer more structure than the app had actually declared.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

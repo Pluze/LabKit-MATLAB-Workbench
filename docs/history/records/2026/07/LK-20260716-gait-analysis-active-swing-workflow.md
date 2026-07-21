@@ -1,7 +1,6 @@
 # Gait Analysis active-swing workflow
 
 ```labkit-change
-schema: 2
 id: LK-20260716-gait-analysis-active-swing-workflow
 date: 2026-07-16
 sequence: 71

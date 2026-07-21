@@ -1,7 +1,6 @@
 # Framework owns UI and compatibility documentation
 
 ```labkit-change
-schema: 2
 id: LK-20260717-framework-documentation-ownership
 date: 2026-07-17
 sequence: 133

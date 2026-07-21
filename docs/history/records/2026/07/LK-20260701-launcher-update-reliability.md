@@ -1,7 +1,6 @@
 # Launcher update reliability
 
 ```labkit-change
-schema: 2
 id: LK-20260701-launcher-update-reliability
 date: 2026-07-01
 sequence: 25
@@ -9,6 +8,7 @@ type: fix
 compatibility: compatible
 component: `labkit_launcher` | `1.1.3 -> 1.1.4`
 component: `labkit_launcher` | `1.1.4 -> 1.1.5`
+scope: Launcher update reliability
 ```
 
 ## Context

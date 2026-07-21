@@ -1,7 +1,6 @@
 # EIS delegates source identity reconciliation to Runtime V2
 
 ```labkit-change
-schema: 2
 id: LK-20260716-eis-runtime-source-reconciliation
 date: 2026-07-16
 sequence: 110

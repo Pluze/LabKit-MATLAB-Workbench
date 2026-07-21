@@ -1,7 +1,6 @@
 # DIC uses framework-owned optional source slots
 
 ```labkit-change
-schema: 2
 id: LK-20260716-dic-source-slots
 date: 2026-07-16
 sequence: 93
@@ -41,7 +40,7 @@ without hiding corrupt project data.
 - Preserved alignment, crop, mask, anchor, rendering, calculation, and export
   behavior.
 
-## User and developer impact
+## User and data impact
 
 An empty DIC project still presents empty file controls and enables them as the
 workflow requires. Selected and relinked files load through the same paths.

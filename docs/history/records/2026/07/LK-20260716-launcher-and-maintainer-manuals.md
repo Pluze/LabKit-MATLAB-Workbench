@@ -1,13 +1,12 @@
 # Launcher and maintainer tool manuals
 
 ```labkit-change
-schema: 2
 id: LK-20260716-launcher-and-maintainer-manuals
 date: 2026-07-16
 sequence: 63
 type: docs
-compatibility: additive
-component: `labkit_launcher` | documentation
+compatibility: compatible
+component: `labkit_launcher`
 scope: `docs/apps/labkit-core/launcher/`
 scope: `docs/development/tools/`
 scope: `docs/development/maintain-and-release/testing.md`

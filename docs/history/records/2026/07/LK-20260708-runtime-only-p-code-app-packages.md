@@ -1,7 +1,6 @@
 # Runtime-only P-code app packages
 
 ```labkit-change
-schema: 2
 id: LK-20260708-runtime-only-p-code-app-packages
 date: 2026-07-08
 sequence: 41

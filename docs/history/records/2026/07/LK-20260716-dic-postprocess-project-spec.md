@@ -1,7 +1,6 @@
 # DIC Postprocess adopts one product and project declaration
 
 ```labkit-change
-schema: 2
 id: LK-20260716-dic-postprocess-project-spec
 date: 2026-07-16
 sequence: 83
@@ -38,7 +37,7 @@ serialized into the project.
 - Kept all calculation, parameter, action, presentation, and export behavior
   unchanged.
 
-## User and developer impact
+## User and data impact
 
 Ncorr loading, overlay preparation, statistics, save/load, and exports behave
 unchanged. Maintainers can now find the complete product contract in one file

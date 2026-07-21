@@ -1,7 +1,6 @@
 # CIC uses Runtime-owned source and workflow mechanics
 
 ```labkit-change
-schema: 2
 id: LK-20260716-cic-runtime-source-reconciliation
 date: 2026-07-16
 sequence: 112

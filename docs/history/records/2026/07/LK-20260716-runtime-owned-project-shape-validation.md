@@ -1,7 +1,6 @@
 # Runtime-owned project shape validation
 
 ```labkit-change
-schema: 2
 id: LK-20260716-runtime-owned-project-shape-validation
 date: 2026-07-16
 sequence: 117

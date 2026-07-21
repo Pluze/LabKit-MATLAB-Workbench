@@ -2,8 +2,7 @@ function plan = buildfile
 %BUILDFILE LabKit build and validation entry points.
 %
 % User-facing commands:
-%   buildtool changed       conservative validation routed from the git diff
-%   buildtool changedFast   faster local iteration routed from the git diff
+%   buildtool changedFast   local pre-push validation routed from the git diff
 %   buildtool docs          rebuild the tracked static documentation site
 %   buildtool docsCheck     verify the tracked site matches its sources
 %   buildtool headless      full non-GUI validation
@@ -25,10 +24,6 @@ function plan = buildfile
     for k = 1:numel(catalog)
         plan(catalog(k).Name).Description = catalog(k).Description;
     end
-end
-
-function changedTask(~)
-    runCatalogTask("changed");
 end
 
 function changedFastTask(~)

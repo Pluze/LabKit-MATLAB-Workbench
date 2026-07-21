@@ -1,7 +1,6 @@
 # App alerts through UI facade
 
 ```labkit-change
-schema: 2
 id: LK-20260630-app-alerts-through-ui-facade
 date: 2026-06-30
 sequence: 22
@@ -21,6 +20,7 @@ component: `labkit_FocusStack_app` | `1.2.4 -> 1.2.5`
 component: `labkit_ImageEnhance_app` | `1.3.3 -> 1.3.4`
 component: `labkit_ImageMatch_app` | `1.3.4 -> 1.3.5`
 component: `labkit_ECGPrint_app` | `1.2.1 -> 1.2.2`
+scope: App alerts through UI facade
 ```
 
 ## Context

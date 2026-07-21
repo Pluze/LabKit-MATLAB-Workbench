@@ -1,7 +1,6 @@
 # Documentation rendering avoids repeated model capture
 
 ```labkit-change
-schema: 2
 id: LK-20260717-documentation-render-performance
 date: 2026-07-17
 sequence: 130

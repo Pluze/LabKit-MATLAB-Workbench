@@ -1,7 +1,6 @@
 # DIC Preprocess replaces its generic state bucket
 
 ```labkit-change
-schema: 2
 id: LK-20260716-dic-preprocess-state-capabilities
 date: 2026-07-16
 sequence: 85
@@ -37,7 +36,7 @@ Preprocess.
   the capability paths.
 - Removed the generic `+appState` package without adding an adapter.
 
-## User and developer impact
+## User and data impact
 
 All controls, calculations, undo limits, project fields, masks, alignment/crop
 history, and viewport behavior are unchanged. Code navigation now starts from

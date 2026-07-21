@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="flir-display-tuning">FLIR display tuning</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260703-flir-display-tuning
+<pre><code class="language-labkit-change">id: LK-20260703-flir-display-tuning
 date: 2026-07-03
 sequence: 36
 type: feat
@@ -31,7 +30,8 @@ compatibility: compatible
 component: `labkit_CSC_app` | `1.3.6 -&gt; 1.3.7`
 component: `labkit_FLIRThermal_app` | `1.2.4 -&gt; 1.2.5`
 component: `labkit_FLIRThermal_app` | `1.2.5 -&gt; 1.2.6`
-component: `labkit_FLIRThermal_app` | `1.2.6 -&gt; 1.2.7`</code></pre>
+component: `labkit_FLIRThermal_app` | `1.2.6 -&gt; 1.2.7`
+scope: FLIR display tuning</code></pre>
 <h2 id="context">Context</h2>
 <p>The initial FLIR renderer used a fixed color transfer. Images with a narrow or skewed temperature distribution could therefore hide useful contrast even when the numeric range was correct. CSC voltage/current CSV output also needed clearer cycle organization for direct downstream use.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

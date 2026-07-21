@@ -18,12 +18,11 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../../../apps/index.html">Apps</a><a class="product-nav-link" href="../../../../reference/index.html">Functions</a><a class="product-nav-link" href="../../../../framework/index.html">Framework</a><a class="product-nav-link" href="../../../../development/index.html">Development</a><a class="product-nav-link active" href="../../../index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">Figure Studio preserves common graphics and styles semantic categories</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#compatibility-and-user-impact">Compatibility and user impact</a><a class="toc-link" href="#validation-and-evidence">Validation and evidence</a><a class="toc-link" href="#follow-up">Follow-up</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">Figure Studio preserves common graphics and styles semantic categories</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-data-impact">User and data impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="figure-studio-preserves-common-graphics-and-styles-semantic-categories">Figure Studio preserves common graphics and styles semantic categories</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260720-figure-studio-semantic-restyling
+<pre><code class="language-labkit-change">id: LK-20260720-figure-studio-semantic-restyling
 date: 2026-07-20
 sequence: 145
 type: feat
@@ -55,16 +54,20 @@ scope: Test runner</code></pre>
 <li>Bound heartbeat work at timer creation so path-isolation contracts cannot remove a method needed by an active progress callback.</li>
 <li>Removed internal worker planning, partitioning, process launch, shard selectors, and speculative JUnit shard estimates. Local and CI broad tasks now share the same single-process runner.</li>
 </ul>
-<h2 id="compatibility-and-user-impact">Compatibility and user impact</h2>
+<h2 id="user-and-data-impact">User and data impact</h2>
 <p>Existing schema 1 documents migrate automatically to schema 2, keeping saved values and supplying defaults only for newly introduced style categories. Supported figures retain more visible content, while unsupported MATLAB chart classes continue to produce explicit warnings. Normal App launches remain visible; only official hidden or minimized validation modes change final window presentation.</p>
-<h2 id="validation-and-evidence">Validation and evidence</h2>
+<h2 id="compatibility-and-migration">Compatibility and migration</h2>
+<p>No additional migration applies beyond the compatibility information in the preceding impact section.</p>
+<h2 id="validation">Validation</h2>
 <ul>
 <li>Result-file tests exercise extraction, FIG reopening, recreation-script execution, legend metadata, constant-line labels, semantic styling, and idempotent preset application.</li>
 <li>Figure Studio source-axis and hidden-GUI suites cover source defaults, LabKit handoff defaults, the new control surface, preview stability, and popout handoff. Project tests cover schema 1 style migration.</li>
 <li>Framework GUI coverage verifies that the final show operation retains hidden mode, and a direct DIC Preprocess entrypoint test exercises the full launch path.</li>
 <li>A same-machine cold-process comparison measured 470 seconds wall time and 876 seconds CPU time for the serial headless gate versus 490 seconds wall time and 1,215 seconds CPU time for three workers. Worker artifacts also confirmed that heartbeat updates survived the isolated-path contract.</li>
 </ul>
-<h2 id="follow-up">Follow-up</h2>
+<h2 id="evidence">Evidence</h2>
+<p>The validation details above are the supporting evidence for this record.</p>
+<h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
 <p>Developer-led visual review remains responsible for aesthetic judgment, unusual third-party chart classes, native window behavior, and plot-specific overlap after manual legend placement.</p><nav class="history-sequence-nav" aria-label="Adjacent history records"><a class="history-sequence-link older" href="LK-20260720-public-api-escalation-order.html"><span>Previous change</span><strong>Framework public APIs become an explicit last resort</strong></a><a class="history-sequence-link newer" href="LK-20260720-ranked-and-scoped-documentation-search.html"><span>Next change</span><strong>Documentation search ranks page intent and scopes history explicitly</strong></a></nav>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

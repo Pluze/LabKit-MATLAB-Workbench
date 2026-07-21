@@ -1,7 +1,6 @@
 # Image Match adopts capability-owned structure
 
 ```labkit-change
-schema: 2
 id: LK-20260716-image-match-structure
 date: 2026-07-16
 sequence: 96
@@ -41,7 +40,7 @@ tasks with result writing.
 - Corrected the GUI-free manual example to use the real `applyPipeline`
   argument order and cell output.
 
-## User and developer impact
+## User and data impact
 
 Reference/source selection, lazy preview loading, match history, calculation,
 duplicate-export detection, project reopen, and export formats behave

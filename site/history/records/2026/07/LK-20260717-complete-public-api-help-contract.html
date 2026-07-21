@@ -18,12 +18,11 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../../../apps/index.html">Apps</a><a class="product-nav-link" href="../../../../reference/index.html">Functions</a><a class="product-nav-link" href="../../../../framework/index.html">Framework</a><a class="product-nav-link" href="../../../../development/index.html">Development</a><a class="product-nav-link active" href="../../../index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">Public API help is complete, discoverable, and behavior checked</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-developer-impact">User and developer impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a><a class="toc-link" href="#functions-and-api">Functions And API</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">Public API help is complete, discoverable, and behavior checked</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-data-impact">User and data impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a><a class="toc-link" href="#functions-and-api">Functions And API</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="public-api-help-is-complete-discoverable-and-behavior-checked">Public API help is complete, discoverable, and behavior checked</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260717-complete-public-api-help-contract
+<pre><code class="language-labkit-change">id: LK-20260717-complete-public-api-help-contract
 date: 2026-07-17
 sequence: 127
 type: docs
@@ -59,7 +58,7 @@ scope: Documentation contract tests</code></pre>
 <li>Made <code>labkit.image.resizeToFit</code> reject unsupported interpolation method names instead of silently treating them as bilinear.</li>
 <li>Linked owning library and App manuals to the detailed generated reference.</li>
 </ul>
-<h2 id="user-and-developer-impact">User and developer impact</h2>
+<h2 id="user-and-data-impact">User and data impact</h2>
 <p>Readers can now determine valid calls, defaults, option domains, outputs, empty-result behavior, errors, and adjacent functions from the generated page for a public symbol. Developers adding a public function or a standard option read receive a focused contract failure when the corresponding help is incomplete.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <p>No saved project or data migration is required. Existing valid calls are unchanged. A call to <code>labkit.image.resizeToFit</code> with a method other than <code>&quot;bilinear&quot;</code> or <code>&quot;nearest&quot;</code> now raises <code>labkit:image:InvalidResizeMethod</code>; such values were never part of the documented contract.</p>

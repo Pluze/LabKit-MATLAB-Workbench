@@ -1,12 +1,11 @@
 # Framework public APIs become an explicit last resort
 
 ```labkit-change
-schema: 2
 id: LK-20260720-public-api-escalation-order
 date: 2026-07-20
 sequence: 144
 type: docs
-compatibility: behavior-preserving
+compatibility: compatible
 scope: Architecture guidance
 scope: Agent skills
 ```
@@ -40,19 +39,28 @@ genuine reusable boundary has emerged.
   an existing focused extension from review of a genuinely new public
   surface.
 
-## Compatibility and user impact
+## User and data impact
 
 Runtime behavior, public signatures, App calculations, projects, and exports
 are unchanged. The rule affects future design choices and review evidence.
 
-## Validation and evidence
+
+## Compatibility and migration
+
+No additional migration applies beyond the compatibility information in the preceding impact section.
+
+## Validation
 
 - Skill package validation covers every edited skill.
 - Documentation history rendering and consistency checks cover this record.
 - Repository searches confirm the escalation order appears at the three
   ownership layers and in the relevant skills.
 
-## Follow-up
+## Evidence
+
+The validation details above are the supporting evidence for this record.
+
+## Known limitations and follow-up
 
 When a proposed public API crosses the stated threshold, record its consumers,
 ownership rationale, alternatives considered, and compatibility contract in

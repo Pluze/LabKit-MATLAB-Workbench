@@ -1,7 +1,6 @@
 # Documentation search ranks page intent and scopes history explicitly
 
-\`\`\`labkit-change
-schema: 2
+```labkit-change
 id: LK-20260720-ranked-and-scoped-documentation-search
 date: 2026-07-20
 sequence: 146
@@ -10,7 +9,7 @@ compatibility: compatible
 scope: Documentation system
 scope: tools/docs/
 scope: site search
-\`\`\`
+```
 
 ## Context
 

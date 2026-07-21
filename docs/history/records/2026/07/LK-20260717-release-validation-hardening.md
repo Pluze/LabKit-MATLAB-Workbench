@@ -1,7 +1,6 @@
 # Release validation includes Base MATLAB compatibility
 
 ```labkit-change
-schema: 2
 id: LK-20260717-release-validation-hardening
 date: 2026-07-17
 sequence: 129

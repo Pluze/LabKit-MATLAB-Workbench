@@ -1,7 +1,6 @@
 # Nerve Response Analysis uses fixed source identities
 
 ```labkit-change
-schema: 2
 id: LK-20260716-nerve-response-structure
 date: 2026-07-16
 sequence: 107

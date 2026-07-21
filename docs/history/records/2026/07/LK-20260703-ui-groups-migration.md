@@ -1,7 +1,6 @@
 # UI groups migration
 
 ```labkit-change
-schema: 2
 id: LK-20260703-ui-groups-migration
 date: 2026-07-03
 sequence: 34
@@ -25,6 +24,7 @@ component: `labkit_NerveResponseAnalysis_app` | `1.3.1 -> 1.3.2`
 component: `labkit_ResponseReviewStats_app` | `1.3.1 -> 1.3.2`
 component: `labkit_RHSPreview_app` | `1.3.1 -> 1.3.2`
 component: `labkit_ECGPrint_app` | `1.3.2 -> 1.3.3`
+scope: UI groups migration
 ```
 
 ## Context

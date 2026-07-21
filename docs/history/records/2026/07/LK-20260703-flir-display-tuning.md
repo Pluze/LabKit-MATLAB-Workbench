@@ -1,7 +1,6 @@
 # FLIR display tuning
 
 ```labkit-change
-schema: 2
 id: LK-20260703-flir-display-tuning
 date: 2026-07-03
 sequence: 36
@@ -11,6 +10,7 @@ component: `labkit_CSC_app` | `1.3.6 -> 1.3.7`
 component: `labkit_FLIRThermal_app` | `1.2.4 -> 1.2.5`
 component: `labkit_FLIRThermal_app` | `1.2.5 -> 1.2.6`
 component: `labkit_FLIRThermal_app` | `1.2.6 -> 1.2.7`
+scope: FLIR display tuning
 ```
 
 ## Context

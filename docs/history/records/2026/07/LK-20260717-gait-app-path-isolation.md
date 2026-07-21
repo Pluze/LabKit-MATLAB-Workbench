@@ -1,7 +1,6 @@
 # Gait consumes the Video Marker file contract without a sibling App dependency
 
 ```labkit-change
-schema: 2
 id: LK-20260717-gait-app-path-isolation
 date: 2026-07-17
 sequence: 124
@@ -46,7 +45,7 @@ package.
 - Documented the saved-data boundary in the App development guide and Gait
   manual.
 
-## User and developer impact
+## User and data impact
 
 Gait debug startup and its packaged App behavior no longer depend on every
 public App being present on the MATLAB path. Users continue to open the same

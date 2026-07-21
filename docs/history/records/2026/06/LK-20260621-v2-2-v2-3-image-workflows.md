@@ -1,7 +1,6 @@
 # v2.2 to v2.3.1: self-contained launch and image workflow refinement
 
 ```labkit-change
-schema: 2
 id: LK-20260621-v2-2-v2-3-image-workflows
 date: 2026-06-21
 sequence: 8

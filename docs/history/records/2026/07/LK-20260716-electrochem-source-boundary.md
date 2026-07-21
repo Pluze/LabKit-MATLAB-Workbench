@@ -1,7 +1,6 @@
 # Electrochem Apps stop reading portable references
 
 ```labkit-change
-schema: 2
 id: LK-20260716-electrochem-source-boundary
 date: 2026-07-16
 sequence: 92
@@ -38,7 +37,7 @@ of the portable-reference storage schema.
 - Kept DTA parsing, formulas, thresholds, plots, exports, and error wording
   unchanged.
 
-## User and developer impact
+## User and data impact
 
 File selection, project reopen/relink, calculation, preview, and export behavior
 are unchanged. App code now expresses only its workflow use of paths; Runtime

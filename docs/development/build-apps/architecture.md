@@ -14,9 +14,13 @@ apps/      workflow-specific GUI apps and app-owned helpers
 +labkit/   reusable UI, image, thermal, DTA, RHS, and biosignal facades
 tests/     behavior tests, project contracts, GUI checks, shared helpers, and runner code
 docs/      human-facing usage, API, architecture, and validation docs
-scripts/   CI helper scripts
 tools/     maintainer diagnostics, deployment packagers, and report generators
+.github/scripts/  GitHub Actions-only helper scripts
 ```
+
+The repository root has no generic `scripts/` bucket. Keep automation beside
+its single consumer; promote it to a shared owner only when several stable
+consumers genuinely need the same operation.
 
 Apps should remain independently launchable. The reusable library should grow
 only when a helper is domain-neutral, app-facing, tested, and useful beyond one

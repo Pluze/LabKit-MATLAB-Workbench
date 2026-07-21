@@ -1,7 +1,6 @@
 # Image app workflow improvements
 
 ```labkit-change
-schema: 2
 id: LK-20260701-image-app-workflow-improvements
 date: 2026-07-01
 sequence: 27
@@ -17,6 +16,7 @@ component: `labkit_FLIRThermal_app` | `1.0.0 -> 1.1.0`
 component: `labkit_FLIRThermal_app` | `1.1.0 -> 1.1.2`
 component: `labkit_ImageEnhance_app` | `1.4.0 -> 1.4.1`
 component: `labkit_ImageMatch_app` | `1.4.0 -> 1.4.1`
+scope: Image app workflow improvements
 ```
 
 ## Context

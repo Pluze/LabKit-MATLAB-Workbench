@@ -1,7 +1,6 @@
 # App SDK explicit contract replaces the retired UI runtime
 
 ```labkit-change
-schema: 2
 id: LK-20260719-ui-explicit-contract-migration
 date: 2026-07-19
 sequence: 138

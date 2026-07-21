@@ -121,16 +121,13 @@ end
 function output = runValidationPlan(root, opts)
     ensurePlanHasNoExplicitSelectors(opts);
     planName = opts.Plan;
-    if planName == "changed"
-        changedPaths = detectAffectedValidationPaths(root);
-        steps = labkitValidationPlanForChangedPaths(root, changedPaths);
-    elseif planName == "changedfast"
+    if planName == "changedfast"
         changedPaths = detectAffectedValidationPaths(root);
         steps = labkitValidationPlanForChangedPaths(root, changedPaths, ...
             "Mode", "fast");
     else
         error("LabKit:Tests:UnknownValidationPlan", ...
-            "Plan must be changed or changedFast: %s.", planName);
+            "Plan must be changedFast: %s.", planName);
     end
 
     if isempty(steps)
@@ -257,7 +254,7 @@ function assertChangedValidationGitAvailable(root)
     [status, output] = system(char(command));
     if status ~= 0 || strip(string(output)) ~= "true"
         error("LabKit:Tests:ChangedRequiresGit", ...
-            "The changed build task requires git and a git checkout. Use buildtool headless when git state is unavailable.");
+            "The changedFast build task requires git and a git checkout. Use buildtool headless when git state is unavailable.");
     end
 end
 

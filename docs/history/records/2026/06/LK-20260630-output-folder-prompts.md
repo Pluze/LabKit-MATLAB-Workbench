@@ -1,7 +1,6 @@
 # Output folder prompts
 
 ```labkit-change
-schema: 2
 id: LK-20260630-output-folder-prompts
 date: 2026-06-30
 sequence: 20
@@ -16,6 +15,7 @@ component: `labkit_ImageEnhance_app` | `1.3.1 -> 1.3.2`
 component: `labkit_ImageMatch_app` | `1.3.1 -> 1.3.2`
 component: `labkit_NerveResponseAnalysis_app` | `1.2.1 -> 1.2.3`
 component: `labkit_ResponseReviewStats_app` | `1.2.1 -> 1.2.2`
+scope: Output folder prompts
 ```
 
 ## Context

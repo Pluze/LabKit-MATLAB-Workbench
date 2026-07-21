@@ -38,12 +38,11 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
             testCase.verifyEqual(physicalLines, 8);
         end
 
-        function scriptsDoNotContainMatlabEntryScripts(testCase)
+        function repositoryRootDoesNotContainGenericScriptsDirectory(testCase)
             root = setupLabKitTestPath();
-            actual = collectRelativeFiles(root, fullfile(root, 'scripts', '*.m'));
-            testCase.verifyEmpty(actual, ...
-                ['launcher-owned MATLAB helpers must remain inside ' ...
-                'labkit_launcher.m. Files: ' strjoin(cellstr(actual), ', ')]);
+            testCase.verifyFalse(isfolder(fullfile(root, "scripts")), ...
+                ["Do not create a repository-root scripts directory. Place " ...
+                "automation with its owning consumer instead."]);
         end
 
         function charPathListsDoNotUseBracketConcatenation(testCase)

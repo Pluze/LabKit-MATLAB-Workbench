@@ -1,7 +1,6 @@
 # Response Review Stats uses one project contract
 
 ```labkit-change
-schema: 2
 id: LK-20260716-response-review-structure
 date: 2026-07-16
 sequence: 105
@@ -37,7 +36,7 @@ and remain unchanged.
 - Replaced direct portable-reference reads with semantic `sourcePaths` lookup.
 - Removed the generic lifecycle package and separate requirement/version files.
 
-## User and developer impact
+## User and data impact
 
 Analysis JSON and segment CSV loading, automatic window recomputation, aligned
 preview, metric summaries, reset, output-folder choice, CSV export, and result

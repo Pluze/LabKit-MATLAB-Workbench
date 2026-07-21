@@ -1,12 +1,11 @@
 # Runtime exposes GUI-free source-record creation
 
 ```labkit-change
-schema: 2
 id: LK-20260716-gui-free-source-records
 date: 2026-07-16
 sequence: 100
 type: feat
-compatibility: additive
+compatibility: compatible
 component: `labkit.ui` | `7.4.1 -> 7.4.2`
 scope: Runtime V2 sources
 scope: App project migration
@@ -36,7 +35,7 @@ Runtime. The injected callback service uses the same factory.
 - Extended source tests to cover factory output and invalid inputs.
 - Updated the framework API map and portable-source guidance.
 
-## User and developer impact
+## User and data impact
 
 User project behavior is unchanged. App authors can now implement project
 migrations and legacy imports without opening a UI callback or constructing

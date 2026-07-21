@@ -1,7 +1,6 @@
 # CSC consolidates its product and project contracts
 
 ```labkit-change
-schema: 2
 id: LK-20260716-csc-project-spec
 date: 2026-07-16
 sequence: 88
@@ -35,7 +34,7 @@ CV/CT curves and restoring file/cycle selection is genuine transient work.
 - Kept integration formulas, sign splitting, scan-rate handling, area
   normalization, plots, and export schemas unchanged.
 
-## User and developer impact
+## User and data impact
 
 Launch, source and cycle selection, save/load, calculations, plots, and both
 export paths behave unchanged. The durable contract is now readable in one

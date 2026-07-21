@@ -1,7 +1,6 @@
 # CSC delegates decoded-source identity to Runtime V2
 
 ```labkit-change
-schema: 2
 id: LK-20260716-csc-runtime-source-reconciliation
 date: 2026-07-16
 sequence: 113

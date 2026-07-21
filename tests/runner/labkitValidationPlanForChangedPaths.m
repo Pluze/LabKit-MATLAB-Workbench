@@ -44,9 +44,9 @@ function steps = stepsForChangedPath(root, path)
     elseif path == "README.md"
         steps = planStep("project_docs", "project/docs", false, ...
             "Reason", "README change needs documentation guardrails");
-    elseif isProjectRoutingPath(path)
-        steps = planStep("project", "project", false, ...
-            "Reason", "project or validation-policy file changed");
+    elseif endsWith(path, "AGENTS.md") || first == ".agents"
+        steps = planStep("project_docs", "project/docs", false, ...
+            "Reason", "repository or agent guidance changed");
     elseif first == "+labkit"
         steps = labkitPackageSteps(parts);
     elseif first == "apps"
@@ -57,11 +57,20 @@ function steps = stepsForChangedPath(root, path)
         steps = docPathSteps();
     elseif first == "tools"
         steps = toolPathSteps(parts);
-    elseif startsWith(first, ".github") || first == ".agents"
-        steps = planStep("project", "project", false, ...
-            "Reason", "agent docs or GitHub workflow changed");
+    elseif first == ".github"
+        steps = githubPathSteps(parts);
     else
         steps = fullNonGuiStep();
+    end
+end
+
+function steps = githubPathSteps(parts)
+    if numel(parts) >= 2 && ismember(parts(2), ["workflows", "scripts"])
+        steps = planStep("project_ci", "project/ci", false, ...
+            "Reason", "GitHub workflow or CI helper changed");
+    else
+        steps = planStep("project_docs", "project/docs", false, ...
+            "Reason", "GitHub contribution template changed");
     end
 end
 
@@ -261,15 +270,6 @@ function consumers = sharedHelperConsumers(root, filename)
     end
     consumers.guiTests = unique(consumers.guiTests, "stable");
     consumers.nonGuiTests = unique(consumers.nonGuiTests, "stable");
-end
-
-function tf = isProjectRoutingPath(path)
-    path = string(path);
-    tf = ismember(path, [ ...
-        "AGENTS.md", ...
-        "+labkit/AGENTS.md", ...
-        "apps/AGENTS.md", ...
-        "tests/AGENTS.md"]);
 end
 
 function tests = launcherProjectTests()

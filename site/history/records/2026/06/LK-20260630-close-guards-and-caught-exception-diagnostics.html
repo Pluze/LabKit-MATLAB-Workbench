@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="close-guards-and-caught-exception-diagnostics">Close guards and caught-exception diagnostics</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260630-close-guards-and-caught-exception-diagnostics
+<pre><code class="language-labkit-change">id: LK-20260630-close-guards-and-caught-exception-diagnostics
 date: 2026-06-30
 sequence: 21
 type: feat
@@ -41,7 +40,8 @@ component: `labkit_ImageMatch_app` | `1.3.3 -&gt; 1.3.4`
 component: `labkit_NerveResponseAnalysis_app` | `1.2.3 -&gt; 1.2.4`
 component: `labkit_ResponseReviewStats_app` | `1.2.2 -&gt; 1.2.3`
 component: `labkit_RHSPreview_app` | `1.2.1 -&gt; 1.2.2`
-component: `labkit_ECGPrint_app` | `1.2.0 -&gt; 1.2.1`</code></pre>
+component: `labkit_ECGPrint_app` | `1.2.0 -&gt; 1.2.1`
+scope: Close guards and caught-exception diagnostics</code></pre>
 <h2 id="context">Context</h2>
 <p>Many app callbacks caught an exception, showed its message, and returned. That protected the UI but discarded the stack and callback context needed to diagnose the failure. Image apps also tracked unsaved or incomplete work in slightly different ways when deciding whether a window could close.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

@@ -1,7 +1,6 @@
 # Durable Video Marker source metadata
 
 ```labkit-change
-schema: 2
 id: LK-20260716-video-marker-durable-metadata
 date: 2026-07-16
 sequence: 70

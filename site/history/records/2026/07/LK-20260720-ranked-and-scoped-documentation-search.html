@@ -22,7 +22,14 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="documentation-search-ranks-page-intent-and-scopes-history-explicitly">Documentation search ranks page intent and scopes history explicitly</h1>
-<p>\<code>\</code>\<code>labkit-change schema: 2 id: LK-20260720-ranked-and-scoped-documentation-search date: 2026-07-20 sequence: 146 type: docs compatibility: compatible scope: Documentation system scope: tools/docs/ scope: site search \</code>\<code>\</code></p>
+<pre><code class="language-labkit-change">id: LK-20260720-ranked-and-scoped-documentation-search
+date: 2026-07-20
+sequence: 146
+type: docs
+compatibility: compatible
+scope: Documentation system
+scope: tools/docs/
+scope: site search</code></pre>
 <h2 id="context">Context</h2>
 <p>The generated documentation search treated every term in a page title, body, and rendered component-history links as equivalent. A shared history record could therefore make an unrelated App page appear before the App named by a search. Readers also had no way to restrict a query to history records.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

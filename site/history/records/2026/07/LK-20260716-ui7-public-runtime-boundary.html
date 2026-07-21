@@ -18,12 +18,11 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../../../apps/index.html">Apps</a><a class="product-nav-link" href="../../../../reference/index.html">Functions</a><a class="product-nav-link" href="../../../../framework/index.html">Framework</a><a class="product-nav-link" href="../../../../development/index.html">Development</a><a class="product-nav-link active" href="../../../index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">UI 7 public runtime boundary</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-developer-impact">User and developer impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">UI 7 public runtime boundary</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-data-impact">User and data impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="ui-7-public-runtime-boundary">UI 7 public runtime boundary</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260716-ui7-public-runtime-boundary
+<pre><code class="language-labkit-change">id: LK-20260716-ui7-public-runtime-boundary
 date: 2026-07-16
 sequence: 75
 type: refactor
@@ -64,7 +63,7 @@ scope: Runtime V2 busy and persistence mechanics</code></pre>
 <li>Updated all tracked Apps to declare the UI 7 compatibility range without changing their domain behavior or project payload versions.</li>
 <li>Replaced tests that fabricated references through a public helper with project-level save/move/load coverage or explicit legacy fixtures.</li>
 </ul>
-<h2 id="user-and-developer-impact">User and developer impact</h2>
+<h2 id="user-and-data-impact">User and data impact</h2>
 <p>App users see no workflow or saved-data change. App developers initiate work through semantic actions and create source records through <code>services.project.sourceRecord</code>; the runtime owns the corresponding busy and serialization mechanics. Code that called the three removed UI 6 functions must move to those lifecycle contracts before adopting UI 7.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <p>The change is a deliberate public API break and therefore increments the UI facade major version. Every tracked App now requires <code>labkit.ui &gt;=7 &lt;8</code>. Runtime V2 project envelopes, App payload versions, and portable-reference field names are unchanged, so saved projects require no data migration.</p>

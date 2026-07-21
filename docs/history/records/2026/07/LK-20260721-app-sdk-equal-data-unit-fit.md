@@ -1,7 +1,6 @@
 # App SDK supports equal-data-unit plot fitting
 
 ```labkit-change
-schema: 2
 id: LK-20260721-app-sdk-equal-data-unit-fit
 date: 2026-07-21
 sequence: 148

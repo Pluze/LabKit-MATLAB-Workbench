@@ -1,7 +1,6 @@
 # Runtime owns portable source-reference details
 
 ```labkit-change
-schema: 2
 id: LK-20260716-source-path-accessor
 date: 2026-07-16
 sequence: 91
@@ -40,7 +39,7 @@ resource-service construction merely to read a path.
 - Stopped documenting portable-reference fields as an App read contract.
 - Added the accessor to the guarded public UI runtime surface.
 
-## User and developer impact
+## User and data impact
 
 Saved projects and file resolution behave unchanged. App code can now read,
 compare, load, and present source paths without knowing how a portable

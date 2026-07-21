@@ -1,7 +1,6 @@
 # Structured documentation history
 
 ```labkit-change
-schema: 2
 id: LK-20260715-component-owned-history
 date: 2026-07-15
 sequence: 61

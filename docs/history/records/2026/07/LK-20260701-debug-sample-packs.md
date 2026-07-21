@@ -1,7 +1,6 @@
 # Debug sample packs
 
 ```labkit-change
-schema: 2
 id: LK-20260701-debug-sample-packs
 date: 2026-07-01
 sequence: 28
@@ -25,6 +24,7 @@ component: `labkit_NerveResponseAnalysis_app` | `1.2.4 -> 1.3.0`
 component: `labkit_ResponseReviewStats_app` | `1.2.3 -> 1.3.0`
 component: `labkit_RHSPreview_app` | `1.2.4 -> 1.3.0`
 component: `labkit_ECGPrint_app` | `1.2.2 -> 1.3.0`
+scope: Debug sample packs
 ```
 
 ## Context

@@ -1,7 +1,6 @@
 # FLIR Thermal separates durable annotations from decoded sources
 
 ```labkit-change
-schema: 2
 id: LK-20260716-flir-thermal-structure
 date: 2026-07-16
 sequence: 98
@@ -41,7 +40,7 @@ thermal semantics into the framework.
 - Replaced all direct portable-reference field access with the Runtime source
   path accessor.
 
-## User and developer impact
+## User and data impact
 
 Radiometric decoding, Celsius conversion, range controls, point and ROI
 readings, viewport-preserving overlays, project reopen, and exports keep their

@@ -1,7 +1,6 @@
 # Legacy import preserves portable references without exposing their schema
 
 ```labkit-change
-schema: 2
 id: LK-20260716-opaque-source-import
 date: 2026-07-16
 sequence: 102
@@ -37,7 +36,7 @@ read nested reference fields.
 - Documented the distinction between normal filepath creation and legacy
   reference preservation.
 
-## User and developer impact
+## User and data impact
 
 Moved legacy projects retain their relative source fallback during upgrade.
 App importers no longer need to duplicate Runtime serialization fields or

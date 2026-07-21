@@ -1,7 +1,6 @@
 # Profiling and validation speedups
 
 ```labkit-change
-schema: 2
 id: LK-20260702-profiling-and-validation-speedups
 date: 2026-07-02
 sequence: 30
@@ -13,6 +12,7 @@ component: `labkit.ui` | `3.4.0 -> 3.4.1`
 component: `labkit.ui` | `3.4.1 -> 3.4.2`
 component: `labkit_BatchImageCrop_app` | `1.6.0 -> 1.6.1`
 component: `labkit_ECGPrint_app` | `1.3.0 -> 1.3.1`
+scope: Profiling and validation speedups
 ```
 
 ## Context

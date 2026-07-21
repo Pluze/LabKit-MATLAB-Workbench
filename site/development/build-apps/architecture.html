@@ -29,8 +29,9 @@
 +labkit/   reusable UI, image, thermal, DTA, RHS, and biosignal facades
 tests/     behavior tests, project contracts, GUI checks, shared helpers, and runner code
 docs/      human-facing usage, API, architecture, and validation docs
-scripts/   CI helper scripts
-tools/     maintainer diagnostics, deployment packagers, and report generators</code></pre>
+tools/     maintainer diagnostics, deployment packagers, and report generators
+.github/scripts/  GitHub Actions-only helper scripts</code></pre>
+<p>The repository root has no generic <code>scripts/</code> bucket. Keep automation beside its single consumer; promote it to a shared owner only when several stable consumers genuinely need the same operation.</p>
 <p>Apps should remain independently launchable. The reusable library should grow only when a helper is domain-neutral, app-facing, tested, and useful beyond one workflow.</p>
 <h2 id="runtime-dependency-boundary">Runtime Dependency Boundary</h2>
 <p>LabKit apps run from MATLAB and repository-owned code. Production apps and facades do not create Python or Conda environments, install third-party runtime packages, download model weights, or require a network connection on first use. This keeps source checkouts, offline packages, and restored lab systems reproducible.</p>

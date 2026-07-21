@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="default-labkit-close-protection">Default LabKit close protection</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260709-default-labkit-close-protection
+<pre><code class="language-labkit-change">id: LK-20260709-default-labkit-close-protection
 date: 2026-07-09
 sequence: 43
 type: fix
@@ -31,7 +30,8 @@ compatibility: compatible
 component: `labkit.ui` | `5.0.2 -&gt; 5.0.3`
 component: `labkit_FocusStack_app` | `1.4.6 -&gt; 1.4.7`
 component: `labkit_ImageEnhance_app` | `1.5.5 -&gt; 1.5.6`
-component: `labkit_ImageMatch_app` | `1.5.5 -&gt; 1.5.6`</code></pre>
+component: `labkit_ImageMatch_app` | `1.5.5 -&gt; 1.5.6`
+scope: Default LabKit close protection</code></pre>
 <h2 id="context">Context</h2>
 <p>Only apps that installed a dirty-state guard warned before closing. A newly created public or private app could therefore discard work silently until its author implemented and tested a separate guard. Repeated close shortcuts could also race with a modal confirmation.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

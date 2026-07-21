@@ -1,7 +1,6 @@
 # Image App project validation ownership
 
 ```labkit-change
-schema: 2
 id: LK-20260716-image-project-validation-ownership
 date: 2026-07-16
 sequence: 119

@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="image-app-workflow-improvements">Image app workflow improvements</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260701-image-app-workflow-improvements
+<pre><code class="language-labkit-change">id: LK-20260701-image-app-workflow-improvements
 date: 2026-07-01
 sequence: 27
 type: feat
@@ -37,7 +36,8 @@ component: `labkit_BatchImageCrop_app` | `1.5.0 -&gt; 1.5.1`
 component: `labkit_FLIRThermal_app` | `1.0.0 -&gt; 1.1.0`
 component: `labkit_FLIRThermal_app` | `1.1.0 -&gt; 1.1.2`
 component: `labkit_ImageEnhance_app` | `1.4.0 -&gt; 1.4.1`
-component: `labkit_ImageMatch_app` | `1.4.0 -&gt; 1.4.1`</code></pre>
+component: `labkit_ImageMatch_app` | `1.4.0 -&gt; 1.4.1`
+scope: Image app workflow improvements</code></pre>
 <h2 id="context">Context</h2>
 <p>Image apps used full-resolution data for several previews even when the screen could not display that detail. Controls also accepted ranges that were awkward for the current image, and FLIR point and ROI measurements were not yet a complete direct-manipulation workflow.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

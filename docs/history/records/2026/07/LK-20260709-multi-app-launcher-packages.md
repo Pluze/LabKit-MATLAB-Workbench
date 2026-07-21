@@ -1,13 +1,13 @@
 # Multi-app launcher packages
 
 ```labkit-change
-schema: 2
 id: LK-20260709-multi-app-launcher-packages
 date: 2026-07-09
 sequence: 42
 type: feat
 compatibility: compatible
 component: `labkit_launcher` | `1.2.7 -> 1.3.0`
+scope: Multi-app launcher packages
 ```
 
 ## Context

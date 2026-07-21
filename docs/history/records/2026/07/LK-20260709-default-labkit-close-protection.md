@@ -1,7 +1,6 @@
 # Default LabKit close protection
 
 ```labkit-change
-schema: 2
 id: LK-20260709-default-labkit-close-protection
 date: 2026-07-09
 sequence: 43
@@ -11,6 +10,7 @@ component: `labkit.ui` | `5.0.2 -> 5.0.3`
 component: `labkit_FocusStack_app` | `1.4.6 -> 1.4.7`
 component: `labkit_ImageEnhance_app` | `1.5.5 -> 1.5.6`
 component: `labkit_ImageMatch_app` | `1.5.5 -> 1.5.6`
+scope: Default LabKit close protection
 ```
 
 ## Context

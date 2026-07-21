@@ -1,7 +1,6 @@
 # VT Resistance consolidates its project contract
 
 ```labkit-change
-schema: 2
 id: LK-20260716-vt-resistance-project-spec
 date: 2026-07-16
 sequence: 90
@@ -35,7 +34,7 @@ decoding and analysis is transient reconstruction, not lifecycle boilerplate.
 - Kept pulse detection, steady windows, voltage definitions, resistance
   formulas, plots, and export schemas unchanged.
 
-## User and developer impact
+## User and data impact
 
 Launch, batch loading, selection, calculation, save/load, plotting, and CSV
 exports behave unchanged. The durable contract and lazy reconstruction policy

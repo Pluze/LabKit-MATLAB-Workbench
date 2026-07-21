@@ -1,7 +1,6 @@
 # Public library help contracts and reference validation
 
 ```labkit-change
-schema: 2
 id: LK-20260716-public-api-help-contracts
 date: 2026-07-16
 sequence: 62

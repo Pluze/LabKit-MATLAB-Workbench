@@ -18,17 +18,16 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../../../apps/index.html">Apps</a><a class="product-nav-link" href="../../../../reference/index.html">Functions</a><a class="product-nav-link" href="../../../../framework/index.html">Framework</a><a class="product-nav-link" href="../../../../development/index.html">Development</a><a class="product-nav-link active" href="../../../index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">Minimal App contract and current authoring manuals</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-developer-impact">User and developer impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">Minimal App contract and current authoring manuals</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-data-impact">User and data impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="minimal-app-contract-and-current-authoring-manuals">Minimal App contract and current authoring manuals</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260716-minimal-app-contract
+<pre><code class="language-labkit-change">id: LK-20260716-minimal-app-contract
 date: 2026-07-16
 sequence: 115
 type: docs
-compatibility: clarification
-component: `LabKit project` | documentation
+compatibility: compatible
+component: `labkit-project`
 scope: App authoring
 scope: Runtime V2 contract guardrails</code></pre>
 <h2 id="context">Context</h2>
@@ -43,7 +42,7 @@ scope: Runtime V2 contract guardrails</code></pre>
 <li>Corrected the tutorial's numeric field declaration after the real launch test exposed its implicit text-control mismatch.</li>
 <li>Made the App package guardrail reject retired metadata, lifecycle, state, startup, and per-version migration files for every App shape.</li>
 </ul>
-<h2 id="user-and-developer-impact">User and developer impact</h2>
+<h2 id="user-and-data-impact">User and data impact</h2>
 <p>App behavior and scientific results do not change. A developer can begin with three source files and add each larger architectural concept only when a real workflow requires it. Public and private App documentation now teach the same contract.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <p>This change documents and protects the already migrated Runtime V2 structure. It does not alter saved project payloads or remove the temporary low-level legacy project-migration reader used by framework tests.</p>

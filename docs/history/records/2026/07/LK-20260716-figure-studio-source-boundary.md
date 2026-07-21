@@ -1,7 +1,6 @@
 # Figure Studio removes source-reference knowledge
 
 ```labkit-change
-schema: 2
 id: LK-20260716-figure-studio-source-boundary
 date: 2026-07-16
 sequence: 94
@@ -33,7 +32,7 @@ any portable-reference field.
 - Preserved imported axes data, default style adoption, source order, current
   selection, editing, and export behavior.
 
-## User and developer impact
+## User and data impact
 
 FIG selection and display behave unchanged. Figure Studio now owns only how it
 uses a resolved FIG file; Runtime V2 owns how that file remains portable.

@@ -1,7 +1,6 @@
 # Explicit application autosave
 
 ```labkit-change
-schema: 2
 id: LK-20260716-explicit-autosave
 date: 2026-07-16
 sequence: 68

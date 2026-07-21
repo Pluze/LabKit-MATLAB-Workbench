@@ -1,7 +1,6 @@
 # Migration helper cleanup
 
 ```labkit-change
-schema: 2
 id: LK-20260630-migration-helper-cleanup
 date: 2026-06-30
 sequence: 23

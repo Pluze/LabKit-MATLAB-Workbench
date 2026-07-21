@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           if [ -f artifacts/test-results/headless/junit.xml ]; then
-            python scripts/summarize_junit.py \
+            python .github/scripts/summarize_junit.py \
               artifacts/test-results/headless/junit.xml \
               --run-name "headless-${{ matrix.id }}" \
               --html artifacts/test-results/headless/html/index.html \
@@ -129,7 +129,7 @@ jobs:
         shell: bash
         run: |
           if [ -f artifacts/test-results/gui/junit.xml ]; then
-            python scripts/summarize_junit.py \
+            python .github/scripts/summarize_junit.py \
               artifacts/test-results/gui/junit.xml \
               --run-name "gui-${{ matrix.id }}" \
               --html artifacts/test-results/gui/html/index.html \

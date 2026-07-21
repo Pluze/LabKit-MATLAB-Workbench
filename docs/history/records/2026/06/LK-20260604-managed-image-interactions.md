@@ -1,7 +1,6 @@
 # Managed image interactions and diagnostic tracing
 
 ```labkit-change
-schema: 2
 id: LK-20260604-managed-image-interactions
 date: 2026-06-04
 sequence: 4

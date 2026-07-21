@@ -1,7 +1,6 @@
 # Clean-room cross-platform CI
 
 ```labkit-change
-schema: 2
 id: LK-20260717-clean-room-cross-platform-ci
 date: 2026-07-17
 sequence: 131

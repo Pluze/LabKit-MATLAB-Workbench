@@ -1,7 +1,6 @@
 # Runtime-owned session defaults across App families
 
 ```labkit-change
-schema: 2
 id: LK-20260716-runtime-owned-session-defaults
 date: 2026-07-16
 sequence: 116

@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="file-panel-migration">File-panel migration</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260624-file-panel-migration
+<pre><code class="language-labkit-change">id: LK-20260624-file-panel-migration
 date: 2026-06-24
 sequence: 12
 type: refactor
@@ -45,7 +44,8 @@ component: `labkit_ImageMatch_app` | `1.0.0 -&gt; 1.2.0`
 component: `labkit_NerveResponseAnalysis_app` | `1.0.0 -&gt; 1.2.0`
 component: `labkit_ResponseReviewStats_app` | `1.0.0 -&gt; 1.2.0`
 component: `labkit_RHSPreview_app` | `1.0.0 -&gt; 1.2.0`
-component: `labkit_ECGPrint_app` | `1.0.0 -&gt; 1.2.0`</code></pre>
+component: `labkit_ECGPrint_app` | `1.0.0 -&gt; 1.2.0`
+scope: File-panel migration</code></pre>
 <h2 id="context">Context</h2>
 <p>Apps implemented file selection through separate task-input adapters, which produced inconsistent lists, selection events, and status feedback. The DTA session helper also coupled parsing to that older UI model.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

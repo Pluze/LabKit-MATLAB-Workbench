@@ -1,7 +1,6 @@
 # App file-selection and electrochem control fixes
 
 ```labkit-change
-schema: 2
 id: LK-20260703-app-file-selection-and-electrochem-control-fixes
 date: 2026-07-03
 sequence: 33

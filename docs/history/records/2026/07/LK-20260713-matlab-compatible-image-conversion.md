@@ -1,7 +1,6 @@
 # MATLAB-compatible image conversion API
 
 ```labkit-change
-schema: 2
 id: LK-20260713-matlab-compatible-image-conversion
 date: 2026-07-13
 sequence: 47
@@ -14,6 +13,7 @@ component: `labkit_CurvatureMeasurement_app` | `1.3.4 -> 1.3.5`
 component: `labkit_FocusStack_app` | `1.4.8 -> 1.4.9`
 component: `labkit_ImageEnhance_app` | `1.5.7 -> 1.5.8`
 component: `labkit_ImageMatch_app` | `1.5.7 -> 1.5.8`
+scope: MATLAB-compatible image conversion API
 ```
 
 ## Context

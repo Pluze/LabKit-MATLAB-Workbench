@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="csc-export-and-viewport-policy">CSC export and viewport policy</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260703-csc-export-and-viewport-policy
+<pre><code class="language-labkit-change">id: LK-20260703-csc-export-and-viewport-policy
 date: 2026-07-03
 sequence: 35
 type: feat
@@ -45,7 +44,8 @@ component: `labkit_ImageMatch_app` | `1.5.3 -&gt; 1.5.4`
 component: `labkit_NerveResponseAnalysis_app` | `1.3.2 -&gt; 1.3.3`
 component: `labkit_ResponseReviewStats_app` | `1.3.2 -&gt; 1.3.3`
 component: `labkit_RHSPreview_app` | `1.3.2 -&gt; 1.3.3`
-component: `labkit_ECGPrint_app` | `1.3.3 -&gt; 1.3.4`</code></pre>
+component: `labkit_ECGPrint_app` | `1.3.3 -&gt; 1.3.4`
+scope: CSC export and viewport policy</code></pre>
 <h2 id="context">Context</h2>
 <p>CSC could export the selected cycle, but comparing activation and stability across a recording required all cycles in one dataset. In parallel, app layouts made their own assumptions about minimum window size and scrollable content, so the same control panel could behave differently in a small viewport.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

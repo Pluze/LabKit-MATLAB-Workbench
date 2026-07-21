@@ -1,7 +1,6 @@
 # UI 7 public runtime boundary
 
 ```labkit-change
-schema: 2
 id: LK-20260716-ui7-public-runtime-boundary
 date: 2026-07-16
 sequence: 75
@@ -66,7 +65,7 @@ workbench shell, without project lifecycle or action orchestration.
 - Replaced tests that fabricated references through a public helper with
   project-level save/move/load coverage or explicit legacy fixtures.
 
-## User and developer impact
+## User and data impact
 
 App users see no workflow or saved-data change. App developers initiate work
 through semantic actions and create source records through

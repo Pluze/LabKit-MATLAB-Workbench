@@ -1,7 +1,6 @@
 # Base-MATLAB image compatibility
 
 ```labkit-change
-schema: 2
 id: LK-20260713-base-matlab-image-compatibility
 date: 2026-07-13
 sequence: 45
@@ -13,6 +12,7 @@ component: `labkit_DICPreprocess_app` | `1.3.5 -> 1.3.6`
 component: `labkit_FocusStack_app` | `1.4.7 -> 1.4.8`
 component: `labkit_ImageEnhance_app` | `1.5.6 -> 1.5.7`
 component: `labkit_ImageMatch_app` | `1.5.6 -> 1.5.7`
+scope: Base-MATLAB image compatibility
 ```
 
 ## Context

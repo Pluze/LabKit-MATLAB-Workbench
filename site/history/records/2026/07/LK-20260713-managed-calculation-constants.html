@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="managed-scientific-and-conversion-constants">Managed scientific and conversion constants</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260713-managed-calculation-constants
+<pre><code class="language-labkit-change">id: LK-20260713-managed-calculation-constants
 date: 2026-07-13
 sequence: 48
 type: refactor
@@ -34,7 +33,8 @@ component: `labkit.biosignal` | `1.0.0 -&gt; 1.0.1`
 component: `labkit_ChronoOverlay_app` | `1.3.5 -&gt; 1.3.6`
 component: `labkit_CSC_app` | `1.3.9 -&gt; 1.3.10`
 component: `labkit_NerveResponseAnalysis_app` | `1.3.4 -&gt; 1.3.5`
-component: `labkit_ResponseReviewStats_app` | `1.3.4 -&gt; 1.3.5`</code></pre>
+component: `labkit_ResponseReviewStats_app` | `1.3.4 -&gt; 1.3.5`
+scope: Managed scientific and conversion constants</code></pre>
 <h2 id="context">Context</h2>
 <p>Scientific coefficients, device-format gains, unit conversions, and numeric tolerances were sometimes left as unexplained literals or repeated across callers, making origin and change impact difficult to audit.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

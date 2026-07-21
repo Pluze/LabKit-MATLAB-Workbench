@@ -22,8 +22,7 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="profiling-and-validation-speedups">Profiling and validation speedups</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260702-profiling-and-validation-speedups
+<pre><code class="language-labkit-change">id: LK-20260702-profiling-and-validation-speedups
 date: 2026-07-02
 sequence: 30
 type: ci
@@ -33,7 +32,8 @@ component: `labkit_launcher` | `1.2.1 -&gt; 1.2.2`
 component: `labkit.ui` | `3.4.0 -&gt; 3.4.1`
 component: `labkit.ui` | `3.4.1 -&gt; 3.4.2`
 component: `labkit_BatchImageCrop_app` | `1.6.0 -&gt; 1.6.1`
-component: `labkit_ECGPrint_app` | `1.3.0 -&gt; 1.3.1`</code></pre>
+component: `labkit_ECGPrint_app` | `1.3.0 -&gt; 1.3.1`
+scope: Profiling and validation speedups</code></pre>
 <h2 id="context">Context</h2>
 <p>Startup and file-selection complaints could not be resolved reliably from wall clock impressions alone. At the same time, focused changes paid avoidable test discovery cost, GUI tests waited longer than the behavior required, and Batch Crop read every selected image before the user requested a preview or export.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

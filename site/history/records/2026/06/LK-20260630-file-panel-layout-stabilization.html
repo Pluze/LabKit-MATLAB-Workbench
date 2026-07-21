@@ -22,14 +22,14 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="file-panel-layout-stabilization">File-panel layout stabilization</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260630-file-panel-layout-stabilization
+<pre><code class="language-labkit-change">id: LK-20260630-file-panel-layout-stabilization
 date: 2026-06-30
 sequence: 19
 type: fix
 compatibility: compatible
 component: `labkit.ui` | `3.2.3 -&gt; 3.2.4`
-component: `labkit.ui` | `3.2.4 -&gt; 3.2.5`</code></pre>
+component: `labkit.ui` | `3.2.4 -&gt; 3.2.5`
+scope: File-panel layout stabilization</code></pre>
 <h2 id="context">Context</h2>
 <p>The single-file panel allocated too much height to its rows and could render inconsistently as the containing app resized. This was especially noticeable in file-heavy apps, where the panel competed with analysis controls and plots.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

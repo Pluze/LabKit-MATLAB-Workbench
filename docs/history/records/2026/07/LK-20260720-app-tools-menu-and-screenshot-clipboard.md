@@ -1,7 +1,6 @@
 # App tools and presentation controls become more deliberate
 
 ```labkit-change
-schema: 2
 id: LK-20260720-app-tools-menu-and-screenshot-clipboard
 date: 2026-07-20
 sequence: 141
@@ -45,7 +44,7 @@ the capability remains platform-neutral and introduces no external runtime.
   user zoom during ordinary redraws.
 - Updated the getting-started and framework manuals.
 
-## Compatibility and user impact
+## User and data impact
 
 App calculations, project files, plots, and exports are unchanged. Existing
 action tags continue to identify save screenshot, save state, load state, and
@@ -53,7 +52,12 @@ plot commands, but users now reach them through the Tools hierarchy. Clipboard
 copy uses the operating system clipboard and may be unavailable in a
 noninteractive MATLAB session.
 
-## Validation and evidence
+
+## Compatibility and migration
+
+No additional migration applies beyond the compatibility information in the preceding impact section.
+
+## Validation
 
 - Hidden native-adapter GUI coverage verifies the menu hierarchy, labels,
   conditional Project State menu, stable action tags, and clipboard callback
@@ -62,7 +66,11 @@ noninteractive MATLAB session.
 - Documentation rendering and consistency checks cover the updated manuals and
   history record.
 
-## Follow-up
+## Evidence
+
+The validation details above are the supporting evidence for this record.
+
+## Known limitations and follow-up
 
 Developer-led interactive checks should confirm clipboard image fidelity and
 native menu appearance on supported MATLAB desktop platforms.

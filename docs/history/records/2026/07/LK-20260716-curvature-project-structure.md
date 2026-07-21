@@ -1,7 +1,6 @@
 # Curvature consolidates migration and analysis state
 
 ```labkit-change
-schema: 2
 id: LK-20260716-curvature-project-structure
 date: 2026-07-16
 sequence: 97
@@ -38,7 +37,7 @@ beside the analysis functions that consume them.
 - Kept managed anchor editing, scale calibration, curve fitting, length
   measurement, overlay rendering, and exports unchanged.
 
-## User and developer impact
+## User and data impact
 
 Opening current or version-1 projects, tracing/removing anchors, calibrating
 scale, fitting curvature, measuring length, and exporting results behave

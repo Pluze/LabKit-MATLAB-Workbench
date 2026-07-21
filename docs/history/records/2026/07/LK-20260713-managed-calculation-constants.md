@@ -1,7 +1,6 @@
 # Managed scientific and conversion constants
 
 ```labkit-change
-schema: 2
 id: LK-20260713-managed-calculation-constants
 date: 2026-07-13
 sequence: 48
@@ -14,6 +13,7 @@ component: `labkit_ChronoOverlay_app` | `1.3.5 -> 1.3.6`
 component: `labkit_CSC_app` | `1.3.9 -> 1.3.10`
 component: `labkit_NerveResponseAnalysis_app` | `1.3.4 -> 1.3.5`
 component: `labkit_ResponseReviewStats_app` | `1.3.4 -> 1.3.5`
+scope: Managed scientific and conversion constants
 ```
 
 ## Context

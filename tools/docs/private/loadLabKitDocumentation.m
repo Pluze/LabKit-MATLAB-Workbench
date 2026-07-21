@@ -283,29 +283,17 @@ function pages = discoverHistoryPages(sourceRoot)
         filepath = string(fullfile(entries(k).folder, entries(k).name));
         source = replace(extractAfter(filepath, string(sourceRoot) + filesep), ...
             filesep, "/");
-        text = string(fileread(filepath));
-        lines = splitlines(text);
-        titleLine = find(startsWith(lines, "# "), 1);
-        if isempty(titleLine)
-            error("LabKit:Docs:InvalidHistory", ...
-                "History page has no level-one title: %s", source);
-        end
-        historySchema = historyScalar(lines, "schema", source);
-        if historySchema ~= "2"
-            error("LabKit:Docs:UnsupportedHistorySchema", ...
-                "History page %s must use schema 2.", source);
-        end
-        historyId = historyScalar(lines, "id", source);
-        historyDate = historyScalar(lines, "date", source);
-        historySequence = historySequenceScalar(lines, source);
-        changeType = historyScalar(lines, "type", source);
-        compatibility = historyScalar(lines, "compatibility", source);
-        componentLines = lines(startsWith(lines, "component:") | ...
-            startsWith(lines, "introduced:"));
+        record = parseLabKitHistoryRecord(fileread(filepath), source);
+        historyId = record.id;
+        historyDate = record.date;
+        historySequence = record.sequence;
+        changeType = record.type;
+        compatibility = record.compatibility;
+        componentLines = record.components;
         components = strings(0, 1);
         for iLine = 1:numel(componentLines)
             token = regexp(componentLines(iLine), ...
-                '^(?:component|introduced):\s*`([^`]+)`', "tokens", "once");
+                '^`([^`]+)`', "tokens", "once");
             if isempty(token)
                 error("LabKit:Docs:InvalidHistory", ...
                     "History page has malformed component metadata: %s", source);
@@ -316,12 +304,12 @@ function pages = discoverHistoryPages(sourceRoot)
             "id", "history-" + historyId, ...
             "source", source, ...
             "output", erase(source, ".md") + ".html", ...
-            "title", extractAfter(lines(titleLine), "# "), ...
+            "title", record.title, ...
             "kind", "history", ...
             "nav", strings(0, 1), ...
             "order", 1000, ...
             "keywords", [historyId; historyDate; string(historySequence); ...
-                changeType; compatibility; components], ...
+                changeType; compatibility; components; record.scopes], ...
             "components", unique(components, "stable"));
         page = validatePage(raw, sourceRoot);
         page.historyId = historyId;
@@ -351,29 +339,6 @@ function pages = discoverHistoryPages(sourceRoot)
     end
     [~, order] = sort(sequences, "descend");
     pages = pages(order);
-end
-
-function value = historySequenceScalar(lines, source)
-    text = historyScalar(lines, "sequence", source);
-    if isempty(regexp(text, '^[1-9][0-9]*$', 'once'))
-        error("LabKit:Docs:InvalidHistorySequence", ...
-            "History page %s sequence must be a positive integer.", source);
-    end
-    value = str2double(text);
-end
-
-function value = historyScalar(lines, key, source)
-    prefix = key + ":";
-    matches = lines(startsWith(lines, prefix));
-    if numel(matches) ~= 1
-        error("LabKit:Docs:InvalidHistory", ...
-            "History page %s must contain one %s metadata field.", source, key);
-    end
-    value = strtrim(extractAfter(matches, prefix));
-    if strlength(value) == 0
-        error("LabKit:Docs:InvalidHistory", ...
-            "History page %s has an empty %s metadata field.", source, key);
-    end
 end
 
 function apps = discoverPublicApps(repoRoot, sourceRoot)

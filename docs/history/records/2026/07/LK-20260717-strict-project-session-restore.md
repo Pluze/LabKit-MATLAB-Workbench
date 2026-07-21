@@ -1,7 +1,6 @@
 # Project restore distinguishes missing sources from damaged sources
 
 ```labkit-change
-schema: 2
 id: LK-20260717-strict-project-session-restore
 date: 2026-07-17
 sequence: 125
@@ -47,7 +46,7 @@ state and presentation.
 - Added atomic corrupt-source, diagnostic-delivery, cross-App factory, and
   no-broad-catch regression coverage.
 
-## User and developer impact
+## User and data impact
 
 Missing required files still open the relink workflow, and cancelling it leaves
 the current project untouched. Existing corrupt or unsupported files now stop

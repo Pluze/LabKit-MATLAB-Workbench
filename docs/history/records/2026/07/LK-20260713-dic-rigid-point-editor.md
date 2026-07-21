@@ -1,14 +1,14 @@
 # Single-click DIC rigid point matching
 
 ```labkit-change
-schema: 2
 id: LK-20260713-dic-rigid-point-editor
 date: 2026-07-13
 sequence: 50
 type: feat
-compatibility: additive
+compatibility: compatible
 component: `labkit.ui` | `5.0.4 -> 5.1.0`
 component: `labkit_DICPreprocess_app` | `1.3.6 -> 1.4.0`
+scope: Single-click DIC rigid point matching
 ```
 
 ## Context

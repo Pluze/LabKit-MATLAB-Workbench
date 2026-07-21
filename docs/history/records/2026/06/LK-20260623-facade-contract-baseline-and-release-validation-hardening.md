@@ -1,21 +1,21 @@
 # Facade contract baseline and release validation hardening
 
 ```labkit-change
-schema: 2
 id: LK-20260623-facade-contract-baseline-and-release-validation-hardening
 date: 2026-06-23
 sequence: 11
 type: ci
 compatibility: compatible
-introduced: `labkit.biosignal` | `1.0.0`
-introduced: `labkit.dta` | `1.0.0`
-introduced: `labkit.rhs` | `1.0.0`
-introduced: `labkit.ui` | `2.0.0`
+component: `labkit.biosignal` | `new -> 1.0.0`
+component: `labkit.dta` | `new -> 1.0.0`
+component: `labkit.rhs` | `new -> 1.0.0`
+component: `labkit.ui` | `new -> 2.0.0`
 component: `labkit.ui` | `2.0.0 -> 2.1.0`
 component: `labkit.ui` | `2.2.0 -> 2.2.1`
 component: `labkit_DICPostprocess_app` | `1.0.0 -> 1.0.1`
 component: `labkit_DICPreprocess_app` | `1.0.0 -> 1.0.1`
 component: `labkit_CurvatureMeasurement_app` | `1.0.0 -> 1.0.1`
+scope: Facade contract baseline and release validation hardening
 ```
 
 ## Context

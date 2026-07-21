@@ -43,11 +43,10 @@ Never hand-edit HTML, CSS, JavaScript, or search indexes.
 
 ## History
 
-Component history records use schema 2 metadata, a globally unique stable ID,
-date, monotonic unique sequence, type, compatibility, affected components, and
-scopes. Content explains context, decision, changes, user/data impact,
-compatibility, validation, evidence, and known follow-up. Sequence defines
-linear order, including same-day changes; filenames and Git timestamps do not.
+The authored [history record format](../../../docs/history/record-format.md)
+is the single authority for metadata, legal values, and required narrative
+sections. Sequence defines linear order, including same-day changes; filenames
+and Git timestamps do not.
 
 Update history only with a versioned component change or a meaningful project
 evolution record. Do not create records for mechanical regeneration, typo-only

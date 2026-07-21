@@ -1,7 +1,6 @@
 # RHS Preview separates source roles from reference mechanics
 
 ```labkit-change
-schema: 2
 id: LK-20260716-rhs-preview-structure
 date: 2026-07-16
 sequence: 108

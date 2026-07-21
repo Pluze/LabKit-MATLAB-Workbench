@@ -1,7 +1,6 @@
 # UI diagnostics and release v3.0.0
 
 ```labkit-change
-schema: 2
 id: LK-20260629-ui-diagnostics-and-release-v3-0-0
 date: 2026-06-29
 sequence: 17
@@ -9,6 +8,7 @@ type: feat
 compatibility: compatible
 component: `labkit_launcher` | `1.1.2 -> 1.1.3`
 component: `labkit.ui` | `3.1.3 -> 3.2.0`
+scope: UI diagnostics and release v3.0.0
 ```
 
 ## Context

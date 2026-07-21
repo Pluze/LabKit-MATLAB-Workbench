@@ -1,7 +1,6 @@
 # App validation no longer relies on sibling App paths
 
 ```labkit-change
-schema: 2
 id: LK-20260717-isolated-app-validation
 date: 2026-07-17
 sequence: 128
@@ -45,7 +44,7 @@ same path shape as a single-App package.
   compatibility checks without inheriting public App roots.
 - Evaluated, but did not add, a hidden-GUI job to every pull request.
 
-## User and developer impact
+## User and data impact
 
 There is no App or saved-data behavior change. A new sibling package
 dependency, stale facade requirement, incomplete definition, or broken debug

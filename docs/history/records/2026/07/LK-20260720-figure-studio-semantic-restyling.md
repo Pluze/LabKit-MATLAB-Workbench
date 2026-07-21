@@ -1,7 +1,6 @@
 # Figure Studio preserves common graphics and styles semantic categories
 
 ```labkit-change
-schema: 2
 id: LK-20260720-figure-studio-semantic-restyling
 date: 2026-07-20
 sequence: 145
@@ -75,7 +74,7 @@ around child-process orchestration would preserve cost without user benefit.
   selectors, and speculative JUnit shard estimates. Local and CI broad tasks
   now share the same single-process runner.
 
-## Compatibility and user impact
+## User and data impact
 
 Existing schema 1 documents migrate automatically to schema 2, keeping saved
 values and supplying defaults only for newly introduced style categories.
@@ -84,7 +83,12 @@ classes continue to produce explicit warnings. Normal App launches remain
 visible; only official hidden or minimized validation modes change final
 window presentation.
 
-## Validation and evidence
+
+## Compatibility and migration
+
+No additional migration applies beyond the compatibility information in the preceding impact section.
+
+## Validation
 
 - Result-file tests exercise extraction, FIG reopening, recreation-script
   execution, legend metadata, constant-line labels, semantic styling, and
@@ -100,7 +104,11 @@ window presentation.
   time and 1,215 seconds CPU time for three workers. Worker artifacts also
   confirmed that heartbeat updates survived the isolated-path contract.
 
-## Follow-up
+## Evidence
+
+The validation details above are the supporting evidence for this record.
+
+## Known limitations and follow-up
 
 Developer-led visual review remains responsible for aesthetic judgment,
 unusual third-party chart classes, native window behavior, and plot-specific

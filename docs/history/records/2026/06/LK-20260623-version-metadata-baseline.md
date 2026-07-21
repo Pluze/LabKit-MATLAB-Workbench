@@ -1,30 +1,30 @@
 # Version metadata baseline
 
 ```labkit-change
-schema: 2
 id: LK-20260623-version-metadata-baseline
 date: 2026-06-23
 sequence: 10
 type: feat
 compatibility: compatible
-introduced: `labkit_launcher` | `1.0.0`
+component: `labkit_launcher` | `new -> 1.0.0`
 component: `labkit.ui` | `2.1.0 -> 2.2.0`
-introduced: `labkit_DICPostprocess_app` | `1.0.0`
-introduced: `labkit_DICPreprocess_app` | `1.0.0`
-introduced: `labkit_ChronoOverlay_app` | `1.0.0`
-introduced: `labkit_CIC_app` | `1.0.0`
-introduced: `labkit_CSC_app` | `1.0.0`
-introduced: `labkit_EIS_app` | `1.0.0`
-introduced: `labkit_VTResistance_app` | `1.0.0`
-introduced: `labkit_BatchImageCrop_app` | `1.0.0`
-introduced: `labkit_CurvatureMeasurement_app` | `1.0.0`
-introduced: `labkit_FocusStack_app` | `1.0.0`
-introduced: `labkit_ImageEnhance_app` | `1.0.0`
-introduced: `labkit_ImageMatch_app` | `1.0.0`
-introduced: `labkit_NerveResponseAnalysis_app` | `1.0.0`
-introduced: `labkit_ResponseReviewStats_app` | `1.0.0`
-introduced: `labkit_RHSPreview_app` | `1.0.0`
-introduced: `labkit_ECGPrint_app` | `1.0.0`
+component: `labkit_DICPostprocess_app` | `new -> 1.0.0`
+component: `labkit_DICPreprocess_app` | `new -> 1.0.0`
+component: `labkit_ChronoOverlay_app` | `new -> 1.0.0`
+component: `labkit_CIC_app` | `new -> 1.0.0`
+component: `labkit_CSC_app` | `new -> 1.0.0`
+component: `labkit_EIS_app` | `new -> 1.0.0`
+component: `labkit_VTResistance_app` | `new -> 1.0.0`
+component: `labkit_BatchImageCrop_app` | `new -> 1.0.0`
+component: `labkit_CurvatureMeasurement_app` | `new -> 1.0.0`
+component: `labkit_FocusStack_app` | `new -> 1.0.0`
+component: `labkit_ImageEnhance_app` | `new -> 1.0.0`
+component: `labkit_ImageMatch_app` | `new -> 1.0.0`
+component: `labkit_NerveResponseAnalysis_app` | `new -> 1.0.0`
+component: `labkit_ResponseReviewStats_app` | `new -> 1.0.0`
+component: `labkit_RHSPreview_app` | `new -> 1.0.0`
+component: `labkit_ECGPrint_app` | `new -> 1.0.0`
+scope: Version metadata baseline
 ```
 
 ## Context

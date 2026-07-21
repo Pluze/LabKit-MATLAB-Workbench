@@ -1,7 +1,6 @@
 # Image Enhance assigns state helpers to workflow capabilities
 
 ```labkit-change
-schema: 2
 id: LK-20260716-image-enhance-structure
 date: 2026-07-16
 sequence: 99
@@ -43,7 +42,7 @@ downsampled preview while full-size export continues to use source coordinates.
 - Corrected the GUI-free manual example to write the first returned image from
   the documented cell-array result.
 
-## User and developer impact
+## User and data impact
 
 Shared and per-image histories, white ROI calibration, pending previews,
 preview-coordinate radius scaling, original-resolution processing, duplicate

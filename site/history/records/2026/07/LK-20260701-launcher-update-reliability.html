@@ -22,14 +22,14 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="launcher-update-reliability">Launcher update reliability</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260701-launcher-update-reliability
+<pre><code class="language-labkit-change">id: LK-20260701-launcher-update-reliability
 date: 2026-07-01
 sequence: 25
 type: fix
 compatibility: compatible
 component: `labkit_launcher` | `1.1.3 -&gt; 1.1.4`
-component: `labkit_launcher` | `1.1.4 -&gt; 1.1.5`</code></pre>
+component: `labkit_launcher` | `1.1.4 -&gt; 1.1.5`
+scope: Launcher update reliability</code></pre>
 <h2 id="context">Context</h2>
 <p>The self-contained launcher could install a ZIP release, but the replacement path performed more filesystem work than necessary and duplicated logic for locating, unpacking, and replacing the workbench. Slow replacement made a successful update look stalled; duplicated recovery paths made failures harder to reason about.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

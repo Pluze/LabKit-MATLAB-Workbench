@@ -1,12 +1,11 @@
 # One project migration entry per App
 
 ```labkit-change
-schema: 2
 id: LK-20260716-single-project-migration-entry
 date: 2026-07-16
 sequence: 81
 type: feat
-compatibility: additive
+compatibility: compatible
 component: `labkit.ui` | `7.2.1 -> 7.3.0`
 scope: Runtime V2 projects
 scope: App authoring
@@ -35,7 +34,7 @@ validates every intermediate payload, and continues to the current version.
   with two version cases.
 - Retained `Project.Migrations` only as a temporary bridge for existing Apps.
 
-## User and developer impact
+## User and data impact
 
 Saved projects behave as before. App maintainers can keep create, validate,
 and every schema transition as local functions in one `projectSpec.m` instead

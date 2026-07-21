@@ -1,12 +1,11 @@
 # Adjacent navigation for history records
 
 ```labkit-change
-schema: 2
 id: LK-20260716-history-adjacent-navigation
 date: 2026-07-16
 sequence: 64
 type: docs
-compatibility: additive
+compatibility: compatible
 component: `documentation`
 scope: `tools/docs/`
 scope: `site/history/records/`

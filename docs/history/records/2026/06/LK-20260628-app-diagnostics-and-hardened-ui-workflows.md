@@ -1,7 +1,6 @@
 # App diagnostics and hardened UI workflows
 
 ```labkit-change
-schema: 2
 id: LK-20260628-app-diagnostics-and-hardened-ui-workflows
 date: 2026-06-28
 sequence: 15
@@ -19,6 +18,7 @@ component: `labkit_ImageMatch_app` | `1.2.0 -> 1.2.1`
 component: `labkit_NerveResponseAnalysis_app` | `1.2.0 -> 1.2.1`
 component: `labkit_ResponseReviewStats_app` | `1.2.0 -> 1.2.1`
 component: `labkit_RHSPreview_app` | `1.2.0 -> 1.2.1`
+scope: App diagnostics and hardened UI workflows
 ```
 
 ## Context

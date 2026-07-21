@@ -1,7 +1,6 @@
 # CSC export and viewport policy
 
 ```labkit-change
-schema: 2
 id: LK-20260703-csc-export-and-viewport-policy
 date: 2026-07-03
 sequence: 35
@@ -25,6 +24,7 @@ component: `labkit_NerveResponseAnalysis_app` | `1.3.2 -> 1.3.3`
 component: `labkit_ResponseReviewStats_app` | `1.3.2 -> 1.3.3`
 component: `labkit_RHSPreview_app` | `1.3.2 -> 1.3.3`
 component: `labkit_ECGPrint_app` | `1.3.3 -> 1.3.4`
+scope: CSC export and viewport policy
 ```
 
 ## Context

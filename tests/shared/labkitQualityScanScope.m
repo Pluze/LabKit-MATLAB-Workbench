@@ -162,7 +162,7 @@ function files = gitTrackedFiles(root)
 end
 
 function files = publicTrackedTextFiles(root, tracked)
-    roots = ["README.md", "AGENTS.md", "docs/", "scripts/", ...
+    roots = ["README.md", "AGENTS.md", "docs/", ...
         "tests/", "apps/", "+labkit/", ".github/"];
     keep = false(size(tracked));
     slashTracked = replace(tracked, "\", "/");

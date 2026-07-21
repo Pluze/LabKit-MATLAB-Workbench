@@ -1,7 +1,6 @@
 # File-panel migration
 
 ```labkit-change
-schema: 2
 id: LK-20260624-file-panel-migration
 date: 2026-06-24
 sequence: 12
@@ -25,6 +24,7 @@ component: `labkit_NerveResponseAnalysis_app` | `1.0.0 -> 1.2.0`
 component: `labkit_ResponseReviewStats_app` | `1.0.0 -> 1.2.0`
 component: `labkit_RHSPreview_app` | `1.0.0 -> 1.2.0`
 component: `labkit_ECGPrint_app` | `1.0.0 -> 1.2.0`
+scope: File-panel migration
 ```
 
 ## Context

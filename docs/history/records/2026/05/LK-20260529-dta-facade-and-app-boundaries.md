@@ -1,7 +1,6 @@
 # DTA facade and app ownership boundaries
 
 ```labkit-change
-schema: 2
 id: LK-20260529-dta-facade-and-app-boundaries
 date: 2026-05-29
 sequence: 2

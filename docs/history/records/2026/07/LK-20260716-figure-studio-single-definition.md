@@ -1,7 +1,6 @@
 # Figure Studio adopts one product definition
 
 ```labkit-change
-schema: 2
 id: LK-20260716-figure-studio-single-definition
 date: 2026-07-16
 sequence: 79
@@ -39,7 +38,7 @@ typed axes handoff, without changing its plotting or export behavior.
   variable-length export manifest instead of constructing an invalid empty-ID
   placeholder output.
 
-## User and developer impact
+## User and data impact
 
 Launch, axes handoff, style controls, project payload, FIG reading, plot
 snapshot extraction, and all export formats retain their existing behavior.

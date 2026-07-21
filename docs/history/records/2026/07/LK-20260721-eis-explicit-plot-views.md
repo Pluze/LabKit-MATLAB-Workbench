@@ -1,7 +1,6 @@
 # EIS uses explicit plot-view actions
 
 ```labkit-change
-schema: 2
 id: LK-20260721-eis-explicit-plot-views
 date: 2026-07-21
 sequence: 147

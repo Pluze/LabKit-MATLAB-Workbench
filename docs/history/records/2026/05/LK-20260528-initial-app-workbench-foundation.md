@@ -1,7 +1,6 @@
 # Legacy import and first app workbench
 
 ```labkit-change
-schema: 2
 id: LK-20260528-initial-app-workbench-foundation
 date: 2026-05-28
 sequence: 1

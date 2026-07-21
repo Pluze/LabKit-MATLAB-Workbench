@@ -18,12 +18,11 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../../../apps/index.html">Apps</a><a class="product-nav-link" href="../../../../reference/index.html">Functions</a><a class="product-nav-link" href="../../../../framework/index.html">Framework</a><a class="product-nav-link" href="../../../../development/index.html">Development</a><a class="product-nav-link active" href="../../../index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">App validation no longer relies on sibling App paths</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-developer-impact">User and developer impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../../../index.html">Documentation Home</a><a class="context-parent" href="../../../index.html">History</a><p class="current-page">App validation no longer relies on sibling App paths</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>Timeline</h3><div class="local-branch"><a class="local-link" href="../../../index.html">Project History</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#context">Context</a><a class="toc-link" href="#decision-and-rationale">Decision and rationale</a><a class="toc-link" href="#changes">Changes</a><a class="toc-link" href="#user-and-data-impact">User and data impact</a><a class="toc-link" href="#compatibility-and-migration">Compatibility and migration</a><a class="toc-link" href="#validation">Validation</a><a class="toc-link" href="#evidence">Evidence</a><a class="toc-link" href="#known-limitations-and-follow-up">Known limitations and follow-up</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="app-validation-no-longer-relies-on-sibling-app-paths">App validation no longer relies on sibling App paths</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260717-isolated-app-validation
+<pre><code class="language-labkit-change">id: LK-20260717-isolated-app-validation
 date: 2026-07-17
 sequence: 128
 type: test
@@ -44,7 +43,7 @@ scope: GUI CI evaluation</code></pre>
 <li>Documented why independent private workspaces must run their own compatibility checks without inheriting public App roots.</li>
 <li>Evaluated, but did not add, a hidden-GUI job to every pull request.</li>
 </ul>
-<h2 id="user-and-developer-impact">User and developer impact</h2>
+<h2 id="user-and-data-impact">User and data impact</h2>
 <p>There is no App or saved-data behavior change. A new sibling package dependency, stale facade requirement, incomplete definition, or broken debug sample now fails in a focused non-GUI contract instead of passing because all Apps happened to be on the developer's MATLAB path.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <p>No migration is required. Existing test commands remain unchanged; the changed-file planner adds the focused isolation selection automatically.</p>

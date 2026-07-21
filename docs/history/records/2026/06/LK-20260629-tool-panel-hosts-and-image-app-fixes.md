@@ -1,7 +1,6 @@
 # Tool-panel hosts and image app fixes
 
 ```labkit-change
-schema: 2
 id: LK-20260629-tool-panel-hosts-and-image-app-fixes
 date: 2026-06-29
 sequence: 18
@@ -13,6 +12,7 @@ component: `labkit_BatchImageCrop_app` | `1.3.2 -> 1.3.3`
 component: `labkit_CurvatureMeasurement_app` | `1.2.0 -> 1.2.1`
 component: `labkit_ImageEnhance_app` | `1.3.0 -> 1.3.1`
 component: `labkit_ImageMatch_app` | `1.3.0 -> 1.3.1`
+scope: Tool-panel hosts and image app fixes
 ```
 
 ## Context

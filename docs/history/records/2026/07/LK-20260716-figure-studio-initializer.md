@@ -1,7 +1,6 @@
 # Figure Studio names its post-layout initialization capability
 
 ```labkit-change
-schema: 2
 id: LK-20260716-figure-studio-initializer
 date: 2026-07-16
 sequence: 109

@@ -22,13 +22,13 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="multi-app-launcher-packages">Multi-app launcher packages</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260709-multi-app-launcher-packages
+<pre><code class="language-labkit-change">id: LK-20260709-multi-app-launcher-packages
 date: 2026-07-09
 sequence: 42
 type: feat
 compatibility: compatible
-component: `labkit_launcher` | `1.2.7 -&gt; 1.3.0`</code></pre>
+component: `labkit_launcher` | `1.2.7 -&gt; 1.3.0`
+scope: Multi-app launcher packages</code></pre>
 <h2 id="context">Context</h2>
 <p>The deployment tool could package one app, but laboratory workflows often used a small related set. Creating one ZIP per app duplicated the shared LabKit runtime, while manually merging ZIP files risked inconsistent entry files and manifests. The launcher's selected row also could not double as a multi-select without making Open and Debug ambiguous.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

@@ -1,7 +1,6 @@
 # App actions require explanatory hover help
 
 ```labkit-change
-schema: 2
 id: LK-20260720-app-action-tooltips
 date: 2026-07-20
 sequence: 140
@@ -66,13 +65,18 @@ visible action label and also requires an explanatory input-selection tooltip.
 - Centralized the shared tooltip contract in the App Framework and App catalog
   instead of repeating it in every App manual.
 
-## Compatibility and user impact
+## User and data impact
 
 Existing tracked Apps and third-party layouts retain their actions and
 calculations. Hovering now always shows readable text; tracked Apps additionally
 carry domain-specific explanations.
 
-## Validation and evidence
+
+## Compatibility and migration
+
+No additional migration applies beyond the compatibility information in the preceding impact section.
+
+## Validation
 
 - App SDK unit coverage for required and compiled tooltip values.
 - Cross-App definition guardrail for non-label business and input tooltips.
@@ -80,7 +84,11 @@ carry domain-specific explanations.
   newlines.
 - DIC Postprocess GUI coverage for scientific action and Ncorr input help.
 
-## Follow-up
+## Evidence
+
+The validation details above are the supporting evidence for this record.
+
+## Known limitations and follow-up
 
 Developer-led interactive checks should confirm tooltip timing, width, and
 line wrapping on supported MATLAB releases and desktop platforms.

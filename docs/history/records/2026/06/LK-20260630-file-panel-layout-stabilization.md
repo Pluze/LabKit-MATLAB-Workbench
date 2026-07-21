@@ -1,7 +1,6 @@
 # File-panel layout stabilization
 
 ```labkit-change
-schema: 2
 id: LK-20260630-file-panel-layout-stabilization
 date: 2026-06-30
 sequence: 19
@@ -9,6 +8,7 @@ type: fix
 compatibility: compatible
 component: `labkit.ui` | `3.2.3 -> 3.2.4`
 component: `labkit.ui` | `3.2.4 -> 3.2.5`
+scope: File-panel layout stabilization
 ```
 
 ## Context

@@ -1,7 +1,6 @@
 # Launcher manager and stale callback fix
 
 ```labkit-change
-schema: 2
 id: LK-20260626-launcher-manager-and-stale-callback-fix
 date: 2026-06-26
 sequence: 13
@@ -10,6 +9,7 @@ compatibility: compatible
 component: `labkit_launcher` | `1.0.0 -> 1.1.0`
 component: `labkit_launcher` | `1.1.0 -> 1.1.1`
 component: `labkit.ui` | `3.0.0 -> 3.0.1`
+scope: Launcher manager and stale callback fix
 ```
 
 ## Context

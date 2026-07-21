@@ -1,7 +1,6 @@
 # Interactive recovery of missing project sources
 
 ```labkit-change
-schema: 2
 id: LK-20260716-runtime-source-relink
 date: 2026-07-16
 sequence: 66

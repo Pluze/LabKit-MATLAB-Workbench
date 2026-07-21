@@ -1,7 +1,6 @@
 # Chrono Overlay removes App-owned source identity bookkeeping
 
 ```labkit-change
-schema: 2
 id: LK-20260716-chrono-runtime-source-reconciliation
 date: 2026-07-16
 sequence: 111

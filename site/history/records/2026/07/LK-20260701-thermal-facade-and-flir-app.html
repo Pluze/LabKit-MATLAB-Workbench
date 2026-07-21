@@ -22,15 +22,15 @@
 <main class="content">
 <p class="page-kind">history</p>
 <h1 id="thermal-facade-and-flir-app">Thermal facade and FLIR app</h1>
-<pre><code class="language-labkit-change">schema: 2
-id: LK-20260701-thermal-facade-and-flir-app
+<pre><code class="language-labkit-change">id: LK-20260701-thermal-facade-and-flir-app
 date: 2026-07-01
 sequence: 26
 type: feat
 compatibility: compatible
-introduced: `labkit.thermal` | `1.0.0`
+component: `labkit.thermal` | `new -&gt; 1.0.0`
 component: `labkit.ui` | `3.2.9 -&gt; 3.2.10`
-introduced: `labkit_FLIRThermal_app` | `1.0.0`</code></pre>
+component: `labkit_FLIRThermal_app` | `new -&gt; 1.0.0`
+scope: Thermal facade and FLIR app</code></pre>
 <h2 id="context">Context</h2>
 <p>FLIR radiometric JPEGs contain both a visible preview and embedded thermal data plus camera metadata. Treating them as ordinary images loses the temperature meaning, while placing all parsing and conversion code inside one GUI would make the scientific operations unusable from MATLAB scripts.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>

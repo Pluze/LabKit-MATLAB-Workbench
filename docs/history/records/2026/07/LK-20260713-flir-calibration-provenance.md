@@ -1,14 +1,14 @@
 # Traceable FLIR temperature calibration
 
 ```labkit-change
-schema: 2
 id: LK-20260713-flir-calibration-provenance
 date: 2026-07-13
 sequence: 49
 type: feat
-compatibility: additive
+compatibility: compatible
 component: `labkit.thermal` | `1.0.0 -> 1.1.0`
 component: `labkit_FLIRThermal_app` | `1.2.8 -> 1.3.0`
+scope: Traceable FLIR temperature calibration
 ```
 
 ## Context

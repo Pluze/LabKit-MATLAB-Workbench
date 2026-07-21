@@ -1,7 +1,6 @@
 # Debug workflows, launcher tools, and changelog governance
 
 ```labkit-change
-schema: 2
 id: LK-20260707-debug-workflows-launcher-tools-and-changelog-governance
 date: 2026-07-07
 sequence: 39
@@ -16,6 +15,7 @@ component: `labkit_DICPreprocess_app` | `1.3.4 -> 1.3.5`
 component: `labkit_BatchImageCrop_app` | `1.6.6 -> 1.6.7`
 component: `labkit_FocusStack_app` | `1.4.5 -> 1.4.6`
 component: `labkit_FigureStudio_app` | `0.1.4 -> 0.1.5`
+scope: Debug workflows, launcher tools, and changelog governance
 ```
 
 ## Context

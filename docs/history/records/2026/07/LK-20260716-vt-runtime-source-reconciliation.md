@@ -1,7 +1,6 @@
 # VT Resistance removes source and workflow storage boilerplate
 
 ```labkit-change
-schema: 2
 id: LK-20260716-vt-runtime-source-reconciliation
 date: 2026-07-16
 sequence: 114

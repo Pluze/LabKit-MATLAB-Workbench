@@ -30,8 +30,8 @@ Tests mirror source ownership and use MATLAB's official test framework.
   updates for humans.
 - Focused iteration normally uses `runLabKitTests("Files", ...)`; use `Suites`
   for folders and `Tests` for class or method names. Run `changedFast` at a
-  coherent checkpoint and `changed` once for a stable handoff. After a
-  failure, repair and rerun the narrowest failed file or method.
+  coherent pre-push checkpoint; CI owns the complete post-push validation.
+  After a failure, repair and rerun the narrowest failed file or method.
 - Unknown changed paths fall back to full non-GUI validation rather than a
   narrow false signal. GUI changes route to the owning hidden-GUI suite.
 - Exact public tasks and examples belong only in

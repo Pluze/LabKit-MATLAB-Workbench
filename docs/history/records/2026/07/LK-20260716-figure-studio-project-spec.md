@@ -1,7 +1,6 @@
 # Figure Studio consolidates its project schema
 
 ```labkit-change
-schema: 2
 id: LK-20260716-figure-studio-project-spec
 date: 2026-07-16
 sequence: 82
@@ -33,7 +32,7 @@ validated project.
 - Left meaningful startup, action, presentation, source, style, and export
   capabilities unchanged.
 
-## User and developer impact
+## User and data impact
 
 Figure loading, axes handoff, styling, project save/load, session restoration,
 and exports behave unchanged. A maintainer can now understand the entire

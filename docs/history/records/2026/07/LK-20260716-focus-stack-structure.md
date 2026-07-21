@@ -1,7 +1,6 @@
 # Focus Stack adopts the compact App contract
 
 ```labkit-change
-schema: 2
 id: LK-20260716-focus-stack-structure
 date: 2026-07-16
 sequence: 95
@@ -38,7 +37,7 @@ folders only when file registration or export actually needs them.
   App startup callback.
 - Replaced all direct portable-reference reads with the Runtime path accessor.
 
-## User and developer impact
+## User and data impact
 
 Focus loading, registration, fusion, previews, duplicate-run detection,
 project reopen, and exports keep the same scientific behavior. A new App no

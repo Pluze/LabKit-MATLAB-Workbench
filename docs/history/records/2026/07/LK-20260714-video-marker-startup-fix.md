@@ -1,7 +1,6 @@
 # Video Marker startup validation
 
 ```labkit-change
-schema: 2
 id: LK-20260714-video-marker-startup-fix
 date: 2026-07-14
 sequence: 56

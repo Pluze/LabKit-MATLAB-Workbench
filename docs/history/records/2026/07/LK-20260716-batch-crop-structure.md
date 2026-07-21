@@ -1,7 +1,6 @@
 # Batch Crop assigns state to workflow capabilities
 
 ```labkit-change
-schema: 2
 id: LK-20260716-batch-crop-structure
 date: 2026-07-16
 sequence: 101
@@ -45,7 +44,7 @@ are removed.
 - Removed the generic lifecycle/state packages, separate metadata files,
   redundant startup callback, and unused scale-unit wrapper.
 
-## User and developer impact
+## User and data impact
 
 Multiple crop tasks per source, draggable and resizable ROIs, zoom-preserving
 preview edits, rotation, edge-continuous padding, pixel and physical crop

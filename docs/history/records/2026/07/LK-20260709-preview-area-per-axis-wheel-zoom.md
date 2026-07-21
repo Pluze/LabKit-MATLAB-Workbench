@@ -1,13 +1,13 @@
 # Preview-area per-axis wheel zoom
 
 ```labkit-change
-schema: 2
 id: LK-20260709-preview-area-per-axis-wheel-zoom
 date: 2026-07-09
 sequence: 44
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `5.0.3 -> 5.0.4`
+scope: Preview-area per-axis wheel zoom
 ```
 
 ## Context

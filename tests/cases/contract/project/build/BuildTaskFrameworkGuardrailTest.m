@@ -319,18 +319,23 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "Generated site and renderer changes should use documentation guardrails.");
         end
 
-        function changedValidationPlanRoutesScopedAgentDocsToProject(testCase)
+        function changedValidationPlanRoutesGuidanceAndGitHubFilesByOwner(testCase)
             root = setupLabKitTestPath();
 
             steps = labkitValidationPlanForChangedPaths(root, [
+                "AGENTS.md"
                 "apps/AGENTS.md"
                 "+labkit/AGENTS.md"
-                "tests/AGENTS.md"]);
+                "tests/AGENTS.md"
+                ".agents/skills/labkit-test-planner/SKILL.md"
+                ".github/ISSUE_TEMPLATE/bug_report.md"
+                ".github/workflows/ci.yml"
+                ".github/scripts/summarize_junit.py"]);
             signatures = validationStepSignatures(steps);
 
-            testCase.verifyEqual(signatures, "project|false", ...
-                "Scoped AGENTS changes should run project guardrails, not " + ...
-                "invalid app or package suite names.");
+            testCase.verifyEqual(sort(signatures), ...
+                sort(["project/ci|false", "project/docs|false"]), ...
+                "Guidance, templates, workflows, and CI helpers should run their owning guardrails.");
         end
 
         function changedValidationPlanRoutesToolsToProject(testCase)
@@ -364,7 +369,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
             catalog = labkitBuildTaskCatalog();
 
-            expectedTasks = ["changed", "changedFast", "docs", "docsCheck", ...
+            expectedTasks = ["changedFast", "docs", "docsCheck", ...
                 "headless", "gui", "coverage", "listTasks"];
             publicTasks = [catalog([catalog.Visibility] == "public").Name];
             testCase.verifyEqual(publicTasks, expectedTasks, ...
@@ -473,7 +478,7 @@ end
 
 function tf = taskSpecMapsToKnownTests(root, spec)
     if strlength(spec.Plan) > 0
-        tf = any(lower(spec.Plan) == ["changed", "changedfast"]);
+        tf = lower(spec.Plan) == "changedfast";
         return;
     end
 

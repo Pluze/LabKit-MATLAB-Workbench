@@ -1,7 +1,6 @@
 # Chrono Overlay adopts one version-aware project migration entry
 
 ```labkit-change
-schema: 2
 id: LK-20260716-chrono-overlay-project-spec
 date: 2026-07-16
 sequence: 86
@@ -35,7 +34,7 @@ validation after every step, and unsupported-envelope handling.
 - Kept DTA parsing, pulse-gap alignment, interpolation, plots, and exports
   unchanged.
 
-## User and developer impact
+## User and data impact
 
 Launch, plotting, save/load, v1 project upgrade, and CSV export behavior remain
 unchanged. Maintainers now add future schema cases in one ordered migration

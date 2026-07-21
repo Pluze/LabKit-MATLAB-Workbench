@@ -1,7 +1,6 @@
 # Destination-rebased source references
 
 ```labkit-change
-schema: 2
 id: LK-20260716-destination-rebased-source-references
 date: 2026-07-16
 sequence: 74

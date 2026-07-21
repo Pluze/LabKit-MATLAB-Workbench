@@ -1,7 +1,6 @@
 # Runtime V2 lifecycle ownership across the app fleet
 
 ```labkit-change
-schema: 2
 id: LK-20260715-runtime-v2-app-migration
 date: 2026-07-15
 sequence: 59

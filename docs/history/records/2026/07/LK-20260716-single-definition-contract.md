@@ -1,12 +1,11 @@
 # Single-definition App product contract
 
 ```labkit-change
-schema: 2
 id: LK-20260716-single-definition-contract
 date: 2026-07-16
 sequence: 77
 type: feat
-compatibility: additive
+compatibility: compatible
 component: `labkit.ui` | `7.1.0 -> 7.2.0`
 scope: App authoring
 scope: Runtime V2 launch metadata
@@ -36,7 +35,7 @@ The public entrypoint can delegate through `launch(@definition, varargin{:})`.
 - Extended the minimal real-GUI launch test to obtain all metadata from the
   same definition.
 
-## User and developer impact
+## User and data impact
 
 App users see no workflow or scientific change. App authors no longer need to
 keep three product declarations synchronized after their App is migrated.
