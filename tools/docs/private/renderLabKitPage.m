@@ -6,7 +6,7 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
     scriptUrl = rootPrefix + "assets/app.js";
     searchScriptUrl = rootPrefix + "assets/search-index.js";
     homeUrl = relativeWebPath(outputPath, "index.html");
-    topNavigation = renderTopNavigation(outputPath);
+    topNavigation = renderTopNavigation(model, outputPath);
     localNavigation = renderLocalNavigation(model, outputPath, title, body);
     html = strjoin([ ...
         "<!doctype html>"
@@ -52,7 +52,7 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
         "</html>"], newline);
 end
 
-function html = renderTopNavigation(outputPath)
+function html = renderTopNavigation(model, outputPath)
     labels = ["Get Started", "Apps", "Functions", "Framework", ...
         "Development", "History"];
     targets = ["getting-started/index.html", "apps/index.html", ...
@@ -60,7 +60,7 @@ function html = renderTopNavigation(outputPath)
         "development/index.html", "history/index.html"];
     sections = ["getting-started", "apps", "functions", "framework", ...
         "development", "history"];
-    current = documentationSection(outputPath);
+    current = navigationSection(model, outputPath);
     links = strings(numel(labels), 1);
     for k = 1:numel(labels)
         className = "product-nav-link";
@@ -75,7 +75,7 @@ function html = renderTopNavigation(outputPath)
 end
 
 function html = renderLocalNavigation(model, outputPath, title, body)
-    section = documentationSection(outputPath);
+    section = navigationSection(model, outputPath);
     chunks = "<nav aria-label=""Current documentation"">" + ...
         "<a class=""context-home"" href=""" + ...
         relativeWebPath(outputPath, "index.html") + """>Documentation Home</a>";
@@ -88,6 +88,14 @@ function html = renderLocalNavigation(model, outputPath, title, body)
     end
 
     [ownerTitle, ownerTarget, apiItem] = apiOwner(model, outputPath);
+    if isempty(apiItem)
+        ancestors = renderContextAncestors( ...
+            model.pages, outputPath, landingTarget);
+        if strlength(ancestors) > 0
+            chunks = chunks + "<div class=""context-path"" aria-label=""Page hierarchy"">" + ...
+                ancestors + "</div>";
+        end
+    end
     if strlength(ownerTarget) > 0 && ownerTarget ~= outputPath
         chunks = chunks + "<a class=""context-parent"" href=""" + ...
             relativeWebPath(outputPath, ownerTarget) + """>" + ...
@@ -108,6 +116,26 @@ function html = renderLocalNavigation(model, outputPath, title, body)
             onPage + "</section>";
     end
     html = chunks + "</nav>";
+end
+
+function html = renderContextAncestors(pages, outputPath, landingTarget)
+    folder = replace(string(fileparts(char(outputPath))), "\\", "/");
+    parts = split(folder, "/");
+    links = strings(0, 1);
+    for k = 1:numel(parts)
+        target = strjoin(parts(1:k), "/") + "/index.html";
+        if target == outputPath || target == landingTarget
+            continue;
+        end
+        index = find(string({pages.output}) == target, 1);
+        if isempty(index)
+            continue;
+        end
+        links(end + 1, 1) = "<a class=""context-parent"" href=""" + ...
+            relativeWebPath(outputPath, target) + """>" + ...
+            htmlEscape(pages(index).title) + "</a>";
+    end
+    html = strjoin(links, "");
 end
 
 function html = renderSectionLinks(model, outputPath, section, apiItem)
@@ -153,9 +181,6 @@ function html = renderSiblingApis(api, item, outputPath)
     links = strings(0, 1);
     for k = 1:numel(members)
         target = apiOutputPath(members(k));
-        if target == outputPath
-            continue;
-        end
         nameParts = split(string(members(k).symbol), ".");
         links(end + 1, 1) = localLink(outputPath, target, nameParts(end));
     end
@@ -167,9 +192,9 @@ function html = renderSiblingApis(api, item, outputPath)
     if packagePrefix == "labkit.contract"
         groupTitle = "Framework Compatibility";
     elseif packagePrefix == "labkit.app"
-        groupTitle = "App SDK Core";
+        groupTitle = "App SDK Core API";
     elseif startsWith(packagePrefix, "labkit.app.")
-        groupTitle = "App SDK " + titleCasePackage(parts(end - 1));
+        groupTitle = "App SDK " + titleCasePackage(parts(end - 1)) + " API";
     end
     html = localSubgroup(groupTitle, strjoin(links, ""));
 end
@@ -245,9 +270,6 @@ function html = renderPageGroupLinks(members, outputPath, indentChildren)
     hasParent = any(ismember(string({members.kind}), parentKinds));
     links = strings(0, 1);
     for k = 1:numel(members)
-        if members(k).output == outputPath
-            continue;
-        end
         className = "local-link";
         isParent = any(string(members(k).kind) == parentKinds);
         if indentChildren && hasParent && ~isParent
@@ -317,6 +339,15 @@ function [title, target, item] = apiOwner(model, outputPath)
         pageIndex = find(string({pages.id}) == pageId, 1);
     else
         symbol = string(item.symbol);
+        if startsWith(symbol, "labkit.app")
+            pageIndex = find(string({pages.output}) == ...
+                "framework/app-sdk-api.html", 1);
+            if ~isempty(pageIndex)
+                title = string(pages(pageIndex).title);
+                target = string(pages(pageIndex).output);
+                return;
+            end
+        end
         pageIndex = [];
         best = -1;
         for k = 1:numel(pages)
@@ -351,8 +382,14 @@ function html = localLink(current, target, label)
 end
 
 function html = localLinkWithClass(current, target, label, className)
+    currentAttribute = "";
+    if string(current) == string(target)
+        className = string(className) + " active";
+        currentAttribute = " aria-current=""page""";
+    end
     html = "<a class=""" + className + """ href=""" + ...
-        relativeWebPath(current, target) + """>" + htmlEscape(label) + "</a>";
+        relativeWebPath(current, target) + """" + currentAttribute + ">" + ...
+        htmlEscape(label) + "</a>";
 end
 
 function [title, target] = sectionLanding(section)
@@ -379,6 +416,15 @@ function [title, target] = sectionLanding(section)
             title = "";
             target = "";
     end
+end
+
+function section = navigationSection(model, outputPath)
+    [~, ~, apiItem] = apiOwner(model, outputPath);
+    if ~isempty(apiItem) && startsWith(string(apiItem.symbol), "labkit.app")
+        section = "framework";
+        return;
+    end
+    section = documentationSection(outputPath);
 end
 
 function section = documentationSection(outputPath)

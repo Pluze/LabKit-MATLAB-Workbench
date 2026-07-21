@@ -13,6 +13,7 @@ sources, dialogs, resources, results, and native component lifecycle.
 | Understand ownership boundaries | [Architecture](../development/build-apps/architecture.md) |
 | Declare compatible LabKit modules | [Compatibility contracts](compatibility/contracts.md) |
 | Look up exact MATLAB syntax | [Public API reference](../reference/README.md) |
+| Browse the App SDK API by capability | [App SDK API](app-sdk-api.md) |
 | Validate framework or GUI changes | [Testing](../development/maintain-and-release/testing.md) |
 
 ## SDK Map

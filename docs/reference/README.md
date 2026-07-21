@@ -1,5 +1,9 @@
 # API Reference
 
+This index covers domain libraries and GUI-free App APIs. The App SDK itself
+is documented under [Framework: App SDK API](../framework/app-sdk-api.md), so
+its contracts stay with the lifecycle and architecture guidance they support.
+
 Use this reference to look up supported MATLAB functions. Every function name
 in the generated module tables is a direct link to an individual page with
 syntax, arguments, outputs, behavior, source, and related APIs.

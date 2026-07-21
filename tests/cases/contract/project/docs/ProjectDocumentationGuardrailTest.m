@@ -250,6 +250,36 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 '@media(max-width:991px)'));
         end
 
+        function appSdkApiStaysWithinFrameworkNavigation(testCase)
+            root = setupLabKitTestPath();
+            page = string(fileread(fullfile(root, "site", "reference", "api", ...
+                "labkit", "app", "layout", "plotArea.html")));
+
+            testCase.verifyTrue(contains(page, ...
+                '<a class="product-nav-link active" href="../../../../../framework/index.html">Framework</a>'));
+            testCase.verifyTrue(contains(page, ...
+                ['<a class="context-parent" ' ...
+                'href="../../../../../framework/app-sdk-api.html">App SDK API</a>']));
+            testCase.verifyTrue(contains(page, ...
+                '<div class="local-subgroup"><h3>App SDK Layout API</h3>'));
+            testCase.verifyTrue(contains(page, ...
+                ['<p class="api-context"><a href="../../../../../framework/index.html">Framework</a> ' ...
+                '&rsaquo; <a href="../../../../../framework/app-sdk-api.html">App SDK API</a>']));
+        end
+
+        function appSdkApiGuideListsEverySdkFunction(testCase)
+            root = setupLabKitTestPath();
+            page = string(fileread(fullfile(root, "site", "framework", ...
+                "app-sdk-api.html")));
+
+            testCase.verifyTrue(contains(page, ...
+                '<h2 id="functions-and-api">Complete App SDK API</h2>'));
+            testCase.verifyTrue(contains(page, "labkit.app.layout.plotArea"));
+            testCase.verifyTrue(contains(page, "labkit.app.view.Snapshot"));
+            testCase.verifyTrue(contains(page, "<h3>labkit.app.layout</h3>"));
+            testCase.verifyTrue(contains(page, "<h3>labkit.app.plot</h3>"));
+        end
+
         function generatedApiUsesPublicHelpInsteadOfImplementationPreamble(testCase)
             root = setupLabKitTestPath();
             page = string(fileread(fullfile(root, "site", "reference", "api", ...

@@ -4,10 +4,17 @@ function html = renderLabKitApiBody(model, item, outputPath)
 % Inputs: documentation model, API record, and generated output path.
 % Output: structured HTML reference body.
 
-    indexUrl = relativeWebPath(outputPath, "reference/index.html");
     [ownerTitle, ownerTarget] = ownerPage(model, item);
-    context = "<p class=""api-context""><a href=""" + indexUrl + ...
-        """>API Reference</a>";
+    if startsWith(string(item.symbol), "labkit.app")
+        contextTitle = "Framework";
+        contextTarget = "framework/index.html";
+    else
+        contextTitle = "API Reference";
+        contextTarget = "reference/index.html";
+    end
+    context = "<p class=""api-context""><a href=""" + ...
+        relativeWebPath(outputPath, contextTarget) + """>" + ...
+        contextTitle + "</a>";
     if strlength(ownerTarget) > 0
         context = context + " &rsaquo; <a href=""" + ...
             relativeWebPath(outputPath, ownerTarget) + """>" + ...
@@ -286,6 +293,15 @@ function [title, target] = ownerPage(model, item)
         index = find(string({pages.id}) == id, 1);
     else
         symbol = string(item.symbol);
+        if startsWith(symbol, "labkit.app")
+            index = find(string({pages.output}) == ...
+                "framework/app-sdk-api.html", 1);
+            if ~isempty(index)
+                title = string(pages(index).title);
+                target = string(pages(index).output);
+                return;
+            end
+        end
         candidates = false(numel(pages), 1);
         specificity = zeros(numel(pages), 1);
         for k = 1:numel(pages)

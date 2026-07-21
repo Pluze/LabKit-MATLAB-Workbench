@@ -10,22 +10,16 @@ function [html, plainText] = renderLabKitApiIndex(model, outputPath)
     words = strings(0, 1);
     for k = 1:numel(groups)
         items = api(groups(k).indices);
-        rows = strings(numel(items), 1);
-        for iItem = 1:numel(items)
-            target = "reference/api/" + ...
-                replace(string(items(iItem).symbol), ".", "/") + ".html";
-            summary = cleanSummary(items(iItem).summary);
-            rows(iItem) = "<tr><td><a href=""" + ...
-                relativeWebPath(outputPath, target) + """><code>" + ...
-                htmlEscape(items(iItem).symbol) + "</code></a></td><td>" + ...
-                htmlEscape(summary) + "</td></tr>";
-            words(end + 1, 1) = string(items(iItem).symbol) + " " + summary;
-        end
+        [target, label] = categoryTarget(model, items, groups(k));
+        rows = "<tr><td><a href=""" + relativeWebPath(outputPath, target) + ...
+            """>" + htmlEscape(label) + "</a></td><td>" + ...
+            htmlEscape(groups(k).description) + "</td></tr>";
+        words(end + 1, 1) = label + " " + groups(k).description;
         blocks(end + 1, 1) = "<section class=""api-group""><h2 id=""" + ...
             groups(k).id + """>" + htmlEscape(groups(k).title) + ...
             "</h2><p>" + htmlEscape(groups(k).description) + ...
             "</p><table class=""api-table""><thead><tr><th>Function</th>" + ...
-            "<th>Purpose</th></tr></thead><tbody>" + strjoin(rows, "") + ...
+            "<th>Purpose</th></tr></thead><tbody>" + rows + ...
             "</tbody></table></section>";
     end
     html = "<h2 id=""browse-by-module"">Browse By Module</h2>" + ...
@@ -34,12 +28,33 @@ function [html, plainText] = renderLabKitApiIndex(model, outputPath)
     plainText = strjoin(words, " ");
 end
 
+function [target, label] = categoryTarget(model, items, group)
+    first = items(1);
+    if string(first.origin) == "app"
+        pageId = "app-" + replace(string(first.owner), "_", "-");
+        index = find(string({model.pages.id}) == pageId, 1);
+        target = string(model.pages(index).output);
+        label = string(model.pages(index).title);
+        return;
+    end
+    key = erase(group.id, "app-");
+    if key == "labkit-contract"
+        target = "framework/compatibility/contracts.html";
+        label = "Framework Compatibility";
+    else
+        parts = split(string(first.symbol), ".");
+        target = "libraries/" + parts(2) + "/index.html";
+        label = group.title;
+    end
+end
+
 function groups = apiGroups(api)
     groups = repmat(struct("id", "", "title", "", "description", "", ...
         "indices", []), 0, 1);
     symbols = string({api.symbol});
     origin = string({api.origin});
-    libraryIndices = find(origin == "library");
+    libraryIndices = find(origin == "library" & ...
+        ~startsWith(symbols, "labkit.app"));
     libraryKeys = strings(numel(libraryIndices), 1);
     for k = 1:numel(libraryIndices)
         parts = split(symbols(libraryIndices(k)), ".");
