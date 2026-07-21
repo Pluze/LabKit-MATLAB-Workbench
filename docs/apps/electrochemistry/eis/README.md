@@ -22,8 +22,10 @@ through portable references.
 1. Add the EIS DTA files.
 2. Choose X and Y quantities.
 3. Enable logarithmic X or Y scaling only for strictly positive plotted data.
-4. Adjust marker, line, grid, and legend presentation.
-5. Export the current plot data CSV.
+4. Use **Fit X/Y limits** to re-estimate independent limits from the current
+   data, or **Use equal X/Y scale** when equal data units are wanted.
+5. Adjust marker, line, grid, and legend presentation.
+6. Export the current plot data CSV.
 
 ## Axis Quantities
 
@@ -48,9 +50,15 @@ intended.
 | Log X / Log Y | off / off |
 | Legend / Grid | on / on |
 
-Axis and styling changes preserve the current source set. The plot refits when
-the selected data quantities change; ordinary zoom is preserved for styling
-changes.
+The app never infers an equal aspect ratio from the selected quantities: a
+Nyquist plot starts with independently fitted limits. Use **Use equal X/Y
+scale** only when equal data units are useful for the current comparison. Use
+**Fit X/Y limits** to return to independent limits after equal scaling or a
+manual zoom. Equal scaling expands a fitted limit when necessary so X and Y
+data units have the same on-screen length; it is a one-time reset and does not
+constrain later wheel zooming. Axis and styling changes preserve the current
+source set and the current viewport; the two view buttons explicitly replace
+that viewport.
 
 ## Output
 

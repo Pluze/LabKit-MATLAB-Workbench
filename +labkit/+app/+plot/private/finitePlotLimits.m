@@ -1,10 +1,58 @@
 % Private UI plot axes helper. Expected caller: fit. Inputs are an axes,
 % graphics handles, and fractional padding. Outputs are X/Y limits fitted to
 % finite plotted data.
-function [xLim, yLim] = finitePlotLimits(ax, handles, padding)
+function [xLim, yLim] = finitePlotLimits(ax, handles, padding, equalDataUnits)
     [x, y] = collectFiniteXY(handles);
     xLim = paddedDataLimits(x, ax.XScale, padding);
     yLim = paddedDataLimits(y, ax.YScale, padding);
+    if equalDataUnits && ~isempty(xLim) && ~isempty(yLim)
+        [xLim, yLim] = equalDataUnitLimits(ax, xLim, yLim);
+    end
+end
+
+function [xLim, yLim] = equalDataUnitLimits(ax, xLim, yLim)
+    position = getpixelposition(ax, true);
+    if numel(position) ~= 4 || position(3) <= 0 || position(4) <= 0
+        return;
+    end
+    xLog = string(ax.XScale) == "log";
+    yLog = string(ax.YScale) == "log";
+    xWork = scaleLimits(xLim, xLog);
+    yWork = scaleLimits(yLim, yLog);
+    if isempty(xWork) || isempty(yWork)
+        return;
+    end
+    targetRatio = position(3) / position(4);
+    xSpan = diff(xWork);
+    ySpan = diff(yWork);
+    if xSpan / ySpan < targetRatio
+        xWork = expandAroundCenter(xWork, ySpan * targetRatio);
+    else
+        yWork = expandAroundCenter(yWork, xSpan / targetRatio);
+    end
+    xLim = unscaleLimits(xWork, xLog);
+    yLim = unscaleLimits(yWork, yLog);
+end
+
+function limits = scaleLimits(limits, isLog)
+    if isLog
+        if any(limits <= 0)
+            limits = [];
+            return;
+        end
+        limits = log10(limits);
+    end
+end
+
+function limits = unscaleLimits(limits, isLog)
+    if isLog
+        limits = 10 .^ limits;
+    end
+end
+
+function limits = expandAroundCenter(limits, span)
+    center = mean(limits);
+    limits = center + [-0.5, 0.5] * span;
 end
 
 function [x, y] = collectFiniteXY(handles)

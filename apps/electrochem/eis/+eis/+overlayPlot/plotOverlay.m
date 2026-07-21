@@ -9,7 +9,6 @@ function labels = plotOverlay(ax, items, opts)
     opts = fillPlotOptions(opts);
 
     labkit.app.plot.clearAxes(ax, ResetScale=true);
-    axis(ax, 'normal');
 
     cmap = lines(numel(items));
     labels = cell(1, numel(items));
@@ -35,9 +34,7 @@ function labels = plotOverlay(ax, items, opts)
     % are still negative makes MATLAB warn before the redraw can refit them.
     ax.XScale = ternary(opts.logX, 'log', 'linear');
     ax.YScale = ternary(opts.logY, 'log', 'linear');
-    if any(isgraphics(plottedLines))
-        axis(ax, 'tight');
-    end
+    labkit.app.plot.fitAxesToGraphics(ax, plottedLines(isgraphics(plottedLines)));
 
     xlabel(ax, labelForAxis(opts.xName));
     ylabel(ax, labelForAxis(opts.yName));
@@ -54,11 +51,6 @@ function labels = plotOverlay(ax, items, opts)
         legend(ax, labels, 'Interpreter', 'none', 'Location', 'best');
     else
         legend(ax, 'off');
-    end
-
-    if eis.overlayPlot.axisModeForSelection(opts.xName, opts.yName, ...
-            opts.logX, opts.logY) == "equal"
-        axis(ax, 'equal');
     end
 end
 

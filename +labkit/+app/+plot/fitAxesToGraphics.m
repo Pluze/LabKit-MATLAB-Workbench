@@ -16,6 +16,10 @@ function limits = fitAxesToGraphics(ax, varargin)
 %   Padding - Nonnegative fractional padding added on each side of the data
 %       range. Default: 0.02. For logarithmic axes, padding is computed in
 %       base-10 logarithmic space.
+%   EqualDataUnits - Logical value. true expands one fitted dimension so one
+%       data unit occupies the same screen distance on X and Y without
+%       changing the axes position. For logarithmic dimensions, equality is
+%       evaluated in base-10 logarithmic space. Default: false.
 %
 % Outputs:
 %   limits - Scalar struct with x and y fields. Each field contains the applied
@@ -46,7 +50,8 @@ function limits = fitAxesToGraphics(ax, varargin)
 
     validateAxesHandle(ax, 'fit');
     [handles, opts] = parseFitInputs(ax, varargin);
-    [xLim, yLim] = finitePlotLimits(ax, handles, opts.Padding);
+    [xLim, yLim] = finitePlotLimits( ...
+        ax, handles, opts.Padding, logicalScalar(opts.EqualDataUnits));
     if isempty(xLim)
         xlim(ax, 'auto');
     else
@@ -66,5 +71,13 @@ function [handles, opts] = parseFitInputs(ax, args)
         handles = args{1};
         args = args(2:end);
     end
-    opts = parseAxesOptions(args, struct('Padding', 0.02));
+    opts = parseAxesOptions(args, struct( ...
+        'Padding', 0.02, 'EqualDataUnits', false));
+end
+
+function value = logicalScalar(value)
+    if ~(islogical(value) && isscalar(value))
+        error('labkit:app:plot:InvalidOption', ...
+            'EqualDataUnits must be a logical scalar.');
+    end
 end
