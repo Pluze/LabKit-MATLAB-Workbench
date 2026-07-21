@@ -145,9 +145,12 @@ tests, history, and details out of the public repository.
 - After failure, fix and rerun the narrowest failed file, method, or suite; do not repeatedly
   invoke the planner. Exact commands and scope live in
   `docs/development/maintain-and-release/testing.md`.
-- MATLAB and GitHub inspection require host runtime/network permissions. If
-  MATLAB exits before a build/test banner, diagnose launcher access rather than
-  source failure.
+- MATLAB and GitHub inspection require host runtime/network permissions. Run
+  every `gh` command with host permissions on its first attempt, including
+  `gh auth status`; sandboxed `gh` cannot access the macOS Keychain and can
+  falsely report a valid token as invalid. Never ask the user to reauthenticate
+  based only on sandboxed output. If MATLAB exits before a build/test banner,
+  diagnose launcher access rather than source failure.
 - Do not add Code Analyzer suppression pragmas.
 - `artifacts/` is ignored scratch output, never tracked design state.
 - Automated hidden GUI tests do not prove native dialogs, visual quality,

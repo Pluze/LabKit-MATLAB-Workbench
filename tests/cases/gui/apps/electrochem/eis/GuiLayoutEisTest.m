@@ -83,8 +83,10 @@ classdef GuiLayoutEisTest < matlab.unittest.TestCase
                 'The explicit fit action must replace the saved X viewport.');
             testCase.verifyNotEqual(ax.YLim, [4e4 13e4], ...
                 'The explicit fit action must replace the saved Y viewport.');
-            plotPixels = getpixelposition(ax, true);
+            drawnow
             runtime.invokeAction("equalAxes");
+            drawnow
+            plotPixels = getpixelposition(ax, true);
             testCase.verifyEqual(diff(ax.XLim) / plotPixels(3), ...
                 diff(ax.YLim) / plotPixels(4), "AbsTol", 1e-8, ...
                 'Equal X/Y scale must use equal data units.');

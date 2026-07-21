@@ -26,6 +26,10 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
             plugin.ActiveTestFile = fullfile(string(logFolder), "active-test.json");
             plugin.ActiveTestTextFile = fullfile(string(logFolder), "active-test.txt");
         end
+
+        function delete(plugin)
+            plugin.stopHeartbeat();
+        end
     end
 
     methods (Access = protected)
@@ -120,6 +124,7 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
                     "ExecutionMode", "fixedSpacing", ...
                     "Period", 30, ...
                     "BusyMode", "drop", ...
+                    "Tag", char("labkitProgressHeartbeat:" + plugin.ActiveTestFile), ...
                     "TimerFcn", callback);
                 start(plugin.HeartbeatTimer);
             catch

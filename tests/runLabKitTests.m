@@ -55,7 +55,9 @@ function output = runLabKitTests(varargin)
     runner = matlab.unittest.TestRunner.withTextOutput( ...
         "OutputDetail", opts.OutputDetail, ...
         "LoggingLevel", opts.LoggingLevel);
-    runner.addPlugin(labkitProgressPlugin(paths.logs));
+    progressPlugin = labkitProgressPlugin(paths.logs);
+    progressCleanup = onCleanup(@() delete(progressPlugin));
+    runner.addPlugin(progressPlugin);
     runner.addPlugin(matlab.unittest.plugins.XMLPlugin.producingJUnitFormat( ...
         paths.junitXml));
     if opts.HtmlReport
@@ -83,6 +85,7 @@ function output = runLabKitTests(varargin)
     end
 
     officialResults = runner.run(suite);
+    clear progressCleanup
     if labkitOfficialResultsHaveFailures(officialResults)
         error("LabKit:Tests:OfficialFailure", ...
             "One or more official matlab.unittest tests failed.");
