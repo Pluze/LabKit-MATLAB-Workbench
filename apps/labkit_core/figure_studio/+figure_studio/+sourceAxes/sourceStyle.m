@@ -8,6 +8,7 @@ function style = sourceStyle(srcAx, opts)
 
     style = figure_studio.styleLibrary.styleForPreset("FIG default");
     style.name = "FIG default";
+    style.axesPosition = [];
     if isempty(srcAx) || ~isvalid(srcAx)
         return;
     end
@@ -22,11 +23,7 @@ function style = sourceStyle(srcAx, opts)
             ratio = ratioFromVector(optionalAxesValue(srcAx, 'PlotBoxAspectRatio'));
         end
     end
-    width = 720;
-    height = 540;
-    if isfinite(ratio) && ratio > 0
-        height = max(300, round(width / ratio));
-    end
+    [width, height] = sourceCanvasSize(srcAx, ratio);
     style.canvasWidth = width;
     style.canvasHeight = height;
     style.referenceCanvasWidth = width;
@@ -62,6 +59,26 @@ function style = sourceStyle(srcAx, opts)
     style.boxVisible = string(optionalAxesValue(srcAx, 'Box')) == "on";
     style.boundaryLines = style.boxVisible;
     style = sourceLegendStyle(srcAx, style);
+end
+
+function [width, height] = sourceCanvasSize(ax, ratio)
+width = 720;
+height = 540;
+try
+    figureHandle = ancestor(ax, "figure");
+    position = getpixelposition(figureHandle, true);
+    if numel(position) == 4 && all(isfinite(position(3:4))) && ...
+            all(position(3:4) > 0)
+        width = round(position(3));
+        height = round(position(4));
+    end
+catch
+end
+if isfinite(ratio) && ratio > 0
+    height = max(240, round(width / ratio));
+end
+width = min(max(width, 320), 8000);
+height = min(max(height, 240), 8000);
 end
 
 function value = sourceLabelFont(labelHandle, fallback)

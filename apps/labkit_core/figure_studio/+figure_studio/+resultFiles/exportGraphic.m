@@ -19,17 +19,18 @@ if chosen.Cancelled
     return
 end
 [fig, ax] = figure_studio.resultFiles.createStyledFigure( ...
-    state.session.cache.plotData, state.project.parameters.style);
+    state.session.cache.plotData, state.project.parameters.style, ...
+    state.session.cache.sourceAxes);
 cleanup = onCleanup(@() delete(fig));
 filepath = string(chosen.Value);
 if format == "fig"
     savefig(fig, filepath);
 elseif format == "svg"
-    exportgraphics(ax, filepath, ContentType="vector");
+    print(fig, char(filepath), "-dsvg");
 else
     resolution = max(72, round( ...
         300 * state.project.parameters.style.exportScale));
-    exportgraphics(ax, filepath, Resolution=resolution);
+    print(fig, char(filepath), "-d" + format, "-r" + string(resolution));
 end
 [folder, base, suffix] = fileparts(filepath);
 output = labkit.app.result.File( ...

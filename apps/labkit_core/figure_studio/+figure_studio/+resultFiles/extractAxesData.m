@@ -37,6 +37,23 @@ function children = visiblePlotChildren(ax)
         label = ax.(property);
         children(children == label) = [];
     end
+    children = expandVisibleGroups(children);
+end
+
+function children = expandVisibleGroups(children)
+    expanded = gobjects(0, 1);
+    for k = 1:numel(children)
+        child = children(k);
+        if isgraphics(child, 'hggroup')
+            if isprop(child, 'Visible') && string(child.Visible) == "off"
+                continue;
+            end
+            expanded = [expanded; expandVisibleGroups(flipud(allchild(child)))];
+        else
+            expanded(end + 1, 1) = child;
+        end
+    end
+    children = expanded;
 end
 
 function meta = axesMetadata(ax)

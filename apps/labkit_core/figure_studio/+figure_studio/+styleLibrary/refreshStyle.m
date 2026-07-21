@@ -7,6 +7,7 @@ arguments
 end
 p = state.project.parameters;
 p.style = sanitizeStyle(p.style);
+p.canvasSize = normalizeCanvasSize(p.canvasSize);
 if changedId == "baseFontSize"
     p.style.titleFontSize = p.style.baseFontSize;
     p.style.labelFontSize = p.style.baseFontSize;
@@ -22,7 +23,8 @@ elseif changedId == "gridVisible"
 elseif changedId == "boundaryLines"
     p.style.boundaryLines = p.boundaryChoice == "On";
 end
-p.style = applyAspectPreset(p.style, p.aspectPreset, changedId);
+p.style = applyAspectPreset( ...
+    p.style, p.aspectPreset, p.canvasSize, changedId);
 state.project.parameters = p;
 state.session.workflow.status = "Styled with " + p.preset + ".";
 state.project.results.lastExport = [];
@@ -75,15 +77,17 @@ if ~isfield(style, "fontOverrides") || ~isstruct(style.fontOverrides)
 end
 end
 
-function style = applyAspectPreset(style, preset, changedId)
+function style = applyAspectPreset(style, preset, canvasSize, changedId)
 ratio = aspectRatio(preset);
+if changedId == "canvasSize"
+    style.canvasWidth = figure_studio.styleLibrary.canvasWidthForSize( ...
+        string(canvasSize), style.canvasWidth);
+end
 if ~isfinite(ratio)
     return
 end
-if changedId == "aspectPreset" || changedId == "canvasWidth"
+if changedId == "aspectPreset" || changedId == "canvasSize"
     style.canvasHeight = max(1, round(style.canvasWidth / ratio));
-elseif changedId == "canvasHeight"
-    style.canvasWidth = max(1, round(style.canvasHeight * ratio));
 end
 end
 
@@ -101,6 +105,14 @@ switch string(preset)
         ratio = 3 / 2;
     otherwise
         ratio = NaN;
+end
+end
+
+function choice = normalizeCanvasSize(choice)
+[choices, ~] = figure_studio.styleLibrary.canvasSizeOptions();
+choice = string(choice);
+if ~isscalar(choice) || ~any(choices == choice)
+    choice = "1600 px";
 end
 end
 

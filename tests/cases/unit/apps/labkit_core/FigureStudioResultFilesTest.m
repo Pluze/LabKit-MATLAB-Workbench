@@ -24,17 +24,19 @@ classdef FigureStudioResultFilesTest < matlab.unittest.TestCase
 
             testCase.verifyEqual( ...
                 [style.canvasWidth style.canvasHeight style.exportScale], ...
-                [720 600 2]);
+                [1600 1333 2]);
             testCase.verifyEqual( ...
                 [style.titleFontSize style.labelFontSize ...
                 style.tickFontSize style.annotationFontSize ...
                 style.legendFontSize], ...
-                [24 24 20 20 15]);
+                [60 72 60 54 64]);
             testCase.verifyEqual( ...
                 [style.dataLineWidth style.uncertaintyLineWidth ...
                 style.boundaryLineWidth style.referenceLineWidth ...
                 style.axesLineWidth], ...
-                [1.2 1.1 1.1 1.2 1.2]);
+                [6.0 4.0 2.5 4.0 2.4]);
+            testCase.verifyEqual(style.axesPosition, ...
+                [0.185 0.17 0.795 0.78]);
             testCase.verifyTrue(style.boxVisible);
             testCase.verifyTrue(style.boundaryLines);
             testCase.verifyFalse(style.gridVisible);
@@ -52,24 +54,24 @@ classdef FigureStudioResultFilesTest < matlab.unittest.TestCase
 
             style = figure_studio.styleLibrary.styleForPreset( ...
                 "LabKit figure");
-            style.canvasWidth = 1440;
-            style.canvasHeight = 1200;
+            style.canvasWidth = 3200;
+            style.canvasHeight = 2666;
             figure_studio.resultFiles.applyFigureStyle(ax, style);
 
-            testCase.verifyEqual(fig.Position(3:4), [1440 1200]);
-            testCase.verifyEqual(ax.FontSize, 40);
-            testCase.verifyEqual(ax.Title.FontSize, 48);
-            testCase.verifyEqual(ax.LineWidth, 2.4, 'AbsTol', 1e-12);
-            testCase.verifyEqual(curve.LineWidth, 2.4, 'AbsTol', 1e-12);
+            testCase.verifyEqual(fig.Position(3:4), [3200 2666]);
+            testCase.verifyEqual(ax.FontSize, 120);
+            testCase.verifyEqual(ax.Title.FontSize, 120);
+            testCase.verifyEqual(ax.LineWidth, 4.8, 'AbsTol', 1e-12);
+            testCase.verifyEqual(curve.LineWidth, 12, 'AbsTol', 1e-12);
 
-            style.canvasWidth = 360;
-            style.canvasHeight = 300;
+            style.canvasWidth = 800;
+            style.canvasHeight = 666.5;
             figure_studio.resultFiles.applyFigureStyle(ax, style);
-            testCase.verifyEqual(fig.Position(3:4), [360 300]);
-            testCase.verifyEqual(ax.FontSize, 10);
-            testCase.verifyEqual(ax.Title.FontSize, 12);
-            testCase.verifyEqual(ax.LineWidth, 0.6, 'AbsTol', 1e-12);
-            testCase.verifyEqual(curve.LineWidth, 0.6, 'AbsTol', 1e-12);
+            testCase.verifyEqual(fig.Position(3:4), [800 666.5]);
+            testCase.verifyEqual(ax.FontSize, 30);
+            testCase.verifyEqual(ax.Title.FontSize, 30);
+            testCase.verifyEqual(ax.LineWidth, 1.2, 'AbsTol', 1e-12);
+            testCase.verifyEqual(curve.LineWidth, 3, 'AbsTol', 1e-12);
             clear cleanup
         end
     end
@@ -79,6 +81,7 @@ function verify_presetStylesSemanticElements(testCase)
     cleanup = onCleanup(@() closeAllTestFigures());
     sourceFig = figure('Visible', 'off', 'Color', 'w');
     ax = axes('Parent', sourceFig);
+    ax.Position = [0.18 0.24 0.68 0.56];
     hold(ax, 'on');
     curve = plot(ax, 1:3, [2 4 3], 'LineWidth', 4, ...
         'DisplayName', 'curve');
@@ -88,6 +91,8 @@ function verify_presetStylesSemanticElements(testCase)
     region = rectangle(ax, 'Position', [1.2 1.5 1.5 2], ...
         'LineWidth', 4);
     reference = xline(ax, 2, 'LineWidth', 4);
+    bracket = plot(ax, [1 1 3 3], [4.2 4.5 4.5 4.2], ...
+        'k', 'LineWidth', 0.75, 'HandleVisibility', 'off');
     note = text(ax, 2, 4.8, 'manual annotation', ...
         'FontName', 'Courier', 'FontSize', 19);
     title(ax, 'Title');
@@ -108,6 +113,8 @@ function verify_presetStylesSemanticElements(testCase)
     testCase.verifyEqual(bars.LineWidth, style.boundaryLineWidth);
     testCase.verifyEqual(region.LineWidth, style.boundaryLineWidth);
     testCase.verifyEqual(reference.LineWidth, style.referenceLineWidth);
+    testCase.verifyEqual(bracket.LineWidth, 0.75, ...
+        "Hidden annotation lines must retain their source width.");
     testCase.verifyEqual(string(note.FontName), string(style.fontName));
     testCase.verifyEqual(note.FontSize, style.annotationFontSize);
     testCase.verifyEqual(lgd.FontSize, style.legendFontSize);
@@ -140,9 +147,12 @@ function verify_figImportKeepsCompositeAppGraphics(testCase)
     filepath = string(tempname) + ".fig";
     fileCleanup = onCleanup(@() deleteIfFile(filepath));
     savefig(sourceFig, filepath);
-    [plotData, style] = figure_studio.sourceAxes.readFigFile(filepath);
+    [plotData, style, resource] = figure_studio.sourceAxes.readFigFile(filepath);
+    resourceCleanup = onCleanup(@() ...
+        figure_studio.sourceAxes.closeResource(resource));
     [rebuiltFig, rebuiltAx] = ...
-        figure_studio.resultFiles.createStyledFigure(plotData, style);
+        figure_studio.resultFiles.createStyledFigure( ...
+        plotData, style, resource.axes);
 
     expected = ["bar", "errorbar", "rectangle", "constantline", "text"];
     actual = string(get(findall(rebuiltAx, '-property', 'Type'), 'Type'));
@@ -155,8 +165,10 @@ function verify_figImportKeepsCompositeAppGraphics(testCase)
         expectedLegendStrings);
     testCase.verifyEqual(rebuiltLegend.Location, 'northwest');
     testCase.verifyEqual(rebuiltLegend.Orientation, 'horizontal');
+    testCase.verifyEqual(rebuiltAx.Position, ax.Position, 'AbsTol', 1e-12, ...
+        "FIG default export must retain the source axes placement.");
     testCase.verifyTrue(isvalid(rebuiltFig));
-    clear fileCleanup cleanup
+    clear resourceCleanup fileCleanup cleanup
 end
 
 function verify_axesPackageRecreatesCommonGraphics()

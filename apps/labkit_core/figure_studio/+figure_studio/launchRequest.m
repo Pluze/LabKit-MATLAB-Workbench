@@ -10,6 +10,7 @@ function [initialProject, dispatchArgs] = launchRequest(args)
             error('labkit_FigureStudio_app:InvalidAxes', ...
                 'Figure Studio axes launch requires a valid axes handle.');
         end
+        drawnow nocallbacks
         schema = figure_studio.projectSpec();
         initialProject = schema.Create();
         sourceStyle = figure_studio.sourceAxes.sourceStyle(ax);
@@ -17,6 +18,7 @@ function [initialProject, dispatchArgs] = launchRequest(args)
         initialProject.annotations.embeddedPlot = ...
             figure_studio.resultFiles.extractAxesData(ax);
         initialProject.annotations.sourceDefaultStyle = sourceStyle;
+        initialProject.annotations.transientSourceAxes = ax;
         labkitStyle = figure_studio.styleLibrary.styleForPreset( ...
             "LabKit figure");
         initialProject.parameters.preset = "LabKit figure";

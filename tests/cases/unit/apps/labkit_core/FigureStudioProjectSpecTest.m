@@ -5,7 +5,7 @@ classdef FigureStudioProjectSpecTest < matlab.unittest.TestCase
         function defaultProjectAcceptsAndRequiresSources(testCase)
             setupLabKitTestPath();
             spec = figure_studio.projectSpec();
-            testCase.verifyEqual(spec.Version, 2);
+            testCase.verifyEqual(spec.Version, 4);
             testCase.verifyClass(spec.Migrate, "function_handle");
             project = spec.Create();
             testCase.verifyTrue(accepts(spec, project));
@@ -31,11 +31,11 @@ classdef FigureStudioProjectSpecTest < matlab.unittest.TestCase
             testCase.verifyEqual( ...
                 migrated.parameters.style.baseFontSize, 17);
             testCase.verifyEqual( ...
-                migrated.parameters.style.annotationFontSize, 20);
+                migrated.parameters.style.annotationFontSize, 54);
             testCase.verifyEqual( ...
-                migrated.parameters.style.legendFontSize, 15);
+                migrated.parameters.style.legendFontSize, 64);
             testCase.verifyEqual( ...
-                migrated.parameters.style.referenceLineWidth, 1.2);
+                migrated.parameters.style.referenceLineWidth, 4.0);
             testCase.verifyEqual( ...
                 migrated.parameters.style.xTickLabelAngle, "Horizontal");
             testCase.verifyEqual( ...
@@ -43,6 +43,8 @@ classdef FigureStudioProjectSpecTest < matlab.unittest.TestCase
                 migrated.parameters.style.referenceCanvasHeight], ...
                 [legacy.parameters.style.canvasWidth ...
                 legacy.parameters.style.canvasHeight]);
+            testCase.verifyEqual(migrated.parameters.style.axesPosition, ...
+                [0.185 0.17 0.795 0.78]);
             testCase.verifyTrue(accepts(spec, migrated));
         end
 
@@ -51,6 +53,35 @@ classdef FigureStudioProjectSpecTest < matlab.unittest.TestCase
             spec = figure_studio.projectSpec();
             testCase.verifyError(@() spec.Migrate(spec.Create(), 0), ...
                 "figure_studio:UnsupportedProjectVersion");
+        end
+
+        function versionTwoCanvasControlsMigrateToFixedControlModel(testCase)
+            setupLabKitTestPath();
+            spec = figure_studio.projectSpec();
+            legacy = spec.Create();
+            legacy.parameters = rmfield(legacy.parameters, "canvasSize");
+            legacy.parameters.aspectPreset = "Custom";
+            legacy.annotations = rmfield(legacy.annotations, "limitOverrides");
+
+            migrated = spec.Migrate(legacy, 2);
+
+            testCase.verifyEqual(migrated.parameters.aspectPreset, "Source");
+            testCase.verifyEqual(migrated.parameters.canvasSize, "Source size");
+            testCase.verifyEqual(migrated.annotations.limitOverrides, ...
+                struct("xLim", [], "yLim", []));
+            testCase.verifyTrue(accepts(spec, migrated));
+        end
+
+        function versionThreeAddsSelectedPanel(testCase)
+            setupLabKitTestPath();
+            spec = figure_studio.projectSpec();
+            legacy = spec.Create();
+            legacy.annotations = rmfield(legacy.annotations, "panelIndex");
+
+            migrated = spec.Migrate(legacy, 3);
+
+            testCase.verifyEqual(migrated.annotations.panelIndex, 1);
+            testCase.verifyTrue(accepts(spec, migrated));
         end
     end
 end

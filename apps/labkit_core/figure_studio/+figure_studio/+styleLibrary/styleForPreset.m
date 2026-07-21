@@ -16,6 +16,7 @@ function style = styleForPreset(name)
 end
 
 function style = baseStyle(name, colorOrder)
+    gold = figure_studio.styleLibrary.goldStandard();
     style = struct();
     style.name = string(name);
     style.fontName = preferredFont(name);
@@ -23,33 +24,34 @@ function style = baseStyle(name, colorOrder)
     style.titleFontOffset = 4;
     style.labelFontOffset = 4;
     style.tickFontOffset = 0;
-    style.titleFontSize = 24;
-    style.labelFontSize = 24;
-    style.tickFontSize = 20;
-    style.annotationFontSize = 20;
+    style.titleFontSize = gold.titleFontSize;
+    style.labelFontSize = gold.labelFontSize;
+    style.tickFontSize = gold.tickFontSize;
+    style.annotationFontSize = gold.annotationFontSize;
     style.xTickLabelAngle = "Horizontal";
     style.fontOverrides = struct( ...
         'title', false, ...
         'label', false, ...
         'tick', false);
-    style.dataLineWidth = 1.2;
-    style.uncertaintyLineWidth = 1.1;
-    style.boundaryLineWidth = 1.1;
-    style.referenceLineWidth = 1.2;
-    style.axesLineWidth = 1.2;
+    style.dataLineWidth = gold.dataLineWidth;
+    style.uncertaintyLineWidth = gold.uncertaintyLineWidth;
+    style.boundaryLineWidth = gold.boundaryLineWidth;
+    style.referenceLineWidth = gold.referenceLineWidth;
+    style.axesLineWidth = gold.axesLineWidth;
     style.gridAlpha = 0.12;
     style.gridVisible = false;
     style.boxVisible = true;
     style.boundaryLines = true;
     style.legendVisible = "Source";
     style.legendLocation = "Source";
-    style.legendFontSize = 15;
+    style.legendFontSize = gold.legendFontSize;
     style.legendNumColumns = 0;
     style.legendBox = "On";
-    style.canvasWidth = 720;
-    style.canvasHeight = 600;
-    style.referenceCanvasWidth = 720;
-    style.referenceCanvasHeight = 600;
+    style.canvasWidth = gold.canvasWidth;
+    style.canvasHeight = gold.canvasHeight;
+    style.referenceCanvasWidth = gold.canvasWidth;
+    style.referenceCanvasHeight = gold.canvasHeight;
+    style.axesPosition = gold.axesPosition;
     style.exportScale = 2;
     style.colorOrder = colorOrder;
 end

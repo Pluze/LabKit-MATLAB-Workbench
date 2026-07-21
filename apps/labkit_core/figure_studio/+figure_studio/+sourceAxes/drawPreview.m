@@ -16,6 +16,18 @@ function drawPreview(axesById, model)
         title(ax, "No figure loaded");
         return;
     end
+    if isfield(model, "preview") && logical(model.preview)
+        drawExportPreview(ax, model);
+        return;
+    end
+    if hasNativeSource(model)
+        figure_studio.sourceAxes.copyToPreview(model.sourceAxes, ax);
+        applyStoredLimits(ax, model.plotData.axes);
+        style = model.style;
+        style.previewScale = logical(model.preview);
+        figure_studio.resultFiles.applyFigureStyle(ax, style);
+        return;
+    end
     samePlot = isappdata(ax, 'labkitFigureStudioPlotData') && ...
         isequaln(getappdata(ax, 'labkitFigureStudioPlotData'), model.plotData);
     if samePlot
@@ -46,6 +58,49 @@ function drawPreview(axesById, model)
         setappdata(ax, 'labkitFigureStudioPreviewStyle', style);
         figure_studio.sourceAxes.resizePreview(ax, style);
     end
+end
+
+function drawExportPreview(ax, model)
+labkit.app.plot.clearAxes(ax);
+ax.Visible = 'on';
+disableDefaultAxesToolbar(ax);
+previewFigure = figure_studio.resultFiles.createStyledFigure( ...
+    model.plotData, model.style, model.sourceAxes);
+figureCleanup = onCleanup(@() delete(previewFigure));
+filepath = string(tempname) + ".png";
+fileCleanup = onCleanup(@() deleteIfFile(filepath));
+print(previewFigure, char(filepath), '-dpng', '-r96');
+rgb = imread(filepath);
+image(ax, 'CData', rgb, 'XData', [0 size(rgb, 2)], ...
+    'YData', [0 size(rgb, 1)], ...
+    'HitTest', 'off', 'PickableParts', 'none');
+ax.YDir = 'reverse';
+axis(ax, 'image');
+axis(ax, 'off');
+setappdata(ax, 'labkitFigureStudioExportPreview', ...
+    struct("canvas", [model.style.canvasWidth model.style.canvasHeight], ...
+    "aspect", model.style.canvasWidth / model.style.canvasHeight));
+clear fileCleanup figureCleanup
+end
+
+function tf = hasNativeSource(model)
+tf = isstruct(model) && isfield(model, "sourceAxes") && ...
+    ~isempty(model.sourceAxes) && ...
+    isscalar(model.sourceAxes) && isgraphics(model.sourceAxes, "axes");
+end
+
+function applyStoredLimits(ax, axesData)
+for field = ["xLim", "yLim"]
+    if ~isfield(axesData, field)
+        continue;
+    end
+    value = double(axesData.(field));
+    if numel(value) ~= 2 || any(~isfinite(value)) || value(1) >= value(2)
+        continue;
+    end
+    property = upper(extractBefore(field, 2)) + "Lim";
+    ax.(char(property)) = reshape(value, 1, 2);
+end
 end
 
 function applyLegendMetadata(ax, plotData)
@@ -259,4 +314,10 @@ function disableDefaultAxesToolbar(ax)
         disableDefaultInteractivity(ax);
     catch
     end
+end
+
+function deleteIfFile(filepath)
+if isfile(filepath)
+    delete(filepath);
+end
 end

@@ -22,21 +22,27 @@ available through **FIG default**.
 
 A plot-context-menu handoff creates the same editable project state as loading
 a FIG file. Saved projects retain portable FIG sources, embedded plot
-snapshots, style settings, and canvas settings. Decoded FIG graphics are
-rebuilt after load, and the default output folder follows the restored source.
+snapshots, the selected subplot panel, style settings, and canvas settings.
+Decoded source graphics are rebuilt after load, and the default output folder
+follows the restored source.
 
 ## Load And Select Figures
 
 On **Figures**, choose **Add FIG files or scan folder**. The source list accepts
 MATLAB `.fig` files and keeps one current selection. Selecting another source
-loads that figure's plot snapshot and original style. **Clear figures** removes
-all sources from the project.
+opens its native graphics without rerunning the analysis. A mixed FIG is
+listed as ordered **Subplot panel** choices (top-left to bottom-right, with a
+title where one exists). Select one panel to preview, restyle, recalculate, and
+export exactly that axes; Studio never combines multiple panels into one output.
+The plot-context-menu handoff already represents one axes, so it provides one
+panel. **Clear figures** removes all sources from the project.
 
 For a source using **FIG default**, Figure Studio adopts its font, semantic
 line widths, annotations, legend, grid, canvas, and axes appearance. Selecting
-**LabKit figure** applies the calibrated 720-by-600 reference canvas and
-publication hierarchy while retaining the source legend placement. The source
-canvas and presentation remain available by switching back to **FIG default**.
+**LabKit figure** applies the calibrated 1600-by-1333 (6:5) reference canvas
+and publication hierarchy while retaining the source legend placement. The
+source canvas and presentation remain available by switching back to **FIG
+default**.
 
 ## Style And Canvas Controls
 
@@ -45,30 +51,33 @@ canvas and presentation remain available by switching back to **FIG default**.
 | Text Style | preset, all/title/axis-label/tick/annotation font size, X tick-label angle, grid alpha, grid visibility |
 | Lines + Boundaries | data, uncertainty, main-graphic boundary, reference-line, and axes line widths |
 | Legend | source/on/off display, location, font size, columns, and border |
-| Canvas | 6:5, 4:3, 16:9, 1:1, 3:2, or custom aspect; width; height; export scale; boundary visibility |
+| Canvas | 6:5, 4:3, 16:9, 1:1, 3:2, or source aspect; a fixed export width or source size; export supersampling; boundary visibility |
 
 Changing **All font** updates title, axis-label, tick, annotation, and legend
 sizes together. Individual controls then provide category-level refinement.
-**LabKit figure** uses a calibrated 720-by-600 reference canvas: 24 pt title
-and axis labels, 20 pt ticks and annotations, 15 pt legend text, 1.1 pt graphic
-and uncertainty boundaries, and 1.2 pt data, reference, and axes lines. These
-are editable baseline values, not fixed output sizes. Text and strokes scale
-with the smaller width/height ratio relative to the reference canvas. A
-1440-by-1200 output therefore doubles them, while a 360-by-300 output halves
-them. Preview fitting compensates for that canvas scale so changing export
-dimensions does not make the on-screen preview jump in apparent size.
+**LabKit figure** uses a calibrated 1600-by-1333 reference canvas: 60 pt title,
+72 pt axis labels, 60 pt ticks, 54 pt annotations, 64 pt legend text, 2.5 pt
+main-graphic boundaries, 4.0 pt data/reference lines, and 2.4 pt axes lines.
+It uses a normalized axes frame of `[0.185 0.17 0.795 0.78]`, measured from
+single-panel references. These are editable baseline values, not arbitrary
+preview geometry. Choose **Source size** or one of 640, 720, 960, 1200, 1600,
+or 2400 px; an aspect choice sets the paired export height. The workbench
+always shows a rasterized preview of that exact export canvas. Resizing the
+app only rescales this one rendered image; it never recomputes text or stroke
+sizes. **Export x** is raster supersampling only.
 
-Font controls use 0.5 pt steps, line controls use 0.1 pt steps, and canvas
-dimensions use 10 px steps for precise adjustment. The preset styles every
-existing category but does not create or move a legend by default, because
+Font controls use 0.5 pt steps and line controls use 0.1 pt steps. The preset
+styles every existing category but does not create or move a legend by default, because
 either action can cover data. Use the Legend panel for those explicit layout
 changes. **X tick labels** retains the source angle, makes labels horizontal,
 or rotates them 45 degrees.
 
-Canvas width and height are stored as project parameters. PNG and JPG
-resolution is `300 * Export x`, with a minimum of 72 dpi. SVG uses vector
-content. **FIG default** records the source figure's own canvas as its
-reference, so reopening a source does not rescale its original typography.
+PNG and JPG resolution is `300 * Export x`, with a minimum of 72 dpi. SVG uses
+vector content. **FIG default** records the source figure's own width and the
+selected subplot's displayed ratio as its reference, so reopening a source
+does not rescale its original typography. If limits are stale after copying or
+editing, use **Recalculate X/Y limits** to make MATLAB infer visible-data
+limits explicitly; it does not change the source calculation.
 
 ## Quick Exports
 
@@ -86,7 +95,11 @@ summary metadata.
 
 On **Export**, select an output folder and choose **Export data + script**.
 Figure Studio creates a package containing supported visible data, style and
-axes metadata, and a MATLAB recreation script. The extractor recognizes
+axes metadata, and a MATLAB recreation script. For preview, editable FIG
+export, and image export, Studio first copies the selected native axes
+hierarchy. This preserves MATLAB graphics that can be copied into the target
+axes, including ordinary grouped charts such as `boxplot`. The portable data
+package separately recognizes
 visible line, bar, error-bar, area, scatter, image, surface, patch, rectangle,
 text, and constant-line objects. Existing legend text, visibility, placement,
 orientation, column count, font, interpreter, and border are retained.
@@ -94,7 +107,9 @@ Explicit axis ticks, tick labels, label rotations, axis locations, and tick
 geometry are retained as visible presentation metadata. Visible graphics with
 hidden handles, such as error bars or significance brackets intentionally
 excluded from legends, are also retained without adding legend entries.
-Unsupported graphics are skipped and reported as warnings.
+Portable-package unsupported graphics are skipped and reported as warnings;
+the original FIG remains the authoritative source for object types that cannot
+be represented in that portable package.
 
 The package represents displayed graphics in axes child order. It is intended
 for audit, handoff, and plot recreation, not for reconstructing hidden source
@@ -124,8 +139,9 @@ objects.
   the restore and preserves the currently open document; it is not presented
   as an empty figure source.
 - Invisible objects are not exported.
-- Figure Studio preserves supported visible elements rather than promising a
-  pixel-identical copy of every MATLAB chart class.
+- A selected single axes is copied natively when MATLAB supports that parent
+  transition. The portable data package remains deliberately narrower and is
+  not a promise of pixel-identical reconstruction of every MATLAB chart class.
 - Callbacks, application data, custom classes, and analysis provenance inside
   the source figure are not treated as portable scientific data.
 - Some object-specific rendering semantics cannot be reproduced from a plain

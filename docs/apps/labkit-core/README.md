@@ -25,9 +25,11 @@ inspection; Figure Studio provides the complete workflow for controlled canvas
 and style settings, raster/vector export, and a data-plus-recreation-script
 package.
 
-Figure Studio snapshots visible graphics. It does not rerun the calculation
-that produced the original figure and does not claim that displayed graphics
-are a lossless replacement for the original scientific dataset.
+Figure Studio processes one selected axes at a time. A mixed FIG exposes its
+subplots as separate panels; Studio does not turn the composite layout into a
+single plot. It does not rerun the calculation that produced the original
+figure and does not claim that displayed graphics are a lossless replacement
+for the original scientific dataset.
 
 ## Related Documentation
 

@@ -2,7 +2,7 @@ classdef FigureStudioSourceAxesTest < matlab.unittest.TestCase
     %FIGURESTUDIOSOURCEAXESTEST Verify Figure Studio source axes import prep.
 
     methods (Test, TestTags = {'Unit'})
-        function copyToPreviewNormalizesLayoutBeforeStyling(testCase)
+        function copyToPreviewPreservesNativeAxesGeometry(testCase)
             setupLabKitTestPath();
             cleanup = onCleanup(@() closeAllTestFigures());
 
@@ -18,10 +18,10 @@ classdef FigureStudioSourceAxesTest < matlab.unittest.TestCase
             previewAx = axes('Parent', previewFig);
             figure_studio.sourceAxes.copyToPreview(sourceAx, previewAx);
 
-            testCase.verifyEqual(string(previewAx.PlotBoxAspectRatioMode), "auto", ...
-                "Imported FIG layout constraints should not be carried into the Studio preview.");
-            testCase.verifyEqual(string(previewAx.DataAspectRatioMode), "auto", ...
-                "Imported FIG data aspect constraints should be normalized before Studio styling.");
+            testCase.verifyEqual(string(previewAx.PlotBoxAspectRatioMode), "manual", ...
+                "Native source geometry should not be replaced by export canvas sizing.");
+            testCase.verifyEqual(string(previewAx.DataAspectRatioMode), "manual", ...
+                "Native source data geometry should remain available in the preview.");
             testCase.verifyEqual(numel(previewAx.Children), numel(sourceAx.Children), ...
                 "Imported FIG data graphics should still be copied into the preview.");
         end
@@ -45,6 +45,8 @@ classdef FigureStudioSourceAxesTest < matlab.unittest.TestCase
                 "FIG default canvas should follow displayed axes geometry.");
             testCase.verifyLessThan(ratio, 3, ...
                 "FIG default canvas should not inherit extreme cached plot-box ratios.");
+            testCase.verifyEmpty(style.axesPosition, ...
+                "FIG default must preserve source axes placement rather than applying the LabKit frame.");
         end
 
         function axesHandoffCanPreserveSourcePlotBoxRatio(testCase)

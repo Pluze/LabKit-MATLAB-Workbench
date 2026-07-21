@@ -93,11 +93,12 @@ function style = defaultNatureStyle()
         "legendFontSize", 10, ...
         "legendNumColumns", 0, ...
         "legendBox", "Source", ...
-        "canvasWidth", 1200, ...
-        "canvasHeight", 900, ...
-        "referenceCanvasWidth", 1200, ...
-        "referenceCanvasHeight", 900, ...
+        "canvasWidth", 1600, ...
+        "canvasHeight", 1333, ...
+        "referenceCanvasWidth", 1600, ...
+        "referenceCanvasHeight", 1333, ...
         "previewScale", false, ...
+        "axesPosition", [], ...
         "colorOrder", natureColorOrder());
 end
 
@@ -260,7 +261,9 @@ function kind = graphicStrokeKind(handle)
     catch
         return;
     end
-    if any(type == ["line", "scatter", "surface"])
+    if type == "line" && preserveSourceLineWidth(handle)
+        return;
+    elseif any(type == ["line", "scatter", "surface"])
         kind = "data";
     elseif type == "errorbar"
         kind = "uncertainty";
@@ -268,6 +271,20 @@ function kind = graphicStrokeKind(handle)
         kind = "boundary";
     elseif type == "constantline"
         kind = "reference";
+    end
+end
+
+function tf = preserveSourceLineWidth(handle)
+    tf = false;
+    try
+        if string(handle.HandleVisibility) == "off"
+            tf = true;
+            return;
+        end
+        xData = handle.XData;
+        yData = handle.YData;
+        tf = numel(xData) <= 2 || numel(yData) <= 2;
+    catch
     end
 end
 
@@ -343,65 +360,28 @@ end
 function scale = applyCanvasGeometry(ax, style)
     width = max(1, double(style.canvasWidth));
     height = max(1, double(style.canvasHeight));
-    applyAxesCanvasFrame(ax, width, height);
-    try
-        pbaspect(ax, [width height 1]);
-    catch
-    end
     fig = ancestor(ax, 'figure');
     if isempty(fig) || ~isvalid(fig) || ...
-            isa(ax, 'matlab.ui.control.UIAxes')
+            isa(ax, 'matlab.ui.control.UIAxes') || style.previewScale
         scale = previewScale(ax, style, width, height);
         return;
     end
     try
         fig.Position(3:4) = [width height];
+        applyAxesPosition(ax, style);
     catch
     end
-    scale = previewScale(ax, style, width, height);
+    scale = 1;
 end
 
-function applyAxesCanvasFrame(ax, width, height)
-    if applyGridCanvasFrame(ax, width, height)
+function applyAxesPosition(ax, style)
+    position = double(style.axesPosition);
+    if numel(position) ~= 4 || any(~isfinite(position)) || ...
+            position(3) <= 0 || position(4) <= 0
         return;
     end
-    ratio = width / height;
-    margin = 0.07;
-    availableWidth = 1 - 2 * margin;
-    availableHeight = 1 - 2 * margin;
-    frameWidth = availableWidth;
-    frameHeight = frameWidth / ratio;
-    if frameHeight > availableHeight
-        frameHeight = availableHeight;
-        frameWidth = frameHeight * ratio;
-    end
-    left = (1 - frameWidth) / 2;
-    bottom = (1 - frameHeight) / 2;
-    try
-        ax.Units = 'normalized';
-        ax.ActivePositionProperty = 'outerposition';
-        ax.OuterPosition = [left bottom frameWidth frameHeight];
-        ax.Position = [left bottom frameWidth frameHeight];
-        scale = min(frameWidth, frameHeight);
-        setappdata(ax, 'labkitFigureStudioCanvasFrame', ...
-            struct('width', width, 'height', height, ...
-            'ratio', ratio, 'position', [left bottom frameWidth frameHeight], ...
-            'scale', scale));
-    catch
-    end
-end
-
-function tf = applyGridCanvasFrame(ax, width, height)
-    try
-        [tf, frame] = labkit.app.plot.fitCanvasToSource(ax, width, height);
-        if ~tf
-            return;
-        end
-        setappdata(ax, 'labkitFigureStudioCanvasFrame', ...
-            frame);
-    catch
-        tf = false;
-    end
+    ax.Units = 'normalized';
+    ax.Position = reshape(position, 1, 4);
 end
 
 function scale = previewScale(ax, style, width, height)
@@ -409,29 +389,11 @@ function scale = previewScale(ax, style, width, height)
     if ~style.previewScale
         return;
     end
-    if isappdata(ax, 'labkitFigureStudioCanvasFrame')
-        frame = getappdata(ax, 'labkitFigureStudioCanvasFrame');
-        if isfield(frame, 'scale') && isfinite(frame.scale)
-            scale = frame.scale;
-            return;
-        end
-    end
     try
         pixelPos = getpixelposition(ax, true);
         scale = min(pixelPos(3) / width, pixelPos(4) / height);
         scale = min(1, max(0.15, scale));
-        updateCanvasFrameScale(ax, scale, pixelPos);
     catch
         scale = 1;
     end
-end
-
-function updateCanvasFrameScale(ax, scale, pixelPos)
-    if ~isappdata(ax, 'labkitFigureStudioCanvasFrame')
-        return;
-    end
-    frame = getappdata(ax, 'labkitFigureStudioCanvasFrame');
-    frame.scale = scale;
-    frame.pixelPosition = pixelPos;
-    setappdata(ax, 'labkitFigureStudioCanvasFrame', frame);
 end

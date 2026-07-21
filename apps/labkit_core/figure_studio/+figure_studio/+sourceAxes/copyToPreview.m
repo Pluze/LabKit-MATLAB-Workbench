@@ -6,7 +6,10 @@ function copyToPreview(srcAx, dstAx)
     dstAx.Visible = 'on';
     disableDefaultAxesToolbar(dstAx);
     copyAxesState(srcAx, dstAx);
-    children = flipud(srcAx.Children(:));
+    children = flipud(allchild(srcAx));
+    children = children(:);
+    labels = [srcAx.Title; srcAx.XLabel; srcAx.YLabel; srcAx.ZLabel];
+    children(ismember(children, labels)) = [];
     if ~isempty(children)
         copyobj(children, dstAx);
     end
@@ -14,8 +17,7 @@ function copyToPreview(srcAx, dstAx)
     xlabel(dstAx, string(srcAx.XLabel.String), 'Interpreter', 'none');
     ylabel(dstAx, string(srcAx.YLabel.String), 'Interpreter', 'none');
     zlabel(dstAx, string(srcAx.ZLabel.String), 'Interpreter', 'none');
-    normalizePreviewAxesLayout(dstAx);
-    labkit.app.plot.fitAxesToGraphics(dstAx);
+    figure_studio.sourceAxes.copyLegend(srcAx, dstAx);
 end
 
 function disableDefaultAxesToolbar(ax)
@@ -29,6 +31,11 @@ end
 function copyAxesState(srcAx, dstAx)
     props = {'XScale','YScale','ZScale','XDir','YDir','ZDir', ...
         'XLim','YLim','ZLim','CLim','Layer','Box','XGrid','YGrid','ZGrid', ...
+        'XTick','YTick','ZTick','XTickLabel','YTickLabel','ZTickLabel', ...
+        'XTickLabelRotation','YTickLabelRotation','ZTickLabelRotation', ...
+        'XAxisLocation','YAxisLocation','TickLength','TickLabelInterpreter', ...
+        'DataAspectRatio','DataAspectRatioMode','PlotBoxAspectRatio', ...
+        'PlotBoxAspectRatioMode', ...
         'Color','XColor','YColor','ZColor','LineWidth','FontName','FontSize'};
     for k = 1:numel(props)
         try
@@ -39,15 +46,5 @@ function copyAxesState(srcAx, dstAx)
     try
         colormap(dstAx, colormap(srcAx));
     catch
-    end
-end
-
-function normalizePreviewAxesLayout(ax)
-    props = {'DataAspectRatioMode', 'PlotBoxAspectRatioMode'};
-    for k = 1:numel(props)
-        try
-            ax.(props{k}) = 'auto';
-        catch
-        end
     end
 end

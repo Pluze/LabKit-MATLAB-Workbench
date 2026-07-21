@@ -15,6 +15,10 @@ if strlength(state.project.parameters.outputFolder) == 0
     end
     state.project.parameters.outputFolder = folder;
 end
+if isfield(state.project.annotations, "transientSourceAxes")
+    state.project.annotations = rmfield( ...
+        state.project.annotations, "transientSourceAxes");
+end
 if ~isempty(state.session.cache.plotData)
     callbackContext.appendStatus("Restored Figure Studio source.");
 end
