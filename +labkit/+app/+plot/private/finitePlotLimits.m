@@ -11,8 +11,7 @@ function [xLim, yLim] = finitePlotLimits(ax, handles, padding, equalDataUnits)
 end
 
 function [xLim, yLim] = equalDataUnitLimits(ax, xLim, yLim)
-    drawnow
-    position = getpixelposition(ax, true);
+    position = resolveAxesPixelPosition(ax);
     if numel(position) ~= 4 || position(3) <= 0 || position(4) <= 0
         return;
     end
@@ -33,6 +32,24 @@ function [xLim, yLim] = equalDataUnitLimits(ax, xLim, yLim)
     end
     xLim = unscaleLimits(xWork, xLog);
     yLim = unscaleLimits(yWork, yLog);
+end
+
+function position = resolveAxesPixelPosition(ax)
+    position = [NaN NaN NaN NaN];
+    for attempt = 1:3
+        drawnow
+        position = getpixelposition(ax, true);
+        if numel(position) == 4 && position(3) > 0 && position(4) > 0
+            return;
+        end
+        if attempt == 3
+            break;
+        end
+    end
+    fallback = ax.Position;
+    if numel(fallback) == 4 && fallback(3) > 0 && fallback(4) > 0
+        position = double(fallback);
+    end
 end
 
 function limits = scaleLimits(limits, isLog)
