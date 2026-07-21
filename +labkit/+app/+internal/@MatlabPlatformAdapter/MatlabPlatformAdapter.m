@@ -154,7 +154,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             obj.Figure.Name = char(obj.BaseWindowTitle + ...
                 " [Working: " + message + "]");
             setappdata(obj.Figure, "labkitAppBusy", true);
-            drawnow limitrate
+            drawnow limitrate nocallbacks
         end
 
         function endBusy(obj)
@@ -173,7 +173,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if isappdata(obj.Figure, "labkitAppBusy")
                 rmappdata(obj.Figure, "labkitAppBusy");
             end
-            drawnow limitrate
+            drawnow limitrate nocallbacks
         end
 
         function startupUpdate(obj, message)
@@ -187,7 +187,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                     ~any(labkit.app.internal.NativeAdapterValues.startupGuiMode() == ["hidden", "minimized"])
                 obj.StartupPanel.Visible = "on";
                 obj.Figure.Visible = "on";
-                drawnow limitrate
+                drawnow limitrate nocallbacks
             end
         end
 
@@ -237,7 +237,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 "message", message, ...
                 "identifier", string(cause.identifier)));
             obj.Figure.CloseRequestFcn = @(~, ~) obj.close();
-            drawnow limitrate
+            drawnow limitrate nocallbacks
         end
 
         function alert(obj, message, title)
@@ -538,7 +538,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 ButtonPushedFcn=@(~, ~) obj.clearClosePrompt());
             cancelButton.Layout.Row = 2;
             cancelButton.Layout.Column = 3;
-            drawnow
+            drawnow nocallbacks
         end
 
         function clearClosePrompt(obj)

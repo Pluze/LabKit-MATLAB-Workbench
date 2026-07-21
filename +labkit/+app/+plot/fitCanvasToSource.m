@@ -61,7 +61,7 @@ function [applied, frame] = fitCanvasToSource(ax, width, height, varargin)
     rememberResizeRequest(ax, canvasWidth, canvasHeight, opts);
 
     try
-        drawnow;
+        drawnow nocallbacks;
         parentPixels = getpixelposition(parent, true);
         margin = finiteScalar(opts.margin, 24);
         maxScale = finiteScalar(opts.maxScale, 1);

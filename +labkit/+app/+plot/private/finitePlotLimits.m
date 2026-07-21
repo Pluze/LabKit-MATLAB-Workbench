@@ -11,7 +11,7 @@ function [xLim, yLim] = finitePlotLimits(ax, handles, padding, equalDataUnits)
 end
 
 function [xLim, yLim] = equalDataUnitLimits(ax, xLim, yLim)
-    drawnow
+    drawnow nocallbacks
     position = getpixelposition(ax, true);
     if numel(position) ~= 4 || position(3) <= 0 || position(4) <= 0
         return;

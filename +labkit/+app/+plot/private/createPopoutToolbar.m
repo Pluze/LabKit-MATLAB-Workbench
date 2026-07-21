@@ -85,7 +85,7 @@ toolbar.Position = [0.00 0.93 1.00 0.07];
 ax.Units = 'normalized';
 ax.OuterPosition = [0.02 0.02 0.96 0.89];
 ax.ActivePositionProperty = 'outerposition';
-drawnow limitrate;
+drawnow limitrate nocallbacks;
 end
 
 function sendToStudio(fig, ax)

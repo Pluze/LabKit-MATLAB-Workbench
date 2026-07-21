@@ -116,9 +116,9 @@ and renderer signatures, and builds one private native platform plan.
   supply their current values with same-named Snapshot methods.
 - Use `labkit.app.plot.clearAxes`, `showMessage`, and `fitAxesToGraphics`
   for renderer mechanics; `EqualDataUnits=true` makes a one-time fitted
-  equal-scale view from the settled native axes allocation, without changing
-  the allocation or locking later zoom. Apps still decide message wording and
-  viewport policy.
+  equal-scale view from the settled native axes allocation without dispatching
+  pending UI callbacks, without changing the allocation or locking later zoom.
+  Apps still decide message wording and viewport policy.
 - Use `labkit.app.project.Schema`, `labkit.app.result.File`, and
   `labkit.app.result.Package` only when those optional capabilities exist.
 - Use `labkit.app.project.sourceRecord` only in pure project creation or

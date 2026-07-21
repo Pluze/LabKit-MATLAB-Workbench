@@ -24,7 +24,7 @@ switch string(command)
         error('labkit:app:plot:InvalidPopoutStyleCommand', ...
             'Unsupported popout style command "%s".', string(command));
 end
-drawnow limitrate;
+drawnow limitrate nocallbacks;
 end
 
 function adjustFont(ax, delta)
