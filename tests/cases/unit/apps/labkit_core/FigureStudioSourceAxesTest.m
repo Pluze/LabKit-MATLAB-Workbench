@@ -26,6 +26,32 @@ classdef FigureStudioSourceAxesTest < matlab.unittest.TestCase
                 "Imported FIG data graphics should still be copied into the preview.");
         end
 
+        function copyToPreviewPreservesImageOverlayStack(testCase)
+            setupLabKitTestPath();
+            cleanup = onCleanup(@() closeAllTestFigures());
+
+            sourceFig = figure('Visible', 'off', 'Color', 'w');
+            sourceAx = axes('Parent', sourceFig);
+            image(sourceAx, 'CData', uint8(80 .* ones(12, 16, 3)), ...
+                'XData', [0 1], 'YData', [0 1]);
+            hold(sourceAx, 'on');
+            line(sourceAx, [0.1 0.9], [0.2 0.8], ...
+                'Color', [1 0 0], 'LineWidth', 3);
+            text(sourceAx, 0.5, 0.6, 'overlay', ...
+                'HorizontalAlignment', 'center');
+            hold(sourceAx, 'off');
+
+            previewFig = figure('Visible', 'off', 'Color', 'w');
+            previewAx = axes('Parent', previewFig);
+            figure_studio.sourceAxes.copyToPreview(sourceAx, previewAx);
+
+            testCase.verifyEqual(childTypes(previewAx), childTypes(sourceAx), ...
+                "Preview stacking must match the source front-to-back order.");
+            testCase.verifyEqual(childTypes(previewAx), ...
+                ["text"; "line"; "image"], ...
+                "The opaque image must remain behind its visible overlays.");
+        end
+
         function figFileImportUsesDisplayedAxesRatioForCanvas(testCase)
             setupLabKitTestPath();
             cleanup = onCleanup(@() closeAllTestFigures());
@@ -84,4 +110,12 @@ end
 
 function closeAllTestFigures()
     delete(findall(groot, 'Type', 'figure'));
+end
+
+function types = childTypes(ax)
+children = ax.Children;
+types = strings(numel(children), 1);
+for k = 1:numel(children)
+    types(k) = string(children(k).Type);
+end
 end

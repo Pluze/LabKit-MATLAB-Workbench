@@ -257,6 +257,40 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             clear exportCleanup handoffRuntimeCleanup fileRuntimeCleanup folderCleanup cleanup;
         end
 
+        function figure_studio_preserves_image_overlays_for_fig_and_handoff(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+
+            sourceFig = figure('Visible', 'off', 'Color', 'w');
+            sourceAx = axes('Parent', sourceFig);
+            drawImageOverlayProbe(sourceAx);
+            folder = string(tempname);
+            mkdir(folder);
+            folderCleanup = onCleanup(@() removeTempFolder(folder));
+            figPath = fullfile(folder, "image-overlay.fig");
+            savefig(sourceFig, figPath);
+
+            fromFile = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                figure_studio.definition());
+            fileRuntimeCleanup = onCleanup(@() fromFile.close());
+            fromFile.applyFileSelection("figFiles", figPath, 1);
+            assertImageOverlaysInFront(testCase, ...
+                findall(fromFile.figureHandle(), 'Tag', 'preview.main'), ...
+                "Opening a FIG must leave overlays above its image.");
+
+            [handoffProject, ~] = figure_studio.launchRequest( ...
+                {"axes", sourceAx});
+            fromHandoff = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                figure_studio.definition(), handoffProject);
+            handoffRuntimeCleanup = onCleanup(@() fromHandoff.close());
+            assertImageOverlaysInFront(testCase, ...
+                findall(fromHandoff.figureHandle(), 'Tag', 'preview.main'), ...
+                "Sending axes must leave overlays above its image.");
+            clear handoffRuntimeCleanup fileRuntimeCleanup folderCleanup cleanup;
+        end
+
         function figure_studio_edits_one_subplot_from_a_mixed_fig(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -493,6 +527,35 @@ ax.XTickLabel = {'Baseline', 'Treatment'};
 title(ax, 'Grouped boxplot');
 xlabel(ax, 'Cohort');
 ylabel(ax, 'Synthetic score');
+end
+
+function drawImageOverlayProbe(ax)
+image(ax, 'CData', uint8(80 .* ones(12, 16, 3)), ...
+    'XData', [0 1], 'YData', [0 1]);
+hold(ax, 'on');
+line(ax, [0.1 0.9], [0.2 0.8], ...
+    'Color', [1 0 0], 'LineWidth', 3);
+text(ax, 0.5, 0.6, 'overlay', ...
+    'Color', [1 1 1], 'HorizontalAlignment', 'center');
+hold(ax, 'off');
+ax.XLim = [0 1];
+ax.YLim = [0 1];
+end
+
+function assertImageOverlaysInFront(testCase, ax, message)
+children = ax.Children;
+types = strings(numel(children), 1);
+for k = 1:numel(children)
+    types(k) = string(children(k).Type);
+end
+imageIndex = find(types == "image", 1, 'first');
+lineIndex = find(types == "line", 1, 'first');
+textIndex = find(types == "text", 1, 'first');
+testCase.verifyNotEmpty(imageIndex, message);
+testCase.verifyNotEmpty(lineIndex, message);
+testCase.verifyNotEmpty(textIndex, message);
+testCase.verifyGreaterThan(imageIndex, lineIndex, message);
+testCase.verifyGreaterThan(imageIndex, textIndex, message);
 end
 
 function drawNativeBoxGroup(ax, x, values)

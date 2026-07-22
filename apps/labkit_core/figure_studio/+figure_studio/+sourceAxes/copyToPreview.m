@@ -10,7 +10,10 @@ function copyToPreview(srcAx, dstAx)
     zlabel(dstAx, "");
     disableDefaultAxesToolbar(dstAx);
     copyAxesState(srcAx, dstAx);
-    children = flipud(allchild(srcAx));
+    % Axes Children are ordered front-to-back. copyobj preserves the order
+    % of a vector input, so pass that order through unchanged. Reversing it
+    % promotes an opaque image above line and text overlays.
+    children = allchild(srcAx);
     children = children(:);
     labels = [srcAx.Title; srcAx.XLabel; srcAx.YLabel; srcAx.ZLabel];
     children(ismember(children, labels)) = [];

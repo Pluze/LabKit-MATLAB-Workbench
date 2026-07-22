@@ -111,7 +111,9 @@ axes metadata, and a MATLAB recreation script. For preview, editable FIG
 export, and image export, Studio first copies the selected native axes
 hierarchy when MATLAB permits the parent transition. This preserves MATLAB
 graphics that can be copied into the target axes, including ordinary grouped
-charts such as `boxplot`. UIAxes sources are rebuilt into conventional export
+charts such as `boxplot`. Native child stacking is retained, so lines, markers,
+and text drawn over an image remain above that image in both the interactive
+preview and exports. UIAxes sources are rebuilt into conventional export
 axes from the portable snapshot, retaining the displayed scientific axis
 exponents as well as visible data. The portable data package separately recognizes
 visible line, bar, error-bar, area, scatter, image, surface, patch, rectangle,
