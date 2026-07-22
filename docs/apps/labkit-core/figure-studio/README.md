@@ -71,7 +71,9 @@ Choose **Source size** or one of
 paired plot-frame height. The workbench preview is a real interactive axes,
 not a raster image. When its allotted screen area changes, Studio reflows only
 the display text and strokes; project settings and export proportions remain
-unchanged. **Export x** is raster supersampling only. **Top/right frame** only
+unchanged. This calibration is validated on both 72-PPI Linux renderers and
+96-PPI desktop MATLAB so display-density differences do not restyle exports.
+**Export x** is raster supersampling only. **Top/right frame** only
 shows or hides those two axes edges; it never changes the plot-frame size.
 
 Font controls use 0.5 pt steps and line controls use 0.1 pt steps. The preset
