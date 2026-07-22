@@ -159,14 +159,21 @@ function steps = appSourceSteps(root, parts)
     slug = appSlug(parts);
     scope = appSourceScope(parts);
     unitTarget = appTestSuiteTarget(root, "unit", family, slug, scope);
-    steps = [ ...
-        planStep(suiteRunNameSuffix(unitTarget), unitTarget, false, ...
+    steps = isolationStep;
+    if ~isempty(unitTarget)
+        steps = [planStep(suiteRunNameSuffix(unitTarget), unitTarget, false, ...
             "Reason", appSourceReason("unit", family, slug, scope, unitTarget)), ...
-        isolationStep];
+            steps];
+    end
     guiTarget = appTestSuiteTarget(root, "gui", family, slug, scope);
-    if strlength(guiTarget) > 0
+    if ~isempty(guiTarget)
         steps = [steps, planStep(suiteRunNameSuffix(guiTarget), guiTarget, true, ...
             "Reason", appSourceReason("gui", family, slug, scope, guiTarget))];
+    end
+    smokeTarget = appExactTestSuiteTarget(root, "gui", family, slug, "smoke");
+    if ~isempty(smokeTarget) && ~any(guiTarget == smokeTarget)
+        steps = [steps, planStep(suiteRunNameSuffix(smokeTarget), smokeTarget, true, ...
+            "Reason", "app source change keeps the owning App smoke proof")];
     end
 end
 
@@ -317,6 +324,11 @@ function target = appTestSuiteTarget(root, kind, family, slug, scope)
         end
     end
 
+    if kind == "gui"
+        target = strings(1, 0);
+        return;
+    end
+
     appFolder = fullfile(root, "tests", "cases", kind, "apps", family, slug);
     if exist(appFolder, "dir") == 7
         target = kind + "/apps/" + family + "/" + slug;
@@ -326,6 +338,20 @@ function target = appTestSuiteTarget(root, kind, family, slug, scope)
     appFamilyFolder = fullfile(root, "tests", "cases", kind, "apps", family);
     if exist(appFamilyFolder, "dir") == 7
         target = kind + "/apps/" + family;
+    else
+        target = strings(1, 0);
+    end
+end
+
+function target = appExactTestSuiteTarget(root, kind, family, slug, scope)
+    kind = string(kind);
+    family = string(family);
+    slug = string(slug);
+    scope = string(scope);
+    folder = fullfile(root, "tests", "cases", kind, "apps", ...
+        family, slug, scope);
+    if exist(folder, "dir") == 7
+        target = kind + "/apps/" + family + "/" + slug + "/" + scope;
     else
         target = strings(1, 0);
     end

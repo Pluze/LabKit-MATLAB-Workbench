@@ -33,7 +33,7 @@ function tf = hasDedicatedLayoutTest(root, appFolder)
     tf = false;
     if numel(relParts) >= 2
         guiFolder = fullfile(root, 'tests', 'cases', 'gui', 'apps', ...
-            char(relParts(1)), char(relParts(2)));
+            char(relParts(1)), char(relParts(2)), 'smoke');
         tf = isfolder(guiFolder) && ~isempty(dir(fullfile(guiFolder, '*.m')));
     end
 end

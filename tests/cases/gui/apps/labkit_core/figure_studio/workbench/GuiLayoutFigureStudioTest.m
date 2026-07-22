@@ -141,6 +141,9 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             clear runtimeCleanup folderCleanup cleanup;
         end
 
+    end
+
+    methods (Static, Access = private)
         function figure_studio_accepts_popout_axes_handoff(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -326,6 +329,9 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             clear runtimeCleanup folderCleanup cleanup;
         end
 
+    end
+
+    methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
         function figure_studio_renders_an_interactive_export_proportioned_preview(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
