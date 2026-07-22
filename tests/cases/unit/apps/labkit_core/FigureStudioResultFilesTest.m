@@ -96,7 +96,8 @@ classdef FigureStudioResultFilesTest < matlab.unittest.TestCase
             testCase.verifyGreaterThan(metrics.canvasPixels(2), metrics.axesPixels(2));
             testCase.verifyGreaterThan(metrics.titleHeightToPlot, 0.035);
             testCase.verifyLessThan(metrics.titleHeightToPlot, 0.10);
-            testCase.verifyGreaterThan(metrics.tickHeightToPlot, 0.07);
+            testCase.verifyGreaterThan(metrics.tickHeightToPlot, 0.055, ...
+                "The display PPI may be 72 on Linux and 96 on desktop MATLAB.");
             testCase.verifyLessThan(metrics.tickHeightToPlot, 0.10);
             testCase.verifyGreaterThan(metrics.dataStrokeToPlot, 0.008);
             testCase.verifyLessThan(metrics.dataStrokeToPlot, 0.014);

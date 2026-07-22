@@ -27,7 +27,7 @@ date: 2026-07-21
 sequence: 155
 type: fix
 compatibility: compatible
-component: `labkit_FigureStudio_app` | `0.6.1 -&gt; 0.6.2`
+component: `labkit_FigureStudio_app` | `0.6.1 -&gt; 0.6.3`
 scope: LabKit Core</code></pre>
 <h2 id="context">Context</h2>
 <p>The previous Figure Studio publication profile was described as a visual calibration even though its dimensions had been taken from a separate manual FIG example. It also allowed native figure chrome to reduce the exported drawable height.</p>
@@ -40,6 +40,7 @@ scope: LabKit Core</code></pre>
 <li>Ignored zero-area text extents when computing outer margins so native log rulers cannot inflate an export canvas to tens of thousands of pixels.</li>
 <li>Added the calibrated 900 px plot width to the selectable sizes and made it the new-project default.</li>
 <li>Retained source token geometry for <strong>FIG default</strong> while applying the measured long token only to the LabKit preset.</li>
+<li>Replaced dynamic-array analyzer suppressions with bounded collection and documented the 72-to-96-PPI range used by cross-platform visual metrics.</li>
 </ul>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>New LabKit-style projects open at the nine-panel reference scale. Existing scientific values, limits, source graphics, FIG files, and saved projects are not recalculated. Exports retain the requested inner-frame aspect instead of losing native-window height.</p>
@@ -51,6 +52,7 @@ scope: LabKit Core</code></pre>
 <li>Focused Figure Studio result-file and project tests.</li>
 <li>Hidden-GUI Figure Studio workflow tests.</li>
 <li>Native logarithmic-axis margin regression.</li>
+<li>Linux-compatible visual-ratio and analyzer-policy regressions.</li>
 <li>Repository <code>changedFast</code> validation.</li>
 </ul>
 <h2 id="evidence">Evidence</h2>

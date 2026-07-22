@@ -6,7 +6,7 @@ date: 2026-07-21
 sequence: 155
 type: fix
 compatibility: compatible
-component: `labkit_FigureStudio_app` | `0.6.1 -> 0.6.2`
+component: `labkit_FigureStudio_app` | `0.6.1 -> 0.6.3`
 scope: LabKit Core
 ```
 
@@ -37,6 +37,8 @@ survives raster and vector export.
   the new-project default.
 - Retained source token geometry for **FIG default** while applying the
   measured long token only to the LabKit preset.
+- Replaced dynamic-array analyzer suppressions with bounded collection and
+  documented the 72-to-96-PPI range used by cross-platform visual metrics.
 
 ## User and data impact
 
@@ -58,6 +60,7 @@ Switching an existing document to **LabKit figure** opts into the new profile;
 - Focused Figure Studio result-file and project tests.
 - Hidden-GUI Figure Studio workflow tests.
 - Native logarithmic-axis margin regression.
+- Linux-compatible visual-ratio and analyzer-policy regressions.
 - Repository `changedFast` validation.
 
 ## Evidence

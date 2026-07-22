@@ -69,7 +69,8 @@ end
 
 function widths = visibleDataLineWidths(ax)
 children = findall(ax, "-property", "LineWidth");
-widths = zeros(0, 1);
+widths = zeros(numel(children), 1);
+count = 0;
 for index = 1:numel(children)
     child = children(index);
     if child == ax || ~isvalid(child)
@@ -82,9 +83,11 @@ for index = 1:numel(children)
     if isprop(child, "Visible") && string(child.Visible) == "off"
         continue;
     end
-    widths(end + 1, 1) = double(child.LineWidth); %#ok<AGROW>
+    count = count + 1;
+    widths(count) = double(child.LineWidth);
 end
-if isempty(widths)
+widths = widths(1:count);
+if count == 0
     widths = NaN;
 end
 end

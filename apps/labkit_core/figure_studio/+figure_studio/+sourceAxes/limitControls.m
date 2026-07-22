@@ -21,17 +21,19 @@ limits = struct( ...
 end
 
 function [xData, yData] = visibleCoordinates(objects)
-xData = zeros(0, 1);
-yData = zeros(0, 1);
+xParts = cell(numel(objects), 1);
+yParts = cell(numel(objects), 1);
 for index = 1:numel(objects)
     object = objects(index);
     if ~isfield(object, "type") || any(string(object.type) == ...
             ["text", "rectangle"])
         continue;
     end
-    xData = [xData; finiteReal(fieldValue(object, "x"))]; %#ok<AGROW>
-    yData = [yData; finiteReal(fieldValue(object, "y"))]; %#ok<AGROW>
+    xParts{index} = finiteReal(fieldValue(object, "x"));
+    yParts{index} = finiteReal(fieldValue(object, "y"));
 end
+xData = vertcat(xParts{:});
+yData = vertcat(yParts{:});
 end
 
 function [envelope, values] = axisLimits(data, stored)
