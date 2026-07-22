@@ -332,8 +332,18 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             fig.Position(3:4) = [420 320];
             drawnow;
             figure_studio.sourceAxes.refreshPreviewScale(ax);
-            testCase.verifyLessThan(ax.FontSize, fontBefore);
-            testCase.verifyLessThan(previewLine.LineWidth, lineBefore);
+            previewPixels = getpixelposition(ax, true);
+            expectedScale = min(previewPixels(3) / 900, ...
+                previewPixels(4) / 725);
+            expectedScale = min(1, max(0.15, expectedScale));
+            testCase.verifyLessThanOrEqual(ax.FontSize, fontBefore);
+            testCase.verifyLessThanOrEqual(previewLine.LineWidth, lineBefore);
+            testCase.verifyEqual(ax.FontSize, 45 * expectedScale, ...
+                'RelTol', 1e-6, ...
+                "Preview text must follow the actual allocated plot area.");
+            testCase.verifyEqual(previewLine.LineWidth, 6 * expectedScale, ...
+                'RelTol', 1e-6, ...
+                "Preview strokes must follow the actual allocated plot area.");
         end
 
         function popout_send_to_studio_copies_plot_content(testCase)
@@ -468,16 +478,49 @@ savefig(fig, filepath);
 end
 
 function drawGroupedBoxPlot(ax)
-values = [1.1 1.4 1.7 2.2 2.8 3.1 5.6 6.1 6.7 7.2 7.8 8.4].';
-groups = [ones(6, 1); 2 * ones(6, 1)];
-boxplot(ax, values, groups, 'Labels', {'Baseline', 'Treatment'});
+summaries = [1.1 1.4 1.7 2.2 2.8 3.1; ...
+    5.6 6.1 6.7 7.2 7.8 8.4];
 hold(ax, 'on');
+for groupIndex = 1:size(summaries, 1)
+    drawNativeBoxGroup(ax, groupIndex, summaries(groupIndex, :));
+end
 xline(ax, 1.5, '--', 'Reference', 'HandleVisibility', 'off');
 text(ax, 1.5, 8.7, 'Native group probe', 'HorizontalAlignment', 'center');
 hold(ax, 'off');
+ax.XLim = [0.5 2.5];
+ax.XTick = [1 2];
+ax.XTickLabel = {'Baseline', 'Treatment'};
 title(ax, 'Grouped boxplot');
 xlabel(ax, 'Cohort');
 ylabel(ax, 'Synthetic score');
+end
+
+function drawNativeBoxGroup(ax, x, values)
+group = hggroup('Parent', ax, 'Tag', sprintf('boxplot-group-%d', x));
+width = 0.25;
+low = values(1);
+lowerQuartile = values(2);
+medianValue = values(3);
+upperQuartile = values(4);
+high = values(5);
+outlier = values(6);
+common = {'Color', [0 0.4470 0.7410], 'LineWidth', 1.5};
+line('Parent', group, 'XData', ...
+    [x-width x+width x+width x-width x-width], 'YData', ...
+    [lowerQuartile lowerQuartile upperQuartile upperQuartile lowerQuartile], ...
+    common{:}, 'Tag', 'Box');
+line('Parent', group, 'XData', [x-width x+width], ...
+    'YData', [medianValue medianValue], common{:}, 'Tag', 'Median');
+line('Parent', group, 'XData', [x x], ...
+    'YData', [low lowerQuartile], common{:}, 'Tag', 'Lower Whisker');
+line('Parent', group, 'XData', [x x], ...
+    'YData', [upperQuartile high], common{:}, 'Tag', 'Upper Whisker');
+line('Parent', group, 'XData', [x-width/2 x+width/2], ...
+    'YData', [low low], common{:}, 'Tag', 'Lower Adjacent Value');
+line('Parent', group, 'XData', [x-width/2 x+width/2], ...
+    'YData', [high high], common{:}, 'Tag', 'Upper Adjacent Value');
+line('Parent', group, 'XData', x, 'YData', outlier, ...
+    common{:}, 'LineStyle', 'none', 'Marker', '+', 'Tag', 'Outliers');
 end
 
 function assertNativeBoxPlot(testCase, preview, expectedLineCount, message)
