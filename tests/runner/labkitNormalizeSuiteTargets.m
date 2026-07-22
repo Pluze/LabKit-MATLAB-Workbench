@@ -1,16 +1,13 @@
 function targets = labkitNormalizeSuiteTargets(targets)
 %LABKITNORMALIZESUITETARGETS Normalize test-folder selectors.
 % Expected caller: runLabKitTests and selector discovery. Inputs may use a
-% tests/cases prefix or a kind prefix (unit, contract, or gui). Outputs are
-% slash-separated owner/area folder selectors. Test .m files are rejected;
+% tests/cases prefix while preserving an explicit kind prefix (unit, contract,
+% or gui). Outputs are slash-separated physical or semantic folder selectors.
+% Test .m files are rejected;
 % use Files for paths or Tests for class and method names.
 
     targets = normalizeTextList(targets);
-    prefixes = [ ...
-        "tests/cases/unit/", ...
-        "tests/cases/contract/", ...
-        "tests/cases/gui/", ...
-        "tests/cases/"];
+    prefixes = "tests/cases/";
     for k = 1:numel(targets)
         target = replace(strip(targets(k)), "\", "/");
         while startsWith(target, "./")

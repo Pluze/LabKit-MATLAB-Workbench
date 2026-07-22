@@ -147,7 +147,7 @@ function steps = appSourceSteps(root, parts)
         "Reason", "app source change must remain runnable without sibling App paths");
     if numel(parts) < 2
         steps = [ ...
-            planStep("apps", "apps", false, ...
+            planStep("unit_apps", "unit/apps", false, ...
             "Reason", "broad app source change needs app logic coverage"), ...
             planStep("gui_apps", "gui/apps", true, ...
             "Reason", "broad app source change can affect app GUI workflows"), ...
@@ -156,15 +156,17 @@ function steps = appSourceSteps(root, parts)
     end
 
     family = parts(2);
+    slug = appSlug(parts);
+    scope = appSourceScope(parts);
+    unitTarget = appTestSuiteTarget(root, "unit", family, slug, scope);
     steps = [ ...
-        planStep("apps_" + safeRunNamePart(family), ...
-            "apps/" + family, false, ...
-            "Reason", "app source change needs owning app-family logic coverage"), ...
+        planStep(suiteRunNameSuffix(unitTarget), unitTarget, false, ...
+            "Reason", appSourceReason("unit", family, slug, scope, unitTarget)), ...
         isolationStep];
-    guiTarget = appGuiSuiteTarget(root, family, appSlug(parts));
+    guiTarget = appTestSuiteTarget(root, "gui", family, slug, scope);
     if strlength(guiTarget) > 0
         steps = [steps, planStep(suiteRunNameSuffix(guiTarget), guiTarget, true, ...
-            "Reason", "app source change has matching GUI coverage")];
+            "Reason", appSourceReason("gui", family, slug, scope, guiTarget))];
     end
 end
 
@@ -290,24 +292,67 @@ function slug = appSlug(parts)
     end
 end
 
-function target = appGuiSuiteTarget(root, family, slug)
+function target = appTestSuiteTarget(root, kind, family, slug, scope)
+    kind = string(kind);
     family = string(family);
     slug = string(slug);
+    scope = string(scope);
 
-    if strlength(slug) > 0
-        appFolder = fullfile(root, "tests", "cases", "gui", "apps", ...
-            family, slug);
-        if exist(appFolder, "dir") == 7
-            target = "gui/apps/" + family + "/" + slug;
+    if strlength(slug) == 0
+        familyFolder = fullfile(root, "tests", "cases", kind, "apps", family);
+        if exist(familyFolder, "dir") == 7
+            target = kind + "/apps/" + family;
+        else
+            target = strings(1, 0);
+        end
+        return;
+    end
+
+    if strlength(scope) > 0
+        scopeFolder = fullfile(root, "tests", "cases", kind, "apps", ...
+            family, slug, scope);
+        if exist(scopeFolder, "dir") == 7
+            target = kind + "/apps/" + family + "/" + slug + "/" + scope;
             return;
         end
     end
 
-    appFamilyFolder = fullfile(root, "tests", "cases", "gui", "apps", family);
+    appFolder = fullfile(root, "tests", "cases", kind, "apps", family, slug);
+    if exist(appFolder, "dir") == 7
+        target = kind + "/apps/" + family + "/" + slug;
+        return;
+    end
+
+    appFamilyFolder = fullfile(root, "tests", "cases", kind, "apps", family);
     if exist(appFamilyFolder, "dir") == 7
-        target = "gui/apps/" + family;
+        target = kind + "/apps/" + family;
     else
         target = strings(1, 0);
+    end
+end
+
+function scope = appSourceScope(parts)
+    scope = "appContract";
+    if numel(parts) < 5
+        return;
+    end
+
+    candidate = string(parts(5));
+    if candidate == "+workbench"
+        scope = "workbench";
+    elseif startsWith(candidate, "+")
+        scope = erase(candidate, "+");
+    end
+end
+
+function reason = appSourceReason(kind, family, slug, scope, target)
+    requested = string(kind) + "/apps/" + string(family) + "/" + ...
+        string(slug) + "/" + string(scope);
+    if string(target) == requested
+        reason = "app source change uses its deepest owning test scope";
+    else
+        reason = "app source change uses a migration fallback from " + ...
+            requested + " to " + string(target);
     end
 end
 
@@ -534,9 +579,12 @@ end
 function tf = fileCoveredBySuites(suites, file)
     folder = replace(string(fileparts(char(file))), "\", "/");
     folder = eraseLeadingPrefix(folder, "tests/cases/");
-    folder = eraseLeadingPrefix(folder, "unit/");
-    folder = eraseLeadingPrefix(folder, "contract/");
-    tf = suiteCoveredByAny(suites, folder);
+    semanticFolder = folder;
+    semanticFolder = eraseLeadingPrefix(semanticFolder, "unit/");
+    semanticFolder = eraseLeadingPrefix(semanticFolder, "contract/");
+    semanticFolder = eraseLeadingPrefix(semanticFolder, "gui/");
+    tf = suiteCoveredByAny(suites, folder) || ...
+        suiteCoveredByAny(suites, semanticFolder);
 end
 
 function value = eraseLeadingPrefix(value, prefix)
