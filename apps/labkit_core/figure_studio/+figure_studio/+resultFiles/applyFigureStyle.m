@@ -13,7 +13,8 @@ function applyFigureStyle(ax, preset)
 %       dataLineWidth, uncertaintyLineWidth, boundaryLineWidth,
 %       referenceLineWidth, axesLineWidth,
 %       gridAlpha, gridVisible, boxVisible,
-%       boundaryLines, canvasWidth, canvasHeight, referenceCanvasWidth,
+%       boundaryLines, legendTokenWidth, canvasWidth, canvasHeight,
+%       referenceCanvasWidth,
 %       referenceCanvasHeight, previewScale, legend controls, and colorOrder
 %       fields.
 %
@@ -94,12 +95,13 @@ function style = defaultNatureStyle()
         "legendVisible", "Source", ...
         "legendLocation", "Source", ...
         "legendFontSize", 10, ...
+        "legendTokenWidth", 0, ...
         "legendNumColumns", 0, ...
         "legendBox", "Source", ...
-        "canvasWidth", 1237, ...
-        "canvasHeight", 942, ...
-        "referenceCanvasWidth", 1237, ...
-        "referenceCanvasHeight", 942, ...
+        "canvasWidth", 900, ...
+        "canvasHeight", 725, ...
+        "referenceCanvasWidth", 900, ...
+        "referenceCanvasHeight", 725, ...
         "previewScale", false, ...
         "tickDirection", "out", ...
         "axesPosition", [], ...
@@ -140,6 +142,8 @@ function style = fillStyle(style)
     style.axesLineWidth = finiteScalar(style.axesLineWidth, defaults.axesLineWidth);
     style.legendFontSize = finiteScalar(style.legendFontSize, ...
         defaults.legendFontSize);
+    style.legendTokenWidth = max(0, finiteScalar( ...
+        style.legendTokenWidth, defaults.legendTokenWidth));
     style.legendNumColumns = max(0, round(finiteScalar( ...
         style.legendNumColumns, defaults.legendNumColumns)));
     style.gridAlpha = min(max(finiteScalar(style.gridAlpha, defaults.gridAlpha), 0), 1);
@@ -168,6 +172,7 @@ function style = scaledStyle(style, scale)
     style.tickFontSize = max(1, style.tickFontSize * scale);
     style.annotationFontSize = max(1, style.annotationFontSize * scale);
     style.legendFontSize = max(1, style.legendFontSize * scale);
+    style.legendTokenWidth = max(0, style.legendTokenWidth * scale);
     style.dataLineWidth = max(0.1, style.dataLineWidth * scale);
     style.uncertaintyLineWidth = max(0.1, ...
         style.uncertaintyLineWidth * scale);
@@ -347,6 +352,11 @@ function styleLegend(ax, style)
     end
     lgd.FontName = ax.FontName;
     lgd.FontSize = style.legendFontSize;
+    if style.legendTokenWidth > 0 && isprop(lgd, 'ItemTokenSize')
+        tokenSize = lgd.ItemTokenSize;
+        tokenSize(1) = style.legendTokenWidth;
+        lgd.ItemTokenSize = tokenSize;
+    end
     if string(style.legendVisible) ~= "Source"
         lgd.Visible = lower(char(style.legendVisible));
     end
@@ -417,19 +427,34 @@ try
     padding = max(4, round(0.01 * min(plotWidth, plotHeight)));
     fig.Units = 'pixels';
     ax.Units = 'pixels';
-    fig.Position(3:4) = [plotWidth + 4 * padding, ...
-        plotHeight + 4 * padding];
+    setFigureContentSize(fig, [plotWidth + 4 * padding, ...
+        plotHeight + 4 * padding]);
     ax.Position = [2 * padding 2 * padding plotWidth plotHeight];
     for iteration = 1:3
         drawnow nocallbacks
         inset = plotInsets(ax, plotWidth, plotHeight, padding);
-        fig.Position(3:4) = [ ...
+        setFigureContentSize(fig, [ ...
             inset(1) + plotWidth + inset(3), ...
-            inset(2) + plotHeight + inset(4)];
+            inset(2) + plotHeight + inset(4)]);
         ax.Position = [inset(1) inset(2) plotWidth plotHeight];
     end
     clear cleanup
 catch
+end
+end
+
+function setFigureContentSize(fig, sizePixels)
+% Position includes native window decorations on desktop MATLAB. Axes pixel
+% coordinates live in the drawable client area, so size that area directly;
+% otherwise a title bar silently removes height from the requested frame.
+if isprop(fig, 'InnerPosition')
+    position = fig.InnerPosition;
+    position(3:4) = sizePixels;
+    fig.InnerPosition = position;
+else
+    position = fig.Position;
+    position(3:4) = sizePixels;
+    fig.Position = position;
 end
 end
 
@@ -459,6 +484,11 @@ for index = 1:numel(texts)
         cleanup = onCleanup(@() set(textHandle, 'Units', units));
         textHandle.Units = 'pixels';
         extent = double(textHandle.Extent);
+        if numel(extent) ~= 4 || any(~isfinite(extent)) || ...
+                extent(3) <= 0 || extent(4) <= 0
+            clear cleanup
+            continue;
+        end
         inset = max(inset, [ ...
             max(0, -extent(1)), ...
             max(0, -extent(2)), ...

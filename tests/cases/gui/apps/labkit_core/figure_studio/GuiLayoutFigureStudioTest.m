@@ -30,23 +30,24 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(preset.Items), ...
                 ["LabKit figure", "FIG default"]);
             style = runtime.State.project.parameters.style;
-            testCase.verifyEqual(style.baseFontSize, 35);
-            testCase.verifyEqual(style.titleFontSize, 36);
-            testCase.verifyEqual(style.labelFontSize, 36);
-            testCase.verifyEqual(style.tickFontSize, 35);
-            testCase.verifyEqual(style.annotationFontSize, 35);
-            testCase.verifyEqual(style.legendFontSize, 35);
-            testCase.verifyEqual(style.dataLineWidth, 11.2);
-            testCase.verifyEqual(style.uncertaintyLineWidth, 11.2);
-            testCase.verifyEqual(style.boundaryLineWidth, 4.3);
-            testCase.verifyEqual(style.referenceLineWidth, 4.3);
-            testCase.verifyEqual(style.axesLineWidth, 4.3);
+            testCase.verifyEqual(style.baseFontSize, 45);
+            testCase.verifyEqual(style.titleFontSize, 45);
+            testCase.verifyEqual(style.labelFontSize, 45);
+            testCase.verifyEqual(style.tickFontSize, 45);
+            testCase.verifyEqual(style.annotationFontSize, 45);
+            testCase.verifyEqual(style.legendFontSize, 45);
+            testCase.verifyEqual(style.legendTokenWidth, 100);
+            testCase.verifyEqual(style.dataLineWidth, 6);
+            testCase.verifyEqual(style.uncertaintyLineWidth, 2);
+            testCase.verifyEqual(style.boundaryLineWidth, 1.5);
+            testCase.verifyEqual(style.referenceLineWidth, 1.5);
+            testCase.verifyEqual(style.axesLineWidth, 1.5);
             testCase.verifyEmpty(style.axesPosition);
             testCase.verifyEqual([style.canvasWidth style.canvasHeight], ...
-                [1237 942]);
+                [900 725]);
             testCase.verifyEqual( ...
                 [style.referenceCanvasWidth style.referenceCanvasHeight], ...
-                [1237 942]);
+                [900 725]);
             testCase.verifyEqual( ...
                 runtime.State.project.parameters.aspectPreset, "Reference");
             runtime.applyControlValue("baseFontSize", 24);
@@ -158,9 +159,9 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             testCase.verifyEqual( ...
                 initialProject.parameters.preset, "LabKit figure");
             testCase.verifyEqual( ...
-                initialProject.parameters.style.tickFontSize, 35);
+                initialProject.parameters.style.tickFontSize, 45);
             testCase.verifyEqual( ...
-                initialProject.parameters.style.axesLineWidth, 4.3);
+                initialProject.parameters.style.axesLineWidth, 1.5);
             testCase.verifyEqual( ...
                 initialProject.annotations.sourceDefaultStyle.tickFontSize, ...
                 28);
@@ -182,7 +183,7 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             style = runtime.State.project.parameters.style;
             canvasRatio = double(style.canvasWidth) / ...
                 double(style.canvasHeight);
-            testCase.verifyEqual(canvasRatio, 1237 / 942, 'AbsTol', 0.02);
+            testCase.verifyEqual(canvasRatio, 900 / 725, 'AbsTol', 0.02);
             testCase.verifyEqual( ...
                 runtime.State.project.parameters.aspectPreset, "Reference");
 
@@ -319,7 +320,7 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             testCase.verifyNumElements(previewLine, 1);
             testCase.verifyEqual(string(ax.Title.String), "");
             testCase.verifyEqual(ax.PlotBoxAspectRatio(1) / ...
-                ax.PlotBoxAspectRatio(2), 1237 / 942, 'AbsTol', 0.04);
+                ax.PlotBoxAspectRatio(2), 900 / 725, 'AbsTol', 0.04);
             ax.XLim = [4 8];
             fig.Position(3:4) = [760 540];
             drawnow;

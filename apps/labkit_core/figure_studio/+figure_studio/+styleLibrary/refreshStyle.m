@@ -128,7 +128,7 @@ function choice = normalizeCanvasSize(choice)
 [choices, ~] = figure_studio.styleLibrary.canvasSizeOptions();
 choice = string(choice);
 if ~isscalar(choice) || ~any(choices == choice)
-    choice = "1237 px";
+    choice = "900 px";
 end
 end
 

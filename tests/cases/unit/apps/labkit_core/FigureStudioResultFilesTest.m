@@ -24,22 +24,23 @@ classdef FigureStudioResultFilesTest < matlab.unittest.TestCase
 
             testCase.verifyEqual( ...
                 [style.canvasWidth style.canvasHeight style.exportScale], ...
-                [1237 942 2]);
+                [900 725 2]);
             testCase.verifyEqual( ...
                 [style.titleFontSize style.labelFontSize ...
                 style.tickFontSize style.annotationFontSize ...
                 style.legendFontSize], ...
-                [36 36 35 35 35]);
+                [45 45 45 45 45]);
+            testCase.verifyEqual(style.legendTokenWidth, 100);
             testCase.verifyEqual( ...
                 [style.dataLineWidth style.uncertaintyLineWidth ...
                 style.boundaryLineWidth style.referenceLineWidth ...
                 style.axesLineWidth], ...
-                [11.2 11.2 4.3 4.3 4.3]);
+                [6 2 1.5 1.5 1.5]);
             testCase.verifyEmpty(style.axesPosition);
             testCase.verifyFalse(style.boxVisible);
-            testCase.verifyFalse(style.boundaryLines);
-            testCase.verifyTrue(style.gridVisible);
-            testCase.verifyEqual(style.legendBox, "On");
+            testCase.verifyTrue(style.boundaryLines);
+            testCase.verifyFalse(style.gridVisible);
+            testCase.verifyEqual(style.legendBox, "Off");
             testCase.verifyEqual(style.xTickLabelAngle, "Horizontal");
         end
 
@@ -53,26 +54,26 @@ classdef FigureStudioResultFilesTest < matlab.unittest.TestCase
 
             style = figure_studio.styleLibrary.styleForPreset( ...
                 "LabKit figure");
-            style.canvasWidth = 2474;
-            style.canvasHeight = 1884;
+            style.canvasWidth = 1800;
+            style.canvasHeight = 1450;
             figure_studio.resultFiles.applyFigureStyle(ax, style);
 
-            testCase.verifyGreaterThan(fig.Position(3), 2474);
-            testCase.verifyGreaterThan(fig.Position(4), 1884);
-            testCase.verifyEqual(ax.FontSize, 70);
-            testCase.verifyEqual(ax.Title.FontSize, 72);
-            testCase.verifyEqual(ax.LineWidth, 8.6, 'AbsTol', 1e-12);
-            testCase.verifyEqual(curve.LineWidth, 22.4, 'AbsTol', 1e-12);
+            testCase.verifyGreaterThan(fig.Position(3), 1800);
+            testCase.verifyGreaterThan(fig.Position(4), 1450);
+            testCase.verifyEqual(ax.FontSize, 90);
+            testCase.verifyEqual(ax.Title.FontSize, 90);
+            testCase.verifyEqual(ax.LineWidth, 3, 'AbsTol', 1e-12);
+            testCase.verifyEqual(curve.LineWidth, 12, 'AbsTol', 1e-12);
 
-            style.canvasWidth = 618.5;
-            style.canvasHeight = 471;
+            style.canvasWidth = 450;
+            style.canvasHeight = 362.5;
             figure_studio.resultFiles.applyFigureStyle(ax, style);
-            testCase.verifyGreaterThan(fig.Position(3), 618.5);
-            testCase.verifyGreaterThan(fig.Position(4), 471);
-            testCase.verifyEqual(ax.FontSize, 17.5);
-            testCase.verifyEqual(ax.Title.FontSize, 18);
-            testCase.verifyEqual(ax.LineWidth, 2.15, 'AbsTol', 1e-12);
-            testCase.verifyEqual(curve.LineWidth, 5.6, 'AbsTol', 1e-12);
+            testCase.verifyGreaterThan(fig.Position(3), 450);
+            testCase.verifyGreaterThan(fig.Position(4), 362.5);
+            testCase.verifyEqual(ax.FontSize, 22.5);
+            testCase.verifyEqual(ax.Title.FontSize, 22.5);
+            testCase.verifyEqual(ax.LineWidth, 0.75, 'AbsTol', 1e-12);
+            testCase.verifyEqual(curve.LineWidth, 3, 'AbsTol', 1e-12);
             clear cleanup
         end
 
@@ -90,17 +91,17 @@ classdef FigureStudioResultFilesTest < matlab.unittest.TestCase
             figure_studio.resultFiles.applyFigureStyle(ax, style);
             metrics = figure_studio.styleLibrary.visualMetrics(ax);
 
-            testCase.verifyEqual(metrics.axesPixels, [1237 942], 'AbsTol', 1);
+            testCase.verifyEqual(metrics.axesPixels, [900 725], 'AbsTol', 1);
             testCase.verifyGreaterThan(metrics.canvasPixels(1), metrics.axesPixels(1));
             testCase.verifyGreaterThan(metrics.canvasPixels(2), metrics.axesPixels(2));
             testCase.verifyGreaterThan(metrics.titleHeightToPlot, 0.035);
-            testCase.verifyLessThan(metrics.titleHeightToPlot, 0.09);
-            testCase.verifyGreaterThan(metrics.tickHeightToPlot, 0.035);
-            testCase.verifyLessThan(metrics.tickHeightToPlot, 0.06);
+            testCase.verifyLessThan(metrics.titleHeightToPlot, 0.10);
+            testCase.verifyGreaterThan(metrics.tickHeightToPlot, 0.07);
+            testCase.verifyLessThan(metrics.tickHeightToPlot, 0.10);
             testCase.verifyGreaterThan(metrics.dataStrokeToPlot, 0.008);
-            testCase.verifyLessThan(metrics.dataStrokeToPlot, 0.02);
-            testCase.verifyGreaterThan(metrics.axesStrokeToPlot, 0.003);
-            testCase.verifyLessThan(metrics.axesStrokeToPlot, 0.009);
+            testCase.verifyLessThan(metrics.dataStrokeToPlot, 0.014);
+            testCase.verifyGreaterThan(metrics.axesStrokeToPlot, 0.002);
+            testCase.verifyLessThan(metrics.axesStrokeToPlot, 0.004);
             clear cleanup
         end
 
@@ -134,6 +135,29 @@ classdef FigureStudioResultFilesTest < matlab.unittest.TestCase
             testCase.verifyLessThanOrEqual(titleRight, canvasWidth);
             testCase.verifyGreaterThanOrEqual(titleBottom, 0);
             testCase.verifyLessThanOrEqual(titleTop, canvasHeight);
+            clear cleanup
+        end
+
+        function emptyLogAxisTextCannotInflateExportCanvas(testCase)
+            setupLabKitTestPath();
+            cleanup = onCleanup(@() closeAllTestFigures());
+            fig = figure('Visible', 'off', 'MenuBar', 'none', ...
+                'ToolBar', 'none');
+            ax = axes('Parent', fig);
+            loglog(ax, [1 1e5], [1e5 1e2]);
+            xlabel(ax, 'Frequency (Hz)');
+            ylabel(ax, 'Impedance (ohm)');
+            style = figure_studio.styleLibrary.styleForPreset( ...
+                "LabKit figure");
+
+            figure_studio.resultFiles.applyFigureStyle(ax, style);
+
+            ax.Units = 'pixels';
+            testCase.verifyEqual(ax.Position(3:4), [900 725], ...
+                'AbsTol', 1);
+            testCase.verifyLessThan(fig.InnerPosition(3), 2000);
+            testCase.verifyLessThan(fig.InnerPosition(4), 2000, ...
+                "Empty log-ruler text must not become a 100k-pixel margin.");
             clear cleanup
         end
     end
@@ -180,8 +204,9 @@ function verify_presetStylesSemanticElements(testCase)
     testCase.verifyEqual(string(note.FontName), string(style.fontName));
     testCase.verifyEqual(note.FontSize, style.annotationFontSize);
     testCase.verifyEqual(lgd.FontSize, style.legendFontSize);
+    testCase.verifyEqual(lgd.ItemTokenSize(1), style.legendTokenWidth);
     testCase.verifyEqual(lgd.Location, 'northwest');
-    testCase.verifyEqual(string(lgd.Box), "on");
+    testCase.verifyEqual(string(lgd.Box), "off");
     testCase.verifyEqual(ax.XTickLabelRotation, 45);
 
     figure_studio.resultFiles.applyFigureStyle(ax, style);
@@ -214,7 +239,10 @@ function verify_figImportKeepsCompositeAppGraphics(testCase)
         figure_studio.sourceAxes.closeResource(resource));
     [rebuiltFig, rebuiltAx] = ...
         figure_studio.resultFiles.createStyledFigure( ...
-        plotData, style, resource.axes);
+            plotData, style, resource.axes);
+
+    testCase.verifyEqual(string(rebuiltFig.MenuBar), "none");
+    testCase.verifyEqual(string(rebuiltFig.ToolBar), "none");
 
     expected = ["bar", "errorbar", "rectangle", "constantline", "text"];
     actual = string(get(findall(rebuiltAx, '-property', 'Type'), 'Type'));

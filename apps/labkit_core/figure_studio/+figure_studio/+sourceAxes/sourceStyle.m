@@ -164,6 +164,11 @@ function style = sourceLegendStyle(ax, style)
     style.legendLocation = string(optionalAxesValue(lgd, 'Location'));
     style.legendFontSize = finiteValue(optionalAxesValue( ...
         lgd, 'FontSize'), style.legendFontSize);
+    tokenSize = optionalAxesValue(lgd, 'ItemTokenSize');
+    if isnumeric(tokenSize) && ~isempty(tokenSize)
+        style.legendTokenWidth = finiteValue( ...
+            tokenSize(1), style.legendTokenWidth);
+    end
     style.legendNumColumns = finiteValue(optionalAxesValue( ...
         lgd, 'NumColumns'), style.legendNumColumns);
     style.legendBox = titleCase(optionalAxesValue(lgd, 'Box'));

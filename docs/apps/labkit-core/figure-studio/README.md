@@ -54,15 +54,20 @@ changes the selected plot-frame width, aspect, or export scale.
 
 Changing **All font** updates title, axis-label, tick, annotation, and legend
 sizes together. Individual controls then provide category-level refinement.
-**LabKit figure** uses a calibrated 1237-by-942 px reference **plot frame**:
-36 pt title and axis labels, 35 pt ticks/annotations/legend text, 11.2 pt data
-and uncertainty strokes, and 4.3 pt boundary/reference/axes strokes. These are
-editable baseline values measured against the single-panel visual reference.
+**LabKit figure** uses a calibrated 900-by-725 px reference **plot frame**:
+45 pt title, axis-label, tick, annotation, and legend text; 6 pt data strokes;
+2 pt uncertainty strokes; and 1.5 pt boundary, reference, and axes strokes.
+The default uses a complete top/right frame with no grid and no legend box.
+Legend samples use the reference's long line tokens. These editable baselines
+come from normalized pixel measurements across all nine panels of the maintained
+3-by-3 visual reference, not from a single imported FIG.
 The configured width and aspect always describe the inside of the axes frame.
 Figure Studio calculates the enclosing figure's outer margins from the current
 title, labels, ticks, legend, and visible annotations, so changing a long
-label cannot silently shrink the data region. Choose **Source size** or one of
-640, 720, 960, 1200, 1237, 1364, 1600, or 2400 px; an aspect choice sets the
+label cannot silently shrink the data region. Empty ruler text is ignored,
+including the zero-area placeholders MATLAB exposes on logarithmic axes.
+Choose **Source size** or one of
+640, 720, 900, 960, 1200, 1237, 1364, 1600, or 2400 px; an aspect choice sets the
 paired plot-frame height. The workbench preview is a real interactive axes,
 not a raster image. When its allotted screen area changes, Studio reflows only
 the display text and strokes; project settings and export proportions remain

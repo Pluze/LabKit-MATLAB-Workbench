@@ -1,3 +1,6 @@
+% Expected caller: Figure Studio style refresh. Inputs are one size label and
+% a finite fallback width. Output is the selected fixed width or fallback;
+% side effects are none.
 function width = canvasWidthForSize(sizeChoice, fallback)
 %CANVASWIDTHFORSIZE Return the selected fixed canvas width or a fallback.
 arguments

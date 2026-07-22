@@ -1,3 +1,6 @@
+% Expected caller: the Figure Studio recalculate-limits action. Inputs are
+% runtime state and callback context. Output is updated state; side effects
+% are a transient styled figure and an appended user-visible status message.
 function state = recalculateLimits(state, callbackContext)
 %RECALCULATELIMITS Fit the current Figure Studio snapshot to visible X/Y data.
 arguments

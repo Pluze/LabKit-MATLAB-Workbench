@@ -5,7 +5,8 @@ function [fig, ax] = createStyledFigure(plotData, style, sourceAxes)
 if nargin < 3
     sourceAxes = [];
 end
-    fig = figure('Visible', 'off', 'Color', 'w');
+    fig = figure('Visible', 'off', 'Color', 'w', ...
+        'MenuBar', 'none', 'ToolBar', 'none');
     useNativeSource = ~isempty(sourceAxes) && isscalar(sourceAxes) && ...
         isgraphics(sourceAxes, "axes") && ...
         ~isa(sourceAxes, 'matlab.ui.control.UIAxes');
