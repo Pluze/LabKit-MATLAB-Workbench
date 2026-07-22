@@ -27,7 +27,7 @@ function [initialProject, dispatchArgs] = launchRequest(args)
             labkitStyle.gridVisible);
         initialProject.parameters.boundaryChoice = onOff( ...
             labkitStyle.boundaryLines);
-        initialProject.parameters.aspectPreset = "6:5";
+        initialProject.parameters.aspectPreset = "Reference";
         dispatchArgs = {};
     end
 end

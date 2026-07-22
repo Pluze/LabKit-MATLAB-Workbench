@@ -75,6 +75,9 @@ function meta = axesMetadata(ax)
     meta.xTick = ax.XTick;
     meta.yTick = ax.YTick;
     meta.zTick = ax.ZTick;
+    meta.xExponent = rulerExponent(ax, 'XAxis');
+    meta.yExponent = rulerExponent(ax, 'YAxis');
+    meta.zExponent = rulerExponent(ax, 'ZAxis');
     meta.xTickLabel = ax.XTickLabel;
     meta.yTickLabel = ax.YTickLabel;
     meta.zTickLabel = ax.ZTickLabel;
@@ -112,6 +115,17 @@ function meta = axesMetadata(ax)
     catch
         meta.colormap = [];
     end
+end
+
+function value = rulerExponent(ax, rulerName)
+value = [];
+try
+    ruler = ax.(rulerName);
+    if isprop(ruler, 'Exponent')
+        value = ruler.Exponent;
+    end
+catch
+end
 end
 
 function meta = legendMetadata(ax)

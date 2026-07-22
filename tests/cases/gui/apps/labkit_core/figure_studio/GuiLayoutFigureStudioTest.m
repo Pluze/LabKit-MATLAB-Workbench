@@ -30,26 +30,25 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(preset.Items), ...
                 ["LabKit figure", "FIG default"]);
             style = runtime.State.project.parameters.style;
-            testCase.verifyEqual(style.baseFontSize, 20);
-            testCase.verifyEqual(style.titleFontSize, 60);
-            testCase.verifyEqual(style.labelFontSize, 72);
-            testCase.verifyEqual(style.tickFontSize, 60);
-            testCase.verifyEqual(style.annotationFontSize, 54);
-            testCase.verifyEqual(style.legendFontSize, 64);
-            testCase.verifyEqual(style.dataLineWidth, 6.0);
-            testCase.verifyEqual(style.uncertaintyLineWidth, 4.0);
-            testCase.verifyEqual(style.boundaryLineWidth, 2.5);
-            testCase.verifyEqual(style.referenceLineWidth, 4.0);
-            testCase.verifyEqual(style.axesLineWidth, 2.4);
-            testCase.verifyEqual(style.axesPosition, ...
-                [0.185 0.17 0.795 0.78]);
+            testCase.verifyEqual(style.baseFontSize, 35);
+            testCase.verifyEqual(style.titleFontSize, 36);
+            testCase.verifyEqual(style.labelFontSize, 36);
+            testCase.verifyEqual(style.tickFontSize, 35);
+            testCase.verifyEqual(style.annotationFontSize, 35);
+            testCase.verifyEqual(style.legendFontSize, 35);
+            testCase.verifyEqual(style.dataLineWidth, 11.2);
+            testCase.verifyEqual(style.uncertaintyLineWidth, 11.2);
+            testCase.verifyEqual(style.boundaryLineWidth, 4.3);
+            testCase.verifyEqual(style.referenceLineWidth, 4.3);
+            testCase.verifyEqual(style.axesLineWidth, 4.3);
+            testCase.verifyEmpty(style.axesPosition);
             testCase.verifyEqual([style.canvasWidth style.canvasHeight], ...
-                [1600 1333]);
+                [1237 942]);
             testCase.verifyEqual( ...
                 [style.referenceCanvasWidth style.referenceCanvasHeight], ...
-                [1600 1333]);
+                [1237 942]);
             testCase.verifyEqual( ...
-                runtime.State.project.parameters.aspectPreset, "6:5");
+                runtime.State.project.parameters.aspectPreset, "Reference");
             runtime.applyControlValue("baseFontSize", 24);
             style = runtime.State.project.parameters.style;
             testCase.verifyEqual([style.baseFontSize, style.titleFontSize, ...
@@ -75,26 +74,54 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
                 runtime.State.project));
             ax = findall(fig, "Tag", "preview.main");
             testCase.verifyNotEmpty(ax.Children);
-            testCase.verifyNumElements(findall(ax, "Type", "image"), 1, ...
-                "The workbench preview must be the export-canvas rendering.");
-            previewInfo = getappdata(ax, 'labkitFigureStudioExportPreview');
-            testCase.verifyEqual(previewInfo.canvas, [1200 675]);
+            testCase.verifyEmpty(findall(ax, "Type", "image"), ...
+                "The workbench preview must remain an interactive axes.");
+            testCase.verifyNotEmpty(findall(ax, "Type", "line"));
             testCase.verifyEqual(string( ...
                 findall(fig, "Tag", "exportCurrent").Enable), "on");
             testCase.verifyFalse(contains( ...
                 join(string(ax.Title.String), " "), " | file "));
             originalLimits = runtime.State.session.cache.plotData.axes.xLim;
+            originalRevision = runtime.State.session.cache.viewRevision;
             runtime.invokeAction("recalculateLimits");
             testCase.verifyNotEqual( ...
                 runtime.State.session.cache.plotData.axes.xLim, originalLimits, ...
                 "The explicit limit action should recover the visible data extent.");
+            testCase.verifyGreaterThan( ...
+                runtime.State.session.cache.viewRevision, originalRevision);
+            testCase.verifyEqual(ax.XLim, ...
+                runtime.State.session.cache.plotData.axes.xLim, ...
+                "Recalculation must replace the current interactive viewport.");
+            limitState = runtime.State.session.cache.limitState;
+            testCase.verifyGreaterThanOrEqual(limitState.xMin, limitState.xRange(1));
+            testCase.verifyLessThanOrEqual(limitState.xMax, limitState.xRange(2));
+            manualXMin = mean([limitState.xMin limitState.xMax]);
+            runtime.applyControlValue("xMin", manualXMin);
+            testCase.verifyEqual(ax.XLim(1), manualXMin);
+
+            canvasBeforePreset = [style.canvasWidth style.canvasHeight];
+            axesFrameBeforePreset = style.axesPosition;
+            runtime.applyControlValue("stylePreset", "FIG default");
+            testCase.verifyEqual( ...
+                [runtime.State.project.parameters.style.canvasWidth ...
+                runtime.State.project.parameters.style.canvasHeight], ...
+                canvasBeforePreset, ...
+                "Text-style presets must not change canvas dimensions.");
+            testCase.verifyEqual( ...
+                runtime.State.project.parameters.style.axesPosition, ...
+                axesFrameBeforePreset, ...
+                "Text-style presets must not change the canvas frame.");
+            runtime.applyControlValue("stylePreset", "LabKit figure");
+            runtime.applyControlValue("boundaryLines", "Off");
+            testCase.verifyEqual(string(ax.Box), "off");
 
             runtime.invokeAction("exportPng");
             testCase.verifyTrue(isfile(pngPath));
             pngInfo = imfinfo(pngPath);
-            testCase.verifyEqual(double(pngInfo.Width) / double(pngInfo.Height), ...
-                16 / 9, 'AbsTol', 0.01, ...
-                "Quick raster export must retain the selected canvas aspect.");
+            testCase.verifyGreaterThan(double(pngInfo.Width), 1200, ...
+                "Export must include the configured plot frame and its outer text margins.");
+            testCase.verifyGreaterThan(double(pngInfo.Height), 675, ...
+                "Export must include the configured plot frame and its outer text margins.");
             testCase.verifyTrue(isfile( ...
                 fullfile(folder, 'figure_studio.labkit.json')));
             runtime.invokeAction("chooseOutputFolder");
@@ -131,9 +158,9 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             testCase.verifyEqual( ...
                 initialProject.parameters.preset, "LabKit figure");
             testCase.verifyEqual( ...
-                initialProject.parameters.style.tickFontSize, 40);
+                initialProject.parameters.style.tickFontSize, 35);
             testCase.verifyEqual( ...
-                initialProject.parameters.style.axesLineWidth, 2.0);
+                initialProject.parameters.style.axesLineWidth, 4.3);
             testCase.verifyEqual( ...
                 initialProject.annotations.sourceDefaultStyle.tickFontSize, ...
                 28);
@@ -146,14 +173,18 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             fig = runtime.figureHandle();
             ax = findall(fig, "Tag", "preview.main");
             testCase.verifyNotEmpty(ax.Children);
+            testCase.verifyEqual( ...
+                runtime.State.session.cache.currentSource, "Popout axes");
+            testCase.verifyEmpty(findall(ax, "Type", "image"));
+            testCase.verifyEqual(string(ax.Title.String), "Probe");
             testCase.verifyEqual(string( ...
                 findall(fig, "Tag", "exportCurrent").Enable), "on");
             style = runtime.State.project.parameters.style;
             canvasRatio = double(style.canvasWidth) / ...
                 double(style.canvasHeight);
-            testCase.verifyEqual(canvasRatio, 6 / 5, 'AbsTol', 0.02);
+            testCase.verifyEqual(canvasRatio, 1237 / 942, 'AbsTol', 0.02);
             testCase.verifyEqual( ...
-                runtime.State.project.parameters.aspectPreset, "6:5");
+                runtime.State.project.parameters.aspectPreset, "Reference");
 
             folder = string(tempname);
             mkdir(folder);
@@ -260,7 +291,7 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             clear runtimeCleanup folderCleanup cleanup;
         end
 
-        function figure_studio_renders_a_stable_export_canvas_preview(testCase)
+        function figure_studio_renders_an_interactive_export_proportioned_preview(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
@@ -283,20 +314,28 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
                 struct("plotData", data, "sourceAxes", sourceAx, ...
                 "style", style, "preview", true));
 
-            preview = findall(ax, "Type", "image");
-            testCase.verifyNumElements(preview, 1);
-            testCase.verifyEqual(getappdata( ...
-                ax, 'labkitFigureStudioExportPreview').canvas, [1600 1333]);
-            pixelsBefore = preview.CData;
+            testCase.verifyEmpty(findall(ax, "Type", "image"));
+            previewLine = findall(ax, "Type", "line");
+            testCase.verifyNumElements(previewLine, 1);
+            testCase.verifyEqual(string(ax.Title.String), "");
+            testCase.verifyEqual(ax.PlotBoxAspectRatio(1) / ...
+                ax.PlotBoxAspectRatio(2), 1237 / 942, 'AbsTol', 0.04);
+            ax.XLim = [4 8];
             fig.Position(3:4) = [760 540];
             drawnow;
-            testCase.verifyEqual(preview.CData, pixelsBefore, ...
-                "Workspace resize must not recompute text or stroke proportions.");
-            testCase.verifyEqual(diff(ax.XLim) / diff(ax.YLim), ...
-                1600 / 1333, 'AbsTol', 0.01);
+            testCase.verifyEqual(ax.XLim, [4 8], ...
+                "Workspace resize must preserve the interactive viewport.");
+            testCase.verifyEqual(previewLine.XData, linspace(0, 30, 200));
+            fontBefore = ax.FontSize;
+            lineBefore = previewLine.LineWidth;
+            fig.Position(3:4) = [420 320];
+            drawnow;
+            figure_studio.sourceAxes.refreshPreviewScale(ax);
+            testCase.verifyLessThan(ax.FontSize, fontBefore);
+            testCase.verifyLessThan(previewLine.LineWidth, lineBefore);
         end
 
-        function popout_send_to_studio_copies_plot_content(~)
+        function popout_send_to_studio_copies_plot_content(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
@@ -329,14 +368,44 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             export = findall(studioFig(1), "Tag", "exportCurrent");
             assert(~isempty(preview.Children) && ...
                 string(export.Enable) == "on");
+            testCase.verifyEmpty(findall(preview, "Type", "image"));
+            testCase.verifyEqual(string(preview.Title.String), "Source Plot");
             clear hookCleanup cleanup;
+        end
+
+        function uiAxesExportPreservesScientificAxisExponent(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+
+            sourceFigure = uifigure('Visible', 'off');
+            sourceAxes = uiaxes(sourceFigure);
+            plot(sourceAxes, [0 2e5 4e5], [0 1e4 2e4], '-o');
+            sourceAxes.XAxis.Exponent = 5;
+            sourceAxes.XAxis.ExponentMode = 'manual';
+            sourceAxes.YAxis.Exponent = 4;
+            sourceAxes.YAxis.ExponentMode = 'manual';
+            plotData = figure_studio.resultFiles.extractAxesData(sourceAxes);
+            style = figure_studio.styleLibrary.styleForPreset( ...
+                "LabKit figure");
+            [exportFigure, exportAxes] = ...
+                figure_studio.resultFiles.createStyledFigure( ...
+                plotData, style, sourceAxes);
+            exportCleanup = onCleanup(@() delete(exportFigure));
+
+            testCase.verifyNotEmpty(findall(exportAxes, 'Type', 'line'));
+            testCase.verifyEqual(double(exportAxes.XAxis.Exponent), 5);
+            testCase.verifyEqual(double(exportAxes.YAxis.Exponent), 4);
+            clear exportCleanup cleanup;
         end
     end
 end
 
 function assertFigureStudioLayout(h, fig)
 h.assertStartupSucceeded(fig);
-ids = ["figFiles", "currentSource", "sourcePanel", "statusSummary", "stylePreset", ...
+ids = ["figFiles", "currentSource", "sourcePanel", "statusSummary", "recalculateLimits", ...
+    "xMin", "xMax", "yMin", "yMax", "stylePreset", ...
     "aspectPreset", "canvasSize", "exportScale", "recalculateLimits", ...
     "boundaryLines", "baseFontSize", "titleFontSize", "labelFontSize", ...
     "tickFontSize", "annotationFontSize", "xTickLabelAngle", ...

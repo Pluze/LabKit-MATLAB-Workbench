@@ -24,7 +24,8 @@ elseif changedId == "boundaryLines"
     p.style.boundaryLines = p.boundaryChoice == "On";
 end
 p.style = applyAspectPreset( ...
-    p.style, p.aspectPreset, p.canvasSize, changedId);
+    p.style, p.aspectPreset, p.canvasSize, changedId, ...
+    state.session.cache.sourceDefaultStyle);
 state.project.parameters = p;
 state.session.workflow.status = "Styled with " + p.preset + ".";
 state.project.results.lastExport = [];
@@ -77,11 +78,23 @@ if ~isfield(style, "fontOverrides") || ~isstruct(style.fontOverrides)
 end
 end
 
-function style = applyAspectPreset(style, preset, canvasSize, changedId)
+function style = applyAspectPreset(style, preset, canvasSize, changedId, sourceStyle)
 ratio = aspectRatio(preset);
 if changedId == "canvasSize"
     style.canvasWidth = figure_studio.styleLibrary.canvasWidthForSize( ...
         string(canvasSize), style.canvasWidth);
+    if string(canvasSize) == "Source size" && isstruct(sourceStyle) && ...
+            isfield(sourceStyle, "canvasWidth") && ...
+            isfinite(sourceStyle.canvasWidth)
+        style.canvasWidth = sourceStyle.canvasWidth;
+    end
+end
+if string(preset) == "Source" && isstruct(sourceStyle) && ...
+        isfield(sourceStyle, "canvasWidth") && ...
+        isfield(sourceStyle, "canvasHeight") && ...
+        isfinite(sourceStyle.canvasWidth) && isfinite(sourceStyle.canvasHeight) && ...
+        sourceStyle.canvasHeight > 0
+    ratio = sourceStyle.canvasWidth / sourceStyle.canvasHeight;
 end
 if ~isfinite(ratio)
     return
@@ -93,6 +106,9 @@ end
 
 function ratio = aspectRatio(preset)
 switch string(preset)
+    case "Reference"
+        reference = figure_studio.styleLibrary.goldStandard();
+        ratio = reference.canvasWidth / reference.canvasHeight;
     case "6:5"
         ratio = 6 / 5;
     case "4:3"
@@ -112,7 +128,7 @@ function choice = normalizeCanvasSize(choice)
 [choices, ~] = figure_studio.styleLibrary.canvasSizeOptions();
 choice = string(choice);
 if ~isscalar(choice) || ~any(choices == choice)
-    choice = "1600 px";
+    choice = "1237 px";
 end
 end
 

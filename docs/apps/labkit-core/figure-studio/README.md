@@ -38,11 +38,10 @@ The plot-context-menu handoff already represents one axes, so it provides one
 panel. **Clear figures** removes all sources from the project.
 
 For a source using **FIG default**, Figure Studio adopts its font, semantic
-line widths, annotations, legend, grid, canvas, and axes appearance. Selecting
-**LabKit figure** applies the calibrated 1600-by-1333 (6:5) reference canvas
-and publication hierarchy while retaining the source legend placement. The
-source canvas and presentation remain available by switching back to **FIG
-default**.
+line widths, annotations, legend, grid, and axes appearance. Selecting
+**LabKit figure** applies the calibrated single-panel publication hierarchy
+while retaining the source legend placement. Switching a text preset never
+changes the selected plot-frame width, aspect, or export scale.
 
 ## Style And Canvas Controls
 
@@ -51,20 +50,24 @@ default**.
 | Text Style | preset, all/title/axis-label/tick/annotation font size, X tick-label angle, grid alpha, grid visibility |
 | Lines + Boundaries | data, uncertainty, main-graphic boundary, reference-line, and axes line widths |
 | Legend | source/on/off display, location, font size, columns, and border |
-| Canvas | 6:5, 4:3, 16:9, 1:1, 3:2, or source aspect; a fixed export width or source size; export supersampling; boundary visibility |
+| Plot frame | reference, 6:5, 4:3, 16:9, 1:1, 3:2, or source aspect; a fixed plot width or source size; export supersampling; top/right frame visibility |
 
 Changing **All font** updates title, axis-label, tick, annotation, and legend
 sizes together. Individual controls then provide category-level refinement.
-**LabKit figure** uses a calibrated 1600-by-1333 reference canvas: 60 pt title,
-72 pt axis labels, 60 pt ticks, 54 pt annotations, 64 pt legend text, 2.5 pt
-main-graphic boundaries, 4.0 pt data/reference lines, and 2.4 pt axes lines.
-It uses a normalized axes frame of `[0.185 0.17 0.795 0.78]`, measured from
-single-panel references. These are editable baseline values, not arbitrary
-preview geometry. Choose **Source size** or one of 640, 720, 960, 1200, 1600,
-or 2400 px; an aspect choice sets the paired export height. The workbench
-always shows a rasterized preview of that exact export canvas. Resizing the
-app only rescales this one rendered image; it never recomputes text or stroke
-sizes. **Export x** is raster supersampling only.
+**LabKit figure** uses a calibrated 1237-by-942 px reference **plot frame**:
+36 pt title and axis labels, 35 pt ticks/annotations/legend text, 11.2 pt data
+and uncertainty strokes, and 4.3 pt boundary/reference/axes strokes. These are
+editable baseline values measured against the single-panel visual reference.
+The configured width and aspect always describe the inside of the axes frame.
+Figure Studio calculates the enclosing figure's outer margins from the current
+title, labels, ticks, legend, and visible annotations, so changing a long
+label cannot silently shrink the data region. Choose **Source size** or one of
+640, 720, 960, 1200, 1237, 1364, 1600, or 2400 px; an aspect choice sets the
+paired plot-frame height. The workbench preview is a real interactive axes,
+not a raster image. When its allotted screen area changes, Studio reflows only
+the display text and strokes; project settings and export proportions remain
+unchanged. **Export x** is raster supersampling only. **Top/right frame** only
+shows or hides those two axes edges; it never changes the plot-frame size.
 
 Font controls use 0.5 pt steps and line controls use 0.1 pt steps. The preset
 styles every existing category but does not create or move a legend by default, because
@@ -73,11 +76,13 @@ changes. **X tick labels** retains the source angle, makes labels horizontal,
 or rotates them 45 degrees.
 
 PNG and JPG resolution is `300 * Export x`, with a minimum of 72 dpi. SVG uses
-vector content. **FIG default** records the source figure's own width and the
-selected subplot's displayed ratio as its reference, so reopening a source
-does not rescale its original typography. If limits are stale after copying or
-editing, use **Recalculate X/Y limits** to make MATLAB infer visible-data
-limits explicitly; it does not change the source calculation.
+vector content. **FIG default** records the source plot-frame ratio as its
+reference, so reopening a source does not rescale its original typography. If
+limits are stale after copying or editing, use **Recalculate X/Y limits** to
+fit the visible graphics, update the interactive viewport, and refresh the
+four limit inputs. The X/Y minimum and maximum controls accept values within
+the finite visible-data extent expanded by exactly 50% on both sides; they do
+not change the source calculation.
 
 ## Quick Exports
 
@@ -97,9 +102,11 @@ On **Export**, select an output folder and choose **Export data + script**.
 Figure Studio creates a package containing supported visible data, style and
 axes metadata, and a MATLAB recreation script. For preview, editable FIG
 export, and image export, Studio first copies the selected native axes
-hierarchy. This preserves MATLAB graphics that can be copied into the target
-axes, including ordinary grouped charts such as `boxplot`. The portable data
-package separately recognizes
+hierarchy when MATLAB permits the parent transition. This preserves MATLAB
+graphics that can be copied into the target axes, including ordinary grouped
+charts such as `boxplot`. UIAxes sources are rebuilt into conventional export
+axes from the portable snapshot, retaining the displayed scientific axis
+exponents as well as visible data. The portable data package separately recognizes
 visible line, bar, error-bar, area, scatter, image, surface, patch, rectangle,
 text, and constant-line objects. Existing legend text, visibility, placement,
 orientation, column count, font, interpreter, and border are retained.

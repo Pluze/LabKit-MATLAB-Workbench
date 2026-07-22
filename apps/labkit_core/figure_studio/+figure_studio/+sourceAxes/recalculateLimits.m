@@ -18,6 +18,9 @@ state.session.cache.plotData.axes.xLim = ax.XLim;
 state.session.cache.plotData.axes.yLim = ax.YLim;
 state.project.annotations.limitOverrides = struct( ...
     "xLim", ax.XLim, "yLim", ax.YLim);
+state.session.cache.limitState = ...
+    figure_studio.sourceAxes.limitControls(state.session.cache.plotData);
+state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
 if isempty(state.project.inputs.sources)
     state.project.annotations.embeddedPlot = state.session.cache.plotData;
 end

@@ -16,10 +16,13 @@ if preset == "FIG default"
     end
 else
     p.style = figure_studio.styleLibrary.styleForPreset(preset);
-    p.style.canvasWidth = previous.canvasWidth;
-    p.style.canvasHeight = previous.canvasHeight;
-    p.style.exportScale = previous.exportScale;
 end
+p.style.canvasWidth = previous.canvasWidth;
+p.style.canvasHeight = previous.canvasHeight;
+p.style.referenceCanvasWidth = previous.referenceCanvasWidth;
+p.style.referenceCanvasHeight = previous.referenceCanvasHeight;
+p.style.exportScale = previous.exportScale;
+p.style.axesPosition = previous.axesPosition;
 p.gridChoice = onOff(p.style.gridVisible);
 p.boundaryChoice = onOff(p.style.boundaryLines);
 state.project.parameters = p;

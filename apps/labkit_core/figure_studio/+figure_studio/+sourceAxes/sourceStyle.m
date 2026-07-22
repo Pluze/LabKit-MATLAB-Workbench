@@ -53,6 +53,10 @@ function style = sourceStyle(srcAx, opts)
         "constantline", style.referenceLineWidth);
     style.axesLineWidth = finiteValue(optionalAxesValue( ...
         srcAx, 'LineWidth'), style.axesLineWidth);
+    style.tickDirection = string(optionalAxesValue(srcAx, 'TickDir'));
+    if ~any(style.tickDirection == ["in", "out", "both", "none"])
+        style.tickDirection = "out";
+    end
     style.gridVisible = string(optionalAxesValue(srcAx, 'XGrid')) == "on" || ...
         string(optionalAxesValue(srcAx, 'YGrid')) == "on";
     style.gridAlpha = finiteValue(optionalAxesValue(srcAx, 'GridAlpha'), 0.12);

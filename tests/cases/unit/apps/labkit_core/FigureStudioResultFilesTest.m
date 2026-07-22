@@ -24,22 +24,21 @@ classdef FigureStudioResultFilesTest < matlab.unittest.TestCase
 
             testCase.verifyEqual( ...
                 [style.canvasWidth style.canvasHeight style.exportScale], ...
-                [1600 1333 2]);
+                [1237 942 2]);
             testCase.verifyEqual( ...
                 [style.titleFontSize style.labelFontSize ...
                 style.tickFontSize style.annotationFontSize ...
                 style.legendFontSize], ...
-                [60 72 60 54 64]);
+                [36 36 35 35 35]);
             testCase.verifyEqual( ...
                 [style.dataLineWidth style.uncertaintyLineWidth ...
                 style.boundaryLineWidth style.referenceLineWidth ...
                 style.axesLineWidth], ...
-                [6.0 4.0 2.5 4.0 2.4]);
-            testCase.verifyEqual(style.axesPosition, ...
-                [0.185 0.17 0.795 0.78]);
-            testCase.verifyTrue(style.boxVisible);
-            testCase.verifyTrue(style.boundaryLines);
-            testCase.verifyFalse(style.gridVisible);
+                [11.2 11.2 4.3 4.3 4.3]);
+            testCase.verifyEmpty(style.axesPosition);
+            testCase.verifyFalse(style.boxVisible);
+            testCase.verifyFalse(style.boundaryLines);
+            testCase.verifyTrue(style.gridVisible);
             testCase.verifyEqual(style.legendBox, "On");
             testCase.verifyEqual(style.xTickLabelAngle, "Horizontal");
         end
@@ -54,24 +53,87 @@ classdef FigureStudioResultFilesTest < matlab.unittest.TestCase
 
             style = figure_studio.styleLibrary.styleForPreset( ...
                 "LabKit figure");
-            style.canvasWidth = 3200;
-            style.canvasHeight = 2666;
+            style.canvasWidth = 2474;
+            style.canvasHeight = 1884;
             figure_studio.resultFiles.applyFigureStyle(ax, style);
 
-            testCase.verifyEqual(fig.Position(3:4), [3200 2666]);
-            testCase.verifyEqual(ax.FontSize, 120);
-            testCase.verifyEqual(ax.Title.FontSize, 120);
-            testCase.verifyEqual(ax.LineWidth, 4.8, 'AbsTol', 1e-12);
-            testCase.verifyEqual(curve.LineWidth, 12, 'AbsTol', 1e-12);
+            testCase.verifyGreaterThan(fig.Position(3), 2474);
+            testCase.verifyGreaterThan(fig.Position(4), 1884);
+            testCase.verifyEqual(ax.FontSize, 70);
+            testCase.verifyEqual(ax.Title.FontSize, 72);
+            testCase.verifyEqual(ax.LineWidth, 8.6, 'AbsTol', 1e-12);
+            testCase.verifyEqual(curve.LineWidth, 22.4, 'AbsTol', 1e-12);
 
-            style.canvasWidth = 800;
-            style.canvasHeight = 666.5;
+            style.canvasWidth = 618.5;
+            style.canvasHeight = 471;
             figure_studio.resultFiles.applyFigureStyle(ax, style);
-            testCase.verifyEqual(fig.Position(3:4), [800 666.5]);
-            testCase.verifyEqual(ax.FontSize, 30);
-            testCase.verifyEqual(ax.Title.FontSize, 30);
-            testCase.verifyEqual(ax.LineWidth, 1.2, 'AbsTol', 1e-12);
-            testCase.verifyEqual(curve.LineWidth, 3, 'AbsTol', 1e-12);
+            testCase.verifyGreaterThan(fig.Position(3), 618.5);
+            testCase.verifyGreaterThan(fig.Position(4), 471);
+            testCase.verifyEqual(ax.FontSize, 17.5);
+            testCase.verifyEqual(ax.Title.FontSize, 18);
+            testCase.verifyEqual(ax.LineWidth, 2.15, 'AbsTol', 1e-12);
+            testCase.verifyEqual(curve.LineWidth, 5.6, 'AbsTol', 1e-12);
+            clear cleanup
+        end
+
+        function labkitPresetMaintainsMeasuredSinglePanelRatios(testCase)
+            setupLabKitTestPath();
+            cleanup = onCleanup(@() closeAllTestFigures());
+            fig = figure('Visible', 'off', 'Units', 'pixels');
+            ax = axes('Parent', fig);
+            plot(ax, 1:4, [1 3 2 4], '-o');
+            title(ax, 'Reference title');
+            xlabel(ax, 'X label');
+            ylabel(ax, 'Y label');
+            style = figure_studio.styleLibrary.styleForPreset( ...
+                "LabKit figure");
+            figure_studio.resultFiles.applyFigureStyle(ax, style);
+            metrics = figure_studio.styleLibrary.visualMetrics(ax);
+
+            testCase.verifyEqual(metrics.axesPixels, [1237 942], 'AbsTol', 1);
+            testCase.verifyGreaterThan(metrics.canvasPixels(1), metrics.axesPixels(1));
+            testCase.verifyGreaterThan(metrics.canvasPixels(2), metrics.axesPixels(2));
+            testCase.verifyGreaterThan(metrics.titleHeightToPlot, 0.035);
+            testCase.verifyLessThan(metrics.titleHeightToPlot, 0.09);
+            testCase.verifyGreaterThan(metrics.tickHeightToPlot, 0.035);
+            testCase.verifyLessThan(metrics.tickHeightToPlot, 0.06);
+            testCase.verifyGreaterThan(metrics.dataStrokeToPlot, 0.008);
+            testCase.verifyLessThan(metrics.dataStrokeToPlot, 0.02);
+            testCase.verifyGreaterThan(metrics.axesStrokeToPlot, 0.003);
+            testCase.verifyLessThan(metrics.axesStrokeToPlot, 0.009);
+            clear cleanup
+        end
+
+        function exportedLongTitleRemainsInsideTheCanvas(testCase)
+            setupLabKitTestPath();
+            cleanup = onCleanup(@() closeAllTestFigures());
+            sourceFig = figure('Visible', 'off');
+            sourceAxes = axes('Parent', sourceFig);
+            plot(sourceAxes, 0:5, [0 2 4 3 2 1]);
+            title(sourceAxes, '-Zimag (ohm) vs Zreal (ohm) (4 files)');
+            xlabel(sourceAxes, 'Zreal (ohm)');
+            ylabel(sourceAxes, '-Zimag (ohm)');
+            style = figure_studio.styleLibrary.styleForPreset( ...
+                "LabKit figure");
+            plotData = figure_studio.resultFiles.extractAxesData(sourceAxes);
+            [exportFig, exportAxes] = ...
+                figure_studio.resultFiles.createStyledFigure( ...
+                plotData, style, sourceAxes);
+            drawnow;
+            exportAxes.Units = 'pixels';
+            exportAxes.Title.Units = 'pixels';
+            axesPosition = exportAxes.Position;
+            titleExtent = exportAxes.Title.Extent;
+            titleLeft = axesPosition(1) + titleExtent(1);
+            titleRight = titleLeft + titleExtent(3);
+            titleBottom = axesPosition(2) + titleExtent(2);
+            titleTop = titleBottom + titleExtent(4);
+            canvasWidth = exportFig.Position(3);
+            canvasHeight = exportFig.Position(4);
+            testCase.verifyGreaterThanOrEqual(titleLeft, 0);
+            testCase.verifyLessThanOrEqual(titleRight, canvasWidth);
+            testCase.verifyGreaterThanOrEqual(titleBottom, 0);
+            testCase.verifyLessThanOrEqual(titleTop, canvasHeight);
             clear cleanup
         end
     end
@@ -165,8 +227,12 @@ function verify_figImportKeepsCompositeAppGraphics(testCase)
         expectedLegendStrings);
     testCase.verifyEqual(rebuiltLegend.Location, 'northwest');
     testCase.verifyEqual(rebuiltLegend.Orientation, 'horizontal');
-    testCase.verifyEqual(rebuiltAx.Position, ax.Position, 'AbsTol', 1e-12, ...
-        "FIG default export must retain the source axes placement.");
+    rebuiltAx.Units = 'pixels';
+    testCase.verifyEqual(rebuiltAx.Position(3:4), ...
+        round([style.canvasWidth style.canvasHeight]), 'AbsTol', 1, ...
+        "FIG exports must use the selected plot-frame size, not source margins.");
+    testCase.verifyGreaterThan(rebuiltFig.Position(3), rebuiltAx.Position(3));
+    testCase.verifyGreaterThan(rebuiltFig.Position(4), rebuiltAx.Position(4));
     testCase.verifyTrue(isvalid(rebuiltFig));
     clear resourceCleanup fileCleanup cleanup
 end

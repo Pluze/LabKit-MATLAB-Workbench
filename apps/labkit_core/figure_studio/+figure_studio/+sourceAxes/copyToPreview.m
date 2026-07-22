@@ -4,6 +4,10 @@
 function copyToPreview(srcAx, dstAx)
     labkit.app.plot.clearAxes(dstAx);
     dstAx.Visible = 'on';
+    title(dstAx, "");
+    xlabel(dstAx, "");
+    ylabel(dstAx, "");
+    zlabel(dstAx, "");
     disableDefaultAxesToolbar(dstAx);
     copyAxesState(srcAx, dstAx);
     children = flipud(allchild(srcAx));

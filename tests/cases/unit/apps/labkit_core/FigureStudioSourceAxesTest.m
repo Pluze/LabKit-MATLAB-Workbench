@@ -64,6 +64,21 @@ classdef FigureStudioSourceAxesTest < matlab.unittest.TestCase
             testCase.verifyLessThan(abs(ratio - 2), 0.02, ...
                 "Axes handoff should still preserve explicit source plot-box ratios.");
         end
+
+        function limitControlsUseExactFiftyPercentDataEnvelope(testCase)
+            setupLabKitTestPath();
+            plotData = struct( ...
+                "objects", struct( ...
+                    "type", "line", "x", [2; 6], "y", [-1; 3]), ...
+                "axes", struct("xLim", [2 6], "yLim", [-1 3]));
+
+            limits = figure_studio.sourceAxes.limitControls(plotData);
+
+            testCase.verifyEqual(limits.xRange, [0 8]);
+            testCase.verifyEqual(limits.yRange, [-3 5]);
+            testCase.verifyEqual([limits.xMin limits.xMax], [2 6]);
+            testCase.verifyEqual([limits.yMin limits.yMax], [-1 3]);
+        end
     end
 end
 

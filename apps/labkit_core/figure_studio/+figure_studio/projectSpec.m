@@ -16,8 +16,8 @@ function project = createProject()
     project.parameters = struct( ...
         "preset", preset, ...
         "style", style, ...
-        "aspectPreset", "6:5", ...
-        "canvasSize", "1600 px", ...
+        "aspectPreset", "Reference", ...
+        "canvasSize", "1237 px", ...
         "gridChoice", onOff(style.gridVisible), ...
         "boundaryChoice", onOff(style.boundaryLines), ...
         "outputFolder", "");
@@ -53,16 +53,19 @@ function project = migrateProject(project, fromVersion)
             fromVersion);
     end
     if fromVersion == 1
-        defaults = figure_studio.styleLibrary.styleForPreset( ...
-            project.parameters.preset);
+        defaults = versionOneStyleDefaults(project.parameters.preset);
         savedStyle = project.parameters.style;
         project.parameters.style = mergeStyle( ...
             defaults, savedStyle);
+        project.parameters.style = completeVersionOneGeometry( ...
+            project.parameters.style, defaults);
         project.parameters.style = legacyReferenceCanvas( ...
             project.parameters.style, savedStyle);
         savedSourceStyle = project.annotations.sourceDefaultStyle;
         project.annotations.sourceDefaultStyle = mergeStyle( ...
             defaults, savedSourceStyle);
+        project.annotations.sourceDefaultStyle = completeVersionOneGeometry( ...
+            project.annotations.sourceDefaultStyle, defaults);
         project.annotations.sourceDefaultStyle = legacyReferenceCanvas( ...
             project.annotations.sourceDefaultStyle, savedSourceStyle);
     end
@@ -78,6 +81,40 @@ function project = migrateProject(project, fromVersion)
     if ~isfield(project.annotations, "panelIndex")
         project.annotations.panelIndex = 1;
     end
+end
+
+function style = completeVersionOneGeometry(style, defaults)
+position = double(style.axesPosition);
+if numel(position) ~= 4 || any(~isfinite(position)) || ...
+        position(3) <= 0 || position(4) <= 0
+    style.axesPosition = defaults.axesPosition;
+end
+end
+
+function style = versionOneStyleDefaults(preset)
+% Version-one projects did not persist every style category. Complete only
+% their missing fields with that schema's defaults so a saved publication
+% style is never silently restyled by the current reference profile.
+style = figure_studio.styleLibrary.styleForPreset(preset);
+if string(preset) ~= "LabKit figure"
+    return;
+end
+style.baseFontSize = 20;
+style.titleFontSize = 60;
+style.labelFontSize = 72;
+style.tickFontSize = 60;
+style.annotationFontSize = 54;
+style.legendFontSize = 64;
+style.dataLineWidth = 6.0;
+style.uncertaintyLineWidth = 4.0;
+style.boundaryLineWidth = 2.5;
+style.referenceLineWidth = 4.0;
+style.axesLineWidth = 2.4;
+style.canvasWidth = 1600;
+style.canvasHeight = 1333;
+style.referenceCanvasWidth = 1600;
+style.referenceCanvasHeight = 1333;
+style.axesPosition = [0.185 0.17 0.795 0.78];
 end
 
 function limits = emptyLimitOverrides()

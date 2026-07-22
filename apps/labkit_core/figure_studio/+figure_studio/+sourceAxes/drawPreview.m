@@ -12,20 +12,23 @@ function drawPreview(axesById, model)
         if isappdata(ax, 'labkitFigureStudioPreviewStyle')
             rmappdata(ax, 'labkitFigureStudioPreviewStyle');
         end
+        if isappdata(ax, 'labkitFigureStudioExportPreview')
+            rmappdata(ax, 'labkitFigureStudioExportPreview');
+        end
         ax.Visible = 'off';
         title(ax, "No figure loaded");
         return;
     end
-    if isfield(model, "preview") && logical(model.preview)
-        drawExportPreview(ax, model);
-        return;
-    end
     if hasNativeSource(model)
         figure_studio.sourceAxes.copyToPreview(model.sourceAxes, ax);
+        if isappdata(ax, 'labkitFigureStudioExportPreview')
+            rmappdata(ax, 'labkitFigureStudioExportPreview');
+        end
         applyStoredLimits(ax, model.plotData.axes);
         style = model.style;
         style.previewScale = logical(model.preview);
         figure_studio.resultFiles.applyFigureStyle(ax, style);
+        configureInteractivePreview(ax, style);
         return;
     end
     samePlot = isappdata(ax, 'labkitFigureStudioPlotData') && ...
@@ -56,31 +59,34 @@ function drawPreview(axesById, model)
     if model.preview
         setappdata(ax, 'labkitFigureStudioPlotData', model.plotData);
         setappdata(ax, 'labkitFigureStudioPreviewStyle', style);
+        configureInteractivePreview(ax, style);
         figure_studio.sourceAxes.resizePreview(ax, style);
     end
 end
 
-function drawExportPreview(ax, model)
-labkit.app.plot.clearAxes(ax);
-ax.Visible = 'on';
-disableDefaultAxesToolbar(ax);
-previewFigure = figure_studio.resultFiles.createStyledFigure( ...
-    model.plotData, model.style, model.sourceAxes);
-figureCleanup = onCleanup(@() delete(previewFigure));
-filepath = string(tempname) + ".png";
-fileCleanup = onCleanup(@() deleteIfFile(filepath));
-print(previewFigure, char(filepath), '-dpng', '-r96');
-rgb = imread(filepath);
-image(ax, 'CData', rgb, 'XData', [0 size(rgb, 2)], ...
-    'YData', [0 size(rgb, 1)], ...
-    'HitTest', 'off', 'PickableParts', 'none');
-ax.YDir = 'reverse';
-axis(ax, 'image');
-axis(ax, 'off');
-setappdata(ax, 'labkitFigureStudioExportPreview', ...
-    struct("canvas", [model.style.canvasWidth model.style.canvasHeight], ...
-    "aspect", model.style.canvasWidth / model.style.canvasHeight));
-clear fileCleanup figureCleanup
+function configureInteractivePreview(ax, style)
+if ~logical(style.previewScale)
+    return;
+end
+setappdata(ax, 'labkitFigureStudioPreviewStyle', style);
+setappdata(ax, 'labkitFigureStudioPreviewSize', previewPixelSize(ax));
+if ~isappdata(ax, 'labkitFigureStudioPreviewResizeInstalled')
+    try
+        ax.SizeChangedFcn = @(src, ~) ...
+            figure_studio.sourceAxes.refreshPreviewScale(src);
+        setappdata(ax, 'labkitFigureStudioPreviewResizeInstalled', true);
+    catch
+    end
+end
+end
+
+function size = previewPixelSize(ax)
+size = [0 0];
+try
+    position = getpixelposition(ax, true);
+    size = round(position(3:4));
+catch
+end
 end
 
 function tf = hasNativeSource(model)
@@ -290,6 +296,33 @@ function applyAxesMetadata(ax, meta)
     if isfield(meta, 'colormap') && ~isempty(meta.colormap)
         colormap(ax, meta.colormap);
     end
+    if applyRulerExponent(ax, 'XAxis', fieldValue(meta, 'xExponent', []))
+        safeSet(ax, 'XTickLabelMode', 'auto');
+    end
+    if applyRulerExponent(ax, 'YAxis', fieldValue(meta, 'yExponent', []))
+        safeSet(ax, 'YTickLabelMode', 'auto');
+    end
+    if applyRulerExponent(ax, 'ZAxis', fieldValue(meta, 'zExponent', []))
+        safeSet(ax, 'ZTickLabelMode', 'auto');
+    end
+end
+
+function applied = applyRulerExponent(ax, rulerName, value)
+applied = false;
+if isempty(value) || ~isscalar(value) || ~isfinite(value)
+    return;
+end
+try
+    ruler = ax.(rulerName);
+    if isprop(ruler, 'Exponent')
+        ruler.Exponent = value;
+        if isprop(ruler, 'ExponentMode')
+            ruler.ExponentMode = 'manual';
+        end
+        applied = value ~= 0;
+    end
+catch
+end
 end
 
 function value = fieldValue(owner, name, fallback)
@@ -314,10 +347,4 @@ function disableDefaultAxesToolbar(ax)
         disableDefaultInteractivity(ax);
     catch
     end
-end
-
-function deleteIfFile(filepath)
-if isfile(filepath)
-    delete(filepath);
-end
 end

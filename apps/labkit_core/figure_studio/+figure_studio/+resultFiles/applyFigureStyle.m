@@ -22,8 +22,10 @@ function applyFigureStyle(ax, preset)
 %
 % Behavior:
 %   Uses editable sans-serif text and applies semantic text and stroke
-%   categories. Category sizes scale with the output canvas relative to the
-%   style's reference canvas; preview fitting compensates for display scale.
+%   categories. Canvas values describe the inner plot frame, not the outer
+%   figure. Category sizes scale with that frame relative to the style's
+%   reference frame; export calculates outer text margins from rendered
+%   labels, ticks, title, and annotations.
 
     if nargin < 2
         preset = "nature";
@@ -47,14 +49,14 @@ end
 
 function applyStyleStruct(ax, style)
     style = fillStyle(style);
-    viewScale = applyCanvasGeometry(ax, style);
-    style = scaledStyle(style, ...
-        canvasStyleScale(style) * viewScale);
+    style = scaledStyle(style, canvasStyleScale(style));
+    viewScale = applyPreviewGeometry(ax, style);
+    style = scaledStyle(style, viewScale);
     ax.FontName = char(style.fontName);
     ax.FontSize = style.tickFontSize;
     ax.LineWidth = style.axesLineWidth;
-    ax.Box = onOff(style.boxVisible || style.boundaryLines);
-    ax.TickDir = 'out';
+    ax.Box = onOff(style.boundaryLines);
+    ax.TickDir = char(style.tickDirection);
     ax.ColorOrder = style.colorOrder;
     applyTickLabelAngle(ax, style.xTickLabelAngle);
     if style.gridVisible
@@ -68,6 +70,7 @@ function applyStyleStruct(ax, style)
     styleDataChildren(ax, style);
     unifyAnnotationFont(ax, style);
     styleLegend(ax, style);
+    layoutExportCanvas(ax, style);
 end
 
 function style = defaultNatureStyle()
@@ -93,11 +96,12 @@ function style = defaultNatureStyle()
         "legendFontSize", 10, ...
         "legendNumColumns", 0, ...
         "legendBox", "Source", ...
-        "canvasWidth", 1600, ...
-        "canvasHeight", 1333, ...
-        "referenceCanvasWidth", 1600, ...
-        "referenceCanvasHeight", 1333, ...
+        "canvasWidth", 1237, ...
+        "canvasHeight", 942, ...
+        "referenceCanvasWidth", 1237, ...
+        "referenceCanvasHeight", 942, ...
         "previewScale", false, ...
+        "tickDirection", "out", ...
         "axesPosition", [], ...
         "colorOrder", natureColorOrder());
 end
@@ -191,7 +195,7 @@ end
 
 function name = preferredFont()
     names = listfonts;
-    preferred = ["Arial", "Liberation Sans", "DejaVu Sans"];
+    preferred = ["Helvetica", "Arial", "Liberation Sans", "DejaVu Sans"];
     name = "Arial";
     for k = 1:numel(preferred)
         if any(strcmpi(names, preferred(k)))
@@ -357,31 +361,28 @@ function styleLegend(ax, style)
     end
 end
 
-function scale = applyCanvasGeometry(ax, style)
+function scale = applyPreviewGeometry(ax, style)
     width = max(1, double(style.canvasWidth));
     height = max(1, double(style.canvasHeight));
     fig = ancestor(ax, 'figure');
-    if isempty(fig) || ~isvalid(fig) || ...
-            isa(ax, 'matlab.ui.control.UIAxes') || style.previewScale
+    if isempty(fig) || ~isvalid(fig) || style.previewScale || ...
+            isa(ax, 'matlab.ui.control.UIAxes')
+        applyPreviewCanvasAspect(ax, style, width, height);
         scale = previewScale(ax, style, width, height);
         return;
-    end
-    try
-        fig.Position(3:4) = [width height];
-        applyAxesPosition(ax, style);
-    catch
     end
     scale = 1;
 end
 
-function applyAxesPosition(ax, style)
-    position = double(style.axesPosition);
-    if numel(position) ~= 4 || any(~isfinite(position)) || ...
-            position(3) <= 0 || position(4) <= 0
-        return;
-    end
-    ax.Units = 'normalized';
-    ax.Position = reshape(position, 1, 4);
+function applyPreviewCanvasAspect(ax, style, width, height)
+if ~style.previewScale
+    return;
+end
+try
+    ax.PlotBoxAspectRatio = [width height 1];
+    ax.PlotBoxAspectRatioMode = 'manual';
+catch
+end
 end
 
 function scale = previewScale(ax, style, width, height)
@@ -396,4 +397,84 @@ function scale = previewScale(ax, style, width, height)
     catch
         scale = 1;
     end
+end
+
+function layoutExportCanvas(ax, style)
+if style.previewScale || isa(ax, 'matlab.ui.control.UIAxes')
+    return;
+end
+fig = ancestor(ax, 'figure');
+if isempty(fig) || ~isvalid(fig)
+    return;
+end
+try
+    originalFigureUnits = fig.Units;
+    originalAxesUnits = ax.Units;
+    cleanup = onCleanup(@() restoreLayoutUnits( ...
+        fig, ax, originalFigureUnits, originalAxesUnits));
+    plotWidth = max(1, round(double(style.canvasWidth)));
+    plotHeight = max(1, round(double(style.canvasHeight)));
+    padding = max(4, round(0.01 * min(plotWidth, plotHeight)));
+    fig.Units = 'pixels';
+    ax.Units = 'pixels';
+    fig.Position(3:4) = [plotWidth + 4 * padding, ...
+        plotHeight + 4 * padding];
+    ax.Position = [2 * padding 2 * padding plotWidth plotHeight];
+    for iteration = 1:3
+        drawnow nocallbacks
+        inset = plotInsets(ax, plotWidth, plotHeight, padding);
+        fig.Position(3:4) = [ ...
+            inset(1) + plotWidth + inset(3), ...
+            inset(2) + plotHeight + inset(4)];
+        ax.Position = [inset(1) inset(2) plotWidth plotHeight];
+    end
+    clear cleanup
+catch
+end
+end
+
+function inset = plotInsets(ax, plotWidth, plotHeight, padding)
+inset = [padding padding padding padding];
+try
+    tight = double(ax.TightInset);
+    if numel(tight) == 4 && all(isfinite(tight))
+        inset = max(inset, reshape(tight, 1, 4) + padding);
+    end
+catch
+end
+textInset = textExtentsOutsidePlot(ax, plotWidth, plotHeight);
+inset = max(inset, textInset + padding);
+end
+
+function inset = textExtentsOutsidePlot(ax, plotWidth, plotHeight)
+inset = zeros(1, 4);
+texts = findall(ax, 'Type', 'text');
+for index = 1:numel(texts)
+    textHandle = texts(index);
+    if ~isvalid(textHandle) || string(textHandle.Visible) == "off"
+        continue;
+    end
+    try
+        units = textHandle.Units;
+        cleanup = onCleanup(@() set(textHandle, 'Units', units));
+        textHandle.Units = 'pixels';
+        extent = double(textHandle.Extent);
+        inset = max(inset, [ ...
+            max(0, -extent(1)), ...
+            max(0, -extent(2)), ...
+            max(0, extent(1) + extent(3) - plotWidth), ...
+            max(0, extent(2) + extent(4) - plotHeight)]);
+        clear cleanup
+    catch
+    end
+end
+end
+
+function restoreLayoutUnits(fig, ax, figureUnits, axesUnits)
+if isvalid(fig)
+    fig.Units = figureUnits;
+end
+if isvalid(ax)
+    ax.Units = axesUnits;
+end
 end
