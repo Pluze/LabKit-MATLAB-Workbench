@@ -63,7 +63,8 @@ classdef FigureStudioResultFilesTest < matlab.unittest.TestCase
             testCase.verifyEqual(ax.FontSize, 90);
             testCase.verifyEqual(ax.Title.FontSize, 90);
             testCase.verifyEqual(ax.LineWidth, 3, 'AbsTol', 1e-12);
-            testCase.verifyEqual(curve.LineWidth, 12, 'AbsTol', 1e-12);
+            testCase.verifyEqual(curve.LineWidth, ...
+                2 * style.dataLineWidth, 'AbsTol', 1e-12);
 
             style.canvasWidth = 450;
             style.canvasHeight = 362.5;
@@ -73,7 +74,8 @@ classdef FigureStudioResultFilesTest < matlab.unittest.TestCase
             testCase.verifyEqual(ax.FontSize, 22.5);
             testCase.verifyEqual(ax.Title.FontSize, 22.5);
             testCase.verifyEqual(ax.LineWidth, 0.75, 'AbsTol', 1e-12);
-            testCase.verifyEqual(curve.LineWidth, 3, 'AbsTol', 1e-12);
+            testCase.verifyEqual(curve.LineWidth, ...
+                0.5 * style.dataLineWidth, 'AbsTol', 1e-12);
             clear cleanup
         end
 
