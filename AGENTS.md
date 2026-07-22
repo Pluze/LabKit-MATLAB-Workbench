@@ -164,23 +164,29 @@ tests, history, and details out of the public repository.
 ## Git workflow
 
 1. Inspect status and alignment before editing. Preserve unrelated user work.
-2. Work directly on aligned `main` for focused changes; use `codex/` branches
+2. When a multi-commit migration needs a roadmap, finish and land that roadmap
+   as a standalone direct-main documentation checkpoint before creating the
+   implementation branch. The roadmap is a mainline design baseline even when
+   its active-debt entry will be removed by the final zero-debt squash merge.
+   Start the implementation branch from that main commit; do not leave the
+   only record of the migration rationale on a branch that will later squash.
+3. Work directly on aligned `main` for focused changes; use `codex/` branches
    for larger, risky, multi-commit, or review-heavy work.
-3. Keep branch work stable with small logical purpose-based commits and focused
+4. Keep branch work stable with small logical purpose-based commits and focused
    validation. Prepare user docs, component versions, and structured history as
    the single net change that the PR will squash into; do not accumulate
    release semantics from intermediate branch commits.
-4. Push each completed, committed checkpoint promptly so finished work is not
+5. Push each completed, committed checkpoint promptly so finished work is not
    left only on the local machine. Do not defer a safe branch push merely
    because PR preparation or broader validation will happen later. For
    direct-main work, fetch/prune afterward and verify local `main` equals
    `origin/main`.
-5. Inspect the final direct-main CI run once. For branch work, inspect required
+6. Inspect the final direct-main CI run once. For branch work, inspect required
    CI before merge rather than polling after every push. Read only failing logs
    and fix the underlying issue.
-6. Never force-push without explicit approval. Stop and report permission,
+7. Never force-push without explicit approval. Stop and report permission,
    protection, review, CI, sync, or cleanup blockers rather than bypassing them.
-7. After PR merge, fast-forward local `main`, prune refs, delete the merged
+8. After PR merge, fast-forward local `main`, prune refs, delete the merged
    branch, and leave the worktree synchronized.
 
 When creating a public GitHub Issue or pull request, use the matching template

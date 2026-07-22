@@ -54,6 +54,19 @@ runs remain single-process unless a separate end-to-end benchmark proves that
 worker startup, license use, discovery, reporting, and tail latency repay the
 extra orchestration.
 
+### Mainline roadmap baseline
+
+Complete and land this roadmap on `main` before creating the implementation
+branch. The standalone mainline commit is the durable decision record used to
+review every later phase. The implementation branch starts from that commit;
+its final squash merge may remove this active-debt entry after reaching the
+zero-debt state, but it must not erase the rationale that established the
+migration's constraints and completion criteria.
+
+Do not treat a pushed feature branch as a substitute for this baseline. A
+branch can be rebased, abandoned, or squash-merged; `main` is the stable place
+to preserve an accepted migration design.
+
 ### Non-goals
 
 - Do not add one build task, runner, or route manifest per App.
