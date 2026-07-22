@@ -55,7 +55,7 @@ changes the selected plot-frame width, aspect, or export scale.
 Changing **All font** updates title, axis-label, tick, annotation, and legend
 sizes together. Individual controls then provide category-level refinement.
 **LabKit figure** uses a calibrated 900-by-725 px reference **plot frame**:
-45 pt title, axis-label, tick, annotation, and legend text; 6 pt data strokes;
+45 pt title, axis-label, tick, annotation, and legend text; 6.5 pt data strokes;
 2 pt uncertainty strokes; and 1.5 pt boundary, reference, and axes strokes.
 The default uses a complete top/right frame with no grid and no legend box.
 Legend samples use the reference's long line tokens. These editable baselines

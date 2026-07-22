@@ -6,7 +6,7 @@ date: 2026-07-21
 sequence: 155
 type: fix
 compatibility: compatible
-component: `labkit_FigureStudio_app` | `0.6.1 -> 0.6.3`
+component: `labkit_FigureStudio_app` | `0.6.1 -> 0.6.4`
 scope: LabKit Core
 ```
 
@@ -29,6 +29,8 @@ survives raster and vector export.
 
 - Recalibrated the reference plot frame, typography, semantic strokes, frame,
   grid, legend border, and legend token length from panels A through I.
+- Set the data stroke to 6.5 pt after registered raster checks matched panel A
+  exactly and reduced the remaining one-pixel deficits in panels E and H.
 - Removed menu and toolbar chrome from temporary export figures and preserved
   the complete figure bounds through `exportgraphics`.
 - Ignored zero-area text extents when computing outer margins so native log

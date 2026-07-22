@@ -37,7 +37,7 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             testCase.verifyEqual(style.annotationFontSize, 45);
             testCase.verifyEqual(style.legendFontSize, 45);
             testCase.verifyEqual(style.legendTokenWidth, 100);
-            testCase.verifyEqual(style.dataLineWidth, 6);
+            testCase.verifyEqual(style.dataLineWidth, 6.5);
             testCase.verifyEqual(style.uncertaintyLineWidth, 2);
             testCase.verifyEqual(style.boundaryLineWidth, 1.5);
             testCase.verifyEqual(style.referenceLineWidth, 1.5);
@@ -341,7 +341,7 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             testCase.verifyEqual(ax.FontSize, 45 * expectedScale, ...
                 'RelTol', 1e-6, ...
                 "Preview text must follow the actual allocated plot area.");
-            testCase.verifyEqual(previewLine.LineWidth, 6 * expectedScale, ...
+            testCase.verifyEqual(previewLine.LineWidth, 6.5 * expectedScale, ...
                 'RelTol', 1e-6, ...
                 "Preview strokes must follow the actual allocated plot area.");
         end
