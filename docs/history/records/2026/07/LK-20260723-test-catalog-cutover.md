@@ -62,7 +62,9 @@ cross-owner. No data migration is required.
 - Documentation render and `docsCheck`: 372 generated files current.
 - PR CI was inspected; Windows separator handling and the shell-sensitive
   clean-checkpoint revision syntax are covered by catalog regressions and
-  require the updated commit to run remotely.
+  require the updated commit to run remotely. POSIX CI also exposed an
+  interactive Git pager inherited by MATLAB; planner queries now use
+  `git --no-pager` so the progress watchdog can never stall on a pager.
 
 ## Evidence
 

@@ -53,7 +53,7 @@ scope: Cross-platform validation</code></pre>
 <li>DTA, RHS, and thermal synthetic-fixture regressions: 8 tests passed.</li>
 <li>Complete headless catalog: 202 tests passed.</li>
 <li>Documentation render and <code>docsCheck</code>: 372 generated files current.</li>
-<li>PR CI was inspected; Windows separator handling and the shell-sensitive clean-checkpoint revision syntax are covered by catalog regressions and require the updated commit to run remotely.</li>
+<li>PR CI was inspected; Windows separator handling and the shell-sensitive clean-checkpoint revision syntax are covered by catalog regressions and require the updated commit to run remotely. POSIX CI also exposed an interactive Git pager inherited by MATLAB; planner queries now use <code>git --no-pager</code> so the progress watchdog can never stall on a pager.</li>
 </ul>
 <h2 id="evidence">Evidence</h2>
 <p>The catalog writes exact identities and semantic reasons into each run's <code>plan.json</code>; the final headless <code>summary.json</code> records 202 passed identities with no failures or incomplete tests. The PR workflow independently executes headless and hidden-GUI profiles on Linux, macOS, and Windows.</p>

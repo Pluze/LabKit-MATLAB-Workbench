@@ -239,7 +239,7 @@ function paths = gitChangedPaths(root)
 end
 
 function output = gitOutput(root, gitArguments)
-    command = "git -C " + shellQuote(root) + " " + gitArguments;
+    command = "git --no-pager -C " + shellQuote(root) + " " + gitArguments;
     [status, output] = system(char(command));
     if status ~= 0
         error("LabKit:TestPlan:GitInspection", ...
@@ -249,7 +249,7 @@ function output = gitOutput(root, gitArguments)
 end
 
 function tf = gitRefExists(root, reference)
-    command = "git -C " + shellQuote(root) + " rev-parse --verify --quiet " + reference;
+    command = "git --no-pager -C " + shellQuote(root) + " rev-parse --verify --quiet " + reference;
     [status, ~] = system(char(command));
     tf = status == 0;
 end
