@@ -113,6 +113,22 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "apps/electrochem/cic/workbench"]);
         end
 
+        function multiContractRunWritesOneCompletePlanArtifact(testCase)
+            specsRoot = testCase.createCapabilityFixture(true);
+            fixture = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+
+            result = labkittest.run("File", ...
+                "apps/electrochem/cic/+cic/+analysisRun/computeCIC.m", ...
+                "SpecsRoot", specsRoot, "ArtifactsRoot", fixture.Folder, ...
+                "RunName", "closure");
+            plan = jsondecode(fileread(fullfile(result.Artifacts.Folder, "plan.json")));
+
+            testCase.verifyEqual(numel(result.Results{1}), 3);
+            testCase.verifyEqual(numel(plan.reasons), 3);
+            testCase.verifyEqual(numel(plan.tests), 3);
+        end
+
         function locateGivesAuthorsTheExactCapabilityInsertionFolders(testCase)
             locations = labkittest.locate( ...
                 "apps/electrochem/cic/+cic/+analysisRun/computeCIC.m");
