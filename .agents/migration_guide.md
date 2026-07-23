@@ -109,23 +109,21 @@ Branch progress measured on 2026-07-23 (not a final acceptance benchmark):
 - the legacy local `changedFast` checkpoint treated a committed new image
   specification as generic test support, selected one `project` route, and
   ran 211 headless tests in 92.14 seconds (zero failures, one skip);
-- the current complete headless profile ran 199 exact identities with zero
-  failures; its migrated framework owners are `app`, `biosignal`,
-  `dta`, `image`, `rhs`, and `thermal`, and its App behavior owners cover CIC,
-  CSC, Chrono Overlay, EIS, VT Resistance, Gait Analysis, DIC Postprocess,
-  DIC Preprocess, Focus Stack, ECG Print, RHS Preview, Response Review Stats,
-  Nerve Response Analysis, T-test Wizard, Curvature, Video Marker, Batch Crop,
-  FLIR Thermal, and Image Enhance. The former
-  82-test/23.459-second observation is superseded; record a final
-  cross-platform wall-clock benchmark after the remaining App and repository
-  migration is complete;
+- the final complete headless profile ran 200 exact identities with zero
+  failures. It covers all 21 public Apps plus the `app`, `biosignal`, `dta`,
+  `image`, `rhs`, and `thermal` framework facades and repository guardrails;
+- final local `changedFast` selected those same 200 identities with zero
+  failures after an executor change, by conservative design. A representative
+  `curvature` calculation-file change selected and ran only five exact
+  scientific/result/presentation identities with no fallback;
 - `Profile="changed"` now preserves the local checkpoint contract: it includes
   tracked and untracked working-tree paths, and on a clean worktree reports
   the just-created commit. Temporary-repository system specs cover both paths.
 
-The new count is intentionally incomplete until every owner is migrated; this
-comparison proves removal of the legacy `project` fallback, not final suite
-coverage or a release performance claim.
+The changed-validation comparison proves removal of the legacy `project`
+fallback while preserving a safe full-headless fallback for test-framework and
+otherwise unmapped changes. Wall-clock performance remains host-dependent and
+is not a release claim.
 
 These measurements select owner-scoped discovery, exact in-memory
 `TestSuite` execution, parameterized conformance, pure owner/contract rules,
