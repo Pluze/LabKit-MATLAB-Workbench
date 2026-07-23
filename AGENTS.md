@@ -18,7 +18,9 @@ affected source/tests/docs. Read component manuals only for changed contracts:
 - apps: `docs/apps/README.md`
 
 Read `.agents/migration_guide.md` only for active migration or compatibility
-retirement. A zero-debt ledger is not an everyday checklist.
+retirement. A zero-debt ledger is not an everyday checklist. Active migration
+roadmaps live only in that ledger; do not create future-state migration pages
+under `docs/`.
 
 ## Agent skills and automation
 
@@ -108,6 +110,10 @@ retirement. A zero-debt ledger is not an everyday checklist.
   help. Narrative pages, App manuals, and App APIs are discovered from paths,
   launcher metadata, and complete public help contracts. `site/` is generated only by
   `tools/docs/renderLabKitDocs.m`; never edit generated assets directly.
+- Add a `docs/` page only for the currently supported architecture or a
+  delivered new feature. Keep active migration plans, checkpoints, legacy
+  removal lists, and future-state acceptance gates in
+  `.agents/migration_guide.md`.
 - Update human docs for user behavior or public contracts, scoped AGENTS for
   execution/ownership rules, and both only when both changed. Do not duplicate
   agent workflow in human manuals.
@@ -164,12 +170,13 @@ tests, history, and details out of the public repository.
 ## Git workflow
 
 1. Inspect status and alignment before editing. Preserve unrelated user work.
-2. When a multi-commit migration needs a roadmap, finish and land that roadmap
-   as a standalone direct-main documentation checkpoint before creating the
-   implementation branch. The roadmap is a mainline design baseline even when
-   its active-debt entry will be removed by the final zero-debt squash merge.
-   Start the implementation branch from that main commit; do not leave the
-   only record of the migration rationale on a branch that will later squash.
+2. When a multi-commit migration needs a roadmap, write it in
+   `.agents/migration_guide.md` and land that ledger update as a standalone
+   direct-main checkpoint before creating the implementation branch. Do not
+   add a future-state migration page under `docs/`. Start the implementation
+   branch from that main commit; the active ledger entry is removed by the
+   final zero-debt squash merge after durable final behavior and rationale are
+   recorded in the owning manual and component history.
 3. Work directly on aligned `main` for focused changes; use `codex/` branches
    for larger, risky, multi-commit, or review-heavy work.
 4. Keep branch work stable with small logical purpose-based commits and focused
