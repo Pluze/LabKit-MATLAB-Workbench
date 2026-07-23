@@ -26,6 +26,7 @@ function descriptors = catalog(varargin)
 %   duplicate identities, and tests without exactly one Contract and Env tag.
 
     opts = parseOptions(varargin{:});
+    labkittest.setup();
     root = normalizedFolder(opts.SpecsRoot);
     ownerFolder = ownerFolderFor(root, opts.Owner);
     suite = discoverSuite(ownerFolder);

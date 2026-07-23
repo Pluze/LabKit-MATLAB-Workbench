@@ -126,6 +126,18 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyTrue(all(startsWith(result.Reasons, ...
                 "conservative fallback:")));
         end
+
+        function parameterizedDefinitionsKeepEachPublicAppSelectable(testCase)
+            descriptors = labkittest.catalog("Owner", "apps/conformance", ...
+                "Contract", "definition", "Environment", "headless");
+            apps = labkittest.publicApps();
+
+            testCase.verifyEqual(numel(descriptors), numel(fieldnames(apps)));
+            testCase.verifyEqual(numel(unique(string({descriptors.Id}))), ...
+                numel(descriptors));
+            testCase.verifyTrue(all(contains(string({descriptors.Id}), ...
+                "AppDefinitionConformanceSpec/declaresThePublicAppContract")));
+        end
     end
 
     methods (Access = private)
