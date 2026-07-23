@@ -38,7 +38,7 @@ under `docs/`.
   underlying workflow is platform-independent.
 - Do not create a repository-root `scripts/` directory. Put automation beside
   its single consumer: GitHub workflow helpers under `.github/scripts/`, test
-  runner support under `tests/runner/`, and agent-only wrappers under the
+  catalog support under `tests/+labkittest/`, and agent-only wrappers under the
   owning skill. Promote a script only when it has multiple stable consumers.
 - Validate an edited skill and exercise the changed script path. Record
   durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
@@ -97,7 +97,7 @@ under `docs/`.
 - Temporary Toolbox use requires a visible direct call and a repository-owned
   base-MATLAB implementation with comparable behavior. Declare source, symbol,
   product, owner, fallback test, idempotency test, parity test, tolerance, and
-  removal condition in `tests/runner/labkitToolboxDebt.m` and the migration
+  removal condition in `tests/+labkittest/toolboxDebt.m` and the migration
   ledger.
 - When a replacement affects numbers, scientific meaning, branching, exports,
   or later calculation, identical inputs must be idempotent and tests compare

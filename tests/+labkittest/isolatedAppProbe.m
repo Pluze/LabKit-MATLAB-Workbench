@@ -1,0 +1,55 @@
+function isolatedAppProbe(root, appFolder, packageName, scratchRoot)
+%ISOLATEDAPPPROBE Verify one App from only its deployable path boundary.
+%   labkittest.isolatedAppProbe(ROOT, APPFOLDER, PACKAGE, SCRATCHROOT) is the
+%   child-process implementation used by labkittest.runIsolatedAppProbe. It
+%   restores MATLAB's default path, adds ROOT and APPFOLDER only, validates the
+%   App definition, and builds its synthetic debug sample. It throws on any
+%   boundary or contract failure so the child MATLAB process exits nonzero.
+
+    root = string(root);
+    appFolder = string(appFolder);
+    packageName = string(packageName);
+    scratchRoot = string(scratchRoot);
+    validateFolder(root, "repository root");
+    validateFolder(appFolder, "App folder");
+    if strlength(packageName) == 0 || contains(packageName, ["/", "\\", "."])
+        error("LabKit:IsolatedProbe:InvalidPackage", ...
+            "Package must be one App package identifier.");
+    end
+    mkdir(scratchRoot);
+    cleanup = onCleanup(@() removeFolder(scratchRoot));
+    restoredefaultpath;
+    addpath(char(root));
+    addpath(char(appFolder));
+    rehash path
+
+    definition = feval(char(packageName + ".definition"));
+    assert(string(definition.AppId) == packageName, ...
+        "LabKit:IsolatedProbe:WrongAppId", ...
+        "App definition identity does not match its package.");
+    assert(~isempty(regexp(string(definition.AppVersion), '^\d+\.\d+\.\d+$', "once")), ...
+        "LabKit:IsolatedProbe:InvalidVersion", ...
+        "App definition must expose a semantic AppVersion.");
+    requirements = labkit.contract.checkRequirements(definition.Requirements);
+    assert(requirements.ok, "LabKit:IsolatedProbe:Requirements", ...
+        "App definition requirements are not satisfiable.");
+    sample = definition.BuildDebugSample(labkit.app.diagnostic.SampleContext( ...
+        fullfile(scratchRoot, packageName)));
+    assert(isa(sample, "labkit.app.diagnostic.SamplePack"), ...
+        "LabKit:IsolatedProbe:DebugSample", ...
+        "App definition must create a synthetic SamplePack.");
+    clear cleanup
+end
+
+function validateFolder(folder, label)
+    if exist(folder, "dir") ~= 7
+        error("LabKit:IsolatedProbe:MissingFolder", ...
+            "The %s does not exist: %s", label, folder);
+    end
+end
+
+function removeFolder(folder)
+    if isfolder(folder)
+        rmdir(folder, "s");
+    end
+end

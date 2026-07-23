@@ -47,7 +47,7 @@ jobs:
         with:
           release: ${{ env.MATLAB_RELEASE }}
 
-      - name: Prepare artifact directories
+      - name: Prepare MATLAB log directory
         shell: bash
         run: mkdir -p artifacts/logs/headless
 
@@ -66,9 +66,8 @@ jobs:
             python .github/scripts/summarize_junit.py \
               artifacts/test-results/headless/junit.xml \
               --run-name "headless-${{ matrix.id }}" \
-              --html artifacts/test-results/headless/html/index.html \
               --log artifacts/logs/headless/matlab.log \
-              --active-test artifacts/logs/headless/active-test.json
+              --active-test artifacts/test-results/headless/active-test.json
           else
             echo "::warning::Headless validation did not produce JUnit output."
           fi
@@ -113,7 +112,7 @@ jobs:
         with:
           release: ${{ env.MATLAB_RELEASE }}
 
-      - name: Prepare artifact directories
+      - name: Prepare MATLAB log directory
         shell: bash
         run: mkdir -p artifacts/logs/gui
 
@@ -132,9 +131,8 @@ jobs:
             python .github/scripts/summarize_junit.py \
               artifacts/test-results/gui/junit.xml \
               --run-name "gui-${{ matrix.id }}" \
-              --html artifacts/test-results/gui/html/index.html \
               --log artifacts/logs/gui/matlab.log \
-              --active-test artifacts/logs/gui/active-test.json
+              --active-test artifacts/test-results/gui/active-test.json
           else
             echo "::warning::GUI validation did not produce JUnit output."
           fi

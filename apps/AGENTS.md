@@ -8,7 +8,8 @@ framework owns common lifecycle and interaction mechanics.
 Read the app source and nearby tests, `docs/apps/README.md`, and
 `docs/development/app-development.md`. Read only the relevant framework or
 library manual for APIs the app actually uses. App tests live under
-`tests/cases/unit/apps/` and `tests/cases/gui/apps/`.
+`tests/specs/apps/<family>/<app>/<capability>/`. Use `labkittest.explain` to
+find the exact owner and contract; App authors never invent test paths.
 
 ## Required app shape
 

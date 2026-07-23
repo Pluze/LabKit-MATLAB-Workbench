@@ -104,6 +104,27 @@ The current real CIC unit, contract, and GUI owner folders contain twelve
 tests. Discovering those scopes has a 0.285-second median; discovering the
 current calculation test file directly takes 0.049 seconds.
 
+Branch progress measured on 2026-07-23 (not a final acceptance benchmark):
+
+- the legacy local `changedFast` checkpoint treated a committed new image
+  specification as generic test support, selected one `project` route, and
+  ran 211 headless tests in 92.14 seconds (zero failures, one skip);
+- the final complete headless profile ran 202 exact identities with zero
+  failures. It covers all 21 public Apps plus the `app`, `biosignal`, `dta`,
+  `image`, `rhs`, and `thermal` framework facades and repository guardrails;
+- final local `changedFast` selected those same 202 identities with zero
+  failures after an executor change, by conservative design. A representative
+  `curvature` calculation-file change selected and ran only five exact
+  scientific/result/presentation identities with no fallback;
+- `Profile="changed"` now preserves the local checkpoint contract: it includes
+  tracked and untracked working-tree paths, and on a clean worktree reports
+  the just-created commit. Temporary-repository system specs cover both paths.
+
+The changed-validation comparison proves removal of the legacy `project`
+fallback while preserving a safe full-headless fallback for test-framework and
+otherwise unmapped changes. Wall-clock performance remains host-dependent and
+is not a release claim.
+
 These measurements select owner-scoped discovery, exact in-memory
 `TestSuite` execution, parameterized conformance, pure owner/contract rules,
 and fail-on-missing-contract behavior. They reject unconditional full-catalog
@@ -165,8 +186,10 @@ App source mapping:
 and capability-local state transitions do not use it as a fallback test
 folder.
 
-`tests/shared/` continues to own small synthetic fixtures, semantic
-assertions, GUI probes, and lookup helpers.
+`tests/+testfixtures/` owns only synthetic inputs reused by more than one
+specification owner. Assertions, GUI probes, and lookup helpers stay with
+their concrete specification owner unless they justify a separately named,
+single-purpose test package.
 
 #### Contract catalog
 
@@ -414,7 +437,8 @@ Selection:
 Efficiency:
 
 - focused files do not discover the repository catalog;
-- changed validation discovers only affected owners and shared conformance;
+- changed validation discovers only affected owners and parameterized
+  conformance;
 - the representative calculation plan compiles in less than 3 seconds on the
   baseline machine, excluding MATLAB startup;
 - a fixed changed-path corpus improves median end-to-end validation by at
