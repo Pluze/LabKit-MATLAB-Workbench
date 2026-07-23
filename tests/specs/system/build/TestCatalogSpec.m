@@ -1,0 +1,118 @@
+classdef TestCatalogSpec < matlab.unittest.TestCase
+    %TESTCATALOGSPEC Verify catalog metadata and exact owner discovery.
+
+    methods (Test, TestTags = {'Contract:system', 'Env:headless'})
+        function catalogReturnsExactOwnerAndIdentity(testCase)
+            descriptors = labkittest.catalog( ...
+                "Owner", "system/build", ...
+                "Contract", "system", ...
+                "Environment", "headless");
+
+            testCase.verifyGreaterThanOrEqual(numel(descriptors), 4);
+            testCase.verifyEqual(string({descriptors.Owner}), ...
+                repmat("system/build", 1, numel(descriptors)));
+            testCase.verifyTrue(all(contains(string({descriptors.Id}), ...
+                "TestCatalogSpec/")));
+        end
+
+        function catalogRejectsMissingMetadata(testCase)
+            specsRoot = testCase.createFixtureTree([ ...
+                "classdef ProbeSpec < matlab.unittest.TestCase", ...
+                "    methods (Test, TestTags = {'Contract:system'})", ...
+                "        function proof(~), end", ...
+                "    end", ...
+                "end"]);
+
+            testCase.verifyError(@() labkittest.catalog("SpecsRoot", specsRoot), ...
+                "LabKit:TestCatalog:InvalidMetadata");
+        end
+
+        function planRejectsMissingRequiredContract(testCase)
+            testCase.verifyError(@() labkittest.plan( ...
+                "Owner", "system/build", "Contract", "scientific", ...
+                "Environment", "headless"), "LabKit:TestPlan:MissingContract");
+        end
+
+        function explicitPlanRunsEachExactIdentityOnce(testCase)
+            specsRoot = testCase.createFixtureTree([ ...
+                "classdef ProbeSpec < matlab.unittest.TestCase", ...
+                "    methods (Test, TestTags = {'Contract:system', 'Env:headless'})", ...
+                "        function proof(testCase), testCase.verifyTrue(true), end", ...
+                "    end", ...
+                "end"]);
+            result = labkittest.run("Owner", "system/probe", ...
+                "Contract", "system", "Environment", "headless", ...
+                "SpecsRoot", specsRoot);
+
+            testCase.verifyEqual(numel(result.Results), 1);
+            testCase.verifyEqual(numel(result.Results{1}), 1);
+            testCase.verifyFalse(any([result.Results{1}.Failed]));
+        end
+
+        function calculationFileRequiresItsBoundedContractClosure(testCase)
+            specsRoot = testCase.createCapabilityFixture(true);
+
+            result = labkittest.plan( ...
+                "File", "apps/electrochem/cic/+analysisRun/computeCIC.m", ...
+                "SpecsRoot", specsRoot);
+
+            testCase.verifyFalse(result.Fallback);
+            testCase.verifyEqual(string({result.Descriptors.Contracts}), ...
+                ["scientific", "result", "presentation"]);
+            testCase.verifyEqual(string({result.Descriptors.Owner}), ...
+                repmat("apps/electrochem/cic/analysisrun", 1, 3));
+        end
+
+        function calculationFileRejectsMissingContractEvidence(testCase)
+            specsRoot = testCase.createCapabilityFixture(false);
+
+            testCase.verifyError(@() labkittest.plan( ...
+                "File", "apps/electrochem/cic/+analysisRun/computeCIC.m", ...
+                "SpecsRoot", specsRoot), "LabKit:TestPlan:MissingContract");
+        end
+    end
+
+    methods (Access = private)
+        function specsRoot = createFixtureTree(testCase, lines)
+            fixture = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            specsRoot = fullfile(fixture.Folder, "specs");
+            owner = fullfile(specsRoot, "system", "probe");
+            mkdir(owner);
+            file = fullfile(owner, "ProbeSpec.m");
+            fid = fopen(file, "w");
+            cleanup = onCleanup(@() fclose(fid));
+            fprintf(fid, "%s\n", strjoin(lines, newline));
+            clear cleanup
+        end
+
+        function specsRoot = createCapabilityFixture(testCase, includePresentation)
+            fixture = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            specsRoot = fullfile(fixture.Folder, "specs");
+            owner = fullfile(specsRoot, "apps", "electrochem", "cic", ...
+                "analysisRun");
+            mkdir(owner);
+            testCase.writeSpec(owner, "ScientificSpec", "scientific");
+            testCase.writeSpec(owner, "ResultSpec", "result");
+            if includePresentation
+                testCase.writeSpec(owner, "PresentationSpec", "presentation");
+            end
+        end
+
+        function writeSpec(~, owner, className, contract)
+            file = fullfile(owner, className + ".m");
+            source = strjoin([ ...
+                "classdef " + className + " < matlab.unittest.TestCase", ...
+                "    methods (Test, TestTags = {'Contract:" + contract + ...
+                    "', 'Env:headless'})", ...
+                "        function proof(testCase), testCase.verifyTrue(true), end", ...
+                "    end", ...
+                "end"], newline);
+            fid = fopen(file, "w");
+            cleanup = onCleanup(@() fclose(fid));
+            fprintf(fid, "%s\n", source);
+            clear cleanup
+        end
+    end
+end
