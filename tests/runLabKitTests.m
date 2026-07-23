@@ -544,6 +544,8 @@ function suite = filterSuiteByTags(suite, includeTags, excludeTags)
 end
 
 function tf = groupMatchesSuite(groupKey, target)
+    groupKey = lower(string(groupKey));
+    target = lower(string(target));
     if startsWith(target, ["unit/", "contract/", "gui/"])
         candidates = target;
     else
