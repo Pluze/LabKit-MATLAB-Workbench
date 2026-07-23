@@ -175,7 +175,8 @@ function owner = ownerForTest(test, specsRoot)
     prefix = root + "/";
     if ~startsWith(baseFolder + "/", prefix)
         error("LabKit:TestCatalog:ExternalTest", ...
-            "Test %s is outside the specification root.", test.Name);
+            "Test %s is outside the specification root. BaseFolder=%s SpecsRoot=%s", ...
+            test.Name, baseFolder, root);
     end
     owner = lower(extractAfter(baseFolder, strlength(prefix)));
 end
