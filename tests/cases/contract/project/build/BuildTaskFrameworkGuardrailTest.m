@@ -231,7 +231,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "apps/image_measurement/batch_crop/+batch_crop/definition.m"]);
             signatures = validationStepSignatures(steps);
 
-            testCase.verifyTrue(any(signatures == "labkit_framework/ui|true"), ...
+            testCase.verifyTrue(any(signatures == "gui/labkit_framework/ui|true"), ...
                 "Shared UI changes should run reusable UI GUI checks.");
             testCase.verifyTrue(any(signatures == "gui/apps|true"), ...
                 "Shared UI changes should run downstream app GUI checks.");
@@ -351,18 +351,18 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "the full non-GUI suite.");
         end
 
-        function changedValidationPlanCompressesCoveredGuiTargets(testCase)
+        function changedValidationPlanRetainsUncoveredGuiTestTargets(testCase)
             root = setupLabKitTestPath();
 
             steps = labkitValidationPlanForChangedPaths(root, [ ...
                 "+labkit/+app/+internal/RuntimeKernel.m", ...
-                "tests/cases/gui/apps/image_measurement/batch_crop/GuiLayoutBatchCropTest.m"]);
+                "tests/cases/gui/apps/image_measurement/batch_crop/workbench/GuiLayoutBatchCropTest.m"]);
             signatures = validationStepSignatures(steps);
 
             testCase.verifyTrue(any(signatures == "gui/apps|true"), ...
                 "Broad downstream GUI coverage should cover the changed app GUI test.");
-            testCase.verifyTrue(all(arrayfun(@(step) isempty(step.Files), steps)), ...
-                "A covered exact test-file step should be removed from the plan.");
+            testCase.verifyTrue(any(arrayfun(@(step) ~isempty(step.Files), steps)), ...
+                "A workbench test must remain when framework routing selects only App smoke proofs.");
         end
 
         function buildTaskCatalogStaysCompactAndDiscoveryDriven(testCase)
