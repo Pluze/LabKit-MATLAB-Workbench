@@ -64,7 +64,7 @@ function [compiledPlan, opts] = parseOptions(varargin)
         compiledPlan = labkittest.plan(selectorArgs{:});
     end
     opts.RunName = string(opts.RunName);
-    opts.ArtifactsRoot = string(opts.ArtifactsRoot);
+    opts.ArtifactsRoot = absolutePath(opts.ArtifactsRoot);
 end
 
 function pairs = unmatchedPairs(values)
@@ -87,6 +87,18 @@ end
 
 function tf = isLogicalScalar(value)
     tf = islogical(value) && isscalar(value);
+end
+
+function value = absolutePath(value)
+    value = string(value);
+    if ispc
+        absolute = ~isempty(regexp(char(value), "^[A-Za-z]:[\\\\/]|^[\\\\/]{2}", "once"));
+    else
+        absolute = startsWith(value, filesep);
+    end
+    if ~absolute
+        value = string(fullfile(pwd, value));
+    end
 end
 
 function root = defaultArtifactsRoot()
