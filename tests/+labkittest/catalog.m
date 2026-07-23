@@ -101,11 +101,18 @@ function folder = ownerFolderFor(root, owner)
         folder = root;
         return;
     end
-    folder = fullfile(char(root), char(replace(owner, "/", filesep)));
-    if exist(folder, "dir") ~= 7
-        error("LabKit:TestCatalog:UnknownOwner", ...
-            "No test specification owner exists at %s.", owner);
+    folder = string(root);
+    for part = split(owner, "/").'
+        entries = dir(folder);
+        names = string({entries([entries.isdir]).name});
+        index = find(lower(names) == part, 1);
+        if isempty(index)
+            error("LabKit:TestCatalog:UnknownOwner", ...
+                "No test specification owner exists at %s.", owner);
+        end
+        folder = fullfile(folder, names(index));
     end
+    folder = char(folder);
 end
 
 function suite = discoverSuite(folder)

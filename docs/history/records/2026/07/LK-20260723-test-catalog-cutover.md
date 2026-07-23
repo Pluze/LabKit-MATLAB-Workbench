@@ -64,7 +64,9 @@ cross-owner. No data migration is required.
   clean-checkpoint revision syntax are covered by catalog regressions and
   require the updated commit to run remotely. POSIX CI also exposed an
   interactive Git pager inherited by MATLAB; planner queries now use
-  `git --no-pager` so the progress watchdog can never stall on a pager.
+  `git --no-pager` so the progress watchdog can never stall on a pager. Its
+  case-sensitive filesystem also verified that semantic owner matching must
+  resolve the physical specification-directory spelling exactly.
 
 ## Evidence
 
