@@ -24,6 +24,9 @@ function result = run(varargin)
         progress = labkittest.ProgressPlugin(artifacts.Folder);
         cleanup = onCleanup(@() delete(progress));
         runner.addPlugin(progress);
+        if opts.Coverage
+            runner.addPlugin(coveragePlugin(artifacts.Folder));
+        end
         environmentCleanup = applyEnvironment(group.Environment);
         results{k} = runner.run(suite);
         clear environmentCleanup cleanup
@@ -46,6 +49,7 @@ function [compiledPlan, opts] = parseOptions(varargin)
     p.addParameter("Plan", struct(), @isPlanOrEmpty);
     p.addParameter("RunName", "labkittest", @isTextScalar);
     p.addParameter("ArtifactsRoot", defaultArtifactsRoot(), @isTextScalar);
+    p.addParameter("Coverage", false, @isLogicalScalar);
     p.KeepUnmatched = true;
     p.parse(varargin{:});
     opts = p.Results;
@@ -81,9 +85,34 @@ function tf = isTextScalar(value)
     tf = ischar(value) || (isstring(value) && isscalar(value));
 end
 
+function tf = isLogicalScalar(value)
+    tf = islogical(value) && isscalar(value);
+end
+
 function root = defaultArtifactsRoot()
     packageFolder = fileparts(mfilename("fullpath"));
     root = fullfile(fileparts(fileparts(packageFolder)), "artifacts", "runs");
+end
+
+function root = repositoryRoot()
+    packageFolder = fileparts(mfilename("fullpath"));
+    root = fileparts(fileparts(packageFolder));
+end
+
+function plugin = coveragePlugin(folder)
+    html = fullfile(folder, "coverage-html");
+    if exist(html, "dir") ~= 7
+        mkdir(html);
+    end
+    formats = [ ...
+        matlab.unittest.plugins.codecoverage.CoverageReport( ...
+            html, "MainFile", "index.html"), ...
+        matlab.unittest.plugins.codecoverage.CoberturaFormat( ...
+            fullfile(folder, "coverage.xml"))];
+    plugin = matlab.unittest.plugins.CodeCoveragePlugin.forFolder( ...
+        {fullfile(repositoryRoot(), "+labkit"), ...
+         fullfile(repositoryRoot(), "apps")}, ...
+        "IncludingSubfolders", true, "Producing", formats);
 end
 
 function tf = hasFailures(results)
