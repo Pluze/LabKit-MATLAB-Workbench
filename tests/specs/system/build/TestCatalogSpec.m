@@ -203,6 +203,23 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifySubstring(source, "LabKit:TestSpec:Unimplemented");
         end
 
+        function createSpecInfersTheOnlyContractAndRejectsRealAmbiguity(testCase)
+            fixture = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            specsRoot = fullfile(fixture.Folder, "specs");
+            mkdir(specsRoot);
+
+            file = labkittest.createSpec( ...
+                "apps/electrochem/vt_resistance/+vt_resistance/+resultFiles/writeResultsCSV.m", ...
+                "Name", "CsvSchema", "SpecsRoot", specsRoot);
+
+            testCase.verifySubstring(string(fileread(file)), "Contract:result");
+            testCase.verifyError(@() labkittest.createSpec( ...
+                "apps/electrochem/vt_resistance/+vt_resistance/+analysisRun/recomputeItems.m", ...
+                "Name", "ResistancePolicy", "SpecsRoot", specsRoot), ...
+                "LabKit:TestAuthoring:AmbiguousContract");
+        end
+
         function calculationFileRejectsMissingContractEvidence(testCase)
             specsRoot = testCase.createCapabilityFixture(false);
 

@@ -1,13 +1,15 @@
 function file = createSpec(sourceFile, varargin)
 %CREATESPEC Create a minimal behavior-specification skeleton in its owner.
-%   FILE = labkittest.createSpec(SOURCEFILE, Contract=CONTRACT, Name=NAME)
-%   finds SOURCEFILE's author-owned insertion target and writes NAME + "Spec"
-%   below its exact tests/specs owner. The generated class declares the target
-%   Contract and Env tags and contains one deliberately failing TODO method.
+%   FILE = labkittest.createSpec(SOURCEFILE, Name=NAME) finds SOURCEFILE's
+%   one author-owned insertion target and writes NAME + "Spec" below its exact
+%   tests/specs owner. Contract=CONTRACT is required only when SOURCEFILE has
+%   more than one author-owned behavior boundary. The generated class declares
+%   the target Contract and Env tags and contains one deliberately failing TODO
+%   method.
 %   Replace only that method body with behavioral evidence; do not invent test
 %   folders, stage tags, runner selectors, or wrapper classes.
 %
-%   Contract must be one of the locations returned by
+%   When supplied, Contract must be one of the locations returned by
 %   labkittest.locate(SOURCEFILE). Name must be a valid MATLAB class name and
 %   need not include the Spec suffix. Existing files are never overwritten.
 %
@@ -17,17 +19,32 @@ function file = createSpec(sourceFile, varargin)
 
     opts = parseOptions(sourceFile, varargin{:});
     locations = labkittest.locate(opts.SourceFile, "SpecsRoot", opts.SpecsRoot);
-    matches = locations([locations.Contract] == opts.Contract);
-    if isempty(matches)
-        error("LabKit:TestAuthoring:UnknownContract", ...
-            "Contract %s is not required for %s.", opts.Contract, opts.SourceFile);
+    authorLocations = locations([locations.AuthorOwned]);
+    if strlength(opts.Contract) == 0
+        if isempty(authorLocations)
+            error("LabKit:TestAuthoring:FrameworkConformance", ...
+                "Framework conformance provides all evidence for %s; no App wrapper is created.", ...
+                opts.SourceFile);
+        end
+        if numel(authorLocations) ~= 1
+            error("LabKit:TestAuthoring:AmbiguousContract", ...
+                "Source %s has multiple behavior boundaries; specify Contract as one of: %s.", ...
+                opts.SourceFile, strjoin(string({authorLocations.Contract}), ", "));
+        end
+        location = authorLocations;
+    else
+        matches = locations([locations.Contract] == opts.Contract);
+        if isempty(matches)
+            error("LabKit:TestAuthoring:UnknownContract", ...
+                "Contract %s is not required for %s.", opts.Contract, opts.SourceFile);
+        end
+        location = matches;
     end
-    if numel(matches) ~= 1 || ~matches.AuthorOwned
+    if numel(location) ~= 1 || ~location.AuthorOwned
         error("LabKit:TestAuthoring:FrameworkConformance", ...
             "Contract %s is provided by framework conformance; no App wrapper is created.", ...
             opts.Contract);
     end
-    location = matches;
     className = opts.Name;
     if ~endsWith(className, "Spec")
         className = className + "Spec";
@@ -61,9 +78,9 @@ function opts = parseOptions(sourceFile, varargin)
     opts.Contract = lower(strip(string(opts.Contract)));
     opts.Name = string(opts.Name);
     opts.SpecsRoot = string(opts.SpecsRoot);
-    if strlength(opts.Contract) == 0 || strlength(opts.Name) == 0
+    if strlength(opts.Name) == 0
         error("LabKit:TestAuthoring:MissingArgument", ...
-            "Contract and Name are required to create a specification.");
+            "Name is required to create a specification.");
     end
 end
 
