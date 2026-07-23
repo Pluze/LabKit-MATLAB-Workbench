@@ -144,9 +144,12 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "File", "apps/electrochem/cic/+cic/definition.m");
 
             testCase.verifyFalse(result.Fallback);
-            testCase.verifyEqual(numel(result.Descriptors), 1);
-            testCase.verifyEqual(result.Descriptors.Id, ...
-                "AppDefinitionConformanceSpec/declaresThePublicAppContract(App=cic)");
+            testCase.verifyEqual(numel(result.Descriptors), 2);
+            testCase.verifyEqual(string({result.Descriptors.Id}), [ ...
+                "AppDefinitionConformanceSpec/declaresThePublicAppContract(App=cic)", ...
+                "AppSmokeConformanceSpec/launchesThroughTheSupportedDefinition(App=cic)"]);
+            testCase.verifyEqual(string({result.Descriptors.Environment}), ...
+                ["headless", "hidden-gui"]);
         end
     end
 

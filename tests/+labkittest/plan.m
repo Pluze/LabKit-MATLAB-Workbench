@@ -139,8 +139,10 @@ function [queries, reasons, fallback] = queriesForChangedPath(path)
     end
     if startsWith(path, "apps/") && endsWith(path, "/definition.m") && numel(parts) >= 3
         packageName = erase(parts(end - 1), "+");
-        queries = query("apps/conformance", "definition", "headless", packageName);
-        reasons = "App definition change selects its parameterized definition evidence";
+        queries = [ ...
+            query("apps/conformance", "definition", "headless", packageName), ...
+            query("apps/conformance", "product", "hidden-gui", packageName)];
+        reasons = "App definition change selects its parameterized definition and smoke evidence";
         return;
     end
     if startsWith(path, ".agents/") || path == "AGENTS.md"
