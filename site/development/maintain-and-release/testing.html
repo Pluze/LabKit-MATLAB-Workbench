@@ -18,183 +18,68 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../../apps/index.html">Apps</a><a class="product-nav-link" href="../../reference/index.html">Functions</a><a class="product-nav-link" href="../../framework/index.html">Framework</a><a class="product-nav-link active" href="../index.html">Development</a><a class="product-nav-link" href="../../history/index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../index.html">Documentation Home</a><a class="context-parent" href="../index.html">Development</a><p class="current-page">Testing</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>General</h3><div class="local-branch"><a class="local-link local-parent-link" href="../index.html">Development</a></div></div><div class="local-subgroup"><h3>Build Apps</h3><div class="local-branch"><a class="local-link" href="../build-apps/app-development.html">App Development</a><a class="local-link" href="../build-apps/architecture.html">Architecture</a><a class="local-link" href="../build-apps/complete-app.html">Build A Complete App</a></div></div><div class="local-subgroup"><h3>Data and Designs</h3><div class="local-branch"><a class="local-link" href="../data-and-designs/group-comparison-app-design.html">T-Test Wizard Design</a><a class="local-link" href="../data-and-designs/scientific-csv-interchange.html">Simple Scientific CSV Exchange</a></div></div><div class="local-subgroup"><h3>Maintain and Release</h3><div class="local-branch"><a class="local-link" href="documentation.html">Documentation Architecture</a><a class="local-link" href="private-apps.html">Private Apps</a><a class="local-link" href="release.html">Release Policy</a><a class="local-link active" href="testing.html" aria-current="page">Testing</a></div></div><div class="local-subgroup"><h3>Tools</h3><div class="local-branch"><a class="local-link local-parent-link" href="../tools/index.html">Maintainer Tools</a><a class="local-link local-child-link" href="../tools/codecheck.html">Code Analyzer Reports</a><a class="local-link local-child-link" href="../tools/deployment.html">App Deployment Packages</a><a class="local-link local-child-link" href="../tools/documentation.html">Documentation Build Tools</a><a class="local-link local-child-link" href="../tools/profiling.html">Performance Profiling</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#how-the-test-system-fits-together">How The Test System Fits Together</a><a class="toc-link" href="#default-check">Default Check</a><a class="toc-link" href="#build-tasks">Build Tasks</a><a class="toc-link" href="#choosing-a-task">Choosing A Task</a><a class="toc-link" href="#validation-cadence">Validation Cadence</a><a class="toc-link" href="#ci-scope">CI Scope</a><a class="toc-link" href="#test-layout">Test Layout</a><a class="toc-link" href="#focused-iteration">Focused Iteration</a><a class="toc-link" href="#gui-validation">GUI Validation</a><a class="toc-link" href="#fixtures-and-data-hygiene">Fixtures And Data Hygiene</a><a class="toc-link" href="#numerical-tolerance">Numerical Tolerance</a><a class="toc-link" href="#artifacts">Artifacts</a><a class="toc-link" href="#app-sdk-runtime-contract-coverage">App SDK Runtime Contract Coverage</a><a class="toc-link" href="#profiling-is-supporting-evidence">Profiling Is Supporting Evidence</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../index.html">Documentation Home</a><a class="context-parent" href="../index.html">Development</a><p class="current-page">Testing</p><section class="local-group"><h2>In this section</h2><div class="local-subgroup"><h3>General</h3><div class="local-branch"><a class="local-link local-parent-link" href="../index.html">Development</a></div></div><div class="local-subgroup"><h3>Build Apps</h3><div class="local-branch"><a class="local-link" href="../build-apps/app-development.html">App Development</a><a class="local-link" href="../build-apps/architecture.html">Architecture</a><a class="local-link" href="../build-apps/complete-app.html">Build A Complete App</a></div></div><div class="local-subgroup"><h3>Data and Designs</h3><div class="local-branch"><a class="local-link" href="../data-and-designs/group-comparison-app-design.html">T-Test Wizard Design</a><a class="local-link" href="../data-and-designs/scientific-csv-interchange.html">Simple Scientific CSV Exchange</a></div></div><div class="local-subgroup"><h3>Maintain and Release</h3><div class="local-branch"><a class="local-link" href="documentation.html">Documentation Architecture</a><a class="local-link" href="private-apps.html">Private Apps</a><a class="local-link" href="release.html">Release Policy</a><a class="local-link active" href="testing.html" aria-current="page">Testing</a></div></div><div class="local-subgroup"><h3>Tools</h3><div class="local-branch"><a class="local-link local-parent-link" href="../tools/index.html">Maintainer Tools</a><a class="local-link local-child-link" href="../tools/codecheck.html">Code Analyzer Reports</a><a class="local-link local-child-link" href="../tools/deployment.html">App Deployment Packages</a><a class="local-link local-child-link" href="../tools/documentation.html">Documentation Build Tools</a><a class="local-link local-child-link" href="../tools/profiling.html">Performance Profiling</a></div></div></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#everyday-workflow">Everyday Workflow</a><a class="toc-link" href="#test-model">Test Model</a><a class="toc-link" href="#build-tasks">Build Tasks</a><a class="toc-link" href="#artifacts-and-failures">Artifacts and Failures</a><a class="toc-link" href="#ci-and-manual-evidence">CI and Manual Evidence</a><a class="toc-link" href="#maintainer-rules">Maintainer Rules</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">guide</p>
 <h1 id="testing">Testing</h1>
-<p><a href="../index.html">Development index</a> | <a href="../build-apps/architecture.html">Architecture</a> | <a href="../tools/index.html">Maintainer Tools</a> | <a href="../tools/profiling.html">Performance Profiling</a></p>
-<p>Use this page to choose the smallest supported validation entry point. The public build-task set is intentionally small; changed-file tasks inspect the current git diff and print why each selected scope is being run.</p>
-<h2 id="how-the-test-system-fits-together">How The Test System Fits Together</h2>
-<p><code>buildfile.m</code> owns the stable human and CI commands. Those tasks select a validation plan and call <code>tests/runLabKitTests.m</code>, which discovers official <code>matlab.unittest</code> tests beneath <code>tests/cases/</code>, applies folder, exact-file, name, tag, and GUI selectors, then runs them with progress, JUnit, optional HTML, and optional coverage plugins.</p>
-<pre><code class="language-text">buildtool &lt;task&gt;
-  -&gt; changed-file plan or explicit selection
-    -&gt; runLabKitTests discovery and selectors
-      -&gt; unit, contract, or GUI tests
-        -&gt; progress, JUnit, HTML, coverage, and debug artifacts</code></pre>
-<p>Test ownership mirrors production ownership:</p>
-<ul>
-<li>unit tests exercise deterministic calculations, parsers, and project tools;</li>
-<li>contract tests protect public APIs, architecture, documentation, packaging, release rules, and repository hygiene;</li>
-<li>GUI structural tests validate launch, layout, and callback wiring;</li>
-<li>GUI workflow tests use hidden real figures and synthetic data to validate semantic outcomes;</li>
-<li>manual testing remains responsible for file dialogs, drawing feel, visual quality, scientific review, and complete interactive workflows.</li>
-</ul>
-<p>The changed-file planner maps modified paths to these owners. It is routing, not a second test framework: the selected tests still run through the same official runner used by broad build tasks and CI.</p>
-<h2 id="default-check">Default Check</h2>
-<p>Run the default broad non-GUI check when you are not sure which focused scope applies:</p>
-<pre><code class="language-bash">buildtool headless</code></pre>
-<p>If <code>buildtool</code> is not available in your shell, find your MATLAB app and add its <code>bin</code> directory to <code>PATH</code>, then rerun the same command:</p>
-<pre><code class="language-bash">ls /Applications/MATLAB_*.app/bin/matlab
-export PATH=&quot;/Applications/MATLAB_R2025a.app/bin:$PATH&quot;</code></pre>
-<p>If MATLAB exits before printing a build-task banner such as <code>** Starting headless</code> or a <code>LabKit official test run</code> line, treat that as a MATLAB launcher or runtime access failure before diagnosing source or test failures.</p>
-<p>Every official run writes <code>test-progress.jsonl</code>, <code>active-test.json</code>, and <code>active-test.txt</code> under its <code>artifacts/logs/&lt;run-name&gt;/</code> folder. The first file records suite, test, and long-test heartbeat events. The JSON snapshot records the latest structured state; the TXT snapshot presents the same state as a single <code>START</code>, <code>RUN</code>, <code>PASS</code>, or <code>DONE</code> line for humans. CI gives the MATLAB execution step a shorter timeout than the containing job so the always-run summary and artifact upload steps can still publish these diagnostics when a test stalls before JUnit is complete.</p>
-<p>Broad tasks use one MATLAB process. This keeps local and CI behavior aligned and avoids worker startup, license, platform, status-aggregation, and tail-latency costs. The progress plugin emits the active test and estimated remaining time directly; a long-test heartbeat updates the same structured and human-readable artifacts.</p>
+<p><a href="../index.html">Development index</a> | <a href="../build-apps/architecture.html">Architecture</a> | <a href="../tools/index.html">Maintainer Tools</a> | <a href="documentation.html">Documentation</a></p>
+<p>LabKit tests specify observable contracts. They are not organized by an implementation-stage label, suite selector, tag query, or hand-maintained test catalog. Start from the production file whose behavior changed; the test catalog determines its required evidence and executes exact test identities.</p>
+<h2 id="everyday-workflow">Everyday Workflow</h2>
+<p>For a changed production source, ask the catalog where evidence belongs:</p>
+<pre><code class="language-matlab">addpath(&quot;tests&quot;)
+labkittest.explain(&quot;apps/electrochem/cic/+cic/+analysisRun/computeCIC.m&quot;)</code></pre>
+<p><code>explain</code> prints the exact specification folders, contracts, environments, selected identities, and the reason for every selection. Add a new behavioral spec without inventing a path, metadata, class shell, or runner command:</p>
+<pre><code class="language-matlab">labkittest.createSpec( ...
+    &quot;apps/electrochem/cic/+cic/+analysisRun/computeCIC.m&quot;, ...
+    Contract=&quot;scientific&quot;, Name=&quot;PulseWindow&quot;)</code></pre>
+<p><code>Contract</code> is needed only when one source has more than one author-owned boundary. The generated file contains the required <code>Contract:&lt;name&gt;</code> and <code>Env:&lt;name&gt;</code> tags plus an intentional failing placeholder. Replace that placeholder with a small behavioral proof. Never create a test by guessing a folder, a suite range, a test tag, or a wrapper class.</p>
+<p>During an edit, execute the narrow owner and contract that changed:</p>
+<pre><code class="language-matlab">labkittest.run(Owner=&quot;apps/electrochem/cic/analysisRun&quot;, ...
+    Contract=&quot;scientific&quot;)</code></pre>
+<p>Use <code>labkittest.run(File=...)</code> only when the source maps to one complete, known evidence closure. It refuses missing evidence instead of silently running a partial test. A changed analysis source normally requires its scientific behavior, result schema, and presentation consumer together.</p>
+<h2 id="test-model">Test Model</h2>
+<p>Runnable specifications are under <code>tests/specs/</code>. Their owner path mirrors a production capability, and every test declares exactly one contract and one execution environment.</p>
+<pre><code class="language-text">tests/specs/
+├── framework/&lt;area&gt;/
+├── apps/&lt;family&gt;/&lt;app&gt;/&lt;capability&gt;/
+├── apps/conformance/
+└── system/&lt;area&gt;/</code></pre>
+<p>Contracts describe evidence, not test cost:</p>
+<div class="table-wrap"><table><thead><tr><th>Contract</th><th>Proves</th></tr></thead><tbody><tr><td><code>scientific</code></td><td>calculations, numerical policies, and scientifically meaningful branches</td></tr><tr><td><code>source</code></td><td>source decoding, callbacks, and capability-local state transitions</td></tr><tr><td><code>state</code></td><td>durable/transient state transitions and reconstruction</td></tr><tr><td><code>persistence</code></td><td>project schema creation, validation, and migration</td></tr><tr><td><code>result</code></td><td>exports, schemas, manifests, and task identity</td></tr><tr><td><code>presentation</code></td><td>reader-facing snapshot data and declared layout semantics</td></tr><tr><td><code>definition</code> / <code>product</code></td><td>parameterized public App conformance</td></tr><tr><td><code>system</code></td><td>build, repository, CI, documentation, packaging, and release guardrails</td></tr></tbody></table></div>
+<p>Environments are <code>headless</code>, <code>hidden-gui</code>, and <code>isolated-process</code>. Headless tests do not prove GUI behavior. Hidden-GUI conformance proves that an App can build its declared layout; it does not prove native dialogs, pointer feel, visual quality, real lab data, or scientific review. The isolated-process conformance probes every public App from reset paths in one child MATLAB process, retaining the path boundary without paying one cold startup per App.</p>
 <h2 id="build-tasks">Build Tasks</h2>
-<p>Use MATLAB build tasks for the stable official entry points:</p>
+<p>Use stable Build tasks for branch and CI gates:</p>
 <pre><code class="language-bash">buildtool changedFast
-buildtool docs
-buildtool docsCheck
 buildtool headless
 buildtool gui
 buildtool coverage
-buildtool listTasks</code></pre>
-<div class="table-wrap"><table><thead><tr><th>Task</th><th>Use it for</th></tr></thead><tbody><tr><td><code>changedFast</code></td><td>Final local changed-file checkpoint before push; substitutes representative GUI coverage for expensive broad GUI scopes.</td></tr><tr><td><code>docs</code></td><td>Rebuild the tracked <code>site/</code> tree from path-organized Markdown and MATLAB help contracts.</td></tr><tr><td><code>docsCheck</code></td><td>Regenerate documentation in a temporary folder and compare it byte-for-byte with tracked <code>site/</code>.</td></tr><tr><td><code>headless</code></td><td>Full non-GUI validation.</td></tr><tr><td><code>gui</code></td><td>Full automated GUI validation with hidden figures.</td></tr></tbody></table></div>
-<p>Report and discovery tasks:</p>
-<div class="table-wrap"><table><thead><tr><th>Task</th><th>Use it for</th></tr></thead><tbody><tr><td><code>coverage</code></td><td>Manual or scheduled coverage reports.</td></tr><tr><td><code>listTasks</code></td><td>Print the current build task catalog.</td></tr></tbody></table></div>
-<h2 id="choosing-a-task">Choosing A Task</h2>
-<p>Prefer automatic routing before hand-picking suites:</p>
-<p>Common choices:</p>
-<div class="table-wrap"><table><thead><tr><th>Change area</th><th>Build task</th></tr></thead><tbody><tr><td>Tight local iteration on one known component</td><td>Focused <code>runLabKitTests</code> folder or test-name selection</td></tr><tr><td>Stable branch work before PR preparation</td><td>Focused <code>runLabKitTests</code> selection</td></tr><tr><td>Preparing a branch for PR review</td><td><code>buildtool changedFast</code>, then inspect PR CI</td></tr><tr><td>Direct-main integration or explicitly final handoff</td><td><code>buildtool changedFast</code>, then inspect main-push CI</td></tr><tr><td>Rebuild documentation after editing sources or public help contracts</td><td><code>buildtool docs</code></td></tr><tr><td>Verify generated documentation is current</td><td><code>buildtool docsCheck</code></td></tr><tr><td>Full broad non-GUI validation</td><td><code>buildtool headless</code></td></tr><tr><td>Full automated GUI validation</td><td><code>buildtool gui</code></td></tr><tr><td>Coverage report</td><td><code>buildtool coverage</code></td></tr></tbody></table></div>
-<p><code>changedFast</code> requires a git checkout. In exported source trees, packaged copies, or environments without git state, use <code>headless</code> or an explicit <code>runLabKitTests</code> suite selection instead.</p>
-<p>Documentation checks cover more than generated-file freshness. They also verify local links, search behavior, public API coverage, executable examples, component history metadata, and the absence of known empty history-page boilerplate. These checks catch structural regressions; a human review is still required to decide whether an explanation is accurate, complete, and readable.</p>
-<p>Project style and code-quality guardrails normally scan only public repository files. A private app workspace can opt in by placing an empty <code>.labkit-accept-main-guardrails</code> file at the private workspace root. Accepted roots under <code>private_apps/apps/</code> or <code>LABKIT_PRIVATE_APP_ROOTS</code> are included in source-text quality scans and Code Analyzer reports without adding private source to the public repository. For temporary local checks, <code>LABKIT_GUARD_PRIVATE_APPS=1</code> includes configured private roots even without the sentinel file.</p>
-<p>Toolbox compatibility guardrails protect the Base MATLAB user path. Every ordinary and release CI runner installs MATLAB without optional Toolboxes, so the complete headless and hidden-GUI suites execute in the same dependency baseline promised to users. Source guardrails also reject known undeclared non-base calls under <code>apps/</code> and <code>+labkit/</code> and run representative workflows with known Toolbox helpers shadowed on the MATLAB path. CI deliberately does not install candidate Toolboxes or infer product ownership from an all-products development environment: successful execution in a clean runtime is the primary contract.</p>
-<p>A temporary MathWorks product path is accepted only through an exact entry in <code>tests/runner/labkitToolboxDebt.m</code> that names its source, symbol, product, owner, no-Toolbox fallback test, idempotency test, Toolbox parity test, and repository-owned replacement. Numeric or scientific replacements must also prove identical inputs reproduce the same app-consumed values; stateful operations must prove that safe repetition does not compound state or side effects. Compare the outputs consumed by the app, including downstream decisions or exports, within a documented tolerance. The same ID remains active in the debt registry until the Toolbox branch is deleted. This records debt without hiding it: dynamic invocation does not satisfy the contract, broad product allowlists are rejected, and the Base MATLAB path must provide comparable user-visible behavior until the Toolbox branch is deleted.</p>
-<p>Private workspaces under <code>private_apps/</code> are separate Git repositories, so the public <code>changedFast</code> task does not discover their diffs. Validate a private change with that workspace's own test entry point, such as <code>addpath('private_apps/tests'); run_private_tests</code>, which can reuse the public runner and shared guardrails. Do not substitute the full public <code>headless</code> task only because the public checkout has no changed paths. The <code>.labkit-accept-main-guardrails</code> sentinel controls quality-scan inclusion; it does not change Git diff discovery. When an accepted private workspace has unpushed source, test, documentation, component history, or version changes, run that workspace's private tests and the public <code>buildtool changedFast</code> guardrail before push, then inspect CI. The public guardrail must be invoked intentionally from the public checkout because the private Git diff is invisible to the public changed-file planner.</p>
-<p>The changed-file planner routes by the deepest physical owner. An App capability change selects its matching unit and GUI capability scopes when they exist, the App's bounded GUI smoke proof, and only that App's <code>isolatedPath</code> contract. Product assembly changes select <code>workbench</code>; an App entrypoint or definition change selects <code>appContract</code>. A changed test file reruns exactly that file, while runner and buildfile changes map to the focused <code>project/build</code> self-tests. Unknown production or repository files still fall back conservatively. The printed plan includes selected folders, files, test-name selectors, GUI mode, and the reason for each step. The runner keeps every semantic route, discovers its exact test identities, and executes each identity only once; the plan output reports both requested routes and the resulting canonical execution count.</p>
-<p>Framework changes keep direct framework coverage, then expand through their actual consumers. Universal App SDK changes run every App's fast headless contract plus the smallest deterministic GUI smoke set that covers the needed <code>RouteFeature:</code> tags. If the current smoke metadata cannot prove a required feature, the planner reports that gap and safely selects every affected smoke test instead.</p>
-<p>Authored App manuals, history records, and library references use their corresponding focused documentation contracts. Generated site changes and documentation-renderer or policy changes retain the complete documentation contract because they can affect every rendered page.</p>
-<p>Every public App owns an independently selectable <code>isolatedPath</code> contract. It restores the default MATLAB path, adds only the LabKit root and that App root, then loads the definition, checks facade compatibility, and writes the App's synthetic debug sample. A discovery guardrail requires this contract for every current public App, without maintaining a duplicated App catalog.</p>
-<h2 id="validation-cadence">Validation Cadence</h2>
-<p>Prefer a staged validation cadence so small follow-up edits do not repeatedly pay the cost of broad changed-file planning:</p>
-<ol>
-<li>While actively editing one known component, run the smallest direct <code>runLabKitTests</code> selection that covers the behavior being changed. Use <code>Suites</code> for a folder scope under <code>tests/cases</code>; use <code>Tests</code> for a class or method-name selector, or <code>Files</code> for exact <code>.m</code> paths. <code>Suites</code> deliberately rejects <code>.m</code> file paths so a mistaken file selection cannot silently expand into a whole folder. For GUI wiring, use the affected app GUI suite with <code>IncludeGui=true</code>, <code>GuiMode=&quot;hidden&quot;</code>, and <code>HtmlReport=false</code> during iteration.</li>
-<li>Before the branch is ready for PR review, keep checkpoints small and stable and continue using focused tests. Do not run <code>changedFast</code>, full headless, or full GUI gates merely because an intermediate commit is ready.</li>
-<li>When preparing the completed branch for PR review or direct-main integration, run <code>changedFast</code> once to inspect the diff-based plan, then inspect the PR or main-push CI for the complete validation.</li>
-<li>After push, inspect CI for the final pushed commit. If another user-requested follow-up supersedes an in-progress run, continue the follow-up locally and inspect CI for the newest pushed commit instead of waiting for the superseded run.</li>
-</ol>
-<p>Do not rerun <code>changedFast</code> or CI after every small edit when the same focused suite can validate the changed behavior more directly. Changes to additional ownership areas, validation routing, docs, or AGENTS still use focused checks while the branch is evolving; run the changed-file checkpoint only when the branch is ready for review or final integration. After CI exposes a failure, repair with the narrowest failed suite or test selector, push the correction, and inspect CI for the final stable diff.</p>
-<h3 id="keep-iteration-tests-cheap">Keep Iteration Tests Cheap</h3>
-<p>A runner result of “one matched test” does not imply a cheap test. One GUI method may launch a real App, read and write files, commit presentation many times, render plots, and wait for asynchronous UI work.</p>
-<p>Use this cost ladder while fixing behavior:</p>
-<ol>
-<li>pure helper or calculation test;</li>
-<li>direct presenter, renderer, state-transition, or callback test;</li>
-<li>one structural GUI method when handle wiring is the behavior;</li>
-<li>one complete App GUI workflow after the smaller behaviors are stable;</li>
-<li>changed-file and broad gates only when preparing for PR review or final integration.</li>
-</ol>
-<p>When a GUI workflow taking roughly 20 seconds or more fails, diagnose its stack and reproduce the failed helper, renderer, callback, or presentation value directly. Do not repeatedly rerun the whole workflow after each small edit. Accumulate the narrow fixes, then run that workflow once as the integration confirmation. Before starting an unusually long focused test, state what it actually exercises and its expected order of runtime so “one test” is not mistaken for a quick check.</p>
-<h2 id="ci-scope">CI Scope</h2>
-<p>CI is a clean-room check for omissions that a developer's configured machine or targeted local test can hide. <code>ci.yml</code> installs R2025a with no optional Toolboxes, then runs:</p>
+buildtool docs
+buildtool docsCheck</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Task</th><th>Purpose</th></tr></thead><tbody><tr><td><code>changedFast</code></td><td>Local final pre-commit/pre-push gate. Reads tracked and untracked working-tree paths; on a clean checkpoint it reads <code>HEAD^..HEAD</code>.</td></tr><tr><td><code>headless</code></td><td>Every headless catalog identity.</td></tr><tr><td><code>gui</code></td><td>Every hidden-GUI catalog identity.</td></tr><tr><td><code>coverage</code></td><td>Headless catalog with Cobertura XML and HTML coverage artifacts.</td></tr><tr><td><code>docs</code> / <code>docsCheck</code></td><td>Render or verify the generated documentation site.</td></tr></tbody></table></div>
+<p><code>changedFast</code> prints semantic reasons and exact identities. For ordinary App and facade source it runs only the required contract closure. A framework, Build, catalog, policy, or unknown path deliberately widens to every headless specification: broad selection is a visible safety boundary, not a planner failure. Do not weaken that fallback to make a route count look smaller.</p>
+<p>Run focused behavior during iteration. Run <code>changedFast</code> once when the branch is ready for review or direct-main integration. CI owns broad platform validation; do not repeatedly run broad tasks after each small edit.</p>
+<h2 id="artifacts-and-failures">Artifacts and Failures</h2>
+<p>Each run writes one folder beneath <code>artifacts/test-results/&lt;run-name&gt;/</code>:</p>
+<pre><code class="language-text">manifest.json       run identity
+plan.json           exact selected identities and reasons
+events.jsonl        progress and heartbeat stream
+active-test.json    latest machine-readable progress state
+junit.xml           CI result exchange
+summary.json        pass/fail summary
+coverage.xml        coverage runs only
+coverage-html/      coverage runs only</code></pre>
+<p>After a failure, copy its exact class/method identity from the output and run the smallest owner/contract or exact source that proves the repair. A zero selection or missing-contract error is a test-authoring defect, never passing evidence.</p>
+<h2 id="ci-and-manual-evidence">CI and Manual Evidence</h2>
+<p>Continuous Integration runs <code>headless</code> and <code>gui</code> on Linux, macOS, and Windows from a clean MATLAB runtime without optional Toolboxes. It uploads the catalog artifacts even after failure. Coverage is an explicit report, not a duplicate CI gate.</p>
+<p>Manual App validation remains required for native file dialogs, visual design, pointer interaction, real-data suitability, and scientific interpretation. Use synthetic, minimal fixtures in automated tests. Never add real lab files, local paths, subject/device identifiers, timestamps, or proprietary metadata.</p>
+<h2 id="maintainer-rules">Maintainer Rules</h2>
 <ul>
-<li><code>buildtool headless</code> on Linux, macOS, and Windows;</li>
-<li><code>buildtool gui</code> with hidden figures on Linux, macOS, and Windows.</li>
+<li>Keep specs beside the capability that owns their behavior; tests never own a parallel product API.</li>
+<li>Prefer direct behavioral calls over full App workflows. Add a structural GUI proof only when layout or wiring itself is the contract.</li>
+<li>Do not add legacy suite folders, stage tags, selector registries, test wrappers, runner options, or Code Analyzer suppression pragmas.</li>
+<li>Add a new public framework test API only when it is a stable product boundary. Test infrastructure stays private under <code>tests/+labkittest/</code>.</li>
+<li>Follow <code>.agents/migration_guide.md</code> only while retiring compatibility debt; it is not an everyday authoring checklist.</li>
 </ul>
-<p>Both platform matrices use <code>fail-fast: false</code>, so one failure does not cancel the evidence from the other operating systems. Each job keeps JUnit, HTML, active-test, MATLAB log, debug, and applicable GUI artifacts. The MATLAB execution timeout is shorter than the containing job timeout so diagnostics still upload after a stalled test.</p>
-<p><code>Continuous Integration</code> runs this required suite for pull requests targeting <code>main</code> and pushes to <code>main</code>. Feature-branch pushes do not duplicate the pull-request run. Coverage has no pass threshold and would only repeat the non-GUI tests, so <code>buildtool coverage</code> remains an explicit local report rather than a second CI path.</p>
-<p>The manual <code>Release</code> workflow is separate from ordinary CI. A developer first completes interactive App testing, dispatches it from <code>main</code> with a <code>vX.Y.Z</code> version and confirms that manual validation. The workflow requires an already successful <code>Continuous Integration</code> main-push run for that exact commit; it does not duplicate the six jobs. Only then does it create the tag and a draft GitHub Release. Ordinary CI has read-only repository permissions and cannot create tags.</p>
-<p>Workflow YAML calls public buildfile tasks through <code>matlab-actions/run-build</code>; it does not maintain test-class lists, CI-only build tasks, parallel-worker settings, or call the lower-level runner directly. CI checkouts fetch the candidate and its parent so version and changed-file contracts have a stable <code>HEAD^</code> baseline.</p>
-<p>When adding a test, place it under the correct ownership tree and give it the right stage tag: <code>Unit</code>, <code>Integration</code>, or <code>GUI</code>. GUI tests may add secondary tags such as <code>Structural</code>, <code>Workflow</code>, or <code>Gesture</code>. Membership follows from the public <code>headless</code> or <code>gui</code> task; ordinary test additions should not require editing workflow YAML.</p>
-<p>Hidden GUI automation still cannot prove native file dialogs, pointer feel, visual quality, scientific validity, or a complete human workflow. That is why manual App validation remains a required release input rather than an inference from green CI.</p>
-<h2 id="test-layout">Test Layout</h2>
-<pre><code class="language-text">tests/cases/unit/labkit_framework/
-                               reusable +labkit framework behavior
-tests/cases/unit/apps/         app-owned helper behavior
-tests/cases/unit/project/      project-level helper behavior
-tests/cases/gui/labkit_framework/
-                               reusable +labkit GUI checks
-tests/cases/gui/apps/          app GUI launch, layout, callback, and workflow checks
-tests/cases/gui/project/       project entrypoint GUI checks
-tests/cases/contract/apps/     long-lived app boundary and app workflow guardrails
-tests/cases/contract/project/  project contracts grouped by topic
-tests/shared/                  small test-facing assertions, fixture builders, GUI probes, and lookup helpers
-tests/runner/                  runner setup, artifact paths, trace plumbing, and artifact writers</code></pre>
-<p>Project contract tests use a third directory level for the guarded contract, for example <code>build</code>, <code>ci</code>, <code>docs</code>, <code>hygiene</code>, <code>packages</code>, <code>runtime</code>, or <code>release</code>.</p>
-<p>Test paths follow <code>tests/cases/&lt;kind&gt;/&lt;owner&gt;/&lt;area&gt;/...</code>. <code>kind</code> is <code>unit</code>, <code>gui</code>, or <code>contract</code>. <code>owner</code> is <code>apps</code>, <code>labkit_framework</code>, or <code>project</code>. The <code>labkit_framework</code> owner means reusable <code>+labkit</code> framework code only; repository-level entrypoints such as the launcher use <code>project</code>. Interaction styles such as gesture checks are expressed with <code>TestTags</code> and test class names, not extra ownership paths.</p>
-<p><code>tests/shared/</code> intentionally keeps ordinary MATLAB helper functions as one-function files because those helpers are called directly by tests. Prefer a plain function file there over a larger registry object unless repeated call patterns justify a grouped API. Changed-file validation resolves direct test consumers of a shared helper and reruns those test classes instead of expanding every shared GUI helper change to the full GUI suite.</p>
-<p>Build tasks are the supported human and CI entry points. The lower-level runner is an implementation detail used by the buildfile.</p>
-<h2 id="focused-iteration">Focused Iteration</h2>
-<p>When diagnosing one failure, rerun the smallest matching suite directly after adding <code>tests</code> to the MATLAB path:</p>
-<pre><code class="language-matlab">addpath(&quot;tests&quot;)
-runLabKitTests(&quot;Suites&quot;, &quot;gui/apps/image_measurement/batch_crop&quot;, ...
-    &quot;IncludeGui&quot;, true, &quot;GuiMode&quot;, &quot;hidden&quot;, &quot;HtmlReport&quot;, false)</code></pre>
-<p>To run one class or method, pass its name through <code>Tests</code>:</p>
-<pre><code class="language-matlab">runLabKitTests(&quot;Tests&quot;, &quot;GuiLayoutBatchCropTest&quot;, ...
-    &quot;IncludeGui&quot;, true, &quot;GuiMode&quot;, &quot;hidden&quot;, &quot;HtmlReport&quot;, false)</code></pre>
-<p>An unqualified method name is accepted when it is unique. To select one method without ambiguity, use the official <code>ClassName/methodName</code> test name:</p>
-<pre><code class="language-matlab">runLabKitTests(&quot;Tests&quot;, ...
-    &quot;PlatformSkeletonTest/artifactPathsUseRunnerLayout&quot;, ...
-    &quot;HtmlReport&quot;, false)</code></pre>
-<p>For the lowest-learning-cost exact rerun, select the test file directly:</p>
-<pre><code class="language-matlab">runLabKitTests(&quot;Files&quot;, ...
-    &quot;tests/cases/unit/project/PlatformSkeletonTest.m&quot;, ...
-    &quot;HtmlReport&quot;, false)</code></pre>
-<p>Use <code>buildtool</code> for broad validation. The buildfile owns stable task selection while the runner owns discovery, progress, reports, and artifacts. Local and CI broad tasks use the same single-process execution model.</p>
-<h2 id="gui-validation">GUI Validation</h2>
-<p>Automated GUI tests check:</p>
-<ul>
-<li>app launch</li>
-<li>layout contracts</li>
-<li>callback wiring</li>
-<li>debug trace plumbing</li>
-<li>reusable tool lifecycle</li>
-<li>hidden synthetic app workflows</li>
-</ul>
-<p>Hidden GUI tests use <code>matlab.unittest.TestCase</code> while still constructing real figures and controls. <code>matlab.uitest.TestCase</code> is reserved for visible UI automation because its display driver emits <code>ViewReady</code> callback errors for hidden figures on CI runners.</p>
-<p>App GUI layout tests should express user-facing and app-facing contracts: expected command buttons, dropdown choices, tabs, table columns, axes, callback wiring, and debug trace behavior. They should not assert raw MATLAB component class counts, because those counts are framework implementation details. The shared standard-workbench assertion waits for the startup lifecycle and fails on deferred startup errors, so a constructed shell is not mistaken for a successfully launched app. Reusable LabKit GUI tests may assert low-level control shape only when that shape is the framework behavior under test. Avoid duplicating expensive figure launches for the same contract. If an app already has dedicated GUI coverage, broad entry-point coverage should act as a missing-coverage guardrail rather than launching it again. For future apps without dedicated GUI coverage, one debug launch can cover startup, named figure creation, path hygiene, and visible trace plumbing until app-specific layout or workflow tests are added.</p>
-<p>For scientific and visualization behavior, prefer deterministic value or state assertions over visual snapshots whenever the result can be expressed as data: export tables, image dimensions, masks, numeric summaries, axis labels, selected files, callback events, and debug traces. Use minimal synthetic data that makes the behavior obvious. Add image or screenshot comparisons only when the rendered pixels are the actual contract, and keep those baselines focused on the visual behavior under test rather than the entire app shell.</p>
-<p>Repository-wide guardrails should avoid repeated full-tree IO. Cache tracked file lists or file contents within the test process when several assertions scan the same scope, and avoid adding a second test that repeats the same scan with only a different diagnostic wording.</p>
-<p><code>buildtool gui</code> runs with hidden test windows by default while still creating real MATLAB figures, controls, callbacks, and layout trees. The setting is scoped to the MATLAB test process; visible or minimized GUI mode is only for local diagnosis, and manual app work should not share that MATLAB session.</p>
-<p>They do not prove:</p>
-<ul>
-<li>visual quality</li>
-<li>actual manual drawing quality</li>
-<li>interactive file-selection usability</li>
-<li>full workflow feel</li>
-</ul>
-<p>Manual MATLAB review is still required for those user-experience questions. Do not run interactive GUI workflows in MATLAB <code>-batch</code> mode.</p>
-<h2 id="fixtures-and-data-hygiene">Fixtures And Data Hygiene</h2>
-<p>Fixtures should be synthetic and minimal. Do not commit raw local lab files, identifying file names, subject names, device serials, local absolute paths, or timestamp-shaped sample identifiers.</p>
-<p>Thermal parser tests should generate anonymous synthetic radiometric structures instead of tracking real camera files. Preserve only the container shape, record offsets, calibration fields, byte-order behavior, and pixel matrix data needed for regression coverage.</p>
-<p>DTA tests generate named synthetic <code>.DTA</code> files in a temporary directory through <code>dtaFixturePath</code> and <code>dtaFixtureDir</code>. Tests may depend on those synthetic names for discovery and short-name behavior, but the repository should not track raw <code>.DTA</code> fixture files.</p>
-<h2 id="numerical-tolerance">Numerical Tolerance</h2>
-<p>Default direct numerical tolerance:</p>
-<pre><code class="language-matlab">abs(oldValue - newValue) &lt; 1e-9</code></pre>
-<p>Use looser tolerances only for interpolation, plotting alignment, or format conversion, and document why the looser tolerance is valid.</p>
-<h2 id="artifacts">Artifacts</h2>
-<p>The <code>artifacts/</code> tree is ignored and reserved for generated outputs, local scratch evidence, and temporary design notes that support one improvement round. Do not track files under <code>artifacts/</code>; lasting design decisions belong in the relevant documentation, source comment, or test instead.</p>
-<p>Test artifacts are written under:</p>
-<pre><code class="language-text">artifacts/test-results/&lt;RunName&gt;/
-artifacts/coverage/&lt;RunName&gt;/
-artifacts/code-check/
-artifacts/debug/&lt;RunName&gt;/
-artifacts/gui/&lt;RunName&gt;/
-artifacts/logs/&lt;RunName&gt;/</code></pre>
-<p>Build tasks set <code>LABKIT_ARTIFACTS</code> while tests run, so apps launched in debug mode write their trace files into the same artifact root:</p>
-<pre><code class="language-text">artifacts/debug/&lt;RunName&gt;/&lt;AppName&gt;/&lt;SessionId&gt;/</code></pre>
-<p>Coverage is report-only and not part of the default local check.</p>
-<h2 id="app-sdk-runtime-contract-coverage">App SDK Runtime Contract Coverage</h2>
-<p>The workflow-first app contract is covered by layered tests, not by a single launch-only suite:</p>
-<ul>
-<li><code>AppPackageStructureGuardrailTest</code> discovers every <code>apps/**/labkit_*_app.m</code> entrypoint, requires the canonical <code>definition.m</code> and <code>+workbench/buildLayout.m</code>, verifies references to optional action/project/session/presentation capabilities when present, and rejects retired metadata files, generic lifecycle/state packages, per-version migration files, package-root app runners, and broad app buckets such as <code>+actions</code>, <code>+state</code>, <code>+ui</code>, <code>+view</code>, <code>+ops</code>, <code>+io</code>, and <code>+export</code>.</li>
-<li><code>UiRuntimeKernelTest</code> owns queued dispatch, canonical state, presentation commits, callback-capability injection, rollback, and <code>OnStart</code> behavior. <code>UiProjectDocumentStoreTest</code> owns project persistence, migrations, source relinking, and read-only legacy snapshot imports. <code>UiMatlabPlatformAdapterTest</code> owns the native component and interaction adapter boundary.</li>
-<li><code>AppOwnedWorkflowBoundariesTest</code> and <code>AppLibraryCompatibilityTest</code> keep app workflow code under the owning app tree and prevent apps from depending on removed helper-dump or old UI surfaces.</li>
-<li>App GUI workflow tests should cover semantic controls, enabled states, workflow outcomes, debug traces, and exported results. Do not add broad launch-only coverage for every app when a real workflow or guardrail already covers the contract.</li>
-<li>Debug sample-pack tests cover clean-room debug artifacts. Profiler evidence is used for performance regressions and should not replace correctness assertions.</li>
-</ul>
-<h2 id="profiling-is-supporting-evidence">Profiling Is Supporting Evidence</h2>
-<p>Performance profiling is a maintainer tool rather than a correctness test. Use the complete <a href="../tools/profiling.html">Performance Profiling</a> reference for targets, options, report fields, and interpretation. A profile can identify startup or callback cost, but it does not replace outcome assertions, numeric parity, GUI workflow coverage, or manual scientific review.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

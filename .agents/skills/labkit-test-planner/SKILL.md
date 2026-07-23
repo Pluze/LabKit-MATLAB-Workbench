@@ -1,119 +1,66 @@
 ---
 name: labkit-test-planner
-description: "Use for validation planning, MATLAB test execution, pre-commit checks, CI scope, GUI checks, fixtures, or test-runner changes."
+description: "Use for validation planning, MATLAB test execution, pre-commit checks, CI scope, GUI checks, fixtures, or test-catalog changes."
 ---
 
 # LabKit Test Planner
 
 ## Read
 
-Read `AGENTS.md`, `tests/AGENTS.md`, affected source/tests, and
-`docs/development/maintain-and-release/testing.md` when exact tasks or routing
-matter. Do not reread shared context already inspected for another active
-skill.
+Read `AGENTS.md`, the affected source/specification, and
+`docs/development/maintain-and-release/testing.md`. Read the catalog source
+only when changing catalog behavior or diagnosing its output.
 
-## Select evidence
+## Plan From Production Ownership
 
-Keep the calling model small:
+Tests are owner-first behavioral specifications beneath `tests/specs/`; no
+caller infers test paths, stage tags, suite roots, ranges, or runner options.
 
-- before PR preparation, use focused tests for the current small branch step;
-  run `changedFast` once at the review-ready checkpoint. PR and main-push CI
-  own the complete validation;
-- use the platform-independent skill-owned wrapper at
-  `.agents/skills/labkit-test-planner/scripts/runLabKitTestTarget.m` instead
-  of rebuilding runner argument lists. It is not in the repository-root
-  `scripts/` folder. Add that exact skill folder to the MATLAB path once, then
-  call:
+1. Begin with `labkittest.explain(SOURCE_FILE)` for a production change.
+2. Add evidence with `labkittest.createSpec(SOURCE_FILE, Name=...)`. Specify
+   `Contract` only when `explain` reports multiple author-owned boundaries.
+3. Iterate with `labkittest.run(Owner=..., Contract=...)`, or use
+   `labkittest.run(File=...)` for the catalog's complete bounded closure.
+4. Use `buildtool changedFast` once at the review-ready or direct-main gate.
 
-  ```matlab
-  addpath(".agents/skills/labkit-test-planner/scripts")
-  ```
+`createSpec` deliberately fails for framework-provided conformance and for
+ambiguous contracts. These are authoring decisions, not a reason to invent a
+test wrapper or folder. A missing-contract or zero-selection result is a
+failure to supply evidence, never a passing test result.
 
-  - `runLabKitTestTarget("list-file", File=path)` to print canonical names;
-  - `runLabKitTestTarget("run-file", File=path)` for one exact file;
-  - `runLabKitTestTarget("run-test", Test="Class/method")` for an exact
-    method; add `File=path` only to constrain an ambiguous owner;
-  - `runLabKitTestTarget("run-suite", Suite=path, Gui=true)` only when a
-    folder scope is necessary.
+## Choose Evidence
 
-The wrapper locates the repository from its own path, infers GUI inclusion for
-files and `gui/` suites, uses hidden GUI mode, disables focused HTML reports,
-and preserves the official runner's fail-on-zero-match behavior. Read the
-script only when changing or diagnosing the wrapper. Use the existing
-cross-platform `buildtool changedFast` command for the local final gate; do not
-wrap it.
+Use the smallest behavior that proves the change:
 
-Choose by execution cost as well as matched-test count. One GUI method may
-launch a real App, parse files, redraw several times, and export outputs, so it
-is not a cheap iteration test merely because the runner reports one match.
+1. pure calculation, parser, result schema, or project migration;
+2. direct presenter, renderer, callback, or state transition;
+3. one hidden-GUI structural proof when declared layout/wiring is itself the
+   behavior;
+4. one bounded App workflow only when lower layers cannot prove the contract;
+5. `changedFast`, then CI, only at final integration.
 
-`changedFast` prints semantic owner routes first, then compiles their discovered
-tests into one non-GUI and (when needed) one hidden-GUI execution group. Read
-both parts of that output: route count explains coverage; canonical count and
-duplicate removals explain actual cost. Do not reintroduce folder-overlap
-suppression to make the route list look smaller.
+One GUI identity can be costly despite reporting one test. Diagnose its failed
+helper or callback directly before rerunning the workflow. Keep broad runs
+single-process unless an end-to-end benchmark shows a material net gain after
+startup, licensing, reporting, progress, and failure-diagnosis costs.
 
-Use this escalation order:
+## Profiles and Claims
 
-1. pure helper or calculation test;
-2. direct presenter, renderer, state-transition, or callback test;
-3. one structural GUI method for wiring that cannot be proved below the UI;
-4. one complete App workflow after the smaller behaviors are stable;
-5. branch/repository gates only during PR or final integration preparation.
+- `buildtool headless` runs every `Env:headless` identity.
+- `buildtool gui` runs every `Env:hidden-gui` identity with hidden figures.
+- `buildtool coverage` adds Cobertura XML and HTML coverage to headless.
+- `buildtool changedFast` maps local Git paths to exact evidence closures. A
+  framework, build, policy, or unknown path safely widens to full headless.
+- Hidden GUI proves declared structural wiring, not native dialogs, visual
+  quality, pointer feel, real-data suitability, or scientific validity.
 
-When a GUI workflow longer than roughly 20 seconds fails, use its stack and
-artifacts to reproduce the failing helper, renderer, callback, or presentation
-value directly. Do not rerun the whole workflow until that narrower check
-passes. Combine corrected behaviors into one final GUI run instead of
-rerunning after every edit.
+Use host permission for every MATLAB invocation. Keep GUI runs hidden and do
+not automate manual native-dialog or pointer workflows in `-batch`. Use only
+minimal synthetic fixtures; never track sensitive lab data.
 
-Migration source scanners require semantic fixtures: ordinary local helpers
-must not become UI callbacks, definition values must not become field names,
-and every generated aggregate must agree on category uses and App unions.
+## Report
 
-Common folder scopes are:
-
-```text
-labkit_framework/<area>           reusable facade behavior
-apps/<family>                     app logic and exports
-gui/labkit_framework/ui           framework GUI and interactions
-gui/apps/<family>/<app_slug>      one app workflow/layout
-gui/project/launcher              launcher behavior
-project/<topic>                   repository contracts
-```
-
-Do not make callers learn internal validation-plan names or test-discovery
-implementation. Pair facade changes with downstream apps when
-their contract can be affected. After a failure, copy the canonical
-`Class/method` name from runner output and use `run-test`; the wrapper resolves
-the unique owning file from the class name.
-Keep broad execution single-process unless a repeatable end-to-end benchmark
-shows a material wall-clock gain after worker startup, discovery, reporting,
-and tail latency. Estimated per-test parallelism is not evidence by itself;
-include CPU, licensing, platform behavior, live status, and failure diagnosis
-in the decision, and remove orchestration that does not repay those costs.
-Repair and rerun the narrowest failed behavior, which may be a smaller direct
-test than the method that exposed it; broaden again only when the fix crosses
-another boundary or final policy requires it. A zero-match result is a
-selection failure, not passing evidence: use `list-file`, then rerun with the
-printed name.
-
-For private workspaces, run private tests first. The acceptance sentinel opts
-private source into public scans but does not expose its Git diff to the public
-planner, so invoke the relevant public guardrail explicitly.
-
-Run MATLAB with host permission in sandboxed sessions. Keep broad GUI runs
-hidden and avoid them while the user is actively interacting with the desktop.
-Never automate manual native-dialog or pointer workflows in `-batch`.
-
-## Claims
-
-- Non-GUI tests do not validate GUI behavior.
-- Structural GUI tests validate launch/layout/callback wiring.
-- Workflow GUI tests validate bounded synthetic flows.
-- Debug tests validate diagnostics, not usability.
-- Native dialogs, visual quality, pointer feel, real data, and scientific
-  validity remain manual unless a dedicated deterministic test proves them.
-
-Report MATLAB availability, exact commands/results, GUI/manual status,
-unverified behavior, and why any expected gate was intentionally omitted.
+Report the exact owner/contract or profile command, selected identity count,
+pass/fail result, artifact folder, GUI/manual boundary, and why any broader
+gate is intentionally deferred. For final integration, report `changedFast`
+and the CI state for the exact pushed commit.
