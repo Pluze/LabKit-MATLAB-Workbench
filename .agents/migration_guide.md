@@ -109,12 +109,13 @@ Branch progress measured on 2026-07-23 (not a final acceptance benchmark):
 - the legacy local `changedFast` checkpoint treated a committed new image
   specification as generic test support, selected one `project` route, and
   ran 211 headless tests in 92.14 seconds (zero failures, one skip);
-- the current complete headless profile ran 145 exact identities with zero
+- the current complete headless profile ran 183 exact identities with zero
   failures; its migrated framework owners are `app`, `biosignal`,
   `dta`, `image`, `rhs`, and `thermal`, and its App behavior owners cover CIC,
   CSC, Chrono Overlay, EIS, VT Resistance, Gait Analysis, DIC Postprocess,
   DIC Preprocess, Focus Stack, ECG Print, RHS Preview, Response Review Stats,
-  Nerve Response Analysis, and T-test Wizard. The former
+  Nerve Response Analysis, T-test Wizard, Curvature, Video Marker, Batch Crop,
+  FLIR Thermal, and Image Enhance. The former
   82-test/23.459-second observation is superseded; record a final
   cross-platform wall-clock benchmark after the remaining App and repository
   migration is complete;
