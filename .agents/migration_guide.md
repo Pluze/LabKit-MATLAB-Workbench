@@ -109,7 +109,7 @@ Branch progress measured on 2026-07-23 (not a final acceptance benchmark):
 - the legacy local `changedFast` checkpoint treated a committed new image
   specification as generic test support, selected one `project` route, and
   ran 211 headless tests in 92.14 seconds (zero failures, one skip);
-- the current complete headless profile ran 197 exact identities with zero
+- the current complete headless profile ran 199 exact identities with zero
   failures; its migrated framework owners are `app`, `biosignal`,
   `dta`, `image`, `rhs`, and `thermal`, and its App behavior owners cover CIC,
   CSC, Chrono Overlay, EIS, VT Resistance, Gait Analysis, DIC Postprocess,
