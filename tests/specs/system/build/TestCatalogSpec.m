@@ -73,6 +73,30 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             end
         end
 
+        function progressPluginWritesHeartbeatForLongRunningTest(testCase)
+            specsRoot = testCase.createFixtureTree([ ...
+                "classdef ProbeSpec < matlab.unittest.TestCase", ...
+                "    methods (Test, TestTags = {'Contract:system', 'Env:headless'})", ...
+                "        function proof(testCase), pause(0.06), testCase.verifyTrue(true), end", ...
+                "    end", ...
+                "end"]);
+            runFolder = fullfile(testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder, "run");
+            mkdir(runFolder);
+            suite = matlab.unittest.TestSuite.fromFolder(specsRoot, ...
+                "IncludingSubfolders", true);
+            runner = matlab.unittest.TestRunner.withTextOutput("OutputDetail", "terse");
+            plugin = labkittest.ProgressPlugin(runFolder, "HeartbeatSeconds", 0.01);
+            cleanup = onCleanup(@() delete(plugin));
+            runner.addPlugin(plugin);
+            results = runner.run(suite);
+            clear cleanup
+
+            testCase.assertTrue(all([results.Passed]));
+            testCase.verifySubstring(string(fileread(fullfile(runFolder, ...
+                "events.jsonl"))), '"event":"heartbeat"');
+        end
+
         function calculationFileRequiresItsBoundedContractClosure(testCase)
             specsRoot = testCase.createCapabilityFixture(true);
 

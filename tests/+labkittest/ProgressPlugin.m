@@ -13,11 +13,21 @@ classdef ProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
         SuiteTimer = []
         TestTimer = []
         Current = ""
+        HeartbeatTimer = []
+        HeartbeatSeconds = 30
     end
 
     methods
-        function plugin = ProgressPlugin(runFolder)
+        function plugin = ProgressPlugin(runFolder, varargin)
+            p = inputParser;
+            p.addParameter("HeartbeatSeconds", 30, @isPositiveScalar);
+            p.parse(varargin{:});
             plugin.RunFolder = string(runFolder);
+            plugin.HeartbeatSeconds = double(p.Results.HeartbeatSeconds);
+        end
+
+        function delete(plugin)
+            plugin.stopHeartbeat();
         end
     end
 
@@ -28,9 +38,12 @@ classdef ProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
             plugin.record("suite_start", "", 0);
             plugin.writeActive("starting", "", 0);
             fprintf("LabKit test progress: 0/%d eta=unknown\n", plugin.Total);
+            plugin.startHeartbeat();
+            cleanup = onCleanup(@() plugin.stopHeartbeat());
             runTestSuite@matlab.unittest.plugins.TestRunnerPlugin(plugin, pluginData);
             plugin.record("suite_done", "", 0);
             plugin.writeActive("finished", "", 0);
+            clear cleanup
         end
 
         function runTest(plugin, pluginData)
@@ -54,6 +67,46 @@ classdef ProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
     end
 
     methods (Access = private)
+        function startHeartbeat(plugin)
+            plugin.stopHeartbeat();
+            try
+                plugin.HeartbeatTimer = timer( ...
+                    "ExecutionMode", "fixedSpacing", ...
+                    "Period", plugin.HeartbeatSeconds, ...
+                    "BusyMode", "drop", ...
+                    "TimerFcn", @(~, ~) plugin.heartbeat());
+                start(plugin.HeartbeatTimer);
+            catch
+                plugin.HeartbeatTimer = [];
+            end
+        end
+
+        function stopHeartbeat(plugin)
+            timerObject = plugin.HeartbeatTimer;
+            plugin.HeartbeatTimer = [];
+            if isempty(timerObject)
+                return;
+            end
+            try
+                if isvalid(timerObject)
+                    stop(timerObject);
+                    delete(timerObject);
+                end
+            catch
+            end
+        end
+
+        function heartbeat(plugin)
+            if strlength(plugin.Current) == 0 || isempty(plugin.TestTimer)
+                return;
+            end
+            elapsed = toc(plugin.TestTimer);
+            plugin.record("heartbeat", plugin.Current, elapsed);
+            plugin.writeActive("heartbeat", plugin.Current, elapsed);
+            fprintf("HEARTBEAT [%d/%d eta=%s] %s\n", plugin.Started, ...
+                plugin.Total, plugin.etaText(), plugin.Current);
+        end
+
         function record(plugin, eventName, testName, testElapsed)
             plugin.appendJson("events.jsonl", plugin.payload(eventName, testName, testElapsed));
         end
@@ -122,4 +175,9 @@ classdef ProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
             clear cleanup
         end
     end
+end
+
+function tf = isPositiveScalar(value)
+    tf = (isnumeric(value) || islogical(value)) && isscalar(value) && ...
+        isfinite(double(value)) && double(value) > 0;
 end
