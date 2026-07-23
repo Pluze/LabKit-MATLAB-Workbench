@@ -38,6 +38,7 @@ scope: Test ownership</code></pre>
 <li>Moved App-specific tests into explicit <code>appContract</code>, <code>workbench</code>, source capability, <code>smoke</code>, and <code>isolatedPath</code> owners; moved cross-App audits to project ownership.</li>
 <li>Removed family-root and overlap-based route suppression.</li>
 <li>Added canonical test-union compilation, deterministic feature-tagged smoke selection, direct facade-consumer routing, and safe all-smoke fallback when required feature metadata is absent.</li>
+<li>Preserved physical suite-folder case during selector discovery and made an isolated App sample derive the repository root from the shared test setup, so owner paths behave consistently on Linux, macOS, and Windows.</li>
 <li>Focused ordinary App-manual, history, and library-documentation routes while retaining complete contracts for renderer and policy changes.</li>
 <li>Added dynamic guards for every public App's owned contracts and smoke proof, valid source-capability scopes, unique canonical execution, and focused documentation routes. Test classes also reject migrated test-shaped methods stranded in non-discoverable static-private blocks.</li>
 </ul>

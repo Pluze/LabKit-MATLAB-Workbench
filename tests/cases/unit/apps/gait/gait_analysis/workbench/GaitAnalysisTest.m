@@ -292,9 +292,7 @@ function labkitProject = markerEnvelope(project)
 end
 
 function [root, appRoot] = gaitRoots()
-    testFile = mfilename("fullpath");
-    root = fileparts(fileparts(fileparts(fileparts( ...
-        fileparts(fileparts(testFile))))));
+    root = setupLabKitTestPath();
     appRoot = fullfile(root, "apps", "gait", "gait_analysis");
 end
 

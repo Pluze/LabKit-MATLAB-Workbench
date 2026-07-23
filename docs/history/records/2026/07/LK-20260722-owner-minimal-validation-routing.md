@@ -34,6 +34,9 @@ group. This keeps coverage reviewable without paying for duplicate execution.
 - Added canonical test-union compilation, deterministic feature-tagged smoke
   selection, direct facade-consumer routing, and safe all-smoke fallback when
   required feature metadata is absent.
+- Preserved physical suite-folder case during selector discovery and made an
+  isolated App sample derive the repository root from the shared test setup,
+  so owner paths behave consistently on Linux, macOS, and Windows.
 - Focused ordinary App-manual, history, and library-documentation routes while
   retaining complete contracts for renderer and policy changes.
 - Added dynamic guards for every public App's owned contracts and smoke proof,
