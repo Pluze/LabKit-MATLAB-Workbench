@@ -5,8 +5,12 @@ Tests mirror source ownership and use MATLAB's official test framework.
 ## Structure
 
 - Runnable tests live under `tests/cases/unit`, `contract`, or `gui`.
-- App logic tests use `unit/apps/<family>`; app GUI tests use
-  `gui/apps/<family>/<app_slug>`.
+- App tests use explicit physical owners: `unit/apps/<family>/<app_slug>/`
+  followed by `appContract`, `workbench`, or the concrete source capability.
+  App GUI tests use `gui/apps/<family>/<app_slug>/smoke`, `workbench`, or a
+  concrete source capability. Every public App also owns an independently
+  selectable `contract/apps/<family>/<app_slug>/isolatedPath` proof; tests
+  that genuinely constrain more than one App belong in `contract/apps/shared`.
 - Reusable library tests use `unit/labkit_framework/<area>` and
   `gui/labkit_framework/<area>`.
 - Project contracts are grouped under `contract/project/<topic>`; project GUI
@@ -33,7 +37,15 @@ Tests mirror source ownership and use MATLAB's official test framework.
   coherent pre-push checkpoint; CI owns the complete post-push validation.
   After a failure, repair and rerun the narrowest failed file or method.
 - Unknown changed paths fall back to full non-GUI validation rather than a
-  narrow false signal. GUI changes route to the owning hidden-GUI suite.
+  narrow false signal. App changes select only their explicit owner scopes,
+  smoke proof, and isolated-path contract; do not reintroduce family-level
+  test fallbacks or infer a test kind from an unprefixed selector.
+- Keep every semantic route in a changed-file plan. The runner resolves those
+  routes to exact test identities and executes each identity once, preserving
+  route reasons without relying on folder-overlap suppression.
+- Framework downstream GUI rules select a deterministic minimum smoke set from
+  `RouteFeature:` test tags. A missing required feature is a visible metadata
+  gap and safely selects every affected App smoke instead of narrowing.
 - Exact public tasks and examples belong only in
   `docs/development/maintain-and-release/testing.md`.
 

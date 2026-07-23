@@ -207,8 +207,13 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "tests/cases/contract/project/build/BuildTaskFrameworkGuardrailTest.m"]);
             signatures = validationStepSignatures(steps);
 
-            testCase.verifyEqual(signatures, "project/build|false", ...
+            testCase.verifyTrue(any(signatures == "project/build|false"), ...
                 "Runner changes should route to runner/build contracts.");
+            testCase.verifyTrue(any(arrayfun(@(step) ...
+                any(step.Files == ...
+                "tests/cases/contract/project/build/BuildTaskFrameworkGuardrailTest.m"), steps)), ...
+                ["The changed guardrail must remain an explicit semantic route; " + ...
+                "canonical execution, not folder overlap, removes duplicate tests."]);
 
             runnerSource = string(fileread(fullfile(root, "tests", "runLabKitTests.m")));
             required = [
@@ -307,6 +312,28 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "Docs and runner changes should keep their two focused contracts.");
             testCase.verifyFalse(any([steps.IncludeGui]), ...
                 "Docs and runner changes should not trigger GUI validation.");
+        end
+
+        function authoredDocumentationUsesFocusedOwnerContracts(testCase)
+            root = setupLabKitTestPath();
+
+            appSteps = labkitValidationPlanForChangedPaths(root, ...
+                "docs/apps/electrochemistry/cic.md");
+            historySteps = labkitValidationPlanForChangedPaths(root, ...
+                "docs/history/records/2026/07/example.md");
+            librarySteps = labkitValidationPlanForChangedPaths(root, ...
+                "docs/libraries/dta/README.md");
+
+            testCase.verifyTrue(contains(validationStepTestSelectors(appSteps), ...
+                "AppDocumentationGuardrailTest") & ...
+                contains(validationStepTestSelectors(appSteps), ...
+                "markedAppManualExamplesExecute"));
+            testCase.verifyTrue(contains(validationStepTestSelectors(historySteps), ...
+                "historyUsesOneTimelineForEveryEra") & ...
+                contains(validationStepTestSelectors(historySteps), ...
+                "historyRecordsDoNotUseEmptyNormalizationBoilerplate"));
+            testCase.verifyEqual(validationStepTestSelectors(librarySteps), ...
+                "LibraryDocumentationGuardrailTest");
         end
 
         function generatedSiteAndRendererRouteToDocumentationChecks(testCase)
@@ -571,6 +598,15 @@ function signatures = validationStepSignatures(steps)
     for k = 1:numel(steps)
         signatures(k) = strjoin(steps(k).Suites, ",") + "|" + ...
             string(steps(k).IncludeGui);
+    end
+end
+
+function selectors = validationStepTestSelectors(steps)
+    selectors = strings(1, numel(steps));
+    for k = 1:numel(steps)
+        if isfield(steps(k), "Tests")
+            selectors(k) = strjoin(steps(k).Tests, ",");
+        end
     end
 end
 

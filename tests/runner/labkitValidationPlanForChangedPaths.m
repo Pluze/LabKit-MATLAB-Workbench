@@ -17,7 +17,10 @@ function steps = labkitValidationPlanForChangedPaths(root, changedPaths, varargi
     for k = 1:numel(changedPaths)
         steps = [steps, stepsForChangedPath(root, changedPaths(k))];
     end
-    steps = compressPlanSteps(uniquePlanSteps(steps));
+    % Keep every semantically requested route. The runner resolves the
+    % selections to canonical test identities before execution, so a broad
+    % route cannot suppress a narrower one because folder selectors overlap.
+    steps = uniquePlanSteps(steps);
 end
 
 function steps = stepsForChangedPath(root, path)
@@ -51,7 +54,7 @@ function steps = stepsForChangedPath(root, path)
     elseif first == "tests"
         steps = testPathSteps(root, parts);
     elseif first == "docs" || first == "site"
-        steps = docPathSteps();
+        steps = docPathSteps(parts);
     elseif first == "tools"
         steps = toolPathSteps(parts);
     elseif first == ".github"
@@ -110,9 +113,14 @@ function step = allAppContractStep(root)
 end
 
 function step = allAppSmokeStep(root)
+    [tests, fallback] = labkitAppSmokeFeatureTests(root, "app-layout");
+    reason = "universal App SDK change needs the minimum smoke feature closure";
+    if fallback
+        reason = reason + "; missing route-feature metadata selects every App smoke";
+    end
     step = planStep("gui_apps_smoke", "gui/apps", true, ...
-        "Tests", appOwnerTestNames(root, "gui", "smoke"), ...
-        "Reason", "universal App SDK change needs every App bounded smoke proof");
+        "Tests", tests, ...
+        "Reason", reason);
 end
 
 function names = appOwnerTestNames(root, kind, scope)
@@ -250,9 +258,30 @@ function steps = testPathSteps(root, parts)
     end
 end
 
-function steps = docPathSteps()
+function steps = docPathSteps(parts)
+    tests = strings(1, 0);
+    reason = "documentation change needs documentation guardrails";
+    if parts(1) == "docs" && numel(parts) >= 2
+        switch parts(2)
+            case "apps"
+                tests = [ ...
+                    "AppDocumentationGuardrailTest", ...
+                    "ProjectDocumentationGuardrailTest/markedAppManualExamplesExecute"];
+                reason = "App documentation change needs App manual contracts";
+            case "history"
+                tests = [ ...
+                    "DocumentationRendererRegressionTest/historyUsesOneTimelineForEveryEra", ...
+                    "DocumentationRendererRegressionTest/historyRecordsLinkAdjacentSequenceAtPageEnd", ...
+                    "ProjectDocumentationGuardrailTest/historyRecordsDoNotUseEmptyNormalizationBoilerplate"];
+                reason = "history documentation change needs focused history contracts";
+            case "libraries"
+                tests = "LibraryDocumentationGuardrailTest";
+                reason = "library documentation change needs library reference contracts";
+        end
+    end
     steps = planStep("project_docs", "project/docs", false, ...
-        "Reason", "human documentation changed");
+        "Tests", tests, ...
+        "Reason", reason);
 end
 
 function steps = toolPathSteps(parts)
@@ -510,125 +539,6 @@ function steps = uniquePlanSteps(steps)
         keep(k) = ~any(signatures(1:k-1) == signatures(k));
     end
     steps = steps(keep);
-end
-
-function steps = compressPlanSteps(steps)
-    if isempty(steps)
-        return;
-    end
-
-    keep = true(1, numel(steps));
-    for k = 1:numel(steps)
-        for j = 1:numel(steps)
-            if k == j || ~keep(k)
-                continue;
-            end
-            if stepCovers(steps(j), steps(k))
-                keep(k) = false;
-            end
-        end
-    end
-    steps = steps(keep);
-end
-
-function tf = stepCovers(candidate, step)
-    if stepSignature(candidate) == stepSignature(step)
-        tf = true;
-        return;
-    end
-
-    if candidate.IncludeGui ~= step.IncludeGui
-        tf = false;
-        return;
-    end
-    if ~testsCover(candidate, step)
-        tf = false;
-        return;
-    end
-    if ~filesCover(candidate, step)
-        tf = false;
-        return;
-    end
-
-    candidateSuites = normalizeTextList(candidate.Suites);
-    stepSuites = normalizeTextList(step.Suites);
-    if isempty(stepSuites) && ~isempty(step.Files)
-        tf = true;
-        return;
-    end
-    if isempty(candidateSuites)
-        tf = ~step.IncludeGui;
-        return;
-    end
-    if isempty(stepSuites)
-        tf = false;
-        return;
-    end
-
-    tf = true;
-    for k = 1:numel(stepSuites)
-        tf = tf && suiteCoveredByAny(candidateSuites, stepSuites(k));
-    end
-end
-
-function tf = filesCover(candidate, step)
-    candidateFiles = normalizeTextList(candidate.Files);
-    stepFiles = normalizeTextList(step.Files);
-    if isempty(candidateFiles)
-        if isempty(stepFiles)
-            tf = true;
-            return;
-        end
-        candidateSuites = normalizeTextList(candidate.Suites);
-        if isempty(candidateSuites)
-            tf = ~candidate.IncludeGui;
-            return;
-        end
-        tf = all(arrayfun(@(file) fileCoveredBySuites( ...
-            candidateSuites, file), stepFiles));
-    elseif isempty(stepFiles)
-        tf = false;
-    else
-        tf = all(ismember(stepFiles, candidateFiles));
-    end
-end
-
-function tf = fileCoveredBySuites(suites, file)
-    folder = replace(string(fileparts(char(file))), "\", "/");
-    folder = eraseLeadingPrefix(folder, "tests/cases/");
-    semanticFolder = folder;
-    semanticFolder = eraseLeadingPrefix(semanticFolder, "unit/");
-    semanticFolder = eraseLeadingPrefix(semanticFolder, "contract/");
-    semanticFolder = eraseLeadingPrefix(semanticFolder, "gui/");
-    tf = suiteCoveredByAny(suites, folder) || ...
-        suiteCoveredByAny(suites, semanticFolder);
-end
-
-function value = eraseLeadingPrefix(value, prefix)
-    if startsWith(value, prefix)
-        value = extractAfter(value, strlength(prefix));
-    end
-end
-
-function tf = testsCover(candidate, step)
-    candidateTests = normalizeTextList(candidate.Tests);
-    stepTests = normalizeTextList(step.Tests);
-    if isempty(candidateTests)
-        tf = true;
-    elseif isempty(stepTests)
-        tf = false;
-    else
-        tf = all(ismember(stepTests, candidateTests));
-    end
-end
-
-function tf = suiteCoveredByAny(candidateSuites, target)
-    tf = false;
-    target = string(target);
-    for k = 1:numel(candidateSuites)
-        candidate = string(candidateSuites(k));
-        tf = tf || target == candidate || startsWith(target, candidate + "/");
-    end
 end
 
 function signature = stepSignature(step)

@@ -187,7 +187,22 @@ entrypoint or definition change selects `appContract`. A changed test file
 reruns exactly that file, while runner and buildfile changes map to the focused
 `project/build` self-tests. Unknown production or repository files still fall
 back conservatively. The printed plan includes selected folders, files,
-test-name selectors, GUI mode, and the reason for each step.
+test-name selectors, GUI mode, and the reason for each step. The runner keeps
+every semantic route, discovers its exact test identities, and executes each
+identity only once; the plan output reports both requested routes and the
+resulting canonical execution count.
+
+Framework changes keep direct framework coverage, then expand through their
+actual consumers. Universal App SDK changes run every App's fast headless
+contract plus the smallest deterministic GUI smoke set that covers the needed
+`RouteFeature:` tags. If the current smoke metadata cannot prove a required
+feature, the planner reports that gap and safely selects every affected smoke
+test instead.
+
+Authored App manuals, history records, and library references use their
+corresponding focused documentation contracts. Generated site changes and
+documentation-renderer or policy changes retain the complete documentation
+contract because they can affect every rendered page.
 
 Every public App owns an independently selectable `isolatedPath` contract.
 It restores the default MATLAB path, adds only the LabKit root and that App
