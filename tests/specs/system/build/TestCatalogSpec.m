@@ -197,6 +197,32 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "conservative fallback:")));
         end
 
+        function changedProfileIncludesTrackedAndUntrackedPreCommitPaths(testCase)
+            [repository, specsRoot] = testCase.createGitRepository();
+            testCase.writeTextFile(fullfile(repository, "tracked-source.m"), "changed");
+            testCase.writeTextFile(fullfile(repository, "untracked-source.m"), "new");
+
+            result = labkittest.plan("Profile", "changed", ...
+                "RepositoryRoot", repository, "SpecsRoot", specsRoot);
+
+            testCase.verifyTrue(result.Fallback);
+            testCase.verifyTrue(any(contains(result.Reasons, "tracked-source.m")));
+            testCase.verifyTrue(any(contains(result.Reasons, "untracked-source.m")));
+        end
+
+        function changedProfileUsesJustCommittedPathsAfterCleanCheckpoint(testCase)
+            [repository, specsRoot] = testCase.createGitRepository();
+            testCase.writeTextFile(fullfile(repository, "checkpoint-source.m"), "changed");
+            testCase.runGit(repository, "add checkpoint-source.m");
+            testCase.runGit(repository, "commit -m checkpoint");
+
+            result = labkittest.plan("Profile", "changed", ...
+                "RepositoryRoot", repository, "SpecsRoot", specsRoot);
+
+            testCase.verifyTrue(result.Fallback);
+            testCase.verifyTrue(contains(result.Reasons, "checkpoint-source.m"));
+        end
+
         function parameterizedDefinitionsKeepEachPublicAppSelectable(testCase)
             descriptors = labkittest.catalog("Owner", "apps/conformance", ...
                 "Contract", "definition", "Environment", "headless");
@@ -236,6 +262,40 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() fclose(fid));
             fprintf(fid, "%s\n", strjoin(lines, newline));
             clear cleanup
+        end
+
+        function [repository, specsRoot] = createGitRepository(testCase)
+            fixture = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            repository = string(fixture.Folder);
+            specsRoot = fullfile(repository, "specs");
+            owner = fullfile(specsRoot, "system", "probe");
+            mkdir(owner);
+            testCase.writeSpec(owner, "ProbeSpec", "system");
+            testCase.writeTextFile(fullfile(repository, "baseline.m"), "baseline");
+            testCase.runGit(repository, "init");
+            testCase.runGit(repository, "config user.email labkit-test@example.invalid");
+            testCase.runGit(repository, "config user.name LabKitTest");
+            testCase.runGit(repository, "add baseline.m specs");
+            testCase.runGit(repository, "commit -m baseline");
+        end
+
+        function runGit(testCase, repository, gitArguments)
+            [status, output] = system(char("git -C " + ...
+                testCase.shellQuote(repository) + " " + gitArguments));
+            testCase.assertEqual(status, 0, string(output));
+        end
+
+        function writeTextFile(~, file, contents)
+            fid = fopen(file, "w");
+            cleanup = onCleanup(@() fclose(fid));
+            fprintf(fid, "%s\n", contents);
+            clear cleanup
+        end
+
+        function value = shellQuote(~, value)
+            quote = string(char(34));
+            value = quote + replace(string(value), quote, "\\" + quote) + quote;
         end
 
         function specsRoot = createCapabilityFixture(testCase, includePresentation)

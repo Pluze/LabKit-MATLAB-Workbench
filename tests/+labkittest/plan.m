@@ -2,8 +2,9 @@ function result = plan(varargin)
 %PLAN Compile a bounded LabKit test plan from semantic selectors.
 %   RESULT = labkittest.plan(Profile="headless") selects every validated
 %   headless specification. Profile="gui" selects hidden-GUI specifications;
-%   Profile="changed" derives changed source paths from Git and compiles their
-%   bounded owner/contract evidence closure.
+%   Profile="changed" derives the local pre-commit change set from Git and
+%   compiles its bounded owner/contract evidence closure. It includes tracked
+%   edits and untracked files; after a clean commit it reports that checkpoint.
 %
 %   RESULT = labkittest.plan(File=PATH), Owner=OWNER, Contract=CONTRACT, or
 %   Environment=ENVIRONMENT compiles an exact plan without exposing folders,
@@ -13,8 +14,8 @@ function result = plan(varargin)
 %
 %   RESULT has Descriptors, Groups, Reasons, Fallback, and ManualChecks. The
 %   executor consumes this result directly and runs each exact test identity
-%   once. SpecsRoot and ChangedPaths exist for isolated framework self-tests;
-%   ordinary callers rely on repository defaults.
+%   once. SpecsRoot, RepositoryRoot, and ChangedPaths exist for isolated
+%   framework self-tests; ordinary callers rely on repository defaults.
 
     opts = parseOptions(varargin{:});
     [queries, reasons, fallback] = planQueries(opts);
@@ -41,6 +42,7 @@ function opts = parseOptions(varargin)
     p.addParameter("Contract", "", @isTextScalar);
     p.addParameter("Environment", "", @isTextScalar);
     p.addParameter("SpecsRoot", defaultSpecsRoot(), @isFolderPath);
+    p.addParameter("RepositoryRoot", repositoryRoot(), @isFolderPath);
     p.addParameter("ChangedPaths", strings(1, 0), @isTextList);
     p.parse(varargin{:});
     opts = p.Results;
@@ -50,6 +52,7 @@ function opts = parseOptions(varargin)
     opts.Contract = string(opts.Contract);
     opts.Environment = string(opts.Environment);
     opts.SpecsRoot = string(opts.SpecsRoot);
+    opts.RepositoryRoot = string(opts.RepositoryRoot);
     opts.ChangedPaths = normalizeRepositoryPath(opts.ChangedPaths);
     selectorCount = sum([strlength(opts.Profile) > 0, strlength(opts.File) > 0, ...
         strlength(opts.Owner) > 0, strlength(opts.Contract) > 0, ...
@@ -88,7 +91,7 @@ function [queries, reasons, fallback] = planQueries(opts)
             case "changed"
                 paths = opts.ChangedPaths;
                 if isempty(paths)
-                    paths = gitChangedPaths(repositoryRoot());
+                    paths = gitChangedPaths(opts.RepositoryRoot);
                 end
                 [queries, reasons, fallback] = changedQueries(paths);
         end
@@ -222,14 +225,38 @@ function root = repositoryRoot()
 end
 
 function paths = gitChangedPaths(root)
-    command = "git -C \"" + string(root) + "\" diff --name-only HEAD";
+    tracked = gitOutput(root, "diff --name-only HEAD");
+    untracked = gitOutput(root, "ls-files --others --exclude-standard");
+    paths = unique(normalizeRepositoryPath([splitlines(tracked); splitlines(untracked)]), ...
+        "stable");
+    paths = paths(strlength(paths) > 0);
+    if ~isempty(paths) || ~gitRefExists(root, "HEAD^")
+        return;
+    end
+    output = gitOutput(root, "diff --name-only HEAD^ HEAD");
+    paths = normalizeRepositoryPath(splitlines(output));
+    paths = paths(strlength(paths) > 0).';
+end
+
+function output = gitOutput(root, gitArguments)
+    command = "git -C " + shellQuote(root) + " " + gitArguments;
     [status, output] = system(char(command));
     if status ~= 0
         error("LabKit:TestPlan:GitInspection", ...
-            "Could not inspect changed files with git: %s", strtrim(output));
+            "Could not inspect local pre-commit changes with git: %s", strtrim(output));
     end
-    paths = normalizeRepositoryPath(splitlines(string(output)));
-    paths = paths(strlength(paths) > 0).';
+    output = string(output);
+end
+
+function tf = gitRefExists(root, reference)
+    command = "git -C " + shellQuote(root) + " rev-parse --verify --quiet " + reference;
+    [status, ~] = system(char(command));
+    tf = status == 0;
+end
+
+function value = shellQuote(value)
+    quote = string(char(34));
+    value = quote + replace(string(value), quote, "\\" + quote) + quote;
 end
 
 function value = normalizeRepositoryPath(value)
