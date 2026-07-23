@@ -118,47 +118,27 @@ function [queries, reasons, fallback] = changedQueries(paths)
 end
 
 function [queries, reasons, fallback] = queriesForChangedPath(path)
-    fallback = false;
-    parts = split(path, "/");
-    if startsWith(path, "apps/") && numel(parts) >= 6 && ...
-            startsWith(parts(4), "+") && startsWith(parts(5), "+")
-        appOwner = "apps/" + parts(2) + "/" + parts(3);
-        owner = appOwner + "/" + erase(parts(5), "+");
-        fileName = lower(parts(end));
-        if startsWith(fileName, "compute") || startsWith(fileName, "calculate") || ...
-                startsWith(fileName, "analyze")
-            queries = [query(owner, "scientific", "headless"), ...
-                query(appOwner + "/resultFiles", "result", "headless"), ...
-                query(appOwner + "/workbench", "presentation", "headless")];
-            reasons = "calculation change selects scientific, result, and presentation evidence";
-            return;
-        end
-        queries = query(owner, "source", "headless");
-        reasons = "capability source change selects its direct source evidence";
-        return;
-    end
-    if startsWith(path, "apps/") && endsWith(path, "/definition.m") && numel(parts) >= 3
-        packageName = erase(parts(end - 1), "+");
-        queries = [ ...
-            query("apps/conformance", "definition", "headless", packageName), ...
-            query("apps/conformance", "product", "hidden-gui", packageName)];
-        reasons = "App definition change selects its parameterized definition and smoke evidence";
-        return;
-    end
-    if startsWith(path, ".agents/") || path == "AGENTS.md"
-        queries = query("system/repository", "system", "headless");
-        reasons = "repository guidance change selects repository system contracts";
-        return;
-    end
     if startsWith(path, "tests/specs/")
         [folder, ~, ~] = fileparts(char(path));
         owner = extractAfter(string(folder), "tests/specs/");
         queries = query(owner, "", "");
         reasons = "changed specification selects its physical owner";
+        fallback = false;
         return;
     end
-    [queries, reasons, fallback] = fullHeadlessFallback( ...
-        "path has no bounded source-owner rule: " + path);
+    try
+        targets = labkittest.locate(path);
+        queries = arrayfun(@(target) query(target.Owner, target.Contract, ...
+            target.Environment, target.App), targets);
+        reasons = string({targets.Reason});
+        fallback = false;
+    catch exception
+        if exception.identifier ~= "LabKit:TestLocation:UnknownSource"
+            rethrow(exception)
+        end
+        [queries, reasons, fallback] = fullHeadlessFallback( ...
+            "path has no bounded source-owner rule: " + path);
+    end
 end
 
 function [queries, reasons, fallback] = fullHeadlessFallback(reason)

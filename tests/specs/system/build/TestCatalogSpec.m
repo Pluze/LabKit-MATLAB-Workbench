@@ -89,6 +89,41 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "apps/electrochem/cic/workbench"]);
         end
 
+        function locateGivesAuthorsTheExactCapabilityInsertionFolders(testCase)
+            locations = labkittest.locate( ...
+                "apps/electrochem/cic/+cic/+analysisRun/computeCIC.m");
+            root = labkittest.setup();
+
+            testCase.verifyEqual(string({locations.Owner}), [ ...
+                "apps/electrochem/cic/analysisRun", ...
+                "apps/electrochem/cic/resultFiles", ...
+                "apps/electrochem/cic/workbench"]);
+            testCase.verifyTrue(all([locations.AuthorOwned]));
+            testCase.verifyEqual(string({locations.Folder}), [ ...
+                string(fullfile(root, "tests", "specs", "apps", "electrochem", "cic", "analysisRun")), ...
+                string(fullfile(root, "tests", "specs", "apps", "electrochem", "cic", "resultFiles")), ...
+                string(fullfile(root, "tests", "specs", "apps", "electrochem", "cic", "workbench"))]);
+        end
+
+        function createSpecWritesTheRequiredMetadataAndFailingPlaceholder(testCase)
+            fixture = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            specsRoot = fullfile(fixture.Folder, "specs");
+            mkdir(specsRoot);
+
+            file = labkittest.createSpec( ...
+                "apps/electrochem/cic/+cic/+analysisRun/computeCIC.m", ...
+                "Contract", "scientific", "Name", "PulseWindow", ...
+                "SpecsRoot", specsRoot);
+            source = string(fileread(file));
+
+            testCase.verifyEqual(file, string(fullfile(specsRoot, "apps", ...
+                "electrochem", "cic", "analysisRun", "PulseWindowSpec.m")));
+            testCase.verifySubstring(source, "Contract:scientific");
+            testCase.verifySubstring(source, "Env:headless");
+            testCase.verifySubstring(source, "LabKit:TestSpec:Unimplemented");
+        end
+
         function calculationFileRejectsMissingContractEvidence(testCase)
             specsRoot = testCase.createCapabilityFixture(false);
 
@@ -144,12 +179,13 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "File", "apps/electrochem/cic/+cic/definition.m");
 
             testCase.verifyFalse(result.Fallback);
-            testCase.verifyEqual(numel(result.Descriptors), 2);
+            testCase.verifyEqual(numel(result.Descriptors), 3);
             testCase.verifyEqual(string({result.Descriptors.Id}), [ ...
                 "AppDefinitionConformanceSpec/declaresThePublicAppContract(App=cic)", ...
-                "AppSmokeConformanceSpec/launchesThroughTheSupportedDefinition(App=cic)"]);
+                "AppSmokeConformanceSpec/launchesThroughTheSupportedDefinition(App=cic)", ...
+                "AppIsolationConformanceSpec/runsFromItsIsolatedDeployableBoundary(App=cic)"]);
             testCase.verifyEqual(string({result.Descriptors.Environment}), ...
-                ["headless", "hidden-gui"]);
+                ["headless", "hidden-gui", "isolated-process"]);
         end
     end
 

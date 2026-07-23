@@ -24,13 +24,12 @@ function result = run(varargin)
         progress = labkittest.ProgressPlugin(artifacts.Folder);
         cleanup = onCleanup(@() delete(progress));
         runner.addPlugin(progress);
-        runner.addPlugin(matlab.unittest.plugins.XMLPlugin.producingJUnitFormat( ...
-            fullfile(artifacts.Folder, "junit.xml")));
         environmentCleanup = applyEnvironment(group.Environment);
         results{k} = runner.run(suite);
         clear environmentCleanup cleanup
     end
     failed = cellfun(@hasFailures, results);
+    writeJUnit(fullfile(artifacts.Folder, "junit.xml"), results);
     writeJson(fullfile(artifacts.Folder, "summary.json"), ...
         summaryPayload(compiledPlan, results, failed));
     if any(failed)
@@ -156,6 +155,60 @@ function writeJson(file, payload)
     cleanup = onCleanup(@() fclose(fid));
     fprintf(fid, "%s\n", jsonencode(payload));
     clear cleanup
+end
+
+function writeJUnit(file, results)
+    flattened = [results{:}];
+    fid = fopen(file, "w", "n", "UTF-8");
+    if fid < 0
+        error("LabKit:TestRun:ArtifactWrite", ...
+            "Could not write JUnit artifact: %s", file);
+    end
+    cleanup = onCleanup(@() fclose(fid));
+    fprintf(fid, '<?xml version="1.0" encoding="UTF-8"?>\n<testsuites>\n');
+    for k = 1:numel(flattened)
+        result = flattened(k);
+        [className, methodName] = junitNames(result.Name);
+        failed = logical(result.Failed);
+        incomplete = logical(result.Incomplete);
+        fprintf(fid, ['  <testsuite name="%s" tests="1" failures="%d" ' ...
+            'errors="%d" time="%.9g">\n'], xmlText(className), failed, ...
+            incomplete, resultSeconds(result.Duration));
+        fprintf(fid, '    <testcase classname="%s" name="%s" time="%.9g"', ...
+            xmlText(className), xmlText(methodName), resultSeconds(result.Duration));
+        if ~failed && ~incomplete
+            fprintf(fid, '/>\n');
+        elseif failed
+            fprintf(fid, '><failure message="Test failed"/></testcase>\n');
+        else
+            fprintf(fid, '><error message="Test incomplete"/></testcase>\n');
+        end
+        fprintf(fid, '  </testsuite>\n');
+    end
+    fprintf(fid, '</testsuites>\n');
+    clear cleanup
+end
+
+function [className, methodName] = junitNames(identity)
+    parts = split(string(identity), "/");
+    className = parts(1);
+    methodName = strjoin(parts(2:end), "/");
+end
+
+function value = resultSeconds(durationValue)
+    if isduration(durationValue)
+        value = seconds(durationValue);
+    else
+        value = double(durationValue);
+    end
+end
+
+function value = xmlText(value)
+    value = string(value);
+    value = replace(value, "&", "&amp;");
+    value = replace(value, string(char(34)), "&quot;");
+    value = replace(value, "<", "&lt;");
+    value = char(replace(value, ">", "&gt;"));
 end
 
 function name = sanitizedRunName(value)
