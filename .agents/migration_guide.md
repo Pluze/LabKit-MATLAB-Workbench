@@ -109,10 +109,10 @@ Branch progress measured on 2026-07-23 (not a final acceptance benchmark):
 - the legacy local `changedFast` checkpoint treated a committed new image
   specification as generic test support, selected one `project` route, and
   ran 211 headless tests in 92.14 seconds (zero failures, one skip);
-- the final complete headless profile ran 201 exact identities with zero
+- the final complete headless profile ran 202 exact identities with zero
   failures. It covers all 21 public Apps plus the `app`, `biosignal`, `dta`,
   `image`, `rhs`, and `thermal` framework facades and repository guardrails;
-- final local `changedFast` selected those same 201 identities with zero
+- final local `changedFast` selected those same 202 identities with zero
   failures after an executor change, by conservative design. A representative
   `curvature` calculation-file change selected and ran only five exact
   scientific/result/presentation identities with no fallback;

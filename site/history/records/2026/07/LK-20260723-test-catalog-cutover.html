@@ -49,14 +49,14 @@ scope: Cross-platform validation</code></pre>
 <p>This intentionally removes the unsupported legacy test folders, runner, and selector model. Contributors must use <code>tests/specs</code>, <code>labkittest</code> semantic selectors, and <code>tests/+testfixtures</code> where a synthetic input is genuinely cross-owner. No data migration is required.</p>
 <h2 id="validation">Validation</h2>
 <ul>
-<li>Catalog/build regression: 22 tests passed.</li>
+<li>Catalog/build regression: 23 tests passed.</li>
 <li>DTA, RHS, and thermal synthetic-fixture regressions: 8 tests passed.</li>
-<li>Complete headless catalog: 201 tests passed.</li>
+<li>Complete headless catalog: 202 tests passed.</li>
 <li>Documentation render and <code>docsCheck</code>: 372 generated files current.</li>
 <li>PR CI was inspected; the Windows failure is covered by the added catalog path regression and requires the updated commit to run remotely.</li>
 </ul>
 <h2 id="evidence">Evidence</h2>
-<p>The catalog writes exact identities and semantic reasons into each run's <code>plan.json</code>; the final headless <code>summary.json</code> records 201 passed identities with no failures or incomplete tests. The PR workflow independently executes headless and hidden-GUI profiles on Linux, macOS, and Windows.</p>
+<p>The catalog writes exact identities and semantic reasons into each run's <code>plan.json</code>; the final headless <code>summary.json</code> records 202 passed identities with no failures or incomplete tests. The PR workflow independently executes headless and hidden-GUI profiles on Linux, macOS, and Windows.</p>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
 <p>Hidden-GUI checks remain structural and do not replace manual validation of native dialogs, visual quality, pointer behavior, real-data suitability, or scientific interpretation. The PR must receive green cross-platform CI before merge.</p><nav class="history-sequence-nav" aria-label="Adjacent history records"><a class="history-sequence-link older" href="LK-20260722-owner-minimal-validation-routing.html"><span>Previous change</span><strong>Owner-minimal validation routing compiles canonical test groups</strong></a></nav>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

@@ -56,9 +56,9 @@ cross-owner. No data migration is required.
 
 ## Validation
 
-- Catalog/build regression: 22 tests passed.
+- Catalog/build regression: 23 tests passed.
 - DTA, RHS, and thermal synthetic-fixture regressions: 8 tests passed.
-- Complete headless catalog: 201 tests passed.
+- Complete headless catalog: 202 tests passed.
 - Documentation render and `docsCheck`: 372 generated files current.
 - PR CI was inspected; the Windows failure is covered by the added catalog
   path regression and requires the updated commit to run remotely.
@@ -66,7 +66,7 @@ cross-owner. No data migration is required.
 ## Evidence
 
 The catalog writes exact identities and semantic reasons into each run's
-`plan.json`; the final headless `summary.json` records 201 passed identities
+`plan.json`; the final headless `summary.json` records 202 passed identities
 with no failures or incomplete tests. The PR workflow independently executes
 headless and hidden-GUI profiles on Linux, macOS, and Windows.
 

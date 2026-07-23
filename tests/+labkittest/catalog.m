@@ -63,7 +63,7 @@ end
 
 function root = normalizedFolder(value)
     root = string(java.io.File(char(value)).getCanonicalPath());
-    root = replace(root, "\\", "/");
+    root = replace(root, "\", "/");
     while endsWith(root, "/")
         root = extractBefore(root, strlength(root));
     end
@@ -73,7 +73,7 @@ function root = normalizedFolder(value)
 end
 
 function owner = normalizedOwner(value)
-    owner = lower(strip(replace(string(value), "\\", "/")));
+    owner = lower(strip(replace(string(value), "\", "/")));
     if strlength(owner) == 0
         return;
     end

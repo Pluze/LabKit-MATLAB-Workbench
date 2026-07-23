@@ -260,7 +260,7 @@ function value = shellQuote(value)
 end
 
 function value = normalizeRepositoryPath(value)
-    value = strip(replace(string(value), "\\", "/"));
+    value = strip(replace(string(value), "\", "/"));
     value = value(:).';
     if any(startsWith(value, "/") | contains(value, "..") | contains(value, ":"))
         error("LabKit:TestPlan:InvalidPath", ...

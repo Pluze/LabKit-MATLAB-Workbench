@@ -135,7 +135,7 @@ function root = defaultSpecsRoot()
 end
 
 function value = normalizePath(value)
-    value = strip(replace(string(value), "\\", "/"));
+    value = strip(replace(string(value), "\", "/"));
     if strlength(value) == 0 || startsWith(value, "/") || ...
             contains(value, "..") || contains(value, ":")
         error("LabKit:TestLocation:InvalidPath", ...

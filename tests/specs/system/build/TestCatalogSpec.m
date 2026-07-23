@@ -195,6 +195,14 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "tests", "specs", "framework", "dta")));
         end
 
+        function locateNormalizesWindowsStyleRepositoryPaths(testCase)
+            location = labkittest.locate( ...
+                "apps\electrochem\cic\+cic\+analysisRun\computeCIC.m");
+
+            testCase.verifyEqual(string({location.Contract}), ...
+                ["scientific", "result", "presentation"]);
+        end
+
         function locateMapsStructuralAppRolesWithoutFileNameHeuristics(testCase)
             analysis = labkittest.locate( ...
                 "apps/electrochem/vt_resistance/+vt_resistance/+analysisRun/recomputeItems.m");
