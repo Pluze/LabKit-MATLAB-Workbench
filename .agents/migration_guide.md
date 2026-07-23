@@ -104,6 +104,22 @@ The current real CIC unit, contract, and GUI owner folders contain twelve
 tests. Discovering those scopes has a 0.285-second median; discovering the
 current calculation test file directly takes 0.049 seconds.
 
+Branch progress measured on 2026-07-23 (not a final acceptance benchmark):
+
+- the legacy local `changedFast` checkpoint treated a committed new image
+  specification as generic test support, selected one `project` route, and
+  ran 211 headless tests in 92.14 seconds (zero failures, one skip);
+- the new catalog's current complete headless profile ran 61 exact identities
+  in 17.295 seconds; its migrated framework owners are `app`, `biosignal`,
+  `dta`, `image`, `rhs`, and `thermal`;
+- `Profile="changed"` now preserves the local checkpoint contract: it includes
+  tracked and untracked working-tree paths, and on a clean worktree reports
+  the just-created commit. Temporary-repository system specs cover both paths.
+
+The new count is intentionally incomplete until every owner is migrated; this
+comparison proves removal of the legacy `project` fallback, not final suite
+coverage or a release performance claim.
+
 These measurements select owner-scoped discovery, exact in-memory
 `TestSuite` execution, parameterized conformance, pure owner/contract rules,
 and fail-on-missing-contract behavior. They reject unconditional full-catalog
