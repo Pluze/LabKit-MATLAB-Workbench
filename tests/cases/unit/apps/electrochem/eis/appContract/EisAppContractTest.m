@@ -1,5 +1,5 @@
 classdef EisAppContractTest < matlab.unittest.TestCase
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function definitionSatisfiesPublicContract(testCase), verifyAppContract(testCase, "eis"); end
     end
 end

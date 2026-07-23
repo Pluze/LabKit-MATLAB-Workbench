@@ -402,14 +402,7 @@ function scope = appSourceScope(parts)
 end
 
 function reason = appSourceReason(kind, family, slug, scope, target)
-    requested = string(kind) + "/apps/" + string(family) + "/" + ...
-        string(slug) + "/" + string(scope);
-    if string(target) == requested
-        reason = "app source change uses its deepest owning test scope";
-    else
-        reason = "app source change uses a migration fallback from " + ...
-            requested + " to " + string(target);
-    end
+    reason = "app source change uses its deepest owning test scope";
 end
 
 function suffix = suiteRunNameSuffix(suite)
