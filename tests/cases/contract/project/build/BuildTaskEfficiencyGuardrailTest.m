@@ -282,6 +282,32 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
                 "labkit_framework, or project."]);
         end
 
+        function testClassesDoNotHideMigratedTestsInPrivateBlocks(testCase)
+            root = setupLabKitTestPath();
+            files = trackedTestCaseFiles(root);
+            offenders = strings(1, 0);
+            privateBlockPattern = [ ...
+                '(?s)methods\s*\(Static,\s*Access\s*=\s*private\)' ...
+                '(.*?)(?:\n\s*methods\s*\(|\nend\s*(?:\n|$))'];
+            testMethodPattern = 'function\s+\w+\s*\(\s*testCase\b';
+            for k = 1:numel(files)
+                source = fileread(fullfile(root, extractAfter(files(k), 1)));
+                blocks = regexp(source, privateBlockPattern, 'tokens');
+                for blockIndex = 1:numel(blocks)
+                    if ~isempty(regexp(blocks{blockIndex}{1}, ...
+                            testMethodPattern, 'once'))
+                        offenders(end + 1) = files(k);
+                        break;
+                    end
+                end
+            end
+
+            testCase.verifyEmpty(offenders, ...
+                ["Test-shaped methods must remain discoverable Test methods, " + ...
+                "not dead migration copies in Static private blocks. Findings: " + ...
+                strjoin(offenders, ", ")]);
+        end
+
         function hiddenGuiTestsAvoidUiAutomationDriver(testCase)
             root = setupLabKitTestPath();
             files = trackedTestCaseFiles(root);

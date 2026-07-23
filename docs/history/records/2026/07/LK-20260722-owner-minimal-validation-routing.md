@@ -38,7 +38,8 @@ group. This keeps coverage reviewable without paying for duplicate execution.
   retaining complete contracts for renderer and policy changes.
 - Added dynamic guards for every public App's owned contracts and smoke proof,
   valid source-capability scopes, unique canonical execution, and focused
-  documentation routes.
+  documentation routes. Test classes also reject migrated test-shaped methods
+  stranded in non-discoverable static-private blocks.
 
 ## User and data impact
 
@@ -56,6 +57,8 @@ their guardrails rather than restore compatibility fallbacks.
 
 - Focused build-routing guardrails, App ownership contracts, and moved
   cross-App contracts.
+- Same-machine MATLAB R2025a before/after benchmark for a representative
+  Figure Studio source-capability change.
 - One final `buildtool changedFast` run for the completed diff.
 
 ## Evidence
@@ -63,6 +66,17 @@ their guardrails rather than restore compatibility fallbacks.
 The planner prints all semantic routes and the canonical execution count,
 including the number of repeated selections removed. The final local gate and
 CI provide the executable evidence for the exact merged diff.
+
+For a change to the Figure Studio `sourceAxes/copyToPreview` capability, the
+pre-migration planner at the retained mainline baseline selected 46 test
+executions across three runner groups: 45 unique tests plus one repeated
+isolated-path contract. Those groups took 120.396 seconds after 5.284 seconds
+of planning. The migrated planner retained four explicit semantic routes,
+selected 11 unique tests with no repeated execution, and compiled them into
+one headless and one hidden-GUI group. Those groups took 51.134 seconds after
+6.212 seconds of planning. Test execution time fell by 69.262 seconds (57.5%)
+while retaining the source-capability unit tests, the owning App's isolated
+path contract, its launch smoke test, and the relevant source-axes GUI tests.
 
 ## Known limitations and follow-up
 

@@ -39,7 +39,7 @@ scope: Test ownership</code></pre>
 <li>Removed family-root and overlap-based route suppression.</li>
 <li>Added canonical test-union compilation, deterministic feature-tagged smoke selection, direct facade-consumer routing, and safe all-smoke fallback when required feature metadata is absent.</li>
 <li>Focused ordinary App-manual, history, and library-documentation routes while retaining complete contracts for renderer and policy changes.</li>
-<li>Added dynamic guards for every public App's owned contracts and smoke proof, valid source-capability scopes, unique canonical execution, and focused documentation routes.</li>
+<li>Added dynamic guards for every public App's owned contracts and smoke proof, valid source-capability scopes, unique canonical execution, and focused documentation routes. Test classes also reject migrated test-shaped methods stranded in non-discoverable static-private blocks.</li>
 </ul>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>No App behavior, saved project, scientific result, or export changes. Local <code>changedFast</code> feedback is smaller and deterministic; CI remains the complete headless and hidden-GUI validation gate.</p>
@@ -48,10 +48,12 @@ scope: Test ownership</code></pre>
 <h2 id="validation">Validation</h2>
 <ul>
 <li>Focused build-routing guardrails, App ownership contracts, and moved cross-App contracts.</li>
+<li>Same-machine MATLAB R2025a before/after benchmark for a representative Figure Studio source-capability change.</li>
 <li>One final <code>buildtool changedFast</code> run for the completed diff.</li>
 </ul>
 <h2 id="evidence">Evidence</h2>
 <p>The planner prints all semantic routes and the canonical execution count, including the number of repeated selections removed. The final local gate and CI provide the executable evidence for the exact merged diff.</p>
+<p>For a change to the Figure Studio <code>sourceAxes/copyToPreview</code> capability, the pre-migration planner at the retained mainline baseline selected 46 test executions across three runner groups: 45 unique tests plus one repeated isolated-path contract. Those groups took 120.396 seconds after 5.284 seconds of planning. The migrated planner retained four explicit semantic routes, selected 11 unique tests with no repeated execution, and compiled them into one headless and one hidden-GUI group. Those groups took 51.134 seconds after 6.212 seconds of planning. Test execution time fell by 69.262 seconds (57.5%) while retaining the source-capability unit tests, the owning App's isolated path contract, its launch smoke test, and the relevant source-axes GUI tests.</p>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
 <p>Hidden GUI smoke tests validate bounded launch/layout behavior, not native dialogs, pointer feel, visual quality, or scientific interpretation; those remain manual review responsibilities.</p><nav class="history-sequence-nav" aria-label="Adjacent history records"><a class="history-sequence-link older" href="LK-20260722-figure-studio-image-overlay-stacking.html"><span>Previous change</span><strong>Figure Studio preserves overlays above source images</strong></a></nav>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
