@@ -15,8 +15,8 @@ tests, and the one owning manual:
 - RHS: `docs/libraries/rhs/README.md`
 - biosignal: `docs/libraries/biosignal/README.md`
 
-Framework tests live under `tests/cases/unit/labkit_framework/` and
-`tests/cases/gui/labkit_framework/`.
+Framework behavior specifications live under `tests/specs/framework/<area>/`.
+Use `labkittest.explain` to find the exact owner and contract.
 
 ## Ownership
 
