@@ -109,13 +109,15 @@ Branch progress measured on 2026-07-23 (not a final acceptance benchmark):
 - the legacy local `changedFast` checkpoint treated a committed new image
   specification as generic test support, selected one `project` route, and
   ran 211 headless tests in 92.14 seconds (zero failures, one skip);
-- the new catalog's current complete headless profile ran 110 exact identities
-  with zero failures; its migrated framework owners are `app`, `biosignal`,
+- the most recent complete headless profile ran 110 exact identities with zero
+  failures before the subsequently verified DIC Preprocess migration; its
+  migrated framework owners are `app`, `biosignal`,
   `dta`, `image`, `rhs`, and `thermal`, and its App behavior owners cover CIC,
   CSC, Chrono Overlay, EIS, VT Resistance, Gait Analysis, DIC Postprocess,
-  ECG Print, and T-test Wizard. The former 82-test/23.459-second observation
-  is superseded; record a final cross-platform wall-clock benchmark only after
-  the remaining App and repository migration is complete;
+  DIC Preprocess, ECG Print, and T-test Wizard. The former
+  82-test/23.459-second observation is superseded; record the next full count
+  and a final cross-platform wall-clock benchmark after the remaining App and
+  repository migration is complete;
 - `Profile="changed"` now preserves the local checkpoint contract: it includes
   tracked and untracked working-tree paths, and on a clean worktree reports
   the just-created commit. Temporary-repository system specs cover both paths.
