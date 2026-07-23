@@ -44,6 +44,7 @@ labkittest.explain(&quot;apps/electrochem/cic/+cic/+analysisRun/computeCIC.m&quo
 ├── apps/&lt;family&gt;/&lt;app&gt;/&lt;capability&gt;/
 ├── apps/conformance/
 └── system/&lt;area&gt;/</code></pre>
+<p><code>tests/+testfixtures/</code> contains only synthetic inputs reused by multiple specification owners. Keep an owner-specific fixture beside its specification; do not create a generic <code>shared</code>, <code>support</code>, or <code>helpers</code> test directory.</p>
 <p>Contracts describe evidence, not test cost:</p>
 <div class="table-wrap"><table><thead><tr><th>Contract</th><th>Proves</th></tr></thead><tbody><tr><td><code>scientific</code></td><td>calculations, numerical policies, and scientifically meaningful branches</td></tr><tr><td><code>source</code></td><td>source decoding, callbacks, and capability-local state transitions</td></tr><tr><td><code>state</code></td><td>durable/transient state transitions and reconstruction</td></tr><tr><td><code>persistence</code></td><td>project schema creation, validation, and migration</td></tr><tr><td><code>result</code></td><td>exports, schemas, manifests, and task identity</td></tr><tr><td><code>presentation</code></td><td>reader-facing snapshot data and declared layout semantics</td></tr><tr><td><code>definition</code> / <code>product</code></td><td>parameterized public App conformance</td></tr><tr><td><code>system</code></td><td>build, repository, CI, documentation, packaging, and release guardrails</td></tr></tbody></table></div>
 <p>Environments are <code>headless</code>, <code>hidden-gui</code>, and <code>isolated-process</code>. Headless tests do not prove GUI behavior. Hidden-GUI conformance proves that an App can build its declared layout; it does not prove native dialogs, pointer feel, visual quality, real lab data, or scientific review. The isolated-process conformance probes every public App from reset paths in one child MATLAB process, retaining the path boundary without paying one cold startup per App.</p>
@@ -75,6 +76,7 @@ coverage-html/      coverage runs only</code></pre>
 <h2 id="maintainer-rules">Maintainer Rules</h2>
 <ul>
 <li>Keep specs beside the capability that owns their behavior; tests never own a parallel product API.</li>
+<li>Keep cross-owner synthetic inputs in <code>tests/+testfixtures/</code>; keep every other test helper beside the specification that owns its behavior.</li>
 <li>Prefer direct behavioral calls over full App workflows. Add a structural GUI proof only when layout or wiring itself is the contract.</li>
 <li>Do not add legacy suite folders, stage tags, selector registries, test wrappers, runner options, or Code Analyzer suppression pragmas.</li>
 <li>Add a new public framework test API only when it is a stable product boundary. Test infrastructure stays private under <code>tests/+labkittest/</code>.</li>

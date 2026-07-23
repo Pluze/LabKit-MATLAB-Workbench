@@ -3,7 +3,7 @@ classdef CicPresentationSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function summarizesComputedAnalysisForTheWorkbench(testCase)
-            item = makeChronoFixtureItem('', 'sample.DTA');
+            item = testfixtures.makeChronoFixtureItem('', 'sample.DTA');
             item.analysis = cic.analysisRun.computeCIC(item, defaultOptions());
             choices = cic.analysisRun.analysisChoices();
 

@@ -15,6 +15,21 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "TestCatalogSpec/")));
         end
 
+        function catalogAcceptsWindowsCaseVariantsInTheSpecificationRoot(testCase)
+            if ~ispc
+                return;
+            end
+            root = labkittest.setup();
+            descriptors = labkittest.catalog( ...
+                "SpecsRoot", upper(fullfile(root, "tests", "specs")), ...
+                "Owner", "system/build", "Contract", "system", ...
+                "Environment", "headless");
+
+            testCase.verifyNotEmpty(descriptors);
+            testCase.verifyEqual(string({descriptors.Owner}), ...
+                repmat("system/build", 1, numel(descriptors)));
+        end
+
         function catalogRejectsMissingMetadata(testCase)
             specsRoot = testCase.createFixtureTree([ ...
                 "classdef ProbeSpec < matlab.unittest.TestCase", ...

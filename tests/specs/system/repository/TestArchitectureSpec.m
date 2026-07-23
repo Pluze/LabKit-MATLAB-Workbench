@@ -30,6 +30,10 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyFalse(isfile(fullfile(root, "tests", "runLabKitTests.m")) && ...
                 isfile(fullfile(root, "buildfile.m")) && ...
                 contains(text(root, "buildfile.m"), "runLabKitTests"));
+            testCase.verifyTrue(isfolder(fullfile(root, "tests", "+testfixtures")));
+            testCase.verifyFalse(isfolder(fullfile(root, "tests", "shared")));
+            testCase.verifyFalse(isfolder(fullfile(root, "tests", "cases")));
+            testCase.verifyFalse(isfolder(fullfile(root, "tests", "runner")));
         end
     end
 end

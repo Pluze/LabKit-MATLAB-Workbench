@@ -3,7 +3,7 @@ classdef CicResultSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:result', 'Env:headless'})
         function preservesResultSchemaAndUnits(testCase)
-            item = makeChronoFixtureItem('', 'chrono.DTA');
+            item = testfixtures.makeChronoFixtureItem('', 'chrono.DTA');
             item.analysis = cic.analysisRun.computeCIC(item, defaultOptions());
             failed = item;
             failed.name = 'failed.DTA';

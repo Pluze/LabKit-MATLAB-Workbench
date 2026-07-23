@@ -1,5 +1,5 @@
 function pose = syntheticGaitPose()
-%SYNTHETICGAITPOSE Return a deterministic five-point walking pose fixture.
+%SYNTHETICGAITPOSE Return a cross-owner deterministic walking-pose fixture.
 %
 % Expected callers: Gait Analysis specifications. Output has twelve frames,
 % five named points, and two complete synthetic swings. It has no side effects.

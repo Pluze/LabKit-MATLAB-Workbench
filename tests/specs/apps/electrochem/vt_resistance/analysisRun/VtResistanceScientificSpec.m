@@ -3,7 +3,7 @@ classdef VtResistanceScientificSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
         function calculatesSteadyPulseResistanceWithDeclaredPolicies(testCase)
-            item = makeChronoFixtureItem();
+            item = testfixtures.makeChronoFixtureItem();
             choices = vt_resistance.analysisRun.analysisChoices();
             options = struct("windowMode", choices.steadyWindows(1), ...
                 "voltageMode", choices.voltageModes(1), ...
@@ -22,7 +22,7 @@ classdef VtResistanceScientificSpec < matlab.unittest.TestCase
         end
 
         function recomputesSharedSettingsAndReportsInvalidCurves(testCase)
-            item = makeChronoFixtureItem();
+            item = testfixtures.makeChronoFixtureItem();
             options = struct("windowMode", "Center 60% median", ...
                 "voltageMode", "Raw Vf/I", "pulseMode", "Metadata only");
             items = repmat(item, 1, 2);

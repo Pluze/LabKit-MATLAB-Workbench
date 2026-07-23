@@ -1,5 +1,5 @@
 function writeSyntheticRhsFixture(filepath, opts)
-%WRITESYNTHETICRHSFIXTURE Write a minimal synthetic RHS fixture.
+%WRITESYNTHETICRHSFIXTURE Write a cross-owner synthetic RHS fixture.
 %
 % Expected caller: unit tests. Inputs are a destination path and optional
 % struct fields nBlocks, amplifierNames, sampleRateHz, and stimPulseSamples.

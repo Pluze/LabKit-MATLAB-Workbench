@@ -3,7 +3,7 @@ classdef CicScientificSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
         function calculatesChargeAndVoltageMetrics(testCase)
-            item = makeChronoFixtureItem();
+            item = testfixtures.makeChronoFixtureItem();
             analysis = cic.analysisRun.computeCIC(item, defaultOptions());
 
             testCase.verifyTrue(analysis.ok, analysis.message);
@@ -20,7 +20,7 @@ classdef CicScientificSpec < matlab.unittest.TestCase
         end
 
         function appliesAreaAndWaterWindowPolicy(testCase)
-            item = makeChronoFixtureItem();
+            item = testfixtures.makeChronoFixtureItem();
             options = defaultOptions();
             options.areaOverride = '2';
             options.cathLimit = -2;
@@ -35,7 +35,7 @@ classdef CicScientificSpec < matlab.unittest.TestCase
         end
 
         function reportsInvalidDataWithoutExtrapolation(testCase)
-            item = makeChronoFixtureItem();
+            item = testfixtures.makeChronoFixtureItem();
             options = defaultOptions();
             options.delay_s = 1e6;
             outside = cic.analysisRun.computeCIC(item, options);

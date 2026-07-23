@@ -1,7 +1,7 @@
 function root = setup()
 %SETUP Configure the MATLAB path required by LabKit test specifications.
 %   ROOT = labkittest.setup adds the repository root, every public App entry
-%   folder, tests, and tests/shared to the current MATLAB session. It returns
+%   folder and tests to the current MATLAB session. It returns
 %   the repository root. The function is idempotent and does not add legacy
 %   runner folders.
 %
@@ -14,7 +14,6 @@ function root = setup()
     folders = [string(root), ...
         string(fullfile(root, "apps")), ...
         string(fullfile(root, "tests")), ...
-        string(fullfile(root, "tests", "shared")), ...
         publicAppFolders(root)];
     current = string(strsplit(path, pathsep));
     folders = folders(arrayfun(@(folder) exist(folder, "dir") == 7, folders));

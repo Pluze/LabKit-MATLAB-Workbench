@@ -1,5 +1,5 @@
 function filepath = dtaFixturePath(filename)
-%DTAFIXTUREPATH Create and return a synthetic DTA fixture path.
+%DTAFIXTUREPATH Create and return a cross-owner synthetic DTA fixture path.
 
     root = fullfile(tempdir, "labkit_synthetic_dta_fixtures");
     if exist(root, "dir") ~= 7

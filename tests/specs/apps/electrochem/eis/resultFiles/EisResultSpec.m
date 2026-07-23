@@ -23,7 +23,7 @@ classdef EisResultSpec < matlab.unittest.TestCase
     methods (Static, Access = private)
         function item = canonicalItem(testCase)
             [item, status] = labkit.dta.loadFile( ...
-                dtaFixturePath("eis_potentiostatic_zcurve.DTA"), "eis");
+                testfixtures.dtaFixturePath("eis_potentiostatic_zcurve.DTA"), "eis");
             testCase.assertTrue(status.ok, status.message);
         end
     end

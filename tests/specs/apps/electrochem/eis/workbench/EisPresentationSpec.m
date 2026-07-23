@@ -6,7 +6,7 @@ classdef EisPresentationSpec < matlab.unittest.TestCase
             definition = eis.definition();
             runtime = labkit.app.internal.RuntimeFactory.createHeadless(definition);
             cleanup = onCleanup(@() runtime.close());
-            fixture = dtaFixturePath("eis_potentiostatic_zcurve.DTA");
+            fixture = testfixtures.dtaFixturePath("eis_potentiostatic_zcurve.DTA");
 
             runtime.applyFileSelection("files", string(fixture), 1);
             state = runtime.State;

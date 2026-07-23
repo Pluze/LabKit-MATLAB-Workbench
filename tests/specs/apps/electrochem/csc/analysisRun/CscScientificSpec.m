@@ -44,7 +44,7 @@ classdef CscScientificSpec < matlab.unittest.TestCase
     methods (Static, Access = private)
         function [item, curve] = referenceCurve(testCase)
             [item, status] = labkit.dta.loadFile( ...
-                dtaFixturePath("cv_cyclic_voltammetry_pt_reference.DTA"), "cvct");
+                testfixtures.dtaFixturePath("cv_cyclic_voltammetry_pt_reference.DTA"), "cvct");
             testCase.assertTrue(status.ok, status.message);
             curve = item.curves(1);
         end

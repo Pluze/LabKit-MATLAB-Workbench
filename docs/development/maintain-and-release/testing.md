@@ -59,6 +59,10 @@ tests/specs/
 └── system/<area>/
 ```
 
+`tests/+testfixtures/` contains only synthetic inputs reused by multiple
+specification owners. Keep an owner-specific fixture beside its specification;
+do not create a generic `shared`, `support`, or `helpers` test directory.
+
 Contracts describe evidence, not test cost:
 
 | Contract | Proves |
@@ -146,6 +150,8 @@ local paths, subject/device identifiers, timestamps, or proprietary metadata.
 
 - Keep specs beside the capability that owns their behavior; tests never own a
   parallel product API.
+- Keep cross-owner synthetic inputs in `tests/+testfixtures/`; keep every
+  other test helper beside the specification that owns its behavior.
 - Prefer direct behavioral calls over full App workflows. Add a structural GUI
   proof only when layout or wiring itself is the contract.
 - Do not add legacy suite folders, stage tags, selector registries, test

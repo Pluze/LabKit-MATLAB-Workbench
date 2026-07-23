@@ -1,5 +1,5 @@
 function folder = dtaFixtureDir()
-%DTAFIXTUREDIR Create and return the synthetic DTA fixture directory.
+%DTAFIXTUREDIR Create and return a cross-owner synthetic DTA fixture directory.
 
     names = [
         "chrono_chronopot_current_pulse_0p2ms.DTA"
@@ -13,8 +13,8 @@ function folder = dtaFixtureDir()
         ];
 
     for k = 1:numel(names)
-        dtaFixturePath(names(k));
+        testfixtures.dtaFixturePath(names(k));
     end
 
-    folder = fileparts(dtaFixturePath(names(1)));
+    folder = fileparts(testfixtures.dtaFixturePath(names(1)));
 end

@@ -4,7 +4,7 @@ classdef EisSourceSpec < matlab.unittest.TestCase
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function summarizesCanonicalZcurveItems(testCase)
             [item, status] = labkit.dta.loadFile( ...
-                dtaFixturePath("eis_potentiostatic_zcurve.DTA"), "eis");
+                testfixtures.dtaFixturePath("eis_potentiostatic_zcurve.DTA"), "eis");
             testCase.assertTrue(status.ok, status.message);
 
             summary = eis.sourceFiles.buildSummary(item);

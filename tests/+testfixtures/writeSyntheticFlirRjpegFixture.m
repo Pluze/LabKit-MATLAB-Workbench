@@ -1,5 +1,5 @@
 function fixture = writeSyntheticFlirRjpegFixture(filepath, opts)
-%WRITESYNTHETICFLIRRJPEGFIXTURE Write a minimal synthetic FLIR RJPEG fixture.
+%WRITESYNTHETICFLIRRJPEGFIXTURE Write a cross-owner synthetic FLIR RJPEG fixture.
 %
 % Expected caller: thermal facade and FLIR app tests. Inputs are a
 % destination path and optional struct fields raw, emissivity,

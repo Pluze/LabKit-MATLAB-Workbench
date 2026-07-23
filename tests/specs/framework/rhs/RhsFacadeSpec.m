@@ -8,8 +8,8 @@ classdef RhsFacadeSpec < matlab.unittest.TestCase
             primary = fullfile(folder, "primary.rhs");
             nested = fullfile(folder, "nested", "secondary.rhs");
             mkdir(fileparts(nested));
-            writeSyntheticRhsFixture(primary, struct("nBlocks", 2));
-            writeSyntheticRhsFixture(nested, struct("nBlocks", 1));
+            testfixtures.writeSyntheticRhsFixture(primary, struct("nBlocks", 2));
+            testfixtures.writeSyntheticRhsFixture(nested, struct("nBlocks", 1));
 
             files = labkit.rhs.findFiles(folder);
             [info, status] = labkit.rhs.inspectFile(primary);
@@ -29,7 +29,7 @@ classdef RhsFacadeSpec < matlab.unittest.TestCase
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             source = fullfile(folder, "recording.rhs");
-            writeSyntheticRhsFixture(source, struct("nBlocks", 2, ...
+            testfixtures.writeSyntheticRhsFixture(source, struct("nBlocks", 2, ...
                 "stimPulseSamples", [1, 2, 3]));
 
             [amplifier, status] = labkit.rhs.readWindow(source, struct( ...

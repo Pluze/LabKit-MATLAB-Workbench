@@ -67,6 +67,7 @@ function root = normalizedFolder(value)
     while endsWith(root, "/")
         root = extractBefore(root, strlength(root));
     end
+    root = lower(root);
 end
 
 function owner = normalizedOwner(value)
