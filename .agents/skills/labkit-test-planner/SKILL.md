@@ -47,6 +47,12 @@ Choose by execution cost as well as matched-test count. One GUI method may
 launch a real App, parse files, redraw several times, and export outputs, so it
 is not a cheap iteration test merely because the runner reports one match.
 
+`changedFast` prints semantic owner routes first, then compiles their discovered
+tests into one non-GUI and (when needed) one hidden-GUI execution group. Read
+both parts of that output: route count explains coverage; canonical count and
+duplicate removals explain actual cost. Do not reintroduce folder-overlap
+suppression to make the route list look smaller.
+
 Use this escalation order:
 
 1. pure helper or calculation test;

@@ -47,7 +47,7 @@ function terms = selectorDiscoveryTerms(values)
 end
 
 function roots = selectorSearchRoots(casesRoot, opts)
-    targets = lower(labkitNormalizeSuiteTargets(opts.Suites));
+    targets = labkitNormalizeSuiteTargets(opts.Suites);
     if isempty(targets)
         roots = string(casesRoot);
         return;
@@ -56,12 +56,15 @@ function roots = selectorSearchRoots(casesRoot, opts)
     roots = strings(1, 0);
     for k = 1:numel(targets)
         target = targets(k);
-        if target == "gui"
+        % Compare selectors case-insensitively without changing the physical
+        % folder spelling required by case-sensitive runners.
+        comparisonTarget = lower(target);
+        if comparisonTarget == "gui"
             roots(end+1) = string(fullfile(casesRoot, "gui"));
-        elseif startsWith(target, "gui/")
+        elseif startsWith(comparisonTarget, "gui/")
             roots(end+1) = string(fullfile(casesRoot, target));
-        elseif startsWith(target, "unit/") || ...
-                startsWith(target, "contract/")
+        elseif startsWith(comparisonTarget, "unit/") || ...
+                startsWith(comparisonTarget, "contract/")
             roots(end+1) = string(fullfile(casesRoot, target));
         else
             roots(end+1) = string(fullfile(casesRoot, "unit", target));

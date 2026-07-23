@@ -11,16 +11,16 @@ function steps = labkitValidationPlanForChangedPaths(root, changedPaths, varargi
 % Side effects: none. Unknown paths intentionally fall back to the full
 %   non-GUI runner selection rather than returning a narrow false signal.
 
-    mode = parseMode(varargin{:});
+    parseMode(varargin{:});
     changedPaths = normalizeChangedPaths(changedPaths);
     steps = emptyPlanSteps();
     for k = 1:numel(changedPaths)
         steps = [steps, stepsForChangedPath(root, changedPaths(k))];
     end
-    steps = compressPlanSteps(uniquePlanSteps(steps));
-    if mode == "fast"
-        steps = fastPlanSteps(steps);
-    end
+    % Keep every semantically requested route. The runner resolves the
+    % selections to canonical test identities before execution, so a broad
+    % route cannot suppress a narrower one because folder selectors overlap.
+    steps = uniquePlanSteps(steps);
 end
 
 function steps = stepsForChangedPath(root, path)
@@ -48,13 +48,13 @@ function steps = stepsForChangedPath(root, path)
         steps = planStep("project_docs", "project/docs", false, ...
             "Reason", "repository or agent guidance changed");
     elseif first == "+labkit"
-        steps = labkitPackageSteps(parts);
+        steps = labkitPackageSteps(root, parts);
     elseif first == "apps"
         steps = appSourceSteps(root, parts);
     elseif first == "tests"
         steps = testPathSteps(root, parts);
     elseif first == "docs" || first == "site"
-        steps = docPathSteps();
+        steps = docPathSteps(parts);
     elseif first == "tools"
         steps = toolPathSteps(parts);
     elseif first == ".github"
@@ -74,7 +74,7 @@ function steps = githubPathSteps(parts)
     end
 end
 
-function steps = labkitPackageSteps(parts)
+function steps = labkitPackageSteps(root, parts)
     if numel(parts) < 2
         steps = [ ...
             planStep("labkit_framework", "labkit_framework", true, ...
@@ -88,50 +88,15 @@ function steps = labkitPackageSteps(parts)
     switch packageName
         case "app"
             steps = [ ...
-                planStep("labkit_framework_ui", "labkit_framework/ui", true, ...
+                planStep("labkit_framework_ui", "labkit_framework/ui", false, ...
                 "Reason", "labkit.app change needs reusable App SDK coverage"), ...
-                planStep("gui_apps", "gui/apps", true, ...
-                "Reason", "labkit.app change can affect downstream app GUI contracts")];
-        case "dta"
-            steps = [ ...
-                planStep("labkit_framework_dta", "labkit_framework/dta", false, ...
-                "Reason", "labkit.dta change needs DTA facade coverage"), ...
-                planStep("apps_electrochem", "apps/electrochem", false, ...
-                "Reason", "DTA facade change can affect electrochem app logic"), ...
-                planStep("gui_apps_electrochem", "gui/apps/electrochem", true, ...
-                "Reason", "DTA facade change can affect electrochem GUI workflows")];
-        case "rhs"
-            steps = [ ...
-                planStep("labkit_framework_rhs", "labkit_framework/rhs", false, ...
-                "Reason", "labkit.rhs change needs RHS facade coverage"), ...
-                planStep("apps_neurophysiology", "apps/neurophysiology", false, ...
-                "Reason", "RHS facade change can affect neurophysiology app logic")];
-        case "biosignal"
-            steps = [ ...
-                planStep("labkit_framework_biosignal", "labkit_framework/biosignal", false, ...
-                "Reason", "labkit.biosignal change needs biosignal facade coverage"), ...
-                planStep("apps_wearable", "apps/wearable", false, ...
-                "Reason", "biosignal facade change can affect wearable app logic"), ...
-                planStep("apps_neurophysiology", "apps/neurophysiology", false, ...
-                "Reason", "biosignal facade change can affect neurophysiology app logic"), ...
-                planStep("gui_apps_wearable", "gui/apps/wearable", true, ...
-                "Reason", "biosignal facade change can affect wearable GUI workflows")];
-        case "image"
-            steps = [ ...
-                planStep("labkit_framework_image", "labkit_framework/image", false, ...
-                "Reason", "labkit.image change needs image facade coverage"), ...
-                planStep("apps_image_measurement", "apps/image_measurement", false, ...
-                "Reason", "image facade change can affect image-measurement app logic"), ...
-                planStep("gui_apps_image_measurement", "gui/apps/image_measurement", true, ...
-                "Reason", "image facade change can affect image-measurement GUI workflows")];
-        case "thermal"
-            steps = [ ...
-                planStep("labkit_framework_thermal", "labkit_framework/thermal", false, ...
-                "Reason", "labkit.thermal change needs thermal facade coverage"), ...
-                planStep("apps_image_measurement", "apps/image_measurement", false, ...
-                "Reason", "thermal facade change can affect image-measurement app logic"), ...
-                planStep("gui_apps_image_measurement", "gui/apps/image_measurement", true, ...
-                "Reason", "thermal facade change can affect image-measurement GUI workflows")];
+                planStep("gui_labkit_framework_ui", "gui/labkit_framework/ui", true, ...
+                "Tests", [uiRepresentativeTests(), uiGestureRepresentativeTests()], ...
+                "Reason", "labkit.app change needs representative UI GUI coverage"), ...
+                allAppContractStep(root), ...
+                allAppSmokeStep(root)];
+        case {"dta", "rhs", "biosignal", "image", "thermal"}
+            steps = leafFacadeSteps(root, packageName);
         otherwise
             steps = [ ...
                 planStep("labkit_framework", "labkit_framework", true, ...
@@ -141,30 +106,134 @@ function steps = labkitPackageSteps(parts)
     end
 end
 
+function step = allAppContractStep(root)
+    step = planStep("apps_app_contracts", "unit/apps", false, ...
+        "Tests", appOwnerTestNames(root, "unit", "appContract"), ...
+        "Reason", "universal App SDK change needs every App public contract");
+end
+
+function step = allAppSmokeStep(root)
+    [tests, fallback] = labkitAppSmokeFeatureTests(root, "app-layout");
+    reason = "universal App SDK change needs the minimum smoke feature closure";
+    if fallback
+        reason = reason + "; missing route-feature metadata selects every App smoke";
+    end
+    step = planStep("gui_apps_smoke", "gui/apps", true, ...
+        "Tests", tests, ...
+        "Reason", reason);
+end
+
+function names = appOwnerTestNames(root, kind, scope)
+    entries = dir(fullfile(root, "tests", "cases", kind, "apps", ...
+        "**", scope, "*Test.m"));
+    names = strings(1, numel(entries));
+    for k = 1:numel(entries)
+        [~, names(k)] = fileparts(entries(k).name);
+    end
+    names = unique(names, "stable");
+end
+
+function steps = leafFacadeSteps(root, area)
+    area = string(area);
+    steps = planStep("labkit_framework_" + area, ...
+        "labkit_framework/" + area, false, ...
+        "Reason", "leaf facade change needs its direct framework coverage");
+    consumers = facadeConsumers(root, area);
+    for k = 1:numel(consumers)
+        family = consumers(k).family;
+        slug = consumers(k).slug;
+        scope = consumers(k).scope;
+        unitTarget = appExactTestSuiteTarget(root, "unit", family, slug, scope);
+        if ~isempty(unitTarget)
+            steps(end + 1) = planStep(suiteRunNameSuffix(unitTarget), ...
+                unitTarget, false, ...
+                "Reason", "leaf facade change reaches a direct App capability consumer");
+        end
+        contractTarget = appExactTestSuiteTarget( ...
+            root, "contract", family, slug, "isolatedPath");
+        if ~isempty(contractTarget)
+            steps(end + 1) = planStep(suiteRunNameSuffix(contractTarget), ...
+                contractTarget, false, ...
+                "Reason", "leaf facade change keeps each direct consumer isolated");
+        end
+        smokeTarget = appExactTestSuiteTarget(root, "gui", family, slug, "smoke");
+        if ~isempty(smokeTarget)
+            steps(end + 1) = planStep(suiteRunNameSuffix(smokeTarget), ...
+                smokeTarget, true, ...
+                "Reason", "leaf facade change keeps each direct consumer smoke proof");
+        end
+    end
+end
+
+function consumers = facadeConsumers(root, area)
+    files = dir(fullfile(root, "apps", "**", "*.m"));
+    consumers = repmat(struct("family", "", "slug", "", "scope", ""), 1, 0);
+    marker = "labkit." + string(area) + ".";
+    appsRoot = string(fullfile(root, "apps")) + filesep;
+    for k = 1:numel(files)
+        filePath = string(fullfile(files(k).folder, files(k).name));
+        if ~contains(string(fileread(filePath)), marker)
+            continue;
+        end
+        relative = extractAfter(filePath, strlength(appsRoot));
+        pieces = split(replace(relative, filesep, "/"), "/");
+        if numel(pieces) < 4 || ~startsWith(pieces(3), "+")
+            continue;
+        end
+        scope = "appContract";
+        if numel(pieces) >= 4 && startsWith(pieces(4), "+")
+            scope = erase(pieces(4), "+");
+        end
+        candidate = struct("family", pieces(1), "slug", pieces(2), ...
+            "scope", scope);
+        if ~any(arrayfun(@(item) item.family == candidate.family && ...
+                item.slug == candidate.slug && item.scope == candidate.scope, consumers))
+            consumers(end + 1) = candidate;
+        end
+    end
+end
+
 function steps = appSourceSteps(root, parts)
-    isolationStep = planStep("apps_isolated_contract", "contract/apps", false, ...
-        "Tests", "publicAppsLoadContractsAndDebugSamplesOnOwningPath", ...
-        "Reason", "app source change must remain runnable without sibling App paths");
     if numel(parts) < 2
         steps = [ ...
-            planStep("apps", "apps", false, ...
+            planStep("unit_apps", "unit/apps", false, ...
             "Reason", "broad app source change needs app logic coverage"), ...
             planStep("gui_apps", "gui/apps", true, ...
             "Reason", "broad app source change can affect app GUI workflows"), ...
-            isolationStep];
+            planStep("apps_isolated_contract", "contract/apps", false, ...
+            "Reason", "broad app source change needs every owned isolated-path contract")];
         return;
     end
 
     family = parts(2);
-    steps = [ ...
-        planStep("apps_" + safeRunNamePart(family), ...
-            "apps/" + family, false, ...
-            "Reason", "app source change needs owning app-family logic coverage"), ...
-        isolationStep];
-    guiTarget = appGuiSuiteTarget(root, family, appSlug(parts));
-    if strlength(guiTarget) > 0
+    slug = appSlug(parts);
+    scope = appSourceScope(parts);
+    isolationTarget = appExactTestSuiteTarget( ...
+        root, "contract", family, slug, "isolatedPath");
+    if isempty(isolationTarget)
+        isolationStep = planStep("apps_isolated_contract", "contract/apps", false, ...
+            "Reason", "app source change cannot resolve an owned isolated-path contract");
+    else
+        isolationStep = planStep(suiteRunNameSuffix(isolationTarget), ...
+            isolationTarget, false, ...
+            "Reason", "app source change keeps its owning isolated-path contract");
+    end
+    unitTarget = appTestSuiteTarget(root, "unit", family, slug, scope);
+    steps = isolationStep;
+    if ~isempty(unitTarget)
+        steps = [planStep(suiteRunNameSuffix(unitTarget), unitTarget, false, ...
+            "Reason", appSourceReason("unit", family, slug, scope, unitTarget)), ...
+            steps];
+    end
+    guiTarget = appTestSuiteTarget(root, "gui", family, slug, scope);
+    if ~isempty(guiTarget)
         steps = [steps, planStep(suiteRunNameSuffix(guiTarget), guiTarget, true, ...
-            "Reason", "app source change has matching GUI coverage")];
+            "Reason", appSourceReason("gui", family, slug, scope, guiTarget))];
+    end
+    smokeTarget = appExactTestSuiteTarget(root, "gui", family, slug, "smoke");
+    if ~isempty(smokeTarget) && ~any(guiTarget == smokeTarget)
+        steps = [steps, planStep(suiteRunNameSuffix(smokeTarget), smokeTarget, true, ...
+            "Reason", "app source change keeps the owning App smoke proof")];
     end
 end
 
@@ -189,9 +258,30 @@ function steps = testPathSteps(root, parts)
     end
 end
 
-function steps = docPathSteps()
+function steps = docPathSteps(parts)
+    tests = strings(1, 0);
+    reason = "documentation change needs documentation guardrails";
+    if parts(1) == "docs" && numel(parts) >= 2
+        switch parts(2)
+            case "apps"
+                tests = [ ...
+                    "AppDocumentationGuardrailTest", ...
+                    "ProjectDocumentationGuardrailTest/markedAppManualExamplesExecute"];
+                reason = "App documentation change needs App manual contracts";
+            case "history"
+                tests = [ ...
+                    "DocumentationRendererRegressionTest/historyUsesOneTimelineForEveryEra", ...
+                    "DocumentationRendererRegressionTest/historyRecordsLinkAdjacentSequenceAtPageEnd", ...
+                    "ProjectDocumentationGuardrailTest/historyRecordsDoNotUseEmptyNormalizationBoilerplate"];
+                reason = "history documentation change needs focused history contracts";
+            case "libraries"
+                tests = "LibraryDocumentationGuardrailTest";
+                reason = "library documentation change needs library reference contracts";
+        end
+    end
     steps = planStep("project_docs", "project/docs", false, ...
-        "Reason", "human documentation changed");
+        "Tests", tests, ...
+        "Reason", reason);
 end
 
 function steps = toolPathSteps(parts)
@@ -290,25 +380,80 @@ function slug = appSlug(parts)
     end
 end
 
-function target = appGuiSuiteTarget(root, family, slug)
+function target = appTestSuiteTarget(root, kind, family, slug, scope)
+    kind = string(kind);
     family = string(family);
     slug = string(slug);
+    scope = string(scope);
 
-    if strlength(slug) > 0
-        appFolder = fullfile(root, "tests", "cases", "gui", "apps", ...
-            family, slug);
-        if exist(appFolder, "dir") == 7
-            target = "gui/apps/" + family + "/" + slug;
+    if strlength(slug) == 0
+        familyFolder = fullfile(root, "tests", "cases", kind, "apps", family);
+        if exist(familyFolder, "dir") == 7
+            target = kind + "/apps/" + family;
+        else
+            target = strings(1, 0);
+        end
+        return;
+    end
+
+    if strlength(scope) > 0
+        scopeFolder = fullfile(root, "tests", "cases", kind, "apps", ...
+            family, slug, scope);
+        if exist(scopeFolder, "dir") == 7
+            target = kind + "/apps/" + family + "/" + slug + "/" + scope;
             return;
         end
     end
 
-    appFamilyFolder = fullfile(root, "tests", "cases", "gui", "apps", family);
+    if ismember(kind, ["unit", "gui"])
+        target = strings(1, 0);
+        return;
+    end
+
+    appFolder = fullfile(root, "tests", "cases", kind, "apps", family, slug);
+    if exist(appFolder, "dir") == 7
+        target = kind + "/apps/" + family + "/" + slug;
+        return;
+    end
+
+    appFamilyFolder = fullfile(root, "tests", "cases", kind, "apps", family);
     if exist(appFamilyFolder, "dir") == 7
-        target = "gui/apps/" + family;
+        target = kind + "/apps/" + family;
     else
         target = strings(1, 0);
     end
+end
+
+function target = appExactTestSuiteTarget(root, kind, family, slug, scope)
+    kind = string(kind);
+    family = string(family);
+    slug = string(slug);
+    scope = string(scope);
+    folder = fullfile(root, "tests", "cases", kind, "apps", ...
+        family, slug, scope);
+    if exist(folder, "dir") == 7
+        target = kind + "/apps/" + family + "/" + slug + "/" + scope;
+    else
+        target = strings(1, 0);
+    end
+end
+
+function scope = appSourceScope(parts)
+    scope = "appContract";
+    if numel(parts) < 5
+        return;
+    end
+
+    candidate = string(parts(5));
+    if candidate == "+workbench"
+        scope = "workbench";
+    elseif startsWith(candidate, "+")
+        scope = erase(candidate, "+");
+    end
+end
+
+function reason = appSourceReason(kind, family, slug, scope, target)
+    reason = "app source change uses its deepest owning test scope";
 end
 
 function suffix = suiteRunNameSuffix(suite)
@@ -349,68 +494,14 @@ function step = planStep(runNameSuffix, suites, includeGui, varargin)
         "Reason", reason);
 end
 
-function steps = fastPlanSteps(steps)
-    fastSteps = emptyPlanSteps();
-    for k = 1:numel(steps)
-        fastSteps = [fastSteps, fastStepForPlanStep(steps(k))];
-    end
-    steps = compressPlanSteps(uniquePlanSteps(fastSteps));
-end
-
-function steps = fastStepForPlanStep(step)
-    suites = normalizeTextList(step.Suites);
-    if ~step.IncludeGui || isempty(suites)
-        steps = step;
-        return;
-    end
-
-    if any(suites == "labkit_framework/ui")
-        steps = [ ...
-            planStep("labkit_framework_ui", "labkit_framework/ui", false, ...
-            "Reason", "fast UI route keeps reusable UI non-GUI coverage"), ...
-            planStep("gui_labkit_framework_ui_representative", ...
-            "gui/labkit_framework/ui", true, ...
-            "Tests", [fastUiRepresentativeTests(), fastUiGestureRepresentativeTests()], ...
-            "Reason", "fast UI route uses representative UI GUI and gesture contracts")];
-    elseif any(suites == "gui")
-        steps = planStep("gui_representative", ...
-            ["gui/labkit_framework/ui", ...
-            "gui/apps/image_measurement/image_enhance", ...
-            "gui/apps/image_measurement/batch_crop"], true, ...
-            "Tests", fastGuiRepresentativeTests(), ...
-            "Reason", "fast GUI route uses representative UI and app workflows");
-    elseif any(suites == "gui/apps")
-        steps = planStep("gui_apps_representative", ...
-            ["gui/apps/image_measurement/image_enhance", ...
-            "gui/apps/image_measurement/batch_crop"], true, ...
-            "Tests", fastRepresentativeAppGuiTests(), ...
-            "Reason", "fast app-GUI route uses representative downstream workflows");
-    else
-        steps = step;
-    end
-end
-
-function tests = fastGuiRepresentativeTests()
-    tests = [ ...
-        fastRepresentativeAppGuiTests(), ...
-        fastUiRepresentativeTests(), ...
-        fastUiGestureRepresentativeTests()];
-end
-
-function tests = fastRepresentativeAppGuiTests()
-    tests = [ ...
-        "image_enhance_workflow_applies_tool_and_exports", ...
-        "cropTasksCenterAndExportSyntheticImages"];
-end
-
-function tests = fastUiRepresentativeTests()
+function tests = uiRepresentativeTests()
     tests = [ ...
         "reconcilesChronoLikeSemanticTree", ...
         "nativeCallbacksUseTypedRuntimeEntrypoints", ...
         "replacesChoicesWhenCurrentValueDisappears"];
 end
 
-function tests = fastUiGestureRepresentativeTests()
+function tests = uiGestureRepresentativeTests()
     tests = "reconcilesManagedRectangleAndDispatchesDirectCallback";
 end
 
@@ -448,122 +539,6 @@ function steps = uniquePlanSteps(steps)
         keep(k) = ~any(signatures(1:k-1) == signatures(k));
     end
     steps = steps(keep);
-end
-
-function steps = compressPlanSteps(steps)
-    if isempty(steps)
-        return;
-    end
-
-    keep = true(1, numel(steps));
-    for k = 1:numel(steps)
-        for j = 1:numel(steps)
-            if k == j || ~keep(k)
-                continue;
-            end
-            if stepCovers(steps(j), steps(k))
-                keep(k) = false;
-            end
-        end
-    end
-    steps = steps(keep);
-end
-
-function tf = stepCovers(candidate, step)
-    if stepSignature(candidate) == stepSignature(step)
-        tf = true;
-        return;
-    end
-
-    if candidate.IncludeGui ~= step.IncludeGui
-        tf = false;
-        return;
-    end
-    if ~testsCover(candidate, step)
-        tf = false;
-        return;
-    end
-    if ~filesCover(candidate, step)
-        tf = false;
-        return;
-    end
-
-    candidateSuites = normalizeTextList(candidate.Suites);
-    stepSuites = normalizeTextList(step.Suites);
-    if isempty(stepSuites) && ~isempty(step.Files)
-        tf = true;
-        return;
-    end
-    if isempty(candidateSuites)
-        tf = ~step.IncludeGui;
-        return;
-    end
-    if isempty(stepSuites)
-        tf = false;
-        return;
-    end
-
-    tf = true;
-    for k = 1:numel(stepSuites)
-        tf = tf && suiteCoveredByAny(candidateSuites, stepSuites(k));
-    end
-end
-
-function tf = filesCover(candidate, step)
-    candidateFiles = normalizeTextList(candidate.Files);
-    stepFiles = normalizeTextList(step.Files);
-    if isempty(candidateFiles)
-        if isempty(stepFiles)
-            tf = true;
-            return;
-        end
-        candidateSuites = normalizeTextList(candidate.Suites);
-        if isempty(candidateSuites)
-            tf = ~candidate.IncludeGui;
-            return;
-        end
-        tf = all(arrayfun(@(file) fileCoveredBySuites( ...
-            candidateSuites, file), stepFiles));
-    elseif isempty(stepFiles)
-        tf = false;
-    else
-        tf = all(ismember(stepFiles, candidateFiles));
-    end
-end
-
-function tf = fileCoveredBySuites(suites, file)
-    folder = replace(string(fileparts(char(file))), "\", "/");
-    folder = eraseLeadingPrefix(folder, "tests/cases/");
-    folder = eraseLeadingPrefix(folder, "unit/");
-    folder = eraseLeadingPrefix(folder, "contract/");
-    tf = suiteCoveredByAny(suites, folder);
-end
-
-function value = eraseLeadingPrefix(value, prefix)
-    if startsWith(value, prefix)
-        value = extractAfter(value, strlength(prefix));
-    end
-end
-
-function tf = testsCover(candidate, step)
-    candidateTests = normalizeTextList(candidate.Tests);
-    stepTests = normalizeTextList(step.Tests);
-    if isempty(candidateTests)
-        tf = true;
-    elseif isempty(stepTests)
-        tf = false;
-    else
-        tf = all(ismember(stepTests, candidateTests));
-    end
-end
-
-function tf = suiteCoveredByAny(candidateSuites, target)
-    tf = false;
-    target = string(target);
-    for k = 1:numel(candidateSuites)
-        candidate = string(candidateSuites(k));
-        tf = tf || target == candidate || startsWith(target, candidate + "/");
-    end
 end
 
 function signature = stepSignature(step)
