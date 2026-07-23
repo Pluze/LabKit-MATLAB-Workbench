@@ -96,6 +96,36 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "File", "apps/electrochem/cic/+cic/+analysisRun/computeCIC.m", ...
                 "SpecsRoot", specsRoot), "LabKit:TestPlan:MissingContract");
         end
+
+        function changedProfileCombinesSemanticClosuresWithoutDuplicates(testCase)
+            specsRoot = testCase.createCapabilityFixture(true);
+            repositoryOwner = fullfile(specsRoot, "system", "repository");
+            mkdir(repositoryOwner);
+            testCase.writeSpec(repositoryOwner, "RepositoryPolicySpec", "system");
+
+            result = labkittest.plan("Profile", "changed", ...
+                "ChangedPaths", [ ...
+                "apps/electrochem/cic/+cic/+analysisRun/computeCIC.m", ...
+                ".agents/migration_guide.md"], ...
+                "SpecsRoot", specsRoot);
+
+            testCase.verifyFalse(result.Fallback);
+            testCase.verifyEqual(string({result.Descriptors.Contracts}), ...
+                ["scientific", "result", "presentation", "system"]);
+            testCase.verifyEqual(numel(unique(string({result.Descriptors.Id}))), 4);
+        end
+
+        function unknownChangedPathWidensToEveryHeadlessSpec(testCase)
+            specsRoot = testCase.createCapabilityFixture(true);
+
+            result = labkittest.plan("Profile", "changed", ...
+                "ChangedPaths", "unmapped-policy.txt", "SpecsRoot", specsRoot);
+
+            testCase.verifyTrue(result.Fallback);
+            testCase.verifyEqual(numel(result.Descriptors), 3);
+            testCase.verifyTrue(all(startsWith(result.Reasons, ...
+                "conservative fallback:")));
+        end
     end
 
     methods (Access = private)
