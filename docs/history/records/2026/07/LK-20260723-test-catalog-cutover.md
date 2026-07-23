@@ -60,8 +60,9 @@ cross-owner. No data migration is required.
 - DTA, RHS, and thermal synthetic-fixture regressions: 8 tests passed.
 - Complete headless catalog: 202 tests passed.
 - Documentation render and `docsCheck`: 372 generated files current.
-- PR CI was inspected; the Windows failure is covered by the added catalog
-  path regression and requires the updated commit to run remotely.
+- PR CI was inspected; Windows separator handling and the shell-sensitive
+  clean-checkpoint revision syntax are covered by catalog regressions and
+  require the updated commit to run remotely.
 
 ## Evidence
 

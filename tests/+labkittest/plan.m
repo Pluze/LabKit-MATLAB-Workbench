@@ -230,10 +230,10 @@ function paths = gitChangedPaths(root)
     paths = unique(normalizeRepositoryPath([splitlines(tracked); splitlines(untracked)]), ...
         "stable");
     paths = paths(strlength(paths) > 0);
-    if ~isempty(paths) || ~gitRefExists(root, "HEAD^")
+    if ~isempty(paths) || ~gitRefExists(root, "HEAD~1")
         return;
     end
-    output = gitOutput(root, "diff --name-only HEAD^ HEAD");
+    output = gitOutput(root, "diff --name-only HEAD~1 HEAD");
     paths = normalizeRepositoryPath(splitlines(output));
     paths = paths(strlength(paths) > 0).';
 end
