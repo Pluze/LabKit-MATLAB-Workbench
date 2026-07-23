@@ -296,7 +296,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "AppDefinitionConformanceSpec/declaresThePublicAppContract")));
         end
 
-        function definitionFileSelectsOnlyItsParameterizedIdentity(testCase)
+        function definitionFileSelectsItsCompleteConformanceEvidence(testCase)
             result = labkittest.plan( ...
                 "File", "apps/electrochem/cic/+cic/definition.m");
 
@@ -305,7 +305,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string({result.Descriptors.Id}), [ ...
                 "AppDefinitionConformanceSpec/declaresThePublicAppContract(App=cic)", ...
                 "AppSmokeConformanceSpec/launchesThroughTheSupportedDefinition(App=cic)", ...
-                "AppIsolationConformanceSpec/runsFromItsIsolatedDeployableBoundary(App=cic)"]);
+                "AppIsolationConformanceSpec/verifiesEveryPublicAppFromAResetPathBoundary"]);
             testCase.verifyEqual(string({result.Descriptors.Environment}), ...
                 ["headless", "hidden-gui", "isolated-process"]);
         end

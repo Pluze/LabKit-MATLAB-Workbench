@@ -1,13 +1,10 @@
 classdef AppIsolationConformanceSpec < matlab.unittest.TestCase
-    %APPISOLATIONCONFORMANCESPEC Verify each App without sibling App paths.
-
-    properties (TestParameter)
-        App = labkittest.publicApps()
-    end
+    %APPISOLATIONCONFORMANCESPEC Verify Apps without sibling App paths.
 
     methods (Test, TestTags = {'Contract:product', 'Env:isolated-process'})
-        function runsFromItsIsolatedDeployableBoundary(testCase, App)
-            [status, output] = labkittest.runIsolatedAppProbe(App);
+        function verifiesEveryPublicAppFromAResetPathBoundary(testCase)
+            [status, output] = labkittest.runIsolatedAppProbes( ...
+                labkittest.publicApps());
 
             testCase.verifyEqual(status, 0, string(output));
         end
