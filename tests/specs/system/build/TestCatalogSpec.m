@@ -138,6 +138,16 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyTrue(all(contains(string({descriptors.Id}), ...
                 "AppDefinitionConformanceSpec/declaresThePublicAppContract")));
         end
+
+        function definitionFileSelectsOnlyItsParameterizedIdentity(testCase)
+            result = labkittest.plan( ...
+                "File", "apps/electrochem/cic/+cic/definition.m");
+
+            testCase.verifyFalse(result.Fallback);
+            testCase.verifyEqual(numel(result.Descriptors), 1);
+            testCase.verifyEqual(result.Descriptors.Id, ...
+                "AppDefinitionConformanceSpec/declaresThePublicAppContract(App=cic)");
+        end
     end
 
     methods (Access = private)

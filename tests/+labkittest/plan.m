@@ -138,10 +138,9 @@ function [queries, reasons, fallback] = queriesForChangedPath(path)
         return;
     end
     if startsWith(path, "apps/") && endsWith(path, "/definition.m") && numel(parts) >= 3
-        owner = "apps/" + parts(2) + "/" + parts(3) + "/product";
-        queries = [query(owner, "definition", "headless"), ...
-            query(owner, "definition", "hidden-gui")];
-        reasons = "App definition change selects definition and structural evidence";
+        packageName = erase(parts(end - 1), "+");
+        queries = query("apps/conformance", "definition", "headless", packageName);
+        reasons = "App definition change selects its parameterized definition evidence";
         return;
     end
     if startsWith(path, ".agents/") || path == "AGENTS.md"
@@ -183,6 +182,10 @@ function descriptors = descriptorsForQueries(opts, queries)
                 rethrow(exception)
             end
         end
+        if strlength(current.App) > 0
+            selected = selected(contains(string({selected.Id}), ...
+                "(App=" + current.App + ")"));
+        end
         if isempty(selected)
             error("LabKit:TestPlan:MissingContract", ...
                 "Required evidence is missing for owner=%s contract=%s environment=%s.", ...
@@ -209,9 +212,12 @@ function groups = executionGroups(descriptors)
     end
 end
 
-function value = query(owner, contract, environment)
+function value = query(owner, contract, environment, app)
+    if nargin < 4
+        app = "";
+    end
     value = struct("Owner", string(owner), "Contract", string(contract), ...
-        "Environment", string(environment));
+        "Environment", string(environment), "App", string(app));
 end
 
 function value = emptyQuery()
