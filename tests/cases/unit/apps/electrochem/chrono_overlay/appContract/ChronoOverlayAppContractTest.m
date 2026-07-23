@@ -1,0 +1,5 @@
+classdef ChronoOverlayAppContractTest < matlab.unittest.TestCase
+    methods (Test)
+        function definitionSatisfiesPublicContract(testCase), verifyAppContract(testCase, "chrono_overlay"); end
+    end
+end

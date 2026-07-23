@@ -332,7 +332,7 @@ function target = appTestSuiteTarget(root, kind, family, slug, scope)
         end
     end
 
-    if kind == "gui"
+    if ismember(kind, ["unit", "gui"])
         target = strings(1, 0);
         return;
     end
