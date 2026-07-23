@@ -18,6 +18,15 @@ function targets = locate(file, varargin)
 
     opts = parseOptions(file, varargin{:});
     parts = split(opts.File, "/");
+    if startsWith(opts.File, "+labkit/") && numel(parts) >= 2 && ...
+            startsWith(parts(2), "+")
+        area = erase(parts(2), "+");
+        if ismember(area, ["app", "biosignal", "dta", "image", "rhs", "thermal"])
+            targets = target(opts.SpecsRoot, "framework/" + area, "source", ...
+                "headless", "", true, "direct public facade behavior");
+            return;
+        end
+    end
     if startsWith(opts.File, "apps/") && numel(parts) >= 6 && ...
             startsWith(parts(4), "+") && startsWith(parts(5), "+")
         appOwner = "apps/" + parts(2) + "/" + parts(3);

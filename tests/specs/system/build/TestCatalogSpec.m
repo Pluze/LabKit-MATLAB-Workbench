@@ -129,6 +129,17 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 string(fullfile(root, "tests", "specs", "apps", "electrochem", "cic", "workbench"))]);
         end
 
+        function locateMapsPublicFrameworkFacadeToItsOwner(testCase)
+            location = labkittest.locate("+labkit/+dta/loadFile.m");
+            root = labkittest.setup();
+
+            testCase.verifyEqual(location.Owner, "framework/dta");
+            testCase.verifyEqual(location.Contract, "source");
+            testCase.verifyEqual(location.Environment, "headless");
+            testCase.verifyEqual(location.Folder, string(fullfile(root, ...
+                "tests", "specs", "framework", "dta")));
+        end
+
         function createSpecWritesTheRequiredMetadataAndFailingPlaceholder(testCase)
             fixture = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture);
