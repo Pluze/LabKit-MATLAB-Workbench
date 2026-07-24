@@ -86,12 +86,16 @@ GUI workflow is not considered covered by a launch smoke test.
 | T-test Wizard | input table, layered labels, Welch/pooled/paired/directional/error statistics, project migration, CSV result schema, generic semantic layout | Covered: direct source, run, persistence, result, and structural specs replace the legacy core/layout wrappers. |
 | ECG Print | input controls, signal products, migration, result/presentation, bounded load/analyze/four-plot/export/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
 
-Repository guardrails are a separate parity inventory: version, dependency,
-documentation, release, package-boundary, sensitive-data, and launcher rules
-were deleted with no executable successor found. Each old guardrail must be
-classified as retained elsewhere, rewritten as public-behavior evidence, or
-explicitly retired with rationale; restoring private implementation-text scans
-is not acceptable.
+Repository guardrails are now classified as follows. Sensitive-data hygiene is
+retained as a platform-independent tracked-text contract (home/drive paths and
+sample timestamps). App/package ownership and launcher conformance are retained
+through `TestCatalogSpec`, public-App source routing, definition conformance,
+and isolated-process evidence. Public help and rendered documentation remain
+validated by the dedicated docs build/check tasks. Release/version, dependency,
+magic-number, rectangle-geometry, and Code Analyzer implementation scans are
+explicitly retired: their old private-text heuristics do not prove a public
+contract and conflict with the current ownership/metadata model. Their durable
+rules live in `AGENTS.md`, version metadata, public help, and release workflow.
 
 #### ManualChecks trial
 
