@@ -41,5 +41,28 @@ classdef CscResultSpec < matlab.unittest.TestCase
             testCase.verifyEqual(rows.CurveIndex, 0);
             testCase.verifyEqual(rows.Status, "No curve found");
         end
+
+        function keepsOnlyMiddleCyclesAndExportsVoltageCurrentColumns(testCase)
+            [item, status] = labkit.dta.loadFile( ...
+                testfixtures.dtaFixturePath("cv_cyclic_voltammetry_4cycle.DTA"), "cvct");
+            testCase.assertTrue(status.ok, status.message);
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            destination = fullfile(folder, "voltage-current.csv");
+
+            rows = csc.resultFiles.buildResultsTable(item, struct( ...
+                "area_cm2", "1", "ignoreEdgeCycles", true));
+            [ok, message, info] = csc.resultFiles.writeVoltageCurrentCSV(item, ...
+                destination, struct("ignoreEdgeCycles", true));
+            csv = readcell(destination);
+
+            testCase.verifyEqual(rows.CurveIndex(:).', [2 3]);
+            testCase.verifyTrue(ok, message);
+            testCase.verifyEqual(numel(info.files), 1);
+            testCase.verifyEqual(string(csv{1, 1}), "Potential_V");
+            testCase.verifySize(csv, [size(csv, 1), 5]);
+            testCase.verifySubstring(string(csv{1, 2}), "Cycle2_Current_A");
+            testCase.verifySubstring(string(csv{1, 4}), "Cycle3_Current_A");
+        end
     end
 end
