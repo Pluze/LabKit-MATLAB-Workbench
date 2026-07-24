@@ -224,7 +224,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual([presentation.Owner, presentation.Contract], ...
                 ["apps/electrochem/vt_resistance/workbench", "presentation"]);
             testCase.verifyEqual(string({layout.Contract}), ["presentation", "product"]);
-            testCase.verifyEqual(string({layout.Environment}), ["headless", "hidden-gui"]);
+            testCase.verifyEqual(string({layout.Environment}), ["", "hidden-gui"]);
             testCase.verifyEqual([project.Owner, project.Contract], ...
                 ["apps/electrochem/vt_resistance/project", "persistence"]);
             testCase.verifyEqual([session.Owner, session.Contract], ...
@@ -263,6 +263,15 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(numel(result.ManualChecks), 1);
             testCase.verifySubstring(result.ManualChecks, "Open vt_resistance");
             testCase.verifySubstring(result.ManualChecks, "pointer interaction");
+        end
+
+        function workbenchChangesSelectEveryDeclaredPresentationEnvironment(testCase)
+            result = labkittest.plan("File", ...
+                "apps/image_measurement/image_match/+image_match/+workbench/buildLayout.m");
+
+            imageMatch = contains(string({result.Descriptors.Id}), "ImageMatch");
+            testCase.verifyEqual(string({result.Descriptors(imageMatch).Environment}), ...
+                ["headless", "headless", "hidden-gui"]);
         end
 
         function lowerLevelChangesDoNotAcquireGenericManualChecks(testCase)
