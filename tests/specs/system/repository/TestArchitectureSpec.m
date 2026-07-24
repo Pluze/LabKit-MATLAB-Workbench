@@ -6,13 +6,20 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             root = labkittest.setup();
             build = text(root, "buildfile.m");
             guide = text(root, "docs/development/maintain-and-release/testing.md");
-            skill = text(root, ".agents/skills/labkit-test-planner/SKILL.md");
             testsGuide = text(root, "tests/AGENTS.md");
+            migrationGuide = text(root, ".agents/migration_guide.md");
+            skillFiles = activeSkillFiles(root, "labkit-test-planner");
 
             testCase.verifySubstring(build, "labkittest.run");
             testCase.verifyFalse(contains(build, "runLabKitTests"));
             testCase.verifyFalse(contains(build, "tests/runner"));
-            for active = [guide skill testsGuide]
+            testCase.verifySubstring(migrationGuide, ...
+                "tests/+labkittest/toolboxDebt.m");
+            testCase.verifyFalse(contains(migrationGuide, ...
+                "tests/runner/labkitToolboxDebt.m"));
+            activeTexts = [guide; testsGuide; ...
+                arrayfun(@(file) string(fileread(file)), skillFiles(:))];
+            for active = activeTexts.'
                 testCase.verifyFalse(contains(active, "tests/cases"));
                 testCase.verifyFalse(contains(active, "runLabKitTests"));
                 testCase.verifyFalse(contains(active, "tests/runner"));
@@ -36,10 +43,9 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyFalse(isfolder(fullfile(root, "tests", "runner")));
         end
 
-        function trackedTextDoesNotContainLocalSamplePathOrTimestampTokens(testCase)
+        function repositoryTextDoesNotContainUserPathsOrTimestampTokens(testCase)
             root = labkittest.setup();
-            files = trackedTextFiles(root);
-            homes = unique(string({getenv("HOME"), getenv("USERPROFILE")}));
+            files = repositoryTextFiles(root);
 
             testCase.verifyNotEmpty(files);
             for index = 1:numel(files)
@@ -47,14 +53,10 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 content = string(fileread(fullfile(root, file)));
                 testCase.verifyEmpty(regexp(content, "(?<![A-Za-z])[A-Za-z]:[\\\\/]", "once"), ...
                     "Tracked text contains a drive-root path: " + file);
+                testCase.verifyEmpty(regexp(content, "/(?:Users|home)/[^/\\s]+/", "once"), ...
+                    "Tracked text contains a Unix user path: " + file);
                 testCase.verifyEmpty(regexp(content, "\\d{8}_\\d{6}", "once"), ...
                     "Tracked text contains a sample timestamp token: " + file);
-                for home = homes
-                    if strlength(home) > 3
-                        testCase.verifyFalse(contains(content, home), ...
-                            "Tracked text contains a local home path: " + file);
-                    end
-                end
             end
         end
     end
@@ -64,14 +66,24 @@ function value = text(root, relative)
 value = string(fileread(fullfile(root, relative)));
 end
 
-function files = trackedTextFiles(root)
-[status, output] = system("git -C " + shellQuote(root) + " ls-files");
+function files = activeSkillFiles(root, skillName)
+listing = dir(fullfile(root, ".agents", "skills", skillName, "**", "*"));
+listing = listing(~[listing.isdir]);
+extensions = [".m" ".md"];
+paths = string(fullfile({listing.folder}, {listing.name}));
+files = paths(endsWith(lower(paths), extensions));
+end
+
+function files = repositoryTextFiles(root)
+[status, output] = system("git -C " + shellQuote(root) + ...
+    " ls-files --cached --others --exclude-standard");
 if status ~= 0
     error("LabKit:RepositoryGuardrail:GitListFailed", ...
         "Could not list tracked repository files.");
 end
 files = splitlines(string(output));
-files = files(strlength(files) > 0);
+files = unique(files(strlength(files) > 0), "stable");
+files = files(arrayfun(@(file) isfile(fullfile(root, file)), files));
 extensions = [".m" ".md" ".json" ".yml" ".yaml" ".txt"];
 files = files(endsWith(lower(files), extensions));
 end

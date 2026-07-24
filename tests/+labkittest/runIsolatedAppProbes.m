@@ -17,7 +17,7 @@ function [status, output] = runIsolatedAppProbes(apps)
     testsFolder = fileparts(packageFolder);
     root = fileparts(testsFolder);
     scratch = string(tempname);
-    cleanup = onCleanup(@() removeScratch(scratch));
+    cleanup = onCleanup(@() restoreRunner(testsFolder, scratch));
     messages = strings(1, numel(apps));
     failed = false(1, numel(apps));
     for k = 1:numel(apps)
@@ -36,13 +36,13 @@ function [status, output] = runIsolatedAppProbes(apps)
     end
     status = double(any(failed));
     output = strjoin(messages, newline);
-    restoredefaultpath;
-    addpath(testsFolder);
-    rehash path
     clear cleanup
 end
 
-function removeScratch(scratch)
+function restoreRunner(testsFolder, scratch)
+    restoredefaultpath;
+    addpath(testsFolder);
+    rehash path
     if isfolder(scratch)
         rmdir(scratch, "s");
     end

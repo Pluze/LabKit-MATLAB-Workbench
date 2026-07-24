@@ -92,8 +92,8 @@ function [queries, reasons, fallback, manualChecks] = planQueries(opts)
                 queries = query("", "", "hidden-gui");
                 reasons = "profile selects every hidden-GUI specification";
             case "isolated"
-                queries = query("", "", "isolated-process");
-                reasons = "profile selects every isolated-process specification";
+                queries = query("", "", "path-isolated");
+                reasons = "profile selects every path-isolated specification";
             case "changed"
                 paths = opts.ChangedPaths;
                 if isempty(paths)
@@ -159,7 +159,7 @@ function [queries, reasons, fallback, manualChecks] = queriesForChangedPath(path
 end
 
 function [queries, reasons, fallback, manualChecks] = fullEnvironmentFallback(reason)
-    environments = ["headless", "hidden-gui", "isolated-process"];
+    environments = ["headless", "hidden-gui", "path-isolated"];
     queries = arrayfun(@(environment) query("", "", environment), environments);
     reasons = "conservative fallback: " + reason + " environment=" + environments;
     fallback = true;

@@ -231,9 +231,11 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 ["apps/electrochem/vt_resistance/session", "state"]);
         end
 
-        function everyPublicAppSourceHasAnExplicitEvidenceLocation(testCase)
+        function everyProductionSourceHasAnExplicitEvidenceLocation(testCase)
             root = labkittest.setup();
-            files = dir(fullfile(root, "apps", "**", "*.m"));
+            files = [ ...
+                dir(fullfile(root, "apps", "**", "*.m")); ...
+                dir(fullfile(root, "+labkit", "**", "*.m"))];
 
             testCase.verifyGreaterThan(numel(files), 0);
             for k = 1:numel(files)
@@ -252,7 +254,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string({locations.Contract}), ...
                 ["definition", "product", "product"]);
             testCase.verifyEqual(string({locations.Environment}), ...
-                ["headless", "hidden-gui", "isolated-process"]);
+                ["headless", "hidden-gui", "path-isolated"]);
             testCase.verifyEqual(string({locations.App}), ["cic", "cic", ""]);
         end
 
@@ -352,16 +354,16 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyTrue(result.Fallback);
             testCase.verifyEqual(numel(result.Descriptors), 5);
             testCase.verifyEqual(string({result.Descriptors.Environment}), ...
-                ["headless", "headless", "headless", "hidden-gui", "isolated-process"]);
+                ["headless", "headless", "headless", "hidden-gui", "path-isolated"]);
             testCase.verifyTrue(all(startsWith(result.Reasons, ...
                 "conservative fallback:")));
         end
 
-        function isolatedProfileSelectsEveryIsolatedProcessSpecification(testCase)
+        function isolatedProfileSelectsEveryPathIsolatedSpecification(testCase)
             result = labkittest.plan("Profile", "isolated");
 
             testCase.verifyEqual(numel(result.Descriptors), 1);
-            testCase.verifyEqual(result.Descriptors.Environment, "isolated-process");
+            testCase.verifyEqual(result.Descriptors.Environment, "path-isolated");
             testCase.verifySubstring(result.Descriptors.Id, ...
                 "AppIsolationConformanceSpec/");
         end
@@ -415,7 +417,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "AppSmokeConformanceSpec/launchesThroughTheSupportedDefinition(App=cic)", ...
                 "AppIsolationConformanceSpec/verifiesEveryPublicAppFromAResetPathBoundary"]);
             testCase.verifyEqual(string({result.Descriptors.Environment}), ...
-                ["headless", "hidden-gui", "isolated-process"]);
+                ["headless", "hidden-gui", "path-isolated"]);
         end
 
         function isolatedProbeReportsLaterAppsAfterAnEarlierFailure(testCase)
@@ -461,7 +463,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.writeSpec(owner, "ProbeSpec", "system");
             testCase.writeSpec(guiOwner, "GuiSpec", "system", "hidden-gui");
             testCase.writeSpec(isolatedOwner, "IsolatedSpec", "system", ...
-                "isolated-process");
+                "path-isolated");
             testCase.writeTextFile(fullfile(repository, "baseline.m"), "baseline");
             testCase.runGit(repository, "init");
             testCase.runGit(repository, "config user.email labkit-test@example.invalid");
@@ -516,7 +518,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             mkdir(isolatedOwner);
             testCase.writeSpec(guiOwner, "GuiSpec", "system", "hidden-gui");
             testCase.writeSpec(isolatedOwner, "IsolatedSpec", "system", ...
-                "isolated-process");
+                "path-isolated");
         end
 
         function writeSpec(~, owner, className, contract, environment)

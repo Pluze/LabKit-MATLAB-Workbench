@@ -76,10 +76,10 @@ Contracts describe evidence, not test cost:
 | `definition` / `product` | parameterized public App conformance |
 | `system` | build, repository, CI, documentation, packaging, and release guardrails |
 
-Environments are `headless`, `hidden-gui`, and `isolated-process`.
+Environments are `headless`, `hidden-gui`, and `path-isolated`.
 Headless tests do not prove GUI behavior. Hidden-GUI conformance proves that an
 App can build its declared layout; it does not prove native dialogs, pointer
-feel, visual quality, real lab data, or scientific review. The isolated-process
+feel, visual quality, real lab data, or scientific review. The path-isolated
 conformance probes every public App from a reset path boundary in the already
 running catalog executor. It retains the deployable path boundary and batches
 all App results without requiring a second concurrent MATLAB license.
@@ -103,14 +103,14 @@ buildtool docsCheck
 | `changedFast` | Local final pre-commit/pre-push gate. Reads tracked and untracked working-tree paths; on a clean checkpoint it reads `HEAD^..HEAD`. |
 | `headless` | Every headless catalog identity. |
 | `gui` | Every hidden-GUI catalog identity. |
-| `isolated` | Every isolated-process catalog identity. |
+| `isolated` | Every path-isolated catalog identity. |
 | `coverage` | Headless catalog with Cobertura XML and HTML coverage artifacts. |
 | `docs` / `docsCheck` | Render or verify the generated documentation site. |
 
 `changedFast` prints semantic reasons and exact identities. For ordinary App
 and facade source it runs only the required contract closure. A framework,
 Build, catalog, policy, or unknown path deliberately widens to every automated
-environment: headless, hidden-GUI, and isolated-process. Broad selection is a
+environment: headless, hidden-GUI, and path-isolated. Broad selection is a
 visible safety boundary, not a planner failure. Do not weaken that fallback to
 make a route count look smaller.
 

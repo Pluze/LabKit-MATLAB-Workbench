@@ -85,7 +85,7 @@ jobs:
             artifacts/logs/**
 
   isolated-platforms:
-    name: Isolated process / ${{ matrix.label }}
+    name: Path isolation / ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 35
     strategy:
@@ -116,14 +116,14 @@ jobs:
         shell: bash
         run: mkdir -p artifacts/logs/isolated
 
-      - name: Run isolated-process validation
+      - name: Run path-isolation validation
         timeout-minutes: 30
         uses: matlab-actions/run-build@v3
         with:
           tasks: isolated
           startup-options: -logfile artifacts/logs/isolated/matlab.log
 
-      - name: Summarize isolated-process validation
+      - name: Summarize path-isolation validation
         if: always()
         shell: bash
         run: |
@@ -134,10 +134,10 @@ jobs:
               --log artifacts/logs/isolated/matlab.log \
               --active-test artifacts/test-results/isolated/active-test.json
           else
-            echo "::warning::Isolated-process validation did not produce JUnit output."
+            echo "::warning::Path-isolation validation did not produce JUnit output."
           fi
 
-      - name: Upload isolated-process artifacts
+      - name: Upload path-isolation artifacts
         if: always()
         uses: actions/upload-artifact@v7
         with:

@@ -36,20 +36,22 @@ classes.
   owner-first specs, parameterized App conformance, `labkittest`, and the
   narrow `+testfixtures` package. The cutover deleted 28,840 test lines and
   added 5,524; most deletion is test code rather than product code.
-- Build and CI now select `Env:isolated-process` on Linux, macOS, and Windows.
+- Build and CI now select `Env:path-isolated` on Linux, macOS, and Windows.
   Its catalog-selected aggregate test resets paths before every public App,
   then returns a complete failure report. This retains the App boundary without
   requiring a second concurrent named-user license checkout.
 - `changedFast` now widens unmapped, Build, framework, and policy paths to
-  every automated environment: headless, hidden-GUI, and isolated-process.
+  every automated environment: headless, hidden-GUI, and path-isolated.
 - `AppSmokeConformanceSpec` now verifies every compiled layout target that
   must materialize as exactly one native semantic component. Interaction
   declarations remain view targets but correctly share their owning axes; they
   are not false component IDs. This restores the common structural assertion
   formerly duplicated across the App GUI layout wrappers.
-- Every public `apps/**/*.m` source now has an explicit `locate` result;
-  the test guardrail includes the thin public launchers, which select the same
-  definition, hidden-GUI, and isolated-process closure as their App package.
+- Every production `apps/**/*.m` and `+labkit/**/*.m` source now has an
+  explicit `locate` result. The guardrail includes thin public launchers, which
+  select the same definition, hidden-GUI, and path-isolated closure as their
+  App package. The `labkit.contract` facade has direct requirement, version,
+  incompatibility, and assertion evidence under `framework/contract`.
 - `ManualChecks` passed its bounded trial: a mapped `buildLayout` path emits
   an owner-derived instruction through `explain`, `plan.json`, and `run`, while
   source/result/scientific paths remain empty and manual work never passes an
@@ -88,10 +90,10 @@ GUI workflow is not considered covered by a launch smoke test.
 | ECG Print | input controls, signal products, migration, result/presentation, bounded load/analyze/four-plot/export/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
 
 Repository guardrails are now classified as follows. Sensitive-data hygiene is
-retained as a platform-independent tracked-text contract (home/drive paths and
+retained as a platform-independent tracked-text contract (user/drive paths and
 sample timestamps). App/package ownership and launcher conformance are retained
 through `TestCatalogSpec`, public-App source routing, definition conformance,
-and isolated-process evidence. Public help and rendered documentation remain
+and path-isolated evidence. Public help and rendered documentation remain
 validated by the dedicated docs build/check tasks. Release/version, dependency,
 magic-number, rectangle-geometry, and Code Analyzer implementation scans are
 explicitly retired: their old private-text heuristics do not prove a public
@@ -122,7 +124,7 @@ architecture.
 
 #### Execution plan
 
-1. **Framework closure.** Add an isolated profile to Build and CI; make
+1. **Framework closure.** Add a path-isolated profile to Build and CI; make
    isolation aggregate every App failure; make changed fallback include the
    required environments; add the source-route/exemption guardrail; trial the
    bounded ManualChecks model above.
@@ -176,7 +178,7 @@ file length, helper count, or a possible future abstraction as migration debt.
 Temporary MathWorks Toolbox use must record the exact source symbol, product,
 owner, repository fallback, fallback test, idempotency evidence, numeric parity
 outputs and tolerance, and the condition for deleting the Toolbox branch. Its
-machine-readable declaration lives in `tests/runner/labkitToolboxDebt.m`.
+machine-readable declaration lives in `tests/+labkittest/toolboxDebt.m`.
 
 When an entry is resolved, delete it and any debt-only guardrail in the same
 change. Preserve durable decisions and evidence in the owning manual and

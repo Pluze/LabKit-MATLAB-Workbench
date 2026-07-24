@@ -14,7 +14,7 @@ function descriptors = catalog(varargin)
 %   by their Contract:<name> or Env:<name> test tag. Legal contracts are
 %   product, definition, source, scientific, state, persistence,
 %   presentation, rendering, result, and system. Legal environments are
-%   headless, hidden-gui, and isolated-process.
+%   headless, hidden-gui, and path-isolated.
 %
 %   DESCRIPTORS = labkittest.catalog(SpecsRoot=FOLDER) discovers a separate
 %   specification tree. This option is intended for framework self-tests and
@@ -206,7 +206,7 @@ function values = legalContracts()
 end
 
 function values = legalEnvironments()
-    values = ["headless", "hidden-gui", "isolated-process"];
+    values = ["headless", "hidden-gui", "path-isolated"];
 end
 
 function mask = duplicated(values)

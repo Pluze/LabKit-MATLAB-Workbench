@@ -13,7 +13,10 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             figure = runtime.figureHandle();
 
             testCase.verifyTrue(isgraphics(figure, "figure"));
-            targets = labkit.app.internal.DefinitionInspector.materializedTargetIds(definition);
+            plan = labkit.app.internal.DefinitionInspector.platformPlan(definition);
+            nodes = plan.Nodes;
+            targets = string({nodes(~arrayfun(@(node) ...
+                isempty(node.Capabilities), nodes)).Id});
             testCase.verifyNotEmpty(targets);
             for target = targets
                 testCase.verifyNumElements(findall(figure, "Tag", target), 1, ...
