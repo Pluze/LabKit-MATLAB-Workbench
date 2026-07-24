@@ -16,6 +16,7 @@ function result = run(varargin)
     [compiledPlan, opts] = parseOptions(varargin{:});
     labkittest.setup();
     artifacts = createArtifacts(opts, compiledPlan);
+    reportManualChecks(compiledPlan.ManualChecks);
     results = cell(1, numel(compiledPlan.Groups));
     for k = 1:numel(compiledPlan.Groups)
         group = compiledPlan.Groups(k);
@@ -41,6 +42,12 @@ function result = run(varargin)
     result = struct("Plan", compiledPlan, "Results", {results}, ...
         "RunName", opts.RunName, "ArtifactsRoot", opts.ArtifactsRoot, ...
         "Artifacts", artifacts);
+end
+
+function reportManualChecks(checks)
+    for k = 1:numel(checks)
+        fprintf("MANUAL CHECK (not automated evidence): %s\n", checks(k));
+    end
 end
 
 function [compiledPlan, opts] = parseOptions(varargin)

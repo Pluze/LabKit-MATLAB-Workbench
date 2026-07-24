@@ -13,6 +13,11 @@ classdef FocusStackSourceSpec < matlab.unittest.TestCase
 
             testCase.verifyEqual(fileNames(paths), ["slice_a.jpg"; "slice_b.png"]);
         end
+
+        function rejectsAnEmptyImageSelectionWithTheStableError(testCase)
+            testCase.verifyError(@() focus_stack.sourceFiles.readImages(strings(1, 0)), ...
+                "labkit_FocusStack_app:NoImagesSelected");
+        end
     end
 end
 

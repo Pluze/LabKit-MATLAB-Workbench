@@ -1,0 +1,44 @@
+classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
+    %FIGURESTUDIOWORKFLOWSPEC Specify the bounded FIG-preview-export workflow.
+
+    methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
+        function loadsAFigureIntoTheInteractivePreviewAndExportsPng(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            sourcePath = fullfile(folder, "probe.fig");
+            outputPath = fullfile(folder, "styled.png");
+            writeProbe(sourcePath);
+            backend = struct( ...
+                "chooseOutputFile", @(~, ~) labkit.app.dialog.Choice(outputPath), ...
+                "chooseOutputFolder", @(~) labkit.app.dialog.Choice(folder), ...
+                "alert", @(~, ~) []);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                figure_studio.definition(), [], backend);
+            cleanup = onCleanup(@() runtime.close());
+            figureValue = runtime.figureHandle();
+
+            runtime.applyFileSelection("figFiles", sourcePath, 1);
+            preview = findall(figureValue, "Tag", "preview.main");
+            export = findall(figureValue, "Tag", "exportCurrent");
+
+            testCase.verifyNotEmpty(runtime.State.session.cache.plotData);
+            testCase.verifyNotEmpty(preview.Children);
+            testCase.verifyEmpty(findall(preview, "Type", "image"));
+            testCase.verifyEqual(string(export.Enable), "on");
+            runtime.invokeAction("exportPng");
+            testCase.verifyTrue(isfile(outputPath));
+            clear cleanup
+        end
+    end
+end
+
+function writeProbe(path)
+figureValue = figure(Visible="off");
+cleanup = onCleanup(@() delete(figureValue));
+axesValue = axes(Parent=figureValue);
+plot(axesValue, 1:4, [1 3 2 4], DisplayName="probe");
+title(axesValue, "Probe");
+axesValue.XLim = [1.75 2.25];
+savefig(figureValue, path);
+clear cleanup
+end

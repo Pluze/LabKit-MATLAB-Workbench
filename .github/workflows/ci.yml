@@ -84,6 +84,71 @@ jobs:
             artifacts/debug/**
             artifacts/logs/**
 
+  isolated-platforms:
+    name: Path isolation / ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            id: linux
+            label: Linux
+          - os: macos-14
+            id: macos
+            label: macOS
+          - os: windows-latest
+            id: windows
+            label: Windows
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Set up clean MATLAB runtime
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ env.MATLAB_RELEASE }}
+
+      - name: Prepare MATLAB log directory
+        shell: bash
+        run: mkdir -p artifacts/logs/isolated
+
+      - name: Run path-isolation validation
+        timeout-minutes: 30
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: isolated
+          startup-options: -logfile artifacts/logs/isolated/matlab.log
+
+      - name: Summarize path-isolation validation
+        if: always()
+        shell: bash
+        run: |
+          if [ -f artifacts/test-results/isolated/junit.xml ]; then
+            python .github/scripts/summarize_junit.py \
+              artifacts/test-results/isolated/junit.xml \
+              --run-name "isolated-${{ matrix.id }}" \
+              --log artifacts/logs/isolated/matlab.log \
+              --active-test artifacts/test-results/isolated/active-test.json
+          else
+            echo "::warning::Path-isolation validation did not produce JUnit output."
+          fi
+
+      - name: Upload path-isolation artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: matlab-isolated-${{ matrix.id }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/test-results/**
+            artifacts/debug/**
+            artifacts/logs/**
+
   gui-platforms:
     name: Hidden GUI / ${{ matrix.label }}
     runs-on: ${{ matrix.os }}

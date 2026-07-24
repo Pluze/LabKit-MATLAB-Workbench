@@ -3,6 +3,7 @@ function plan = buildfile
 %   buildtool changedFast  local semantic pre-commit evidence
 %   buildtool headless     every headless specification
 %   buildtool gui          every hidden-GUI specification
+%   buildtool isolated     every path-isolated specification
 %   buildtool coverage     headless specifications with coverage artifacts
 %   buildtool docs         render documentation
 %   buildtool docsCheck    verify generated documentation
@@ -23,6 +24,10 @@ function guiTask(~)
 runTests("gui");
 end
 
+function isolatedTask(~)
+runTests("isolated");
+end
+
 function coverageTask(~)
 runTests("coverage", Coverage=true);
 end
@@ -40,6 +45,7 @@ fprintf("LabKit build tasks:\n");
 fprintf("  changedFast  local semantic pre-commit evidence\n");
 fprintf("  headless     every headless specification\n");
 fprintf("  gui          every hidden-GUI specification\n");
+fprintf("  isolated     every path-isolated specification\n");
 fprintf("  coverage     headless specifications with coverage artifacts\n");
 fprintf("  docs         render documentation\n");
 fprintf("  docsCheck    verify generated documentation\n");

@@ -45,11 +45,32 @@ classdef CurvatureScientificSpec < matlab.unittest.TestCase
                 struct("doDensify", true, "denseN", 25));
             changed = curvature.analysisRun.fitTask(anchors, path, calibration, ...
                 struct("doDensify", false, "denseN", 25));
+            lengthTask = curvature.analysisRun.lengthTask(anchors, path, calibration);
+            changedAnchors = curvature.analysisRun.lengthTask( ...
+                anchors + [0 1], path, calibration);
+            changedPath = curvature.analysisRun.lengthTask(anchors, anchors, calibration);
 
             testCase.verifyEqual(numel(fit.xFit), 5);
             testCase.verifyGreaterThan(max(fit.yFit), 0);
             testCase.verifyEqual(fit.curveLength_px, 2 .* hypot(10, 10), AbsTol=1e-9);
             testCase.verifyNotEqual(initial.fingerprint, changed.fingerprint);
+            testCase.verifyNotEqual(lengthTask.fingerprint, changedAnchors.fingerprint);
+            testCase.verifyNotEqual(lengthTask.fingerprint, changedPath.fingerprint);
+            testCase.verifyEqual(lengthTask.lengthPath, path);
+        end
+
+        function rejectsDegenerateFitsAndSinglePointLengths(testCase)
+            options = struct("referencePx", NaN, "referenceLength", 0, ...
+                "scaleUnit", "um", "doDensify", false);
+
+            testCase.verifyError(@() curvature.analysisRun.computeFitFromOptions( ...
+                [5; 5; 5], [7; 7; 7], options), ...
+                "labkit_CurvatureMeasurement_app:NotEnoughPoints");
+            testCase.verifyError(@() curvature.analysisRun.computeFitFromOptions( ...
+                [1; 2], [3; 4], options), ...
+                "labkit_CurvatureMeasurement_app:NotEnoughPoints");
+            testCase.verifyError(@() curvature.analysisRun.computeLengthFromOptions( ...
+                1, 3, options), "labkit_CurvatureMeasurement_app:NotEnoughLengthPoints");
         end
     end
 end

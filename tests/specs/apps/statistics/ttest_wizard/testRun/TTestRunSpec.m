@@ -33,6 +33,37 @@ classdef TTestRunSpec < matlab.unittest.TestCase
             testCase.verifyEqual(invalid.status, "unequal_pairs");
         end
 
+        function preservesDirectionalConfidenceIntervalSemantics(testCase)
+            options = TTestRunSpec.options();
+            choices = ttest_wizard.testRun.choices();
+            twoSided = ttest_wizard.testRun.runTTest( ...
+                [1.2, 1.4, 1.3, 1.5], [1.8, 1.7, 2.0, 1.9, 1.6], options);
+            options.alternative = choices.alternativeLabels(2);
+            greater = ttest_wizard.testRun.runTTest( ...
+                [1.2, 1.4, 1.3, 1.5], [1.8, 1.7, 2.0, 1.9, 1.6], options);
+            options.alternative = choices.alternativeLabels(3);
+            less = ttest_wizard.testRun.runTTest( ...
+                [1.2, 1.4, 1.3, 1.5], [1.8, 1.7, 2.0, 1.9, 1.6], options);
+
+            testCase.verifyEqual(greater.alternativeToken, "greater");
+            testCase.verifyEqual(greater.pValue, 1 - twoSided.pValue / 2, RelTol=1e-11);
+            testCase.verifyEqual(greater.ciUpper, Inf);
+            testCase.verifyEqual(less.alternativeToken, "less");
+            testCase.verifyEqual(less.pValue, twoSided.pValue / 2, RelTol=1e-11);
+            testCase.verifyEqual(less.ciLower, -Inf);
+        end
+
+        function distinguishesInsufficientNonfiniteAndZeroErrorInputs(testCase)
+            options = TTestRunSpec.options();
+            tooShort = ttest_wizard.testRun.runTTest(1, [1, 2], options);
+            nonfinite = ttest_wizard.testRun.runTTest([1, NaN], [1, 2], options);
+            zeroError = ttest_wizard.testRun.runTTest([1, 1], [1, 1], options);
+
+            testCase.verifyEqual(tooShort.status, "insufficient_n");
+            testCase.verifyEqual(nonfinite.status, "invalid_input");
+            testCase.verifyEqual(zeroError.status, "zero_standard_error");
+        end
+
         function comparesEveryLaterGroupWithTheReference(testCase)
             groups = struct("label", {"Reference", "Treatment 1", "Treatment 2"}, ...
                 "values", {[1.2, 1.4, 1.3, 1.5], [1.8, 1.7, 2.0, 1.9, 1.6], ...

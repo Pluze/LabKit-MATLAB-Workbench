@@ -10,6 +10,27 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
 
             testCase.verifyEqual(string({entries.status}).', ["ready"; "needs scale"]);
         end
+
+        function createsAnIndependentDeferredTaskForEachDuplicateSource(testCase)
+            task = batch_crop.cropTasks.forSourceIds("image1");
+            item = batch_crop.sourceFiles.emptyItem();
+            item.path = "source.png";
+            item.image = uint8(ones(5, 6));
+            item.angleDeg = 12;
+            item.centerXY = [3 4];
+            item.centerSet = true;
+            item.paddingPercent = 25;
+            duplicate = batch_crop.cropTasks.duplicateItem(item);
+
+            testCase.verifyEqual(task.sourceId, "image1");
+            testCase.verifyFalse(isfield(task, "image"));
+            testCase.verifyEqual(duplicate.path, item.path);
+            testCase.verifyEqual(duplicate.angleDeg, item.angleDeg);
+            testCase.verifyFalse(duplicate.centerSet);
+            testCase.verifyTrue(all(isnan(duplicate.centerXY)));
+            duplicate.paddingPercent = 50;
+            testCase.verifyEqual(item.paddingPercent, 25);
+        end
     end
 end
 

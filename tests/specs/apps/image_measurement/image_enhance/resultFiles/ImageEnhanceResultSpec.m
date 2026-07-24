@@ -36,6 +36,33 @@ classdef ImageEnhanceResultSpec < matlab.unittest.TestCase
             testCase.verifyNotEqual(base.fingerprint, moved.fingerprint);
             testCase.verifyNotEqual(base.fingerprint, changed.fingerprint);
         end
+
+        function writesPerImageHistoriesAndTheStableManifestSchema(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            first = fullfile(folder, "first.png");
+            second = fullfile(folder, "second.png");
+            imwrite(uint8(80 .* ones(8, 9, 3)), first);
+            imwrite(uint8(120 .* ones(8, 9, 3)), second);
+            items = image_enhance.sourceFiles.readImages([string(first); string(second)]);
+            steps = { ...
+                image_enhance.analysisRun.makeStep("Brightness/contrast", 20, 0, 0); ...
+                image_enhance.analysisRun.makeStep("Brightness/contrast", -20, 0, 0)};
+
+            payload = image_enhance.resultFiles.writeOutputs(items, ...
+                repmat(image_enhance.analysisRun.emptyStep(), 0, 1), struct( ...
+                "outputFolder", folder, "format", "PNG", "itemSteps", {steps}));
+            manifest = image_enhance.resultFiles.buildManifest(payload.results);
+            firstWritten = labkit.image.im2double(imread(payload.results(1).outputPath));
+            secondWritten = labkit.image.im2double(imread(payload.results(2).outputPath));
+
+            testCase.verifyEqual(string(manifest.Properties.VariableNames), ...
+                ["SourceImage", "OutputImage", "Status", "Width_px", ...
+                 "Height_px", "StepCount", "Message"]);
+            testCase.verifyEqual(manifest.StepCount, [1; 1]);
+            testCase.verifyGreaterThan(mean(firstWritten, "all"), mean(items(1).image, "all"));
+            testCase.verifyLessThan(mean(secondWritten, "all"), mean(items(2).image, "all"));
+        end
     end
 end
 

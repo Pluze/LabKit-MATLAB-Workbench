@@ -224,11 +224,63 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual([presentation.Owner, presentation.Contract], ...
                 ["apps/electrochem/vt_resistance/workbench", "presentation"]);
             testCase.verifyEqual(string({layout.Contract}), ["presentation", "product"]);
-            testCase.verifyEqual(string({layout.Environment}), ["headless", "hidden-gui"]);
+            testCase.verifyEqual(string({layout.Environment}), ["", "hidden-gui"]);
             testCase.verifyEqual([project.Owner, project.Contract], ...
                 ["apps/electrochem/vt_resistance/project", "persistence"]);
             testCase.verifyEqual([session.Owner, session.Contract], ...
                 ["apps/electrochem/vt_resistance/session", "state"]);
+        end
+
+        function everyProductionSourceHasAnExplicitEvidenceLocation(testCase)
+            root = labkittest.setup();
+            files = [ ...
+                dir(fullfile(root, "apps", "**", "*.m")); ...
+                dir(fullfile(root, "+labkit", "**", "*.m"))];
+
+            testCase.verifyGreaterThan(numel(files), 0);
+            for k = 1:numel(files)
+                relative = erase(string(fullfile(files(k).folder, files(k).name)), ...
+                    string(root) + filesep);
+                locations = labkittest.locate(relative);
+                testCase.verifyNotEmpty(locations, ...
+                    "No test location is defined for " + relative);
+            end
+        end
+
+        function appLaunchersUseTheDefinitionEvidenceClosure(testCase)
+            locations = labkittest.locate( ...
+                "apps/electrochem/cic/labkit_CIC_app.m");
+
+            testCase.verifyEqual(string({locations.Contract}), ...
+                ["definition", "product", "product"]);
+            testCase.verifyEqual(string({locations.Environment}), ...
+                ["headless", "hidden-gui", "path-isolated"]);
+            testCase.verifyEqual(string({locations.App}), ["cic", "cic", ""]);
+        end
+
+        function layoutChangesRecordOneConcreteManualResponsibility(testCase)
+            result = labkittest.plan("File", ...
+                "apps/electrochem/vt_resistance/+vt_resistance/+workbench/buildLayout.m");
+
+            testCase.verifyEqual(numel(result.ManualChecks), 1);
+            testCase.verifySubstring(result.ManualChecks, "Open vt_resistance");
+            testCase.verifySubstring(result.ManualChecks, "pointer interaction");
+        end
+
+        function workbenchChangesSelectEveryDeclaredPresentationEnvironment(testCase)
+            result = labkittest.plan("File", ...
+                "apps/image_measurement/image_match/+image_match/+workbench/buildLayout.m");
+
+            imageMatch = contains(string({result.Descriptors.Id}), "ImageMatch");
+            testCase.verifyEqual(string({result.Descriptors(imageMatch).Environment}), ...
+                ["headless", "headless", "hidden-gui"]);
+        end
+
+        function lowerLevelChangesDoNotAcquireGenericManualChecks(testCase)
+            result = labkittest.plan("File", ...
+                "apps/electrochem/cic/+cic/+analysisRun/computeCIC.m");
+
+            testCase.verifyEmpty(result.ManualChecks);
         end
 
         function createSpecWritesTheRequiredMetadataAndFailingPlaceholder(testCase)
@@ -293,16 +345,27 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(numel(unique(string({result.Descriptors.Id}))), 4);
         end
 
-        function unknownChangedPathWidensToEveryHeadlessSpec(testCase)
-            specsRoot = testCase.createCapabilityFixture(true);
+        function unknownChangedPathWidensToEveryAutomatedEnvironment(testCase)
+            specsRoot = testCase.createEnvironmentFixture();
 
             result = labkittest.plan("Profile", "changed", ...
                 "ChangedPaths", "unmapped-policy.txt", "SpecsRoot", specsRoot);
 
             testCase.verifyTrue(result.Fallback);
-            testCase.verifyEqual(numel(result.Descriptors), 3);
+            testCase.verifyEqual(numel(result.Descriptors), 5);
+            testCase.verifyEqual(string({result.Descriptors.Environment}), ...
+                ["headless", "headless", "headless", "hidden-gui", "path-isolated"]);
             testCase.verifyTrue(all(startsWith(result.Reasons, ...
                 "conservative fallback:")));
+        end
+
+        function isolatedProfileSelectsEveryPathIsolatedSpecification(testCase)
+            result = labkittest.plan("Profile", "isolated");
+
+            testCase.verifyEqual(numel(result.Descriptors), 1);
+            testCase.verifyEqual(result.Descriptors.Environment, "path-isolated");
+            testCase.verifySubstring(result.Descriptors.Id, ...
+                "AppIsolationConformanceSpec/");
         end
 
         function changedProfileIncludesTrackedAndUntrackedPreCommitPaths(testCase)
@@ -328,7 +391,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "RepositoryRoot", repository, "SpecsRoot", specsRoot);
 
             testCase.verifyTrue(result.Fallback);
-            testCase.verifyTrue(contains(result.Reasons, "checkpoint-source.m"));
+            testCase.verifyTrue(any(contains(result.Reasons, "checkpoint-source.m")));
         end
 
         function parameterizedDefinitionsKeepEachPublicAppSelectable(testCase)
@@ -354,7 +417,21 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "AppSmokeConformanceSpec/launchesThroughTheSupportedDefinition(App=cic)", ...
                 "AppIsolationConformanceSpec/verifiesEveryPublicAppFromAResetPathBoundary"]);
             testCase.verifyEqual(string({result.Descriptors.Environment}), ...
-                ["headless", "hidden-gui", "isolated-process"]);
+                ["headless", "hidden-gui", "path-isolated"]);
+        end
+
+        function isolatedProbeReportsLaterAppsAfterAnEarlierFailure(testCase)
+            apps = labkittest.publicApps();
+            valid = apps.cic;
+            invalid = valid;
+            invalid.Package = "missing_app";
+
+            [status, output] = labkittest.runIsolatedAppProbes([invalid, valid]);
+
+            testCase.verifyNotEqual(status, 0);
+            testCase.verifySubstring(string(output), ...
+                "ISOLATED_APP_PROBE missing_app FAIL");
+            testCase.verifySubstring(string(output), "ISOLATED_APP_PROBE cic PASS");
         end
     end
 
@@ -378,8 +455,15 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             repository = string(fixture.Folder);
             specsRoot = fullfile(repository, "specs");
             owner = fullfile(specsRoot, "system", "probe");
+            guiOwner = fullfile(specsRoot, "system", "gui");
+            isolatedOwner = fullfile(specsRoot, "system", "isolated");
             mkdir(owner);
+            mkdir(guiOwner);
+            mkdir(isolatedOwner);
             testCase.writeSpec(owner, "ProbeSpec", "system");
+            testCase.writeSpec(guiOwner, "GuiSpec", "system", "hidden-gui");
+            testCase.writeSpec(isolatedOwner, "IsolatedSpec", "system", ...
+                "path-isolated");
             testCase.writeTextFile(fullfile(repository, "baseline.m"), "baseline");
             testCase.runGit(repository, "init");
             testCase.runGit(repository, "config user.email labkit-test@example.invalid");
@@ -426,12 +510,26 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             end
         end
 
-        function writeSpec(~, owner, className, contract)
+        function specsRoot = createEnvironmentFixture(testCase)
+            specsRoot = testCase.createCapabilityFixture(true);
+            guiOwner = fullfile(specsRoot, "system", "gui");
+            isolatedOwner = fullfile(specsRoot, "system", "isolated");
+            mkdir(guiOwner);
+            mkdir(isolatedOwner);
+            testCase.writeSpec(guiOwner, "GuiSpec", "system", "hidden-gui");
+            testCase.writeSpec(isolatedOwner, "IsolatedSpec", "system", ...
+                "path-isolated");
+        end
+
+        function writeSpec(~, owner, className, contract, environment)
+            if nargin < 5
+                environment = "headless";
+            end
             file = fullfile(owner, className + ".m");
             source = strjoin([ ...
                 "classdef " + className + " < matlab.unittest.TestCase", ...
                 "    methods (Test, TestTags = {'Contract:" + contract + ...
-                    "', 'Env:headless'})", ...
+                    "', 'Env:" + environment + "'})", ...
                 "        function proof(testCase), testCase.verifyTrue(true), end", ...
                 "    end", ...
                 "end"], newline);

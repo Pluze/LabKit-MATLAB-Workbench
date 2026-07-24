@@ -36,18 +36,26 @@ classes.
   owner-first specs, parameterized App conformance, `labkittest`, and the
   narrow `+testfixtures` package. The cutover deleted 28,840 test lines and
   added 5,524; most deletion is test code rather than product code.
-- Headless and hidden-GUI profiles select `Env:headless` and
-  `Env:hidden-gui` respectively. `AppIsolationConformanceSpec` is tagged
-  `Env:isolated-process`, but no stable Build task or CI job selects that
-  environment. Current green CI is therefore not isolation evidence.
-- The isolation child script stops after its first App exception. It must
-  continue through all Apps and return an aggregate failure report.
-- `changedFast` is exact for mapped App roles, but an unmapped, Build,
-  framework, or policy path widens only to headless evidence. Its fallback
-  must include every affected automated environment, rather than silently
-  omitting hidden-GUI or isolated-process evidence.
-- `ManualChecks` is present in a compiled plan but is always empty. Empty
-  metadata must not be described as an evidence boundary.
+- Build and CI now select `Env:path-isolated` on Linux, macOS, and Windows.
+  Its catalog-selected aggregate test resets paths before every public App,
+  then returns a complete failure report. This retains the App boundary without
+  requiring a second concurrent named-user license checkout.
+- `changedFast` now widens unmapped, Build, framework, and policy paths to
+  every automated environment: headless, hidden-GUI, and path-isolated.
+- `AppSmokeConformanceSpec` now verifies every compiled layout target that
+  must materialize as exactly one native semantic component. Interaction
+  declarations remain view targets but correctly share their owning axes; they
+  are not false component IDs. This restores the common structural assertion
+  formerly duplicated across the App GUI layout wrappers.
+- Every production `apps/**/*.m` and `+labkit/**/*.m` source now has an
+  explicit `locate` result. The guardrail includes thin public launchers, which
+  select the same definition, hidden-GUI, and path-isolated closure as their
+  App package. The `labkit.contract` facade has direct requirement, version,
+  incompatibility, and assertion evidence under `framework/contract`.
+- `ManualChecks` passed its bounded trial: a mapped `buildLayout` path emits
+  an owner-derived instruction through `explain`, `plan.json`, and `run`, while
+  source/result/scientific paths remain empty and manual work never passes an
+  automated plan.
 
 #### High-value App audit
 
@@ -59,34 +67,38 @@ GUI workflow is not considered covered by a launch smoke test.
 
 | App | Current high-value evidence | Parity disposition |
 | --- | --- | --- |
-| DIC Postprocess | strain domain, masks, overlays, source/result/presentation | Split: restore one bounded load-overlay-summary GUI workflow; retain source/export edge cases after direct parity check. |
-| DIC Preprocess | masks, crop geometry, alignment, history, source/result/project/presentation | Split: restore semantic layout plus pair/alignment/crop workflow proof. |
-| Chrono Overlay | pulse alignment, export interpolation, presentation | Split: restore plot/export/restore workflow proof. |
-| CIC | core metrics, area/window policy, schema and summary | Gap: nominal-current branch, baseline selection/source, onset/access metrics, total charge, batch recompute, and workflow must be restored as owner specs. |
-| CSC | cycle charge, modes/errors, CSV schema, presentation | Split: audit the retained edge-cycle/export branches; restore compare-and-plot workflow proof. |
-| EIS | impedance mapping, source summary, result schema, presentation | Split: restore file-load/layout proof. |
-| VT Resistance | scientific calculation including batch recompute, result schema, presentation | Split: restore layout/export/restore and redraw lifecycle proof. |
-| Gait Analysis | segmentation, timing roles, project migration, CSV result, presentation | Split: preserve producer-reader compatibility, rejection branches, and one navigation/export/restore workflow proof. |
-| Batch Crop | core crop geometry, physical size, manifest and overwrite policy | Gap: rotated/padded-crop policies, duplicate task handling, preview viewport/ROI lifecycle, and workflow export require direct evidence. |
-| Curvature | circle/length science, migration, result schema, source/presentation | Split: restore invalid-curve and task-fingerprint branches plus fit-and-export workflow proof. |
-| FLIR Thermal | extrema, ROI measurement, project/result/source/presentation | Split: restore raw fallback, correction/default warnings, shared range bounds, and display/export workflow proof. |
-| Focus Stack | fusion, registration, project/result/source/presentation | Split: restore invalid-input and file-panel branches plus load/run workflow proof. |
-| Image Enhance | basic enhancement, white balance, source/result/presentation | Gap: white-ROI, subject-preserving enhancement, tool availability, preview scaling, and workflow export evidence. |
-| Image Match | white-balance and tone matching, source/result/project/presentation | Split: restore protected/Lab/histogram modes, reference separation, and workflow export proof. |
-| Video Marker | connection order, coarse tracking, project/result/source/presentation | Gap: annotations, legacy import, subpixel/deterministic/cache tracking, toolbox parity, and marking/prediction/export workflow. |
-| Figure Studio | style, overlay order, source limits, project/presentation | Gap: composite FIG import/export, canvas/title/log-axis edge cases, source handoff, and interactive preview/export workflows. |
-| Nerve Response Analysis | train detection, roles, CAP metrics, migration, source/result/presentation | Split: restore legacy session-input branch and analysis workflow proof. |
-| Response Review Stats | CSV parsing, aligned metrics, migration, result/presentation | Split: restore metrics/export workflow proof. |
-| RHS Preview | role assignment, timing, migration, result/source/presentation | Split: restore filter discovery and preview workflow proof. |
-| T-test Wizard | input table, Welch/pooled/paired/error statistics, result schema | Gap: project migration, UI selection semantics, and compare/plot/export workflow. |
-| ECG Print | input controls, signal products, migration, result/presentation | Split: restore full load/analyze/plot workflow and standalone export boundary. |
+| DIC Postprocess | strain domain, finite ROI and edge trim, overlay generation, source/result/presentation, bounded load/generate/display/export/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| DIC Preprocess | masks, crop geometry, toolbox-free alignment, history, source/result/project/presentation, bounded pair/alignment/crop/export/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| Chrono Overlay | definition/version metadata, project migration, pulse alignment, export interpolation, presentation, generic semantic layout, bounded load/plot/export/restore workflow | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| CIC | core metrics, baseline/source and access policies, nominal current, batch recompute, result schema, success/failed summary, display-unit fallback, stable plot requests, generic semantic layout, bounded workflow | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| CSC | full/cathodic/anodic charge branches, zero-crossing subdivision, invalid statuses, all-cycle and voltage/current CSV export, edge-cycle filtering, presentation, generic semantic layout, bounded compare-and-plot workflow | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| EIS | impedance mapping, source summary, result schema, presentation, generic semantic layout, bounded load/plot/export/restore workflow | Covered: direct source/result/plot specifications plus the hidden-GUI workflow replace the legacy export/layout wrappers. |
+| VT Resistance | steady/center-window and raw-voltage policies, batch recompute, result schema/failed rows/CSV, presentation, generic semantic layout, bounded load/recompute/plot/export/restore workflow | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| Gait Analysis | Video Marker producer-reader compatibility, segmentation/timing roles, project migration, CSV result, presentation, bounded navigation/export/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| Batch Crop | core/rotated crop geometry, padded-edge policy, duplicate tasks/outputs, preview viewport preservation, physical size export, manifest and overwrite policy, generic semantic layout | Covered: direct geometry, task, result, and preview specifications replace legacy automated behavior; native ROI pointer feel remains an explicit ManualCheck. |
+| Curvature | circle/length science, invalid-curve branches, fit/length task fingerprints, source migration, result schema, source/presentation, bounded trace/fit/export/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| FLIR Thermal | raw fallback, correction/default warning, extrema, ROI measurement, project/result/source/presentation, shared display range, bounded radiometric display/reading/export/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| Focus Stack | fusion, registration, project/result/source/presentation, empty-source failure, generic semantic layout, bounded load/fuse/export/restore workflow | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| Image Enhance | basic enhancement, white balance, white-ROI calibration, subject-preserving enhancement, ROI availability/defaults, preview scaling, per-image export manifest, source/result/presentation, generic semantic layout | Covered: direct capability specs now replace the legacy behavioral and layout tests without a wrapper class. |
+| Image Match | white-balance, tone, protected-tone, Lab-style and histogram matching; reference separation; source/result/project/presentation; bounded reference-match/export/restore workflow; generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| Video Marker | editable skeleton lifecycle, coarse/subpixel deterministic tracking, prediction cache, legacy project and annotation migration, marker/coordinate provenance, bounded marking/prediction/calibration/export/restore workflow, project/result/source/presentation | Covered: direct capability and hidden-GUI workflow specs replace the legacy wrappers. The optional Vision Toolbox comparator is explicitly retired: production has no Toolbox dependency, and deterministic synthetic tracking behavior is the retained contract. |
+| Figure Studio | style, overlay order, source limits/geometry, composite FIG import/export, canvas/title/log-axis edge cases, version migrations, axes-source handoff, bounded FIG preview/export workflow, project/presentation, generic semantic layout | Covered: direct capability and bounded GUI specs replace the legacy high-value behavior without restoring its wrappers. |
+| Nerve Response Analysis | train detection, roles, CAP metrics, migration, source/result/presentation, synthetic filter-record/protocol session, bounded analysis/export/reset/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| Response Review Stats | CSV parsing, aligned metrics, migration, result/presentation, bounded load/preview/export/reset/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| RHS Preview | role assignment, timing, migration, result/source/presentation, synthetic recording/filter discovery, bounded preview/ROI/export/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
+| T-test Wizard | input table, layered labels, Welch/pooled/paired/directional/error statistics, project migration, CSV result schema, generic semantic layout | Covered: direct source, run, persistence, result, and structural specs replace the legacy core/layout wrappers. |
+| ECG Print | input controls, signal products, migration, result/presentation, bounded load/analyze/four-plot/export/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
 
-Repository guardrails are a separate parity inventory: version, dependency,
-documentation, release, package-boundary, sensitive-data, and launcher rules
-were deleted with no executable successor found. Each old guardrail must be
-classified as retained elsewhere, rewritten as public-behavior evidence, or
-explicitly retired with rationale; restoring private implementation-text scans
-is not acceptable.
+Repository guardrails are now classified as follows. Sensitive-data hygiene is
+retained as a platform-independent tracked-text contract (user/drive paths and
+sample timestamps). App/package ownership and launcher conformance are retained
+through `TestCatalogSpec`, public-App source routing, definition conformance,
+and path-isolated evidence. Public help and rendered documentation remain
+validated by the dedicated docs build/check tasks. Release/version, dependency,
+magic-number, rectangle-geometry, and Code Analyzer implementation scans are
+explicitly retired: their old private-text heuristics do not prove a public
+contract and conflict with the current ownership/metadata model. Their durable
+rules live in `AGENTS.md`, version metadata, public help, and release workflow.
 
 #### ManualChecks trial
 
@@ -112,7 +124,7 @@ architecture.
 
 #### Execution plan
 
-1. **Framework closure.** Add an isolated profile to Build and CI; make
+1. **Framework closure.** Add a path-isolated profile to Build and CI; make
    isolation aggregate every App failure; make changed fallback include the
    required environments; add the source-route/exemption guardrail; trial the
    bounded ManualChecks model above.
@@ -166,7 +178,7 @@ file length, helper count, or a possible future abstraction as migration debt.
 Temporary MathWorks Toolbox use must record the exact source symbol, product,
 owner, repository fallback, fallback test, idempotency evidence, numeric parity
 outputs and tolerance, and the condition for deleting the Toolbox branch. Its
-machine-readable declaration lives in `tests/runner/labkitToolboxDebt.m`.
+machine-readable declaration lives in `tests/+labkittest/toolboxDebt.m`.
 
 When an entry is resolved, delete it and any debt-only guardrail in the same
 change. Preserve durable decisions and evidence in the owning manual and

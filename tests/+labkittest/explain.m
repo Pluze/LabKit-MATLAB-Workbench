@@ -33,4 +33,8 @@ function result = explain(target, varargin)
     for k = 1:numel(result.Reasons)
         fprintf("  reason: %s\n", result.Reasons(k));
     end
+    for k = 1:numel(result.ManualChecks)
+        fprintf("  manual check (not automated evidence): %s\n", ...
+            result.ManualChecks(k));
+    end
 end
