@@ -30,6 +30,14 @@ function targets = locate(file, varargin)
             return;
         end
     end
+    if startsWith(opts.File, "apps/") && numel(parts) == 4 && ...
+            startsWith(parts(4), "labkit_") && endsWith(parts(4), "_app.m")
+        % Each public launcher is a thin definition entrypoint.  It has the
+        % same launch, GUI, and isolated-process evidence closure as its App
+        % definition, while remaining outside the App package folder.
+        targets = appDefinitionTargets(opts.SpecsRoot, parts(3));
+        return;
+    end
     if startsWith(opts.File, "apps/") && numel(parts) >= 5 && ...
             startsWith(parts(4), "+")
         appOwner = "apps/" + parts(2) + "/" + parts(3);

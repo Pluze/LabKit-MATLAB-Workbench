@@ -231,6 +231,31 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 ["apps/electrochem/vt_resistance/session", "state"]);
         end
 
+        function everyPublicAppSourceHasAnExplicitEvidenceLocation(testCase)
+            root = labkittest.setup();
+            files = dir(fullfile(root, "apps", "**", "*.m"));
+
+            testCase.verifyGreaterThan(numel(files), 0);
+            for k = 1:numel(files)
+                relative = erase(string(fullfile(files(k).folder, files(k).name)), ...
+                    string(root) + filesep);
+                locations = labkittest.locate(relative);
+                testCase.verifyNotEmpty(locations, ...
+                    "No test location is defined for " + relative);
+            end
+        end
+
+        function appLaunchersUseTheDefinitionEvidenceClosure(testCase)
+            locations = labkittest.locate( ...
+                "apps/electrochem/cic/labkit_CIC_app.m");
+
+            testCase.verifyEqual(string({locations.Contract}), ...
+                ["definition", "product", "product"]);
+            testCase.verifyEqual(string({locations.Environment}), ...
+                ["headless", "hidden-gui", "isolated-process"]);
+            testCase.verifyEqual(string({locations.App}), ["cic", "cic", ""]);
+        end
+
         function layoutChangesRecordOneConcreteManualResponsibility(testCase)
             result = labkittest.plan("File", ...
                 "apps/electrochem/vt_resistance/+vt_resistance/+workbench/buildLayout.m");

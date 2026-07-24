@@ -46,6 +46,9 @@ classes.
   declarations remain view targets but correctly share their owning axes; they
   are not false component IDs. This restores the common structural assertion
   formerly duplicated across the App GUI layout wrappers.
+- Every public `apps/**/*.m` source now has an explicit `locate` result;
+  the test guardrail includes the thin public launchers, which select the same
+  definition, hidden-GUI, and isolated-process closure as their App package.
 - `ManualChecks` passed its bounded trial: a mapped `buildLayout` path emits
   an owner-derived instruction through `explain`, `plan.json`, and `run`, while
   source/result/scientific paths remain empty and manual work never passes an
