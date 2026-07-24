@@ -39,5 +39,5 @@ function writeStack(first, second)
 [x, y] = meshgrid(1:40, 1:32);
 base = uint8(120 + 80 .* sin(.5 .* x) .* cos(.4 .* y));
 imwrite(base, first);
-imwrite(imrotate(base, 1, "crop"), second);
+imwrite(circshift(base, [0 1]), second);
 end
