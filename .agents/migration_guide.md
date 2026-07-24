@@ -84,7 +84,7 @@ GUI workflow is not considered covered by a launch smoke test.
 | Response Review Stats | CSV parsing, aligned metrics, migration, result/presentation, bounded load/preview/export/reset/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
 | RHS Preview | role assignment, timing, migration, result/source/presentation, synthetic recording/filter discovery, bounded preview/ROI/export/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
 | T-test Wizard | input table, layered labels, Welch/pooled/paired/directional/error statistics, project migration, CSV result schema, generic semantic layout | Covered: direct source, run, persistence, result, and structural specs replace the legacy core/layout wrappers. |
-| ECG Print | input controls, signal products, migration, result/presentation, generic semantic layout | Split: restore full load/analyze/plot workflow and standalone export boundary. |
+| ECG Print | input controls, signal products, migration, result/presentation, bounded load/analyze/four-plot/export/restore workflow, generic semantic layout | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
 
 Repository guardrails are a separate parity inventory: version, dependency,
 documentation, release, package-boundary, sensitive-data, and launcher rules
