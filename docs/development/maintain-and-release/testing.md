@@ -80,8 +80,9 @@ Environments are `headless`, `hidden-gui`, and `isolated-process`.
 Headless tests do not prove GUI behavior. Hidden-GUI conformance proves that an
 App can build its declared layout; it does not prove native dialogs, pointer
 feel, visual quality, real lab data, or scientific review. The isolated-process
-conformance probes every public App from reset paths in one child MATLAB
-process, retaining the path boundary without paying one cold startup per App.
+conformance probes every public App from a reset path boundary in the already
+running catalog executor. It retains the deployable path boundary and batches
+all App results without requiring a second concurrent MATLAB license.
 
 ## Build Tasks
 

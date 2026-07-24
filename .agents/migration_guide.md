@@ -37,8 +37,9 @@ classes.
   narrow `+testfixtures` package. The cutover deleted 28,840 test lines and
   added 5,524; most deletion is test code rather than product code.
 - Build and CI now select `Env:isolated-process` on Linux, macOS, and Windows.
-  Its one child process continues through every public App and returns a
-  complete aggregated failure report.
+  Its catalog-selected aggregate test resets paths before every public App,
+  then returns a complete failure report. This retains the App boundary without
+  requiring a second concurrent named-user license checkout.
 - `changedFast` now widens unmapped, Build, framework, and policy paths to
   every automated environment: headless, hidden-GUI, and isolated-process.
 - `AppSmokeConformanceSpec` now verifies every compiled layout target that

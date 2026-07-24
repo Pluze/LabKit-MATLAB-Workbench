@@ -1,10 +1,10 @@
 function isolatedAppProbe(root, appFolder, packageName, scratchRoot)
 %ISOLATEDAPPPROBE Verify one App from only its deployable path boundary.
 %   labkittest.isolatedAppProbe(ROOT, APPFOLDER, PACKAGE, SCRATCHROOT) is the
-%   child-process implementation used by labkittest.runIsolatedAppProbe. It
+%   reset-path implementation used by labkittest.runIsolatedAppProbe. It
 %   restores MATLAB's default path, adds ROOT and APPFOLDER only, validates the
 %   App definition, and builds its synthetic debug sample. It throws on any
-%   boundary or contract failure so the child MATLAB process exits nonzero.
+%   boundary or contract failure so the caller can aggregate every App result.
 
     root = string(root);
     appFolder = string(appFolder);
