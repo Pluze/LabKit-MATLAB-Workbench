@@ -7,6 +7,20 @@ classdef (Hidden, Sealed) DefinitionInspector
             ids = contract.TargetIds;
         end
 
+        function ids = materializedTargetIds(definition)
+            % Return semantic IDs backed by one native MATLAB component.
+            %
+            % TargetIds also includes interaction declarations.  Those
+            % declarations are view targets but intentionally share the axes
+            % of their owning plot rather than materializing a component with
+            % their own tag.  Layout conformance therefore uses the compiled
+            % platform plan as the native materialization contract.
+            contract = compiledContract(definition);
+            nodes = contract.PlatformPlan.Nodes;
+            ids = string({nodes(~arrayfun(@(node) ...
+                isempty(node.Capabilities), nodes)).Id});
+        end
+
         function ids = signalIds(definition)
             contract = compiledContract(definition);
             ids = contract.signalIds();

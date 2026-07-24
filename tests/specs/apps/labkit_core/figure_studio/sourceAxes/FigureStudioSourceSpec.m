@@ -33,6 +33,42 @@ classdef FigureStudioSourceSpec < matlab.unittest.TestCase
             testCase.verifyEqual(childTypes(preview), ["text"; "line"; "image"]);
             clear cleanup
         end
+
+        function preservesManualNativeGeometryDuringPreviewCopy(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            sourceFigure = figure(Visible="off");
+            source = axes(Parent=sourceFigure);
+            plot(source, linspace(0, 30, 200), sin(linspace(0, 30, 200)));
+            pbaspect(source, [2 1 1]);
+            daspect(source, [10 1 1]);
+            previewFigure = figure(Visible="off");
+            preview = axes(Parent=previewFigure);
+
+            figure_studio.sourceAxes.copyToPreview(source, preview);
+
+            testCase.verifyEqual(string(preview.PlotBoxAspectRatioMode), "manual");
+            testCase.verifyEqual(string(preview.DataAspectRatioMode), "manual");
+            testCase.verifyNumElements(preview.Children, numel(source.Children));
+            clear cleanup
+        end
+
+        function distinguishesDisplayedFigCanvasFromExplicitAxesHandoff(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            sourceFigure = figure(Visible="off", Units="pixels", Position=[100 100 720 540]);
+            source = axes(Parent=sourceFigure, Units="normalized", ...
+                Position=[.13 .34 .775 .58]);
+            plot(source, 1:4, [1 3 2 4]);
+            pbaspect(source, [2 1 1]);
+
+            figStyle = figure_studio.sourceAxes.sourceStyle(source, PreserveAspect=false);
+            axesStyle = figure_studio.sourceAxes.sourceStyle(source);
+
+            testCase.verifyGreaterThan(figStyle.canvasWidth / figStyle.canvasHeight, 1.2);
+            testCase.verifyLessThan(figStyle.canvasWidth / figStyle.canvasHeight, 3);
+            testCase.verifyEmpty(figStyle.axesPosition);
+            testCase.verifyLessThan(abs(axesStyle.canvasWidth / axesStyle.canvasHeight - 2), .02);
+            clear cleanup
+        end
     end
 end
 

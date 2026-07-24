@@ -36,18 +36,20 @@ classes.
   owner-first specs, parameterized App conformance, `labkittest`, and the
   narrow `+testfixtures` package. The cutover deleted 28,840 test lines and
   added 5,524; most deletion is test code rather than product code.
-- Headless and hidden-GUI profiles select `Env:headless` and
-  `Env:hidden-gui` respectively. `AppIsolationConformanceSpec` is tagged
-  `Env:isolated-process`, but no stable Build task or CI job selects that
-  environment. Current green CI is therefore not isolation evidence.
-- The isolation child script stops after its first App exception. It must
-  continue through all Apps and return an aggregate failure report.
-- `changedFast` is exact for mapped App roles, but an unmapped, Build,
-  framework, or policy path widens only to headless evidence. Its fallback
-  must include every affected automated environment, rather than silently
-  omitting hidden-GUI or isolated-process evidence.
-- `ManualChecks` is present in a compiled plan but is always empty. Empty
-  metadata must not be described as an evidence boundary.
+- Build and CI now select `Env:isolated-process` on Linux, macOS, and Windows.
+  Its one child process continues through every public App and returns a
+  complete aggregated failure report.
+- `changedFast` now widens unmapped, Build, framework, and policy paths to
+  every automated environment: headless, hidden-GUI, and isolated-process.
+- `AppSmokeConformanceSpec` now verifies every compiled layout target that
+  must materialize as exactly one native semantic component. Interaction
+  declarations remain view targets but correctly share their owning axes; they
+  are not false component IDs. This restores the common structural assertion
+  formerly duplicated across the App GUI layout wrappers.
+- `ManualChecks` passed its bounded trial: a mapped `buildLayout` path emits
+  an owner-derived instruction through `explain`, `plan.json`, and `run`, while
+  source/result/scientific paths remain empty and manual work never passes an
+  automated plan.
 
 #### High-value App audit
 
@@ -59,27 +61,27 @@ GUI workflow is not considered covered by a launch smoke test.
 
 | App | Current high-value evidence | Parity disposition |
 | --- | --- | --- |
-| DIC Postprocess | strain domain, masks, overlays, source/result/presentation | Split: restore one bounded load-overlay-summary GUI workflow; retain source/export edge cases after direct parity check. |
-| DIC Preprocess | masks, crop geometry, alignment, history, source/result/project/presentation | Split: restore semantic layout plus pair/alignment/crop workflow proof. |
-| Chrono Overlay | pulse alignment, export interpolation, presentation | Split: restore plot/export/restore workflow proof. |
+| DIC Postprocess | strain domain, masks, overlays, source/result/presentation, generic semantic layout | Split: restore one bounded load-overlay-summary GUI workflow; retain source/export edge cases after direct parity check. |
+| DIC Preprocess | masks, crop geometry, alignment, history, source/result/project/presentation, generic semantic layout | Split: restore pair/alignment/crop workflow proof. |
+| Chrono Overlay | pulse alignment, export interpolation, presentation, generic semantic layout | Split: restore plot/export/restore workflow proof. |
 | CIC | core metrics, baseline/source and access policies, nominal current, batch recompute, schema, summary, and bounded workflow | Split: retain direct display-unit, failed-summary, and plot-request branch audit; do not replace the restored automated workflow with a manual check. |
-| CSC | cycle charge, modes/errors, CSV schema, presentation | Split: audit the retained edge-cycle/export branches; restore compare-and-plot workflow proof. |
-| EIS | impedance mapping, source summary, result schema, presentation | Split: restore file-load/layout proof. |
-| VT Resistance | scientific calculation including batch recompute, result schema, presentation | Split: restore layout/export/restore and redraw lifecycle proof. |
-| Gait Analysis | segmentation, timing roles, project migration, CSV result, presentation | Split: preserve producer-reader compatibility, rejection branches, and one navigation/export/restore workflow proof. |
-| Batch Crop | core/rotated crop geometry, padded-edge policy, physical size export, manifest and overwrite policy | Split: restore duplicate task handling, preview viewport/ROI lifecycle, and workflow export evidence. |
-| Curvature | circle/length science, migration, result schema, source/presentation | Split: restore invalid-curve and task-fingerprint branches plus fit-and-export workflow proof. |
-| FLIR Thermal | extrema, ROI measurement, project/result/source/presentation | Split: restore raw fallback, correction/default warnings, shared range bounds, and display/export workflow proof. |
-| Focus Stack | fusion, registration, project/result/source/presentation | Split: restore invalid-input and file-panel branches plus load/run workflow proof. |
-| Image Enhance | basic enhancement, white balance, source/result/presentation | Gap: white-ROI, subject-preserving enhancement, tool availability, preview scaling, and workflow export evidence. |
-| Image Match | white-balance and tone matching, source/result/project/presentation | Split: restore protected/Lab/histogram modes, reference separation, and workflow export proof. |
+| CSC | cycle charge, modes/errors, CSV schema, presentation, generic semantic layout | Split: audit the retained edge-cycle/export branches; restore compare-and-plot workflow proof. |
+| EIS | impedance mapping, source summary, result schema, presentation, generic semantic layout | Split: restore file-load workflow proof. |
+| VT Resistance | scientific calculation including batch recompute, result schema, presentation, generic semantic layout | Split: restore export/restore and redraw lifecycle proof. |
+| Gait Analysis | segmentation, timing roles, project migration, CSV result, presentation, generic semantic layout | Split: preserve producer-reader compatibility, rejection branches, and one navigation/export/restore workflow proof. |
+| Batch Crop | core/rotated crop geometry, padded-edge policy, physical size export, manifest and overwrite policy, generic semantic layout | Split: restore duplicate task handling, preview viewport/ROI lifecycle, and workflow export evidence. |
+| Curvature | circle/length science, migration, result schema, source/presentation, generic semantic layout | Split: restore invalid-curve and task-fingerprint branches plus fit-and-export workflow proof. |
+| FLIR Thermal | extrema, ROI measurement, project/result/source/presentation, generic semantic layout | Split: restore raw fallback, correction/default warnings, shared range bounds, and display/export workflow proof. |
+| Focus Stack | fusion, registration, project/result/source/presentation, generic semantic layout | Split: restore invalid-input and file-panel branches plus load/run workflow proof. |
+| Image Enhance | basic enhancement, white balance, white-ROI calibration, subject-preserving enhancement, ROI availability/defaults, preview scaling, per-image export manifest, source/result/presentation, generic semantic layout | Covered: direct capability specs now replace the legacy behavioral and layout tests without a wrapper class. |
+| Image Match | white-balance and tone matching, source/result/project/presentation, generic semantic layout | Split: restore protected/Lab/histogram modes, reference separation, and workflow export proof. |
 | Video Marker | editable skeleton lifecycle, coarse/subpixel deterministic tracking, prediction cache, annotation migration, project/result/source/presentation | Split: restore legacy project import, annotation/export provenance, declared Toolbox parity, and marking/prediction/export workflow. |
-| Figure Studio | style, overlay order, source limits, project/presentation | Gap: composite FIG import/export, canvas/title/log-axis edge cases, source handoff, and interactive preview/export workflows. |
-| Nerve Response Analysis | train detection, roles, CAP metrics, migration, source/result/presentation | Split: restore legacy session-input branch and analysis workflow proof. |
-| Response Review Stats | CSV parsing, aligned metrics, migration, result/presentation | Split: restore metrics/export workflow proof. |
-| RHS Preview | role assignment, timing, migration, result/source/presentation | Split: restore filter discovery and preview workflow proof. |
-| T-test Wizard | input table, Welch/pooled/paired/error statistics, result schema | Gap: project migration, UI selection semantics, and compare/plot/export workflow. |
-| ECG Print | input controls, signal products, migration, result/presentation | Split: restore full load/analyze/plot workflow and standalone export boundary. |
+| Figure Studio | style, overlay order, source limits, source preview geometry, project/presentation, generic semantic layout | Split: composite FIG import/export, canvas/title/log-axis edge cases, source handoff, and interactive preview/export workflows remain. |
+| Nerve Response Analysis | train detection, roles, CAP metrics, migration, source/result/presentation, generic semantic layout | Split: restore legacy session-input branch and analysis workflow proof. |
+| Response Review Stats | CSV parsing, aligned metrics, migration, result/presentation, generic semantic layout | Split: restore metrics/export workflow proof. |
+| RHS Preview | role assignment, timing, migration, result/source/presentation, generic semantic layout | Split: restore filter discovery and preview workflow proof. |
+| T-test Wizard | input table, layered labels, Welch/pooled/paired/directional/error statistics, project migration, CSV result schema, generic semantic layout | Covered: direct source, run, persistence, result, and structural specs replace the legacy core/layout wrappers. |
+| ECG Print | input controls, signal products, migration, result/presentation, generic semantic layout | Split: restore full load/analyze/plot workflow and standalone export boundary. |
 
 Repository guardrails are a separate parity inventory: version, dependency,
 documentation, release, package-boundary, sensitive-data, and launcher rules

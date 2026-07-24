@@ -1,5 +1,5 @@
 classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
-    %APPSMOKECONFORMANCESPEC Verify each public App creates its declared layout.
+    %APPSMOKECONFORMANCESPEC Verify each public App materializes its declared layout.
 
     properties (TestParameter)
         App = labkittest.publicApps()
@@ -13,7 +13,12 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             figure = runtime.figureHandle();
 
             testCase.verifyTrue(isgraphics(figure, "figure"));
-            testCase.verifyNotEmpty(findall(figure));
+            targets = labkit.app.internal.DefinitionInspector.materializedTargetIds(definition);
+            testCase.verifyNotEmpty(targets);
+            for target = targets
+                testCase.verifyNumElements(findall(figure, "Tag", target), 1, ...
+                    "Declared semantic target was not materialized exactly once: " + target);
+            end
             clear cleanup
         end
     end
