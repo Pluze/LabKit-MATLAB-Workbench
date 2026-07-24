@@ -41,5 +41,38 @@ classdef BatchCropResultSpec < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(payload.results(1).outputPath));
             testCase.verifyTrue(isfile(payload.manifestPath));
         end
+
+        function exportsEveryPhysicalCropAtOneDeclaredOutputSize(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            items = [physicalItem(fullfile(folder, "source_a.png"), 4); ...
+                physicalItem(fullfile(folder, "source_b.png"), 8)];
+
+            payload = batch_crop.resultFiles.writeOutputs(items, struct( ...
+                "outputFolder", folder, "format", "PNG", ...
+                "cropWidth", 10, "cropHeight", 10, "paddingPercent", 0, ...
+                "scaleMode", "Physical", "physicalWidth", 10, ...
+                "physicalHeight", 5, "scaleUnit", "um", ...
+                "targetPixelsPerUnit", 0, "maxUpsamplePercent", 15));
+
+            first = imread(payload.results(1).outputPath);
+            second = imread(payload.results(2).outputPath);
+            testCase.verifySize(first, [30 60]);
+            testCase.verifySize(second, [30 60]);
+            testCase.verifyEqual([payload.results.nativeCropWidth], [40 80]);
+            testCase.verifyTrue(contains(payload.results(1).scaleWarning, "upsample"));
+            testCase.verifyEqual(payload.manifest.OutputWidth_px, [60; 60]);
+        end
     end
+end
+
+function item = physicalItem(path, pixelsPerUnit)
+item = batch_crop.sourceFiles.emptyItem();
+item.path = string(path);
+item.image = uint8(80 .* ones(120, 120));
+item.centerXY = [60 60];
+item.centerSet = true;
+item.scaleCalibration = labkit.app.interaction.scaleCalibration( ...
+    pixelsPerUnit, 1, "um", struct("defaultUnit", "um", ...
+    "referenceLine", [1 1; 1 + pixelsPerUnit 1]));
 end

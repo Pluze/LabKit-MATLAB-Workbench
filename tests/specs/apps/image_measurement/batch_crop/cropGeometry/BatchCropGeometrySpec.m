@@ -39,6 +39,34 @@ classdef BatchCropGeometrySpec < matlab.unittest.TestCase
             testCase.verifyEqual(plan.nativeCropWidth, [40; 80]);
             testCase.verifyTrue(contains(plan.warnings(1), "upsample"));
         end
+
+        function repairsDarkEdgesWithoutMutatingInteriorPixels(testCase)
+            image = uint8(180 .* ones(20, 30));
+            image(:, 1) = 0;
+            image(9:12, 9:12) = 200;
+
+            [padded, padding] = batch_crop.cropGeometry.padImageEdges(image, 40);
+
+            source = padded((1:20) + padding.top, (1:30) + padding.left);
+            leftPadding = double(padded(padding.top + 10, 1:padding.left));
+            testCase.verifyEqual(source(9:12, 9:12), image(9:12, 9:12));
+            testCase.verifyGreaterThan(source(10, 1), 120);
+            testCase.verifyGreaterThan(min(leftPadding), 60);
+        end
+
+        function keepsRotatedCropsInsideTheValidMaskWhenPossible(testCase)
+            image = uint8(zeros(7, 9));
+
+            result = batch_crop.cropGeometry.cropImage(image, struct( ...
+                "cropWidth", 3, "cropHeight", 3, "centerXY", [2 5], ...
+                "angleDeg", 33, "paddingPercent", 40));
+
+            testCase.verifyEqual([result.centerX result.centerY], ...
+                [1.9393 4.7952], AbsTol=1e-4);
+            testCase.verifyEqual(max(result.image, [], "all"), uint8(0));
+            testCase.verifyEqual([result.sourceWidth result.sourceHeight], [9 7]);
+            testCase.verifyEqual(result.paddingPercent, 40);
+        end
     end
 end
 

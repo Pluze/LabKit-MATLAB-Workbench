@@ -62,12 +62,12 @@ GUI workflow is not considered covered by a launch smoke test.
 | DIC Postprocess | strain domain, masks, overlays, source/result/presentation | Split: restore one bounded load-overlay-summary GUI workflow; retain source/export edge cases after direct parity check. |
 | DIC Preprocess | masks, crop geometry, alignment, history, source/result/project/presentation | Split: restore semantic layout plus pair/alignment/crop workflow proof. |
 | Chrono Overlay | pulse alignment, export interpolation, presentation | Split: restore plot/export/restore workflow proof. |
-| CIC | core metrics, area/window policy, schema and summary | Gap: nominal-current branch, baseline selection/source, onset/access metrics, total charge, batch recompute, and workflow must be restored as owner specs. |
+| CIC | core metrics, baseline/source and access policies, nominal current, batch recompute, schema, summary, and bounded workflow | Split: retain direct display-unit, failed-summary, and plot-request branch audit; do not replace the restored automated workflow with a manual check. |
 | CSC | cycle charge, modes/errors, CSV schema, presentation | Split: audit the retained edge-cycle/export branches; restore compare-and-plot workflow proof. |
 | EIS | impedance mapping, source summary, result schema, presentation | Split: restore file-load/layout proof. |
 | VT Resistance | scientific calculation including batch recompute, result schema, presentation | Split: restore layout/export/restore and redraw lifecycle proof. |
 | Gait Analysis | segmentation, timing roles, project migration, CSV result, presentation | Split: preserve producer-reader compatibility, rejection branches, and one navigation/export/restore workflow proof. |
-| Batch Crop | core crop geometry, physical size, manifest and overwrite policy | Gap: rotated/padded-crop policies, duplicate task handling, preview viewport/ROI lifecycle, and workflow export require direct evidence. |
+| Batch Crop | core/rotated crop geometry, padded-edge policy, physical size export, manifest and overwrite policy | Split: restore duplicate task handling, preview viewport/ROI lifecycle, and workflow export evidence. |
 | Curvature | circle/length science, migration, result schema, source/presentation | Split: restore invalid-curve and task-fingerprint branches plus fit-and-export workflow proof. |
 | FLIR Thermal | extrema, ROI measurement, project/result/source/presentation | Split: restore raw fallback, correction/default warnings, shared range bounds, and display/export workflow proof. |
 | Focus Stack | fusion, registration, project/result/source/presentation | Split: restore invalid-input and file-panel branches plus load/run workflow proof. |
