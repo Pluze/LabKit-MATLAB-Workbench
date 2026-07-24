@@ -24,14 +24,18 @@ spec without inventing a path, metadata, class shell, or runner command:
 ```matlab
 labkittest.createSpec( ...
     "apps/electrochem/cic/+cic/+analysisRun/computeCIC.m", ...
-    Contract="scientific", Name="PulseWindow")
+    Contract="scientific", Name="PulseWindow", ...
+    Reason="Regression: pulse-window bounds must remain stable.")
 ```
 
 `Contract` is needed only when one source has more than one author-owned
-boundary. The generated file contains the required `Contract:<name>` and
-`Env:<name>` tags plus an intentional failing placeholder. Replace that
-placeholder with a small behavioral proof. Never create a test by guessing a
-folder, a suite range, a test tag, or a wrapper class.
+boundary. `Reason` starts with `Regression`, `Invariant`, or `Compatibility`;
+it records the durable behavior being protected, rather than a temporary
+implementation detail. The generated file contains the required
+`Contract:<name>` and `Env:<name>` tags plus an intentional failing placeholder.
+Replace that placeholder with a small behavioral proof. Remove or revise a
+specification when that stated behavior is intentionally retired. Never create
+a test by guessing a folder, a suite range, a test tag, or a wrapper class.
 
 During an edit, execute the narrow owner and contract that changed:
 
@@ -107,12 +111,19 @@ buildtool docsCheck
 | `coverage` | Headless catalog with Cobertura XML and HTML coverage artifacts. |
 | `docs` / `docsCheck` | Render or verify the generated documentation site. |
 
-`changedFast` prints semantic reasons and exact identities. For ordinary App
-and facade source it runs only the required contract closure. A framework,
-Build, catalog, policy, or unknown path deliberately widens to every automated
-environment: headless, hidden-GUI, and path-isolated. Broad selection is a
-visible safety boundary, not a planner failure. Do not weaken that fallback to
-make a route count look smaller.
+`changedFast` prints whether its plan is `focused-local` or `full-profile`,
+semantic reasons, exact identities, and any explicitly ignored paths. For
+ordinary App and facade source it runs only the required contract closure.
+Framework, Build, catalog, and repository-policy paths select explicit bounded
+system evidence. Documentation and generated-site paths are explicitly ignored
+because `docsCheck` owns their consistency. An unknown path is a planning error:
+declare its production role or an explicit no-test reason; do not hide missing
+ownership by widening the run.
+
+Use `labkittest.explainChanged` to inspect that decision without executing
+tests. It prints each changed path's classification, selected evidence, and any
+manual boundary. A focused-local result is rapid author feedback, not merge
+safety evidence; CI runs the full platform profiles.
 
 Run focused behavior during iteration. Run `changedFast` once when the branch
 is ready for review or direct-main integration. CI owns broad platform
@@ -148,9 +159,12 @@ migration, structural-GUI, or workflow proof.
 ## CI and Manual Evidence
 
 Continuous Integration runs `headless`, `gui`, and `isolated` on Linux, macOS, and Windows
-from a clean MATLAB runtime without optional Toolboxes. It uploads the catalog
-artifacts even after failure. Coverage is an explicit report, not a duplicate
-CI gate.
+from a clean MATLAB runtime without optional Toolboxes. It also runs `docsCheck`
+once, then reports one aggregate `CI Gate` result that depends on every required
+profile. Configure repository branch protection to require `CI Gate`; the
+workflow does not silently replace repository protection policy. It uploads the
+catalog artifacts even after failure. Coverage is an explicit report, not a
+duplicate CI gate.
 
 Manual App validation remains required for native file dialogs, visual design,
 pointer interaction, real-data suitability, and scientific interpretation.

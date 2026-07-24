@@ -292,6 +292,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             file = labkittest.createSpec( ...
                 "apps/electrochem/cic/+cic/+analysisRun/computeCIC.m", ...
                 "Contract", "scientific", "Name", "PulseWindow", ...
+                "Reason", "Regression LK-0001: pulse window must remain bounded.", ...
                 "SpecsRoot", specsRoot);
             source = string(fileread(file));
 
@@ -299,6 +300,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "electrochem", "cic", "analysisRun", "PulseWindowSpec.m")));
             testCase.verifySubstring(source, "Contract:scientific");
             testCase.verifySubstring(source, "Env:headless");
+            testCase.verifySubstring(source, "Regression LK-0001");
             testCase.verifySubstring(source, "LabKit:TestSpec:Unimplemented");
         end
 
@@ -310,13 +312,29 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
 
             file = labkittest.createSpec( ...
                 "apps/electrochem/vt_resistance/+vt_resistance/+resultFiles/writeResultsCSV.m", ...
-                "Name", "CsvSchema", "SpecsRoot", specsRoot);
+                "Name", "CsvSchema", ...
+                "Reason", "Compatibility: CSV columns are a public export contract.", ...
+                "SpecsRoot", specsRoot);
 
             testCase.verifySubstring(string(fileread(file)), "Contract:result");
             testCase.verifyError(@() labkittest.createSpec( ...
                 "apps/electrochem/vt_resistance/+vt_resistance/+analysisRun/recomputeItems.m", ...
-                "Name", "ResistancePolicy", "SpecsRoot", specsRoot), ...
+                "Name", "ResistancePolicy", ...
+                "Reason", "Invariant: recomputation preserves item ownership.", ...
+                "SpecsRoot", specsRoot), ...
                 "LabKit:TestAuthoring:AmbiguousContract");
+        end
+
+        function createSpecRequiresOneDurableReasonCategory(testCase)
+            fixture = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            specsRoot = fullfile(fixture.Folder, "specs");
+            mkdir(specsRoot);
+
+            testCase.verifyError(@() labkittest.createSpec( ...
+                "apps/electrochem/cic/+cic/+analysisRun/computeCIC.m", ...
+                "Contract", "scientific", "Name", "MissingReason", ...
+                "SpecsRoot", specsRoot), "LabKit:TestAuthoring:InvalidReason");
         end
 
         function calculationFileRejectsMissingContractEvidence(testCase)
@@ -345,18 +363,39 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(numel(unique(string({result.Descriptors.Id}))), 4);
         end
 
-        function unknownChangedPathWidensToEveryAutomatedEnvironment(testCase)
+        function unknownChangedPathFailsPlanningInsteadOfWidening(testCase)
             specsRoot = testCase.createEnvironmentFixture();
 
-            result = labkittest.plan("Profile", "changed", ...
-                "ChangedPaths", "unmapped-policy.txt", "SpecsRoot", specsRoot);
+            testCase.verifyError(@() labkittest.plan("Profile", "changed", ...
+                "ChangedPaths", "unmapped-policy.txt", "SpecsRoot", specsRoot), ...
+                "LabKit:TestPlan:UnknownOwnership");
+        end
 
-            testCase.verifyTrue(result.Fallback);
-            testCase.verifyEqual(numel(result.Descriptors), 5);
-            testCase.verifyEqual(string({result.Descriptors.Environment}), ...
-                ["headless", "headless", "headless", "hidden-gui", "path-isolated"]);
-            testCase.verifyTrue(all(startsWith(result.Reasons, ...
-                "conservative fallback:")));
+        function ignoredDocumentationPathDoesNotInventAutomatedEvidence(testCase)
+            result = labkittest.plan("Profile", "changed", ...
+                "ChangedPaths", "docs/development/maintain-and-release/testing.md");
+
+            testCase.verifyEqual(result.Scope, "focused-local");
+            testCase.verifyEmpty(result.Descriptors);
+            testCase.verifyEqual(result.Classifications.Kind, "ignored");
+            testCase.verifySubstring(result.Classifications.Reason, "docsCheck");
+        end
+
+        function validationFrameworkChangeUsesBoundedSystemEvidence(testCase)
+            result = labkittest.plan("Profile", "changed", ...
+                "ChangedPaths", "tests/+labkittest/plan.m");
+
+            testCase.verifyEqual(result.Scope, "focused-local");
+            testCase.verifyFalse(result.Fallback);
+            testCase.verifyEqual(string({result.Descriptors.Owner}), ...
+                repmat("system/build", 1, numel(result.Descriptors)));
+        end
+
+        function explainChangedReportsClassificationAndExactEvidence(testCase)
+            output = evalc("labkittest.explainChanged(""ChangedPaths"", ""tests/+labkittest/plan.m"");");
+
+            testCase.verifySubstring(string(output), "classification: mapped");
+            testCase.verifySubstring(string(output), "system/build / system / headless");
         end
 
         function isolatedProfileSelectsEveryPathIsolatedSpecification(testCase)
@@ -370,28 +409,30 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
 
         function changedProfileIncludesTrackedAndUntrackedPreCommitPaths(testCase)
             [repository, specsRoot] = testCase.createGitRepository();
-            testCase.writeTextFile(fullfile(repository, "tracked-source.m"), "changed");
-            testCase.writeTextFile(fullfile(repository, "untracked-source.m"), "new");
+            testCase.writeTextFile(fullfile(repository, "docs", "tracked-source.md"), "changed");
+            testCase.writeTextFile(fullfile(repository, "site", "untracked-source.md"), "new");
 
             result = labkittest.plan("Profile", "changed", ...
                 "RepositoryRoot", repository, "SpecsRoot", specsRoot);
 
-            testCase.verifyTrue(result.Fallback);
-            testCase.verifyTrue(any(contains(result.Reasons, "tracked-source.m")));
-            testCase.verifyTrue(any(contains(result.Reasons, "untracked-source.m")));
+            testCase.verifyEqual(string({result.Classifications.Kind}), ["ignored", "ignored"]);
+            testCase.verifyTrue(any(contains(string({result.Classifications.Path}), ...
+                "tracked-source.md")));
+            testCase.verifyTrue(any(contains(string({result.Classifications.Path}), ...
+                "untracked-source.md")));
         end
 
         function changedProfileUsesJustCommittedPathsAfterCleanCheckpoint(testCase)
             [repository, specsRoot] = testCase.createGitRepository();
-            testCase.writeTextFile(fullfile(repository, "checkpoint-source.m"), "changed");
-            testCase.runGit(repository, "add checkpoint-source.m");
+            testCase.writeTextFile(fullfile(repository, "docs", "checkpoint-source.md"), "changed");
+            testCase.runGit(repository, "add docs/checkpoint-source.md");
             testCase.runGit(repository, "commit -m checkpoint");
 
             result = labkittest.plan("Profile", "changed", ...
                 "RepositoryRoot", repository, "SpecsRoot", specsRoot);
 
-            testCase.verifyTrue(result.Fallback);
-            testCase.verifyTrue(any(contains(result.Reasons, "checkpoint-source.m")));
+            testCase.verifyEqual(result.Classifications.Kind, "ignored");
+            testCase.verifySubstring(result.Classifications.Path, "checkpoint-source.md");
         end
 
         function parameterizedDefinitionsKeepEachPublicAppSelectable(testCase)
@@ -425,6 +466,8 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             valid = apps.cic;
             invalid = valid;
             invalid.Package = "missing_app";
+            previousPath = path;
+            previousFolder = pwd;
 
             [status, output] = labkittest.runIsolatedAppProbes([invalid, valid]);
 
@@ -432,6 +475,31 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifySubstring(string(output), ...
                 "ISOLATED_APP_PROBE missing_app FAIL");
             testCase.verifySubstring(string(output), "ISOLATED_APP_PROBE cic PASS");
+            testCase.verifyEqual(path, previousPath);
+            testCase.verifyEqual(pwd, previousFolder);
+        end
+
+        function isolatedProbeDoesNotResolveASiblingAppsLoadedFunction(testCase)
+            fixture = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            token = string(randi(10^9));
+            first = "isolatedfirst" + token;
+            second = "isolatedsecond" + token;
+            firstFolder = testCase.writeIsolatedFixtureApp( ...
+                fixture.Folder, first, "");
+            secondFolder = testCase.writeIsolatedFixtureApp( ...
+                fixture.Folder, second, first);
+            apps = struct( ...
+                "Package", {first, second}, ...
+                "Folder", {string(firstFolder), string(secondFolder)});
+
+            [status, output] = labkittest.runIsolatedAppProbes(apps);
+
+            testCase.verifyNotEqual(status, 0);
+            testCase.verifySubstring(string(output), ...
+                "ISOLATED_APP_PROBE " + first + " PASS");
+            testCase.verifySubstring(string(output), ...
+                "ISOLATED_APP_PROBE " + second + " FAIL");
         end
     end
 
@@ -479,6 +547,10 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
         end
 
         function writeTextFile(~, file, contents)
+            folder = fileparts(file);
+            if exist(folder, "dir") ~= 7
+                mkdir(folder);
+            end
             fid = fopen(file, "w");
             cleanup = onCleanup(@() fclose(fid));
             fprintf(fid, "%s\n", contents);
@@ -537,6 +609,33 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() fclose(fid));
             fprintf(fid, "%s\n", source);
             clear cleanup
+        end
+
+        function folder = writeIsolatedFixtureApp(testCase, root, package, sibling)
+            folder = fullfile(root, package);
+            packageFolder = fullfile(folder, "+" + package);
+            mkdir(packageFolder);
+            dependency = [ ...
+                "function onlyFromFirst()", ...
+                "end"];
+            testCase.writeTextFile(fullfile(packageFolder, "onlyFromFirst.m"), ...
+                strjoin(dependency, newline));
+            prefix = strings(1, 0);
+            if strlength(sibling) > 0
+                prefix = sibling + ".onlyFromFirst();";
+            end
+            definition = [ ...
+                "function app = definition()", ...
+                prefix, ...
+                "app = struct( ...", ...
+                "    'AppId', """ + package + """, ...", ...
+                "    'AppVersion', ""1.0.0"", ...", ...
+                "    'Requirements', labkit.contract.requirements(""app"", "">=1 <2""), ...", ...
+                "    'BuildDebugSample', @(context) labkit.app.diagnostic.SamplePack( ...", ...
+                "        Scenario=""fixture"", InitialProject=struct(), Artifacts={}));", ...
+                "end"];
+            testCase.writeTextFile(fullfile(packageFolder, "definition.m"), ...
+                strjoin(definition, newline));
         end
     end
 end

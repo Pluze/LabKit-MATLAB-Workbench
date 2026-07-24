@@ -14,8 +14,12 @@ folders, selector registries, wrappers, or stage tags by hand. Run focused
 evidence through `labkittest.run`, and use `buildtool changedFast` only at the
 final integration gate.
 
-`headless`, `gui`, `isolated`, and `coverage` are catalog profiles. A
-framework, build, or unknown change widens to every automated environment
-deliberately. Generated artifacts live under `artifacts/test-results/` and are
-never tracked. A plan may also name an explicit manual check; it is a handoff
-for native interaction or scientific review, never passing test evidence.
+`headless`, `gui`, `isolated`, and `coverage` are full catalog profiles.
+`changedFast` is focused local evidence: an App or facade path maps to its
+bounded closure, while framework, build, and repository-policy paths map to
+explicit system evidence. Documentation and generated site paths are explicitly
+ignored because `docsCheck` owns them. An unclassified path fails planning; add
+a production role or an explicit no-test classification rather than widening
+the run. Generated artifacts live under `artifacts/test-results/` and are never
+tracked. A plan may also name an explicit manual check; it is a handoff for
+native interaction or scientific review, never passing test evidence.

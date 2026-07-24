@@ -1,9 +1,10 @@
 function file = createSpec(sourceFile, varargin)
 %CREATESPEC Create a minimal behavior-specification skeleton in its owner.
-%   FILE = labkittest.createSpec(SOURCEFILE, Name=NAME) finds SOURCEFILE's
+%   FILE = labkittest.createSpec(SOURCEFILE, Name=NAME, Reason=REASON) finds SOURCEFILE's
 %   one author-owned insertion target and writes NAME + "Spec" below its exact
 %   tests/specs owner. Contract=CONTRACT is required only when SOURCEFILE has
-%   more than one author-owned behavior boundary. The generated class declares
+%   more than one author-owned behavior boundary. Reason records why the test
+%   merits durable maintenance: Regression, Invariant, or Compatibility. The generated class declares
 %   the target Contract and Env tags and contains one deliberately failing TODO
 %   method.
 %   Replace only that method body with behavioral evidence; do not invent test
@@ -61,7 +62,7 @@ function file = createSpec(sourceFile, varargin)
     if exist(location.Folder, "dir") ~= 7
         mkdir(location.Folder);
     end
-    writeTemplate(file, className, location);
+    writeTemplate(file, className, location, opts.Reason);
     file = string(file);
 end
 
@@ -71,24 +72,30 @@ function opts = parseOptions(sourceFile, varargin)
     p.addRequired("SourceFile", @isTextScalar);
     p.addParameter("Contract", "", @isTextScalar);
     p.addParameter("Name", "", @isTextScalar);
+    p.addParameter("Reason", "", @isTextScalar);
     p.addParameter("SpecsRoot", defaultSpecsRoot(), @isFolderPath);
     p.parse(sourceFile, varargin{:});
     opts = p.Results;
     opts.SourceFile = string(opts.SourceFile);
     opts.Contract = lower(strip(string(opts.Contract)));
     opts.Name = string(opts.Name);
+    opts.Reason = strip(string(opts.Reason));
     opts.SpecsRoot = string(opts.SpecsRoot);
     if strlength(opts.Name) == 0
         error("LabKit:TestAuthoring:MissingArgument", ...
             "Name is required to create a specification.");
     end
+    if isempty(regexp(char(opts.Reason), "^(Regression|Invariant|Compatibility)(:|\s)", "once"))
+        error("LabKit:TestAuthoring:InvalidReason", ...
+            "Reason is required and must begin with Regression, Invariant, or Compatibility.");
+    end
 end
 
-function writeTemplate(file, className, location)
+function writeTemplate(file, className, location, reason)
     methodName = "proves" + erase(className, "Spec");
     source = strjoin([ ...
         "classdef " + className + " < matlab.unittest.TestCase", ...
-        "    % " + upper(className) + " Specify " + location.Reason + ".", ...
+        "    % " + upper(className) + " " + reason, ...
         "", ...
         "    methods (Test, TestTags = {'Contract:" + location.Contract + ...
             "', 'Env:" + location.Environment + "'})", ...
