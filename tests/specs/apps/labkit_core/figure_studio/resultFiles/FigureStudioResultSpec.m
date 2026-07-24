@@ -65,6 +65,50 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
                 round([style.canvasWidth style.canvasHeight]), AbsTol=1);
             clear rebuiltCleanup resourceCleanup fileCleanup cleanup
         end
+
+        function exportedLongTitleStaysWithinTheCanvas(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            sourceFigure = figure(Visible="off");
+            source = axes(Parent=sourceFigure);
+            plot(source, 0:5, [0 2 4 3 2 1]);
+            title(source, "-Zimag (ohm) vs Zreal (ohm) (4 files)");
+            xlabel(source, "Zreal (ohm)");
+            ylabel(source, "-Zimag (ohm)");
+            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            [exportedFigure, exported] = figure_studio.resultFiles.createStyledFigure( ...
+                figure_studio.resultFiles.extractAxesData(source), style, source);
+            exportCleanup = onCleanup(@() delete(exportedFigure));
+            drawnow
+            exported.Units = "pixels";
+            exported.Title.Units = "pixels";
+            axesPosition = exported.Position;
+            extent = exported.Title.Extent;
+            titleBounds = [axesPosition(1) + extent(1), axesPosition(2) + extent(2), ...
+                axesPosition(1) + extent(1) + extent(3), ...
+                axesPosition(2) + extent(2) + extent(4)];
+
+            testCase.verifyGreaterThanOrEqual(titleBounds(1:2), [0 0]);
+            testCase.verifyLessThanOrEqual(titleBounds(3:4), exportedFigure.Position(3:4));
+            clear exportCleanup cleanup
+        end
+
+        function emptyLogRulerTextDoesNotCreateAnOversizedCanvas(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            figureValue = figure(Visible="off", MenuBar="none", ToolBar="none");
+            axesValue = axes(Parent=figureValue);
+            loglog(axesValue, [1 1e5], [1e5 1e2]);
+            xlabel(axesValue, "Frequency (Hz)");
+            ylabel(axesValue, "Impedance (ohm)");
+
+            figure_studio.resultFiles.applyFigureStyle(axesValue, ...
+                figure_studio.styleLibrary.styleForPreset("LabKit figure"));
+            axesValue.Units = "pixels";
+
+            testCase.verifyEqual(axesValue.Position(3:4), [900 725], AbsTol=1);
+            testCase.verifyLessThan(figureValue.InnerPosition(3), 2000);
+            testCase.verifyLessThan(figureValue.InnerPosition(4), 2000);
+            clear cleanup
+        end
     end
 end
 

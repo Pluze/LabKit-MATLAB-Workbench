@@ -69,6 +69,25 @@ classdef FigureStudioSourceSpec < matlab.unittest.TestCase
             testCase.verifyLessThan(abs(axesStyle.canvasWidth / axesStyle.canvasHeight - 2), .02);
             clear cleanup
         end
+
+        function axesHandoffBuildsAnEmbeddedProjectWithoutSourceFileState(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            sourceFigure = figure(Visible="off");
+            source = axes(Parent=sourceFigure);
+            plot(source, 1:4, [2 1 4 3]);
+            title(source, "Source handoff");
+
+            [project, dispatch] = figure_studio.launchRequest({"axes", source});
+
+            testCase.verifyEmpty(dispatch);
+            testCase.verifyEmpty(project.inputs.sources);
+            testCase.verifyNotEmpty(project.annotations.embeddedPlot.objects);
+            testCase.verifyEqual(project.parameters.preset, "LabKit figure");
+            testCase.verifyTrue(isgraphics(project.annotations.transientSourceAxes, "axes"));
+            testCase.verifyError(@() figure_studio.launchRequest({"axes", []}), ...
+                "labkit_FigureStudio_app:InvalidAxes");
+            clear cleanup
+        end
     end
 end
 
