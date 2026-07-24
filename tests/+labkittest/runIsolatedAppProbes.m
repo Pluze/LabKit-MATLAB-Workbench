@@ -23,6 +23,10 @@ function [status, output] = runIsolatedAppProbes(apps)
     command = matlabCommand();
     [status, output] = system(char(shellDoubleQuote(command) + " -batch " + ...
         shellDoubleQuote("run(" + matlabLiteral(scriptPath) + ");")));
+    if status ~= 0
+        error("LabKit:IsolatedProbe:ChildFailed", ...
+            "The isolated MATLAB child failed (status %d):\n%s", status, output);
+    end
     clear cleanup
 end
 
