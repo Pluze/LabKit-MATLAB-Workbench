@@ -73,7 +73,7 @@ GUI workflow is not considered covered by a launch smoke test.
 | Focus Stack | fusion, registration, project/result/source/presentation | Split: restore invalid-input and file-panel branches plus load/run workflow proof. |
 | Image Enhance | basic enhancement, white balance, source/result/presentation | Gap: white-ROI, subject-preserving enhancement, tool availability, preview scaling, and workflow export evidence. |
 | Image Match | white-balance and tone matching, source/result/project/presentation | Split: restore protected/Lab/histogram modes, reference separation, and workflow export proof. |
-| Video Marker | connection order, coarse tracking, project/result/source/presentation | Gap: annotations, legacy import, subpixel/deterministic/cache tracking, toolbox parity, and marking/prediction/export workflow. |
+| Video Marker | editable skeleton lifecycle, coarse/subpixel deterministic tracking, prediction cache, annotation migration, project/result/source/presentation | Split: restore legacy project import, annotation/export provenance, declared Toolbox parity, and marking/prediction/export workflow. |
 | Figure Studio | style, overlay order, source limits, project/presentation | Gap: composite FIG import/export, canvas/title/log-axis edge cases, source handoff, and interactive preview/export workflows. |
 | Nerve Response Analysis | train detection, roles, CAP metrics, migration, source/result/presentation | Split: restore legacy session-input branch and analysis workflow proof. |
 | Response Review Stats | CSV parsing, aligned metrics, migration, result/presentation | Split: restore metrics/export workflow proof. |
