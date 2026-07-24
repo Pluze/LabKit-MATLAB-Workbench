@@ -66,7 +66,7 @@ GUI workflow is not considered covered by a launch smoke test.
 | --- | --- | --- |
 | DIC Postprocess | strain domain, masks, overlays, source/result/presentation, generic semantic layout | Split: restore one bounded load-overlay-summary GUI workflow; retain source/export edge cases after direct parity check. |
 | DIC Preprocess | masks, crop geometry, alignment, history, source/result/project/presentation, generic semantic layout | Split: restore pair/alignment/crop workflow proof. |
-| Chrono Overlay | pulse alignment, export interpolation, presentation, generic semantic layout | Split: restore plot/export/restore workflow proof. |
+| Chrono Overlay | definition/version metadata, project migration, pulse alignment, export interpolation, presentation, generic semantic layout, bounded load/plot/export/restore workflow | Covered: direct capability and hidden-GUI workflow specs replace the legacy behavioral and layout wrappers. |
 | CIC | core metrics, baseline/source and access policies, nominal current, batch recompute, schema, summary, and bounded workflow | Split: retain direct display-unit, failed-summary, and plot-request branch audit; do not replace the restored automated workflow with a manual check. |
 | CSC | cycle charge, modes/errors, CSV schema, presentation, generic semantic layout | Split: audit the retained edge-cycle/export branches; restore compare-and-plot workflow proof. |
 | EIS | impedance mapping, source summary, result schema, presentation, generic semantic layout | Split: restore file-load workflow proof. |
