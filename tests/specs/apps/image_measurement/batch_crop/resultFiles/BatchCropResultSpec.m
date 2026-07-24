@@ -63,6 +63,28 @@ classdef BatchCropResultSpec < matlab.unittest.TestCase
             testCase.verifyTrue(contains(payload.results(1).scaleWarning, "upsample"));
             testCase.verifyEqual(payload.manifest.OutputWidth_px, [60; 60]);
         end
+
+        function givesDuplicateSourceTasksDistinctOutputsAndManifestRows(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            items = repmat(batch_crop.sourceFiles.emptyItem(), 2, 1);
+            for k = 1:2
+                items(k).path = fullfile(folder, "shared_source.png");
+                items(k).image = uint8(20 .* ones(8));
+                items(k).centerXY = [3 + 3 * (k - 1), 3];
+                items(k).centerSet = true;
+            end
+
+            payload = batch_crop.resultFiles.writeOutputs(items, struct( ...
+                "outputFolder", folder, "format", "PNG", "cropWidth", 4, ...
+                "cropHeight", 4, "paddingPercent", 0));
+            outputs = string({payload.results.outputPath});
+
+            testCase.verifyEqual(numel(unique(outputs)), 2);
+            testCase.verifyTrue(endsWith(outputs(1), "shared_source_crop.png"));
+            testCase.verifyTrue(endsWith(outputs(2), "shared_source_crop_001.png"));
+            testCase.verifyEqual(height(payload.manifest), 2);
+        end
     end
 end
 
