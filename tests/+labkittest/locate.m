@@ -16,10 +16,29 @@ function targets = locate(file, varargin)
 %   are framework-owned parameterized conformance and need no App wrapper.
 %
 %   TARGETS = labkittest.locate(FILE, SpecsRoot=FOLDER) uses FOLDER to form
-%   the insertion paths. Unknown source roles throw rather than guessing; the
-%   changed-file planner catches that condition and widens visibly.
+%   the insertion paths. Path classification and evidence strategy are
+%   separate: unknown structure throws rather than widening into a full run.
 
     opts = parseOptions(file, varargin{:});
+    classification = labkittest.classifyPath(opts.File);
+    if classification.Kind == "ignored"
+        error("LabKit:TestLocation:IgnoredPath", ...
+            "No test location is required for %s: %s", opts.File, classification.Reason);
+    end
+    if classification.Kind == "unknown"
+        error("LabKit:TestLocation:UnknownSource", ...
+            "No validation ownership exists for %s. %s", opts.File, classification.Reason);
+    end
+    if ismember(classification.Role, ["validation-framework", "test-fixture"])
+        targets = target(opts.SpecsRoot, classification.Owner, "system", ...
+            "headless", "", true, classification.Reason);
+        return;
+    end
+    if classification.Role == "repository-policy"
+        targets = target(opts.SpecsRoot, classification.Owner, "system", ...
+            "headless", "", true, classification.Reason);
+        return;
+    end
     parts = split(opts.File, "/");
     if startsWith(opts.File, "+labkit/") && numel(parts) >= 2 && ...
             startsWith(parts(2), "+")

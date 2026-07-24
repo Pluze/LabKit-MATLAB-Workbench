@@ -12,7 +12,9 @@ function result = plan(varargin)
 %   relative source path. Owner, Contract, and Environment use the same
 %   semantics as labkittest.catalog.
 %
-%   RESULT has Descriptors, Groups, Reasons, Fallback, and ManualChecks. A
+%   RESULT has Descriptors, Groups, Reasons, Scope, Classifications, and
+%   ManualChecks. Scope is focused-local or full-profile; it describes the
+%   selected evidence shape and never upgrades local evidence into merge proof. A
 %   manual check is an explicit non-automatable responsibility, never passing
 %   automated evidence. The executor consumes this result directly and runs
 %   each exact test identity once. SpecsRoot, RepositoryRoot, and ChangedPaths
@@ -20,9 +22,11 @@ function result = plan(varargin)
 %   repository defaults.
 
     opts = parseOptions(varargin{:});
-    [queries, reasons, fallback, manualChecks] = planQueries(opts);
+    [queries, reasons, manualChecks, classifications] = planQueries(opts);
+    scope = scopeForOptions(opts);
+    validateFocusedQueries(scope, queries);
     descriptors = descriptorsForQueries(opts, queries);
-    if isempty(descriptors)
+    if isempty(descriptors) && ~allowsNoAutomatedEvidence(scope, classifications)
         error("LabKit:TestPlan:NoEvidence", ...
             "The requested plan has no validated automated evidence.");
     end
@@ -31,7 +35,9 @@ function result = plan(varargin)
         "Descriptors", descriptors, ...
         "Groups", executionGroups(descriptors), ...
         "Reasons", reasons, ...
-        "Fallback", fallback, ...
+        "Fallback", false, ...
+        "Scope", scope, ...
+        "Classifications", classifications, ...
         "ManualChecks", manualChecks);
 end
 
@@ -78,11 +84,11 @@ function opts = parseOptions(varargin)
     end
 end
 
-function [queries, reasons, fallback, manualChecks] = planQueries(opts)
-    fallback = false;
+function [queries, reasons, manualChecks, classifications] = planQueries(opts)
     queries = repmat(emptyQuery(), 1, 0);
     reasons = strings(1, 0);
     manualChecks = strings(1, 0);
+    classifications = repmat(emptyClassification(), 1, 0);
     if strlength(opts.Profile) > 0
         switch opts.Profile
             case {"headless", "coverage"}
@@ -99,71 +105,64 @@ function [queries, reasons, fallback, manualChecks] = planQueries(opts)
                 if isempty(paths)
                     paths = gitChangedPaths(opts.RepositoryRoot);
                 end
-                [queries, reasons, fallback, manualChecks] = changedQueries(paths);
+                [queries, reasons, manualChecks, classifications] = changedQueries(paths);
         end
         return;
     end
     if strlength(opts.File) > 0
-        [queries, reasons, fallback, manualChecks] = queriesForChangedPath(opts.File);
+        [queries, reasons, manualChecks, classifications] = queriesForChangedPath(opts.File);
         return;
     end
     queries = query(opts.Owner, opts.Contract, opts.Environment);
     reasons = "explicit semantic selector";
 end
 
-function [queries, reasons, fallback, manualChecks] = changedQueries(paths)
+function [queries, reasons, manualChecks, classifications] = changedQueries(paths)
     queries = repmat(emptyQuery(), 1, 0);
     reasons = strings(1, 0);
-    fallback = false;
     manualChecks = strings(1, 0);
+    classifications = repmat(emptyClassification(), 1, 0);
     for k = 1:numel(paths)
-        [pathQueries, pathReasons, pathFallback, pathManualChecks] = queriesForChangedPath(paths(k));
+        [pathQueries, pathReasons, pathManualChecks, pathClassification] = queriesForChangedPath(paths(k));
         queries = [queries, pathQueries];
         reasons = [reasons, pathReasons];
-        fallback = fallback || pathFallback;
         manualChecks = [manualChecks, pathManualChecks];
+        classifications = [classifications, pathClassification];
     end
     if isempty(queries)
-        [queries, reasons, fallback, manualChecks] = fullEnvironmentFallback( ...
-            "no changed paths were found");
-        return;
+        if isempty(paths)
+            reasons = "no changed paths were found";
+        end
     end
     manualChecks = unique(manualChecks(strlength(manualChecks) > 0), "stable");
 end
 
-function [queries, reasons, fallback, manualChecks] = queriesForChangedPath(path)
+function [queries, reasons, manualChecks, classification] = queriesForChangedPath(path)
     manualChecks = strings(1, 0);
-    if startsWith(path, "tests/specs/")
-        [folder, ~, ~] = fileparts(char(path));
-        owner = extractAfter(string(folder), "tests/specs/");
-        queries = query(owner, "", "");
-        reasons = "changed specification selects its physical owner";
-        fallback = false;
+    classification = labkittest.classifyPath(path);
+    switch classification.Kind
+        case "ignored"
+            queries = repmat(emptyQuery(), 1, 0);
+            reasons = "ignored: " + classification.Reason;
+            return;
+        case "unknown"
+            error("LabKit:TestPlan:UnknownOwnership", ...
+                ["No validation ownership exists for: %s\n\n" + ...
+                "The change either introduces a new production structure, is outside " + ...
+                "an existing owner, requires a routing rule, or requires an explicit " + ...
+                "no-test classification. Full CI cannot resolve missing ownership."], path);
+    end
+    if classification.Role == "specification"
+        queries = query(classification.Owner, "", "");
+        reasons = classification.Reason;
         return;
     end
-    try
-        targets = labkittest.locate(path);
-        queries = arrayfun(@(target) query(target.Owner, target.Contract, ...
-            target.Environment, target.App), targets);
-        reasons = string({targets.Reason});
-        fallback = false;
-        manualChecks = unique(string({targets.ManualCheck}), "stable");
-        manualChecks = manualChecks(strlength(manualChecks) > 0);
-    catch exception
-        if exception.identifier ~= "LabKit:TestLocation:UnknownSource"
-            rethrow(exception)
-        end
-        [queries, reasons, fallback, manualChecks] = fullEnvironmentFallback( ...
-            "path has no bounded source-owner rule: " + path);
-    end
-end
-
-function [queries, reasons, fallback, manualChecks] = fullEnvironmentFallback(reason)
-    environments = ["headless", "hidden-gui", "path-isolated"];
-    queries = arrayfun(@(environment) query("", "", environment), environments);
-    reasons = "conservative fallback: " + reason + " environment=" + environments;
-    fallback = true;
-    manualChecks = strings(1, 0);
+    targets = labkittest.locate(path);
+    queries = arrayfun(@(target) query(target.Owner, target.Contract, ...
+        target.Environment, target.App), targets);
+    reasons = string({targets.Reason});
+    manualChecks = unique(string({targets.ManualCheck}), "stable");
+    manualChecks = manualChecks(strlength(manualChecks) > 0);
 end
 
 function descriptors = descriptorsForQueries(opts, queries)
@@ -223,6 +222,51 @@ end
 
 function value = emptyQuery()
     value = query("", "", "");
+end
+
+function value = emptyClassification()
+    value = struct("Path", string(""), "Kind", string(""), ...
+        "Role", string(""), "Owner", string(""), "Reason", string(""));
+end
+
+function scope = scopeForOptions(opts)
+    if strlength(opts.Profile) > 0
+        if opts.Profile == "changed"
+            scope = "focused-local";
+        else
+            scope = "full-profile";
+        end
+        return;
+    end
+    if strlength(opts.File) > 0
+        scope = "focused-local";
+        return;
+    end
+    if strlength(opts.Environment) > 0 && strlength(opts.Owner) == 0 && ...
+            strlength(opts.Contract) == 0
+        scope = "full-profile";
+    else
+        scope = "focused-local";
+    end
+end
+
+function validateFocusedQueries(scope, queries)
+    if scope ~= "focused-local"
+        return;
+    end
+    for k = 1:numel(queries)
+        current = queries(k);
+        if strlength(current.Owner) == 0 && strlength(current.Contract) == 0 && ...
+                strlength(current.App) == 0
+            error("LabKit:TestPlan:UnboundedFocusedPlan", ...
+                "Focused validation must select bounded owner, contract, or App evidence.");
+        end
+    end
+end
+
+function tf = allowsNoAutomatedEvidence(scope, classifications)
+tf = scope == "focused-local" && ~isempty(classifications) && ...
+    all(string({classifications.Kind}) == "ignored");
 end
 
 function value = emptyDescriptor()

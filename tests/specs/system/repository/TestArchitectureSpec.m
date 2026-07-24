@@ -43,6 +43,17 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyFalse(isfolder(fullfile(root, "tests", "runner")));
         end
 
+        function ciHasOneDocumentationCheckAndOneAggregateGate(testCase)
+            root = labkittest.setup();
+            workflow = text(root, ".github/workflows/ci.yml");
+
+            testCase.verifySubstring(workflow, "docs-check:");
+            testCase.verifySubstring(workflow, "tasks: docsCheck");
+            testCase.verifySubstring(workflow, "ci-gate:");
+            testCase.verifySubstring(workflow, "name: CI Gate");
+            testCase.verifySubstring(workflow, "docs-check.result");
+        end
+
         function repositoryTextDoesNotContainUserPathsOrTimestampTokens(testCase)
             root = labkittest.setup();
             files = repositoryTextFiles(root);

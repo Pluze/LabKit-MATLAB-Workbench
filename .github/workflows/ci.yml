@@ -214,3 +214,39 @@ jobs:
             artifacts/debug/**
             artifacts/gui/**
             artifacts/logs/**
+
+  docs-check:
+    name: Documentation check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up clean MATLAB runtime
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ env.MATLAB_RELEASE }}
+
+      - name: Verify generated documentation
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: docsCheck
+
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs:
+      - headless-platforms
+      - gui-platforms
+      - isolated-platforms
+      - docs-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all validation profiles
+        shell: bash
+        run: |
+          test '${{ needs.headless-platforms.result }}' = 'success'
+          test '${{ needs.gui-platforms.result }}' = 'success'
+          test '${{ needs.isolated-platforms.result }}' = 'success'
+          test '${{ needs.docs-check.result }}' = 'success'

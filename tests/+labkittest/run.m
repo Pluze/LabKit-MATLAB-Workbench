@@ -16,6 +16,7 @@ function result = run(varargin)
     [compiledPlan, opts] = parseOptions(varargin{:});
     labkittest.setup();
     artifacts = createArtifacts(opts, compiledPlan);
+    reportPlanScope(compiledPlan);
     reportManualChecks(compiledPlan.ManualChecks);
     results = cell(1, numel(compiledPlan.Groups));
     for k = 1:numel(compiledPlan.Groups)
@@ -42,6 +43,24 @@ function result = run(varargin)
     result = struct("Plan", compiledPlan, "Results", {results}, ...
         "RunName", opts.RunName, "ArtifactsRoot", opts.ArtifactsRoot, ...
         "Artifacts", artifacts);
+end
+
+function reportPlanScope(compiledPlan)
+if compiledPlan.Scope == "full-profile"
+    fprintf("LabKit full profile validation\n");
+    fprintf("Selected evidence: %d identities\n", numel(compiledPlan.Descriptors));
+    fprintf("Purpose: complete catalog coverage for the selected environment/profile\n");
+else
+    fprintf("LabKit focused local validation\n");
+    fprintf("Selected evidence: %d identities\n", numel(compiledPlan.Descriptors));
+    fprintf("Purpose: rapid local feedback\n");
+    fprintf("Merge safety: not established; full profiles run in CI\n");
+end
+for classification = compiledPlan.Classifications
+    if classification.Kind == "ignored"
+        fprintf("IGNORED PATH: %s (%s)\n", classification.Path, classification.Reason);
+    end
+end
 end
 
 function reportManualChecks(checks)
@@ -85,7 +104,8 @@ end
 
 function tf = isPlanOrEmpty(value)
     tf = isstruct(value) && (isempty(fieldnames(value)) || ...
-        all(isfield(value, {"Descriptors", "Groups", "Reasons", "Fallback", "ManualChecks"})));
+        all(isfield(value, {"Descriptors", "Groups", "Reasons", "Fallback", ...
+        "Scope", "Classifications", "ManualChecks"})));
 end
 
 function tf = isTextScalar(value)
@@ -172,8 +192,19 @@ function payload = planPayload(compiledPlan)
     payload = struct( ...
         "reasons", {cellstr(compiledPlan.Reasons)}, ...
         "fallback", compiledPlan.Fallback, ...
+        "scope", char(compiledPlan.Scope), ...
+        "classifications", {arrayfun(@classificationPayload, compiledPlan.Classifications)}, ...
         "manualChecks", {cellstr(compiledPlan.ManualChecks)}, ...
         "tests", {arrayfun(@descriptorPayload, descriptors)});
+end
+
+function payload = classificationPayload(classification)
+payload = struct( ...
+    "path", char(classification.Path), ...
+    "kind", char(classification.Kind), ...
+    "role", char(classification.Role), ...
+    "owner", char(classification.Owner), ...
+    "reason", char(classification.Reason));
 end
 
 function payload = descriptorPayload(descriptor)
@@ -191,7 +222,8 @@ function payload = summaryPayload(compiledPlan, results, failed)
         "failed", sum([flattened.Failed]), ...
         "incomplete", sum([flattened.Incomplete]), ...
         "passed", ~any(failed), ...
-        "fallback", compiledPlan.Fallback);
+        "fallback", compiledPlan.Fallback, ...
+        "scope", char(compiledPlan.Scope));
 end
 
 function writeJson(file, payload)

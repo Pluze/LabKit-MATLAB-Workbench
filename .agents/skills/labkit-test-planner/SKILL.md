@@ -17,7 +17,8 @@ Tests are owner-first behavioral specifications beneath `tests/specs/`; no
 caller infers test paths, stage tags, suite roots, ranges, or runner options.
 
 1. Begin with `labkittest.explain(SOURCE_FILE)` for a production change.
-2. Add evidence with `labkittest.createSpec(SOURCE_FILE, Name=...)`. Specify
+2. Add evidence with `labkittest.createSpec(SOURCE_FILE, Name=..., Reason=...)`.
+   Reason starts with `Regression`, `Invariant`, or `Compatibility`; specify
    `Contract` only when `explain` reports multiple author-owned boundaries.
 3. Iterate with `labkittest.run(Owner=..., Contract=...)`, or use
    `labkittest.run(File=...)` for the catalog's complete bounded closure.
@@ -51,8 +52,9 @@ startup, licensing, reporting, progress, and failure-diagnosis costs.
 - `buildtool isolated` runs every `Env:path-isolated` identity.
 - `buildtool coverage` adds Cobertura XML and HTML coverage to headless.
 - `buildtool changedFast` maps local Git paths to exact evidence closures. A
-  framework, build, policy, or unknown path safely widens to every automated
-  environment.
+  framework, build, or policy path selects explicit system evidence;
+  documentation is owned by `docsCheck`; an unknown path fails planning until
+  it has a declared validation owner or explicit ignore reason.
 - Hidden GUI proves declared structural wiring, not native dialogs, visual
   quality, pointer feel, real-data suitability, or scientific validity.
 
