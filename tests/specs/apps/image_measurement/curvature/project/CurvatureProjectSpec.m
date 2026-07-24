@@ -1,19 +1,24 @@
 classdef CurvatureProjectSpec < matlab.unittest.TestCase
-    %CURVATUREPROJECTSPEC Specify durable image-source migration.
+    %CURVATUREPROJECTSPEC Specify source-record migration and empty session state.
 
     methods (Test, TestTags = {'Contract:persistence', 'Env:headless'})
-        function migratesTheFormerSingularImageSource(testCase)
-            spec = curvature.projectSpec();
-            source = struct("absolutePath", "/tmp/image.png");
-            project = spec.Create();
-            project.inputs.source = source;
-            project.inputs = rmfield(project.inputs, "sources");
+        function migratesTheOriginalSingleSourceFieldAndRebuildsAnEmptySession(testCase)
+            definition = curvature.definition();
+            project = definition.ProjectSchema.Create();
+            session = definition.CreateSession(project, ...
+                labkit.app.internal.CallbackContextFactory.disconnected());
+            legacy = project;
+            legacy.inputs.source = struct("absolutePath", "/tmp/image.png");
+            legacy.inputs = rmfield(legacy.inputs, "sources");
 
-            migrated = spec.Migrate(project, 1);
+            migrated = definition.ProjectSchema.Migrate(legacy, 1);
 
-            testCase.verifyEqual(migrated.inputs.sources, source);
+            testCase.verifyTrue(definition.ProjectSchema.Validate(project));
+            testCase.verifyEqual(definition.ProjectSchema.Version, 2);
+            testCase.verifyEmpty(session.cache.image);
+            testCase.verifyEqual(session.workflow.editMode, "none");
+            testCase.verifyEqual(migrated.inputs.sources, legacy.inputs.source);
             testCase.verifyFalse(isfield(migrated.inputs, "source"));
-            testCase.verifyTrue(spec.Validate(migrated));
         end
     end
 end
