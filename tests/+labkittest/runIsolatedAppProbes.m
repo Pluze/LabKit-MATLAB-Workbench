@@ -24,6 +24,7 @@ function [status, output] = runIsolatedAppProbes(apps)
     [status, output] = system(char(shellDoubleQuote(command) + " -batch " + ...
         shellDoubleQuote("run(" + matlabLiteral(scriptPath) + ");")));
     if status ~= 0
+        fprintf(2, "ISOLATED MATLAB CHILD OUTPUT:\n%s\n", output);
         error("LabKit:IsolatedProbe:ChildFailed", ...
             "The isolated MATLAB child failed (status %d):\n%s", status, output);
     end
