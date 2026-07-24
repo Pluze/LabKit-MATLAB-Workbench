@@ -44,6 +44,9 @@ classdef VideoMarkerResultSpec < matlab.unittest.TestCase
             testCase.verifyEqual(payload.skeleton.pointNames, ["hip"; "knee"]);
             testCase.verifyEqual(payload.annotations.coords, annotations.coords);
             testCase.verifyEqual(payload.annotations.frameStatus, annotations.frameStatus);
+            testCase.verifyEqual(payload.annotations.frameSource, annotations.frameSource);
+            testCase.verifyEqual(payload.annotations.trackingConfidence, ...
+                annotations.trackingConfidence, AbsTol=1e-12);
         end
     end
 end
