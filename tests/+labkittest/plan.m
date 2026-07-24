@@ -12,13 +12,15 @@ function result = plan(varargin)
 %   relative source path. Owner, Contract, and Environment use the same
 %   semantics as labkittest.catalog.
 %
-%   RESULT has Descriptors, Groups, Reasons, Fallback, and ManualChecks. The
-%   executor consumes this result directly and runs each exact test identity
-%   once. SpecsRoot, RepositoryRoot, and ChangedPaths exist for isolated
-%   framework self-tests; ordinary callers rely on repository defaults.
+%   RESULT has Descriptors, Groups, Reasons, Fallback, and ManualChecks. A
+%   manual check is an explicit non-automatable responsibility, never passing
+%   automated evidence. The executor consumes this result directly and runs
+%   each exact test identity once. SpecsRoot, RepositoryRoot, and ChangedPaths
+%   exist for isolated framework self-tests; ordinary callers rely on
+%   repository defaults.
 
     opts = parseOptions(varargin{:});
-    [queries, reasons, fallback] = planQueries(opts);
+    [queries, reasons, fallback, manualChecks] = planQueries(opts);
     descriptors = descriptorsForQueries(opts, queries);
     if isempty(descriptors)
         error("LabKit:TestPlan:NoEvidence", ...
@@ -30,7 +32,7 @@ function result = plan(varargin)
         "Groups", executionGroups(descriptors), ...
         "Reasons", reasons, ...
         "Fallback", fallback, ...
-        "ManualChecks", strings(1, 0));
+        "ManualChecks", manualChecks);
 end
 
 function opts = parseOptions(varargin)
@@ -70,16 +72,17 @@ function opts = parseOptions(varargin)
             "File cannot be combined with Owner, Contract, or Environment.");
     end
     if strlength(opts.Profile) > 0 && ~ismember(opts.Profile, ...
-            ["changed", "headless", "gui", "coverage"])
+            ["changed", "headless", "gui", "isolated", "coverage"])
         error("LabKit:TestPlan:UnknownProfile", ...
-            "Profile must be changed, headless, gui, or coverage.");
+            "Profile must be changed, headless, gui, isolated, or coverage.");
     end
 end
 
-function [queries, reasons, fallback] = planQueries(opts)
+function [queries, reasons, fallback, manualChecks] = planQueries(opts)
     fallback = false;
     queries = repmat(emptyQuery(), 1, 0);
     reasons = strings(1, 0);
+    manualChecks = strings(1, 0);
     if strlength(opts.Profile) > 0
         switch opts.Profile
             case {"headless", "coverage"}
@@ -88,39 +91,48 @@ function [queries, reasons, fallback] = planQueries(opts)
             case "gui"
                 queries = query("", "", "hidden-gui");
                 reasons = "profile selects every hidden-GUI specification";
+            case "isolated"
+                queries = query("", "", "isolated-process");
+                reasons = "profile selects every isolated-process specification";
             case "changed"
                 paths = opts.ChangedPaths;
                 if isempty(paths)
                     paths = gitChangedPaths(opts.RepositoryRoot);
                 end
-                [queries, reasons, fallback] = changedQueries(paths);
+                [queries, reasons, fallback, manualChecks] = changedQueries(paths);
         end
         return;
     end
     if strlength(opts.File) > 0
-        [queries, reasons, fallback] = queriesForChangedPath(opts.File);
+        [queries, reasons, fallback, manualChecks] = queriesForChangedPath(opts.File);
         return;
     end
     queries = query(opts.Owner, opts.Contract, opts.Environment);
     reasons = "explicit semantic selector";
 end
 
-function [queries, reasons, fallback] = changedQueries(paths)
+function [queries, reasons, fallback, manualChecks] = changedQueries(paths)
     queries = repmat(emptyQuery(), 1, 0);
     reasons = strings(1, 0);
     fallback = false;
+    manualChecks = strings(1, 0);
     for k = 1:numel(paths)
-        [pathQueries, pathReasons, pathFallback] = queriesForChangedPath(paths(k));
+        [pathQueries, pathReasons, pathFallback, pathManualChecks] = queriesForChangedPath(paths(k));
         queries = [queries, pathQueries];
         reasons = [reasons, pathReasons];
         fallback = fallback || pathFallback;
+        manualChecks = [manualChecks, pathManualChecks];
     end
     if isempty(queries)
-        [queries, reasons, fallback] = fullHeadlessFallback("no changed paths were found");
+        [queries, reasons, fallback, manualChecks] = fullEnvironmentFallback( ...
+            "no changed paths were found");
+        return;
     end
+    manualChecks = unique(manualChecks(strlength(manualChecks) > 0), "stable");
 end
 
-function [queries, reasons, fallback] = queriesForChangedPath(path)
+function [queries, reasons, fallback, manualChecks] = queriesForChangedPath(path)
+    manualChecks = strings(1, 0);
     if startsWith(path, "tests/specs/")
         [folder, ~, ~] = fileparts(char(path));
         owner = extractAfter(string(folder), "tests/specs/");
@@ -135,19 +147,23 @@ function [queries, reasons, fallback] = queriesForChangedPath(path)
             target.Environment, target.App), targets);
         reasons = string({targets.Reason});
         fallback = false;
+        manualChecks = unique(string({targets.ManualCheck}), "stable");
+        manualChecks = manualChecks(strlength(manualChecks) > 0);
     catch exception
         if exception.identifier ~= "LabKit:TestLocation:UnknownSource"
             rethrow(exception)
         end
-        [queries, reasons, fallback] = fullHeadlessFallback( ...
+        [queries, reasons, fallback, manualChecks] = fullEnvironmentFallback( ...
             "path has no bounded source-owner rule: " + path);
     end
 end
 
-function [queries, reasons, fallback] = fullHeadlessFallback(reason)
-    queries = query("", "", "headless");
-    reasons = "conservative fallback: " + reason;
+function [queries, reasons, fallback, manualChecks] = fullEnvironmentFallback(reason)
+    environments = ["headless", "hidden-gui", "isolated-process"];
+    queries = arrayfun(@(environment) query("", "", environment), environments);
+    reasons = "conservative fallback: " + reason + " environment=" + environments;
     fallback = true;
+    manualChecks = strings(1, 0);
 end
 
 function descriptors = descriptorsForQueries(opts, queries)

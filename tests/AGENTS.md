@@ -14,6 +14,8 @@ folders, selector registries, wrappers, or stage tags by hand. Run focused
 evidence through `labkittest.run`, and use `buildtool changedFast` only at the
 final integration gate.
 
-`headless`, `gui`, and `coverage` are catalog profiles. A framework, build, or
-unknown change widens to all headless specs deliberately. Generated artifacts
-live under `artifacts/test-results/` and are never tracked.
+`headless`, `gui`, `isolated`, and `coverage` are catalog profiles. A
+framework, build, or unknown change widens to every automated environment
+deliberately. Generated artifacts live under `artifacts/test-results/` and are
+never tracked. A plan may also name an explicit manual check; it is a handoff
+for native interaction or scientific review, never passing test evidence.

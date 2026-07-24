@@ -2,7 +2,9 @@ function targets = locate(file, varargin)
 %LOCATE Show where an author adds evidence for a production source file.
 %   TARGETS = labkittest.locate(FILE) maps one repository-relative production
 %   source file to its required evidence targets. Each target has Owner,
-%   Contract, Environment, Folder, Reason, and AuthorOwned fields. Folder is
+%   Contract, Environment, Folder, Reason, AuthorOwned, and ManualCheck fields.
+%   ManualCheck names an explicit non-automatable responsibility; it is empty
+%   when automated evidence is sufficient. Folder is
 %   the exact tests/specs insertion directory; Authors never infer it from
 %   unit/contract/gui folders or from an App-wide fallback.
 %
@@ -64,13 +66,14 @@ function targets = locate(file, varargin)
             case "resultfiles"
                 targets = target(opts.SpecsRoot, owner, "result", "headless", "", true, ...
                     "direct result-schema behavior");
-            case "workbench"
-                targets = target(opts.SpecsRoot, owner, "presentation", "headless", "", true, ...
-                    "direct workbench presentation behavior");
+                case "workbench"
+                    targets = target(opts.SpecsRoot, owner, "presentation", "headless", "", true, ...
+                        "direct workbench presentation behavior");
                 if name == "buildlayout.m"
                     targets = [targets, target(opts.SpecsRoot, "apps/conformance", ...
                         "product", "hidden-gui", packageName, false, ...
-                        "parameterized App smoke after layout assembly")];
+                        "parameterized App smoke after layout assembly", ...
+                        layoutManualCheck(packageName))];
                 end
             otherwise
                 targets = target(opts.SpecsRoot, owner, "source", "headless", "", true, ...
@@ -107,6 +110,12 @@ function targets = appDefinitionTargets(specsRoot, packageName)
             "", false, "batched App isolated-boundary conformance")];
 end
 
+function value = layoutManualCheck(packageName)
+    value = "Open " + packageName + " with a representative synthetic or " + ...
+        "approved non-sensitive sample; inspect native dialogs, pointer " + ...
+        "interaction, and visual layout after the automated structural check.";
+end
+
 function opts = parseOptions(file, varargin)
     p = inputParser;
     p.FunctionName = "labkittest.locate";
@@ -118,7 +127,10 @@ function opts = parseOptions(file, varargin)
     opts.SpecsRoot = string(opts.SpecsRoot);
 end
 
-function value = target(specsRoot, owner, contract, environment, app, authorOwned, reason)
+function value = target(specsRoot, owner, contract, environment, app, authorOwned, reason, manualCheck)
+    if nargin < 8
+        manualCheck = "";
+    end
     value = struct( ...
         "Owner", string(owner), ...
         "Contract", string(contract), ...
@@ -126,6 +138,7 @@ function value = target(specsRoot, owner, contract, environment, app, authorOwne
         "App", string(app), ...
         "Folder", string(fullfile(specsRoot, char(replace(owner, "/", filesep)))), ...
         "AuthorOwned", logical(authorOwned), ...
+        "ManualCheck", string(manualCheck), ...
         "Reason", string(reason));
 end
 

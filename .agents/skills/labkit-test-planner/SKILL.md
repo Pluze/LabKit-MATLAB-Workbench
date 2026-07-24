@@ -48,9 +48,11 @@ startup, licensing, reporting, progress, and failure-diagnosis costs.
 
 - `buildtool headless` runs every `Env:headless` identity.
 - `buildtool gui` runs every `Env:hidden-gui` identity with hidden figures.
+- `buildtool isolated` runs every `Env:isolated-process` identity.
 - `buildtool coverage` adds Cobertura XML and HTML coverage to headless.
 - `buildtool changedFast` maps local Git paths to exact evidence closures. A
-  framework, build, policy, or unknown path safely widens to full headless.
+  framework, build, policy, or unknown path safely widens to every automated
+  environment.
 - Hidden GUI proves declared structural wiring, not native dialogs, visual
   quality, pointer feel, real-data suitability, or scientific validity.
 

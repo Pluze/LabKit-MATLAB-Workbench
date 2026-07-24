@@ -91,6 +91,7 @@ Use stable Build tasks for branch and CI gates:
 buildtool changedFast
 buildtool headless
 buildtool gui
+buildtool isolated
 buildtool coverage
 buildtool docs
 buildtool docsCheck
@@ -101,14 +102,16 @@ buildtool docsCheck
 | `changedFast` | Local final pre-commit/pre-push gate. Reads tracked and untracked working-tree paths; on a clean checkpoint it reads `HEAD^..HEAD`. |
 | `headless` | Every headless catalog identity. |
 | `gui` | Every hidden-GUI catalog identity. |
+| `isolated` | Every isolated-process catalog identity. |
 | `coverage` | Headless catalog with Cobertura XML and HTML coverage artifacts. |
 | `docs` / `docsCheck` | Render or verify the generated documentation site. |
 
 `changedFast` prints semantic reasons and exact identities. For ordinary App
 and facade source it runs only the required contract closure. A framework,
-Build, catalog, policy, or unknown path deliberately widens to every headless
-specification: broad selection is a visible safety boundary, not a planner
-failure. Do not weaken that fallback to make a route count look smaller.
+Build, catalog, policy, or unknown path deliberately widens to every automated
+environment: headless, hidden-GUI, and isolated-process. Broad selection is a
+visible safety boundary, not a planner failure. Do not weaken that fallback to
+make a route count look smaller.
 
 Run focused behavior during iteration. Run `changedFast` once when the branch
 is ready for review or direct-main integration. CI owns broad platform
@@ -134,9 +137,16 @@ the smallest owner/contract or exact source that proves the repair. A zero
 selection or missing-contract error is a test-authoring defect, never passing
 evidence.
 
+When a mapped layout change leaves a non-automatable boundary, its plan can
+name a manual check. It is printed and recorded in `plan.json`, but it never
+makes an automated run pass. Manual checks are limited to native dialogs,
+pointer behavior, visual design, real-data suitability, and scientific
+interpretation; they cannot replace an automated calculation, state, export,
+migration, structural-GUI, or workflow proof.
+
 ## CI and Manual Evidence
 
-Continuous Integration runs `headless` and `gui` on Linux, macOS, and Windows
+Continuous Integration runs `headless`, `gui`, and `isolated` on Linux, macOS, and Windows
 from a clean MATLAB runtime without optional Toolboxes. It uploads the catalog
 artifacts even after failure. Coverage is an explicit report, not a duplicate
 CI gate.

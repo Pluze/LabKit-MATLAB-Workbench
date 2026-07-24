@@ -9,7 +9,8 @@ function [status, output] = runIsolatedAppProbes(apps)
 %   function's scalar parameter-value structure. STATUS is zero only when
 %   every App proves its definition and synthetic debug-sample contract.
 %   OUTPUT names every failing App, so batching startup does not hide which
-%   deployable boundary failed.
+%   deployable boundary failed. The child continues after an App failure and
+%   reports the aggregate after every supplied App has been probed.
 
     apps = normalizedApps(apps);
     packageFolder = fileparts(mfilename("fullpath"));
@@ -17,7 +18,7 @@ function [status, output] = runIsolatedAppProbes(apps)
     root = fileparts(testsFolder);
     scratch = tempname;
     scriptPath = tempname + ".m";
-    cleanup = onCleanup(@() removeScript(scriptPath));
+    cleanup = onCleanup(@() removeScratch(scriptPath, scratch));
     writeChildScript(scriptPath, root, testsFolder, apps, scratch);
     command = matlabCommand();
     [status, output] = system(char(shellDoubleQuote(command) + " -batch " + ...
@@ -57,11 +58,15 @@ function writeChildScript(path, root, testsFolder, apps, scratch)
             "Unable to create the isolated probe script.");
     end
     cleanup = onCleanup(@() fclose(file));
+    failurePath = fullfile(scratch, "failures.mat");
+    fprintf(file, "mkdir(%s);\n", matlabLiteral(scratch));
     for k = 1:numel(apps)
         app = apps(k);
         appScratch = fullfile(scratch, num2str(k));
         fprintf(file, "restoredefaultpath;\nclear classes;\n");
         fprintf(file, "addpath(%s);\n", matlabLiteral(testsFolder));
+        fprintf(file, "failurePath = %s;\n", matlabLiteral(failurePath));
+        fprintf(file, "if isfile(failurePath), load(failurePath, 'failures'); else, failures = {}; end\n");
         fprintf(file, "try\n");
         fprintf(file, "  labkittest.isolatedAppProbe(%s, %s, %s, %s);\n", ...
             matlabLiteral(root), matlabLiteral(app.Folder), ...
@@ -69,17 +74,30 @@ function writeChildScript(path, root, testsFolder, apps, scratch)
         fprintf(file, "  fprintf('ISOLATED_APP_PROBE %s PASS\\n');\n", ...
             char(app.Package));
         fprintf(file, "catch exception\n");
-        fprintf(file, "  error('LabKit:IsolatedProbe:BatchFailed', ...\n");
-        fprintf(file, "    '%%s: %%s', %s, getReport(exception, 'basic', 'hyperlinks', 'off'));\n", ...
+        fprintf(file, "  failures{numel(failures) + 1} = sprintf('%%s: %%s', %s, ...\n", ...
             matlabLiteral(app.Package));
+        fprintf(file, "    getReport(exception, 'basic', 'hyperlinks', 'off'));\n");
+        fprintf(file, "  save(failurePath, 'failures');\n");
+        fprintf(file, "  fprintf('ISOLATED_APP_PROBE %s FAIL\\n');\n", ...
+            char(app.Package));
         fprintf(file, "end\n");
     end
+    fprintf(file, "restoredefaultpath;\nclear classes;\n");
+    fprintf(file, "failurePath = %s;\n", matlabLiteral(failurePath));
+    fprintf(file, "if isfile(failurePath), load(failurePath, 'failures'); else, failures = {}; end\n");
+    fprintf(file, "if ~isempty(failures)\n");
+    fprintf(file, "  error('LabKit:IsolatedProbe:BatchFailed', '%%s', ...\n");
+    fprintf(file, "    strjoin(failures, sprintf('\\n\\n')));\n");
+    fprintf(file, "end\n");
     clear cleanup
 end
 
-function removeScript(path)
-    if isfile(path)
-        delete(path);
+function removeScratch(scriptPath, scratch)
+    if isfile(scriptPath)
+        delete(scriptPath);
+    end
+    if isfolder(scratch)
+        rmdir(scratch, "s");
     end
 end
 
