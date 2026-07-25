@@ -11,6 +11,11 @@ library manual for APIs the app actually uses. App tests live under
 `tests/specs/apps/<family>/<app>/<capability>/`. Use `labkittest.explain` to
 find the exact owner and contract; App authors never invent test paths.
 
+After a meaningful App-work checkpoint, record any reusable workflow,
+interaction, debugging, or validation lesson in `.agents/dos-and-donts.md`.
+Keep product-specific policy in this file or the owning App manual rather than
+duplicating it in the ledger.
+
 ## Required app shape
 
 - Keep `labkit_*_app.m` as a thin wrapper around

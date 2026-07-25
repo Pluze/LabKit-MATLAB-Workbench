@@ -14,6 +14,11 @@ folders, selector registries, wrappers, or stage tags by hand. Run focused
 evidence through `labkittest.run`, and use `buildtool changedFast` only at the
 final integration gate.
 
+After a meaningful validation or test-design checkpoint, add any durable
+lesson about selectors, evidence scope, fixtures, or runner behavior to
+`.agents/dos-and-donts.md`. Consolidate it regularly and retain stable test
+catalog rules here rather than duplicating them in the ledger.
+
 `headless`, `gui`, `isolated`, and `coverage` are full catalog profiles.
 `changedFast` is focused local evidence: an App or facade path maps to its
 bounded closure, while framework, build, and repository-policy paths map to

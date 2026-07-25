@@ -18,6 +18,10 @@ tests, and the one owning manual:
 Framework behavior specifications live under `tests/specs/framework/<area>/`.
 Use `labkittest.explain` to find the exact owner and contract.
 
+Record a reusable framework command, runtime, boundary, or validation lesson
+after the checkpoint in `.agents/dos-and-donts.md`; keep its guidance compact
+and promote enduring policy to this file when it governs all framework work.
+
 ## Ownership
 
 - Promote an API only when it is domain-neutral, independently testable, and

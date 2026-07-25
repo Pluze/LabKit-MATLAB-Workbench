@@ -43,6 +43,11 @@ under `docs/`.
 - Validate an edited skill and exercise the changed script path. Record
   durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
   agent procedure in skills rather than duplicating it in human manuals.
+- After each meaningful work checkpoint, update `.agents/dos-and-donts.md`
+  when a durable command, debugging, design, validation, or collaboration
+  lesson was learned. Keep it concise and periodically consolidate it; do not
+  turn it into a chronological work log or duplicate stable policy already
+  owned here.
 
 ## Architecture and implementation
 
