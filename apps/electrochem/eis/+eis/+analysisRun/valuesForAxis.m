@@ -6,38 +6,28 @@ function values = valuesForAxis(item, axisName)
     items = eis.overlayPlot.axisItems();
     switch axisName
         case char(items(1))
-            values = itemField(item, 'freq_Hz', 'Freq');
+            values = item.freq_Hz;
         case char(items(2))
-            values = log10(itemField(item, 'freq_Hz', 'Freq'));
+            values = log10(item.freq_Hz);
         case char(items(3))
-            values = itemField(item, 'time_s', 'Time');
+            values = item.time_s;
         case char(items(4))
-            values = itemField(item, 'point', 'Pt');
+            values = item.point;
         case char(items(5))
-            values = itemField(item, 'Zreal_ohm', 'Zreal');
+            values = item.Zreal_ohm;
         case char(items(6))
-            values = itemField(item, 'Zimag_ohm', 'Zimag');
+            values = item.Zimag_ohm;
         case char(items(7))
-            values = itemField(item, 'negZimag_ohm', 'negZimag');
+            values = item.negZimag_ohm;
         case char(items(8))
-            values = itemField(item, 'Zmod_ohm', 'Zmod');
+            values = item.Zmod_ohm;
         case char(items(9))
-            values = itemField(item, 'Zphz_deg', 'Zphz');
+            values = item.Zphz_deg;
         case char(items(10))
-            values = itemField(item, 'Idc_A', 'Idc');
+            values = item.Idc_A;
         case char(items(11))
-            values = itemField(item, 'Vdc_V', 'Vdc');
+            values = item.Vdc_V;
         otherwise
             error('Unsupported axis selection: %s', axisName);
-    end
-end
-
-function values = itemField(item, canonicalName, legacyName)
-    if isfield(item, canonicalName) && ~isempty(item.(canonicalName))
-        values = item.(canonicalName);
-    elseif isfield(item, legacyName) && ~isempty(item.(legacyName))
-        values = item.(legacyName);
-    else
-        values = [];
     end
 end

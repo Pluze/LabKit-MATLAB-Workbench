@@ -325,8 +325,8 @@ end
 
 function V = computeVoltageTransientMetrics(t, Vf, pulse, delay_s)
     V = struct();
-    V.t_emc = pulse.cath_end + delay_s;
-    V.t_ema = pulse.anod_end + delay_s;
+    V.t_emc = pulse.cath.end_s + delay_s;
+    V.t_ema = pulse.anod.end_s + delay_s;
     V.ok = V.t_emc >= min(t) && V.t_emc <= max(t) && ...
         V.t_ema >= min(t) && V.t_ema <= max(t);
     if ~V.ok
@@ -342,23 +342,23 @@ function V = computeVoltageTransientMetrics(t, Vf, pulse, delay_s)
     V.Emc = interp1Safe(t, Vf, V.t_emc);
     V.Ema = interp1Safe(t, Vf, V.t_ema);
 
-    V.Epre = medianInWindow(t, Vf, pulse.pre_start, pulse.pre_end);
-    V.Ebetween = medianInWindow(t, Vf, pulse.gap_start, pulse.gap_end);
-    V.Epost = medianInWindow(t, Vf, pulse.post_start, pulse.post_end);
+    V.Epre = medianInWindow(t, Vf, pulse.pre.start_s, pulse.pre.end_s);
+    V.Ebetween = medianInWindow(t, Vf, pulse.gap.start_s, pulse.gap.end_s);
+    V.Epost = medianInWindow(t, Vf, pulse.post.start_s, pulse.post.end_s);
     [V.Eipp, V.baselineCathSource, V.baselineCathWindow] = chooseBaselineCandidate( ...
         [V.Epre, V.Ebetween, V.Epost, 0], ...
         {'pre-pulse median', 'interpulse median', 'post-pulse median', 'zero fallback'}, ...
-        [pulse.pre_start pulse.pre_end; pulse.gap_start pulse.gap_end; pulse.post_start pulse.post_end; NaN NaN]);
+        [pulse.pre.start_s pulse.pre.end_s; pulse.gap.start_s pulse.gap.end_s; pulse.post.start_s pulse.post.end_s; NaN NaN]);
     [V.Eipp_gap, V.baselineAnodSource, V.baselineAnodWindow] = chooseBaselineCandidate( ...
         [V.Ebetween, V.Epre, V.Epost, V.Eipp], ...
         {'interpulse median', 'pre-pulse median', 'post-pulse median', 'cathodic baseline fallback'}, ...
-        [pulse.gap_start pulse.gap_end; pulse.pre_start pulse.pre_end; pulse.post_start pulse.post_end; V.baselineCathWindow]);
+        [pulse.gap.start_s pulse.gap.end_s; pulse.pre.start_s pulse.pre.end_s; pulse.post.start_s pulse.post.end_s; V.baselineCathWindow]);
 
-    V.tc_s = max(0, pulse.cath_end - pulse.cath_start);
-    V.ta_s = max(0, pulse.anod_end - pulse.anod_start);
-    V.tip_s = max(0, pulse.anod_start - pulse.cath_end);
-    V.t_conset = pulse.cath_start + delay_s;
-    V.t_aonset = pulse.anod_start + delay_s;
+    V.tc_s = max(0, pulse.cath.end_s - pulse.cath.start_s);
+    V.ta_s = max(0, pulse.anod.end_s - pulse.anod.start_s);
+    V.tip_s = max(0, pulse.anod.start_s - pulse.cath.end_s);
+    V.t_conset = pulse.cath.start_s + delay_s;
+    V.t_aonset = pulse.anod.start_s + delay_s;
     V.Vc_on = interp1Safe(t, Vf, V.t_conset);
     V.Va_on = interp1Safe(t, Vf, V.t_aonset);
     V.Va_cath_mag = abs(V.Eipp - V.Vc_on);
@@ -420,8 +420,8 @@ function Q = computeInjectedCharge(t, Im, pulse, useMeasuredCurrent)
     end
 
     Q = struct();
-    cathMask = (t >= pulse.cath_start) & (t <= pulse.cath_end);
-    anodMask = (t >= pulse.anod_start) & (t <= pulse.anod_end);
+    cathMask = (t >= pulse.cath.start_s) & (t <= pulse.cath.end_s);
+    anodMask = (t >= pulse.anod.start_s) & (t <= pulse.anod.end_s);
     Q.cathMask = cathMask;
     Q.anodMask = anodMask;
 
@@ -434,18 +434,18 @@ function Q = computeInjectedCharge(t, Im, pulse, useMeasuredCurrent)
     Q.Ic_est_A = median(Im(cathMask), 'omitnan');
     Q.Ia_est_A = median(Im(anodMask), 'omitnan');
     if ~isfinite(Q.Ic_est_A)
-        Q.Ic_est_A = pulse.Ic_nominal;
+        Q.Ic_est_A = pulse.cath.current_A;
     end
     if ~isfinite(Q.Ia_est_A)
-        Q.Ia_est_A = pulse.Ia_nominal;
+        Q.Ia_est_A = pulse.anod.current_A;
     end
 
     if useMeasuredCurrent
         Qc = abs(trapz(t(cathMask), Im(cathMask)));
         Qa = abs(trapz(t(anodMask), Im(anodMask)));
     else
-        Qc = abs(pulse.Ic_nominal * (pulse.cath_end - pulse.cath_start));
-        Qa = abs(pulse.Ia_nominal * (pulse.anod_end - pulse.anod_start));
+        Qc = abs(pulse.cath.current_A * (pulse.cath.end_s - pulse.cath.start_s));
+        Qa = abs(pulse.anod.current_A * (pulse.anod.end_s - pulse.anod.start_s));
     end
 
     Q.Qc_C = Qc;

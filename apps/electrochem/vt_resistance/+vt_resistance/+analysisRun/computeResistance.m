@@ -155,8 +155,8 @@ function A = computeResistance(item, opts)
         return;
     end
 
-    [cStart, cEnd] = selectSteadyWindow(pulse.cath_start, pulse.cath_end, A.windowMode);
-    [aStart, aEnd] = selectSteadyWindow(pulse.anod_start, pulse.anod_end, A.windowMode);
+    [cStart, cEnd] = selectSteadyWindow(pulse.cath.start_s, pulse.cath.end_s, A.windowMode);
+    [aStart, aEnd] = selectSteadyWindow(pulse.anod.start_s, pulse.anod.end_s, A.windowMode);
     cathMask = t >= cStart & t <= cEnd;
     anodMask = t >= aStart & t <= aEnd;
     if nnz(cathMask) < 2 || nnz(anodMask) < 2
@@ -176,14 +176,14 @@ function A = computeResistance(item, opts)
     A.Vc_ss_V = median(Vf(cathMask), 'omitnan');
     A.Va_ss_V = median(Vf(anodMask), 'omitnan');
 
-    A.cathBaselineStart = pulse.pre_start;
-    A.cathBaselineEnd = pulse.pre_end;
-    A.anodBaselineStart = pulse.post_start;
-    A.anodBaselineEnd = pulse.post_end;
+    A.cathBaselineStart = pulse.pre.start_s;
+    A.cathBaselineEnd = pulse.pre.end_s;
+    A.anodBaselineStart = pulse.post.start_s;
+    A.anodBaselineEnd = pulse.post.end_s;
     [A.Vc_baseline_V, A.cathBaselineWindow_s] = estimateBaseline( ...
-        t, Vf, pulse.pre_start, pulse.pre_end, 0);
+        t, Vf, pulse.pre.start_s, pulse.pre.end_s, 0);
     [A.Va_baseline_V, A.anodBaselineWindow_s] = estimateBaseline( ...
-        t, Vf, pulse.post_start, pulse.post_end, chooseFinite(A.Vc_baseline_V, 0));
+        t, Vf, pulse.post.start_s, pulse.post.end_s, chooseFinite(A.Vc_baseline_V, 0));
 
     A.dVc_V = A.Vc_ss_V - A.Vc_baseline_V;
     A.dVa_V = A.Va_ss_V - A.Va_baseline_V;

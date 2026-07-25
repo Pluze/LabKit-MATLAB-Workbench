@@ -32,9 +32,12 @@ classdef DtaFacadeSpec < matlab.unittest.TestCase
             testCase.verifyTrue(chronoStatus.ok, chronoStatus.message);
             testCase.verifyEqual(chronoItem.type, "chrono");
             testCase.verifyTrue(all(isfield(chronoItem, {'t_s', 'Vf_V', 'Im_A'})));
+            testCase.verifyFalse(any(isfield(chronoItem, {'t', 'Vf', 'Im'})));
             testCase.verifyTrue(eisStatus.ok, eisStatus.message);
             testCase.verifyEqual(eisItem.type, "eis");
             testCase.verifyTrue(all(isfield(eisItem, {'freq_Hz', 'Zreal_ohm', 'Zimag_ohm'})));
+            testCase.verifyFalse(any(isfield(eisItem, ...
+                {'Freq', 'Zreal', 'Zimag', 'Pt', 'Time'})));
             testCase.verifyTrue(cvctStatus.ok, cvctStatus.message);
             testCase.verifyEqual(cvctItem.type, "cvct");
             testCase.verifyNotEmpty(cvctItem.curves);

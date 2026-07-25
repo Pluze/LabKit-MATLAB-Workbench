@@ -118,10 +118,17 @@ accepted. Current-based detection uses 25 percent of `max(abs(Im))` as its
 threshold, with a `1e-12 A` floor, then selects the longest cathodic segment
 and the longest later anodic segment.
 
-On success, `pulse.cath`, `pulse.gap`, and `pulse.anod` provide times in
-seconds and currents in amperes. `pulse.ok` is false and numeric fields are
-`NaN` when a valid cathodic/anodic pair cannot be found. Always check
-`pulse.ok` before using the windows in a calculation.
+On success, `pulse.pre`, `pulse.cath`, `pulse.gap`, `pulse.anod`, and
+`pulse.post` provide unit-explicit `start_s` and `end_s` windows.
+`pulse.cath.current_A` and `pulse.anod.current_A` contain nominal or measured
+phase currents, and `pulse.gap.center_s` contains the alignment center.
+`pulse.ok` is false and numeric fields are `NaN` when a valid
+cathodic/anodic pair cannot be found. Always check `pulse.ok` before using the
+windows in a calculation.
+
+Version 3 returns only this unit-explicit item and pulse model. Chrono items
+use `t_s`, `Vf_V`, and `Im_A`; EIS items use the fields listed below. Earlier
+unit-ambiguous aliases are not emitted.
 
 ## EIS Data
 

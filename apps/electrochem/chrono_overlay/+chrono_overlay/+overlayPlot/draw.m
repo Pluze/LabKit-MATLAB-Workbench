@@ -100,18 +100,9 @@ end
 
 function values = signalValues(item, signal)
     if signal == "voltage"
-        values = firstAvailable(item, "Vf_V", "Vf");
+        values = item.Vf_V(:);
     else
-        values = firstAvailable(item, "Im_A", "Im");
-    end
-end
-
-function values = firstAvailable(item, preferred, fallback)
-    values = [];
-    if isfield(item, preferred) && ~isempty(item.(preferred))
-        values = item.(preferred)(:);
-    elseif isfield(item, fallback) && ~isempty(item.(fallback))
-        values = item.(fallback)(:);
+        values = item.Im_A(:);
     end
 end
 
@@ -129,7 +120,7 @@ function x = chooseX(item, mode)
 end
 
 function values = alignedTime(item)
-    values = firstAvailable(item, "tAligned_s", "tAligned");
+    values = item.tAligned_s(:);
 end
 
 function values = samplePoint(item)

@@ -41,21 +41,11 @@ function [pulse, message] = detectPulses(t, Im, meta, mode)
 % Output Fields:
 %   ok - Logical success flag.
 %   method - "metadata-current", "metadata-voltage", "auto-from-Im", or "-".
+%   pre - Structure with start_s and end_s.
 %   cath - Structure with start_s, end_s, and current_A.
-%   anod - Structure with start_s, end_s, and current_A.
 %   gap - Structure with start_s, end_s, and center_s.
-%   cath_start - Cathodic-window start time in seconds.
-%   cath_end - Cathodic-window end time in seconds.
-%   anod_start - Anodic-window start time in seconds.
-%   anod_end - Anodic-window end time in seconds.
-%   Ic_nominal - Nominal or median cathodic current in amperes.
-%   Ia_nominal - Nominal or median anodic current in amperes.
-%   pre_start - Start time of the pre-pulse region in seconds.
-%   pre_end - End time of the pre-pulse region in seconds.
-%   gap_start - Start time between cathodic and anodic pulses in seconds.
-%   gap_end - End time between cathodic and anodic pulses in seconds.
-%   post_start - Start time of the post-pulse region in seconds.
-%   post_end - End time of the post-pulse region in seconds.
+%   anod - Structure with start_s, end_s, and current_A.
+%   post - Structure with start_s and end_s.
 %
 % Failure Behavior:
 %   Missing usable metadata, absent opposite-polarity current phases, or

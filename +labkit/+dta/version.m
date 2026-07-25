@@ -27,6 +27,6 @@ function info = version()
 % See also labkit.contract.versionInfo,
 %   labkit.contract.checkRequirements
 
-    info = labkit.contract.versionInfo("dta", "2.0.3", ">=2.0 <3", ...
+    info = labkit.contract.versionInfo("dta", "3.0.0", ">=3 <4", ...
         "stable", "DTA parser, file item, pulse, and curve facade contract.");
 end
