@@ -21,7 +21,7 @@ preview = labkit.image.ensureRgb(source);
 preview = min(max(preview, 0), 1);
 luma = labkit.image.rgb2gray(preview);
 [preview, scale] = labkit.image.resizeToFit(preview, "MaxHeight", 1500);
-[preview, budget] = labkit.image.previewBudget(preview, "MaxPixels", 1.2e6);
+[preview, budget] = labkit.image.previewBudget(preview, "MaxPixels", appPreviewBudget);
 
 blurred = labkit.image.meanFilter2(preview(:, :, 1), 7);
 enhanced = labkit.image.adjustBrightnessContrast(preview, 10, 20);
@@ -45,6 +45,10 @@ to three channels or drops channels after RGB without changing class or sample
 values. Callers that need display-ready RGB data explicitly compose
 `im2double`, `ensureRgb`, and `[0, 1]` clamping as shown above.
 
+`labkit.image.previewBudget` preserves native pixels by default. An App passes
+an explicit finite `"MaxPixels"` value only when its own workflow permits
+sampling; the resulting integer coordinate scale is returned with the preview.
+
 ## Provided Operations
 
 The module provides:
@@ -54,8 +58,8 @@ The module provides:
 - `imread`/`imwrite` wrappers that normalize app-facing edge behavior
 - MATLAB-compatible image conversion, explicit RGB shaping, preview-size fitting,
   and edge-normalized mean filtering
-- display-pixel budget helpers for responsive previews while preserving a
-  documented integer coordinate scale
+- caller-owned display-pixel budget helpers for responsive previews while
+  preserving a documented integer coordinate scale
 - generic image enhancement primitives such as brightness/contrast, HSV
   hue/saturation, gray-world white balance, local contrast, and sharpening
 

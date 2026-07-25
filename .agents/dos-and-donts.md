@@ -45,9 +45,19 @@ architecture manuals, or a place for transient failures.
 - A preview axis should have one active editor for overlapping gestures. If a
   workflow needs both a placement click and ROI movement, make them behaviors
   of the same managed interaction instead of relying on editor-focus order.
+- A persistent rectangle must accept a drag from its center marker and visible
+  interior, not only from a thin edge; edge-only hit testing is technically
+  interactive but fails ordinary pointer use.
 - State-only geometry tests prove coordinate mapping, not pointer ownership or
   native-control creation. Add hidden-GUI coverage for regressions involving
   native controls, interactions, or dynamic limits.
+
+### Preview budgets
+
+- A shared image utility may implement caller-selected sampling, but its
+  default must not impose an App's responsiveness-versus-pixel-fidelity policy.
+  Keep the default native and make every finite preview budget explicit at the
+  product stage that owns the workflow semantics.
 
 ### Runtime presentation
 

@@ -6,11 +6,13 @@ function [preview, info] = previewBudget(imageData, varargin)
 %   [preview, info] = labkit.image.previewBudget(imageData, Name, Value)
 %
 % Description:
-%   Produces a lightweight preview by taking every Nth row and column. N is
-%   the smallest integer stride whose estimated processing area does not
-%   exceed MaxPixels. The estimate is source rows times source columns times
-%   Expansion, so callers can reserve memory for workflows that pad, tile, or
-%   otherwise enlarge an image before display.
+%   When MaxPixels is finite, produces a lightweight preview by taking every
+%   Nth row and column. N is the smallest integer stride whose estimated
+%   processing area does not exceed MaxPixels. The estimate is source rows
+%   times source columns times Expansion, so callers can reserve memory for
+%   workflows that pad, tile, or otherwise enlarge an image before display.
+%   The default is Inf and preserves native pixels; each caller owns whether a
+%   display budget is appropriate for its workflow.
 %
 %   This is sampling rather than interpolating resize. The first source pixel
 %   is always retained, and image class and channel count are preserved. A
@@ -21,9 +23,9 @@ function [preview, info] = previewBudget(imageData, varargin)
 %   imageData - Nonempty numeric or logical 2-D or 3-D image array.
 %
 % Name-Value Arguments:
-%   MaxPixels - Positive display-area budget. The default is 1.2e6 pixels.
-%               Invalid, empty, or nonpositive values fall back to the
-%               default rather than throwing an error.
+%   MaxPixels - Positive display-area budget or Inf. Default: Inf, retaining
+%               native pixels. Invalid, empty, or nonpositive values fall
+%               back to the default rather than throwing an error.
 %   Expansion - Positive multiplier applied only to estimatedPixels. The
 %               default is 1. Invalid values fall back to 1.
 %
@@ -92,9 +94,7 @@ function opts = parseOptions(args)
 end
 
 function value = defaultMaxPixels()
-    % Constant: 1.2 megapixels balances interactive preview responsiveness
-    % with enough spatial detail for image measurement workflows.
-    value = 1.2e6;
+    value = Inf;
 end
 
 function validateImageData(imageData)
@@ -106,7 +106,7 @@ end
 
 function value = positiveScalar(value, defaultValue)
     value = double(value);
-    if isempty(value) || ~isscalar(value) || ~isfinite(value) || value <= 0
+    if isempty(value) || ~isscalar(value) || isnan(value) || value <= 0
         value = defaultValue;
         return;
     end

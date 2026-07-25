@@ -35,6 +35,9 @@ classdef SyntheticProjectSpec < matlab.unittest.TestCase
 
             testCase.verifyTrue(isgraphics(runtime.figureHandle(), "figure"));
             testCase.verifyFalse(runtime.StartupFailed);
+            roi = findall(runtime.figureHandle(), Type="rectangle");
+            testCase.verifyNumElements(roi, 1);
+            testCase.verifyEqual(string(roi.HitTest), "on");
             clear cleanup
         end
     end

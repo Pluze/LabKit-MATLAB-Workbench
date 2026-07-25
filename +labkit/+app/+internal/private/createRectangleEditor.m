@@ -193,7 +193,8 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
         state.dragCorner = find(state.cornerHandles == src, 1);
         if ~isempty(state.dragCorner)
             state.dragMode = "resize";
-        elseif isequal(src, state.box) && state.movable
+        elseif state.movable && (isequal(src, state.box) || ...
+                positionContainsPoint(state.position, axesPoint(state.ax)))
             state.dragCorner = 0;
             state.dragMode = "move";
         else
@@ -232,6 +233,14 @@ function value = optionValue(options, name, fallback)
     if isfield(options, name) && ~isempty(options.(name))
         value = options.(name);
     end
+end
+
+function tf = positionContainsPoint(position, point)
+    tf = isnumeric(position) && numel(position) == 4 && ...
+        isnumeric(point) && numel(point) == 2 && ...
+        all(isfinite(double([position(:); point(:)]))) && ...
+        point(1) >= position(1) && point(1) <= position(1) + position(3) && ...
+        point(2) >= position(2) && point(2) <= position(2) + position(4);
 end
 
 function imageSize = normalizeImageSize(value)
