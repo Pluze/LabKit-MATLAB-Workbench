@@ -50,8 +50,9 @@ classdef (Hidden, Sealed) RuntimeFactory
                 if diagnostics.Sample == "synthetic"
                     sampleOperation = recorder.begin( ...
                         "sample", "synthetic", "build");
-                    initialProject = buildSyntheticProject( ...
+                    buildSyntheticSample( ...
                         definition, initialProject, diagnostics);
+                    initialProject = [];
                     recorder.finish(sampleOperation, "completed", []);
                     sampleOperation = [];
                 end
@@ -69,7 +70,7 @@ classdef (Hidden, Sealed) RuntimeFactory
     end
 end
 
-function initialProject = buildSyntheticProject( ...
+function buildSyntheticSample( ...
         definition, initialProject, diagnostics)
 if ~isempty(initialProject)
     error("labkit:app:contract:InvalidValue", ...
@@ -110,7 +111,6 @@ if ~isequal(accepted, true)
 end
 verifySampleArtifacts(context, pack);
 writeSampleManifest(context, pack);
-initialProject = pack.InitialProject;
 end
 
 function verifySampleArtifacts(context, pack)

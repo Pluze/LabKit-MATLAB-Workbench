@@ -76,7 +76,8 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 end
                 obj.Presentation = obj.present(obj.State);
                 obj.Adapter.reconcile([], obj.Presentation);
-                if ~isempty(application.OnStart)
+                if ~isempty(application.OnStart) && ...
+                        diagnostics.Sample ~= "synthetic"
                     obj.updateStartup("Running startup actions...");
                     obj.dispatch( ...
                         contract.onStartBinding(), []);

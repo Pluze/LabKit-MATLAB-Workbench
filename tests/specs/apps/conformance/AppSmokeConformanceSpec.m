@@ -24,5 +24,22 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             end
             clear cleanup
         end
+
+        function launchesSyntheticDebugAsACleanApp(testCase, App)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = feval(char(App.Package + ".definition"));
+            diagnostics = labkit.app.diagnostic.Options( ...
+                ArtifactFolder=folder, Sample="synthetic");
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                definition, [], struct(), diagnostics);
+            cleanup = onCleanup(@() runtime.close());
+
+            testCase.verifyTrue(isgraphics(runtime.figureHandle(), "figure"));
+            testCase.verifyEqual(runtime.State.project, ...
+                definition.ProjectSchema.Create());
+            testCase.verifyTrue(isfile(fullfile(folder, "sample-pack.json")));
+            clear cleanup
+        end
     end
 end

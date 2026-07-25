@@ -63,6 +63,29 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyError(@() context.alert("message", "title"), ...
                 "labkit:app:runtime:InvariantFailure");
         end
+
+        function syntheticDebugStartsWithACleanProjectAndNoStartupAction(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.field("gain", Kind="numeric", ...
+                    Bind="project.parameters.gain")});
+            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
+                labkit.app.project.Schema(Version=1, Create=@createProject, ...
+                Validate=@validateProject), CreateSession=@sampleSession, ...
+                OnStart=@startChangesGain, BuildDebugSample=@validDebugSample);
+            diagnostics = labkit.app.diagnostic.Options( ...
+                ArtifactFolder=folder, Sample="synthetic");
+
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                app, [], struct(), diagnostics);
+            cleanup = onCleanup(@() runtime.close());
+
+            testCase.verifyEqual(runtime.State.project.parameters.gain, 1);
+            testCase.verifyEqual(runtime.State.session.gainAtCreation, 1);
+            testCase.verifyTrue(isfile(fullfile(folder, "sample-pack.json")));
+            clear cleanup
+        end
     end
 
     methods (Static, Access = private)
@@ -109,6 +132,21 @@ end
 
 function pack = debugSample(~)
 pack = struct();
+end
+
+function session = sampleSession(project, ~)
+session = struct("gainAtCreation", project.parameters.gain);
+end
+
+function state = startChangesGain(state, ~)
+state.project.parameters.gain = 99;
+end
+
+function pack = validDebugSample(~)
+pack = labkit.app.diagnostic.SamplePack( ...
+    Scenario="sdk-probe", ...
+    InitialProject=struct("parameters", struct("gain", 7)), ...
+    Artifacts={});
 end
 
 function session = wrongSession(~)

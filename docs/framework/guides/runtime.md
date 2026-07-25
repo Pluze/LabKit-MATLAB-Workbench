@@ -265,6 +265,16 @@ that callback transaction commits.
 
 ## Persistence, Results, And Cleanup
 
+## Diagnostic Synthetic Samples
+
+`labkit.app.diagnostic.Options(Sample="synthetic")` asks an App to create and
+validate its anonymous `BuildDebugSample` pack in the diagnostic artifact
+folder. The pack remains a reproducible input fixture: the runtime starts from
+the schema's new project and does not run `OnStart`. This makes Debug launches
+safe, clean starting points for user-directed exploration while retaining the
+sample manifest and files for deliberate import through the App's ordinary
+workflow.
+
 `labkit.app.project.Schema` owns current project creation, validation, and
 ordered version migration. Runtime owns the project envelope, atomic save,
 restore, recovery, and relinking loop.

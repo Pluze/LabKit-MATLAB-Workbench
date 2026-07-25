@@ -21,7 +21,7 @@ tool availability, or the active maintenance operation.
 | Group | Action | Behavior |
 | --- | --- | --- |
 | Run Apps | **Open Selected App** | Checks the selected app requirements, adds the app root, and calls its App SDK entrypoint without retired runtime launch arguments. |
-| Run Apps | **Open Debug** | Starts the same App through its typed SDK diagnostics contract, records verbose structured events under `artifacts/diagnostics/launcher/`, and loads the App-owned anonymous synthetic sample. |
+| Run Apps | **Open Debug** | Starts the same App through its typed SDK diagnostics contract, records verbose structured events under `artifacts/diagnostics/launcher/`, and creates the App-owned anonymous synthetic sample without loading it into the App. |
 | Run Apps | **Refresh App List** | Repeats public and configured private-app discovery without restarting the launcher. |
 | Run Apps | **Documentation and History** | Opens the generated manual for the selected app. |
 | Versions and Install | **Latest** | Installs the current `main` branch archive. |
@@ -40,9 +40,11 @@ selection does not change the checked set.
 
 Debug sessions use a new isolated artifact folder on every launch. The folder
 contains the runtime event stream, session manifest, synthetic sample manifest,
-and any anonymous fixture files declared by the selected App. Normal launches
-keep the SDK's bounded standard diagnostics in memory and do not create this
-verbose artifact set.
+and any anonymous fixture files declared by the selected App. The App itself
+opens as a clean project and does not run automatic startup actions: use the
+generated anonymous files only when you deliberately select them through the
+normal workflow. Normal launches keep the SDK's bounded standard diagnostics in
+memory and do not create this verbose artifact set.
 
 ## Programmatic Calls
 
