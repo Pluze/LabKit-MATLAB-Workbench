@@ -1,21 +1,23 @@
 # Working Dos and Don'ts
 
-This is the repository's compact, durable working-memory ledger. It records
-lessons that save future agents meaningful investigation, retry, or design
-cost. It is not a chronological activity log, a replacement for architecture
-manuals, or a place for transient failures.
+This is the repository's compact, durable working-memory ledger. Record only a
+high-value lesson that will save future agents meaningful investigation, retry,
+or design cost. It is not a chronological activity log, a replacement for
+architecture manuals, or a place for transient failures.
 
 ## Use this file
 
-- After each meaningful work checkpoint, add a concise entry when it yields a
-  reusable lesson about commands, validation, implementation, design
-  boundaries, debugging, or collaboration.
+- After each meaningful work checkpoint, add an entry only when the lesson is
+  both reusable and costly to rediscover. Ordinary successful commands,
+  routine edits, and one-off observations do not belong here.
 - State the durable cause and preferred practice, not a step-by-step transcript
   or a one-off filename.
 - Capture failed or wasteful approaches only when the reason and better route
   will prevent a repeated mistake.
-- Periodically consolidate overlapping entries into fewer, principle-first
-  rules. Remove details that no longer describe the repository.
+- Before adding an entry, merge it into an existing principle whenever
+  possible. Periodically compress the document into fewer, principle-first
+  rules; remove stale, duplicated, or low-value details instead of accumulating
+  a work log.
 - Keep product policy in the owning `AGENTS.md`, skill, source help, or manual;
   link or promote a lesson there once it becomes a stable rule.
 

@@ -44,10 +44,11 @@ under `docs/`.
   durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
   agent procedure in skills rather than duplicating it in human manuals.
 - After each meaningful work checkpoint, update `.agents/dos-and-donts.md`
-  when a durable command, debugging, design, validation, or collaboration
-  lesson was learned. Keep it concise and periodically consolidate it; do not
-  turn it into a chronological work log or duplicate stable policy already
-  owned here.
+  only for a high-value, reusable lesson whose rediscovery would cost material
+  investigation or retry time. Merge it into an existing principle whenever
+  possible, periodically compress the file, and remove stale or low-value
+  detail; never turn it into a chronological work log or duplicate stable
+  policy already owned here.
 
 ## Architecture and implementation
 
