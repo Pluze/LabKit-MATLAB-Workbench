@@ -60,6 +60,23 @@ classdef BatchCropGeometrySpec < matlab.unittest.TestCase
             testCase.verifyTrue(state.project.inputs.items(1).centerSet);
         end
 
+        function setsTheCropCenterWhenTheManagedRoiBackgroundIsClicked(testCase)
+            state = stateWithImage(uint8(zeros(200, 300)));
+            state.project.parameters.cropWidth = 40;
+            state.project.parameters.cropHeight = 30;
+            state.project.inputs.items(1).centerXY = [150 120];
+            state.project.inputs.items(1).centerSet = true;
+
+            state = batch_crop.cropGeometry.changeCenterFromPreview( ...
+                state, [220 80], ...
+                labkit.app.internal.CallbackContextFactory.create( ...
+                    struct("appendStatus", @(~) [])));
+
+            testCase.verifyEqual(state.project.inputs.items(1).centerXY, ...
+                [220.5 80.5]);
+            testCase.verifyTrue(state.project.inputs.items(1).centerSet);
+        end
+
         function plansOnePhysicalOutputSizeAcrossUnequalCalibrations(testCase)
             items = [physicalItem("a.png", 4); physicalItem("b.png", 8)];
 
