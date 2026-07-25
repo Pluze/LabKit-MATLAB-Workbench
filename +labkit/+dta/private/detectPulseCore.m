@@ -13,7 +13,7 @@ function [pulse, msg] = detectPulseCore(t, Im, meta, opts)
 %   Im - measured current vector in ampere, same length as t.
 %   meta - parsed chrono metadata struct with optional steps field.
 %   opts - string mode or struct with mode. Accepted private modes are
-%          "metadata_first", "metadata_only", and "current_only"; legacy
+%          "metadata_first", "metadata_only", and "current_only"; public
 %          display labels are normalized here.
 %
 % Output:
@@ -28,11 +28,21 @@ function [pulse, msg] = detectPulseCore(t, Im, meta, opts)
     if nargin < 4 || isempty(opts)
         opts = defaultPulseOptions();
     elseif ischar(opts) || isstring(opts)
-        opts = struct('mode', normalizeMode(opts));
+        [mode, recognized] = normalizeMode(opts);
+        if ~recognized
+            [pulse, msg] = unsupportedMode(opts);
+            return
+        end
+        opts = struct('mode', mode);
     elseif ~isfield(opts, 'mode')
         opts.mode = "metadata_first";
     else
-        opts.mode = normalizeMode(opts.mode);
+        modeText = opts.mode;
+        [opts.mode, recognized] = normalizeMode(modeText);
+        if ~recognized
+            [pulse, msg] = unsupportedMode(modeText);
+            return
+        end
     end
 
     pulse = emptyPulse();
@@ -62,7 +72,8 @@ function [pulse, msg] = detectPulseCore(t, Im, meta, opts)
     pulse.message = msg;
 end
 
-function mode = normalizeMode(modeText)
+function [mode, recognized] = normalizeMode(modeText)
+    recognized = true;
     switch string(modeText)
         case {"metadata_first", "Metadata first, then auto"}
             mode = "metadata_first";
@@ -71,6 +82,13 @@ function mode = normalizeMode(modeText)
         case {"current_only", "Auto from Im only"}
             mode = "current_only";
         otherwise
-            mode = "metadata_first";
+            mode = "";
+            recognized = false;
     end
+end
+
+function [pulse, msg] = unsupportedMode(modeText)
+pulse = emptyPulse();
+msg = sprintf("Unsupported pulse detection mode: %s.", string(modeText));
+pulse.message = msg;
 end

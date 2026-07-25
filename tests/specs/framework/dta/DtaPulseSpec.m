@@ -49,6 +49,21 @@ classdef DtaPulseSpec < matlab.unittest.TestCase
             testCase.verifyFalse(metadataOnly.ok);
             testCase.verifySubstring(metadataOnlyMessage, 'no ISTEP/TSTEP or VSTEP/TSTEP');
         end
+
+        function rejectsUnknownModesInsteadOfRunningTheDefaultBranch(testCase)
+            time = (0:0.01:0.25).';
+            current = zeros(size(time));
+            current(time >= 0.03 & time <= 0.10) = -1e-3;
+            current(time >= 0.14 & time <= 0.20) = 1e-3;
+
+            [pulse, message] = labkit.dta.detectPulses( ...
+                time, current, validMetadata(), "not-a-mode");
+
+            testCase.verifyFalse(pulse.ok);
+            testCase.verifySubstring(string(message), ...
+                "Unsupported pulse detection mode");
+            testCase.verifyEqual(string(pulse.method), "-");
+        end
     end
 end
 

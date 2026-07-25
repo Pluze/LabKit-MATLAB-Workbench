@@ -116,7 +116,8 @@ Other modes are `"Metadata only"` and `"Auto from Im only"`. Programmatic
 aliases `"metadata_first"`, `"metadata_only"`, and `"current_only"` are also
 accepted. Current-based detection uses 25 percent of `max(abs(Im))` as its
 threshold, with a `1e-12 A` floor, then selects the longest cathodic segment
-and the longest later anodic segment.
+and the longest later anodic segment. An unknown mode returns `pulse.ok=false`
+with an explanatory message; it is never silently treated as the default.
 
 On success, `pulse.pre`, `pulse.cath`, `pulse.gap`, `pulse.anod`, and
 `pulse.post` provide unit-explicit `start_s` and `end_s` windows.
