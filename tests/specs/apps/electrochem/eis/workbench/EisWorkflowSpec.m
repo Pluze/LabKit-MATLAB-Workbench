@@ -17,11 +17,15 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
 
             runtime.applyFileSelection("files", source, 1);
             axesValue = findall(figureValue, "Tag", "plot.main");
+            units = eis.impedanceDisplay.catalog();
+            runtime.applyControlValue("impedanceUnit", units.choices(4));
             runtime.applyControlValue("showMarkers", false);
             runtime.invokeAction("exportPlot");
 
             testCase.verifyNumElements(runtime.State.session.cache.items, 1);
             testCase.verifyNotEmpty(axesValue.Children);
+            testCase.verifySubstring(string(axesValue.XLabel.String), ...
+                units.choices(4));
             testCase.verifyTrue(isfile(output));
             testCase.verifyTrue(isfile(fullfile(folder, "labkit_result.json")));
             saved = fullfile(folder, "eis-project.mat");

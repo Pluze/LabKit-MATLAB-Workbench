@@ -15,6 +15,9 @@ classdef EisPresentationSpec < matlab.unittest.TestCase
             testCase.verifyClass(snapshot, "labkit.app.view.Snapshot");
             testCase.verifyEqual(numel(state.session.cache.items), 1);
             testCase.verifyEqual(state.session.selection.files.Indices, 1);
+            units = eis.impedanceDisplay.catalog();
+            testCase.verifyEqual(state.project.parameters.impedanceUnit, ...
+                units.choices(3));
             testCase.verifyFalse(contains(evalc("disp(state)"), "matlab.ui"));
             clear cleanup
         end

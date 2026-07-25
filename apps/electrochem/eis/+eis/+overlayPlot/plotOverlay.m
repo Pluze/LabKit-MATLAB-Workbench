@@ -20,7 +20,8 @@ function labels = plotOverlay(ax, items, opts)
     hold(ax, 'on');
     plottedLines = gobjects(1, numel(items));
     for k = 1:numel(items)
-        [x, y] = filteredXY(items(k), opts.xName, opts.yName, opts.logX, opts.logY);
+        [x, y] = filteredXY(items(k), opts.xName, opts.yName, ...
+            opts.impedanceUnit, opts.logX, opts.logY);
         plottedLines(k) = plot(ax, x, y, ...
             'LineWidth', opts.lineWidth, ...
             'Marker', marker, ...
@@ -36,10 +37,12 @@ function labels = plotOverlay(ax, items, opts)
     ax.YScale = ternary(opts.logY, 'log', 'linear');
     labkit.app.plot.fitAxesToGraphics(ax, plottedLines(isgraphics(plottedLines)));
 
-    xlabel(ax, labelForAxis(opts.xName));
-    ylabel(ax, labelForAxis(opts.yName));
+    xLabel = eis.overlayPlot.labelForAxis(opts.xName, opts.impedanceUnit);
+    yLabel = eis.overlayPlot.labelForAxis(opts.yName, opts.impedanceUnit);
+    xlabel(ax, xLabel);
+    ylabel(ax, yLabel);
     title(ax, sprintf('%s vs %s (%d file%s)', ...
-        labelForAxis(opts.yName), labelForAxis(opts.xName), numel(items), pluralS(numel(items))));
+        yLabel, xLabel, numel(items), pluralS(numel(items))));
 
     if opts.showGrid
         grid(ax, 'on');
@@ -54,10 +57,6 @@ function labels = plotOverlay(ax, items, opts)
     end
 end
 
-function txt = labelForAxis(axisName)
-    txt = axisName;
-end
-
 function opts = fillPlotOptions(opts)
     items = eis.overlayPlot.axisItems();
     if ~isfield(opts, 'xName')
@@ -68,6 +67,10 @@ function opts = fillPlotOptions(opts)
     end
     if ~isfield(opts, 'logX')
         opts.logX = false;
+    end
+    if ~isfield(opts, 'impedanceUnit')
+        units = eis.impedanceDisplay.catalog();
+        opts.impedanceUnit = units.choices(3);
     end
     if ~isfield(opts, 'logY')
         opts.logY = false;
@@ -89,9 +92,10 @@ function opts = fillPlotOptions(opts)
     end
 end
 
-function [x, y] = filteredXY(item, xName, yName, useLogX, useLogY)
-    x = eis.analysisRun.valuesForAxis(item, xName);
-    y = eis.analysisRun.valuesForAxis(item, yName);
+function [x, y] = filteredXY( ...
+        item, xName, yName, impedanceUnit, useLogX, useLogY)
+    x = eis.analysisRun.valuesForAxis(item, xName, impedanceUnit);
+    y = eis.analysisRun.valuesForAxis(item, yName, impedanceUnit);
     valid = isfinite(x) & isfinite(y);
     x = x(valid);
     y = y(valid);
