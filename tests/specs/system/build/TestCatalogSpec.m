@@ -363,6 +363,27 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(numel(unique(string({result.Descriptors.Id}))), 4);
         end
 
+        function scopedAgentPolicySelectsRepositoryEvidence(testCase)
+            fixture = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+            specsRoot = fullfile(fixture.Folder, "specs");
+            repositoryOwner = fullfile(specsRoot, "system", "repository");
+            mkdir(repositoryOwner);
+            testCase.writeSpec(repositoryOwner, ...
+                "RepositoryPolicySpec", "system");
+
+            result = labkittest.plan("Profile", "changed", ...
+                "ChangedPaths", "+labkit/AGENTS.md", ...
+                "SpecsRoot", specsRoot);
+
+            testCase.verifyEqual(result.Classifications.Role, ...
+                "repository-policy");
+            testCase.verifyEqual(string({result.Descriptors.Owner}), ...
+                "system/repository");
+            testCase.verifyEqual(result.Descriptors.Contracts, ...
+                "system");
+        end
+
         function unknownChangedPathFailsPlanningInsteadOfWidening(testCase)
             specsRoot = testCase.createEnvironmentFixture();
 

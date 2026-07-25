@@ -26,7 +26,7 @@ function classification = classifyPath(file)
         return;
     end
     if startsWith(file, ".agents/") || file == "AGENTS.md" || ...
-            file == "tests/AGENTS.md" || file == ".gitignore"
+            endsWith(file, "/AGENTS.md") || file == ".gitignore"
         classification = mapped(file, "repository-policy", "system/repository", ...
             "repository policy behavior");
         return;
