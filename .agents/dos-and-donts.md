@@ -29,6 +29,10 @@ manuals, or a place for transient failures.
 - Test synthetic fixtures twice when practical: validate their project/artifact
   contract and start the App from the fixture in an isolated runtime. A clean
   Debug-start test alone cannot prove the fixture is operational.
+- Schema-valid placeholders such as an unset `[NaN NaN]` ROI center are not
+  valid synthetic UI data when a native control must render them. Seed every
+  interactive sample field with finite, representative values and cover it in
+  a hidden-GUI sample-launch test.
 
 ### Managed interactions
 
