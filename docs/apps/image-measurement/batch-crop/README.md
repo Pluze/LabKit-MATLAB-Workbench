@@ -22,14 +22,15 @@ loading duplicate files.
 
 1. Load images and select a task.
 2. Set crop width and height or switch to physical mode.
-3. Drag the highlighted crop center/ROI in the preview or enter center X/Y.
+3. Drag the highlighted crop center or ROI in the preview, or enter center X/Y.
 4. Set rotation and padding.
 5. Calibrate physical scale when required.
 6. Duplicate tasks for additional ROIs.
 7. Choose format and output folder, then export.
 
-The preview rectangle remains draggable and resizable. Editing the ROI updates
-the selected task immediately; switching tasks restores that task's geometry.
+The preview rectangle remains draggable. Change crop width and height with
+their controls. Editing the ROI updates the selected task immediately; switching
+tasks restores that task's geometry.
 Marker and ROI refreshes preserve axes zoom.
 
 ## Pixel Mode

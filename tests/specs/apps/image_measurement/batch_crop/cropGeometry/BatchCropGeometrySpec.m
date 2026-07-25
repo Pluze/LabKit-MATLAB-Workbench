@@ -28,6 +28,38 @@ classdef BatchCropGeometrySpec < matlab.unittest.TestCase
             testCase.verifyEqual(recovered, point, AbsTol=1e-9);
         end
 
+        function preservesNativePreviewPixelsForOrdinaryImages(testCase)
+            item = batch_crop.sourceFiles.emptyItem();
+            item.image = uint8(zeros(2000, 3000));
+            geometry = batch_crop.cropGeometry.currentGeometry( ...
+                batch_crop.cropGeometry.emptyCanvasCache(), 1, item, 0);
+
+            testCase.verifyEqual(geometry.coordinateScale, 1);
+            testCase.verifySize(geometry.canvas, [2000 3000]);
+        end
+
+        function movesTheCropCenterWhenTheManagedRoiMoves(testCase)
+            state = stateWithImage(uint8(zeros(200, 300)));
+            state.project.parameters.cropWidth = 40;
+            state.project.parameters.cropHeight = 30;
+            state.project.inputs.items(1).centerXY = [150 120];
+            state.project.inputs.items(1).centerSet = true;
+            item = batch_crop.sourceFiles.currentItem(state);
+            [geometry, ~] = batch_crop.cropGeometry.currentGeometry( ...
+                state.session.cache.canvas, 1, item, 0);
+            position = batch_crop.cropGeometry.cropRectanglePosition( ...
+                geometry, item.centerXY, [40 30]);
+
+            state = batch_crop.cropGeometry.changeCropRectangle( ...
+                state, position + [20 -10 0 0], ...
+                labkit.app.internal.CallbackContextFactory.create( ...
+                    struct("appendStatus", @(~) [])));
+
+            testCase.verifyEqual(state.project.inputs.items(1).centerXY, ...
+                [170.5 110.5]);
+            testCase.verifyTrue(state.project.inputs.items(1).centerSet);
+        end
+
         function plansOnePhysicalOutputSizeAcrossUnequalCalibrations(testCase)
             items = [physicalItem("a.png", 4); physicalItem("b.png", 8)];
 
@@ -95,6 +127,18 @@ classdef BatchCropGeometrySpec < matlab.unittest.TestCase
             clear cleanup
         end
     end
+end
+
+function state = stateWithImage(imageData)
+project = batch_crop.projectSpec().Create();
+project.inputs.items = batch_crop.cropTasks.forSourceIds("image1");
+state = struct("project", project, "session", struct( ...
+    "selection", struct("currentIndex", 1), ...
+    "workflow", struct("cropDefaultsInitialized", true, ...
+        "scaleReferenceEditing", false), ...
+    "view", struct("scaleBar", []), ...
+    "cache", struct("images", {{imageData}}, "paths", "source.png", ...
+        "canvas", batch_crop.cropGeometry.emptyCanvasCache())));
 end
 
 function item = physicalItem(path, pixelsPerUnit)

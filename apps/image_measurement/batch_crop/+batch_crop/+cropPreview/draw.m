@@ -27,28 +27,12 @@ function draw(axesById, model)
     plot(ax, [center(1), center(1)], [center(2) - 16, center(2) + 16], ...
         'Color', [0 0.85 1], 'LineWidth', 1.25, ...
         'HitTest', 'off', 'PickableParts', 'none');
-    drawCropRoi(ax, model.cropRectangle);
     drawScaleBar(ax, model.scaleBar);
     hold(ax, 'off');
     title(ax, char(model.title));
     xlabel(ax, '');
     ylabel(ax, '');
     box(ax, 'on');
-end
-
-function drawCropRoi(ax, position)
-    if numel(position) ~= 4 || any(~isfinite(position)) || ...
-            any(position(3:4) <= 0)
-        return;
-    end
-    color = [1 0.9 0.15];
-    rectangle(ax, 'Position', position, 'EdgeColor', color, ...
-        'LineStyle', '-', 'LineWidth', 2, ...
-        'HitTest', 'off', 'PickableParts', 'none');
-    text(ax, position(1), max(0.5, position(2) - 3), 'Crop ROI', ...
-        'Color', color, 'FontWeight', 'bold', ...
-        'BackgroundColor', [0 0 0], 'Margin', 2, ...
-        'HitTest', 'off', 'PickableParts', 'none');
 end
 
 function drawScaleBar(ax, scaleBar)
