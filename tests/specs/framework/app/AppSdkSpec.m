@@ -86,6 +86,46 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile(folder, "sample-pack.json")));
             clear cleanup
         end
+
+        function restoresDeclaredMigrationsAndReadOnlyImports(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            layout = labkit.app.layout.workbench({});
+            schema = labkit.app.project.Schema( ...
+                Version=2, Create=@createCurrentProject, ...
+                Validate=@validateCurrentProject, ...
+                Migrate=@migrateProbeProject, ...
+                LegacyImports=struct("probeLegacy", @importProbeProject));
+            app = AppSdkSpec.definition(layout, "ProjectSchema", schema);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
+            cleanup = onCleanup(@() runtime.close());
+
+            oldProjectFile = fullfile(folder, "old-project.mat");
+            runtime.saveProject(runtime.State, oldProjectFile);
+            loaded = load(oldProjectFile, "labkitProject");
+            labkitProject = loaded.labkitProject;
+            labkitProject.app.payloadVersion = 1;
+            labkitProject.payload.parameters = ...
+                rmfield(labkitProject.payload.parameters, "unit");
+            save(oldProjectFile, "labkitProject");
+
+            runtime.restoreProject(oldProjectFile);
+            testCase.verifyEqual(runtime.State.project.parameters.unit, "base");
+
+            legacyFile = fullfile(folder, "legacy-project.mat");
+            probeLegacy = struct("gain", 7);
+            save(legacyFile, "probeLegacy");
+            runtime.restoreProject(legacyFile);
+            testCase.verifyEqual(runtime.State.project.parameters.gain, 7);
+            testCase.verifyEqual(runtime.State.project.parameters.unit, "base");
+
+            labkitProject.app.payloadVersion = 3;
+            newerFile = fullfile(folder, "newer-project.mat");
+            save(newerFile, "labkitProject");
+            testCase.verifyError(@() runtime.restoreProject(newerFile), ...
+                "labkit:app:runtime:NewerProjectPayload");
+            clear cleanup
+        end
     end
 
     methods (Static, Access = private)
@@ -151,4 +191,27 @@ end
 
 function session = wrongSession(~)
 session = struct();
+end
+
+function project = createCurrentProject()
+project = struct("parameters", struct("gain", 1, "unit", "base"));
+end
+
+function accepted = validateCurrentProject(project)
+accepted = isstruct(project) && isscalar(project) && ...
+    isfield(project, "parameters") && ...
+    all(isfield(project.parameters, ["gain", "unit"]));
+end
+
+function project = migrateProbeProject(project, fromVersion)
+if fromVersion ~= 1
+    error("probe:UnsupportedProjectMigration", ...
+        "Unsupported probe project version.");
+end
+project.parameters.unit = "base";
+end
+
+function project = importProbeProject(legacy)
+project = createCurrentProject();
+project.parameters.gain = legacy.gain;
 end

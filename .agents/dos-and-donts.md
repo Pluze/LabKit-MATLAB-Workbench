@@ -74,3 +74,19 @@ architecture manuals, or a place for transient failures.
   as a hidden background MATLAB process with redirected output, then poll the
   log and record the completed result rather than treating a client timeout as
   a test failure.
+- Run `labkittest.explain` for every changed `projectSpec`; a successful
+  save/restore workflow does not replace an owner-level persistence spec for
+  defaults, validation, and migration semantics. A missing evidence mapping is
+  a test gap, not an empty passing scope.
+
+### Compatibility boundaries
+
+- A one-way saved-data reader is bounded compatibility when the writer emits
+  only the current format, accepted old versions or variable names are exact,
+  and App plus runtime restore evidence exists. Record that as a supported
+  persistence contract, not permanent migration debt.
+- Parallel old/new fields on the same live object are two data models, not a
+  harmless compatibility layer. Migrate all consumers, make the breaking
+  facade version explicit, and delete the aliases together.
+- Defaults apply when an option is omitted. An explicit but unknown scientific
+  mode must fail visibly instead of silently selecting a different branch.

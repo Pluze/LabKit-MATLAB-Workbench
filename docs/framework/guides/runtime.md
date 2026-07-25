@@ -279,6 +279,27 @@ workflow.
 ordered version migration. Runtime owns the project envelope, atomic save,
 restore, recovery, and relinking loop.
 
+### Saved-project compatibility boundary
+
+Every save writes exactly one `labkitProject` variable using the current App
+payload version. A restore accepts an older payload only when the App's current
+schema declares one `Migrate(project, fromVersion)` callback; Runtime invokes
+it once for each missing version in order and then validates the current
+payload. A payload newer than the running App is rejected rather than guessed
+at.
+
+An App may declare an exact legacy MAT variable name in `LegacyImports` when
+real user files still require a one-way import. That callback converts the
+legacy value directly to the current project and optional resume state. It is
+read-only: current saves never write the legacy variable, and Runtime contains
+no App ID, field-shape, or filename heuristics.
+
+These readers are supported data contracts while their Apps declare and test
+them. They are not an excuse for duplicate live state fields or old runtime
+APIs. Removing a supported payload migration or importer is an explicit
+breaking saved-data decision; adding one requires App-owned persistence
+evidence plus a runtime restore test for the framework mechanism.
+
 `labkit.app.result.File` and `labkit.app.result.Package` describe App-owned
 outputs. `CallbackContext.writeResultPackage` writes through the runtime so
 source and project provenance remain consistent.

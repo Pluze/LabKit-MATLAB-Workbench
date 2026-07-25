@@ -82,7 +82,9 @@ and promote enduring policy to this file when it governs all framework work.
   internal unless App authors need a clear stable contract.
 - Persistence writes only the current project envelope. Ordered app migrations
   and declared legacy importers are read-only compatibility hooks and must not
-  introduce app-id branches in the framework.
+  introduce app-id branches in the framework. Treat them as supported
+  persistence contracts while they have App-owned evidence, not as migration
+  ledger entries; removing one is an explicit saved-data compatibility change.
 - Resource replacement for the same scope and id is intentional and
   idempotent; use distinct ids for resources that coexist.
 - Diagnostic output must stay app-neutral and sanitized.
