@@ -33,6 +33,10 @@ manuals, or a place for transient failures.
   valid synthetic UI data when a native control must render them. Seed every
   interactive sample field with finite, representative values and cover it in
   a hidden-GUI sample-launch test.
+- App conformance must launch each App's `BuildDebugSample` project through
+  the native adapter as well as validating it headlessly. Clean Debug startup
+  proves the diagnostic policy, but only a native sample launch exposes
+  control-limit and presentation failures.
 
 ### Managed interactions
 
