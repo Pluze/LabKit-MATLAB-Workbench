@@ -48,5 +48,6 @@ if loaded
     applicationState = batch_crop.cropGeometry.initializeCropDefaults( ...
         applicationState);
 end
-callbackContext.appendStatus("Crop tasks: " + string(numel(retained)) + ".");
+callbackContext.log("info", "batch_crop.sourcefiles.selectionchanged.status", ...
+    "Crop tasks: " + string(numel(retained)) + ".");
 end

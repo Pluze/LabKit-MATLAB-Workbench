@@ -27,6 +27,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         StartupStarted
         StartupPanel
         StartupLabel
+        LogViewer
+        TraceCaptureMenu
     end
 
     methods (Access = { ...
@@ -105,6 +107,10 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function close(obj)
+            if ~isempty(obj.LogViewer) && isvalid(obj.LogViewer)
+                obj.LogViewer.close();
+                obj.LogViewer = [];
+            end
             if ~isempty(obj.InteractionController)
                 obj.InteractionController.delete();
                 obj.InteractionController = [];
@@ -392,6 +398,37 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 callback();
             catch cause
                 obj.alert(cause.message, "LabKit Utility");
+            end
+        end
+
+        function openSessionLog(obj)
+            if isempty(obj.LogViewer) || ~isvalid(obj.LogViewer) || ...
+                    ~obj.LogViewer.isOpen()
+                obj.LogViewer = ...
+                    labkit.app.internal.SessionLogViewer(obj.Runtime);
+            else
+                obj.LogViewer.refresh();
+            end
+            obj.LogViewer.show();
+        end
+
+        function toggleTraceCapture(obj)
+            enabled = true;
+            if ~isempty(obj.TraceCaptureMenu) && ...
+                    isvalid(obj.TraceCaptureMenu)
+                enabled = string(obj.TraceCaptureMenu.Checked) ~= "on";
+            end
+            obj.Runtime.setTraceCapture(enabled);
+            if ~isempty(obj.TraceCaptureMenu) && ...
+                    isvalid(obj.TraceCaptureMenu)
+                if enabled
+                    obj.TraceCaptureMenu.Checked = "on";
+                else
+                    obj.TraceCaptureMenu.Checked = "off";
+                end
+            end
+            if ~isempty(obj.LogViewer) && isvalid(obj.LogViewer)
+                obj.LogViewer.refresh();
             end
         end
 

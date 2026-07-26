@@ -64,7 +64,7 @@ function app = definition()
         Entrypoint="labkit_Example_app", AppId="example", ...
         Title="Example", Family="Examples", ...
         AppVersion="1.0.0", Updated="2026-07-19", ...
-        Requirements=labkit.contract.requirements("app", ">=1 <2"), ...
+        Requirements=labkit.contract.requirements("app", ">=2 <3"), ...
         Workbench=workbench);
 end
 ```
@@ -114,6 +114,9 @@ and renderer signatures, and builds one private native platform plan.
   remain scrollable.
 - Declare editable overlays with `labkit.app.interaction.*` on the plot area;
   supply their current values with same-named Snapshot methods.
+- For a managed rectangle with `OnBackgroundPressed`, an un-dragged click
+  anywhere on its plot—including inside the rectangle—uses that point
+  callback; dragging the rectangle still uses its change callback.
 - Use `labkit.app.plot.clearAxes`, `showMessage`, and `fitAxesToGraphics`
   for renderer mechanics; `EqualDataUnits=true` makes a one-time fitted
   equal-scale view from the settled native axes allocation without dispatching
@@ -127,8 +130,9 @@ and renderer signatures, and builds one private native platform plan.
 
 Runtime validates candidate state and the complete view snapshot before
 publishing either. The private MATLAB adapter maps semantic IDs to native
-components, preserves plot viewports, normalizes native event differences, and
-never exposes component registries to Apps.
+components, skips unchanged native property writes, reuses direct associations
+between controls and their labels, preserves plot viewports, normalizes native
+event differences, and never exposes component registries to Apps.
 
 Normal App launches show the completed native window. Official GUI validation
 uses the same launch path with a framework-owned visibility policy: `hidden`

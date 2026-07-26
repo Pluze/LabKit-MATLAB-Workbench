@@ -5,11 +5,13 @@ classdef NerveResponseWorkflowSpec < matlab.unittest.TestCase
         function analyzesExportsResetsAndRestoresSyntheticSession(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.diagnostic.SampleContext(folder);
-            pack = nerve_response_analysis.debug.writeSamplePack(context);
+            context = labkit.app.synthetic.Context(folder);
+            pack = nerve_response_analysis.syntheticInputs.writeSamplePack(context);
+            definition = nerve_response_analysis.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                nerve_response_analysis.definition(), pack.InitialProject, ...
-                struct("alert", @(~, ~) []));
+                definition, pack.InitialProject, struct("alert", @(~, ~) []), ...
+                journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

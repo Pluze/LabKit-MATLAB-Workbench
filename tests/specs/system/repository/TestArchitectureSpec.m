@@ -2,6 +2,14 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
     %TESTARCHITECTURESPEC Specify one active owner/contract test architecture.
 
     methods (Test, TestTags = {'Contract:system', 'Env:headless'})
+        function generatedApiExcludesInternalPackages(testCase)
+            root = labkittest.setup();
+
+            testCase.verifyFalse(isfolder(fullfile( ...
+                root, "site", "reference", "api", "labkit", ...
+                "app", "internal")));
+        end
+
         function activeEntryPointsDescribeOnlyTheCatalogModel(testCase)
             root = labkittest.setup();
             build = text(root, "buildfile.m");
@@ -70,7 +78,95 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                     "Tracked text contains a sample timestamp token: " + file);
             end
         end
+
+        function testsPassAnExplicitJournalOrJournalRootToEveryRuntimeFactory(testCase)
+            root = labkittest.setup();
+            files = dir(fullfile(root, "tests", "**", "*.m"));
+            violations = strings(1, 0);
+            for index = 1:numel(files)
+                file = fullfile(files(index).folder, files(index).name);
+                calls = labkittest.runtimeFactoryCalls(fileread(file));
+                for call = calls
+                    if ~hasExplicitJournalOrRoot(call)
+                        relative = erase(string(file), string(root) + filesep);
+                        violations(end + 1) = relative + ":" + ...
+                            string(call.Line) + " must pass a nonempty fourth journal " + ...
+                            "or fourth [] with a nonempty JournalRoot.";
+                    end
+                end
+            end
+            testCase.verifyEmpty(violations, strjoin(violations, newline));
+        end
+
+        function runtimeFactoryParserAcceptsFourthArgumentJournal(testCase)
+            source = strjoin([ ...
+                "% RuntimeFactory.createMatlab(app) is a comment.", ...
+                "literal = ""RuntimeFactory.createHeadless(app)"";", ...
+                "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
+                "    app, [], struct(), journal);"], newline);
+
+            calls = labkittest.runtimeFactoryCalls(source);
+
+            testCase.verifyNumElements(calls, 1);
+            testCase.verifyEqual(calls.Method, "createHeadless");
+            testCase.verifyNumElements(calls.Arguments, 4);
+            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
+        end
+
+        function runtimeFactoryParserHandlesTransposeAndCharLiterals(testCase)
+            source = strjoin([ ...
+                "values = [1 2];", ...
+                "values.';", ...
+                "literal = 'RuntimeFactory.createMatlab(app)';", ...
+                "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
+                "    app, [], struct(""alert"", @(~, ~) []), ...", ...
+                "    journal);"], newline);
+
+            calls = labkittest.runtimeFactoryCalls(source);
+
+            testCase.verifyNumElements(calls, 1);
+            testCase.verifyEqual(calls.Method, "createHeadless");
+            testCase.verifyNumElements(calls.Arguments, 4);
+            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
+        end
+
+        function runtimeFactoryParserAcceptsExplicitJournalWithAdditionalArguments(testCase)
+            source = strjoin([ ...
+                "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
+                "    app, [], struct(), journal, ...", ...
+                "    JournalRoot=temporaryRoot);"], newline);
+
+            calls = labkittest.runtimeFactoryCalls(source);
+
+            testCase.verifyNumElements(calls, 1);
+            testCase.verifyEqual(calls.Arguments(4), "journal");
+            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
+        end
+
+        function runtimeFactoryParserAcceptsExplicitJournalRootWithEmptyJournal(testCase)
+            source = strjoin([ ...
+                "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
+                "    app, [], struct(), [], ...", ...
+                "    JournalRoot=temporaryRoot);"], newline);
+
+            calls = labkittest.runtimeFactoryCalls(source);
+
+            testCase.verifyNumElements(calls, 1);
+            testCase.verifyEqual(calls.Arguments(4), "[]");
+            testCase.verifyTrue(startsWith(strtrim(calls.Arguments(5)), "..."));
+            testCase.verifyEqual(calls.JournalRoot, "temporaryRoot");
+            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
+        end
     end
+end
+
+function tf = hasExplicitJournalOrRoot(call)
+callArguments = call.Arguments;
+hasJournal = numel(callArguments) >= 4 && ...
+    strlength(callArguments(4)) > 0 && callArguments(4) ~= "[]";
+hasJournalRoot = any(numel(callArguments) == [5, 6]) && ...
+    callArguments(4) == "[]" && strlength(call.JournalRoot) > 0;
+tf = hasJournal || hasJournalRoot;
 end
 
 function value = text(root, relative)

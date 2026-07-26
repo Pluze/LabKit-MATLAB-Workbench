@@ -15,5 +15,6 @@ state.session.selection.selectedPointIndex = min( ...
 state.session.selection.selectedEdgeIndex = 0;
 state = video_marker.skeletonSetup.normalizeSelection(state);
 state = video_marker.resultFiles.clearExportState(state);
-context.appendStatus("Removed keypoint " + string(index) + ".");
+context.log("info", "video_marker.skeletonsetup.removekeypoint.status", ...
+    "Removed keypoint " + string(index) + ".");
 end

@@ -5,7 +5,7 @@ function varargout = labkit_TTestWizard_app(varargin)
 %   labkit_TTestWizard_app
 %   fig = labkit_TTestWizard_app
 %   info = labkit_TTestWizard_app("version")
-%   [fig, debug] = labkit_TTestWizard_app("debug")
+%   requirements = labkit_TTestWizard_app("requirements")
 %
 % Description:
 %   Opens tabular CSV or workbook sources, captures two or more visible numeric
@@ -16,8 +16,8 @@ function varargout = labkit_TTestWizard_app(varargin)
 %   varargin - Launch requests accepted by labkit.app.Definition.launch.
 %
 % Outputs:
-%   varargout - Launch, version, requirements, or debug outputs returned by the
-%   LabKit runtime.
+%   varargout - Optional figure, version metadata, or requirements returned by
+%       the LabKit runtime.
 %
 % Typical Call:
 %   labkit_TTestWizard_app

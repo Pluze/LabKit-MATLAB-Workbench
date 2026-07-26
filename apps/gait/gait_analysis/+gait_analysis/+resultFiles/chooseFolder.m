@@ -4,10 +4,10 @@ function applicationState = chooseFolder(applicationState, callbackContext)
 choice = callbackContext.chooseOutputFolder( ...
     applicationState.session.workflow.outputFolder);
 if choice.Cancelled
-    callbackContext.appendStatus("Output folder selection cancelled.");
+    callbackContext.log("info", "gait_analysis.resultfiles.choosefolder.status", "Output folder selection cancelled.");
     return
 end
 applicationState.session.workflow.outputFolder = string(choice.Value);
-callbackContext.appendStatus( ...
-    "Output folder: " + string(choice.Value));
+callbackContext.log("info", "gait_analysis.resultfiles.choosefolder.status",  ...
+    "Selected the gait output folder.");
 end

@@ -20,5 +20,6 @@ state = image_enhance.enhancementPipeline.invalidateResults(state);
 state.session.cache.previewResult = [];
 state.session.cache.previewResultKey = "";
 state = image_enhance.enhancementPipeline.rebuildPreview(state);
-context.appendStatus("Applied tool: " + string(step.label));
+context.log("info", "image_enhance.enhancementpipeline.applydraft.completed", ...
+    "Applied the selected enhancement tool.");
 end

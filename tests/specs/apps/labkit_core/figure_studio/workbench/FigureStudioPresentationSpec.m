@@ -6,7 +6,8 @@ classdef FigureStudioPresentationSpec < matlab.unittest.TestCase
             ids = nodeIds(figure_studio.workbench.buildLayout());
 
             testCase.verifyTrue(all(ismember( ...
-                ["preview" "outputFolder" "exportCurrent" "appLog"], ids)));
+                ["preview" "outputFolder" "exportCurrent"], ids)));
+            testCase.verifyFalse(any(ids == "appLog"));
         end
     end
 end

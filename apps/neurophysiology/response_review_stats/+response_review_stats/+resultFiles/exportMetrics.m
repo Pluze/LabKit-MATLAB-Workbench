@@ -34,5 +34,6 @@ state.project.results.lastExport = struct("csvPath", string(path), ...
     "manifestPath", string(written.Value));
 state.session.workflow.statusMessage = "Exported response-review metrics.";
 state.session.workflow.lastAction = "Exported metrics";
-context.appendStatus("Exported metrics: " + string(path));
+context.log("info", "response_review_stats.resultfiles.exportmetrics.completed", ...
+    "Exported the response-review metrics.");
 end

@@ -8,9 +8,9 @@ function [geometry, cache] = currentGeometry(cache, itemIndex, item, paddingPerc
         geometry = cache.geometry;
         return;
     end
-    % Constant: 1.2 megapixels balances draggable crop responsiveness with
-    % enough preview detail to place the crop accurately.
-    previewCanvasPixels = 1.2e6;
+    % Constant: images through 12 megapixels retain native preview pixels;
+    % larger inputs are sampled to keep interaction responsive.
+    previewCanvasPixels = 12e6;
     geometry = batch_crop.cropGeometry.prepareCropCanvas(item.image, struct( ...
         'angleDeg', item.angleDeg, ...
         'paddingPercent', paddingPercent, ...

@@ -11,6 +11,6 @@ if isempty(selection.Indices)
     return;
 end
 state.session.workflow.lastAction = "Selected protocol";
-context.appendStatus( ...
-    "Selected protocol: " + state.session.cache.protocolPath);
+context.log("info", "nerve_response_analysis.sourcefiles.protocolchanged.status", ...
+    "Selected a protocol.");
 end

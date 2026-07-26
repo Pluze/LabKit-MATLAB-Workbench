@@ -10,5 +10,6 @@ state.project.annotations.skeleton = ...
         state.project.annotations.skeleton);
 state.session.selection.selectedEdgeIndex = 0;
 state = video_marker.resultFiles.clearExportState(state);
-context.appendStatus("Connected adjacent keypoints in order.");
+context.log("info", "video_marker.skeletonsetup.connectinorder.status", ...
+    "Connected adjacent keypoints in order.");
 end

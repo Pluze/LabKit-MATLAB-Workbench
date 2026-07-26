@@ -19,8 +19,8 @@ state.project.inputs.groups = reassignRows( ...
     state.project.inputs.groups, selectedRows, target);
 state.session.selection.analysisCells = zeros(0, 2);
 state.project.results.lastDataExport = "";
-context.appendStatus(sprintf( ...
-    'Changed %d selected row(s) to %s.', numel(selectedRows), target));
+context.log("info", "ttest_wizard.groupdata.assignselectedrows.status", sprintf( ...
+    'Changed the group for %d selected row(s).', numel(selectedRows)));
 end
 
 function groups = reassignRows(groups, selectedRows, target)

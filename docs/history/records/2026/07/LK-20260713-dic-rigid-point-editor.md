@@ -15,7 +15,7 @@ scope: Single-click DIC rigid point matching
 
 DIC manual rigid matching had draggable points but maintained a separate
 pointer implementation and required a less consistent placement workflow than
-the ROI-center anchors used by Imager Reconstruction.
+the ROI-center anchors used by related reconstruction workflows.
 
 ## Decision and rationale
 

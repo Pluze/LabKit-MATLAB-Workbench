@@ -11,7 +11,7 @@ if isempty(cache.currentReferenceImage) || isempty(cache.currentMovingImage)
 end
 choice = callbackContext.chooseOutputFolder("");
 if choice.Cancelled
-    callbackContext.appendStatus("Save current images cancelled.");
+    callbackContext.log("info", "dic_preprocess.resultfiles.savecurrentimages.status", "Save current images cancelled.");
     return
 end
 folder = string(choice.Value);
@@ -28,7 +28,7 @@ package = labkit.app.result.Package(Outputs=files, ...
 written = callbackContext.writeResultPackage(folder, package);
 applicationState.project.results.currentImagesManifestPath = ...
     string(written.Value);
-callbackContext.appendStatus("Saved current DIC image pair.");
+callbackContext.log("info", "dic_preprocess.resultfiles.savecurrentimages.status", "Saved current DIC image pair.");
 end
 
 function file = resultFile(id, filepath)

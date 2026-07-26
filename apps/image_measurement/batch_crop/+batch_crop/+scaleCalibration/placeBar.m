@@ -21,7 +21,8 @@ try
             parameters.scaleBarColor);
     applicationState.session.workflow.scaleReferenceEditing = false;
 catch cause
-    callbackContext.reportError("Could not place scale bar", cause);
+    callbackContext.log("error", "batch_crop.scalecalibration.placebar.exception", "Could not place scale bar", ...
+        Category="failure", Audience="developer", Exception=cause);
     callbackContext.alert(cause.message, "Could not place scale bar");
 end
 end

@@ -24,7 +24,11 @@ directly from the layout. Add `+workbench/present.m` for derived visible state,
 `createSession.m` for transient decoded/cache state, and `projectSpec.m` only
 when the App owns durable data. That single project file contains local create,
 validate, and migrate functions. Its migrate callback exists only after a
-saved project schema has actually changed; Runtime owns the version loop.
+saved project schema has actually changed and only for the older payload
+versions the App explicitly supports; Runtime owns the version loop. Current
+saves always write the current payload version. Use an exact declared
+`LegacyImports` variable adapter only for real pre-envelope user files, never
+as a shape-guessing fallback.
 
 Runtime and App architecture names remain versionless. Put facade/App
 compatibility in the existing version and requirement metadata, and put saved

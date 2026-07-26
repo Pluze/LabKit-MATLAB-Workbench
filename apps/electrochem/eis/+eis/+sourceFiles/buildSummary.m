@@ -5,21 +5,11 @@ function summary = buildSummary(items)
     summary = cell(0, 1);
     summary{end+1} = sprintf('Loaded files: %d', numel(items));
     for i = 1:numel(items)
-        freq = itemField(items(i), 'freq_Hz', 'Freq');
+        freq = items(i).freq_Hz;
         fmin = min(freq, [], 'omitnan');
         fmax = max(freq, [], 'omitnan');
         summary{end+1} = sprintf('%s | N=%d | Freq %.4g to %.4g Hz | order: %s', ...
             items(i).name, items(i).n, fmin, fmax, ternary(items(i).freqDesc, 'high->low', 'low->high/mixed'));
-    end
-end
-
-function values = itemField(item, canonicalName, legacyName)
-    if isfield(item, canonicalName) && ~isempty(item.(canonicalName))
-        values = item.(canonicalName);
-    elseif isfield(item, legacyName) && ~isempty(item.(legacyName))
-        values = item.(legacyName);
-    else
-        values = [];
     end
 end
 

@@ -14,7 +14,9 @@ folder = string(applicationState.project.parameters.outputFolder);
 if strlength(folder) == 0
     choice = callbackContext.chooseOutputFolder("");
     if choice.Cancelled
-        callbackContext.appendStatus("Image-match export cancelled.");
+        callbackContext.log("info", ...
+            "image_match.resultfiles.exportimages.cancelled", ...
+            "Image-match export cancelled.");
         return;
     end
     folder = string(choice.Value);
@@ -35,7 +37,8 @@ try
     if ~isempty(applicationState.project.results.lastExport) && ...
             applicationState.project.results.lastExportFingerprint == ...
             task.fingerprint
-        callbackContext.appendStatus( ...
+        callbackContext.log("info", ...
+            "image_match.resultfiles.exportimages.skipped", ...
             "Matched export is already up to date.");
         return;
     end
@@ -51,10 +54,12 @@ try
         ManifestName="image_match.labkit.json");
     written = callbackContext.writeResultPackage(folder, package);
 catch ME
-    callbackContext.reportError("Export matched images", ME);
+    callbackContext.log("error", "image_match.resultfiles.exportimages.exception", "Export matched images", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Export failed");
-    callbackContext.appendStatus( ...
-        "Image-match export failed: " + string(ME.message));
+    callbackContext.log("error", ...
+        "image_match.resultfiles.exportimages.failed", ...
+        "Image-match export failed.");
     return;
 end
 payload.sourceIds = string({sources.id});
@@ -63,8 +68,16 @@ payload.resultManifestPath = string(written.Value);
 applicationState.project.results.lastExport = payload;
 applicationState.project.results.lastExportFingerprint = task.fingerprint;
 applicationState.project.results.resultManifestPath = string(written.Value);
-callbackContext.appendStatus( ...
-    "Exported matched images: " + payload.manifestPath);
+statuses = string({payload.results.status});
+failedCount = sum(statuses == "failed");
+severity = "info";
+if failedCount > 0
+    severity = "warning";
+end
+callbackContext.log(severity, ...
+    "image_match.resultfiles.exportimages.completed", ...
+    sprintf("Exported %d matched image(s); %d failed.", ...
+    sum(statuses == "saved"), failedCount));
 end
 
 function outputs = packageOutputs(payload)

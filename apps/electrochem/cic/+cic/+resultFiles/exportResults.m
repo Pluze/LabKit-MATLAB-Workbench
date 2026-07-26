@@ -11,7 +11,7 @@ end
 choice = callbackContext.chooseOutputFile( ...
     ["*.csv", "CSV files"], "cic_results.csv");
 if choice.Cancelled
-    callbackContext.appendStatus("CIC result export cancelled.");
+    callbackContext.log("info", "cic.resultfiles.exportresults.status", "CIC result export cancelled.");
     return
 end
 filepath = string(choice.Value);
@@ -37,5 +37,6 @@ package = labkit.app.result.Package( ...
 written = callbackContext.writeResultPackage(folder, package);
 applicationState.project.results.lastExport = struct( ...
     "csvPath", filepath, "manifestPath", string(written.Value));
-callbackContext.appendStatus("Exported CIC CSV: " + filepath);
+callbackContext.log("info", "cic.resultfiles.exportresults.status", ...
+    "Exported CIC results.");
 end

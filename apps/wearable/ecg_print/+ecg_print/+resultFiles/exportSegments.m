@@ -12,7 +12,8 @@ end
 chosen = callbackContext.chooseOutputFile( ...
     ["*.csv", "CSV files (*.csv)"], "ecg_segment_snr.csv");
 if chosen.Cancelled
-    callbackContext.appendStatus("Segment SNR export cancelled.");
+    callbackContext.log("info", "ecg_print.resultfiles.exportsegments.cancelled", ...
+        "Segment SNR export cancelled.");
     return;
 end
 filepath = string(chosen.Value);
@@ -34,8 +35,8 @@ package = labkit.app.result.Package(Outputs={output}, ...
 written = callbackContext.writeResultPackage(folder, package);
 applicationState.project.results.lastSegmentExport = struct( ...
     "csvPath", filepath, "manifestPath", string(written.Value));
-callbackContext.appendStatus( ...
-    "Exported segment SNR CSV: " + filepath);
+callbackContext.log("info", "ecg_print.resultfiles.exportsegments.completed", ...
+    "Exported the segment SNR CSV.");
 end
 
 function folder = outputFolder(folder)

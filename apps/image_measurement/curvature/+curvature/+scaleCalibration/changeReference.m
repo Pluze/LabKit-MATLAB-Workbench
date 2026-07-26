@@ -13,7 +13,9 @@ applicationState.project.annotations.calibration = ...
         struct("referenceLine", endpoints));
 applicationState.session.view.scaleBar = [];
 applicationState = curvature.curveEdit.clearMeasurements(applicationState);
-callbackContext.appendStatus("Scale reference updated.");
+callbackContext.log("info", ...
+    "curvature.scalecalibration.changereference.status", ...
+    "Scale reference updated.");
 end
 
 function endpoints = normalizeEndpoints(endpoints)

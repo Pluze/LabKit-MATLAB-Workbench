@@ -15,7 +15,8 @@ try
         filepath, applicationState.project.parameters, ...
         applicationState.project.parameters.channel);
 catch cause
-    callbackContext.reportError("Recording parse failed", cause);
+    callbackContext.log("error", "ecg_print.sourcefiles.refreshimport.exception", "Recording parse failed", ...
+        Category="failure", Audience="developer", Exception=cause);
     cache = ecg_print.sourceFiles.emptyCache();
     cache.filepath = filepath;
     cache.filePreview = preview;
@@ -27,8 +28,8 @@ catch cause
     applicationState.project.results.lastAnalysis = struct();
     applicationState.project.results.lastSegmentExport = [];
     applicationState.project.results.lastWaveformExport = [];
-    callbackContext.appendStatus( ...
-        "Recording parse failed: " + cause.message);
+    callbackContext.log("error", "ecg_print.sourcefiles.refreshimport.failed", ...
+        "Recording import failed.");
     callbackContext.alert(cause.message, "Could not parse recording");
     return;
 end
@@ -42,7 +43,6 @@ applicationState.project.parameters.roiEnd = max(cache.signal.time);
 applicationState.project.results.lastAnalysis = struct();
 applicationState.project.results.lastSegmentExport = [];
 applicationState.project.results.lastWaveformExport = [];
-callbackContext.appendStatus(sprintf( ...
-    "Parsed %d channel(s) from %s", ...
-    numel(cache.channelItems), filepath));
+callbackContext.log("info", "ecg_print.sourcefiles.refreshimport.completed", sprintf( ...
+    "Imported %d recording channel(s).", numel(cache.channelItems)));
 end

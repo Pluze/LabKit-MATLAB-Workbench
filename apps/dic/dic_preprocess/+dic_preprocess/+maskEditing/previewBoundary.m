@@ -6,7 +6,7 @@ function applicationState = previewBoundary( ...
 if accepted
     applicationState.project.annotations.maskImage = mask;
     applicationState.project.parameters.previewMode = "ROI mask";
-    callbackContext.appendStatus("Previewed ROI mask boundary.");
+    callbackContext.log("info", "dic_preprocess.maskediting.previewboundary.status", "Previewed ROI mask boundary.");
 elseif ~isempty(applicationState.project.annotations.maskImage)
     applicationState.project.parameters.previewMode = "ROI mask";
 else

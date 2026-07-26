@@ -8,5 +8,5 @@ applicationState.project = ...
         applicationState.project, "clear mask canvas");
 applicationState.project.annotations.maskImage = [];
 applicationState = dic_preprocess.analysisRun.clearResults(applicationState);
-callbackContext.appendStatus("Cleared ROI mask canvas.");
+callbackContext.log("info", "dic_preprocess.maskediting.clearcanvas.status", "Cleared ROI mask canvas.");
 end

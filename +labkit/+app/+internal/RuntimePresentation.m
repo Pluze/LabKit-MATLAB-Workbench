@@ -83,8 +83,6 @@ classdef (Sealed, Hidden) RuntimePresentation
                             Columns=config.Columns, ...
                             RowNames=config.RowNames, ...
                             ColumnEditable=config.ColumnEditable);
-                    case "logPanel"
-                        view = view.text(node.Id, join(statusLog, newline));
                     case "statusPanel"
                         status = config.Text;
                         if isempty(status) && ~isempty(statusLog)

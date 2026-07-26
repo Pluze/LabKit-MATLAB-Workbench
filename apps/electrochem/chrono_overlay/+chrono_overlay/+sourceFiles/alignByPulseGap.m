@@ -27,62 +27,40 @@ function [item, msg] = alignByPulseGap(item)
     end
 
     if isfield(pulse, 'ok') && pulse.ok
-        alignTime = 0.5 * (pulse.gap_start + pulse.gap_end);
+        alignTime = 0.5 * (pulse.gap.start_s + pulse.gap.end_s);
         if isfinite(alignTime)
-            item.alignTime = alignTime;
-            item.tAligned = t - alignTime;
-            item.alignTime_s = item.alignTime;
-            item.tAligned_s = item.tAligned;
+            item.alignTime_s = alignTime;
+            item.tAligned_s = t - alignTime;
             msg = sprintf('%s: aligned to cathodic/anodic blank center at %.9g s (gap %.9g to %.9g s, %s).', ...
-                itemName, alignTime, pulse.gap_start, pulse.gap_end, pulse.method);
+                itemName, alignTime, pulse.gap.start_s, pulse.gap.end_s, pulse.method);
             return;
         end
 
-        item.alignTime = t(1);
-        item.tAligned = t - item.alignTime;
-        item.alignTime_s = item.alignTime;
-        item.tAligned_s = item.tAligned;
+        item.alignTime_s = t(1);
+        item.tAligned_s = t - item.alignTime_s;
         msg = sprintf('%s: blank center not found, fallback to first sample (%s).', itemName, pulseMsg);
         return;
     end
 
-    item.alignTime = t(1);
-    item.tAligned = t - item.alignTime;
-    item.alignTime_s = item.alignTime;
-    item.tAligned_s = item.tAligned;
+    item.alignTime_s = t(1);
+    item.tAligned_s = t - item.alignTime_s;
     msg = sprintf('%s: pulse gap not found, fallback to first sample (%s).', itemName, pulseMsg);
 end
 
 function t = chronoTime(item)
-    if isfield(item, 't_s') && ~isempty(item.t_s)
-        t = item.t_s;
-    elseif isfield(item, 't') && ~isempty(item.t)
-        t = item.t;
-    else
+    if ~isfield(item, 't_s') || isempty(item.t_s)
         t = [];
+    else
+        t = item.t_s;
     end
     t = t(:);
 end
 
 function pulse = emptyPulse()
-    pulse = struct( ...
-        'ok', false, ...
-        'method', '-', ...
-        'message', '', ...
-        'cath_start', NaN, ...
-        'cath_end', NaN, ...
-        'anod_start', NaN, ...
-        'anod_end', NaN, ...
-        'Ic_nominal', NaN, ...
-        'Ia_nominal', NaN, ...
-        'pre_start', NaN, ...
-        'pre_end', NaN, ...
-        'gap_start', NaN, ...
-        'gap_end', NaN, ...
-        'post_start', NaN, ...
-        'post_end', NaN);
-
+    pulse = struct('ok', false, 'method', '-', 'message', '');
+    pulse.pre = struct('start_s', NaN, 'end_s', NaN);
     pulse.cath = struct('start_s', NaN, 'end_s', NaN, 'current_A', NaN);
-    pulse.anod = struct('start_s', NaN, 'end_s', NaN, 'current_A', NaN);
     pulse.gap = struct('start_s', NaN, 'end_s', NaN, 'center_s', NaN);
+    pulse.anod = struct('start_s', NaN, 'end_s', NaN, 'current_A', NaN);
+    pulse.post = struct('start_s', NaN, 'end_s', NaN);
 end

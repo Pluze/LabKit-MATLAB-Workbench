@@ -12,6 +12,6 @@ if choice.Cancelled
 end
 state.session.workflow.outputFolder = string(choice.Value);
 state.session.workflow.lastAction = "Selected output folder";
-context.appendStatus( ...
-    "Selected output folder: " + string(choice.Value));
+context.log("info", "response_review_stats.resultfiles.chooseoutputfolder.status", ...
+    "Selected an output folder.");
 end

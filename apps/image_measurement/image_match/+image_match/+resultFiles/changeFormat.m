@@ -4,7 +4,9 @@ function applicationState = changeFormat( ...
 %CHANGEFORMAT Select the matched-image batch format.
 format = upper(string(format));
 if ~isscalar(format) || ~any(format == ["PNG" "TIFF" "JPEG"])
-    callbackContext.appendStatus("Ignored an unsupported export format.");
+    callbackContext.log("warning", ...
+        "image_match.resultfiles.changeformat.ignored", ...
+        "Ignored an unsupported export format.");
     return;
 end
 applicationState.project.parameters.exportFormat = format;

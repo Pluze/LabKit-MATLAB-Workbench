@@ -4,7 +4,11 @@ classdef EisPresentationSpec < matlab.unittest.TestCase
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function presentsLoadedFilesWithoutUiHandlesInApplicationState(testCase)
             definition = eis.definition();
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless(definition);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(definition, root);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             fixture = testfixtures.dtaFixturePath("eis_potentiostatic_zcurve.DTA");
 
@@ -15,6 +19,9 @@ classdef EisPresentationSpec < matlab.unittest.TestCase
             testCase.verifyClass(snapshot, "labkit.app.view.Snapshot");
             testCase.verifyEqual(numel(state.session.cache.items), 1);
             testCase.verifyEqual(state.session.selection.files.Indices, 1);
+            units = eis.impedanceDisplay.catalog();
+            testCase.verifyEqual(state.project.parameters.impedanceUnit, ...
+                units.choices(3));
             testCase.verifyFalse(contains(evalc("disp(state)"), "matlab.ui"));
             clear cleanup
         end

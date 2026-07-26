@@ -56,8 +56,8 @@ classdef CicPresentationSpec < matlab.unittest.TestCase
             testCase.verifyEqual(request.y, item.analysis.Vf);
             testCase.verifyEqual(string(request.xLabel), choices.xAxes(1));
             testCase.verifyEqual(string(request.yLabel), "Vf (V vs Ref.)");
-            testCase.verifyEqual(request.coords.cathStartX, item.analysis.pulse.cath_start);
-            testCase.verifyEqual(request.coords.anodEndX, item.analysis.pulse.anod_end);
+            testCase.verifyEqual(request.coords.cathStartX, item.analysis.pulse.cath.start_s);
+            testCase.verifyEqual(request.coords.anodEndX, item.analysis.pulse.anod.end_s);
         end
     end
 end

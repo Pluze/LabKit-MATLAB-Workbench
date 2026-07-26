@@ -11,7 +11,8 @@ try
     items = flir_thermal.sourceFiles.readImages( ...
         paths, struct("SkipInvalid", false));
 catch ME
-    callbackContext.reportError("Load FLIR sources for individual ranges", ME);
+    callbackContext.log("error", "flir_thermal.displaymapping.perimagerange.exception", "Load FLIR sources for individual ranges", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not load FLIR sources");
     return
 end
@@ -49,7 +50,8 @@ if index >= 1 && index <= numel(items)
 end
 applicationState.project.results.lastExport = [];
 applicationState.project.results.resultManifestPath = "";
-callbackContext.appendStatus( ...
+callbackContext.log("info", ...
+    "flir_thermal.displaymapping.perimagerange.completed", ...
     "Applied individual auto ranges to " + ...
     string(numel(items)) + " thermal images.");
 end

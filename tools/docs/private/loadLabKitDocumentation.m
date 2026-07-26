@@ -415,6 +415,9 @@ function api = discoverLabKitPublicApi(repoRoot)
         if contains(filepath, filesep + "private" + filesep)
             continue;
         end
+        if contains(filepath, filesep + "+internal" + filesep)
+            continue;
+        end
         if contains(filepath, filesep + "@")
             continue;
         end

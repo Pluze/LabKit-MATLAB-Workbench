@@ -15,8 +15,6 @@ function height = preferredRowHeight(obj, node)
             end
         case "dataTable"
             height = policy.TableHeight;
-        case "logPanel"
-            height = policy.LogHeight;
         case "statusPanel"
             if node.Id == "applicationUsage"
                 height = policy.UsageHeight;

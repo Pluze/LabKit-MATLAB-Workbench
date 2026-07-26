@@ -11,7 +11,7 @@ classdef VideoMarkerSourceSpec < matlab.unittest.TestCase
             project.results.coordinateManifestPath = "coordinates.labkit.json";
             state = struct("project", project);
             context = labkit.app.internal.CallbackContextFactory.create(struct( ...
-                "removeResource", @(~, ~) [], "appendStatus", @(~) []));
+                "removeResource", @(~, ~) [], "log", @(varargin) []));
 
             actual = video_marker.videoSource.selectionChanged(state, [], context);
 

@@ -16,6 +16,6 @@ end
 state.project.parameters.outputFolder = string(chosen.Value);
 state.project.results.lastExport = [];
 state.project.results.resultManifestPath = "";
-callbackContext.appendStatus( ...
-    "Output folder: " + state.project.parameters.outputFolder);
+callbackContext.log("info", "figure_studio.resultfiles.chooseoutputfolder.status",  ...
+    "Selected the Figure Studio output folder.");
 end

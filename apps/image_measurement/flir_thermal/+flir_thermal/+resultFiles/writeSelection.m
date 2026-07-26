@@ -37,7 +37,8 @@ try
         ManifestName="flir_thermal.labkit.json");
     written = callbackContext.writeResultPackage(folder, package);
 catch ME
-    callbackContext.reportError("Export FLIR thermal results", ME);
+    callbackContext.log("error", "flir_thermal.resultfiles.writeselection.exception", "Export FLIR thermal results", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not export FLIR images");
     return
 end

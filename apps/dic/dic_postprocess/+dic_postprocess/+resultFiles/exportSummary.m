@@ -15,7 +15,7 @@ defaultName = fullfile(folder, name + "_strain_summary.csv");
 choice = callbackContext.chooseOutputFile( ...
     ["*.csv", "CSV files (*.csv)"], defaultName);
 if choice.Cancelled
-    callbackContext.appendStatus("Export summary cancelled.");
+    callbackContext.log("info", "dic_postprocess.resultfiles.exportsummary.status", "Export summary cancelled.");
     return;
 end
 filepath = string(choice.Value);
@@ -33,7 +33,9 @@ package = labkit.app.result.Package( ...
 written = callbackContext.writeResultPackage(folder, package);
 applicationState.project.results.summaryManifestPath = ...
     string(written.Value);
-callbackContext.appendStatus("Exported summary CSV: " + filepath);
+callbackContext.log("info", ...
+    "dic_postprocess.resultfiles.exportsummary.status", ...
+    "Exported the DIC summary.");
 end
 
 function filepath = pathForRole(sources, role, context)

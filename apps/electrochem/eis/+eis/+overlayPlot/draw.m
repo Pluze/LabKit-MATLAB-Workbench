@@ -10,8 +10,10 @@ function draw(axesById, model)
         ax.XScale = scaleName(p.logX);
         ax.YScale = scaleName(p.logY);
         title(ax, 'EIS Overlay');
-        xlabel(ax, eis.overlayPlot.labelForAxis(p.xName));
-        ylabel(ax, eis.overlayPlot.labelForAxis(p.yName));
+        xlabel(ax, eis.overlayPlot.labelForAxis( ...
+            p.xName, p.impedanceUnit));
+        ylabel(ax, eis.overlayPlot.labelForAxis( ...
+            p.yName, p.impedanceUnit));
     end
     if model.viewAction == "equal"
         labkit.app.plot.fitAxesToGraphics(ax, EqualDataUnits=true);

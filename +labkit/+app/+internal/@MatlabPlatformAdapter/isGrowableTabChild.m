@@ -9,6 +9,5 @@ function tf = isGrowableTabChild(obj, node)
             node.Configuration.MaxFiles > 1;
         return
     end
-    tf = any(node.Kind == [ ...
-        "plotArea", "dataTable", "logPanel", "statusPanel"]);
+    tf = any(node.Kind == ["plotArea", "dataTable", "statusPanel"]);
 end

@@ -4,7 +4,9 @@ function applicationState = openProject(applicationState, callbackContext)
 choice = callbackContext.chooseInputFile( ...
     ["*.mat", "LabKit project files"], "");
 if choice.Cancelled
-    callbackContext.appendStatus("Project open cancelled.");
+    callbackContext.log("info", ...
+        "video_marker.sessioncontrol.openproject.cancelled", ...
+        "Project open cancelled.");
     return
 end
 filepath = string(choice.Value);
@@ -12,9 +14,12 @@ try
     applicationState = ...
         callbackContext.restoreProjectDocument(filepath);
 catch cause
-    callbackContext.reportError("Could not open Video Marker project", cause);
+    callbackContext.log("error", "video_marker.sessioncontrol.openproject.exception", "Could not open Video Marker project", ...
+        Category="failure", Audience="developer", Exception=cause);
     callbackContext.alert(cause.message, "Could not open project");
     return
 end
-callbackContext.appendStatus("Opened project: " + filepath);
+callbackContext.log("info", ...
+    "video_marker.sessioncontrol.openproject.completed", ...
+    "Opened a Video Marker project.");
 end

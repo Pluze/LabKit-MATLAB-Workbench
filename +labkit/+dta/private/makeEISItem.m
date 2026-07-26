@@ -12,8 +12,8 @@ function item = makeEISItem(filepath)
 %   filepath - Gamry EIS DTA file path containing a ZCURVE table.
 %
 % Output:
-%   item - EIS item with parser outputs, zcurve, normalized field aliases,
-%          legacy bridge fields, frequency-order metadata, and analysis struct.
+%   item - EIS item with parser outputs, zcurve, unit-explicit vectors,
+%          frequency-order metadata, and analysis struct.
 %
 % Errors:
 %   Throws when no usable ZCURVE data remains.
@@ -31,48 +31,38 @@ function item = makeEISItem(filepath)
 
     item.curve = curve;
     item.zcurve = curve;
-    item.Pt = defaultColumn(curve, 'Pt');
-    item.Time = defaultColumn(curve, 'Time');
-    item.Freq = defaultColumn(curve, 'Freq');
-    item.Zreal = defaultColumn(curve, 'Zreal');
-    item.Zimag = defaultColumn(curve, 'Zimag');
-    item.Zmod = defaultColumn(curve, 'Zmod');
-    item.Zphz = defaultColumn(curve, 'Zphz');
-    item.Idc = defaultColumn(curve, 'Idc');
-    item.Vdc = defaultColumn(curve, 'Vdc');
-    item.negZimag = -item.Zimag;
+    item.point = defaultColumn(curve, 'Pt');
+    item.time_s = defaultColumn(curve, 'Time');
+    item.freq_Hz = defaultColumn(curve, 'Freq');
+    item.Zreal_ohm = defaultColumn(curve, 'Zreal');
+    item.Zimag_ohm = defaultColumn(curve, 'Zimag');
+    item.negZimag_ohm = -item.Zimag_ohm;
+    item.Zmod_ohm = defaultColumn(curve, 'Zmod');
+    item.Zphz_deg = defaultColumn(curve, 'Zphz');
+    item.Idc_A = defaultColumn(curve, 'Idc');
+    item.Vdc_V = defaultColumn(curve, 'Vdc');
 
-    valid = isfinite(item.Freq) | isfinite(item.Zreal) | isfinite(item.Zimag) ...
-        | isfinite(item.Zmod) | isfinite(item.Zphz);
-    fields = {'Pt', 'Time', 'Freq', 'Zreal', 'Zimag', 'negZimag', 'Zmod', 'Zphz', 'Idc', 'Vdc'};
+    valid = isfinite(item.freq_Hz) | isfinite(item.Zreal_ohm) | ...
+        isfinite(item.Zimag_ohm) | isfinite(item.Zmod_ohm) | ...
+        isfinite(item.Zphz_deg);
+    fields = {'point', 'time_s', 'freq_Hz', 'Zreal_ohm', ...
+        'Zimag_ohm', 'negZimag_ohm', 'Zmod_ohm', 'Zphz_deg', ...
+        'Idc_A', 'Vdc_V'};
     for ii = 1:numel(fields)
         item.(fields{ii}) = item.(fields{ii})(valid);
     end
 
-    if numel(item.Pt) < 2
+    if numel(item.point) < 2
         error('Not enough valid ZCURVE points.');
     end
 
-    if isempty(item.Pt) || all(~isfinite(item.Pt))
-        item.Pt = (0:numel(item.Freq)-1).';
+    if isempty(item.point) || all(~isfinite(item.point))
+        item.point = (0:numel(item.freq_Hz)-1).';
     end
 
-    item.n = numel(item.Pt);
-    item.freqDesc = isMostlyDescending(item.Freq);
+    item.n = numel(item.point);
+    item.freqDesc = isMostlyDescending(item.freq_Hz);
     item.message = msg;
-
-    % Unit-explicit aliases are the long-term data model; legacy fields stay
-    % for behavior-preserving GUI compatibility.
-    item.point = item.Pt;
-    item.time_s = item.Time;
-    item.freq_Hz = item.Freq;
-    item.Zreal_ohm = item.Zreal;
-    item.Zimag_ohm = item.Zimag;
-    item.negZimag_ohm = item.negZimag;
-    item.Zmod_ohm = item.Zmod;
-    item.Zphz_deg = item.Zphz;
-    item.Idc_A = item.Idc;
-    item.Vdc_V = item.Vdc;
     item.analysis = struct();
 end
 

@@ -10,7 +10,7 @@ end
 choice = callbackContext.chooseOutputFile( ...
     ["*.csv", "CSV files"], "vt_steady_resistance_results.csv");
 if choice.Cancelled
-    callbackContext.appendStatus("VT result export cancelled.");
+    callbackContext.log("info", "vt_resistance.resultfiles.exportresults.status", "VT result export cancelled.");
     return
 end
 filepath = string(choice.Value);
@@ -31,5 +31,7 @@ package = labkit.app.result.Package( ...
 written = callbackContext.writeResultPackage(folder, package);
 applicationState.project.results.lastExport = struct( ...
     "csvPath", filepath, "manifestPath", string(written.Value));
-callbackContext.appendStatus("Exported VT CSV: " + filepath);
+callbackContext.log("info", ...
+    "vt_resistance.resultfiles.exportresults.status", ...
+    "Exported VT results.");
 end

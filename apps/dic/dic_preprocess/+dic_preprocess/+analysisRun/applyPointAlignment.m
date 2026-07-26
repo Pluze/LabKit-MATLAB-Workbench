@@ -11,11 +11,12 @@ try
     [~, transform] = dic_preprocess.analysisRun.alignMovingToReference( ...
         cache.currentReferenceImage, cache.currentMovingImage, reference, moving);
 catch ME
-    context.reportError('Point alignment', ME);
+    context.log("error", "dic_preprocess.analysisrun.applypointalignment.exception", 'Point alignment', ...
+        Category="failure", Audience="developer", Exception=ME);
     context.alert(ME.message, 'Point alignment failed');
     return;
 end
 state = dic_preprocess.analysisRun.recordAlignment(state, transform, "manual alignment");
-context.appendStatus( ...
+context.log("info", "dic_preprocess.analysisrun.applypointalignment.status",  ...
     "Aligned image using " + string(size(reference,1)) + " point pair(s).");
 end

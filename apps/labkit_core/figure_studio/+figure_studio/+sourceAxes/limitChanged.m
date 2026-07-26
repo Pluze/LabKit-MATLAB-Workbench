@@ -32,7 +32,7 @@ if any(~isfinite(pair)) || pair(1) >= pair(2) || ...
     end
     state.session.cache.limitState = controls;
     state.session.workflow.status = "Keep each axis minimum below its maximum within the displayed data envelope.";
-    callbackContext.appendStatus(state.session.workflow.status);
+    callbackContext.log("info", "figure_studio.sourceaxes.limitchanged.status", state.session.workflow.status);
     return;
 end
 state.session.cache.plotData.axes.(char(axisName)) = pair;
@@ -44,5 +44,5 @@ state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
 state.session.workflow.status = "Applied editable X/Y limits.";
 state.project.results.lastExport = [];
 state.project.results.resultManifestPath = "";
-callbackContext.appendStatus(state.session.workflow.status);
+callbackContext.log("info", "figure_studio.sourceaxes.limitchanged.status", state.session.workflow.status);
 end

@@ -16,7 +16,8 @@ try
         parameters.scaleBarColor);
     state.session.workflow.scaleReferenceEditing = false;
 catch cause
-    context.reportError("Could not place scale bar", cause);
+    context.log("error", "video_marker.scalecalibration.placebar.exception", "Could not place scale bar", ...
+        Category="failure", Audience="developer", Exception=cause);
     context.alert(cause.message, "Could not place scale bar");
 end
 end

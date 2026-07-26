@@ -22,7 +22,9 @@ if isempty(sources)
         labkit.app.event.ListSelection();
     applicationState.session.cache.currentItem = [];
     applicationState = invalidateResults(applicationState);
-    callbackContext.appendStatus("Cleared loaded FLIR files.");
+    callbackContext.log("info", ...
+        "flir_thermal.thermalsources.selectcurrent.cleared", ...
+        "Cleared loaded FLIR files.");
     return
 end
 
@@ -30,7 +32,8 @@ index = selectedIndex(selection, sources);
 try
     item = loadItem(sources(index), annotations, callbackContext);
 catch ME
-    callbackContext.reportError("Load selected FLIR image", ME);
+    callbackContext.log("error", "flir_thermal.thermalsources.selectcurrent.exception", "Load selected FLIR image", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not load FLIR image");
     return
 end
@@ -52,7 +55,8 @@ end
 if sourceSetChanged
     applicationState = invalidateResults(applicationState);
 end
-callbackContext.appendStatus(sprintf( ...
+callbackContext.log("info", ...
+    "flir_thermal.thermalsources.selectcurrent.selected", sprintf( ...
     "Selected FLIR image %d of %d.", index, numel(sources)));
 end
 

@@ -8,5 +8,6 @@ end
 points(end, :) = [];
 frame = state.session.cache.frameIndex;
 state = video_marker.markerEditing.setPoints(state, points);
-context.appendStatus("Undid last point on frame " + string(frame) + ".");
+context.log("info", "video_marker.markerediting.undo.status", ...
+    "Undid the last point on frame " + string(frame) + ".");
 end

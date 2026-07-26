@@ -21,7 +21,6 @@ tool availability, or the active maintenance operation.
 | Group | Action | Behavior |
 | --- | --- | --- |
 | Run Apps | **Open Selected App** | Checks the selected app requirements, adds the app root, and calls its App SDK entrypoint without retired runtime launch arguments. |
-| Run Apps | **Open Debug** | Starts the same App through its typed SDK diagnostics contract, records verbose structured events under `artifacts/diagnostics/launcher/`, and loads the App-owned anonymous synthetic sample. |
 | Run Apps | **Refresh App List** | Repeats public and configured private-app discovery without restarting the launcher. |
 | Run Apps | **Documentation and History** | Opens the generated manual for the selected app. |
 | Versions and Install | **Latest** | Installs the current `main` branch archive. |
@@ -38,11 +37,12 @@ Double-clicking an app row is equivalent to selecting it and opening it
 normally. The checkbox column controls package membership; ordinary launch
 selection does not change the checked set.
 
-Debug sessions use a new isolated artifact folder on every launch. The folder
-contains the runtime event stream, session manifest, synthetic sample manifest,
-and any anonymous fixture files declared by the selected App. Normal launches
-keep the SDK's bounded standard diagnostics in memory and do not create this
-verbose artifact set.
+Every launch uses the same clean App path. Use the App's **Tools >
+Diagnostics** menu to inspect its live session log, enable trace capture, or
+export a diagnostic ZIP after a problem occurs. Apps that declare a synthetic
+input pack expose **Tools > Developer Tools > Generate Synthetic Inputs...**.
+Generation writes anonymous fixture files and a manifest into a new folder but
+does not load them or mutate the running project.
 
 ## Programmatic Calls
 

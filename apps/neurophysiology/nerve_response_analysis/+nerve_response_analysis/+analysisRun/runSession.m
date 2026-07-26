@@ -15,7 +15,8 @@ try
     state.session.cache.analysis = nerve_response_analysis.analysisRun.analyzeSession( ...
         state.session.cache.filterRecord, state.session.cache.protocol, options);
 catch ME
-    context.reportError("Analyze nerve response", ME);
+    context.log("error", "nerve_response_analysis.analysisrun.runsession.exception", "Analyze nerve response", ...
+        Category="failure", Audience="developer", Exception=ME);
     state.session.cache.analysis = [];
     state.session.workflow.statusMessage = string(ME.message);
     state.session.workflow.lastAction = "Analysis failed";
@@ -25,5 +26,6 @@ state.project.results.lastExport = [];
 state.session.workflow.statusMessage = sprintf("Analyzed %d recording(s).", ...
     state.session.cache.analysis.analyzedCount);
 state.session.workflow.lastAction = "Analyzed filter record";
-context.appendStatus(state.session.workflow.statusMessage);
+context.log("info", "nerve_response_analysis.analysisrun.runsession.completed", ...
+    state.session.workflow.statusMessage);
 end

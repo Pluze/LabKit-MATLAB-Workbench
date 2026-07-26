@@ -24,7 +24,7 @@ app = labkit.app.Definition( ...
     Family="Examples", ...
     AppVersion="1.0.0", ...
     Updated="2026-07-19", ...
-    Requirements=labkit.contract.requirements("app", ">=1 <2"), ...
+    Requirements=labkit.contract.requirements("app", ">=2 <3"), ...
     Workbench=example.workbench.buildLayout(), ...
     ProjectSchema=example.projectSpec(), ...
     CreateSession=@example.createSession, ...
@@ -40,7 +40,7 @@ Required Definition arguments are product metadata, requirements, and one
 | `CreateSession` | `session = callback(project,callbackContext)` | Rebuild transient App data from durable project state. |
 | `PresentWorkbench` | `view = callback(applicationState)` | Return the App-owned fragment of the complete visible snapshot. |
 | `OnStart` | `applicationState = callback(applicationState,callbackContext)` | Perform a real post-first-commit request or resource initialization. |
-| `BuildDebugSample` | `sample = callback(callbackContext)` | Build clean-room debug input when the App supports it. |
+| `BuildSyntheticSample` | `sample = callback(callbackContext)` | Build clean-room debug input when the App supports it. |
 
 Ordinary default state needs no startup callback. Exact syntax and errors are
 in the generated [public API reference](../../reference/README.md).
@@ -263,11 +263,66 @@ presentation, rollback, document metadata, and title publication.
 project/session state and publishes a new unsaved document identity only when
 that callback transaction commits.
 
+## Diagnostics And Session Logging
+
+Every ordinary App launch starts one sanitized session event stream and durable
+journal. Launch arguments do not select a debug mode, change startup behavior,
+or generate sample data. Runtime automatically records lifecycle, callback,
+transaction, dialog, project, source, result, and failure boundaries with
+correlated operation IDs.
+
+App callbacks add domain events through
+`callbackContext.log(severity,eventName,message,Name=Value)`. Use `info` for
+useful progress and completed user actions, `warning` for recoverable
+conditions, and `error` or `critical` for failures. Stable event names and
+structured allowlisted attributes support diagnosis; messages remain concise
+and safe for display. Pass caught exceptions through the dedicated
+`Exception` option instead of copying stack, path, identifier, or scientific
+data into free text.
+
+The App's **Tools > Diagnostics** menu opens the live session viewer, enables
+more detailed trace capture for future activity, and exports a diagnostic
+bundle from the same session history. Enabling trace does not restart the App
+or reconstruct earlier detail. Journal degradation is itself exposed in the
+surviving in-memory stream; logging failures never alter callback transaction
+semantics or scientific results.
+
 ## Persistence, Results, And Cleanup
+
+## Synthetic Inputs
+
+An App that declares `BuildSyntheticSample` exposes **Tools > Developer
+Tools > Generate Synthetic Inputs...**. The action writes an anonymous,
+validated `labkit.app.synthetic.Pack` and `synthetic-input-pack.json` into a
+new folder beneath the selected destination. Generation does not load the
+pack, mutate the open project, or suppress `OnStart`; every App launch follows
+the same clean startup path. Users deliberately import the generated files
+through the App's ordinary controls.
 
 `labkit.app.project.Schema` owns current project creation, validation, and
 ordered version migration. Runtime owns the project envelope, atomic save,
 restore, recovery, and relinking loop.
+
+### Saved-project compatibility boundary
+
+Every save writes exactly one `labkitProject` variable using the current App
+payload version. A restore accepts an older payload only when the App's current
+schema declares one `Migrate(project, fromVersion)` callback; Runtime invokes
+it once for each missing version in order and then validates the current
+payload. A payload newer than the running App is rejected rather than guessed
+at.
+
+An App may declare an exact legacy MAT variable name in `LegacyImports` when
+real user files still require a one-way import. That callback converts the
+legacy value directly to the current project and optional resume state. It is
+read-only: current saves never write the legacy variable, and Runtime contains
+no App ID, field-shape, or filename heuristics.
+
+These readers are supported data contracts while their Apps declare and test
+them. They are not an excuse for duplicate live state fields or old runtime
+APIs. Removing a supported payload migration or importer is an explicit
+breaking saved-data decision; adding one requires App-owned persistence
+evidence plus a runtime restore test for the framework mechanism.
 
 `labkit.app.result.File` and `labkit.app.result.Package` describe App-owned
 outputs. `CallbackContext.writeResultPackage` writes through the runtime so

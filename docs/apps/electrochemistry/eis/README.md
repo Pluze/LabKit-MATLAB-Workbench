@@ -21,18 +21,20 @@ through portable references.
 
 1. Add the EIS DTA files.
 2. Choose X and Y quantities.
-3. Enable logarithmic X or Y scaling only for strictly positive plotted data.
-4. Use **Fit X/Y limits** to re-estimate independent limits from the current
+3. Choose **mΩ**, **Ω**, **kΩ**, or **MΩ** for impedance axes. New projects
+   default to **kΩ**.
+4. Enable logarithmic X or Y scaling only for strictly positive plotted data.
+5. Use **Fit X/Y limits** to re-estimate independent limits from the current
    data, or **Use equal X/Y scale** when equal data units are wanted.
-5. Adjust marker, line, grid, and legend presentation.
-6. Export the current plot data CSV.
+6. Adjust marker, line, grid, and legend presentation.
+7. Export the current plot data CSV.
 
 ## Axis Quantities
 
 The available quantities are frequency, log10 frequency, time, point number,
 real impedance, imaginary impedance, negative imaginary impedance, impedance
 magnitude, phase, DC current, and DC voltage. Default axes are
-`Zreal (ohm)` and `-Zimag (ohm)`.
+`Zreal` and `-Zimag`, displayed in kΩ for a new project.
 
 Use `Zreal` versus `-Zimag` for the conventional Nyquist orientation. Use
 frequency versus magnitude or phase for Bode-style views. The log-axis
@@ -44,6 +46,7 @@ intended.
 
 | Parameter | Default |
 | --- | ---: |
+| Impedance unit | kΩ |
 | Line width | 1.4 |
 | Marker size | 6 |
 | Show markers | on |
@@ -64,17 +67,19 @@ that viewport.
 
 **Export current plot CSV** writes the selected X/Y values for each valid file
 on a shared row index. Each file retains its own X and Y pair, so unequal curve
-lengths do not imply interpolation. A result manifest records the selected
-axes, plot parameters, source references, and output role.
+lengths do not imply interpolation. Impedance columns use the selected display
+unit and include an ASCII unit suffix such as `kohm` in the column name. A
+result manifest records the selected axes, impedance unit, plot parameters,
+source references, and output role.
 
 ## Use Without The GUI
 
 ```matlab
 [item, status] = labkit.dta.loadFile("spectrum.DTA", "eis");
 assert(status.ok, status.message);
-curve = labkit.dta.getZCurve(item);
-x = eis.analysisRun.valuesForAxis(curve, "Zreal (ohm)");
-y = eis.analysisRun.valuesForAxis(curve, "-Zimag (ohm)");
+units = eis.impedanceDisplay.catalog();
+x = eis.analysisRun.valuesForAxis(item, "Zreal", units.choices(3));
+y = eis.analysisRun.valuesForAxis(item, "-Zimag", units.choices(3));
 plot(x, y, "o-");
 axis equal
 ```
@@ -87,6 +92,8 @@ catalog. The DTA loader and `getZCurve` are supported reusable APIs.
 - Log axes omit or reject nonpositive coordinates according to MATLAB axes
   behavior; inspect the data rather than treating missing points as zero.
 - Overlaying files does not normalize electrode area or fixture geometry.
+- Changing the impedance display unit rescales impedance axes and exported
+  impedance columns; it does not alter the DTA values stored in base ohms.
 - Axis labels describe parsed DTA columns; they do not validate the experiment
   configuration recorded by the instrument.
 

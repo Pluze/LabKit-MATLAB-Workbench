@@ -6,5 +6,5 @@ applicationState.project.results.summaryTable = table();
 applicationState.session.cache.strain = struct();
 applicationState.session.cache.overlayExx = [];
 applicationState.session.cache.overlayEyy = [];
-callbackContext.appendStatus("Updated DIC postprocess inputs.");
+callbackContext.log("info", "dic_postprocess.sourcefiles.invalidateresults.status", "Updated DIC postprocess inputs.");
 end

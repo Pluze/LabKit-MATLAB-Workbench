@@ -32,8 +32,9 @@ try
     applicationState.session.cache.paths(index) = paths(1);
     loaded = true;
 catch cause
-    callbackContext.reportError("Could not load image", cause);
-    callbackContext.appendStatus( ...
-        "Could not load crop task " + string(index) + ": " + cause.message);
+    callbackContext.log("error", "batch_crop.sourcefiles.loadcurrent.exception", "Could not load image", ...
+        Category="failure", Audience="developer", Exception=cause);
+    callbackContext.log("error", "batch_crop.sourcefiles.loadcurrent.failed", ...
+        "Could not load the selected crop task.");
 end
 end

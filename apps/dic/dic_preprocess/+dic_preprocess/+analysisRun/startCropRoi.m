@@ -16,5 +16,5 @@ applicationState.project.parameters.previewMode = "Current pair";
 applicationState.session.workflow.mode = "crop";
 applicationState.session.workflow.details = ...
     dic_preprocess.analysisRun.cropSelectionSummary(rectangle);
-callbackContext.appendStatus("Started crop ROI on the current pair.");
+callbackContext.log("info", "dic_preprocess.analysisrun.startcroproi.status", "Started crop ROI on the current pair.");
 end

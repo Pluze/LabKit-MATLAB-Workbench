@@ -1,6 +1,14 @@
 classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
     %FIGURESTUDIOWORKFLOWSPEC Specify the bounded FIG-preview-export workflow.
 
+    methods (TestMethodSetup)
+        function keepNativeRuntimeHidden(testCase)
+            previous = getenv("LABKIT_GUI_TEST_MODE");
+            testCase.addTeardown(@setenv, "LABKIT_GUI_TEST_MODE", previous);
+            setenv("LABKIT_GUI_TEST_MODE", "hidden");
+        end
+    end
+
     methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
         function loadsAFigureIntoTheInteractivePreviewAndExportsPng(testCase)
             folder = testCase.applyFixture( ...
@@ -12,8 +20,10 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
                 "chooseOutputFile", @(~, ~) labkit.app.dialog.Choice(outputPath), ...
                 "chooseOutputFolder", @(~) labkit.app.dialog.Choice(folder), ...
                 "alert", @(~, ~) []);
+            definition = figure_studio.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                figure_studio.definition(), [], backend);
+                definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

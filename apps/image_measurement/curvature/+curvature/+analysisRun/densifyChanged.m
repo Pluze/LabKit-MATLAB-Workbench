@@ -4,5 +4,6 @@ function applicationState = densifyChanged( ...
 %DENSIFYCHANGED Normalize the fit sampling mode and invalidate results.
 applicationState.project.parameters.densify = logical(enabled);
 applicationState = curvature.curveEdit.clearMeasurements(applicationState);
-callbackContext.appendStatus("Curvature fit settings changed.");
+callbackContext.log("info", "curvature.analysisrun.densifychanged.status", ...
+    "Curvature fit settings changed.");
 end

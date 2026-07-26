@@ -2,11 +2,7 @@ classdef (Sealed) CallbackContext < handle
     %CALLBACKCONTEXT Provide declared App-neutral runtime capabilities.
     %
     % Usage:
-    %   labkit.app.CallbackContext.appendStatus(context, message)
-    %   context.appendStatus(message)
-    %   context.reportError(operation, exception)
-    %   context.diagnosticCheckpoint(id)
-    %   context.diagnosticCount(id, count)
+    %   context.log(severity, eventName, message, Name=Value)
     %   context.alert(message, title)
     %   result = context.chooseOption(prompt, choices, Name=Value)
     %   result = context.chooseInputFile(filters, startPath)
@@ -35,8 +31,12 @@ classdef (Sealed) CallbackContext < handle
     % Inputs:
     %   state - Complete App-owned state value.
     %   message - Scalar reader-facing text.
-    %   operation - Scalar diagnostic operation text.
-    %   exception - Scalar MException.
+    %   severity - Log severity from "trace" through "critical".
+    %   eventName - Stable semantic event identifier.
+    %   Category - Semantic App capability category. Default: "workflow".
+    %   Audience - "user" or "developer"; default: "user".
+    %   Attributes - Scalar privacy-safe structured details. Default: struct().
+    %   Exception - Scalar MException associated with the event. Default: [].
     %   id - Stable semantic diagnostic or resource identifier.
     %   count - Nonnegative integer diagnostic count.
     %   title - Scalar reader-facing dialog title.
@@ -79,7 +79,8 @@ classdef (Sealed) CallbackContext < handle
     %           event
     %           callbackContext (1,1) labkit.app.CallbackContext
     %       end
-    %       callbackContext.appendStatus("Analysis started.");
+    %       callbackContext.log("info", "analysis.started", ...
+    %           "Analysis started.");
     %   end
     %
     % See also labkit.app.Definition, labkit.app.dialog.Choice,
@@ -110,36 +111,20 @@ classdef (Sealed) CallbackContext < handle
     end
 
     methods
-        function appendStatus(obj, message)
-            message = scalarText(message, "message");
-            obj.invoke("appendStatus", "workflow", {message}, 0);
-        end
-
-        function reportError(obj, operation, exception)
-            operation = scalarText(operation, "operation");
-            if ~isa(exception, "MException") || ~isscalar(exception)
-                error("labkit:app:contract:InvalidValue", ...
-                    "CallbackContext exception must be a scalar MException.");
-            end
-            obj.invoke("reportError", "diagnostics", ...
-                {operation, exception}, 0);
-        end
-
-        function diagnosticCheckpoint(obj, id)
-            id = nonemptyText(id, "diagnostic id");
-            obj.invoke("diagnosticCheckpoint", "diagnostics", {id}, 0);
-        end
-
-        function diagnosticCount(obj, id, count)
-            id = nonemptyText(id, "diagnostic id");
-            if ~(isnumeric(count) && isscalar(count) && ...
-                    isfinite(count) && count >= 0 && count == fix(count))
-                error("labkit:app:contract:InvalidValue", ...
-                    "CallbackContext diagnostic count must be a " + ...
-                    "nonnegative integer.");
-            end
-            obj.invoke("diagnosticCount", "diagnostics", ...
-                {id, double(count)}, 0);
+        function log(obj, severity, eventName, message, varargin)
+            options = labkit.app.internal.OptionParser.parse( ...
+                "labkit.app.CallbackContext.log", ...
+                ["Category", "Audience", "Attributes", "Exception"], varargin{:});
+            values = labkit.app.internal.SessionEventValidator.logInputs( ...
+                severity, eventName, message, ...
+                optionValue(options, "Category", "workflow"), ...
+                optionValue(options, "Audience", "user"), ...
+                optionValue(options, "Attributes", struct()), ...
+                optionValue(options, "Exception", []));
+            obj.invoke("log", "logging", ...
+                {values.severity, values.eventName, values.message, ...
+                values.category, values.audience, values.attributes, ...
+                values.exception}, 0);
         end
 
         function alert(obj, message, title)

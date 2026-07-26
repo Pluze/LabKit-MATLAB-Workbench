@@ -8,7 +8,6 @@ classdef (Sealed) Definition
     %       Requirements=requirements, Workbench=workbench, Name=Value)
     %   fig = app.launch()
     %   fig = app.launch(InitialProject=project)
-    %   fig = app.launch(Diagnostics=diagnosticOptions)
     %   requirements = app.launch("requirements")
     %   version = app.launch("version")
     %
@@ -42,7 +41,7 @@ classdef (Sealed) Definition
     %       empty.
     %   OnStart - Fixed callback state = callback(state,context), invoked
     %       after the first view commit. Default: empty.
-    %   BuildDebugSample - Fixed callback pack = callback(context). Default:
+    %   BuildSyntheticSample - Fixed callback pack = callback(context). Default:
     %       empty.
     %
     % Outputs:
@@ -50,9 +49,6 @@ classdef (Sealed) Definition
     %
     % Definition Methods:
     %   launch() - Build and show the native MATLAB App figure.
-    %   launch(Diagnostics=options) - Use one
-    %       labkit.app.diagnostic.Options value for standard or verbose
-    %       sanitized runtime recording.
     %   launch("requirements") - Return declared facade requirements without
     %       creating a figure.
     %   launch("version") - Return product version metadata without creating
@@ -98,7 +94,7 @@ classdef (Sealed) Definition
         CreateSession
         PresentWorkbench
         OnStart
-        BuildDebugSample
+        BuildSyntheticSample
     end
 
     properties (SetAccess = immutable, GetAccess = { ...
@@ -113,7 +109,7 @@ classdef (Sealed) Definition
                 "Entrypoint", "AppId", "Title", "DisplayName", "Family", ...
                 "AppVersion", "Updated", "Requirements", "Workbench", ...
                 "ProjectSchema", "CreateSession", "PresentWorkbench", ...
-                "OnStart", "BuildDebugSample"];
+                "OnStart", "BuildSyntheticSample"];
             options = labkit.app.internal.OptionParser.parse( ...
                 "labkit.app.Definition", names, varargin{:});
             required = [ ...
@@ -148,8 +144,8 @@ classdef (Sealed) Definition
             startCallback = optionalFixedCallback( ...
                 options, "OnStart", 2, 1);
             obj.OnStart = startCallback;
-            obj.BuildDebugSample = optionalFixedCallback( ...
-                options, "BuildDebugSample", 1, 1);
+            obj.BuildSyntheticSample = optionalFixedCallback( ...
+                options, "BuildSyntheticSample", 1, 1);
             obj.Compiled = labkit.app.internal.CompiledDefinition( ...
                 options.Workbench, startCallback);
         end
@@ -161,14 +157,13 @@ classdef (Sealed) Definition
         function varargout = launch(obj, varargin)
             %LAUNCH Answer metadata requests or show the native MATLAB App.
             initialProject = [];
-            diagnostics = labkit.app.diagnostic.Options();
             if ~isempty(varargin) && ...
                     ~(numel(varargin) == 1 && ...
                       (ischar(varargin{1}) || ...
                        (isstring(varargin{1}) && isscalar(varargin{1}))))
                 options = labkit.app.internal.OptionParser.parse( ...
                     "labkit.app.Definition.launch", ...
-                    ["InitialProject", "Diagnostics"], ...
+                    "InitialProject", ...
                     varargin{:});
                 if isfield(options, "InitialProject")
                     if ~isstruct(options.InitialProject) || ...
@@ -178,16 +173,6 @@ classdef (Sealed) Definition
                             "scalar project struct.");
                     end
                     initialProject = options.InitialProject;
-                end
-                if isfield(options, "Diagnostics")
-                    if ~isa(options.Diagnostics, ...
-                            "labkit.app.diagnostic.Options") || ...
-                            ~isscalar(options.Diagnostics)
-                        error("labkit:app:contract:InvalidValue", ...
-                            "Definition launch Diagnostics must be one " + ...
-                            "labkit.app.diagnostic.Options value.");
-                    end
-                    diagnostics = options.Diagnostics;
                 end
                 varargin = {};
             end
@@ -225,8 +210,7 @@ classdef (Sealed) Definition
                     "Definition launch returns at most one figure.");
             end
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                obj, ...
-                initialProject, struct(), diagnostics);
+                obj, initialProject, struct());
             runtime.showFigure();
             figure = runtime.figureHandle();
             if nargout == 1

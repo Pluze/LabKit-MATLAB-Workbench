@@ -25,7 +25,7 @@ if ~any(labels == string(state.session.selection.batchGroupTarget))
     state.session.selection.batchGroupTarget = "(select group)";
 end
 state.project.results.lastDataExport = "";
-context.appendStatus(sprintf( ...
+context.log("info", "ttest_wizard.groupdata.deleteselectedrows.status", sprintf( ...
     'Deleted %d selected row(s).', numel(selectedRows)));
 end
 

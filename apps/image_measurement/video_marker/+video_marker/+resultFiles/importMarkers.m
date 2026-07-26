@@ -4,14 +4,17 @@ function state = importMarkers(state, context)
 choice = context.chooseInputFile( ...
     ["*.csv", "Marker CSV files"], pwd);
 if choice.Cancelled
-    context.appendStatus("Marker import cancelled.");
+    context.log("info", ...
+        "video_marker.resultfiles.importmarkers.cancelled", ...
+        "Marker import cancelled.");
     return
 end
 filepath = string(choice.Value);
 try
     payload = video_marker.markerCsv.readFile(filepath);
 catch cause
-    context.reportError("Could not import marker CSV", cause);
+    context.log("error", "video_marker.resultfiles.importmarkers.exception", "Could not import marker CSV", ...
+        Category="failure", Audience="developer", Exception=cause);
     context.alert(cause.message, "Could not import marker CSV");
     return
 end
@@ -44,5 +47,6 @@ state.project.parameters.coordinateStartFrame = 1;
 state.project.parameters.coordinateEndFrame = ...
     max(1, payload.videoInfo.frameCount);
 state = video_marker.resultFiles.clearExportState(state);
-context.appendStatus("Imported marker CSV: " + filepath);
+context.log("info", "video_marker.resultfiles.importmarkers.completed", ...
+    "Imported the marker CSV.");
 end

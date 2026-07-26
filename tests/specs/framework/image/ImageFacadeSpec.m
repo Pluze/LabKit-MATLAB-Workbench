@@ -38,6 +38,7 @@ classdef ImageFacadeSpec < matlab.unittest.TestCase
 
             [preview, scale] = labkit.image.resizeToFit(image, "MaxHeight", 6);
             [budget, info] = labkit.image.previewBudget(image, "MaxPixels", 40, "Expansion", 4);
+            [native, nativeInfo] = labkit.image.previewBudget(image);
             rgb = labkit.image.ensureRgb(labkit.image.im2double(uint8(100 * ones(4, 5))));
             paths = labkit.image.normalizePaths([" a.png "; ""; "b.JPG"]);
 
@@ -47,6 +48,9 @@ classdef ImageFacadeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(scale, 0.5, "AbsTol", 1e-12);
             testCase.verifyLessThan(size(budget, 1), size(image, 1));
             testCase.verifyEqual(info.coordinateScale, 0.2, "AbsTol", 1e-12);
+            testCase.verifyEqual(native, image);
+            testCase.verifyEqual(nativeInfo.scaleFactor, 1);
+            testCase.verifyTrue(isinf(nativeInfo.maxPixels));
             testCase.verifyEqual(paths, ["a.png"; "b.JPG"]);
             testCase.verifyTrue(labkit.image.isSupportedPath("sample.TIFF"));
             testCase.verifyFalse(labkit.image.isSupportedPath("sample.txt"));

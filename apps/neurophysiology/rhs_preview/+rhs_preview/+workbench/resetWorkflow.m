@@ -6,5 +6,6 @@ schema = rhs_preview.projectSpec();
 applicationState.project = schema.Create();
 applicationState.session = rhs_preview.createSession( ...
     applicationState.project, callbackContext);
-callbackContext.appendStatus("Reset RHS Preview state.");
+callbackContext.log("info", "rhs_preview.workbench.resetworkflow.completed", ...
+    "Reset RHS Preview state.");
 end

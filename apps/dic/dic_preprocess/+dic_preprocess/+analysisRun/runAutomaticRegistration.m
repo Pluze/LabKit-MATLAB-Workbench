@@ -10,11 +10,12 @@ try
     [~, transform, method] = dic_preprocess.analysisRun.autoAlignMovingToReference( ...
         cache.currentReferenceImage, cache.currentMovingImage);
 catch ME
-    context.reportError('Automatic alignment', ME);
+    context.log("error", "dic_preprocess.analysisrun.runautomaticregistration.exception", 'Automatic alignment', ...
+        Category="failure", Audience="developer", Exception=ME);
     context.alert("Automatic alignment failed:" + newline + ME.message, 'Auto align failed');
     return;
 end
 state = dic_preprocess.analysisRun.recordAlignment(state, transform, "automatic alignment");
-context.appendStatus( ...
+context.log("info", "dic_preprocess.analysisrun.runautomaticregistration.status",  ...
     "Automatically aligned current pair using " + string(method) + ".");
 end

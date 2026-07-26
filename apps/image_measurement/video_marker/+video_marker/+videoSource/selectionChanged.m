@@ -19,7 +19,8 @@ if info.frameCount <= 0
     state.project.parameters.coordinateStartFrame = 1;
     state.project.parameters.coordinateEndFrame = 1;
     state = video_marker.resultFiles.clearExportState(state);
-    context.appendStatus("No video loaded.");
+    context.log("info", "video_marker.videosource.selectionchanged.cleared", ...
+        "No video loaded.");
     return
 end
 frames = state.project.annotations.frames;
@@ -36,6 +37,7 @@ state.project.inputs.videoMetadata = ...
 state.project.parameters.coordinateStartFrame = 1;
 state.project.parameters.coordinateEndFrame = info.frameCount;
 state = video_marker.resultFiles.clearExportState(state);
-context.appendStatus("Opened video with " + string(info.frameCount) + ...
+context.log("info", "video_marker.videosource.selectionchanged.opened", ...
+    "Opened a video with " + string(info.frameCount) + ...
     " frame(s).");
 end

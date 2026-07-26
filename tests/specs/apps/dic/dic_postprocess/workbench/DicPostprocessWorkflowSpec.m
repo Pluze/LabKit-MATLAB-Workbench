@@ -14,8 +14,10 @@ classdef DicPostprocessWorkflowSpec < matlab.unittest.TestCase
                 "chooseOutputFolder", @(~) labkit.app.dialog.Choice(folder), ...
                 "chooseOutputFile", @(~, ~) labkit.app.dialog.Choice(summaryPath), ...
                 "alert", @(~, ~) []);
+            definition = dic_postprocess.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                dic_postprocess.definition(), [], backend);
+                definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

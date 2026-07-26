@@ -29,6 +29,11 @@ ambiguous contracts. These are authoring decisions, not a reason to invent a
 test wrapper or folder. A missing-contract or zero-selection result is a
 failure to supply evidence, never a passing test result.
 
+For focused MATLAB execution, add `tests` to the path and call
+`labkittest.run`; `buildtool test --tasks` is not a catalog selector. Every
+changed `projectSpec.m` must explain to nonempty App-owned `persistence`
+evidence even when an end-to-end save/restore workflow also passes.
+
 ## Choose Evidence
 
 Use the smallest behavior that proves the change:
@@ -61,6 +66,11 @@ startup, licensing, reporting, progress, and failure-diagnosis costs.
 Use host permission for every MATLAB invocation. Keep GUI runs hidden and do
 not automate manual native-dialog or pointer workflows in `-batch`. Use only
 minimal synthetic fixtures; never track sensitive lab data.
+
+When a legitimate all-App or GUI run can outlive one tool request, start one
+hidden MATLAB process with durable redirected output, then poll its progress
+artifact or log. A client timeout is not test evidence and is not a MATLAB
+failure; record the executor's terminal result.
 
 ## Report
 

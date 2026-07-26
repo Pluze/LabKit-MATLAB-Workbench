@@ -20,6 +20,6 @@ if isfield(state.project.annotations, "transientSourceAxes")
         state.project.annotations, "transientSourceAxes");
 end
 if ~isempty(state.session.cache.plotData)
-    callbackContext.appendStatus("Restored Figure Studio source.");
+    callbackContext.log("info", "figure_studio.initializeworkbench.status", "Restored Figure Studio source.");
 end
 end

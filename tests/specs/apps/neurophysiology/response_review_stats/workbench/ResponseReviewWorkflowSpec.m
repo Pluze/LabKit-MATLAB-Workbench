@@ -12,8 +12,10 @@ classdef ResponseReviewWorkflowSpec < matlab.unittest.TestCase
             backend = struct( ...
                 "alert", @(~, ~) [], ...
                 "chooseOutputFolder", @(~) labkit.app.dialog.Choice(alternateFolder));
+            definition = response_review_stats.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                response_review_stats.definition(), [], backend);
+                definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

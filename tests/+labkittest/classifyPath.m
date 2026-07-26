@@ -26,7 +26,7 @@ function classification = classifyPath(file)
         return;
     end
     if startsWith(file, ".agents/") || file == "AGENTS.md" || ...
-            file == "tests/AGENTS.md" || file == ".gitignore"
+            endsWith(file, "/AGENTS.md") || file == ".gitignore"
         classification = mapped(file, "repository-policy", "system/repository", ...
             "repository policy behavior");
         return;
@@ -35,6 +35,16 @@ function classification = classifyPath(file)
             startsWith(file, "tools/docs/")
         classification = ignored(file, "documentation", ...
             "documentation source or generated output; docsCheck owns consistency");
+        return;
+    end
+    if startsWith(file, "tools/maintenance/")
+        classification = mapped(file, "maintenance-tool", "system/maintenance", ...
+            "independently callable repository maintenance tool");
+        return;
+    end
+    if file == "tools/deployment/manageLabKitVersions.m"
+        classification = mapped(file, "deployment-tool", "system/deployment", ...
+            "independently callable deployment and version-management tool");
         return;
     end
     if startsWith(file, "artifacts/") || startsWith(file, ".Trash/") || ...
@@ -46,6 +56,16 @@ function classification = classifyPath(file)
     if startsWith(file, "tests/+testfixtures/")
         classification = mapped(file, "test-fixture", "system/build", ...
             "cross-owner synthetic fixture behavior");
+        return;
+    end
+    if file == "labkit_launcher.m"
+        classification = mapped(file, "repair-launcher", "system/launcher", ...
+            "self-contained repair-launcher bootstrap behavior");
+        return;
+    end
+    if startsWith(file, "+labkit/+app/+internal/+launcher/")
+        classification = mapped(file, "installed-launcher", "system/launcher", ...
+            "installed Launcher composition and routing behavior");
         return;
     end
     if startsWith(file, "+labkit/") && numel(parts) >= 2 && startsWith(parts(2), "+")

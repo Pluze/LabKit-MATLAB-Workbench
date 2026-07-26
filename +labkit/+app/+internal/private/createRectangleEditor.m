@@ -21,7 +21,9 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
 %   resizable - logical, default true.
 %   onMoving - callback(position) during pointer movement, default [].
 %   onMoved - callback(position) after pointer release, default [].
-%   onBackgroundDown - callback(src,event) for background clicks, default [].
+%   onBackgroundDown - callback(src,event) for plot clicks outside the
+%       rectangle and clicks on the rectangle that do not begin a drag,
+%       default [].
 %
 % Returned editor API:
 %   getPosition(), setPosition(position), setImageSize(imageSize),
@@ -64,6 +66,7 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
     state.dragCorner = 0;
     state.dragStartPoint = [0 0];
     state.dragStartPosition = state.position;
+    state.dragMoved = false;
     state.session = runtime.createSession(struct( ...
         'name', 'rectangleEditor', ...
         'onPointerDown', @onPointerDown, ...
@@ -193,7 +196,8 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
         state.dragCorner = find(state.cornerHandles == src, 1);
         if ~isempty(state.dragCorner)
             state.dragMode = "resize";
-        elseif isequal(src, state.box) && state.movable
+        elseif state.movable && (isequal(src, state.box) || ...
+                positionContainsPoint(state.position, axesPoint(state.ax)))
             state.dragCorner = 0;
             state.dragMode = "move";
         else
@@ -202,6 +206,7 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
         end
         state.dragStartPoint = axesPoint(state.ax);
         state.dragStartPosition = state.position;
+        state.dragMoved = false;
         state.session.captureDrag(@onDrag, @onRelease);
     end
 
@@ -216,14 +221,22 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
         end
         state.position = constrainPosition(candidate, state.bounds, ...
             state.aspectRatio, state.fixedAspectRatio, state.minimumSize);
+        state.dragMoved = state.dragMoved || any( ...
+            abs(state.position - state.dragStartPosition) > 1e-9);
         refresh();
         invokeCallback(state.onMoving, state.position);
     end
 
-    function onRelease(~, ~)
+    function onRelease(src, event)
+        moved = state.dragMoved;
         state.dragMode = "";
         state.dragCorner = 0;
-        invokeCallback(state.onMoved, state.position);
+        state.dragMoved = false;
+        if ~moved && ~isempty(state.onBackgroundDown)
+            invokePointerCallback(state.onBackgroundDown, src, event);
+        else
+            invokeCallback(state.onMoved, state.position);
+        end
     end
 end
 
@@ -232,6 +245,14 @@ function value = optionValue(options, name, fallback)
     if isfield(options, name) && ~isempty(options.(name))
         value = options.(name);
     end
+end
+
+function tf = positionContainsPoint(position, point)
+    tf = isnumeric(position) && numel(position) == 4 && ...
+        isnumeric(point) && numel(point) == 2 && ...
+        all(isfinite(double([position(:); point(:)]))) && ...
+        point(1) >= position(1) && point(1) <= position(1) + position(3) && ...
+        point(2) >= position(2) && point(2) <= position(2) + position(4);
 end
 
 function imageSize = normalizeImageSize(value)

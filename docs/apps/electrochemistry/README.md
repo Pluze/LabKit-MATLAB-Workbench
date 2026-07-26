@@ -25,7 +25,8 @@ one failed item does not silently replace another result.
 The DTA library returns structured items, curve tables, headers, units,
 metadata, parser messages, and status. Apps use exact required columns for
 scientific calculations and do not infer missing physical quantities from a
-plot label.
+plot label. The Apps require the version 3 unit-explicit DTA contract rather
+than branching between duplicate legacy and canonical item fields.
 
 ## Units And Traceability
 

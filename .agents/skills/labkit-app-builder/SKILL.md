@@ -79,6 +79,15 @@ complex App it composes layout fragments from capability packages in user
 order. `+workbench/present.m` composes their snapshot fragments with
 `Snapshot.include`. Renderers live with the plot capability they draw.
 
+When the App declares `BuildSyntheticSample`, make it return a validated synthetic
+project and anonymous artifacts without changing startup semantics. There is
+no separate Debug launch; generated inputs are selected
+deliberately through the ordinary Developer Tools action. Seed interactive
+fields with finite representative
+values that survive the smallest supported native control limits. Validate the
+sample contract headlessly and launch the sample project through the native
+adapter; clean construction alone does not prove the sample is operational.
+
 On the App SDK paved road, bind ordinary project/session fields directly in
 `labkit.app.layout.*` and let runtime defaults complete the view snapshot.
 Add a direct callback only for real business effects and a view operation only
@@ -107,7 +116,9 @@ names must state their capability directly; do not add general buckets such as
 3. Implement GUI-free readers/calculations/result builders with synthetic
    tests.
 4. Implement feature-owned snapshot fragments, renderers, and managed
-   interactions.
+   interactions. Give overlapping gestures one active owner; a movable
+   rectangle must expose its visible interior or center as an ordinary drag
+   target.
 5. Keep selection cheap and batch loading lazy; separate preview-resolution
    work from original-resolution Run/Export.
 6. Add portable project references, relinking, current-envelope save, and only

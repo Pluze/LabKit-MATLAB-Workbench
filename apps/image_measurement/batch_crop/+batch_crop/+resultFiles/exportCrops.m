@@ -26,7 +26,8 @@ try
         applicationState.session.cache.paths);
     items = batch_crop.sourceFiles.loadMissingImages(items);
 catch cause
-    callbackContext.reportError("Could not load image", cause);
+    callbackContext.log("error", "batch_crop.resultfiles.exportcrops.exception", "Could not load image", ...
+        Category="failure", Audience="developer", Exception=cause);
     callbackContext.alert(cause.message, "Could not load image");
     return
 end
@@ -38,7 +39,7 @@ plan = batch_crop.resultFiles.exportPlan(items, options);
 results = applicationState.project.results;
 if ~isempty(results.lastExport) && ...
         results.lastExportFingerprint == plan.fingerprint
-    callbackContext.appendStatus( ...
+    callbackContext.log("info", "batch_crop.resultfiles.exportcrops.skipped", ...
         "Crop export is already up to date; skipped duplicate write.");
     return
 end
@@ -52,7 +53,8 @@ try
     written = callbackContext.writeResultPackage( ...
         options.outputFolder, package);
 catch cause
-    callbackContext.reportError("Export failed", cause);
+    callbackContext.log("error", "batch_crop.resultfiles.exportcrops.exception", "Export failed", ...
+        Category="failure", Audience="developer", Exception=cause);
     callbackContext.alert(cause.message, "Export failed");
     return
 end
@@ -63,9 +65,12 @@ applicationState.project.results.resultManifestPath = string(written.Value);
 statuses = string({payload.results.status});
 savedCount = sum(statuses == "saved");
 failedCount = sum(statuses == "failed");
-callbackContext.appendStatus(sprintf( ...
-    "Exported %d crop(s), %d failed. Manifest: %s", ...
-    savedCount, failedCount, payload.manifestPath));
+severity = "info";
+if failedCount > 0
+    severity = "warning";
+end
+callbackContext.log(severity, "batch_crop.resultfiles.exportcrops.completed", ...
+    sprintf("Exported %d crop(s); %d failed.", savedCount, failedCount));
 if failedCount > 0
     callbackContext.alert( ...
         string(failedCount) + ...

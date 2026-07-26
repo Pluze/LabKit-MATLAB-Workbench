@@ -52,6 +52,7 @@ classdef (Sealed, Hidden) NativeAdapterValues
         labelHandle = uilabel(grid, Text=char(string(label)), Tag=char(tag), ...
             HorizontalAlignment="right");
         applyTextFit(labelHandle);
+        grid.UserData = struct("Label", labelHandle);
         parent = grid;
         end
 
@@ -101,8 +102,30 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
 
         function setIfProperty(component, name, value)
-        if isprop(component, name)
-            component.(name) = value;
+        if ~isprop(component, name) || isequaln(component.(name), value)
+            return
+        end
+        component.(name) = value;
+        end
+
+        function label = linkedLabel(component)
+        label = [];
+        if isempty(component) || ~isvalid(component) || ...
+                ~isprop(component, "UserData") || ...
+                ~isstruct(component.UserData) || ...
+                ~isfield(component.UserData, "LayoutContainer")
+            return
+        end
+        container = component.UserData.LayoutContainer;
+        if isempty(container) || ~isvalid(container) || ...
+                ~isprop(container, "UserData") || ...
+                ~isstruct(container.UserData) || ...
+                ~isfield(container.UserData, "Label")
+            return
+        end
+        candidate = container.UserData.Label;
+        if ~isempty(candidate) && isvalid(candidate)
+            label = candidate;
         end
         end
 

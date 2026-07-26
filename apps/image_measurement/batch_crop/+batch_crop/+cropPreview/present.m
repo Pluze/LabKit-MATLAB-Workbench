@@ -6,12 +6,9 @@ hasImage = ~isempty(model.imageData);
 editing = hasImage && ...
     applicationState.session.workflow.scaleReferenceEditing;
 imageSize = [1 1];
-centerValue = zeros(0, 2);
 reference = zeros(0, 2);
 if hasImage
     imageSize = [size(geometry.canvas, 1), size(geometry.canvas, 2)];
-    centerValue = batch_crop.cropGeometry.originalToCanvas( ...
-        geometry, item.centerXY);
     reference = item.scaleCalibration.referenceLine;
     for k = 1:size(reference, 1)
         reference(k, :) = batch_crop.cropGeometry.originalToCanvas( ...
@@ -20,7 +17,7 @@ if hasImage
 end
 view = labkit.app.view.Snapshot() ...
     .renderPlot("preview", model) ...
-    .pointSlots("cropCenter", centerValue, ...
+    .rectangle("cropRoi", roiPosition(model, hasImage), ...
         ImageSize=imageSize, Enabled=hasImage && ~editing) ...
     .scaleReference("scaleReference", reference, ...
         ImageSize=imageSize, Enabled=editing);
@@ -46,18 +43,18 @@ model.xData = [1 size(geometry.canvas, 2)];
 model.yData = [1 size(geometry.canvas, 1)];
 model.center = batch_crop.cropGeometry.originalToCanvas( ...
     geometry, item.centerXY);
-model.cropRectangle = cropRectangle(geometry, item.centerXY, ...
+model.cropRectangle = batch_crop.cropGeometry.cropRectanglePosition( ...
+    geometry, item.centerXY, ...
     batch_crop.cropGeometry.currentCropSize(state));
 model.scaleBar = scaleBarOnCanvas(geometry, state.session.view.scaleBar);
 end
 
-function position = cropRectangle(geometry, center, cropSize)
-scale = batch_crop.cropGeometry.geometryScale(geometry);
-width = max(1, double(cropSize(1)) * scale);
-height = max(1, double(cropSize(2)) * scale);
-canvasCenter = batch_crop.cropGeometry.originalToCanvas(geometry, center);
-position = [round(canvasCenter(1) - (width - 1) / 2) - 0.5, ...
-    round(canvasCenter(2) - (height - 1) / 2) - 0.5, width, height];
+function position = roiPosition(model, hasImage)
+if hasImage
+    position = model.cropRectangle;
+else
+    position = [0 0 0 0];
+end
 end
 
 function value = scaleBarOnCanvas(geometry, value)

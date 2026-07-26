@@ -13,7 +13,7 @@ function [pulse, ok, msg] = pulsesFromCurrent(t, Im)
 %   Im - measured current vector in ampere, same length/order as t.
 %
 % Outputs:
-%   pulse - pulse struct with legacy and normalized fields populated when ok.
+%   pulse - pulse struct with unit-explicit phase windows populated when ok.
 %   ok - true when both cathodic and later anodic segments are found.
 %   msg - detection status for DTA item logs.
 %
@@ -59,22 +59,24 @@ function [pulse, ok, msg] = pulsesFromCurrent(t, Im)
 
     pulse.ok = true;
     pulse.method = 'auto-from-Im';
-    pulse.cath_start = t(cseg(1));
-    pulse.cath_end = t(cseg(2));
-    pulse.anod_start = t(aseg(1));
-    pulse.anod_end = t(aseg(2));
-    pulse.Ic_nominal = median(Im(cseg(1):cseg(2)), 'omitnan');
-    pulse.Ia_nominal = median(Im(aseg(1):aseg(2)), 'omitnan');
-    pulse.pre_start = t(1);
-    pulse.pre_end = pulse.cath_start;
-    pulse.gap_start = pulse.cath_end;
-    pulse.gap_end = pulse.anod_start;
-    pulse.post_start = pulse.anod_end;
-    pulse.post_end = t(end);
+    pulse.pre = struct('start_s', t(1), 'end_s', t(cseg(1)));
+    pulse.cath = struct( ...
+        'start_s', t(cseg(1)), ...
+        'end_s', t(cseg(2)), ...
+        'current_A', median(Im(cseg(1):cseg(2)), 'omitnan'));
+    pulse.gap = struct( ...
+        'start_s', pulse.cath.end_s, ...
+        'end_s', t(aseg(1)), ...
+        'center_s', 0.5 * (pulse.cath.end_s + t(aseg(1))));
+    pulse.anod = struct( ...
+        'start_s', t(aseg(1)), ...
+        'end_s', t(aseg(2)), ...
+        'current_A', median(Im(aseg(1):aseg(2)), 'omitnan'));
+    pulse.post = struct('start_s', pulse.anod.end_s, 'end_s', t(end));
 
     ok = true;
     msg = sprintf('Auto pulse detection OK: cath [%d %d], anod [%d %d].', cseg(1), cseg(2), aseg(1), aseg(2));
-    pulse = addNormalizedFields(pulse, msg);
+    pulse.message = msg;
 end
 
 function seg = contiguousSegments(mask)
@@ -83,12 +85,4 @@ function seg = contiguousSegments(mask)
     starts = find(d == 1);
     ends = find(d == -1) - 1;
     seg = [starts(:), ends(:)];
-end
-
-function pulse = addNormalizedFields(pulse, msg)
-    pulse.message = msg;
-    pulse.cath = struct('start_s', pulse.cath_start, 'end_s', pulse.cath_end, 'current_A', pulse.Ic_nominal);
-    pulse.anod = struct('start_s', pulse.anod_start, 'end_s', pulse.anod_end, 'current_A', pulse.Ia_nominal);
-    pulse.gap = struct('start_s', pulse.gap_start, 'end_s', pulse.gap_end, ...
-        'center_s', 0.5 * (pulse.gap_start + pulse.gap_end));
 end

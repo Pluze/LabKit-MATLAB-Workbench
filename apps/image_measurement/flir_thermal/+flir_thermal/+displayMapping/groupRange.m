@@ -18,7 +18,8 @@ for k = 1:numel(items)
 end
 applicationState = storeAll(applicationState, items);
 applicationState = invalidateResults(applicationState);
-callbackContext.appendStatus( ...
+callbackContext.log("info", ...
+    "flir_thermal.displaymapping.grouprange.completed", ...
     "Applied one shared range to " + string(numel(items)) + ...
     " thermal images.");
 end
@@ -36,7 +37,8 @@ try
         applicationState.project.annotations.items);
     ok = numel(items) == numel(applicationState.project.inputs.sources);
 catch ME
-    callbackContext.reportError("Load FLIR sources for shared range", ME);
+    callbackContext.log("error", "flir_thermal.displaymapping.grouprange.exception", "Load FLIR sources for shared range", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not load FLIR sources");
 end
 end

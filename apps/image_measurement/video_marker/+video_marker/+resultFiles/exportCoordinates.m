@@ -11,7 +11,9 @@ startPath = video_marker.resultFiles.defaultOutputPath( ...
 choice = context.chooseOutputFile( ...
     ["*.csv", "Coordinate CSV files"], startPath);
 if choice.Cancelled
-    context.appendStatus("Coordinate export cancelled.");
+    context.log("info", ...
+        "video_marker.resultfiles.exportcoordinates.cancelled", ...
+        "Coordinate export cancelled.");
     return
 end
 filepath = string(choice.Value);
@@ -32,12 +34,15 @@ try
     written = writeManifest(state, context, filepath, ...
         "coordinateCsv", "video_marker_coordinates.labkit.json");
 catch cause
-    context.reportError("Could not export coordinate CSV", cause);
+    context.log("error", "video_marker.resultfiles.exportcoordinates.exception", "Could not export coordinate CSV", ...
+        Category="failure", Audience="developer", Exception=cause);
     context.alert(cause.message, "Could not export coordinate CSV");
     return
 end
 state.project.results.coordinateManifestPath = string(written.Value);
-context.appendStatus("Exported coordinate CSV: " + filepath);
+context.log("info", ...
+    "video_marker.resultfiles.exportcoordinates.completed", ...
+    "Exported the coordinate CSV.");
 end
 
 function written = writeManifest(state, context, filepath, id, manifestName)

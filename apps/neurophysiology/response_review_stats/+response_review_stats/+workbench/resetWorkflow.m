@@ -4,5 +4,6 @@ function state = resetWorkflow(state, context)
 schema = response_review_stats.projectSpec();
 state.project = schema.Create();
 state.session = response_review_stats.createSession(state.project, context);
-context.appendStatus("Reset Response Review Stats state.");
+context.log("info", "response_review_stats.workbench.resetworkflow.completed", ...
+    "Reset Response Review Stats state.");
 end

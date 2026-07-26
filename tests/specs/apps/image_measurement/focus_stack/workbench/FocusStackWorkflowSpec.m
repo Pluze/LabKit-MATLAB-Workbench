@@ -12,8 +12,10 @@ classdef FocusStackWorkflowSpec < matlab.unittest.TestCase
             backend = struct( ...
                 "chooseOutputFile", @(~, ~) labkit.app.dialog.Choice(output), ...
                 "alert", @(~, ~) []);
+            definition = focus_stack.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                focus_stack.definition(), [], backend);
+                definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

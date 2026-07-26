@@ -16,14 +16,20 @@ classdef DtaPulseSpec < matlab.unittest.TestCase
 
             testCase.verifyTrue(fromMetadata.ok, metadataMessage);
             testCase.verifyEqual(fromMetadata.method, 'metadata-current');
-            testCase.verifyEqual([fromMetadata.cath_start, fromMetadata.cath_end], ...
+            testCase.verifyEqual( ...
+                [fromMetadata.cath.start_s, fromMetadata.cath.end_s], ...
                 [0, 0.10], 'AbsTol', 1e-12);
-            testCase.verifyEqual([fromMetadata.gap_start, fromMetadata.gap_end], ...
+            testCase.verifyEqual( ...
+                [fromMetadata.gap.start_s, fromMetadata.gap.end_s], ...
                 [0.10, 0.14], 'AbsTol', 1e-12);
             testCase.verifyTrue(fromCurrent.ok, currentMessage);
             testCase.verifyEqual(fromCurrent.method, 'auto-from-Im');
-            testCase.verifyEqual([fromCurrent.cath_start, fromCurrent.anod_start], ...
+            testCase.verifyEqual( ...
+                [fromCurrent.cath.start_s, fromCurrent.anod.start_s], ...
                 [0.03, 0.14], 'AbsTol', 1e-12);
+            testCase.verifyFalse(isfield(fromMetadata, "cath_start"));
+            testCase.verifyTrue(all(isfield(fromMetadata, ...
+                ["pre", "cath", "gap", "anod", "post"])));
         end
 
         function reportsWhenRequestedMetadataCannotProveAPulse(testCase)
@@ -42,6 +48,21 @@ classdef DtaPulseSpec < matlab.unittest.TestCase
             testCase.verifySubstring(fallbackMessage, 'fallback success');
             testCase.verifyFalse(metadataOnly.ok);
             testCase.verifySubstring(metadataOnlyMessage, 'no ISTEP/TSTEP or VSTEP/TSTEP');
+        end
+
+        function rejectsUnknownModesInsteadOfRunningTheDefaultBranch(testCase)
+            time = (0:0.01:0.25).';
+            current = zeros(size(time));
+            current(time >= 0.03 & time <= 0.10) = -1e-3;
+            current(time >= 0.14 & time <= 0.20) = 1e-3;
+
+            [pulse, message] = labkit.dta.detectPulses( ...
+                time, current, validMetadata(), "not-a-mode");
+
+            testCase.verifyFalse(pulse.ok);
+            testCase.verifySubstring(string(message), ...
+                "Unsupported pulse detection mode");
+            testCase.verifyEqual(string(pulse.method), "-");
         end
     end
 end

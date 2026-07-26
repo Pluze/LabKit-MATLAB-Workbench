@@ -19,7 +19,9 @@ applicationState = flir_thermal.thermalSources.storeCurrentAnnotation( ...
     applicationState, item);
 applicationState.project.results.lastExport = [];
 applicationState.project.results.resultManifestPath = "";
-callbackContext.appendStatus("Updated current thermal display range.");
+callbackContext.log("info", ...
+    "flir_thermal.displaymapping.changemaximum.status", ...
+    "Updated current thermal display range.");
 end
 
 function range = normalizedRange(value)

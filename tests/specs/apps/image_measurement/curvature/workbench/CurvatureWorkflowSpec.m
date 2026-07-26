@@ -13,8 +13,10 @@ classdef CurvatureWorkflowSpec < matlab.unittest.TestCase
                 "chooseOutputFile", @(filters, ~) chooseFile( ...
                     filters, csvPath, overlayPath), ...
                 "alert", @(~, ~) []);
+            definition = curvature.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                curvature.definition(), [], backend);
+                definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

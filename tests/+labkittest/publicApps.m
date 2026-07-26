@@ -14,8 +14,15 @@ function values = publicApps()
     listing = listing(listing.Visibility == "public", :);
     values = struct();
     for k = 1:height(listing)
-        relativeEntry = string(listing.RelativePath(k));
-        appFolder = fileparts(fullfile(root, char(relativeEntry)));
+        entries = dir(fullfile(root, "apps", "**", ...
+            char(listing.Command(k) + ".m")));
+        entries = entries(~[entries.isdir]);
+        if numel(entries) ~= 1
+            error("LabKit:TestCatalog:InvalidAppEntrypoint", ...
+                "Public App %s must have exactly one source entrypoint.", ...
+                listing.Command(k));
+        end
+        appFolder = string(entries(1).folder);
         definitions = dir(fullfile(appFolder, "+*", "definition.m"));
         if numel(definitions) ~= 1
             error("LabKit:TestCatalog:InvalidAppDefinition", ...

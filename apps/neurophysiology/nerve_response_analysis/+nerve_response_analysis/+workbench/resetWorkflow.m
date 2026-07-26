@@ -5,5 +5,6 @@ schema = nerve_response_analysis.projectSpec();
 state.project = schema.Create();
 state.session = nerve_response_analysis.createSession( ...
     state.project, context);
-context.appendStatus("Reset Nerve Response Analysis state.");
+context.log("info", "nerve_response_analysis.workbench.resetworkflow.completed", ...
+    "Reset Nerve Response Analysis state.");
 end

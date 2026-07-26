@@ -19,12 +19,14 @@ if chosen.Cancelled
 end
 path = string(chosen.Value);
 p = state.project.parameters;
-tableValue = eis.resultFiles.buildExportTable(items, p.xName, p.yName, p.logX, p.logY);
+tableValue = eis.resultFiles.buildExportTable(items, p.xName, p.yName, ...
+    p.impedanceUnit, p.logX, p.logY);
 writetable(tableValue, path);
 [folder, base, extension] = fileparts(path);
 output = labkit.app.result.File("eisPlotData", "primary", string(base) + string(extension), MediaType="text/csv");
 package = labkit.app.result.Package(Outputs={output}, Inputs=struct("sources", state.project.inputs.sources), Parameters=p, Summary=struct("fileCount", numel(items)));
 written = context.writeResultPackage(folder, package);
 state.project.results.lastExport = struct("csvPath", path, "manifestPath", string(written.Value));
-context.appendStatus("Exported CSV: " + path);
+context.log("info", "eis.resultfiles.exportcurrentplot.status", ...
+    "Exported the current EIS plot data.");
 end
