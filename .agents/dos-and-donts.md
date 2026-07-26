@@ -52,6 +52,10 @@ second architecture guide.
 - Moving behavior to a new owner does not authorize retiring its visible or
   interactive contract. Recreate the old appearance, selection paths, status,
   and failure semantics at the new boundary before deleting the old owner.
+- Automatic instrumentation wraps the existing failure boundary, not a wider
+  convenience block: preserve specific validation/error identifiers, and test
+  nested diagnostic ownership by parent/root ancestry rather than assuming
+  every health record attaches directly to the outer callback.
 - A destructive updater has one shared write gateway for GUI and programmatic
   callers. Reject invalid roots and both Git-marker forms before network I/O;
   use a sibling backup, preserve explicit local data, validate the replacement,

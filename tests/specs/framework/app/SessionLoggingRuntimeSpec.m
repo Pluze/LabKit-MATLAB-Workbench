@@ -218,9 +218,12 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(sum([dropAttributes.count]), health.writeFailureDropCount);
             testCase.verifyTrue(all(string({dropAttributes.reason}) == "write-failure"));
             healthRecords = [degraded; dropped];
-            testCase.verifyTrue(all(string({healthRecords.operationId}) == started.operationId));
-            testCase.verifyTrue(all(string({healthRecords.parentOperationId}) == started.parentOperationId));
             testCase.verifyTrue(all(string({healthRecords.rootActionId}) == started.rootActionId));
+            operationIds = string({healthRecords.operationId});
+            parentIds = string({healthRecords.parentOperationId});
+            testCase.verifyTrue(all( ...
+                operationIds == started.operationId | ...
+                parentIds == started.operationId));
             clear cleanup
         end
 

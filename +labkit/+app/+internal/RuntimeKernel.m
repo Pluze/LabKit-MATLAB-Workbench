@@ -176,26 +176,71 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function result = saveProject(obj, state, filepath)
             obj.assertProjectStore();
-            result = obj.Documents.save(state, filepath);
-            obj.refreshWindowTitle();
+            operation = obj.Recorder.begin( ...
+                "runtime.project", "project.saved", ...
+                "Saving project document.");
+            try
+                result = obj.Documents.save(state, filepath);
+                obj.refreshWindowTitle();
+                obj.Recorder.finish( ...
+                    operation, "completed", "committed", []);
+            catch cause
+                obj.Recorder.finish( ...
+                    operation, "failed", "rolledBack", cause);
+                rethrow(cause);
+            end
         end
 
         function state = prepareProjectRestore(obj, filepath)
             obj.assertOpen();
             obj.assertProjectStore();
-            [state, obj.PendingDocumentMetadata] = ...
-                obj.Documents.restore(filepath, false);
+            operation = obj.Recorder.begin( ...
+                "runtime.project", "project.restore_prepared", ...
+                "Preparing project restore.");
+            try
+                [state, obj.PendingDocumentMetadata] = ...
+                    obj.Documents.restore(filepath, false);
+                obj.Recorder.finish( ...
+                    operation, "completed", "notApplicable", []);
+            catch cause
+                obj.Recorder.finish( ...
+                    operation, "failed", "notApplicable", cause);
+                rethrow(cause);
+            end
         end
 
         function state = prepareNewProject(obj)
             obj.assertOpen();
             obj.assertProjectStore();
-            [state, obj.PendingDocumentMetadata] = obj.Documents.createNew();
+            operation = obj.Recorder.begin( ...
+                "runtime.project", "project.new_prepared", ...
+                "Preparing a new project.");
+            try
+                [state, obj.PendingDocumentMetadata] = ...
+                    obj.Documents.createNew();
+                obj.Recorder.finish( ...
+                    operation, "completed", "notApplicable", []);
+            catch cause
+                obj.Recorder.finish( ...
+                    operation, "failed", "notApplicable", cause);
+                rethrow(cause);
+            end
         end
 
         function saveRecovery(obj, state, filepath)
             obj.assertProjectStore();
-            obj.Documents.saveRecovery(state, filepath);
+            operation = obj.Recorder.begin( ...
+                "runtime.project", "project.recovery_saved", ...
+                "Saving project recovery document.");
+            try
+                obj.Documents.saveRecovery(state, filepath);
+                obj.Recorder.finish( ...
+                    operation, "completed", "committed", []);
+            catch cause
+                obj.Recorder.finish( ...
+                    operation, "failed", "rolledBack", cause);
+                rethrow(cause);
+            end
         end
 
         function restoreProject(obj, filepath, asRecovery)
@@ -206,7 +251,17 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.assertProjectStore();
             previousState = obj.State;
             previousPresentation = obj.Presentation;
-            [candidate, metadata] = obj.Documents.restore(filepath, asRecovery);
+            operation = obj.Recorder.begin( ...
+                "runtime.project", "project.restored", ...
+                "Restoring project document.");
+            try
+                [candidate, metadata] = ...
+                    obj.Documents.restore(filepath, asRecovery);
+            catch cause
+                obj.Recorder.finish( ...
+                    operation, "failed", "notApplicable", cause);
+                rethrow(cause);
+            end
             try
                 labkit.app.internal.RuntimeContractBoundary.validateState( ...
                     obj.Application, candidate);
@@ -216,9 +271,13 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.Presentation = view;
                 obj.Documents.acceptRestore(metadata);
                 obj.refreshWindowTitle();
+                obj.Recorder.finish( ...
+                    operation, "completed", "committed", []);
             catch cause
                 obj.State = previousState;
                 obj.Presentation = previousPresentation;
+                obj.Recorder.finish( ...
+                    operation, "failed", "rolledBack", cause);
                 failure = MException( ...
                     "labkit:app:runtime:ProjectRestoreFailed", ...
                     "Project restore failed transactionally.");
@@ -603,17 +662,29 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function view = present(obj, state)
-            view = labkit.app.internal.RuntimePresentation.fromState( ...
-                obj.Contract.PlatformPlan, state, ...
-                @(records, role) obj.presentationSourcePaths(records, role), ...
-                obj.StatusLog);
-            if isempty(obj.Application.PresentWorkbench)
-                custom = labkit.app.view.Snapshot();
-            else
-                custom = obj.Application.PresentWorkbench(state);
+            operation = obj.Recorder.begin( ...
+                "runtime.presentation", "presentation.rendered", ...
+                "Preparing application presentation.");
+            try
+                view = labkit.app.internal.RuntimePresentation.fromState( ...
+                    obj.Contract.PlatformPlan, state, ...
+                    @(records, role) ...
+                        obj.presentationSourcePaths(records, role), ...
+                    obj.StatusLog);
+                if isempty(obj.Application.PresentWorkbench)
+                    custom = labkit.app.view.Snapshot();
+                else
+                    custom = obj.Application.PresentWorkbench(state);
+                end
+                view = view.overlayForRuntime(custom);
+                obj.Application.validateViewSnapshot(view);
+                obj.Recorder.finish( ...
+                    operation, "completed", "notApplicable", []);
+            catch cause
+                obj.Recorder.finish( ...
+                    operation, "failed", "notApplicable", cause);
+                rethrow(cause);
             end
-            view = view.overlayForRuntime(custom);
-            obj.Application.validateViewSnapshot(view);
         end
 
         function appendStatus(obj, message)
