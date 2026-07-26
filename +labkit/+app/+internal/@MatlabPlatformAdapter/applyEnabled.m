@@ -2,13 +2,9 @@ function applyEnabled(~, component, enabled)
 % Class-folder implementation of MatlabPlatformAdapter.applyEnabled.
     value = labkit.app.internal.NativeAdapterValues.onOff(enabled);
     labkit.app.internal.NativeAdapterValues.setIfProperty(component, "Enable", value);
-    if isprop(component, "Tag") && strlength(string(component.Tag)) > 0
-        figure = ancestor(component, "figure");
-        labels = findall(figure, "Tag", ...
-            char(string(component.Tag) + ".label"));
-        for k = 1:numel(labels)
-            labkit.app.internal.NativeAdapterValues.setIfProperty(labels(k), "Enable", value);
-        end
+    label = labkit.app.internal.NativeAdapterValues.linkedLabel(component);
+    if ~isempty(label)
+        labkit.app.internal.NativeAdapterValues.setIfProperty(label, "Enable", value);
     end
     mode = labkit.app.internal.NativeAdapterValues.linkedPlotMode(component);
     if ~isempty(mode)

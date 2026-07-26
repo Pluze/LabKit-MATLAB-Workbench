@@ -128,6 +128,30 @@ classdef AppSdkSpec < matlab.unittest.TestCase
         end
     end
 
+    methods (Test, TestTags = {'Contract:source', 'Env:hidden-gui'})
+        function updatesAFieldAndItsCachedLabelWithoutTreeDiscovery(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.field("gain", Kind="numeric", ...
+                    Bind="project.parameters.gain")});
+            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
+                labkit.app.project.Schema( ...
+                    Version=1, Create=@createProject, Validate=@validateProject), ...
+                "PresentWorkbench", @presentGainAvailability);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab(app);
+            cleanup = onCleanup(@() runtime.close());
+            figureValue = runtime.figureHandle();
+            field = findall(figureValue, "Tag", "gain");
+            label = findall(figureValue, "Tag", "gain.label");
+
+            testCase.verifyEqual(string(field.Enable), "on");
+            testCase.verifyEqual(string(label.Enable), "on");
+            runtime.applyBinding("gain", 0);
+            testCase.verifyEqual(string(field.Enable), "off");
+            testCase.verifyEqual(string(label.Enable), "off");
+            clear cleanup
+        end
+    end
+
     methods (Static, Access = private)
         function app = definition(layout, varargin)
             app = labkit.app.Definition( ...
@@ -191,6 +215,11 @@ end
 
 function session = wrongSession(~)
 session = struct();
+end
+
+function view = presentGainAvailability(state)
+view = labkit.app.view.Snapshot().enabled( ...
+    "gain", state.project.parameters.gain ~= 0);
 end
 
 function project = createCurrentProject()

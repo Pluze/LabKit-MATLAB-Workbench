@@ -17,8 +17,10 @@ function spec = rectangle(id, onChanged, varargin)
 %   Style - Scalar visual-option struct. Default: struct().
 %   Instruction - Scalar guidance text. Default: "".
 %   ViewportPolicy - "preserve" or "fit". Default: "preserve".
-%   OnBackgroundPressed - Optional callback
-%       state = callback(state,point,context). Default: [].
+%   OnBackgroundPressed - Optional point callback
+%       state = callback(state,point,context). It receives clicks on blank
+%       plot space and clicks on the rectangle that do not move it.
+%       Default: [].
 %
 % Outputs:
 %   spec - Immutable interaction declaration.

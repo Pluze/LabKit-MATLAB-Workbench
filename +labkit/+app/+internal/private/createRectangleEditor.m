@@ -21,7 +21,9 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
 %   resizable - logical, default true.
 %   onMoving - callback(position) during pointer movement, default [].
 %   onMoved - callback(position) after pointer release, default [].
-%   onBackgroundDown - callback(src,event) for background clicks, default [].
+%   onBackgroundDown - callback(src,event) for plot clicks outside the
+%       rectangle and clicks on the rectangle that do not begin a drag,
+%       default [].
 %
 % Returned editor API:
 %   getPosition(), setPosition(position), setImageSize(imageSize),
@@ -64,6 +66,7 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
     state.dragCorner = 0;
     state.dragStartPoint = [0 0];
     state.dragStartPosition = state.position;
+    state.dragMoved = false;
     state.session = runtime.createSession(struct( ...
         'name', 'rectangleEditor', ...
         'onPointerDown', @onPointerDown, ...
@@ -203,6 +206,7 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
         end
         state.dragStartPoint = axesPoint(state.ax);
         state.dragStartPosition = state.position;
+        state.dragMoved = false;
         state.session.captureDrag(@onDrag, @onRelease);
     end
 
@@ -217,14 +221,22 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
         end
         state.position = constrainPosition(candidate, state.bounds, ...
             state.aspectRatio, state.fixedAspectRatio, state.minimumSize);
+        state.dragMoved = state.dragMoved || any( ...
+            abs(state.position - state.dragStartPosition) > 1e-9);
         refresh();
         invokeCallback(state.onMoving, state.position);
     end
 
-    function onRelease(~, ~)
+    function onRelease(src, event)
+        moved = state.dragMoved;
         state.dragMode = "";
         state.dragCorner = 0;
-        invokeCallback(state.onMoved, state.position);
+        state.dragMoved = false;
+        if ~moved && ~isempty(state.onBackgroundDown)
+            invokePointerCallback(state.onBackgroundDown, src, event);
+        else
+            invokeCallback(state.onMoved, state.position);
+        end
     end
 end
 
