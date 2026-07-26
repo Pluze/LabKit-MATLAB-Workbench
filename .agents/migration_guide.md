@@ -16,6 +16,36 @@ compatibility-retirement-debt: debug launch and split status/diagnostic APIs
 
 ## Unified session logging and incident diagnostics
 
+### Implementation hold and agent coordination
+
+Status: **architecture rework required before broad implementation continues**.
+
+Any agent working on this migration must stop before adding more App migrations,
+committing the current all-App batch, or treating a draft `SessionJournal`,
+viewer, or `CallbackContext.log` implementation as an accepted contract.
+Preserve existing work, inspect the shared worktree, and reread this complete
+entry before continuing. Do not overwrite, discard, or silently reshape another
+agent's uncommitted files.
+
+Implementation may resume only as the ordered checkpoints below. In particular:
+
+- preserve `labkit_launcher.m` as a self-contained repair bootstrap that can run
+  when `+labkit`, Apps, docs, or scripts are missing or damaged;
+- do not make Launcher resolution or repair depend on a Runtime logger class;
+- establish a privacy-safe semantic event before any persistent, exported, or
+  default Log-viewer projection;
+- prove the minimal in-memory stream and operation state machine before
+  migrating every App;
+- do not commit hundreds of framework, App, fixture, and compatibility changes
+  as one checkpoint; isolate the contract, persistence, Launcher handoff,
+  viewer, synthetic-input rename, and App-family migrations;
+- run the focused exit gate for a checkpoint before starting the next one.
+
+An agent that discovers this hold while work is in progress must report which
+checkpoint its current files represent, which later-phase files are already
+present, and what remains unverified. It must not call a broad staged diff
+“complete” merely because construction or one headless log test passes.
+
 ### User problem and current evidence
 
 LabKit does not currently have one session log. It has several partially
@@ -78,8 +108,10 @@ There is no product-level “debug session” mode.
 
 ### Target product behavior
 
-1. Every launch creates one session identity and one canonical logging pipeline
-   before Launcher resolution or App construction begins.
+1. Every launch creates one canonical session identity and a compatible event
+   contract. A self-contained Launcher bootstrap journal records resolution,
+   requirements, repair, and startup failure, then hands the session identity
+   and lineage to the full Runtime pipeline after the App SDK is available.
 2. A bounded local flight recorder is always on. It captures sufficient
    structured `DEBUG`-and-higher evidence to diagnose a later failure without
    requiring the user to predict that failure. `TRACE` is opt-in because of its
@@ -97,14 +129,23 @@ There is no product-level “debug session” mode.
    mutate current App state, load a project, start analysis, or change logging
    policy.
 
-The framework-owned App toolbar provides:
+The framework-owned **Tools** menu keeps diagnostics out of each App's primary
+scientific workflow:
 
-- **Show Logs**
-- **Display Level** (`Info`, `Debug`, or `Trace`)
-- **Generate Synthetic Inputs**
-- **Export Diagnostic Bundle**
-- **Copy Problem Summary**
-- **Clear Log View**
+```text
+Tools
+|- Diagnostics
+|  |- Show Logs
+|  |- Export Diagnostic Bundle
+|  |- Copy Problem Summary
+|  `- Clear View
+`- Developer Tools
+   |- Generate Synthetic Inputs
+   `- Trace Capture
+```
+
+Display filtering belongs in the Log viewer. Trace capture and synthetic-input
+generation are ordinary-session tools, not a separate launch mode.
 
 `Clear Log View` clears only the current viewer projection. It does not silently
 delete the flight recorder. `ERROR` leaves the App usable when recovery is
@@ -112,9 +153,10 @@ possible and exposes the correlation ID and export action. `CRITICAL` means the
 session is not safe for further product actions; diagnostic export remains
 available.
 
-Launcher removes **Open Debug**. It uses the same launch pipeline as direct App
-entrypoints and provides **Export Last Launch Diagnostics** when startup failed
-before the App toolbar became available.
+Launcher removes **Open Debug**. It uses the same session contract as direct
+App entrypoints without importing the full Runtime pipeline. It provides
+**Export Last Launch Diagnostics** when startup failed before the Runtime Tools
+menu became available.
 
 ### Severity and audience contract
 
@@ -143,23 +185,49 @@ operation to fail.
 
 ### Canonical structured record
 
-The repository owns a versioned record schema. A record contains:
+The repository owns a minimal versioned record schema. Schema v1 contains:
 
-- `schemaVersion`, monotonic `sequence`, `timestampUtc`,
-  `observedTimestampUtc`, and relative `elapsedSeconds`;
-- `severityText`, OpenTelemetry-compatible `severityNumber`, `audience`,
-  `category`, stable `eventName`, human `message`, and bounded `attributes`;
-- `appId`, App version, SDK version, MATLAB/platform facts, and `sessionId`;
-- `operationId`, `parentOperationId`, and `rootActionId`;
-- `outcome`, `durationSeconds`, and optional source function/line;
-- for failures, exception identifier, sanitized message, causal chain, and
-  sanitized stack.
+```text
+schemaVersion
+sequence
+timestampUtc
+elapsedSeconds
 
-`message` is readable prose and may evolve. `eventName` and attribute keys are
-the machine-stable contract used by tests and diagnostic tooling. Attributes
-are scalars, short strings, small categorical arrays, or bounded plain structs.
-The recorder rejects or summarizes handles, classes, large arrays, graphics
-objects, tables containing sample data, and arbitrary workspace values.
+severity
+audience
+category
+eventName
+message
+attributes
+
+sessionId
+appId
+operationId
+parentOperationId
+rootActionId
+
+outcome
+durationSeconds
+exception
+```
+
+Do not persist `observedTimestampUtc` until an asynchronous or cross-process
+collector makes it observably different from the event timestamp. Derive the
+OpenTelemetry severity number from `severity` in an export projection instead
+of storing two authorities. Store App, App SDK, MATLAB, platform, capture
+policy, and resolved-entrypoint facts once in the session manifest rather than
+repeating them in every event. Source function/line belongs only in a sanitized
+exception stack or an explicit developer checkpoint; it is not a routine
+record field or stable public contract.
+
+`message` is privacy-safe readable prose and may evolve. It must not contain a
+raw path, original filename, user/subject/device/sample identifier, or
+scientific value copied from an input. `eventName` and attribute keys are the
+machine-stable contract used by tests and diagnostic tooling. Attributes are
+privacy-safe scalars, short strings, small categorical arrays, or bounded plain
+structs. The recorder rejects or summarizes handles, classes, large arrays,
+graphics objects, tables containing sample data, arbitrary workspace values,
+and unsafe free-form strings.
 
 Operation ancestry, not a full call stack on every line, reconstructs the
 normal action chain. A root user action creates `rootActionId`; nested Runtime
@@ -215,6 +283,13 @@ mechanics, interaction dispatch, rollback, and exception conversion. Pure
 scientific functions do not receive a logger; they return results, diagnostics,
 or typed failures for the callback boundary to record.
 
+The App-provided `message` is not a place to concatenate a path or filename.
+For example, log `"Selected source loaded."` with a Runtime-owned
+`sourceAlias`, not `"Loaded " + filepath`. Runtime source mechanics create
+session-local aliases such as `source-3`; Apps do not invent redaction. A
+selected full path needed by the current workflow is rendered from current App
+state and does not pass through the semantic log event.
+
 Project/save/load transactions emit start, validation, commit or rollback, and
 one final outcome under one operation ID. A caught exception cannot produce a
 misleading success record. Failure presentation and diagnostic recording share
@@ -238,15 +313,18 @@ The default projection is user-audience `INFO` and above plus all
 it is no longer the implicit “last log line.” Viewer updates are incremental
 and virtualized/batched rather than repeatedly joining the full session history.
 
-### Always-on journal, sinks, and retention
+### Always-on journal, projections, sinks, and retention
 
-The canonical session stream feeds independent sinks:
+A semantic action first becomes one validated privacy-safe event. Internal
+projections then feed independent sinks:
 
 1. an in-memory ring for immediate viewer updates;
-2. a bounded segmented JSON Lines flight recorder;
+2. a persistent projection for the bounded segmented JSON Lines flight
+   recorder;
 3. the App viewer projection;
 4. MATLAB command-window output when explicitly enabled for development;
-5. an on-demand human-readable text rendering used in exported bundles.
+5. an export projection that adds derived interoperability fields and
+   human-readable text without reintroducing private values.
 
 Changing one sink's threshold does not change another sink. Formatting happens
 after filtering, and an unavailable sink is isolated and reported through the
@@ -255,13 +333,15 @@ remaining sinks when possible.
 The user-owned journal location is:
 
 ```text
-<MATLAB prefdir>/LabKit/logs/<appId>/<sessionId>/
+<MATLAB prefdir>/LabKit/logs/sessions/<sessionId>/
 ```
 
 It is not stored in the repository, installation tree, current working
 directory, or beside user data. A source checkout may offer a convenience link
 to that location, but `artifacts/` is not the product persistence contract.
-Tests inject a private temporary store.
+The manifest records `requestedEntrypoint`, `resolvedAppId`, resolution outcome,
+and whether Runtime accepted the bootstrap handoff. This path works even when
+no App can be resolved. Tests inject a private temporary store.
 
 Initial implementation bounds, to be confirmed by profiling before the
 contract is frozen, are:
@@ -271,23 +351,60 @@ contract is frozen, are:
 - retain at most ten closed sessions per App;
 - expire closed sessions after 14 days;
 - cap retained storage at 50 MiB per App, deleting oldest closed sessions first;
+- enforce a profiled per-session bound and a global LabKit bound in addition to
+  the per-App bound;
 - coalesce repeated identical `TRACE`/`DEBUG` records in a bounded window and
   emit a summary with the suppressed count;
 - never rate-limit or coalesce distinct `ERROR`/`CRITICAL` records;
 - emit `journal.records_dropped` with count, reason, category, and interval
   whenever capacity, rate limiting, or serialization rejects evidence.
 
+The concrete byte/count values above are profiling hypotheses, not frozen
+schema v1 guarantees. Pruning removes expired and oldest closed sessions first,
+never the active session, while satisfying session, App, and global bounds.
+
+The writer keeps one active segment handle and a small bounded buffer. It
+flushes at measured record/byte thresholds; before and after
+`WARNING`/`ERROR`/`CRITICAL`; at selected operation terminal points; and on
+close or rotation. Flushing an error also flushes its preceding buffered
+context. It does not open and close the JSONL file for every record.
+
+Instrumentation records root actions, operation boundaries, meaningful branch
+decisions, and settled interaction state. It does not record every pointer
+move, renderer property assignment, or repeated preview setter. Bounded
+coalescing handles repetitive `DEBUG`; only opt-in `TRACE` may contain
+fine-grained steps.
+
 Normal shutdown closes and flushes the manifest. An active-operation marker and
 atomic manifest replacement allow the next launch to identify an abandoned
 session. Journal cleanup occurs outside a user callback's critical path.
 Failure to create, rotate, flush, or prune a journal never prevents the App
-from starting or completing scientific work.
+from starting or completing scientific work. Such failures increment explicit
+drop/degradation accounting visible through any surviving sink; a broad catch
+that silently changes only an internal counter is insufficient.
 
 ### Privacy and diagnostic bundles
 
-The live App UI may display a user-selected path when the workflow requires it.
-Persistent and exported records use a stricter policy. They redact home,
-temporary, artifact, shared-drive, and user-selected roots; replace filenames
+The live App UI may render a user-selected path directly from current App state
+when the workflow requires it. That value does not enter the logging pipeline.
+The semantic event accepted by the recorder is already persistence-safe:
+
+```text
+App/Runtime meaning
+    -> validated privacy-safe semantic event
+        |- default Log-viewer projection
+        |- persistent journal projection
+        `- export/interoperability projection
+```
+
+`eventName`, `category`, safe attributes, and operation lineage carry durable
+meaning. The human message passes the same sanitizer and privacy validation
+before entering the retained in-memory ring or any disk sink. Runtime replaces
+source paths, filenames, and identifiers with stable session aliases; Apps do
+not perform their own redaction.
+
+Persistent and exported projections redact home, temporary, artifact,
+shared-drive, and user-selected roots as a defense in depth; replace filenames
 with stable session aliases; and exclude by default:
 
 - project/source contents, images, numeric arrays, tables, and workspace values;
@@ -312,24 +429,45 @@ redaction-report.json
 ```
 
 `README.txt` explains capture bounds and missing intervals. The redaction report
-lists categories of removed data, never the removed values. Synthetic packs,
-projects, scientific inputs/results, screenshots, and source files are not
-included by default. LabKit does not upload, email, or transmit a bundle and
-does not add telemetry or analytics through this migration.
+lists categories of removed data, never the removed values. Export snapshots
+the already-sanitized journal; export-time scanning is an additional guard, not
+the first privacy boundary. Synthetic packs, projects, scientific
+inputs/results, screenshots, and source files are not included by default.
+LabKit does not upload, email, or transmit a bundle and does not add telemetry
+or analytics through this migration.
 
 ### Unified launch and synthetic-input workflow
 
-Launcher and direct entrypoints share one bootstrap:
+Launcher and direct entrypoints share a session/event contract, not one
+mandatory implementation object.
 
-1. create the session identity and bootstrap recorder;
-2. record Launcher/App resolution and requirement checks;
-3. create Runtime and transfer the same session/operation lineage;
-4. launch a clean App with no project, source, sample, or automatic action;
-5. close or mark the session abandoned on every startup outcome.
+The Launcher bootstrap journal:
 
-Direct entrypoints create the same session when no Launcher session is supplied.
-Tests inject deterministic clocks, IDs, and private stores; production APIs do
-not expose those controls.
+- remains implemented by self-contained local Launcher code using native MATLAB
+  operations, plain structs, and minimal JSONL/manifest writes;
+- does not import `+labkit`, an App definition, a Runtime sink, viewer, rate
+  limiter, or App event validator;
+- creates `sessionId` before resolution and records only the compatible
+  `launcher.lifecycle` subset for resolution, requirements, repair, handoff,
+  launch success, and launch failure;
+- remains capable of showing and exporting last-launch evidence when the App
+  SDK is absent or damaged.
+
+After successful resolution, Runtime:
+
+1. validates the bootstrap manifest and compatible event subset;
+2. adopts the same `sessionId`;
+3. records a handoff event linking Launcher operation lineage to the Runtime
+   root operation;
+4. adds resolved App/session facts to the manifest;
+5. launches a clean App with no project, source, sample, or automatic action;
+6. closes or marks the session abandoned on every startup outcome.
+
+Direct entrypoints create the same session contract without a Launcher
+bootstrap and write to the same session-root layout. Tests inject deterministic
+clocks, IDs, and private stores; production APIs do not expose those controls.
+One compatibility test owns the minimal bootstrap schema so the duplicated
+self-contained writer cannot drift silently from the Runtime importer.
 
 Rename the misleading `BuildDebugSample` contract to
 `BuildSyntheticSample`, and App-owned `+debug` fixture packages to
@@ -341,8 +479,8 @@ on journal level.
 
 Launcher removes its verbose-plus-sample `Open Debug` branch and
 repository-specific diagnostics folder. It shows the most recent failed or
-abandoned launch with actions to copy the problem summary, export its bundle,
-and open the session folder.
+abandoned launch with self-contained actions to copy the problem summary,
+export its safe bootstrap/runtime bundle, and open the session folder.
 
 ### Compatibility retirement
 
@@ -382,70 +520,109 @@ push. Intermediate branch commits do not independently accumulate App release
 semantics; versions, manuals, and structured history describe the final net
 change before merge.
 
-#### Phase 1: characterize and specify
+#### Phase 1: characterize and freeze the minimal contracts
 
 - Add direct characterization tests for current status/error/recorder behavior,
   clean Launcher/direct startup, synthetic sample generation, sanitization, and
   abandoned sessions.
-- Define the record schema, severity rules, privacy matrix, event/category
-  vocabulary, retention policy, and golden bundle shape as repository-owned
-  test data.
-- Measure normal App startup, callback dispatch, viewer update, and recorder
-  throughput/memory before changing implementation.
+- Specify only the minimal event schema, severity/audience meanings, privacy
+  classification, operation state machine, bootstrap-compatible subset, and
+  manifest ownership.
+- Specify retention dimensions and pruning order without freezing byte/count
+  hypotheses before measurement.
+- Measure normal App startup, callback dispatch, representative interaction,
+  viewer update, and recorder throughput/memory.
 
 Exit gate: every known current gap has a failing target test or a documented
-manual-only acceptance check; baseline performance artifacts are recorded.
+manual-only acceptance check; the self-contained Launcher boundary has an
+explicit compatibility test; baseline performance artifacts are recorded.
 
-#### Phase 2: canonical record and flight recorder
+#### Phase 2: private in-memory canonical stream
 
-- Implement the private canonical record, validator, operation scope, session
-  manifest, segmented writer, pruning, rate limiting, drop accounting, and
-  sanitization.
-- Extend sealed `CallbackContext` with `log`.
-- Adapt legacy recorder/status calls into the stream without changing App
-  behavior.
-- Ensure a recorder failure is contained and observable from another sink.
+- Implement the private event record, validator, session context, operation
+  scope/state machine, and bounded in-memory ring.
+- Extend sealed `CallbackContext` with the smallest `log` operation justified by
+  repeated App need.
+- Adapt legacy status/error/checkpoint/count calls into the stream without
+  deleting their callers yet.
+- Prove one callback produces one complete operation chain and rollback produces
+  one terminal failure without a false-success record.
 
-Exit gate: ordinary headless sessions persist bounded, sanitized,
-correlation-complete history and all legacy behavior tests still pass.
+Do not implement the segmented writer, Launcher import, full viewer, or
+all-App migration in this checkpoint.
 
-#### Phase 3: complete Runtime instrumentation
+Exit gate: the in-memory stream, privacy validation, operation ancestry, legacy
+adapters, and sink-failure isolation pass focused headless evidence.
+
+#### Phase 3: persistence and privacy projections
+
+- Implement the persistent projection, session manifest, segmented buffered
+  writer, session/App/global retention, rotation, coalescing, explicit drop
+  accounting, and abandoned-operation marker.
+- Implement safe bundle snapshot/export from the already-sanitized journal.
+- Prove buffered context is flushed with warnings/errors and journal failure
+  cannot change the scientific operation outcome.
+
+Exit gate: an ordinary headless session retains bounded, sanitized,
+correlation-complete evidence after failure or interruption, with measured
+throughput and no per-record open/close path.
+
+#### Phase 4: repair-safe Launcher handoff
+
+- Implement the minimal self-contained Launcher bootstrap journal only inside
+  the Launcher repair boundary.
+- Store sessions independently of `appId`, then record `resolvedAppId` in the
+  manifest.
+- Validate/import the compatible bootstrap subset into Runtime and continue the
+  same session/lineage.
+- Align direct and Launcher entrypoint outcomes without importing full Runtime
+  logging into the repair bootstrap.
+
+Exit gate: Launcher can still repair an installation with missing/damaged
+`+labkit`; early failure, normal handoff, direct launch, abandoned launch, and
+last-launch export have focused evidence.
+
+#### Phase 5: complete Runtime automatic instrumentation
 
 - Instrument lifecycle, callbacks, presentation, projects, sources, dialogs,
-  results, resources, managed interactions, rollback, and recovery.
-- Transfer one bootstrap session across Launcher and Runtime.
-- Align direct and Launcher entrypoint evidence.
+  results, resources, managed interactions, rollback, and recovery at semantic
+  operation boundaries.
+- Exclude pointer-move and renderer-setter noise and prove repetitive debug
+  events are bounded.
 - Correct framework documentation so every automatic claim has executable
   proof.
 
-Exit gate: each documented automatic category has start/success/failure or
-explicit non-applicability evidence, and one root action can be reconstructed
-across nested operations.
+Exit gate: the framework fixture App proves every documented Runtime category
+and one root action can be reconstructed across nested operations.
 
-#### Phase 4: standard viewer and diagnostic tools
+#### Phase 6: standard viewer and diagnostic tools
 
-- Build the incremental framework Log viewer, toolbar actions, last-launch
-  recovery, problem summary, and diagnostic bundle export.
-- Add visible truncation/coalescing/drop state and clear-view semantics.
+- Build the incremental framework Log viewer, **Tools > Diagnostics** actions,
+  problem summary, clear-view semantics, and bundle export.
+- Add visible truncation, coalescing, retention, trace-disabled, and dropped
+  record state.
 - Validate keyboard navigation, screen scaling, long messages, large journals,
   and absence of viewport/callback interference.
 
 Exit gate: an ordinary hidden-GUI session can generate an incident, inspect
-earlier `DEBUG` evidence, and export a privacy-safe bundle without restarting.
+earlier `DEBUG` evidence, filter one root action, and export a privacy-safe
+bundle without restarting.
 
-#### Phase 5: migrate Apps by capability family
+#### Phase 7: synthetic inputs and App-family migration
 
-- Replace status strings with stable events and domain attributes.
-- Remove App-authored log panels and duplicate exception/status presentation.
-- Audit each App's warnings, errors, transaction outcomes, exports, long
-  operations, synthetic inputs, and direct public entrypoint.
-- Run a real callback/pointer workflow where interaction is a declared product
-  capability; construction-only tests are insufficient.
+- Rename `BuildDebugSample` and App `+debug` contracts separately from logging
+  mechanics; add **Tools > Developer Tools** generation without automatic load.
+- Migrate one capability family at a time from status strings to stable domain
+  events and safe attributes.
+- Remove App-authored log panels and duplicate exception/status presentation
+  only after the standard viewer is proven.
+- Keep real callback/pointer regressions where interaction is a product
+  capability; construction-only evidence is insufficient.
 
-Exit gate: every public App passes the shared logging conformance suite plus
-its focused user-workflow evidence, with no undeclared compatibility use.
+Exit gate: all Apps pass parameterized conformance, each capability family has a
+representative real workflow, and no undeclared compatibility use remains.
 
-#### Phase 6: unify launch and remove debt
+#### Phase 8: retire bridges and close debt
 
 - Remove **Open Debug**, old APIs/schema, `BuildDebugSample`, `+debug`
   packages, dual options, and bridge-only tests.
@@ -460,9 +637,9 @@ completion criterion below is satisfied.
 
 ### Required automated evidence
 
-Framework headless tests must prove:
+One framework fixture App owns complete headless evidence for:
 
-- severity validation and OpenTelemetry-compatible numeric mapping;
+- severity validation and deterministic derived OpenTelemetry numeric mapping;
 - deterministic sequence/time ordering and stable event/attribute schema;
 - parent/root operation correlation across success, caught failure, rollback,
   nested callback, and abandoned operation;
@@ -474,30 +651,37 @@ Framework headless tests must prove:
   repeated-record coalescing, and explicit drop counts;
 - atomic manifest/active-operation recovery after interrupted writes;
 - sink failure isolation, including unwritable storage and malformed records;
-- export bundle contents, ordering, readable rendering, and absence of excluded
-  scientific/user data;
+- export bundle file set, schema, ordering, required semantic events, readable
+  rendering, and absence of excluded scientific/user data without freezing the
+  complete `session.log.txt` wording;
 - legacy adapter equivalence during migration and zero adapter use before
   deletion.
 
 Hidden-GUI tests must prove:
 
-- standard viewer presence in every migrated App;
 - default level/audience projection and live level changes without data loss;
 - search, severity/category/root-action filters, follow/pause, clear-view, and
   row-detail rendering;
 - warning/error visibility, correlation ID, and export actions;
 - large-journal incremental updates without rebuilding the full text control;
-- toolbar synthetic generation leaves App state and current inputs unchanged.
+- **Tools > Developer Tools** synthetic generation leaves App state and current
+  inputs unchanged.
 
-Launcher/system tests must prove clean direct and Launcher startup, identical
-session handoff, early requirement/build failure capture, last-launch recovery,
-and removal of automatic synthetic behavior.
+Launcher/system tests must prove self-contained repair with missing/damaged
+`+labkit`, clean direct and Launcher startup, compatible session handoff, early
+resolution/requirement/build failure capture, last-launch recovery, session
+rooting before `appId`, and removal of automatic synthetic behavior.
 
-Every App has a cataloged conformance row for ordinary startup, one meaningful
-success event, validation/degradation where applicable, one controlled failure,
-export, and synthetic-input generation. Apps with managed interactions also
-retain their pointer-driven workflow tests so log migration cannot mask a
-non-interactive GUI.
+All Apps share parameterized conformance proving the standard viewer/tools are
+available, no legacy logging API remains, definition/synthetic-input contracts
+are legal, and at least one stable domain event is declared. This conformance
+does not repeat full journal failure/export workflows per App.
+
+Each capability family selects a representative App for one real hidden-GUI
+workflow. Apps with an actual interaction or logging regression retain their
+focused callback/pointer test. The framework fixture, not every production App,
+systematically covers callback, project, source, dialog, result, resource,
+interaction, presentation, rollback, journal, export, and viewer failures.
 
 Performance/capacity tests profile the implementation rather than bless
 untested constants. The initial acceptance target is under five percent median
@@ -506,9 +690,10 @@ no observable scientific-output change, bounded memory/disk use, and no
 quadratic viewer rebuild through at least 10,000 retained records. Any relaxed
 threshold needs measured platform evidence and rationale.
 
-Repository data-hygiene tests scan source, tests, fixtures, and exported golden
-bundles for local roots, real filenames, users, subjects, devices, proprietary
-metadata, and recognizable sample values.
+Repository data-hygiene tests scan source, tests, fixtures, and exported bundle
+schema fixtures for local roots, real filenames, users, subjects, devices,
+proprietary metadata, and recognizable sample values. Golden evidence asserts
+semantic structure and exclusions, not full message prose.
 
 ### Manual acceptance
 
@@ -533,7 +718,8 @@ abrupt process termination are not considered proven by hidden GUI tests.
 
 The migration is complete only when:
 
-- one launch architecture serves Launcher and direct entrypoints;
+- one session/event contract spans a repair-safe Launcher bootstrap, Runtime,
+  and direct entrypoints without making repair depend on `+labkit`;
 - ordinary sessions have a bounded, always-on, privacy-safe flight recorder;
 - severity, audience, category, event, operation scope, and sink thresholds
   have one canonical contract;
@@ -542,8 +728,8 @@ The migration is complete only when:
 - synthetic inputs are explicit, state-neutral, and independent of logging;
 - incident export works for current, startup-failed, and abandoned sessions;
 - old status/diagnostic/debug surfaces and every temporary bridge are deleted;
-- retention, degradation, privacy, capacity, performance, automated, and manual
-  acceptance gates pass;
+- per-session, per-App, and global retention plus degradation, privacy,
+  performance, automated, and manual acceptance gates pass;
 - current manuals, versions, generated docs, and one final cross-component
   structured history record describe the supported net behavior.
 

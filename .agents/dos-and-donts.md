@@ -31,6 +31,12 @@ second architecture guide.
   synthetic-input generation are independent policies. Do not bundle them into
   a Debug launch; an always-on bounded flight recorder is what makes an
   ordinary post-incident session diagnosable.
+- A self-contained repair entrypoint may share a session and event contract
+  with the repaired Runtime, but not its implementation dependency. Hand off
+  identity and lineage only after the full framework is available.
+- Make retained semantic events privacy-safe before they enter memory or disk.
+  Free-form messages can leak more readily than attributes; export-time
+  redaction is defense in depth, not the primary boundary.
 
 ### Interaction and previews
 
