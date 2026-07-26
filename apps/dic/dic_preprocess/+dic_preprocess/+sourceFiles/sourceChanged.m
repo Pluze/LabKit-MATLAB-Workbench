@@ -20,6 +20,6 @@ applicationState.project.parameters.previewMode = ...
 applicationState.project.results.currentImagesManifestPath = "";
 applicationState.project.results.maskManifestPath = "";
 if ~isempty(selection.Indices)
-    callbackContext.appendStatus("Updated DIC source image.");
+    callbackContext.log("info", "dic_preprocess.sourcefiles.sourcechanged.status", "Updated DIC source image.");
 end
 end

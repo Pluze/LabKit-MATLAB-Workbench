@@ -17,5 +17,5 @@ applicationState = dic_preprocess.analysisRun.stopEditors(applicationState);
 applicationState.project.parameters.previewMode = "Current pair";
 applicationState.session.workflow.details = {'Restored original image pair.'};
 applicationState = dic_preprocess.analysisRun.clearResults(applicationState);
-callbackContext.appendStatus("Reset the working pair to originals.");
+callbackContext.log("info", "dic_preprocess.analysisrun.resettooriginals.status", "Reset the working pair to originals.");
 end

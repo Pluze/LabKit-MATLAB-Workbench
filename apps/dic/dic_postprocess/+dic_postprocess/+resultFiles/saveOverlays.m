@@ -10,7 +10,7 @@ if isempty(cache.overlayExx) || isempty(cache.overlayEyy)
 end
 choice = callbackContext.chooseOutputFolder("");
 if choice.Cancelled
-    callbackContext.appendStatus("Save overlay PNGs cancelled.");
+    callbackContext.log("info", "dic_postprocess.resultfiles.saveoverlays.status", "Save overlay PNGs cancelled.");
     return;
 end
 folder = string(choice.Value);
@@ -38,9 +38,8 @@ package = labkit.app.result.Package( ...
 written = callbackContext.writeResultPackage(folder, package);
 applicationState.project.results.overlayManifestPath = ...
     string(written.Value);
-callbackContext.appendStatus( ...
-    "Saved clean overlay PNGs: " + ...
-    fullfile(folder, exxName) + " and " + fullfile(folder, eyyName));
+callbackContext.log("info", "dic_postprocess.resultfiles.saveoverlays.status",  ...
+    "Saved clean overlay PNGs.");
 end
 
 function filepath = pathForRole(sources, role, context)

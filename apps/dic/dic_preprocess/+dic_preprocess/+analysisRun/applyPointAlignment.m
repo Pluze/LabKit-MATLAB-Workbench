@@ -16,6 +16,6 @@ catch ME
     return;
 end
 state = dic_preprocess.analysisRun.recordAlignment(state, transform, "manual alignment");
-context.appendStatus( ...
+context.log("info", "dic_preprocess.analysisrun.applypointalignment.status",  ...
     "Aligned image using " + string(size(reference,1)) + " point pair(s).");
 end

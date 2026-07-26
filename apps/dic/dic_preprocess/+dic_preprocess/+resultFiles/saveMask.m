@@ -16,7 +16,7 @@ end
 choice = callbackContext.chooseOutputFile( ...
     ["*.png", "PNG mask"], "roi_mask.png");
 if choice.Cancelled
-    callbackContext.appendStatus("Save ROI mask cancelled.");
+    callbackContext.log("info", "dic_preprocess.resultfiles.savemask.status", "Save ROI mask cancelled.");
     return
 end
 filepath = string(choice.Value);
@@ -32,5 +32,6 @@ package = labkit.app.result.Package(Outputs={output}, ...
     ManifestName=string(name) + ".labkit.json");
 written = callbackContext.writeResultPackage(folder, package);
 applicationState.project.results.maskManifestPath = string(written.Value);
-callbackContext.appendStatus("Saved ROI mask: " + filepath);
+callbackContext.log("info", "dic_preprocess.resultfiles.savemask.status", ...
+    "Saved the ROI mask.");
 end

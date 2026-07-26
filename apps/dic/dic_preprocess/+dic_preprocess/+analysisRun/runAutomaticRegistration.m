@@ -15,6 +15,6 @@ catch ME
     return;
 end
 state = dic_preprocess.analysisRun.recordAlignment(state, transform, "automatic alignment");
-context.appendStatus( ...
+context.log("info", "dic_preprocess.analysisrun.runautomaticregistration.status",  ...
     "Automatically aligned current pair using " + string(method) + ".");
 end

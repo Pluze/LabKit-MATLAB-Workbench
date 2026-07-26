@@ -12,5 +12,5 @@ applicationState.project.parameters.previewMode = "ROI mask";
 applicationState.session.workflow.details = ...
     dic_preprocess.maskEditing.maskDraftDetails( ...
         applicationState.project.annotations.maskPoints);
-callbackContext.appendStatus("Started ROI mask editing.");
+callbackContext.log("info", "dic_preprocess.maskediting.startedit.status", "Started ROI mask editing.");
 end

@@ -21,12 +21,14 @@ try
     applicationState.session.cache.strain = ...
         dic_postprocess.sourceFiles.loadNcorrStrain(matPath);
     applicationState = prepare(applicationState);
-    callbackContext.appendStatus( ...
+    callbackContext.log("info", "dic_postprocess.analysisrun.generate.status",  ...
         "Generated EXX/EYY overlays and ROI summary.");
 catch exception
     callbackContext.reportError("Generate failed", exception);
     callbackContext.alert(exception.message, "DIC postprocess error");
-    callbackContext.appendStatus("Generate failed: " + exception.message);
+    callbackContext.log("info", ...
+        "dic_postprocess.analysisrun.generate.status", ...
+        "DIC postprocess generation failed.");
 end
 end
 
