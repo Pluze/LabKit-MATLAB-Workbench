@@ -21,7 +21,8 @@ item.rangeAdjusted = true;
 applicationState = flir_thermal.thermalSources.storeCurrentAnnotation( ...
     applicationState, item);
 applicationState = invalidateResults(applicationState);
-callbackContext.appendStatus("Set the selected FLIR auto range.");
+callbackContext.log("info", "flir_thermal.displaymapping.autorange.status", ...
+    "Set the selected FLIR auto range.");
 end
 
 function range = normalizeRange(range)

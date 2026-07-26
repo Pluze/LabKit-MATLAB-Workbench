@@ -6,7 +6,9 @@ palette = lower(string(palette));
 if any(palette == ["turbo", "iron", "hot", "parula", "gray"])
     applicationState.project.parameters.palette = palette;
     applicationState = invalidateResults(applicationState);
-    callbackContext.appendStatus("Thermal palette: " + palette + ".");
+    callbackContext.log("info", ...
+        "flir_thermal.displaymapping.changepalette.status", ...
+        "Thermal palette: " + palette + ".");
 end
 end
 

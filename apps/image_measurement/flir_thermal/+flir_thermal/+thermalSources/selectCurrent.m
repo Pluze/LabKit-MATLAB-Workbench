@@ -22,7 +22,9 @@ if isempty(sources)
         labkit.app.event.ListSelection();
     applicationState.session.cache.currentItem = [];
     applicationState = invalidateResults(applicationState);
-    callbackContext.appendStatus("Cleared loaded FLIR files.");
+    callbackContext.log("info", ...
+        "flir_thermal.thermalsources.selectcurrent.cleared", ...
+        "Cleared loaded FLIR files.");
     return
 end
 
@@ -52,7 +54,8 @@ end
 if sourceSetChanged
     applicationState = invalidateResults(applicationState);
 end
-callbackContext.appendStatus(sprintf( ...
+callbackContext.log("info", ...
+    "flir_thermal.thermalsources.selectcurrent.selected", sprintf( ...
     "Selected FLIR image %d of %d.", index, numel(sources)));
 end
 

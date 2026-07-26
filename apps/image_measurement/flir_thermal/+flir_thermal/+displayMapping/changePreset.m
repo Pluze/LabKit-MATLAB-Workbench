@@ -25,7 +25,9 @@ end
 applicationState = flir_thermal.thermalSources.storeCurrentAnnotation( ...
     applicationState, item);
 applicationState = invalidateResults(applicationState);
-callbackContext.appendStatus("Thermal range bounds: " + preset + ".");
+callbackContext.log("info", ...
+    "flir_thermal.displaymapping.changepreset.status", ...
+    "Thermal range bounds: " + preset + ".");
 end
 
 function range = clampRange(range, bounds)

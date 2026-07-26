@@ -20,6 +20,7 @@ end
 payload.resultManifestPath = manifestPath;
 applicationState.project.results.lastExport = payload;
 applicationState.project.results.resultManifestPath = manifestPath;
-callbackContext.appendStatus( ...
-    "Exported current FLIR image: " + payload.manifestPath);
+callbackContext.log("info", ...
+    "flir_thermal.resultfiles.exportcurrent.completed", ...
+    "Exported the current FLIR image.");
 end

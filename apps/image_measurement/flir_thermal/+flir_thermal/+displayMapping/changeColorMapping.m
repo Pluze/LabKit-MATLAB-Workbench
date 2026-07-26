@@ -6,7 +6,8 @@ mapping = string(mapping);
 if any(mapping == ["Linear", "Log", "Gamma"])
     applicationState.project.parameters.colorMapping = mapping;
     applicationState = invalidateResults(applicationState);
-    callbackContext.appendStatus( ...
+    callbackContext.log("info", ...
+        "flir_thermal.displaymapping.changecolormapping.status", ...
         "Thermal color mapping: " + mapping + ".");
 end
 end

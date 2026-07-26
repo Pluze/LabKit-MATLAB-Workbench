@@ -8,5 +8,7 @@ if ~isfinite(reading.temperatureC),return,end
 state=flir_thermal.thermalSources.storeCurrentAnnotation(state,item);
 state.project.results.lastExport=[];
 state.project.results.resultManifestPath="";
-context.appendStatus(sprintf('Set temperature ROI: %.2f C.',reading.temperatureC));
+context.log("info", ...
+    "flir_thermal.temperaturereadings.changeregion.status", ...
+    "Updated the temperature ROI.");
 end
