@@ -43,11 +43,12 @@ under `docs/`.
 - Validate an edited skill and exercise the changed script path. Record
   durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
   agent procedure in skills rather than duplicating it in human manuals.
-- After each meaningful checkpoint, review `.agents/dos-and-donts.md` and add
-  only high-value working experience whose rediscovery would be costly.
-  Promote mature policy, procedure, behavior, or product meaning to the nearest
-  `AGENTS.md`, skill, test, source contract, or manual; keep the ledger active
-  and compact by merging or removing duplicate, stale, and low-value detail.
+- Treat `.agents/dos-and-donts.md` as an experience reservoir. After each
+  meaningful checkpoint, add only high-value experience whose rediscovery
+  would be costly. Let lessons accumulate and survive repeated use before
+  promoting them to the nearest `AGENTS.md`, skill, test, source contract, or
+  manual; then actively compress or remove the reservoir copy plus stale,
+  duplicated, disproven, and low-value detail.
 
 ## Architecture and implementation
 

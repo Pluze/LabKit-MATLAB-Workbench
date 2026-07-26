@@ -1,26 +1,47 @@
 # Working Dos and Don'ts
 
-This file is the repository's compact, active working-memory ledger. After each
-meaningful checkpoint, review the work for a high-value lesson that would save
-future investigation, retry, or design cost. It is not a chronological work log
-or a second architecture guide.
+This file is the repository's compact experience reservoir. After each
+meaningful checkpoint, record only a high-value lesson that would save future
+investigation, retry, or design cost. Let lessons accumulate and survive
+repeated use before promoting them; this is not a chronological work log or a
+second architecture guide.
 
 ## Record, promote, and compress
 
 - Add only a lesson whose rediscovery would cost meaningful investigation or
   retry time. Record the durable cause and better practice, never a transcript,
   successful command, transient failure, version, or one-off filename.
-- Merge with an existing lesson before adding another. Promote mature guidance
-  to its nearest owner: policy to `AGENTS.md`, repeatable procedure to a skill,
-  enforceable behavior to a test, and user or API meaning to source help or a
-  manual.
-- Promotion does not end working-memory review. Retain a concise lesson here
-  while it still adds cross-cutting value; remove duplicated, stale, or
-  low-value detail and periodically compress the remainder into fewer
-  principle-first statements.
+- Merge with an existing lesson before adding another. Do not promote a new
+  observation immediately merely because a destination exists. After it has
+  accumulated supporting cases and remained useful over time, promote policy
+  to `AGENTS.md`, procedure to a skill, enforceable behavior to a test, or
+  product/API meaning to source help or a manual.
+- When promotion is proven, merge or remove the reservoir copy. Regularly
+  compress related lessons into fewer principle-first statements and delete
+  stale, duplicated, disproven, or low-value detail.
 
 ## Incubating lessons
 
-None at this checkpoint. The previous durable lessons were promoted to their
-owning policies, skills, and tests; future checkpoints continue adding
-high-value working experience here.
+### Debug and native presentation
+
+- Debug generates deliberate synthetic inputs without preloading them. Validate
+  both the sample contract and a native launch; finite schema placeholders can
+  still violate small-image control limits or native presentation.
+
+### Interaction and previews
+
+- Overlapping gestures need one active owner. A movable ROI must accept its
+  visible interior or center as a normal drag target; state geometry alone
+  cannot prove pointer ownership.
+- Shared image code keeps native pixels by default. Any finite preview budget
+  is an explicit App decision, and pixel-unit parameters follow the preview
+  scale.
+
+### Validation and compatibility
+
+- A changed `projectSpec` needs nonempty owner-level persistence evidence.
+  Treat a client timeout during a durable MATLAB run as unknown until its
+  progress artifact or terminal log confirms the executor result.
+- Exact one-way old-data readers are bounded persistence support; simultaneous
+  old/new fields on live values are competing models. Defaults cover omitted
+  options, while explicit unknown scientific modes fail visibly.
