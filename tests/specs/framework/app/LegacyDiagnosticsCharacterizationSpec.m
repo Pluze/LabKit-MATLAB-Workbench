@@ -2,7 +2,7 @@ classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
     %LEGACYDIAGNOSTICSCHARACTERIZATIONSPEC Freeze pre-migration diagnostic behavior.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function legacyCallbackOperationsRemainAvailableUntilConsumerMigration(testCase)
+        function remainingDiagnosticBridgesCoexistWithSemanticLogging(testCase)
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.button("run", "Run", @runProbe, ...
                     Tooltip="Run the probe.")});
@@ -18,14 +18,14 @@ classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
 
             runtime.invokeAction("run");
 
-            testCase.verifyEqual(runtime.StatusLog(end), "Legacy status.");
+            testCase.verifyEqual(runtime.StatusLog(end), "Semantic status.");
             events = runtime.diagnosticEvents();
-            status = events(string({events.eventName}) == "status.appended");
+            status = events(string({events.eventName}) == "probe.status");
             checkpoint = events(string({events.eventName}) == "probe.checkpoint");
             count = events(string({events.eventName}) == "probe.count");
             reported = events(string({events.eventName}) == "probe.operation.failed");
             testCase.verifyNumElements(status, 1);
-            testCase.verifyEqual(status.message, "Legacy status.");
+            testCase.verifyEqual(status.message, "Semantic status.");
             testCase.verifyNumElements(checkpoint, 1);
             testCase.verifyEqual(checkpoint.attributes.enum, "checkpoint");
             testCase.verifyEqual(checkpoint.operationResult, "");
@@ -68,7 +68,7 @@ classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
 end
 
 function state = runProbe(state, callbackContext)
-callbackContext.appendStatus("Legacy status.");
+callbackContext.log("info", "probe.status", "Semantic status.");
 callbackContext.diagnosticCheckpoint("probe.checkpoint");
 callbackContext.diagnosticCount("probe.count", 2);
 try

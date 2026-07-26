@@ -3,8 +3,6 @@ classdef (Sealed) CallbackContext < handle
     %
     % Usage:
     %   context.log(severity, eventName, message, Name=Value)
-    %   labkit.app.CallbackContext.appendStatus(context, message)
-    %   context.appendStatus(message)
     %   context.reportError(operation, exception)
     %   context.diagnosticCheckpoint(id)
     %   context.diagnosticCount(id, count)
@@ -86,7 +84,8 @@ classdef (Sealed) CallbackContext < handle
     %           event
     %           callbackContext (1,1) labkit.app.CallbackContext
     %       end
-    %       callbackContext.appendStatus("Analysis started.");
+    %       callbackContext.log("info", "analysis.started", ...
+    %           "Analysis started.");
     %   end
     %
     % See also labkit.app.Definition, labkit.app.dialog.Choice,
@@ -131,11 +130,6 @@ classdef (Sealed) CallbackContext < handle
                 {values.severity, values.eventName, values.message, ...
                 values.category, values.audience, values.attributes, ...
                 values.exception}, 0);
-        end
-
-        function appendStatus(obj, message)
-            message = scalarText(message, "message");
-            obj.invoke("appendStatus", "workflow", {message}, 0);
         end
 
         function reportError(obj, operation, exception)
