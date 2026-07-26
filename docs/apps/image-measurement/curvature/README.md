@@ -35,8 +35,6 @@ fit center, and pixels per selected unit. **Details** explains the next valid
 step before a result exists and reports the current measurement afterward.
 **Tools > Diagnostics > Open Session Log...** records file, edit, fit,
 calibration, export, and runtime actions without consuming a workflow tab.
-**Tools > Developer Tools > Generate Synthetic Inputs...** writes an anonymous
-sample pack without loading it or changing the open project.
 
 The chosen image is saved as a portable project source. Older projects are
 upgraded on load without changing the curve, calibration, or result meaning.

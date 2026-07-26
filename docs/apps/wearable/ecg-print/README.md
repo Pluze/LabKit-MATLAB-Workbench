@@ -72,9 +72,6 @@ Log...** records the current workflow and earlier runtime context. The **ECG
 Preview** workspace keeps four vertically stacked time-series axes available
 on every tab.
 
-**Tools > Developer Tools > Generate Synthetic Inputs...** writes an anonymous
-recording and project pack without loading it or changing the open project.
-
 ## Analysis Parameters
 
 | Parameter | Default | Meaning |

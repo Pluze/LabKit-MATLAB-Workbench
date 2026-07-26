@@ -54,6 +54,10 @@ second architecture guide.
 
 ### Validation and compatibility
 
+- A component version change proves that its contract moved; it does not prove
+  that every component manual needs new prose. For cross-App behavior, choose
+  one canonical owner first and keep App pages limited to workflow-critical or
+  App-specific differences.
 - Moving behavior to a new owner does not authorize retiring its visible or
   interactive contract. Recreate the old appearance, selection paths, status,
   and failure semantics at the new boundary before deleting the old owner.
