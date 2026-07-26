@@ -49,6 +49,13 @@ second architecture guide.
 
 ### Validation and compatibility
 
+- Moving behavior to a new owner does not authorize retiring its visible or
+  interactive contract. Recreate the old appearance, selection paths, status,
+  and failure semantics at the new boundary before deleting the old owner.
+- A destructive updater has one shared write gateway for GUI and programmatic
+  callers. Reject invalid roots and both Git-marker forms before network I/O;
+  use a sibling backup, preserve explicit local data, validate the replacement,
+  and prove success and rollback with path entries that actually existed.
 - A changed `projectSpec` needs nonempty owner-level persistence evidence.
   Treat a client timeout during a durable MATLAB run as unknown until its
   progress artifact or terminal log confirms the executor result.
