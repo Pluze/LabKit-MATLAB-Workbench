@@ -33,5 +33,6 @@ state.session.cache.source = source;
 state.session.selection.sourceCells = zeros(0, 2);
 state.session.selection.selectionMessage = ...
     "Select numeric cells in the new worksheet.";
-context.appendStatus("Worksheet: " + source.sheet);
+context.log("info", "ttest_wizard.sourcetable.changeworksheet.status", ...
+    "Selected a source worksheet.");
 end

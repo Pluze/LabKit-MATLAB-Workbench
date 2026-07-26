@@ -30,7 +30,8 @@ catch ME
     return;
 end
 state.project.results.lastResultExport = filepath;
-context.appendStatus("Exported t-test results: " + filepath);
+context.log("info", "ttest_wizard.resultfiles.exportcomparisons.status", ...
+    "Exported t-test comparison results.");
 end
 
 function filepath = ensureCsvExtension(filepath)

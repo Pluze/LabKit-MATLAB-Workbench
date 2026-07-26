@@ -29,7 +29,8 @@ catch ME
     return;
 end
 state.project.results.lastDataExport = filepath;
-context.appendStatus("Exported group data: " + filepath);
+context.log("info", "ttest_wizard.resultfiles.exportgroupdata.status", ...
+    "Exported group data.");
 end
 
 function filepath = ensureCsvExtension(filepath)

@@ -15,5 +15,5 @@ state.project.parameters.captureTarget = "(new group)";
 state.session.selection.analysisCells = zeros(0, 2);
 state.session.selection.batchGroupTarget = "(select group)";
 state.project.results.lastDataExport = "";
-context.appendStatus("Cleared all analysis data.");
+context.log("info", "ttest_wizard.groupdata.clearall.status", "Cleared all analysis data.");
 end
