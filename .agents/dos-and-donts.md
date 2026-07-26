@@ -52,6 +52,11 @@ second architecture guide.
 - A changed `projectSpec` needs nonempty owner-level persistence evidence.
   Treat a client timeout during a durable MATLAB run as unknown until its
   progress artifact or terminal log confirms the executor result.
+- Before starting a durable background MATLAB test run, derive the repository
+  root from the runner file, convert suite paths to absolute character cells,
+  and assert both the container type and file existence. Reusing this
+  preflight prevents repeated no-test runs caused by changed working
+  directories or string-cell inputs.
 - Exact one-way old-data readers are bounded persistence support; simultaneous
   old/new fields on live values are competing models. Defaults cover omitted
   options, while explicit unknown scientific modes fail visibly.

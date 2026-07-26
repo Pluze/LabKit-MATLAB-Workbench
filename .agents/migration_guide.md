@@ -206,7 +206,8 @@ operationId
 parentOperationId
 rootActionId
 
-outcome
+operationResult
+stateDisposition
 durationSeconds
 exception
 ```
@@ -220,14 +221,23 @@ repeating them in every event. Source function/line belongs only in a sanitized
 exception stack or an explicit developer checkpoint; it is not a routine
 record field or stable public contract.
 
+`operationResult` and `stateDisposition` are independent. An operation that
+throws after the Runtime restores its transaction records
+`operationResult=failed` and `stateDisposition=rolledBack`; it never uses
+`rolledBack` as a competing result value. The schema uses the two explicit
+top-level fields rather than a scalar-or-struct compatibility shape.
+
 `message` is privacy-safe readable prose and may evolve. It must not contain a
 raw path, original filename, user/subject/device/sample identifier, or
 scientific value copied from an input. `eventName` and attribute keys are the
 machine-stable contract used by tests and diagnostic tooling. Attributes are
-privacy-safe scalars, short strings, small categorical arrays, or bounded plain
-structs. The recorder rejects or summarizes handles, classes, large arrays,
-graphics objects, tables containing sample data, arbitrary workspace values,
-and unsafe free-form strings.
+deny-by-default: finite scalar numeric/logical values, controlled enum/unit/
+reason/Runtime-alias text, and an explicitly bounded dimensions shape are the
+only ordinary retained values. Attribute validation enforces nesting, field,
+and serialized-byte limits. It rejects subject, device-serial, sample, signal,
+and other identifier/scientific-value fields; numeric arrays; arbitrary free
+text; handles; classes; graphics objects; tables; and workspace values before
+the event enters memory, a projection, or disk.
 
 Operation ancestry, not a full call stack on every line, reconstructs the
 normal action chain. A root user action creates `rootActionId`; nested Runtime
@@ -569,16 +579,36 @@ adapters, and sink-failure isolation pass focused headless evidence.
 - Implement the persistent projection, session manifest, segmented buffered
   writer, session/App/global retention, rotation, coalescing, explicit drop
   accounting, and abandoned-operation marker.
+- Generate all session identities through one private owner that does not read
+  or advance MATLAB's global random-number state. Prove unchanged `rng` state
+  for direct stream, default journal, and default Runtime construction paths.
+- Replace the scalar terminal outcome model everywhere with orthogonal
+  `operationResult` and `stateDisposition` fields. A failed callback whose
+  state is restored records `failed` plus `rolledBack` and one `.failed`
+  terminal event; no live reader accepts both scalar and structured aliases.
 - Implement safe bundle snapshot/export from the already-sanitized journal.
+- Enforce the deny-by-default attribute contract, including semantic sensitive
+  key rejection plus nesting and serialized-byte bounds.
+- Surface journal unavailability and dropped-record degradation in the
+  surviving in-memory stream through a non-recursive path that never projects
+  the health event back into the failed sink.
 - Prove buffered context is flushed with warnings/errors and journal failure
   cannot change the scientific operation outcome.
 
 Exit gate: an ordinary headless session retains bounded, sanitized,
 correlation-complete evidence after failure or interruption, with measured
-throughput and no per-record open/close path.
+throughput and no per-record open/close path. Session creation does not change
+MATLAB RNG state; operation result and state disposition are reconstructable;
+sensitive attributes never reach a sink; degradation is visible without
+recursion; and every test Runtime injects an explicit temporary journal.
 
 #### Phase 4: repair-safe Launcher handoff
 
+- Add an active-session lease containing host, process ID, session nonce,
+  start time, and heartbeat. Archive inspection may mark a session abandoned
+  only when same-host process death or an expired lease proves it stale;
+  fresh remote and malformed/uncertain leases remain active and visibly
+  unresolved. Snapshot remains read-only.
 - Implement the minimal self-contained Launcher bootstrap journal only inside
   the Launcher repair boundary.
 - Store sessions independently of `appId`, then record `resolvedAppId` in the
@@ -590,7 +620,8 @@ throughput and no per-record open/close path.
 
 Exit gate: Launcher can still repair an installation with missing/damaged
 `+labkit`; early failure, normal handoff, direct launch, abandoned launch, and
-last-launch export have focused evidence.
+last-launch export have focused evidence. A second live MATLAB process cannot
+be marked abandoned or pruned by Launcher inspection.
 
 #### Phase 5: complete Runtime automatic instrumentation
 
