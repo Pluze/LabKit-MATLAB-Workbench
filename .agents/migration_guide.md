@@ -18,7 +18,7 @@ compatibility-retirement-debt: debug launch and split status/diagnostic APIs
 
 ### Implementation hold and agent coordination
 
-Status: **architecture rework required before broad implementation continues**.
+Status: **repair-only Launcher architecture approved; continue only through the ordered checkpoints below**.
 
 Any agent working on this migration must stop before adding more App migrations,
 committing the current all-App batch, or treating a draft `SessionJournal`,
@@ -29,15 +29,17 @@ agent's uncommitted files.
 
 Implementation may resume only as the ordered checkpoints below. In particular:
 
-- preserve `labkit_launcher.m` as a self-contained repair bootstrap that can run
-  when `+labkit`, Apps, docs, or scripts are missing or damaged;
-- do not make Launcher resolution or repair depend on a Runtime logger class;
+- preserve `labkit_launcher.m` as a self-contained **repair-only** entry that
+  can run when `+labkit`, Apps, docs, or scripts are missing or damaged;
+- do not add a bootstrap journal, bootstrap schema, session importer, or any
+  second logging implementation to the repair entry; repair does not depend on
+  a Runtime logger class;
 - establish a privacy-safe semantic event before any persistent, exported, or
   default Log-viewer projection;
 - prove the minimal in-memory stream and operation state machine before
   migrating every App;
 - do not commit hundreds of framework, App, fixture, and compatibility changes
-  as one checkpoint; isolate the contract, persistence, Launcher handoff,
+  as one checkpoint; isolate the contract, persistence, repair/delegation,
   viewer, synthetic-input rename, and App-family migrations;
 - run the focused exit gate for a checkpoint before starting the next one.
 
@@ -45,6 +47,42 @@ An agent that discovers this hold while work is in progress must report which
 checkpoint its current files represent, which later-phase files are already
 present, and what remains unverified. It must not call a broad staged diff
 “complete” merely because construction or one headless log test passes.
+
+### Launcher ownership and repair boundary
+
+The launcher has three separate layers:
+
+1. `labkit_launcher.m` is the single-file rescue entry. It uses only native
+   MATLAB for a boot-critical minimum check, user-visible repair errors, and
+   the one GitHub ZIP repair transaction. It does not discover Apps, create
+   Runtime diagnostics, or own a session journal.
+2. A focused hidden installed capability under
+   `+labkit/+app/+internal/+launcher/` (optionally behind one hidden `Launcher`
+   facade) owns Launcher UI composition, catalog routing, and normal startup.
+   It starts only after the rescue entry can call the installed entry. Once the
+   SDK is loaded, Launcher actions use the canonical Runtime operation/session
+   contract; no repair-to-Runtime handoff schema exists.
+3. `tools/<owning-capability>/` owns only MATLAB tools with independent value:
+   a callable entry, explicit inputs/results or observable side effect, stable
+   error behavior, and independent tests/docs. Launcher-only callbacks, table
+   formatting, status wording, menus, and routing remain with the installed
+   Launcher. Existing docs, codecheck, profiling, and deployment tools are
+   called directly with only necessary UI/path adaptation.
+
+Version browsing or rollback is a `tools/deployment` candidate only when it
+has an independent callable contract and invokes the root's unique repair
+transaction; it must not copy ZIP replacement logic.
+
+Repair detects incompleteness lazily. Rescue startup checks only that the
+installed Launcher entry exists and is callable. If entry loading, dependency
+resolution, or App startup fails structurally (for example a missing file or
+undefined symbol), preserve the concrete error and offer GitHub repair. Do not
+label ordinary scientific input, validation, or user-operation failures as an
+incomplete install. ZIP candidate validation is deliberately narrower: require
+a LabKit root, root launcher, installed entry, and expected `apps`/`+labkit`
+top-level content before replacement. Packages may keep using
+`packaged_app_manifest.json` for package semantics, but rescue does not require
+it and this migration adds no install manifest, hash, or file inventory.
 
 ### User problem and current evidence
 
@@ -108,18 +146,18 @@ There is no product-level “debug session” mode.
 
 ### Target product behavior
 
-1. Every launch creates one canonical session identity and a compatible event
-   contract. A self-contained Launcher bootstrap journal records resolution,
-   requirements, repair, and startup failure, then hands the session identity
-   and lineage to the full Runtime pipeline after the App SDK is available.
+1. Every ordinary installed Launcher or direct App launch creates its canonical
+   Runtime session only after the App SDK is available. The repair-only entry
+   creates no log/session schema; it delegates when possible and otherwise
+   offers repair for structural installation failure.
 2. A bounded local flight recorder is always on. It captures sufficient
    structured `DEBUG`-and-higher evidence to diagnose a later failure without
    requiring the user to predict that failure. `TRACE` is opt-in because of its
    potential volume.
 3. The App Log viewer shows concise, actionable user information. Its filter
    does not decide what the recorder captured and cannot erase earlier detail.
-4. A user can export the retained current-session history after a problem.
-   Launcher can also export the most recent abandoned or failed launch.
+4. A user can export retained current-session history after a problem. Runtime
+   archive recovery preserves safe evidence for abandoned sessions.
 5. “Complete history” means the retained semantic action chain, state
    transitions, outcomes, durations, warnings, and exceptions. It does not mean
    raw scientific arrays, workspace snapshots, images, or every call frame.
@@ -153,10 +191,9 @@ possible and exposes the correlation ID and export action. `CRITICAL` means the
 session is not safe for further product actions; diagnostic export remains
 available.
 
-Launcher removes **Open Debug**. It uses the same session contract as direct
-App entrypoints without importing the full Runtime pipeline. It provides
-**Export Last Launch Diagnostics** when startup failed before the Runtime Tools
-menu became available.
+Launcher removes **Open Debug**. Repair failures remain user-visible repair
+errors; diagnostics and export begin only after the installed SDK/Runtime is
+available.
 
 ### Severity and audience contract
 
@@ -349,9 +386,9 @@ The user-owned journal location is:
 It is not stored in the repository, installation tree, current working
 directory, or beside user data. A source checkout may offer a convenience link
 to that location, but `artifacts/` is not the product persistence contract.
-The manifest records `requestedEntrypoint`, `resolvedAppId`, resolution outcome,
-and whether Runtime accepted the bootstrap handoff. This path works even when
-no App can be resolved. Tests inject a private temporary store.
+The Runtime manifest records only canonical Runtime session facts. Repair does
+not create a session folder when no App can be resolved. Tests inject a private
+temporary Runtime store.
 
 Initial implementation bounds, to be confirmed by profiling before the
 contract is frozen, are:
@@ -448,36 +485,21 @@ or analytics through this migration.
 
 ### Unified launch and synthetic-input workflow
 
-Launcher and direct entrypoints share a session/event contract, not one
-mandatory implementation object.
+The rescue entry and installed Launcher have different responsibilities. The
+rescue entry only checks whether the installed Launcher can be called, performs
+the unique ZIP repair transaction when it cannot, and preserves structural load
+errors in its repair prompt. It neither discovers Apps nor writes diagnostics.
 
-The Launcher bootstrap journal:
+The installed Launcher is an entrypoint composition owner. It lists/routs Apps
+and invokes independent maintenance tools, but does not duplicate their
+implementations. After SDK loading, Launcher actions and direct App entrypoints
+use the same canonical Runtime session/operation contract. Runtime may create
+or associate a normal session at the appropriate action boundary; this ledger
+does not freeze a repair handoff or an early-startup lineage shape.
 
-- remains implemented by self-contained local Launcher code using native MATLAB
-  operations, plain structs, and minimal JSONL/manifest writes;
-- does not import `+labkit`, an App definition, a Runtime sink, viewer, rate
-  limiter, or App event validator;
-- creates `sessionId` before resolution and records only the compatible
-  `launcher.lifecycle` subset for resolution, requirements, repair, handoff,
-  launch success, and launch failure;
-- remains capable of showing and exporting last-launch evidence when the App
-  SDK is absent or damaged.
-
-After successful resolution, Runtime:
-
-1. validates the bootstrap manifest and compatible event subset;
-2. adopts the same `sessionId`;
-3. records a handoff event linking Launcher operation lineage to the Runtime
-   root operation;
-4. adds resolved App/session facts to the manifest;
-5. launches a clean App with no project, source, sample, or automatic action;
-6. closes or marks the session abandoned on every startup outcome.
-
-Direct entrypoints create the same session contract without a Launcher
-bootstrap and write to the same session-root layout. Tests inject deterministic
-clocks, IDs, and private stores; production APIs do not expose those controls.
-One compatibility test owns the minimal bootstrap schema so the duplicated
-self-contained writer cannot drift silently from the Runtime importer.
+The Runtime lease remains a persistence safety contract: active-session
+recovery may abandon only a proven stale same-host process, and must retain
+remote, live, malformed, or otherwise uncertain sessions without pruning them.
 
 Rename the misleading `BuildDebugSample` contract to
 `BuildSyntheticSample`, and App-owned `+debug` fixture packages to
@@ -488,9 +510,9 @@ project. Sample generation is available in ordinary launches and has no effect
 on journal level.
 
 Launcher removes its verbose-plus-sample `Open Debug` branch and
-repository-specific diagnostics folder. It shows the most recent failed or
-abandoned launch with self-contained actions to copy the problem summary,
-export its safe bootstrap/runtime bundle, and open the session folder.
+repository-specific diagnostics folder. The standard Runtime Tools menu owns
+diagnostics after normal startup; rescue remains a repair affordance, not a
+second diagnostic product.
 
 ### Compatibility retirement
 
@@ -535,9 +557,8 @@ change before merge.
 - Add direct characterization tests for current status/error/recorder behavior,
   clean Launcher/direct startup, synthetic sample generation, sanitization, and
   abandoned sessions.
-- Specify only the minimal event schema, severity/audience meanings, privacy
-  classification, operation state machine, bootstrap-compatible subset, and
-  manifest ownership.
+- Specify only the minimal Runtime event schema, severity/audience meanings,
+  privacy classification, operation state machine, and manifest ownership.
 - Specify retention dimensions and pruning order without freezing byte/count
   hypotheses before measurement.
 - Measure normal App startup, callback dispatch, representative interaction,
@@ -602,26 +623,37 @@ MATLAB RNG state; operation result and state disposition are reconstructable;
 sensitive attributes never reach a sink; degradation is visible without
 recursion; and every test Runtime injects an explicit temporary journal.
 
-#### Phase 4: repair-safe Launcher handoff
+#### Phase 4: repair-only Launcher delegation
 
-- Add an active-session lease containing host, process ID, session nonce,
-  start time, and heartbeat. Archive inspection may mark a session abandoned
-  only when same-host process death or an expired lease proves it stale;
-  fresh remote and malformed/uncertain leases remain active and visibly
-  unresolved. Snapshot remains read-only.
-- Implement the minimal self-contained Launcher bootstrap journal only inside
-  the Launcher repair boundary.
-- Store sessions independently of `appId`, then record `resolvedAppId` in the
-  manifest.
-- Validate/import the compatible bootstrap subset into Runtime and continue the
-  same session/lineage.
-- Align direct and Launcher entrypoint outcomes without importing full Runtime
-  logging into the repair bootstrap.
+- Keep `labkit_launcher.m` self-contained and narrow: boot-critical installed
+  entry existence/callability, clear repair errors, and the one GitHub ZIP
+  repair transaction. Do not add a journal, schema, session importer, or App
+  catalog to it.
+- Move installed UI composition and catalog routing to a focused hidden
+  `labkit.app.internal.launcher` capability. Menus call independently owned
+  tools through their stable entries; Launcher-only glue remains internal.
+- Detect incomplete installation lazily: structural installed-entry, dependency,
+  or App-startup load failures retain their concrete cause and offer repair;
+  scientific input and ordinary user-operation failures do not.
+- Validate a ZIP candidate only as a LabKit root with root launcher, installed
+  entry, and expected `apps`/`+labkit` content before replacement. Do not add a
+  new install manifest, hash, or file inventory.
+- Root repair defaults to a trusted latest stable release, with a documented
+  stable-tag fallback. It does not retain main-branch selection or a product
+  version browser; an independently useful deployment tool may offer deliberate
+  version selection while invoking this same root transaction.
+- Preserve the Runtime active-session lease contract from Phase 3. Archive
+  recovery may abandon only proven stale same-host sessions; live, remote,
+  malformed, and uncertain sessions remain visible and unpruned. This is not a
+  Launcher lease or inspection algorithm.
+- After installed SDK loading, Launcher actions use the normal canonical Runtime
+  stream/operation contract. Do not freeze a repair-to-Runtime handoff shape.
 
-Exit gate: Launcher can still repair an installation with missing/damaged
-`+labkit`; early failure, normal handoff, direct launch, abandoned launch, and
-last-launch export have focused evidence. A second live MATLAB process cannot
-be marked abandoned or pruned by Launcher inspection.
+Exit gate: a single surviving root launcher can repair missing/damaged
+`+labkit`; a healthy install delegates to the installed entry; an invalid ZIP
+candidate is rejected; no-network repair failure is actionable; and no root
+repair path imports `labkit.*` or creates a journal. Runtime archive tests prove
+that a second live MATLAB process cannot be abandoned or pruned.
 
 #### Phase 5: complete Runtime automatic instrumentation
 
@@ -708,10 +740,13 @@ Hidden-GUI tests must prove:
 - **Tools > Developer Tools** synthetic generation leaves App state and current
   inputs unchanged.
 
-Launcher/system tests must prove self-contained repair with missing/damaged
-`+labkit`, clean direct and Launcher startup, compatible session handoff, early
-resolution/requirement/build failure capture, last-launch recovery, session
-rooting before `appId`, and removal of automatic synthetic behavior.
+Launcher/system tests must prove that the root file repairs missing/damaged
+`+labkit`, a healthy root delegates to the installed entry, an invalid ZIP
+candidate is rejected before replacement, and a no-network repair failure is
+actionable. They must distinguish structural load/dependency failure (repair
+affordance) from ordinary App scientific/input failure, prove no automatic
+synthetic behavior, and prove the repair file imports no `labkit.*` symbol or
+creates a journal.
 
 All Apps share parameterized conformance proving the standard viewer/tools are
 available, no legacy logging API remains, definition/synthetic-input contracts
@@ -748,7 +783,8 @@ On at least one representative App from every capability family:
 5. export a bundle, inspect its readable timeline and redaction report, and
    search it for identifying/local/scientific data;
 6. generate synthetic inputs and confirm current App state is unchanged;
-7. terminate a session mid-operation and export it from the next Launcher run;
+7. terminate a session mid-operation and export its recovered journal through
+   the next normal Runtime/archive inspection;
 8. verify viewer scaling, keyboard use, copy actions, follow/pause, and long
    messages on supported platforms.
 
@@ -759,15 +795,16 @@ abrupt process termination are not considered proven by hidden GUI tests.
 
 The migration is complete only when:
 
-- one session/event contract spans a repair-safe Launcher bootstrap, Runtime,
-  and direct entrypoints without making repair depend on `+labkit`;
+- repair is a self-contained, journal-free rescue entry; healthy installed
+  Launcher and direct App paths use the canonical Runtime contract only after
+  SDK loading;
 - ordinary sessions have a bounded, always-on, privacy-safe flight recorder;
 - severity, audience, category, event, operation scope, and sink thresholds
   have one canonical contract;
 - all documented automatic Runtime categories have executable evidence;
 - every public App uses the standard viewer/tools and domain logging contract;
 - synthetic inputs are explicit, state-neutral, and independent of logging;
-- incident export works for current, startup-failed, and abandoned sessions;
+- incident export works for current and Runtime-recovered abandoned sessions;
 - old status/diagnostic/debug surfaces and every temporary bridge are deleted;
 - per-session, per-App, and global retention plus degradation, privacy,
   performance, automated, and manual acceptance gates pass;
