@@ -5,8 +5,8 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
         function marksPredictsExportsAndRestoresSyntheticVideo(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.diagnostic.SampleContext(folder);
-            pack = video_marker.debug.writeSamplePack(context);
+            context = labkit.app.synthetic.Context(folder);
+            pack = video_marker.syntheticInputs.writeSamplePack(context);
             markerPath = context.outputPath("markers.csv");
             coordinatePath = context.outputPath("coordinates.csv");
             backend = struct( ...

@@ -29,21 +29,24 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function launchesSyntheticDebugAsACleanApp(testCase, App)
+        function generatesSyntheticInputsWithoutMutatingRunningApp(testCase, App)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = feval(char(App.Package + ".definition"));
-            diagnostics = labkit.app.diagnostic.Options( ...
-                ArtifactFolder=folder, Sample="synthetic");
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                definition, [], struct(), diagnostics, journal);
+                definition, [], struct(), ...
+                labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
+            stateBeforeGeneration = runtime.State;
 
+            pack = runtime.generateSyntheticInputs(folder);
+
+            testCase.verifyClass(pack, "labkit.app.synthetic.Pack");
             testCase.verifyTrue(isgraphics(runtime.figureHandle(), "figure"));
-            testCase.verifyEqual(runtime.State.project, ...
-                definition.ProjectSchema.Create());
-            testCase.verifyTrue(isfile(fullfile(folder, "sample-pack.json")));
+            testCase.verifyEqual(runtime.State, stateBeforeGeneration);
+            testCase.verifyTrue(isfile(fullfile( ...
+                folder, "synthetic-input-pack.json")));
             clear cleanup
         end
 
@@ -51,8 +54,8 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = feval(char(App.Package + ".definition"));
-            pack = definition.BuildDebugSample( ...
-                labkit.app.diagnostic.SampleContext(folder));
+            pack = labkit.app.internal.SyntheticInputGenerator.generate( ...
+                definition, folder);
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
                 definition, pack.InitialProject, struct(), ...

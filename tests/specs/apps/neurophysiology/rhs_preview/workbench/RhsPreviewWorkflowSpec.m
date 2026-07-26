@@ -5,8 +5,8 @@ classdef RhsPreviewWorkflowSpec < matlab.unittest.TestCase
         function indexesPreviewsExportsAndRestoresSyntheticRhs(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.diagnostic.SampleContext(folder);
-            pack = rhs_preview.debug.writeSamplePack(context);
+            context = labkit.app.synthetic.Context(folder);
+            pack = rhs_preview.syntheticInputs.writeSamplePack(context);
             primary = context.samplePath("rhs_preview/acquisition/representative_primary.rhs");
             repeat = context.samplePath("rhs_preview/acquisition/representative_repeat.rhs");
             protocolPath = context.outputPath("rhs_protocol_draft.json");

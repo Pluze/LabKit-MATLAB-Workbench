@@ -24,8 +24,8 @@ second architecture guide.
 
 ### Debug and native presentation
 
-- Debug generates deliberate synthetic inputs without preloading them. Validate
-  both the sample contract and a native launch; finite schema placeholders can
+- Generate synthetic inputs deliberately without preloading them. Validate
+  both the pack contract and a native launch; finite schema placeholders can
   still violate small-image control limits or native presentation.
 - Validate interdependent native UI properties through real construction:
   constructor name-values may be applied in a different order than written,
@@ -86,6 +86,11 @@ second architecture guide.
   preflight prevents repeated no-test runs caused by changed working
   directories or string-cell inputs. For a quick focused run, keep those
   assertions inside MATLAB rather than building a second cross-shell preflight.
+- Treat parameter providers and reset-path probes as executable test
+  infrastructure: run suite construction, not only selected test bodies. After
+  `restoredefaultpath`, a probe must use only dependencies it explicitly
+  restored; calling a test helper that just disappeared from the path defeats
+  the isolation contract.
 - Exact one-way old-data readers are bounded persistence support; simultaneous
   old/new fields on live values are competing models. Defaults cover omitted
   options, while explicit unknown scientific modes fail visibly.

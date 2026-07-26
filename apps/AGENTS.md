@@ -17,7 +17,7 @@ find the exact owner and contract; App authors never invent test paths.
   `definition().launch(...)`.
 - `definition.m` is the single product contract. It declares stable identity,
   version, requirements, layout, and references to optional project, session,
-  presenter, debug-sample, and Start capabilities.
+  presenter, synthetic-input, and Start capabilities.
   It performs no IO, computation, export, handle creation, or lifecycle
   mutation.
 - A static App needs only the entrypoint, definition, and
@@ -57,9 +57,10 @@ find the exact owner and contract; App authors never invent test paths.
 - Do not add package-root lifecycle `run.m`, `+ui/runApp.m`, app-family
   `private/` workflow helpers, string dispatchers, or app-specific packages
   outside the owning app tree.
-- `BuildDebugSample` creates a validated, reproducible synthetic project and
+- `BuildSyntheticSample` creates a validated, reproducible synthetic project and
   artifacts; it never authorizes startup work or automatic project loading.
-  Debug launch stays at the same clean default project as an ordinary launch.
+  Runtime exposes generation as an ordinary Developer Tools action; every
+  launch follows the same App startup path.
   Interactive sample values are finite, representative, and valid for the
   smallest native controls that will render them.
 

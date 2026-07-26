@@ -42,7 +42,7 @@ classdef (Sealed) Definition
     %       empty.
     %   OnStart - Fixed callback state = callback(state,context), invoked
     %       after the first view commit. Default: empty.
-    %   BuildDebugSample - Fixed callback pack = callback(context). Default:
+    %   BuildSyntheticSample - Fixed callback pack = callback(context). Default:
     %       empty.
     %
     % Outputs:
@@ -98,7 +98,7 @@ classdef (Sealed) Definition
         CreateSession
         PresentWorkbench
         OnStart
-        BuildDebugSample
+        BuildSyntheticSample
     end
 
     properties (SetAccess = immutable, GetAccess = { ...
@@ -113,7 +113,7 @@ classdef (Sealed) Definition
                 "Entrypoint", "AppId", "Title", "DisplayName", "Family", ...
                 "AppVersion", "Updated", "Requirements", "Workbench", ...
                 "ProjectSchema", "CreateSession", "PresentWorkbench", ...
-                "OnStart", "BuildDebugSample"];
+                "OnStart", "BuildSyntheticSample"];
             options = labkit.app.internal.OptionParser.parse( ...
                 "labkit.app.Definition", names, varargin{:});
             required = [ ...
@@ -148,8 +148,8 @@ classdef (Sealed) Definition
             startCallback = optionalFixedCallback( ...
                 options, "OnStart", 2, 1);
             obj.OnStart = startCallback;
-            obj.BuildDebugSample = optionalFixedCallback( ...
-                options, "BuildDebugSample", 1, 1);
+            obj.BuildSyntheticSample = optionalFixedCallback( ...
+                options, "BuildSyntheticSample", 1, 1);
             obj.Compiled = labkit.app.internal.CompiledDefinition( ...
                 options.Workbench, startCallback);
         end

@@ -105,14 +105,14 @@ the upgraded project before moving it into another workflow.
 CSV dialogs start in a source-adjacent `video_marker` output folder. Result
 manifests are written beside the chosen CSV.
 
-## Debug Diagnostics
+## Diagnostics And Synthetic Inputs
 
-Launch with `Diagnostics=labkit.app.diagnostic.Options(Level="verbose")` to
-record the richer sanitized callback, checkpoint, count, project, dialog,
-resource, and failure trace. Add `Sample="synthetic"` and an artifact folder
-to run the App's `BuildDebugSample` contract, which creates a synthetic video,
-a valid initial marking project, and declared marker/coordinate output targets
-without including user filenames or laboratory data.
+Use **Tools > Diagnostics** to inspect the live session log, enable trace
+capture, or export a diagnostic bundle after a problem occurs. Use **Tools >
+Developer Tools > Generate Synthetic Inputs...** to create a synthetic video,
+a valid marking project, and declared marker/coordinate output targets without
+including user filenames or laboratory data. Generation does not load those
+inputs into the running App.
 
 ## Use Without The GUI
 

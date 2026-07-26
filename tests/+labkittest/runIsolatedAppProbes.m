@@ -7,7 +7,7 @@ function [status, output] = runIsolatedAppProbes(apps)
 %
 %   APPS can be a descriptor array from labkittest.publicApps or that
 %   function's scalar parameter-value structure. STATUS is zero only when
-%   every App proves its definition and synthetic debug-sample contract.
+%   every App proves its definition and synthetic-input contract.
 %   OUTPUT names every failing App, so batching startup does not hide which
 %   deployable boundary failed. The probe continues after an App failure and
 %   reports the aggregate after every supplied App has been probed.

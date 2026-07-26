@@ -19,7 +19,7 @@ classdef (Sealed) Options
     %   ArtifactFolder - Scalar diagnostic-session folder. Empty keeps
     %       recording in memory only. Default: "".
     %   Sample - "none" or "synthetic". Synthetic requires the Definition's
-    %       BuildDebugSample contract. Default: "none".
+    %       BuildSyntheticSample contract. Default: "none".
     %
     % Outputs:
     %   options - Immutable diagnostic configuration.
@@ -35,8 +35,8 @@ classdef (Sealed) Options
     %   assert(options.Level == "verbose")
     %
     % See also labkit.app.Definition,
-    %   labkit.app.diagnostic.SampleContext,
-    %   labkit.app.diagnostic.SamplePack
+    %   labkit.app.synthetic.Context,
+    %   labkit.app.synthetic.Pack
 
     properties (SetAccess = immutable)
         Level (1, 1) string

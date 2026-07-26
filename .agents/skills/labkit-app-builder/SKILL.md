@@ -79,13 +79,14 @@ complex App it composes layout fragments from capability packages in user
 order. `+workbench/present.m` composes their snapshot fragments with
 `Snapshot.include`. Renderers live with the plot capability they draw.
 
-When the App declares `BuildDebugSample`, make it return a validated synthetic
-project and anonymous artifacts without changing startup semantics. Debug and
-ordinary launch both open the clean default project; generated inputs are
-selected deliberately. Seed interactive fields with finite representative
+When the App declares `BuildSyntheticSample`, make it return a validated synthetic
+project and anonymous artifacts without changing startup semantics. There is
+no separate Debug launch; generated inputs are selected
+deliberately through the ordinary Developer Tools action. Seed interactive
+fields with finite representative
 values that survive the smallest supported native control limits. Validate the
 sample contract headlessly and launch the sample project through the native
-adapter; clean Debug launch alone does not prove the sample is operational.
+adapter; clean construction alone does not prove the sample is operational.
 
 On the App SDK paved road, bind ordinary project/session fields directly in
 `labkit.app.layout.*` and let runtime defaults complete the view snapshot.

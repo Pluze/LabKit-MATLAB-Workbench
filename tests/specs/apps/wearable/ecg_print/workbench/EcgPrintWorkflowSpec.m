@@ -5,8 +5,8 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
         function analyzesExportsAndRestoresASyntheticRecording(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.diagnostic.SampleContext(folder);
-            pack = ecg_print.debug.writeSamplePack(context);
+            context = labkit.app.synthetic.Context(folder);
+            pack = ecg_print.syntheticInputs.writeSamplePack(context);
             segmentPath = context.outputPath("segments.csv");
             waveformPath = context.outputPath("waveform.png");
             backend = struct( ...

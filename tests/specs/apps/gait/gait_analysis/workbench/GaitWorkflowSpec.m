@@ -5,8 +5,8 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
         function analyzesNavigatesExportsAndRestoresSyntheticPose(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.diagnostic.SampleContext(folder);
-            pack = gait_analysis.debug.writeSamplePack(context);
+            context = labkit.app.synthetic.Context(folder);
+            pack = gait_analysis.syntheticInputs.writeSamplePack(context);
             posePath = pack.InitialProject.inputs.sources(1).reference.originalPath;
             backend = struct( ...
                 "chooseOutputFolder", @(~) labkit.app.dialog.Choice(folder), ...

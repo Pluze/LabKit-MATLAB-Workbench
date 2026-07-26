@@ -77,8 +77,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 end
                 obj.Presentation = obj.present(obj.State);
                 obj.Adapter.reconcile([], obj.Presentation);
-                if ~isempty(application.OnStart) && ...
-                        diagnostics.Sample ~= "synthetic"
+                if ~isempty(application.OnStart)
                     obj.updateStartup("Running startup actions...");
                     obj.dispatch( ...
                         contract.onStartBinding(), []);
@@ -212,6 +211,39 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function folder = diagnosticFolder(obj)
             folder = obj.Recorder.artifactFolder();
+        end
+
+        function supported = supportsSyntheticInputs(obj)
+            supported = ~isempty(obj.Application.BuildSyntheticSample);
+        end
+
+        function pack = generateSyntheticInputs(obj, folder)
+            operation = obj.Recorder.begin( ...
+                "runtime.source", "synthetic_inputs.generated", ...
+                "Generating synthetic inputs.");
+            try
+                pack = labkit.app.internal.SyntheticInputGenerator.generate( ...
+                    obj.Application, folder);
+                obj.Recorder.finish( ...
+                    operation, "completed", "notApplicable", []);
+            catch cause
+                obj.Recorder.finish( ...
+                    operation, "failed", "notApplicable", cause);
+                rethrow(cause);
+            end
+        end
+
+        function folder = generateSyntheticInputsInteractive(obj)
+            choice = obj.Context.chooseOutputFolder("");
+            folder = "";
+            if choice.Cancelled
+                return;
+            end
+            folder = obj.uniqueSyntheticInputFolder(choice.Value);
+            obj.generateSyntheticInputs(folder);
+            obj.Context.alert( ...
+                "Synthetic inputs were written to the selected folder.", ...
+                "Synthetic Inputs");
         end
 
         function figure = figureHandle(obj)
@@ -640,6 +672,16 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
     end
 
     methods (Access = private)
+        function folder = uniqueSyntheticInputFolder(obj, parent)
+            timestamp = string(datetime("now", ...
+                "TimeZone", "UTC", "Format", "yyyyMMdd-HHmmss"));
+            nonce = extractBefore( ...
+                string(java.util.UUID.randomUUID()), 9);
+            folder = string(fullfile(char(parent), ...
+                "labkit-synthetic-" + obj.Application.AppId + "-" + ...
+                timestamp + "-" + nonce));
+        end
+
         function commitFilePanel(obj, target, config, sources, indices, rebuildSession)
             if nargin < 6
                 rebuildSession = false;

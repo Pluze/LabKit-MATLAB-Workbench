@@ -31,7 +31,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             layout = labkit.app.layout.workbench({});
             app = AppSdkSpec.definition(layout, "OnStart", @startProbe, ...
                 "CreateSession", @createSession, "PresentWorkbench", @presentProbe, ...
-                "BuildDebugSample", @debugSample);
+                "BuildSyntheticSample", @syntheticSample);
 
             testCase.verifyEqual(app.launch("version").version, "1.0.0");
             testCase.verifyEqual(string(func2str(app.OnStart)), "startProbe");
@@ -68,7 +68,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "labkit:app:runtime:InvariantFailure");
         end
 
-        function syntheticDebugStartsWithACleanProjectAndNoStartupAction(testCase)
+        function syntheticInputsAreDeliberateAndDoNotChangeTheRuntime(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             layout = labkit.app.layout.workbench({ ...
@@ -77,17 +77,21 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             app = AppSdkSpec.definition(layout, "ProjectSchema", ...
                 labkit.app.project.Schema(Version=1, Create=@createProject, ...
                 Validate=@validateProject), CreateSession=@sampleSession, ...
-                OnStart=@startChangesGain, BuildDebugSample=@validDebugSample);
-            diagnostics = labkit.app.diagnostic.Options( ...
-                ArtifactFolder=folder, Sample="synthetic");
+                OnStart=@startChangesGain, BuildSyntheticSample=@validSyntheticSample);
             journal = labkittest.temporarySessionJournal(app, folder);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                app, [], struct(), diagnostics, journal);
+                app, [], struct(), labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
+            stateBeforeGeneration = runtime.State;
 
-            testCase.verifyEqual(runtime.State.project.parameters.gain, 1);
+            pack = runtime.generateSyntheticInputs(folder);
+
+            testCase.verifyEqual(runtime.State.project.parameters.gain, 99);
             testCase.verifyEqual(runtime.State.session.gainAtCreation, 1);
-            testCase.verifyTrue(isfile(fullfile(folder, "sample-pack.json")));
+            testCase.verifyEqual(runtime.State, stateBeforeGeneration);
+            testCase.verifyEqual(pack.InitialProject.parameters.gain, 7);
+            testCase.verifyTrue(isfile(fullfile( ...
+                folder, "synthetic-input-pack.json")));
             clear cleanup
         end
 
@@ -154,10 +158,34 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             label = findall(figureValue, "Tag", "gain.label");
 
             testCase.verifyEqual(string(field.Enable), "on");
+            testCase.verifyEmpty(findall(figureValue, ...
+                "Tag", "labkitAppUtilitySyntheticInputs"));
             testCase.verifyEqual(string(label.Enable), "on");
             runtime.applyBinding("gain", 0);
             testCase.verifyEqual(string(field.Enable), "off");
             testCase.verifyEqual(string(label.Enable), "off");
+            clear cleanup
+        end
+
+        function exposesSyntheticInputGenerationAsAnOrdinaryTool(testCase)
+            layout = labkit.app.layout.workbench({});
+            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
+                labkit.app.project.Schema( ...
+                Version=1, Create=@createProject, Validate=@validateProject), ...
+                "BuildSyntheticSample", @validSyntheticSample);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                app, [], struct(), labkit.app.diagnostic.Options(), journal);
+            cleanup = onCleanup(@() runtime.close());
+
+            menu = findall(runtime.figureHandle(), ...
+                "Tag", "labkitAppUtilitySyntheticInputs");
+
+            testCase.verifyNumElements(menu, 1);
+            testCase.verifyEqual(string(menu.Text), ...
+                "Generate Synthetic Inputs...");
             clear cleanup
         end
     end
@@ -204,7 +232,7 @@ function view = presentProbe(~)
 view = labkit.app.view.Snapshot();
 end
 
-function pack = debugSample(~)
+function pack = syntheticSample(~)
 pack = struct();
 end
 
@@ -216,8 +244,8 @@ function state = startChangesGain(state, ~)
 state.project.parameters.gain = 99;
 end
 
-function pack = validDebugSample(~)
-pack = labkit.app.diagnostic.SamplePack( ...
+function pack = validSyntheticSample(~)
+pack = labkit.app.synthetic.Pack( ...
     Scenario="sdk-probe", ...
     InitialProject=struct("parameters", struct("gain", 7)), ...
     Artifacts={});

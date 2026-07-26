@@ -6,7 +6,7 @@ the nearest `AGENTS.md`; completed work belongs in component history.
 
 ## Active debt
 
-Last audited: 2026-07-25.
+Last audited: 2026-07-26.
 
 ```text
 toolbox-product-debt: none
@@ -694,6 +694,15 @@ bundle without restarting.
 
 Exit gate: all Apps pass parameterized conformance, each capability family has a
 representative real workflow, and no undeclared compatibility use remains.
+
+Checkpoint A is implemented on `debug-repair`: the public SDK types now live
+under `labkit.app.synthetic`, all 21 public Apps and the accepted private
+Imager App declare `BuildSyntheticSample` from `+syntheticInputs`, and ordinary
+Tools generation validates/publishes without changing runtime state or
+suppressing `OnStart`. The 63-case parameterized public native conformance
+file, focused Batch Crop contracts, complete App SDK specification, and focused
+private generator contract pass. App-family event migration and log-panel
+retirement remain active Phase 7 work.
 
 #### Phase 8: retire bridges and close debt
 

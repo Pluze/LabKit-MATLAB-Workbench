@@ -40,7 +40,7 @@ Required Definition arguments are product metadata, requirements, and one
 | `CreateSession` | `session = callback(project,callbackContext)` | Rebuild transient App data from durable project state. |
 | `PresentWorkbench` | `view = callback(applicationState)` | Return the App-owned fragment of the complete visible snapshot. |
 | `OnStart` | `applicationState = callback(applicationState,callbackContext)` | Perform a real post-first-commit request or resource initialization. |
-| `BuildDebugSample` | `sample = callback(callbackContext)` | Build clean-room debug input when the App supports it. |
+| `BuildSyntheticSample` | `sample = callback(callbackContext)` | Build clean-room debug input when the App supports it. |
 
 Ordinary default state needs no startup callback. Exact syntax and errors are
 in the generated [public API reference](../../reference/README.md).
@@ -265,15 +265,15 @@ that callback transaction commits.
 
 ## Persistence, Results, And Cleanup
 
-## Diagnostic Synthetic Samples
+## Synthetic Inputs
 
-`labkit.app.diagnostic.Options(Sample="synthetic")` asks an App to create and
-validate its anonymous `BuildDebugSample` pack in the diagnostic artifact
-folder. The pack remains a reproducible input fixture: the runtime starts from
-the schema's new project and does not run `OnStart`. This makes Debug launches
-safe, clean starting points for user-directed exploration while retaining the
-sample manifest and files for deliberate import through the App's ordinary
-workflow.
+An App that declares `BuildSyntheticSample` exposes **Tools > Developer
+Tools > Generate Synthetic Inputs...**. The action writes an anonymous,
+validated `labkit.app.synthetic.Pack` and `synthetic-input-pack.json` into a
+new folder beneath the selected destination. Generation does not load the
+pack, mutate the open project, or suppress `OnStart`; every App launch follows
+the same clean startup path. Users deliberately import the generated files
+through the App's ordinary controls.
 
 `labkit.app.project.Schema` owns current project creation, validation, and
 ordered version migration. Runtime owns the project envelope, atomic save,
