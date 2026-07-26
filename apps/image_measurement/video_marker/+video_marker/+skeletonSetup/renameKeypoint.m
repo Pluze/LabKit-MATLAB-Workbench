@@ -7,7 +7,8 @@ try
         state.project.annotations.skeleton,edit.RowIndex,edit.NewValue);
     state=video_marker.skeletonSetup.normalizeSelection(state);
     state=video_marker.resultFiles.clearExportState(state);
-    context.appendStatus("Renamed keypoint " + string(edit.RowIndex) + ".");
+    context.log("info", "video_marker.skeletonsetup.renamekeypoint.status", ...
+        "Renamed keypoint " + string(edit.RowIndex) + ".");
 catch ME
     context.reportError("Invalid keypoint name", ME);
     context.alert(ME.message, "Invalid keypoint name");

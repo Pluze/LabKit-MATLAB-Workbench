@@ -11,7 +11,9 @@ startPath = video_marker.resultFiles.defaultOutputPath( ...
 choice = context.chooseOutputFile( ...
     ["*.csv", "Marker CSV files"], startPath);
 if choice.Cancelled
-    context.appendStatus("Marker export cancelled.");
+    context.log("info", ...
+        "video_marker.resultfiles.exportmarkers.cancelled", ...
+        "Marker export cancelled.");
     return
 end
 filepath = string(choice.Value);
@@ -38,5 +40,6 @@ catch cause
     return
 end
 state.project.results.markerManifestPath = string(written.Value);
-context.appendStatus("Exported marker CSV: " + filepath);
+context.log("info", "video_marker.resultfiles.exportmarkers.completed", ...
+    "Exported the marker CSV.");
 end

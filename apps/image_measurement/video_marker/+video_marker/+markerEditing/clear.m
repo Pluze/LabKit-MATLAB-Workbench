@@ -6,5 +6,6 @@ if state.session.cache.videoInfo.frameCount <= 0
 end
 frame = state.session.cache.frameIndex;
 state = video_marker.markerEditing.setPoints(state, zeros(0, 2));
-context.appendStatus("Cleared frame " + string(frame) + " points.");
+context.log("info", "video_marker.markerediting.clear.status", ...
+    "Cleared frame " + string(frame) + " points.");
 end

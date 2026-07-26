@@ -4,7 +4,9 @@ function state = importMarkers(state, context)
 choice = context.chooseInputFile( ...
     ["*.csv", "Marker CSV files"], pwd);
 if choice.Cancelled
-    context.appendStatus("Marker import cancelled.");
+    context.log("info", ...
+        "video_marker.resultfiles.importmarkers.cancelled", ...
+        "Marker import cancelled.");
     return
 end
 filepath = string(choice.Value);
@@ -44,5 +46,6 @@ state.project.parameters.coordinateStartFrame = 1;
 state.project.parameters.coordinateEndFrame = ...
     max(1, payload.videoInfo.frameCount);
 state = video_marker.resultFiles.clearExportState(state);
-context.appendStatus("Imported marker CSV: " + filepath);
+context.log("info", "video_marker.resultfiles.importmarkers.completed", ...
+    "Imported the marker CSV.");
 end

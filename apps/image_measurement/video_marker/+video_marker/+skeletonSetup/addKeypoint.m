@@ -10,6 +10,6 @@ end
 state.session.selection.selectedPointIndex = index;
 state = video_marker.skeletonSetup.normalizeSelection(state);
 state = video_marker.resultFiles.clearExportState(state);
-context.appendStatus("Added keypoint " + ...
-    state.project.annotations.skeleton.pointNames(index) + ".");
+context.log("info", "video_marker.skeletonsetup.addkeypoint.status", ...
+    "Added keypoint " + string(index) + ".");
 end
