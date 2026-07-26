@@ -7,8 +7,12 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:product', 'Env:hidden-gui'})
         function launchesThroughTheSupportedDefinition(testCase, App)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = feval(char(App.Package + ".definition"));
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab(definition);
+            journal = labkittest.temporarySessionJournal(definition, folder);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                definition, [], struct(), labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
 
@@ -31,8 +35,9 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             definition = feval(char(App.Package + ".definition"));
             diagnostics = labkit.app.diagnostic.Options( ...
                 ArtifactFolder=folder, Sample="synthetic");
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                definition, [], struct(), diagnostics);
+                definition, [], struct(), diagnostics, journal);
             cleanup = onCleanup(@() runtime.close());
 
             testCase.verifyTrue(isgraphics(runtime.figureHandle(), "figure"));
@@ -48,8 +53,10 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             definition = feval(char(App.Package + ".definition"));
             pack = definition.BuildDebugSample( ...
                 labkit.app.diagnostic.SampleContext(folder));
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                definition, pack.InitialProject, struct());
+                definition, pack.InitialProject, struct(), ...
+                labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             testCase.verifyTrue(isgraphics(runtime.figureHandle(), "figure"));

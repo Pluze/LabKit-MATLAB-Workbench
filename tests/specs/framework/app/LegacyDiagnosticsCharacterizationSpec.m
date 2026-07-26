@@ -10,8 +10,10 @@ classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             options = labkit.app.diagnostic.Options( ...
                 Level="verbose", ArtifactFolder=folder);
+            definition = probeDefinition(layout);
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                probeDefinition(layout), [], struct(), options);
+                definition, [], struct(), options, journal);
             cleanup = onCleanup(@() runtime.close());
 
             runtime.invokeAction("run");

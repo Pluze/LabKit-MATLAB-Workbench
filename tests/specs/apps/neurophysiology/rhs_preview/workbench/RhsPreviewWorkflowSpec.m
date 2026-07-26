@@ -19,8 +19,10 @@ classdef RhsPreviewWorkflowSpec < matlab.unittest.TestCase
                 "chooseOutputFile", @(~, defaultPath) chooseOutput( ...
                     defaultPath, protocolPath, filterPath), ...
                 "alert", @(~, ~) []);
+            definition = rhs_preview.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                rhs_preview.definition(), project, backend);
+                definition, project, backend, labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

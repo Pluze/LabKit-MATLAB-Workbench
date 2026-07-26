@@ -7,9 +7,11 @@ classdef NerveResponseWorkflowSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             context = labkit.app.diagnostic.SampleContext(folder);
             pack = nerve_response_analysis.debug.writeSamplePack(context);
+            definition = nerve_response_analysis.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                nerve_response_analysis.definition(), pack.InitialProject, ...
-                struct("alert", @(~, ~) []));
+                definition, pack.InitialProject, struct("alert", @(~, ~) []), ...
+                labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

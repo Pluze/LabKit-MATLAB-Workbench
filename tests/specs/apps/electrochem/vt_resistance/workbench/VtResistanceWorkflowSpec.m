@@ -11,8 +11,10 @@ classdef VtResistanceWorkflowSpec < matlab.unittest.TestCase
             backend = struct( ...
                 "chooseOutputFile", @(~, ~) labkit.app.dialog.Choice(output), ...
                 "alert", @(~, ~) []);
+            definition = vt_resistance.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                vt_resistance.definition(), [], backend);
+                definition, [], backend, labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

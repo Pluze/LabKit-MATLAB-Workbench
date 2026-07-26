@@ -11,7 +11,11 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             app = AppSdkSpec.definition(layout, "ProjectSchema", ...
                 labkit.app.project.Schema( ...
                 Version=1, Create=@createProject, Validate=@validateProject));
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                app, [], struct(), labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             runtime.applyBinding("gain", 3);
@@ -76,9 +80,9 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 OnStart=@startChangesGain, BuildDebugSample=@validDebugSample);
             diagnostics = labkit.app.diagnostic.Options( ...
                 ArtifactFolder=folder, Sample="synthetic");
-
+            journal = labkittest.temporarySessionJournal(app, folder);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                app, [], struct(), diagnostics);
+                app, [], struct(), diagnostics, journal);
             cleanup = onCleanup(@() runtime.close());
 
             testCase.verifyEqual(runtime.State.project.parameters.gain, 1);
@@ -97,7 +101,9 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 Migrate=@migrateProbeProject, ...
                 LegacyImports=struct("probeLegacy", @importProbeProject));
             app = AppSdkSpec.definition(layout, "ProjectSchema", schema);
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless(app);
+            journal = labkittest.temporarySessionJournal(app, folder);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                app, [], struct(), labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             oldProjectFile = fullfile(folder, "old-project.mat");
@@ -137,7 +143,11 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 labkit.app.project.Schema( ...
                     Version=1, Create=@createProject, Validate=@validateProject), ...
                 "PresentWorkbench", @presentGainAvailability);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab(app);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                app, [], struct(), labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
             field = findall(figureValue, "Tag", "gain");

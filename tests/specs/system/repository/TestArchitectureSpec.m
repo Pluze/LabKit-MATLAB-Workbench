@@ -70,7 +70,63 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                     "Tracked text contains a sample timestamp token: " + file);
             end
         end
+
+        function testsPassAnExplicitTemporaryJournalToEveryRuntimeFactory(testCase)
+            root = labkittest.setup();
+            files = dir(fullfile(root, "tests", "**", "*.m"));
+            violations = strings(1, 0);
+            for index = 1:numel(files)
+                file = fullfile(files(index).folder, files(index).name);
+                calls = labkittest.runtimeFactoryCalls(fileread(file));
+                for call = calls
+                    if ~hasExplicitJournal(call)
+                        relative = erase(string(file), string(root) + filesep);
+                        violations(end + 1) = relative + ":" + ...
+                            string(call.Line) + " must pass a fifth journal argument.";
+                    end
+                end
+            end
+            testCase.verifyEmpty(violations, strjoin(violations, newline));
+        end
+
+        function runtimeFactoryParserRejectsFourthArgumentJournal(testCase)
+            source = strjoin([ ...
+                "% RuntimeFactory.createMatlab(app) is a comment.", ...
+                "literal = ""RuntimeFactory.createHeadless(app)"";", ...
+                "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
+                "    app, [], struct(), journal);"], newline);
+
+            calls = labkittest.runtimeFactoryCalls(source);
+
+            testCase.verifyNumElements(calls, 1);
+            testCase.verifyEqual(calls.Method, "createHeadless");
+            testCase.verifyNumElements(calls.Arguments, 4);
+            testCase.verifyFalse(hasExplicitJournal(calls));
+        end
+
+        function runtimeFactoryParserHandlesTransposeAndCharLiterals(testCase)
+            source = strjoin([ ...
+                "values = [1 2];", ...
+                "values.';", ...
+                "literal = 'RuntimeFactory.createMatlab(app)';", ...
+                "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
+                "    app, [], struct(""alert"", @(~, ~) []), ...", ...
+                "    labkit.app.diagnostic.Options(), journal);"], newline);
+
+            calls = labkittest.runtimeFactoryCalls(source);
+
+            testCase.verifyNumElements(calls, 1);
+            testCase.verifyEqual(calls.Method, "createHeadless");
+            testCase.verifyNumElements(calls.Arguments, 5);
+            testCase.verifyTrue(hasExplicitJournal(calls));
+        end
     end
+end
+
+function tf = hasExplicitJournal(call)
+callArguments = call.Arguments;
+tf = numel(callArguments) == 5 && ...
+    strlength(callArguments(5)) > 0 && callArguments(5) ~= "[]";
 end
 
 function value = text(root, relative)

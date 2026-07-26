@@ -9,8 +9,11 @@ classdef FlirThermalWorkflowSpec < matlab.unittest.TestCase
             pack = flir_thermal.debug.writeSamplePack(context);
             backend = struct("chooseOutputFolder", @(~) labkit.app.dialog.Choice(folder), ...
                 "alert", @(~, ~) []);
+            definition = flir_thermal.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                flir_thermal.definition(), pack.InitialProject, backend);
+                definition, pack.InitialProject, backend, ...
+                labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

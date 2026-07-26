@@ -3,8 +3,12 @@ classdef SessionLoggingContractSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function retainsOnlyTheMinimalV1EventSchema(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = loggingProbeDefinition();
+            journal = labkittest.temporarySessionJournal(definition, root);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                loggingProbeDefinition());
+                definition, [], struct(), labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             records = runtime.diagnosticEvents();

@@ -12,8 +12,10 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
                 "chooseOutputFile", @(~, ~) labkit.app.dialog.Choice(outputPath), ...
                 "chooseOutputFolder", @(~) labkit.app.dialog.Choice(folder), ...
                 "alert", @(~, ~) []);
+            definition = figure_studio.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                figure_studio.definition(), [], backend);
+                definition, [], backend, labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

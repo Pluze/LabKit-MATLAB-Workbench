@@ -14,8 +14,10 @@ classdef CicWorkflowSpec < matlab.unittest.TestCase
                 "chooseOutputFile", @(~, ~) labkit.app.dialog.Choice( ...
                     fullfile(folder, "cic_results.csv")), ...
                 "alert", @(~, ~) []);
+            definition = cic.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                cic.definition(), [], backend);
+                definition, [], backend, labkit.app.diagnostic.Options(), journal);
             cleanupRuntime = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
 

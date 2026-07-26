@@ -5,7 +5,12 @@ classdef CscWorkflowSpec < matlab.unittest.TestCase
         function loadsACvCtFileAndUpdatesComparisonPlots(testCase)
             source = testfixtures.dtaFixturePath( ...
                 "cv_cyclic_voltammetry_pt_reference.DTA");
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab(csc.definition());
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = csc.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                definition, [], struct(), labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

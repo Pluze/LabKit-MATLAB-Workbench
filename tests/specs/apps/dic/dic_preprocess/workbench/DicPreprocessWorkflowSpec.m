@@ -11,8 +11,10 @@ classdef DicPreprocessWorkflowSpec < matlab.unittest.TestCase
             backend = struct( ...
                 "chooseOutputFolder", @(~) labkit.app.dialog.Choice(folder), ...
                 "alert", @(~, ~) []);
+            definition = dic_preprocess.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                dic_preprocess.definition(), [], backend);
+                definition, [], backend, labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

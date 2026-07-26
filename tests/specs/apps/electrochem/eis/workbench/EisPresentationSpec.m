@@ -4,7 +4,11 @@ classdef EisPresentationSpec < matlab.unittest.TestCase
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function presentsLoadedFilesWithoutUiHandlesInApplicationState(testCase)
             definition = eis.definition();
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless(definition);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(definition, root);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                definition, [], struct(), labkit.app.diagnostic.Options(), journal);
             cleanup = onCleanup(@() runtime.close());
             fixture = testfixtures.dtaFixturePath("eis_potentiostatic_zcurve.DTA");
 
