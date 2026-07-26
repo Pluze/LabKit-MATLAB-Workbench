@@ -9,8 +9,7 @@ function varargout = dispatch(root, varargin)
         case "documentation"
             varargout = {documentationPage(root, modeArgs)};
         case "version"
-            varargout = {struct("name", "labkit_launcher", "displayName", "LabKit App Launcher", ...
-                "version", "1.6.0", "updated", "2026-07-20")};
+            varargout = {launcherVersion()};
         otherwise
             if nargout > 1
                 error("labkit:app:internal:launcher:TooManyOutputs", ...
@@ -49,134 +48,567 @@ end
 end
 
 function fig = createLauncher(root)
-figArgs = {"Name", "LabKit App Launcher", "Tag", "labkitLauncher", ...
-    "Position", [150 130 1120 620], "Color", [0.97 0.98 0.99]};
+panelFontSize = 15;
+tableFontSize = 14;
+version = launcherVersion();
+position = defaultLauncherPosition();
+figArgs = { ...
+    "Name", version.displayName + " v" + version.version + ...
+        " (" + version.updated + ")", ...
+    "Tag", "labkitLauncher", ...
+    "Position", position, ...
+    "Color", [0.97 0.98 0.99]};
 if launcherGuiTestMode() == "hidden"
     figArgs = [figArgs, {"Visible", "off"}];
 end
 close(findall(groot, "Type", "figure", "Tag", "labkitLauncher"));
 fig = uifigure(figArgs{:});
-main = uigridlayout(fig, [1 2]);
-main.ColumnWidth = {330, "1x"};
-main.Padding = [8 8 8 8];
-left = uipanel(main, "Title", "Launcher");
-right = uipanel(main, "Title", "Applications");
-controls = uigridlayout(left, [10 1]);
-controls.RowHeight = {32, 32, 32, 32, 32, 32, 32, 32, 32, "1x"};
-setappdata(groot, "labkitFigureStudioLauncher", @(ax) launchFigureStudioFromAxes(root, ax));
-openButton = uibutton(controls, "Text", "Open Selected App");
-refreshButton = uibutton(controls, "Text", "Refresh App List");
-docsButton = uibutton(controls, "Text", "Documentation and History");
-repairButton = uibutton(controls, "Text", "Repair / Reinstall");
-cleanButton = uibutton(controls, "Text", "Clean Artifacts");
-docsToolButton = uibutton(controls, "Text", "Build Documentation");
-codeButton = uibutton(controls, "Text", "Code Analyzer");
-profileButton = uibutton(controls, "Text", "Profile Selected App");
-packageButton = uibutton(controls, "Text", "Package Selected App");
-status = uitextarea(controls, "Editable", "off", "Value", "Ready.");
-grid = uigridlayout(right, [1 1]);
-table = uitable(grid, "ColumnName", {"Family", "App", "Visibility", "Version", "Updated", "Command"}, ...
-    "RowName", {}, "ColumnEditable", false(1, 6));
-state = struct("apps", discoverApps(root), "selected", 1);
-refresh();
-openButton.ButtonPushedFcn = @(~, ~) launchSelected();
-refreshButton.ButtonPushedFcn = @(~, ~) refresh();
-docsButton.ButtonPushedFcn = @(~, ~) openDocumentation();
-repairButton.ButtonPushedFcn = @(~, ~) labkit_launcher("repair");
-cleanButton.ButtonPushedFcn = @(~, ~) runTool("clean");
-docsToolButton.ButtonPushedFcn = @(~, ~) runTool("docs");
-codeButton.ButtonPushedFcn = @(~, ~) runTool("codecheck");
-profileButton.ButtonPushedFcn = @(~, ~) runTool("profile");
-packageButton.ButtonPushedFcn = @(~, ~) runTool("package");
-table.CellSelectionCallback = @selectRow;
+main = uigridlayout(fig, [1 3]);
+leftWidth = min(420, max(380, round(position(3) * 0.28)));
+main.ColumnWidth = {leftWidth, 5, "1x"};
+main.RowHeight = {"1x"};
+main.Padding = [6 6 6 6];
+main.ColumnSpacing = 0;
 
-    function refresh()
-        state.apps = discoverApps(root);
-        table.Data = displayRows(state.apps);
-        state.selected = min(max(state.selected, 1), max(numel(state.apps), 1));
-        enabled = matlab.lang.OnOffSwitchState(~isempty(state.apps));
-        openButton.Enable = enabled;
-        docsButton.Enable = enabled;
-        if isempty(state.apps)
-            status.Value = "No app entry points found. Repair / Reinstall may restore this installation.";
-        else
-            status.Value = string(sprintf("%d app entry point(s) available.", numel(state.apps)));
+left = uipanel(main, "Title", "Launcher", "FontSize", panelFontSize);
+left.Layout.Column = 1;
+divider = uipanel(main, "BorderType", "none", ...
+    "BackgroundColor", [0.78 0.80 0.82]);
+divider.Layout.Column = 2;
+right = uipanel(main, "Title", "Applications", "FontSize", panelFontSize);
+right.Layout.Column = 3;
+
+controls = uigridlayout(left, [5 1]);
+controls.RowHeight = {108, 72, 108, 72, "1x"};
+controls.Padding = [6 6 6 6];
+controls.RowSpacing = 6;
+
+runPanel = uipanel(controls, "Title", "Run Apps");
+runPanel.Layout.Row = 1;
+runGrid = uigridlayout(runPanel, [2 2]);
+runGrid.RowHeight = {"1x", "1x"};
+runGrid.ColumnWidth = {"1x", "1x"};
+runGrid.Padding = [5 5 5 5];
+runGrid.RowSpacing = 5;
+runGrid.ColumnSpacing = 6;
+openButton = uibutton(runGrid, "Text", "Open Selected App");
+openButton.Layout.Row = 1;
+openButton.Layout.Column = [1 2];
+refreshButton = uibutton(runGrid, "Text", "Refresh App List");
+refreshButton.Layout.Row = 2;
+refreshButton.Layout.Column = 1;
+appDocsButton = uibutton(runGrid, "Text", "Documentation and History");
+appDocsButton.Layout.Row = 2;
+appDocsButton.Layout.Column = 2;
+appDocsButton.Tooltip = ...
+    "Open the generated documentation page for the selected app.";
+
+versionPanel = uipanel(controls, "Title", "Versions and Install");
+versionPanel.Layout.Row = 2;
+versionGrid = uigridlayout(versionPanel, [1 3]);
+versionGrid.ColumnWidth = {"1x", "1x", "1x"};
+versionGrid.Padding = [5 5 5 5];
+versionGrid.ColumnSpacing = 6;
+latestButton = uibutton(versionGrid, "Text", "Latest");
+releaseButton = uibutton(versionGrid, "Text", "Release");
+versionsButton = uibutton(versionGrid, "Text", "Versions");
+latestButton.Tooltip = "Download and apply the latest main branch ZIP.";
+releaseButton.Tooltip = "Download and apply the latest stable release.";
+versionsButton.Tooltip = ...
+    "Choose a recent release, tag, or main-branch commit.";
+
+maintenancePanel = uipanel(controls, ...
+    "Title", "Development and Maintenance");
+maintenancePanel.Layout.Row = 3;
+maintenanceGrid = uigridlayout(maintenancePanel, [2 2]);
+maintenanceGrid.ColumnWidth = {"1x", "1x"};
+maintenanceGrid.RowHeight = {"1x", "1x"};
+maintenanceGrid.Padding = [5 5 5 5];
+maintenanceGrid.RowSpacing = 5;
+maintenanceGrid.ColumnSpacing = 6;
+docsToolButton = uibutton(maintenanceGrid, "Text", "Update Documentation");
+codeButton = uibutton(maintenanceGrid, "Text", "Run Code Analyzer");
+profileButton = uibutton(maintenanceGrid, "Text", "Profile Selected App");
+cleanButton = uibutton(maintenanceGrid, "Text", "Clean Artifacts");
+docsToolButton.Tooltip = ...
+    "Rebuild the documentation site from docs and public MATLAB help.";
+codeButton.Tooltip = ...
+    "Run MATLAB Code Analyzer and write the repository report.";
+profileButton.Tooltip = ...
+    "Profile the selected app and save its report without opening a browser.";
+cleanButton.Tooltip = ...
+    "Remove generated artifacts through the maintenance tool.";
+
+packagePanel = uipanel(controls, "Title", "Package and Publish");
+packagePanel.Layout.Row = 4;
+packageGrid = uigridlayout(packagePanel, [1 2]);
+packageGrid.ColumnWidth = {"1x", "1x"};
+packageGrid.Padding = [5 5 5 5];
+packageGrid.ColumnSpacing = 6;
+packageButton = uibutton(packageGrid, "Text", "Package Checked");
+pcodeButton = uibutton(packageGrid, "Text", "Checked P-code");
+packageButton.Tooltip = ...
+    "Create one standalone source package containing every checked app.";
+pcodeButton.Tooltip = ...
+    "Create the same multi-app package with MATLAB code encoded as P-code.";
+
+status = uitextarea(controls, "Editable", "off", "Value", "Ready.");
+status.Layout.Row = 5;
+tableGrid = uigridlayout(right, [1 1]);
+tableGrid.Padding = [4 4 4 4];
+appTable = uitable(tableGrid, ...
+    "ColumnName", { ...
+        "Package", "Family", "App", "Visibility", ...
+        "Version", "Updated", "Command"}, ...
+    "ColumnEditable", [true false false false false false false], ...
+    "RowName", {}, ...
+    "FontSize", tableFontSize);
+if isprop(appTable, "ColumnFormat")
+    appTable.ColumnFormat = { ...
+        'logical', 'char', 'char', 'char', 'char', 'char', 'char'};
+end
+appTable.ColumnWidth = repmat({"auto"}, 1, 7);
+configureTable(appTable, @selectRow, @doubleClickRow);
+appTable.CellEditCallback = @changePackageSelection;
+
+setappdata(groot, "labkitFigureStudioLauncher", ...
+    @(ax) launchFigureStudioFromAxes(root, ax));
+view = struct( ...
+    "figure", fig, ...
+    "controls", struct( ...
+        "selectedDetails", struct("textArea", status), ...
+        "statusLine", struct("textArea", status), ...
+        "appTable", struct("table", appTable)));
+setappdata(fig, "labkitLauncherView", view);
+state = struct( ...
+    "apps", emptyApps(), ...
+    "selected", 1, ...
+    "checkedCommands", strings(0, 1), ...
+    "status", "Loading app list...", ...
+    "busy", false, ...
+    "tools", launcherToolAvailability(root));
+
+openButton.ButtonPushedFcn = @(~, ~) launchSelected();
+refreshButton.ButtonPushedFcn = @(~, ~) refreshApps();
+appDocsButton.ButtonPushedFcn = @(~, ~) openDocumentation();
+latestButton.ButtonPushedFcn = @(~, ~) manageVersion("main");
+releaseButton.ButtonPushedFcn = @(~, ~) manageVersion("stable");
+versionsButton.ButtonPushedFcn = @(~, ~) manageVersion("browse");
+cleanButton.ButtonPushedFcn = @(~, ~) runMaintenance("clean");
+docsToolButton.ButtonPushedFcn = @(~, ~) runMaintenance("docs");
+codeButton.ButtonPushedFcn = @(~, ~) runMaintenance("codecheck");
+profileButton.ButtonPushedFcn = @(~, ~) runMaintenance("profile");
+packageButton.ButtonPushedFcn = @(~, ~) packageChecked("source");
+pcodeButton.ButtonPushedFcn = @(~, ~) packageChecked("pcode");
+refreshApps();
+
+    function refreshApps()
+        if state.busy
+            return;
         end
+        selectedCommand = currentSelectedCommand();
+        beginAction("Refreshing app list...");
+        try
+            state.apps = discoverApps(root);
+            state.tools = launcherToolAvailability(root);
+            state.checkedCommands = retainedCommands( ...
+                state.apps, state.checkedCommands);
+            state.selected = appRowByCommand(state.apps, selectedCommand);
+            appTable.Data = launcherRows(state.apps, state.checkedCommands);
+            setStatus(appAvailabilityStatus(state.apps));
+        catch cause
+            setStatus("Refresh app list failed: " + failureText(cause));
+        end
+        endAction();
     end
 
     function selectRow(~, event)
-        if ~isempty(event.Indices)
-            state.selected = event.Indices(1, 1);
+        row = eventRow(event);
+        if ~isnan(row)
+            state.selected = row;
+            updateInfo();
         end
+    end
+
+    function doubleClickRow(~, event)
+        row = eventRow(event);
+        if ~isnan(row)
+            state.selected = row;
+        end
+        launchSelected();
+    end
+
+    function changePackageSelection(~, event)
+        if isempty(event.Indices) || isempty(state.apps)
+            return;
+        end
+        row = event.Indices(1, 1);
+        if row < 1 || row > numel(state.apps)
+            return;
+        end
+        command = string(state.apps(row).command);
+        state.checkedCommands(state.checkedCommands == command) = [];
+        if logical(event.NewData)
+            state.checkedCommands(end + 1, 1) = command;
+        end
+        updateInfo();
     end
 
     function launchSelected()
-        if isempty(state.apps)
+        if state.busy || isempty(state.apps)
             return;
         end
-        app = state.apps(state.selected);
+        app = selectedApp();
+        beginAction("Opening " + app.command + "...");
         try
-            addpath(app.folder, "-end");
+            addPathIfMissing(app.folder, "-end");
             feval(app.command);
-            status.Value = "Opened " + app.command + ".";
+            setStatus("Opened " + app.command + ".");
         catch cause
             if isStructuralStartupFailure(cause)
-                status.Value = ["Could not start " + app.command + ": " + string(cause.message); ...
-                    "The installation may be incomplete. Use Repair / Reinstall."];
+                setStatus([ ...
+                    "Could not start " + app.command + ": " + ...
+                        failureText(cause)
+                    "The installation may be incomplete. Run " + ...
+                        "labkit_launcher(""repair"") to reinstall."
+                    ]);
             else
-                status.Value = "App " + app.command + " reported: " + string(cause.message);
+                setStatus("App " + app.command + " reported: " + ...
+                    failureText(cause));
             end
         end
+        endAction();
     end
 
     function openDocumentation()
-        if isempty(state.apps)
+        if state.busy || isempty(state.apps)
             return;
         end
+        app = selectedApp();
+        beginAction("Opening documentation for " + app.command + "...");
         try
-            page = documentationPage(root, state.apps(state.selected).command);
+            page = documentationPage(root, app.command);
             if launcherGuiTestMode() ~= "hidden"
                 web(page, "-browser");
             end
-            status.Value = "Opened documentation for " + state.apps(state.selected).command + ".";
+            setStatus("Opened documentation for " + app.command + ".");
         catch cause
-            status.Value = "Documentation unavailable: " + string(cause.message);
+            setStatus("Documentation unavailable: " + failureText(cause));
         end
+        endAction();
     end
 
-    function runTool(kind)
+    function manageVersion(mode)
+        if state.busy
+            return;
+        end
+        beginAction("Preparing LabKit version tools...");
+        try
+            if mode == "browse"
+                callTool(root, fullfile("tools", "deployment"), ...
+                    "manageLabKitVersions", root, mode, ...
+                    "ProgressFcn", @reportProgress);
+                setStatus("Opened LabKit Version Manager.");
+            else
+                result = callTool(root, fullfile("tools", "deployment"), ...
+                    "manageLabKitVersions", root, mode, ...
+                    "ProgressFcn", @reportProgress);
+                setStatus(result.message);
+            end
+        catch cause
+            setStatus("Version action failed: " + failureText(cause));
+        end
+        endAction();
+    end
+
+    function runMaintenance(kind)
+        if state.busy
+            return;
+        end
+        beginAction("Running " + kind + "...");
         try
             switch kind
                 case "clean"
-                    callTool(root, fullfile("tools", "maintenance"), "cleanLabKitArtifacts", root);
+                    result = callTool(root, fullfile("tools", "maintenance"), ...
+                        "cleanLabKitArtifacts", root, ...
+                        "ProgressFcn", @reportProgress);
+                    setStatus("Clean Artifacts complete: " + ...
+                        string(result.removedCount) + " target(s) removed.");
                 case "docs"
-                    callTool(root, fullfile("tools", "docs"), "renderLabKitDocs", ...
-                        fullfile(root, "docs"), fullfile(root, "site"));
+                    callTool(root, fullfile("tools", "docs"), ...
+                        "renderLabKitDocs", fullfile(root, "docs"), ...
+                        fullfile(root, "site"));
+                    setStatus("Documentation site updated.");
                 case "codecheck"
-                    callTool(root, fullfile("tools", "codecheck"), "runCodecheckReport", root);
+                    callTool(root, fullfile("tools", "codecheck"), ...
+                        "runCodecheckReport", root, ...
+                        "ProgressFcn", @reportProgress);
+                    setStatus("Code Analyzer report completed.");
                 case "profile"
-                    requireSelectedApp();
-                    callTool(root, fullfile("tools", "profiling"), "profileLabKitTarget", ...
-                        state.apps(state.selected).command, [], "OpenReport", false, "WaitForGuiClose", false);
-                case "package"
-                    requireSelectedApp();
-                    callTool(root, fullfile("tools", "deployment"), "packageLabKitApp", ...
-                        state.apps(state.selected).command, [], "Root", root, "CodeFormat", "source");
+                    app = selectedApp();
+                    callTool(root, fullfile("tools", "profiling"), ...
+                        "profileLabKitTarget", app.command, [], ...
+                        "OpenReport", false, "WaitForGuiClose", false);
+                    setStatus("Performance profile completed for " + ...
+                        app.command + ".");
             end
-            status.Value = "Tool completed.";
         catch cause
-            status.Value = "Tool failed: " + string(cause.message);
+            setStatus("Tool failed: " + failureText(cause));
+        end
+        endAction();
+    end
+
+    function packageChecked(codeFormat)
+        if state.busy
+            return;
+        end
+        apps = checkedApps(state.apps, state.checkedCommands);
+        if isempty(apps)
+            setStatus("Check one or more apps in the Package column first.");
+            return;
+        end
+        commands = string({apps.command});
+        beginAction("Packaging " + packageSummary(commands) + "...");
+        try
+            result = callTool(root, fullfile("tools", "deployment"), ...
+                "packageLabKitApp", commands, [], ...
+                "Root", root, "CodeFormat", codeFormat, ...
+                "ProgressFcn", @reportProgress);
+            setStatus("Packaged " + packageSummary(commands) + ...
+                " at " + string(result.zipFile) + ".");
+        catch cause
+            setStatus("Package failed: " + failureText(cause));
+        end
+        endAction();
+    end
+
+    function reportProgress(message, ~)
+        setStatus(message);
+        drawnow limitrate;
+    end
+
+    function app = selectedApp()
+        if isempty(state.apps)
+            error("labkit:app:internal:launcher:NoAppSelected", ...
+                "Select an app before using this action.");
+        end
+        row = min(max(state.selected, 1), numel(state.apps));
+        app = state.apps(row);
+    end
+
+    function command = currentSelectedCommand()
+        command = "";
+        if ~isempty(state.apps)
+            command = string(selectedApp().command);
         end
     end
 
-    function requireSelectedApp()
-        if isempty(state.apps)
-            error("labkit:app:internal:launcher:NoAppSelected", "Select an app before using this tool.");
-        end
+    function beginAction(message)
+        state.busy = true;
+        setControlsEnabled(false);
+        setStatus(message);
+    end
+
+    function endAction()
+        state.busy = false;
+        setControlsEnabled(true);
+        updateInfo();
+    end
+
+    function setControlsEnabled(enabled)
+        value = matlab.lang.OnOffSwitchState(enabled);
+        refreshButton.Enable = value;
+        latestButton.Enable = matlab.lang.OnOffSwitchState( ...
+            enabled && state.tools.version);
+        releaseButton.Enable = latestButton.Enable;
+        versionsButton.Enable = latestButton.Enable;
+        cleanButton.Enable = matlab.lang.OnOffSwitchState( ...
+            enabled && state.tools.clean);
+        docsToolButton.Enable = matlab.lang.OnOffSwitchState( ...
+            enabled && state.tools.docs);
+        codeButton.Enable = matlab.lang.OnOffSwitchState( ...
+            enabled && state.tools.codecheck);
+        hasApps = ~isempty(state.apps);
+        openButton.Enable = matlab.lang.OnOffSwitchState(enabled && hasApps);
+        appDocsButton.Enable = openButton.Enable;
+        profileButton.Enable = matlab.lang.OnOffSwitchState( ...
+            enabled && hasApps && state.tools.profile);
+        packageButton.Enable = matlab.lang.OnOffSwitchState( ...
+            enabled && hasApps && state.tools.package);
+        pcodeButton.Enable = packageButton.Enable;
+    end
+
+    function setStatus(message)
+        state.status = string(message);
+        updateInfo();
+    end
+
+    function updateInfo()
+        details = selectedAppDetails(state.apps, state.selected);
+        details(end + 1, 1) = "Checked for package: " + ...
+            numel(state.checkedCommands) + " app(s)";
+        status.Value = [ ...
+            "Status: " + state.status
+            ""
+            details
+            ];
     end
 end
 
-function callTool(root, relativeFolder, name, varargin)
+function info = launcherVersion()
+info = struct( ...
+    "name", "labkit_launcher", ...
+    "displayName", "LabKit App Launcher", ...
+    "version", "1.6.0", ...
+    "updated", "2026-07-20");
+end
+
+function position = defaultLauncherPosition()
+screen = double(get(groot, "ScreenSize"));
+screenWidth = screen(3);
+screenHeight = screen(4);
+width = min(screenWidth, max(800, min(1500, screenWidth - 80)));
+height = min(screenHeight, max(560, min(780, screenHeight - 120)));
+x = screen(1) + max(0, (screenWidth - width) / 2);
+y = screen(2) + max(0, (screenHeight - height) / 2);
+position = round([x y width height]);
+end
+
+function configureTable(tableHandle, selectionCallback, doubleClickCallback)
+if isprop(tableHandle, "SelectionChangedFcn")
+    tableHandle.SelectionChangedFcn = selectionCallback;
+else
+    tableHandle.CellSelectionCallback = selectionCallback;
+end
+if isprop(tableHandle, "SelectionType")
+    tableHandle.SelectionType = "row";
+end
+if isprop(tableHandle, "DoubleClickedFcn")
+    tableHandle.DoubleClickedFcn = doubleClickCallback;
+elseif isprop(tableHandle, "CellDoubleClickedFcn")
+    tableHandle.CellDoubleClickedFcn = doubleClickCallback;
+end
+end
+
+function row = eventRow(event)
+row = NaN;
+if isprop(event, "Indices") && ~isempty(event.Indices)
+    row = event.Indices(1, 1);
+elseif isprop(event, "Selection") && ~isempty(event.Selection)
+    row = event.Selection(1, 1);
+elseif isstruct(event) && isfield(event, "Indices") && ~isempty(event.Indices)
+    row = event.Indices(1, 1);
+elseif isstruct(event) && isfield(event, "Selection") && ~isempty(event.Selection)
+    row = event.Selection(1, 1);
+end
+end
+
+function row = appRowByCommand(apps, command)
+row = 1;
+if isempty(apps) || strlength(string(command)) == 0
+    return;
+end
+match = find(string({apps.command}) == string(command), 1);
+if ~isempty(match)
+    row = match;
+end
+end
+
+function rows = launcherRows(apps, checkedCommands)
+rows = cell(numel(apps), 7);
+checked = ismember(string({apps.command}), string(checkedCommands));
+for index = 1:numel(apps)
+    rows(index, :) = { ...
+        checked(index), ...
+        char(apps(index).family), ...
+        char(apps(index).name), ...
+        char(apps(index).visibility), ...
+        char(apps(index).version), ...
+        char(apps(index).updated), ...
+        char(apps(index).command)};
+end
+end
+
+function commands = retainedCommands(apps, commands)
+available = string({apps.command});
+commands = string(commands(:));
+commands = commands(ismember(commands, available));
+end
+
+function apps = checkedApps(apps, commands)
+if isempty(apps)
+    return;
+end
+apps = apps(ismember(string({apps.command}), string(commands)));
+end
+
+function summary = packageSummary(commands)
+if isscalar(commands)
+    summary = string(commands);
+else
+    summary = string(numel(commands)) + " checked apps";
+end
+end
+
+function details = selectedAppDetails(apps, selected)
+if isempty(apps)
+    details = [
+        "No app entry points found."
+        "Run labkit_launcher(""repair"") if the installation is incomplete."
+        ];
+    return;
+end
+row = min(max(selected, 1), numel(apps));
+app = apps(row);
+details = [
+    string(app.name)
+    "Family: " + string(app.family)
+    "Visibility: " + string(app.visibility)
+    "Version: " + string(app.version)
+    "Updated: " + string(app.updated)
+    "Command: " + string(app.command)
+    "Path: " + string(app.folder)
+    ];
+end
+
+function message = appAvailabilityStatus(apps)
+if isempty(apps)
+    message = "No app entry points found. Run labkit_launcher(""repair"") " + ...
+        "if the installation is incomplete.";
+else
+    message = string(numel(apps)) + " app entry point(s) available.";
+end
+end
+
+function tools = launcherToolAvailability(root)
+tools = struct( ...
+    "version", toolExists(root, "deployment", "manageLabKitVersions"), ...
+    "clean", toolExists(root, "maintenance", "cleanLabKitArtifacts"), ...
+    "docs", toolExists(root, "docs", "renderLabKitDocs"), ...
+    "codecheck", toolExists(root, "codecheck", "runCodecheckReport"), ...
+    "profile", toolExists(root, "profiling", "profileLabKitTarget"), ...
+    "package", toolExists(root, "deployment", "packageLabKitApp"));
+end
+
+function tf = toolExists(root, area, name)
+base = fullfile(root, "tools", area, name);
+tf = exist(base + ".m", "file") == 2 || exist(base + ".p", "file") == 2;
+end
+
+function addPathIfMissing(folder, varargin)
+if exist(folder, "dir") == 7 && ~pathContains(folder)
+    addpath(folder, varargin{:});
+end
+end
+
+function text = failureText(cause)
+text = string(cause.message);
+if strlength(string(cause.identifier)) > 0
+    text = string(cause.identifier) + ": " + text;
+end
+end
+
+function varargout = callTool(root, relativeFolder, name, varargin)
 folder = fullfile(root, relativeFolder);
 if exist(fullfile(folder, name + ".m"), "file") ~= 2 && ...
         exist(fullfile(folder, name + ".p"), "file") ~= 2
@@ -187,7 +619,11 @@ if added
     addpath(folder, "-begin");
     cleanup = onCleanup(@() rmpath(folder));
 end
-feval(name, varargin{:});
+if nargout > 0
+    [varargout{1:nargout}] = feval(name, varargin{:});
+else
+    feval(name, varargin{:});
+end
 clear cleanup
 end
 
