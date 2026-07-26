@@ -14,6 +14,16 @@ SPEC.loader.exec_module(MODULE)
 
 
 class ClassifyCiScopeTest(unittest.TestCase):
+    def test_normalization_preserves_dot_directories_on_every_platform(self):
+        self.assertEqual(
+            MODULE.normalize(".agents/dos-and-donts.md"),
+            ".agents/dos-and-donts.md",
+        )
+        self.assertEqual(
+            MODULE.classify([r".agents\dos-and-donts.md"]),
+            {"full": False, "docs": False, "governance": True},
+        )
+
     def test_agent_guidance_uses_only_governance_check(self):
         self.assertEqual(
             MODULE.classify(["AGENTS.md", ".agents/dos-and-donts.md"]),
