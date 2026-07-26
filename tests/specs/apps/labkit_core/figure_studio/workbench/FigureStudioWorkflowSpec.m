@@ -1,6 +1,14 @@
 classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
     %FIGURESTUDIOWORKFLOWSPEC Specify the bounded FIG-preview-export workflow.
 
+    methods (TestMethodSetup)
+        function keepNativeRuntimeHidden(testCase)
+            previous = getenv("LABKIT_GUI_TEST_MODE");
+            testCase.addTeardown(@setenv, "LABKIT_GUI_TEST_MODE", previous);
+            setenv("LABKIT_GUI_TEST_MODE", "hidden");
+        end
+    end
+
     methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
         function loadsAFigureIntoTheInteractivePreviewAndExportsPng(testCase)
             folder = testCase.applyFixture( ...
