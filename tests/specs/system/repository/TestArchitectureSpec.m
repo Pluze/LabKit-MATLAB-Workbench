@@ -122,6 +122,19 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
         end
 
+        function runtimeFactoryParserAcceptsExplicitJournalWithAdditionalArguments(testCase)
+            source = strjoin([ ...
+                "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
+                "    app, [], struct(), labkit.app.diagnostic.Options(), journal, ...", ...
+                "    JournalRoot=temporaryRoot);"], newline);
+
+            calls = labkittest.runtimeFactoryCalls(source);
+
+            testCase.verifyNumElements(calls, 1);
+            testCase.verifyEqual(calls.Arguments(5), "journal");
+            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
+        end
+
         function runtimeFactoryParserAcceptsExplicitJournalRootWithEmptyJournal(testCase)
             source = strjoin([ ...
                 "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
@@ -141,7 +154,7 @@ end
 
 function tf = hasExplicitJournalOrRoot(call)
 callArguments = call.Arguments;
-hasJournal = numel(callArguments) == 5 && ...
+hasJournal = numel(callArguments) >= 5 && ...
     strlength(callArguments(5)) > 0 && callArguments(5) ~= "[]";
 hasJournalRoot = any(numel(callArguments) == [6, 7]) && ...
     callArguments(5) == "[]" && strlength(call.JournalRoot) > 0;
