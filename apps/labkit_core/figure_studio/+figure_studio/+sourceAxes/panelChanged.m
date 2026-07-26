@@ -27,7 +27,8 @@ state.project.annotations.limitOverrides = emptyLimitOverrides();
 state.project.results.lastExport = [];
 state.project.results.resultManifestPath = "";
 state.session.workflow.status = "Editing " + panelLabel + ".";
-callbackContext.appendStatus("Selected FIG " + panelLabel + ".");
+callbackContext.log("info", "figure_studio.sourceaxes.panelchanged.status", ...
+    "Selected a figure panel.");
 end
 
 function limits = emptyLimitOverrides()

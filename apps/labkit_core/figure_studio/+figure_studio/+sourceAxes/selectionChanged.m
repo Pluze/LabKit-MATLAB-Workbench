@@ -54,7 +54,9 @@ state.session.workflow.status = "Opened " + string(name) + ...
     string(extension) + " — " + panelLabel + ".";
 state.project.results.lastExport = [];
 state.project.results.resultManifestPath = "";
-callbackContext.appendStatus("Opened FIG: " + sourcePath);
+callbackContext.log("info", ...
+    "figure_studio.sourceaxes.selectionchanged.status", ...
+    "Opened the selected FIG source.");
 end
 
 function state = adoptSourceStyle(state, sourceStyle)

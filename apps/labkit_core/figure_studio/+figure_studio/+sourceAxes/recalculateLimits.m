@@ -30,7 +30,7 @@ end
 state.session.workflow.status = "Recalculated X/Y limits from visible graphics.";
 state.project.results.lastExport = [];
 state.project.results.resultManifestPath = "";
-callbackContext.appendStatus(state.session.workflow.status);
+callbackContext.log("info", "figure_studio.sourceaxes.recalculatelimits.status", state.session.workflow.status);
 end
 
 function deleteIfValid(fig)

@@ -37,7 +37,8 @@ state.project.results.lastExport = struct( ...
     "kind", "package", "path", folder, ...
     "manifestPath", string(written.Value), "outputs", payload);
 state.project.results.resultManifestPath = string(written.Value);
-callbackContext.appendStatus("Exported package: " + folder);
+callbackContext.log("info", "figure_studio.resultfiles.exportcurrent.status", ...
+    "Exported the Figure Studio package.");
 end
 
 function outputs = packageOutputs(payload)

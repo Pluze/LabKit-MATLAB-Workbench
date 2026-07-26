@@ -29,7 +29,7 @@ state.project.parameters = p;
 state.session.workflow.status = "Styled with " + preset + ".";
 state.project.results.lastExport = [];
 state.project.results.resultManifestPath = "";
-callbackContext.appendStatus("Selected style mode: " + preset);
+callbackContext.log("info", "figure_studio.stylelibrary.applypreset.status", "Selected style mode: " + preset);
 end
 
 function value = onOff(tf)
