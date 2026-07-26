@@ -168,6 +168,22 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             events = obj.Recorder.events();
         end
 
+        function snapshot = diagnosticSnapshot(obj)
+            snapshot = obj.Recorder.captureSnapshot();
+        end
+
+        function token = subscribeDiagnostics(obj, callback)
+            token = obj.Recorder.subscribe(callback);
+        end
+
+        function unsubscribeDiagnostics(obj, token)
+            obj.Recorder.unsubscribe(token);
+        end
+
+        function setTraceCapture(obj, enabled)
+            obj.Recorder.setTraceEnabled(enabled);
+        end
+
         function folder = diagnosticFolder(obj)
             folder = obj.Recorder.artifactFolder();
         end

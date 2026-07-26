@@ -17,6 +17,10 @@ classdef (Hidden, Sealed) SessionEventStream < handle
         ProjectionHook = []
         ProjectionHealthHook = []
         ProjectionHealthUnavailableReported (1, 1) logical = false
+        TraceEnabled (1, 1) logical = false
+        ConsumerSequence (1, 1) double = 0
+        Consumers (1, :) struct = struct( ...
+            "Id", strings(1, 0), "Callback", cell(1, 0))
         Closed (1, 1) logical = false
     end
 
@@ -35,6 +39,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 labkit.app.internal.SessionIdentity.create());
             projectionHook = optionValue(varargin, "ProjectionHook", []);
             projectionHealthHook = optionValue(varargin, "ProjectionHealthHook", []);
+            traceEnabled = optionValue(varargin, "TraceEnabled", false);
             if ~isempty(projectionHook) && ~isa(projectionHook, "function_handle")
                 error("labkit:app:contract:InvalidValue", ...
                     "Session event ProjectionHook must be a function handle.");
@@ -42,6 +47,10 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             if ~isempty(projectionHealthHook) && ~isa(projectionHealthHook, "function_handle")
                 error("labkit:app:contract:InvalidValue", ...
                     "Session event ProjectionHealthHook must be a function handle.");
+            end
+            if ~(islogical(traceEnabled) && isscalar(traceEnabled))
+                error("labkit:app:contract:InvalidValue", ...
+                    "Session event TraceEnabled must be scalar logical.");
             end
             obj.Application = application;
             obj.SessionId = labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
@@ -52,6 +61,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             obj.Records = repmat(recordTemplate(), 0, 1);
             obj.ProjectionHook = projectionHook;
             obj.ProjectionHealthHook = projectionHealthHook;
+            obj.TraceEnabled = traceEnabled;
             obj.log("info", "session.started", "Session started.", ...
                 Category="runtime.lifecycle", Audience="developer");
         end
@@ -131,6 +141,9 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             audience = values.audience;
             attributes = values.attributes;
             exception = exceptionProjection(values.exception);
+            if severity == "trace" && ~obj.TraceEnabled
+                return;
+            end
             operation = optionValue(varargin, "Operation", []);
             if isempty(operation)
                 operation = obj.currentOperation();
@@ -172,6 +185,57 @@ classdef (Hidden, Sealed) SessionEventStream < handle
 
         function records = records(obj)
             records = obj.Records;
+        end
+
+        function snapshot = captureSnapshot(obj)
+            snapshot = struct( ...
+                "events", obj.Records, ...
+                "traceEnabled", obj.TraceEnabled, ...
+                "inMemoryTruncated", obj.Sequence > numel(obj.Records), ...
+                "retainedRecordCount", numel(obj.Records), ...
+                "totalRecordCount", obj.Sequence);
+        end
+
+        function setTraceEnabled(obj, enabled)
+            obj.ensureOpen();
+            if ~(islogical(enabled) && isscalar(enabled))
+                error("labkit:app:contract:InvalidValue", ...
+                    "Trace capture state must be scalar logical.");
+            end
+            if obj.TraceEnabled == enabled
+                return;
+            end
+            obj.TraceEnabled = enabled;
+            if enabled
+                obj.log("info", "trace.capture_enabled", ...
+                    "Trace capture enabled.", ...
+                    Category="runtime.lifecycle", Audience="developer");
+            else
+                obj.log("info", "trace.capture_disabled", ...
+                    "Trace capture disabled.", ...
+                    Category="runtime.lifecycle", Audience="developer");
+            end
+        end
+
+        function token = subscribe(obj, callback)
+            obj.ensureOpen();
+            if ~isa(callback, "function_handle")
+                error("labkit:app:contract:InvalidValue", ...
+                    "Session event consumer must be a function handle.");
+            end
+            obj.ConsumerSequence = obj.ConsumerSequence + 1;
+            token = "consumer-" + string(obj.ConsumerSequence);
+            obj.Consumers(end + 1) = struct( ...
+                "Id", token, "Callback", callback);
+        end
+
+        function unsubscribe(obj, token)
+            token = string(token);
+            if ~isscalar(token) || ismissing(token)
+                return;
+            end
+            keep = string({obj.Consumers.Id}) ~= token;
+            obj.Consumers = obj.Consumers(keep);
         end
 
         function refreshProjectionHealth(obj)
@@ -249,6 +313,9 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             end
             if notifyProjection
                 obj.notifyProjectionHook(record);
+            end
+            obj.notifyConsumers(record);
+            if notifyProjection
                 obj.drainProjectionHealth(record);
             end
         end
@@ -337,6 +404,21 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             record.rootActionId = rootActionId;
             record.exception = emptyException();
             obj.retain(record, false);
+        end
+
+        function notifyConsumers(obj, record)
+            if isempty(obj.Consumers)
+                return;
+            end
+            keep = true(1, numel(obj.Consumers));
+            for index = 1:numel(obj.Consumers)
+                try
+                    obj.Consumers(index).Callback(record);
+                catch
+                    keep(index) = false;
+                end
+            end
+            obj.Consumers = obj.Consumers(keep);
         end
     end
 end

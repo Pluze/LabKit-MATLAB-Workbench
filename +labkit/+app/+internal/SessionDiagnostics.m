@@ -1,0 +1,207 @@
+classdef (Hidden, Sealed) SessionDiagnostics < handle
+    %SESSIONDIAGNOSTICS Own one Runtime's canonical event and journal services.
+    % RuntimeFactory is the production creator. RuntimeKernel uses this private
+    % boundary for semantic operations, viewer snapshots, trace capture, and
+    % orderly persistence teardown. App callbacks never receive this object.
+
+    properties (Access = private)
+        Application
+        Stream
+        Projection
+        Journal
+        Closed (1, 1) logical = false
+    end
+
+    methods
+        function obj = SessionDiagnostics( ...
+                application, stream, projection, journal)
+            if ~isa(application, "labkit.app.Definition") || ...
+                    ~isscalar(application)
+                error("labkit:app:runtime:InvariantFailure", ...
+                    "SessionDiagnostics requires one Definition.");
+            end
+            if ~isa(stream, "labkit.app.internal.SessionEventStream") || ...
+                    ~isscalar(stream)
+                error("labkit:app:runtime:InvariantFailure", ...
+                    "SessionDiagnostics requires one SessionEventStream.");
+            end
+            if ~isa(projection, ...
+                    "labkit.app.internal.SessionJournalProjection") || ...
+                    ~isscalar(projection)
+                error("labkit:app:runtime:InvariantFailure", ...
+                    "SessionDiagnostics requires one journal projection.");
+            end
+            if ~isa(journal, "labkit.app.internal.SessionJournal") || ...
+                    ~isscalar(journal)
+                error("labkit:app:runtime:InvariantFailure", ...
+                    "SessionDiagnostics requires one SessionJournal.");
+            end
+            obj.Application = application;
+            obj.Stream = stream;
+            obj.Projection = projection;
+            obj.Journal = journal;
+        end
+
+        function operation = begin(obj, category, eventName, message, varargin)
+            operation = obj.Stream.begin( ...
+                category, eventName, message, varargin{:});
+        end
+
+        function finish(obj, operation, operationResult, ...
+                stateDisposition, exception)
+            if nargin < 5
+                exception = [];
+            end
+            obj.Stream.finish( ...
+                operation, operationResult, stateDisposition, exception);
+        end
+
+        function log(obj, severity, eventName, message, varargin)
+            obj.Stream.log(severity, eventName, message, varargin{:});
+        end
+
+        function events = events(obj)
+            events = obj.Stream.records();
+        end
+
+        function snapshot = captureSnapshot(obj)
+            streamSnapshot = obj.Stream.captureSnapshot();
+            manifest = obj.Journal.manifest();
+            health = obj.Journal.healthSnapshot();
+            degradation = manifest.degradation;
+            snapshot = struct( ...
+                "events", streamSnapshot.events, ...
+                "traceEnabled", streamSnapshot.traceEnabled, ...
+                "inMemoryTruncated", streamSnapshot.inMemoryTruncated, ...
+                "retainedRecordCount", ...
+                    streamSnapshot.retainedRecordCount, ...
+                "totalRecordCount", streamSnapshot.totalRecordCount, ...
+                "journalAvailable", health.available, ...
+                "journalState", string(health.state), ...
+                "droppedRecordCount", ...
+                    double(degradation.droppedRecordCount), ...
+                "coalescedRecordCount", ...
+                    double(degradation.coalescedRecordCount), ...
+                "expiredSegmentCount", ...
+                    double(degradation.expiredSegmentCount), ...
+                "degradationReason", ...
+                    string(health.degradationReason));
+        end
+
+        function token = subscribe(obj, callback)
+            token = obj.Stream.subscribe(callback);
+        end
+
+        function unsubscribe(obj, token)
+            obj.Stream.unsubscribe(token);
+        end
+
+        function setTraceEnabled(obj, enabled)
+            obj.Stream.setTraceEnabled(enabled);
+        end
+
+        function folder = artifactFolder(~)
+            % Transitional compatibility: ordinary diagnostics have no
+            % App-authored artifact folder.
+            folder = "";
+        end
+
+        function note(obj, category, targetId, signal, ~)
+            [eventName, attributes] = legacyEvent(targetId, signal);
+            obj.Stream.log( ...
+                "debug", eventName, "Legacy diagnostic checkpoint.", ...
+                Category=legacyCategory(category, obj.Application), ...
+                Audience="developer", Attributes=attributes);
+        end
+
+        function count(obj, id, value)
+            if ~(isnumeric(value) && isscalar(value) && isfinite(value) && ...
+                    value >= 0 && value == fix(value))
+                error("labkit:app:contract:InvalidValue", ...
+                    "Diagnostic count must be a nonnegative integer.");
+            end
+            eventName = legacyIdentifier( ...
+                id, "legacy.count", "diagnostic id");
+            obj.Stream.log( ...
+                "debug", eventName, "Legacy diagnostic count.", ...
+                Category=legacyCategory("app", obj.Application), ...
+                Audience="developer", Attributes=struct( ...
+                    "enum", "count", "count", double(value)));
+        end
+
+        function reportError(obj, operation, exception)
+            if ~isa(exception, "MException") || ~isscalar(exception)
+                error("labkit:app:contract:InvalidValue", ...
+                    "Diagnostic reportError requires one MException.");
+            end
+            eventName = legacyErrorEventName(operation);
+            diagnosticOperation = obj.Stream.begin( ...
+                legacyCategory("app", obj.Application), eventName, ...
+                "Legacy error reported.");
+            obj.Stream.finish( ...
+                diagnosticOperation, "failed", ...
+                "notApplicable", exception);
+        end
+
+        function close(obj)
+            if obj.Closed
+                return;
+            end
+            try
+                obj.Stream.close();
+            catch
+                % Stream teardown must not prevent projection cleanup.
+            end
+            try
+                obj.Projection.close();
+            catch
+                % Journal teardown must not change Runtime close semantics.
+            end
+            try
+                obj.Stream.refreshProjectionHealth();
+            catch
+                % Health refresh must not change Runtime close semantics.
+            end
+            obj.Closed = true;
+        end
+
+        function delete(obj)
+            obj.close();
+        end
+    end
+end
+
+function category = legacyCategory(value, application)
+value = lower(labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
+    value, "legacy diagnostic category"));
+if value == "app"
+    category = "app." + application.AppId + ".legacy";
+elseif value == "lifecycle"
+    category = "runtime.lifecycle";
+else
+    category = "runtime.callback";
+end
+end
+
+function [eventName, attributes] = legacyEvent(targetId, signal)
+eventName = legacyIdentifier( ...
+    targetId, "legacy.checkpoint", "legacy diagnostic id");
+signal = legacyIdentifier( ...
+    signal, "checkpoint", "legacy diagnostic signal");
+attributes = struct("enum", signal);
+end
+
+function eventName = legacyErrorEventName(operation)
+eventName = legacyIdentifier( ...
+    operation, "legacy.reported_error", ...
+    "legacy diagnostic operation");
+end
+
+function value = legacyIdentifier(value, fallback, name)
+try
+    value = labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
+        value, name);
+catch
+    value = fallback;
+end
+end
