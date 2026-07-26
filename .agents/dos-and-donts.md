@@ -84,6 +84,8 @@ second architecture guide.
 - After a bulk text rewrite, scan changed MATLAB files for unexpected UTF-8
   BOMs before reviewing semantics. A shell encoding default can otherwise
   create hundreds of noisy first-line changes and conceal the real migration.
+  If terminal output looks corrupted, reread with explicit UTF-8 and inspect
+  code points before changing source; display decoding is not source damage.
 - Before starting a durable background MATLAB test run, derive the repository
   root from the runner file, convert suite paths to absolute character cells,
   and assert both the container type and file existence. Reusing this

@@ -21,7 +21,10 @@ classdef CropRoiPresentationSpec < matlab.unittest.TestCase
             testCase.verifyEqual(centerMarker.XData, 60);
             testCase.verifyEqual(centerMarker.YData, 40);
             testCase.verifyTrue(any(contains(labels, "Crop center")));
-            testCase.verifyTrue(any(contains(labels, "drag center or inside box")));
+            testCase.verifyTrue(any( ...
+                labels == "Crop ROI — drag center or inside box"));
+            testCase.verifyEqual(string(centerMarker.HitTest), "off");
+            testCase.verifyEqual(string(centerMarker.PickableParts), "none");
             clear cleanup
         end
     end
