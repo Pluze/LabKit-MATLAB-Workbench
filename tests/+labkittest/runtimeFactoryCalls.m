@@ -8,7 +8,7 @@ masked = maskNonCode(source);
 pattern = "RuntimeFactory\.(createHeadless|createMatlab)\s*\(";
 [starts, ends, tokens] = regexp(masked, pattern, "start", "end", "tokens");
 calls = repmat(struct("Method", "", "Line", 0, ...
-    "Arguments", strings(1, 0)), 1, numel(starts));
+    "Arguments", strings(1, 0), "JournalRoot", ""), 1, numel(starts));
 for index = 1:numel(starts)
     opening = ends(index);
     closing = closingDelimiter(masked, opening);
@@ -21,7 +21,36 @@ for index = 1:numel(starts)
     calls(index) = struct( ...
         "Method", string(tokens{index}{1}), ...
         "Line", numel(regexp(source(1:starts(index)), newline)) + 1, ...
-        "Arguments", arguments);
+        "Arguments", arguments, ...
+        "JournalRoot", journalRootArgument(arguments));
+end
+end
+
+function value = journalRootArgument(arguments)
+value = "";
+if numel(arguments) == 6
+    expression = strtrim(arguments(6));
+    equals = find(char(expression) == "=", 1);
+    if ~isempty(equals) && normalizedName(extractBefore(expression, equals)) == ...
+            "journalroot"
+        value = nonemptyExpression(extractAfter(expression, equals));
+    end
+    return;
+end
+if numel(arguments) ~= 7 || normalizedName(arguments(6)) ~= "journalroot"
+    return;
+end
+value = nonemptyExpression(arguments(7));
+end
+
+function value = normalizedName(value)
+value = lower(erase(strtrim(string(value)), [char(39), char(34)]));
+end
+
+function value = nonemptyExpression(value)
+value = strtrim(string(value));
+if value == "[]"
+    value = "";
 end
 end
 

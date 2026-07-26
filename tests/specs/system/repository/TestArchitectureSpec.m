@@ -71,7 +71,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             end
         end
 
-        function testsPassAnExplicitTemporaryJournalToEveryRuntimeFactory(testCase)
+        function testsPassAnExplicitJournalOrJournalRootToEveryRuntimeFactory(testCase)
             root = labkittest.setup();
             files = dir(fullfile(root, "tests", "**", "*.m"));
             violations = strings(1, 0);
@@ -79,10 +79,11 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 file = fullfile(files(index).folder, files(index).name);
                 calls = labkittest.runtimeFactoryCalls(fileread(file));
                 for call = calls
-                    if ~hasExplicitJournal(call)
+                    if ~hasExplicitJournalOrRoot(call)
                         relative = erase(string(file), string(root) + filesep);
                         violations(end + 1) = relative + ":" + ...
-                            string(call.Line) + " must pass a fifth journal argument.";
+                            string(call.Line) + " must pass a nonempty fifth journal " + ...
+                            "or fifth [] with a nonempty JournalRoot.";
                     end
                 end
             end
@@ -101,7 +102,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(calls, 1);
             testCase.verifyEqual(calls.Method, "createHeadless");
             testCase.verifyNumElements(calls.Arguments, 4);
-            testCase.verifyFalse(hasExplicitJournal(calls));
+            testCase.verifyFalse(hasExplicitJournalOrRoot(calls));
         end
 
         function runtimeFactoryParserHandlesTransposeAndCharLiterals(testCase)
@@ -118,15 +119,32 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(calls, 1);
             testCase.verifyEqual(calls.Method, "createHeadless");
             testCase.verifyNumElements(calls.Arguments, 5);
-            testCase.verifyTrue(hasExplicitJournal(calls));
+            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
+        end
+
+        function runtimeFactoryParserAcceptsExplicitJournalRootWithEmptyJournal(testCase)
+            source = strjoin([ ...
+                "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
+                "    app, [], struct(), labkit.app.diagnostic.Options(), [], ...", ...
+                "    JournalRoot=temporaryRoot);"], newline);
+
+            calls = labkittest.runtimeFactoryCalls(source);
+
+            testCase.verifyNumElements(calls, 1);
+            testCase.verifyEqual(calls.Arguments(5), "[]");
+            testCase.verifyEqual(calls.JournalRoot, "temporaryRoot");
+            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
         end
     end
 end
 
-function tf = hasExplicitJournal(call)
+function tf = hasExplicitJournalOrRoot(call)
 callArguments = call.Arguments;
-tf = numel(callArguments) == 5 && ...
+hasJournal = numel(callArguments) == 5 && ...
     strlength(callArguments(5)) > 0 && callArguments(5) ~= "[]";
+hasJournalRoot = any(numel(callArguments) == [6, 7]) && ...
+    callArguments(5) == "[]" && strlength(call.JournalRoot) > 0;
+tf = hasJournal || hasJournalRoot;
 end
 
 function value = text(root, relative)

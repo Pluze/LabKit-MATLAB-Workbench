@@ -2,6 +2,18 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
     %SESSIONJOURNALSPEC Verify the private buffered canonical session store.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function defaultSessionIdentityDoesNotChangeRng(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            app = journalProbeDefinition();
+            before = rng;
+            journal = labkit.app.internal.SessionJournal(app, RootFolder=root);
+            cleanup = onCleanup(@() journal.close());
+
+            testCase.verifyEqual(rng, before);
+            clear cleanup
+        end
+
         function buffersContextAndFlushesAroundWarnings(testCase)
             global labkitSessionJournalStages
             labkitSessionJournalStages = strings(0, 1);

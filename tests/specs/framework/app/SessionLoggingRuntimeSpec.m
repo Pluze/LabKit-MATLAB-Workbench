@@ -2,6 +2,46 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
     %SESSIONLOGGINGRUNTIMESPEC Verify Runtime callback canonical event chains.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function defaultFactorySessionIdentityDoesNotChangeRng(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = runtimeProbeDefinition("run", @runLoggingProbe);
+            before = rng;
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                definition, [], struct(), labkit.app.diagnostic.Options(), [], ...
+                JournalRoot=root);
+            cleanup = onCleanup(@() runtime.close());
+
+            testCase.verifyEqual(rng, before);
+            clear cleanup
+        end
+
+        function rejectsJournalRootAlongsideAnExplicitJournal(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = runtimeProbeDefinition("run", @runLoggingProbe);
+            journal = labkit.app.internal.SessionJournal(definition, RootFolder=root);
+            cleanup = onCleanup(@() journal.close());
+
+            testCase.verifyError(@() labkit.app.internal.RuntimeFactory.createHeadless( ...
+                definition, [], struct(), labkit.app.diagnostic.Options(), journal, ...
+                JournalRoot=root), "labkit:app:runtime:InvariantFailure");
+            clear cleanup
+        end
+
+        function rejectsUnknownJournalOptionsBeforeTheSeamInvariant(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = runtimeProbeDefinition("run", @runLoggingProbe);
+            journal = labkit.app.internal.SessionJournal(definition, RootFolder=root);
+            cleanup = onCleanup(@() journal.close());
+
+            testCase.verifyError(@() labkit.app.internal.RuntimeFactory.createHeadless( ...
+                definition, [], struct(), labkit.app.diagnostic.Options(), journal, ...
+                UnknownJournalOption=root), "labkit:app:contract:UnknownArgument");
+            clear cleanup
+        end
+
         function recordsOneCompleteCallbackChain(testCase)
             runtime = runtimeWithJournal(testCase, "session-runtime-complete", ...
                 "run", @runLoggingProbe);

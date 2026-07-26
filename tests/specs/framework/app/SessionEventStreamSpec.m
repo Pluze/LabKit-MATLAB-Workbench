@@ -2,6 +2,16 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
     %SESSIONEVENTSTREAMSPEC Verify the private Phase 2 canonical event stream.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function defaultSessionIdentityDoesNotChangeRng(testCase)
+            before = rng;
+            stream = labkit.app.internal.SessionEventStream( ...
+                loggingProbeDefinition());
+            cleanup = onCleanup(@() stream.close());
+
+            testCase.verifyEqual(rng, before);
+            clear cleanup
+        end
+
         function retainsMinimalPrivacySafeEventBeforeAnyProjection(testCase)
             stream = labkit.app.internal.SessionEventStream( ...
                 loggingProbeDefinition(), SessionId="session-test");

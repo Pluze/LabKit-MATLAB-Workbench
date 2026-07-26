@@ -29,7 +29,8 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 error("labkit:app:runtime:InvariantFailure", ...
                     "SessionEventStream requires one Definition.");
             end
-            sessionId = optionValue(varargin, "SessionId", newSessionId());
+            sessionId = optionValue(varargin, "SessionId", ...
+                labkit.app.internal.SessionIdentity.create());
             projectionHook = optionValue(varargin, "ProjectionHook", []);
             if ~isempty(projectionHook) && ~isa(projectionHook, "function_handle")
                 error("labkit:app:contract:InvalidValue", ...
@@ -311,9 +312,4 @@ end
 exception.identifier = string(value.identifier);
 exception.message = "Exception captured.";
 exception.stack = string({value.stack.name}).';
-end
-
-function value = newSessionId()
-value = "session-" + string(datetime("now", Format="yyyyMMddHHmmssSSS")) + ...
-    "-" + string(randi([0, 999999]));
 end
