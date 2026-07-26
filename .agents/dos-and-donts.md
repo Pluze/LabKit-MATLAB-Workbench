@@ -1,92 +1,22 @@
 # Working Dos and Don'ts
 
-This is the repository's compact, durable working-memory ledger. Record only a
-high-value lesson that will save future agents meaningful investigation, retry,
-or design cost. It is not a chronological activity log, a replacement for
-architecture manuals, or a place for transient failures.
+This file is a short incubation ledger for a reusable lesson that is still too
+new to belong to a stable policy, skill, test, source contract, or manual. It is
+not a work log or a second architecture guide.
 
-## Use this file
+## Admission and promotion
 
-- After each meaningful work checkpoint, add an entry only when the lesson is
-  both reusable and costly to rediscover. Ordinary successful commands,
-  routine edits, and one-off observations do not belong here.
-- State the durable cause and preferred practice, not a step-by-step transcript
-  or a one-off filename.
-- Capture failed or wasteful approaches only when the reason and better route
-  will prevent a repeated mistake.
-- Before adding an entry, merge it into an existing principle whenever
-  possible. Periodically compress the document into fewer, principle-first
-  rules; remove stale, duplicated, or low-value details instead of accumulating
-  a work log.
-- Keep product policy in the owning `AGENTS.md`, skill, source help, or manual;
-  link or promote a lesson there once it becomes a stable rule.
+- Add only a lesson whose rediscovery would cost meaningful investigation or
+  retry time. Record the durable cause and better practice, never a transcript,
+  successful command, transient failure, version, or one-off filename.
+- Merge with an existing lesson before adding another. At each meaningful
+  checkpoint, promote mature guidance to its nearest owner: policy to
+  `AGENTS.md`, repeatable procedure to a skill, enforceable behavior to a test,
+  and user or API meaning to source help or a manual.
+- Remove a promoted, stale, duplicated, or low-value entry immediately.
+  Periodically compress the remainder into fewer principle-first statements.
 
-## Current lessons
+## Incubating lessons
 
-### Debug samples
-
-- A diagnostic synthetic sample is a validated, reproducible input fixture;
-  it is not permission to preload an App or run startup work. Keep Debug
-  launches clean and let users deliberately select generated inputs.
-- Test synthetic fixtures twice when practical: validate their project/artifact
-  contract and start the App from the fixture in an isolated runtime. A clean
-  Debug-start test alone cannot prove the fixture is operational.
-- Schema-valid placeholders such as an unset `[NaN NaN]` ROI center are not
-  valid synthetic UI data when a native control must render them. Seed every
-  interactive sample field with finite, representative values and cover it in
-  a hidden-GUI sample-launch test.
-- App conformance must launch each App's `BuildDebugSample` project through
-  the native adapter as well as validating it headlessly. Clean Debug startup
-  proves the diagnostic policy, but only a native sample launch exposes
-  control-limit and presentation failures.
-
-### Managed interactions
-
-- A preview axis should have one active editor for overlapping gestures. If a
-  workflow needs both a placement click and ROI movement, make them behaviors
-  of the same managed interaction instead of relying on editor-focus order.
-- A persistent rectangle must accept a drag from its center marker and visible
-  interior, not only from a thin edge; edge-only hit testing is technically
-  interactive but fails ordinary pointer use.
-- State-only geometry tests prove coordinate mapping, not pointer ownership or
-  native-control creation. Add hidden-GUI coverage for regressions involving
-  native controls, interactions, or dynamic limits.
-
-### Preview budgets
-
-- A shared image utility may implement caller-selected sampling, but its
-  default must not impose an App's responsiveness-versus-pixel-fidelity policy.
-  Keep the default native and make every finite preview budget explicit at the
-  product stage that owns the workflow semantics.
-
-### Runtime presentation
-
-- When an App narrows a control's dynamic limits, ensure its current bound
-  value remains inside those limits before native reconciliation. Test with the
-  smallest valid synthetic source, since defaults often exceed small-image
-  geometry.
-
-### Validation workflow
-
-- Use `addpath('tests'); labkittest.run(...)` for focused MATLAB validation;
-  `buildtool test --tasks` is not a supported selector form.
-- Long all-App MATLAB checks can exceed one shell request's timeout. Run them
-  as a hidden background MATLAB process with redirected output, then poll the
-  log and record the completed result rather than treating a client timeout as
-  a test failure.
-- Run `labkittest.explain` for every changed `projectSpec`; a successful
-  save/restore workflow does not replace an owner-level persistence spec for
-  defaults, validation, and migration semantics. A missing evidence mapping is
-  a test gap, not an empty passing scope.
-
-### Compatibility boundaries
-
-- A one-way saved-data reader is bounded compatibility when the writer emits
-  only the current format, accepted old versions or variable names are exact,
-  and App plus runtime restore evidence exists. Record that as a supported
-  persistence contract, not permanent migration debt.
-- Parallel old/new fields on the same live object are two data models, not a
-  harmless compatibility layer. Migrate all consumers, make the breaking
-  facade version explicit, and delete the aliases together.
-- Defaults apply when an option is omitted. An explicit but unknown scientific
-  mode must fail visibly instead of silently selecting a different branch.
+None. Current durable lessons have been promoted to their owning policies,
+skills, and tests.

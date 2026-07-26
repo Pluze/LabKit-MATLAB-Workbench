@@ -43,12 +43,10 @@ under `docs/`.
 - Validate an edited skill and exercise the changed script path. Record
   durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
   agent procedure in skills rather than duplicating it in human manuals.
-- After each meaningful work checkpoint, update `.agents/dos-and-donts.md`
-  only for a high-value, reusable lesson whose rediscovery would cost material
-  investigation or retry time. Merge it into an existing principle whenever
-  possible, periodically compress the file, and remove stale or low-value
-  detail; never turn it into a chronological work log or duplicate stable
-  policy already owned here.
+- Use `.agents/dos-and-donts.md` only as a short incubation ledger for a costly
+  reusable lesson without a stable owner. Promote mature policy, procedure,
+  behavior, or product meaning to the nearest `AGENTS.md`, skill, test, source
+  contract, or manual, then remove it from the ledger.
 
 ## Architecture and implementation
 
@@ -62,24 +60,11 @@ under `docs/`.
   need the stable contract or extending an existing API would turn it into an
   ambiguous bucket.
 - App-facing packages are `labkit.app`, `image`, `thermal`, `dta`, `rhs`,
-  and `biosignal`. Do not
-  create public `analysis`, `data`, `io`, `util`, or app-specific helper
-  surfaces.
-- Migrated Apps use `labkit.app.Definition`, `labkit.app.layout.*`,
-  `labkit.app.view.Snapshot`, typed `labkit.app.event.*` payloads, and
-  `labkit.app.CallbackContext`. Layout controls bind directly to concrete
-  semantic callbacks; there is no App-authored handler or renderer registry.
-  Entrypoints call `definition().launch(...)`. Apps do not own lifecycle
-  timers, readiness, callback queues, or concrete framework layout.
-- `+workbench/buildLayout.m` is the visible product assembly boundary.
-  Complex Apps compose feature-owned layout and snapshot fragments from
-  capability packages; renderers live with the plot capability they draw.
-  Runtime callbacks name `applicationState`, typed event values, and
-  `callbackContext` explicitly, then delegate scientific work through narrow
-  inputs rather than forwarding SDK objects or a generic App object.
-- Keep app entrypoints thin and app helpers under the owning app package. Name
-  packages and functions for the capability they own, not `helpers`, `utils`,
-  `process`, `handle`, or `manage`.
+  and `biosignal`. Do not create public `analysis`, `data`, `io`, `util`, or
+  app-specific helper surfaces.
+- App shape, capability naming, callbacks, persistence, and Debug behavior are
+  governed by `apps/AGENTS.md`; App SDK internals and facade contracts are
+  governed by `+labkit/AGENTS.md`.
 - Do not convert struct state into classes, merge all apps into one entrypoint,
   or change implementation language without explicit approval.
 - File budgets count nonblank, non-comment MATLAB code. They are review
@@ -87,10 +72,6 @@ under `docs/`.
   makes workflow order clearer.
 - Path collections use string or cell arrays. A scalar folder becomes
   `string(folder)`; never reshape an unknown char path with `(:)`.
-- Sanitize UI numeric values to finite scalars before storing them.
-- Repeated labels/choices that also drive state have one app-local owner.
-- Interactive rectangles use managed interaction specs. Display-only graphics
-  disable hit testing, and overlay edits preserve the current viewport.
 - Scientific constants have semantic names and nearby rationale. Structural
   indices, UI geometry, versions, and synthetic fixtures are exempt.
 

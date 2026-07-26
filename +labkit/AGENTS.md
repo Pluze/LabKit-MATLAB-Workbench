@@ -18,10 +18,6 @@ tests, and the one owning manual:
 Framework behavior specifications live under `tests/specs/framework/<area>/`.
 Use `labkittest.explain` to find the exact owner and contract.
 
-Record a reusable framework command, runtime, boundary, or validation lesson
-after the checkpoint in `.agents/dos-and-donts.md`; keep its guidance compact
-and promote enduring policy to this file when it governs all framework work.
-
 ## Ownership
 
 - Promote an API only when it is domain-neutral, independently testable, and
@@ -41,6 +37,8 @@ and promote enduring policy to this file when it governs all framework work.
   not an app's task orchestration.
 - `labkit.app` owns the App SDK. Registry mutation, queueing, concrete
   controls, native adapters, and lifecycle handles remain private.
+- Shared image utilities retain native pixels by default. A finite preview
+  budget is an explicit caller-owned product decision, not a facade default.
 - `labkit.contract` owns MATLAB-native version requirements and range checks,
   not app discovery or package management.
 - Do not introduce MATLAB classes or a third-party runtime dependency without
@@ -60,6 +58,9 @@ and promote enduring policy to this file when it governs all framework work.
   remain legal and unique; references must resolve before UI mutation.
 - View snapshots must preserve unchanged graphics and viewports. Renderers own
   incremental overlay changes; interaction specs own user gestures.
+- One interaction target has one active gesture owner. A managed movable
+  rectangle accepts movement from its visible box or interior, not only a thin
+  edge; display-only affordances remain non-pickable.
 - The App runtime composes complete `labkit.app.view.Snapshot` values from
   `labkit.app.layout.*` defaults, strict state bindings, framework-owned state,
   and the App's dynamic view fragment; private reconciliation owns diffs.
@@ -85,6 +86,10 @@ and promote enduring policy to this file when it governs all framework work.
   introduce app-id branches in the framework. Treat them as supported
   persistence contracts while they have App-owned evidence, not as migration
   ledger entries; removing one is an explicit saved-data compatibility change.
+- Do not keep old and current fields on one live facade value. Migrate consumers
+  together, express the breaking facade range, and remove aliases as one
+  change. Defaults apply only to omitted options; an explicitly unknown
+  scientific mode fails rather than selecting a plausible fallback.
 - Resource replacement for the same scope and id is intentional and
   idempotent; use distinct ids for resources that coexist.
 - Diagnostic output must stay app-neutral and sanitized.

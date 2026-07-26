@@ -6,15 +6,10 @@ framework owns common lifecycle and interaction mechanics.
 ## Read before editing
 
 Read the app source and nearby tests, `docs/apps/README.md`, and
-`docs/development/app-development.md`. Read only the relevant framework or
-library manual for APIs the app actually uses. App tests live under
+`docs/development/build-apps/app-development.md`. Read only the relevant
+framework or library manual for APIs the app actually uses. App tests live under
 `tests/specs/apps/<family>/<app>/<capability>/`. Use `labkittest.explain` to
 find the exact owner and contract; App authors never invent test paths.
-
-After a meaningful App-work checkpoint, record any reusable workflow,
-interaction, debugging, or validation lesson in `.agents/dos-and-donts.md`.
-Keep product-specific policy in this file or the owning App manual rather than
-duplicating it in the ledger.
 
 ## Required app shape
 
@@ -30,9 +25,9 @@ duplicating it in the ledger.
   callbacks directly; do not create `definitionActions.m`, `stateHandlers.m`,
   callback bags, or renderer registries.
 - Add one `projectSpec.m` only for durable App-owned state. It returns a
-  `ProjectContract` owning local
-  create, validate, version-aware migrate, resume, relink, and declared
-  read-only legacy-import functions as needed; Runtime owns the migration loop.
+  `labkit.app.project.Schema` owning local create, validate, version-aware
+  migrate, resume, relink, and declared read-only legacy-import functions as
+  needed; Runtime owns the migration loop.
 - Add root `createSession.m` only to reconstruct App-specific transient data
   with the fixed `(project,context)` signature. Resolve opaque portable
   sources through `context.resolveSourcePaths`.
@@ -62,6 +57,11 @@ duplicating it in the ledger.
 - Do not add package-root lifecycle `run.m`, `+ui/runApp.m`, app-family
   `private/` workflow helpers, string dispatchers, or app-specific packages
   outside the owning app tree.
+- `BuildDebugSample` creates a validated, reproducible synthetic project and
+  artifacts; it never authorizes startup work or automatic project loading.
+  Debug launch stays at the same clean default project as an ordinary launch.
+  Interactive sample values are finite, representative, and valid for the
+  smallest native controls that will render them.
 
 ## Ownership and behavior
 
@@ -86,8 +86,9 @@ duplicating it in the ledger.
   view requires. Large batches stay lazy unless a useful first view requires
   full parsing.
 - Preview work uses current/display-resolution data; original-resolution batch
-  work belongs at Run or Export. Pixel-unit preview parameters scale with
-  preview resolution.
+  work belongs at Run or Export. Every finite preview pixel budget is an
+  explicit App-owned responsiveness decision; pixel-unit preview parameters
+  scale with preview resolution.
 - Repeatable Run/Export workflows use immutable task snapshots and
   deterministic fingerprints when stale or duplicated work is possible.
 
@@ -100,15 +101,21 @@ duplicating it in the ledger.
   Do not mutate registries, restore figure callbacks, create interaction
   runtimes, or add startup timers/readiness flags.
 - Interactive rectangles use managed `rectangle` or `regionSelection` specs.
-  Display-only rectangles disable hit testing.
+  One preview axis has at most one active editor for overlapping gestures;
+  combine placement and movement in one interaction instead of depending on
+  focus order. Movable rectangles expose an ordinary interior/center drag
+  affordance, while display-only graphics disable hit testing.
+- Before narrowing a native control's dynamic limits, reconcile its bound value
+  into the new finite range. Defaults and synthetic projects must also remain
+  valid for the smallest supported source geometry.
 - Placing or editing overlays must preserve the user's viewport unless the
   user explicitly requests fit/reset.
 - File and folder dialogs outside `fileList` and alerts use CallbackContext.
 - External files in saved projects use portable references and field-specific
   relinking. Current saves use the project envelope; compatibility importers
   are read-only.
-- Caught exceptions that allow the app to continue are reported through the
-  RuntimeContext before alerting or logging recovery.
+- Caught exceptions that allow the App to continue are reported through
+  `CallbackContext` before alerting or logging recovery.
 
 ## Version, docs, and tests
 
@@ -116,10 +123,12 @@ duplicating it in the ledger.
   the App's `definition.m`, owned documentation, and component history before
   direct-main push or merge.
 - Test GUI wiring semantically: controls, choices, events, workflow outcomes,
-  viewport behavior, and traces. Test calculations and exports directly with
-  synthetic inputs.
+  viewport behavior, and traces. A synthetic project is validated headlessly
+  and launched through the native adapter; test calculations and exports
+  directly with minimal synthetic inputs.
 - Use the owning app-family unit suite and the app's hidden-GUI suite. Add
   project guardrails for entrypoint, boundary, fixture, or validation-policy
-  changes. Exact commands belong in `docs/development/testing.md`.
+  changes. Exact commands belong in
+  `docs/development/maintain-and-release/testing.md`.
 - Record only concrete compatibility or transitional retirement work in
   `.agents/migration_guide.md`; ordinary refactoring and file size are not debt.
