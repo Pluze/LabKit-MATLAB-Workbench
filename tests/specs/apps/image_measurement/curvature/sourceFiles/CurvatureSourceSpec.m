@@ -11,7 +11,7 @@ classdef CurvatureSourceSpec < matlab.unittest.TestCase
                 "view", struct("scaleBar", [1 2]), "cache", struct("image", [])));
             selection = labkit.app.event.ListSelection();
             context = labkit.app.internal.CallbackContextFactory.create( ...
-                struct("appendStatus", @(~) []));
+                struct("log", @(varargin) []));
 
             actual = curvature.sourceFiles.selectionChanged(state, selection, context);
 

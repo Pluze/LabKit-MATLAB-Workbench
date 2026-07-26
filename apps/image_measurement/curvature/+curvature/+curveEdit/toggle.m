@@ -8,13 +8,14 @@ if isempty(applicationState.session.cache.image)
 end
 if string(applicationState.session.workflow.editMode) == "curve"
     applicationState.session.workflow.editMode = "none";
-    callbackContext.appendStatus("Finished curve edit.");
+    callbackContext.log("info", "curvature.curveedit.toggle.finished", ...
+        "Finished curve edit.");
 else
     applicationState.session.workflow.editMode = "curve";
     applicationState.session.view.scaleBar = [];
     applicationState = ...
         curvature.curveEdit.clearMeasurements(applicationState);
-    callbackContext.appendStatus( ...
+    callbackContext.log("info", "curvature.curveedit.toggle.started", ...
         "Started curve edit. Double-click blank image space to add or " + ...
         "insert points; drag points to move; double-click a point to delete.");
 end

@@ -8,5 +8,6 @@ end
 points(end, :) = [];
 applicationState.project.annotations.curvePoints = points;
 applicationState = curvature.curveEdit.clearMeasurements(applicationState);
-callbackContext.appendStatus("Undid last curve point.");
+callbackContext.log("info", "curvature.curveedit.undo.status", ...
+    "Undid last curve point.");
 end

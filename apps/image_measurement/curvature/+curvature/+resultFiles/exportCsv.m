@@ -14,7 +14,8 @@ choice = callbackContext.chooseOutputFile( ...
     ["*.csv", "CSV files (*.csv)"], ...
     defaultOutputPath(applicationState, "curvature_result.csv"));
 if choice.Cancelled
-    callbackContext.appendStatus("Result CSV export cancelled.");
+    callbackContext.log("info", "curvature.resultfiles.exportcsv.cancelled", ...
+        "Result CSV export cancelled.");
     return
 end
 filepath = string(choice.Value);
@@ -32,7 +33,8 @@ catch ME
 end
 applicationState.project.results.lastCsvExport = struct( ...
     "csvPath", filepath, "manifestPath", string(written.Value));
-callbackContext.appendStatus("Exported result CSV: " + filepath);
+callbackContext.log("info", "curvature.resultfiles.exportcsv.completed", ...
+    "Exported the result CSV.");
 end
 
 function written = writeManifest( ...
