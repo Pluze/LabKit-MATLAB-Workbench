@@ -22,5 +22,6 @@ end
 applicationState = batch_crop.cropGeometry.setCurrentCenter( ...
     applicationState, center, true);
 applicationState = batch_crop.cropGeometry.clearDerived(applicationState);
-callbackContext.appendStatus("Set crop " + upper(mode) + " center.");
+callbackContext.log("info", "batch_crop.cropgeometry.usesourcecenter.status", ...
+    "Set crop " + upper(mode) + " center.");
 end

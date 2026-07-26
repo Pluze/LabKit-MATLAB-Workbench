@@ -3,7 +3,8 @@ function applicationState = chooseFolder(applicationState, callbackContext)
 choice = callbackContext.chooseOutputFolder( ...
     applicationState.project.parameters.outputFolder);
 if choice.Cancelled
-    callbackContext.appendStatus("Export folder selection cancelled.");
+    callbackContext.log("info", "batch_crop.resultfiles.choosefolder.cancelled", ...
+        "Export folder selection cancelled.");
     return
 end
 applicationState.project.parameters.outputFolder = string(choice.Value);

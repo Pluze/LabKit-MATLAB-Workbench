@@ -33,7 +33,7 @@ try
     loaded = true;
 catch cause
     callbackContext.reportError("Could not load image", cause);
-    callbackContext.appendStatus( ...
-        "Could not load crop task " + string(index) + ": " + cause.message);
+    callbackContext.log("error", "batch_crop.sourcefiles.loadcurrent.failed", ...
+        "Could not load the selected crop task.");
 end
 end
