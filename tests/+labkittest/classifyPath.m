@@ -48,6 +48,11 @@ function classification = classifyPath(file)
             "cross-owner synthetic fixture behavior");
         return;
     end
+    if file == "labkit_launcher.m"
+        classification = mapped(file, "repair-launcher", "system/launcher", ...
+            "self-contained repair-launcher bootstrap behavior");
+        return;
+    end
     if startsWith(file, "+labkit/") && numel(parts) >= 2 && startsWith(parts(2), "+")
         area = erase(parts(2), "+");
         if ismember(area, ["app", "biosignal", "contract", "dta", "image", "rhs", "thermal"])
