@@ -1,0 +1,56 @@
+classdef SessionEventStreamSpec < matlab.unittest.TestCase
+    %SESSIONEVENTSTREAMSPEC Verify the private Phase 2 canonical event stream.
+
+    methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function retainsMinimalPrivacySafeEventBeforeAnyProjection(testCase)
+            stream = labkit.app.internal.SessionEventStream( ...
+                loggingProbeDefinition(), SessionId="session-test");
+            cleanup = onCleanup(@() stream.close());
+
+            operation = stream.begin("runtime.callback", "callback.run", ...
+                "Dispatching callback.", Attributes=struct("bindingId", "run"));
+            stream.log("info", "analysis.completed", "Analysis completed.", ...
+                Category="app.probe.session-logging.analysisRun", Audience="user", ...
+                Attributes=struct("validItemCount", 2));
+            stream.finish(operation, "completed");
+            records = stream.records();
+            completed = records(string({records.eventName}) == "analysis.completed");
+
+            testCase.verifyNumElements(completed, 1);
+            testCase.verifyEqual(string(fieldnames(completed)), [ ...
+                "schemaVersion"; "sequence"; "timestampUtc"; ...
+                "elapsedSeconds"; "severity"; "audience"; "category"; ...
+                "eventName"; "message"; "attributes"; "sessionId"; ...
+                "appId"; "operationId"; "parentOperationId"; ...
+                "rootActionId"; "outcome"; "durationSeconds"; "exception"]);
+            testCase.verifyEqual(completed.sessionId, "session-test");
+            testCase.verifyEqual(completed.attributes.validItemCount, 2);
+            testCase.verifyEqual(completed.operationId, operation.Id);
+            testCase.verifyEqual(completed.rootActionId, operation.RootActionId);
+            clear cleanup
+        end
+
+        function rejectsRawPathBeforeItCanEnterTheRetainedRing(testCase)
+            stream = labkit.app.internal.SessionEventStream( ...
+                loggingProbeDefinition());
+            cleanup = onCleanup(@() stream.close());
+            before = numel(stream.records());
+
+            testCase.verifyError(@() stream.log("info", "source.loaded", ...
+                "Loaded C:\\lab-data\\subject-01.csv.", ...
+                Category="runtime.source", Audience="developer"), ...
+                "labkit:app:contract:UnsafeLogData");
+
+            testCase.verifyEqual(numel(stream.records()), before);
+            clear cleanup
+        end
+    end
+end
+
+function definition = loggingProbeDefinition()
+definition = labkit.app.Definition( ...
+    "Entrypoint", "labkit_SessionEventStreamProbe_app", ...
+    "AppId", "probe.session-event-stream", "Title", "Session stream probe", ...
+    "Family", "Tests", "AppVersion", "1.0.0", "Updated", "2026-07-25", ...
+    "Requirements", [], "Workbench", labkit.app.layout.workbench({}));
+end
