@@ -84,13 +84,13 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                         contract.onStartBinding(), []);
                 end
                 obj.Recorder.finish( ...
-                    startupOperation, "completed", []);
+                    startupOperation, "completed", "committed", []);
                 if isa(obj.Adapter, "labkit.app.internal.MatlabPlatformAdapter")
                     obj.Adapter.finishStartup();
                 end
             catch cause
                 obj.Recorder.finish( ...
-                    startupOperation, "failed", cause);
+                    startupOperation, "failed", "notApplicable", cause);
                 if isa(obj.Adapter, ...
                         "labkit.app.internal.MatlabPlatformAdapter")
                     obj.StartupFailed = true;
@@ -586,13 +586,13 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     obj.Documents.acceptRestore(obj.PendingDocumentMetadata);
                     obj.refreshWindowTitle();
                 end
-                obj.Recorder.finish(operation, "completed", []);
+                obj.Recorder.finish(operation, "completed", "committed", []);
             catch cause
                 obj.State = previousState;
                 obj.Presentation = previousPresentation;
                 obj.PendingDocumentMetadata = [];
                 obj.Resources.clearScope("event");
-                obj.Recorder.finish(operation, "rolledBack", cause);
+                obj.Recorder.finish(operation, "failed", "rolledBack", cause);
                 failure = MException("labkit:app:runtime:ActionFailed", ...
                     "Callback %s failed transactionally.", binding.Id);
                 failure = addCause(failure, cause);

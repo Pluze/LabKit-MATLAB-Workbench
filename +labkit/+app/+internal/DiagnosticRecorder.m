@@ -44,22 +44,23 @@ classdef (Hidden, Sealed) DiagnosticRecorder < handle
             operation = obj.Stream.begin(category, eventName, message, varargin{:});
         end
 
-        function finish(obj, operation, outcome, exception)
+        function finish(obj, operation, operationResult, stateDisposition, exception)
             if nargin < 4
+                error("labkit:app:contract:InvalidValue", ...
+                    "Diagnostic finish requires a state disposition.");
+            end
+            if nargin < 5
                 exception = [];
             end
-            obj.Stream.finish(operation, outcome, exception);
+            obj.Stream.finish(operation, operationResult, stateDisposition, exception);
         end
 
         function log(obj, severity, eventName, message, varargin)
             obj.Stream.log(severity, eventName, message, varargin{:});
         end
 
-        function note(obj, category, targetId, signal, outcome)
-            if nargin < 5
-                outcome = "completed";
-            end
-            [eventName, attributes] = legacyEvent(targetId, signal, outcome);
+        function note(obj, category, targetId, signal, ~)
+            [eventName, attributes] = legacyEvent(targetId, signal);
             obj.Stream.log("debug", eventName, "Legacy diagnostic checkpoint.", ...
                 Category=legacyCategory(category, obj.Application), ...
                 Audience="developer", Attributes=attributes);
@@ -75,7 +76,7 @@ classdef (Hidden, Sealed) DiagnosticRecorder < handle
             obj.Stream.log("debug", eventName, "Legacy diagnostic count.", ...
                 Category=legacyCategory("app", obj.Application), ...
                 Audience="developer", Attributes=struct( ...
-                "signal", "count", "count", double(value), "outcome", "completed"));
+                "signal", "count", "count", double(value)));
         end
 
         function reportError(obj, operation, exception)
@@ -87,7 +88,7 @@ classdef (Hidden, Sealed) DiagnosticRecorder < handle
             diagnosticOperation = obj.Stream.begin( ...
                 legacyCategory("app", obj.Application), eventName, ...
                 "Legacy error reported.");
-            obj.Stream.finish(diagnosticOperation, "failed", exception);
+            obj.Stream.finish(diagnosticOperation, "failed", "notApplicable", exception);
         end
 
         function events = events(obj)
@@ -131,16 +132,11 @@ else
 end
 end
 
-function [eventName, attributes] = legacyEvent(targetId, signal, outcome)
+function [eventName, attributes] = legacyEvent(targetId, signal)
 eventName = legacyIdentifier(targetId, "legacy.checkpoint", ...
     "legacy diagnostic id");
 signal = legacyIdentifier(signal, "checkpoint", "legacy diagnostic signal");
-outcome = lower(legacyIdentifier(outcome, "completed", ...
-    "legacy diagnostic outcome"));
-if outcome == "reported"
-    outcome = "failed";
-end
-attributes = struct("signal", signal, "outcome", outcome);
+attributes = struct("signal", signal);
 end
 
 function eventName = legacyErrorEventName(operation)

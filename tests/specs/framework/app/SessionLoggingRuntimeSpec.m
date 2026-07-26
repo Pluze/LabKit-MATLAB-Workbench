@@ -59,7 +59,8 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(logged.operationId, started.operationId);
             testCase.verifyEqual(logged.rootActionId, started.rootActionId);
             testCase.verifyEqual(completed.operationId, started.operationId);
-            testCase.verifyEqual(string(completed.outcome), "completed");
+            testCase.verifyEqual(string(completed.operationResult), "completed");
+            testCase.verifyEqual(string(completed.stateDisposition), "committed");
             clear cleanup
         end
 
@@ -76,7 +77,8 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
 
             testCase.verifyNumElements(failed, 1);
             testCase.verifyEmpty(completed);
-            testCase.verifyEqual(failed.outcome, "failed");
+            testCase.verifyEqual(failed.operationResult, "failed");
+            testCase.verifyEqual(failed.stateDisposition, "rolledBack");
             testCase.verifyEqual(failed.exception.identifier, "probe:ExpectedFailure");
             clear cleanup
         end
@@ -97,7 +99,8 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(started, 1);
             testCase.verifyNumElements(completed, 1);
             testCase.verifyEqual(started.rootActionId, completed.rootActionId);
-            testCase.verifyEqual(string(completed.outcome), "completed");
+            testCase.verifyEqual(string(completed.operationResult), "completed");
+            testCase.verifyEqual(string(completed.stateDisposition), "committed");
             testCase.verifyEqual(string(snapshot.manifest.state), "closed");
             clear cleanup
         end

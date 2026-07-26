@@ -2,6 +2,84 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
     %SESSIONJOURNALSPEC Verify the private buffered canonical session store.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function rejectsLegacyScalarOutcomeRecords(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            app = journalProbeDefinition();
+            journal = labkit.app.internal.SessionJournal(app, ...
+                RootFolder=root, SessionId="session-old-schema");
+            cleanup = onCleanup(@() journal.close());
+            stream = labkit.app.internal.SessionEventStream(app, ...
+                SessionId="session-old-schema");
+            streamCleanup = onCleanup(@() stream.close());
+            legacy = stream.records();
+            legacy = legacy(end);
+            legacy = rmfield(legacy, {'operationResult', 'stateDisposition'});
+            legacy.outcome = "completed";
+
+            journal.append(legacy);
+
+            testCase.verifyEqual( ...
+                journal.manifest().degradation.dropReasons.invalidCanonicalRecord, 1);
+            clear streamCleanup cleanup
+        end
+
+        function archiveRejectsLegacyScalarOutcomeJsonlRecords(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            [folder, expectedEvents] = writeJournalSession( ...
+                root, "session-old-archive-schema", "probe.session-journal");
+            record = jsondecode(expectedEvents(1));
+            legacy = rmfield(record, {'operationResult', 'stateDisposition'});
+            legacy.outcome = "completed";
+            legacyFields = ["schemaVersion", "sequence", "timestampUtc", ...
+                "elapsedSeconds", "severity", "audience", "category", ...
+                "eventName", "message", "attributes", "sessionId", "appId", ...
+                "operationId", "parentOperationId", "rootActionId", "outcome", ...
+                "durationSeconds", "exception"];
+            legacy = orderfields(legacy, cellstr(legacyFields));
+            appendText(onlySegment(folder), string(jsonencode(legacy)) + newline);
+
+            snapshot = labkit.app.internal.SessionJournalArchive.snapshot( ...
+                root, "session-old-archive-schema");
+
+            testCase.verifyEqual(numel(snapshot.events), numel(expectedEvents));
+            testCase.verifyEqual(snapshot.degradation.snapshotCorruptRecordCount, 1);
+        end
+
+        function rejectsMismatchedTerminalPairsInJournalAndArchive(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            app = journalProbeDefinition();
+            journal = labkit.app.internal.SessionJournal(app, ...
+                RootFolder=root, SessionId="session-mismatched-pair");
+            cleanup = onCleanup(@() journal.close());
+            stream = labkit.app.internal.SessionEventStream(app, ...
+                SessionId="session-mismatched-pair");
+            streamCleanup = onCleanup(@() stream.close());
+            mismatch = stream.records();
+            mismatch = mismatch(end);
+            mismatch.operationResult = "failed";
+            mismatch.stateDisposition = "committed";
+            journal.append(mismatch);
+
+            testCase.verifyEqual( ...
+                journal.manifest().degradation.dropReasons.invalidCanonicalRecord, 1);
+            clear streamCleanup cleanup
+
+            [folder, expectedEvents] = writeJournalSession( ...
+                root, "session-mismatched-archive", "probe.session-journal");
+            mismatch = jsondecode(expectedEvents(1));
+            mismatch.operationResult = "failed";
+            mismatch.stateDisposition = "committed";
+            appendText(onlySegment(folder), string(jsonencode(mismatch)) + newline);
+            snapshot = labkit.app.internal.SessionJournalArchive.snapshot( ...
+                root, "session-mismatched-archive");
+
+            testCase.verifyEqual(numel(snapshot.events), numel(expectedEvents));
+            testCase.verifyEqual(snapshot.degradation.snapshotCorruptRecordCount, 1);
+        end
+
         function defaultSessionIdentityDoesNotChangeRng(testCase)
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -71,7 +149,8 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
                 "elapsedSeconds"; "severity"; "audience"; "category"; ...
                 "eventName"; "message"; "attributes"; "sessionId"; ...
                 "appId"; "operationId"; "parentOperationId"; ...
-                "rootActionId"; "outcome"; "durationSeconds"; "exception"]);
+                "rootActionId"; "operationResult"; "stateDisposition"; ...
+                "durationSeconds"; "exception"]);
             testCase.verifyEqual(string(stored.eventName), "analysis.completed");
             clear streamCleanup cleanup
         end

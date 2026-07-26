@@ -75,28 +75,34 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 Operation=operation);
         end
 
-        function finish(obj, operation, outcome, exception)
+        function finish(obj, operation, operationResult, stateDisposition, exception)
             if nargin < 4
+                error("labkit:app:contract:InvalidValue", ...
+                    "Session operation finish requires a state disposition.");
+            end
+            if nargin < 5
                 exception = [];
             end
             obj.ensureOpen();
             operation = validOperation(operation);
             obj.requireActiveTopOperation(operation);
-            outcome = terminalOutcome(outcome);
-            if ~isempty(exception)
-                outcome = "failed";
+            terminal = labkit.app.internal.SessionEventValidator.terminalFields( ...
+                operationResult, stateDisposition);
+            if ~isempty(exception) && terminal.operationResult ~= "failed"
+                error("labkit:app:contract:InvalidValue", ...
+                    "A session exception requires a failed operation result.");
             end
             severity = "debug";
             if ~isempty(exception)
                 severity = "error";
-            elseif outcome ~= "completed"
+            elseif terminal.operationResult ~= "completed"
                 severity = "warning";
             end
-            obj.log(severity, operation.EventName + "." + outcome, ...
-                terminalMessage(outcome), Category=operation.Category, ...
+            obj.log(severity, operation.EventName + "." + terminal.operationResult, ...
+                terminalMessage(terminal.operationResult), Category=operation.Category, ...
                 Audience="developer", ...
-                Attributes=struct("outcome", outcome, ...
-                "durationSeconds", toc(operation.Timer)), ...
+                Attributes=struct("durationSeconds", toc(operation.Timer)), ...
+                Terminal=terminal, ...
                 Exception=exception, Operation=operation);
             obj.OperationStack(end) = [];
             obj.rememberFinishedOperation(operation.Id);
@@ -142,8 +148,12 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             record.operationId = operation.Id;
             record.parentOperationId = operation.ParentId;
             record.rootActionId = operation.RootActionId;
-            if isfield(attributes, "outcome")
-                record.outcome = string(attributes.outcome);
+            terminal = optionValue(varargin, "Terminal", []);
+            if ~isempty(terminal)
+                terminal = labkit.app.internal.SessionEventValidator.terminalFields( ...
+                    terminal.operationResult, terminal.stateDisposition);
+                record.operationResult = terminal.operationResult;
+                record.stateDisposition = terminal.stateDisposition;
             end
             if isfield(attributes, "durationSeconds")
                 record.durationSeconds = double(attributes.durationSeconds);
@@ -161,7 +171,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 return;
             end
             while ~isempty(obj.OperationStack)
-                obj.finish(obj.OperationStack{end}, "abandoned");
+                obj.finish(obj.OperationStack{end}, "abandoned", "unknown");
             end
             obj.log("info", "session.closed", "Session closed.", ...
                 Category="runtime.lifecycle", Audience="developer");
@@ -244,7 +254,8 @@ record = struct( ...
     "category", "", "eventName", "", "message", "", ...
     "attributes", struct(), "sessionId", "", "appId", "", ...
     "operationId", "", "parentOperationId", "", "rootActionId", "", ...
-    "outcome", "", "durationSeconds", [], "exception", emptyException());
+    "operationResult", "", "stateDisposition", "", "durationSeconds", [], ...
+    "exception", emptyException());
 end
 
 function operation = emptyOperation()
@@ -267,18 +278,6 @@ for index = 1:2:numel(values)
 end
 end
 
-function value = terminalOutcome(value)
-value = lower(labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
-    value, "outcome"));
-if value == "rolledback"
-    value = "rolledBack";
-end
-if ~any(value == ["completed", "failed", "rolledBack", "abandoned"])
-    error("labkit:app:contract:InvalidValue", ...
-        "Session operation outcome is unsupported.");
-end
-end
-
 function operation = validOperation(operation)
 needed = ["Id", "ParentId", "RootActionId", "Category", "EventName", "SessionId", "Timer"];
 if ~isstruct(operation) || ~isscalar(operation) || ~all(isfield(operation, needed))
@@ -286,10 +285,10 @@ if ~isstruct(operation) || ~isscalar(operation) || ~all(isfield(operation, neede
 end
 end
 
-function message = terminalMessage(outcome)
-if outcome == "completed"
+function message = terminalMessage(operationResult)
+if operationResult == "completed"
     message = "Operation completed.";
-elseif outcome == "failed"
+elseif operationResult == "failed"
     message = "Operation failed.";
 else
     message = "Operation settled.";

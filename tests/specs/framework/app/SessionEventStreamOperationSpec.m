@@ -11,8 +11,8 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
             inner = stream.begin("app.probe", "analysis.run", ...
                 "Running analysis.");
             exception = MException("probe:ExpectedFailure", "Expected failure.");
-            stream.finish(inner, "completed", exception);
-            stream.finish(outer, "completed");
+            stream.finish(inner, "failed", "rolledBack", exception);
+            stream.finish(outer, "completed", "committed");
             records = stream.records();
             innerStarted = records(string({records.eventName}) == "analysis.run.started");
             innerFailed = records(string({records.eventName}) == "analysis.run.failed");
@@ -23,7 +23,8 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(outerCompleted, 1);
             testCase.verifyEqual(innerStarted.parentOperationId, outer.Id);
             testCase.verifyEqual(innerStarted.rootActionId, outer.RootActionId);
-            testCase.verifyEqual(innerFailed.outcome, "failed");
+            testCase.verifyEqual(innerFailed.operationResult, "failed");
+            testCase.verifyEqual(innerFailed.stateDisposition, "rolledBack");
             testCase.verifyEqual(innerFailed.exception.identifier, "probe:ExpectedFailure");
             testCase.verifyEmpty(records(string({records.eventName}) == ...
                 "analysis.run.completed"));
@@ -38,16 +39,16 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
                 "Dispatching callback.");
             inner = stream.begin("app.probe", "analysis.run", ...
                 "Running analysis.");
-            testCase.verifyError(@() stream.finish(outer, "completed"), ...
+            testCase.verifyError(@() stream.finish(outer, "completed", "committed"), ...
                 "labkit:app:runtime:OutOfOrderOperation");
-            stream.finish(inner, "completed");
-            testCase.verifyError(@() stream.finish(inner, "completed"), ...
+            stream.finish(inner, "completed", "committed");
+            testCase.verifyError(@() stream.finish(inner, "completed", "committed"), ...
                 "labkit:app:runtime:OperationAlreadyFinished");
             unknown = outer;
             unknown.Id = "op-unknown";
-            testCase.verifyError(@() stream.finish(unknown, "completed"), ...
+            testCase.verifyError(@() stream.finish(unknown, "completed", "committed"), ...
                 "labkit:app:runtime:UnknownOperation");
-            stream.finish(outer, "completed");
+            stream.finish(outer, "completed", "committed");
             clear cleanup
         end
 
@@ -57,7 +58,7 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
                 "Dispatching callback.");
             stream.close();
 
-            testCase.verifyError(@() stream.finish(operation, "completed"), ...
+            testCase.verifyError(@() stream.finish(operation, "completed", "committed"), ...
                 "labkit:app:runtime:OperationClosed");
         end
 
@@ -79,8 +80,10 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(closed, 1);
             testCase.verifyEqual(innerAbandoned.parentOperationId, outer.Id);
             testCase.verifyEqual(innerAbandoned.rootActionId, outer.RootActionId);
-            testCase.verifyEqual(innerAbandoned.outcome, "abandoned");
-            testCase.verifyEqual(outerAbandoned.outcome, "abandoned");
+            testCase.verifyEqual(innerAbandoned.operationResult, "abandoned");
+            testCase.verifyEqual(innerAbandoned.stateDisposition, "unknown");
+            testCase.verifyEqual(outerAbandoned.operationResult, "abandoned");
+            testCase.verifyEqual(outerAbandoned.stateDisposition, "unknown");
             testCase.verifyLessThan(innerAbandoned.sequence, outerAbandoned.sequence);
             testCase.verifyLessThan(outerAbandoned.sequence, closed.sequence);
             testCase.verifyEmpty(records(string({records.eventName}) == ...
@@ -95,17 +98,20 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
             operation = stream.begin("runtime.callback", "callback.run", ...
                 "Dispatching callback.");
 
-            testCase.verifyError(@() stream.finish(operation, "banana"), ...
+            testCase.verifyError(@() stream.finish(operation, "completed"), ...
                 "labkit:app:contract:InvalidValue");
-            stream.finish(operation, "Completed");
+            testCase.verifyError(@() stream.finish(operation, "banana", "committed"), ...
+                "labkit:app:contract:InvalidValue");
+            stream.finish(operation, "Completed", "committed");
             rolledBack = stream.begin("runtime.callback", "callback.rollback", ...
                 "Rolling back callback.");
-            stream.finish(rolledBack, "RolledBack");
+            stream.finish(rolledBack, "failed", "rolledBack");
             records = stream.records();
             terminal = records(string({records.eventName}) == ...
-                "callback.rollback.rolledBack");
+                "callback.rollback.failed");
             testCase.verifyNumElements(terminal, 1);
-            testCase.verifyEqual(terminal.outcome, "rolledBack");
+            testCase.verifyEqual(terminal.operationResult, "failed");
+            testCase.verifyEqual(terminal.stateDisposition, "rolledBack");
             clear cleanup
         end
 
@@ -116,14 +122,15 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
 
             operation = stream.begin("runtime.callback", "callback.run", ...
                 "Dispatching callback.");
-            stream.finish(operation, "completed");
+            stream.finish(operation, "completed", "committed");
             records = stream.records();
             started = records(string({records.eventName}) == "callback.run.started");
             completed = records(string({records.eventName}) == "callback.run.completed");
 
             testCase.verifyNumElements(started, 1);
             testCase.verifyNumElements(completed, 1);
-            testCase.verifyEqual(completed.outcome, "completed");
+            testCase.verifyEqual(completed.operationResult, "completed");
+            testCase.verifyEqual(completed.stateDisposition, "committed");
             testCase.verifyEqual(completed.operationId, operation.Id);
             clear cleanup
         end

@@ -28,12 +28,14 @@ classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
             testCase.verifyEqual(status.message, "Legacy status.");
             testCase.verifyNumElements(checkpoint, 1);
             testCase.verifyEqual(checkpoint.attributes.signal, "checkpoint");
-            testCase.verifyEqual(checkpoint.outcome, "completed");
+            testCase.verifyEqual(checkpoint.operationResult, "");
+            testCase.verifyEqual(checkpoint.stateDisposition, "");
             testCase.verifyNumElements(count, 1);
             testCase.verifyEqual(count.attributes.signal, "count");
             testCase.verifyEqual(count.attributes.count, 2);
             testCase.verifyNumElements(reported, 1);
-            testCase.verifyEqual(reported.outcome, "failed");
+            testCase.verifyEqual(reported.operationResult, "failed");
+            testCase.verifyEqual(reported.stateDisposition, "notApplicable");
             testCase.verifyEqual(reported.exception.identifier, "probe:ExpectedFailure");
             clear cleanup
         end
@@ -47,14 +49,17 @@ classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
                 probeDefinition(labkit.app.layout.workbench({})), options);
             cleanup = onCleanup(@() recorder.close());
 
-            recorder.begin("runtime.callback", "callback.run", ...
+            operation = recorder.begin("runtime.callback", "callback.run", ...
                 "Dispatching callback.");
+            testCase.verifyError(@() recorder.finish(operation, "completed"), ...
+                "labkit:app:contract:InvalidValue");
             recorder.close();
             events = recorder.events();
             abandoned = events(string({events.eventName}) == "callback.run.abandoned");
 
             testCase.verifyNumElements(abandoned, 1);
-            testCase.verifyEqual(abandoned.outcome, "abandoned");
+            testCase.verifyEqual(abandoned.operationResult, "abandoned");
+            testCase.verifyEqual(abandoned.stateDisposition, "unknown");
             testCase.verifyFalse(isfile(fullfile(folder, "events.jsonl")));
             testCase.verifyFalse(isfile(fullfile(folder, "active-operation.json")));
             clear cleanup

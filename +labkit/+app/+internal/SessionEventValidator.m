@@ -101,7 +101,66 @@ classdef (Hidden, Sealed) SessionEventValidator
                     "Session event Exception must be a scalar MException.");
             end
         end
+
+        function terminal = terminalFields(operationResult, stateDisposition)
+            operationResult = lower( ...
+                labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
+                operationResult, "operationResult"));
+            stateDisposition = lower( ...
+                labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
+                stateDisposition, "stateDisposition"));
+            if operationResult == "completed" && ...
+                    any(stateDisposition == ["committed", "notapplicable"])
+                terminal = struct("operationResult", "completed", ...
+                    "stateDisposition", ternary(stateDisposition == "committed", ...
+                    "committed", "notApplicable"));
+            elseif operationResult == "failed" && ...
+                    any(stateDisposition == ["rolledback", "notapplicable"])
+                terminal = struct("operationResult", "failed", ...
+                    "stateDisposition", ternary(stateDisposition == "rolledback", ...
+                    "rolledBack", "notApplicable"));
+            elseif operationResult == "abandoned" && stateDisposition == "unknown"
+                terminal = struct("operationResult", "abandoned", ...
+                    "stateDisposition", "unknown");
+            else
+                error("labkit:app:contract:InvalidValue", ...
+                    "Session terminal result and state disposition are incompatible.");
+            end
+        end
+
+        function tf = canonicalTerminalPair(operationResult, stateDisposition)
+            if ~(ischar(operationResult) || ...
+                    (isstring(operationResult) && isscalar(operationResult))) || ...
+                    ~(ischar(stateDisposition) || ...
+                    (isstring(stateDisposition) && isscalar(stateDisposition)))
+                tf = false;
+                return;
+            end
+            operationResult = string(operationResult);
+            stateDisposition = string(stateDisposition);
+            if strlength(operationResult) == 0 || strlength(stateDisposition) == 0
+                tf = strlength(operationResult) == 0 && ...
+                    strlength(stateDisposition) == 0;
+                return;
+            end
+            try
+                terminal = labkit.app.internal.SessionEventValidator.terminalFields( ...
+                    operationResult, stateDisposition);
+                tf = operationResult == terminal.operationResult && ...
+                    stateDisposition == terminal.stateDisposition;
+            catch
+                tf = false;
+            end
+        end
     end
+end
+
+function value = ternary(condition, trueValue, falseValue)
+if condition
+    value = trueValue;
+else
+    value = falseValue;
+end
 end
 
 function tf = containsUnsafeAbsolutePath(value)

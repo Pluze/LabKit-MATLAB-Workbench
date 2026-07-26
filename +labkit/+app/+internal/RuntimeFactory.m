@@ -73,7 +73,7 @@ classdef (Hidden, Sealed) RuntimeFactory
                     buildSyntheticSample( ...
                         definition, initialProject, diagnostics);
                     initialProject = [];
-                    recorder.finish(sampleOperation, "completed", []);
+                    recorder.finish(sampleOperation, "completed", "notApplicable", []);
                     sampleOperation = [];
                 end
                 runtime = labkit.app.internal.RuntimeKernel( ...
@@ -81,7 +81,7 @@ classdef (Hidden, Sealed) RuntimeFactory
                     backend, platform, diagnostics, recorder);
             catch cause
                 if ~isempty(sampleOperation)
-                    recorder.finish(sampleOperation, "failed", cause);
+                    recorder.finish(sampleOperation, "failed", "notApplicable", cause);
                 end
                 recorder.close();
                 rethrow(cause);
