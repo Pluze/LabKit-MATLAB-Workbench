@@ -13,7 +13,14 @@ classdef (Hidden, Sealed) SessionEventStream < handle
         OperationSequence (1, 1) double = 0
         Records
         OperationStack (1, :) cell = {}
+        FinishedOperationIds (1, :) string = strings(1, 0)
+        ProjectionHook = []
         Closed (1, 1) logical = false
+    end
+
+    properties (Constant, Access = private)
+        % A temporary immediate-view bound until Phase 3 profiles durable policy.
+        ProvisionalInMemoryRecordLimit = 512
     end
 
     methods
@@ -23,17 +30,24 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                     "SessionEventStream requires one Definition.");
             end
             sessionId = optionValue(varargin, "SessionId", newSessionId());
+            projectionHook = optionValue(varargin, "ProjectionHook", []);
+            if ~isempty(projectionHook) && ~isa(projectionHook, "function_handle")
+                error("labkit:app:contract:InvalidValue", ...
+                    "Session event ProjectionHook must be a function handle.");
+            end
             obj.Application = application;
             obj.SessionId = semanticText(sessionId, "sessionId");
             obj.StartedAt = datetime("now", TimeZone="UTC", ...
                 Format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
             obj.StartedTimer = tic;
             obj.Records = repmat(recordTemplate(), 0, 1);
+            obj.ProjectionHook = projectionHook;
             obj.log("info", "session.started", "Session started.", ...
                 Category="runtime.lifecycle", Audience="developer");
         end
 
         function operation = begin(obj, category, eventName, message, varargin)
+            obj.ensureOpen();
             category = semanticText(category, "category");
             eventName = semanticText(eventName, "eventName");
             message = privacySafeText(message, "message");
@@ -45,7 +59,8 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 "Id", "op-" + string(obj.OperationSequence), ...
                 "ParentId", parent.Id, ...
                 "RootActionId", parent.RootActionId, ...
-                "Category", category, "EventName", eventName, "Timer", tic);
+                "Category", category, "EventName", eventName, ...
+                "SessionId", obj.SessionId, "Timer", tic);
             if strlength(operation.RootActionId) == 0
                 operation.RootActionId = operation.Id;
             end
@@ -59,27 +74,31 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             if nargin < 4
                 exception = [];
             end
+            obj.ensureOpen();
             operation = validOperation(operation);
-            outcome = semanticText(outcome, "outcome");
+            obj.requireActiveTopOperation(operation);
+            outcome = terminalOutcome(outcome);
+            if ~isempty(exception)
+                outcome = "failed";
+            end
             severity = "debug";
             if ~isempty(exception)
                 severity = "error";
             elseif outcome ~= "completed"
                 severity = "warning";
             end
-            obj.log(severity, operation.EventName + ".completed", ...
-                "Operation completed.", Category=operation.Category, ...
+            obj.log(severity, operation.EventName + "." + outcome, ...
+                terminalMessage(outcome), Category=operation.Category, ...
                 Audience="developer", ...
                 Attributes=struct("outcome", outcome, ...
                 "durationSeconds", toc(operation.Timer)), ...
                 Exception=exception, Operation=operation);
-            obj.removeOperation(operation.Id);
+            obj.OperationStack(end) = [];
+            obj.rememberFinishedOperation(operation.Id);
         end
 
         function log(obj, severity, eventName, message, varargin)
-            if obj.Closed
-                return;
-            end
+            obj.ensureOpen();
             severity = severityText(severity);
             eventName = semanticText(eventName, "eventName");
             message = privacySafeText(message, "message");
@@ -93,6 +112,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 operation = obj.currentOperation();
             else
                 operation = validOperation(operation);
+                obj.requireActiveOperation(operation);
             end
             obj.Sequence = obj.Sequence + 1;
             record = recordTemplate();
@@ -130,9 +150,11 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             if obj.Closed
                 return;
             end
+            while ~isempty(obj.OperationStack)
+                obj.finish(obj.OperationStack{end}, "abandoned");
+            end
             obj.log("info", "session.closed", "Session closed.", ...
                 Category="runtime.lifecycle", Audience="developer");
-            obj.OperationStack = {};
             obj.Closed = true;
         end
     end
@@ -145,22 +167,61 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             end
         end
 
-        function removeOperation(obj, id)
-            if isempty(obj.OperationStack)
-                return;
+        function ensureOpen(obj)
+            if obj.Closed
+                error("labkit:app:runtime:OperationClosed", ...
+                    "Session event stream is closed.");
+            end
+        end
+
+        function requireActiveOperation(obj, operation)
+            if operation.SessionId ~= obj.SessionId
+                error("labkit:app:runtime:UnknownOperation", ...
+                    "Session operation does not belong to this stream.");
             end
             ids = string(cellfun(@(entry) entry.Id, obj.OperationStack, ...
                 UniformOutput=false));
-            index = find(ids == string(id), 1, "last");
-            if ~isempty(index)
-                obj.OperationStack(index) = [];
+            if ~any(ids == operation.Id)
+                if any(obj.FinishedOperationIds == operation.Id)
+                    error("labkit:app:runtime:OperationAlreadyFinished", ...
+                        "Session operation already has a terminal result.");
+                end
+                error("labkit:app:runtime:UnknownOperation", ...
+                    "Session operation is not active.");
+            end
+        end
+
+        function requireActiveTopOperation(obj, operation)
+            obj.requireActiveOperation(operation);
+            if obj.OperationStack{end}.Id ~= operation.Id
+                error("labkit:app:runtime:OutOfOrderOperation", ...
+                    "Nested session operations must finish in stack order.");
+            end
+        end
+
+        function rememberFinishedOperation(obj, id)
+            obj.FinishedOperationIds(end + 1) = string(id);
+            if numel(obj.FinishedOperationIds) > obj.ProvisionalInMemoryRecordLimit
+                obj.FinishedOperationIds(1) = [];
             end
         end
 
         function retain(obj, record)
             obj.Records(end + 1, 1) = record;
-            if numel(obj.Records) > 512
+            if numel(obj.Records) > obj.ProvisionalInMemoryRecordLimit
                 obj.Records(1) = [];
+            end
+            obj.notifyProjectionHook(record);
+        end
+
+        function notifyProjectionHook(obj, record)
+            if isempty(obj.ProjectionHook)
+                return;
+            end
+            try
+                obj.ProjectionHook(record);
+            catch
+                % Downstream projections must not alter canonical history.
             end
         end
     end
@@ -178,7 +239,7 @@ end
 
 function operation = emptyOperation()
 operation = struct("Id", "", "ParentId", "", "RootActionId", "", ...
-    "Category", "", "EventName", "", "Timer", []);
+    "Category", "", "EventName", "", "SessionId", "", "Timer", []);
 end
 
 function value = optionValue(values, name, defaultValue)
@@ -216,6 +277,17 @@ if ~any(value == ["trace", "debug", "info", "warning", "error", "critical"])
 end
 end
 
+function value = terminalOutcome(value)
+value = lower(semanticText(value, "outcome"));
+if value == "rolledback"
+    value = "rolledBack";
+end
+if ~any(value == ["completed", "failed", "rolledBack", "abandoned"])
+    error("labkit:app:contract:InvalidValue", ...
+        "Session operation outcome is unsupported.");
+end
+end
+
 function value = audienceText(value)
 value = lower(semanticText(value, "audience"));
 if ~any(value == ["user", "developer"])
@@ -234,10 +306,84 @@ if strlength(value) > 512
     error("labkit:app:contract:InvalidValue", ...
         "Session event %s exceeds the retained-text limit.", name);
 end
-if ~isempty(regexp(char(value), ...
-        "(?i)([A-Z]:[\\\\/]|\\\\\\\\|\\b[^\\s\\\\/]+\\.(csv|mat|json|txt|png|jpg|jpeg|tif|tiff|avi|xlsx|dta|rhs)\\b)", "once"))
+if containsUnsafeAbsolutePath(value) || containsFilenameLikeLeaf(value)
     error("labkit:app:contract:UnsafeLogData", ...
         "Session event %s must not contain a path or original filename.", name);
+end
+end
+
+function tf = containsUnsafeAbsolutePath(value)
+text = char(value);
+tf = containsWindowsDrivePath(text) || containsUncPath(text) || ...
+    containsPosixAbsolutePath(text);
+end
+
+function tf = containsWindowsDrivePath(text)
+tf = false;
+for index = 1:max(0, strlength(string(text)) - 2)
+    if isstrprop(text(index), "alpha") && text(index + 1) == ':' && ...
+            isPathSeparator(text(index + 2)) && isPathTokenBoundary(text, index)
+        tf = true;
+        return;
+    end
+end
+end
+
+function tf = containsUncPath(text)
+tf = false;
+for index = 1:max(0, strlength(string(text)) - 2)
+    if text(index) == char(92) && text(index + 1) == char(92) && ...
+            isstrprop(text(index + 2), "alphanum") && ...
+            isUncTokenBoundary(text, index)
+        tf = true;
+        return;
+    end
+end
+end
+
+function tf = containsPosixAbsolutePath(text)
+tf = false;
+for index = 1:max(0, strlength(string(text)) - 1)
+    if text(index) == '/' && isstrprop(text(index + 1), "alphanum") && ...
+            isPathTokenBoundary(text, index)
+        tf = true;
+        return;
+    end
+end
+end
+
+function tf = isPathSeparator(character)
+tf = character == '/' || character == char(92);
+end
+
+function tf = isPathTokenBoundary(text, index)
+tf = index == 1 || (~isstrprop(text(index - 1), "alphanum") && ...
+    text(index - 1) ~= '_' && text(index - 1) ~= ':');
+end
+
+function tf = isUncTokenBoundary(text, index)
+tf = index == 1 || (~isstrprop(text(index - 1), "alphanum") && ...
+    text(index - 1) ~= '_' && text(index - 1) ~= ':');
+end
+
+function tf = containsFilenameLikeLeaf(value)
+extensions = [".csv", ".mat", ".json", ".txt", ".png", ".jpg", ...
+    ".jpeg", ".tif", ".tiff", ".avi", ".xlsx", ".dta", ".rhs"];
+text = char(lower(value));
+tf = false;
+for extension = extensions
+    starts = strfind(text, char(extension));
+    for startIndex = starts
+        extensionEnd = startIndex + strlength(extension) - 1;
+        hasLeafStem = startIndex > 1 && ...
+            isstrprop(text(startIndex - 1), "alphanum");
+        hasLeafBoundary = extensionEnd == strlength(string(text)) || ...
+            ~isstrprop(text(extensionEnd + 1), "alphanum");
+        if hasLeafStem && hasLeafBoundary
+            tf = true;
+            return;
+        end
+    end
 end
 end
 
@@ -267,9 +413,19 @@ end
 end
 
 function operation = validOperation(operation)
-needed = ["Id", "ParentId", "RootActionId", "Category", "EventName", "Timer"];
+needed = ["Id", "ParentId", "RootActionId", "Category", "EventName", "SessionId", "Timer"];
 if ~isstruct(operation) || ~isscalar(operation) || ~all(isfield(operation, needed))
     error("labkit:app:runtime:InvariantFailure", "Session operation is invalid.");
+end
+end
+
+function message = terminalMessage(outcome)
+if outcome == "completed"
+    message = "Operation completed.";
+elseif outcome == "failed"
+    message = "Operation failed.";
+else
+    message = "Operation settled.";
 end
 end
 
