@@ -8,7 +8,6 @@ classdef (Sealed) Definition
     %       Requirements=requirements, Workbench=workbench, Name=Value)
     %   fig = app.launch()
     %   fig = app.launch(InitialProject=project)
-    %   fig = app.launch(Diagnostics=diagnosticOptions)
     %   requirements = app.launch("requirements")
     %   version = app.launch("version")
     %
@@ -50,9 +49,6 @@ classdef (Sealed) Definition
     %
     % Definition Methods:
     %   launch() - Build and show the native MATLAB App figure.
-    %   launch(Diagnostics=options) - Use one
-    %       labkit.app.diagnostic.Options value for standard or verbose
-    %       sanitized runtime recording.
     %   launch("requirements") - Return declared facade requirements without
     %       creating a figure.
     %   launch("version") - Return product version metadata without creating
@@ -168,7 +164,7 @@ classdef (Sealed) Definition
                        (isstring(varargin{1}) && isscalar(varargin{1}))))
                 options = labkit.app.internal.OptionParser.parse( ...
                     "labkit.app.Definition.launch", ...
-                    ["InitialProject", "Diagnostics"], ...
+                    "InitialProject", ...
                     varargin{:});
                 if isfield(options, "InitialProject")
                     if ~isstruct(options.InitialProject) || ...
@@ -178,16 +174,6 @@ classdef (Sealed) Definition
                             "scalar project struct.");
                     end
                     initialProject = options.InitialProject;
-                end
-                if isfield(options, "Diagnostics")
-                    if ~isa(options.Diagnostics, ...
-                            "labkit.app.diagnostic.Options") || ...
-                            ~isscalar(options.Diagnostics)
-                        error("labkit:app:contract:InvalidValue", ...
-                            "Definition launch Diagnostics must be one " + ...
-                            "labkit.app.diagnostic.Options value.");
-                    end
-                    diagnostics = options.Diagnostics;
                 end
                 varargin = {};
             end
