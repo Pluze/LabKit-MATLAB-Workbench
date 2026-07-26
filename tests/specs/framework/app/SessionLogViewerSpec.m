@@ -121,10 +121,46 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
                 height(tableHandle.Data), 512);
             clear cleanup
         end
+
+        function exportsTheLiveBundleFromToolsAndTheViewer(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            destination = fullfile(folder, "live-diagnostics.zip");
+            backend = struct( ...
+                "chooseOutputFile", @(~, ~) ...
+                    labkit.app.dialog.Choice(destination));
+            runtime = viewerRuntime(testCase, backend);
+            cleanup = onCleanup(@() runtime.close());
+            runtime.invokeAction("run");
+            appFigure = runtime.figureHandle();
+            exportMenu = oneHandle( ...
+                appFigure, "labkitAppUtilityExportDiagnostics");
+
+            invoke(exportMenu.MenuSelectedFcn, exportMenu, []);
+            testCase.verifyTrue(isfile(destination));
+
+            openMenu = oneHandle( ...
+                appFigure, "labkitAppUtilitySessionLog");
+            invoke(openMenu.MenuSelectedFcn, openMenu, []);
+            viewerFigure = oneHandle( ...
+                groot, "labkitSessionLogViewer");
+            exportButton = oneHandle( ...
+                viewerFigure, "labkitSessionLogExport");
+            invoke(exportButton.ButtonPushedFcn, exportButton, []);
+            testCase.verifyTrue(isfile(destination));
+            records = runtime.diagnosticEvents();
+            testCase.verifyGreaterThanOrEqual(sum( ...
+                string({records.eventName}) == ...
+                    "diagnostics.bundle_exported.completed"), 2);
+            clear cleanup
+        end
     end
 end
 
-function runtime = viewerRuntime(testCase)
+function runtime = viewerRuntime(testCase, backend)
+if nargin < 2
+    backend = struct();
+end
 journalRoot = testCase.applyFixture( ...
     matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
 layout = labkit.app.layout.workbench({ ...
@@ -141,7 +177,7 @@ definition = labkit.app.Definition( ...
     AppVersion="1.0.0", Updated="2026-07-26", ...
     Requirements=[], Workbench=layout);
 runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-    definition, [], struct(), labkit.app.diagnostic.Options(), [], ...
+    definition, [], backend, labkit.app.diagnostic.Options(), [], ...
     JournalRoot=journalRoot);
 end
 

@@ -17,6 +17,7 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
         CategoryFilter
         RootFilter
         FollowButton
+        CopyButton
         EventTable
         DetailArea
         VisibleSequences (1, :) double = zeros(1, 0)
@@ -179,8 +180,8 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
             obj.FollowButton.Layout.Row = 1;
             obj.FollowButton.Layout.Column = [7 8];
 
-            noticeGrid = uigridlayout(root, [1 3], ...
-                ColumnWidth={"1x", 90, 90}, ...
+            noticeGrid = uigridlayout(root, [1 5], ...
+                ColumnWidth={"1x", 80, 90, 110, 150}, ...
                 Padding=[0 0 0 0], ColumnSpacing=6);
             noticeGrid.Layout.Row = 3;
             obj.NoticeLabel = uilabel(noticeGrid, ...
@@ -192,6 +193,15 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
             uibutton(noticeGrid, Text="Clear view", ...
                 ButtonPushedFcn=@(~, ~) obj.clearView(), ...
                 Tag="labkitSessionLogClear");
+            obj.CopyButton = uibutton(noticeGrid, ...
+                Text="Copy selected", Enable="off", ...
+                ButtonPushedFcn=@(~, ~) obj.copyDetails(), ...
+                Tag="labkitSessionLogCopy");
+            uibutton(noticeGrid, ...
+                Text="Export diagnostic ZIP", ...
+                ButtonPushedFcn=@(~, ~) ...
+                    obj.Runtime.exportDiagnosticBundleInteractive(), ...
+                Tag="labkitSessionLogExport");
 
             obj.EventTable = uitable(root, ...
                 Data=emptyRows(), ...
@@ -234,6 +244,9 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
 
         function clearView(obj)
             obj.Projection.clearView();
+            obj.DetailArea.Value = ...
+                "Select an event to inspect safe structured details.";
+            obj.CopyButton.Enable = "off";
             obj.refreshView();
         end
 
@@ -318,6 +331,18 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
                 return;
             end
             obj.DetailArea.Value = cellstr(detailLines(record));
+            obj.CopyButton.Enable = "on";
+        end
+
+        function copyDetails(obj)
+            try
+                clipboard("copy", strjoin( ...
+                    string(obj.DetailArea.Value), newline));
+            catch
+                obj.NoticeLabel.Text = ...
+                    "Clipboard access is unavailable in this MATLAB session.";
+                obj.NoticeLabel.FontColor = [0.55 0.28 0];
+            end
         end
 
         function followLatest(obj)

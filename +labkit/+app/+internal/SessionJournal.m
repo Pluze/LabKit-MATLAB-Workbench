@@ -185,6 +185,10 @@ classdef (Hidden, Sealed) SessionJournal < handle
             folder = obj.Folder;
         end
 
+        function folder = rootFolder(obj)
+            folder = obj.RootFolder;
+        end
+
         function manifest = manifest(obj)
             manifest = manifestPayload(obj);
         end

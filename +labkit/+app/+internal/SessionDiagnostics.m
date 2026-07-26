@@ -100,6 +100,50 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
             obj.Stream.setTraceEnabled(enabled);
         end
 
+        function destination = exportBundle( ...
+                obj, destination, excludeOperationId)
+            if nargin < 3
+                excludeOperationId = "";
+            end
+            obj.Journal.flush();
+            streamSnapshot = obj.Stream.captureSnapshot();
+            manifest = obj.Journal.manifest();
+            events = streamSnapshot.events;
+            degradation = manifest.degradation;
+            try
+                archived = ...
+                    labkit.app.internal.SessionJournalArchive.snapshot( ...
+                    obj.Journal.rootFolder(), ...
+                    obj.Journal.sessionId());
+                events = mergeEvents( ...
+                    archived.events, streamSnapshot.events);
+                degradation = archived.degradation;
+            catch
+                % A surviving in-memory stream remains exportable when the
+                % persistent journal is unavailable or unreadable.
+            end
+            if strlength(string(excludeOperationId)) > 0 && ...
+                    ~isempty(events)
+                events = events( ...
+                    string({events.operationId}) ~= ...
+                        string(excludeOperationId));
+            end
+            capture = struct( ...
+                "traceEnabled", streamSnapshot.traceEnabled, ...
+                "inMemoryTruncated", ...
+                    streamSnapshot.inMemoryTruncated, ...
+                "retainedRecordCount", ...
+                    streamSnapshot.retainedRecordCount, ...
+                "totalRecordCount", ...
+                    streamSnapshot.totalRecordCount);
+            snapshot = struct( ...
+                "manifest", manifest, "events", events, ...
+                "degradation", degradation, "capture", capture);
+            destination = ...
+                labkit.app.internal.SessionDiagnosticBundle.write( ...
+                snapshot, destination);
+        end
+
         function folder = artifactFolder(~)
             % Transitional compatibility: ordinary diagnostics have no
             % App-authored artifact folder.
@@ -169,6 +213,23 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
             obj.close();
         end
     end
+end
+
+function value = mergeEvents(archived, retained)
+if isempty(archived)
+    value = retained(:);
+    return;
+end
+if isempty(retained)
+    value = archived(:);
+    return;
+end
+combined = [archived(:); retained(:)];
+sequences = double([combined.sequence]);
+[~, last] = unique(sequences, "last");
+value = combined(last);
+[~, order] = sort(double([value.sequence]));
+value = value(order);
 end
 
 function category = legacyCategory(value, application)

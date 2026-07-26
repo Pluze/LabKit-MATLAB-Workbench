@@ -184,6 +184,32 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.Recorder.setTraceEnabled(enabled);
         end
 
+        function destination = exportDiagnosticBundle(obj, destination)
+            operation = obj.Recorder.begin( ...
+                "runtime.lifecycle", "diagnostics.bundle_exported", ...
+                "Exporting diagnostic bundle.");
+            try
+                destination = obj.Recorder.exportBundle( ...
+                    destination, operation.Id);
+                obj.Recorder.finish( ...
+                    operation, "completed", "notApplicable", []);
+            catch cause
+                obj.Recorder.finish( ...
+                    operation, "failed", "notApplicable", cause);
+                rethrow(cause);
+            end
+        end
+
+        function destination = exportDiagnosticBundleInteractive(obj)
+            choice = obj.Context.chooseOutputFile( ...
+                {"*.zip", "Diagnostic bundle (*.zip)"}, ...
+                "labkit-diagnostics.zip");
+            destination = "";
+            if ~choice.Cancelled
+                destination = obj.exportDiagnosticBundle(choice.Value);
+            end
+        end
+
         function folder = diagnosticFolder(obj)
             folder = obj.Recorder.artifactFolder();
         end
