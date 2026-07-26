@@ -27,6 +27,11 @@ second architecture guide.
 - Debug generates deliberate synthetic inputs without preloading them. Validate
   both the sample contract and a native launch; finite schema placeholders can
   still violate small-image control limits or native presentation.
+- Validate interdependent native UI properties through real construction:
+  constructor name-values may be applied in a different order than written,
+  and layout-manager resize hooks vary by MATLAB release. Set dependent values
+  only after their legal domain exists, give responsive resize to an explicit
+  container owner, and retain a rendered GUI check.
 - Logging severity, capture detail, display filtering, persistence, and
   synthetic-input generation are independent policies. Do not bundle them into
   a Debug launch; an always-on bounded flight recorder is what makes an
