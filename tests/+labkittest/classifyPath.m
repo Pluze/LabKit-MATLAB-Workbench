@@ -37,6 +37,11 @@ function classification = classifyPath(file)
             "documentation source or generated output; docsCheck owns consistency");
         return;
     end
+    if startsWith(file, "tools/maintenance/")
+        classification = mapped(file, "maintenance-tool", "system/maintenance", ...
+            "independently callable repository maintenance tool");
+        return;
+    end
     if startsWith(file, "artifacts/") || startsWith(file, ".Trash/") || ...
             startsWith(file, ".DS_Store")
         classification = ignored(file, "generated-artifact", ...

@@ -44,6 +44,11 @@ function targets = locate(file, varargin)
             "headless", "", true, classification.Reason);
         return;
     end
+    if classification.Role == "maintenance-tool"
+        targets = target(opts.SpecsRoot, classification.Owner, "system", ...
+            "headless", "", true, classification.Reason);
+        return;
+    end
     parts = split(opts.File, "/");
     if startsWith(opts.File, "+labkit/") && numel(parts) >= 2 && ...
             startsWith(parts(2), "+")

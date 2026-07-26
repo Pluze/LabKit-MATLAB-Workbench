@@ -469,6 +469,10 @@ function fig = runLauncher(root)
         if state.actionBusy
             return;
         end
+        if ~state.tools.clean
+            setStatus(missingToolTooltip('tools/maintenance/cleanLabKitArtifacts.m or .p'));
+            return;
+        end
         if ~confirmCleanArtifacts(fig)
             setStatus('Clean artifacts canceled.');
             return;
@@ -821,6 +825,12 @@ function fig = runLauncher(root)
             tooltip = missingToolTooltip('tools/deployment/packageLabKitApp.m or .p');
             btnPackage.Tooltip = tooltip;
             btnPackagePcode.Tooltip = tooltip;
+        end
+        if state.tools.clean
+            btnClean.Tooltip = 'Remove only generated artifacts through tools/maintenance.';
+        else
+            btnClean.Tooltip = missingToolTooltip('tools/maintenance/cleanLabKitArtifacts.m or .p');
+            btnClean.Enable = 'off';
         end
     end
 
@@ -1671,88 +1681,24 @@ end
 %% Section: Clean Artifacts action
 
 function result = cleanGeneratedArtifacts(root, progressFcn)
-    if nargin < 2
-        progressFcn = [];
+    toolFile = cleanArtifactsToolFile(root);
+    if strlength(string(toolFile)) == 0
+        error('labkit_launcher:CleanArtifactsToolUnavailable', ...
+            'Clean Artifacts requires tools/maintenance/cleanLabKitArtifacts.');
     end
-    notifyProgress(progressFcn, "Checking cleanup root...", 0.05);
-    try
-        root = validateCleanArtifactsRoot(root);
-    catch err
-        result = struct('removedCount', 0, 'errors', string(err.message));
-        return;
+    toolFolder = fileparts(toolFile);
+    addedToolPath = ~pathContains(toolFolder);
+    addPathIfMissing(toolFolder);
+    if addedToolPath
+        toolPathCleanup = onCleanup(@() rmpath(toolFolder));
     end
-
-    targets = {'artifacts'};
-    notifyProgress(progressFcn, "Finding generated artifact targets...", 0.20);
-    removedCount = 0;
-    errors = strings(0, 1);
-    for k = 1:numel(targets)
-        relativeTarget = targets{k};
-        target = fullfile(root, relativeTarget);
-        try
-            notifyProgress(progressFcn, ...
-                sprintf("Checking %s...", relativeTarget), 0.25);
-            validateCleanArtifactsTarget(root, target, relativeTarget);
-            if exist(target, 'dir') == 7
-                notifyProgress(progressFcn, ...
-                    sprintf("Removing %s...", relativeTarget), 0.55);
-                rmdir(target, 's');
-                removedCount = removedCount + 1;
-            elseif exist(target, 'file') == 2
-                notifyProgress(progressFcn, ...
-                    sprintf("Removing %s...", relativeTarget), 0.55);
-                delete(target);
-                removedCount = removedCount + 1;
-            else
-                notifyProgress(progressFcn, ...
-                    sprintf("%s is already clean.", relativeTarget), 0.85);
-            end
-        catch err
-            errors(end+1) = string(err.message);
-        end
-    end
-    result = struct('removedCount', removedCount, 'errors', errors);
-    notifyProgress(progressFcn, "Clean Artifacts complete.", 1.00);
+    result = cleanLabKitArtifacts(root, ProgressFcn=progressFcn);
+    clear toolPathCleanup
 end
 
-function root = validateCleanArtifactsRoot(root)
-    root = canonicalPath(root);
-    if isSamePath(root, filesep)
-        error('labkit_launcher:UnsafeCleanRoot', ...
-            'Clean Artifacts refused to use the filesystem root as the project root.');
-    end
-    if exist(fullfile(root, 'labkit_launcher.m'), 'file') ~= 2
-        error('labkit_launcher:UnsafeCleanRoot', ...
-            'Clean Artifacts refused a folder that is not a LabKit launcher root: %s', root);
-    end
-end
-
-function validateCleanArtifactsTarget(root, target, relativeTarget)
-    if exist(target, 'dir') ~= 7 && exist(target, 'file') ~= 2
-        return;
-    end
-
-    canonicalRoot = canonicalPath(root);
-    canonicalTarget = canonicalPath(target);
-    expectedTarget = fullfile(canonicalRoot, relativeTarget);
-    if ~isSamePath(canonicalTarget, expectedTarget) || ...
-            isSamePath(canonicalTarget, canonicalRoot) || ...
-            ~startsWith(string(canonicalTarget), string([canonicalRoot filesep]))
-        error('labkit_launcher:UnsafeCleanTarget', ...
-            'Clean Artifacts refused unsafe target: %s', target);
-    end
-end
-
-function resolvedPath = canonicalPath(filepath)
-    resolvedPath = char(java.io.File(char(filepath)).getCanonicalPath());
-end
-
-function tf = isSamePath(left, right)
-    if ispc
-        tf = strcmpi(char(left), char(right));
-    else
-        tf = strcmp(char(left), char(right));
-    end
+function toolFile = cleanArtifactsToolFile(root)
+    toolFile = matlabCodeFile(fullfile(root, 'tools', 'maintenance', ...
+        'cleanLabKitArtifacts'));
 end
 
 function tf = confirmCleanArtifacts(fig)
@@ -1983,6 +1929,7 @@ end
 
 function tools = launcherToolAvailability(root)
     tools = struct();
+    tools.clean = strlength(string(cleanArtifactsToolFile(root))) > 0;
     tools.docs = strlength(string(documentationToolFile(root))) > 0;
     tools.codecheck = strlength(string(codecheckToolFile(root))) > 0;
     tools.profile = strlength(string(profileToolFile(root))) > 0;
