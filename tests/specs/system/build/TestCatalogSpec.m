@@ -210,6 +210,23 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 string(fullfile(root, "tests", "specs", "system", "launcher")));
         end
 
+        function versionManagementToolUsesItsFocusedSystemOwner(testCase)
+            source = "tools/deployment/manageLabKitVersions.m";
+            root = labkittest.setup();
+            classification = labkittest.classifyPath(source);
+            location = labkittest.locate(source);
+
+            testCase.verifyEqual(classification.Role, "deployment-tool");
+            testCase.verifyEqual(classification.Owner, "system/deployment");
+            testCase.verifyEqual(location.Owner, "system/deployment");
+            testCase.verifyEqual(location.Contract, "system");
+            testCase.verifyEqual(location.Environment, "headless");
+            testCase.verifyEqual(string(location.Folder), ...
+                string(fullfile(root, "tests", "specs", "system", "deployment")));
+            package = labkittest.classifyPath("tools/deployment/packageLabKitApp.m");
+            testCase.verifyEqual(package.Kind, "unknown");
+        end
+
         function locateNormalizesWindowsStyleRepositoryPaths(testCase)
             location = labkittest.locate( ...
                 "apps\electrochem\cic\+cic\+analysisRun\computeCIC.m");

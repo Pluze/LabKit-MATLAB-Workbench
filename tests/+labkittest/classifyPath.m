@@ -42,6 +42,11 @@ function classification = classifyPath(file)
             "independently callable repository maintenance tool");
         return;
     end
+    if file == "tools/deployment/manageLabKitVersions.m"
+        classification = mapped(file, "deployment-tool", "system/deployment", ...
+            "independently callable deployment and version-management tool");
+        return;
+    end
     if startsWith(file, "artifacts/") || startsWith(file, ".Trash/") || ...
             startsWith(file, ".DS_Store")
         classification = ignored(file, "generated-artifact", ...

@@ -44,7 +44,7 @@ function targets = locate(file, varargin)
             "headless", "", true, classification.Reason);
         return;
     end
-    if classification.Role == "maintenance-tool"
+    if ismember(classification.Role, ["maintenance-tool", "deployment-tool"])
         targets = target(opts.SpecsRoot, classification.Owner, "system", ...
             "headless", "", true, classification.Reason);
         return;
