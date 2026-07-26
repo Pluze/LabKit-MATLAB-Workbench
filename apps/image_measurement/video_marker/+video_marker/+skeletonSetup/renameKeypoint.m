@@ -10,7 +10,8 @@ try
     context.log("info", "video_marker.skeletonsetup.renamekeypoint.status", ...
         "Renamed keypoint " + string(edit.RowIndex) + ".");
 catch ME
-    context.reportError("Invalid keypoint name", ME);
+    context.log("error", "video_marker.skeletonsetup.renamekeypoint.exception", "Invalid keypoint name", ...
+        Category="failure", Audience="developer", Exception=ME);
     context.alert(ME.message, "Invalid keypoint name");
 end
 end

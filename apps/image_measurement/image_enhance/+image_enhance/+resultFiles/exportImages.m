@@ -52,7 +52,8 @@ try
         ManifestName="image_enhance.labkit.json");
     written = callbackContext.writeResultPackage(folder, package);
 catch ME
-    callbackContext.reportError("Export enhanced images", ME);
+    callbackContext.log("error", "image_enhance.resultfiles.exportimages.exception", "Export enhanced images", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Export failed");
     callbackContext.log("error", ...
         "image_enhance.resultfiles.exportimages.failed", ...

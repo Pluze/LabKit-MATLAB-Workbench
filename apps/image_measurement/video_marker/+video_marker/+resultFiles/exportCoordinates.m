@@ -34,7 +34,8 @@ try
     written = writeManifest(state, context, filepath, ...
         "coordinateCsv", "video_marker_coordinates.labkit.json");
 catch cause
-    context.reportError("Could not export coordinate CSV", cause);
+    context.log("error", "video_marker.resultfiles.exportcoordinates.exception", "Could not export coordinate CSV", ...
+        Category="failure", Audience="developer", Exception=cause);
     context.alert(cause.message, "Could not export coordinate CSV");
     return
 end

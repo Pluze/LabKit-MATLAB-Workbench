@@ -35,7 +35,8 @@ try
         ManifestName="video_marker_markers.labkit.json");
     written = context.writeResultPackage(folder, package);
 catch cause
-    context.reportError("Could not export marker CSV", cause);
+    context.log("error", "video_marker.resultfiles.exportmarkers.exception", "Could not export marker CSV", ...
+        Category="failure", Audience="developer", Exception=cause);
     context.alert(cause.message, "Could not export marker CSV");
     return
 end

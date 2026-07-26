@@ -11,7 +11,8 @@ try
     signal = labkit.biosignal.getChannel( ...
         applicationState.session.cache.recording, channel);
 catch ME
-    callbackContext.reportError("Channel selection", ME);
+    callbackContext.log("error", "ecg_print.analysisrun.changechannel.exception", "Channel selection", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Channel selection failed");
     return;
 end

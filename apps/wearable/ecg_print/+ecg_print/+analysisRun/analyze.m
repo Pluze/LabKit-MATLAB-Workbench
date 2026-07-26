@@ -17,7 +17,8 @@ try
         applicationState.session.cache, ...
         applicationState.project.parameters);
 catch ME
-    callbackContext.reportError("ECG analysis", ME);
+    callbackContext.log("error", "ecg_print.analysisrun.analyze.exception", "ECG analysis", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Analysis failed");
     callbackContext.log("error", "ecg_print.analysisrun.analyze.failed", ...
         "ECG analysis failed.");

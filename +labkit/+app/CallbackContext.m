@@ -3,7 +3,6 @@ classdef (Sealed) CallbackContext < handle
     %
     % Usage:
     %   context.log(severity, eventName, message, Name=Value)
-    %   context.reportError(operation, exception)
     %   context.diagnosticCheckpoint(id)
     %   context.diagnosticCount(id, count)
     %   context.alert(message, title)
@@ -40,8 +39,6 @@ classdef (Sealed) CallbackContext < handle
     %   Audience - "user" or "developer"; default: "user".
     %   Attributes - Scalar privacy-safe structured details. Default: struct().
     %   Exception - Scalar MException associated with the event. Default: [].
-    %   operation - Scalar diagnostic operation text.
-    %   exception - Scalar MException.
     %   id - Stable semantic diagnostic or resource identifier.
     %   count - Nonnegative integer diagnostic count.
     %   title - Scalar reader-facing dialog title.
@@ -130,16 +127,6 @@ classdef (Sealed) CallbackContext < handle
                 {values.severity, values.eventName, values.message, ...
                 values.category, values.audience, values.attributes, ...
                 values.exception}, 0);
-        end
-
-        function reportError(obj, operation, exception)
-            operation = scalarText(operation, "operation");
-            if ~isa(exception, "MException") || ~isscalar(exception)
-                error("labkit:app:contract:InvalidValue", ...
-                    "CallbackContext exception must be a scalar MException.");
-            end
-            obj.invoke("reportError", "diagnostics", ...
-                {operation, exception}, 0);
         end
 
         function diagnosticCheckpoint(obj, id)

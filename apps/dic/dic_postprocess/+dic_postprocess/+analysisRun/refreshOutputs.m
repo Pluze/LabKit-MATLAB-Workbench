@@ -21,7 +21,8 @@ try
     applicationState.session.cache.overlayExx = overlayExx;
     applicationState.session.cache.overlayEyy = overlayEyy;
 catch exception
-    callbackContext.reportError("Option update skipped", exception);
+    callbackContext.log("error", "dic_postprocess.analysisrun.refreshoutputs.exception", "Option update skipped", ...
+        Category="failure", Audience="developer", Exception=exception);
     callbackContext.log("info", "dic_postprocess.analysisrun.refreshoutputs.status",  ...
         "DIC option update was skipped.");
 end

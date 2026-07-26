@@ -19,7 +19,8 @@ try
     paths = focus_stack.sourceFiles.findImages(folder);
     images = focus_stack.sourceFiles.readImages(paths);
 catch ME
-    callbackContext.reportError("Load focus image folder", ME);
+    callbackContext.log("error", "focus_stack.sourcefiles.choosefolder.exception", "Load focus image folder", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not load focus image folder");
     callbackContext.log("error", ...
         "focus_stack.sourcefiles.choosefolder.failed", ...

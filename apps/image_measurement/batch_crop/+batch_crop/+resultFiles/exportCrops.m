@@ -26,7 +26,8 @@ try
         applicationState.session.cache.paths);
     items = batch_crop.sourceFiles.loadMissingImages(items);
 catch cause
-    callbackContext.reportError("Could not load image", cause);
+    callbackContext.log("error", "batch_crop.resultfiles.exportcrops.exception", "Could not load image", ...
+        Category="failure", Audience="developer", Exception=cause);
     callbackContext.alert(cause.message, "Could not load image");
     return
 end
@@ -52,7 +53,8 @@ try
     written = callbackContext.writeResultPackage( ...
         options.outputFolder, package);
 catch cause
-    callbackContext.reportError("Export failed", cause);
+    callbackContext.log("error", "batch_crop.resultfiles.exportcrops.exception", "Export failed", ...
+        Category="failure", Audience="developer", Exception=cause);
     callbackContext.alert(cause.message, "Export failed");
     return
 end

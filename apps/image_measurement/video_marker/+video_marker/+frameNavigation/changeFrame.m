@@ -31,7 +31,8 @@ try
         state.session.cache.currentImage, ...
         numel(state.project.annotations.skeleton.pointIds));
 catch cause
-    context.reportError("Could not read video frame", cause);
+    context.log("error", "video_marker.framenavigation.changeframe.exception", "Could not read video frame", ...
+        Category="failure", Audience="developer", Exception=cause);
     context.alert(cause.message, "Could not read frame");
     state.session.selection.currentFrame = startFrame;
     return

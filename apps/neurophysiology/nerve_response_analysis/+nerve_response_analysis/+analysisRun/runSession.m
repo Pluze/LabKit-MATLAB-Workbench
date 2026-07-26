@@ -15,7 +15,8 @@ try
     state.session.cache.analysis = nerve_response_analysis.analysisRun.analyzeSession( ...
         state.session.cache.filterRecord, state.session.cache.protocol, options);
 catch ME
-    context.reportError("Analyze nerve response", ME);
+    context.log("error", "nerve_response_analysis.analysisrun.runsession.exception", "Analyze nerve response", ...
+        Category="failure", Audience="developer", Exception=ME);
     state.session.cache.analysis = [];
     state.session.workflow.statusMessage = string(ME.message);
     state.session.workflow.lastAction = "Analysis failed";

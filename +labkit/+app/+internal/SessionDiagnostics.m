@@ -173,20 +173,6 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                     "enum", "count", "count", double(value)));
         end
 
-        function reportError(obj, operation, exception)
-            if ~isa(exception, "MException") || ~isscalar(exception)
-                error("labkit:app:contract:InvalidValue", ...
-                    "Diagnostic reportError requires one MException.");
-            end
-            eventName = legacyErrorEventName(operation);
-            diagnosticOperation = obj.Stream.begin( ...
-                legacyCategory("app", obj.Application), eventName, ...
-                "Legacy error reported.");
-            obj.Stream.finish( ...
-                diagnosticOperation, "failed", ...
-                "notApplicable", exception);
-        end
-
         function close(obj)
             if obj.Closed
                 return;
@@ -250,12 +236,6 @@ eventName = legacyIdentifier( ...
 signal = legacyIdentifier( ...
     signal, "checkpoint", "legacy diagnostic signal");
 attributes = struct("enum", signal);
-end
-
-function eventName = legacyErrorEventName(operation)
-eventName = legacyIdentifier( ...
-    operation, "legacy.reported_error", ...
-    "legacy diagnostic operation");
 end
 
 function value = legacyIdentifier(value, fallback, name)

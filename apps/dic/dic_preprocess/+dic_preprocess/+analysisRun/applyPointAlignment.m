@@ -11,7 +11,8 @@ try
     [~, transform] = dic_preprocess.analysisRun.alignMovingToReference( ...
         cache.currentReferenceImage, cache.currentMovingImage, reference, moving);
 catch ME
-    context.reportError('Point alignment', ME);
+    context.log("error", "dic_preprocess.analysisrun.applypointalignment.exception", 'Point alignment', ...
+        Category="failure", Audience="developer", Exception=ME);
     context.alert(ME.message, 'Point alignment failed');
     return;
 end

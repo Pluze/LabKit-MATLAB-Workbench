@@ -26,7 +26,8 @@ end
 try
     outputs = gait_analysis.resultFiles.writeOutputs(folder, stem, result);
 catch exception
-    callbackContext.reportError("Gait export failed", exception);
+    callbackContext.log("error", "gait_analysis.resultfiles.exportresults.exception", "Gait export failed", ...
+        Category="failure", Audience="developer", Exception=exception);
     callbackContext.alert(exception.message, ...
         "Could not export gait CSV files");
     return

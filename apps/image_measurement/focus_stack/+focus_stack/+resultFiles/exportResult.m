@@ -35,7 +35,8 @@ try
         ManifestName="focus_stack.labkit.json");
     written = callbackContext.writeResultPackage(folder, package);
 catch ME
-    callbackContext.reportError("Export Focus Stack result", ME);
+    callbackContext.log("error", "focus_stack.resultfiles.exportresult.exception", "Export Focus Stack result", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not export result");
     callbackContext.log("error", ...
         "focus_stack.resultfiles.exportresult.failed", ...

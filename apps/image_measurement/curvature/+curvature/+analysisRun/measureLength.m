@@ -25,7 +25,8 @@ try
     lengthResult = curvature.analysisRun.computeCurveLength( ...
         task.lengthPath(:, 1), task.lengthPath(:, 2), task.calibration);
 catch ME
-    callbackContext.reportError("Measure Curvature curve length", ME);
+    callbackContext.log("error", "curvature.analysisrun.measurelength.exception", "Measure Curvature curve length", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Curve length failed");
     return
 end

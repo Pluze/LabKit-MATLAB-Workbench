@@ -37,7 +37,8 @@ try
         applicationState.project.annotations.items);
     ok = numel(items) == numel(applicationState.project.inputs.sources);
 catch ME
-    callbackContext.reportError("Load FLIR sources for shared range", ME);
+    callbackContext.log("error", "flir_thermal.displaymapping.grouprange.exception", "Load FLIR sources for shared range", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not load FLIR sources");
 end
 end

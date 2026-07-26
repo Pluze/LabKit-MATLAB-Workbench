@@ -32,7 +32,8 @@ index = selectedIndex(selection, sources);
 try
     item = loadItem(sources(index), annotations, callbackContext);
 catch ME
-    callbackContext.reportError("Load selected FLIR image", ME);
+    callbackContext.log("error", "flir_thermal.thermalsources.selectcurrent.exception", "Load selected FLIR image", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not load FLIR image");
     return
 end

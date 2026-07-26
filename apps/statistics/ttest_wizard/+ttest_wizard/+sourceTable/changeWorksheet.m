@@ -24,7 +24,8 @@ paths = context.resolveSourcePaths(state.project.inputs.sources);
 try
     source = ttest_wizard.sourceTable.readSourceTable(paths(1), requested);
 catch ME
-    context.reportError("Change worksheet", ME);
+    context.log("error", "ttest_wizard.sourcetable.changeworksheet.exception", "Change worksheet", ...
+        Category="failure", Audience="developer", Exception=ME);
     context.alert(ME.message, "Worksheet");
     return;
 end

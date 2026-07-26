@@ -22,7 +22,8 @@ try
     paths = callbackContext.resolveSourcePaths(source);
     items = image_enhance.sourceFiles.readImages(paths);
 catch ME
-    callbackContext.reportError("Load image preview", ME);
+    callbackContext.log("error", "image_enhance.sourcelibrary.selectpreview.exception", "Load image preview", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not load image preview");
     return;
 end

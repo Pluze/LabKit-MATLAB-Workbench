@@ -13,7 +13,8 @@ filepath = string(choice.Value);
 try
     payload = video_marker.markerCsv.readFile(filepath);
 catch cause
-    context.reportError("Could not import marker CSV", cause);
+    context.log("error", "video_marker.resultfiles.importmarkers.exception", "Could not import marker CSV", ...
+        Category="failure", Audience="developer", Exception=cause);
     context.alert(cause.message, "Could not import marker CSV");
     return
 end

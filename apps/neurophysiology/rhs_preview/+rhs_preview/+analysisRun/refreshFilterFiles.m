@@ -12,7 +12,8 @@ try
     rows = rhs_preview.analysisRun.discoverFilterRows( ...
         string(rows.filePath), rows);
 catch ME
-    callbackContext.reportError("Folder scan failed", ME);
+    callbackContext.log("error", "rhs_preview.analysisrun.refreshfilterfiles.exception", "Folder scan failed", ...
+        Category="failure", Audience="developer", Exception=ME);
     applicationState.session.workflow.statusMessage = string(ME.message);
     return;
 end

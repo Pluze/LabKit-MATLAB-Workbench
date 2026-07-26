@@ -18,7 +18,8 @@ try
             parameters.scaleBarLength, ...
             parameters.scaleBarPosition, parameters.scaleBarColor);
 catch ME
-    callbackContext.reportError("Place Curvature scale bar", ME);
+    callbackContext.log("error", "curvature.scalecalibration.placebar.exception", "Place Curvature scale bar", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not place scale bar");
     return
 end

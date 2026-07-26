@@ -25,7 +25,8 @@ filepath = ensureCsvExtension(string(chosen.Value));
 try
     ttest_wizard.resultFiles.writeResultCsv(filepath, results);
 catch ME
-    context.reportError("Export t-test results", ME);
+    context.log("error", "ttest_wizard.resultfiles.exportcomparisons.exception", "Export t-test results", ...
+        Category="failure", Audience="developer", Exception=ME);
     context.alert(ME.message, "Export results");
     return;
 end

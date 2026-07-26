@@ -15,7 +15,8 @@ try
         filepath, applicationState.project.parameters, ...
         applicationState.project.parameters.channel);
 catch cause
-    callbackContext.reportError("Recording parse failed", cause);
+    callbackContext.log("error", "ecg_print.sourcefiles.refreshimport.exception", "Recording parse failed", ...
+        Category="failure", Audience="developer", Exception=cause);
     cache = ecg_print.sourceFiles.emptyCache();
     cache.filepath = filepath;
     cache.filePreview = preview;

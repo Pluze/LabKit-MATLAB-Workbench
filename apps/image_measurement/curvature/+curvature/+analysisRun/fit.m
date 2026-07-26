@@ -29,7 +29,8 @@ try
         task.options.doDensify, task.options.denseN, ...
         task.fitPath(:, 1), task.fitPath(:, 2));
 catch ME
-    callbackContext.reportError("Fit Curvature circle", ME);
+    callbackContext.log("error", "curvature.analysisrun.fit.exception", "Fit Curvature circle", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Circle fit failed");
     return
 end

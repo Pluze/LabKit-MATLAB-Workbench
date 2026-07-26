@@ -34,8 +34,8 @@ classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
             testCase.verifyEqual(count.attributes.enum, "count");
             testCase.verifyEqual(count.attributes.count, 2);
             testCase.verifyNumElements(reported, 1);
-            testCase.verifyEqual(reported.operationResult, "failed");
-            testCase.verifyEqual(reported.stateDisposition, "notApplicable");
+            testCase.verifyEqual(reported.operationResult, "");
+            testCase.verifyEqual(reported.stateDisposition, "");
             testCase.verifyEqual(reported.exception.identifier, "probe:ExpectedFailure");
             clear cleanup
         end
@@ -74,7 +74,9 @@ callbackContext.diagnosticCount("probe.count", 2);
 try
     error("probe:ExpectedFailure", "Expected diagnostic failure.");
 catch exception
-    callbackContext.reportError("probe.operation", exception);
+    callbackContext.log("error", "probe.operation.failed", ...
+        "Expected probe failure.", Category="failure", ...
+        Audience="developer", Exception=exception);
 end
 end
 

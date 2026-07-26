@@ -25,7 +25,8 @@ try
     end
     result = focus_stack.analysisRun.computeFocusStack(aligned, options);
 catch ME
-    context.reportError("Focus stacking", ME);
+    context.log("error", "focus_stack.analysisrun.runfocusstack.exception", "Focus stacking", ...
+        Category="failure", Audience="developer", Exception=ME);
     context.alert(ME.message, "Focus stacking failed");
     context.log("error", "focus_stack.analysisrun.runfocusstack.failed", ...
         "Focus stacking failed.");

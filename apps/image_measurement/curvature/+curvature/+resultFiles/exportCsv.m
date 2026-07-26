@@ -27,7 +27,8 @@ try
         filepath, "curvatureResults", "text/csv", ...
         "curvature_result.labkit.json");
 catch ME
-    callbackContext.reportError("Export Curvature result CSV", ME);
+    callbackContext.log("error", "curvature.resultfiles.exportcsv.exception", "Export Curvature result CSV", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not export result CSV");
     return
 end

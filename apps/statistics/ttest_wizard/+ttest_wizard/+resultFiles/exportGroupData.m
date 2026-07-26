@@ -24,7 +24,8 @@ filepath = ensureCsvExtension(string(chosen.Value));
 try
     ttest_wizard.sourceTable.writeGroupCsv(filepath, groups);
 catch ME
-    context.reportError("Export group data", ME);
+    context.log("error", "ttest_wizard.resultfiles.exportgroupdata.exception", "Export group data", ...
+        Category="failure", Audience="developer", Exception=ME);
     context.alert(ME.message, "Export data");
     return;
 end

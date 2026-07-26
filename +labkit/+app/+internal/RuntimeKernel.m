@@ -4,7 +4,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         State (1, 1) struct
         Presentation
         StatusLog (1, :) string = "Ready."
-        Diagnostics (1, :) cell = {}
         Closed (1, 1) logical = false
         StartupFailed (1, 1) logical = false
     end
@@ -747,8 +746,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             builtins = struct( ...
                 "log", @(severity, eventName, message, category, audience, attributes, exception) ...
                     obj.log(severity, eventName, message, category, audience, attributes, exception), ...
-                "reportError", @(operation, exception) ...
-                    obj.reportError(operation, exception), ...
                 "diagnosticCheckpoint", @(id) ...
                     obj.Recorder.note( ...
                     "app", id, "checkpoint", "completed"), ...
@@ -865,12 +862,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         function paths = presentationSourcePaths(obj, records, role)
             records = obj.Sources.recordsForRole(records, role);
             paths = obj.Sources.sourcePaths(records);
-        end
-
-        function reportError(obj, operation, exception)
-            obj.Diagnostics{end + 1} = struct( ...
-                "Operation", operation, "Exception", exception);
-            obj.Recorder.reportError(operation, exception);
         end
 
         function log(obj, severity, eventName, message, category, audience, attributes, exception)

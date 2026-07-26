@@ -29,7 +29,8 @@ try
         filepath, "curvatureOverlay", "image/png", ...
         "curvature_overlay.labkit.json");
 catch ME
-    callbackContext.reportError("Export Curvature overlay PNG", ME);
+    callbackContext.log("error", "curvature.resultfiles.exportoverlay.exception", "Export Curvature overlay PNG", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not export overlay PNG");
     return
 end

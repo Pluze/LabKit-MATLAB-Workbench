@@ -15,7 +15,8 @@ try
     [metrics, summary, aligned] = response_review_stats.analysisRun.loadMetrics( ...
         paths(1), state.project.parameters);
 catch ME
-    context.reportError("Metric load", ME);
+    context.log("error", "response_review_stats.analysisrun.refreshmetrics.exception", "Metric load", ...
+        Category="failure", Audience="developer", Exception=ME);
     state.session.cache.metrics = table();
     state.session.cache.summary = table();
     state.session.cache.aligned = [];

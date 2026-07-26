@@ -23,7 +23,8 @@ end
 try
     result = gait_analysis.analysisRun.computeGait(pose, options);
 catch cause
-    context.reportError("Gait analysis failed", cause);
+    context.log("error", "gait_analysis.analysisrun.runfromworkbench.exception", "Gait analysis failed", ...
+        Category="failure", Audience="developer", Exception=cause);
     context.alert(cause.message, "Gait analysis failed");
     context.log("info", ...
         "gait_analysis.analysisrun.runfromworkbench.status", ...

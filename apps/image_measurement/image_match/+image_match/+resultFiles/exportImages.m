@@ -54,7 +54,8 @@ try
         ManifestName="image_match.labkit.json");
     written = callbackContext.writeResultPackage(folder, package);
 catch ME
-    callbackContext.reportError("Export matched images", ME);
+    callbackContext.log("error", "image_match.resultfiles.exportimages.exception", "Export matched images", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Export failed");
     callbackContext.log("error", ...
         "image_match.resultfiles.exportimages.failed", ...

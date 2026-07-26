@@ -25,7 +25,8 @@ try
     paths = callbackContext.resolveSourcePaths(sources(index));
     items = image_match.sourceFiles.readImages(paths);
 catch ME
-    callbackContext.reportError("Load image-match preview", ME);
+    callbackContext.log("error", "image_match.sourcefiles.selectpreview.exception", "Load image-match preview", ...
+        Category="failure", Audience="developer", Exception=ME);
     callbackContext.alert(ME.message, "Could not load source image");
     return;
 end
