@@ -87,6 +87,35 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function persistsRollbackFailureChainOnClose(testCase)
+            [runtime, journal, root] = runtimeWithJournal(testCase, ...
+                "session-runtime-persisted-failure", "fail", @failLoggingProbe);
+            cleanup = onCleanup(@() runtime.close());
+
+            testCase.verifyError(@() runtime.invokeAction("fail"), ...
+                "labkit:app:runtime:ActionFailed");
+            runtime.close();
+            snapshot = labkit.app.internal.SessionJournalArchive.snapshot( ...
+                root, journal.sessionId());
+            names = string({snapshot.events.eventName});
+            started = snapshot.events(names == "callback.pressed.started");
+            failed = snapshot.events(names == "callback.pressed.failed");
+            completed = snapshot.events(names == "callback.pressed.completed");
+
+            testCase.verifyNumElements(started, 1);
+            testCase.verifyNumElements(failed, 1);
+            testCase.verifyEmpty(completed);
+            testCase.verifyEqual(failed.operationId, started.operationId);
+            testCase.verifyEqual(failed.parentOperationId, started.parentOperationId);
+            testCase.verifyEqual(failed.rootActionId, started.rootActionId);
+            testCase.verifyEqual(string(failed.operationResult), "failed");
+            testCase.verifyEqual(string(failed.stateDisposition), "rolledBack");
+            testCase.verifyEqual(string(failed.exception.identifier), "probe:ExpectedFailure");
+            testCase.verifyEqual(string(failed.exception.message), "Exception captured.");
+            testCase.verifyEqual(string(snapshot.manifest.state), "closed");
+            clear cleanup
+        end
+
         function persistsCorrelationCompleteCallbackHistoryOnClose(testCase)
             [runtime, journal, root] = runtimeWithJournal(testCase, ...
                 "session-runtime-persisted", "run", @runLoggingProbe);
