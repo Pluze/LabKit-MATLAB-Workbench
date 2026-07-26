@@ -12,7 +12,8 @@ options = struct("focusWindow", p.focusWindow, "smoothRadius", p.smoothRadius, .
 paths = context.resolveSourcePaths(state.project.inputs.sources);
 task = focus_stack.analysisRun.runTask(paths, images, options, p.autoRegister);
 if state.session.cache.result.ok && state.project.results.lastRunFingerprint == task.fingerprint
-    context.appendStatus("Focus stack result is already up to date.");
+    context.log("info", "focus_stack.analysisrun.runfocusstack.skipped", ...
+        "Focus stack result is already up to date.");
     return;
 end
 try
@@ -26,7 +27,8 @@ try
 catch ME
     context.reportError("Focus stacking", ME);
     context.alert(ME.message, "Focus stacking failed");
-    context.appendStatus("Focus stacking failed: " + string(ME.message));
+    context.log("error", "focus_stack.analysisrun.runfocusstack.failed", ...
+        "Focus stacking failed.");
     return;
 end
 state.session.cache.alignedImages = aligned;
@@ -38,9 +40,13 @@ state.project.results.lastRunFingerprint = task.fingerprint;
 state.project.results.registrationLines = lines;
 state.project.results.lastExport = [];
 state.project.results.resultManifestPath = "";
-context.appendStatus(sprintf("Focus stack complete: %d images fused with %s.", result.inputCount, result.method));
-for line = lines(:).'
-    context.appendStatus(line);
+context.log("info", "focus_stack.analysisrun.runfocusstack.completed", ...
+    sprintf("Focus stack complete: %d images fused.", result.inputCount));
+if ~isempty(lines)
+    context.log("debug", ...
+        "focus_stack.analysisrun.runfocusstack.registration_details", ...
+        sprintf("Recorded %d registration detail(s).", numel(lines)), ...
+        Audience="developer");
 end
 end
 

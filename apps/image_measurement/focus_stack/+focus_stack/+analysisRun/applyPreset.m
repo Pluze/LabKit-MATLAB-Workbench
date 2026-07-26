@@ -7,5 +7,6 @@ state.project.parameters.focusWindow = settings.focusWindow;
 state.project.parameters.smoothRadius = settings.smoothRadius;
 state.project.parameters.uncertainBlend = settings.minConfidencePercent;
 state = focus_stack.analysisRun.invalidate(state, [], context);
-context.appendStatus("Fusion preset set to " + state.project.parameters.fusionPreset + ".");
+context.log("info", "focus_stack.analysisrun.applypreset.status", ...
+    "Applied the selected fusion preset.");
 end
