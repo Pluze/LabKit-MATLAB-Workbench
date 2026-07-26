@@ -537,6 +537,14 @@ Exit gate: every known current gap has a failing target test or a documented
 manual-only acceptance check; the self-contained Launcher boundary has an
 explicit compatibility test; baseline performance artifacts are recorded.
 
+Phase 1 manual-only baseline acceptance (before Phase 2 implementation) is a
+maintainer-run interactive check, not batch evidence: using synthetic inputs,
+record ignored `artifacts/profile/` JSON reports separately for normal App
+startup, one callback dispatch, one representative managed interaction, the
+legacy status/log-panel update, and verbose-recorder throughput/memory. Record
+the host MATLAB release, scenario, and whether any measured interval includes
+human wait time. Do not use a `-batch` GUI run as a substitute for this check.
+
 #### Phase 2: private in-memory canonical stream
 
 - Implement the private event record, validator, session context, operation
