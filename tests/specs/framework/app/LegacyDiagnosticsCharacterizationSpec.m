@@ -27,11 +27,11 @@ classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(status, 1);
             testCase.verifyEqual(status.message, "Legacy status.");
             testCase.verifyNumElements(checkpoint, 1);
-            testCase.verifyEqual(checkpoint.attributes.signal, "checkpoint");
+            testCase.verifyEqual(checkpoint.attributes.enum, "checkpoint");
             testCase.verifyEqual(checkpoint.operationResult, "");
             testCase.verifyEqual(checkpoint.stateDisposition, "");
             testCase.verifyNumElements(count, 1);
-            testCase.verifyEqual(count.attributes.signal, "count");
+            testCase.verifyEqual(count.attributes.enum, "count");
             testCase.verifyEqual(count.attributes.count, 2);
             testCase.verifyNumElements(reported, 1);
             testCase.verifyEqual(reported.operationResult, "failed");

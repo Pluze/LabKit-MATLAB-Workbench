@@ -566,7 +566,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.PendingDocumentMetadata = [];
             operation = obj.Recorder.begin( ...
                 "runtime.callback", "callback." + binding.Signal, ...
-                "Dispatching callback.", Attributes=struct("bindingId", binding.Id));
+                "Dispatching callback.", Attributes=struct("runtimeAlias", binding.Id));
             try
                 if ~binding.AcceptsPayload
                     candidate = binding.UpdateState(previousState, obj.Context);

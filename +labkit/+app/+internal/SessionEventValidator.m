@@ -66,32 +66,45 @@ classdef (Hidden, Sealed) SessionEventValidator
         end
 
         function attributes = privacySafeAttributes(attributes)
-            if ~isstruct(attributes) || ~isscalar(attributes) || ...
-                    numel(fieldnames(attributes)) > 16
-                error("labkit:app:contract:InvalidValue", ...
-                    "Session event attributes must be one bounded scalar struct.");
+            if ~isstruct(attributes) || ~isscalar(attributes)
+                unsafeAttributeData("must be one scalar struct");
             end
             names = string(fieldnames(attributes));
+            if numel(names) > maximumRetainedAttributeFieldCount()
+                unsafeAttributeData("exceed the retained field limit");
+            end
             for index = 1:numel(names)
-                name = labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
-                    names(index), "attribute key");
+                name = attributeKeyIdentifier(names(index), "key");
                 value = attributes.(name);
-                if ischar(value) || (isstring(value) && isscalar(value))
-                    attributes.(name) = ...
-                        labkit.app.internal.SessionEventValidator.privacySafeText( ...
-                        value, "attribute value");
-                elseif isnumeric(value) || islogical(value)
-                    if numel(value) > 16 || any(~isfinite(double(value)), "all")
-                        error("labkit:app:contract:InvalidValue", ...
-                            "Session event numeric attributes must be finite and bounded.");
+                rejectSensitiveAttributeKey(name, value);
+                if name == "dimensions"
+                    attributes.(name) = validateDimensions(value);
+                elseif isScalarText(value)
+                    if ~any(name == retainedTextAttributeKeys())
+                        unsafeAttributeData("only allow text for controlled semantic keys");
                     end
-                elseif isstruct(value) && isscalar(value)
-                    attributes.(name) = ...
-                        labkit.app.internal.SessionEventValidator.privacySafeAttributes(value);
+                    attributes.(name) = validateRetainedText(name, value);
+                elseif isnumeric(value) || islogical(value)
+                    if ~(isscalar(value) && isreal(value) && isfinite(double(value)))
+                        unsafeAttributeData("must use finite scalar numeric or logical values");
+                    end
                 else
-                    error("labkit:app:contract:InvalidValue", ...
-                        "Session event attributes must use privacy-safe scalar values.");
+                    unsafeAttributeData("must not contain arrays, nested values, or MATLAB objects");
                 end
+            end
+            attributes = orderfields(attributes);
+            if isfield(attributes, "dimensions")
+                attributes.dimensions = orderfields(attributes.dimensions);
+            end
+            dimensionAxes = 0;
+            if isfield(attributes, "dimensions")
+                dimensionAxes = numel(fieldnames(attributes.dimensions));
+            end
+            if numel(names) + dimensionAxes > maximumRetainedAttributeFieldCount()
+                unsafeAttributeData("exceed the retained total field limit");
+            end
+            if utf8ByteCount(jsonencode(attributes)) > maximumRetainedAttributeJsonBytes()
+                unsafeAttributeData("exceed the retained canonical JSON byte limit");
             end
         end
 
@@ -161,6 +174,148 @@ if condition
 else
     value = falseValue;
 end
+end
+
+function value = validateRetainedText(key, value)
+if key == "unit"
+    value = validateUnitToken(value);
+elseif key == "sourceAlias"
+    value = validateSourceAlias(value);
+else
+    value = retainedSemanticToken(value, "text value");
+end
+end
+
+function value = validateUnitToken(value)
+if ~isScalarText(value)
+    unsafeAttributeData("unit must be one short controlled token");
+end
+value = string(value);
+unitCharacters = [char(181), char(956), char(8486), char(176)];
+factor = "[A-Za-z" + string(unitCharacters) + "]+(?:\^-?[1-9][0-9]*)?";
+pattern = "^(1|%|a\.u\." + "|" + factor + "(?:[*/.]" + factor + ")*)$";
+if strlength(value) > maximumRetainedSemanticTokenLength() || ...
+        strlength(value) > maximumRetainedUnitTokenLength() || ...
+        isempty(regexp(char(value), char(pattern), "once"))
+    unsafeAttributeData("unit must be one short controlled token");
+end
+end
+
+function value = validateSourceAlias(value)
+if ~isScalarText(value)
+    unsafeAttributeData("sourceAlias must use the framework source-N form");
+end
+value = string(value);
+if strlength(value) > maximumRetainedSemanticTokenLength() || ...
+        isempty(regexp(char(value), '^source-[1-9][0-9]*$', "once"))
+    unsafeAttributeData("sourceAlias must use the framework source-N form");
+end
+end
+
+function value = validateDimensions(value)
+if ~isstruct(value) || ~isscalar(value)
+    unsafeAttributeData("dimensions must be one fixed scalar object");
+end
+names = string(fieldnames(value));
+if isempty(names) || numel(names) > maximumDimensionAxisCount()
+    unsafeAttributeData("dimensions exceed the axis limit");
+end
+for index = 1:numel(names)
+    name = attributeKeyIdentifier(names(index), "dimension axis");
+    axisLength = value.(name);
+    if ~(isnumeric(axisLength) && isreal(axisLength) && isscalar(axisLength) && ...
+            isfinite(axisLength) && axisLength >= 1 && axisLength == fix(axisLength))
+        unsafeAttributeData("dimension axes must be positive integer scalars");
+    end
+    value.(name) = double(axisLength);
+end
+end
+
+function value = attributeKeyIdentifier(value, label)
+if ~isScalarText(value)
+    unsafeAttributeData(label + " must be scalar semantic text");
+end
+value = string(value);
+if strlength(value) > maximumRetainedAttributeKeyLength() || ...
+        isempty(regexp(char(value), '^[A-Za-z][A-Za-z0-9._-]*$', "once"))
+    unsafeAttributeData(label + " must be a short semantic identifier");
+end
+end
+
+function value = retainedSemanticToken(value, label)
+if ~isScalarText(value)
+    unsafeAttributeData(label + " must be scalar semantic text");
+end
+value = string(value);
+if strlength(value) > maximumRetainedSemanticTokenLength() || ...
+        isempty(regexp(char(value), '^[A-Za-z][A-Za-z0-9._-]*$', "once"))
+    unsafeAttributeData(label + " must be a short semantic identifier");
+end
+end
+
+function rejectSensitiveAttributeKey(key, value)
+if any(key == retainedTextAttributeKeys()) || key == "dimensions"
+    return;
+end
+normalized = lower(erase(key, [".", "_", "-"]));
+if isSafeScalarFact(key, value)
+    return;
+end
+forbiddenFragments = ["subject", "device", "serial", "sample", "signal", ...
+    "path", "file", "name", "value", "data", "content", "metadata", ...
+    "message", "freetext", "user", "identifier"];
+if any(contains(normalized, forbiddenFragments)) || endsWith(normalized, "id")
+    unsafeAttributeData("key denotes retained identity, content, or scientific data");
+end
+end
+
+function tf = isSafeScalarFact(key, value)
+tf = (isnumeric(value) || islogical(value)) && isreal(value) && isscalar(value) && ...
+    isfinite(double(value)) && (key == "ordinal" || key == "count" || ...
+    endsWith(key, ["Count", "Index", "DurationSeconds"]));
+end
+
+function keys = retainedTextAttributeKeys()
+keys = ["enum", "unit", "reason", "runtimeAlias", "sourceAlias"];
+end
+
+function tf = isScalarText(value)
+tf = (isstring(value) && isscalar(value) && ~ismissing(value)) || ...
+    (ischar(value) && isrow(value));
+end
+
+function count = maximumRetainedAttributeFieldCount()
+count = 16;
+end
+
+function count = maximumDimensionAxisCount()
+count = 4;
+end
+
+function count = maximumRetainedAttributeKeyLength()
+count = 64;
+end
+
+function count = maximumRetainedSemanticTokenLength()
+count = 64;
+end
+
+function count = maximumRetainedUnitTokenLength()
+count = 24;
+end
+
+function count = maximumRetainedAttributeJsonBytes()
+% Bound one fully validated canonical object before it reaches the ring/disk.
+count = 1024;
+end
+
+function count = utf8ByteCount(value)
+count = numel(unicode2native(char(string(value)), "UTF-8"));
+end
+
+function unsafeAttributeData(detail)
+error("labkit:app:contract:UnsafeLogData", ...
+    "Session event attributes %s.", detail);
 end
 
 function tf = containsUnsafeAbsolutePath(value)

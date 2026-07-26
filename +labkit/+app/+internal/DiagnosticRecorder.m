@@ -76,7 +76,7 @@ classdef (Hidden, Sealed) DiagnosticRecorder < handle
             obj.Stream.log("debug", eventName, "Legacy diagnostic count.", ...
                 Category=legacyCategory("app", obj.Application), ...
                 Audience="developer", Attributes=struct( ...
-                "signal", "count", "count", double(value)));
+                "enum", "count", "count", double(value)));
         end
 
         function reportError(obj, operation, exception)
@@ -136,7 +136,7 @@ function [eventName, attributes] = legacyEvent(targetId, signal)
 eventName = legacyIdentifier(targetId, "legacy.checkpoint", ...
     "legacy diagnostic id");
 signal = legacyIdentifier(signal, "checkpoint", "legacy diagnostic signal");
-attributes = struct("signal", signal);
+attributes = struct("enum", signal);
 end
 
 function eventName = legacyErrorEventName(operation)
