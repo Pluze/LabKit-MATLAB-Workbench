@@ -27,6 +27,10 @@ second architecture guide.
 - Debug generates deliberate synthetic inputs without preloading them. Validate
   both the sample contract and a native launch; finite schema placeholders can
   still violate small-image control limits or native presentation.
+- Logging severity, capture detail, display filtering, persistence, and
+  synthetic-input generation are independent policies. Do not bundle them into
+  a Debug launch; an always-on bounded flight recorder is what makes an
+  ordinary post-incident session diagnosable.
 
 ### Interaction and previews
 
