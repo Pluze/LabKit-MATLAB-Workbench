@@ -459,6 +459,23 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 repmat("system/build", 1, numel(result.Descriptors)));
         end
 
+        function releaseAssetIntegrityUsesDigestAndByteCount(testCase)
+            root = labkittest.setup();
+            workflow = string(fileread(fullfile( ...
+                root, ".github", "workflows", "release.yml")));
+
+            testCase.verifySubstring(workflow, ...
+                "Remote launcher digest does not match the tag blob.");
+            testCase.verifySubstring(workflow, ...
+                "Remote launcher byte count does not match the tag blob.");
+            testCase.verifySubstring(workflow, ...
+                ".digest')");
+            testCase.verifySubstring(workflow, ...
+                ".size')");
+            testCase.verifyFalse(contains(workflow, ...
+                "gh release verify-asset"));
+        end
+
         function explainChangedReportsClassificationAndExactEvidence(testCase)
             output = evalc("labkittest.explainChanged(""ChangedPaths"", ""tests/+labkittest/plan.m"");");
 

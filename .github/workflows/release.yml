@@ -122,7 +122,24 @@ jobs:
             --title "LabKit MATLAB Workbench ${RELEASE_TAG}" \
             --generate-notes \
             --draft
-          gh release verify-asset "$RELEASE_TAG" "$asset" \
-            --repo "$GITHUB_REPOSITORY"
+          local_digest="sha256:$(cut -d' ' -f1 \
+            "artifacts/release/${RELEASE_TAG}/asset.sha256")"
+          local_size="$(wc -c < "$asset" | tr -d '[:space:]')"
+          remote_digest="$(gh release view "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '.assets[] | select(.name == "labkit_launcher.m") | .digest')"
+          remote_size="$(gh release view "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '.assets[] | select(.name == "labkit_launcher.m") | .size')"
+          if [[ "$remote_digest" != "$local_digest" ]]; then
+            echo "::error::Remote launcher digest does not match the tag blob."
+            exit 1
+          fi
+          if [[ "$remote_size" != "$local_size" ]]; then
+            echo "::error::Remote launcher byte count does not match the tag blob."
+            exit 1
+          fi
           echo "Review and complete the release notes, asset, and validation evidence before publishing the draft." \
             >> "$GITHUB_STEP_SUMMARY"
