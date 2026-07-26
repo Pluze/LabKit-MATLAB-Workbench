@@ -195,6 +195,21 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "tests", "specs", "framework", "dta")));
         end
 
+        function installedLauncherUsesItsFocusedSystemOwner(testCase)
+            source = "+labkit/+app/+internal/+launcher/dispatch.m";
+            root = labkittest.setup();
+            classification = labkittest.classifyPath(source);
+            location = labkittest.locate(source);
+
+            testCase.verifyEqual(classification.Role, "installed-launcher");
+            testCase.verifyEqual(classification.Owner, "system/launcher");
+            testCase.verifyEqual(location.Owner, "system/launcher");
+            testCase.verifyEqual(location.Contract, "system");
+            testCase.verifyEqual(location.Environment, "headless");
+            testCase.verifyEqual(string(location.Folder), ...
+                string(fullfile(root, "tests", "specs", "system", "launcher")));
+        end
+
         function locateNormalizesWindowsStyleRepositoryPaths(testCase)
             location = labkittest.locate( ...
                 "apps\electrochem\cic\+cic\+analysisRun\computeCIC.m");

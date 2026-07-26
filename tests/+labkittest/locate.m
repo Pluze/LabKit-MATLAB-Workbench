@@ -39,7 +39,7 @@ function targets = locate(file, varargin)
             "headless", "", true, classification.Reason);
         return;
     end
-    if classification.Role == "repair-launcher"
+    if classification.Role == "repair-launcher" || classification.Role == "installed-launcher"
         targets = target(opts.SpecsRoot, classification.Owner, "system", ...
             "headless", "", true, classification.Reason);
         return;

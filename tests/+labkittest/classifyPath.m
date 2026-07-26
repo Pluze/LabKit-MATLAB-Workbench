@@ -58,6 +58,11 @@ function classification = classifyPath(file)
             "self-contained repair-launcher bootstrap behavior");
         return;
     end
+    if startsWith(file, "+labkit/+app/+internal/+launcher/")
+        classification = mapped(file, "installed-launcher", "system/launcher", ...
+            "installed Launcher composition and routing behavior");
+        return;
+    end
     if startsWith(file, "+labkit/") && numel(parts) >= 2 && startsWith(parts(2), "+")
         area = erase(parts(2), "+");
         if ismember(area, ["app", "biosignal", "contract", "dta", "image", "rhs", "thermal"])
