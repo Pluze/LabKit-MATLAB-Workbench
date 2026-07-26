@@ -247,6 +247,21 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             end
         end
 
+        function everyProjectSchemaHasOwnedPersistenceEvidence(testCase)
+            root = labkittest.setup();
+            files = dir(fullfile(root, "apps", "**", "projectSpec.m"));
+
+            testCase.verifyNotEmpty(files);
+            for k = 1:numel(files)
+                relative = erase(string(fullfile( ...
+                    files(k).folder, files(k).name)), string(root) + filesep);
+                plan = labkittest.plan("File", relative);
+                contracts = string({plan.Descriptors.Contracts});
+                testCase.verifyTrue(any(contracts == "persistence"), ...
+                    "No persistence evidence is selected for " + relative);
+            end
+        end
+
         function appLaunchersUseTheDefinitionEvidenceClosure(testCase)
             locations = labkittest.locate( ...
                 "apps/electrochem/cic/labkit_CIC_app.m");
