@@ -50,7 +50,8 @@ function options = parseOptions(varargin)
 % the production contract. Global storage equals five ordinary App budgets.
 options = struct("ClosedSessionLimitPerApp", 10, "ClosedSessionAgeDays", 14, ...
     "AppByteLimit", 50 * 1024 * 1024, "GlobalByteLimit", 250 * 1024 * 1024, ...
-    "ProtectedSessionIds", strings(0, 1));
+    "ProtectedSessionIds", strings(0, 1), "LeaseClock", [], "LeaseProbe", [], ...
+    "LeaseFreshSeconds", 60);
 if mod(numel(varargin), 2) ~= 0
     error("labkit:app:contract:InvalidValue", ...
         "SessionJournalArchive options must be name-value pairs.");
@@ -78,23 +79,52 @@ for index = 1:numel(options.ProtectedSessionIds)
     options.ProtectedSessionIds(index) = semanticSessionId( ...
         options.ProtectedSessionIds(index), "ProtectedSessionId");
 end
+for name = ["LeaseClock", "LeaseProbe"]
+    if ~isempty(options.(name)) && ~isa(options.(name), "function_handle")
+        error("labkit:app:contract:InvalidValue", ...
+            "SessionJournalArchive %s must be a function handle.", name);
+    end
+end
+if ~(isnumeric(options.LeaseFreshSeconds) && isscalar(options.LeaseFreshSeconds) && ...
+        isfinite(options.LeaseFreshSeconds) && options.LeaseFreshSeconds > 0)
+    error("labkit:app:contract:InvalidValue", ...
+        "SessionJournalArchive LeaseFreshSeconds must be positive.");
+end
 end
 
 function inspection = inspectRoot(rootFolder, options)
 sessionRoot = fullfile(rootFolder, "sessions");
 if exist(char(sessionRoot), "dir") ~= 7
     inspection = struct("retention", emptyRetention(), "sessionCount", 0, ...
-        "recoveredSessionCount", 0, "corruptTailCount", 0);
+        "recoveredSessionCount", 0, "corruptTailCount", 0, ...
+        "liveSessionCount", 0, "uncertainSessionCount", 0, ...
+        "staleSessionCount", 0);
     return;
 end
 sessions = discover(sessionRoot);
 recoveredSessionCount = 0;
 corruptTailCount = 0;
+liveSessionCount = 0;
+uncertainSessionCount = 0;
+staleSessionCount = 0;
 for index = 1:numel(sessions)
+    leaseState = classifyLease(sessions(index), options);
+    switch leaseState
+        case "live"
+            liveSessionCount = liveSessionCount + 1;
+        case "uncertain"
+            uncertainSessionCount = uncertainSessionCount + 1;
+        case "stale"
+            staleSessionCount = staleSessionCount + 1;
+    end
     if any(sessions(index).SessionId == options.ProtectedSessionIds)
         continue;
     end
-    [didRecover, tailCount] = recover(sessions(index).Folder);
+    if ~(sessions(index).State == "closed" || sessions(index).State == "abandoned" || ...
+            leaseState == "stale")
+        continue;
+    end
+    [didRecover, tailCount] = recover(sessions(index).Folder, leaseState == "stale");
     recoveredSessionCount = recoveredSessionCount + didRecover;
     corruptTailCount = corruptTailCount + tailCount;
 end
@@ -105,7 +135,9 @@ retention.corruptTailCount = corruptTailCount;
 retention.updatedAtUtc = utcNow();
 atomicJson(fullfile(rootFolder, "retention.json"), retention);
 inspection = struct("retention", retention, "sessionCount", numel(sessions), ...
-    "recoveredSessionCount", recoveredSessionCount, "corruptTailCount", corruptTailCount);
+    "recoveredSessionCount", recoveredSessionCount, "corruptTailCount", corruptTailCount, ...
+    "liveSessionCount", liveSessionCount, "uncertainSessionCount", uncertainSessionCount, ...
+    "staleSessionCount", staleSessionCount);
 end
 
 function sessions = discover(sessionRoot)
@@ -118,8 +150,10 @@ sessions = repmat(template, 0, 1);
 for index = 1:numel(folders)
     folder = string(fullfile(folders(index).folder, folders(index).name));
     manifest = readJson(fullfile(folder, "manifest.json"));
-    if isempty(manifest) || ~isfield(manifest, "sessionId") || ...
-            ~isfield(manifest, "state") || ~isfield(manifest, "appId")
+    if isempty(manifest) || ~isstruct(manifest) || ~isscalar(manifest) || ...
+            ~all(isfield(manifest, ["sessionId", "state", "appId"])) || ...
+            ~isTextScalar(manifest.sessionId) || ~isTextScalar(manifest.state) || ...
+            ~isTextScalar(manifest.appId)
         continue;
     end
     try
@@ -133,7 +167,7 @@ for index = 1:numel(folders)
 end
 end
 
-function [didRecover, corruptTailCount] = recover(folder)
+function [didRecover, corruptTailCount] = recover(folder, abandonActive)
 manifestFile = fullfile(folder, "manifest.json");
 manifest = readJson(manifestFile);
 didRecover = false;
@@ -151,7 +185,7 @@ if corruptTailCount > 0
     manifest.recovery = recoveryMetadata(manifest, corruptTailCount, false);
     didRecover = true;
 end
-if string(manifest.state) == "active"
+if abandonActive && string(manifest.state) == "active"
     manifest.state = "abandoned";
     manifest.abandonedAtUtc = utcNow();
     manifest.recovery = recoveryMetadata(manifest, corruptTailCount, true);
@@ -160,11 +194,55 @@ if string(manifest.state) == "active"
         delete(char(active));
     end
     didRecover = true;
+elseif string(manifest.state) ~= "active"
+    active = fullfile(folder, "active.json");
+    if exist(char(active), "file") == 2
+        delete(char(active));
+        didRecover = true;
+    end
 end
+
 if didRecover
     manifest.updatedAtUtc = utcNow();
     atomicJson(manifestFile, manifest);
 end
+end
+
+function state = classifyLease(session, options)
+if session.State ~= "active"
+    state = "terminal";
+    return;
+end
+marker = readJson(fullfile(session.Folder, "active.json"));
+manifest = readJson(fullfile(session.Folder, "manifest.json"));
+nowUtc = utcNow();
+if ~isempty(options.LeaseClock)
+    nowUtc = string(options.LeaseClock());
+end
+probe = [];
+targetPid = -1;
+targetHost = "unknown";
+if isstruct(marker) && isscalar(marker)
+    if isfield(marker, "pid") && isnumeric(marker.pid) && isscalar(marker.pid) && ...
+            isfinite(marker.pid) && marker.pid == fix(marker.pid)
+        targetPid = marker.pid;
+    end
+    if isfield(marker, "host") && ((isstring(marker.host) && isscalar(marker.host)) || ...
+            (ischar(marker.host) && isrow(marker.host)))
+        targetHost = string(marker.host);
+    end
+end
+try
+    if ~isempty(options.LeaseProbe)
+        probe = options.LeaseProbe(targetPid, targetHost);
+    else
+        probe = labkit.app.internal.SessionLease.localProbe(targetPid);
+    end
+catch
+    probe = [];
+end
+state = labkit.app.internal.SessionLease.classify( ...
+    marker, manifest, nowUtc, probe, options.LeaseFreshSeconds);
 end
 
 function metadata = recoveryMetadata(manifest, tailCount, abandoned)
@@ -277,12 +355,17 @@ end
 
 function value = sessionTimestamp(manifest)
 for field = ["closedAtUtc", "abandonedAtUtc", "updatedAtUtc", "startedAtUtc"]
-    if isfield(manifest, field) && strlength(string(manifest.(field))) > 0
+    if isfield(manifest, field) && isTextScalar(manifest.(field)) && ...
+            strlength(string(manifest.(field))) > 0
         value = string(manifest.(field));
         return;
     end
 end
 value = "";
+end
+
+function tf = isTextScalar(value)
+tf = (isstring(value) && isscalar(value)) || (ischar(value) && isrow(value));
 end
 
 function value = parseUtc(text)
