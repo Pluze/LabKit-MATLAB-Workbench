@@ -49,7 +49,7 @@ end
 
 function fig = createLauncher(root)
 panelFontSize = 15;
-tableFontSize = 14;
+tableFontSize = 12;
 version = launcherVersion();
 position = defaultLauncherPosition();
 figArgs = { ...
@@ -57,14 +57,20 @@ figArgs = { ...
         " (" + version.updated + ")", ...
     "Tag", "labkitLauncher", ...
     "Position", position, ...
+    "AutoResizeChildren", "off", ...
     "Color", [0.97 0.98 0.99]};
 if launcherGuiTestMode() == "hidden"
     figArgs = [figArgs, {"Visible", "off"}];
 end
 close(findall(groot, "Type", "figure", "Tag", "labkitLauncher"));
 fig = uifigure(figArgs{:});
-main = uigridlayout(fig, [1 3]);
-leftWidth = min(420, max(380, round(position(3) * 0.28)));
+rootPanel = uipanel(fig, ...
+    "BorderType", "none", ...
+    "BackgroundColor", fig.Color, ...
+    "Units", "pixels", ...
+    "Position", [1 1 position(3:4)]);
+main = uigridlayout(rootPanel, [1 3]);
+leftWidth = launcherControlWidth(position(3));
 main.ColumnWidth = {leftWidth, 5, "1x"};
 main.RowHeight = {"1x"};
 main.Padding = [6 6 6 6];
@@ -167,7 +173,7 @@ if isprop(appTable, "ColumnFormat")
     appTable.ColumnFormat = { ...
         'logical', 'char', 'char', 'char', 'char', 'char', 'char'};
 end
-appTable.ColumnWidth = repmat({"auto"}, 1, 7);
+appTable.ColumnWidth = launcherTableWidths(position(3), leftWidth);
 configureTable(appTable, @selectRow, @doubleClickRow);
 appTable.CellEditCallback = @changePackageSelection;
 
@@ -201,6 +207,8 @@ profileButton.ButtonPushedFcn = @(~, ~) runMaintenance("profile");
 packageButton.ButtonPushedFcn = @(~, ~) packageChecked("source");
 pcodeButton.ButtonPushedFcn = @(~, ~) packageChecked("pcode");
 refreshApps();
+fig.SizeChangedFcn = @(~, ~) resizeLauncher();
+resizeLauncher();
 
     function refreshApps()
         if state.busy
@@ -220,6 +228,18 @@ refreshApps();
             setStatus("Refresh app list failed: " + failureText(cause));
         end
         endAction();
+    end
+
+    function resizeLauncher()
+        if ~isvalid(fig) || ~isvalid(appTable)
+            return;
+        end
+        figureWidth = fig.Position(3);
+        rootPanel.Position = [1 1 fig.Position(3:4)];
+        resizedControlWidth = launcherControlWidth(figureWidth);
+        main.ColumnWidth = {resizedControlWidth, 5, "1x"};
+        appTable.ColumnWidth = launcherTableWidths( ...
+            figureWidth, resizedControlWidth);
     end
 
     function selectRow(~, event)
@@ -467,11 +487,32 @@ function position = defaultLauncherPosition()
 screen = double(get(groot, "ScreenSize"));
 screenWidth = screen(3);
 screenHeight = screen(4);
-width = min(screenWidth, max(800, min(1500, screenWidth - 80)));
-height = min(screenHeight, max(560, min(780, screenHeight - 120)));
+width = min(screenWidth, max(800, min(1280, screenWidth - 80)));
+height = min(screenHeight, max(560, min(720, screenHeight - 120)));
 x = screen(1) + max(0, (screenWidth - width) / 2);
 y = screen(2) + max(0, (screenHeight - height) / 2);
 position = round([x y width height]);
+end
+
+function width = launcherControlWidth(figureWidth)
+width = min(390, max(350, round(double(figureWidth) * 0.29)));
+end
+
+function widths = launcherTableWidths(figureWidth, controlWidth)
+tableWidth = max(640, double(figureWidth) - double(controlWidth) - 36);
+minimum = [62 92 124 72 64 84 142];
+preferred = [72 118 156 80 70 92 224];
+if tableWidth <= sum(minimum)
+    values = minimum;
+elseif tableWidth < sum(preferred)
+    fraction = (tableWidth - sum(minimum)) / ...
+        (sum(preferred) - sum(minimum));
+    values = minimum + fraction .* (preferred - minimum);
+else
+    extra = tableWidth - sum(preferred);
+    values = preferred + extra .* [0 0.10 0.25 0 0 0 0.65];
+end
+widths = num2cell(round(values));
 end
 
 function configureTable(tableHandle, selectionCallback, doubleClickCallback)

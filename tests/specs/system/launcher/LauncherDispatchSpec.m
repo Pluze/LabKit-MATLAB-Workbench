@@ -102,14 +102,14 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             screen = double(get(groot, "ScreenSize"));
             testCase.verifyLessThanOrEqual(fig.Position(3), screen(3));
             testCase.verifyLessThanOrEqual(fig.Position(4), screen(4));
-            if screen(3) >= 1580
-                testCase.verifyEqual(fig.Position(3), 1500);
+            if screen(3) >= 1360
+                testCase.verifyEqual(fig.Position(3), 1280);
             else
                 testCase.verifyGreaterThanOrEqual( ...
                     fig.Position(3), max(1, screen(3) - 100));
             end
-            if screen(4) >= 900
-                testCase.verifyEqual(fig.Position(4), 780);
+            if screen(4) >= 840
+                testCase.verifyEqual(fig.Position(4), 720);
             else
                 testCase.verifyGreaterThanOrEqual( ...
                     fig.Position(4), max(1, screen(4) - 140));
@@ -124,9 +124,18 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 "Version"; "Updated"; "Command"]);
             testCase.verifyEqual(appTable.ColumnEditable, ...
                 [true false false false false false false]);
-            testCase.verifyEqual(appTable.FontSize, 14);
-            testCase.verifyEqual(string(appTable.ColumnWidth), ...
-                repmat("auto", 1, 7));
+            testCase.verifyEqual(appTable.FontSize, 12);
+            testCase.verifyTrue(all(cellfun( ...
+                @(value) isnumeric(value) && isscalar(value), ...
+                appTable.ColumnWidth)));
+            initialWidths = cell2mat(appTable.ColumnWidth);
+            testCase.verifyGreaterThan(initialWidths(7), initialWidths(1));
+            fig.Position(3) = max(800, fig.Position(3) - 160);
+            drawnow;
+            resizedWidths = cell2mat(appTable.ColumnWidth);
+            testCase.verifyLessThan(sum(resizedWidths), sum(initialWidths));
+            testCase.verifyGreaterThanOrEqual(resizedWidths, ...
+                [62 92 124 72 64 84 142]);
             testCase.verifyTrue(all(ismember([ ...
                 "Open Selected App", "Refresh App List", ...
                 "Documentation and History", "Latest", "Release", "Versions", ...
