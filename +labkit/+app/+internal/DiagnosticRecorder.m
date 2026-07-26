@@ -1,22 +1,26 @@
 classdef (Hidden, Sealed) DiagnosticRecorder < handle
     %DIAGNOSTICRECORDER Bridge legacy diagnostics into canonical session events.
     % Expected callers are the private Runtime and transitional legacy adapters.
-    % This Phase 2 bridge is memory-only; journal persistence belongs to Phase 3.
+    % The Runtime may attach a private durable-projection close hook.
 
     properties (Access = private)
         Application
         Stream
+        ProjectionCloseHook = []
         Closed (1, 1) logical = false
     end
 
     methods
-        function obj = DiagnosticRecorder(application, streamOrOptions)
+        function obj = DiagnosticRecorder(application, streamOrOptions, projectionCloseHook)
             if ~isa(application, "labkit.app.Definition") || ~isscalar(application)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "DiagnosticRecorder requires one Definition.");
             end
             if nargin < 2 || isempty(streamOrOptions)
                 streamOrOptions = labkit.app.diagnostic.Options();
+            end
+            if nargin < 3
+                projectionCloseHook = [];
             end
             if isa(streamOrOptions, "labkit.app.internal.SessionEventStream")
                 stream = streamOrOptions;
@@ -29,6 +33,11 @@ classdef (Hidden, Sealed) DiagnosticRecorder < handle
             end
             obj.Application = application;
             obj.Stream = stream;
+            if ~isempty(projectionCloseHook) && ~isa(projectionCloseHook, "function_handle")
+                error("labkit:app:runtime:InvariantFailure", ...
+                    "DiagnosticRecorder projection close hook must be a function handle.");
+            end
+            obj.ProjectionCloseHook = projectionCloseHook;
         end
 
         function operation = begin(obj, category, eventName, message, varargin)
@@ -94,6 +103,13 @@ classdef (Hidden, Sealed) DiagnosticRecorder < handle
                 return;
             end
             obj.Stream.close();
+            if ~isempty(obj.ProjectionCloseHook)
+                try
+                    obj.ProjectionCloseHook();
+                catch
+                    % Projection teardown must not change Runtime close semantics.
+                end
+            end
             obj.Closed = true;
         end
 

@@ -28,7 +28,10 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             lines = lines(strlength(lines) > 0);
 
             testCase.verifyEqual(numel(lines), 3);
-            testCase.verifyEqual(labkitSessionJournalStages, ...
+            writeStages = labkitSessionJournalStages( ...
+                labkitSessionJournalStages == "open" | ...
+                labkitSessionJournalStages == "flush");
+            testCase.verifyEqual(writeStages, ...
                 ["open", "flush", "flush"]);
             clear streamCleanup cleanup resetObserver
         end
@@ -124,6 +127,114 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             testCase.verifyEqual(scientificOutcome, "completed");
             testCase.verifyEqual(numel(stream.records()), 2);
             testCase.verifyEqual(manifest.degradation.writeFailureCount, 1);
+            clear streamCleanup cleanup
+        end
+
+        function coalescesOnlyEquivalentLowSeverityRecords(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            app = journalProbeDefinition();
+            journal = labkit.app.internal.SessionJournal(app, ...
+                RootFolder=root, SessionId="session-coalescing", BufferRecordLimit=32);
+            cleanup = onCleanup(@() journal.close());
+            stream = labkit.app.internal.SessionEventStream(app, ...
+                SessionId="session-coalescing", ProjectionHook=@journal.append);
+            streamCleanup = onCleanup(@() stream.close());
+
+            stream.log("debug", "analysis.repeat", "Repeated diagnostic step.", ...
+                Category="app.probe.journal.analysisRun", Audience="developer");
+            stream.log("debug", "analysis.repeat", "Repeated diagnostic step.", ...
+                Category="app.probe.journal.analysisRun", Audience="developer");
+            stream.log("warning", "analysis.degraded", "Analysis degraded.", ...
+                Category="app.probe.journal.analysisRun", Audience="user");
+            stream.log("warning", "analysis.degraded", "Analysis degraded.", ...
+                Category="app.probe.journal.analysisRun", Audience="user");
+            manifest = journal.manifest();
+
+            testCase.verifyEqual(manifest.degradation.coalescedRecordCount, 1);
+            testCase.verifyEqual(string(manifest.degradation.coalescing.reason), ...
+                "repeated-low-severity");
+            testCase.verifyEqual(manifest.degradation.coalescing.windowSeconds, 1);
+            testCase.verifyEqual(manifest.degradation.droppedRecordCount, 0);
+            clear streamCleanup cleanup
+        end
+
+        function highFrequencyCoalescingDoesNotWriteManifestPerRecord(testCase)
+            global labkitSessionJournalStages
+            labkitSessionJournalStages = strings(0, 1);
+            resetObserver = onCleanup(@resetJournalObserver);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            app = journalProbeDefinition();
+            journal = labkit.app.internal.SessionJournal(app, ...
+                RootFolder=root, SessionId="session-coalescing-manifest", ...
+                BufferRecordLimit=128, TestObserver=@recordJournalStage);
+            cleanup = onCleanup(@() journal.close());
+            stream = labkit.app.internal.SessionEventStream(app, ...
+                SessionId="session-coalescing-manifest", ProjectionHook=@journal.append);
+            streamCleanup = onCleanup(@() stream.close());
+
+            for index = 1:32
+                stream.log("debug", "analysis.repeat", "Repeated diagnostic step.", ...
+                    Category="app.probe.journal.analysisRun", Audience="developer");
+            end
+
+            manifestStages = labkitSessionJournalStages( ...
+                labkitSessionJournalStages == "manifest");
+            testCase.verifyNumElements(manifestStages, 1);
+            testCase.verifyEqual(journal.manifest().degradation.coalescedRecordCount, 31);
+            clear streamCleanup cleanup resetObserver
+        end
+
+        function doesNotCoalesceLowSeverityExceptions(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            app = journalProbeDefinition();
+            journal = labkit.app.internal.SessionJournal(app, ...
+                RootFolder=root, SessionId="session-exception-coalescing", ...
+                BufferRecordLimit=32);
+            cleanup = onCleanup(@() journal.close());
+            stream = labkit.app.internal.SessionEventStream(app, ...
+                SessionId="session-exception-coalescing", ProjectionHook=@journal.append);
+            streamCleanup = onCleanup(@() stream.close());
+            exception = MException("probe:RepeatedFailure", ...
+                "Repeated diagnostic failure.");
+
+            stream.log("debug", "analysis.repeat", "Repeated diagnostic step.", ...
+                Category="app.probe.journal.analysisRun", Audience="developer", ...
+                Exception=exception);
+            stream.log("debug", "analysis.repeat", "Repeated diagnostic step.", ...
+                Category="app.probe.journal.analysisRun", Audience="developer", ...
+                Exception=exception);
+
+            testCase.verifyEqual( ...
+                journal.manifest().degradation.coalescedRecordCount, 0);
+            clear streamCleanup cleanup
+        end
+
+        function preWarningWriteFailureDropsCurrentRecordWithoutFalseCoalescing(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            app = journalProbeDefinition();
+            journal = labkit.app.internal.SessionJournal(app, ...
+                RootFolder=root, SessionId="session-prewarning-failure", ...
+                FaultInjector=@failWrite, BufferRecordLimit=32);
+            cleanup = onCleanup(@() journal.close());
+            stream = labkit.app.internal.SessionEventStream(app, ...
+                SessionId="session-prewarning-failure", ProjectionHook=@journal.append);
+            streamCleanup = onCleanup(@() stream.close());
+
+            stream.log("debug", "analysis.repeat", "Repeated diagnostic step.", ...
+                Category="app.probe.journal.analysisRun", Audience="developer");
+            stream.log("warning", "analysis.degraded", "Analysis degraded.", ...
+                Category="app.probe.journal.analysisRun", Audience="user");
+            stream.log("debug", "analysis.repeat", "Repeated diagnostic step.", ...
+                Category="app.probe.journal.analysisRun", Audience="developer");
+            manifest = journal.manifest();
+
+            testCase.verifyEqual(manifest.degradation.coalescedRecordCount, 0);
+            testCase.verifyEqual(manifest.degradation.droppedRecordCount, 4);
+            testCase.verifyEqual(manifest.degradation.dropReasons.writeFailure, 4);
             clear streamCleanup cleanup
         end
 

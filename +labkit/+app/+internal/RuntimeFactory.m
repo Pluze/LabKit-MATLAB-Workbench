@@ -3,7 +3,7 @@ classdef (Hidden, Sealed) RuntimeFactory
 
     methods (Static)
         function runtime = createHeadless( ...
-                definition, initialProject, backend, diagnostics)
+                definition, initialProject, backend, diagnostics, journal)
             if nargin < 2
                 initialProject = [];
             end
@@ -13,13 +13,16 @@ classdef (Hidden, Sealed) RuntimeFactory
             if nargin < 4
                 diagnostics = labkit.app.diagnostic.Options();
             end
+            if nargin < 5
+                journal = [];
+            end
             runtime = labkit.app.internal.RuntimeFactory.create( ...
                 definition, initialProject, backend, ...
-                "headless", diagnostics);
+                "headless", diagnostics, journal);
         end
 
         function runtime = createMatlab( ...
-                definition, initialProject, backend, diagnostics)
+                definition, initialProject, backend, diagnostics, journal)
             if nargin < 2
                 initialProject = [];
             end
@@ -29,22 +32,37 @@ classdef (Hidden, Sealed) RuntimeFactory
             if nargin < 4
                 diagnostics = labkit.app.diagnostic.Options();
             end
+            if nargin < 5
+                journal = [];
+            end
             runtime = labkit.app.internal.RuntimeFactory.create( ...
                 definition, initialProject, backend, ...
-                "matlab", diagnostics);
+                "matlab", diagnostics, journal);
         end
     end
 
     methods (Static, Access = private)
         function runtime = create( ...
-                definition, initialProject, backend, platform, diagnostics)
+                definition, initialProject, backend, platform, diagnostics, journal)
             if ~isa(definition, "labkit.app.Definition") || ...
                     ~isscalar(definition)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "RuntimeFactory requires one Definition.");
             end
-            stream = labkit.app.internal.SessionEventStream(definition);
-            recorder = labkit.app.internal.DiagnosticRecorder(definition, stream);
+            journal = prepareJournal(definition, journal);
+            try
+                stream = labkit.app.internal.SessionEventStream(definition, ...
+                    SessionId=journal.sessionId(), ProjectionHook=@journal.append);
+                recorder = labkit.app.internal.DiagnosticRecorder( ...
+                    definition, stream, @journal.close);
+            catch cause
+                try
+                    journal.close();
+                catch
+                    % Journal teardown must not hide the construction failure.
+                end
+                rethrow(cause);
+            end
             sampleOperation = [];
             try
                 if diagnostics.Sample == "synthetic"
@@ -68,6 +86,17 @@ classdef (Hidden, Sealed) RuntimeFactory
             end
         end
     end
+end
+
+function journal = prepareJournal(definition, journal)
+if isempty(journal)
+    journal = labkit.app.internal.SessionJournal(definition);
+    return;
+end
+if ~isa(journal, "labkit.app.internal.SessionJournal") || ~isscalar(journal)
+    error("labkit:app:runtime:InvariantFailure", ...
+        "RuntimeFactory journal seam requires one SessionJournal.");
+end
 end
 
 function buildSyntheticSample( ...

@@ -29,8 +29,17 @@ classdef (Hidden, Sealed) SessionJournal < handle
         CoalescedRecordCount (1, 1) double = 0
         ExpiredSegmentCount (1, 1) double = 0
         WriteFailureCount (1, 1) double = 0
+        InvalidRecordDropCount (1, 1) double = 0
+        WriteFailureDropCount (1, 1) double = 0
+        LastCoalescingKey (1, 1) string = ""
+        LastCoalescingElapsedSeconds (1, 1) double = -inf
         FaultInjector = []
         TestObserver = []
+    end
+
+    properties (Constant, Access = private)
+        % Consecutive low-level duplicates only; terminal/visible events remain exact.
+        CoalescingWindowSeconds = 1
     end
 
     methods
@@ -59,22 +68,35 @@ classdef (Hidden, Sealed) SessionJournal < handle
         end
 
         function append(obj, record)
-            if obj.Closed || ~obj.Available
+            if obj.Closed
+                return;
+            end
+            if ~obj.Available
+                obj.recordUnavailableDrop();
                 return;
             end
             if ~isCanonicalRecord(record)
                 obj.DroppedRecordCount = obj.DroppedRecordCount + 1;
-                obj.writeManifest();
+                obj.InvalidRecordDropCount = obj.InvalidRecordDropCount + 1;
                 return;
             end
             try
+                if isFlushSeverity(record.severity) && ~obj.flush( ...
+                        DeferFailureManifest=true)
+                    obj.recordUnavailableDrop();
+                    obj.writeManifest(Force=true);
+                    return;
+                end
+                candidateKey = obj.coalescingCandidateKey(record);
+                if obj.shouldCoalesce(candidateKey, record.elapsedSeconds)
+                    obj.CoalescedRecordCount = obj.CoalescedRecordCount + 1;
+                    return;
+                end
                 line = string(jsonencode(record));
                 lineBytes = utf8Bytes(line) + 1;
-                if isFlushSeverity(record.severity)
-                    obj.flush();
-                end
                 obj.BufferLines(end + 1) = line;
                 obj.BufferBytes = obj.BufferBytes + lineBytes;
+                obj.rememberCoalescingCandidate(candidateKey, record.elapsedSeconds);
                 if isFlushSeverity(record.severity) || ...
                         numel(obj.BufferLines) >= obj.BufferRecordLimit || ...
                         obj.BufferBytes >= obj.BufferByteLimit
@@ -82,11 +104,21 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 end
             catch
                 obj.recordWriteFailure();
+                obj.writeManifest(Force=true);
             end
         end
 
-        function flush(obj)
+        function written = flush(obj, varargin)
+            deferFailureManifest = false;
+            if ~isempty(varargin)
+                options = labkit.app.internal.OptionParser.parse( ...
+                    "SessionJournal.flush", "DeferFailureManifest", varargin{:});
+                deferFailureManifest = optionValue(options, ...
+                    "DeferFailureManifest", false);
+            end
+            written = false;
             if obj.Closed || ~obj.Available || isempty(obj.BufferLines)
+                written = obj.Available;
                 return;
             end
             try
@@ -102,8 +134,12 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 obj.writeActiveMarker();
                 obj.enforceSessionRetention();
                 obj.writeManifest();
+                written = true;
             catch
                 obj.recordWriteFailure();
+                if ~deferFailureManifest
+                    obj.writeManifest(Force=true);
+                end
             end
         end
 
@@ -116,7 +152,7 @@ classdef (Hidden, Sealed) SessionJournal < handle
             obj.Closed = true;
             obj.ClosedAtUtc = utcNow();
             obj.removeActiveMarker();
-            obj.writeManifest();
+            obj.writeManifest(Force=true);
         end
 
         function folder = folder(obj)
@@ -125,6 +161,10 @@ classdef (Hidden, Sealed) SessionJournal < handle
 
         function manifest = manifest(obj)
             manifest = manifestPayload(obj);
+        end
+
+        function sessionId = sessionId(obj)
+            sessionId = obj.SessionId;
         end
 
         function delete(obj)
@@ -198,11 +238,15 @@ classdef (Hidden, Sealed) SessionJournal < handle
 
         function recordWriteFailure(obj)
             obj.WriteFailureCount = obj.WriteFailureCount + 1;
+            dropped = numel(obj.BufferLines);
+            obj.DroppedRecordCount = obj.DroppedRecordCount + dropped;
+            obj.WriteFailureDropCount = obj.WriteFailureDropCount + dropped;
             obj.closeSegment();
             obj.BufferLines = strings(1, 0);
             obj.BufferBytes = 0;
-            obj.writeManifest();
             obj.Available = false;
+            obj.LastCoalescingKey = "";
+            obj.LastCoalescingElapsedSeconds = -inf;
         end
 
         function writeActiveMarker(obj)
@@ -220,14 +264,23 @@ classdef (Hidden, Sealed) SessionJournal < handle
             end
         end
 
-        function writeManifest(obj)
-            if ~obj.Available || exist(char(obj.Folder), "dir") ~= 7
+        function writeManifest(obj, varargin)
+            force = false;
+            if ~isempty(varargin)
+                options = labkit.app.internal.OptionParser.parse( ...
+                    "SessionJournal.writeManifest", "Force", varargin{:});
+                force = optionValue(options, "Force", false);
+            end
+            if (~obj.Available && ~force) || exist(char(obj.Folder), "dir") ~= 7
                 return;
             end
             try
                 atomicWriteJson(obj.ManifestFile, manifestPayload(obj));
+                obj.notifyObserver("manifest", []);
             catch
-                obj.Available = false;
+                if ~force
+                    obj.Available = false;
+                end
             end
         end
 
@@ -245,6 +298,37 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 obj.TestObserver(stage, value);
             catch
             end
+        end
+
+        function key = coalescingCandidateKey(obj, record)
+            key = "";
+            if ~any(string(record.severity) == ["TRACE", "DEBUG"]) || ...
+                    isTerminalRecord(record) || ~isEmptyException(record.exception)
+                obj.LastCoalescingKey = "";
+                obj.LastCoalescingElapsedSeconds = -inf;
+                return;
+            end
+            key = coalescingKey(record);
+        end
+
+        function tf = shouldCoalesce(obj, key, elapsedSeconds)
+            withinWindow = elapsedSeconds - obj.LastCoalescingElapsedSeconds <= ...
+                obj.CoalescingWindowSeconds;
+            tf = strlength(obj.LastCoalescingKey) > 0 && ...
+                strlength(key) > 0 && obj.LastCoalescingKey == key && withinWindow;
+        end
+
+        function rememberCoalescingCandidate(obj, key, elapsedSeconds)
+            if strlength(key) == 0
+                return;
+            end
+            obj.LastCoalescingKey = key;
+            obj.LastCoalescingElapsedSeconds = elapsedSeconds;
+        end
+
+        function recordUnavailableDrop(obj)
+            obj.DroppedRecordCount = obj.DroppedRecordCount + 1;
+            obj.WriteFailureDropCount = obj.WriteFailureDropCount + 1;
         end
     end
 end
@@ -294,6 +378,13 @@ for name = ["FaultInjector", "TestObserver"]
 end
 end
 
+function value = optionValue(options, name, defaultValue)
+value = defaultValue;
+if isfield(options, name)
+    value = options.(name);
+end
+end
+
 function tf = isCanonicalRecord(record)
 fields = ["schemaVersion", "sequence", "timestampUtc", "elapsedSeconds", ...
     "severity", "audience", "category", "eventName", "message", ...
@@ -306,6 +397,27 @@ end
 
 function tf = isFlushSeverity(severity)
 tf = any(string(severity) == ["WARNING", "ERROR", "CRITICAL"]);
+end
+
+function tf = isTerminalRecord(record)
+terminalNames = ["completed", "failed", "rolledBack", "abandoned"];
+tf = strlength(string(record.outcome)) > 0 || any(endsWith( ...
+    string(record.eventName), "." + terminalNames));
+end
+
+function tf = isEmptyException(exception)
+tf = isstruct(exception) && isscalar(exception) && ...
+    isfield(exception, "identifier") && strlength(string(exception.identifier)) == 0;
+end
+
+function key = coalescingKey(record)
+key = string(jsonencode(struct( ...
+    "severity", record.severity, "audience", record.audience, ...
+    "category", record.category, "eventName", record.eventName, ...
+    "message", record.message, "attributes", record.attributes, ...
+    "operationId", record.operationId, ...
+    "parentOperationId", record.parentOperationId, ...
+    "rootActionId", record.rootActionId)));
 end
 
 function segments = sessionSegments(folder)
@@ -337,7 +449,11 @@ payload = struct("schemaVersion", 1, "sessionId", obj.SessionId, ...
     "updatedAtUtc", utcNow(), "segmentCount", numel(segments), ...
     "retainedBytes", sum([segments.bytes]), "degradation", struct( ...
     "droppedRecordCount", obj.DroppedRecordCount, ...
+    "dropReasons", struct("invalidCanonicalRecord", obj.InvalidRecordDropCount, ...
+    "writeFailure", obj.WriteFailureDropCount), ...
     "coalescedRecordCount", obj.CoalescedRecordCount, ...
+    "coalescing", struct("reason", "repeated-low-severity", ...
+    "windowSeconds", obj.CoalescingWindowSeconds), ...
     "expiredSegmentCount", obj.ExpiredSegmentCount, ...
     "writeFailureCount", obj.WriteFailureCount));
 end
