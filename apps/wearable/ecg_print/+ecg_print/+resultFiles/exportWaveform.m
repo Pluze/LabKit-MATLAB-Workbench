@@ -14,7 +14,8 @@ end
 chosen = callbackContext.chooseOutputFile( ...
     ["*.png", "PNG files (*.png)"], "ecg_waveform.png");
 if chosen.Cancelled
-    callbackContext.appendStatus("Waveform export cancelled.");
+    callbackContext.log("info", "ecg_print.resultfiles.exportwaveform.cancelled", ...
+        "Waveform export cancelled.");
     return;
 end
 filepath = string(chosen.Value);
@@ -33,7 +34,8 @@ package = labkit.app.result.Package(Outputs={output}, ...
 written = callbackContext.writeResultPackage(folder, package);
 applicationState.project.results.lastWaveformExport = struct( ...
     "pngPath", filepath, "manifestPath", string(written.Value));
-callbackContext.appendStatus("Exported waveform PNG: " + filepath);
+callbackContext.log("info", "ecg_print.resultfiles.exportwaveform.completed", ...
+    "Exported the waveform PNG.");
 end
 
 function folder = outputFolder(folder)

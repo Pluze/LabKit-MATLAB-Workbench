@@ -10,5 +10,6 @@ if isempty(paths) || strlength(paths(1)) == 0
 end
 applicationState.session.cache.filePreview = ...
     ecg_print.sourceFiles.previewFileHeader(paths(1), 18);
-callbackContext.appendStatus("Previewed file header: " + paths(1));
+callbackContext.log("info", "ecg_print.sourcefiles.previewheader.completed", ...
+    "Previewed the recording header.");
 end

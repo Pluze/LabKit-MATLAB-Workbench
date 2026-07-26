@@ -28,5 +28,6 @@ applicationState.session.cache.measurements = [];
 applicationState.project.results.lastAnalysis = struct();
 applicationState.project.results.lastSegmentExport = [];
 applicationState.project.results.lastWaveformExport = [];
-callbackContext.appendStatus("Selected channel: " + channel);
+callbackContext.log("info", "ecg_print.analysisrun.changechannel.status", ...
+    "Selected a recording channel.");
 end
