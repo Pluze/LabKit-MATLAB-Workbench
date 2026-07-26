@@ -52,6 +52,10 @@ second architecture guide.
 - A changed `projectSpec` needs nonempty owner-level persistence evidence.
   Treat a client timeout during a durable MATLAB run as unknown until its
   progress artifact or terminal log confirms the executor result.
+- Treat MATLAB local functions as complete structural blocks. After inserting
+  or moving one, inspect the preceding and following `end` boundaries before
+  running tests; a misplaced boundary can silently nest later helpers and turn
+  a simple edit defect into misleading runtime failures.
 - Before starting a durable background MATLAB test run, derive the repository
   root from the runner file, convert suite paths to absolute character cells,
   and assert both the container type and file existence. Reusing this
