@@ -52,7 +52,7 @@ end
 function outputs = handleMissingInstalledEntry(root, args, outputCount)
 outputs = cell(1, 0);
 message = "The installed launcher entry is unavailable. This installation may be incomplete. " + ...
-    "Use Repair / Reinstall to download the latest stable LabKit release.";
+    "Use the install and repair window to choose a target folder and LabKit version.";
 if ~isempty(args)
     error("labkit_launcher:InstalledEntryUnavailable", "%s", message);
 end
@@ -115,48 +115,239 @@ if strlength(string(cause.identifier)) > 0
     detail = string(cause.identifier) + ": " + detail;
 end
 message = "Installed launcher failed to load: " + detail + newline + ...
-    "The installation may be incomplete. Repair / Reinstall can restore the latest stable release.";
+    "The installation may be incomplete. The repair window can reinstall a selected LabKit version.";
 end
 
 function fig = openRepairWindow(root, initialMessage)
 figArgs = {"Name", "LabKit Repair", "Tag", "labkitRepair", ...
-    "Position", [300 250 560 250], "Color", [0.97 0.98 0.99]};
+    "Position", [280 180 720 500], "Color", [0.97 0.98 0.99]};
 if repairGuiTestMode() == "hidden"
     figArgs = [figArgs, {"Visible", "off"}];
 end
 close(findall(groot, "Type", "figure", "Tag", "labkitRepair"));
 fig = uifigure(figArgs{:});
-grid = uigridlayout(fig, [3 1]);
-grid.RowHeight = {"1x", 34, 28};
-uitextarea(grid, "Editable", "off", "Value", cellstr(defaultRepairMessage(initialMessage)));
-repair = uibutton(grid, "Text", "Repair / Reinstall Latest Stable Release");
-status = uilabel(grid, "Text", "Repair does not start until this button is pressed.");
+grid = uigridlayout(fig, [5 1]);
+grid.RowHeight = {92, 104, 112, 42, "1x"};
+grid.Padding = [10 10 10 10];
+grid.RowSpacing = 8;
+
+intro = uipanel(grid, "Title", "Install or Repair LabKit", "FontSize", 15);
+introGrid = uigridlayout(intro, [1 1]);
+introGrid.Padding = [8 6 8 6];
+uitextarea(introGrid, "Editable", "off", ...
+    "Value", cellstr(defaultRepairMessage(initialMessage)));
+
+targetPanel = uipanel(grid, "Title", "Installation Folder");
+targetGrid = uigridlayout(targetPanel, [2 3]);
+targetGrid.RowHeight = {30, "1x"};
+targetGrid.ColumnWidth = {96, "1x", 92};
+targetGrid.Padding = [8 6 8 6];
+uilabel(targetGrid, "Text", "Target folder");
+targetField = uieditfield(targetGrid, "text", ...
+    "Value", char(root), "Tag", "labkitRepairTarget");
+targetField.Layout.Column = 2;
+browse = uibutton(targetGrid, "Text", "Browse...", ...
+    "Tag", "labkitRepairBrowse");
+browse.Layout.Column = 3;
+targetHint = uilabel(targetGrid, "Text", "", "WordWrap", "on");
+targetHint.Layout.Row = 2;
+targetHint.Layout.Column = [1 3];
+
+sourcePanel = uipanel(grid, "Title", "Download Source");
+sourceGrid = uigridlayout(sourcePanel, [2 4]);
+sourceGrid.RowHeight = {30, "1x"};
+sourceGrid.ColumnWidth = {96, 235, "1x", 104};
+sourceGrid.Padding = [8 6 8 6];
+uilabel(sourceGrid, "Text", "Version");
+sourceChoice = uidropdown(sourceGrid, ...
+    "Items", [ ...
+        "Latest stable release (recommended)", ...
+        "Choose a released version", ...
+        "Current main branch (development)"], ...
+    "ItemsData", ["stable", "tag", "main"], ...
+    "Value", "stable", "Tag", "labkitRepairSource");
+sourceChoice.Layout.Column = 2;
+releaseChoice = uidropdown(sourceGrid, ...
+    "Items", "Load versions first", "ItemsData", "", ...
+    "Enable", "off", "Tag", "labkitRepairRelease");
+releaseChoice.Layout.Column = 3;
+loadReleases = uibutton(sourceGrid, "Text", "Load versions", ...
+    "Enable", "off", "Tag", "labkitRepairLoadReleases");
+loadReleases.Layout.Column = 4;
+sourceHint = uilabel(sourceGrid, "Text", ...
+    "Stable is recommended. Main is for deliberate development installs.", ...
+    "WordWrap", "on");
+sourceHint.Layout.Row = 2;
+sourceHint.Layout.Column = [1 4];
+
+repair = uibutton(grid, "Text", "Install LabKit", ...
+    "Tag", "labkitRepairAction", "FontWeight", "bold");
+
+statusPanel = uipanel(grid, "Title", "Installation Status");
+statusGrid = uigridlayout(statusPanel, [2 1]);
+statusGrid.RowHeight = {28, "1x"};
+statusGrid.Padding = [8 6 8 6];
+stage = uilabel(statusGrid, "Text", "Ready", "FontWeight", "bold", ...
+    "Tag", "labkitRepairStage");
+status = uitextarea(statusGrid, "Editable", "off", ...
+    "Value", "No files have been changed.", "Tag", "labkitRepairStatus");
+
+view = struct( ...
+    "targetField", targetField, "targetHint", targetHint, ...
+    "sourceChoice", sourceChoice, "releaseChoice", releaseChoice, ...
+    "loadReleases", loadReleases, ...
+    "sourceHint", sourceHint, "actionButton", repair, ...
+    "stage", stage, "status", status);
+setappdata(fig, "labkitRepairView", view);
+targetField.ValueChangedFcn = @targetChanged;
+browse.ButtonPushedFcn = @browseTarget;
+sourceChoice.ValueChangedFcn = @sourceChanged;
+loadReleases.ButtonPushedFcn = @refreshReleases;
 repair.ButtonPushedFcn = @runRepair;
+updateTargetSummary();
 
     function runRepair(~, ~)
-        repair.Enable = "off";
-        status.Text = "Downloading the latest stable LabKit release...";
-        drawnow;
+        if string(sourceChoice.Value) == "tag" && ...
+                strlength(string(releaseChoice.Value)) == 0
+            setRepairStatus("Needs attention", ...
+                "Load the published versions and choose one before continuing.");
+            return;
+        end
+        target = absolutePath(targetField.Value);
         try
-            result = repairFromStableZip(root, @setRepairProgress);
-            status.Text = char(result.message);
+            plan = inspectRepairTarget(target);
         catch cause
-            status.Text = char("Repair failed: " + repairFailureMessage(cause));
+            setRepairStatus("Needs attention", ...
+                "Target rejected: " + repairFailureMessage(cause));
+            return;
+        end
+        if plan.kind == "repair" && repairGuiTestMode() ~= "hidden"
+            choice = uiconfirm(fig, ...
+                "Replace the installed LabKit code in " + target + ...
+                "? Known local workspace folders are preserved.", ...
+                "Confirm LabKit Repair", ...
+                "Options", {"Repair", "Cancel"}, ...
+                "DefaultOption", 2, "CancelOption", 2);
+            if choice ~= "Repair"
+                setRepairStatus("Cancelled", ...
+                    "Repair cancelled. No files were changed.");
+                return;
+            end
+        end
+        repair.Enable = "off";
+        targetField.Enable = "off";
+        browse.Enable = "off";
+        sourceChoice.Enable = "off";
+        releaseChoice.Enable = "off";
+        loadReleases.Enable = "off";
+        setRepairStatus("Step 1 of 4 — Preparing target", ...
+            "Preparing " + plan.action + " target...");
+        try
+            prepareBootstrapTarget(target, root);
+            result = repairFromZip(target, string(sourceChoice.Value), ...
+                string(releaseChoice.Value), @setRepairStatus);
+            setRepairStatus("Complete", result.message);
+        catch cause
+            setRepairStatus("Failed", "Install / repair failed: " + ...
+                repairFailureMessage(cause));
         end
         repair.Enable = "on";
+        targetField.Enable = "on";
+        browse.Enable = "on";
+        sourceChoice.Enable = "on";
+        sourceChanged([], []);
+        updateTargetSummary();
     end
 
-    function setRepairProgress(text, ~)
-        status.Text = char(text);
+    function setRepairStatus(stageText, detailText)
+        stage.Text = char(stageText);
+        status.Value = cellstr(string(detailText));
         drawnow limitrate;
+    end
+
+    function targetChanged(~, ~)
+        updateTargetSummary();
+    end
+
+    function browseTarget(~, ~)
+        selected = uigetdir(char(fileparts(absolutePath(targetField.Value))), ...
+            "Choose the LabKit installation folder");
+        if isequal(selected, 0)
+            return;
+        end
+        targetField.Value = char(selected);
+        updateTargetSummary();
+    end
+
+    function sourceChanged(~, ~)
+        chooseRelease = string(sourceChoice.Value) == "tag";
+        controlsEnabled = string(repair.Enable) == "on";
+        hasReleases = any(strlength(string(releaseChoice.ItemsData)) > 0);
+        releaseChoice.Enable = char(matlab.lang.OnOffSwitchState( ...
+            chooseRelease && controlsEnabled && hasReleases));
+        loadReleases.Enable = char(matlab.lang.OnOffSwitchState( ...
+            chooseRelease && controlsEnabled));
+        if chooseRelease
+            sourceHint.Text = ...
+                "Load the published versions, then choose one from the list.";
+        elseif string(sourceChoice.Value) == "main"
+            sourceHint.Text = ...
+                "Main may contain unreleased changes; use it deliberately.";
+        else
+            sourceHint.Text = ...
+                "Downloads the latest published stable release.";
+        end
+    end
+
+    function refreshReleases(~, ~)
+        loadReleases.Enable = "off";
+        releaseChoice.Enable = "off";
+        setRepairStatus("Checking GitHub", ...
+            "Loading the published stable LabKit versions...");
+        try
+            tags = publishedStableVersions();
+            releaseChoice.Items = cellstr("LabKit " + tags);
+            releaseChoice.ItemsData = cellstr(tags);
+            releaseChoice.Value = char(tags(1));
+            setRepairStatus("Ready", ...
+                "Choose a released version, then install or repair LabKit.");
+        catch cause
+            setRepairStatus("Failed", ...
+                "Could not load released versions: " + repairFailureMessage(cause));
+        end
+        sourceChanged([], []);
+    end
+
+    function updateTargetSummary()
+        try
+            target = absolutePath(targetField.Value);
+            targetField.Value = char(target);
+            plan = inspectRepairTarget(target);
+            targetHint.Text = char(plan.message);
+            repair.Text = char(plan.button);
+            repair.Enable = "on";
+            sourceChanged([], []);
+        catch cause
+            targetHint.Text = char(repairFailureMessage(cause));
+            repair.Text = "Target Folder Is Not Safe";
+            repair.Enable = "off";
+            releaseChoice.Enable = "off";
+            loadReleases.Enable = "off";
+        end
     end
 end
 
 function message = defaultRepairMessage(initialMessage)
 if strlength(initialMessage) == 0
-    message = "LabKit repair is available if the installed launcher or its dependencies are missing.";
+    message = [
+        "This standalone file can create a new LabKit installation or repair an existing one."
+        "Nothing is downloaded or replaced until you press the action button."
+        ];
 else
-    message = initialMessage;
+    message = [
+        string(initialMessage)
+        "Choose the target folder and download source below. No files change until confirmation."
+        ];
 end
 end
 
@@ -167,7 +358,99 @@ if strlength(string(cause.identifier)) > 0
 end
 end
 
-function result = repairFromStableZip(root, progressFcn)
+function target = absolutePath(value)
+if ~isTextScalar(value) || strlength(strtrim(string(value))) == 0
+    error("labkit_launcher:InvalidInstallTarget", ...
+        "Choose a nonempty installation folder.");
+end
+pathValue = java.nio.file.Paths.get( ...
+    char(strtrim(string(value))), javaArray("java.lang.String", 0));
+target = string(pathValue.toAbsolutePath().normalize().toString());
+end
+
+function plan = inspectRepairTarget(target)
+target = absolutePath(target);
+if isFilesystemRoot(target)
+    error("labkit_launcher:UnsafeRoot", ...
+        "Installation into a filesystem root is not allowed.");
+end
+if exist(fullfile(target, ".git"), "file") == 2 || ...
+        exist(fullfile(target, ".git"), "dir") == 7
+    error("labkit_launcher:GitCheckout", ...
+        "This folder is a Git checkout; update it with Git instead.");
+end
+if exist(target, "file") == 2
+    error("labkit_launcher:InvalidInstallTarget", ...
+        "The selected installation target is a file, not a folder.");
+end
+if exist(target, "dir") ~= 7
+    parent = fileparts(target);
+    if exist(parent, "dir") ~= 7
+        error("labkit_launcher:InvalidInstallTarget", ...
+            "The parent folder must exist before installing LabKit.");
+    end
+    plan = struct( ...
+        "kind", "new", "action", "new installation", ...
+        "button", "Install LabKit", ...
+        "message", "New installation. LabKit will create this folder.");
+    return;
+end
+hasLauncher = exist(fullfile(target, "labkit_launcher.m"), "file") == 2;
+hasFramework = exist(fullfile(target, "+labkit"), "dir") == 7;
+hasApps = exist(fullfile(target, "apps"), "dir") == 7;
+hasSupportingContent = exist(fullfile(target, "tools"), "dir") == 7 || ...
+    exist(fullfile(target, "docs"), "dir") == 7;
+if hasLauncher && (hasFramework || (hasApps && hasSupportingContent))
+    plan = struct( ...
+        "kind", "repair", "action", "existing installation repair", ...
+        "button", "Repair / Reinstall LabKit", ...
+        "message", "Existing LabKit installation. Repair replaces code " + ...
+            "after confirmation and preserves known local workspace folders.");
+elseif hasOnlyBootstrapContent(target)
+    plan = struct( ...
+        "kind", "new", "action", "new installation", ...
+        "button", "Install LabKit", ...
+        "message", "New installation. The folder contains no unrelated files.");
+else
+    error("labkit_launcher:InvalidInstallTarget", ...
+        "Choose an empty folder, a folder containing only labkit_launcher.m, " + ...
+        "or an existing LabKit installation.");
+end
+end
+
+function prepareBootstrapTarget(target, sourceRoot)
+target = absolutePath(target);
+plan = inspectRepairTarget(target);
+if plan.kind ~= "new"
+    return;
+end
+if exist(target, "dir") ~= 7
+    [created, message] = mkdir(target);
+    if ~created
+        error("labkit_launcher:InstallTargetCreateFailed", ...
+            "Could not create the installation folder: %s", message);
+    end
+end
+targetLauncher = fullfile(target, "labkit_launcher.m");
+if exist(targetLauncher, "file") ~= 2
+    sourceLauncher = fullfile(sourceRoot, "labkit_launcher.m");
+    [copied, message] = copyfile(sourceLauncher, targetLauncher);
+    if ~copied
+        error("labkit_launcher:BootstrapCopyFailed", ...
+            "Could not place labkit_launcher.m in the installation folder: %s", ...
+            message);
+    end
+end
+end
+
+function tf = hasOnlyBootstrapContent(folder)
+entries = dir(folder);
+names = string({entries(~ismember(string({entries.name}), [".", ".."])).name});
+allowed = ["labkit_launcher.m", ".DS_Store", "Thumbs.db", "desktop.ini"];
+tf = all(ismember(names, allowed));
+end
+
+function result = repairFromZip(root, sourceMode, requestedTag, progressFcn)
 hook = repairTestHook();
 assertRepairRoot(root);
 source = struct("label", "the supplied repair candidate");
@@ -176,23 +459,27 @@ cleanup = onCleanup(@() removeFolderIfPresent(workspace));
 if strlength(hook.CandidateRoot) > 0
     candidate = hook.CandidateRoot;
 else
-    source = resolveStableZipSource();
-    notifyProgress(progressFcn, "Downloading " + source.label + "...", 0.15);
+    source = resolveZipSource(sourceMode, requestedTag);
+    notifyProgress(progressFcn, "Step 2 of 4 — Downloading source", ...
+        "Downloading " + source.label + "...");
     workspace = tempname;
     mkdir(workspace);
     zipPath = fullfile(workspace, "labkit.zip");
     websave(zipPath, source.url);
-    notifyProgress(progressFcn, "Extracting repair candidate...", 0.40);
+    notifyProgress(progressFcn, "Step 3 of 4 — Validating package", ...
+        "Extracting and validating the downloaded LabKit package...");
     extractRoot = fullfile(workspace, "candidate");
     unzip(zipPath, extractRoot);
     candidate = findCandidateRoot(extractRoot);
 end
 assertCandidateRoot(candidate);
 assertCandidateOutsideRepairRoot(candidate, root);
-notifyProgress(progressFcn, "Replacing the incomplete installation...", 0.65);
+notifyProgress(progressFcn, "Step 4 of 4 — Installing files", ...
+    "Replacing the incomplete installation...");
 replacement = replaceInstall(root, candidate, hook.FailAfterBackup);
-notifyProgress(progressFcn, "Repair completed.", 1.00);
-message = "Reinstalled " + source.label + ". Restart LabKit if it was open.";
+notifyProgress(progressFcn, "Complete", "Installation completed.");
+message = "Installed " + source.label + " into " + string(root) + ...
+    ". Restart LabKit from that folder.";
 if replacement.backupRetained
     if replacement.preservedItemCount > 0
         message = message + " Migrated " + replacement.preservedItemCount + ...
@@ -202,6 +489,29 @@ if replacement.backupRetained
         message = message + " Backup cleanup was incomplete; recovery files remain at " + ...
             replacement.backupFolder + ".";
     end
+end
+
+function source = resolveZipSource(mode, requestedTag)
+switch string(mode)
+    case "stable"
+        source = resolveStableZipSource();
+    case "main"
+        source = struct( ...
+            "label", "the current GitHub main branch", ...
+            "url", "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/refs/heads/main.zip");
+    case "tag"
+        tag = string(strtrim(requestedTag));
+        if ~isStableReleaseTag(tag)
+            error("labkit_launcher:InvalidReleaseSelection", ...
+                "Load the published stable versions and choose one from the list.");
+        end
+        source = struct( ...
+            "label", "GitHub release tag " + tag, ...
+            "url", "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/refs/tags/" + tag + ".zip");
+    otherwise
+        error("labkit_launcher:InvalidDownloadSource", ...
+            "Choose latest stable, current main, or a specific stable release tag.");
+end
 end
 result = summaryStruct(root, message);
 delete(cleanup)
@@ -248,6 +558,40 @@ try
         release.zipUrl = string(raw.zipball_url);
     end
 catch
+end
+end
+
+function versions = publishedStableVersions()
+try
+    raw = webread("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/releases?per_page=50");
+catch cause
+    error("labkit_launcher:ReleaseListUnavailable", ...
+        "GitHub did not return the published LabKit versions: %s", cause.message);
+end
+if ~isstruct(raw) || isempty(raw) || ~isfield(raw, "tag_name")
+    error("labkit_launcher:ReleaseListUnavailable", ...
+        "GitHub did not return any published LabKit versions.");
+end
+versions = strings(numel(raw), 1);
+versionCount = 0;
+for index = 1:numel(raw)
+    if isfield(raw, "draft") && logical(raw(index).draft)
+        continue;
+    end
+    if isfield(raw, "prerelease") && logical(raw(index).prerelease)
+        continue;
+    end
+    tag = string(raw(index).tag_name);
+    if isStableReleaseTag(tag)
+        versionCount = versionCount + 1;
+        versions(versionCount) = tag;
+    end
+end
+versions = versions(1:versionCount);
+versions = unique(versions, "stable");
+if isempty(versions)
+    error("labkit_launcher:ReleaseListUnavailable", ...
+        "GitHub did not return any published stable LabKit versions.");
 end
 end
 
@@ -325,9 +669,11 @@ hasFramework = exist(fullfile(root, "+labkit"), "dir") == 7;
 hasApps = exist(fullfile(root, "apps"), "dir") == 7;
 hasSupportingContent = exist(fullfile(root, "tools"), "dir") == 7 || ...
     exist(fullfile(root, "docs"), "dir") == 7;
-if ~hasLauncher || ~(hasFramework || (hasApps && hasSupportingContent))
+hasBootstrapOnly = hasLauncher && hasOnlyBootstrapContent(root);
+if ~hasLauncher || ...
+        ~(hasBootstrapOnly || hasFramework || (hasApps && hasSupportingContent))
     error("labkit_launcher:InvalidRepairRoot", ...
-        "Repair refuses this directory to avoid overwriting a non-LabKit installation.");
+        "Install / repair refuses this directory to avoid overwriting unrelated files.");
 end
 end
 
@@ -573,9 +919,9 @@ function result = summaryStruct(root, message)
 result = struct("root", string(root), "message", string(message));
 end
 
-function notifyProgress(progressFcn, message, value)
+function notifyProgress(progressFcn, stage, message)
 if ~isempty(progressFcn)
-    progressFcn(char(message), value);
+    progressFcn(char(stage), char(message));
 end
 end
 

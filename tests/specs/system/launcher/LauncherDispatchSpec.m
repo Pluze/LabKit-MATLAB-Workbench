@@ -93,8 +93,7 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             for command = commands
                 filepath = fullfile(root, "apps", "fixture", ...
                     erase(erase(lower(command), "labkit_"), "_app"), command + ".m");
-                writeText(filepath, "function " + command + ...
-                    "; setappdata(groot,'fixtureLaunchedCommand',mfilename); end");
+                writeLaunchProbeEntry(filepath, command);
             end
             cleanup = launcherGuiFixture(commands);
 
@@ -154,8 +153,21 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             invokeTableDoubleClick(appTable, 2);
             testCase.verifyEqual(string(getappdata( ...
                 groot, "fixtureLaunchedCommand")), commands(2));
+            launchSnapshot = getappdata(groot, "fixtureLaunchSnapshot");
+            testCase.verifyTrue(any(contains(string(launchSnapshot.status), ...
+                "Starting Beta (2/2): initializing app window via " + ...
+                commands(2))));
+            testCase.verifyEqual(string(launchSnapshot.tableEnable), "off");
+            testCase.verifyEqual(string(launchSnapshot.pointer), "watch");
+            testCase.verifyEqual(string(launchSnapshot.openButtonText), ...
+                "Starting App...");
             testCase.verifyTrue(any(contains(launcherText(fig), ...
                 "Opened " + commands(2))));
+            testCase.verifyEqual(string(appTable.Enable), "on");
+            testCase.verifyEqual(string(fig.Pointer), "arrow");
+            openButton = findall(fig, "Type", "uibutton", ...
+                "Text", "Open Selected App");
+            testCase.verifyNumElements(openButton, 1);
             view = getappdata(fig, "labkitLauncherView");
             testCase.verifyEqual(view.controls.appTable.table, appTable);
             delete(fig); delete(cleanup)
@@ -426,6 +438,23 @@ names = [string({sourceEntries.name}), string({pcodeEntries.name})];
 commands = unique(erase(names, [".m", ".p"]), "stable").';
 end
 
+function writeLaunchProbeEntry(filepath, command)
+source = [
+    "function " + command
+    "fig = findall(groot, 'Type', 'figure', 'Tag', 'labkitLauncher');"
+    "view = getappdata(fig, 'labkitLauncherView');"
+    "button = findall(fig, 'Type', 'uibutton', 'Text', 'Starting App...');"
+    "snapshot = struct(" + ...
+        "'status', string(view.controls.statusLine.textArea.Value), " + ...
+        "'tableEnable', view.controls.appTable.table.Enable, " + ...
+        "'pointer', fig.Pointer, 'openButtonText', button.Text);"
+    "setappdata(groot, 'fixtureLaunchSnapshot', snapshot);"
+    "setappdata(groot, 'fixtureLaunchedCommand', mfilename);"
+    "end"
+    ];
+writeText(filepath, join(source, newline));
+end
+
 function cleanup = launcherGuiFixture(functionNames)
 previousPath = path;
 functionNames = string(functionNames(:));
@@ -433,6 +462,7 @@ keys = [
     "labkitLauncherGuiTestMode"
     "labkitFigureStudioLauncher"
     "fixtureLaunchedCommand"
+    "fixtureLaunchSnapshot"
     "fixtureVersionCalls"
     "fixtureToolCall"
     "fixtureToolCalls"

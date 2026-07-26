@@ -22,6 +22,68 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
             delete(stateCleanup); delete(cleanup)
         end
 
+        function standaloneUiShowsTargetModeAndDownloadChoices(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            copyfile(fullfile(labkittest.setup(), "labkit_launcher.m"), root);
+            [repairFigure, cleanup] = openRepairFixture(root);
+            view = getappdata(repairFigure, "labkitRepairView");
+
+            testCase.verifyEqual(normalizedPath(view.targetField.Value), ...
+                normalizedPath(root));
+            testCase.verifyEqual(string(view.actionButton.Text), ...
+                "Install LabKit");
+            testCase.verifyTrue(contains(string(view.targetHint.Text), ...
+                "New installation"));
+            testCase.verifyEqual(string(view.sourceChoice.ItemsData), ...
+                ["stable", "tag", "main"]);
+            testCase.verifyEqual(string(view.sourceChoice.Value), "stable");
+            testCase.verifyEqual(string(view.releaseChoice.Enable), "off");
+            testCase.verifyEqual(string(view.loadReleases.Enable), "off");
+            testCase.verifyEqual(string(view.stage.Text), "Ready");
+            testCase.verifyEmpty(findall(repairFigure, "Type", "uilineargauge"));
+
+            view.sourceChoice.Value = "tag";
+            invokeRepairCallback(view.sourceChoice.ValueChangedFcn, ...
+                view.sourceChoice, struct());
+            testCase.verifyEqual(string(view.releaseChoice.Enable), "off");
+            testCase.verifyEqual(string(view.loadReleases.Enable), "on");
+            testCase.verifyTrue(contains(string(view.sourceHint.Text), ...
+                "Load the published versions"));
+            delete(cleanup)
+        end
+
+        function standaloneUiLoadsPublishedVersionsForSelection(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            copyfile(fullfile(labkittest.setup(), "labkit_launcher.m"), root);
+            networkFolder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            writeNetworkStubs(networkFolder);
+            [repairFigure, cleanup] = openRepairFixture(root);
+            networkCleanup = isolatedNetworkStubs(networkFolder);
+            releases = [
+                struct("tag_name", "v2.4.0", "draft", false, "prerelease", false)
+                struct("tag_name", "v2.5.0-rc1", "draft", false, "prerelease", true)
+                struct("tag_name", "v2.3.1", "draft", false, "prerelease", false)
+                ];
+            sequenceCleanup = setWebreadSequence({releases});
+            view = getappdata(repairFigure, "labkitRepairView");
+            view.sourceChoice.Value = "tag";
+            invokeRepairCallback(view.sourceChoice.ValueChangedFcn, ...
+                view.sourceChoice, struct());
+
+            invokeRepairCallback(view.loadReleases.ButtonPushedFcn, ...
+                view.loadReleases, struct());
+
+            testCase.verifyEqual(string(view.releaseChoice.ItemsData), ...
+                ["v2.4.0", "v2.3.1"]);
+            testCase.verifyEqual(string(view.releaseChoice.Value), "v2.4.0");
+            testCase.verifyEqual(string(view.releaseChoice.Enable), "on");
+            testCase.verifyEqual(string(view.stage.Text), "Ready");
+            delete(sequenceCleanup); delete(networkCleanup); delete(cleanup)
+        end
+
         function missingInstalledEntryRejectsOutputModes(testCase)
             root = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             copyfile(fullfile(labkittest.setup(), "labkit_launcher.m"), root);
@@ -52,11 +114,13 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
             stateCleanup = setDelegateFailure("MATLAB:UndefinedFunction", "fixture dispatch symbol is unavailable");
 
             repairFigure = labkit_launcher;
-            text = string(findall(repairFigure, "Type", "uitextarea").Value);
+            text = repairWindowText(repairFigure);
+            view = getappdata(repairFigure, "labkitRepairView");
 
             testCase.verifyTrue(any(contains(text, "MATLAB:UndefinedFunction")));
             testCase.verifyTrue(any(contains(text, "fixture dispatch symbol is unavailable")));
-            testCase.verifyTrue(any(contains(text, "Repair / Reinstall")));
+            testCase.verifyEqual(string(view.actionButton.Text), ...
+                "Repair / Reinstall LabKit");
             delete(repairFigure); delete(stateCleanup); delete(cleanup)
         end
 
@@ -65,10 +129,12 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
             stateCleanup = setDelegateFailure("MATLAB:undefinedVarOrClass", "fixture installed class is unavailable");
 
             repairFigure = labkit_launcher;
-            text = string(findall(repairFigure, "Type", "uitextarea").Value);
+            text = repairWindowText(repairFigure);
+            view = getappdata(repairFigure, "labkitRepairView");
 
             testCase.verifyTrue(any(contains(text, "MATLAB:undefinedVarOrClass")));
-            testCase.verifyTrue(any(contains(text, "Repair / Reinstall")));
+            testCase.verifyEqual(string(view.actionButton.Text), ...
+                "Repair / Reinstall LabKit");
             delete(repairFigure); delete(stateCleanup); delete(cleanup)
         end
 
@@ -174,17 +240,74 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
             delete(hookCleanup); delete(cleanup)
         end
 
-        function rootOnlyCopyRepairIsSafelyRejected(testCase)
+        function rootOnlyCopyInstallsAValidatedCandidate(testCase)
             root = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             copyfile(fullfile(labkittest.setup(), "labkit_launcher.m"), root);
             [repairFigure, cleanup] = openRepairFixture(root);
+            candidate = validRepairCandidate(testCase, "installed-marker", false);
+            hookCleanup = setRepairHook(struct("CandidateRoot", candidate));
 
             clickRepair(repairFigure);
 
             testCase.verifyTrue(contains(repairStatus(repairFigure), ...
-                "labkit_launcher:InvalidRepairRoot"));
-            testCase.verifyEqual(exist(fullfile(root, "labkit_launcher.m"), "file"), 2);
-            delete(cleanup)
+                "Installed"));
+            testCase.verifyEqual(readMarker(root), "installed-marker");
+            testCase.verifyEqual(exist(fullfile(root, "+labkit", "+app", ...
+                "+internal", "+launcher", "dispatch.m"), "file"), 2);
+            delete(hookCleanup); delete(cleanup)
+        end
+
+        function standaloneUiInstallsIntoAChosenEmptyFolder(testCase)
+            sourceRoot = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            copyfile(fullfile(labkittest.setup(), "labkit_launcher.m"), sourceRoot);
+            target = fullfile(sourceRoot, "chosen-install");
+            [repairFigure, cleanup] = openRepairFixture(sourceRoot);
+            candidate = validRepairCandidate(testCase, "chosen-marker", false);
+            hookCleanup = setRepairHook(struct("CandidateRoot", candidate));
+            view = getappdata(repairFigure, "labkitRepairView");
+            view.targetField.Value = target;
+            invokeRepairCallback(view.targetField.ValueChangedFcn, ...
+                view.targetField, struct());
+
+            clickRepair(repairFigure);
+
+            testCase.verifyEqual(string(view.stage.Text), "Complete");
+            testCase.verifyEqual(readMarker(target), "chosen-marker");
+            testCase.verifyTrue(contains(repairStatus(repairFigure), ...
+                string(target)));
+            testCase.verifyEqual(exist(fullfile(target, ...
+                "labkit_launcher.m"), "file"), 2);
+            delete(hookCleanup); delete(cleanup)
+        end
+
+        function standaloneUiRejectsAnUnrelatedFolderBeforeNetwork(testCase)
+            sourceRoot = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            copyfile(fullfile(labkittest.setup(), "labkit_launcher.m"), sourceRoot);
+            target = fullfile(sourceRoot, "unrelated");
+            mkdir(target);
+            writeText(fullfile(target, "notes.txt"), "unrelated content");
+            networkFolder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            writeNetworkStubs(networkFolder);
+            [repairFigure, cleanup] = openRepairFixture(sourceRoot);
+            networkCleanup = isolatedNetworkStubs(networkFolder);
+            view = getappdata(repairFigure, "labkitRepairView");
+            view.targetField.Value = target;
+            invokeRepairCallback(view.targetField.ValueChangedFcn, ...
+                view.targetField, struct());
+
+            testCase.verifyEqual(string(view.actionButton.Enable), "off");
+            testCase.verifyTrue(contains(string(view.targetHint.Text), ...
+                "Choose an empty folder"));
+            invokeRepairCallback(view.actionButton.ButtonPushedFcn, ...
+                view.actionButton, struct());
+            testCase.verifyTrue(contains(repairStatus(repairFigure), ...
+                "labkit_launcher:InvalidInstallTarget"));
+            testCase.verifyFalse(isappdata(groot, "fixtureWebreadCount"));
+            testCase.verifyFalse(isappdata(groot, "fixtureWebsaveCalled"));
+            delete(networkCleanup); delete(cleanup)
         end
 
         function repairUiReplacesAValidDamagedInstallationAndRestoresWorkingFolder(testCase)
@@ -353,6 +476,39 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
             delete(sequenceCleanup); delete(networkCleanup); delete(cleanup)
         end
 
+        function explicitMainAndReleaseTagSelectionsUseExactArchives(testCase)
+            cases = {
+                "main", "", "refs/heads/main.zip"
+                "tag", "v2.4.0", "refs/tags/v2.4.0.zip"
+                };
+            for index = 1:size(cases, 1)
+                root = damagedRepairRoot(testCase, "old-marker", false);
+                networkFolder = testCase.applyFixture( ...
+                    matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+                writeNetworkStubs(networkFolder);
+                [repairFigure, cleanup] = openRepairFixture(root);
+                networkCleanup = isolatedNetworkStubs(networkFolder);
+                view = getappdata(repairFigure, "labkitRepairView");
+                view.sourceChoice.Value = cases{index, 1};
+                invokeRepairCallback(view.sourceChoice.ValueChangedFcn, ...
+                    view.sourceChoice, struct());
+                if cases{index, 1} == "tag"
+                    view.releaseChoice.Items = "LabKit " + cases{index, 2};
+                    view.releaseChoice.ItemsData = cases{index, 2};
+                    view.releaseChoice.Value = cases{index, 2};
+                end
+
+                clickRepair(repairFigure);
+
+                arguments = getappdata(groot, "fixtureWebsaveArguments");
+                testCase.verifyTrue(contains(string(arguments{2}), ...
+                    cases{index, 3}));
+                testCase.verifyTrue(contains(repairStatus(repairFigure), ...
+                    "fixture:UnexpectedDownload"));
+                delete(networkCleanup); delete(cleanup)
+            end
+        end
+
         function networkFailureIsActionableAndDoesNotAttemptDownload(testCase)
             root = damagedRepairRoot(testCase, "old-marker", false);
             networkFolder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -510,13 +666,31 @@ end
 
 function clickRepair(repairFigure)
 button = findall(repairFigure, "Type", "uibutton", ...
-    "Text", "Repair / Reinstall Latest Stable Release");
-button.ButtonPushedFcn(button, []);
+    "Tag", "labkitRepairAction");
+invokeRepairCallback(button.ButtonPushedFcn, button, struct());
 end
 
 function text = repairStatus(repairFigure)
-label = findall(repairFigure, "Type", "uilabel");
-text = string(label.Text);
+status = findall(repairFigure, "Type", "uitextarea", ...
+    "Tag", "labkitRepairStatus");
+text = string(status.Value);
+end
+
+function text = repairWindowText(repairFigure)
+areas = findall(repairFigure, "Type", "uitextarea");
+chunks = cell(numel(areas), 1);
+for index = 1:numel(areas)
+    chunks{index} = string(areas(index).Value(:));
+end
+text = vertcat(chunks{:});
+end
+
+function invokeRepairCallback(callback, source, event)
+if isa(callback, "function_handle")
+    callback(source, event);
+else
+    feval(callback{1}, source, event, callback{2:end});
+end
 end
 
 function value = readMarker(root)

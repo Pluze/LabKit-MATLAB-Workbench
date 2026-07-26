@@ -37,6 +37,15 @@ Double-clicking an app row is equivalent to selecting it and opening it
 normally. The checkbox column controls package membership; ordinary launch
 selection does not change the checked set.
 
+When startup begins, the launcher immediately disables its App table and
+actions, changes the open button to **Starting App...**, shows a wait pointer,
+and reports two explicit stages: preparing the selected App path, then
+initializing its window through the named entry point. This feedback is painted
+before the potentially slow App entry point runs. Duplicate clicks are ignored
+while startup is active. Completion restores the controls and reports the
+opened command; failure reports the failing identifier and message, with repair
+guidance only for structural installation failures.
+
 Every launch uses the same clean App path. Use the App's **Tools >
 Diagnostics** menu to inspect its live session log, enable trace capture, or
 export a diagnostic ZIP after a problem occurs. Apps that declare a synthetic
@@ -86,11 +95,29 @@ removing, or updating an app while the launcher remains open.
 
 ## Installation And Recovery
 
-The downloaded launcher can begin in an otherwise empty folder. **Latest**,
-**Release**, and **Versions** download a repository archive, validate its
-contents, preserve a dated `LabKit-previous-*` recovery copy, and then replace
-the managed runtime. Keep experimental data and exports outside that runtime
-folder because installed code is replaceable.
+The downloaded `labkit_launcher.m` can begin by itself. When no installed
+Launcher is available, it opens a focused install/repair window with:
+
+- an editable installation folder and native **Browse...** action;
+- a clear new-installation, existing-installation, or unsafe-target result;
+- **Latest stable release** (recommended), a GitHub-backed selector of
+  published stable versions, and **Current main branch** (development);
+- honest preparation, download, package-validation, installation, and outcome
+  stages with current-action or error details; and
+- confirmation before replacing an existing installation.
+
+The target is checked before any network request. A new install may use a
+nonexistent folder whose parent exists, an empty folder, or a folder containing
+only the standalone launcher and ordinary OS metadata. Repair accepts an
+existing LabKit installation. Filesystem roots, Git checkouts, files, missing
+parents, and non-LabKit folders containing unrelated content are rejected.
+
+After LabKit is installed, **Latest**, **Release**, and **Versions** in the full
+Launcher provide the richer source-checkout version workflow. Every downloaded
+archive is validated before replacement. Existing repairs preserve a recovery
+copy transactionally and retain known local workspace folders when required.
+Keep experimental data and exports outside the runtime folder because installed
+code is replaceable.
 
 Installed apps run offline unless their own inputs use a network location.
 Version discovery and update actions require network access. Source and P-code

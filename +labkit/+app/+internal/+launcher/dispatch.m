@@ -278,10 +278,16 @@ resizeLauncher();
             return;
         end
         app = selectedApp();
-        beginAction("Opening " + app.command + "...");
+        openButton.Text = "Starting App...";
+        beginAction("Starting " + app.name + "...");
         try
+            reportLaunchStage(app, 1, "preparing app path");
             addPathIfMissing(app.folder, "-end");
+            reportLaunchStage(app, 2, ...
+                "initializing app window via " + app.command);
             feval(app.command);
+            setStatus("Finishing startup for " + app.name + "...");
+            drawnow;
             setStatus("Opened " + app.command + ".");
         catch cause
             if isStructuralStartupFailure(cause)
@@ -296,7 +302,14 @@ resizeLauncher();
                     failureText(cause));
             end
         end
+        openButton.Text = "Open Selected App";
         endAction();
+    end
+
+    function reportLaunchStage(app, step, message)
+        setStatus("Starting " + app.name + " (" + string(step) + ...
+            "/2): " + message + "...");
+        drawnow;
     end
 
     function openDocumentation()
@@ -424,12 +437,17 @@ resizeLauncher();
 
     function beginAction(message)
         state.busy = true;
+        fig.Pointer = "watch";
         setControlsEnabled(false);
         setStatus(message);
+        drawnow;
     end
 
     function endAction()
         state.busy = false;
+        if isvalid(fig)
+            fig.Pointer = "arrow";
+        end
         setControlsEnabled(true);
         updateInfo();
     end
@@ -455,6 +473,7 @@ resizeLauncher();
         packageButton.Enable = matlab.lang.OnOffSwitchState( ...
             enabled && hasApps && state.tools.package);
         pcodeButton.Enable = packageButton.Enable;
+        appTable.Enable = char(value);
     end
 
     function setStatus(message)
@@ -478,7 +497,7 @@ function info = launcherVersion()
 info = struct( ...
     "name", "labkit_launcher", ...
     "displayName", "LabKit App Launcher", ...
-    "version", "1.7.0", ...
+    "version", "1.7.1", ...
     "updated", "2026-07-26");
 end
 

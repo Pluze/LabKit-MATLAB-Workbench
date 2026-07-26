@@ -41,6 +41,12 @@ second architecture guide.
 - A self-contained repair entrypoint owns only minimum health detection,
   repair, and delegation. Do not give it a second log/session schema; canonical
   diagnostics begin after the installed framework is available.
+- Prove a single-file entrypoint from a directory containing only that file.
+  MATLAB resolves the current folder before later path entries, so changing
+  `path` alone can silently exercise the installed repository copy instead.
+- Do not draw determinate progress for work without a measurable denominator.
+  Show named stages backed by real operation boundaries, and paint the status
+  before synchronous expensive work with `drawnow`.
 - Make retained semantic events privacy-safe before they enter memory or disk.
   Free-form messages can leak more readily than attributes; export-time
   redaction is defense in depth, not the primary boundary.
