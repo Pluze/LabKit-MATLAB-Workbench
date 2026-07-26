@@ -137,7 +137,8 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             fig.SizeChangedFcn(fig, []);
             drawnow;
             resizedWidths = cell2mat(appTable.ColumnWidth);
-            testCase.verifyLessThan(sum(resizedWidths), sum(initialWidths));
+            testCase.verifyLessThanOrEqual( ...
+                sum(resizedWidths), sum(initialWidths));
             testCase.verifyGreaterThanOrEqual(resizedWidths, ...
                 [62 180 120 70 72 90]);
             testCase.verifyTrue(all(ismember([ ...

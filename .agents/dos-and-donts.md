@@ -31,7 +31,9 @@ second architecture guide.
   constructor name-values may be applied in a different order than written,
   and layout-manager resize hooks vary by MATLAB release. Set dependent values
   only after their legal domain exists, give responsive resize to an explicit
-  container owner, and retain a rendered GUI check.
+  container owner, and retain a rendered GUI check. Responsive assertions must
+  respect layout minimums and headless virtual-screen bounds; a smaller window
+  cannot reduce a table that is already at its readable-width floor.
 - Logging severity, capture detail, display filtering, persistence, and
   synthetic-input generation are independent policies. Do not bundle them into
   a Debug launch; an always-on bounded flight recorder is what makes an
