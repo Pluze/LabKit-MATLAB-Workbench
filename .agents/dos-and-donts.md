@@ -91,6 +91,12 @@ second architecture guide.
   `restoredefaultpath`, a probe must use only dependencies it explicitly
   restored; calling a test helper that just disappeared from the path defeats
   the isolation contract.
+- A GUI environment tag is metadata, not a visibility fixture. Tests that
+  construct a native runtime must establish and restore hidden mode themselves
+  so a focused `runtests` invocation cannot open product windows.
+- Callback unit tests must use a contract-complete context or an explicit
+  narrow fake of every operation the callback invokes. Old partial test
+  backends can make a supported production API look broken during migration.
 - Exact one-way old-data readers are bounded persistence support; simultaneous
   old/new fields on live values are competing models. Defaults cover omitted
   options, while explicit unknown scientific modes fail visibly.
