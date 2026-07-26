@@ -9,7 +9,6 @@ classdef (Sealed, Hidden) LayoutNode
     %   node = labkit.app.internal.LayoutNode.fileList(id, Name=Value)
     %   node = labkit.app.internal.LayoutNode.plotArea(id, Name=Value)
     %   node = labkit.app.internal.LayoutNode.dataTable(id, Name=Value)
-    %   node = labkit.app.internal.LayoutNode.logPanel(id)
     %   node = labkit.app.internal.LayoutNode.statusPanel(id)
     %   node = labkit.app.layout.group(id, children, Name=Value)
     %   node = labkit.app.layout.section(id, title, children, Name=Value)
@@ -390,15 +389,6 @@ classdef (Sealed, Hidden) LayoutNode
                 ["tableData", "tableCellSelection", ...
                  "enabled", "visible"], ...
                 signals, configuration);
-        end
-
-        function obj = logPanel(id, varargin)
-            options = labkit.app.internal.OptionParser.parse( ...
-                "labkit.app.layout.logPanel", "Title", varargin{:});
-            configuration = struct("Title", labkit.app.internal.LayoutNodeValues.nonemptyText(labkit.app.internal.LayoutNodeValues.optionValue( ...
-                options, "Title", "Log"), "log panel Title"));
-            obj = makeLeaf("logPanel", id, ["text", "visible"], {}, ...
-                configuration);
         end
 
         function obj = statusPanel(id, varargin)

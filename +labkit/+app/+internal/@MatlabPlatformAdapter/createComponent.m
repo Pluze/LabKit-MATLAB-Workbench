@@ -46,9 +46,8 @@ function component = createComponent(obj, node, parent)
             component = obj.createFilePanel(node, parent);
         case "dataTable"
             component = obj.createDataTable(node, parent);
-        case {"logPanel", "statusPanel"}
-            component = obj.createTextPanel( ...
-                node, parent, config, node.Kind == "logPanel");
+        case "statusPanel"
+            component = obj.createTextPanel(node, parent, config, false);
         case "plotArea"
             plotTitle = config.Title;
             owner = obj.owningNode(node.Id);

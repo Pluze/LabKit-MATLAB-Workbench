@@ -49,7 +49,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
 
         function kinds = leafAndGroupKinds()
             kinds = ["button", "field", "rangeField", "slider", "fileList", ...
-                "plotArea", "dataTable", "logPanel", "statusPanel", "group"];
+                "plotArea", "dataTable", "statusPanel", "group"];
         end
 
         function kinds = controlGroupKinds()

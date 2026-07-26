@@ -6,6 +6,5 @@ function tf = sectionDrawsOwnTitle(obj, node)
     end
     child = obj.node(node.ChildIds(1));
     tf = ~any(child.Kind == [ ...
-        "plotArea", "dataTable", "logPanel", ...
-        "statusPanel", "fileList"]);
+        "plotArea", "dataTable", "statusPanel", "fileList"]);
 end

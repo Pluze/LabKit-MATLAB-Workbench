@@ -706,10 +706,10 @@ retirement remain active Phase 7 work.
 
 Checkpoint B removes the duplicate App-authored Log tab from all 21 public
 Apps and the accepted private Imager App. The standard Tools session viewer is
-the only diagnostic-history surface. All public layouts compile, all 21 public
-native launches pass, and the private end-to-end GUI workflow passes. Legacy
-status/error call migration remains active before the `logPanel` primitive and
-bridge APIs can be deleted.
+the only diagnostic-history surface, and the zero-consumer `logPanel` layout
+primitive is deleted. All public layouts compile, all 21 public native launches
+pass, and the private end-to-end GUI workflow passes. Legacy status/error call
+migration remains active before the remaining bridge APIs can be deleted.
 
 #### Phase 8: retire bridges and close debt
 
