@@ -10,7 +10,7 @@ end
 choice = callbackContext.chooseOutputFile( ...
     ["*.csv", "CSV files"], "csc_all_cycles.csv");
 if choice.Cancelled
-    callbackContext.appendStatus("CSC result export cancelled.");
+    callbackContext.log("info", "csc.resultfiles.exportresults.status", "CSC result export cancelled.");
     return
 end
 filepath = string(choice.Value);
@@ -37,7 +37,8 @@ package = resultPackage( ...
 written = callbackContext.writeResultPackage(folder, package);
 applicationState.project.results.lastResultsExport = struct( ...
     "csvPath", filepath, "manifestPath", string(written.Value));
-callbackContext.appendStatus("Exported CSC CSV: " + filepath);
+callbackContext.log("info", "csc.resultfiles.exportresults.status", ...
+    "Exported CSC results.");
 end
 
 function package = resultPackage( ...

@@ -22,5 +22,6 @@ applicationState.session.selection.currentCurve = ...
     csc.analysisRun.analysisChoices().allCycles;
 applicationState.project.results.lastResultsExport = [];
 applicationState.project.results.lastVoltageCurrentExport = [];
-callbackContext.appendStatus("Reloaded: " + paths(index));
+    callbackContext.log("info", "csc.sourcefiles.reloadselected.status", ...
+        "Reloaded the selected source.");
 end

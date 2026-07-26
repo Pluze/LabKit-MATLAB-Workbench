@@ -27,5 +27,6 @@ output = labkit.app.result.File("eisPlotData", "primary", string(base) + string(
 package = labkit.app.result.Package(Outputs={output}, Inputs=struct("sources", state.project.inputs.sources), Parameters=p, Summary=struct("fileCount", numel(items)));
 written = context.writeResultPackage(folder, package);
 state.project.results.lastExport = struct("csvPath", path, "manifestPath", string(written.Value));
-context.appendStatus("Exported CSV: " + path);
+context.log("info", "eis.resultfiles.exportcurrentplot.status", ...
+    "Exported the current EIS plot data.");
 end
