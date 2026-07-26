@@ -25,6 +25,13 @@ Before moving code into `+labkit`, prove that it:
 Otherwise keep it in the app. Duplication, helper length, and a desire to make
 an App callback file shorter are not sufficient evidence.
 
+A shared facade may implement caller-selected preview sampling, but it retains
+native pixels by default; the App owns every finite responsiveness-versus-
+fidelity budget. Likewise, a read-only exact saved-data migration is a bounded
+persistence contract, while simultaneous old and current fields on a live
+value are competing models. Retire live aliases and their consumers together
+under an explicit breaking facade range.
+
 Use this escalation order for new behavior:
 
 1. keep product meaning in the owning App capability;
