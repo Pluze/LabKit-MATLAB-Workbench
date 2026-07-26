@@ -161,7 +161,7 @@ Add workflow packages only when the App has that user-facing capability:
 +resultFiles/     choosing output folders, writing files, and summarizing exports
 +cropGeometry/    app-owned crop geometry operations
 +thermalFrames/   app-owned thermal frame queues and display choices
-+debugArtifacts/  app-owned clean-room sample and debug artifact generation
++syntheticInputs/ app-owned clean-room synthetic input generation
 ```
 
 Create only the packages the app needs. Names should describe a workflow or

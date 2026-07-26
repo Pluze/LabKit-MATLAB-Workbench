@@ -225,7 +225,7 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
 
             fig = manageLabKitVersions(candidate);
             values = textareaValues(fig);
-            testCase.verifyTrue(any(contains(values, "Current launcher: LabKit App Launcher v1.6.0 (2026-07-20)")));
+            testCase.verifyTrue(any(contains(values, "Current launcher: LabKit App Launcher v1.7.0 (2026-07-26)")));
             delete(fig)
             fig = manageLabKitVersions(root);
             values = textareaValues(fig);
@@ -397,7 +397,7 @@ writeText(fullfile(root, "+labkit", "+app", "+internal", "+launcher", "dispatch.
     "function dispatch(varargin)"
     "info = struct(""name"", ""labkit_launcher"", ..."
     "    ""displayName"", ""LabKit App Launcher"", ..."
-    "    ""version"", ""1.6.0"", ""updated"", ""2026-07-20"");"
+    "    ""version"", ""1.7.0"", ""updated"", ""2026-07-26"");"
     "end"], newline));
 writeText(fullfile(root, "marker.txt"), marker);
 end

@@ -164,14 +164,13 @@ tableGrid = uigridlayout(right, [1 1]);
 tableGrid.Padding = [4 4 4 4];
 appTable = uitable(tableGrid, ...
     "ColumnName", { ...
-        "Package", "Family", "App", "Visibility", ...
-        "Version", "Updated", "Command"}, ...
-    "ColumnEditable", [true false false false false false false], ...
+        "Package", "App", "Family", "Version", "Access", "Updated"}, ...
+    "ColumnEditable", [true false false false false false], ...
     "RowName", {}, ...
     "FontSize", tableFontSize);
 if isprop(appTable, "ColumnFormat")
     appTable.ColumnFormat = { ...
-        'logical', 'char', 'char', 'char', 'char', 'char', 'char'};
+        'logical', 'char', 'char', 'char', 'char', 'char'};
 end
 appTable.ColumnWidth = launcherTableWidths(position(3), leftWidth);
 configureTable(appTable, @selectRow, @doubleClickRow);
@@ -479,8 +478,8 @@ function info = launcherVersion()
 info = struct( ...
     "name", "labkit_launcher", ...
     "displayName", "LabKit App Launcher", ...
-    "version", "1.6.0", ...
-    "updated", "2026-07-20");
+    "version", "1.7.0", ...
+    "updated", "2026-07-26");
 end
 
 function position = defaultLauncherPosition()
@@ -500,8 +499,8 @@ end
 
 function widths = launcherTableWidths(figureWidth, controlWidth)
 tableWidth = max(640, double(figureWidth) - double(controlWidth) - 36);
-minimum = [62 92 124 72 64 84 142];
-preferred = [72 118 156 80 70 92 224];
+minimum = [62 180 120 70 72 90];
+preferred = [72 240 150 78 80 100];
 if tableWidth <= sum(minimum)
     values = minimum;
 elseif tableWidth < sum(preferred)
@@ -510,7 +509,7 @@ elseif tableWidth < sum(preferred)
     values = minimum + fraction .* (preferred - minimum);
 else
     extra = tableWidth - sum(preferred);
-    values = preferred + extra .* [0 0.10 0.25 0 0 0 0.65];
+    values = preferred + extra .* [0 0.60 0.25 0 0 0.15];
 end
 widths = num2cell(round(values));
 end
@@ -556,17 +555,16 @@ end
 end
 
 function rows = launcherRows(apps, checkedCommands)
-rows = cell(numel(apps), 7);
+rows = cell(numel(apps), 6);
 checked = ismember(string({apps.command}), string(checkedCommands));
 for index = 1:numel(apps)
     rows(index, :) = { ...
         checked(index), ...
-        char(apps(index).family), ...
         char(apps(index).name), ...
-        char(apps(index).visibility), ...
+        char(apps(index).family), ...
         char(apps(index).version), ...
-        char(apps(index).updated), ...
-        char(apps(index).command)};
+        char(apps(index).visibility), ...
+        char(apps(index).updated)};
 end
 end
 
@@ -691,11 +689,22 @@ for rootIndex = 1:numel(roots)
             continue;
         end
         [~, command] = fileparts(entry.name);
+        filepath = fullfile(entry.folder, entry.name);
         metadata = appVersionInfo(entry.folder);
+        family = familyName(appRoot, entry.folder);
+        if strlength(metadata.family) > 0
+            family = metadata.family;
+        end
+        name = displayName(command);
+        if strlength(metadata.displayName) > 0
+            name = metadata.displayName;
+        end
         app = struct("command", scalarText(command, "command"), ...
             "folder", scalarText(entry.folder, "folder"), ...
-            "family", scalarText(familyName(appRoot, entry.folder), "family"), ...
-            "name", scalarText(displayName(command), "name"), ...
+            "relativePath", scalarText(relativePath(root, filepath), "relativePath"), ...
+            "family", scalarText(family, "family"), ...
+            "name", scalarText(name, "name"), ...
+            "description", scalarText(appDescription(filepath, command), "description"), ...
             "visibility", scalarText(visibilityFor(root, entry.folder), "visibility"), ...
             "version", scalarText(metadata.version, "version"), ...
             "updated", scalarText(metadata.updated, "updated"));
@@ -715,8 +724,9 @@ end
 end
 
 function apps = emptyApps()
-apps = struct("command", {}, "folder", {}, "family", {}, "name", {}, ...
-    "visibility", {}, "version", {}, "updated", {});
+apps = struct("command", {}, "folder", {}, "relativePath", {}, ...
+    "family", {}, "name", {}, "description", {}, "visibility", {}, ...
+    "version", {}, "updated", {});
 end
 
 function entries = appEntryFiles(appRoot)
@@ -820,26 +830,54 @@ end
 value = strjoin(cellstr(words), " ");
 end
 
-function catalog = appCatalogTable(apps)
-count = numel(apps);
-familyColumn = strings(count, 1); appColumn = strings(count, 1); visibilityColumn = strings(count, 1);
-versionColumn = strings(count, 1); updatedColumn = strings(count, 1); commandColumn = strings(count, 1);
-for index = 1:count
-    familyColumn(index) = apps(index).family; appColumn(index) = apps(index).name;
-    visibilityColumn(index) = apps(index).visibility; versionColumn(index) = apps(index).version;
-    updatedColumn(index) = apps(index).updated; commandColumn(index) = apps(index).command;
+function description = appDescription(filepath, command)
+description = "";
+try
+    text = fileread(filepath);
+catch
+    return;
 end
-catalog = table(familyColumn, appColumn, visibilityColumn, versionColumn, updatedColumn, commandColumn, ...
-    'VariableNames', {'Family', 'App', 'Visibility', 'Version', 'Updated', 'Command'});
+lines = splitlines(string(text));
+prefix = "%" + upper(string(command));
+for index = 1:min(numel(lines), 20)
+    line = strtrim(lines(index));
+    if startsWith(line, prefix)
+        description = strtrim(erase(extractAfter( ...
+            line, strlength(prefix)), "-"));
+        return;
+    elseif startsWith(line, "%")
+        cleaned = strtrim(extractAfter(line, 1));
+        if strlength(cleaned) > 0 && ~startsWith(cleaned, "Usage")
+            description = cleaned;
+            return;
+        end
+    end
+end
 end
 
-function rows = displayRows(apps)
-rows = cell(numel(apps), 6);
-for index = 1:numel(apps)
-    rows(index, :) = {char(apps(index).family), char(apps(index).name), ...
-        char(apps(index).visibility), char(apps(index).version), ...
-        char(apps(index).updated), char(apps(index).command)};
+function catalog = appCatalogTable(apps)
+count = numel(apps);
+commandColumn = strings(count, 1); displayNameColumn = strings(count, 1);
+familyColumn = strings(count, 1); visibilityColumn = strings(count, 1);
+folderColumn = strings(count, 1); relativePathColumn = strings(count, 1);
+descriptionColumn = strings(count, 1); versionColumn = strings(count, 1);
+updatedColumn = strings(count, 1);
+for index = 1:count
+    commandColumn(index) = apps(index).command;
+    displayNameColumn(index) = apps(index).name;
+    familyColumn(index) = apps(index).family;
+    visibilityColumn(index) = apps(index).visibility;
+    folderColumn(index) = apps(index).folder;
+    relativePathColumn(index) = apps(index).relativePath;
+    descriptionColumn(index) = apps(index).description;
+    versionColumn(index) = apps(index).version;
+    updatedColumn(index) = apps(index).updated;
 end
+catalog = table(commandColumn, displayNameColumn, familyColumn, ...
+    visibilityColumn, folderColumn, relativePathColumn, descriptionColumn, ...
+    versionColumn, updatedColumn, ...
+    'VariableNames', {'Command', 'DisplayName', 'Family', 'Visibility', ...
+    'Folder', 'RelativePath', 'Description', 'Version', 'Updated'});
 end
 
 function page = documentationPage(root, command)
@@ -870,7 +908,8 @@ tf = startsWith(id, "MATLAB:UndefinedFunction") || ...
 end
 
 function info = appVersionInfo(folder)
-info = struct("version", "", "updated", "");
+info = struct("version", "", "updated", "", ...
+    "displayName", "", "family", "");
 definitions = dir(fullfile(folder, "+*", "definition.m"));
 if isempty(definitions)
     return;
@@ -879,6 +918,8 @@ try
     text = fileread(fullfile(definitions(1).folder, definitions(1).name));
     info.version = literalField(text, "AppVersion");
     info.updated = literalField(text, "Updated");
+    info.displayName = literalField(text, "DisplayName");
+    info.family = literalField(text, "Family");
 catch
 end
 end

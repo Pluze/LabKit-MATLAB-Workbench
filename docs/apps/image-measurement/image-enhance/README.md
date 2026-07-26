@@ -107,3 +107,10 @@ the source-adjacent default; **Choose folder** remains available before export.
 - [Image Match](../image-match/README.md)
 - [Image Library](../../../libraries/image/README.md)
 - [API Reference](../../../reference/README.md)
+## Diagnostics And Synthetic Inputs
+
+Every launch starts with a clean project and an always-on sanitized session journal.
+Use **Tools > Diagnostics** to inspect the live history, enable future trace
+capture, or export a diagnostic bundle after a problem. Use **Tools > Developer
+Tools > Generate Synthetic Inputs...** to write an anonymous sample pack without
+loading it or changing the open project.

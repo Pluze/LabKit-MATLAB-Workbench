@@ -70,7 +70,7 @@ createSession.m                             transient App-specific reconstructio
 +resultFiles/     choosing output folders, writing files, and summarizing exports
 +cropGeometry/    app-owned crop geometry operations
 +thermalFrames/   app-owned thermal frame queues and display choices
-+debugArtifacts/  app-owned clean-room sample and debug artifact generation</code></pre>
++syntheticInputs/ app-owned clean-room synthetic input generation</code></pre>
 <p>Create only the packages the app needs. Names should describe a workflow or domain capability that changes together, not a broad technical phase. Avoid generic <code>+actions</code>, <code>+renderers</code>, <code>+ops</code>, <code>+io</code>, <code>+ui</code>, <code>+userInterface</code>, <code>+view</code>, <code>+export</code>, <code>+helpers</code>, and <code>+utils</code> packages for new app code. Avoid fixed <code>+app</code> namespaces, family-level <code>private/</code> helpers, <code>*Workflow.m</code> string dispatchers, and <code>+core/dispatch.m</code> routers.</p>
 <p><code>+state</code>, <code>+actions</code>, <code>+ui</code>, <code>+view</code>, <code>+ops</code>, <code>+io</code>, and <code>+export</code> packages were retired with the workflow-first migration. Current app work should follow the workflow-first shape.</p>
 <h2 id="app-sdk-boundary">App SDK Boundary</h2>

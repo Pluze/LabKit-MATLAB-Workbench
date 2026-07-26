@@ -137,3 +137,10 @@ schemas, units, partial-recording failure policy, and related APIs.
 - `nerve_response_analysis.analysisRun.measureCapMetrics`
 - [RHS Preview](../rhs-preview/README.md)
 - [Response Review and Stats](../response-review-stats/README.md)
+## Diagnostics And Synthetic Inputs
+
+Every launch starts with a clean project and an always-on sanitized session journal.
+Use **Tools > Diagnostics** to inspect the live history, enable future trace
+capture, or export a diagnostic bundle after a problem. Use **Tools > Developer
+Tools > Generate Synthetic Inputs...** to write an anonymous sample pack without
+loading it or changing the open project.

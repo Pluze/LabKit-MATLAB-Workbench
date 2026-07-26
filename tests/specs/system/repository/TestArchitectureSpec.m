@@ -2,6 +2,14 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
     %TESTARCHITECTURESPEC Specify one active owner/contract test architecture.
 
     methods (Test, TestTags = {'Contract:system', 'Env:headless'})
+        function generatedApiExcludesInternalPackages(testCase)
+            root = labkittest.setup();
+
+            testCase.verifyFalse(isfolder(fullfile( ...
+                root, "site", "reference", "api", "labkit", ...
+                "app", "internal")));
+        end
+
         function activeEntryPointsDescribeOnlyTheCatalogModel(testCase)
             root = labkittest.setup();
             build = text(root, "buildfile.m");

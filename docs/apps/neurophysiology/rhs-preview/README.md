@@ -113,3 +113,10 @@ interpret the waveform matrix.
 - `rhs_preview.analysisRun.readPreviewWindow`
 - [Nerve Response Analysis](../nerve-response-analysis/README.md)
 - [RHS library](../../../libraries/rhs/README.md)
+## Diagnostics And Synthetic Inputs
+
+Every launch starts with a clean project and an always-on sanitized session journal.
+Use **Tools > Diagnostics** to inspect the live history, enable future trace
+capture, or export a diagnostic bundle after a problem. Use **Tools > Developer
+Tools > Generate Synthetic Inputs...** to write an anonymous sample pack without
+loading it or changing the open project.

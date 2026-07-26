@@ -7,14 +7,18 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             publicCatalog = catalog(catalog.Visibility == "public", :);
 
             testCase.verifyEqual(string(catalog.Properties.VariableNames), ...
-                ["Family", "App", "Visibility", "Version", "Updated", "Command"]);
+                ["Command", "DisplayName", "Family", "Visibility", "Folder", ...
+                "RelativePath", "Description", "Version", "Updated"]);
             testCase.verifyEqual(sort(publicCatalog.Command), sort(expectedPublic));
+            testCase.verifyTrue(all(strlength(publicCatalog.DisplayName) > 0));
+            testCase.verifyTrue(all(strlength(publicCatalog.Folder) > 0));
+            testCase.verifyTrue(all(strlength(publicCatalog.Description) > 0));
             testCase.verifyTrue(all(strlength(publicCatalog.Version) > 0));
             testCase.verifyTrue(all(strlength(publicCatalog.Updated) > 0));
             privateCatalog = catalog(catalog.Visibility == "private", :);
             if ~isempty(privateCatalog)
                 testCase.verifyTrue(all(strlength(privateCatalog.Command) > 0));
-                testCase.verifyTrue(all(strlength(privateCatalog.App) > 0));
+                testCase.verifyTrue(all(strlength(privateCatalog.DisplayName) > 0));
             end
         end
 
@@ -120,22 +124,22 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 "Versions and Install", "Development and Maintenance", ...
                 "Package and Publish"], panels)));
             testCase.verifyEqual(string(appTable.ColumnName), [ ...
-                "Package"; "Family"; "App"; "Visibility"; ...
-                "Version"; "Updated"; "Command"]);
+                "Package"; "App"; "Family"; "Version"; "Access"; "Updated"]);
             testCase.verifyEqual(appTable.ColumnEditable, ...
-                [true false false false false false false]);
+                [true false false false false false]);
             testCase.verifyEqual(appTable.FontSize, 12);
             testCase.verifyTrue(all(cellfun( ...
                 @(value) isnumeric(value) && isscalar(value), ...
                 appTable.ColumnWidth)));
             initialWidths = cell2mat(appTable.ColumnWidth);
-            testCase.verifyGreaterThan(initialWidths(7), initialWidths(1));
+            testCase.verifyGreaterThan(initialWidths(2), initialWidths(1));
             fig.Position(3) = max(800, fig.Position(3) - 160);
+            fig.SizeChangedFcn(fig, []);
             drawnow;
             resizedWidths = cell2mat(appTable.ColumnWidth);
             testCase.verifyLessThan(sum(resizedWidths), sum(initialWidths));
             testCase.verifyGreaterThanOrEqual(resizedWidths, ...
-                [62 92 124 72 64 84 142]);
+                [62 180 120 70 72 90]);
             testCase.verifyTrue(all(ismember([ ...
                 "Open Selected App", "Refresh App List", ...
                 "Documentation and History", "Latest", "Release", "Versions", ...
