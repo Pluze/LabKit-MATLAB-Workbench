@@ -43,8 +43,8 @@ classdef (Hidden, Sealed) RuntimeFactory
                 error("labkit:app:runtime:InvariantFailure", ...
                     "RuntimeFactory requires one Definition.");
             end
-            recorder = labkit.app.internal.DiagnosticRecorder( ...
-                definition, diagnostics);
+            stream = labkit.app.internal.SessionEventStream(definition);
+            recorder = labkit.app.internal.DiagnosticRecorder(definition, stream);
             sampleOperation = [];
             try
                 if diagnostics.Sample == "synthetic"

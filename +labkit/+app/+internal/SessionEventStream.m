@@ -36,7 +36,8 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                     "Session event ProjectionHook must be a function handle.");
             end
             obj.Application = application;
-            obj.SessionId = semanticText(sessionId, "sessionId");
+            obj.SessionId = labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
+                sessionId, "sessionId");
             obj.StartedAt = datetime("now", TimeZone="UTC", ...
                 Format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
             obj.StartedTimer = tic;
@@ -48,11 +49,14 @@ classdef (Hidden, Sealed) SessionEventStream < handle
 
         function operation = begin(obj, category, eventName, message, varargin)
             obj.ensureOpen();
-            category = semanticText(category, "category");
-            eventName = semanticText(eventName, "eventName");
-            message = privacySafeText(message, "message");
-            attributes = optionValue(varargin, "Attributes", struct());
-            attributes = privacySafeAttributes(attributes);
+            category = labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
+                category, "category");
+            eventName = labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
+                eventName, "eventName");
+            message = labkit.app.internal.SessionEventValidator.privacySafeText( ...
+                message, "message");
+            attributes = labkit.app.internal.SessionEventValidator.privacySafeAttributes( ...
+                optionValue(varargin, "Attributes", struct()));
             obj.OperationSequence = obj.OperationSequence + 1;
             parent = obj.currentOperation();
             operation = struct( ...
@@ -99,14 +103,19 @@ classdef (Hidden, Sealed) SessionEventStream < handle
 
         function log(obj, severity, eventName, message, varargin)
             obj.ensureOpen();
-            severity = severityText(severity);
-            eventName = semanticText(eventName, "eventName");
-            message = privacySafeText(message, "message");
-            category = semanticText(optionValue(varargin, "Category", "runtime.lifecycle"), ...
-                "category");
-            audience = audienceText(optionValue(varargin, "Audience", "developer"));
-            attributes = privacySafeAttributes(optionValue(varargin, "Attributes", struct()));
-            exception = exceptionProjection(optionValue(varargin, "Exception", []));
+            values = labkit.app.internal.SessionEventValidator.logInputs( ...
+                severity, eventName, message, ...
+                optionValue(varargin, "Category", "runtime.lifecycle"), ...
+                optionValue(varargin, "Audience", "developer"), ...
+                optionValue(varargin, "Attributes", struct()), ...
+                optionValue(varargin, "Exception", []));
+            severity = values.severity;
+            eventName = values.eventName;
+            message = values.message;
+            category = values.category;
+            audience = values.audience;
+            attributes = values.attributes;
+            exception = exceptionProjection(values.exception);
             operation = optionValue(varargin, "Operation", []);
             if isempty(operation)
                 operation = obj.currentOperation();
@@ -257,158 +266,15 @@ for index = 1:2:numel(values)
 end
 end
 
-function value = semanticText(value, name)
-if ~(ischar(value) || (isstring(value) && isscalar(value))) || strlength(strip(string(value))) == 0
-    error("labkit:app:contract:InvalidValue", ...
-        "Session event %s must be nonempty scalar text.", name);
-end
-value = string(value);
-if ~isempty(regexp(char(value), "^[A-Za-z][A-Za-z0-9._-]*$", "once"))
-    return;
-end
-error("labkit:app:contract:InvalidValue", ...
-    "Session event %s must be a semantic identifier.", name);
-end
-
-function value = severityText(value)
-value = lower(semanticText(value, "severity"));
-if ~any(value == ["trace", "debug", "info", "warning", "error", "critical"])
-    error("labkit:app:contract:InvalidValue", "Unsupported log severity: %s.", value);
-end
-end
-
 function value = terminalOutcome(value)
-value = lower(semanticText(value, "outcome"));
+value = lower(labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
+    value, "outcome"));
 if value == "rolledback"
     value = "rolledBack";
 end
 if ~any(value == ["completed", "failed", "rolledBack", "abandoned"])
     error("labkit:app:contract:InvalidValue", ...
         "Session operation outcome is unsupported.");
-end
-end
-
-function value = audienceText(value)
-value = lower(semanticText(value, "audience"));
-if ~any(value == ["user", "developer"])
-    error("labkit:app:contract:InvalidValue", ...
-        "Session event audience must be user or developer.");
-end
-end
-
-function value = privacySafeText(value, name)
-if ~(ischar(value) || (isstring(value) && isscalar(value)))
-    error("labkit:app:contract:InvalidValue", ...
-        "Session event %s must be scalar text.", name);
-end
-value = string(value);
-if strlength(value) > 512
-    error("labkit:app:contract:InvalidValue", ...
-        "Session event %s exceeds the retained-text limit.", name);
-end
-if containsUnsafeAbsolutePath(value) || containsFilenameLikeLeaf(value)
-    error("labkit:app:contract:UnsafeLogData", ...
-        "Session event %s must not contain a path or original filename.", name);
-end
-end
-
-function tf = containsUnsafeAbsolutePath(value)
-text = char(value);
-tf = containsWindowsDrivePath(text) || containsUncPath(text) || ...
-    containsPosixAbsolutePath(text);
-end
-
-function tf = containsWindowsDrivePath(text)
-tf = false;
-for index = 1:max(0, strlength(string(text)) - 2)
-    if isstrprop(text(index), "alpha") && text(index + 1) == ':' && ...
-            isPathSeparator(text(index + 2)) && isPathTokenBoundary(text, index)
-        tf = true;
-        return;
-    end
-end
-end
-
-function tf = containsUncPath(text)
-tf = false;
-for index = 1:max(0, strlength(string(text)) - 2)
-    if text(index) == char(92) && text(index + 1) == char(92) && ...
-            isstrprop(text(index + 2), "alphanum") && ...
-            isUncTokenBoundary(text, index)
-        tf = true;
-        return;
-    end
-end
-end
-
-function tf = containsPosixAbsolutePath(text)
-tf = false;
-for index = 1:max(0, strlength(string(text)) - 1)
-    if text(index) == '/' && isstrprop(text(index + 1), "alphanum") && ...
-            isPathTokenBoundary(text, index)
-        tf = true;
-        return;
-    end
-end
-end
-
-function tf = isPathSeparator(character)
-tf = character == '/' || character == char(92);
-end
-
-function tf = isPathTokenBoundary(text, index)
-tf = index == 1 || (~isstrprop(text(index - 1), "alphanum") && ...
-    text(index - 1) ~= '_' && text(index - 1) ~= ':');
-end
-
-function tf = isUncTokenBoundary(text, index)
-tf = index == 1 || (~isstrprop(text(index - 1), "alphanum") && ...
-    text(index - 1) ~= '_' && text(index - 1) ~= ':');
-end
-
-function tf = containsFilenameLikeLeaf(value)
-extensions = [".csv", ".mat", ".json", ".txt", ".png", ".jpg", ...
-    ".jpeg", ".tif", ".tiff", ".avi", ".xlsx", ".dta", ".rhs"];
-text = char(lower(value));
-tf = false;
-for extension = extensions
-    starts = strfind(text, char(extension));
-    for startIndex = starts
-        extensionEnd = startIndex + strlength(extension) - 1;
-        hasLeafStem = startIndex > 1 && ...
-            isstrprop(text(startIndex - 1), "alphanum");
-        hasLeafBoundary = extensionEnd == strlength(string(text)) || ...
-            ~isstrprop(text(extensionEnd + 1), "alphanum");
-        if hasLeafStem && hasLeafBoundary
-            tf = true;
-            return;
-        end
-    end
-end
-end
-
-function attributes = privacySafeAttributes(attributes)
-if ~isstruct(attributes) || ~isscalar(attributes) || numel(fieldnames(attributes)) > 16
-    error("labkit:app:contract:InvalidValue", ...
-        "Session event attributes must be one bounded scalar struct.");
-end
-names = string(fieldnames(attributes));
-for index = 1:numel(names)
-    name = semanticText(names(index), "attribute key");
-    value = attributes.(name);
-    if ischar(value) || (isstring(value) && isscalar(value))
-        attributes.(name) = privacySafeText(value, "attribute value");
-    elseif isnumeric(value) || islogical(value)
-        if numel(value) > 16 || any(~isfinite(double(value)), "all")
-            error("labkit:app:contract:InvalidValue", ...
-                "Session event numeric attributes must be finite and bounded.");
-        end
-    elseif isstruct(value) && isscalar(value)
-        attributes.(name) = privacySafeAttributes(value);
-    else
-        error("labkit:app:contract:InvalidValue", ...
-            "Session event attributes must use privacy-safe scalar values.");
-    end
 end
 end
 

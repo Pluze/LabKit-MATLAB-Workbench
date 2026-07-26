@@ -98,6 +98,14 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
             testCase.verifyError(@() stream.finish(operation, "banana"), ...
                 "labkit:app:contract:InvalidValue");
             stream.finish(operation, "Completed");
+            rolledBack = stream.begin("runtime.callback", "callback.rollback", ...
+                "Rolling back callback.");
+            stream.finish(rolledBack, "RolledBack");
+            records = stream.records();
+            terminal = records(string({records.eventName}) == ...
+                "callback.rollback.rolledBack");
+            testCase.verifyNumElements(terminal, 1);
+            testCase.verifyEqual(terminal.outcome, "rolledBack");
             clear cleanup
         end
 

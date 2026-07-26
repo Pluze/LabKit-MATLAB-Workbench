@@ -18,27 +18,25 @@ classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
 
             testCase.verifyEqual(runtime.StatusLog(end), "Legacy status.");
             events = runtime.diagnosticEvents();
-            checkpoint = events(string({events.Category}) == "app" & ...
-                string({events.TargetId}) == "probe.checkpoint" & ...
-                string({events.Signal}) == "checkpoint" & ...
-                string({events.Outcome}) == "completed");
-            count = events(string({events.Category}) == "app" & ...
-                string({events.TargetId}) == "probe.count" & ...
-                string({events.Signal}) == "count" & ...
-                string({events.Outcome}) == "completed");
-            reported = events(string({events.Category}) == "reportedError" & ...
-                string({events.TargetId}) == "probe.operation" & ...
-                string({events.Signal}) == "reported" & ...
-                string({events.Outcome}) == "reported");
+            status = events(string({events.eventName}) == "status.appended");
+            checkpoint = events(string({events.eventName}) == "probe.checkpoint");
+            count = events(string({events.eventName}) == "probe.count");
+            reported = events(string({events.eventName}) == "probe.operation.failed");
+            testCase.verifyNumElements(status, 1);
+            testCase.verifyEqual(status.message, "Legacy status.");
             testCase.verifyNumElements(checkpoint, 1);
+            testCase.verifyEqual(checkpoint.attributes.signal, "checkpoint");
+            testCase.verifyEqual(checkpoint.outcome, "completed");
             testCase.verifyNumElements(count, 1);
-            testCase.verifyEqual(count.Count, 2);
+            testCase.verifyEqual(count.attributes.signal, "count");
+            testCase.verifyEqual(count.attributes.count, 2);
             testCase.verifyNumElements(reported, 1);
-            testCase.verifyEqual(reported.ErrorId, "probe:ExpectedFailure");
+            testCase.verifyEqual(reported.outcome, "failed");
+            testCase.verifyEqual(reported.exception.identifier, "probe:ExpectedFailure");
             clear cleanup
         end
 
-        function verboseRecorderKeepsAnAbandonedOperationMarker(testCase)
+        function diagnosticRecorderBridgesAbandonedOperationsInMemory(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             options = labkit.app.diagnostic.Options( ...
@@ -47,9 +45,16 @@ classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
                 probeDefinition(labkit.app.layout.workbench({})), options);
             cleanup = onCleanup(@() recorder.close());
 
-            recorder.begin("callback", "run", "pressed");
+            recorder.begin("runtime.callback", "callback.run", ...
+                "Dispatching callback.");
+            recorder.close();
+            events = recorder.events();
+            abandoned = events(string({events.eventName}) == "callback.run.abandoned");
 
-            testCase.verifyTrue(isfile(fullfile(folder, "active-operation.json")));
+            testCase.verifyNumElements(abandoned, 1);
+            testCase.verifyEqual(abandoned.outcome, "abandoned");
+            testCase.verifyFalse(isfile(fullfile(folder, "events.jsonl")));
+            testCase.verifyFalse(isfile(fullfile(folder, "active-operation.json")));
             clear cleanup
         end
     end
