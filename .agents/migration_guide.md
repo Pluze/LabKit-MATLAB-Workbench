@@ -704,6 +704,13 @@ file, focused Batch Crop contracts, complete App SDK specification, and focused
 private generator contract pass. App-family event migration and log-panel
 retirement remain active Phase 7 work.
 
+Checkpoint B removes the duplicate App-authored Log tab from all 21 public
+Apps and the accepted private Imager App. The standard Tools session viewer is
+the only diagnostic-history surface. All public layouts compile, all 21 public
+native launches pass, and the private end-to-end GUI workflow passes. Legacy
+status/error call migration remains active before the `logPanel` primitive and
+bridge APIs can be deleted.
+
 #### Phase 8: retire bridges and close debt
 
 - Remove **Open Debug**, old APIs/schema, `BuildDebugSample`, `+debug`

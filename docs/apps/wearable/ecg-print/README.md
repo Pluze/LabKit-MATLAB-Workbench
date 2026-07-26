@@ -67,9 +67,10 @@ The **Files + Analysis** tab keeps the workflow in five ordered sections:
 **Recording**, **Import Parsing**, **Channel + ROI**,
 **Signal Processing + SNR**, and **Exports**. Bounded numeric settings use
 paired spinner-and-slider controls. **Summary + Results** contains the
-analysis summary and file-header preview, while **Log** records the current
-session workflow. The **ECG Preview** workspace keeps four vertically stacked
-time-series axes available on every tab.
+analysis summary and file-header preview. **Tools > Diagnostics > Open Session
+Log...** records the current workflow and earlier runtime context. The **ECG
+Preview** workspace keeps four vertically stacked time-series axes available
+on every tab.
 
 ## Analysis Parameters
 

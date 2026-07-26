@@ -33,7 +33,8 @@ axes zoom.
 The **Summary + Results** tab reports curve length, radius, curvature, RMSE,
 fit center, and pixels per selected unit. **Details** explains the next valid
 step before a result exists and reports the current measurement afterward.
-The **Log** tab records file, edit, fit, calibration, and export actions.
+**Tools > Diagnostics > Open Session Log...** records file, edit, fit,
+calibration, export, and runtime actions without consuming a workflow tab.
 
 The chosen image is saved as a portable project source. Older projects are
 upgraded on load without changing the curve, calibration, or result meaning.
