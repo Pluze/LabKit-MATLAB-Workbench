@@ -132,6 +132,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
 
             testCase.verifyNumElements(calls, 1);
             testCase.verifyEqual(calls.Arguments(5), "[]");
+            testCase.verifyTrue(startsWith(strtrim(calls.Arguments(6)), "..."));
             testCase.verifyEqual(calls.JournalRoot, "temporaryRoot");
             testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
         end

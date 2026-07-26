@@ -29,8 +29,8 @@ end
 function value = journalRootArgument(arguments)
 value = "";
 if numel(arguments) == 6
-    expression = strtrim(arguments(6));
-    equals = find(char(expression) == "=", 1);
+    expression = strtrim(erase(arguments(6), "..."));
+    equals = find(char(expression) == char(61), 1);
     if ~isempty(equals) && normalizedName(extractBefore(expression, equals)) == ...
             "journalroot"
         value = nonemptyExpression(extractAfter(expression, equals));
