@@ -13,7 +13,7 @@ if strlength(folder) == 0
     choice = callbackContext.chooseOutputFolder( ...
         fileparts(applicationState.session.cache.filepath));
     if choice.Cancelled
-        callbackContext.appendStatus("Gait export cancelled.");
+        callbackContext.log("info", "gait_analysis.resultfiles.exportresults.status", "Gait export cancelled.");
         return
     end
     folder = string(choice.Value);
@@ -45,8 +45,8 @@ package = labkit.app.result.Package( ...
 written = callbackContext.writeResultPackage(folder, package);
 applicationState.project.results.lastExport = struct( ...
     "outputs", outputs, "manifestPath", string(written.Value));
-callbackContext.appendStatus( ...
-    "Exported gait CSV set and manifest: " + string(written.Value));
+callbackContext.log("info", "gait_analysis.resultfiles.exportresults.status",  ...
+    "Exported the gait CSV set and manifest.");
 end
 
 function file = resultFile(id, filepath)

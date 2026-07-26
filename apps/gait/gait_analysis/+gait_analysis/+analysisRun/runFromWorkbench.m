@@ -16,7 +16,7 @@ task = gait_analysis.analysisRun.runTask( ...
     state.session.cache.filepath, pose, options);
 if state.project.results.analysis.ok && ...
         state.session.cache.lastRunFingerprint == task.fingerprint
-    context.appendStatus( ...
+    context.log("info", "gait_analysis.analysisrun.runfromworkbench.status",  ...
         "Gait analysis is already up to date; skipped duplicate run.");
     return
 end
@@ -25,7 +25,9 @@ try
 catch cause
     context.reportError("Gait analysis failed", cause);
     context.alert(cause.message, "Gait analysis failed");
-    context.appendStatus("Gait analysis failed: " + cause.message);
+    context.log("info", ...
+        "gait_analysis.analysisrun.runfromworkbench.status", ...
+        "Gait analysis failed.");
     return
 end
 state.project.parameters = options;
@@ -33,6 +35,6 @@ state.project.results.analysis = result;
 state.project.results.lastExport = [];
 state.session.cache.lastRunFingerprint = task.fingerprint;
 state.session.selection.currentStepIndex = 1;
-context.appendStatus(sprintf("Gait analysis complete: %d valid step(s).", ...
+context.log("info", "gait_analysis.analysisrun.runfromworkbench.status", sprintf("Gait analysis complete: %d valid step(s).", ...
     sum(result.stepTable.is_valid)));
 end
