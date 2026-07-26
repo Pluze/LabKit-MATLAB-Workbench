@@ -10,7 +10,7 @@ classdef CscWorkflowSpec < matlab.unittest.TestCase
             definition = csc.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                definition, [], struct(), labkit.app.diagnostic.Options(), journal);
+                definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

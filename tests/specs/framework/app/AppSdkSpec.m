@@ -15,7 +15,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                app, [], struct(), labkit.app.diagnostic.Options(), journal);
+                app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             runtime.applyBinding("gain", 3);
@@ -41,14 +41,11 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "CreateSession", @wrongSession), "labkit:app:contract:CallbackRoleMismatch");
         end
 
-        function keepsLaunchDiagnosticsAndSyntheticGenerationOutOfOptions(testCase)
+        function rejectsRetiredLaunchDiagnosticsOption(testCase)
             app = AppSdkSpec.definition(labkit.app.layout.workbench({}));
 
             testCase.verifyError(@() app.launch( ...
-                Diagnostics=labkit.app.diagnostic.Options()), ...
-                "labkit:app:contract:UnknownArgument");
-            testCase.verifyError(@() labkit.app.diagnostic.Options( ...
-                Sample="synthetic"), ...
+                Diagnostics=struct()), ...
                 "labkit:app:contract:UnknownArgument");
         end
 
@@ -91,7 +88,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 OnStart=@startChangesGain, BuildSyntheticSample=@validSyntheticSample);
             journal = labkittest.temporarySessionJournal(app, folder);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                app, [], struct(), labkit.app.diagnostic.Options(), journal);
+                app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             stateBeforeGeneration = runtime.State;
 
@@ -118,7 +115,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             app = AppSdkSpec.definition(layout, "ProjectSchema", schema);
             journal = labkittest.temporarySessionJournal(app, folder);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                app, [], struct(), labkit.app.diagnostic.Options(), journal);
+                app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             oldProjectFile = fullfile(folder, "old-project.mat");
@@ -162,7 +159,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                app, [], struct(), labkit.app.diagnostic.Options(), journal);
+                app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
             field = findall(figureValue, "Tag", "gain");
@@ -188,7 +185,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                app, [], struct(), labkit.app.diagnostic.Options(), journal);
+                app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             menu = findall(runtime.figureHandle(), ...

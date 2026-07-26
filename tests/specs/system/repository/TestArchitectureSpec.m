@@ -82,15 +82,15 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                     if ~hasExplicitJournalOrRoot(call)
                         relative = erase(string(file), string(root) + filesep);
                         violations(end + 1) = relative + ":" + ...
-                            string(call.Line) + " must pass a nonempty fifth journal " + ...
-                            "or fifth [] with a nonempty JournalRoot.";
+                            string(call.Line) + " must pass a nonempty fourth journal " + ...
+                            "or fourth [] with a nonempty JournalRoot.";
                     end
                 end
             end
             testCase.verifyEmpty(violations, strjoin(violations, newline));
         end
 
-        function runtimeFactoryParserRejectsFourthArgumentJournal(testCase)
+        function runtimeFactoryParserAcceptsFourthArgumentJournal(testCase)
             source = strjoin([ ...
                 "% RuntimeFactory.createMatlab(app) is a comment.", ...
                 "literal = ""RuntimeFactory.createHeadless(app)"";", ...
@@ -102,7 +102,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(calls, 1);
             testCase.verifyEqual(calls.Method, "createHeadless");
             testCase.verifyNumElements(calls.Arguments, 4);
-            testCase.verifyFalse(hasExplicitJournalOrRoot(calls));
+            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
         end
 
         function runtimeFactoryParserHandlesTransposeAndCharLiterals(testCase)
@@ -112,40 +112,40 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "literal = 'RuntimeFactory.createMatlab(app)';", ...
                 "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
                 "    app, [], struct(""alert"", @(~, ~) []), ...", ...
-                "    labkit.app.diagnostic.Options(), journal);"], newline);
+                "    journal);"], newline);
 
             calls = labkittest.runtimeFactoryCalls(source);
 
             testCase.verifyNumElements(calls, 1);
             testCase.verifyEqual(calls.Method, "createHeadless");
-            testCase.verifyNumElements(calls.Arguments, 5);
+            testCase.verifyNumElements(calls.Arguments, 4);
             testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
         end
 
         function runtimeFactoryParserAcceptsExplicitJournalWithAdditionalArguments(testCase)
             source = strjoin([ ...
                 "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
-                "    app, [], struct(), labkit.app.diagnostic.Options(), journal, ...", ...
+                "    app, [], struct(), journal, ...", ...
                 "    JournalRoot=temporaryRoot);"], newline);
 
             calls = labkittest.runtimeFactoryCalls(source);
 
             testCase.verifyNumElements(calls, 1);
-            testCase.verifyEqual(calls.Arguments(5), "journal");
+            testCase.verifyEqual(calls.Arguments(4), "journal");
             testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
         end
 
         function runtimeFactoryParserAcceptsExplicitJournalRootWithEmptyJournal(testCase)
             source = strjoin([ ...
                 "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
-                "    app, [], struct(), labkit.app.diagnostic.Options(), [], ...", ...
+                "    app, [], struct(), [], ...", ...
                 "    JournalRoot=temporaryRoot);"], newline);
 
             calls = labkittest.runtimeFactoryCalls(source);
 
             testCase.verifyNumElements(calls, 1);
-            testCase.verifyEqual(calls.Arguments(5), "[]");
-            testCase.verifyTrue(startsWith(strtrim(calls.Arguments(6)), "..."));
+            testCase.verifyEqual(calls.Arguments(4), "[]");
+            testCase.verifyTrue(startsWith(strtrim(calls.Arguments(5)), "..."));
             testCase.verifyEqual(calls.JournalRoot, "temporaryRoot");
             testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
         end
@@ -154,10 +154,10 @@ end
 
 function tf = hasExplicitJournalOrRoot(call)
 callArguments = call.Arguments;
-hasJournal = numel(callArguments) >= 5 && ...
-    strlength(callArguments(5)) > 0 && callArguments(5) ~= "[]";
-hasJournalRoot = any(numel(callArguments) == [6, 7]) && ...
-    callArguments(5) == "[]" && strlength(call.JournalRoot) > 0;
+hasJournal = numel(callArguments) >= 4 && ...
+    strlength(callArguments(4)) > 0 && callArguments(4) ~= "[]";
+hasJournalRoot = any(numel(callArguments) == [5, 6]) && ...
+    callArguments(4) == "[]" && strlength(call.JournalRoot) > 0;
 tf = hasJournal || hasJournalRoot;
 end
 

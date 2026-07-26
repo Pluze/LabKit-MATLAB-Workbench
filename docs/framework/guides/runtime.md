@@ -263,6 +263,30 @@ presentation, rollback, document metadata, and title publication.
 project/session state and publishes a new unsaved document identity only when
 that callback transaction commits.
 
+## Diagnostics And Session Logging
+
+Every ordinary App launch starts one sanitized session event stream and durable
+journal. Launch arguments do not select a debug mode, change startup behavior,
+or generate sample data. Runtime automatically records lifecycle, callback,
+transaction, dialog, project, source, result, and failure boundaries with
+correlated operation IDs.
+
+App callbacks add domain events through
+`callbackContext.log(severity,eventName,message,Name=Value)`. Use `info` for
+useful progress and completed user actions, `warning` for recoverable
+conditions, and `error` or `critical` for failures. Stable event names and
+structured allowlisted attributes support diagnosis; messages remain concise
+and safe for display. Pass caught exceptions through the dedicated
+`Exception` option instead of copying stack, path, identifier, or scientific
+data into free text.
+
+The App's **Tools > Diagnostics** menu opens the live session viewer, enables
+more detailed trace capture for future activity, and exports a diagnostic
+bundle from the same session history. Enabling trace does not restart the App
+or reconstruct earlier detail. Journal degradation is itself exposed in the
+surviving in-memory stream; logging failures never alter callback transaction
+semantics or scientific results.
+
 ## Persistence, Results, And Cleanup
 
 ## Synthetic Inputs

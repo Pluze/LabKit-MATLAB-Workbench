@@ -8,7 +8,7 @@ classdef SessionLoggingContractSpec < matlab.unittest.TestCase
             definition = loggingProbeDefinition();
             journal = labkittest.temporarySessionJournal(definition, root);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                definition, [], struct(), labkit.app.diagnostic.Options(), journal);
+                definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             records = runtime.diagnosticEvents();

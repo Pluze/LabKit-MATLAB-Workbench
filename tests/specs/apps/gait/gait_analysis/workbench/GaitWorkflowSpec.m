@@ -14,7 +14,7 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
             definition = gait_analysis.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                definition, [], backend, labkit.app.diagnostic.Options(), journal);
+                definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

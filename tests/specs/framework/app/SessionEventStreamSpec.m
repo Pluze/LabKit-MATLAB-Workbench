@@ -407,21 +407,27 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function recorderCloseRefreshesHealthAfterProjectionCloseFailure(testCase)
+        function closeSequenceRefreshesHealthAfterProjectionFailure(testCase)
             global labkitProjectionHealthNotifications
             resetProjectionHealthFixture();
             cleanup = onCleanup(@resetProjectionHealthFixture);
             stream = labkit.app.internal.SessionEventStream(loggingProbeDefinition(), ...
                 ProjectionHealthHook=@nextProjectionHealthNotification);
-            recorder = labkit.app.internal.DiagnosticRecorder( ...
-                loggingProbeDefinition(), stream, @failClosingProjection);
 
-            recorder.close();
+            stream.close();
+            try
+                failClosingProjection();
+            catch cause
+                testCase.verifyEqual(string(cause.identifier), ...
+                    "labkit:test:ProjectionCloseFailure");
+            end
+            stream.refreshProjectionHealth();
             records = stream.records();
             names = string({records.eventName});
             sessionClosedIndex = find(names == "session.closed", 1);
             degraded = records(names == "journal.degraded");
-            recorder.close();
+            stream.close();
+            stream.refreshProjectionHealth();
 
             testCase.verifyNotEmpty(sessionClosedIndex);
             testCase.verifyNumElements(degraded, 1);

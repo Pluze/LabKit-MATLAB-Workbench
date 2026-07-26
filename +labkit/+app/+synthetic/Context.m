@@ -2,7 +2,7 @@ classdef (Sealed) Context
     %CONTEXT Provide bounded folders for anonymous synthetic inputs.
     %
     % Usage:
-    %   context = labkit.app.synthetic.Context(artifactFolder)
+    %   context = labkit.app.synthetic.Context(rootFolder)
     %   filepath = context.samplePath(relativePath)
     %   filepath = context.outputPath(relativePath)
     %   record = context.sourceRecord(id,role,filepath,required)
@@ -15,7 +15,7 @@ classdef (Sealed) Context
     %   expose a runtime, recorder, project store, or UI object.
     %
     % Inputs:
-    %   artifactFolder - Nonempty scalar diagnostic-session folder.
+    %   rootFolder - Nonempty scalar folder dedicated to one generated pack.
     %   relativePath - Nonempty child path without an absolute root, empty
     %       segment, current segment, or parent traversal.
     %   id - Stable portable-source identifier.
@@ -24,12 +24,12 @@ classdef (Sealed) Context
     %   required - Logical scalar source requirement.
     %
     % Outputs:
-    %   context - Immutable diagnostic sample context.
+    %   context - Immutable synthetic-input context.
     %   filepath - Absolute path bounded by SampleFolder or OutputFolder.
     %   record - Portable source value from
     %       labkit.app.project.sourceRecord.
     %   artifact - Typed synthetic artifact whose relative path is derived
-    %       from a filepath beneath ArtifactFolder.
+    %       from a filepath beneath RootFolder.
     %
     % Errors:
     %   labkit:app:contract:InvalidValue - A folder, relative path, or source
@@ -46,21 +46,20 @@ classdef (Sealed) Context
     %   labkit.app.project.sourceRecord
 
     properties (SetAccess = immutable)
-        ArtifactFolder (1, 1) string
+        RootFolder (1, 1) string
         SampleFolder (1, 1) string
         OutputFolder (1, 1) string
     end
 
     methods
-        function obj = Context(artifactFolder)
-            artifactFolder = nonemptyText( ...
-                artifactFolder, "ArtifactFolder");
-            obj.ArtifactFolder = artifactFolder;
+        function obj = Context(rootFolder)
+            rootFolder = nonemptyText(rootFolder, "RootFolder");
+            obj.RootFolder = rootFolder;
             obj.SampleFolder = string(fullfile( ...
-                char(artifactFolder), "samples"));
+                char(rootFolder), "samples"));
             obj.OutputFolder = string(fullfile( ...
-                char(artifactFolder), "outputs"));
-            ensureFolder(obj.ArtifactFolder);
+                char(rootFolder), "outputs"));
+            ensureFolder(obj.RootFolder);
             ensureFolder(obj.SampleFolder);
             ensureFolder(obj.OutputFolder);
         end
@@ -83,7 +82,7 @@ classdef (Sealed) Context
 
         function artifact = artifact(obj, id, role, filepath, varargin)
             relativePath = relativeArtifactPath( ...
-                obj.ArtifactFolder, filepath);
+                obj.RootFolder, filepath);
             artifact = labkit.app.synthetic.Artifact( ...
                 id, role, relativePath, varargin{:});
         end
@@ -113,7 +112,7 @@ end
 end
 
 function relativePath = relativeArtifactPath(root, filepath)
-root = normalizedAbsolutePath(root, "ArtifactFolder");
+root = normalizedAbsolutePath(root, "RootFolder");
 filepath = normalizedAbsolutePath(filepath, "filepath");
 rootPrefix = root + "/";
 if ispc
@@ -122,7 +121,7 @@ else
     inside = startsWith(filepath, rootPrefix);
 end
 if ~inside
-    invalid("filepath must remain beneath ArtifactFolder.");
+    invalid("filepath must remain beneath RootFolder.");
 end
 relativePath = extractAfter(filepath, strlength(rootPrefix));
 if strlength(relativePath) == 0

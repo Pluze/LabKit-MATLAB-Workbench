@@ -1,19 +1,17 @@
-classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
-    %LEGACYDIAGNOSTICSCHARACTERIZATIONSPEC Freeze pre-migration diagnostic behavior.
+classdef SemanticDiagnosticsSpec < matlab.unittest.TestCase
+    %SEMANTICDIAGNOSTICSSPEC Verify App-owned semantic diagnostic events.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function remainingDiagnosticBridgesCoexistWithSemanticLogging(testCase)
+        function semanticLogsDriveStatusAndDeveloperEvents(testCase)
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.button("run", "Run", @runProbe, ...
                     Tooltip="Run the probe.")});
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            options = labkit.app.diagnostic.Options( ...
-                Level="verbose", ArtifactFolder=folder);
             definition = probeDefinition(layout);
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                definition, [], struct(), options, journal);
+                definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             runtime.invokeAction("run");
@@ -40,28 +38,22 @@ classdef LegacyDiagnosticsCharacterizationSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function diagnosticRecorderBridgesAbandonedOperationsInMemory(testCase)
-            folder = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            options = labkit.app.diagnostic.Options( ...
-                Level="verbose", ArtifactFolder=folder);
-            recorder = labkit.app.internal.DiagnosticRecorder( ...
-                probeDefinition(labkit.app.layout.workbench({})), options);
-            cleanup = onCleanup(@() recorder.close());
+        function streamClosesAbandonedOperationsInMemory(testCase)
+            stream = labkit.app.internal.SessionEventStream( ...
+                probeDefinition(labkit.app.layout.workbench({})));
+            cleanup = onCleanup(@() stream.close());
 
-            operation = recorder.begin("runtime.callback", "callback.run", ...
+            operation = stream.begin("runtime.callback", "callback.run", ...
                 "Dispatching callback.");
-            testCase.verifyError(@() recorder.finish(operation, "completed"), ...
+            testCase.verifyError(@() stream.finish(operation, "completed"), ...
                 "labkit:app:contract:InvalidValue");
-            recorder.close();
-            events = recorder.events();
+            stream.close();
+            events = stream.records();
             abandoned = events(string({events.eventName}) == "callback.run.abandoned");
 
             testCase.verifyNumElements(abandoned, 1);
             testCase.verifyEqual(abandoned.operationResult, "abandoned");
             testCase.verifyEqual(abandoned.stateDisposition, "unknown");
-            testCase.verifyFalse(isfile(fullfile(folder, "events.jsonl")));
-            testCase.verifyFalse(isfile(fullfile(folder, "active-operation.json")));
             clear cleanup
         end
     end

@@ -28,8 +28,8 @@ end
 
 function value = journalRootArgument(arguments)
 value = "";
-if numel(arguments) == 6
-    expression = strtrim(erase(arguments(6), "..."));
+if numel(arguments) == 5
+    expression = strtrim(erase(arguments(5), "..."));
     equals = find(char(expression) == char(61), 1);
     if ~isempty(equals) && normalizedName(extractBefore(expression, equals)) == ...
             "journalroot"
@@ -37,10 +37,10 @@ if numel(arguments) == 6
     end
     return;
 end
-if numel(arguments) ~= 7 || normalizedName(arguments(6)) ~= "journalroot"
+if numel(arguments) ~= 6 || normalizedName(arguments(5)) ~= "journalroot"
     return;
 end
-value = nonemptyExpression(arguments(7));
+value = nonemptyExpression(arguments(6));
 end
 
 function value = normalizedName(value)

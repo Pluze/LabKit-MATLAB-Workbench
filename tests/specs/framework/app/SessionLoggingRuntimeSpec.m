@@ -8,7 +8,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             definition = runtimeProbeDefinition("run", @runLoggingProbe);
             before = rng;
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                definition, [], struct(), labkit.app.diagnostic.Options(), [], ...
+                definition, [], struct(), [], ...
                 JournalRoot=root);
             cleanup = onCleanup(@() runtime.close());
 
@@ -24,7 +24,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() journal.close());
 
             testCase.verifyError(@() labkit.app.internal.RuntimeFactory.createHeadless( ...
-                definition, [], struct(), labkit.app.diagnostic.Options(), journal, ...
+                definition, [], struct(), journal, ...
                 JournalRoot=root), "labkit:app:runtime:InvariantFailure");
             clear cleanup
         end
@@ -37,7 +37,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() journal.close());
 
             testCase.verifyError(@() labkit.app.internal.RuntimeFactory.createHeadless( ...
-                definition, [], struct(), labkit.app.diagnostic.Options(), journal, ...
+                definition, [], struct(), journal, ...
                 UnknownJournalOption=root), "labkit:app:contract:UnknownArgument");
             clear cleanup
         end
@@ -146,7 +146,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
                 RootFolder=root, SessionId="session-runtime-write-failure", ...
                 FaultInjector=@failJournalWrite);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                definition, [], struct(), labkit.app.diagnostic.Options(), journal);
+                definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             runtime.invokeAction("run");
@@ -172,7 +172,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
                 RootFolder=root, SessionId="session-runtime-initialize-failure", ...
                 FaultInjector=@failJournalInitialize);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                definition, [], struct(), labkit.app.diagnostic.Options(), journal);
+                definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             records = runtime.diagnosticEvents();
             degraded = records(string({records.eventName}) == "journal.degraded");
@@ -197,7 +197,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
                 RootFolder=root, SessionId="session-runtime-mid-callback-failure", ...
                 FaultInjector=@failJournalWrite, BufferRecordLimit=64);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                definition, [], struct(), labkit.app.diagnostic.Options(), journal);
+                definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             runtime.invokeAction("run");
@@ -241,7 +241,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
                 FaultInjector=@failClosingRuntimeManifest, BufferRecordLimit=64, ...
                 TestObserver=@recordRuntimeJournalStage);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-                definition, [], struct(), labkit.app.diagnostic.Options(), journal);
+                definition, [], struct(), journal);
 
             testCase.verifyEqual(labkitRuntimeManifestFaultCount, 1);
             testCase.verifyEmpty(labkitRuntimeJournalStages( ...
@@ -277,7 +277,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
                 RootFolder=root, SessionId="session-runtime-construction-failure");
 
             testCase.verifyError(@() labkit.app.internal.RuntimeFactory.createHeadless( ...
-                definition, [], struct(), labkit.app.diagnostic.Options(), journal), ...
+                definition, [], struct(), journal), ...
                 "probe:SessionConstructionFailure");
 
             testCase.verifyEqual(string(journal.manifest().state), "closed");
@@ -293,7 +293,7 @@ definition = runtimeProbeDefinition(id, callback);
 journal = labkit.app.internal.SessionJournal(definition, ...
     RootFolder=root, SessionId=sessionId);
 runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
-    definition, [], struct(), labkit.app.diagnostic.Options(), journal);
+    definition, [], struct(), journal);
 end
 
 function failJournalWrite(stage)

@@ -15,7 +15,7 @@ classdef ResponseReviewWorkflowSpec < matlab.unittest.TestCase
             definition = response_review_stats.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                definition, [], backend, labkit.app.diagnostic.Options(), journal);
+                definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

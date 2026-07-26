@@ -1,9 +1,9 @@
 classdef (Hidden, Sealed) RuntimeFactory
-    % Internal runtime and synthetic-diagnostic construction boundary.
+    % Internal runtime construction boundary.
 
     methods (Static)
         function runtime = createHeadless( ...
-                definition, initialProject, backend, diagnostics, journal, varargin)
+                definition, initialProject, backend, journal, varargin)
             if nargin < 2
                 initialProject = [];
             end
@@ -11,19 +11,16 @@ classdef (Hidden, Sealed) RuntimeFactory
                 backend = struct();
             end
             if nargin < 4
-                diagnostics = labkit.app.diagnostic.Options();
-            end
-            if nargin < 5
                 journal = [];
             end
             journalRoot = parseJournalRoot(journal, varargin{:});
             runtime = labkit.app.internal.RuntimeFactory.create( ...
                 definition, initialProject, backend, ...
-                "headless", diagnostics, journal, journalRoot);
+                "headless", journal, journalRoot);
         end
 
         function runtime = createMatlab( ...
-                definition, initialProject, backend, diagnostics, journal, varargin)
+                definition, initialProject, backend, journal, varargin)
             if nargin < 2
                 initialProject = [];
             end
@@ -31,21 +28,18 @@ classdef (Hidden, Sealed) RuntimeFactory
                 backend = struct();
             end
             if nargin < 4
-                diagnostics = labkit.app.diagnostic.Options();
-            end
-            if nargin < 5
                 journal = [];
             end
             journalRoot = parseJournalRoot(journal, varargin{:});
             runtime = labkit.app.internal.RuntimeFactory.create( ...
                 definition, initialProject, backend, ...
-                "matlab", diagnostics, journal, journalRoot);
+                "matlab", journal, journalRoot);
         end
     end
 
     methods (Static, Access = private)
         function runtime = create( ...
-                definition, initialProject, backend, platform, diagnostics, journal, journalRoot)
+                definition, initialProject, backend, platform, journal, journalRoot)
             if ~isa(definition, "labkit.app.Definition") || ...
                     ~isscalar(definition)
                 error("labkit:app:runtime:InvariantFailure", ...
@@ -70,7 +64,7 @@ classdef (Hidden, Sealed) RuntimeFactory
             try
                 runtime = labkit.app.internal.RuntimeKernel( ...
                     definition, definition.Compiled, initialProject, ...
-                    backend, platform, diagnostics, recorder);
+                    backend, platform, recorder);
             catch cause
                 recorder.close();
                 rethrow(cause);

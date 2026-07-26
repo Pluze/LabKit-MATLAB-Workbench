@@ -144,12 +144,6 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                 snapshot, destination);
         end
 
-        function folder = artifactFolder(~)
-            % Transitional compatibility: ordinary diagnostics have no
-            % App-authored artifact folder.
-            folder = "";
-        end
-
         function close(obj)
             if obj.Closed
                 return;

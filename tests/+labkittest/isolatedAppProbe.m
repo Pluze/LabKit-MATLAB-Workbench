@@ -46,7 +46,7 @@ function isolatedAppProbe(root, appFolder, packageName, scratchRoot)
         RootFolder=fullfile(scratchRoot, "session-journal"));
     runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
         definition, sample.InitialProject, struct(), ...
-        labkit.app.diagnostic.Options(), journal);
+        journal);
     runtimeCleanup = onCleanup(@() runtime.close());
     clear runtimeCleanup
     clear cleanup

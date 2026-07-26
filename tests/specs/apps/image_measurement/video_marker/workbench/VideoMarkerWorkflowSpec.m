@@ -17,7 +17,7 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
                 definition, pack.InitialProject, backend, ...
-                labkit.app.diagnostic.Options(), journal);
+                journal);
             cleanup = onCleanup(@() runtime.close());
 
             points = [24 34; 32 38; 40 42; 48 46; 56 50];

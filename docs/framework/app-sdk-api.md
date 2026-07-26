@@ -25,7 +25,8 @@ page provides syntax, inputs, outputs, options, errors, and related APIs.
 | Results | [App SDK result API](../reference/api/labkit/app/result/File.html) |
 | Managed interactions | [App SDK interaction API](../reference/api/labkit/app/interaction/anchorPath.html) |
 | Plot mechanics | [App SDK plot API](../reference/api/labkit/app/plot/clearAxes.html) |
-| Diagnostics and dialogs | [App SDK diagnostic API](../reference/api/labkit/app/diagnostic/Artifact.html) and [dialog API](../reference/api/labkit/app/dialog/Choice.html) |
+| Runtime diagnostics | [Runtime diagnostics and session logging](guides/runtime.md#diagnostics-and-session-logging) |
+| Dialog results | [App SDK dialog API](../reference/api/labkit/app/dialog/Choice.html) |
 
 ## Related Topics
 

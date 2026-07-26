@@ -28,7 +28,7 @@ classdef SyntheticProjectSpec < matlab.unittest.TestCase
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
                 definition, pack.InitialProject, struct(), ...
-                labkit.app.diagnostic.Options(), journal);
+                journal);
             cleanup = onCleanup(@() runtime.close());
 
             testCase.verifyTrue(isgraphics(runtime.figureHandle(), "figure"));

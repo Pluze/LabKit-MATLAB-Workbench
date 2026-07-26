@@ -7,7 +7,8 @@ classdef (Sealed) Pack
     %
     % Description:
     %   Couples one App-authored synthetic project with its anonymous artifact
-    %   declarations so verbose diagnostics can reproduce a named scenario.
+    %   declarations so users and tests can reproduce a named scenario through
+    %   the App's ordinary import workflow.
     %
     % Required Name-Value Arguments:
     %   Scenario - Nonempty stable scenario identifier.
@@ -16,7 +17,7 @@ classdef (Sealed) Pack
     %       Empty is legal for an App whose scenario needs no files.
     %
     % Outputs:
-    %   pack - Immutable diagnostic sample pack.
+    %   pack - Immutable synthetic-input pack.
     %
     % Errors:
     %   labkit:app:contract:UnknownArgument - An argument is missing, unknown,

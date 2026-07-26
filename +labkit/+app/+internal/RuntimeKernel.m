@@ -25,15 +25,13 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
     methods (Access = ?labkit.app.internal.RuntimeFactory)
         function obj = RuntimeKernel( ...
                 application, contract, initialProject, backend, platform, ...
-                diagnostics, recorder)
+                recorder)
             obj.Application = application;
             obj.Contract = contract;
-            if nargin < 6
-                diagnostics = labkit.app.diagnostic.Options();
-            end
-            if nargin < 7
-                recorder = labkit.app.internal.DiagnosticRecorder( ...
-                    application, diagnostics);
+            if ~isa(recorder, "labkit.app.internal.SessionDiagnostics") || ...
+                    ~isscalar(recorder)
+                error("labkit:app:runtime:InvariantFailure", ...
+                    "RuntimeKernel requires one SessionDiagnostics service.");
             end
             obj.Recorder = recorder;
             startupOperation = obj.Recorder.begin( ...
@@ -206,10 +204,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if ~choice.Cancelled
                 destination = obj.exportDiagnosticBundle(choice.Value);
             end
-        end
-
-        function folder = diagnosticFolder(obj)
-            folder = obj.Recorder.artifactFolder();
         end
 
         function supported = supportsSyntheticInputs(obj)

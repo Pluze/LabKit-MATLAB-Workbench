@@ -12,7 +12,7 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             definition = feval(char(App.Package + ".definition"));
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                definition, [], struct(), labkit.app.diagnostic.Options(), journal);
+                definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
 
@@ -36,7 +36,7 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
                 definition, [], struct(), ...
-                labkit.app.diagnostic.Options(), journal);
+                journal);
             cleanup = onCleanup(@() runtime.close());
             stateBeforeGeneration = runtime.State;
 
@@ -59,7 +59,7 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
                 definition, pack.InitialProject, struct(), ...
-                labkit.app.diagnostic.Options(), journal);
+                journal);
             cleanup = onCleanup(@() runtime.close());
 
             testCase.verifyTrue(isgraphics(runtime.figureHandle(), "figure"));

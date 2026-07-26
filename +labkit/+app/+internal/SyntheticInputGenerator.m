@@ -57,7 +57,7 @@ classdef (Hidden, Sealed) SyntheticInputGenerator
                 end
                 pathParts = cellstr(split(artifact.RelativePath, "/"));
                 filepath = string(fullfile( ...
-                    char(context.ArtifactFolder), pathParts{:}));
+                    char(context.RootFolder), pathParts{:}));
                 if exist(char(filepath), "file") ~= 2 && ...
                         exist(char(filepath), "dir") ~= 7
                     error("labkit:app:contract:InvalidValue", ...
@@ -84,7 +84,7 @@ classdef (Hidden, Sealed) SyntheticInputGenerator
                 "scenario", pack.Scenario, ...
                 "artifacts", artifacts);
             filepath = string(fullfile( ...
-                context.ArtifactFolder, "synthetic-input-pack.json"));
+                context.RootFolder, "synthetic-input-pack.json"));
             temporary = filepath + ".tmp";
             file = fopen(char(temporary), "w");
             if file < 0

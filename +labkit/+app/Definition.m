@@ -157,7 +157,6 @@ classdef (Sealed) Definition
         function varargout = launch(obj, varargin)
             %LAUNCH Answer metadata requests or show the native MATLAB App.
             initialProject = [];
-            diagnostics = labkit.app.diagnostic.Options();
             if ~isempty(varargin) && ...
                     ~(numel(varargin) == 1 && ...
                       (ischar(varargin{1}) || ...
@@ -211,8 +210,7 @@ classdef (Sealed) Definition
                     "Definition launch returns at most one figure.");
             end
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                obj, ...
-                initialProject, struct(), diagnostics);
+                obj, initialProject, struct());
             runtime.showFigure();
             figure = runtime.figureHandle();
             if nargout == 1

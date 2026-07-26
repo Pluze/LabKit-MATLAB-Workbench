@@ -17,7 +17,7 @@ classdef CicWorkflowSpec < matlab.unittest.TestCase
             definition = cic.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                definition, [], backend, labkit.app.diagnostic.Options(), journal);
+                definition, [], backend, journal);
             cleanupRuntime = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
 

@@ -13,7 +13,7 @@ classdef FlirThermalWorkflowSpec < matlab.unittest.TestCase
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
                 definition, pack.InitialProject, backend, ...
-                labkit.app.diagnostic.Options(), journal);
+                journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 

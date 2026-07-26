@@ -22,7 +22,7 @@ classdef RhsPreviewWorkflowSpec < matlab.unittest.TestCase
             definition = rhs_preview.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                definition, project, backend, labkit.app.diagnostic.Options(), journal);
+                definition, project, backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 
