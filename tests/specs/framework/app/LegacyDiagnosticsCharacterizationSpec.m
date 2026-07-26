@@ -69,8 +69,12 @@ end
 
 function state = runProbe(state, callbackContext)
 callbackContext.log("info", "probe.status", "Semantic status.");
-callbackContext.diagnosticCheckpoint("probe.checkpoint");
-callbackContext.diagnosticCount("probe.count", 2);
+callbackContext.log("debug", "probe.checkpoint", ...
+    "Probe checkpoint.", Audience="developer", ...
+    Attributes=struct("enum", "checkpoint"));
+callbackContext.log("debug", "probe.count", ...
+    "Probe count.", Audience="developer", ...
+    Attributes=struct("enum", "count", "count", 2));
 try
     error("probe:ExpectedFailure", "Expected diagnostic failure.");
 catch exception

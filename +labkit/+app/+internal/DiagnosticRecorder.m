@@ -59,26 +59,6 @@ classdef (Hidden, Sealed) DiagnosticRecorder < handle
             obj.Stream.log(severity, eventName, message, varargin{:});
         end
 
-        function note(obj, category, targetId, signal, ~)
-            [eventName, attributes] = legacyEvent(targetId, signal);
-            obj.Stream.log("debug", eventName, "Legacy diagnostic checkpoint.", ...
-                Category=legacyCategory(category, obj.Application), ...
-                Audience="developer", Attributes=attributes);
-        end
-
-        function count(obj, id, value)
-            if ~(isnumeric(value) && isscalar(value) && isfinite(value) && ...
-                    value >= 0 && value == fix(value))
-                error("labkit:app:contract:InvalidValue", ...
-                    "Diagnostic count must be a nonnegative integer.");
-            end
-            eventName = legacyIdentifier(id, "legacy.count", "diagnostic id");
-            obj.Stream.log("debug", eventName, "Legacy diagnostic count.", ...
-                Category=legacyCategory("app", obj.Application), ...
-                Audience="developer", Attributes=struct( ...
-                "enum", "count", "count", double(value)));
-        end
-
         function events = events(obj)
             events = obj.Stream.records();
         end
@@ -115,31 +95,4 @@ classdef (Hidden, Sealed) DiagnosticRecorder < handle
             obj.close();
         end
     end
-end
-
-function category = legacyCategory(value, application)
-value = lower(labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
-    value, "legacy diagnostic category"));
-if value == "app"
-    category = "app." + application.AppId + ".legacy";
-elseif value == "lifecycle"
-    category = "runtime.lifecycle";
-else
-    category = "runtime.callback";
-end
-end
-
-function [eventName, attributes] = legacyEvent(targetId, signal)
-eventName = legacyIdentifier(targetId, "legacy.checkpoint", ...
-    "legacy diagnostic id");
-signal = legacyIdentifier(signal, "checkpoint", "legacy diagnostic signal");
-attributes = struct("enum", signal);
-end
-
-function value = legacyIdentifier(value, fallback, name)
-try
-    value = labkit.app.internal.SessionEventValidator.semanticIdentifier(value, name);
-catch
-    value = fallback;
-end
 end

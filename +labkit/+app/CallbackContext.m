@@ -3,8 +3,6 @@ classdef (Sealed) CallbackContext < handle
     %
     % Usage:
     %   context.log(severity, eventName, message, Name=Value)
-    %   context.diagnosticCheckpoint(id)
-    %   context.diagnosticCount(id, count)
     %   context.alert(message, title)
     %   result = context.chooseOption(prompt, choices, Name=Value)
     %   result = context.chooseInputFile(filters, startPath)
@@ -127,23 +125,6 @@ classdef (Sealed) CallbackContext < handle
                 {values.severity, values.eventName, values.message, ...
                 values.category, values.audience, values.attributes, ...
                 values.exception}, 0);
-        end
-
-        function diagnosticCheckpoint(obj, id)
-            id = nonemptyText(id, "diagnostic id");
-            obj.invoke("diagnosticCheckpoint", "diagnostics", {id}, 0);
-        end
-
-        function diagnosticCount(obj, id, count)
-            id = nonemptyText(id, "diagnostic id");
-            if ~(isnumeric(count) && isscalar(count) && ...
-                    isfinite(count) && count >= 0 && count == fix(count))
-                error("labkit:app:contract:InvalidValue", ...
-                    "CallbackContext diagnostic count must be a " + ...
-                    "nonnegative integer.");
-            end
-            obj.invoke("diagnosticCount", "diagnostics", ...
-                {id, double(count)}, 0);
         end
 
         function alert(obj, message, title)
