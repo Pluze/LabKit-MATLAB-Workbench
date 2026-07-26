@@ -97,6 +97,9 @@ second architecture guide.
   `restoredefaultpath`, a probe must use only dependencies it explicitly
   restored; calling a test helper that just disappeared from the path defeats
   the isolation contract.
+- A fixture constrains only the contract under test. An unrelated facade
+  version range can turn a path-isolation test into a stale compatibility test
+  and produce a convincing but false isolation failure after a major upgrade.
 - A GUI environment tag is metadata, not a visibility fixture. Tests that
   construct a native runtime must establish and restore hidden mode themselves
   so a focused `runtests` invocation cannot open product windows.
