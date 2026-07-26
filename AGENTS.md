@@ -166,8 +166,10 @@ tests, history, and details out of the public repository.
    branch from that main commit; the active ledger entry is removed by the
    final zero-debt squash merge after durable final behavior and rationale are
    recorded in the owning manual and component history.
-3. Work directly on aligned `main` for focused changes; use `codex/` branches
-   for larger, risky, multi-commit, or review-heavy work.
+3. Work directly on aligned `main` for focused changes. Documentation-only
+   changes default to aligned `main` unless they are broad, review-heavy, or
+   coupled to unfinished implementation. Use `codex/` branches for larger,
+   risky, multi-commit, or review-heavy work.
 4. Keep branch work stable with small logical purpose-based commits and focused
    validation. Prepare user docs, component versions, and structured history as
    the single net change that the PR will squash into; do not accumulate

@@ -166,6 +166,15 @@ workflow does not silently replace repository protection policy. It uploads the
 catalog artifacts even after failure. Coverage is an explicit report, not a
 duplicate CI gate.
 
+CI classifies the exact pushed or pull-request diff before scheduling MATLAB.
+Source, test, build, workflow, and tool changes run the complete platform
+matrix. Human documentation-only changes run `docsCheck` without the platform
+matrix. Agent guidance and GitHub contribution-template-only changes run the
+lightweight change-policy check without starting MATLAB. Mixed changes run the
+union of their required profiles, and `CI Gate` verifies every profile selected
+by the classifier. Changing the classifier or workflow is itself a full-matrix
+change.
+
 Manual App validation remains required for native file dialogs, visual design,
 pointer interaction, real-data suitability, and scientific interpretation.
 Use synthetic, minimal fixtures in automated tests. Never add real lab files,
