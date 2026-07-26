@@ -267,6 +267,37 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             clear resetFault
         end
 
+        function recordsResourceCleanupFailureBeforeClosingTheJournal(testCase)
+            [runtime, journal, root] = runtimeWithJournal(testCase, ...
+                "session-runtime-resource-cleanup-failure", ...
+                "install", @installFailingResource);
+            cleanup = onCleanup(@() runtime.close());
+            runtime.invokeAction("install");
+
+            testCase.verifyError(@() runtime.close(), ...
+                "labkit:app:runtime:ResourceCleanupFailed");
+            records = runtime.diagnosticEvents();
+            names = string({records.eventName});
+            failed = records(names == "runtime.close.failed");
+
+            testCase.verifyNumElements(failed, 1);
+            testCase.verifyEqual(failed.operationResult, "failed");
+            testCase.verifyEqual( ...
+                failed.stateDisposition, "notApplicable");
+            testCase.verifyEqual(failed.exception.identifier, ...
+                "labkit:app:runtime:ResourceCleanupFailed");
+            testCase.verifyTrue(any(names == "session.closed"));
+
+            snapshot = labkit.app.internal.SessionJournalArchive.snapshot( ...
+                root, journal.sessionId());
+            archivedNames = string({snapshot.events.eventName});
+            testCase.verifyTrue(any(archivedNames == ...
+                "runtime.close.failed"));
+            testCase.verifyTrue(any(archivedNames == "session.closed"));
+            testCase.verifyEqual(string(snapshot.manifest.state), "closed");
+            clear cleanup
+        end
+
 
         function closesJournalWhenRuntimeConstructionFails(testCase)
             root = testCase.applyFixture( ...
@@ -355,6 +386,16 @@ end
 
 function state = failLoggingProbe(state, ~)
 error("probe:ExpectedFailure", "Expected rollback failure.");
+end
+
+function state = installFailingResource(state, callbackContext)
+callbackContext.setResource( ...
+    "application", "failingCleanup", struct(), @failResourceCleanup);
+end
+
+function failResourceCleanup(~)
+error("probe:ResourceCleanupFailure", ...
+    "Intentional resource cleanup failure.");
 end
 
 function definition = runtimeProbeDefinition(id, callback, createSession)

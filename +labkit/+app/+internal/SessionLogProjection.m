@@ -100,12 +100,15 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
 
         function projection = view(obj)
             selected = obj.filteredEvents();
+            [rootActionIds, rootActionLabels] = ...
+                actionChoices(obj.Events);
             projection = struct( ...
                 "rows", rowsFor(selected), ...
                 "events", selected, ...
                 "severityCounts", severityCounts(selected), ...
                 "categories", choices(string({obj.Events.category})), ...
-                "rootActions", choices(string({obj.Events.rootActionId})), ...
+                "rootActions", rootActionIds, ...
+                "rootActionLabels", rootActionLabels, ...
                 "notices", obj.notices(), ...
                 "clearedThroughSequence", obj.ClearedThroughSequence);
         end
@@ -171,7 +174,8 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
             value = strings(0, 1);
             if ~obj.TraceEnabled
                 value(end + 1, 1) = ...
-                    "TRACE capture is off; earlier TRACE events are unavailable.";
+                    "TRACE detail is off; DEBUG lifecycle and all warnings and errors " + ...
+                    "are still captured. Earlier TRACE detail is unavailable.";
             end
             if obj.InMemoryTruncated
                 value(end + 1, 1) = ...
@@ -284,6 +288,66 @@ end
 function value = choices(values)
 values = values(strlength(values) > 0);
 value = unique(values, "stable");
+end
+
+function [ids, labels] = actionChoices(events)
+ids = choices(string({events.rootActionId}));
+labels = strings(size(ids));
+for index = 1:numel(ids)
+    actionEvents = events( ...
+        string({events.rootActionId}) == ids(index));
+    labels(index) = actionLabel(actionEvents, ids(index));
+end
+end
+
+function label = actionLabel(events, id)
+first = events(1);
+preferred = find( ...
+    string({events.audience}) == "user" & ...
+    strlength(string({events.message})) > 0, 1);
+if isempty(preferred)
+    severity = string({events.severity});
+    preferred = find(any(severity.' == ...
+        ["WARNING", "ERROR", "CRITICAL"], 2), 1);
+end
+if isempty(preferred)
+    preferred = 1;
+end
+record = events(preferred);
+summary = actionSummary(record, first);
+if strlength(summary) > 72
+    summary = extractBefore(summary, 70) + "...";
+end
+time = regexp(string(first.timestampUtc), ...
+    '\d{2}:\d{2}:\d{2}', "match", "once");
+if strlength(time) > 0
+    label = time + "  " + summary + "  [" + id + "]";
+else
+    label = summary + "  [" + id + "]";
+end
+end
+
+function summary = actionSummary(record, first)
+summary = string(record.message);
+generic = [
+    "Dispatching callback."
+    "Operation completed."
+    "Operation failed."
+    "Operation cancelled."
+    "Operation abandoned."
+    ];
+if ~any(summary == generic)
+    return;
+end
+if isfield(first.attributes, "runtimeAlias") && ...
+        (ischar(first.attributes.runtimeAlias) || ...
+        (isstring(first.attributes.runtimeAlias) && ...
+        isscalar(first.attributes.runtimeAlias)))
+    summary = "Callback: " + string(first.attributes.runtimeAlias);
+    return;
+end
+eventName = erase(string(first.eventName), ".started");
+summary = replace(eventName, [".", "_"], " ");
 end
 
 function value = severityRank(values)

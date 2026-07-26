@@ -646,16 +646,43 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if obj.Closed
                 return;
             end
+            operation = obj.Recorder.begin( ...
+                "runtime.lifecycle", "runtime.close", ...
+                "Closing application runtime.");
             obj.Queue = {};
             obj.Closed = true;
+            failures = cell(1, 2);
+            failureCount = 0;
             if ~isempty(obj.Resources)
-                obj.Resources.clearAll();
+                try
+                    obj.Resources.clearAll();
+                catch cause
+                    failureCount = failureCount + 1;
+                    failures{failureCount} = cause;
+                end
             end
             if ~isempty(obj.Adapter) && isvalid(obj.Adapter)
-                obj.Adapter.close();
+                try
+                    obj.Adapter.close();
+                catch cause
+                    failureCount = failureCount + 1;
+                    failures{failureCount} = cause;
+                end
+            end
+            failure = combinedCloseFailure( ...
+                failures(1:failureCount));
+            if isempty(failure)
+                obj.Recorder.finish( ...
+                    operation, "completed", "notApplicable", []);
+            else
+                obj.Recorder.finish( ...
+                    operation, "failed", "notApplicable", failure);
             end
             if ~isempty(obj.Recorder)
                 obj.Recorder.close();
+            end
+            if ~isempty(failure)
+                throwAsCaller(failure);
             end
         end
 
@@ -1001,4 +1028,21 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
         end
     end
+end
+
+function failure = combinedCloseFailure(failures)
+if isempty(failures)
+    failure = [];
+    return;
+end
+if isscalar(failures)
+    failure = failures{1};
+    return;
+end
+failure = MException( ...
+    "labkit:app:runtime:CloseFailed", ...
+    "Multiple runtime resources failed during close.");
+for index = 1:numel(failures)
+    failure = addCause(failure, failures{index});
+end
 end

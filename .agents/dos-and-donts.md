@@ -38,6 +38,12 @@ second architecture guide.
   synthetic-input generation are independent policies. Do not bundle them into
   a Debug launch; an always-on bounded flight recorder is what makes an
   ordinary post-incident session diagnosable.
+- Treat capture and the default viewer filter as separate contracts. Prove
+  retained DEBUG callback boundaries even when the useful default view hides
+  them, and explain exactly what enabling TRACE can and cannot recover.
+- Instrument teardown before cleanup begins, continue independent cleanup
+  owners after one fails, persist the terminal failure before closing the
+  recorder, and only then return the cleanup exception.
 - A self-contained repair entrypoint owns only minimum health detection,
   repair, and delegation. Do not give it a second log/session schema; canonical
   diagnostics begin after the installed framework is available.

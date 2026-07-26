@@ -287,6 +287,31 @@ or reconstruct earlier detail. Journal degradation is itself exposed in the
 surviving in-memory stream; logging failures never alter callback transaction
 semantics or scientific results.
 
+The viewer's **View** filter describes intended readers, not access control.
+**Useful** shows user-workflow events plus developer warnings and failures;
+**User workflow**, **Developer details**, and **Everything** select the two
+event audiences explicitly. The **Action** filter groups a top-level user or
+lifecycle action with its nested callback, presentation, dialog, resource, and
+transaction records. Its readable label includes time and a semantic message
+while retaining the stable `op-*` correlation identifier for exported
+diagnostics.
+
+TRACE capture is independent of ordinary failure capture. With TRACE off,
+Runtime still retains DEBUG lifecycle/callback start and completion boundaries
+and all INFO, WARNING, ERROR, and CRITICAL events. The default viewer hides
+normal developer DEBUG/INFO records; selecting **DEBUG+** and **Developer
+details** reveals earlier retained callback boundaries. A callback exception
+is recorded as an ERROR with `failed` operation result, rollback disposition,
+safe exception identifier, and sanitized function stack.
+
+Runtime close is also an instrumented lifecycle operation. Resource and native
+adapter cleanup continue independently; a cleanup exception is retained and
+persisted before the journal closes, then returned to the caller. Diagnostics
+cannot manufacture evidence for a native event that never entered Runtime, an
+exception swallowed by App code without logging, or a MATLAB process that
+hangs or terminates before a terminal event. In those cases the last retained
+DEBUG boundary and durable journal state are the available evidence.
+
 ## Persistence, Results, And Cleanup
 
 ## Synthetic Inputs
