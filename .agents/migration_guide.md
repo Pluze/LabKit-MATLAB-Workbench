@@ -84,10 +84,10 @@ top-level content before replacement. Packages may keep using
 `packaged_app_manifest.json` for package semantics, but rescue does not require
 it and this migration adds no install manifest, hash, or file inventory.
 
-### User problem and current evidence
+### Baseline problem and evidence
 
-LabKit does not currently have one session log. It has several partially
-overlapping channels:
+At migration start, LabKit did not have one session log. It had several
+partially overlapping channels:
 
 - `CallbackContext.appendStatus` adds unstructured display strings to an
   unbounded `StatusLog`; every App exposes that row through a `logPanel`.
@@ -516,32 +516,26 @@ second diagnostic product.
 
 ### Compatibility retirement
 
-This is a coordinated App SDK major migration. Temporary bridges exist only to
-keep phases reviewable; the final architecture does not retain two logging
-models.
+This is a coordinated App SDK major migration. The temporary bridges used to
+keep intermediate commits reviewable are retired on `debug-repair`:
 
-| Existing surface | Temporary mapping |
+| Retired surface | Supported replacement |
 | --- | --- |
-| `appendStatus(message)` | `INFO`, `Audience="user"`, event `legacy.status` |
-| `reportError(exception)` | correlated `ERROR` with sanitized exception |
-| diagnostic `checkpoint` | `DEBUG` structured event |
-| diagnostic `count` | `DEBUG` structured event with numeric attribute |
-| `StatusLog` | derived viewer projection during migration |
-| `DiagnosticRecorder` | adapter into the canonical record/store |
-| diagnostic `Options.Level` | bridge to capture/detail policy, not launch mode |
+| `appendStatus(message)` | semantic `CallbackContext.log` user event |
+| `reportError(exception)` | semantic failure event with `Exception` |
+| diagnostic `checkpoint` / `count` | structured developer event and attributes |
+| `DiagnosticRecorder` | canonical `SessionEventStream` + `SessionDiagnostics` |
+| launch diagnostic options | ordinary always-on session plus runtime trace tools |
+| `BuildDebugSample` / App `+debug` | explicit `BuildSyntheticSample` / `+syntheticInputs` |
+| Launcher **Open Debug** | normal launch, Diagnostics tools, Developer Tools |
+| App-authored `logPanel` | framework session viewer |
 
-Synthetic input callers are updated explicitly; a legacy sample option is
-never silently reinterpreted as a log option. After all callers migrate, delete:
+`RuntimeKernel.StatusLog` is now a private, bounded visible-status projection
+fed by user-audience semantic events; it is not an App API, journal, or second
+logging schema. Synthetic input generation owns a separate `RootFolder` and
+does not share diagnostic options or storage.
 
-- `appendStatus`, `reportError`, `StatusLog`, the parallel Runtime diagnostics
-  row, and the old `DiagnosticRecorder` schema;
-- diagnostic options that couple sample construction, persistence, and detail;
-- `BuildDebugSample`, App `+debug` packages, and Launcher **Open Debug**;
-- App-authored standard `logPanel` declarations and the public layout primitive
-  if no intentional nonstandard consumer remains;
-- obsolete documentation, examples, tests, and compatibility branches.
-
-No permanent `Intentional compatibility` exemption is accepted for these
+No permanent `Intentional compatibility` exemption is accepted for retired
 surfaces. A genuine saved-project migration remains a versioned persistence
 contract; it must not be confused with keeping duplicate logging APIs.
 
@@ -708,18 +702,27 @@ Checkpoint B removes the duplicate App-authored Log tab from all 21 public
 Apps and the accepted private Imager App. The standard Tools session viewer is
 the only diagnostic-history surface, and the zero-consumer `logPanel` layout
 primitive is deleted. All public layouts compile, all 21 public native launches
-pass, and the private end-to-end GUI workflow passes. Legacy status/error call
-migration remains active before the remaining bridge APIs can be deleted.
+pass, and the private end-to-end GUI workflow passes. At that checkpoint,
+legacy status/error calls were the remaining bridge users addressed next.
+
+Checkpoint C migrates every public App and the accepted private Imager App to
+semantic status, failure, checkpoint, and count events. It deletes
+`appendStatus`, `reportError`, diagnostic checkpoint/count entrypoints,
+`DiagnosticRecorder`, launch diagnostic options, and the bridge-only test
+schema. RuntimeFactory now always injects one complete `SessionDiagnostics`
+service, synthetic packs own an independent `RootFolder`, the focused framework
+logging suites pass, and all 63 public hidden native App smoke cases pass.
 
 #### Phase 8: retire bridges and close debt
 
-- Remove **Open Debug**, old APIs/schema, `BuildDebugSample`, `+debug`
-  packages, dual options, and bridge-only tests.
+- Audit for zero remaining references to retired launch, logging, and synthetic
+  APIs in public and accepted private sources.
 - Update current framework/App/Launcher manuals and generated documentation.
 - Apply the final cross-component version audit and write one structured history
   record describing the net behavior and compatibility impact.
-- Run branch-review validation, developer-led manual acceptance, and final
-  sensitive-data/diff audit.
+- Run branch-review validation, developer-led manual acceptance, final
+  sensitive-data/diff audit, public/private PR review, merge, and merged-main
+  CI verification.
 
 Exit gate: only one supported launch/logging architecture remains and every
 completion criterion below is satisfied.
@@ -743,8 +746,7 @@ One framework fixture App owns complete headless evidence for:
 - export bundle file set, schema, ordering, required semantic events, readable
   rendering, and absence of excluded scientific/user data without freezing the
   complete `session.log.txt` wording;
-- legacy adapter equivalence during migration and zero adapter use before
-  deletion.
+- zero references to retired logging, launch-debug, and synthetic-debug APIs.
 
 Hidden-GUI tests must prove:
 
@@ -825,7 +827,9 @@ The migration is complete only when:
 - per-session, per-App, and global retention plus degradation, privacy,
   performance, automated, and manual acceptance gates pass;
 - current manuals, versions, generated docs, and one final cross-component
-  structured history record describe the supported net behavior.
+  structured history record describe the supported net behavior;
+- the public repository and accepted private App repository are merged into
+  their respective `main` branches, and CI passes for the exact merged commits.
 
 Delete this active entry in the final zero-debt squash change. Preserve durable
 behavior and rationale in the owning manuals and structured component history;
