@@ -18,6 +18,8 @@ applicationState.session.workflow.pendingDirty = false;
 applicationState = ...
     image_match.matchPipeline.rebuildPreview(applicationState);
 if isempty(listSelection.Indices) && isempty(reference)
-    callbackContext.appendStatus("Reference image cleared.");
+    callbackContext.log("info", ...
+        "image_match.sourcefiles.referenceselected.cleared", ...
+        "Reference image cleared.");
 end
 end
