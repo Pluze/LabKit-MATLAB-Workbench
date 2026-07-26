@@ -53,10 +53,12 @@ classdef (Hidden, Sealed) RuntimeFactory
             end
             journal = prepareJournal(definition, journal, journalRoot);
             try
+                projection = labkit.app.internal.SessionJournalProjection(journal);
                 stream = labkit.app.internal.SessionEventStream(definition, ...
-                    SessionId=journal.sessionId(), ProjectionHook=@journal.append);
+                    SessionId=journal.sessionId(), ProjectionHook=@projection.project, ...
+                    ProjectionHealthHook=@projection.drainHealth);
                 recorder = labkit.app.internal.DiagnosticRecorder( ...
-                    definition, stream, @journal.close);
+                    definition, stream, @projection.close);
             catch cause
                 try
                     journal.close();

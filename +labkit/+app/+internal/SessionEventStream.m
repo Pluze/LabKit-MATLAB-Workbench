@@ -15,6 +15,8 @@ classdef (Hidden, Sealed) SessionEventStream < handle
         OperationStack (1, :) cell = {}
         FinishedOperationIds (1, :) string = strings(1, 0)
         ProjectionHook = []
+        ProjectionHealthHook = []
+        ProjectionHealthUnavailableReported (1, 1) logical = false
         Closed (1, 1) logical = false
     end
 
@@ -32,9 +34,14 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             sessionId = optionValue(varargin, "SessionId", ...
                 labkit.app.internal.SessionIdentity.create());
             projectionHook = optionValue(varargin, "ProjectionHook", []);
+            projectionHealthHook = optionValue(varargin, "ProjectionHealthHook", []);
             if ~isempty(projectionHook) && ~isa(projectionHook, "function_handle")
                 error("labkit:app:contract:InvalidValue", ...
                     "Session event ProjectionHook must be a function handle.");
+            end
+            if ~isempty(projectionHealthHook) && ~isa(projectionHealthHook, "function_handle")
+                error("labkit:app:contract:InvalidValue", ...
+                    "Session event ProjectionHealthHook must be a function handle.");
             end
             obj.Application = application;
             obj.SessionId = labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
@@ -44,6 +51,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             obj.StartedTimer = tic;
             obj.Records = repmat(recordTemplate(), 0, 1);
             obj.ProjectionHook = projectionHook;
+            obj.ProjectionHealthHook = projectionHealthHook;
             obj.log("info", "session.started", "Session started.", ...
                 Category="runtime.lifecycle", Audience="developer");
         end
@@ -166,6 +174,11 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             records = obj.Records;
         end
 
+        function refreshProjectionHealth(obj)
+            % Allow private close teardown to expose a final sink failure.
+            obj.drainProjectionHealth();
+        end
+
         function close(obj)
             if obj.Closed
                 return;
@@ -226,12 +239,18 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             end
         end
 
-        function retain(obj, record)
+        function retain(obj, record, notifyProjection)
+            if nargin < 3
+                notifyProjection = true;
+            end
             obj.Records(end + 1, 1) = record;
             if numel(obj.Records) > obj.ProvisionalInMemoryRecordLimit
                 obj.Records(1) = [];
             end
-            obj.notifyProjectionHook(record);
+            if notifyProjection
+                obj.notifyProjectionHook(record);
+                obj.drainProjectionHealth(record);
+            end
         end
 
         function notifyProjectionHook(obj, record)
@@ -243,6 +262,81 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             catch
                 % Downstream projections must not alter canonical history.
             end
+        end
+
+        function drainProjectionHealth(obj, contextRecord)
+            if nargin < 2
+                contextRecord = [];
+            end
+            if isempty(obj.ProjectionHealthHook)
+                return;
+            end
+            try
+                notifications = obj.ProjectionHealthHook();
+                if isempty(notifications)
+                    return;
+                end
+                if ~isstruct(notifications)
+                    error("labkit:app:runtime:InvariantFailure", ...
+                        "Projection health notifications must be structs.");
+                end
+                for index = 1:numel(notifications)
+                    [eventName, attributes] = projectionHealthNotification( ...
+                        notifications(index));
+                    obj.retainProjectionHealth(eventName, attributes, contextRecord);
+                end
+            catch
+                obj.ProjectionHealthHook = [];
+                if ~obj.ProjectionHealthUnavailableReported
+                    obj.ProjectionHealthUnavailableReported = true;
+                    obj.retainProjectionHealth("journal.degraded", ...
+                        struct("reason", "health-unavailable"), contextRecord);
+                end
+            end
+        end
+
+        function retainProjectionHealth(obj, eventName, attributes, contextRecord)
+            if nargin < 4
+                contextRecord = [];
+            end
+            attributes = labkit.app.internal.SessionEventValidator.privacySafeAttributes( ...
+                attributes);
+            if isempty(contextRecord)
+                operation = obj.currentOperation();
+                operationId = operation.Id;
+                parentOperationId = operation.ParentId;
+                rootActionId = operation.RootActionId;
+            else
+                contextFields = ["operationId", "parentOperationId", "rootActionId"];
+                if ~isstruct(contextRecord) || ~isscalar(contextRecord) || ...
+                        ~all(isfield(contextRecord, contextFields))
+                    error("labkit:app:runtime:InvariantFailure", ...
+                        "Projection health context record is invalid.");
+                end
+                operationId = string(contextRecord.operationId);
+                parentOperationId = string(contextRecord.parentOperationId);
+                rootActionId = string(contextRecord.rootActionId);
+            end
+            obj.Sequence = obj.Sequence + 1;
+            record = recordTemplate();
+            record.schemaVersion = 1;
+            record.sequence = obj.Sequence;
+            record.timestampUtc = string(datetime("now", TimeZone="UTC", ...
+                Format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
+            record.elapsedSeconds = toc(obj.StartedTimer);
+            record.severity = "WARNING";
+            record.audience = "developer";
+            record.category = "runtime.journal";
+            record.eventName = eventName;
+            record.message = projectionHealthMessage(eventName);
+            record.attributes = attributes;
+            record.sessionId = obj.SessionId;
+            record.appId = obj.Application.AppId;
+            record.operationId = operationId;
+            record.parentOperationId = parentOperationId;
+            record.rootActionId = rootActionId;
+            record.exception = emptyException();
+            obj.retain(record, false);
         end
     end
 end
@@ -298,6 +392,47 @@ end
 function exception = emptyException()
 exception = struct("identifier", "", "message", "", "stack", strings(0, 1));
 end
+
+function [eventName, attributes] = projectionHealthNotification(notification)
+if ~isstruct(notification) || ~isscalar(notification) || ...
+        ~isequal(string(fieldnames(notification)), ["eventName"; "reason"; "count"])
+    error("labkit:app:runtime:InvariantFailure", ...
+        "Projection health notification is invalid.");
+end
+eventName = string(notification.eventName);
+attributes = labkit.app.internal.SessionEventValidator.privacySafeAttributes( ...
+    struct("reason", notification.reason));
+count = notification.count;
+if eventName == "journal.degraded"
+    if ~(isnumeric(count) && isreal(count) && isscalar(count) && ...
+            isfinite(count) && count == 0)
+        error("labkit:app:runtime:InvariantFailure", ...
+            "Journal degradation notifications use a fixed count.");
+    end
+elseif eventName == "journal.records_dropped"
+    if ~(isnumeric(count) && isreal(count) && isscalar(count) && ...
+            isfinite(count) && count >= 1 && count == fix(count))
+        error("labkit:app:runtime:InvariantFailure", ...
+            "Journal drop notifications require a positive integer delta.");
+    end
+    attributes.count = double(count);
+else
+    error("labkit:app:runtime:InvariantFailure", ...
+        "Projection health event is not part of the closed protocol.");
+end
+end
+
+function message = projectionHealthMessage(eventName)
+if eventName == "journal.degraded"
+    message = "Detailed session logging became unavailable; in-memory diagnostics continue.";
+elseif eventName == "journal.records_dropped"
+    message = "Some detailed session log records could not be saved.";
+else
+    error("labkit:app:runtime:InvariantFailure", ...
+        "Projection health event is not part of the closed protocol.");
+end
+end
+
 
 function exception = exceptionProjection(value)
 exception = emptyException();

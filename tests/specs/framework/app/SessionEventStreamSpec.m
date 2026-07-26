@@ -217,6 +217,222 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             testCase.verifyEqual(journalText(journal.folder()), beforeJournal);
             clear streamCleanup journalCleanup globalCleanup
         end
+
+        function retainsClosedNonrecursiveProjectionHealthNotifications(testCase)
+            global labkitProjectionHookCount labkitProjectionHealthNotifications
+            resetProjectionHealthFixture();
+            cleanup = onCleanup(@resetProjectionHealthFixture);
+            stream = labkit.app.internal.SessionEventStream(loggingProbeDefinition(), ...
+                ProjectionHook=@countProjectionHook, ...
+                ProjectionHealthHook=@nextProjectionHealthNotification);
+            streamCleanup = onCleanup(@() stream.close());
+            labkitProjectionHealthNotifications = struct( ...
+                "eventName", "journal.records_dropped", ...
+                "reason", "write-failure", "count", 2);
+
+            stream.log("info", "analysis.projection", "Projection retained.", ...
+                Category="runtime.lifecycle", Audience="developer");
+            stream.refreshProjectionHealth();
+            records = stream.records();
+            dropped = records(string({records.eventName}) == "journal.records_dropped");
+
+            testCase.verifyNumElements(dropped, 1);
+            testCase.verifyEqual(dropped.attributes.reason, "write-failure");
+            testCase.verifyEqual(dropped.attributes.count, 2);
+            testCase.verifyEqual(labkitProjectionHookCount, 2);
+            clear streamCleanup cleanup
+        end
+
+        function isolatesMalformedProjectionHealthNotifications(testCase)
+            invalid = { ...
+                struct("eventName", "analysis.injected", "reason", "write-failure", "count", 1), ...
+                struct("eventName", "journal.degraded", "reason", "write-failure", "count", NaN), ...
+                struct("eventName", "journal.records_dropped", "reason", "write-failure", "count", 0), ...
+                struct("eventName", "journal.records_dropped", "reason", "free text", "count", 1)};
+            for index = 1:numel(invalid)
+                global labkitProjectionHealthNotifications
+                resetProjectionHealthFixture();
+                cleanup = onCleanup(@resetProjectionHealthFixture);
+                stream = labkit.app.internal.SessionEventStream(loggingProbeDefinition(), ...
+                    ProjectionHealthHook=@nextProjectionHealthNotification);
+                streamCleanup = onCleanup(@() stream.close());
+                labkitProjectionHealthNotifications = invalid{index};
+
+                stream.refreshProjectionHealth();
+                stream.log("info", "analysis.after_health_fault", ...
+                    "Caller remains isolated.", Category="runtime.lifecycle", ...
+                    Audience="developer");
+                records = stream.records();
+                degraded = records(string({records.eventName}) == "journal.degraded");
+
+                testCase.verifyNumElements(degraded, 1);
+                testCase.verifyEqual(degraded.attributes.reason, "health-unavailable");
+                testCase.verifyFalse(any(string({records.eventName}) == "analysis.injected"));
+                clear streamCleanup cleanup
+            end
+        end
+
+        function surfacesJournalProjectionFailureWithoutRecursing(testCase)
+            global labkitProjectionDeliveryFailures labkitProjectionDeliveryIndex
+            resetProjectionHealthFixture();
+            fixtureCleanup = onCleanup(@resetProjectionHealthFixture);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkit.app.internal.SessionJournal(loggingProbeDefinition(), ...
+                RootFolder=root, SessionId="session-projection-failure");
+            journalCleanup = onCleanup(@() journal.close());
+            projection = labkit.app.internal.SessionJournalProjection( ...
+                journal, @failProjectionDelivery);
+            stream = labkit.app.internal.SessionEventStream(loggingProbeDefinition(), ...
+                SessionId="session-projection-failure", ...
+                ProjectionHook=@projection.project, ...
+                ProjectionHealthHook=@projection.drainHealth);
+            streamCleanup = onCleanup(@() stream.close());
+            labkitProjectionDeliveryFailures = [true, true];
+            labkitProjectionDeliveryIndex = 0;
+            operation = stream.begin("runtime.callback", "callback.delivery", ...
+                "Delivering callback.");
+
+            stream.log("info", "analysis.after_projection_failure", ...
+                "Caller remains isolated.", Category="runtime.lifecycle", ...
+                Audience="developer", Operation=operation);
+            records = stream.records();
+            trigger = records(string({records.eventName}) == "callback.delivery.started");
+            degraded = records(string({records.eventName}) == "journal.degraded");
+            dropped = records(string({records.eventName}) == "journal.records_dropped");
+
+            testCase.verifyNumElements(degraded, 1);
+            testCase.verifyEqual(degraded.attributes.reason, "projection-failure");
+            testCase.verifyEqual(degraded.operationId, trigger.operationId);
+            testCase.verifyEqual(degraded.parentOperationId, trigger.parentOperationId);
+            testCase.verifyEqual(degraded.rootActionId, trigger.rootActionId);
+            testCase.verifyNumElements(dropped, 2);
+            dropAttributes = [dropped.attributes];
+            testCase.verifyEqual([dropAttributes.count], [1, 1]);
+            testCase.verifyEqual(dropped(1).operationId, trigger.operationId);
+            testCase.verifyEqual(dropped(1).parentOperationId, trigger.parentOperationId);
+            testCase.verifyEqual(dropped(1).rootActionId, trigger.rootActionId);
+            testCase.verifyNotEmpty(degraded.message);
+            testCase.verifyNotEmpty(dropped(1).message);
+            testCase.verifyNotEqual(degraded.message, dropped(1).message);
+            testCase.verifyTrue(any(string({records.eventName}) == ...
+                "analysis.after_projection_failure"));
+            testCase.verifyEmpty(dir(fullfile(journal.folder(), "events-*.jsonl")));
+            stream.refreshProjectionHealth();
+            records = stream.records();
+            testCase.verifyNumElements(records( ...
+                string({records.eventName}) == "journal.records_dropped"), 2);
+            clear streamCleanup journalCleanup fixtureCleanup
+        end
+
+        function reportsProjectionRecoveryAndLaterFailureAsNewTransition(testCase)
+            global labkitProjectionDeliveryFailures labkitProjectionDeliveryIndex
+            resetProjectionHealthFixture();
+            fixtureCleanup = onCleanup(@resetProjectionHealthFixture);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkit.app.internal.SessionJournal(loggingProbeDefinition(), ...
+                RootFolder=root, SessionId="session-projection-recovery");
+            journalCleanup = onCleanup(@() journal.close());
+            projection = labkit.app.internal.SessionJournalProjection( ...
+                journal, @failProjectionDelivery);
+            stream = labkit.app.internal.SessionEventStream(loggingProbeDefinition(), ...
+                SessionId="session-projection-recovery", ...
+                ProjectionHook=@projection.project, ...
+                ProjectionHealthHook=@projection.drainHealth);
+            streamCleanup = onCleanup(@() stream.close());
+            labkitProjectionDeliveryFailures = [true, false, true];
+            labkitProjectionDeliveryIndex = 0;
+
+            stream.log("info", "analysis.projection_first", "First delivery.", ...
+                Category="runtime.lifecycle", Audience="developer");
+            stream.log("info", "analysis.projection_recovery", "Recovered delivery.", ...
+                Category="runtime.lifecycle", Audience="developer");
+            stream.log("info", "analysis.projection_second", "Second delivery.", ...
+                Category="runtime.lifecycle", Audience="developer");
+            stream.refreshProjectionHealth();
+            records = stream.records();
+            degraded = records(string({records.eventName}) == "journal.degraded");
+            dropped = records(string({records.eventName}) == "journal.records_dropped");
+            dropAttributes = [dropped.attributes];
+
+            testCase.verifyNumElements(degraded, 2);
+            testCase.verifyNumElements(dropped, 2);
+            testCase.verifyEqual(sum([dropAttributes.count]), 2);
+            testCase.verifyTrue(all(string({dropAttributes.reason}) == "projection-failure"));
+            clear streamCleanup journalCleanup fixtureCleanup
+        end
+
+        function isolatesProjectionHealthHookThrows(testCase)
+            projectionHealthThrowCounter("reset");
+            stream = labkit.app.internal.SessionEventStream(loggingProbeDefinition(), ...
+                ProjectionHealthHook=@() projectionHealthThrowCounter("throw"));
+            cleanup = onCleanup(@() stream.close());
+            records = stream.records();
+            degraded = records(string({records.eventName}) == "journal.degraded");
+
+            stream.log("info", "analysis.after_health_hook_throw", ...
+                "Caller remains isolated.", Category="runtime.lifecycle", ...
+                Audience="developer");
+            stream.close();
+            records = stream.records();
+            testCase.verifyNumElements(degraded, 1);
+            testCase.verifyEqual(degraded.attributes.reason, "health-unavailable");
+            testCase.verifyTrue(any(string({records.eventName}) == ...
+                "analysis.after_health_hook_throw"));
+            testCase.verifyNumElements(records( ...
+                string({records.eventName}) == "journal.degraded"), 1);
+            testCase.verifyEqual(projectionHealthThrowCounter("count"), 1);
+            clear cleanup
+        end
+
+        function reportsWrapperCloseFailureOnceWithoutARecordDrop(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkit.app.internal.SessionJournal(loggingProbeDefinition(), ...
+                RootFolder=root, SessionId="session-projection-close-failure");
+            cleanup = onCleanup(@() journal.close());
+            projection = labkit.app.internal.SessionJournalProjection( ...
+                journal, @failProjectionCloseDelivery);
+
+            projection.close();
+            notifications = projection.drainHealth();
+            repeated = projection.drainHealth();
+
+            testCase.verifyNumElements(notifications, 1);
+            testCase.verifyEqual(notifications.eventName, "journal.degraded");
+            testCase.verifyEqual(notifications.reason, "projection-failure");
+            testCase.verifyEqual(notifications.count, 0);
+            testCase.verifyEmpty(repeated);
+            clear cleanup
+        end
+
+        function recorderCloseRefreshesHealthAfterProjectionCloseFailure(testCase)
+            global labkitProjectionHealthNotifications
+            resetProjectionHealthFixture();
+            cleanup = onCleanup(@resetProjectionHealthFixture);
+            stream = labkit.app.internal.SessionEventStream(loggingProbeDefinition(), ...
+                ProjectionHealthHook=@nextProjectionHealthNotification);
+            recorder = labkit.app.internal.DiagnosticRecorder( ...
+                loggingProbeDefinition(), stream, @failClosingProjection);
+
+            recorder.close();
+            records = stream.records();
+            names = string({records.eventName});
+            sessionClosedIndex = find(names == "session.closed", 1);
+            degraded = records(names == "journal.degraded");
+            recorder.close();
+
+            testCase.verifyNotEmpty(sessionClosedIndex);
+            testCase.verifyNumElements(degraded, 1);
+            testCase.verifyEqual(degraded.attributes.reason, "projection-failure");
+            testCase.verifyGreaterThan(find(names == "journal.degraded", 1), ...
+                sessionClosedIndex);
+            afterSecondClose = stream.records();
+            testCase.verifyNumElements(afterSecondClose( ...
+                string({afterSecondClose.eventName}) == "journal.degraded"), 1);
+            clear cleanup
+        end
     end
 end
 
@@ -228,6 +444,70 @@ end
 function resetTestConsumer()
 global labkitSessionEventStreamConsumerRecords
 labkitSessionEventStreamConsumerRecords = strings(0, 1);
+end
+
+function countProjectionHook(~)
+global labkitProjectionHookCount
+labkitProjectionHookCount = labkitProjectionHookCount + 1;
+end
+
+function notifications = nextProjectionHealthNotification()
+global labkitProjectionHealthNotifications
+notifications = labkitProjectionHealthNotifications;
+labkitProjectionHealthNotifications = [];
+end
+
+function resetProjectionHealthFixture()
+global labkitProjectionHookCount labkitProjectionHealthNotifications ...
+    labkitProjectionDeliveryFailures labkitProjectionDeliveryIndex
+labkitProjectionHookCount = 0;
+labkitProjectionHealthNotifications = [];
+labkitProjectionDeliveryFailures = false(1, 0);
+labkitProjectionDeliveryIndex = 0;
+end
+
+function failProjectionDelivery(stage)
+global labkitProjectionDeliveryFailures labkitProjectionDeliveryIndex
+if string(stage) ~= "project"
+    return;
+end
+labkitProjectionDeliveryIndex = labkitProjectionDeliveryIndex + 1;
+if labkitProjectionDeliveryIndex > numel(labkitProjectionDeliveryFailures) || ...
+        ~labkitProjectionDeliveryFailures(labkitProjectionDeliveryIndex)
+    return;
+end
+error("labkit:test:ProjectionDeliveryFailure", "Intentional projection delivery failure.");
+end
+
+function value = projectionHealthThrowCounter(action)
+persistent count
+if isempty(count)
+    count = 0;
+end
+if action == "reset"
+    count = 0;
+    value = [];
+elseif action == "count"
+    value = count;
+elseif action == "throw"
+    count = count + 1;
+    error("labkit:test:ProjectionHealthFailure", "Intentional health reader failure.");
+else
+    error("labkit:test:InvariantFailure", "Unknown projection health fixture action.");
+end
+end
+
+function failProjectionCloseDelivery(stage)
+if string(stage) == "close"
+    error("labkit:test:ProjectionCloseFailure", "Intentional projection close failure.");
+end
+end
+
+function failClosingProjection()
+global labkitProjectionHealthNotifications
+labkitProjectionHealthNotifications = struct( ...
+    "eventName", "journal.degraded", "reason", "projection-failure", "count", 0);
+error("labkit:test:ProjectionCloseFailure", "Intentional projection close failure.");
 end
 
 function attributes = boundedSafeAttributes()

@@ -18,9 +18,19 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             legacy.outcome = "completed";
 
             journal.append(legacy);
+            health = journal.healthSnapshot();
 
             testCase.verifyEqual( ...
                 journal.manifest().degradation.dropReasons.invalidCanonicalRecord, 1);
+            testCase.verifyEqual(string(fieldnames(health)), [ ...
+                "state"; "available"; "droppedRecordCount"; ...
+                "invalidCanonicalRecordDropCount"; "writeFailureDropCount"; ...
+                "writeFailureCount"; "lastFailureReason"; "degradationReason"]);
+            testCase.verifyEqual(health.state, "healthy");
+            testCase.verifyTrue(health.available);
+            testCase.verifyEqual(health.droppedRecordCount, 1);
+            testCase.verifyEqual(health.invalidCanonicalRecordDropCount, 1);
+            testCase.verifyEqual(health.writeFailureDropCount, 0);
             clear streamCleanup cleanup
         end
 
@@ -124,6 +134,48 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             testCase.verifyEqual(writeStages, ...
                 ["open", "flush", "flush"]);
             clear streamCleanup cleanup resetObserver
+        end
+
+        function countsWarningDroppedAfterPreflushManifestFailure(testCase)
+            global labkitPreflushManifestFaultCount
+            labkitPreflushManifestFaultCount = 0;
+            resetFault = onCleanup(@resetPreflushManifestFault);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            app = journalProbeDefinition();
+            journal = labkit.app.internal.SessionJournal(app, ...
+                RootFolder=root, SessionId="session-warning-manifest-failure", ...
+                BufferRecordLimit=32, FaultInjector=@failPreflushManifest);
+            cleanup = onCleanup(@() journal.close());
+            projection = labkit.app.internal.SessionJournalProjection(journal);
+            stream = labkit.app.internal.SessionEventStream(app, ...
+                SessionId="session-warning-manifest-failure", ...
+                ProjectionHook=@projection.project, ...
+                ProjectionHealthHook=@projection.drainHealth);
+            streamCleanup = onCleanup(@() stream.close());
+
+            stream.log("debug", "analysis.context", "Context retained.", ...
+                Category="app.probe.journal.analysisRun", Audience="developer");
+            stream.log("warning", "analysis.warning", "Warning retained.", ...
+                Category="app.probe.journal.analysisRun", Audience="developer");
+            snapshot = journal.healthSnapshot();
+            records = stream.records();
+            names = string({records.eventName});
+            dropped = records(names == "journal.records_dropped");
+            stream.refreshProjectionHealth();
+            refreshed = stream.records();
+            persisted = readCanonicalEvents(journal.folder());
+
+            testCase.verifyEqual(snapshot.droppedRecordCount, 1);
+            testCase.verifyEqual(snapshot.writeFailureDropCount, 1);
+            testCase.verifyEqual(numel(dropped), 1);
+            testCase.verifyEqual(dropped.attributes.reason, "write-failure");
+            testCase.verifyEqual(dropped.attributes.count, 1);
+            testCase.verifyNumElements(refreshed( ...
+                string({refreshed.eventName}) == "journal.records_dropped"), 1);
+            testCase.verifyTrue(any(contains(persisted, '"eventName":"analysis.context"')));
+            testCase.verifyFalse(any(contains(persisted, '"eventName":"analysis.warning"')));
+            clear streamCleanup cleanup resetFault
         end
 
         function serializesExactlyTheCanonicalRecordFields(testCase)
@@ -700,6 +752,22 @@ function failWrite(stage)
 if string(stage) == "write"
     error("labkit:test:JournalWriteFailure", "Intentional journal write failure.");
 end
+end
+
+function failPreflushManifest(stage)
+global labkitPreflushManifestFaultCount
+if string(stage) ~= "manifest"
+    return;
+end
+labkitPreflushManifestFaultCount = labkitPreflushManifestFaultCount + 1;
+if labkitPreflushManifestFaultCount >= 2
+    error("labkit:test:JournalManifestFailure", "Intentional preflush manifest failure.");
+end
+end
+
+function resetPreflushManifestFault()
+global labkitPreflushManifestFaultCount
+labkitPreflushManifestFaultCount = 0;
 end
 
 function [folder, events] = writeJournalSession(root, sessionId, appId)

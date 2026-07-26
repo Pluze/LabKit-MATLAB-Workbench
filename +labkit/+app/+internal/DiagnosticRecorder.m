@@ -103,13 +103,22 @@ classdef (Hidden, Sealed) DiagnosticRecorder < handle
             if obj.Closed
                 return;
             end
-            obj.Stream.close();
+            try
+                obj.Stream.close();
+            catch
+                % Stream teardown must not prevent projection cleanup.
+            end
             if ~isempty(obj.ProjectionCloseHook)
                 try
                     obj.ProjectionCloseHook();
                 catch
                     % Projection teardown must not change Runtime close semantics.
                 end
+            end
+            try
+                obj.Stream.refreshProjectionHealth();
+            catch
+                % Health refresh must not change Runtime close semantics.
             end
             obj.Closed = true;
         end

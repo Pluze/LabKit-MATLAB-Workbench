@@ -31,6 +31,8 @@ classdef (Hidden, Sealed) SessionJournal < handle
         WriteFailureCount (1, 1) double = 0
         InvalidRecordDropCount (1, 1) double = 0
         WriteFailureDropCount (1, 1) double = 0
+        LastFailureReason (1, 1) string = ""
+        DegradationReason (1, 1) string = ""
         LastCoalescingKey (1, 1) string = ""
         LastCoalescingElapsedSeconds (1, 1) double = -inf
         FaultInjector = []
@@ -111,7 +113,7 @@ classdef (Hidden, Sealed) SessionJournal < handle
                     obj.flush();
                 end
             catch
-                obj.recordWriteFailure();
+                obj.recordWriteFailure("write-failure");
                 obj.writeManifest(Force=true);
             end
         end
@@ -129,8 +131,10 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 written = obj.Available;
                 return;
             end
+            failureReason = "open-failure";
             try
                 obj.ensureSegmentForBufferedRecords();
+                failureReason = "write-failure";
                 obj.invokeFault("write");
                 for index = 1:numel(obj.BufferLines)
                     fprintf(obj.SegmentHandle, "%s\n", obj.BufferLines(index));
@@ -139,12 +143,12 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 obj.notifyObserver("flush", numel(obj.BufferLines));
                 obj.BufferLines = strings(1, 0);
                 obj.BufferBytes = 0;
+                failureReason = "flush-failure";
                 obj.writeActiveMarker();
                 obj.enforceSessionRetention();
-                obj.writeManifest();
-                written = true;
+                written = obj.writeManifest();
             catch
-                obj.recordWriteFailure();
+                obj.recordWriteFailure(failureReason);
                 if ~deferFailureManifest
                     obj.writeManifest(Force=true);
                 end
@@ -156,15 +160,24 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 return;
             end
             obj.flush();
-            obj.closeSegment();
+            try
+                obj.closeSegment();
+            catch
+                obj.recordPersistenceFailure("close-failure");
+            end
             obj.Closed = true;
             obj.ClosedAtUtc = utcNow();
             try
                 obj.writeActiveMarker(true);
             catch
+                obj.recordPersistenceFailure("close-failure");
             end
             if obj.writeManifest(Force=true)
-                obj.removeActiveMarker();
+                try
+                    obj.removeActiveMarker();
+                catch
+                    obj.recordPersistenceFailure("close-failure");
+                end
             end
         end
 
@@ -178,6 +191,31 @@ classdef (Hidden, Sealed) SessionJournal < handle
 
         function sessionId = sessionId(obj)
             sessionId = obj.SessionId;
+        end
+
+        function snapshot = healthSnapshot(obj)
+            % Return fixed in-memory health only; this method performs no I/O.
+            try
+                state = "healthy";
+                if obj.Closed
+                    state = "closed";
+                elseif ~obj.Available
+                    state = "unavailable";
+                end
+                snapshot = struct("state", state, "available", obj.Available, ...
+                    "droppedRecordCount", obj.DroppedRecordCount, ...
+                    "invalidCanonicalRecordDropCount", obj.InvalidRecordDropCount, ...
+                    "writeFailureDropCount", obj.WriteFailureDropCount, ...
+                    "writeFailureCount", obj.WriteFailureCount, ...
+                    "lastFailureReason", obj.LastFailureReason, ...
+                    "degradationReason", obj.DegradationReason);
+            catch
+                snapshot = struct("state", "unavailable", "available", false, ...
+                    "droppedRecordCount", 0, "invalidCanonicalRecordDropCount", 0, ...
+                    "writeFailureDropCount", 0, "writeFailureCount", 0, ...
+                    "lastFailureReason", "health-unavailable", ...
+                    "degradationReason", "health-unavailable");
+            end
         end
 
         function delete(obj)
@@ -198,8 +236,7 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 end
                 obj.writeActiveMarker(true);
             catch
-                obj.Available = false;
-                obj.WriteFailureCount = obj.WriteFailureCount + 1;
+                obj.recordPersistenceFailure("initialize-failure");
             end
         end
 
@@ -251,7 +288,10 @@ classdef (Hidden, Sealed) SessionJournal < handle
             end
         end
 
-        function recordWriteFailure(obj)
+        function recordWriteFailure(obj, reason)
+            if nargin < 2
+                reason = "write-failure";
+            end
             obj.WriteFailureCount = obj.WriteFailureCount + 1;
             dropped = numel(obj.BufferLines);
             obj.DroppedRecordCount = obj.DroppedRecordCount + dropped;
@@ -260,6 +300,8 @@ classdef (Hidden, Sealed) SessionJournal < handle
             obj.BufferLines = strings(1, 0);
             obj.BufferBytes = 0;
             obj.Available = false;
+            obj.LastFailureReason = string(reason);
+            obj.rememberDegradationReason(reason);
             obj.LastCoalescingKey = "";
             obj.LastCoalescingElapsedSeconds = -inf;
         end
@@ -309,9 +351,7 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 obj.notifyObserver("manifest", []);
                 written = true;
             catch
-                if ~force
-                    obj.Available = false;
-                end
+                obj.recordPersistenceFailure("manifest-failure");
             end
         end
 
@@ -360,6 +400,23 @@ classdef (Hidden, Sealed) SessionJournal < handle
         function recordUnavailableDrop(obj)
             obj.DroppedRecordCount = obj.DroppedRecordCount + 1;
             obj.WriteFailureDropCount = obj.WriteFailureDropCount + 1;
+            if strlength(obj.LastFailureReason) == 0
+                obj.LastFailureReason = "journal-unavailable";
+            end
+            obj.rememberDegradationReason("journal-unavailable");
+        end
+
+        function recordPersistenceFailure(obj, reason)
+            obj.WriteFailureCount = obj.WriteFailureCount + 1;
+            obj.LastFailureReason = string(reason);
+            obj.rememberDegradationReason(reason);
+            obj.Available = false;
+        end
+
+        function rememberDegradationReason(obj, reason)
+            if strlength(obj.DegradationReason) == 0
+                obj.DegradationReason = string(reason);
+            end
         end
     end
 end
