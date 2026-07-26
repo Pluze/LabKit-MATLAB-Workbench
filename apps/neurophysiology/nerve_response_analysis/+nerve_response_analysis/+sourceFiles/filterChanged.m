@@ -12,6 +12,6 @@ if isempty(selection.Indices)
 end
 state.session.workflow.statusMessage = "Filter record selected.";
 state.session.workflow.lastAction = "Selected filter record";
-context.appendStatus( ...
-    "Selected filter record: " + state.session.cache.filterPath);
+context.log("info", "nerve_response_analysis.sourcefiles.filterchanged.status", ...
+    "Selected a filter record.");
 end

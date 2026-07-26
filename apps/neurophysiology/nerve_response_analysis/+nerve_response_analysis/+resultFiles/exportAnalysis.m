@@ -33,7 +33,8 @@ state.project.results.lastExport = struct("jsonPath", string(path), ...
 state.session.workflow.statusMessage = ...
     "Exported nerve-response analysis.";
 state.session.workflow.lastAction = "Exported analysis";
-context.appendStatus("Exported analysis: " + string(path));
+context.log("info", "nerve_response_analysis.resultfiles.exportanalysis.completed", ...
+    "Exported the analysis results.");
 end
 
 function summary = analysisSummary(analysis)

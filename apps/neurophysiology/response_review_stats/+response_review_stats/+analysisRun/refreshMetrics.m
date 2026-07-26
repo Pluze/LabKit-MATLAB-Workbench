@@ -30,5 +30,6 @@ state.session.cache.summary = summary;
 state.session.cache.aligned = aligned;
 state.session.workflow.statusMessage = sprintf("Loaded %d metric row(s).", height(metrics));
 state.session.workflow.lastAction = "Loaded metrics";
-context.appendStatus(state.session.workflow.statusMessage);
+context.log("info", "response_review_stats.analysisrun.refreshmetrics.completed", ...
+    state.session.workflow.statusMessage);
 end

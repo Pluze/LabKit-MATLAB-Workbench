@@ -25,5 +25,6 @@ state.project.results.lastExport = [];
 state.session.workflow.statusMessage = sprintf("Analyzed %d recording(s).", ...
     state.session.cache.analysis.analyzedCount);
 state.session.workflow.lastAction = "Analyzed filter record";
-context.appendStatus(state.session.workflow.statusMessage);
+context.log("info", "nerve_response_analysis.analysisrun.runsession.completed", ...
+    state.session.workflow.statusMessage);
 end
