@@ -92,13 +92,16 @@ than the development runtime's `namelengthmax`.
 - Kept Figure Studio raster and SVG export operational on R2022b, where
   `exportgraphics` has neither figure padding nor SVG support.
 - Reserved measured label and tick margins in hidden export canvases. The
-  normal path preserves the configured plot frame and at least a half-em
-  typography-derived outer margin; if Windows refuses the requested outer
-  size, the final fit reduces only the rendered data frame to keep those
-  margins inside the accepted canvas.
+  normal path preserves the configured plot frame and a typography-derived
+  outer margin. Older Windows `print` releases reserve one hardcopy line box
+  plus a half-em white margin; if Windows refuses the requested outer size,
+  the final fit reduces only the rendered data frame to keep that space inside
+  the accepted canvas.
 - Aligned diagnostic struct keys and repository function names with the
   R2022b 63-character identifier ceiling, eliminating warnings hidden by the
   newer development runtime's larger limit.
+- Prepared MATLAB's conventional personal folder on Linux runners so repeated
+  reset-path probes do not emit environment-only `userpath` warnings.
 - Retained deterministic production-rendered PNGs below each test profile's
   `visual-evidence/` folder, included them in the existing platform artifact,
   and kept automated assertions over the same files.

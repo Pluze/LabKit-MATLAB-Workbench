@@ -68,9 +68,9 @@ label cannot silently shrink the data region. Empty ruler text is ignored,
 including the zero-area placeholders MATLAB exposes on logarithmic axes. If a
 Windows desktop refuses the requested hidden figure size, Studio recomputes
 the plot frame from the accepted canvas after reserving measured label and tick
-insets plus a typography-derived minimum outer margin, so ordinary ruler labels
-retain real whitespace even when the older hardcopy renderer reports a smaller
-extent before printing.
+insets plus a typography-derived minimum outer margin. Older Windows `print`
+releases reserve one additional text line because their pre-print screen extent
+can omit that line from the hardcopy bounds.
 Choose **Source size** or one of
 640, 720, 900, 960, 1200, 1237, 1364, 1600, or 2400 px; an aspect choice sets the
 paired plot-frame height. The workbench preview is a real interactive axes,

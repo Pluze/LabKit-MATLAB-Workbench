@@ -104,9 +104,11 @@ second architecture guide.
   and still refuse that requested growth for an invisible figure. Include axis
   labels explicitly; when the accepted size remains clamped, recompute the
   rendered data frame from that canvas, the measured insets, and a
-  typography-derived minimum outer margin. An export regression must inspect
-  the written artifact boundary; hidden figure Position is useful diagnostic
-  context, not the product assertion.
+  typography-derived minimum outer margin. The old Windows `print` path can
+  under-report an axis-label hardcopy line by one em, so reserve that line box
+  in addition to the intended half-em whitespace. An export regression must
+  inspect the written artifact boundary; hidden figure Position is useful
+  diagnostic context, not the product assertion.
 - When a test can produce deterministic rendered output that a person or
   visual model can review, retain that exact image as run-centered visual
   evidence instead of deleting it with a temporary fixture. Keep an automated

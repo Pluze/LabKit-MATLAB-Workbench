@@ -107,7 +107,11 @@ jobs:
 
       - name: Prepare MATLAB artifact directories
         shell: bash
-        run: mkdir -p artifacts/logs/headless artifacts/logs/gui artifacts/logs/isolated
+        run: |
+          mkdir -p artifacts/logs/headless artifacts/logs/gui artifacts/logs/isolated
+          if [ "${RUNNER_OS}" = "Linux" ]; then
+            mkdir -p "${HOME}/Documents/MATLAB"
+          fi
 
       - name: Run full non-GUI validation
         id: headless
