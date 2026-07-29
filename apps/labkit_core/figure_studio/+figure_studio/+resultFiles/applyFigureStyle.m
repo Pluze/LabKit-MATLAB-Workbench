@@ -482,7 +482,7 @@ end
 
 function inset = textExtentsOutsidePlot(ax, plotWidth, plotHeight)
 inset = zeros(1, 4);
-texts = findall(ax, 'Type', 'text');
+texts = axesTextHandles(ax);
 for index = 1:numel(texts)
     textHandle = texts(index);
     if ~isvalid(textHandle) || string(textHandle.Visible) == "off"
@@ -538,7 +538,7 @@ function overflow = renderedTextOverflow(fig, ax, padding)
 overflow = zeros(1, 4);
 figurePosition = fig.Position;
 axesPosition = ax.Position;
-texts = findall(ax, 'Type', 'text');
+texts = axesTextHandles(ax);
 for index = 1:numel(texts)
     textHandle = texts(index);
     if ~isvalid(textHandle) || string(textHandle.Visible) == "off"
@@ -571,7 +571,7 @@ end
 function shiftRenderedTextInsideFigure(fig, ax, padding)
 figureSize = double(fig.Position(3:4));
 axesPosition = double(ax.Position);
-texts = findall(ax, 'Type', 'text');
+texts = axesTextHandles(ax);
 for index = 1:numel(texts)
     textHandle = texts(index);
     if ~isvalid(textHandle) || string(textHandle.Visible) == "off"
@@ -608,6 +608,13 @@ for index = 1:numel(texts)
     catch
     end
 end
+end
+
+function texts = axesTextHandles(ax)
+% R2022b does not consistently expose ruler decorators as descendants of the
+% axes. Include them explicitly, then add ordinary annotation text.
+texts = [ax.Title; ax.XLabel; ax.YLabel; ax.ZLabel; ...
+    findall(ax, 'Type', 'text')];
 end
 
 function restoreLayoutUnits(fig, ax, figureUnits, axesUnits)

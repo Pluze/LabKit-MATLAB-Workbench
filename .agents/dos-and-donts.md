@@ -96,10 +96,13 @@ second architecture guide.
   native text extents as iterative renderer output: converge until geometry is
   stable, then verify figure-coordinate text bounds because an older renderer
   may update them only after accepting the final offscreen geometry. R2022b on
-  Windows can still refuse that requested growth for an invisible figure; when
-  the accepted size remains clamped, translate only the residual overflowing
-  text into the drawable canvas instead of repeatedly requesting the same
-  impossible size or changing the calibrated plot frame.
+  Windows can omit ruler decorators from descendant text discovery and still
+  refuse that requested growth for an invisible figure. Include title and axis
+  labels explicitly; when the accepted size remains clamped, translate only
+  the residual overflowing text into the drawable canvas instead of repeatedly
+  requesting the same impossible size or changing the calibrated plot frame.
+  An export regression must inspect the written artifact boundary; hidden
+  figure Position is useful diagnostic context, not the product assertion.
 - A CI summary is evidence navigation, not a second status badge. On success,
   state the compatibility claim and untested manual boundaries; on failure,
   preserve passing profiles and distinguish a missing report from a failed

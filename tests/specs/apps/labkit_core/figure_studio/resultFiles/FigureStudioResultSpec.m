@@ -66,7 +66,7 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             clear rebuiltCleanup resourceCleanup fileCleanup cleanup
         end
 
-        function exportedLongTitleStaysWithinTheCanvas(testCase)
+        function exportedLongTitleDoesNotClipAtTheImageBoundary(testCase)
             cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
             sourceFigure = figure(Visible="off");
             source = axes(Parent=sourceFigure);
@@ -74,27 +74,34 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             title(source, "-Zimag (ohm) vs Zreal (ohm) (4 files)");
             xlabel(source, "Zreal (ohm)");
             ylabel(source, "-Zimag (ohm)");
-            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
-            [exportedFigure, exported] = figure_studio.resultFiles.createStyledFigure( ...
-                figure_studio.resultFiles.extractAxesData(source), style, source);
-            exportCleanup = onCleanup(@() delete(exportedFigure));
-            drawnow
-            exported.Units = "pixels";
-            exported.Title.Units = "pixels";
-            axesPosition = exported.Position;
-            extent = exported.Title.Extent;
-            titleBounds = [axesPosition(1) + extent(1), axesPosition(2) + extent(2), ...
-                axesPosition(1) + extent(1) + extent(3), ...
-                axesPosition(2) + extent(2) + extent(4)];
-            diagnostic = sprintf( ...
-                "titleBounds=[%g %g %g %g], figurePosition=[%g %g %g %g], innerPosition=[%g %g %g %g], screenSize=[%g %g %g %g]", ...
-                titleBounds, exportedFigure.Position, ...
-                exportedFigure.InnerPosition, get(groot, "ScreenSize"));
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            output = fullfile(folder, "long-title.png");
+            schema = figure_studio.projectSpec();
+            project = schema.Create();
+            project.parameters.style.exportScale = 0.25;
+            session = struct("cache", struct( ...
+                "plotData", ...
+                    figure_studio.resultFiles.extractAxesData(source), ...
+                "sourceAxes", source, "currentSource", ""));
+            state = struct("project", project, "session", session);
+            backend = struct( ...
+                "chooseOutputFile", @(~, ~) ...
+                    labkit.app.dialog.Choice(output), ...
+                "writeResult", @writeResultProbe, ...
+                "log", @ignoreLog);
+            context = labkit.app.internal.CallbackContextFactory.create(backend);
 
-            testCase.verifyGreaterThanOrEqual(titleBounds(1:2), [0 0]);
-            testCase.verifyLessThanOrEqual( ...
-                titleBounds(3:4), exportedFigure.Position(3:4), diagnostic);
-            clear exportCleanup cleanup
+            figure_studio.resultFiles.exportGraphic(state, context, "png");
+
+            image = imread(output);
+            topEdge = reshape(image(1, :, :), [], 1);
+            rightEdge = reshape(image(:, end, :), [], 1);
+            testCase.verifyTrue(all(topEdge >= 245), ...
+                "Rendered ink reaches the top image boundary.");
+            testCase.verifyTrue(all(rightEdge >= 245), ...
+                "Rendered ink reaches the right image boundary.");
+            clear cleanup
         end
 
         function emptyLogRulerTextDoesNotCreateAnOversizedCanvas(testCase)
@@ -121,4 +128,11 @@ function deleteIfFile(path)
 if isfile(path)
     delete(path);
 end
+end
+
+function written = writeResultProbe(folder, ~)
+written = labkit.app.dialog.Choice(fullfile(folder, "manifest.json"));
+end
+
+function ignoreLog(varargin)
 end

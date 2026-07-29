@@ -54,7 +54,9 @@ fit catches older Windows renderers that update title extents only after
 accepting the offscreen geometry. If R2022b clamps that invisible figure to the
 desktop despite the requested size, only the still-overflowing text is
 translated into the accepted canvas; font size and plot-frame geometry remain
-unchanged.
+unchanged. Titles and axis labels are included explicitly because R2022b does
+not consistently expose those ruler decorators through descendant text
+discovery.
 
 ## Changes
 
@@ -113,7 +115,10 @@ schemas are unchanged.
 
 Focused headless specifications cover the Batch Crop duplicate callback and
 the native dialog-filter value, diagnostic ZIP-to-text degradation, and Figure
-Studio result layout. Hidden-GUI workflow coverage performs a real PNG export.
+Studio result layout. The long-title regression uses the production PNG export
+path and checks the written image boundary rather than treating hidden-window
+geometry as export evidence. Hidden-GUI workflow coverage also performs a real
+PNG export.
 CI runs every full profile on Linux, macOS, and Windows against R2022b and the
 latest available MATLAB release, while macOS runs the latest release. The
 R2022b jobs use fixed supported runner images; latest MATLAB uses current
