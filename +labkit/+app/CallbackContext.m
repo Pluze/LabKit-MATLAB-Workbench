@@ -204,6 +204,10 @@ classdef (Sealed) CallbackContext < handle
             elseif ~(ischar(ids) || isstring(ids) || iscellstr(ids))
                 error("labkit:app:contract:InvalidValue", ...
                     "CallbackContext source ids must be text.");
+            elseif isempty(ids)
+                ids = strings(0, 1);
+            elseif ischar(ids)
+                ids = string(ids);
             else
                 ids = string(ids(:));
             end

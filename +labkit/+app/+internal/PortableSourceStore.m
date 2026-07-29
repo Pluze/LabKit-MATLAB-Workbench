@@ -369,7 +369,13 @@ function paths = normalizePaths(value)
 if ~(ischar(value) || isstring(value) || iscellstr(value))
     invalid("Source paths must be text.");
 end
-paths = string(value(:));
+if isempty(value)
+    paths = strings(0, 1);
+elseif ischar(value)
+    paths = string(value);
+else
+    paths = string(value(:));
+end
 if any(strlength(paths) == 0)
     invalid("Source paths must be nonempty.");
 end

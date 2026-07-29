@@ -32,6 +32,13 @@ collections to columns at the duplicate callback boundary before inserting the
 new task. These are the narrow owners of the platform and App shape contracts;
 no new public API or saved-project migration is needed.
 
+The App SDK also canonicalizes text at the portable-source, source-resolution,
+and native file-label boundaries: a character vector is one scalar value,
+while string and cellstr collections become columns where the owning contract
+requires a collection. Apps continue to own ordinary file reading and writing;
+an architecture guardrail only prevents them from bypassing `fileList` or
+`CallbackContext` for native file and folder dialogs.
+
 Diagnostic export now treats a ZIP failure as a degraded but recoverable
 Runtime outcome. It writes the already-sanitized in-memory session records to
 one text file beside the chosen destination when possible, or in MATLAB's
@@ -44,12 +51,19 @@ releases use `print`, including its SVG device. Invisible export figures are
 anchored before their drawable pixel size is assigned, then layout converges
 against the native renderer's measured text extents. A final figure-coordinate
 fit catches older Windows renderers that update title extents only after
-accepting the offscreen geometry.
+accepting the offscreen geometry. If R2022b clamps that invisible figure to the
+desktop despite the requested size, only the still-overflowing text is
+translated into the accepted canvas; font size and plot-frame geometry remain
+unchanged.
 
 ## Changes
 
 - Converted native input/output dialog filters to character-cell tables before
   calling `uigetfile` or `uiputfile`.
+- Canonicalized scalar character paths and IDs before collection reshaping,
+  including Unicode, duplicate, drive-letter, and UNC-shaped regression cases.
+- Added a repository guardrail requiring Apps to use the SDK-owned native file
+  dialog boundaries without introducing a generic public file API.
 - Made Batch Crop duplicate insertion preserve one column-aligned task, source,
   image-cache, and path-cache row per list entry.
 - Added focused regression coverage for the R2024b-compatible filter value and
@@ -71,7 +85,8 @@ accepting the offscreen geometry.
 - Kept hidden export canvases independent of the Windows desktop size while
   preserving the configured plot-frame dimensions, including renderers whose
   title extents change after accepting a larger offscreen window. The final fit
-  grows only the figure sides whose rendered text still overflows.
+  grows only the figure sides whose rendered text still overflows, then
+  translates residual text when the operating system refuses that growth.
 - Replaced three disconnected raw test summaries with one platform-level
   compatibility report that explains each profile, success caveats, actionable
   failure diagnostics, slow-test signals, and exact artifact ownership.

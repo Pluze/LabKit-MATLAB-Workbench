@@ -112,6 +112,26 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             end
         end
 
+        function appsUseSdkOwnedNativeFileDialogs(testCase)
+            root = labkittest.setup();
+            listing = dir(fullfile(root, "apps", "**", "*.m"));
+            violations = strings(0, 1);
+            expression = "(?<![A-Za-z0-9_.])" + ...
+                "(uigetfile|uiputfile|uigetdir)\s*\(";
+            for index = 1:numel(listing)
+                file = fullfile(listing(index).folder, listing(index).name);
+                source = string(fileread(file));
+                if ~isempty(regexp(source, expression, "once"))
+                    relative = erase(string(file), string(root) + filesep);
+                    violations(end + 1, 1) = relative;
+                end
+            end
+
+            testCase.verifyEmpty(violations, ...
+                "Apps must use CallbackContext or fileList for native " + ...
+                "file dialogs so platform/version adaptation remains in SDK.");
+        end
+
         function testsPassAnExplicitJournalOrJournalRootToEveryRuntimeFactory(testCase)
             root = labkittest.setup();
             files = dir(fullfile(root, "tests", "**", "*.m"));

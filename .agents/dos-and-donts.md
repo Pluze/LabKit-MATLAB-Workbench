@@ -95,7 +95,11 @@ second architecture guide.
   origin, and only then assign dimensions that may exceed the screen. Treat
   native text extents as iterative renderer output: converge until geometry is
   stable, then verify figure-coordinate text bounds because an older renderer
-  may update them only after accepting the final offscreen geometry.
+  may update them only after accepting the final offscreen geometry. R2022b on
+  Windows can still refuse that requested growth for an invisible figure; when
+  the accepted size remains clamped, translate only the residual overflowing
+  text into the drawable canvas instead of repeatedly requesting the same
+  impossible size or changing the calibrated plot frame.
 - A CI summary is evidence navigation, not a second status badge. On success,
   state the compatibility claim and untested manual boundaries; on failure,
   preserve passing profiles and distinguish a missing report from a failed

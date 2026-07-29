@@ -79,11 +79,97 @@ classdef AppSdkSpec < matlab.unittest.TestCase
         function nativeDialogFiltersContainOnlyLegacyCharacterCells(testCase)
             filters = labkit.app.internal.NativeAdapterValues.dialogFilters( ...
                 {"*.zip", "Diagnostic bundle (*.zip)"});
+            scalarFilter = ...
+                labkit.app.internal.NativeAdapterValues.dialogFilters("*.png");
+            characterFilter = ...
+                labkit.app.internal.NativeAdapterValues.dialogFilters('*.tif');
 
             testCase.verifySize(filters, [1, 2]);
             testCase.verifyTrue(all(cellfun(@ischar, filters)));
             testCase.verifyEqual(filters, ...
                 {'*.zip', 'Diagnostic bundle (*.zip)'});
+            testCase.verifyEqual(scalarFilter, {'*.png'});
+            testCase.verifyEqual(characterFilter, {'*.tif'});
+        end
+
+        function nativeFileValuesPreserveScalarPathsAndCancellation(testCase)
+            windowsPath = char("C" + ":" + "\" + ...
+                "synthetic" + "\" + "sample.png");
+            labels = labkit.app.internal.NativeAdapterValues.formatFileLabels( ...
+                windowsPath, 'ready');
+            fileCancellation = ...
+                labkit.app.internal.NativeAdapterValues.dialogPath(0, 0);
+            folderCancellation = ...
+                labkit.app.internal.NativeAdapterValues.folderDialogPath(0);
+
+            testCase.verifySize(labels, [1, 1]);
+            testCase.verifySubstring(labels, "[ready]");
+            testCase.verifyTrue(fileCancellation.Cancelled);
+            testCase.verifyTrue(folderCancellation.Cancelled);
+        end
+
+        function sourceResolutionTreatsCharacterIdAsOneIdentifier(testCase)
+            backend = struct("sourcePaths", @sourcePathsProbe);
+            context = labkit.app.internal.CallbackContextFactory.create(backend);
+
+            paths = context.resolveSourcePaths(struct(), 'source-1');
+
+            testCase.verifyEqual(paths, "resolved-source-1");
+        end
+
+        function sourceSelectionNormalizesSupportedPathShapes(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.fileList("files", ...
+                    Bind="project.inputs.sources", ...
+                    AllowDuplicatePaths=true)});
+            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
+                labkit.app.project.Schema( ...
+                    Version=1, Create=@createSourceProject, ...
+                    Validate=@validateSourceProject));
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            unicodePath = fullfile(root, 'α-image.png');
+
+            runtime.applyFileSelection("files", unicodePath, 1);
+            testCase.verifyNumElements( ...
+                runtime.State.project.inputs.sources, 1);
+            testCase.verifyEqual( ...
+                runtime.State.project.inputs.sources.reference.originalPath, ...
+                string(unicodePath));
+
+            drivePath = char("C" + ":" + "\" + ...
+                "synthetic" + "\" + "first.png");
+            uncPath = char("\" + "\" + "host" + "\" + ...
+                "share" + "\" + "second.png");
+            paths = {drivePath; uncPath};
+            runtime.applyFileSelection("files", paths, [1 2]);
+            sources = runtime.State.project.inputs.sources;
+            testCase.verifySize(sources, [2, 1]);
+            testCase.verifyEqual( ...
+                string(arrayfun(@(source) ...
+                    source.reference.originalPath, sources)), ...
+                string(paths));
+
+            stringPaths = ["first.png", "second.png"];
+            runtime.applyFileSelection("files", stringPaths, [1 2]);
+            sources = runtime.State.project.inputs.sources;
+            testCase.verifySize(sources, [2, 1]);
+
+            runtime.applyFileSelection("files", {unicodePath, unicodePath}, [1 2]);
+            sources = runtime.State.project.inputs.sources;
+            testCase.verifySize(sources, [2, 1]);
+            testCase.verifyEqual( ...
+                string(arrayfun(@(source) ...
+                    source.reference.originalPath, sources)), ...
+                repmat(string(unicodePath), 2, 1));
+
+            runtime.applyFileSelection("files", '', zeros(1, 0));
+            testCase.verifyEmpty(runtime.State.project.inputs.sources);
+            clear cleanup
         end
 
         function syntheticInputsAreDeliberateAndDoNotChangeTheRuntime(testCase)
@@ -228,6 +314,22 @@ end
 
 function project = createProject()
 project = struct("parameters", struct("gain", 1));
+end
+
+function project = createSourceProject()
+project = struct("inputs", struct( ...
+    "sources", labkit.app.project.emptySourceRecords()));
+end
+
+function accepted = validateSourceProject(project)
+accepted = isstruct(project) && isscalar(project) && ...
+    isfield(project, "inputs") && isstruct(project.inputs) && ...
+    isfield(project.inputs, "sources") && ...
+    isstruct(project.inputs.sources) && iscolumn(project.inputs.sources);
+end
+
+function paths = sourcePathsProbe(~, ids)
+paths = ("resolved-" + ids(:));
 end
 
 function accepted = validateProject(project)

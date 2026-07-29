@@ -390,7 +390,7 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
 
         function value = dialogFilters(filters)
-        filters = string(filters(:));
+        filters = textColumn(filters);
         if isempty(filters)
             value = "*.*";
         elseif mod(numel(filters), 2) == 0
@@ -401,7 +401,7 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
 
         function paths = filesInFolder(folder, filters, recursive)
-        filters = string(filters(:));
+        filters = textColumn(filters);
         if mod(numel(filters), 2) == 0
             filters = filters(1:2:end);
         end
@@ -467,11 +467,11 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
 
         function labels = formatFileLabels(paths, statuses)
-        paths = string(paths(:));
+        paths = textColumn(paths);
         if nargin < 2 || isempty(statuses)
             statuses = strings(size(paths));
         else
-            statuses = string(statuses(:));
+            statuses = textColumn(statuses);
         end
         if numel(statuses) ~= numel(paths)
             error("labkit:app:contract:InvalidValue", ...
@@ -550,4 +550,14 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
 
     end
+end
+
+function values = textColumn(values)
+if isempty(values)
+    values = strings(0, 1);
+elseif ischar(values)
+    values = string(values);
+else
+    values = string(values(:));
+end
 end

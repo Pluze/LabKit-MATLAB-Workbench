@@ -527,6 +527,11 @@ for iteration = 1:4
     axesPosition(1:2) = axesPosition(1:2) + overflow(1:2);
     ax.Position = axesPosition;
 end
+% R2022b on Windows can clamp even an invisible figure to the desktop.
+% Preserve the requested font size and plot geometry; only translate text
+% that remains outside the actual drawable canvas after growth is refused.
+shiftRenderedTextInsideFigure(fig, ax, padding);
+drawnow nocallbacks
 end
 
 function overflow = renderedTextOverflow(fig, ax, padding)
@@ -556,6 +561,48 @@ for index = 1:numel(texts)
                 max(0, padding - bounds(2)), ...
                 max(0, bounds(3) + padding - figurePosition(3)), ...
                 max(0, bounds(4) + padding - figurePosition(4))]);
+        end
+        clear cleanup
+    catch
+    end
+end
+end
+
+function shiftRenderedTextInsideFigure(fig, ax, padding)
+figureSize = double(fig.Position(3:4));
+axesPosition = double(ax.Position);
+texts = findall(ax, 'Type', 'text');
+for index = 1:numel(texts)
+    textHandle = texts(index);
+    if ~isvalid(textHandle) || string(textHandle.Visible) == "off"
+        continue;
+    end
+    try
+        units = textHandle.Units;
+        cleanup = onCleanup(@() set(textHandle, 'Units', units));
+        textHandle.Units = 'pixels';
+        extent = double(textHandle.Extent);
+        position = double(textHandle.Position);
+        if numel(extent) ~= 4 || any(~isfinite(extent)) || ...
+                numel(position) < 2 || any(~isfinite(position(1:2))) || ...
+                extent(3) <= 0 || extent(4) <= 0
+            clear cleanup
+            continue;
+        end
+        bounds = [ ...
+            axesPosition(1) + extent(1), ...
+            axesPosition(2) + extent(2), ...
+            axesPosition(1) + extent(1) + extent(3), ...
+            axesPosition(2) + extent(2) + extent(4)];
+        availablePadding = min([padding padding], ...
+            max(0, (figureSize - extent(3:4)) ./ 2));
+        lower = availablePadding;
+        upper = figureSize - availablePadding;
+        delta = max(0, lower - bounds(1:2));
+        delta = delta - max(0, bounds(3:4) + delta - upper);
+        if any(abs(delta) >= 0.5)
+            position(1:2) = position(1:2) + delta;
+            textHandle.Position = position;
         end
         clear cleanup
     catch
