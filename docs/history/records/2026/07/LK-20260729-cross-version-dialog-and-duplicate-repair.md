@@ -42,8 +42,9 @@ Figure Studio now selects graphics primitives at its result-file boundary.
 R2025a and newer retain `exportgraphics` figure padding; supported older
 releases use `print`, including its SVG device. Invisible export figures are
 anchored before their drawable pixel size is assigned, then layout converges
-against the native renderer's measured text extents instead of assuming a
-fixed number of draw/resize passes.
+against the native renderer's measured text extents. A final figure-coordinate
+fit catches older Windows renderers that update title extents only after
+accepting the offscreen geometry.
 
 ## Changes
 
@@ -69,10 +70,13 @@ fixed number of draw/resize passes.
   `exportgraphics` has neither figure padding nor SVG support.
 - Kept hidden export canvases independent of the Windows desktop size while
   preserving the configured plot-frame dimensions, including renderers whose
-  title extents change after accepting a larger offscreen window.
+  title extents change after accepting a larger offscreen window. The final fit
+  grows only the figure sides whose rendered text still overflows.
 - Replaced three disconnected raw test summaries with one platform-level
   compatibility report that explains each profile, success caveats, actionable
   failure diagnostics, slow-test signals, and exact artifact ownership.
+  Cancelled or skipped profiles now report an incomplete conclusion instead of
+  mislabeling missing evidence as a compatibility failure.
 
 ## User and data impact
 

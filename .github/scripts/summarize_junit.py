@@ -62,6 +62,14 @@ class ProfileResult:
         )
 
     @property
+    def failed(self) -> bool:
+        if self.failures > 0 or self.errors > 0 or self.failed_cases:
+            return True
+        if self.outcome == "failure":
+            return True
+        return self.outcome == "success" and bool(self.report_problem)
+
+    @property
     def status(self) -> str:
         if self.passed:
             return "✅ Passed"
@@ -79,22 +87,19 @@ def main() -> int:
     ]
     summary_value = os.environ.get("GITHUB_STEP_SUMMARY", "")
     summary_path = Path(summary_value) if summary_value else None
-    all_passed = all(profile.passed for profile in profiles)
+    verdict = overall_verdict(profiles)
 
-    lines = summary_header(args, profiles, all_passed)
+    lines = summary_header(args, profiles, verdict)
     lines += profile_table(profiles)
-    lines += interpretation(args, profiles, all_passed)
-    if not all_passed:
+    lines += interpretation(args, profiles, verdict)
+    if verdict != "passed":
         lines += failure_sections(profiles, args)
     lines += slow_test_lines(profiles, args.max_slow_tests)
     lines += evidence_lines(args)
     write_summary(summary_path, lines)
     publish_annotations(profiles, args.max_annotations)
     print_failure_logs(profiles, args.log_tail_lines)
-    print(
-        f"{args.platform} {args.release}: "
-        + ("all validation profiles passed." if all_passed else "validation failed.")
-    )
+    print(f"{args.platform} {args.release}: validation {verdict}.")
     return 0
 
 
@@ -146,20 +151,26 @@ def load_profile(key: str, outcome: str, artifacts_root: str) -> ProfileResult:
 
 
 def summary_header(
-    args: argparse.Namespace, profiles: list[ProfileResult], all_passed: bool
+    args: argparse.Namespace, profiles: list[ProfileResult], verdict: str
 ) -> list[str]:
-    icon = "✅" if all_passed else "❌"
-    verdict = "passed" if all_passed else "failed"
+    icon = {"passed": "✅", "failed": "❌", "incomplete": "⏸️"}[verdict]
+    heading = {
+        "passed": "passed",
+        "failed": "failed",
+        "incomplete": "incomplete",
+    }[verdict]
     passed_count = sum(profile.passed for profile in profiles)
+    completed_count = sum(profile.passed or profile.failed for profile in profiles)
     return [
-        f"# {icon} LabKit MATLAB compatibility {verdict}",
+        f"# {icon} LabKit MATLAB compatibility {heading}",
         "",
         f"**{args.platform} · {args.release} · `{args.runner}`**",
         "",
         f"> Compatibility claim: {args.claim}.",
         "",
         (
-            f"**Result:** {passed_count}/3 independent MATLAB sessions passed. "
+            f"**Result:** {passed_count}/3 independent MATLAB sessions passed; "
+            f"{completed_count}/3 produced a conclusive result. "
             "A profile counts as passed only when its build step succeeds and its "
             "JUnit report is present, parseable, and failure-free."
         ),
@@ -187,10 +198,10 @@ def profile_table(profiles: list[ProfileResult]) -> list[str]:
 
 
 def interpretation(
-    args: argparse.Namespace, profiles: list[ProfileResult], all_passed: bool
+    args: argparse.Namespace, profiles: list[ProfileResult], verdict: str
 ) -> list[str]:
     lines = ["## What to note", ""]
-    if all_passed:
+    if verdict == "passed":
         lines += [
             "- MATLAB was installed once for this platform/release job, while each "
             "profile ran in a separate batch session so setup was reused without "
@@ -202,8 +213,8 @@ def interpretation(
                 "- GUI evidence used an X virtual framebuffer at 1920×1080; it "
                 "therefore exercises graphics with a display service."
             )
-    else:
-        failed = [PROFILE_METADATA[p.key][0] for p in profiles if not p.passed]
+    elif verdict == "failed":
+        failed = [PROFILE_METADATA[p.key][0] for p in profiles if p.failed]
         passed = [PROFILE_METADATA[p.key][0] for p in profiles if p.passed]
         lines.append(f"- **Requires action:** {', '.join(failed)}.")
         if passed:
@@ -214,6 +225,23 @@ def interpretation(
             "- A failed build step with no JUnit report indicates setup, MATLAB "
             "startup, timeout, or runner failure rather than a reported test failure."
         )
+    else:
+        incomplete = [
+            PROFILE_METADATA[p.key][0]
+            for p in profiles
+            if not p.passed and not p.failed
+        ]
+        passed = [PROFILE_METADATA[p.key][0] for p in profiles if p.passed]
+        lines.append(
+            "- **No test failure was reported.** A compatibility conclusion was "
+            "not reached because this job did not finish: "
+            + ", ".join(incomplete)
+            + "."
+        )
+        if passed:
+            lines.append(
+                "- **Still proven by this run:** " + ", ".join(passed) + " passed."
+            )
     lines += [
         "- Automated hidden-GUI checks do **not** prove native dialog interaction, "
         "pointer feel, visual quality, real-data suitability, or scientific validity.",
@@ -225,13 +253,34 @@ def interpretation(
 def failure_sections(
     profiles: list[ProfileResult], args: argparse.Namespace
 ) -> list[str]:
-    lines = ["## Failures requiring action", ""]
+    failed_profiles = [profile for profile in profiles if profile.failed]
+    incomplete_profiles = [
+        profile for profile in profiles if not profile.passed and not profile.failed
+    ]
+    lines: list[str] = []
+    if failed_profiles:
+        lines += ["## Failures requiring action", ""]
+        lines += profile_problem_sections(failed_profiles, args, incomplete=False)
+    if incomplete_profiles:
+        lines += ["## Validation not completed", ""]
+        lines += profile_problem_sections(incomplete_profiles, args, incomplete=True)
+    return lines
+
+
+def profile_problem_sections(
+    profiles: list[ProfileResult], args: argparse.Namespace, incomplete: bool
+) -> list[str]:
+    lines: list[str] = []
     for profile in profiles:
-        if profile.passed:
-            continue
         label = PROFILE_METADATA[profile.key][0]
         lines += [f"### {label}", ""]
-        if profile.report_problem:
+        if incomplete:
+            lines += [
+                f"> Profile `{profile.outcome}` before it produced a conclusive "
+                "JUnit result. This is missing evidence, not a compatibility failure.",
+                "",
+            ]
+        elif profile.report_problem:
             lines += [
                 f"> **Runner/report failure:** {profile.report_problem}. "
                 f"Build-step outcome: `{profile.outcome}`.",
@@ -262,6 +311,14 @@ def failure_sections(
             profile.log_path, args.summary_log_tail_lines
         )
     return lines
+
+
+def overall_verdict(profiles: list[ProfileResult]) -> str:
+    if all(profile.passed for profile in profiles):
+        return "passed"
+    if any(profile.failed for profile in profiles):
+        return "failed"
+    return "incomplete"
 
 
 def parse_junit(junit_path: Path) -> tuple[list[ET.Element], list[dict[str, str]]]:
@@ -411,7 +468,7 @@ def publish_annotations(profiles: list[ProfileResult], max_annotations: int) -> 
     count = 0
     for profile in profiles:
         label = PROFILE_METADATA[profile.key][0]
-        if profile.report_problem and count < max_annotations:
+        if profile.report_problem and profile.failed and count < max_annotations:
             print_annotation(
                 "error",
                 f"{label} report unavailable",
@@ -431,7 +488,7 @@ def publish_annotations(profiles: list[ProfileResult], max_annotations: int) -> 
 
 def print_failure_logs(profiles: list[ProfileResult], line_count: int) -> None:
     for profile in profiles:
-        if profile.passed or not profile.log_path.is_file():
+        if not profile.failed or not profile.log_path.is_file():
             continue
         label = PROFILE_METADATA[profile.key][0]
         print(f"::group::{label} MATLAB log tail")

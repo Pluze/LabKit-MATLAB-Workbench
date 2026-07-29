@@ -191,7 +191,9 @@ MATLAB diagnostics, and collapses active-test and log-tail evidence below the
 primary failure. Build tasks define descriptions so the upstream MATLAB Build
 Results table is meaningful as well. The repository-owned summary helper has
 no third-party Python dependency and is regression-tested by the lightweight
-change-policy job.
+change-policy job. A cancelled or skipped profile makes the compatibility
+result `incomplete`, not `failed`; passing profiles remain valid evidence, but
+the unfinished job cannot establish the platform claim.
 
 CI classifies the exact pushed or pull-request diff before scheduling MATLAB.
 Source, test, build, workflow, and tool changes run the complete platform

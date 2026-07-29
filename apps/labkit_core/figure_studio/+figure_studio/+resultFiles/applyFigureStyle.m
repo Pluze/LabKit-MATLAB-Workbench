@@ -448,6 +448,7 @@ try
         setFigureContentSize(fig, targetFigureSize);
         ax.Position = targetAxesPosition;
     end
+    fitRenderedTextWithinFigure(fig, ax, padding);
     clear cleanup
 catch
 end
@@ -502,6 +503,60 @@ for index = 1:numel(texts)
             max(0, -extent(2)), ...
             max(0, extent(1) + extent(3) - plotWidth), ...
             max(0, extent(2) + extent(4) - plotHeight)]);
+        clear cleanup
+    catch
+    end
+end
+end
+
+function fitRenderedTextWithinFigure(fig, ax, padding)
+% Older Windows renderers can update text extents only after accepting the
+% final offscreen figure geometry. Measure the rendered figure-coordinate
+% bounds and grow only the sides that still overflow.
+for iteration = 1:4
+    drawnow nocallbacks
+    overflow = renderedTextOverflow(fig, ax, padding);
+    if max(overflow) < 0.5
+        break;
+    end
+    figurePosition = fig.Position;
+    setFigureContentSize(fig, [ ...
+        figurePosition(3) + overflow(1) + overflow(3), ...
+        figurePosition(4) + overflow(2) + overflow(4)]);
+    axesPosition = ax.Position;
+    axesPosition(1:2) = axesPosition(1:2) + overflow(1:2);
+    ax.Position = axesPosition;
+end
+end
+
+function overflow = renderedTextOverflow(fig, ax, padding)
+overflow = zeros(1, 4);
+figurePosition = fig.Position;
+axesPosition = ax.Position;
+texts = findall(ax, 'Type', 'text');
+for index = 1:numel(texts)
+    textHandle = texts(index);
+    if ~isvalid(textHandle) || string(textHandle.Visible) == "off"
+        continue;
+    end
+    try
+        units = textHandle.Units;
+        cleanup = onCleanup(@() set(textHandle, 'Units', units));
+        textHandle.Units = 'pixels';
+        extent = double(textHandle.Extent);
+        if numel(extent) == 4 && all(isfinite(extent)) && ...
+                extent(3) > 0 && extent(4) > 0
+            bounds = [ ...
+                axesPosition(1) + extent(1), ...
+                axesPosition(2) + extent(2), ...
+                axesPosition(1) + extent(1) + extent(3), ...
+                axesPosition(2) + extent(2) + extent(4)];
+            overflow = max(overflow, [ ...
+                max(0, padding - bounds(1)), ...
+                max(0, padding - bounds(2)), ...
+                max(0, bounds(3) + padding - figurePosition(3)), ...
+                max(0, bounds(4) + padding - figurePosition(4))]);
+        end
         clear cleanup
     catch
     end

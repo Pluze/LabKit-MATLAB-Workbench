@@ -75,6 +75,25 @@ class SummarizeJunitTest(unittest.TestCase):
             self.assertIn("Runner/report failure", content)
             self.assertIn("JUnit report was not produced", content)
 
+    def test_cancelled_profiles_make_summary_incomplete_not_failed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            self.write_report(root, "headless", failed=False)
+            summary = root / "summary.md"
+
+            result = self.run_summary(
+                root, summary, ["success", "cancelled", "skipped"]
+            )
+
+            self.assertEqual(result, 0)
+            content = summary.read_text(encoding="utf-8")
+            self.assertIn("# ⏸️ LabKit MATLAB compatibility incomplete", content)
+            self.assertIn("No test failure was reported", content)
+            self.assertIn("Validation not completed", content)
+            self.assertIn("missing evidence, not a compatibility failure", content)
+            self.assertNotIn("Requires action", content)
+            self.assertNotIn("# ❌", content)
+
     def run_summary(self, root, summary, outcomes):
         arguments = [
             "summarize_junit.py",

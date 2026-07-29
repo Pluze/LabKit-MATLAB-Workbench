@@ -94,11 +94,13 @@ second architecture guide.
   export canvas, create it invisible, anchor its pixel Position at the desktop
   origin, and only then assign dimensions that may exceed the screen. Treat
   native text extents as iterative renderer output: converge until geometry is
-  stable rather than relying on a fixed number of resize passes.
+  stable, then verify figure-coordinate text bounds because an older renderer
+  may update them only after accepting the final offscreen geometry.
 - A CI summary is evidence navigation, not a second status badge. On success,
   state the compatibility claim and untested manual boundaries; on failure,
   preserve passing profiles and distinguish a missing report from a failed
-  test. Record real framework diagnostics in JUnit before improving its layout.
+  test. Cancellation means incomplete evidence, not product failure. Record
+  real framework diagnostics in JUnit before improving its layout.
 - A component version change proves that its contract moved; it does not prove
   that every component manual needs new prose. For cross-App behavior, choose
   one canonical owner first and keep App pages limited to workflow-critical or
