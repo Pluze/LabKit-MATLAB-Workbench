@@ -527,48 +527,11 @@ for iteration = 1:4
     axesPosition(1:2) = axesPosition(1:2) + overflow(1:2);
     ax.Position = axesPosition;
 end
-% R2022b on Windows can clamp even an invisible figure to the desktop. If one
-% text object is wider or taller than that accepted canvas, translation alone
-% cannot preserve a margin. Fit only that oversized text before translating
-% any residual overflow; the configured plot-frame geometry remains unchanged.
-fitOversizedTextToFigure(fig, ax, padding);
+% R2022b on Windows can clamp even an invisible figure to the desktop.
+% Preserve the requested font size and plot geometry; only translate text
+% that remains outside the actual drawable canvas after growth is refused.
 shiftRenderedTextInsideFigure(fig, ax, padding);
 drawnow nocallbacks
-end
-
-function fitOversizedTextToFigure(fig, ax, padding)
-for iteration = 1:4
-    drawnow nocallbacks
-    available = max(1, double(fig.Position(3:4)) - 2 * padding);
-    changed = false;
-    texts = axesTextHandles(ax);
-    for index = 1:numel(texts)
-        textHandle = texts(index);
-        if ~isvalid(textHandle) || string(textHandle.Visible) == "off"
-            continue;
-        end
-        try
-            units = textHandle.Units;
-            cleanup = onCleanup(@() set(textHandle, 'Units', units));
-            textHandle.Units = 'pixels';
-            extent = double(textHandle.Extent);
-            if numel(extent) == 4 && all(isfinite(extent)) && ...
-                    all(extent(3:4) > 0)
-                scale = min([1, available ./ extent(3:4)]);
-                if scale < 1
-                    textHandle.FontSize = max(1, ...
-                        double(textHandle.FontSize) * scale);
-                    changed = true;
-                end
-            end
-            clear cleanup
-        catch
-        end
-    end
-    if ~changed
-        break;
-    end
-end
 end
 
 function overflow = renderedTextOverflow(fig, ax, padding)

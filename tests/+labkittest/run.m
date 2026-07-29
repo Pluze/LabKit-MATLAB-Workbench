@@ -16,6 +16,7 @@ function result = run(varargin)
     [compiledPlan, opts] = parseOptions(varargin{:});
     labkittest.setup();
     artifacts = createArtifacts(opts, compiledPlan);
+    artifactEnvironment = exposeArtifactFolder(artifacts.Folder);
     reportPlanScope(compiledPlan);
     reportManualChecks(compiledPlan.ManualChecks);
     results = cell(1, numel(compiledPlan.Groups));
@@ -44,6 +45,7 @@ function result = run(varargin)
     result = struct("Plan", compiledPlan, "Results", {results}, ...
         "RunName", opts.RunName, "ArtifactsRoot", opts.ArtifactsRoot, ...
         "Artifacts", artifacts);
+    clear artifactEnvironment
 end
 
 function reportPlanScope(compiledPlan)
@@ -171,6 +173,12 @@ function artifacts = createArtifacts(opts, compiledPlan)
             "Format", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")), ...
         "framework", "labkittest"));
     writeJson(fullfile(folder, "plan.json"), planPayload(compiledPlan));
+end
+
+function cleanup = exposeArtifactFolder(folder)
+previous = getenv("LABKIT_TEST_ARTIFACT_FOLDER");
+setenv("LABKIT_TEST_ARTIFACT_FOLDER", char(folder));
+cleanup = onCleanup(@() setenv("LABKIT_TEST_ARTIFACT_FOLDER", previous));
 end
 
 function cleanup = applyEnvironment(environment)

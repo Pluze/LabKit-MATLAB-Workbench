@@ -456,6 +456,8 @@ def evidence_lines(args: argparse.Namespace) -> list[str]:
     lines += [
         "- JUnit: `artifacts/test-results/<profile>/junit.xml`",
         "- Active-test state: `artifacts/test-results/<profile>/active-test.json`",
+        "- Reviewable images: "
+        "`artifacts/test-results/<profile>/visual-evidence/` (when produced)",
         "- MATLAB log: `artifacts/logs/<profile>/matlab.log`",
         "- Local equivalent: `buildtool headless`, `buildtool gui`, and "
         "`buildtool isolated` in separate MATLAB sessions",

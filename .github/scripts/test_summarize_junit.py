@@ -38,6 +38,9 @@ class SummarizeJunitTest(unittest.TestCase):
             self.assertIn("Every public App starts from a reset path", content)
             self.assertIn("do **not** prove native dialog interaction", content)
             self.assertIn("3/3 independent MATLAB sessions passed", content)
+            self.assertIn(
+                "test-results/<profile>/visual-evidence/", content
+            )
 
     def test_failure_names_test_and_preserves_passing_profiles(self):
         with tempfile.TemporaryDirectory() as folder:

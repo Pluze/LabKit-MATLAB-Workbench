@@ -156,6 +156,12 @@ pointer behavior, visual design, real-data suitability, and scientific
 interpretation; they cannot replace an automated calculation, state, export,
 migration, structural-GUI, or workflow proof.
 
+For deterministic rendering regressions, use
+`labkittest.visualEvidencePath(name, extension)` and write the production
+image there. Keep an automated assertion over that same file; the retained
+image supports human or visual-model review but is not itself a passing test.
+CI includes each profile's `visual-evidence/` folder in the platform artifact.
+
 ## CI and Manual Evidence
 
 Continuous Integration runs `headless`, `gui`, and `isolated` on Linux, macOS,

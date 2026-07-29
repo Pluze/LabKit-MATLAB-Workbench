@@ -103,6 +103,12 @@ second architecture guide.
   requesting the same impossible size or changing the calibrated plot frame.
   An export regression must inspect the written artifact boundary; hidden
   figure Position is useful diagnostic context, not the product assertion.
+- When a test can produce deterministic rendered output that a person or
+  visual model can review, retain that exact image as run-centered visual
+  evidence instead of deleting it with a temporary fixture. Keep an automated
+  assertion over the same production artifact for the CI result, and publish
+  `visual-evidence/` inside the platform artifact so failures and cross-platform
+  differences can be inspected without rerunning the job.
 - A CI summary is evidence navigation, not a second status badge. On success,
   state the compatibility claim and untested manual boundaries; on failure,
   preserve passing profiles and distinguish a missing report from a failed

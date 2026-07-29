@@ -74,9 +74,8 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             title(source, "-Zimag (ohm) vs Zreal (ohm) (4 files)");
             xlabel(source, "Zreal (ohm)");
             ylabel(source, "-Zimag (ohm)");
-            folder = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            output = fullfile(folder, "long-title.png");
+            output = labkittest.visualEvidencePath( ...
+                "figure-studio-long-title-export", ".png");
             schema = figure_studio.projectSpec();
             project = schema.Create();
             project.parameters.style.exportScale = 0.25;

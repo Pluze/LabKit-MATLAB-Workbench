@@ -67,6 +67,7 @@ if ~isMATLABReleaseOlderThan("R2025a")
     exportgraphics(fig, char(filepath), ...
         'Resolution', resolution, 'BackgroundColor', 'white', ...
         'Padding', 'figure');
+    addRasterSafetyBorder(filepath, format, resolution);
     return;
 end
 paperMode = fig.PaperPositionMode;
@@ -81,7 +82,26 @@ if format == "jpg"
 end
 print(fig, char(filepath), char(device), ...
     char("-r" + string(resolution)));
+addRasterSafetyBorder(filepath, format, resolution);
 clear cleanup
+end
+
+function addRasterSafetyBorder(filepath, format, resolution)
+% Renderer rounding can place otherwise fitted antialiasing in the final
+% raster column. Preserve the rendered pixels and add one logical white pixel
+% at the requested resolution instead of changing figure or font geometry.
+image = imread(filepath);
+border = max(1, round(double(resolution) / 96));
+dimensions = [size(image, 1) + 2 * border, ...
+    size(image, 2) + 2 * border, size(image, 3)];
+padded = ones(dimensions, 'like', image);
+if isinteger(image)
+    padded = padded .* intmax(class(image));
+end
+rows = border + (1:size(image, 1));
+columns = border + (1:size(image, 2));
+padded(rows, columns, :) = image;
+imwrite(padded, filepath, char(format));
 end
 
 function restorePrintProperties(fig, paperMode, invertHardcopy)
