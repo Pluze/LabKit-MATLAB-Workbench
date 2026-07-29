@@ -98,9 +98,9 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             topEdge = reshape(image(1, :, :), [], 1);
             rightEdge = reshape(image(:, end, :), [], 1);
             testCase.verifyTrue(all(topEdge >= 245), ...
-                "Rendered ink reaches the top image boundary.");
+                edgeDiagnostic(topEdge, "top"));
             testCase.verifyTrue(all(rightEdge >= 245), ...
-                "Rendered ink reaches the right image boundary.");
+                edgeDiagnostic(rightEdge, "right"));
             clear cleanup
         end
 
@@ -135,4 +135,16 @@ written = labkit.app.dialog.Choice(fullfile(folder, "manifest.json"));
 end
 
 function ignoreLog(varargin)
+end
+
+function message = edgeDiagnostic(edge, name)
+dark = find(edge < 245);
+if isempty(dark)
+    span = "none";
+else
+    span = string(dark(1)) + ":" + string(dark(end));
+end
+message = sprintf( ...
+    "Rendered ink reaches the %s image boundary (%d channel values, span %s).", ...
+    name, numel(dark), span);
 end

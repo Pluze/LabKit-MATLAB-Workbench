@@ -53,10 +53,11 @@ against the native renderer's measured text extents. A final figure-coordinate
 fit catches older Windows renderers that update title extents only after
 accepting the offscreen geometry. If R2022b clamps that invisible figure to the
 desktop despite the requested size, only the still-overflowing text is
-translated into the accepted canvas; font size and plot-frame geometry remain
-unchanged. Titles and axis labels are included explicitly because R2022b does
-not consistently expose those ruler decorators through descendant text
-discovery.
+translated into the accepted canvas. When a text object is itself larger than
+that accepted canvas, only that object is reduced enough to preserve the
+export boundary; plot-frame geometry remains unchanged. Titles and axis labels
+are included explicitly because R2022b does not consistently expose those
+ruler decorators through descendant text discovery.
 
 ## Changes
 
@@ -88,7 +89,8 @@ discovery.
   preserving the configured plot-frame dimensions, including renderers whose
   title extents change after accepting a larger offscreen window. The final fit
   grows only the figure sides whose rendered text still overflows, then
-  translates residual text when the operating system refuses that growth.
+  fits an individually oversized text object and translates residual text when
+  the operating system refuses that growth.
 - Replaced three disconnected raw test summaries with one platform-level
   compatibility report that explains each profile, success caveats, actionable
   failure diagnostics, slow-test signals, and exact artifact ownership.

@@ -65,7 +65,11 @@ The configured width and aspect always describe the inside of the axes frame.
 Figure Studio calculates the enclosing figure's outer margins from the current
 title, labels, ticks, legend, and visible annotations, so changing a long
 label cannot silently shrink the data region. Empty ruler text is ignored,
-including the zero-area placeholders MATLAB exposes on logarithmic axes.
+including the zero-area placeholders MATLAB exposes on logarithmic axes. If
+an older Windows renderer limits a hidden export canvas to the desktop and one
+text object cannot physically fit inside it, Studio reduces only that text
+enough to preserve the export boundary; the configured plot frame is not
+shrunk.
 Choose **Source size** or one of
 640, 720, 900, 960, 1200, 1237, 1364, 1600, or 2400 px; an aspect choice sets the
 paired plot-frame height. The workbench preview is a real interactive axes,
