@@ -424,10 +424,7 @@ try
         fig, ax, originalFigureUnits, originalAxesUnits));
     plotWidth = max(1, round(double(style.canvasWidth)));
     plotHeight = max(1, round(double(style.canvasHeight)));
-    % Keep a release-independent safety margin around font extents. Older
-    % Windows renderers can report a title several pixels wider only after
-    % the final draw.
-    padding = max(16, round(0.01 * min(plotWidth, plotHeight)));
+    padding = max(4, round(0.01 * min(plotWidth, plotHeight)));
     fig.Units = 'pixels';
     ax.Units = 'pixels';
     setFigureContentSize(fig, [plotWidth + 4 * padding, ...
@@ -447,18 +444,16 @@ end
 end
 
 function setFigureContentSize(fig, sizePixels)
-% Position includes native window decorations on desktop MATLAB. Axes pixel
-% coordinates live in the drawable client area, so size that area directly;
-% otherwise a title bar silently removes height from the requested frame.
-if isprop(fig, 'InnerPosition')
-    position = fig.InnerPosition;
-    position(3:4) = sizePixels;
-    fig.InnerPosition = position;
-else
-    position = fig.Position;
-    position(3:4) = sizePixels;
-    fig.Position = position;
+% Windows constrains displayed windows to the desktop, while an invisible
+% figure can exceed the screen for export. Anchor that hidden canvas before
+% assigning its drawable Position so the window manager does not clamp a
+% large canvas at the default on-screen location.
+position = fig.Position;
+if string(fig.Visible) == "off"
+    position(1:2) = [1 1];
 end
+position(3:4) = sizePixels;
+fig.Position = position;
 end
 
 function inset = plotInsets(ax, plotWidth, plotHeight, padding)

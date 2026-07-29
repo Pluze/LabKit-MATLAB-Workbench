@@ -40,7 +40,7 @@ jobs:
             BASE_SHA="$(git rev-list --max-parents=0 "${HEAD_SHA}")"
           fi
           git diff --check "${BASE_SHA}" "${HEAD_SHA}"
-          python .github/scripts/test_classify_ci_scope.py
+          python -m unittest discover -s .github/scripts -p 'test_*.py'
           git diff --name-only -z "${BASE_SHA}" "${HEAD_SHA}" |
             python .github/scripts/classify_ci_scope.py \
               --null --github-output "${GITHUB_OUTPUT}"
@@ -59,22 +59,27 @@ jobs:
             id: linux
             label: Linux
             release: R2022b
+            claim: Supported MATLAB floor on the pinned Linux runner and legacy graphics/export paths
           - os: ubuntu-latest
             id: linux
             label: Linux
             release: latest
+            claim: Current MATLAB and Ubuntu integration, including virtual-display graphics
           - os: windows-2022
             id: windows
             label: Windows
             release: R2022b
+            claim: Supported MATLAB floor on Windows, including native file and off-screen graphics behavior
           - os: windows-latest
             id: windows
             label: Windows
             release: latest
+            claim: Current MATLAB and Windows native-platform integration
           - os: macos-14
             id: macos
             label: macOS
             release: latest
+            claim: Current Apple Silicon and macOS native-platform sentinel
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -113,20 +118,6 @@ jobs:
           tasks: headless
           startup-options: -logfile artifacts/logs/headless/matlab.log
 
-      - name: Summarize headless validation
-        if: always()
-        shell: bash
-        run: |
-          if [ -f artifacts/test-results/headless/junit.xml ]; then
-            python .github/scripts/summarize_junit.py \
-              artifacts/test-results/headless/junit.xml \
-              --run-name "headless-${{ matrix.id }}-${{ matrix.release }}" \
-              --log artifacts/logs/headless/matlab.log \
-              --active-test artifacts/test-results/headless/active-test.json
-          else
-            echo "::warning::Headless validation did not produce JUnit output."
-          fi
-
       - name: Run hidden GUI validation
         id: gui
         continue-on-error: true
@@ -135,20 +126,6 @@ jobs:
         with:
           tasks: gui
           startup-options: -logfile artifacts/logs/gui/matlab.log
-
-      - name: Summarize GUI validation
-        if: always()
-        shell: bash
-        run: |
-          if [ -f artifacts/test-results/gui/junit.xml ]; then
-            python .github/scripts/summarize_junit.py \
-              artifacts/test-results/gui/junit.xml \
-              --run-name "gui-${{ matrix.id }}-${{ matrix.release }}" \
-              --log artifacts/logs/gui/matlab.log \
-              --active-test artifacts/test-results/gui/active-test.json
-          else
-            echo "::warning::GUI validation did not produce JUnit output."
-          fi
 
       - name: Run path-isolation validation
         id: isolated
@@ -159,19 +136,19 @@ jobs:
           tasks: isolated
           startup-options: -logfile artifacts/logs/isolated/matlab.log
 
-      - name: Summarize path-isolation validation
+      - name: Summarize platform validation
         if: always()
         shell: bash
         run: |
-          if [ -f artifacts/test-results/isolated/junit.xml ]; then
-            python .github/scripts/summarize_junit.py \
-              artifacts/test-results/isolated/junit.xml \
-              --run-name "isolated-${{ matrix.id }}-${{ matrix.release }}" \
-              --log artifacts/logs/isolated/matlab.log \
-              --active-test artifacts/test-results/isolated/active-test.json
-          else
-            echo "::warning::Path-isolation validation did not produce JUnit output."
-          fi
+          python .github/scripts/summarize_junit.py \
+            --platform "${{ matrix.label }}" \
+            --release "${{ matrix.release }}" \
+            --runner "${{ matrix.os }}" \
+            --claim "${{ matrix.claim }}" \
+            --artifact-name "matlab-${{ matrix.id }}-${{ matrix.release }}" \
+            --headless-outcome "${{ steps.headless.outcome }}" \
+            --gui-outcome "${{ steps.gui.outcome }}" \
+            --isolated-outcome "${{ steps.isolated.outcome }}"
 
       - name: Upload platform artifacts
         if: always()

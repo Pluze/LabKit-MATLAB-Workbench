@@ -40,9 +40,9 @@ behavior because Apps neither select nor interpret diagnostic formats.
 
 Figure Studio now selects graphics primitives at its result-file boundary.
 R2025a and newer retain `exportgraphics` figure padding; supported older
-releases use `print`, including its SVG device. A larger minimum text margin
-absorbs renderer-dependent font extent changes without changing the configured
-plot-frame dimensions.
+releases use `print`, including its SVG device. Invisible export figures are
+anchored before their drawable pixel size is assigned so the Windows window
+manager does not clamp an offscreen canvas at its default desktop location.
 
 ## Changes
 
@@ -66,6 +66,11 @@ plot-frame dimensions.
   creation, and publish failures, with the resulting path reported to the user.
 - Kept Figure Studio raster and SVG export operational on R2022b, where
   `exportgraphics` has neither figure padding nor SVG support.
+- Kept hidden export canvases independent of the Windows desktop size while
+  preserving the configured plot-frame dimensions.
+- Replaced three disconnected raw test summaries with one platform-level
+  compatibility report that explains each profile, success caveats, actionable
+  failure diagnostics, slow-test signals, and exact artifact ownership.
 
 ## User and data impact
 
@@ -92,8 +97,11 @@ CI runs every full profile on Linux, macOS, and Windows against R2022b and the
 latest available MATLAB release, while macOS runs the latest release. The
 R2022b jobs use fixed supported runner images; latest MATLAB uses current
 runner images, and Linux GUI validation runs with a virtual display.
-Documentation consistency and the final changed-file gate cover the integrated
-version and history updates.
+The JUnit artifact records MathWorks qualification and exception diagnostics
+instead of a generic failure placeholder, and dependency-free Python
+regressions protect both successful and failed summary layouts. Documentation
+consistency and the final changed-file gate cover the integrated version and
+history updates.
 
 ## Evidence
 

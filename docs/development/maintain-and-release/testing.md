@@ -179,6 +179,20 @@ not silently replace repository protection policy. It uploads the catalog
 artifacts even after failure. Coverage is an explicit report, not a duplicate
 CI gate.
 
+Every platform-release job publishes one evidence-oriented job summary after
+all three independent MATLAB sessions finish. Its profile table states what
+`headless`, `gui`, and `isolated` prove instead of repeating only a raw
+pass/fail count. A successful summary records the compatibility claim, clean
+runtime assumptions, display configuration, slowest tests, artifact name, and
+the manual boundaries that automation does not prove. A failed summary
+preserves any profiles that still passed, separates a missing JUnit report from
+a reported test failure, names failed test identities, includes recorded
+MATLAB diagnostics, and collapses active-test and log-tail evidence below the
+primary failure. Build tasks define descriptions so the upstream MATLAB Build
+Results table is meaningful as well. The repository-owned summary helper has
+no third-party Python dependency and is regression-tested by the lightweight
+change-policy job.
+
 CI classifies the exact pushed or pull-request diff before scheduling MATLAB.
 Source, test, build, workflow, and tool changes run the complete platform
 matrix. Human documentation-only changes run `docsCheck` without the platform

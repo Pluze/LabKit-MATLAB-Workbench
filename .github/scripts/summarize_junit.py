@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Summarize a MATLAB JUnit XML report for GitHub Actions.
+"""Publish one evidence-oriented summary for a MATLAB platform job.
 
-The script is intentionally dependency-free so CI failure summaries keep working
-before Python packages are installed. It never fails the job; MATLAB test steps
-own pass/fail status. This helper only surfaces failed testcase names, messages,
-slow testcase hints, artifact locations, and a short MATLAB log tail in the
-GitHub job summary and annotations.
+The helper is dependency-free and deliberately does not own the job result.
+The workflow's final outcome gate remains authoritative. This script combines
+the three independent MATLAB sessions, explains what each proves, distinguishes
+runner failures from test failures, and keeps bulky diagnostics collapsed.
 """
 
 from __future__ import annotations
@@ -16,121 +15,100 @@ import os
 import re
 import sys
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
 
+PROFILE_METADATA = {
+    "headless": (
+        "Non-GUI",
+        "Product, SDK, persistence, calculation, policy, and export specifications",
+    ),
+    "gui": (
+        "Hidden GUI",
+        "Native App construction, callback wiring, graphics, and export workflows",
+    ),
+    "isolated": (
+        "Path isolation",
+        "Every public App starts from a reset path without undeclared sibling dependencies",
+    ),
+}
+
+
+@dataclass
+class ProfileResult:
+    key: str
+    outcome: str
+    report_path: Path
+    log_path: Path
+    active_test_path: Path
+    tests: int = 0
+    failures: int = 0
+    errors: int = 0
+    skipped: int = 0
+    duration: float = 0.0
+    cases: list[dict[str, str | float]] = field(default_factory=list)
+    failed_cases: list[dict[str, str]] = field(default_factory=list)
+    report_problem: str = ""
+
+    @property
+    def passed(self) -> bool:
+        return (
+            self.outcome == "success"
+            and not self.report_problem
+            and self.failures == 0
+            and self.errors == 0
+        )
+
+    @property
+    def status(self) -> str:
+        if self.passed:
+            return "✅ Passed"
+        if self.outcome in {"cancelled", "skipped"}:
+            return "⏭️ " + self.outcome.capitalize()
+        return "❌ Failed"
+
+
 def main() -> int:
     args = parse_args()
+    profiles = [
+        load_profile("headless", args.headless_outcome, args.artifacts_root),
+        load_profile("gui", args.gui_outcome, args.artifacts_root),
+        load_profile("isolated", args.isolated_outcome, args.artifacts_root),
+    ]
     summary_value = os.environ.get("GITHUB_STEP_SUMMARY", "")
     summary_path = Path(summary_value) if summary_value else None
-    junit_path = Path(args.junit_xml)
-    run_name = args.run_name
+    all_passed = all(profile.passed for profile in profiles)
 
-    if not junit_path.is_file():
-        message = f"JUnit report not found: {junit_path}"
-        lines = [
-            f"### {run_name}",
-            "",
-            f"> Warning: {message}",
-            "",
-            artifact_lines(args),
-            "",
-        ]
-        lines += active_test_lines(args.active_test)
-        lines += log_tail_summary(args.log, args.summary_log_tail_lines)
-        write_summary(summary_path, lines)
-        print_annotation("warning", f"{run_name} report missing", message)
-        print_log_tail(args.log, args.log_tail_lines, "MATLAB log tail")
-        return 0
-
-    try:
-        suites, failed_cases = parse_junit(junit_path)
-    except Exception as exc:  # pragma: no cover - defensive CI reporting path.
-        message = f"Could not parse {junit_path}: {exc}"
-        lines = [f"### {run_name}", "", f"> Warning: {message}", ""]
-        lines += log_tail_summary(args.log, args.summary_log_tail_lines)
-        write_summary(summary_path, lines)
-        print_annotation("warning", f"{run_name} report parse failed", message)
-        print_log_tail(args.log, args.log_tail_lines, "MATLAB log tail")
-        return 0
-
-    test_cases = parse_test_cases(suites)
-    totals = {
-        "tests": sum(to_int(s.get("tests")) for s in suites),
-        "failures": sum(to_int(s.get("failures")) for s in suites),
-        "errors": sum(to_int(s.get("errors")) for s in suites),
-        "skipped": sum(to_int(s.get("skipped")) for s in suites),
-        "time": sum(to_float(s.get("time")) for s in suites),
-    }
-
-    lines = [
-        f"### {run_name}",
-        "",
-        "| tests | failures | errors | skipped | time (s) |",
-        "|---:|---:|---:|---:|---:|",
-        (
-            f"| {totals['tests']} | {totals['failures']} | {totals['errors']} | "
-            f"{totals['skipped']} | {totals['time']:.2f} |"
-        ),
-        "",
-        artifact_lines(args),
-        "",
-    ]
-
-    if failed_cases:
-        lines += [
-            f"#### Failed tests ({len(failed_cases)})",
-            "",
-            "| Class | Test | Message |",
-            "|---|---|---|",
-        ]
-        for case in failed_cases[: args.max_failures]:
-            lines.append(
-                f"| `{case['classname']}` | `{case['name']}` | {markdown_escape(case['message'])} |"
-            )
-        if len(failed_cases) > args.max_failures:
-            lines.append("")
-            lines.append(
-                f"Showing first {args.max_failures} failures; inspect artifacts for the full report."
-            )
-        lines.append("")
-        lines += failure_detail_lines(failed_cases, args.max_failure_details)
-        lines += active_test_lines(args.active_test)
-        lines += log_tail_summary(args.log, args.summary_log_tail_lines)
-
-        for case in failed_cases[: args.max_annotations]:
-            print_annotation(
-                case["kind"],
-                f"{run_name}: {case['classname']}.{case['name']}",
-                case["message"],
-            )
-        print_log_tail(args.log, args.log_tail_lines, "MATLAB log tail after test failure")
-    else:
-        lines += ["No failed tests reported in JUnit.", ""]
-
-    lines += slow_test_lines(test_cases, args.max_slow_tests)
+    lines = summary_header(args, profiles, all_passed)
+    lines += profile_table(profiles)
+    lines += interpretation(args, profiles, all_passed)
+    if not all_passed:
+        lines += failure_sections(profiles, args)
+    lines += slow_test_lines(profiles, args.max_slow_tests)
+    lines += evidence_lines(args)
     write_summary(summary_path, lines)
+    publish_annotations(profiles, args.max_annotations)
+    print_failure_logs(profiles, args.log_tail_lines)
     print(
-        (
-            f"{run_name}: {totals['tests']} tests, {totals['failures']} failures, "
-            f"{totals['errors']} errors, {totals['skipped']} skipped."
-        )
+        f"{args.platform} {args.release}: "
+        + ("all validation profiles passed." if all_passed else "validation failed.")
     )
     return 0
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("junit_xml", help="Path to the JUnit XML report.")
-    parser.add_argument("--run-name", required=True, help="Display name in GitHub summaries.")
-    parser.add_argument("--html", default="", help="Path to the MATLAB HTML test report.")
-    parser.add_argument("--log", default="", help="Path to the MATLAB log file.")
-    parser.add_argument(
-        "--active-test",
-        default="",
-        help="Path to the runner's active-test JSON diagnostic.",
-    )
+    parser.add_argument("--platform", required=True)
+    parser.add_argument("--release", required=True)
+    parser.add_argument("--runner", required=True)
+    parser.add_argument("--claim", required=True)
+    parser.add_argument("--artifact-name", required=True)
+    parser.add_argument("--artifacts-root", default="artifacts")
+    parser.add_argument("--headless-outcome", required=True)
+    parser.add_argument("--gui-outcome", required=True)
+    parser.add_argument("--isolated-outcome", required=True)
     parser.add_argument("--max-failures", type=int, default=20)
     parser.add_argument("--max-annotations", type=int, default=20)
     parser.add_argument("--max-failure-details", type=int, default=5)
@@ -140,9 +118,159 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def load_profile(key: str, outcome: str, artifacts_root: str) -> ProfileResult:
+    root = Path(artifacts_root)
+    report = root / "test-results" / key / "junit.xml"
+    profile = ProfileResult(
+        key=key,
+        outcome=outcome.lower(),
+        report_path=report,
+        log_path=root / "logs" / key / "matlab.log",
+        active_test_path=root / "test-results" / key / "active-test.json",
+    )
+    if not report.is_file():
+        profile.report_problem = "JUnit report was not produced"
+        return profile
+    try:
+        suites, profile.failed_cases = parse_junit(report)
+    except (OSError, ET.ParseError) as exc:
+        profile.report_problem = f"JUnit report could not be parsed: {exc}"
+        return profile
+    profile.cases = parse_test_cases(suites)
+    profile.tests = sum(to_int(suite.get("tests")) for suite in suites)
+    profile.failures = sum(to_int(suite.get("failures")) for suite in suites)
+    profile.errors = sum(to_int(suite.get("errors")) for suite in suites)
+    profile.skipped = sum(to_int(suite.get("skipped")) for suite in suites)
+    profile.duration = sum(to_float(suite.get("time")) for suite in suites)
+    return profile
+
+
+def summary_header(
+    args: argparse.Namespace, profiles: list[ProfileResult], all_passed: bool
+) -> list[str]:
+    icon = "✅" if all_passed else "❌"
+    verdict = "passed" if all_passed else "failed"
+    passed_count = sum(profile.passed for profile in profiles)
+    return [
+        f"# {icon} LabKit MATLAB compatibility {verdict}",
+        "",
+        f"**{args.platform} · {args.release} · `{args.runner}`**",
+        "",
+        f"> Compatibility claim: {args.claim}.",
+        "",
+        (
+            f"**Result:** {passed_count}/3 independent MATLAB sessions passed. "
+            "A profile counts as passed only when its build step succeeds and its "
+            "JUnit report is present, parseable, and failure-free."
+        ),
+        "",
+    ]
+
+
+def profile_table(profiles: list[ProfileResult]) -> list[str]:
+    lines = [
+        "## Validation evidence",
+        "",
+        "| Profile | Status | What it proves | Tests | Failed | Skipped | Time |",
+        "|---|---|---|---:|---:|---:|---:|",
+    ]
+    for profile in profiles:
+        label, purpose = PROFILE_METADATA[profile.key]
+        failed = profile.failures + profile.errors
+        lines.append(
+            f"| **{label}** | {profile.status} | {purpose} | "
+            f"{profile.tests} | {failed} | {profile.skipped} | "
+            f"{format_duration(profile.duration)} |"
+        )
+    lines.append("")
+    return lines
+
+
+def interpretation(
+    args: argparse.Namespace, profiles: list[ProfileResult], all_passed: bool
+) -> list[str]:
+    lines = ["## What to note", ""]
+    if all_passed:
+        lines += [
+            "- MATLAB was installed once for this platform/release job, while each "
+            "profile ran in a separate batch session so setup was reused without "
+            "sharing MATLAB state.",
+            "- The run used a clean MATLAB installation without optional Toolboxes.",
+        ]
+        if args.platform == "Linux":
+            lines.append(
+                "- GUI evidence used an X virtual framebuffer at 1920×1080; it "
+                "therefore exercises graphics with a display service."
+            )
+    else:
+        failed = [PROFILE_METADATA[p.key][0] for p in profiles if not p.passed]
+        passed = [PROFILE_METADATA[p.key][0] for p in profiles if p.passed]
+        lines.append(f"- **Requires action:** {', '.join(failed)}.")
+        if passed:
+            lines.append(
+                "- **Still proven by this run:** " + ", ".join(passed) + " passed."
+            )
+        lines.append(
+            "- A failed build step with no JUnit report indicates setup, MATLAB "
+            "startup, timeout, or runner failure rather than a reported test failure."
+        )
+    lines += [
+        "- Automated hidden-GUI checks do **not** prove native dialog interaction, "
+        "pointer feel, visual quality, real-data suitability, or scientific validity.",
+        "",
+    ]
+    return lines
+
+
+def failure_sections(
+    profiles: list[ProfileResult], args: argparse.Namespace
+) -> list[str]:
+    lines = ["## Failures requiring action", ""]
+    for profile in profiles:
+        if profile.passed:
+            continue
+        label = PROFILE_METADATA[profile.key][0]
+        lines += [f"### {label}", ""]
+        if profile.report_problem:
+            lines += [
+                f"> **Runner/report failure:** {profile.report_problem}. "
+                f"Build-step outcome: `{profile.outcome}`.",
+                "",
+            ]
+        if profile.failed_cases:
+            lines += [
+                "| Class | Test | Diagnostic |",
+                "|---|---|---|",
+            ]
+            for case in profile.failed_cases[: args.max_failures]:
+                lines.append(
+                    f"| `{case['classname']}` | `{case['name']}` | "
+                    f"{markdown_escape(case['message'])} |"
+                )
+            if len(profile.failed_cases) > args.max_failures:
+                lines += [
+                    "",
+                    f"Showing the first {args.max_failures} failures; use the JUnit "
+                    "artifact for the complete set.",
+                ]
+            lines.append("")
+            lines += failure_detail_lines(
+                profile.failed_cases, args.max_failure_details
+            )
+        lines += active_test_lines(profile.active_test_path)
+        lines += log_tail_summary(
+            profile.log_path, args.summary_log_tail_lines
+        )
+    return lines
+
+
 def parse_junit(junit_path: Path) -> tuple[list[ET.Element], list[dict[str, str]]]:
     root = ET.parse(junit_path).getroot()
-    suites = [root] if strip_namespace(root.tag) == "testsuite" else root.findall(".//testsuite")
+    suites = (
+        [root]
+        if strip_namespace(root.tag) == "testsuite"
+        else root.findall(".//testsuite")
+    )
     failed_cases: list[dict[str, str]] = []
     for testcase in root.findall(".//testcase"):
         for tag in ("failure", "error"):
@@ -163,88 +291,28 @@ def parse_junit(junit_path: Path) -> tuple[list[ET.Element], list[dict[str, str]
 
 
 def parse_test_cases(suites: list[ET.Element]) -> list[dict[str, str | float]]:
-    test_cases: list[dict[str, str | float]] = []
+    cases: list[dict[str, str | float]] = []
     for suite in suites:
-        suite_name = suite.get("name", "")
         for testcase in suite.findall("testcase"):
-            test_cases.append(
+            cases.append(
                 {
-                    "suite": suite_name,
                     "classname": testcase.get("classname", ""),
                     "name": testcase.get("name", ""),
                     "time": to_float(testcase.get("time")),
                 }
             )
-    return test_cases
-
-
-def artifact_lines(args: argparse.Namespace) -> str:
-    rows = []
-    url = github_artifacts_url()
-    if url:
-        rows.append(f"- Run artifacts page: [open artifacts for this run]({url})")
-    if args.html:
-        rows.append(
-            "- HTML report in artifact: "
-            f"`{args.html}` (download the artifact; Actions does not render artifact HTML inline)"
-        )
-    if args.log:
-        rows.append(f"- MATLAB log: `{args.log}`")
-    if args.active_test:
-        rows.append(f"- Active-test diagnostic: `{args.active_test}`")
-    rows.append(f"- JUnit XML: `{args.junit_xml}`")
-    return "\n".join(rows)
-
-
-def active_test_lines(active_test_path: str) -> list[str]:
-    if not active_test_path:
-        return []
-    path = Path(active_test_path)
-    if not path.is_file():
-        return [f"> Active-test diagnostic not found: `{path}`", ""]
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        return [f"> Could not read active-test diagnostic `{path}`: {exc}", ""]
-
-    test_name = str(payload.get("test", "unknown"))
-    state = str(payload.get("event", "unknown"))
-    elapsed = to_float(payload.get("testElapsedSeconds"))
-    timestamp = str(payload.get("timestamp", "unknown"))
-    return [
-        "#### Last active test",
-        "",
-        f"- Test: `{markdown_escape(test_name)}`",
-        f"- State: `{markdown_escape(state)}`",
-        f"- Test elapsed at last update: `{elapsed:.2f}s`",
-        f"- Last update: `{markdown_escape(timestamp)}`",
-        "",
-    ]
-
-
-def github_artifacts_url() -> str:
-    server = os.environ.get("GITHUB_SERVER_URL", "")
-    repo = os.environ.get("GITHUB_REPOSITORY", "")
-    run_id = os.environ.get("GITHUB_RUN_ID", "")
-    if not server or not repo or not run_id:
-        return ""
-    return f"{server.rstrip('/')}/{repo}/actions/runs/{run_id}#artifacts"
+    return cases
 
 
 def failure_detail_lines(
-    failed_cases: list[dict[str, str]], max_failure_details: int
+    failed_cases: list[dict[str, str]], max_details: int
 ) -> list[str]:
-    if max_failure_details <= 0:
-        return []
-    lines = [
-        f"#### Failure details (first {min(len(failed_cases), max_failure_details)})",
-        "",
-    ]
-    for case in failed_cases[:max_failure_details]:
-        title = f"{case['classname']}.{case['name']}"
+    lines: list[str] = []
+    for case in failed_cases[:max_details]:
+        identity = f"{case['classname']}.{case['name']}"
         lines += [
             "<details>",
-            f"<summary><code>{markdown_escape(title)}</code></summary>",
+            f"<summary>Diagnostic for <code>{markdown_escape(identity)}</code></summary>",
             "",
             "```text",
             fence_escape(case["detail"]),
@@ -256,45 +324,30 @@ def failure_detail_lines(
     return lines
 
 
-def slow_test_lines(
-    test_cases: list[dict[str, str | float]], max_slow_tests: int
-) -> list[str]:
-    if max_slow_tests <= 0 or not test_cases:
-        return []
-    slow_cases = sorted(test_cases, key=lambda case: float(case["time"]), reverse=True)
-    slow_cases = slow_cases[:max_slow_tests]
-    lines = [
-        f"#### Slowest tests (top {len(slow_cases)})",
-        "",
-        "| Class | Test | time (s) |",
-        "|---|---|---:|",
-    ]
-    for case in slow_cases:
-        lines.append(
-            f"| `{case['classname']}` | `{case['name']}` | {float(case['time']):.2f} |"
-        )
-    lines.append("")
-    return lines
-
-
-def log_tail_summary(log_path: str, line_count: int) -> list[str]:
-    if not log_path or line_count <= 0:
-        return []
-    path = Path(log_path)
+def active_test_lines(path: Path) -> list[str]:
     if not path.is_file():
-        return [
-            "#### MATLAB log tail",
-            "",
-            f"> MATLAB log not found: `{path}`",
-            "",
-        ]
-    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-    tail = lines[-line_count:]
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    test_name = str(payload.get("test", "unknown"))
+    state = str(payload.get("event", "unknown"))
+    elapsed = to_float(payload.get("testElapsedSeconds"))
     return [
-        f"#### MATLAB log tail (last {len(tail)} lines)",
+        f"Last recorded test: `{markdown_escape(test_name)}` "
+        f"(`{markdown_escape(state)}`, {elapsed:.2f}s at last update).",
         "",
+    ]
+
+
+def log_tail_summary(path: Path, line_count: int) -> list[str]:
+    if not path.is_file() or line_count <= 0:
+        return []
+    tail = path.read_text(encoding="utf-8", errors="replace").splitlines()[-line_count:]
+    return [
         "<details>",
-        "<summary>Show MATLAB log tail</summary>",
+        f"<summary>MATLAB log tail ({len(tail)} lines)</summary>",
         "",
         "```text",
         fence_escape("\n".join(tail)),
@@ -305,26 +358,100 @@ def log_tail_summary(log_path: str, line_count: int) -> list[str]:
     ]
 
 
-def print_log_tail(log_path: str, line_count: int, title: str) -> None:
-    if not log_path:
-        return
-    path = Path(log_path)
-    if not path.is_file():
-        print(f"MATLAB log not found: {path}")
-        return
+def slow_test_lines(
+    profiles: list[ProfileResult], max_tests: int
+) -> list[str]:
+    cases = [
+        {**case, "profile": PROFILE_METADATA[profile.key][0]}
+        for profile in profiles
+        for case in profile.cases
+    ]
+    if max_tests <= 0 or not cases:
+        return []
+    slow = sorted(cases, key=lambda case: float(case["time"]), reverse=True)[:max_tests]
+    lines = [
+        "## Performance signals",
+        "",
+        f"Slowest {len(slow)} tests across the three independent sessions:",
+        "",
+        "| Profile | Test | Time |",
+        "|---|---|---:|",
+    ]
+    for case in slow:
+        identity = f"{case['classname']}.{case['name']}"
+        lines.append(
+            f"| {case['profile']} | `{markdown_escape(identity)}` | "
+            f"{float(case['time']):.2f}s |"
+        )
+    lines.append("")
+    return lines
 
-    print(f"::group::{title}")
-    try:
-        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-        for line in lines[-line_count:]:
-            print(line)
-    finally:
-        print("::endgroup::")
+
+def evidence_lines(args: argparse.Namespace) -> list[str]:
+    lines = [
+        "## Evidence and reproduction",
+        "",
+        f"- Artifact: `{args.artifact_name}` (retained for 14 days)",
+    ]
+    url = github_artifacts_url()
+    if url:
+        lines.append(f"- [Open this run's artifacts]({url})")
+    lines += [
+        "- JUnit: `artifacts/test-results/<profile>/junit.xml`",
+        "- Active-test state: `artifacts/test-results/<profile>/active-test.json`",
+        "- MATLAB log: `artifacts/logs/<profile>/matlab.log`",
+        "- Local equivalent: `buildtool headless`, `buildtool gui`, and "
+        "`buildtool isolated` in separate MATLAB sessions",
+        "",
+    ]
+    return lines
 
 
-def print_annotation(level: str, title: str, message: str) -> None:
-    level = "error" if level == "failure" else level
-    print(f"::{level} title={escape_command(title)}::{escape_command(message)}")
+def publish_annotations(profiles: list[ProfileResult], max_annotations: int) -> None:
+    count = 0
+    for profile in profiles:
+        label = PROFILE_METADATA[profile.key][0]
+        if profile.report_problem and count < max_annotations:
+            print_annotation(
+                "error",
+                f"{label} report unavailable",
+                f"{profile.report_problem}; build outcome: {profile.outcome}",
+            )
+            count += 1
+        for case in profile.failed_cases:
+            if count >= max_annotations:
+                return
+            print_annotation(
+                case["kind"],
+                f"{label}: {case['classname']}.{case['name']}",
+                case["message"],
+            )
+            count += 1
+
+
+def print_failure_logs(profiles: list[ProfileResult], line_count: int) -> None:
+    for profile in profiles:
+        if profile.passed or not profile.log_path.is_file():
+            continue
+        label = PROFILE_METADATA[profile.key][0]
+        print(f"::group::{label} MATLAB log tail")
+        try:
+            lines = profile.log_path.read_text(
+                encoding="utf-8", errors="replace"
+            ).splitlines()
+            for line in lines[-line_count:]:
+                print(line)
+        finally:
+            print("::endgroup::")
+
+
+def github_artifacts_url() -> str:
+    server = os.environ.get("GITHUB_SERVER_URL", "")
+    repo = os.environ.get("GITHUB_REPOSITORY", "")
+    run_id = os.environ.get("GITHUB_RUN_ID", "")
+    if not server or not repo or not run_id:
+        return ""
+    return f"{server.rstrip('/')}/{repo}/actions/runs/{run_id}#artifacts"
 
 
 def write_summary(path: Path | None, lines: Iterable[str]) -> None:
@@ -335,32 +462,42 @@ def write_summary(path: Path | None, lines: Iterable[str]) -> None:
         handle.write("\n")
 
 
+def print_annotation(level: str, title: str, message: str) -> None:
+    level = "error" if level == "failure" else level
+    print(f"::{level} title={escape_command(title)}::{escape_command(message)}")
+
+
 def compact_message(message: str) -> str:
     message = re.sub(r"\s+", " ", message).strip()
-    return message[:500] if message else "(no message)"
+    return message[:500] if message else "(no diagnostic supplied)"
 
 
 def compact_detail(message: str) -> str:
     message = message.strip()
     if not message:
-        return "(no detail)"
-    max_chars = 6000
-    if len(message) <= max_chars:
-        return message
-    return message[:max_chars] + "\n... truncated ..."
+        return "(no diagnostic supplied)"
+    return message if len(message) <= 6000 else message[:6000] + "\n... truncated ..."
 
 
-def markdown_escape(message: str) -> str:
-    return message.replace("|", "\\|")
+def format_duration(seconds: float) -> str:
+    minutes, remaining = divmod(seconds, 60)
+    if minutes:
+        return f"{int(minutes)}m {remaining:.0f}s"
+    return f"{remaining:.1f}s"
 
 
-def fence_escape(message: str) -> str:
-    return message.replace("```", "` ` `")
+def markdown_escape(message: object) -> str:
+    return str(message).replace("|", "\\|")
 
 
-def escape_command(value: str) -> str:
+def fence_escape(message: object) -> str:
+    return str(message).replace("```", "` ` `")
+
+
+def escape_command(value: object) -> str:
     return (
-        value.replace("%", "%25")
+        str(value)
+        .replace("%", "%25")
         .replace("\r", "%0D")
         .replace("\n", "%0A")
     )

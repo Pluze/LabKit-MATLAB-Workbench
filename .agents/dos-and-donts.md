@@ -90,6 +90,13 @@ second architecture guide.
 - Guard release-added graphics options at the App export boundary and keep the
   oldest supported release on a real export test. Parsing and layout tests
   cannot detect an unsupported name-value or file format.
+- Windows constrains displayed figure windows to the desktop. For an offscreen
+  export canvas, create it invisible, anchor its pixel Position at the desktop
+  origin, and only then assign dimensions that may exceed the screen.
+- A CI summary is evidence navigation, not a second status badge. On success,
+  state the compatibility claim and untested manual boundaries; on failure,
+  preserve passing profiles and distinguish a missing report from a failed
+  test. Record real framework diagnostics in JUnit before improving its layout.
 - A component version change proves that its contract moved; it does not prove
   that every component manual needs new prose. For cross-App behavior, choose
   one canonical owner first and keep App pages limited to workflow-critical or
