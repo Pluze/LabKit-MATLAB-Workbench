@@ -156,15 +156,50 @@ pointer behavior, visual design, real-data suitability, and scientific
 interpretation; they cannot replace an automated calculation, state, export,
 migration, structural-GUI, or workflow proof.
 
+For deterministic rendering regressions, use
+`labkittest.visualEvidencePath(name, extension)` and write the production
+image there. Keep an automated assertion over that same file; the retained
+image supports human or visual-model review but is not itself a passing test.
+CI includes each profile's `visual-evidence/` folder in the platform artifact.
+
 ## CI and Manual Evidence
 
-Continuous Integration runs `headless`, `gui`, and `isolated` on Linux, macOS, and Windows
-from a clean MATLAB runtime without optional Toolboxes. It also runs `docsCheck`
-once, then reports one aggregate `CI Gate` result that depends on every required
-profile. Configure repository branch protection to require `CI Gate`; the
-workflow does not silently replace repository protection policy. It uploads the
-catalog artifacts even after failure. Coverage is an explicit report, not a
-duplicate CI gate.
+Continuous Integration runs `headless`, `gui`, and `isolated` on Linux, macOS,
+and Windows against R2022b and the latest release available to
+`matlab-actions/setup-matlab`. R2022b is the LabKit minimum supported release
+and also the first release with MATLAB Build Tool. macOS runs only the latest
+release as an Apple Silicon and native-platform sentinel; Linux and Windows
+cover both release boundaries. This matrix is compatibility evidence for the
+supported product boundary. CI uses clean MATLAB runtimes without optional
+Toolboxes. The R2022b entries use the fixed Ubuntu 22.04 and Windows Server
+2022 runner images supported by that MATLAB release; latest MATLAB uses the
+current runner images. Each platform-release job installs MATLAB once, then
+runs `headless`, `gui`, and `isolated` in separate batch sessions so the
+profiles share setup cost without sharing MATLAB session state. Linux jobs
+provide an X virtual framebuffer before running MATLAB so native graphics
+tests have a real display service instead of relying on release-specific
+no-display behavior. It runs `docsCheck` once on the latest release, then
+reports one aggregate `CI Gate` result that depends on every required profile.
+Configure repository branch protection to require `CI Gate`; the workflow does
+not silently replace repository protection policy. It uploads the catalog
+artifacts even after failure. Coverage is an explicit report, not a duplicate
+CI gate.
+
+Every platform-release job publishes one evidence-oriented job summary after
+all three independent MATLAB sessions finish. Its profile table states what
+`headless`, `gui`, and `isolated` prove instead of repeating only a raw
+pass/fail count. A successful summary records the compatibility claim, clean
+runtime assumptions, display configuration, slowest tests, artifact name, and
+the manual boundaries that automation does not prove. A failed summary
+preserves any profiles that still passed, separates a missing JUnit report from
+a reported test failure, names failed test identities, includes recorded
+MATLAB diagnostics, and collapses active-test and log-tail evidence below the
+primary failure. Build tasks define descriptions so the upstream MATLAB Build
+Results table is meaningful as well. The repository-owned summary helper has
+no third-party Python dependency and is regression-tested by the lightweight
+change-policy job. A cancelled or skipped profile makes the compatibility
+result `incomplete`, not `failed`; passing profiles remain valid evidence, but
+the unfinished job cannot establish the platform claim.
 
 CI classifies the exact pushed or pull-request diff before scheduling MATLAB.
 Source, test, build, workflow, and tool changes run the complete platform

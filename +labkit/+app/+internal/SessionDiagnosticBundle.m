@@ -51,6 +51,29 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
             end
             clear zipCleanup cleanup
         end
+
+        function destination = writeFallback(snapshot, preferredDestination)
+            % RuntimeKernel supplies sanitized in-memory records. Prefer a
+            % surviving selected folder, then MATLAB's writable temp folder.
+            snapshot = validateFallbackSnapshot(snapshot);
+            folders = fallbackFolders(preferredDestination);
+            failure = [];
+            for index = 1:numel(folders)
+                destination = availableFallbackPath(folders(index));
+                try
+                    writeText(destination, fallbackLines(snapshot));
+                    return;
+                catch cause
+                    failure = cause;
+                end
+            end
+            if isempty(failure)
+                error("labkit:app:runtime:DiagnosticWriteFailed", ...
+                    "No diagnostic text fallback folder is available.");
+            end
+            error("labkit:app:runtime:DiagnosticWriteFailed", ...
+                "Could not write the diagnostic text fallback.");
+        end
     end
 end
 
@@ -101,6 +124,30 @@ labkit.app.internal.SessionEventValidator.privacySafeAttributes( ...
     record.attributes);
 end
 
+function snapshot = validateFallbackSnapshot(snapshot)
+fields = ["application", "events", "capture", "failureIdentifier"];
+if ~isstruct(snapshot) || ~isscalar(snapshot) || ...
+        ~isequal(string(fieldnames(snapshot)), fields.') || ...
+        ~isstruct(snapshot.application) || ...
+        ~isscalar(snapshot.application) || ...
+        ~isstruct(snapshot.capture) || ~isscalar(snapshot.capture)
+    error("labkit:app:runtime:InvariantFailure", ...
+        "Diagnostic text fallback snapshot is invalid.");
+end
+if isempty(snapshot.events)
+    snapshot.events = emptyEvents();
+elseif ~isstruct(snapshot.events)
+    error("labkit:app:runtime:InvariantFailure", ...
+        "Diagnostic text fallback events are invalid.");
+else
+    for index = 1:numel(snapshot.events)
+        validateRecord(snapshot.events(index));
+    end
+    [~, order] = sort(double([snapshot.events.sequence]));
+    snapshot.events = snapshot.events(order);
+end
+end
+
 function destination = diagnosticZipPath(destination)
 if ~(ischar(destination) || ...
         (isstring(destination) && isscalar(destination))) || ...
@@ -142,6 +189,106 @@ value = [
     ""
     "Use manifest.json for session/component context, events.jsonl for structured history, session.log.txt for a readable timeline, errors.json for failures, and redaction-report.json for excluded-data categories."
     ];
+end
+
+function value = fallbackLines(snapshot)
+application = snapshot.application;
+capture = snapshot.capture;
+value = [
+    "LabKit Diagnostic Text Fallback"
+    ""
+    "The normal diagnostic ZIP could not be written. This single text file contains the surviving privacy-safe Runtime session records."
+    "It does not contain projects, scientific inputs or results, images, screenshots, source files, paths, or original filenames."
+    ""
+    "Application:"
+    "- Name: " + textField(application, "title")
+    "- App ID: " + textField(application, "appId")
+    "- App version: " + textField(application, "appVersion")
+    "- LabKit App SDK version: " + ...
+        textField(application, "labkitAppVersion")
+    "- ZIP failure identifier: " + string(snapshot.failureIdentifier)
+    ""
+    "Capture notes:"
+    "- TRACE enabled at fallback: " + ...
+        yesNo(logicalField(capture, "traceEnabled"))
+    "- In-memory live view truncated: " + ...
+        yesNo(logicalField(capture, "inMemoryTruncated"))
+    "- Retained canonical event count: " + ...
+        string(numel(snapshot.events))
+    ""
+    "Session timeline:"
+    timeline(snapshot.events)
+    ""
+    "Structured failure records:"
+    fallbackErrorLines(snapshot.events)
+    ];
+end
+
+function value = fallbackErrorLines(events)
+records = errorRecords(events);
+if isempty(records)
+    value = "(none)";
+    return;
+end
+value = strings(numel(records), 1);
+for index = 1:numel(records)
+    value(index) = string(jsonencode(records(index)));
+end
+end
+
+function value = textField(structure, name)
+if isfield(structure, name)
+    value = string(structure.(name));
+else
+    value = "unknown";
+end
+end
+
+function value = logicalField(structure, name)
+value = false;
+if isfield(structure, name) && isscalar(structure.(name))
+    value = logical(structure.(name));
+end
+end
+
+function folders = fallbackFolders(preferredDestination)
+folders = strings(0, 1);
+if ischar(preferredDestination) || ...
+        (isstring(preferredDestination) && isscalar(preferredDestination))
+    preferredDestination = strip(string(preferredDestination));
+    if strlength(preferredDestination) > 0
+        folder = string(fileparts(preferredDestination));
+        if strlength(folder) == 0
+            folder = string(pwd);
+        end
+        if exist(char(folder), "dir") == 7
+            folders(end + 1, 1) = folder;
+        end
+    end
+end
+temporaryFolder = string(tempdir);
+if exist(char(temporaryFolder), "dir") == 7
+    folders(end + 1, 1) = temporaryFolder;
+end
+folders = unique(folders, "stable");
+end
+
+function destination = availableFallbackPath(folder)
+destination = fullfile(folder, "labkit-diagnostics-fallback.txt");
+if exist(char(destination), "file") ~= 2 && ...
+        exist(char(destination), "dir") ~= 7
+    return;
+end
+for index = 2:1000
+    candidate = fullfile(folder, ...
+        "labkit-diagnostics-fallback-" + string(index) + ".txt");
+    if exist(char(candidate), "file") ~= 2 && ...
+            exist(char(candidate), "dir") ~= 7
+        destination = candidate;
+        return;
+    end
+end
+destination = string(tempname(char(folder))) + ".txt";
 end
 
 function value = timeline(events)

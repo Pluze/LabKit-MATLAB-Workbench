@@ -16,6 +16,7 @@ function result = run(varargin)
     [compiledPlan, opts] = parseOptions(varargin{:});
     labkittest.setup();
     artifacts = createArtifacts(opts, compiledPlan);
+    artifactEnvironment = exposeArtifactFolder(artifacts.Folder);
     reportPlanScope(compiledPlan);
     reportManualChecks(compiledPlan.ManualChecks);
     results = cell(1, numel(compiledPlan.Groups));
@@ -25,6 +26,7 @@ function result = run(varargin)
         runner = matlab.unittest.TestRunner.withTextOutput("OutputDetail", "terse");
         progress = labkittest.ProgressPlugin(artifacts.Folder);
         cleanup = onCleanup(@() delete(progress));
+        runner.addPlugin(matlab.unittest.plugins.DiagnosticsRecordingPlugin);
         runner.addPlugin(progress);
         if opts.Coverage
             runner.addPlugin(coveragePlugin(artifacts.Folder));
@@ -43,6 +45,7 @@ function result = run(varargin)
     result = struct("Plan", compiledPlan, "Results", {results}, ...
         "RunName", opts.RunName, "ArtifactsRoot", opts.ArtifactsRoot, ...
         "Artifacts", artifacts);
+    clear artifactEnvironment
 end
 
 function reportPlanScope(compiledPlan)
@@ -172,6 +175,12 @@ function artifacts = createArtifacts(opts, compiledPlan)
     writeJson(fullfile(folder, "plan.json"), planPayload(compiledPlan));
 end
 
+function cleanup = exposeArtifactFolder(folder)
+previous = getenv("LABKIT_TEST_ARTIFACT_FOLDER");
+setenv("LABKIT_TEST_ARTIFACT_FOLDER", char(folder));
+cleanup = onCleanup(@() setenv("LABKIT_TEST_ARTIFACT_FOLDER", previous));
+end
+
 function cleanup = applyEnvironment(environment)
     previous = getenv("LABKIT_GUI_TEST_MODE");
     previousVisible = get(groot, "DefaultFigureVisible");
@@ -259,14 +268,55 @@ function writeJUnit(file, results)
         if ~failed && ~incomplete
             fprintf(fid, '/>\n');
         elseif failed
-            fprintf(fid, '><failure message="Test failed"/></testcase>\n');
+            [message, detail] = junitDiagnostic(result, "failure");
+            fprintf(fid, '><failure message="%s">%s</failure></testcase>\n', ...
+                xmlText(message), xmlText(detail));
         else
-            fprintf(fid, '><error message="Test incomplete"/></testcase>\n');
+            [message, detail] = junitDiagnostic(result, "error");
+            fprintf(fid, '><error message="%s">%s</error></testcase>\n', ...
+                xmlText(message), xmlText(detail));
         end
         fprintf(fid, '  </testsuite>\n');
     end
     fprintf(fid, '</testsuites>\n');
     clear cleanup
+end
+
+function [message, detail] = junitDiagnostic(result, kind)
+    fallback = "Test failed";
+    if kind == "error"
+        fallback = "Test incomplete";
+    end
+    message = fallback;
+    detail = fallback;
+    if ~isfield(result.Details, "DiagnosticRecord") || ...
+            isempty(result.Details.DiagnosticRecord)
+        return;
+    end
+    records = result.Details.DiagnosticRecord;
+    if kind == "error"
+        records = records.selectIncomplete();
+    else
+        records = records.selectFailed();
+    end
+    if isempty(records)
+        return;
+    end
+    reports = string({records.Report});
+    reports = reports(strlength(strtrim(reports)) > 0);
+    if isempty(reports)
+        return;
+    end
+    separator = string(newline) + string(newline);
+    detail = strjoin(reports, separator);
+    firstLine = extractBefore(detail + string(newline), string(newline));
+    firstLine = regexprep(strtrim(firstLine), "\s+", " ");
+    if strlength(firstLine) > 500
+        firstLine = extractBefore(firstLine, 501);
+    end
+    if strlength(firstLine) > 0
+        message = firstLine;
+    end
 end
 
 function [className, methodName] = junitNames(identity)

@@ -424,38 +424,90 @@ try
         fig, ax, originalFigureUnits, originalAxesUnits));
     plotWidth = max(1, round(double(style.canvasWidth)));
     plotHeight = max(1, round(double(style.canvasHeight)));
-    padding = max(4, round(0.01 * min(plotWidth, plotHeight)));
+    padding = exportOuterPadding(style, plotWidth, plotHeight);
     fig.Units = 'pixels';
     ax.Units = 'pixels';
     setFigureContentSize(fig, [plotWidth + 4 * padding, ...
         plotHeight + 4 * padding]);
     ax.Position = [2 * padding 2 * padding plotWidth plotHeight];
-    for iteration = 1:3
+    % Font extents can change after the native renderer accepts a larger
+    % offscreen window. Iterate to a stable geometry instead of assuming a
+    % fixed number of draw/resize passes across releases and platforms.
+    for iteration = 1:8
         drawnow nocallbacks
         inset = plotInsets(ax, plotWidth, plotHeight, padding);
-        setFigureContentSize(fig, [ ...
+        targetFigureSize = [ ...
             inset(1) + plotWidth + inset(3), ...
-            inset(2) + plotHeight + inset(4)]);
-        ax.Position = [inset(1) inset(2) plotWidth plotHeight];
+            inset(2) + plotHeight + inset(4)];
+        targetAxesPosition = [inset(1) inset(2) plotWidth plotHeight];
+        currentFigurePosition = fig.Position;
+        if max(abs(currentFigurePosition(3:4) - targetFigureSize)) < 0.5 && ...
+                max(abs(ax.Position - targetAxesPosition)) < 0.5
+            break;
+        end
+        setFigureContentSize(fig, targetFigureSize);
+        ax.Position = targetAxesPosition;
     end
+    fitPlotFrameWithinAcceptedCanvas( ...
+        fig, ax, plotWidth, plotHeight, padding);
+    fitRenderedTextWithinFigure(fig, ax, padding);
     clear cleanup
 catch
 end
 end
 
-function setFigureContentSize(fig, sizePixels)
-% Position includes native window decorations on desktop MATLAB. Axes pixel
-% coordinates live in the drawable client area, so size that area directly;
-% otherwise a title bar silently removes height from the requested frame.
-if isprop(fig, 'InnerPosition')
-    position = fig.InnerPosition;
-    position(3:4) = sizePixels;
-    fig.InnerPosition = position;
-else
-    position = fig.Position;
-    position(3:4) = sizePixels;
-    fig.Position = position;
+function padding = exportOuterPadding(style, plotWidth, plotHeight)
+% Keep a renderer-independent half-em of whitespace outside labels and ticks.
+% Windows print releases also need one complete hardcopy line box because
+% their pre-print screen extent can omit that much of an axis label.
+padding = max(4, round(0.01 * min(plotWidth, plotHeight)));
+dpi = 96;
+try
+    dpi = double(get(groot, 'ScreenPixelsPerInch'));
+catch
 end
+if ~isscalar(dpi) || ~isfinite(dpi) || dpi <= 0
+    dpi = 96;
+end
+labelEmPixels = max([style.labelFontSize style.tickFontSize]) * dpi / 72;
+marginInEms = 0.5;
+if ispc && isMATLABReleaseOlderThan("R2025a")
+    marginInEms = 1.5;
+end
+padding = max(padding, ceil(marginInEms * labelEmPixels));
+end
+
+function fitPlotFrameWithinAcceptedCanvas( ...
+        fig, ax, plotWidth, plotHeight, padding)
+% A Windows desktop can refuse the requested outer figure size. Recompute the
+% data frame from the accepted drawable canvas and the measured outer insets;
+% the App must reserve label whitespace rather than render into a clipped page.
+for iteration = 1:4
+    drawnow nocallbacks
+    inset = plotInsets(ax, plotWidth, plotHeight, padding);
+    accepted = double(fig.Position(3:4));
+    available = max(1, accepted - [ ...
+        inset(1) + inset(3), inset(2) + inset(4)]);
+    fitted = min([plotWidth plotHeight], available);
+    target = [inset(1) inset(2) fitted];
+    if max(abs(double(ax.Position) - target)) < 0.5
+        break;
+    end
+    ax.Position = target;
+end
+end
+
+function setFigureContentSize(fig, sizePixels)
+% Windows constrains displayed windows to the desktop, while an invisible
+% figure can exceed the screen for export. Anchor that hidden canvas before
+% assigning its drawable Position so the window manager does not clamp a
+% large canvas at the default on-screen location.
+position = fig.Position;
+if string(fig.Visible) == "off"
+    position(1:2) = [1 1];
+end
+position(3:4) = sizePixels;
+fig.Position = position;
 end
 
 function inset = plotInsets(ax, plotWidth, plotHeight, padding)
@@ -473,7 +525,7 @@ end
 
 function inset = textExtentsOutsidePlot(ax, plotWidth, plotHeight)
 inset = zeros(1, 4);
-texts = findall(ax, 'Type', 'text');
+texts = axesTextHandles(ax);
 for index = 1:numel(texts)
     textHandle = texts(index);
     if ~isvalid(textHandle) || string(textHandle.Visible) == "off"
@@ -498,6 +550,117 @@ for index = 1:numel(texts)
     catch
     end
 end
+end
+
+function fitRenderedTextWithinFigure(fig, ax, padding)
+% Older Windows renderers can update text extents only after accepting the
+% final offscreen figure geometry. Measure the rendered figure-coordinate
+% bounds and grow only the sides that still overflow.
+for iteration = 1:4
+    drawnow nocallbacks
+    overflow = renderedTextOverflow(fig, ax, padding);
+    if max(overflow) < 0.5
+        break;
+    end
+    figurePosition = fig.Position;
+    setFigureContentSize(fig, [ ...
+        figurePosition(3) + overflow(1) + overflow(3), ...
+        figurePosition(4) + overflow(2) + overflow(4)]);
+    axesPosition = ax.Position;
+    axesPosition(1:2) = axesPosition(1:2) + overflow(1:2);
+    ax.Position = axesPosition;
+end
+% Residual renderer rounding can remain after the accepted-canvas fit.
+shiftRenderedTextInsideFigure(fig, ax, padding);
+drawnow nocallbacks
+end
+
+function overflow = renderedTextOverflow(fig, ax, padding)
+overflow = zeros(1, 4);
+figurePosition = fig.Position;
+axesPosition = ax.Position;
+texts = axesTextHandles(ax);
+for index = 1:numel(texts)
+    textHandle = texts(index);
+    if ~isvalid(textHandle) || string(textHandle.Visible) == "off"
+        continue;
+    end
+    try
+        units = textHandle.Units;
+        cleanup = onCleanup(@() set(textHandle, 'Units', units));
+        textHandle.Units = 'pixels';
+        extent = double(textHandle.Extent);
+        if numel(extent) == 4 && all(isfinite(extent)) && ...
+                extent(3) > 0 && extent(4) > 0
+            bounds = [ ...
+                axesPosition(1) + extent(1), ...
+                axesPosition(2) + extent(2), ...
+                axesPosition(1) + extent(1) + extent(3), ...
+                axesPosition(2) + extent(2) + extent(4)];
+            overflow = max(overflow, [ ...
+                max(0, padding - bounds(1)), ...
+                max(0, padding - bounds(2)), ...
+                max(0, bounds(3) + padding - figurePosition(3)), ...
+                max(0, bounds(4) + padding - figurePosition(4))]);
+        end
+        clear cleanup
+    catch
+    end
+end
+end
+
+function shiftRenderedTextInsideFigure(fig, ax, padding)
+figureSize = double(fig.Position(3:4));
+axesPosition = double(ax.Position);
+texts = axesTextHandles(ax);
+for index = 1:numel(texts)
+    textHandle = texts(index);
+    if ~isvalid(textHandle) || string(textHandle.Visible) == "off"
+        continue;
+    end
+    try
+        units = textHandle.Units;
+        cleanup = onCleanup(@() set(textHandle, 'Units', units));
+        textHandle.Units = 'pixels';
+        extent = double(textHandle.Extent);
+        position = double(textHandle.Position);
+        if numel(extent) ~= 4 || any(~isfinite(extent)) || ...
+                numel(position) < 2 || any(~isfinite(position(1:2))) || ...
+                extent(3) <= 0 || extent(4) <= 0
+            clear cleanup
+            continue;
+        end
+        bounds = [ ...
+            axesPosition(1) + extent(1), ...
+            axesPosition(2) + extent(2), ...
+            axesPosition(1) + extent(1) + extent(3), ...
+            axesPosition(2) + extent(2) + extent(4)];
+        availablePadding = min([padding padding], ...
+            max(0, (figureSize - extent(3:4)) ./ 2));
+        lower = availablePadding;
+        upper = figureSize - availablePadding;
+        delta = max(0, lower - bounds(1:2));
+        delta = delta - max(0, bounds(3:4) + delta - upper);
+        if any(abs(delta) >= 0.5)
+            position(1:2) = position(1:2) + delta;
+            textHandle.Position = position;
+        end
+        clear cleanup
+    catch
+    end
+end
+end
+
+function texts = axesTextHandles(ax)
+% R2022b does not consistently expose ruler decorators as descendants of the
+% axes. Include them explicitly, then add ordinary annotation text.
+labels = [ax.Title; ax.XLabel; ax.YLabel; ax.ZLabel];
+ordinary = findall(ax, 'Type', 'text');
+keep = true(size(ordinary));
+for index = 1:numel(ordinary)
+    keep(index) = ~any(ordinary(index) == labels);
+end
+texts = [labels; ordinary(keep)];
 end
 
 function restoreLayoutUnits(fig, ax, figureUnits, axesUnits)

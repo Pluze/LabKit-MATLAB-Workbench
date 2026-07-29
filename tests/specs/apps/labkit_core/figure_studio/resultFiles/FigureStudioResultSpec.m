@@ -66,30 +66,41 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             clear rebuiltCleanup resourceCleanup fileCleanup cleanup
         end
 
-        function exportedLongTitleStaysWithinTheCanvas(testCase)
+        function exportedAxisLabelsRetainOuterWhitespace(testCase)
             cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
             sourceFigure = figure(Visible="off");
             source = axes(Parent=sourceFigure);
             plot(source, 0:5, [0 2 4 3 2 1]);
-            title(source, "-Zimag (ohm) vs Zreal (ohm) (4 files)");
+            title(source, "Impedance plot");
             xlabel(source, "Zreal (ohm)");
             ylabel(source, "-Zimag (ohm)");
-            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
-            [exportedFigure, exported] = figure_studio.resultFiles.createStyledFigure( ...
-                figure_studio.resultFiles.extractAxesData(source), style, source);
-            exportCleanup = onCleanup(@() delete(exportedFigure));
-            drawnow
-            exported.Units = "pixels";
-            exported.Title.Units = "pixels";
-            axesPosition = exported.Position;
-            extent = exported.Title.Extent;
-            titleBounds = [axesPosition(1) + extent(1), axesPosition(2) + extent(2), ...
-                axesPosition(1) + extent(1) + extent(3), ...
-                axesPosition(2) + extent(2) + extent(4)];
+            output = labkittest.visualEvidencePath( ...
+                "figure-studio-axis-label-margins", ".png");
+            schema = figure_studio.projectSpec();
+            project = schema.Create();
+            project.parameters.style.exportScale = 0.25;
+            session = struct("cache", struct( ...
+                "plotData", ...
+                    figure_studio.resultFiles.extractAxesData(source), ...
+                "sourceAxes", source, "currentSource", ""));
+            state = struct("project", project, "session", session);
+            backend = struct( ...
+                "chooseOutputFile", @(~, ~) ...
+                    labkit.app.dialog.Choice(output), ...
+                "writeResult", @writeResultProbe, ...
+                "log", @ignoreLog);
+            context = labkit.app.internal.CallbackContextFactory.create(backend);
 
-            testCase.verifyGreaterThanOrEqual(titleBounds(1:2), [0 0]);
-            testCase.verifyLessThanOrEqual(titleBounds(3:4), exportedFigure.Position(3:4));
-            clear exportCleanup cleanup
+            figure_studio.resultFiles.exportGraphic(state, context, "png");
+
+            image = imread(output);
+            bottomEdge = reshape(image(end, :, :), [], 1);
+            leftEdge = reshape(image(:, 1, :), [], 1);
+            testCase.verifyTrue(all(bottomEdge >= 245), ...
+                edgeDiagnostic(bottomEdge, "bottom"));
+            testCase.verifyTrue(all(leftEdge >= 245), ...
+                edgeDiagnostic(leftEdge, "left"));
+            clear cleanup
         end
 
         function emptyLogRulerTextDoesNotCreateAnOversizedCanvas(testCase)
@@ -116,4 +127,23 @@ function deleteIfFile(path)
 if isfile(path)
     delete(path);
 end
+end
+
+function written = writeResultProbe(folder, ~)
+written = labkit.app.dialog.Choice(fullfile(folder, "manifest.json"));
+end
+
+function ignoreLog(varargin)
+end
+
+function message = edgeDiagnostic(edge, name)
+dark = find(edge < 245);
+if isempty(dark)
+    span = "none";
+else
+    span = string(dark(1)) + ":" + string(dark(end));
+end
+message = sprintf( ...
+    "Rendered ink reaches the %s image boundary (%d channel values, span %s).", ...
+    name, numel(dark), span);
 end

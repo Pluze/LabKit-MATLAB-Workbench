@@ -16,7 +16,8 @@ Use **Add images or folder** to load supported image files. A folder selection
 loads supported files from that folder. Each list row stores its own crop center,
 rotation, padding, and optional scale calibration. **Duplicate image** creates
 another task for the same source so multiple ROIs can be exported without
-loading duplicate files.
+loading duplicate files. Duplicate tasks remain aligned with their source and
+cached preview when the native file list supplies row- or column-shaped state.
 
 ## Basic Workflow
 

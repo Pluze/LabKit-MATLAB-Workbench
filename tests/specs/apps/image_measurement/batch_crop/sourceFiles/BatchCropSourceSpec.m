@@ -31,6 +31,45 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
             duplicate.paddingPercent = 50;
             testCase.verifyEqual(item.paddingPercent, 25);
         end
+
+        function duplicatesFromRowShapedFileListStateWithoutLosingAlignment(testCase)
+            project = batch_crop.projectSpec().Create();
+            first = labkit.app.project.sourceRecord( ...
+                "image1", "cropSource", "first.png", true);
+            second = labkit.app.project.sourceRecord( ...
+                "image2", "cropSource", "second.png", true);
+            project.inputs.sources = [first, second];
+            project.inputs.items = batch_crop.cropTasks.forSourceIds( ...
+                ["image1", "image2"]).';
+            project.inputs.items(1).centerXY = [2, 3];
+            project.inputs.items(1).centerSet = true;
+            imageOne = uint8(reshape(1:30, 5, 6));
+            imageTwo = uint8(zeros(5, 6));
+            applicationState = struct( ...
+                "project", project, ...
+                "session", struct( ...
+                    "selection", struct("currentIndex", 1), ...
+                    "cache", struct( ...
+                        "images", {{imageOne, imageTwo}}, ...
+                        "paths", ["first.png", "second.png"], ...
+                        "canvas", batch_crop.cropGeometry.emptyCanvasCache())));
+            callbackContext = struct("log", @(varargin) []);
+
+            actual = batch_crop.sourceFiles.duplicateCurrent( ...
+                applicationState, callbackContext);
+
+            testCase.verifySize(actual.project.inputs.items, [3, 1]);
+            testCase.verifySize(actual.project.inputs.sources, [3, 1]);
+            testCase.verifySize(actual.session.cache.images, [3, 1]);
+            testCase.verifySize(actual.session.cache.paths, [3, 1]);
+            testCase.verifyEqual(string({actual.project.inputs.items.sourceId}).', ...
+                string({actual.project.inputs.sources.id}).');
+            testCase.verifyEqual(actual.session.selection.currentIndex, 2);
+            testCase.verifyEqual(actual.session.cache.images{2}, imageOne);
+            testCase.verifyEqual(actual.session.cache.paths(2), "first.png");
+            testCase.verifyFalse(actual.project.inputs.items(2).centerSet);
+            testCase.verifyEqual(actual.project.inputs.items(3).sourceId, "image2");
+        end
     end
 end
 

@@ -57,13 +57,40 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
 
             testCase.verifySubstring(workflow, "change-scope:");
             testCase.verifySubstring(workflow, ...
-                "python .github/scripts/test_classify_ci_scope.py");
+                "python -m unittest discover -s .github/scripts");
             testCase.verifySubstring(workflow, ...
                 "needs.change-scope.outputs.full == 'true'");
             testCase.verifySubstring(workflow, ...
                 "needs.change-scope.outputs.docs == 'true'");
             testCase.verifySubstring(workflow, "docs-check:");
             testCase.verifySubstring(workflow, "tasks: docsCheck");
+            testCase.verifyEqual(count(workflow, ...
+                "release: R2022b"), 2);
+            testCase.verifyEqual(count(workflow, ...
+                "release: latest"), 4);
+            testCase.verifySubstring(workflow, "os: ubuntu-22.04");
+            testCase.verifySubstring(workflow, "os: windows-2022");
+            testCase.verifySubstring(workflow, "os: macos-14");
+            testCase.verifySubstring(workflow, ...
+                "name: Start Linux virtual display");
+            testCase.verifySubstring(workflow, ...
+                "Xvfb :99 -screen 0 1920x1080x24");
+            testCase.verifySubstring(workflow, ...
+                "Documents/MATLAB");
+            testCase.verifyEqual(count(workflow, ...
+                "release: ${{ matrix.release }}"), 1);
+            testCase.verifyEqual(count(workflow, ...
+                "continue-on-error: true"), 3);
+            testCase.verifySubstring(workflow, ...
+                "name: matlab-${{ matrix.id }}-${{ matrix.release }}");
+            testCase.verifySubstring(workflow, ...
+                "name: Summarize platform validation");
+            testCase.verifyEqual(count(workflow, ...
+                "python .github/scripts/summarize_junit.py"), 1);
+            testCase.verifySubstring(workflow, ...
+                "--headless-outcome ""${{ steps.headless.outcome }}""");
+            testCase.verifySubstring(workflow, ...
+                "needs.platform-matrix.result");
             testCase.verifySubstring(workflow, "ci-gate:");
             testCase.verifySubstring(workflow, "name: CI Gate");
             testCase.verifySubstring(workflow, "needs.change-scope.result");
@@ -85,6 +112,51 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 testCase.verifyEmpty(regexp(content, "\\d{8}_\\d{6}", "once"), ...
                     "Tracked text contains a sample timestamp token: " + file);
             end
+        end
+
+        function matlabFunctionNamesFitTheIdentifierLimit(testCase)
+            root = labkittest.setup();
+            files = repositoryTextFiles(root);
+            files = files(endsWith(lower(files), ".m"));
+            violations = strings(0, 1);
+            expression = "(?m)^\s*function\s+" + ...
+                "(?:\[[^\]\r\n]*\]\s*=\s*|[A-Za-z]\w*\s*=\s*)?" + ...
+                "([A-Za-z]\w*)\s*(?:\(|$)";
+            for index = 1:numel(files)
+                relative = files(index);
+                file = fullfile(root, relative);
+                tokens = regexp(fileread(file), expression, "tokens");
+                names = string([tokens{:}]);
+                names = names(strlength(names) > 63);
+                if isempty(names)
+                    continue;
+                end
+                violations = [violations; relative + ": " + names(:)];
+            end
+
+            testCase.verifyEmpty(violations, ...
+                "R2022b truncates MATLAB identifiers longer than 63 characters: " + ...
+                strjoin(violations, ", "));
+        end
+
+        function appsUseSdkOwnedNativeFileDialogs(testCase)
+            root = labkittest.setup();
+            listing = dir(fullfile(root, "apps", "**", "*.m"));
+            violations = strings(0, 1);
+            expression = "(?<![A-Za-z0-9_.])" + ...
+                "(uigetfile|uiputfile|uigetdir)\s*\(";
+            for index = 1:numel(listing)
+                file = fullfile(listing(index).folder, listing(index).name);
+                source = string(fileread(file));
+                if ~isempty(regexp(source, expression, "once"))
+                    relative = erase(string(file), string(root) + filesep);
+                    violations(end + 1, 1) = relative;
+                end
+            end
+
+            testCase.verifyEmpty(violations, ...
+                "Apps must use CallbackContext or fileList for native " + ...
+                "file dialogs so platform/version adaptation remains in SDK.");
         end
 
         function testsPassAnExplicitJournalOrJournalRootToEveryRuntimeFactory(testCase)
@@ -138,7 +210,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
         end
 
-        function runtimeFactoryParserAcceptsExplicitJournalWithAdditionalArguments(testCase)
+        function runtimeFactoryParserAcceptsJournalAndExtraArguments(testCase)
             source = strjoin([ ...
                 "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
                 "    app, [], struct(), journal, ...", ...

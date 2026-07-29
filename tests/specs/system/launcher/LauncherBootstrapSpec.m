@@ -310,7 +310,7 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
             delete(networkCleanup); delete(cleanup)
         end
 
-        function repairUiReplacesAValidDamagedInstallationAndRestoresWorkingFolder(testCase)
+        function repairUiReplacesDamagedInstallAndRestoresFolder(testCase)
             root = damagedRepairRoot(testCase, "old-marker", true);
             candidate = validRepairCandidate(testCase, "new-marker", true);
             mkdir(fullfile(root, "apps", "probe"));

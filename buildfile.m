@@ -10,6 +10,14 @@ function plan = buildfile
 
 plan = buildplan(localfunctions);
 plan.DefaultTasks = "headless";
+plan("changedFast").Description = "Run focused pre-commit specifications selected from the local diff";
+plan("headless").Description = "Run all non-GUI product, SDK, persistence, and export specifications";
+plan("gui").Description = "Run hidden native-App, callback, graphics, and export workflows";
+plan("isolated").Description = "Start every public App from a reset path to detect undeclared dependencies";
+plan("coverage").Description = "Run headless specifications and publish source coverage artifacts";
+plan("docs").Description = "Regenerate the path-owned documentation site";
+plan("docsCheck").Description = "Verify generated documentation matches its source contracts";
+plan("listTasks").Description = "List the stable LabKit build entry points";
 end
 
 function changedFastTask(~)

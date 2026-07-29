@@ -56,6 +56,12 @@ second architecture guide.
 - Make retained semantic events privacy-safe before they enter memory or disk.
   Free-form messages can leak more readily than attributes; export-time
   redaction is defense in depth, not the primary boundary.
+- Normalize string-authored filter tables immediately before native file
+  dialogs. Some MATLAB paths accept string cells while older native dialog
+  helpers require every filter-table element to be a character array.
+- A diagnostic last resort must not reuse the subsystem that just failed.
+  Build it from the sanitized in-memory stream, write one plain-text file
+  without ZIP staging, and report the concrete fallback path.
 
 ### Interaction and previews
 
@@ -65,9 +71,55 @@ second architecture guide.
 - Shared image code keeps native pixels by default. Any finite preview budget
   is an explicit App decision, and pixel-unit parameters follow the preview
   scale.
+- Treat file-list bindings as shape-agnostic collections. Normalize parallel
+  App task, source, path, and cache arrays at the callback boundary before
+  vertical insertion so native row state cannot break one-entry alignment.
 
 ### Validation and compatibility
 
+- Pair an old MATLAB release with runner images from that release's supported
+  operating-system list. A MATLAB-version matrix over `*-latest` can turn an
+  unsupported host/runtime combination into misleading product failures.
+- Choose the oldest CI release from the product compatibility contract, not
+  from the setup action's installation floor or the build tool's introduction.
+  Give each platform-release entry one named risk instead of defaulting to a
+  full Cartesian product.
+- Derive portable identifier and shape limits from the oldest supported MATLAB,
+  not the development runtime. Newer releases can raise `namelengthmax` and
+  silently accept struct keys or test names that R2022b truncates; encode the
+  compatibility-floor limit in the owning contract and a repository guard.
+- Give Linux hidden-GUI validation a virtual display. A green setup and
+  headless run do not prevent older Qt-based MATLAB graphics from crashing
+  when the runner has no active display server.
+- Guard release-added graphics options at the App export boundary and keep the
+  oldest supported release on a real export test. Parsing and layout tests
+  cannot detect an unsupported name-value or file format.
+- Windows constrains displayed figure windows to the desktop. For an offscreen
+  export canvas, create it invisible, anchor its pixel Position at the desktop
+  origin, and only then assign dimensions that may exceed the screen. Treat
+  native text extents as iterative renderer output: converge until geometry is
+  stable, then verify figure-coordinate ruler-label bounds because an older
+  renderer may update them only after accepting the final offscreen geometry.
+  R2022b on Windows can omit ruler decorators from descendant text discovery
+  and still refuse that requested growth for an invisible figure. Include axis
+  labels explicitly; when the accepted size remains clamped, recompute the
+  rendered data frame from that canvas, the measured insets, and a
+  typography-derived minimum outer margin. The old Windows `print` path can
+  under-report an axis-label hardcopy line by one em, so reserve that line box
+  in addition to the intended half-em whitespace. An export regression must
+  inspect the written artifact boundary; hidden figure Position is useful
+  diagnostic context, not the product assertion.
+- When a test can produce deterministic rendered output that a person or
+  visual model can review, retain that exact image as run-centered visual
+  evidence instead of deleting it with a temporary fixture. Keep an automated
+  assertion over the same production artifact for the CI result, and publish
+  `visual-evidence/` inside the platform artifact so failures and cross-platform
+  differences can be inspected without rerunning the job.
+- A CI summary is evidence navigation, not a second status badge. On success,
+  state the compatibility claim and untested manual boundaries; on failure,
+  preserve passing profiles and distinguish a missing report from a failed
+  test. Cancellation means incomplete evidence, not product failure. Record
+  real framework diagnostics in JUnit before improving its layout.
 - A component version change proves that its contract moved; it does not prove
   that every component manual needs new prose. For cross-App behavior, choose
   one canonical owner first and keep App pages limited to workflow-critical or
