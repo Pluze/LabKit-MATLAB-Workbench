@@ -54,21 +54,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14, windows-latest]
-        release: [R2022b, latest]
-        exclude:
-          - os: macos-14
-            release: R2022b
         include:
+          - os: ubuntu-22.04
+            id: linux
+            label: Linux
+            release: R2022b
           - os: ubuntu-latest
             id: linux
             label: Linux
-          - os: macos-14
-            id: macos
-            label: macOS
+            release: latest
+          - os: windows-2022
+            id: windows
+            label: Windows
+            release: R2022b
           - os: windows-latest
             id: windows
             label: Windows
+            release: latest
+          - os: macos-14
+            id: macos
+            label: macOS
+            release: latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v6

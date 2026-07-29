@@ -43,13 +43,14 @@ scope: oldest/latest MATLAB CI compatibility matrix</code></pre>
 <li>Added focused regression coverage for the R2024b-compatible filter value and a multi-image row-shaped duplicate state.</li>
 <li>Expanded every validation profile from one fixed MATLAB release to the effective R2022b Build Tool floor and the latest release available to the official setup action. macOS remains a latest-release platform sentinel.</li>
 <li>Grouped the three validation profiles by platform and release so each matrix entry installs MATLAB once while each profile retains a fresh batch session.</li>
+<li>Bound the R2022b entries to Ubuntu 22.04 and Windows Server 2022 runner images supported by that release instead of testing unsupported latest operating-system images.</li>
 </ul>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Windows users can choose a destination for diagnostic ZIP bundles, projects, screenshots, plots, and other Runtime output dialogs. Batch Crop can duplicate an image task from a multi-image list without changing source images or prior task settings.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <p>The repair is backward compatible. Public App SDK signatures, Batch Crop project payload version 3, scientific crop calculations, and exported result schemas are unchanged.</p>
 <h2 id="validation">Validation</h2>
-<p>Focused headless specifications cover the Batch Crop duplicate callback and the native dialog-filter value. CI runs every full profile on Linux, macOS, and Windows against R2022b and the latest available MATLAB release, while macOS runs the latest release. Documentation consistency and the final changed-file gate cover the integrated version and history updates.</p>
+<p>Focused headless specifications cover the Batch Crop duplicate callback and the native dialog-filter value. CI runs every full profile on Linux, macOS, and Windows against R2022b and the latest available MATLAB release, while macOS runs the latest release. The R2022b jobs use fixed supported runner images; latest MATLAB uses current runner images. Documentation consistency and the final changed-file gate cover the integrated version and history updates.</p>
 <h2 id="evidence">Evidence</h2>
 <p>The repair branch records focused MATLAB test artifacts and the final changed-file validation result. The supplied sanitized log identifies the original <code>MATLAB:catenate:dimensionMismatch</code> and <code>MATLAB:character:CellsMustContainChars</code> failures.</p>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>

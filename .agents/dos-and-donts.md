@@ -74,6 +74,9 @@ second architecture guide.
 
 ### Validation and compatibility
 
+- Pair an old MATLAB release with runner images from that release's supported
+  operating-system list. A MATLAB-version matrix over `*-latest` can turn an
+  unsupported host/runtime combination into misleading product failures.
 - A component version change proves that its contract moved; it does not prove
   that every component manual needs new prose. For cross-App behavior, choose
   one canonical owner first and keep App pages limited to workflow-critical or

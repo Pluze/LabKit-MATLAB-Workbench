@@ -165,14 +165,17 @@ repository uses MATLAB Build Tool, introduced in that release. macOS runs only
 the latest release as an Apple Silicon and native-platform sentinel; Linux and
 Windows cover both release boundaries. This matrix is compatibility evidence,
 not by itself a published product-support promise. CI uses clean MATLAB
-runtimes without optional Toolboxes. Each platform-release job installs MATLAB
-once, then runs `headless`, `gui`, and `isolated` in separate batch sessions so
-the profiles share setup cost without sharing MATLAB session state. It runs
-`docsCheck` once on the latest release, then reports one aggregate `CI Gate`
-result that depends on every required profile. Configure repository branch
-protection to require `CI Gate`; the workflow does not silently replace
-repository protection policy. It uploads the catalog artifacts even after
-failure. Coverage is an explicit report, not a duplicate CI gate.
+runtimes without optional Toolboxes. The R2022b entries use the fixed Ubuntu
+22.04 and Windows Server 2022 runner images supported by that MATLAB release;
+latest MATLAB uses the current runner images. Each platform-release job
+installs MATLAB once, then runs `headless`, `gui`, and `isolated` in separate
+batch sessions so the profiles share setup cost without sharing MATLAB session
+state. It runs `docsCheck` once on the latest release, then reports one
+aggregate `CI Gate` result that depends on every required profile. Configure
+repository branch protection to require `CI Gate`; the workflow does not
+silently replace repository protection policy. It uploads the catalog
+artifacts even after failure. Coverage is an explicit report, not a duplicate
+CI gate.
 
 CI classifies the exact pushed or pull-request diff before scheduling MATLAB.
 Source, test, build, workflow, and tool changes run the complete platform
