@@ -112,6 +112,31 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             end
         end
 
+        function matlabFunctionNamesFitTheIdentifierLimit(testCase)
+            root = labkittest.setup();
+            files = repositoryTextFiles(root);
+            files = files(endsWith(lower(files), ".m"));
+            violations = strings(0, 1);
+            expression = "(?m)^\s*function\s+" + ...
+                "(?:\[[^\]\r\n]*\]\s*=\s*|[A-Za-z]\w*\s*=\s*)?" + ...
+                "([A-Za-z]\w*)\s*(?:\(|$)";
+            for index = 1:numel(files)
+                relative = files(index);
+                file = fullfile(root, relative);
+                tokens = regexp(fileread(file), expression, "tokens");
+                names = string([tokens{:}]);
+                names = names(strlength(names) > 63);
+                if isempty(names)
+                    continue;
+                end
+                violations = [violations; relative + ": " + names(:)];
+            end
+
+            testCase.verifyEmpty(violations, ...
+                "R2022b truncates MATLAB identifiers longer than 63 characters: " + ...
+                strjoin(violations, ", "));
+        end
+
         function appsUseSdkOwnedNativeFileDialogs(testCase)
             root = labkittest.setup();
             listing = dir(fullfile(root, "apps", "**", "*.m"));
@@ -183,7 +208,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
         end
 
-        function runtimeFactoryParserAcceptsExplicitJournalWithAdditionalArguments(testCase)
+        function runtimeFactoryParserAcceptsJournalAndExtraArguments(testCase)
             source = strjoin([ ...
                 "runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...", ...
                 "    app, [], struct(), journal, ...", ...

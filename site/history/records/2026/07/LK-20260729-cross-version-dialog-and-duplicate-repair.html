@@ -34,6 +34,7 @@ scope: Windows MATLAB file-dialog filter compatibility
 scope: Batch Crop duplicate task shape alignment
 scope: diagnostic text fallback
 scope: Figure Studio R2022b graphics export and layout
+scope: R2022b-safe diagnostic attribute identifiers
 scope: oldest/latest MATLAB CI compatibility matrix</code></pre>
 <h2 id="context">Context</h2>
 <p>MATLAB R2024b on Windows rejected string-valued cells passed to <code>uiputfile</code> while exporting a diagnostic ZIP. Batch Crop also inserted a duplicate with vertical concatenation even when the native file-list source binding supplied a row struct array, so duplicating from a multi-image list could fail with a dimension mismatch.</p>
@@ -42,6 +43,7 @@ scope: oldest/latest MATLAB CI compatibility matrix</code></pre>
 <p>The App SDK also canonicalizes text at the portable-source, source-resolution, and native file-label boundaries: a character vector is one scalar value, while string and cellstr collections become columns where the owning contract requires a collection. Apps continue to own ordinary file reading and writing; an architecture guardrail only prevents them from bypassing <code>fileList</code> or <code>CallbackContext</code> for native file and folder dialogs.</p>
 <p>Diagnostic export now treats a ZIP failure as a degraded but recoverable Runtime outcome. It writes the already-sanitized in-memory session records to one text file beside the chosen destination when possible, or in MATLAB's user-writable temporary folder otherwise. This remains private Runtime behavior because Apps neither select nor interpret diagnostic formats.</p>
 <p>Figure Studio now selects graphics primitives at its result-file boundary. R2025a and newer retain <code>exportgraphics</code> figure padding; supported older releases use <code>print</code>, including its SVG device. Invisible export figures are anchored before their drawable pixel size is assigned, then layout converges against the native renderer's measured text extents. A final figure-coordinate fit catches older Windows renderers that update ruler-label extents only after accepting the offscreen geometry. If R2022b clamps that invisible figure to the desktop despite the requested size, Figure Studio recomputes the data frame from the accepted drawable canvas after reserving measured label and tick insets. Font size remains unchanged, while the constrained plot frame yields enough real outer whitespace for ordinary ruler labels. Titles and axis labels are included explicitly because R2022b does not consistently expose those ruler decorators through descendant text discovery.</p>
+<p>The compatibility floor also owns identifier limits. Newer MATLAB releases allow names longer than R2022b's 63-character ceiling, so the diagnostic attribute-key contract and repository test names use the R2022b ceiling rather than the development runtime's <code>namelengthmax</code>.</p>
 <h2 id="changes">Changes</h2>
 <ul>
 <li>Converted native input/output dialog filters to character-cell tables before calling <code>uigetfile</code> or <code>uiputfile</code>.</li>
@@ -55,7 +57,8 @@ scope: oldest/latest MATLAB CI compatibility matrix</code></pre>
 <li>Gave Linux MATLAB sessions an X virtual framebuffer so hidden-GUI tests do not depend on release-specific behavior when no display server is active.</li>
 <li>Added a single-file diagnostic fallback for native dialog, ZIP staging, ZIP creation, and publish failures, with the resulting path reported to the user.</li>
 <li>Kept Figure Studio raster and SVG export operational on R2022b, where <code>exportgraphics</code> has neither figure padding nor SVG support.</li>
-<li>Reserved measured label and tick margins in hidden export canvases. The normal path preserves the configured plot frame; if Windows refuses the requested outer size, the final fit reduces only the rendered data frame to keep those margins inside the accepted canvas.</li>
+<li>Reserved measured label and tick margins in hidden export canvases. The normal path preserves the configured plot frame and at least a half-em typography-derived outer margin; if Windows refuses the requested outer size, the final fit reduces only the rendered data frame to keep those margins inside the accepted canvas.</li>
+<li>Aligned diagnostic struct keys and repository function names with the R2022b 63-character identifier ceiling, eliminating warnings hidden by the newer development runtime's larger limit.</li>
 <li>Retained deterministic production-rendered PNGs below each test profile's <code>visual-evidence/</code> folder, included them in the existing platform artifact, and kept automated assertions over the same files.</li>
 <li>Replaced three disconnected raw test summaries with one platform-level compatibility report that explains each profile, success caveats, actionable failure diagnostics, slow-test signals, and exact artifact ownership. Cancelled or skipped profiles now report an incomplete conclusion instead of mislabeling missing evidence as a compatibility failure.</li>
 </ul>

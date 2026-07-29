@@ -293,7 +293,10 @@ count = 4;
 end
 
 function count = maximumRetainedAttributeKeyLength()
-count = 64;
+% R2022b truncates MATLAB identifiers after 63 characters. Attribute keys
+% arrive as struct field names, so the portable contract cannot exceed that
+% floor even when a newer MATLAB reports a larger namelengthmax.
+count = 63;
 end
 
 function count = maximumRetainedSemanticTokenLength()

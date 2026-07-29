@@ -84,6 +84,10 @@ second architecture guide.
   from the setup action's installation floor or the build tool's introduction.
   Give each platform-release entry one named risk instead of defaulting to a
   full Cartesian product.
+- Derive portable identifier and shape limits from the oldest supported MATLAB,
+  not the development runtime. Newer releases can raise `namelengthmax` and
+  silently accept struct keys or test names that R2022b truncates; encode the
+  compatibility-floor limit in the owning contract and a repository guard.
 - Give Linux hidden-GUI validation a virtual display. A green setup and
   headless run do not prevent older Qt-based MATLAB graphics from crashing
   when the runner has no active display server.
@@ -99,9 +103,10 @@ second architecture guide.
   R2022b on Windows can omit ruler decorators from descendant text discovery
   and still refuse that requested growth for an invisible figure. Include axis
   labels explicitly; when the accepted size remains clamped, recompute the
-  rendered data frame from that canvas and the measured insets. An export
-  regression must inspect the written artifact boundary; hidden figure Position
-  is useful diagnostic context, not the product assertion.
+  rendered data frame from that canvas, the measured insets, and a
+  typography-derived minimum outer margin. An export regression must inspect
+  the written artifact boundary; hidden figure Position is useful diagnostic
+  context, not the product assertion.
 - When a test can produce deterministic rendered output that a person or
   visual model can review, retain that exact image as run-centered visual
   evidence instead of deleting it with a temporary fixture. Keep an automated

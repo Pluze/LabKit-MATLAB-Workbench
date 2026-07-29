@@ -177,6 +177,9 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
                 dimensionsWithFiveAxes(), attributesWithSeventeenFields(), ...
                 attributesWithThirteenRootFieldsAndFourAxes(), ...
                 attributesAtCanonicalByteCount(1025)};
+            if namelengthmax > 63
+                rejected{end + 1} = attributeWithOverlongKey();
+            end
 
             for index = 1:numel(rejected)
                 testCase.verifyError(@() stream.log("info", "analysis.rejected", ...
@@ -542,6 +545,12 @@ for index = 1:12
 end
 end
 
+function attributes = attributeWithOverlongKey()
+attributes = struct();
+name = "metric" + string(repmat('x', 1, 64 - strlength("metric")));
+attributes.(char(name)) = 1;
+end
+
 function attributes = attributesAtCanonicalByteCount(targetBytes)
 attributes = struct();
 prefixes = "metric" + string(1:16);
@@ -551,7 +560,7 @@ end
 remaining = targetBytes - canonicalAttributeBytes(attributes);
 for index = 1:16
     prefix = prefixes(index);
-    padding = min(remaining, 64 - strlength(prefix));
+    padding = min(remaining, 63 - strlength(prefix));
     if padding == 0
         continue;
     end

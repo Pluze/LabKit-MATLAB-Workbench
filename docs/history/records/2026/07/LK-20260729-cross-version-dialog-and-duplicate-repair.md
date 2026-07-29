@@ -13,6 +13,7 @@ scope: Windows MATLAB file-dialog filter compatibility
 scope: Batch Crop duplicate task shape alignment
 scope: diagnostic text fallback
 scope: Figure Studio R2022b graphics export and layout
+scope: R2022b-safe diagnostic attribute identifiers
 scope: oldest/latest MATLAB CI compatibility matrix
 ```
 
@@ -59,6 +60,11 @@ enough real outer whitespace for ordinary ruler labels. Titles and axis labels
 are included explicitly because R2022b does not consistently expose those
 ruler decorators through descendant text discovery.
 
+The compatibility floor also owns identifier limits. Newer MATLAB releases
+allow names longer than R2022b's 63-character ceiling, so the diagnostic
+attribute-key contract and repository test names use the R2022b ceiling rather
+than the development runtime's `namelengthmax`.
+
 ## Changes
 
 - Converted native input/output dialog filters to character-cell tables before
@@ -86,9 +92,13 @@ ruler decorators through descendant text discovery.
 - Kept Figure Studio raster and SVG export operational on R2022b, where
   `exportgraphics` has neither figure padding nor SVG support.
 - Reserved measured label and tick margins in hidden export canvases. The
-  normal path preserves the configured plot frame; if Windows refuses the
-  requested outer size, the final fit reduces only the rendered data frame to
-  keep those margins inside the accepted canvas.
+  normal path preserves the configured plot frame and at least a half-em
+  typography-derived outer margin; if Windows refuses the requested outer
+  size, the final fit reduces only the rendered data frame to keep those
+  margins inside the accepted canvas.
+- Aligned diagnostic struct keys and repository function names with the
+  R2022b 63-character identifier ceiling, eliminating warnings hidden by the
+  newer development runtime's larger limit.
 - Retained deterministic production-rendered PNGs below each test profile's
   `visual-evidence/` folder, included them in the existing platform artifact,
   and kept automated assertions over the same files.

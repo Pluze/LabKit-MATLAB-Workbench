@@ -424,7 +424,7 @@ try
         fig, ax, originalFigureUnits, originalAxesUnits));
     plotWidth = max(1, round(double(style.canvasWidth)));
     plotHeight = max(1, round(double(style.canvasHeight)));
-    padding = max(4, round(0.01 * min(plotWidth, plotHeight)));
+    padding = exportOuterPadding(style, plotWidth, plotHeight);
     fig.Units = 'pixels';
     ax.Units = 'pixels';
     setFigureContentSize(fig, [plotWidth + 4 * padding, ...
@@ -454,6 +454,24 @@ try
     clear cleanup
 catch
 end
+end
+
+function padding = exportOuterPadding(style, plotWidth, plotHeight)
+% Keep a renderer-independent half-em of whitespace outside labels and ticks.
+% Older Windows print renderers can place glyph ink below the screen extent
+% reported before hardcopy; deriving the reserve from typography keeps the
+% layout stable without changing the exported bitmap after rendering.
+padding = max(4, round(0.01 * min(plotWidth, plotHeight)));
+dpi = 96;
+try
+    dpi = double(get(groot, 'ScreenPixelsPerInch'));
+catch
+end
+if ~isscalar(dpi) || ~isfinite(dpi) || dpi <= 0
+    dpi = 96;
+end
+labelEmPixels = max([style.labelFontSize style.tickFontSize]) * dpi / 72;
+padding = max(padding, ceil(0.5 * labelEmPixels));
 end
 
 function fitPlotFrameWithinAcceptedCanvas( ...
