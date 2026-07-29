@@ -76,6 +76,16 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "labkit:app:runtime:InvariantFailure");
         end
 
+        function nativeDialogFiltersContainOnlyLegacyCharacterCells(testCase)
+            filters = labkit.app.internal.NativeAdapterValues.dialogFilters( ...
+                {"*.zip", "Diagnostic bundle (*.zip)"});
+
+            testCase.verifySize(filters, [1, 2]);
+            testCase.verifyTrue(all(cellfun(@ischar, filters)));
+            testCase.verifyEqual(filters, ...
+                {'*.zip', 'Diagnostic bundle (*.zip)'});
+        end
+
         function syntheticInputsAreDeliberateAndDoNotChangeTheRuntime(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;

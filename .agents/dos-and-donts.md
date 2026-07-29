@@ -56,6 +56,9 @@ second architecture guide.
 - Make retained semantic events privacy-safe before they enter memory or disk.
   Free-form messages can leak more readily than attributes; export-time
   redaction is defense in depth, not the primary boundary.
+- Normalize string-authored filter tables immediately before native file
+  dialogs. Some MATLAB paths accept string cells while older native dialog
+  helpers require every filter-table element to be a character array.
 
 ### Interaction and previews
 
@@ -65,6 +68,9 @@ second architecture guide.
 - Shared image code keeps native pixels by default. Any finite preview budget
   is an explicit App decision, and pixel-unit parameters follow the preview
   scale.
+- Treat file-list bindings as shape-agnostic collections. Normalize parallel
+  App task, source, path, and cache arrays at the callback boundary before
+  vertical insertion so native row state cannot break one-entry alignment.
 
 ### Validation and compatibility
 

@@ -261,6 +261,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function result = chooseInputFile(~, filters, startPath)
+            filters = labkit.app.internal.NativeAdapterValues.dialogFilters(filters);
             [name, folder] = uigetfile(filters, "Choose input file", ...
                 labkit.app.internal.NativeAdapterValues.safeStartPath(startPath));
             result = labkit.app.internal.NativeAdapterValues.dialogPath(name, folder);
@@ -272,6 +273,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function result = chooseOutputFile(~, filters, startPath)
+            filters = labkit.app.internal.NativeAdapterValues.dialogFilters(filters);
             [name, folder] = uiputfile(filters, "Choose output file", ...
                 labkit.app.internal.NativeAdapterValues.safeStartPath(startPath));
             result = labkit.app.internal.NativeAdapterValues.dialogPath(name, folder);

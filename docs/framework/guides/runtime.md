@@ -285,7 +285,9 @@ more detailed trace capture for future activity, and exports a diagnostic
 bundle from the same session history. Enabling trace does not restart the App
 or reconstruct earlier detail. Journal degradation is itself exposed in the
 surviving in-memory stream; logging failures never alter callback transaction
-semantics or scientific results.
+semantics or scientific results. Native open and save dialogs normalize their
+file filters to MATLAB character-cell tables before calling the platform
+dialog, including the diagnostic ZIP destination on Windows releases.
 
 The viewer's **View** filter describes intended readers, not access control.
 **Useful** shows user-workflow events plus developer warnings and failures;
