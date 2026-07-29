@@ -448,9 +448,31 @@ try
         setFigureContentSize(fig, targetFigureSize);
         ax.Position = targetAxesPosition;
     end
+    fitPlotFrameWithinAcceptedCanvas( ...
+        fig, ax, plotWidth, plotHeight, padding);
     fitRenderedTextWithinFigure(fig, ax, padding);
     clear cleanup
 catch
+end
+end
+
+function fitPlotFrameWithinAcceptedCanvas( ...
+        fig, ax, plotWidth, plotHeight, padding)
+% A Windows desktop can refuse the requested outer figure size. Recompute the
+% data frame from the accepted drawable canvas and the measured outer insets;
+% the App must reserve label whitespace rather than render into a clipped page.
+for iteration = 1:4
+    drawnow nocallbacks
+    inset = plotInsets(ax, plotWidth, plotHeight, padding);
+    accepted = double(fig.Position(3:4));
+    available = max(1, accepted - [ ...
+        inset(1) + inset(3), inset(2) + inset(4)]);
+    fitted = min([plotWidth plotHeight], available);
+    target = [inset(1) inset(2) fitted];
+    if max(abs(double(ax.Position) - target)) < 0.5
+        break;
+    end
+    ax.Position = target;
 end
 end
 
@@ -527,9 +549,7 @@ for iteration = 1:4
     axesPosition(1:2) = axesPosition(1:2) + overflow(1:2);
     ax.Position = axesPosition;
 end
-% R2022b on Windows can clamp even an invisible figure to the desktop.
-% Preserve the requested font size and plot geometry; only translate text
-% that remains outside the actual drawable canvas after growth is refused.
+% Residual renderer rounding can remain after the accepted-canvas fit.
 shiftRenderedTextInsideFigure(fig, ax, padding);
 drawnow nocallbacks
 end

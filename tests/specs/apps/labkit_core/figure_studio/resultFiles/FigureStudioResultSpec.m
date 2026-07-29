@@ -66,16 +66,16 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             clear rebuiltCleanup resourceCleanup fileCleanup cleanup
         end
 
-        function exportedLongTitleDoesNotClipAtTheImageBoundary(testCase)
+        function exportedAxisLabelsRetainOuterWhitespace(testCase)
             cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
             sourceFigure = figure(Visible="off");
             source = axes(Parent=sourceFigure);
             plot(source, 0:5, [0 2 4 3 2 1]);
-            title(source, "-Zimag (ohm) vs Zreal (ohm) (4 files)");
+            title(source, "Impedance plot");
             xlabel(source, "Zreal (ohm)");
             ylabel(source, "-Zimag (ohm)");
             output = labkittest.visualEvidencePath( ...
-                "figure-studio-long-title-export", ".png");
+                "figure-studio-axis-label-margins", ".png");
             schema = figure_studio.projectSpec();
             project = schema.Create();
             project.parameters.style.exportScale = 0.25;
@@ -94,12 +94,12 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             figure_studio.resultFiles.exportGraphic(state, context, "png");
 
             image = imread(output);
-            topEdge = reshape(image(1, :, :), [], 1);
-            rightEdge = reshape(image(:, end, :), [], 1);
-            testCase.verifyTrue(all(topEdge >= 245), ...
-                edgeDiagnostic(topEdge, "top"));
-            testCase.verifyTrue(all(rightEdge >= 245), ...
-                edgeDiagnostic(rightEdge, "right"));
+            bottomEdge = reshape(image(end, :, :), [], 1);
+            leftEdge = reshape(image(:, 1, :), [], 1);
+            testCase.verifyTrue(all(bottomEdge >= 245), ...
+                edgeDiagnostic(bottomEdge, "bottom"));
+            testCase.verifyTrue(all(leftEdge >= 245), ...
+                edgeDiagnostic(leftEdge, "left"));
             clear cleanup
         end
 

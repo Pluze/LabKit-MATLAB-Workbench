@@ -58,7 +58,7 @@ class SummarizeJunitTest(unittest.TestCase):
             content = summary.read_text(encoding="utf-8")
             self.assertIn("# ❌ LabKit MATLAB compatibility failed", content)
             self.assertIn("FigureStudioResultSpec", content)
-            self.assertIn("exported title exceeded canvas", content)
+            self.assertIn("axis label reached export boundary", content)
             self.assertIn("Still proven by this run", content)
             self.assertIn("Hidden GUI, Path isolation passed", content)
 
@@ -129,8 +129,8 @@ class SummarizeJunitTest(unittest.TestCase):
         report = root / "test-results" / profile / "junit.xml"
         report.parent.mkdir(parents=True, exist_ok=True)
         failure = (
-            '<failure message="exported title exceeded canvas">'
-            "expected y &lt;= height</failure>"
+            '<failure message="axis label reached export boundary">'
+            "expected outer whitespace</failure>"
             if failed
             else ""
         )
@@ -141,7 +141,7 @@ class SummarizeJunitTest(unittest.TestCase):
             f'<testsuite name="FigureStudioResultSpec" tests="1" '
             f'failures="{failures}" errors="0" skipped="0" time="1.25">'
             '<testcase classname="FigureStudioResultSpec" '
-            'name="exportedLongTitleStaysWithinTheCanvas" time="1.25">'
+            'name="exportedAxisLabelsRetainOuterWhitespace" time="1.25">'
             f"{failure}</testcase></testsuite></testsuites>",
             encoding="utf-8",
         )

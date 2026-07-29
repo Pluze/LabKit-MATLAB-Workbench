@@ -50,14 +50,14 @@ R2025a and newer retain `exportgraphics` figure padding; supported older
 releases use `print`, including its SVG device. Invisible export figures are
 anchored before their drawable pixel size is assigned, then layout converges
 against the native renderer's measured text extents. A final figure-coordinate
-fit catches older Windows renderers that update title extents only after
+fit catches older Windows renderers that update ruler-label extents only after
 accepting the offscreen geometry. If R2022b clamps that invisible figure to the
-desktop despite the requested size, only the still-overflowing text is
-translated into the accepted canvas; font size and plot-frame geometry remain
-unchanged. Titles and axis labels are included explicitly because R2022b does
-not consistently expose those ruler decorators through descendant text
-discovery. Raster output adds one resolution-scaled logical white pixel after
-rendering so antialiasing cannot occupy the final image column.
+desktop despite the requested size, Figure Studio recomputes the data frame
+from the accepted drawable canvas after reserving measured label and tick
+insets. Font size remains unchanged, while the constrained plot frame yields
+enough real outer whitespace for ordinary ruler labels. Titles and axis labels
+are included explicitly because R2022b does not consistently expose those
+ruler decorators through descendant text discovery.
 
 ## Changes
 
@@ -85,11 +85,10 @@ rendering so antialiasing cannot occupy the final image column.
   creation, and publish failures, with the resulting path reported to the user.
 - Kept Figure Studio raster and SVG export operational on R2022b, where
   `exportgraphics` has neither figure padding nor SVG support.
-- Kept hidden export canvases independent of the Windows desktop size while
-  preserving the configured plot-frame dimensions, including renderers whose
-  title extents change after accepting a larger offscreen window. The final fit
-  grows only the figure sides whose rendered text still overflows, then
-  translates residual text when the operating system refuses that growth.
+- Reserved measured label and tick margins in hidden export canvases. The
+  normal path preserves the configured plot frame; if Windows refuses the
+  requested outer size, the final fit reduces only the rendered data frame to
+  keep those margins inside the accepted canvas.
 - Retained deterministic production-rendered PNGs below each test profile's
   `visual-evidence/` folder, included them in the existing platform artifact,
   and kept automated assertions over the same files.
@@ -106,8 +105,10 @@ screenshots, plots, and other Runtime output dialogs. Batch Crop can duplicate
 an image task from a multi-image list without changing source images or prior
 task settings. If diagnostic ZIP export still fails, users receive the path to
 a readable plain-text fallback containing the surviving sanitized session
-history. Figure Studio keeps its plot-frame dimensions and complete styled
-figure export across the supported MATLAB release boundary.
+history. Figure Studio keeps complete ruler labels and styled figure output
+across the supported MATLAB release boundary. A Windows desktop that refuses
+the requested outer canvas can constrain the rendered data-frame size without
+changing the saved project setting.
 
 ## Compatibility and migration
 
@@ -119,10 +120,10 @@ schemas are unchanged.
 
 Focused headless specifications cover the Batch Crop duplicate callback and
 the native dialog-filter value, diagnostic ZIP-to-text degradation, and Figure
-Studio result layout. The long-title regression uses the production PNG export
-path and checks the written image boundary rather than treating hidden-window
-geometry as export evidence. Hidden-GUI workflow coverage also performs a real
-PNG export.
+Studio result layout. The ruler-label regression uses the production PNG
+export path and checks its bottom and left whitespace rather than treating
+hidden-window geometry as export evidence. Hidden-GUI workflow coverage also
+performs a real PNG export.
 CI runs every full profile on Linux, macOS, and Windows against R2022b and the
 latest available MATLAB release, while macOS runs the latest release. The
 R2022b jobs use fixed supported runner images; latest MATLAB uses current
