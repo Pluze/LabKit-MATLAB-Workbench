@@ -30,7 +30,8 @@ compatibility: compatible
 component: `labkit.app` | `2.0.1 -&gt; 2.0.2`
 component: `labkit_BatchImageCrop_app` | `1.9.0 -&gt; 1.9.1`
 scope: Windows MATLAB file-dialog filter compatibility
-scope: Batch Crop duplicate task shape alignment</code></pre>
+scope: Batch Crop duplicate task shape alignment
+scope: oldest/latest MATLAB CI compatibility matrix</code></pre>
 <h2 id="context">Context</h2>
 <p>MATLAB R2024b on Windows rejected string-valued cells passed to <code>uiputfile</code> while exporting a diagnostic ZIP. Batch Crop also inserted a duplicate with vertical concatenation even when the native file-list source binding supplied a row struct array, so duplicating from a multi-image list could fail with a dimension mismatch.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>
@@ -40,13 +41,14 @@ scope: Batch Crop duplicate task shape alignment</code></pre>
 <li>Converted native input/output dialog filters to character-cell tables before calling <code>uigetfile</code> or <code>uiputfile</code>.</li>
 <li>Made Batch Crop duplicate insertion preserve one column-aligned task, source, image-cache, and path-cache row per list entry.</li>
 <li>Added focused regression coverage for the R2024b-compatible filter value and a multi-image row-shaped duplicate state.</li>
+<li>Expanded every platform validation profile from one fixed MATLAB release to R2021a and the latest release available to the official setup action.</li>
 </ul>
 <h2 id="user-and-data-impact">User and data impact</h2>
 <p>Windows users can choose a destination for diagnostic ZIP bundles, projects, screenshots, plots, and other Runtime output dialogs. Batch Crop can duplicate an image task from a multi-image list without changing source images or prior task settings.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <p>The repair is backward compatible. Public App SDK signatures, Batch Crop project payload version 3, scientific crop calculations, and exported result schemas are unchanged.</p>
 <h2 id="validation">Validation</h2>
-<p>Focused headless specifications cover the Batch Crop duplicate callback and the native dialog-filter value. Documentation consistency and the final changed-file gate cover the integrated version and history updates.</p>
+<p>Focused headless specifications cover the Batch Crop duplicate callback and the native dialog-filter value. CI runs every full profile on Linux, macOS, and Windows against R2021a and the latest available MATLAB release. Documentation consistency and the final changed-file gate cover the integrated version and history updates.</p>
 <h2 id="evidence">Evidence</h2>
 <p>The repair branch records focused MATLAB test artifacts and the final changed-file validation result. The supplied sanitized log identifies the original <code>MATLAB:catenate:dimensionMismatch</code> and <code>MATLAB:character:CellsMustContainChars</code> failures.</p>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>

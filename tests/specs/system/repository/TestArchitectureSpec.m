@@ -64,6 +64,12 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "needs.change-scope.outputs.docs == 'true'");
             testCase.verifySubstring(workflow, "docs-check:");
             testCase.verifySubstring(workflow, "tasks: docsCheck");
+            testCase.verifySubstring(workflow, ...
+                "release: [R2021a, latest]");
+            testCase.verifyEqual(count(workflow, ...
+                "release: ${{ matrix.release }}"), 3);
+            testCase.verifySubstring(workflow, ...
+                "name: matlab-headless-${{ matrix.id }}-${{ matrix.release }}");
             testCase.verifySubstring(workflow, "ci-gate:");
             testCase.verifySubstring(workflow, "name: CI Gate");
             testCase.verifySubstring(workflow, "needs.change-scope.result");

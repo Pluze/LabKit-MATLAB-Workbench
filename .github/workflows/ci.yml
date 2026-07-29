@@ -11,9 +11,6 @@ on:
 permissions:
   contents: read
 
-env:
-  MATLAB_RELEASE: R2025a
-
 concurrency:
   group: ci-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
@@ -49,7 +46,7 @@ jobs:
               --null --github-output "${GITHUB_OUTPUT}"
 
   headless-platforms:
-    name: Headless / ${{ matrix.label }}
+    name: Headless / ${{ matrix.label }} / ${{ matrix.release }}
     needs: change-scope
     if: needs.change-scope.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
@@ -57,6 +54,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-14, windows-latest]
+        release: [R2021a, latest]
         include:
           - os: ubuntu-latest
             id: linux
@@ -76,7 +75,7 @@ jobs:
       - name: Set up clean MATLAB runtime
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: ${{ env.MATLAB_RELEASE }}
+          release: ${{ matrix.release }}
 
       - name: Prepare MATLAB log directory
         shell: bash
@@ -96,7 +95,7 @@ jobs:
           if [ -f artifacts/test-results/headless/junit.xml ]; then
             python .github/scripts/summarize_junit.py \
               artifacts/test-results/headless/junit.xml \
-              --run-name "headless-${{ matrix.id }}" \
+              --run-name "headless-${{ matrix.id }}-${{ matrix.release }}" \
               --log artifacts/logs/headless/matlab.log \
               --active-test artifacts/test-results/headless/active-test.json
           else
@@ -107,7 +106,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: matlab-headless-${{ matrix.id }}
+          name: matlab-headless-${{ matrix.id }}-${{ matrix.release }}
           if-no-files-found: warn
           retention-days: 14
           path: |
@@ -116,7 +115,7 @@ jobs:
             artifacts/logs/**
 
   isolated-platforms:
-    name: Path isolation / ${{ matrix.label }}
+    name: Path isolation / ${{ matrix.label }} / ${{ matrix.release }}
     needs: change-scope
     if: needs.change-scope.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
@@ -124,6 +123,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-14, windows-latest]
+        release: [R2021a, latest]
         include:
           - os: ubuntu-latest
             id: linux
@@ -143,7 +144,7 @@ jobs:
       - name: Set up clean MATLAB runtime
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: ${{ env.MATLAB_RELEASE }}
+          release: ${{ matrix.release }}
 
       - name: Prepare MATLAB log directory
         shell: bash
@@ -163,7 +164,7 @@ jobs:
           if [ -f artifacts/test-results/isolated/junit.xml ]; then
             python .github/scripts/summarize_junit.py \
               artifacts/test-results/isolated/junit.xml \
-              --run-name "isolated-${{ matrix.id }}" \
+              --run-name "isolated-${{ matrix.id }}-${{ matrix.release }}" \
               --log artifacts/logs/isolated/matlab.log \
               --active-test artifacts/test-results/isolated/active-test.json
           else
@@ -174,7 +175,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: matlab-isolated-${{ matrix.id }}
+          name: matlab-isolated-${{ matrix.id }}-${{ matrix.release }}
           if-no-files-found: warn
           retention-days: 14
           path: |
@@ -183,7 +184,7 @@ jobs:
             artifacts/logs/**
 
   gui-platforms:
-    name: Hidden GUI / ${{ matrix.label }}
+    name: Hidden GUI / ${{ matrix.label }} / ${{ matrix.release }}
     needs: change-scope
     if: needs.change-scope.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
@@ -191,6 +192,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-14, windows-latest]
+        release: [R2021a, latest]
         include:
           - os: ubuntu-latest
             id: linux
@@ -210,7 +213,7 @@ jobs:
       - name: Set up clean MATLAB runtime
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: ${{ env.MATLAB_RELEASE }}
+          release: ${{ matrix.release }}
 
       - name: Prepare MATLAB log directory
         shell: bash
@@ -230,7 +233,7 @@ jobs:
           if [ -f artifacts/test-results/gui/junit.xml ]; then
             python .github/scripts/summarize_junit.py \
               artifacts/test-results/gui/junit.xml \
-              --run-name "gui-${{ matrix.id }}" \
+              --run-name "gui-${{ matrix.id }}-${{ matrix.release }}" \
               --log artifacts/logs/gui/matlab.log \
               --active-test artifacts/test-results/gui/active-test.json
           else
@@ -241,7 +244,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: matlab-gui-${{ matrix.id }}
+          name: matlab-gui-${{ matrix.id }}-${{ matrix.release }}
           if-no-files-found: warn
           retention-days: 14
           path: |
@@ -265,7 +268,7 @@ jobs:
       - name: Set up clean MATLAB runtime
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: ${{ env.MATLAB_RELEASE }}
+          release: latest
 
       - name: Verify generated documentation
         uses: matlab-actions/run-build@v3

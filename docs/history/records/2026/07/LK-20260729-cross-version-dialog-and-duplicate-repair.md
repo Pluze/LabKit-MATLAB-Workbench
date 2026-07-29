@@ -10,6 +10,7 @@ component: `labkit.app` | `2.0.1 -> 2.0.2`
 component: `labkit_BatchImageCrop_app` | `1.9.0 -> 1.9.1`
 scope: Windows MATLAB file-dialog filter compatibility
 scope: Batch Crop duplicate task shape alignment
+scope: oldest/latest MATLAB CI compatibility matrix
 ```
 
 ## Context
@@ -36,6 +37,8 @@ no new public API or saved-project migration is needed.
   image-cache, and path-cache row per list entry.
 - Added focused regression coverage for the R2024b-compatible filter value and
   a multi-image row-shaped duplicate state.
+- Expanded every platform validation profile from one fixed MATLAB release to
+  R2021a and the latest release available to the official setup action.
 
 ## User and data impact
 
@@ -53,8 +56,10 @@ schemas are unchanged.
 ## Validation
 
 Focused headless specifications cover the Batch Crop duplicate callback and
-the native dialog-filter value. Documentation consistency and the final
-changed-file gate cover the integrated version and history updates.
+the native dialog-filter value. CI runs every full profile on Linux, macOS, and
+Windows against R2021a and the latest available MATLAB release. Documentation
+consistency and the final changed-file gate cover the integrated version and
+history updates.
 
 ## Evidence
 

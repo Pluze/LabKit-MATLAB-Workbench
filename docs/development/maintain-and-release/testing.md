@@ -158,13 +158,16 @@ migration, structural-GUI, or workflow proof.
 
 ## CI and Manual Evidence
 
-Continuous Integration runs `headless`, `gui`, and `isolated` on Linux, macOS, and Windows
-from a clean MATLAB runtime without optional Toolboxes. It also runs `docsCheck`
-once, then reports one aggregate `CI Gate` result that depends on every required
-profile. Configure repository branch protection to require `CI Gate`; the
-workflow does not silently replace repository protection policy. It uploads the
-catalog artifacts even after failure. Coverage is an explicit report, not a
-duplicate CI gate.
+Continuous Integration runs `headless`, `gui`, and `isolated` on Linux, macOS,
+and Windows against R2021a and the latest release available to
+`matlab-actions/setup-matlab`. This oldest/latest matrix is compatibility
+evidence, not by itself a published product-support promise. CI uses clean
+MATLAB runtimes without optional Toolboxes. It runs `docsCheck` once on the
+latest release, then reports one aggregate `CI Gate` result that depends on
+every required profile. Configure repository branch protection to require `CI
+Gate`; the workflow does not silently replace repository protection policy. It
+uploads the catalog artifacts even after failure. Coverage is an explicit
+report, not a duplicate CI gate.
 
 CI classifies the exact pushed or pull-request diff before scheduling MATLAB.
 Source, test, build, workflow, and tool changes run the complete platform
