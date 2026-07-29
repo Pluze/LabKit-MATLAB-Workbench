@@ -170,12 +170,14 @@ runtimes without optional Toolboxes. The R2022b entries use the fixed Ubuntu
 latest MATLAB uses the current runner images. Each platform-release job
 installs MATLAB once, then runs `headless`, `gui`, and `isolated` in separate
 batch sessions so the profiles share setup cost without sharing MATLAB session
-state. It runs `docsCheck` once on the latest release, then reports one
-aggregate `CI Gate` result that depends on every required profile. Configure
-repository branch protection to require `CI Gate`; the workflow does not
-silently replace repository protection policy. It uploads the catalog
-artifacts even after failure. Coverage is an explicit report, not a duplicate
-CI gate.
+state. Linux jobs provide an X virtual framebuffer before running MATLAB so
+native graphics tests have a real display service instead of relying on
+release-specific no-display behavior. It runs `docsCheck` once on the latest
+release, then reports one aggregate `CI Gate` result that depends on every
+required profile. Configure repository branch protection to require `CI Gate`;
+the workflow does not silently replace repository protection policy. It
+uploads the catalog artifacts even after failure. Coverage is an explicit
+report, not a duplicate CI gate.
 
 CI classifies the exact pushed or pull-request diff before scheduling MATLAB.
 Source, test, build, workflow, and tool changes run the complete platform

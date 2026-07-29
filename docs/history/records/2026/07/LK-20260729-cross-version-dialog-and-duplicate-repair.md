@@ -45,6 +45,8 @@ no new public API or saved-project migration is needed.
 - Bound the R2022b entries to Ubuntu 22.04 and Windows Server 2022 runner
   images supported by that release instead of testing unsupported latest
   operating-system images.
+- Gave Linux MATLAB sessions an X virtual framebuffer so hidden-GUI tests do
+  not depend on release-specific behavior when no display server is active.
 
 ## User and data impact
 
@@ -65,8 +67,9 @@ Focused headless specifications cover the Batch Crop duplicate callback and
 the native dialog-filter value. CI runs every full profile on Linux, macOS, and
 Windows against R2022b and the latest available MATLAB release, while macOS
 runs the latest release. The R2022b jobs use fixed supported runner images;
-latest MATLAB uses current runner images. Documentation consistency and the
-final changed-file gate cover the integrated version and history updates.
+latest MATLAB uses current runner images, and Linux GUI validation runs with a
+virtual display. Documentation consistency and the final changed-file gate
+cover the integrated version and history updates.
 
 ## Evidence
 
