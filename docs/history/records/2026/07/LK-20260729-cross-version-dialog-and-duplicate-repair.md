@@ -6,10 +6,13 @@ date: 2026-07-29
 sequence: 162
 type: fix
 compatibility: compatible
-component: `labkit.app` | `2.0.1 -> 2.0.2`
+component: `labkit.app` | `2.0.1 -> 2.0.3`
 component: `labkit_BatchImageCrop_app` | `1.9.0 -> 1.9.1`
+component: `labkit_FigureStudio_app` | `0.7.0 -> 0.7.1`
 scope: Windows MATLAB file-dialog filter compatibility
 scope: Batch Crop duplicate task shape alignment
+scope: diagnostic text fallback
+scope: Figure Studio R2022b graphics export and layout
 scope: oldest/latest MATLAB CI compatibility matrix
 ```
 
@@ -29,6 +32,18 @@ collections to columns at the duplicate callback boundary before inserting the
 new task. These are the narrow owners of the platform and App shape contracts;
 no new public API or saved-project migration is needed.
 
+Diagnostic export now treats a ZIP failure as a degraded but recoverable
+Runtime outcome. It writes the already-sanitized in-memory session records to
+one text file beside the chosen destination when possible, or in MATLAB's
+user-writable temporary folder otherwise. This remains private Runtime
+behavior because Apps neither select nor interpret diagnostic formats.
+
+Figure Studio now selects graphics primitives at its result-file boundary.
+R2025a and newer retain `exportgraphics` figure padding; supported older
+releases use `print`, including its SVG device. A larger minimum text margin
+absorbs renderer-dependent font extent changes without changing the configured
+plot-frame dimensions.
+
 ## Changes
 
 - Converted native input/output dialog filters to character-cell tables before
@@ -38,8 +53,8 @@ no new public API or saved-project migration is needed.
 - Added focused regression coverage for the R2024b-compatible filter value and
   a multi-image row-shaped duplicate state.
 - Expanded every validation profile from one fixed MATLAB release to the
-  effective R2022b Build Tool floor and the latest release available to the
-  official setup action. macOS remains a latest-release platform sentinel.
+  supported R2022b floor and the latest release available to the official
+  setup action. macOS remains a latest-release platform sentinel.
 - Grouped the three validation profiles by platform and release so each matrix
   entry installs MATLAB once while each profile retains a fresh batch session.
 - Bound the R2022b entries to Ubuntu 22.04 and Windows Server 2022 runner
@@ -47,13 +62,20 @@ no new public API or saved-project migration is needed.
   operating-system images.
 - Gave Linux MATLAB sessions an X virtual framebuffer so hidden-GUI tests do
   not depend on release-specific behavior when no display server is active.
+- Added a single-file diagnostic fallback for native dialog, ZIP staging, ZIP
+  creation, and publish failures, with the resulting path reported to the user.
+- Kept Figure Studio raster and SVG export operational on R2022b, where
+  `exportgraphics` has neither figure padding nor SVG support.
 
 ## User and data impact
 
 Windows users can choose a destination for diagnostic ZIP bundles, projects,
 screenshots, plots, and other Runtime output dialogs. Batch Crop can duplicate
 an image task from a multi-image list without changing source images or prior
-task settings.
+task settings. If diagnostic ZIP export still fails, users receive the path to
+a readable plain-text fallback containing the surviving sanitized session
+history. Figure Studio keeps its plot-frame dimensions and complete styled
+figure export across the supported MATLAB release boundary.
 
 ## Compatibility and migration
 
@@ -64,12 +86,14 @@ schemas are unchanged.
 ## Validation
 
 Focused headless specifications cover the Batch Crop duplicate callback and
-the native dialog-filter value. CI runs every full profile on Linux, macOS, and
-Windows against R2022b and the latest available MATLAB release, while macOS
-runs the latest release. The R2022b jobs use fixed supported runner images;
-latest MATLAB uses current runner images, and Linux GUI validation runs with a
-virtual display. Documentation consistency and the final changed-file gate
-cover the integrated version and history updates.
+the native dialog-filter value, diagnostic ZIP-to-text degradation, and Figure
+Studio result layout. Hidden-GUI workflow coverage performs a real PNG export.
+CI runs every full profile on Linux, macOS, and Windows against R2022b and the
+latest available MATLAB release, while macOS runs the latest release. The
+R2022b jobs use fixed supported runner images; latest MATLAB uses current
+runner images, and Linux GUI validation runs with a virtual display.
+Documentation consistency and the final changed-file gate cover the integrated
+version and history updates.
 
 ## Evidence
 

@@ -59,6 +59,9 @@ second architecture guide.
 - Normalize string-authored filter tables immediately before native file
   dialogs. Some MATLAB paths accept string cells while older native dialog
   helpers require every filter-table element to be a character array.
+- A diagnostic last resort must not reuse the subsystem that just failed.
+  Build it from the sanitized in-memory stream, write one plain-text file
+  without ZIP staging, and report the concrete fallback path.
 
 ### Interaction and previews
 
@@ -77,9 +80,16 @@ second architecture guide.
 - Pair an old MATLAB release with runner images from that release's supported
   operating-system list. A MATLAB-version matrix over `*-latest` can turn an
   unsupported host/runtime combination into misleading product failures.
+- Choose the oldest CI release from the product compatibility contract, not
+  from the setup action's installation floor or the build tool's introduction.
+  Give each platform-release entry one named risk instead of defaulting to a
+  full Cartesian product.
 - Give Linux hidden-GUI validation a virtual display. A green setup and
   headless run do not prevent older Qt-based MATLAB graphics from crashing
   when the runner has no active display server.
+- Guard release-added graphics options at the App export boundary and keep the
+  oldest supported release on a real export test. Parsing and layout tests
+  cannot detect an unsupported name-value or file format.
 - A component version change proves that its contract moved; it does not prove
   that every component manual needs new prose. For cross-App behavior, choose
   one canonical owner first and keep App pages limited to workflow-critical or

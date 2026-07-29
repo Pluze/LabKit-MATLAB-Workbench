@@ -88,6 +88,58 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
                 readme, "Journal dropped records:"));
             clear cleanup
         end
+
+        function zipFailureWritesOneReadableTextFallback(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = bundleDefinition();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                definition, [], struct(), [], JournalRoot=folder);
+            cleanup = onCleanup(@() runtime.close());
+            runtime.invokeAction("run");
+
+            destination = runtime.exportDiagnosticBundle(fullfile( ...
+                folder, "unavailable", "diagnostics.zip"));
+            fileCleanup = onCleanup(@() deleteIfFile(destination));
+            fallback = string(fileread(destination));
+
+            testCase.verifyTrue(endsWith(destination, ".txt"));
+            testCase.verifyTrue(isfile(destination));
+            testCase.verifyTrue(contains( ...
+                fallback, "LabKit Diagnostic Text Fallback"));
+            testCase.verifyTrue(contains( ...
+                fallback, "analysis.failed"));
+            testCase.verifyTrue(contains( ...
+                fallback, "diagnostics.bundle_exported.failed"));
+            testCase.verifyTrue(contains(fallback, ...
+                "labkit:app:runtime:DiagnosticWriteFailed"));
+            testCase.verifyFalse(contains(fallback, string(folder)));
+            testCase.verifyFalse(contains( ...
+                fallback, "private-source.png"));
+            clear fileCleanup cleanup
+        end
+
+        function saveDialogFailureStillWritesTheTextFallback(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = bundleDefinition();
+            backend = struct( ...
+                "chooseOutputFile", @failOutputDialog, ...
+                "alert", @(~, ~) []);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                definition, [], backend, [], JournalRoot=folder);
+            cleanup = onCleanup(@() runtime.close());
+
+            destination = runtime.exportDiagnosticBundleInteractive();
+            fileCleanup = onCleanup(@() deleteIfFile(destination));
+            fallback = string(fileread(destination));
+
+            testCase.verifyTrue(isfile(destination));
+            testCase.verifyTrue(endsWith(destination, ".txt"));
+            testCase.verifyTrue(contains( ...
+                fallback, "labkit:test:OutputDialogFailure"));
+            clear fileCleanup cleanup
+        end
     end
 end
 
@@ -146,4 +198,16 @@ if string(stage) == "initialize"
     error("labkit:test:JournalInitializeFailure", ...
         "Intentional initialization failure.");
 end
+end
+
+function deleteIfFile(filepath)
+if isfile(filepath)
+    delete(filepath);
+end
+end
+
+function choice = failOutputDialog(varargin)
+choice = [];
+error("labkit:test:OutputDialogFailure", ...
+    "Intentional output dialog failure.");
 end

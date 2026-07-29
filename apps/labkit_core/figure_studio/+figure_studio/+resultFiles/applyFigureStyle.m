@@ -424,7 +424,10 @@ try
         fig, ax, originalFigureUnits, originalAxesUnits));
     plotWidth = max(1, round(double(style.canvasWidth)));
     plotHeight = max(1, round(double(style.canvasHeight)));
-    padding = max(4, round(0.01 * min(plotWidth, plotHeight)));
+    % Keep a release-independent safety margin around font extents. Older
+    % Windows renderers can report a title several pixels wider only after
+    % the final draw.
+    padding = max(16, round(0.01 * min(plotWidth, plotHeight)));
     fig.Units = 'pixels';
     ax.Units = 'pixels';
     setFigureContentSize(fig, [plotWidth + 4 * padding, ...

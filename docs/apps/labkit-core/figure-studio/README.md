@@ -83,7 +83,10 @@ changes. **X tick labels** retains the source angle, makes labels horizontal,
 or rotates them 45 degrees.
 
 PNG and JPG resolution is `300 * Export x`, with a minimum of 72 dpi. SVG uses
-vector content. **FIG default** records the source plot-frame ratio as its
+vector content. On MATLAB releases before R2025a, Figure Studio uses MATLAB's
+native `print` exporter to retain the complete styled figure because
+`exportgraphics` does not yet support figure padding or SVG. **FIG default**
+records the source plot-frame ratio as its
 reference, so reopening a source does not rescale its original typography. If
 limits are stale after copying or editing, use **Recalculate X/Y limits** to
 fit the visible graphics, update the interactive viewport, and refresh the

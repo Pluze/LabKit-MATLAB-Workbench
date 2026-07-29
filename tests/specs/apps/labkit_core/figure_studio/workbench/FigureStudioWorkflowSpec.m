@@ -15,9 +15,12 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             sourcePath = fullfile(folder, "probe.fig");
             outputPath = fullfile(folder, "styled.png");
+            svgPath = fullfile(folder, "styled.svg");
             writeProbe(sourcePath);
             backend = struct( ...
-                "chooseOutputFile", @(~, ~) labkit.app.dialog.Choice(outputPath), ...
+                "chooseOutputFile", @(filters, ~) ...
+                    labkit.app.dialog.Choice( ...
+                    exportPathForFilter(folder, filters)), ...
                 "chooseOutputFolder", @(~) labkit.app.dialog.Choice(folder), ...
                 "alert", @(~, ~) []);
             definition = figure_studio.definition();
@@ -37,6 +40,8 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(export.Enable), "on");
             runtime.invokeAction("exportPng");
             testCase.verifyTrue(isfile(outputPath));
+            runtime.invokeAction("exportSvg");
+            testCase.verifyTrue(isfile(svgPath));
             clear cleanup
         end
     end
@@ -51,4 +56,9 @@ title(axesValue, "Probe");
 axesValue.XLim = [1.75 2.25];
 savefig(figureValue, path);
 clear cleanup
+end
+
+function filepath = exportPathForFilter(folder, filters)
+extension = erase(string(filters(1)), "*");
+filepath = fullfile(folder, "styled" + extension);
 end

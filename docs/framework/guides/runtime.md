@@ -288,6 +288,11 @@ surviving in-memory stream; logging failures never alter callback transaction
 semantics or scientific results. Native open and save dialogs normalize their
 file filters to MATLAB character-cell tables before calling the platform
 dialog, including the diagnostic ZIP destination on Windows releases.
+If the save dialog, staging, ZIP creation, or final publish step fails,
+Runtime writes the surviving privacy-safe records as one plain-text diagnostic
+fallback. It first uses the selected destination folder when that folder is
+available and otherwise uses MATLAB's user-writable temporary folder; the
+failure alert reports the complete fallback path.
 
 The viewer's **View** filter describes intended readers, not access control.
 **Useful** shows user-workflow events plus developer warnings and failures;
