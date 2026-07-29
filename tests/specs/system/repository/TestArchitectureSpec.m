@@ -65,11 +65,15 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, "docs-check:");
             testCase.verifySubstring(workflow, "tasks: docsCheck");
             testCase.verifySubstring(workflow, ...
-                "release: [R2021a, latest]");
+                "release: [R2022b, latest]");
             testCase.verifyEqual(count(workflow, ...
-                "release: ${{ matrix.release }}"), 3);
+                "release: ${{ matrix.release }}"), 1);
+            testCase.verifyEqual(count(workflow, ...
+                "continue-on-error: true"), 3);
             testCase.verifySubstring(workflow, ...
-                "name: matlab-headless-${{ matrix.id }}-${{ matrix.release }}");
+                "name: matlab-${{ matrix.id }}-${{ matrix.release }}");
+            testCase.verifySubstring(workflow, ...
+                "needs.platform-matrix.result");
             testCase.verifySubstring(workflow, "ci-gate:");
             testCase.verifySubstring(workflow, "name: CI Gate");
             testCase.verifySubstring(workflow, "needs.change-scope.result");

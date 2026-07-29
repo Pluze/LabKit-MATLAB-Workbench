@@ -45,17 +45,20 @@ jobs:
             python .github/scripts/classify_ci_scope.py \
               --null --github-output "${GITHUB_OUTPUT}"
 
-  headless-platforms:
-    name: Headless / ${{ matrix.label }} / ${{ matrix.release }}
+  platform-matrix:
+    name: MATLAB / ${{ matrix.label }} / ${{ matrix.release }}
     needs: change-scope
     if: needs.change-scope.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 35
+    timeout-minutes: 100
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-14, windows-latest]
-        release: [R2021a, latest]
+        release: [R2022b, latest]
+        exclude:
+          - os: macos-14
+            release: R2022b
         include:
           - os: ubuntu-latest
             id: linux
@@ -77,11 +80,13 @@ jobs:
         with:
           release: ${{ matrix.release }}
 
-      - name: Prepare MATLAB log directory
+      - name: Prepare MATLAB artifact directories
         shell: bash
-        run: mkdir -p artifacts/logs/headless
+        run: mkdir -p artifacts/logs/headless artifacts/logs/gui artifacts/logs/isolated
 
       - name: Run full non-GUI validation
+        id: headless
+        continue-on-error: true
         timeout-minutes: 30
         uses: matlab-actions/run-build@v3
         with:
@@ -102,124 +107,9 @@ jobs:
             echo "::warning::Headless validation did not produce JUnit output."
           fi
 
-      - name: Upload headless artifacts
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: matlab-headless-${{ matrix.id }}-${{ matrix.release }}
-          if-no-files-found: warn
-          retention-days: 14
-          path: |
-            artifacts/test-results/**
-            artifacts/debug/**
-            artifacts/logs/**
-
-  isolated-platforms:
-    name: Path isolation / ${{ matrix.label }} / ${{ matrix.release }}
-    needs: change-scope
-    if: needs.change-scope.outputs.full == 'true'
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-14, windows-latest]
-        release: [R2021a, latest]
-        include:
-          - os: ubuntu-latest
-            id: linux
-            label: Linux
-          - os: macos-14
-            id: macos
-            label: macOS
-          - os: windows-latest
-            id: windows
-            label: Windows
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 2
-
-      - name: Set up clean MATLAB runtime
-        uses: matlab-actions/setup-matlab@v3
-        with:
-          release: ${{ matrix.release }}
-
-      - name: Prepare MATLAB log directory
-        shell: bash
-        run: mkdir -p artifacts/logs/isolated
-
-      - name: Run path-isolation validation
-        timeout-minutes: 30
-        uses: matlab-actions/run-build@v3
-        with:
-          tasks: isolated
-          startup-options: -logfile artifacts/logs/isolated/matlab.log
-
-      - name: Summarize path-isolation validation
-        if: always()
-        shell: bash
-        run: |
-          if [ -f artifacts/test-results/isolated/junit.xml ]; then
-            python .github/scripts/summarize_junit.py \
-              artifacts/test-results/isolated/junit.xml \
-              --run-name "isolated-${{ matrix.id }}-${{ matrix.release }}" \
-              --log artifacts/logs/isolated/matlab.log \
-              --active-test artifacts/test-results/isolated/active-test.json
-          else
-            echo "::warning::Path-isolation validation did not produce JUnit output."
-          fi
-
-      - name: Upload path-isolation artifacts
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: matlab-isolated-${{ matrix.id }}-${{ matrix.release }}
-          if-no-files-found: warn
-          retention-days: 14
-          path: |
-            artifacts/test-results/**
-            artifacts/debug/**
-            artifacts/logs/**
-
-  gui-platforms:
-    name: Hidden GUI / ${{ matrix.label }} / ${{ matrix.release }}
-    needs: change-scope
-    if: needs.change-scope.outputs.full == 'true'
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-14, windows-latest]
-        release: [R2021a, latest]
-        include:
-          - os: ubuntu-latest
-            id: linux
-            label: Linux
-          - os: macos-14
-            id: macos
-            label: macOS
-          - os: windows-latest
-            id: windows
-            label: Windows
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 2
-
-      - name: Set up clean MATLAB runtime
-        uses: matlab-actions/setup-matlab@v3
-        with:
-          release: ${{ matrix.release }}
-
-      - name: Prepare MATLAB log directory
-        shell: bash
-        run: mkdir -p artifacts/logs/gui
-
       - name: Run hidden GUI validation
+        id: gui
+        continue-on-error: true
         timeout-minutes: 30
         uses: matlab-actions/run-build@v3
         with:
@@ -240,11 +130,34 @@ jobs:
             echo "::warning::GUI validation did not produce JUnit output."
           fi
 
-      - name: Upload GUI artifacts
+      - name: Run path-isolation validation
+        id: isolated
+        continue-on-error: true
+        timeout-minutes: 30
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: isolated
+          startup-options: -logfile artifacts/logs/isolated/matlab.log
+
+      - name: Summarize path-isolation validation
+        if: always()
+        shell: bash
+        run: |
+          if [ -f artifacts/test-results/isolated/junit.xml ]; then
+            python .github/scripts/summarize_junit.py \
+              artifacts/test-results/isolated/junit.xml \
+              --run-name "isolated-${{ matrix.id }}-${{ matrix.release }}" \
+              --log artifacts/logs/isolated/matlab.log \
+              --active-test artifacts/test-results/isolated/active-test.json
+          else
+            echo "::warning::Path-isolation validation did not produce JUnit output."
+          fi
+
+      - name: Upload platform artifacts
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: matlab-gui-${{ matrix.id }}-${{ matrix.release }}
+          name: matlab-${{ matrix.id }}-${{ matrix.release }}
           if-no-files-found: warn
           retention-days: 14
           path: |
@@ -252,6 +165,14 @@ jobs:
             artifacts/debug/**
             artifacts/gui/**
             artifacts/logs/**
+
+      - name: Require every validation profile
+        if: always()
+        shell: bash
+        run: |
+          test '${{ steps.headless.outcome }}' = 'success'
+          test '${{ steps.gui.outcome }}' = 'success'
+          test '${{ steps.isolated.outcome }}' = 'success'
 
   docs-check:
     name: Documentation check
@@ -280,9 +201,7 @@ jobs:
     if: always()
     needs:
       - change-scope
-      - headless-platforms
-      - gui-platforms
-      - isolated-platforms
+      - platform-matrix
       - docs-check
     runs-on: ubuntu-latest
     steps:
@@ -291,9 +210,7 @@ jobs:
         run: |
           test '${{ needs.change-scope.result }}' = 'success'
           if [ '${{ needs.change-scope.outputs.full }}' = 'true' ]; then
-            test '${{ needs.headless-platforms.result }}' = 'success'
-            test '${{ needs.gui-platforms.result }}' = 'success'
-            test '${{ needs.isolated-platforms.result }}' = 'success'
+            test '${{ needs.platform-matrix.result }}' = 'success'
           fi
           if [ '${{ needs.change-scope.outputs.full }}' = 'true' ] ||
              [ '${{ needs.change-scope.outputs.docs }}' = 'true' ]; then

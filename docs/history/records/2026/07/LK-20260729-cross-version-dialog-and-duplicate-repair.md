@@ -37,8 +37,11 @@ no new public API or saved-project migration is needed.
   image-cache, and path-cache row per list entry.
 - Added focused regression coverage for the R2024b-compatible filter value and
   a multi-image row-shaped duplicate state.
-- Expanded every platform validation profile from one fixed MATLAB release to
-  R2021a and the latest release available to the official setup action.
+- Expanded every validation profile from one fixed MATLAB release to the
+  effective R2022b Build Tool floor and the latest release available to the
+  official setup action. macOS remains a latest-release platform sentinel.
+- Grouped the three validation profiles by platform and release so each matrix
+  entry installs MATLAB once while each profile retains a fresh batch session.
 
 ## User and data impact
 
@@ -57,9 +60,9 @@ schemas are unchanged.
 
 Focused headless specifications cover the Batch Crop duplicate callback and
 the native dialog-filter value. CI runs every full profile on Linux, macOS, and
-Windows against R2021a and the latest available MATLAB release. Documentation
-consistency and the final changed-file gate cover the integrated version and
-history updates.
+Windows against R2022b and the latest available MATLAB release, while macOS
+runs the latest release. Documentation consistency and the final changed-file
+gate cover the integrated version and history updates.
 
 ## Evidence
 
