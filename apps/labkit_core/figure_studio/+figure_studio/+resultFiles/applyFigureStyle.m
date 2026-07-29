@@ -430,13 +430,23 @@ try
     setFigureContentSize(fig, [plotWidth + 4 * padding, ...
         plotHeight + 4 * padding]);
     ax.Position = [2 * padding 2 * padding plotWidth plotHeight];
-    for iteration = 1:3
+    % Font extents can change after the native renderer accepts a larger
+    % offscreen window. Iterate to a stable geometry instead of assuming a
+    % fixed number of draw/resize passes across releases and platforms.
+    for iteration = 1:8
         drawnow nocallbacks
         inset = plotInsets(ax, plotWidth, plotHeight, padding);
-        setFigureContentSize(fig, [ ...
+        targetFigureSize = [ ...
             inset(1) + plotWidth + inset(3), ...
-            inset(2) + plotHeight + inset(4)]);
-        ax.Position = [inset(1) inset(2) plotWidth plotHeight];
+            inset(2) + plotHeight + inset(4)];
+        targetAxesPosition = [inset(1) inset(2) plotWidth plotHeight];
+        currentFigurePosition = fig.Position;
+        if max(abs(currentFigurePosition(3:4) - targetFigureSize)) < 0.5 && ...
+                max(abs(ax.Position - targetAxesPosition)) < 0.5
+            break;
+        end
+        setFigureContentSize(fig, targetFigureSize);
+        ax.Position = targetAxesPosition;
     end
     clear cleanup
 catch

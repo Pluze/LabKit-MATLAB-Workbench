@@ -92,7 +92,9 @@ second architecture guide.
   cannot detect an unsupported name-value or file format.
 - Windows constrains displayed figure windows to the desktop. For an offscreen
   export canvas, create it invisible, anchor its pixel Position at the desktop
-  origin, and only then assign dimensions that may exceed the screen.
+  origin, and only then assign dimensions that may exceed the screen. Treat
+  native text extents as iterative renderer output: converge until geometry is
+  stable rather than relying on a fixed number of resize passes.
 - A CI summary is evidence navigation, not a second status badge. On success,
   state the compatibility claim and untested manual boundaries; on failure,
   preserve passing profiles and distinguish a missing report from a failed
