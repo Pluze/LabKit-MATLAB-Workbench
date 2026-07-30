@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       full: ${{ steps.scope.outputs.full }}
+      focused: ${{ steps.scope.outputs.focused }}
       docs: ${{ steps.scope.outputs.docs }}
       governance: ${{ steps.scope.outputs.governance }}
     steps:
@@ -52,7 +53,8 @@ jobs:
             --head-sha "${HEAD_SHA}"
           git diff --name-only -z "${BASE_SHA}" "${HEAD_SHA}" |
             python .github/scripts/classify_ci_scope.py \
-              --null --github-output "${GITHUB_OUTPUT}"
+              --null --head-ref "${{ github.head_ref }}" \
+              --github-output "${GITHUB_OUTPUT}"
 
   platform-matrix:
     name: MATLAB / ${{ matrix.label }} / ${{ matrix.release }} / ${{ matrix.shard }}
@@ -272,6 +274,30 @@ jobs:
         with:
           tasks: docsCheck
 
+  focused-hotfix:
+    name: Focused hotfix validation
+    needs: change-scope
+    if: >-
+      github.event_name == 'pull_request' &&
+      needs.change-scope.outputs.focused == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up clean MATLAB runtime
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: latest
+
+      - name: Run changed-file evidence closure
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: changedFast
+
   ci-gate:
     name: CI Gate
     if: always()
@@ -279,6 +305,7 @@ jobs:
       - change-scope
       - platform-matrix
       - docs-check
+      - focused-hotfix
     runs-on: ubuntu-latest
     steps:
       - name: Require all validation profiles
@@ -288,6 +315,10 @@ jobs:
           if [ '${{ github.event_name }}' = 'pull_request' ] &&
              [ '${{ needs.change-scope.outputs.full }}' = 'true' ]; then
             test '${{ needs.platform-matrix.result }}' = 'success'
+          fi
+          if [ '${{ github.event_name }}' = 'pull_request' ] &&
+             [ '${{ needs.change-scope.outputs.focused }}' = 'true' ]; then
+            test '${{ needs.focused-hotfix.result }}' = 'success'
           fi
           if [ '${{ github.event_name }}' = 'pull_request' ] &&
              { [ '${{ needs.change-scope.outputs.full }}' = 'true' ] ||

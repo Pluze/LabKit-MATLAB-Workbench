@@ -8,6 +8,8 @@ import os
 import sys
 from pathlib import PurePosixPath
 
+FOCUSED_HOTFIX_PREFIX = "hotfix/focused/"
+
 
 def normalize(path: str) -> str:
     normalized = path.strip().replace("\\", "/")
@@ -35,16 +37,37 @@ def is_human_documentation(path: str) -> bool:
     )
 
 
-def classify(paths: list[str]) -> dict[str, bool]:
+def blocks_focused_hotfix(path: str) -> bool:
+    return (
+        path.startswith(".github/")
+        or path.startswith(".agents/")
+        or path.startswith("tests/+labkittest/")
+        or path.startswith("tools/")
+        or path.startswith("resources/")
+        or path in {"AGENTS.md", "buildfile.m", "tests/AGENTS.md"}
+    )
+
+
+def classify(paths: list[str], head_ref: str = "") -> dict[str, bool]:
     normalized = [normalize(path) for path in paths]
     normalized = [path for path in normalized if path]
     docs = any(is_human_documentation(path) for path in normalized)
     governance = any(is_governance_document(path) for path in normalized)
-    full = any(
+    has_executable_change = any(
         not is_human_documentation(path) and not is_governance_document(path)
         for path in normalized
     )
-    return {"full": full, "docs": docs, "governance": governance}
+    focused = (
+        head_ref.startswith(FOCUSED_HOTFIX_PREFIX)
+        and has_executable_change
+        and not any(blocks_focused_hotfix(path) for path in normalized)
+    )
+    return {
+        "full": has_executable_change and not focused,
+        "focused": focused,
+        "docs": docs,
+        "governance": governance,
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -58,6 +81,11 @@ def parse_args() -> argparse.Namespace:
         "--github-output",
         help="Append full/docs/governance outputs to this GitHub output file.",
     )
+    parser.add_argument(
+        "--head-ref",
+        default="",
+        help="Pull-request head branch used to recognize focused hotfixes.",
+    )
     return parser.parse_args()
 
 
@@ -65,7 +93,7 @@ def main() -> int:
     args = parse_args()
     separator = "\0" if args.null else "\n"
     paths = sys.stdin.read().split(separator)
-    scope = classify(paths)
+    scope = classify(paths, args.head_ref)
     lines = [f"{name}={str(value).lower()}" for name, value in scope.items()]
     if args.github_output:
         with open(args.github_output, "a", encoding="utf-8") as stream:

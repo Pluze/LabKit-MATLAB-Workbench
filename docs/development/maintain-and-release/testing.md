@@ -193,7 +193,17 @@ explicit report, not a duplicate CI gate.
 
 `main` is release-only and accepts pull requests from the repository-owned
 permanent `develop` branch or a bounded `hotfix/*` branch. The lightweight
-policy job rejects every other PR source before MATLAB setup. It also compares
+policy job rejects every other PR source before MATLAB setup. An ordinary
+`hotfix/<name>` retains complete compatibility validation. A deliberately
+named `hotfix/focused/<name>` may use one clean latest-MATLAB `changedFast`
+job plus any required documentation check when its diff is limited to ordinary
+product source, its owned specifications, and authored documentation. CI,
+Build, test-catalog/framework, maintainer-tool, resource, and
+dependency-governance paths make that branch ineligible and automatically
+restore the full matrix. The focused namespace is an explicit review claim
+about a bounded evidence closure, not a general hotfix exemption.
+
+The policy job also compares
 the PR base and head for App, facade, and launcher source ownership, direct
 semantic version steps, and matching component-history transitions. Branch
 protection separately rejects direct pushes, including administrator pushes.

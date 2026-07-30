@@ -180,6 +180,11 @@ tests, history, and details out of the public repository.
    created from aligned `origin/main`. Keep it bounded to the repair, validate
    it like `develop`, and merge it only through a `hotfix/* -> main` PR.
    Ordinary features, maintenance, documentation, and CI work are not hotfixes.
+   Ordinary hotfixes retain the full matrix. Reserve
+   `hotfix/focused/<topic>` for a small product repair whose repository-owned
+   changed-file closure is sufficient. CI, Build, test-framework, tool,
+   resource, and dependency-governance changes cannot use that focused route
+   and automatically fall back to the full matrix.
 5. Keep branch work stable with small logical purpose-based commits and focused
    validation. Prepare user docs, component versions, and structured history as
    the single net change that the PR will squash into; do not accumulate
