@@ -106,6 +106,24 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, "docs-check.result");
         end
 
+        function pullRequestChecklistContainsOnlyAuthorOwnedMergeObligations(testCase)
+            root = labkittest.setup();
+            template = text(root, ".github/PULL_REQUEST_TEMPLATE.md");
+
+            for heading = ["## Why" "## What changed" "## Evidence" ...
+                    "## Risks and follow-up" "## Author confirmation"]
+                testCase.verifySubstring(template, heading);
+            end
+            lines = strip(splitlines(template));
+            tasks = lines(startsWith(lines, "- [ ] "));
+            testCase.verifyNumElements(tasks, 3);
+            testCase.verifyTrue(any(contains(tasks, "final diff")));
+            testCase.verifyTrue(any(contains(tasks, "evidence above")));
+            testCase.verifyTrue(any(contains(tasks, "synthetic or generic")));
+            testCase.verifyFalse(any(contains(lower(tasks), ...
+                ["github" "branch" "commit" "push" "merge" "n/a"])));
+        end
+
         function repositoryTextDoesNotContainUserPathsOrTimestampTokens(testCase)
             root = labkittest.setup();
             files = repositoryTextFiles(root);

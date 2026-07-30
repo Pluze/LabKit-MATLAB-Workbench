@@ -203,10 +203,13 @@ criteria, and out-of-scope behavior. A pull request records goal/scope,
 user-visible behavior, exact validation evidence, remaining manual checks,
 documentation/boundary decisions, delivery state, and data hygiene. Do not
 invent a parallel issue or PR format, and do not include sensitive lab data or
-local paths. PR checkboxes are completion gates only: every box must describe
-work that must be completed before merge. Put alternatives, conditional
-applicability, pending state, and “not run” explanations in prose fields so an
-unchecked box always means unfinished required work.
+local paths. Treat the PR body as a review record. A checkbox is reserved for a
+universal, author-controlled, binary pre-merge obligation; never use one for
+branch, commit, hosted-CI, review, or merge state that GitHub owns, or for
+conditional alternatives and `N/A` choices. Record why the change exists, its
+net behavior and ownership decisions, exact local/manual evidence, and risks
+or follow-up, including compatibility, versions, documentation, boundaries,
+and data handling when relevant.
 
 Commit and squash subjects use exactly one lowercase Conventional Commit type:
 `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `ci`, or `chore`. Pass an

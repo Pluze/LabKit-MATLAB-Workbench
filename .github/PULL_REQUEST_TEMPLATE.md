@@ -1,65 +1,33 @@
-## Goal and scope
+## Why
 
-- Goal:
-- In scope:
-- Intentionally out of scope:
+<!-- State the problem or user/developer goal. Link a related issue when one exists. -->
 
-## User-visible behavior
 
-- Before:
-- After:
-- Compatibility / upgrade note:
+## What changed
 
-## Validation
+<!-- Describe the net result and key implementation or ownership decisions.
+Mention intentional non-changes only when they help reviewers understand scope. -->
 
-- [ ] Required focused validation is complete and recorded below.
-- [ ] The final integration gate is complete before ready-for-review handoff.
-- [ ] Every remaining manual or unverified boundary is recorded below.
 
-Commands and results:
+## Evidence
+
+<!-- Record exact local commands and results plus relevant manual checks.
+GitHub Checks already report hosted CI; do not copy their transient state here. -->
 
 ```text
 
 ```
 
-Manual / native behavior not verified:
+## Risks and follow-up
 
--
+<!-- Record compatibility, migration, version/release, dependency, sensitive-data,
+native/manual/scientific validation, or follow-up concerns. Write "None" only
+after considering these boundaries. -->
 
-## Documentation and boundaries
+## Author confirmation
 
-- [ ] Documentation, version/history, and ownership decisions are recorded below.
-
-Human documentation:
-
--
-
-Agent guidance:
-
--
-
-Version and component history:
-
--
-
-App / `+labkit` ownership:
-
--
-
-## Delivery state
-
-Source and target:
-
-- `develop -> main` or bounded `hotfix/* -> main`
-
-Automated CI / review links and state:
-
--
-
-## Data hygiene
-
-- [ ] This PR does not add raw lab files, identifying file names, subject names, device serials, local absolute paths, timestamps, or private experiment labels.
-
-## Unverified behavior
-
-- 
+- [ ] The final diff matches the stated scope and contains no unrelated change.
+- [ ] The evidence above covers required local and manual validation; every
+  remaining unverified boundary is explicit.
+- [ ] The diff contains only synthetic or generic public data, with no private
+  App details, lab identifiers, local paths, or recognizable sample values.
