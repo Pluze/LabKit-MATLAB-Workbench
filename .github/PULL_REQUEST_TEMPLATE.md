@@ -48,14 +48,11 @@ App / `+labkit` ownership:
 
 ## Delivery state
 
-- [ ] The branch is committed and pushed.
-- [ ] Required GitHub checks passed for the current head.
-
 Source and target:
 
 - `develop -> main` or bounded `hotfix/* -> main`
 
-CI / review links:
+Automated CI / review links and state:
 
 -
 
