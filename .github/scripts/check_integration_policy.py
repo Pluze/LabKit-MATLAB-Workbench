@@ -111,10 +111,9 @@ def validate_branch(
     if event_name != "pull_request" or base_ref != "main":
         return []
     errors = []
-    if head_ref != "develop" and not head_ref.startswith("hotfix/"):
+    if head_ref != "develop":
         errors.append(
-            "Pull requests to main must come from develop or hotfix/*, "
-            f'not "{head_ref}".'
+            f'Pull requests to main must come from develop, not "{head_ref}".'
         )
     if head_repository != repository:
         errors.append(
