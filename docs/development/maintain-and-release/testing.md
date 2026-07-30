@@ -125,8 +125,8 @@ tests. It prints each changed path's classification, selected evidence, and any
 manual boundary. A focused-local result is rapid author feedback, not merge
 safety evidence; CI runs the full platform profiles.
 
-Run focused behavior during iteration. Run `changedFast` once when the branch
-is ready for review or direct-main integration. CI owns broad platform
+Run focused behavior during iteration. Run `changedFast` once when `develop`
+or a `hotfix/*` branch is ready for final PR review. CI owns broad platform
 validation; do not repeatedly run broad tasks after each small edit.
 
 ## Artifacts and Failures
@@ -184,6 +184,13 @@ Configure repository branch protection to require `CI Gate`; the workflow does
 not silently replace repository protection policy. It uploads the catalog
 artifacts even after failure. Coverage is an explicit report, not a duplicate
 CI gate.
+
+`main` is release-only and accepts pull requests from the repository-owned
+permanent `develop` branch or a bounded `hotfix/*` branch. The lightweight
+policy job rejects every other PR source before MATLAB setup. It also compares
+the PR base and head for App, facade, and launcher source ownership, direct
+semantic version steps, and matching component-history transitions. Branch
+protection separately rejects direct pushes, including administrator pushes.
 
 Every platform-release job publishes one evidence-oriented job summary after
 all three independent MATLAB sessions finish. Its profile table states what

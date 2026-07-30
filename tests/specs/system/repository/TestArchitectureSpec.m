@@ -57,7 +57,21 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
 
             testCase.verifySubstring(workflow, "change-scope:");
             testCase.verifySubstring(workflow, ...
+                "group: ci-${{ github.event_name }}-" + ...
+                "${{ github.event.pull_request.number || github.ref }}");
+            testCase.verifyFalse(contains(workflow, ...
+                "group: ci-${{ github.event.pull_request.head.sha || github.sha }}"));
+            testCase.verifySubstring(workflow, ...
                 "python -m unittest discover -s .github/scripts");
+            testCase.verifySubstring(workflow, ...
+                "python .github/scripts/check_integration_policy.py");
+            testCase.verifySubstring(workflow, ...
+                "--head-ref ""${{ github.head_ref }}""");
+            testCase.verifySubstring(workflow, ...
+                "--head-repository");
+            testCase.verifySubstring(workflow, ...
+                "--base-sha ""${BASE_SHA}""");
+            testCase.verifySubstring(workflow, "fetch-depth: 0");
             testCase.verifySubstring(workflow, ...
                 "needs.change-scope.outputs.full == 'true'");
             testCase.verifySubstring(workflow, ...
@@ -95,6 +109,24 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, "name: CI Gate");
             testCase.verifySubstring(workflow, "needs.change-scope.result");
             testCase.verifySubstring(workflow, "docs-check.result");
+        end
+
+        function pullRequestChecklistContainsOnlyAuthorOwnedMergeObligations(testCase)
+            root = labkittest.setup();
+            template = text(root, ".github/PULL_REQUEST_TEMPLATE.md");
+
+            for heading = ["## Why" "## What changed" "## Evidence" ...
+                    "## Risks and follow-up" "## Author confirmation"]
+                testCase.verifySubstring(template, heading);
+            end
+            lines = strip(splitlines(template));
+            tasks = lines(startsWith(lines, "- [ ] "));
+            testCase.verifyNumElements(tasks, 3);
+            testCase.verifyTrue(any(contains(tasks, "final diff")));
+            testCase.verifyTrue(any(contains(tasks, "evidence above")));
+            testCase.verifyTrue(any(contains(tasks, "synthetic or generic")));
+            testCase.verifyFalse(any(contains(lower(tasks), ...
+                ["github" "branch" "commit" "push" "merge" "n/a"])));
         end
 
         function repositoryTextDoesNotContainUserPathsOrTimestampTokens(testCase)

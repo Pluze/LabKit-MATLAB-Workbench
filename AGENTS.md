@@ -135,7 +135,7 @@ tests, history, and details out of the public repository.
 - Run the smallest source-aligned test during branch iteration. Before a branch
   is ready for PR review, do not run broad changed-file or full-suite gates;
   use focused fast tests for the current small step. Run `changedFast` once
-  when preparing a branch for PR review or direct-main integration. There is no
+  when preparing `develop` or a `hotfix/*` branch for PR review. There is no
   conservative local changed task; PR and main-push CI own complete validation.
 - After failure, fix and rerun the narrowest failed file, method, or suite; do not repeatedly
   invoke the planner. Exact commands and scope live in
@@ -159,33 +159,41 @@ tests, history, and details out of the public repository.
 ## Git workflow
 
 1. Inspect status and alignment before editing. Preserve unrelated user work.
+   Ordinary work starts on the permanent `develop` branch after fetching and
+   confirming that it contains `origin/main`. Never edit or commit directly on
+   `main`, including for documentation, CI, release preparation, and bug fixes.
 2. When a multi-commit migration needs a roadmap, write it in
-   `.agents/migration_guide.md` and land that ledger update as a standalone
-   direct-main checkpoint before creating the implementation branch. Do not
-   add a future-state migration page under `docs/`. Start the implementation
-   branch from that main commit; the active ledger entry is removed by the
-   final zero-debt squash merge after durable final behavior and rationale are
-   recorded in the owning manual and component history.
-3. Work directly on aligned `main` for focused changes. Documentation-only
-   changes default to aligned `main` unless they are broad, review-heavy, or
-   coupled to unfinished implementation. Use `codex/` branches for larger,
-   risky, multi-commit, or review-heavy work.
-4. Keep branch work stable with small logical purpose-based commits and focused
+   `.agents/migration_guide.md` as a standalone `develop` checkpoint before
+   implementation. Do not add a future-state migration page under `docs/`.
+   Remove the active entry in the final zero-debt squash merge after durable
+   final behavior and rationale are recorded in the owning manual and
+   component history.
+3. Use `develop` as the sole ordinary integration branch and keep one active
+   delivery stream. Push completed checkpoints promptly. Once a
+   `develop -> main` PR opens, freeze `develop` until the PR is merged or
+   closed; do not mix later work into its moving head.
+4. A production emergency may use a short-lived `hotfix/<topic>` branch
+   created from aligned `origin/main`. Keep it bounded to the repair, validate
+   it like `develop`, and merge it only through a `hotfix/* -> main` PR.
+   Ordinary features, maintenance, documentation, and CI work are not hotfixes.
+5. Keep branch work stable with small logical purpose-based commits and focused
    validation. Prepare user docs, component versions, and structured history as
    the single net change that the PR will squash into; do not accumulate
    release semantics from intermediate branch commits.
-5. Push each completed, committed checkpoint promptly so finished work is not
-   left only on the local machine. Do not defer a safe branch push merely
-   because PR preparation or broader validation will happen later. For
-   direct-main work, fetch/prune afterward and verify local `main` equals
-   `origin/main`.
-6. Inspect the final direct-main CI run once. For branch work, inspect required
-   CI before merge rather than polling after every push. Read only failing logs
-   and fix the underlying issue.
-7. Never force-push without explicit approval. Stop and report permission,
+6. Main accepts PRs only from the repository-owned `develop` or `hotfix/*`
+   branch. Run `changedFast` once before final review, inspect required PR CI,
+   and read only failing logs. Squash-merge with an explicit compliant subject.
+7. After the merge, inspect the exact main-push CI once and complete any
+   authorized release from that exact commit. Then fetch, merge `origin/main`
+   into `develop`, verify that `origin/main` is an ancestor and that the two
+   branch trees have no diff, and push the sync merge before new work starts.
+   After a hotfix sync, delete only the merged `hotfix/*` branch; never delete
+   `develop`.
+8. Never force-push without explicit approval. Stop and report permission,
    protection, review, CI, sync, or cleanup blockers rather than bypassing them.
-8. After PR merge, fast-forward local `main`, prune refs, delete the merged
-   branch, and leave the worktree synchronized.
+   Branch protection must require `CI Gate`, PR review flow, linear main
+   history, and conversation resolution for administrators as well as ordinary
+   contributors; it must reject direct pushes, force pushes, and deletion.
 
 When creating a public GitHub Issue or pull request, use the matching template
 under `.github/` as the required structure. A bug report names its target,
@@ -195,7 +203,13 @@ criteria, and out-of-scope behavior. A pull request records goal/scope,
 user-visible behavior, exact validation evidence, remaining manual checks,
 documentation/boundary decisions, delivery state, and data hygiene. Do not
 invent a parallel issue or PR format, and do not include sensitive lab data or
-local paths.
+local paths. Treat the PR body as a review record. A checkbox is reserved for a
+universal, author-controlled, binary pre-merge obligation; never use one for
+branch, commit, hosted-CI, review, or merge state that GitHub owns, or for
+conditional alternatives and `N/A` choices. Record why the change exists, its
+net behavior and ownership decisions, exact local/manual evidence, and risks
+or follow-up, including compatibility, versions, documentation, boundaries,
+and data handling when relevant.
 
 Commit and squash subjects use exactly one lowercase Conventional Commit type:
 `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `ci`, or `chore`. Pass an
@@ -208,10 +222,12 @@ explicit compliant squash subject; do not rely on GitHub defaults.
   and release records. Do not encode versions in package, folder, file,
   function, class, type, protocol, test, or current-architecture names; use one
   stable semantic name and let the version contract express compatibility.
-- Before direct-main push or merge, source changes to a versioned app/facade or
-  launcher update its source version, owning manual, and one structured
-  component history record. Cross-component changes use one record listing all
-  affected components.
+- Before a `develop` or `hotfix/*` PR is merge-ready, source changes to a
+  versioned app/facade or launcher update its source version, owning manual,
+  and one structured component history record. Compare the PR base and head:
+  each existing component advances by exactly one direct patch, minor, or
+  major step. Cross-component changes use one record listing all affected
+  components.
 - History records use stable Change ID and sequence metadata plus rationale,
   compatibility, user/data impact, validation, evidence, and follow-up. Do not
   restore a root changelog or separate history parser.

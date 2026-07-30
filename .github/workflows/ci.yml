@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event.pull_request.head.sha || github.sha }}
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Resolve validation scope
         id: scope
@@ -41,6 +41,15 @@ jobs:
           fi
           git diff --check "${BASE_SHA}" "${HEAD_SHA}"
           python -m unittest discover -s .github/scripts -p 'test_*.py'
+          python .github/scripts/check_integration_policy.py \
+            --event-name "${{ github.event_name }}" \
+            --base-ref "${{ github.base_ref }}" \
+            --head-ref "${{ github.head_ref }}" \
+            --head-repository \
+              "${{ github.event.pull_request.head.repo.full_name || github.repository }}" \
+            --repository "${{ github.repository }}" \
+            --base-sha "${BASE_SHA}" \
+            --head-sha "${HEAD_SHA}"
           git diff --name-only -z "${BASE_SHA}" "${HEAD_SHA}" |
             python .github/scripts/classify_ci_scope.py \
               --null --github-output "${GITHUB_OUTPUT}"
