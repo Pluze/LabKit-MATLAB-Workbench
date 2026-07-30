@@ -11,6 +11,8 @@ function varargout = labkit_launcher(varargin)
 %   APPCOMMAND, "local") returns its generated local HTML page and raises
 %   labkit:app:internal:launcher:LocalDocumentationMissing when `site/` has
 %   not been generated. The programmatic form never opens a browser or prompt.
+%   In the visible Launcher, Generate Local Documentation always rebuilds the
+%   complete ignored `site/` folder and does not open a documentation page.
 
     if nargout > 1
         error("labkit_launcher:TooManyOutputs", "labkit_launcher returns at most one output.");

@@ -137,8 +137,8 @@ tests, history, and details out of the public repository.
 - Run the smallest source-aligned test during branch iteration. Before a branch
   is ready for PR review, do not run broad changed-file or full-suite gates;
   use focused fast tests for the current small step. Run `changedFast` once
-  when preparing `develop` or a `hotfix/*` branch for PR review. There is no
-  conservative local changed task; required PR CI owns complete validation.
+  when preparing `develop` for PR review. There is no conservative local
+  changed task; required PR CI owns complete validation.
   The protected main-push run repeats only policy and the aggregate gate for
   the exact squash commit because its tree is the already-validated PR result.
 - After failure, fix and rerun the narrowest failed file, method, or suite; do not repeatedly
@@ -163,9 +163,10 @@ tests, history, and details out of the public repository.
 ## Git workflow
 
 1. Inspect status and alignment before editing. Preserve unrelated user work.
-   Ordinary work starts on the permanent `develop` branch after fetching and
-   confirming that it contains `origin/main`. Never edit or commit directly on
-   `main`, including for documentation, CI, release preparation, and bug fixes.
+   All work starts on the canonical `develop` branch after fetching and
+   confirming that it was created from the current `origin/main`. Never edit
+   or commit directly on `main`, including for documentation, CI, release
+   preparation, emergency repairs, and bug fixes.
 2. When a multi-commit migration needs a roadmap, write it in
    `.agents/migration_guide.md` as a standalone `develop` checkpoint before
    implementation. Do not add a future-state migration page under `docs/`.
@@ -176,25 +177,21 @@ tests, history, and details out of the public repository.
    delivery stream. Push completed checkpoints promptly. Once a
    `develop -> main` PR opens, freeze `develop` until the PR is merged or
    closed; do not mix later work into its moving head.
-4. A production emergency may use a short-lived `hotfix/<topic>` branch
-   created from aligned `origin/main`. Keep it bounded to the repair, validate
-   it like `develop`, and merge it only through a `hotfix/* -> main` PR.
-   Ordinary features, maintenance, documentation, and CI work are not hotfixes.
-5. Keep branch work stable with small logical purpose-based commits and focused
+4. Keep branch work stable with small logical purpose-based commits and focused
    validation. Prepare user docs, component versions, and structured history as
    the single net change that the PR will squash into; do not accumulate
    release semantics from intermediate branch commits.
-6. Main accepts PRs only from the repository-owned `develop` or `hotfix/*`
-   branch. Run `changedFast` once before final review, inspect required PR CI,
-   and read only failing logs. Squash-merge with an explicit compliant subject.
-7. After the merge, inspect the exact lightweight main-push policy gate once
+5. Main accepts PRs only from the repository-owned `develop` branch. Run
+   `changedFast` once before final review, inspect required PR CI, and read only
+   failing logs. Squash-merge with an explicit compliant subject.
+6. After the merge, inspect the exact lightweight main-push policy gate once
    and complete any authorized release from that exact commit. Do not repeat
-   the MATLAB matrix already required on the up-to-date PR. Then fetch, merge
-   `origin/main` into `develop`, verify that `origin/main` is an ancestor and
-   that the two branch trees have no diff, and push the sync merge before new
-   work starts. After a hotfix sync, delete only the merged `hotfix/*` branch;
-   never delete `develop`.
-8. Never force-push without explicit approval. Stop and report permission,
+   the MATLAB matrix already required on the up-to-date PR. Before deleting
+   `develop`, verify its PR is merged, it has no unmerged commits, and no open
+   PR depends on it. Delete local and remote `develop`, recreate both at the
+   exact new `origin/main` commit, restore branch protection, and verify
+   `develop == origin/main` before new work starts. Never create a sync commit.
+7. Never force-push without explicit approval. Stop and report permission,
    protection, review, CI, sync, or cleanup blockers rather than bypassing them.
    Branch protection must require `CI Gate`, PR review flow, linear main
    history, and conversation resolution for administrators as well as ordinary
@@ -227,7 +224,7 @@ explicit compliant squash subject; do not rely on GitHub defaults.
   and release records. Do not encode versions in package, folder, file,
   function, class, type, protocol, test, or current-architecture names; use one
   stable semantic name and let the version contract express compatibility.
-- Before a `develop` or `hotfix/*` PR is merge-ready, source changes to a
+- Before a `develop` PR is merge-ready, source changes to a
   versioned app/facade or launcher update its source version, owning manual,
   and one structured component history record. Compare the PR base and head:
   each existing component advances by exactly one direct patch, minor, or

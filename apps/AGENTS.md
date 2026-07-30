@@ -122,7 +122,7 @@ find the exact owner and contract; App authors never invent test paths.
 
 - Source or user-visible behavior changes update `AppVersion` and `Updated` in
   the App's `definition.m`, owned documentation, and component history before
-  the `develop` or `hotfix/*` PR is merge-ready.
+  the `develop` PR is merge-ready.
 - Test GUI wiring semantically: controls, choices, events, workflow outcomes,
   viewport behavior, and traces. A synthetic project is validated headlessly
   and launched through the native adapter; test calculations and exports

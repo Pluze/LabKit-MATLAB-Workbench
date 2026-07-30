@@ -17,19 +17,18 @@ compatibility, choose a major version. If the implementation changes a user
 workflow without intentionally breaking compatibility, describe it in the
 release notes so launcher users can choose or roll back versions deliberately.
 
-On the permanent `develop` branch, or on a bounded `hotfix/*` branch created
-from `origin/main`, choose each component's final version directly from the PR
-base, not from intermediate branch commits. A branch may edit version metadata
-while work is evolving, but its merge-ready state must be exactly one
-semantic-version step from the mainline baseline: the next patch, the next
-minor with patch zero, or the next major with minor and patch zero. The related
-component history record describes that direct `main baseline -> PR final`
-transition. CI verifies existing App, facade, and launcher transitions before
-MATLAB setup. This prevents temporary branch versions from accumulating into
-artificial public version jumps. Maintain user documentation with the same
-squash-oriented view: it describes the final branch behavior and one net
-compatibility transition, not the sequence of intermediate commits used to
-develop it.
+On the canonical `develop` branch created from `origin/main`, choose each
+component's final version directly from the PR base, not from intermediate
+branch commits. A branch may edit version metadata while work is evolving, but
+its merge-ready state must be exactly one semantic-version step from the
+mainline baseline: the next patch, the next minor with patch zero, or the next
+major with minor and patch zero. The related component history record
+describes that direct `main baseline -> PR final` transition. CI verifies
+existing App, facade, and launcher transitions before MATLAB setup. This
+prevents temporary branch versions from accumulating into artificial public
+version jumps. Maintain user documentation with the same squash-oriented view:
+it describes the final branch behavior and one net compatibility transition,
+not the sequence of intermediate commits used to develop it.
 
 ## Tags
 
@@ -55,11 +54,12 @@ confirmation, an existing tag or release, or the absence of a successful
 same-commit main CI run prevents tag creation. Ordinary push, pull-request,
 and documentation workflows never create release tags.
 
-After the PR merge and its exact main-push CI complete, fetch the remote and
-merge `origin/main` back into `develop`. Before starting new work, verify that
-`origin/main` is an ancestor of `develop` and that their trees have no diff,
-then push the sync merge. A merged `hotfix/*` branch is deleted only after this
-sync; the permanent `develop` branch is never deleted or force-pushed.
+After the PR merge and its exact main-push CI complete, verify that `develop`
+has no unmerged commits and no open PR depends on it. Delete local and remote
+`develop`, recreate both at the exact new `origin/main` commit, restore its
+branch protection, and verify that the two refs resolve to the same SHA before
+starting new work. Do not merge main back into develop and do not create a
+branch-sync commit.
 
 ```bash
 gh workflow run release.yml --ref main \

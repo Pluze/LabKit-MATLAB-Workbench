@@ -14,15 +14,12 @@ SPEC.loader.exec_module(MODULE)
 
 
 class IntegrationPolicyTest(unittest.TestCase):
-    def test_main_pull_request_requires_integration_or_hotfix_branch(self):
+    def test_main_pull_request_requires_repository_develop_branch(self):
         self.assertEqual(
             MODULE.validate_branch(
                 "pull_request", "main", "feature", "owner/repo", "owner/repo"
             ),
-            [
-                "Pull requests to main must come from develop or hotfix/*, "
-                'not "feature".'
-            ],
+            ['Pull requests to main must come from develop, not "feature".'],
         )
         self.assertEqual(
             MODULE.validate_branch(
@@ -42,7 +39,7 @@ class IntegrationPolicyTest(unittest.TestCase):
             MODULE.validate_branch(
                 "pull_request", "main", "hotfix/export", "owner/repo", "owner/repo"
             ),
-            [],
+            ['Pull requests to main must come from develop, not "hotfix/export".'],
         )
 
     def test_direct_semantic_steps_accept_only_one_public_transition(self):
