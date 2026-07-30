@@ -167,7 +167,11 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "uses: matlab-actions/run-build@v3");
             testCase.verifySubstring(workflow, "tasks: docs");
             testCase.verifySubstring(workflow, ...
-                "uses: actions/upload-pages-artifact@v4");
+                "uses: actions/configure-pages@v6");
+            testCase.verifySubstring(workflow, ...
+                "uses: actions/upload-pages-artifact@v5");
+            testCase.verifySubstring(workflow, ...
+                "uses: actions/deploy-pages@v5");
             testCase.verifySubstring(workflow, "path: site");
         end
 
