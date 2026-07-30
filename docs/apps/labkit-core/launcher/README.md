@@ -26,7 +26,7 @@ tool availability, or the active maintenance operation.
 | Versions and Install | **Latest** | Installs the current `main` branch archive. |
 | Versions and Install | **Release** | Installs the latest stable GitHub release. |
 | Versions and Install | **Versions** | Opens the release, tag, and commit selector for deliberate upgrade or rollback. |
-| Development and Maintenance | **Local Documentation** | Opens the selected app's local manual. If `site/` is missing, offers **Open Online** (the default), **Generate Local**, or **Cancel**. |
+| Development and Maintenance | **Generate Local Documentation** | Rebuilds the complete ignored `site/` folder from the current Markdown and public MATLAB help. It does not open a page or choose between online and local help. |
 | Development and Maintenance | **Run Code Analyzer** | Scans the checkout and writes JSON and HTML Code Analyzer reports. |
 | Development and Maintenance | **Profile Selected App** | Starts the selected app under the MATLAB profiler and saves its report when the app closes. |
 | Development and Maintenance | **Clean Artifacts** | Removes ignored generated reports under `artifacts/`; it does not delete app projects or exported laboratory results. |
@@ -82,8 +82,9 @@ Documentation lookup uses the discovered public App folder and the unique
 path-conventional manual at `docs/apps/<family>/<app>/README.md`. It does not
 require a separately maintained App catalog. The visible launcher opens online
 documentation by default. Local generation is an explicit source-checkout
-convenience and writes the ignored `site/` folder; the deployed site is
-generated independently from `main` by GitHub Actions.
+convenience: **Generate Local Documentation** always rebuilds the ignored
+`site/` folder and reports completion without opening a browser. The deployed
+site is generated independently from `main` by GitHub Actions.
 
 ## App Discovery
 
