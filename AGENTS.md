@@ -203,7 +203,10 @@ criteria, and out-of-scope behavior. A pull request records goal/scope,
 user-visible behavior, exact validation evidence, remaining manual checks,
 documentation/boundary decisions, delivery state, and data hygiene. Do not
 invent a parallel issue or PR format, and do not include sensitive lab data or
-local paths.
+local paths. PR checkboxes are completion gates only: every box must describe
+work that must be completed before merge. Put alternatives, conditional
+applicability, pending state, and “not run” explanations in prose fields so an
+unchecked box always means unfinished required work.
 
 Commit and squash subjects use exactly one lowercase Conventional Commit type:
 `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `ci`, or `chore`. Pass an

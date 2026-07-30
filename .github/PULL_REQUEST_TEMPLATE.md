@@ -12,9 +12,9 @@
 
 ## Validation
 
-- [ ] I ran the smallest relevant local validation from `docs/development/maintain-and-release/testing.md`.
-- [ ] I ran the required final gate for this handoff, or this PR is not ready for final review.
-- [ ] Automated validation was not run; reason and risk are recorded below.
+- [ ] Required focused validation is complete and recorded below.
+- [ ] The final integration gate is complete before ready-for-review handoff.
+- [ ] Every remaining manual or unverified boundary is recorded below.
 
 Commands and results:
 
@@ -28,19 +28,32 @@ Manual / native behavior not verified:
 
 ## Documentation and boundaries
 
-- [ ] Human docs were updated where user-facing behavior or public contracts changed.
-- [ ] Agent guidance was updated where execution, ownership, or governance rules changed.
-- [ ] Docs and agent guidance were left unchanged because their contracts were preserved.
-- [ ] Versioned component docs and a related `docs/history/records/**/*.md` record were updated where required.
-- [ ] App-specific workflow logic stayed in the owning app.
-- [ ] Reusable `+labkit` changes, if any, are domain-neutral and app-facing.
+- [ ] Documentation, version/history, and ownership decisions are recorded below.
+
+Human documentation:
+
+-
+
+Agent guidance:
+
+-
+
+Version and component history:
+
+-
+
+App / `+labkit` ownership:
+
+-
 
 ## Delivery state
 
-- [ ] This PR is `develop -> main` or a bounded `hotfix/* -> main` repair.
-- [ ] No direct commit or push to `main` is required.
 - [ ] The branch is committed and pushed.
-- [ ] Required GitHub checks are linked below, or are pending:
+- [ ] Required GitHub checks passed for the current head.
+
+Source and target:
+
+- `develop -> main` or bounded `hotfix/* -> main`
 
 CI / review links:
 
