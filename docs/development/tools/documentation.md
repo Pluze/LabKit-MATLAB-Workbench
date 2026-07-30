@@ -3,7 +3,7 @@
 LabKit uses three public MATLAB entry points for its documentation sources and
 generated site.
 `renderLabKitDocs` builds and synchronizes the site; `checkLabKitDocs` performs
-an independent build and verifies that the tracked site is current;
+independent builds and verifies deterministic generated output;
 `maintainLabKitDocLinks` checks or repairs standard relative Markdown links.
 Path-organized Markdown and MATLAB help blocks are the authored sources.
 
@@ -38,6 +38,10 @@ Empty or omitted roots default to `docs/` and `site/` beneath the current
 LabKit repository. The result contains `pageCount`, `apiCount`, `fileCount`,
 `sourceRoot`, and `outputRoot`.
 
+The default `site/` folder is ignored by Git. Generate it when local offline
+reading or presentation inspection is useful; GitHub Actions independently
+generates the deployed site from `main`.
+
 Rendering discovers every Markdown page, public App, history record, and
 complete public help contract. It first creates a complete temporary tree,
 then creates `outputRoot`
@@ -50,12 +54,14 @@ exists in this model.
 
 ```matlab
 result = checkLabKitDocs
-result = checkLabKitDocs(sourceRoot, committedSiteRoot)
+result = checkLabKitDocs(sourceRoot)
+result = checkLabKitDocs(sourceRoot, existingSiteRoot)
 ```
 
-The check renders to a temporary folder and compares generated file paths and
-bytes with the tracked site. A difference raises
-`LabKit:Docs:StaleGeneratedSite`; the result otherwise includes
+Without an existing site argument, the check renders to two independent
+temporary folders and compares generated file paths and bytes. Supplying an
+existing site compares one independent render with that folder. A difference
+raises `LabKit:Docs:StaleGeneratedSite`; the result otherwise includes
 `comparedFileCount` in addition to the renderer result fields.
 
 ## Build Tasks
@@ -68,7 +74,7 @@ buildtool docsCheck
 ```
 
 Use `docs` when sources changed and `docsCheck` when validation must prove the
-tracked HTML is already current. Never edit files under `site/` manually.
+renderer is deterministic. Never track or edit files under `site/` manually.
 
 ## Related Documentation
 

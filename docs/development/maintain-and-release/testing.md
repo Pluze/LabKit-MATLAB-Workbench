@@ -109,16 +109,16 @@ buildtool docsCheck
 | `gui` | Every hidden-GUI catalog identity. |
 | `isolated` | Every path-isolated catalog identity. |
 | `coverage` | Headless catalog with Cobertura XML and HTML coverage artifacts. |
-| `docs` / `docsCheck` | Render or verify the generated documentation site. |
+| `docs` / `docsCheck` | Render the ignored local site or verify deterministic source-derived output. |
 
 `changedFast` prints whether its plan is `focused-local` or `full-profile`,
 semantic reasons, exact identities, and any explicitly ignored paths. For
 ordinary App and facade source it runs only the required contract closure.
 Framework, Build, catalog, and repository-policy paths select explicit bounded
-system evidence. Documentation and generated-site paths are explicitly ignored
-because `docsCheck` owns their consistency. An unknown path is a planning error:
-declare its production role or an explicit no-test reason; do not hide missing
-ownership by widening the run.
+system evidence. Documentation paths are explicitly ignored because
+`docsCheck` owns deterministic generation; local `site/` output is ignored by
+Git. An unknown path is a planning error: declare its production role or an
+explicit no-test reason; do not hide missing ownership by widening the run.
 
 Use `labkittest.explainChanged` to inspect that decision without executing
 tests. It prints each changed path's classification, selected evidence, and any
@@ -173,17 +173,23 @@ cover both release boundaries. This matrix is compatibility evidence for the
 supported product boundary. CI uses clean MATLAB runtimes without optional
 Toolboxes. The R2022b entries use the fixed Ubuntu 22.04 and Windows Server
 2022 runner images supported by that MATLAB release; latest MATLAB uses the
-current runner images. Each platform-release job installs MATLAB once, then
-runs `headless`, `gui`, and `isolated` in separate batch sessions so the
-profiles share setup cost without sharing MATLAB session state. Linux jobs
-provide an X virtual framebuffer before running MATLAB so native graphics
-tests have a real display service instead of relying on release-specific
-no-display behavior. It runs `docsCheck` once on the latest release, then
-reports one aggregate `CI Gate` result that depends on every required profile.
-Configure repository branch protection to require `CI Gate`; the workflow does
-not silently replace repository protection policy. It uploads the catalog
-artifacts even after failure. Coverage is an explicit report, not a duplicate
-CI gate.
+current runner images. Each matrix job installs MATLAB once and runs its
+scheduled profiles in separate batch sessions, so a shard shares setup cost
+without sharing MATLAB session state. Historical
+timings showed that the latest Windows and macOS GUI sessions formed the CI
+critical path. Those two sentinels therefore run a `gui` shard in parallel
+with a `headless` plus `isolated` shard. Linux and the R2022b Windows floor
+retain one all-profile job because splitting their shorter sessions would
+mostly duplicate setup. This selective sharding keeps complete evidence while
+avoiding both the long fully serial critical path and the setup cost of a
+15-job Cartesian matrix. Linux jobs provide an X virtual framebuffer before
+running MATLAB so native graphics tests have a real display service instead
+of relying on release-specific no-display behavior. CI runs `docsCheck` once
+on the latest release, then reports one aggregate `CI Gate` result that depends
+on every required shard. Configure repository branch protection to require
+`CI Gate`; the workflow does not silently replace repository protection
+policy. It uploads the catalog artifacts even after failure. Coverage is an
+explicit report, not a duplicate CI gate.
 
 `main` is release-only and accepts pull requests from the repository-owned
 permanent `develop` branch or a bounded `hotfix/*` branch. The lightweight
@@ -191,22 +197,35 @@ policy job rejects every other PR source before MATLAB setup. It also compares
 the PR base and head for App, facade, and launcher source ownership, direct
 semantic version steps, and matching component-history transitions. Branch
 protection separately rejects direct pushes, including administrator pushes.
+Because the required PR check runs against an up-to-date merge result, the
+squash-merged `main` commit has the same file tree that the PR matrix already
+validated. A `main` push therefore repeats only the lightweight policy and
+aggregate gate for the exact commit SHA; it does not pay for a second MATLAB
+matrix or documentation render. This optimization depends on required strict
+PR checks, administrator enforcement, and the direct-push prohibition. If any
+of those protections are relaxed, restore full validation on `main` pushes.
+Documentation delivery is separate from the tracked source tree: relevant
+`main` changes trigger the Documentation Pages workflow, which installs MATLAB,
+generates ignored `site/` output from that exact commit, and deploys the Pages
+artifact. No workflow commits generated HTML back to a protected branch.
 
-Every platform-release job publishes one evidence-oriented job summary after
-all three independent MATLAB sessions finish. Its profile table states what
-`headless`, `gui`, and `isolated` prove instead of repeating only a raw
-pass/fail count. A successful summary records the compatibility claim, clean
-runtime assumptions, display configuration, slowest tests, artifact name, and
-the manual boundaries that automation does not prove. A failed summary
-preserves any profiles that still passed, separates a missing JUnit report from
-a reported test failure, names failed test identities, includes recorded
-MATLAB diagnostics, and collapses active-test and log-tail evidence below the
-primary failure. Build tasks define descriptions so the upstream MATLAB Build
-Results table is meaningful as well. The repository-owned summary helper has
-no third-party Python dependency and is regression-tested by the lightweight
-change-policy job. A cancelled or skipped profile makes the compatibility
-result `incomplete`, not `failed`; passing profiles remain valid evidence, but
-the unfinished job cannot establish the platform claim.
+Every matrix shard publishes one evidence-oriented job summary after its
+scheduled independent MATLAB sessions finish. All-profile summaries make the
+platform compatibility claim; split summaries name `Core` or `Hidden GUI` and
+claim only that shard's evidence. Their profile tables state what the scheduled
+profiles prove instead of treating intentionally unscheduled profiles as
+failures. A successful summary records the scoped claim, clean runtime
+assumptions, display configuration, slowest tests, artifact name, and the
+manual boundaries that automation does not prove. A failed summary preserves
+any profiles that still passed, separates a missing JUnit report from a
+reported test failure, names failed test identities, includes recorded MATLAB
+diagnostics, and collapses active-test and log-tail evidence below the primary
+failure. Build tasks define descriptions so the upstream MATLAB Build Results
+table is meaningful as well. The repository-owned summary helper has no
+third-party Python dependency and is regression-tested by the lightweight
+change-policy job. A cancelled or skipped scheduled profile makes that shard
+`incomplete`, not `failed`; passing profiles remain valid evidence, but the
+unfinished job cannot establish its scoped claim.
 
 CI classifies the exact pushed or pull-request diff before scheduling MATLAB.
 Source, test, build, workflow, and tool changes run the complete platform

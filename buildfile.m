@@ -77,8 +77,8 @@ toolFolder = fullfile(root, "tools", "docs");
 addpath(toolFolder);
 cleanup = onCleanup(@() rmpath(toolFolder));
 if checkOnly
-    result = checkLabKitDocs(fullfile(root, "docs"), fullfile(root, "site"));
-    fprintf("LabKit documentation is current: %d generated file(s).\n", ...
+    result = checkLabKitDocs(fullfile(root, "docs"));
+    fprintf("LabKit documentation is deterministic: %d generated file(s).\n", ...
         result.comparedFileCount);
 else
     result = renderLabKitDocs(fullfile(root, "docs"), fullfile(root, "site"));

@@ -22,11 +22,11 @@ tool availability, or the active maintenance operation.
 | --- | --- | --- |
 | Run Apps | **Open Selected App** | Checks the selected app requirements, adds the app root, and calls its App SDK entrypoint without retired runtime launch arguments. |
 | Run Apps | **Refresh App List** | Repeats public and configured private-app discovery without restarting the launcher. |
-| Run Apps | **Documentation and History** | Opens the generated manual for the selected app. |
+| Run Apps | **Documentation and History** | Opens the current online manual for the selected app. |
 | Versions and Install | **Latest** | Installs the current `main` branch archive. |
 | Versions and Install | **Release** | Installs the latest stable GitHub release. |
 | Versions and Install | **Versions** | Opens the release, tag, and commit selector for deliberate upgrade or rollback. |
-| Development and Maintenance | **Update Documentation** | Regenerates `site/` with the repository-owned documentation compiler. |
+| Development and Maintenance | **Local Documentation** | Opens the selected app's local manual. If `site/` is missing, offers **Open Online** (the default), **Generate Local**, or **Cancel**. |
 | Development and Maintenance | **Run Code Analyzer** | Scans the checkout and writes JSON and HTML Code Analyzer reports. |
 | Development and Maintenance | **Profile Selected App** | Starts the selected app under the MATLAB profiler and saves its report when the app closes. |
 | Development and Maintenance | **Clean Artifacts** | Removes ignored generated reports under `artifacts/`; it does not delete app projects or exported laboratory results. |
@@ -62,6 +62,8 @@ fig = labkit_launcher;
 apps = labkit_launcher("list");
 info = labkit_launcher("version");
 page = labkit_launcher("documentation", "labkit_CIC_app");
+localPage = labkit_launcher( ...
+    "documentation", "labkit_CIC_app", "local");
 ```
 
 | Call | Result |
@@ -69,15 +71,19 @@ page = labkit_launcher("documentation", "labkit_CIC_app");
 | `labkit_launcher` | Opens the window; optionally returns its figure handle. |
 | `labkit_launcher("list")` | Returns the discovered app catalog as a table without opening the launcher window. |
 | `labkit_launcher("version")` | Returns launcher name, display name, semantic version, and update date. |
-| `labkit_launcher("documentation", appCommand)` | Returns the local generated HTML page for one discovered app command. |
+| `labkit_launcher("documentation", appCommand)` | Returns the online GitHub Pages URL for one discovered public app command. |
+| `labkit_launcher("documentation", appCommand, "local")` | Returns the generated local HTML page. The page must already exist; the programmatic call does not display a prompt or generate files. |
 
-Unsupported modes, empty documentation commands, extra inputs, and more than
-one requested GUI output raise `labkit_launcher:InvalidInput` or
-`labkit_launcher:TooManyOutputs` errors.
+Unsupported modes, empty documentation commands, invalid documentation
+sources, extra inputs, and more than one requested GUI output raise
+`labkit_launcher:InvalidInput` or `labkit_launcher:TooManyOutputs` errors.
 
 Documentation lookup uses the discovered public App folder and the unique
 path-conventional manual at `docs/apps/<family>/<app>/README.md`. It does not
-require a separately maintained App catalog.
+require a separately maintained App catalog. The visible launcher opens online
+documentation by default. Local generation is an explicit source-checkout
+convenience and writes the ignored `site/` folder; the deployed site is
+generated independently from `main` by GitHub Actions.
 
 ## App Discovery
 

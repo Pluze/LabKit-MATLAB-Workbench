@@ -61,11 +61,11 @@ jobs:
             "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${RELEASE_SHA}&event=push&status=success&per_page=1" \
             --jq '.workflow_runs[0].id // empty')"
           if [[ -z "$ci_run_id" ]]; then
-            echo "::error::The exact main commit has no successful Continuous Integration push run."
+            echo "::error::The exact main commit has no successful integration-policy push run."
             exit 1
           fi
           echo "version=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
-          echo "Using successful CI run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${ci_run_id}" \
+          echo "Using successful exact-commit integration record: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${ci_run_id}" \
             >> "$GITHUB_STEP_SUMMARY"
 
   create-draft:

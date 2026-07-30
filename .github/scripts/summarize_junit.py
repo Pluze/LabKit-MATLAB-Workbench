@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Publish one evidence-oriented summary for a MATLAB platform job.
+"""Publish one evidence-oriented summary for a MATLAB validation shard.
 
 The helper is dependency-free and deliberately does not own the job result.
 The workflow's final outcome gate remains authoritative. This script combines
-the three independent MATLAB sessions, explains what each proves, distinguishes
-runner failures from test failures, and keeps bulky diagnostics collapsed.
+the independent MATLAB sessions scheduled in one job, explains what each
+proves, distinguishes runner failures from test failures, and keeps bulky
+diagnostics collapsed.
 """
 
 from __future__ import annotations
@@ -80,10 +81,15 @@ class ProfileResult:
 
 def main() -> int:
     args = parse_args()
+    profile_keys = parse_profiles(args.profiles)
+    outcomes = {
+        "headless": args.headless_outcome,
+        "gui": args.gui_outcome,
+        "isolated": args.isolated_outcome,
+    }
     profiles = [
-        load_profile("headless", args.headless_outcome, args.artifacts_root),
-        load_profile("gui", args.gui_outcome, args.artifacts_root),
-        load_profile("isolated", args.isolated_outcome, args.artifacts_root),
+        load_profile(key, outcomes[key], args.artifacts_root)
+        for key in profile_keys
     ]
     summary_value = os.environ.get("GITHUB_STEP_SUMMARY", "")
     summary_path = Path(summary_value) if summary_value else None
@@ -99,7 +105,9 @@ def main() -> int:
     write_summary(summary_path, lines)
     publish_annotations(profiles, args.max_annotations)
     print_failure_logs(profiles, args.log_tail_lines)
-    print(f"{args.platform} {args.release}: validation {verdict}.")
+    print(
+        f"{args.platform} {args.release} {args.shard}: validation {verdict}."
+    )
     return 0
 
 
@@ -108,6 +116,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--platform", required=True)
     parser.add_argument("--release", required=True)
     parser.add_argument("--runner", required=True)
+    parser.add_argument("--shard", default="All profiles")
+    parser.add_argument(
+        "--profiles",
+        default="headless,gui,isolated",
+        help="Comma-separated profiles scheduled in this job",
+    )
     parser.add_argument("--claim", required=True)
     parser.add_argument("--artifact-name", required=True)
     parser.add_argument("--artifacts-root", default="artifacts")
@@ -121,6 +135,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--log-tail-lines", type=int, default=180)
     parser.add_argument("--summary-log-tail-lines", type=int, default=80)
     return parser.parse_args()
+
+
+def parse_profiles(value: str) -> list[str]:
+    profiles = [item.strip().lower() for item in value.split(",") if item.strip()]
+    invalid = [item for item in profiles if item not in PROFILE_METADATA]
+    if not profiles:
+        raise ValueError("At least one validation profile is required")
+    if invalid:
+        raise ValueError("Unknown validation profile(s): " + ", ".join(invalid))
+    if len(set(profiles)) != len(profiles):
+        raise ValueError("Validation profiles must be unique")
+    return profiles
 
 
 def load_profile(key: str, outcome: str, artifacts_root: str) -> ProfileResult:
@@ -154,23 +180,31 @@ def summary_header(
     args: argparse.Namespace, profiles: list[ProfileResult], verdict: str
 ) -> list[str]:
     icon = {"passed": "✅", "failed": "❌", "incomplete": "⏸️"}[verdict]
-    heading = {
+    verdict_text = {
         "passed": "passed",
         "failed": "failed",
         "incomplete": "incomplete",
     }[verdict]
+    full_platform = {profile.key for profile in profiles} == set(PROFILE_METADATA)
+    subject = (
+        "LabKit MATLAB compatibility"
+        if full_platform
+        else f"LabKit MATLAB {args.shard} validation"
+    )
     passed_count = sum(profile.passed for profile in profiles)
     completed_count = sum(profile.passed or profile.failed for profile in profiles)
+    profile_count = len(profiles)
     return [
-        f"# {icon} LabKit MATLAB compatibility {heading}",
+        f"# {icon} {subject} {verdict_text}",
         "",
-        f"**{args.platform} · {args.release} · `{args.runner}`**",
+        f"**{args.platform} · {args.release} · {args.shard} · `{args.runner}`**",
         "",
         f"> Compatibility claim: {args.claim}.",
         "",
         (
-            f"**Result:** {passed_count}/3 independent MATLAB sessions passed; "
-            f"{completed_count}/3 produced a conclusive result. "
+            f"**Result:** {passed_count}/{profile_count} scheduled independent "
+            f"MATLAB sessions passed; {completed_count}/{profile_count} produced "
+            "a conclusive result. "
             "A profile counts as passed only when its build step succeeds and its "
             "JUnit report is present, parseable, and failure-free."
         ),
@@ -203,9 +237,9 @@ def interpretation(
     lines = ["## What to note", ""]
     if verdict == "passed":
         lines += [
-            "- MATLAB was installed once for this platform/release job, while each "
-            "profile ran in a separate batch session so setup was reused without "
-            "sharing MATLAB state.",
+            "- MATLAB was installed once for this validation shard, while each "
+            "scheduled profile ran in a separate batch session so setup was reused "
+            "without sharing MATLAB state.",
             "- The run used a clean MATLAB installation without optional Toolboxes.",
         ]
         if args.platform == "Linux":
@@ -429,7 +463,7 @@ def slow_test_lines(
     lines = [
         "## Performance signals",
         "",
-        f"Slowest {len(slow)} tests across the three independent sessions:",
+        f"Slowest {len(slow)} tests across {len(profiles)} independent session(s):",
         "",
         "| Profile | Test | Time |",
         "|---|---|---:|",
@@ -445,6 +479,8 @@ def slow_test_lines(
 
 
 def evidence_lines(args: argparse.Namespace) -> list[str]:
+    profiles = parse_profiles(args.profiles)
+    commands = ", ".join(f"`buildtool {profile}`" for profile in profiles)
     lines = [
         "## Evidence and reproduction",
         "",
@@ -459,8 +495,7 @@ def evidence_lines(args: argparse.Namespace) -> list[str]:
         "- Reviewable images: "
         "`artifacts/test-results/<profile>/visual-evidence/` (when produced)",
         "- MATLAB log: `artifacts/logs/<profile>/matlab.log`",
-        "- Local equivalent: `buildtool headless`, `buildtool gui`, and "
-        "`buildtool isolated` in separate MATLAB sessions",
+        f"- Local equivalent: {commands} in separate MATLAB sessions",
         "",
     ]
     return lines

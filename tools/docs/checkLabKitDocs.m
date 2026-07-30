@@ -1,32 +1,45 @@
-function result = checkLabKitDocs(sourceRoot, committedSiteRoot)
-%CHECKLABKITDOCS Verify that tracked HTML matches structured sources.
+function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
+%CHECKLABKITDOCS Verify deterministic HTML generation from structured sources.
 % Expected caller: buildtool docsCheck and project documentation tests.
 % Inputs:
 %   sourceRoot        - documentation source folder containing Markdown pages.
-%   committedSiteRoot - tracked generated site folder.
+%   existingSiteRoot - optional existing generated site to compare. When
+%                      omitted, the function renders an independent reference.
 % Output:
 %   result - renderer result plus comparedFileCount.
-% Side effects: creates and removes a temporary generated site.
+% Side effects: creates and removes one or two temporary generated sites.
 
     repoRoot = fileparts(fileparts(fileparts(mfilename("fullpath"))));
     if nargin < 1 || strlength(string(sourceRoot)) == 0
         sourceRoot = fullfile(repoRoot, "docs");
     end
-    if nargin < 2 || strlength(string(committedSiteRoot)) == 0
-        committedSiteRoot = fullfile(repoRoot, "site");
+    compareIndependentRenders = ...
+        nargin < 2 || strlength(string(existingSiteRoot)) == 0;
+    if compareIndependentRenders
+        existingSiteRoot = tempname;
+        referenceCleanup = onCleanup( ...
+            @() removeDocFolder(existingSiteRoot));
+        renderLabKitDocs(sourceRoot, existingSiteRoot);
     end
 
     generatedRoot = tempname;
     cleanup = onCleanup(@() removeDocFolder(generatedRoot));
     result = renderLabKitDocs(sourceRoot, generatedRoot);
     [matches, diagnostic, count] = compareLabKitDocTrees( ...
-        generatedRoot, committedSiteRoot);
+        generatedRoot, existingSiteRoot);
     if ~matches
-        error("LabKit:Docs:StaleGeneratedSite", ...
-            "Tracked site differs from generated documentation: %s", diagnostic);
+        if compareIndependentRenders
+            message = "Repeated documentation renders differ: %s";
+        else
+            message = "Existing site differs from generated documentation: %s";
+        end
+        error("LabKit:Docs:StaleGeneratedSite", message, diagnostic);
     end
     result.comparedFileCount = count;
     clear cleanup
+    if compareIndependentRenders
+        clear referenceCleanup
+    end
 end
 
 function removeDocFolder(folder)
