@@ -37,6 +37,8 @@ Manual / native behavior not verified:
 
 ## Delivery state
 
+- [ ] This PR is `develop -> main` or a bounded `hotfix/* -> main` repair.
+- [ ] No direct commit or push to `main` is required.
 - [ ] The branch is committed and pushed.
 - [ ] Required GitHub checks are linked below, or are pending:
 

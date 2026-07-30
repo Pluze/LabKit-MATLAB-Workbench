@@ -22,7 +22,8 @@ caller infers test paths, stage tags, suite roots, ranges, or runner options.
    `Contract` only when `explain` reports multiple author-owned boundaries.
 3. Iterate with `labkittest.run(Owner=..., Contract=...)`, or use
    `labkittest.run(File=...)` for the catalog's complete bounded closure.
-4. Use `buildtool changedFast` once at the review-ready or direct-main gate.
+4. Use `buildtool changedFast` once when `develop` or a `hotfix/*` branch is
+   ready for final PR review.
 
 `createSpec` deliberately fails for framework-provided conformance and for
 ambiguous contracts. These are authoring decisions, not a reason to invent a

@@ -8,3 +8,4 @@ resources/.DS_Store
 photos/
 derived/
 profile_results/
+*.pyc
