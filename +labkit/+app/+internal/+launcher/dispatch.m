@@ -7,7 +7,8 @@ function varargout = dispatch(root, varargin)
         case "list"
             varargout = {appCatalogTable(discoverApps(root))};
         case "documentation"
-            varargout = {documentationPage(root, modeArgs)};
+            varargout = {documentationPage( ...
+                root, modeArgs.command, modeArgs.source)};
         case "version"
             varargout = {launcherVersion()};
         otherwise
@@ -22,24 +23,34 @@ function varargout = dispatch(root, varargin)
     end
 end
 
-function [mode, appCommand] = parseMode(args)
+function [mode, modeArgs] = parseMode(args)
 mode = "gui";
-appCommand = "";
+modeArgs = struct("command", "", "source", "online");
 if isempty(args)
     return;
 end
-if numel(args) == 2 && isTextScalar(args{1}) && strcmpi(string(args{1}), "documentation")
-    appCommand = string(args{2});
-    if ~isTextScalar(appCommand) || strlength(strtrim(appCommand)) == 0
+if ismember(numel(args), [2 3]) && isTextScalar(args{1}) && ...
+        strcmpi(string(args{1}), "documentation")
+    if ~isTextScalar(args{2}) || ...
+            strlength(strtrim(string(args{2}))) == 0
         error("labkit:app:internal:launcher:InvalidInput", ...
             "Documentation mode requires one nonempty app command.");
+    end
+    modeArgs.command = string(args{2});
+    if numel(args) == 3
+        if ~isTextScalar(args{3}) || ...
+                ~ismember(lower(string(args{3})), ["online", "local"])
+            error("labkit:app:internal:launcher:InvalidInput", ...
+                "Documentation source must be online or local.");
+        end
+        modeArgs.source = lower(string(args{3}));
     end
     mode = "documentation";
     return;
 end
 if numel(args) ~= 1 || ~isTextScalar(args{1})
     error("labkit:app:internal:launcher:InvalidInput", ...
-        "Use no input, list, version, or documentation plus one app command.");
+        "Use no input, list, version, or documentation plus an app command and optional source.");
 end
 mode = lower(string(args{1}));
 if ~ismember(mode, ["list", "version"])
@@ -107,7 +118,7 @@ appDocsButton = uibutton(runGrid, "Text", "Documentation and History");
 appDocsButton.Layout.Row = 2;
 appDocsButton.Layout.Column = 2;
 appDocsButton.Tooltip = ...
-    "Open the generated documentation page for the selected app.";
+    "Open the online documentation page for the selected app.";
 
 versionPanel = uipanel(controls, "Title", "Versions and Install");
 versionPanel.Layout.Row = 2;
@@ -132,12 +143,12 @@ maintenanceGrid.RowHeight = {"1x", "1x"};
 maintenanceGrid.Padding = [5 5 5 5];
 maintenanceGrid.RowSpacing = 5;
 maintenanceGrid.ColumnSpacing = 6;
-docsToolButton = uibutton(maintenanceGrid, "Text", "Update Documentation");
+docsToolButton = uibutton(maintenanceGrid, "Text", "Local Documentation");
 codeButton = uibutton(maintenanceGrid, "Text", "Run Code Analyzer");
 profileButton = uibutton(maintenanceGrid, "Text", "Profile Selected App");
 cleanButton = uibutton(maintenanceGrid, "Text", "Clean Artifacts");
 docsToolButton.Tooltip = ...
-    "Rebuild the documentation site from docs and public MATLAB help.";
+    "Open local documentation, or offer to generate it when missing.";
 codeButton.Tooltip = ...
     "Run MATLAB Code Analyzer and write the repository report.";
 profileButton.Tooltip = ...
@@ -195,12 +206,12 @@ state = struct( ...
 
 openButton.ButtonPushedFcn = @(~, ~) launchSelected();
 refreshButton.ButtonPushedFcn = @(~, ~) refreshApps();
-appDocsButton.ButtonPushedFcn = @(~, ~) openDocumentation();
+appDocsButton.ButtonPushedFcn = @(~, ~) openDocumentation("online");
 latestButton.ButtonPushedFcn = @(~, ~) manageVersion("main");
 releaseButton.ButtonPushedFcn = @(~, ~) manageVersion("stable");
 versionsButton.ButtonPushedFcn = @(~, ~) manageVersion("browse");
 cleanButton.ButtonPushedFcn = @(~, ~) runMaintenance("clean");
-docsToolButton.ButtonPushedFcn = @(~, ~) runMaintenance("docs");
+docsToolButton.ButtonPushedFcn = @(~, ~) openDocumentation("local");
 codeButton.ButtonPushedFcn = @(~, ~) runMaintenance("codecheck");
 profileButton.ButtonPushedFcn = @(~, ~) runMaintenance("profile");
 packageButton.ButtonPushedFcn = @(~, ~) packageChecked("source");
@@ -312,22 +323,57 @@ resizeLauncher();
         drawnow;
     end
 
-    function openDocumentation()
+    function openDocumentation(source)
         if state.busy || isempty(state.apps)
             return;
         end
         app = selectedApp();
-        beginAction("Opening documentation for " + app.command + "...");
+        beginAction("Opening " + source + " documentation for " + ...
+            app.command + "...");
         try
-            page = documentationPage(root, app.command);
+            page = documentationPage(root, app.command, source);
+        catch cause
+            if source == "local" && string(cause.identifier) == ...
+                    "labkit:app:internal:launcher:LocalDocumentationMissing"
+                [page, source] = resolveMissingLocalDocumentation(app);
+                if strlength(page) == 0
+                    setStatus("Local documentation action cancelled.");
+                    endAction();
+                    return;
+                end
+            else
+                setStatus("Documentation unavailable: " + failureText(cause));
+                endAction();
+                return;
+            end
+        end
+        try
             if launcherGuiTestMode() ~= "hidden"
                 web(page, "-browser");
             end
-            setStatus("Opened documentation for " + app.command + ".");
+            setStatus("Opened " + source + " documentation for " + ...
+                app.command + ".");
         catch cause
             setStatus("Documentation unavailable: " + failureText(cause));
         end
         endAction();
+    end
+
+    function [page, source] = resolveMissingLocalDocumentation(app)
+        source = "local";
+        choice = localDocumentationChoice(fig, app.command);
+        switch choice
+            case "Generate Local"
+                callTool(root, fullfile("tools", "docs"), ...
+                    "renderLabKitDocs", fullfile(root, "docs"), ...
+                    fullfile(root, "site"));
+                page = documentationPage(root, app.command, "local");
+            case "Open Online"
+                source = "online";
+                page = documentationPage(root, app.command, "online");
+            otherwise
+                page = "";
+        end
     end
 
     function manageVersion(mode)
@@ -366,11 +412,6 @@ resizeLauncher();
                         "ProgressFcn", @reportProgress);
                     setStatus("Clean Artifacts complete: " + ...
                         string(result.removedCount) + " target(s) removed.");
-                case "docs"
-                    callTool(root, fullfile("tools", "docs"), ...
-                        "renderLabKitDocs", fullfile(root, "docs"), ...
-                        fullfile(root, "site"));
-                    setStatus("Documentation site updated.");
                 case "codecheck"
                     callTool(root, fullfile("tools", "codecheck"), ...
                         "runCodecheckReport", root, ...
@@ -497,8 +538,8 @@ function info = launcherVersion()
 info = struct( ...
     "name", "labkit_launcher", ...
     "displayName", "LabKit App Launcher", ...
-    "version", "1.7.1", ...
-    "updated", "2026-07-26");
+    "version", "1.8.0", ...
+    "updated", "2026-07-30");
 end
 
 function position = defaultLauncherPosition()
@@ -899,7 +940,7 @@ catalog = table(commandColumn, displayNameColumn, familyColumn, ...
     'Folder', 'RelativePath', 'Description', 'Version', 'Updated'});
 end
 
-function page = documentationPage(root, command)
+function page = documentationPage(root, command, source)
 apps = discoverApps(root);
 match = find(string({apps.command}) == string(command), 1);
 if isempty(match) || apps(match).visibility ~= "public"
@@ -911,13 +952,36 @@ appId = replace(string(appId), "_", "-");
 manuals = dir(fullfile(root, "docs", "apps", "*", appId, "README.md"));
 if numel(manuals) ~= 1
     error("labkit:app:internal:launcher:DocumentationUnavailable", ...
-        "No generated documentation page is available for %s.", command);
+        "No documentation source is available for %s.", command);
 end
 [~, family] = fileparts(fileparts(manuals(1).folder));
-page = fullfile(root, "site", "apps", family, appId + ".html");
-if exist(page, "file") ~= 2
-    error("labkit:app:internal:launcher:DocumentationUnavailable", "Generated documentation is missing for %s.", command);
+if source == "online"
+    page = "https://pluze.github.io/LabKit-MATLAB-Workbench/apps/" + ...
+        family + "/" + appId + ".html";
+    return;
 end
+page = string(fullfile(root, "site", "apps", family, appId + ".html"));
+if exist(page, "file") ~= 2
+    error("labkit:app:internal:launcher:LocalDocumentationMissing", ...
+        "Local documentation has not been generated for %s.", command);
+end
+end
+
+function choice = localDocumentationChoice(fig, command)
+if launcherGuiTestMode() == "hidden"
+    choice = "Open Online";
+    if isappdata(groot, "labkitLauncherDocumentationChoice")
+        choice = string(getappdata( ...
+            groot, "labkitLauncherDocumentationChoice"));
+    end
+    return;
+end
+choice = string(uiconfirm(fig, ...
+    "Local documentation is not available for " + command + ...
+    ". Generate it now, or open the online documentation?", ...
+    "Local Documentation", ...
+    "Options", {"Open Online", "Generate Local", "Cancel"}, ...
+    "DefaultOption", 1, "CancelOption", 3));
 end
 
 function tf = isStructuralStartupFailure(cause)

@@ -16,8 +16,9 @@ involved.
 Authored sources are path-organized Markdown and public MATLAB help. Narrative
 pages are discovered from `docs/`; public Apps come from
 `labkit_launcher("list")` plus path-conventional manuals; App API pages come
-from complete public help contracts. `site/` is tracked generated output.
-Never hand-edit HTML, CSS, JavaScript, or search indexes.
+from complete public help contracts. `site/` is ignored local output and the
+GitHub Pages workflow rebuilds the deployed artifact from `main`. Never track
+or hand-edit HTML, CSS, JavaScript, or search indexes.
 
 ## Page design
 
@@ -69,18 +70,21 @@ PR.
    `maintainLabKitDocLinks(repoRoot, "Update", true)` and review every rewrite.
 2. Run `maintainLabKitDocLinks(repoRoot)` and the smallest documentation
    contract/regression test during iteration.
-3. From the repository root, run `addpath("tools/docs"); renderLabKitDocs()`
-   to synchronize the default `docs/` sources into `site/`. Custom roots use
-   positional arguments `renderLabKitDocs(sourceRoot, outputRoot)`; the
+3. Run `docsCheck` to render two independent temporary trees and byte-compare
+   their output. The check must not depend on a tracked or preexisting site.
+4. When local reading or visual inspection is useful, run
+   `addpath("tools/docs"); renderLabKitDocs()` from the repository root to
+   synchronize the default `docs/` sources into ignored `site/`. Custom roots
+   use positional arguments `renderLabKitDocs(sourceRoot, outputRoot)`; the
    renderer does not accept Name-Value options. It must rebuild from a missing
    output root and remove pages no longer present in the source model.
-4. Run `docsCheck` to rebuild in a temporary tree and byte-compare output.
 5. Inspect changed HTML visually when layout, navigation, responsive behavior,
    ordered lists, links, or client-side search changed.
-6. Review source and generated diffs together; generated changes must be fully
-   explained by authored inputs or renderer behavior.
+6. Review authored source and generator diffs. Never stage local `site/`
+   output; GitHub Pages generates its deployment artifact from the exact main
+   source.
 
 Use `labkit-boundary-guard` when public API ownership changes and
 `labkit-test-planner` for broader validation. Report authored sources,
-generated outputs, renderer/docs tests, visual inspection, broken-link/search
+renderer/docs tests, optional local visual inspection, broken-link/search
 status, and deployment status when applicable.

@@ -53,8 +53,9 @@ docs/
 
 Executable renderer code and synthetic-asset generators live under
 `tools/docs/`. Generated HTML, CSS, JavaScript, and search data live under
-`site/`. No executable `.m` file belongs under `docs/`, and no generated file
-under `site/` is edited by hand.
+the ignored local `site/` folder or the GitHub Pages deployment artifact. No
+executable `.m` file belongs under `docs/`, and generated site files are never
+tracked or edited by hand.
 
 Launcher documentation follows the user-facing app map under
 `docs/apps/labkit-core/launcher/`. Direct-call references for maintainer tools
@@ -292,7 +293,14 @@ Generated pages carry a generated-file marker. Regeneration builds a complete
 temporary tree, then synchronizes its files into `site/`: changed files are
 updated, obsolete files and empty directories are removed, and the canonical
 `site/` directory itself is preserved. Keeping that root stable avoids numbered
-conflict copies when the repository is stored in a synchronized folder.
+conflict copies when the repository is stored in a synchronized folder. The
+folder is ignored by Git and may be deleted or regenerated at any time.
+
+The Documentation Pages workflow performs the same build from the exact
+`main` source and deploys the resulting artifact to GitHub Pages. It never
+commits generated files back to `main` or `develop`. The visible Launcher opens
+that online site by default. Its **Local Documentation** action offers to
+generate `site/` when a selected local page is absent.
 
 For direct MATLAB syntax, result fields, missing-output reconstruction, and
 consistency-check behavior, see
@@ -301,19 +309,20 @@ consistency-check behavior, see
 ## Build And Validate
 
 Use the documentation build and consistency tasks listed in
-[Testing](testing.md). The build regenerates the tracked site; the consistency
-check renders independently and compares that result with `site/`. Project
-documentation tests additionally check page/output uniqueness, source and
-output existence, API coverage, local links, direct-file search, generated
-markers, and prohibited retired paths.
+[Testing](testing.md). The build regenerates an ignored local site; the
+consistency check performs two independent temporary renders and compares
+their file paths and bytes. Project documentation tests additionally check
+page/output uniqueness, source and output existence, API coverage, local
+links, direct-file search, generated markers, and prohibited retired paths.
+The main Pages deployment is the authoritative online output.
 
 Before committing documentation work:
 
 1. review the Markdown diff for claims not backed by current code;
-2. regenerate `site/`;
+2. optionally regenerate `site/` for local reading or visual inspection;
 3. run the focused documentation guardrail;
-4. open representative app, module, API, history, and search pages;
-5. commit source and generated output together.
+4. open representative local pages when presentation changed;
+5. commit only authored sources and generator changes.
 
 ## Related Topics
 

@@ -37,7 +37,9 @@ class SummarizeJunitTest(unittest.TestCase):
             self.assertIn("Product, SDK, persistence", content)
             self.assertIn("Every public App starts from a reset path", content)
             self.assertIn("do **not** prove native dialog interaction", content)
-            self.assertIn("3/3 independent MATLAB sessions passed", content)
+            self.assertIn(
+                "3/3 scheduled independent MATLAB sessions passed", content
+            )
             self.assertIn(
                 "test-results/<profile>/visual-evidence/", content
             )
@@ -97,7 +99,45 @@ class SummarizeJunitTest(unittest.TestCase):
             self.assertNotIn("Requires action", content)
             self.assertNotIn("# ❌", content)
 
-    def run_summary(self, root, summary, outcomes):
+    def test_partial_shard_reports_only_scheduled_profiles(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            self.write_report(root, "gui", failed=False)
+            summary = root / "summary.md"
+
+            result = self.run_summary(
+                root,
+                summary,
+                ["skipped", "success", "skipped"],
+                shard="Hidden GUI",
+                profiles="gui",
+            )
+
+            self.assertEqual(result, 0)
+            content = summary.read_text(encoding="utf-8")
+            self.assertIn(
+                "# ✅ LabKit MATLAB Hidden GUI validation passed", content
+            )
+            self.assertIn("1/1 scheduled independent MATLAB sessions passed", content)
+            self.assertIn("Windows · R2022b · Hidden GUI", content)
+            self.assertIn("`buildtool gui` in separate MATLAB sessions", content)
+            self.assertNotIn("Non-GUI", content)
+            self.assertNotIn("Path isolation", content)
+
+    def test_profile_list_rejects_unknown_or_duplicate_values(self):
+        with self.assertRaisesRegex(ValueError, "Unknown validation profile"):
+            MODULE.parse_profiles("headless,visual")
+        with self.assertRaisesRegex(ValueError, "must be unique"):
+            MODULE.parse_profiles("gui,gui")
+
+    def run_summary(
+        self,
+        root,
+        summary,
+        outcomes,
+        shard="All profiles",
+        profiles="headless,gui,isolated",
+    ):
         arguments = [
             "summarize_junit.py",
             "--platform",
@@ -106,6 +146,10 @@ class SummarizeJunitTest(unittest.TestCase):
             "R2022b",
             "--runner",
             "windows-2022",
+            "--shard",
+            shard,
+            "--profiles",
+            profiles,
             "--claim",
             "supported release floor",
             "--artifact-name",

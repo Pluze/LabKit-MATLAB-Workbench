@@ -42,10 +42,13 @@ existing links and user checkouts. Future releases should use `vX.Y.Z`.
 Complete developer-led interactive App validation before starting a release.
 Then dispatch the `Release` workflow from `main`, provide the new version, and
 explicitly confirm that manual validation is complete. The exact main commit
-must already have a successful `Continuous Integration` push run, which proves
-the complete headless and hidden-GUI suites on Toolbox-free Linux, macOS, and
-Windows. The release workflow verifies that run instead of executing the same
-six jobs again, then creates the annotated tag.
+must already have a successful `Continuous Integration` push run. That
+lightweight run records policy success for the exact squash commit; required
+strict PR checks already proved the complete headless, hidden-GUI, and
+path-isolation matrix on Toolbox-free Linux, macOS, and Windows against the
+same file tree. The release workflow verifies the exact-commit integration
+record instead of executing the MATLAB matrix again, then creates the
+annotated tag.
 
 An invalid version, a non-`main` dispatch, a missing manual-validation
 confirmation, an existing tag or release, or the absence of a successful

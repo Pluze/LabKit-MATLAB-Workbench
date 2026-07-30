@@ -55,9 +55,11 @@ jobs:
               --null --github-output "${GITHUB_OUTPUT}"
 
   platform-matrix:
-    name: MATLAB / ${{ matrix.label }} / ${{ matrix.release }}
+    name: MATLAB / ${{ matrix.label }} / ${{ matrix.release }} / ${{ matrix.shard }}
     needs: change-scope
-    if: needs.change-scope.outputs.full == 'true'
+    if: >-
+      github.event_name == 'pull_request' &&
+      needs.change-scope.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 100
     strategy:
@@ -68,27 +70,79 @@ jobs:
             id: linux
             label: Linux
             release: R2022b
+            shard: All profiles
+            shard_id: all
+            profiles: headless,gui,isolated
+            run_headless: true
+            run_gui: true
+            run_isolated: true
             claim: Supported MATLAB floor on the pinned Linux runner and legacy graphics/export paths
           - os: ubuntu-latest
             id: linux
             label: Linux
             release: latest
+            shard: All profiles
+            shard_id: all
+            profiles: headless,gui,isolated
+            run_headless: true
+            run_gui: true
+            run_isolated: true
             claim: Current MATLAB and Ubuntu integration, including virtual-display graphics
           - os: windows-2022
             id: windows
             label: Windows
             release: R2022b
+            shard: All profiles
+            shard_id: all
+            profiles: headless,gui,isolated
+            run_headless: true
+            run_gui: true
+            run_isolated: true
             claim: Supported MATLAB floor on Windows, including native file and off-screen graphics behavior
           - os: windows-latest
             id: windows
             label: Windows
             release: latest
-            claim: Current MATLAB and Windows native-platform integration
+            shard: Core
+            shard_id: core
+            profiles: headless,isolated
+            run_headless: true
+            run_gui: false
+            run_isolated: true
+            claim: Current MATLAB and Windows product, SDK, export, and path-isolation evidence
+          - os: windows-latest
+            id: windows
+            label: Windows
+            release: latest
+            shard: Hidden GUI
+            shard_id: gui
+            profiles: gui
+            run_headless: false
+            run_gui: true
+            run_isolated: false
+            claim: Current MATLAB and Windows native App, graphics, and export evidence
           - os: macos-14
             id: macos
             label: macOS
             release: latest
-            claim: Current Apple Silicon and macOS native-platform sentinel
+            shard: Core
+            shard_id: core
+            profiles: headless,isolated
+            run_headless: true
+            run_gui: false
+            run_isolated: true
+            claim: Current Apple Silicon product, SDK, export, and path-isolation evidence
+          - os: macos-14
+            id: macos
+            label: macOS
+            release: latest
+            shard: Hidden GUI
+            shard_id: gui
+            profiles: gui
+            run_headless: false
+            run_gui: true
+            run_isolated: false
+            claim: Current Apple Silicon native App, graphics, and export evidence
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -123,6 +177,7 @@ jobs:
           fi
 
       - name: Run full non-GUI validation
+        if: matrix.run_headless
         id: headless
         continue-on-error: true
         timeout-minutes: 30
@@ -132,6 +187,7 @@ jobs:
           startup-options: -logfile artifacts/logs/headless/matlab.log
 
       - name: Run hidden GUI validation
+        if: matrix.run_gui
         id: gui
         continue-on-error: true
         timeout-minutes: 30
@@ -141,6 +197,7 @@ jobs:
           startup-options: -logfile artifacts/logs/gui/matlab.log
 
       - name: Run path-isolation validation
+        if: matrix.run_isolated
         id: isolated
         continue-on-error: true
         timeout-minutes: 30
@@ -157,8 +214,10 @@ jobs:
             --platform "${{ matrix.label }}" \
             --release "${{ matrix.release }}" \
             --runner "${{ matrix.os }}" \
+            --shard "${{ matrix.shard }}" \
+            --profiles "${{ matrix.profiles }}" \
             --claim "${{ matrix.claim }}" \
-            --artifact-name "matlab-${{ matrix.id }}-${{ matrix.release }}" \
+            --artifact-name "matlab-${{ matrix.id }}-${{ matrix.release }}-${{ matrix.shard_id }}" \
             --headless-outcome "${{ steps.headless.outcome }}" \
             --gui-outcome "${{ steps.gui.outcome }}" \
             --isolated-outcome "${{ steps.isolated.outcome }}"
@@ -167,7 +226,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: matlab-${{ matrix.id }}-${{ matrix.release }}
+          name: matlab-${{ matrix.id }}-${{ matrix.release }}-${{ matrix.shard_id }}
           if-no-files-found: warn
           retention-days: 14
           path: |
@@ -176,20 +235,27 @@ jobs:
             artifacts/gui/**
             artifacts/logs/**
 
-      - name: Require every validation profile
+      - name: Require every scheduled validation profile
         if: always()
         shell: bash
         run: |
-          test '${{ steps.headless.outcome }}' = 'success'
-          test '${{ steps.gui.outcome }}' = 'success'
-          test '${{ steps.isolated.outcome }}' = 'success'
+          if [ '${{ matrix.run_headless }}' = 'true' ]; then
+            test '${{ steps.headless.outcome }}' = 'success'
+          fi
+          if [ '${{ matrix.run_gui }}' = 'true' ]; then
+            test '${{ steps.gui.outcome }}' = 'success'
+          fi
+          if [ '${{ matrix.run_isolated }}' = 'true' ]; then
+            test '${{ steps.isolated.outcome }}' = 'success'
+          fi
 
   docs-check:
     name: Documentation check
     needs: change-scope
     if: >-
-      needs.change-scope.outputs.full == 'true' ||
-      needs.change-scope.outputs.docs == 'true'
+      github.event_name == 'pull_request' &&
+      (needs.change-scope.outputs.full == 'true' ||
+      needs.change-scope.outputs.docs == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -219,10 +285,12 @@ jobs:
         shell: bash
         run: |
           test '${{ needs.change-scope.result }}' = 'success'
-          if [ '${{ needs.change-scope.outputs.full }}' = 'true' ]; then
+          if [ '${{ github.event_name }}' = 'pull_request' ] &&
+             [ '${{ needs.change-scope.outputs.full }}' = 'true' ]; then
             test '${{ needs.platform-matrix.result }}' = 'success'
           fi
-          if [ '${{ needs.change-scope.outputs.full }}' = 'true' ] ||
-             [ '${{ needs.change-scope.outputs.docs }}' = 'true' ]; then
+          if [ '${{ github.event_name }}' = 'pull_request' ] &&
+             { [ '${{ needs.change-scope.outputs.full }}' = 'true' ] ||
+               [ '${{ needs.change-scope.outputs.docs }}' = 'true' ]; }; then
             test '${{ needs.docs-check.result }}' = 'success'
           fi

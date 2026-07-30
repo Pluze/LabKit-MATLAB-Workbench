@@ -22,8 +22,9 @@ project, and launches the synthetic project through the native adapter.
 `headless`, `gui`, `isolated`, and `coverage` are full catalog profiles.
 `changedFast` is focused local evidence: an App or facade path maps to its
 bounded closure, while framework, build, and repository-policy paths map to
-explicit system evidence. Documentation and generated site paths are explicitly
-ignored because `docsCheck` owns them. An unclassified path fails planning; add
+explicit system evidence. Documentation paths are explicitly ignored because
+`docsCheck` owns them; local generated `site/` output is ignored by Git. An
+unclassified path fails planning; add
 a production role or an explicit no-test classification rather than widening
 the run. Generated artifacts live under `artifacts/test-results/` and are never
 tracked. A plan may also name an explicit manual check; it is a handoff for

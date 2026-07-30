@@ -5,6 +5,12 @@ function varargout = labkit_launcher(varargin)
 %   available. If that entry is missing or cannot load, it opens a minimal
 %   repair window instead. labkit_launcher("repair") always opens that repair
 %   window. Repair is explicit; startup never downloads or replaces files.
+%
+%   PAGE = labkit_launcher("documentation", APPCOMMAND) returns the selected
+%   public App's GitHub Pages URL. PAGE = labkit_launcher("documentation",
+%   APPCOMMAND, "local") returns its generated local HTML page and raises
+%   labkit:app:internal:launcher:LocalDocumentationMissing when `site/` has
+%   not been generated. The programmatic form never opens a browser or prompt.
 
     if nargout > 1
         error("labkit_launcher:TooManyOutputs", "labkit_launcher returns at most one output.");

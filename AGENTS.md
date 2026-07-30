@@ -98,7 +98,8 @@ under `docs/`.
 - Human sources are path-organized Markdown under `docs/` and public MATLAB
   help. Narrative pages, App manuals, and App APIs are discovered from paths,
   launcher metadata, and complete public help contracts. `site/` is generated only by
-  `tools/docs/renderLabKitDocs.m`; never edit generated assets directly.
+  `tools/docs/renderLabKitDocs.m`, ignored locally, and rebuilt from `main` for
+  GitHub Pages; never track or edit generated assets directly.
 - Add a `docs/` page only for the currently supported architecture or a
   delivered new feature. Keep active migration plans, checkpoints, legacy
   removal lists, and future-state acceptance gates in
@@ -114,8 +115,9 @@ under `docs/`.
 - `Example:` help is executable in a clean MATLAB session and covered by the
   docs runner. Use `Typical Call:` for interactive or user-file-dependent
   sketches.
-- Regenerate the site and run documentation consistency checks after source
-  pages, public help, discovery rules, or renderer changes. After moving
+- Run deterministic documentation generation checks after source pages, public
+  help, discovery rules, or renderer changes. Generate the ignored local site
+  only when local reading or visual inspection is useful. After moving
   Markdown, use `maintainLabKitDocLinks(..., "Update", true)` to repair
   standard relative links before rendering.
 
@@ -136,7 +138,9 @@ tests, history, and details out of the public repository.
   is ready for PR review, do not run broad changed-file or full-suite gates;
   use focused fast tests for the current small step. Run `changedFast` once
   when preparing `develop` or a `hotfix/*` branch for PR review. There is no
-  conservative local changed task; PR and main-push CI own complete validation.
+  conservative local changed task; required PR CI owns complete validation.
+  The protected main-push run repeats only policy and the aggregate gate for
+  the exact squash commit because its tree is the already-validated PR result.
 - After failure, fix and rerun the narrowest failed file, method, or suite; do not repeatedly
   invoke the planner. Exact commands and scope live in
   `docs/development/maintain-and-release/testing.md`.
@@ -183,12 +187,13 @@ tests, history, and details out of the public repository.
 6. Main accepts PRs only from the repository-owned `develop` or `hotfix/*`
    branch. Run `changedFast` once before final review, inspect required PR CI,
    and read only failing logs. Squash-merge with an explicit compliant subject.
-7. After the merge, inspect the exact main-push CI once and complete any
-   authorized release from that exact commit. Then fetch, merge `origin/main`
-   into `develop`, verify that `origin/main` is an ancestor and that the two
-   branch trees have no diff, and push the sync merge before new work starts.
-   After a hotfix sync, delete only the merged `hotfix/*` branch; never delete
-   `develop`.
+7. After the merge, inspect the exact lightweight main-push policy gate once
+   and complete any authorized release from that exact commit. Do not repeat
+   the MATLAB matrix already required on the up-to-date PR. Then fetch, merge
+   `origin/main` into `develop`, verify that `origin/main` is an ancestor and
+   that the two branch trees have no diff, and push the sync merge before new
+   work starts. After a hotfix sync, delete only the merged `hotfix/*` branch;
+   never delete `develop`.
 8. Never force-push without explicit approval. Stop and report permission,
    protection, review, CI, sync, or cleanup blockers rather than bypassing them.
    Branch protection must require `CI Gate`, PR review flow, linear main
@@ -235,10 +240,11 @@ explicit compliant squash subject; do not rely on GitHub defaults.
   titles are `LabKit MATLAB Workbench vX.Y.Z` with relevant `Highlights`,
   `Fixes`, `Upgrade Note`, and `Validation` sections.
 - Start the manual `Release` workflow only after developer-led interactive App
-  validation and a successful `Continuous Integration` main-push run for the
-  exact commit. It then creates the validated tag and a draft GitHub Release.
-  Review its notes and asset before publishing; ordinary CI never creates
-  tags, and CI runners never install optional Toolboxes.
+  validation, successful required PR validation, and a successful lightweight
+  `Continuous Integration` main-push run for the exact squash commit. It then
+  creates the validated tag and a draft GitHub Release. Review its notes and
+  asset before publishing; ordinary CI never creates tags, and CI runners never
+  install optional Toolboxes.
 - Release assets come from the tag blob, not the worktree. Verify byte count
   and SHA-256 before and after upload; replace a mismatched asset without moving
   a published tag.
