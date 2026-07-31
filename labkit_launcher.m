@@ -33,6 +33,10 @@ function varargout = labkit_launcher(varargin)
     try
         dispatcher = str2func("labkit.app.internal.launcher.dispatch");
         if ~resolvesInstalledDispatch(dispatcher, entry)
+            searchPath = pathsep + string(path) + pathsep;
+            if contains(searchPath, pathsep + string(root) + pathsep)
+                rmpath(root);
+            end
             addpath(root, "-begin");
             rehash;
             dispatcher = [];
