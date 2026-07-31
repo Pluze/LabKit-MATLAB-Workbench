@@ -35,6 +35,7 @@ function varargout = labkit_launcher(varargin)
         if ~resolvesInstalledDispatch(dispatcher, entry)
             addpath(root, "-begin");
             rehash;
+            clear('labkit.app.internal.launcher.dispatch');
             dispatcher = str2func("labkit.app.internal.launcher.dispatch");
             if ~resolvesInstalledDispatch(dispatcher, entry)
                 error("labkit_launcher:InstalledEntryMismatch", ...
