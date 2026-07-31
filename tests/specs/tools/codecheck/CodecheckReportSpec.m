@@ -22,6 +22,10 @@ classdef CodecheckReportSpec < matlab.unittest.TestCase
             testCase.verifyEqual(exist(report.jsonFile, "file"), 2);
             testCase.verifyEqual(exist(report.htmlFile, "file"), 2);
             testCase.verifyEqual(report.fileCount, 1);
+            payload = jsondecode(fileread(report.jsonFile));
+            testCase.verifyTrue(all(isfield(payload, [ ...
+                "Date", "Release", "Files", ...
+                "Issues", "SuppressedIssues"])));
             progress = testfixtures.StateStore.get("codecheckProgress");
             testCase.verifySubstring(progress(1), "Finding MATLAB files");
             testCase.verifyTrue(any(contains(progress, ...

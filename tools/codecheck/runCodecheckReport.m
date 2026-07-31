@@ -40,7 +40,7 @@ function report = runCodecheckReport(root, varargin)
     notifyProgress(progressFcn, "Writing native codeIssues report...", 0.96);
     ensureFolder(fileparts(output));
     sourceRoot = commonSourceRoot([string(root), files]);
-    export(issues, output, "FileFormat", "json", "SourceRoot", sourceRoot);
+    exportCodeIssuesJson(issues, output, sourceRoot);
 
     notifyProgress(progressFcn, "Writing Code Analyzer HTML report...", 0.98);
     htmlOutput = reportBase + ".html";
@@ -56,6 +56,27 @@ function report = runCodecheckReport(root, varargin)
     report.issueCount = height(issues.Issues);
     report.suppressedIssueCount = height(issues.SuppressedIssues);
     notifyProgress(progressFcn, "codeIssues report complete.", 1.00);
+end
+
+function exportCodeIssuesJson(issues, output, sourceRoot)
+    if ismethod(issues, "export")
+        export(issues, output, "FileFormat", "json", ...
+            "SourceRoot", sourceRoot);
+        return;
+    end
+
+    % R2022b exposes the same public codeIssues properties but predates the
+    % codeIssues.export method. jsonencode preserves that native property
+    % schema for the report reader without resolving an unrelated export
+    % function from the MATLAB path.
+    fid = fopen(output, "w", "n", "UTF-8");
+    if fid < 0
+        error("LabKit:Codecheck:WriteFailed", ...
+            "Could not write Code Analyzer JSON report: %s", output);
+    end
+    cleanup = onCleanup(@() fclose(fid));
+    fprintf(fid, "%s\n", jsonencode(issues));
+    clear cleanup
 end
 
 function reportBase = uniqueReportBase(outputRoot)
