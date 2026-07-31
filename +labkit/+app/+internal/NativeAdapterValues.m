@@ -434,9 +434,68 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
 
         function path = safeStartPath(value)
-        path = char(string(value));
-        if isempty(path) || ~isfolder(path)
-            path = pwd;
+        path = labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+            "input", value);
+        end
+
+        function path = dialogStartFolder(kind, proposed)
+        % Private adapter policy for persistent native-dialog locations.
+        kind = lower(strip(string(kind)));
+        if ~isscalar(kind) || ~any(kind == ["input", "output"])
+            error("labkit:app:contract:InvalidValue", ...
+                "Dialog kind must be input or output.");
+        end
+        path = existingSafeDialogFolder(proposed);
+        if strlength(path) == 0
+            if kind == "input"
+                preference = "LastInputFolder";
+            else
+                preference = "LastOutputFolder";
+            end
+            if ispref("LabKit", char(preference))
+                path = existingSafeDialogFolder( ...
+                    getpref("LabKit", char(preference)));
+            end
+        end
+        if strlength(path) == 0
+            path = existingSafeDialogFolder(getenv("USERPROFILE"));
+        end
+        if strlength(path) == 0
+            path = existingSafeDialogFolder(getenv("HOME"));
+        end
+        if strlength(path) == 0
+            candidates = split(string(userpath), pathsep);
+            candidates = candidates(strlength(candidates) > 0);
+            for candidate = reshape(candidates, 1, [])
+                path = existingSafeDialogFolder(candidate);
+                if strlength(path) > 0
+                    break
+                end
+            end
+        end
+        if strlength(path) == 0
+            path = string(tempdir);
+        end
+        path = char(path);
+        end
+
+        function rememberDialogFolder(kind, folder)
+        % Cancellation and invalid paths intentionally preserve prior memory.
+        kind = lower(strip(string(kind)));
+        folder = existingSafeDialogFolder(folder);
+        if ~isscalar(kind) || ~any(kind == ["input", "output"]) || ...
+                strlength(folder) == 0
+            return
+        end
+        if kind == "input"
+            preference = "LastInputFolder";
+        else
+            preference = "LastOutputFolder";
+        end
+        try
+            setpref("LabKit", char(preference), char(folder));
+        catch
+            % A read-only preference store must not break file selection.
         end
         end
 
@@ -550,6 +609,37 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
 
     end
+end
+
+function folder = existingSafeDialogFolder(value)
+folder = "";
+if isempty(value)
+    return
+end
+value = strip(string(value));
+if ~isscalar(value) || strlength(value) == 0 || ~isfolder(value)
+    return
+end
+try
+    value = string(char(java.io.File(char(value)).getCanonicalPath()));
+catch
+end
+root = string(fileparts(fileparts(fileparts(fileparts(mfilename("fullpath"))))));
+try
+    root = string(char(java.io.File(char(root)).getCanonicalPath()));
+catch
+end
+comparison = value;
+rootComparison = root;
+if ispc
+    comparison = lower(comparison);
+    rootComparison = lower(rootComparison);
+end
+if comparison == rootComparison || ...
+        startsWith(comparison, rootComparison + filesep)
+    return
+end
+folder = value;
 end
 
 function values = textColumn(values)

@@ -18,6 +18,10 @@ otherwise invalid frames before running. The first image defines working
 geometry; differently sized inputs are resized and the result records how many
 images required resizing.
 
+Project restore validates the selected fusion preset, odd focus-window range,
+smoothing and blend ranges, logical registration flag, and durable result
+shape before rebuilding transient image data.
+
 ## Basic Workflow
 
 1. Load at least two focal planes.

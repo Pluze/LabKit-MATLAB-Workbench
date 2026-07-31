@@ -73,6 +73,8 @@ Applications add:
   log text
 
 Use `labkit.image.readFiles` when an app needs generic source-image records.
+Its option structure is a closed contract: unknown fields or a non-struct
+value raise `labkit:image:InvalidOptions`.
 Apps may copy the returned `path`, `name`, and `image` fields into their own
 item structures. Specialized formats and result structures remain documented
 by the app that uses them.

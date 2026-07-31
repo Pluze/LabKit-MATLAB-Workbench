@@ -2,7 +2,9 @@
 % source-schema migration, then validates preview settings, role-based source
 % collections, durable annotations, and compact export state.
 function spec = projectSpec()
-    spec = labkit.app.project.Schema(Version=2, Create=@createProject, Validate=@validateProject, Migrate=@migrateProject);
+    spec = labkit.app.project.Schema(Version=2, Create=@createProject, ...
+        Validate=@validateProject, Migrate=@migrateProject, ...
+        SourceBindings="inputs.sources");
 end
 
 function project = createProject()

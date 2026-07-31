@@ -54,7 +54,7 @@ function [records, report] = readFiles(paths, opts)
 % See also labkit.thermal.readFile,
 %   labkit.thermal.inspectFile
 
-    if nargin < 2 || isempty(opts)
+    if nargin < 2
         opts = struct();
     end
     opts = normalizeOptions(opts);
@@ -87,10 +87,8 @@ function [records, report] = readFiles(paths, opts)
 end
 
 function opts = normalizeOptions(opts)
-    if ~isstruct(opts) || ~isscalar(opts)
-        error('labkit:thermal:InvalidOptions', ...
-            'readFiles options must be a scalar struct.');
-    end
+    validateOptionStruct(opts, ["AllowEmpty", "RequireExisting", ...
+        "SkipInvalid", "TemperatureCorrection", "progressFcn"]);
     opts = struct( ...
         'AllowEmpty', optionValue(opts, 'AllowEmpty', true), ...
         'RequireExisting', optionValue(opts, 'RequireExisting', true), ...

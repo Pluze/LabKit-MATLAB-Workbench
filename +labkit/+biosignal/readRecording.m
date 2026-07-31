@@ -88,6 +88,8 @@ function [recording, status] = readRecording(filepath, opts)
 %   status.ok=false, preserves the normalized source path, and returns an
 %   empty recording. Only an invalid filepath MATLAB value is thrown as
 %   labkit:biosignal:InvalidFilepath before import begins.
+%   Unknown option fields or a non-struct opts value throw
+%   labkit:biosignal:InvalidOptions.
 %
 % Example:
 %   filepath = [tempname '.csv'];
@@ -105,6 +107,9 @@ function [recording, status] = readRecording(filepath, opts)
     if nargin < 2
         opts = struct();
     end
+    validateOptionStruct(opts, ["headerLine", "hasHeader", "timeColumn", ...
+        "timeUnit", "signalColumns", "fallbackFs", "timeRepair", ...
+        "gapFactor", "useFirstNumericColumnAsTime"]);
 
     filepath = normalizeFilepath(filepath);
     recording = emptyRecording(filepath);

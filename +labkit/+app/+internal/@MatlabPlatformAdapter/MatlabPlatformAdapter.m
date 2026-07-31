@@ -263,24 +263,46 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         function result = chooseInputFile(~, filters, startPath)
             filters = labkit.app.internal.NativeAdapterValues.dialogFilters(filters);
             [name, folder] = uigetfile(filters, "Choose input file", ...
-                labkit.app.internal.NativeAdapterValues.safeStartPath(startPath));
+                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                "input", startPath));
+            if ~isequal(name, 0)
+                labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                    "input", folder);
+            end
             result = labkit.app.internal.NativeAdapterValues.dialogPath(name, folder);
         end
 
         function result = chooseInputFolder(~, startPath)
-            folder = uigetdir(labkit.app.internal.NativeAdapterValues.safeStartPath(startPath), "Choose input folder");
+            folder = uigetdir( ...
+                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                "input", startPath), "Choose input folder");
+            if ~isequal(folder, 0)
+                labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                    "input", folder);
+            end
             result = labkit.app.internal.NativeAdapterValues.folderDialogPath(folder);
         end
 
         function result = chooseOutputFile(~, filters, startPath)
             filters = labkit.app.internal.NativeAdapterValues.dialogFilters(filters);
             [name, folder] = uiputfile(filters, "Choose output file", ...
-                labkit.app.internal.NativeAdapterValues.safeStartPath(startPath));
+                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                "output", startPath));
+            if ~isequal(name, 0)
+                labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                    "output", folder);
+            end
             result = labkit.app.internal.NativeAdapterValues.dialogPath(name, folder);
         end
 
         function result = chooseOutputFolder(~, startPath)
-            folder = uigetdir(labkit.app.internal.NativeAdapterValues.safeStartPath(startPath), "Choose output folder");
+            folder = uigetdir( ...
+                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                "output", startPath), "Choose output folder");
+            if ~isequal(folder, 0)
+                labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                    "output", folder);
+            end
             result = labkit.app.internal.NativeAdapterValues.folderDialogPath(folder);
         end
     end
@@ -634,6 +656,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 return;
             end
             obj.DialogFolders(char(target)) = char(folder);
+            labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                "input", folder);
             paths = string(folder) + filesep + string(names);
             if config.SelectionMode == "single"
                 paths = paths(1);
@@ -653,6 +677,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 return
             end
             obj.DialogFolders(char(target)) = char(folder);
+            labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                "input", folder);
             paths = labkit.app.internal.NativeAdapterValues.filesInFolder(folder, config.Filters, recursive);
             if recursive && ...
                     numel(paths) > config.FolderWarningThreshold
@@ -691,7 +717,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             end
             folder = char(string(configured));
             if isempty(folder) || ~isfolder(folder)
-                folder = labkit.app.internal.NativeAdapterValues.userDialogFolder();
+                folder = labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                    "input", "");
             end
         end
 

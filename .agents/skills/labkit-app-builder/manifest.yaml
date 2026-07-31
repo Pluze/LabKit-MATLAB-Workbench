@@ -1,0 +1,1 @@
+{"schema_version":1,"name":"labkit-app-builder","scope":"labkit-repository","dependencies":["labkit-boundary-guard","labkit-test-planner"]}

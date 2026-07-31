@@ -19,6 +19,13 @@ for defaults, validation, and migration semantics. App conformance separately
 validates each synthetic sample pack, keeps Debug startup on the clean default
 project, and launches the synthetic project through the native adapter.
 
+A fixture constrains only the contract under test; do not add unrelated facade
+version ranges or compatibility assertions that can turn a focused fixture
+into a stale cross-component test. A direct test that constructs native Runtime
+owns and restores its hidden-visibility fixture even when its catalog tag is
+GUI. Callback tests use a contract-complete context or a narrow fake covering
+every operation the callback invokes.
+
 `headless`, `gui`, `isolated`, and `coverage` are full catalog profiles.
 `changedFast` is focused local evidence: an App or facade path maps to its
 bounded closure, while framework, build, and repository-policy paths map to

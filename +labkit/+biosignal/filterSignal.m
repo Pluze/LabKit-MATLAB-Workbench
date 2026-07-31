@@ -48,6 +48,8 @@ function filtered = filterSignal(signal, spec)
 %              supplied by the caller.
 %
 % Errors:
+%   labkit:biosignal:InvalidOptions - opts is not a scalar struct or contains
+%       an unknown field.
 %   labkit:biosignal:InvalidSignal - signal lacks values or fs.
 %   labkit:biosignal:UnsupportedFilter - type is not supported.
 %   labkit:biosignal:UnsupportedFilterEdgeMode - edgeMode is not supported.
@@ -67,6 +69,8 @@ function filtered = filterSignal(signal, spec)
     if nargin < 2
         spec = struct();
     end
+    validateOptionStruct(spec, ...
+        ["type", "cutoffHz", "edgeMode", "edgePadSec", "edgeTaperSec"]);
     validateSignal(signal);
 
     filtered = signal;

@@ -10,7 +10,10 @@ function method = peakMethodValue(label)
             method = "pan-tompkins";
         case "Local peaks"
             method = "local";
-        otherwise
+        case "QRS streaming"
             method = "qrs-streaming";
+        otherwise
+            error('ecg_print:UnsupportedPeakMethodLabel', ...
+                'Unsupported ECG peak-method label: %s.', string(label));
     end
 end

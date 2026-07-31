@@ -27,6 +27,6 @@ function info = version()
 % See also labkit.contract.versionInfo,
 %   labkit.contract.checkRequirements
 
-    info = labkit.contract.versionInfo("rhs", "1.0.3", ">=1.0 <2", ...
+    info = labkit.contract.versionInfo("rhs", "1.0.4", ">=1.0 <2", ...
         "stable", "RHS discovery, metadata, indexing, and waveform-window facade contract.");
 end

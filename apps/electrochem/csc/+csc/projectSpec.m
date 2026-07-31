@@ -3,7 +3,8 @@
 % creation defaults, and validation. Side effects are none.
 function spec = projectSpec()
     spec = labkit.app.project.Schema(Version=1, ...
-        Create=@createProject, Validate=@validateProject);
+        Create=@createProject, Validate=@validateProject, ...
+        SourceBindings="inputs.sources");
 end
 
 function project = createProject()

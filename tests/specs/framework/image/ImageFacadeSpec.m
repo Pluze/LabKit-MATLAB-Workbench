@@ -2,6 +2,12 @@ classdef ImageFacadeSpec < matlab.unittest.TestCase
     %IMAGEFACADEPEC Specify public image file and conversion behavior.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function rejectsUnknownReadOptions(testCase)
+            testCase.verifyError(@() labkit.image.readFiles( ...
+                strings(0, 1), struct("Normalise", true)), ...
+                "labkit:image:InvalidOptions");
+        end
+
         function readsNormalizedImagesAndReportsSemanticProgress(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;

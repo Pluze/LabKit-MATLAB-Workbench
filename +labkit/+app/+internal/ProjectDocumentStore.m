@@ -9,6 +9,10 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
         Contract
         Context
         Sources
+        AcceptedPath (1, 1) string = ""
+        AcceptedFingerprint (1, 1) string = ""
+        PendingPath (1, 1) string = ""
+        PendingFingerprint (1, 1) string = ""
     end
 
     methods (Access = ?labkit.app.internal.RuntimeKernel)
@@ -36,10 +40,12 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
 
         function result = save(obj, state, filepath)
             filepath = projectPath(filepath);
+            obj.assertNoExternalOverwrite(filepath);
             candidate = obj.nextSavedMetadata(filepath);
             envelope = obj.envelope(state, candidate);
             writeProjectFile(filepath, envelope);
             obj.Metadata = candidate;
+            obj.acceptFile(filepath);
             result = labkit.app.dialog.Choice(filepath, Cancelled=false);
         end
 
@@ -74,6 +80,13 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
                 candidate.dirty = true;
             end
             metadata = candidate;
+            if asRecovery
+                obj.PendingPath = "";
+                obj.PendingFingerprint = "";
+            else
+                obj.PendingPath = filepath;
+                obj.PendingFingerprint = fileFingerprint(filepath);
+            end
         end
 
         function [state, metadata] = createNew(obj)
@@ -86,6 +99,10 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
 
         function acceptRestore(obj, metadata)
             obj.Metadata = metadata;
+            obj.AcceptedPath = obj.PendingPath;
+            obj.AcceptedFingerprint = obj.PendingFingerprint;
+            obj.PendingPath = "";
+            obj.PendingFingerprint = "";
         end
 
         function markDirty(obj)
@@ -240,6 +257,11 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
         end
 
         function bindings = projectSourceBindings(obj)
+            schema = obj.Application.ProjectSchema;
+            if ~schema.UsesInferredSourceBindings
+                bindings = schema.SourceBindings;
+                return;
+            end
             plan = obj.Contract.PlatformPlan;
             bindings = strings(1, 0);
             for k = 1:numel(plan.Nodes)
@@ -309,6 +331,24 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
             metadata = struct("id", newId(), "createdAtUtc", nowUtc, ...
                 "modifiedAtUtc", nowUtc, "revision", uint64(0), ...
                 "path", "", "dirty", true);
+        end
+
+        function assertNoExternalOverwrite(obj, filepath)
+            if strlength(obj.AcceptedPath) == 0 || ...
+                    ~samePath(filepath, obj.AcceptedPath)
+                return;
+            end
+            if ~isfile(filepath) || ...
+                    fileFingerprint(filepath) ~= obj.AcceptedFingerprint
+                error("labkit:app:runtime:ProjectWriteConflict", ...
+                    "Project file changed after it was opened or saved: %s.", ...
+                    filepath);
+            end
+        end
+
+        function acceptFile(obj, filepath)
+            obj.AcceptedPath = filepath;
+            obj.AcceptedFingerprint = fileFingerprint(filepath);
         end
     end
 end
@@ -440,6 +480,36 @@ end
 function deleteIfPresent(filepath)
 if isfile(filepath)
     delete(filepath);
+end
+end
+
+function value = fileFingerprint(filepath)
+stream = fopen(char(filepath), "r");
+if stream < 0
+    error("labkit:app:runtime:ProjectReadFailed", ...
+        "Could not read project file for conflict detection: %s.", filepath);
+end
+cleanup = onCleanup(@() fclose(stream));
+digest = java.security.MessageDigest.getInstance("SHA-256");
+while true
+    bytes = fread(stream, 1024 * 1024, "*uint8");
+    if isempty(bytes)
+        break;
+    end
+    digest.update(typecast(bytes, "int8"));
+end
+value = lower(string(reshape(dec2hex(typecast(digest.digest(), "uint8"), 2).', 1, [])));
+clear cleanup
+end
+
+function tf = samePath(left, right)
+left = java.nio.file.Paths.get(char(left), javaArray("java.lang.String", 0));
+right = java.nio.file.Paths.get(char(right), javaArray("java.lang.String", 0));
+tf = string(left.toAbsolutePath().normalize().toString()) == ...
+    string(right.toAbsolutePath().normalize().toString());
+if ispc
+    tf = lower(string(left.toAbsolutePath().normalize().toString())) == ...
+        lower(string(right.toAbsolutePath().normalize().toString()));
 end
 end
 

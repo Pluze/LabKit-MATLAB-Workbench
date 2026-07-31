@@ -108,6 +108,42 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyTrue(folderCancellation.Cancelled);
         end
 
+        function nativeDialogsRememberLastSuccessfulInputAndOutputFolders(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            inputFolder = fullfile(root, "input");
+            outputFolder = fullfile(root, "output");
+            mkdir(inputFolder);
+            mkdir(outputFolder);
+            inputMemory = capturePreference("LastInputFolder");
+            outputMemory = capturePreference("LastOutputFolder");
+            cleanup = onCleanup(@() restoreDialogPreferences( ...
+                inputMemory, outputMemory));
+
+            labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                "input", inputFolder);
+            labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                "output", outputFolder);
+
+            testCase.verifyEqual(string( ...
+                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                "input", "")), string(inputFolder));
+            testCase.verifyEqual(string( ...
+                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                "output", "")), string(outputFolder));
+            testCase.verifyEqual(string( ...
+                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                "input", outputFolder)), string(outputFolder), ...
+                "An explicit valid start folder must override remembered state.");
+            labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                "input", fullfile(root, "missing"));
+            testCase.verifyEqual(string( ...
+                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                "input", "")), string(inputFolder), ...
+                "An invalid or cancelled choice must preserve remembered state.");
+            clear cleanup
+        end
+
         function sourceResolutionTreatsCharacterIdAsOneIdentifier(testCase)
             backend = struct("sourcePaths", @sourcePathsProbe);
             context = labkit.app.internal.CallbackContextFactory.create(backend);
@@ -239,6 +275,55 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyError(@() runtime.restoreProject(newerFile), ...
                 "labkit:app:runtime:NewerProjectPayload");
             clear cleanup
+        end
+
+        function preventsExternalProjectOverwriteAndAllowsSaveAs(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            layout = labkit.app.layout.workbench({});
+            schema = labkit.app.project.Schema(Version=1, ...
+                Create=@createProject, Validate=@validateProject);
+            app = AppSdkSpec.definition(layout, "ProjectSchema", schema);
+            journal = labkittest.temporarySessionJournal(app, folder);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            original = fullfile(folder, "project.mat");
+            alternate = fullfile(folder, "alternate.mat");
+
+            runtime.saveProject(runtime.State, original);
+            external = load(original, "labkitProject");
+            labkitProject = external.labkitProject;
+            labkitProject.payload.parameters.gain = 7;
+            save(original, "labkitProject");
+
+            testCase.verifyError( ...
+                @() runtime.saveProject(runtime.State, original), ...
+                "labkit:app:runtime:ProjectWriteConflict");
+            runtime.saveProject(runtime.State, alternate);
+            testCase.verifyTrue(isfile(alternate));
+            clear cleanup
+        end
+
+        function explicitSourceBindingsPreserveLegacyInference(testCase)
+            inferred = labkit.app.project.Schema(Version=1, ...
+                Create=@createSourceProject, Validate=@validateSourceProject);
+            explicit = labkit.app.project.Schema(Version=1, ...
+                Create=@createSourceProject, Validate=@validateSourceProject, ...
+                SourceBindings="inputs.sources");
+            none = labkit.app.project.Schema(Version=1, ...
+                Create=@createProject, Validate=@validateProject, ...
+                SourceBindings=strings(1, 0));
+
+            testCase.verifyTrue(inferred.UsesInferredSourceBindings);
+            testCase.verifyFalse(explicit.UsesInferredSourceBindings);
+            testCase.verifyEqual(explicit.SourceBindings, "inputs.sources");
+            testCase.verifyFalse(none.UsesInferredSourceBindings);
+            testCase.verifyEmpty(none.SourceBindings);
+            testCase.verifyError(@() labkit.app.project.Schema( ...
+                Version=1, Create=@createProject, Validate=@validateProject, ...
+                SourceBindings="project.inputs.sources"), ...
+                "labkit:app:contract:InvalidValue");
         end
     end
 
@@ -401,4 +486,24 @@ end
 function project = importProbeProject(legacy)
 project = createCurrentProject();
 project.parameters.gain = legacy.gain;
+end
+
+function memory = capturePreference(name)
+memory = struct("name", name, "existed", ispref("LabKit", name), "value", []);
+if memory.existed
+    memory.value = getpref("LabKit", name);
+end
+end
+
+function restoreDialogPreferences(inputMemory, outputMemory)
+restorePreference(inputMemory);
+restorePreference(outputMemory);
+end
+
+function restorePreference(memory)
+if memory.existed
+    setpref("LabKit", memory.name, memory.value);
+elseif ispref("LabKit", memory.name)
+    rmpref("LabKit", memory.name);
+end
 end

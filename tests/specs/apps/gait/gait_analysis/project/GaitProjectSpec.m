@@ -26,5 +26,28 @@ classdef GaitProjectSpec < matlab.unittest.TestCase
                 [0.25, 4, 40, 3, 9]);
             testCase.verifyFalse(isfield(migrated.parameters, 'minStride'));
         end
+
+        function rejectsImpossibleOrContradictoryParameters(testCase)
+            spec = gait_analysis.projectSpec();
+            project = spec.Create();
+            testCase.verifyTrue(spec.Validate(project));
+
+            cases = { ...
+                "pixelsPerUnit", 0; ...
+                "smoothWindow", 2.5; ...
+                "detectionProminence", -1; ...
+                "minSwingFrames", 0};
+            for k = 1:size(cases, 1)
+                invalid = project;
+                invalid.parameters.(cases{k, 1}) = cases{k, 2};
+                testCase.verifyError(@() spec.Validate(invalid), ...
+                    "gait_analysis:InvalidProject");
+            end
+            invalid = project;
+            invalid.parameters.minSwingFrames = 20;
+            invalid.parameters.maxSwingFrames = 10;
+            testCase.verifyError(@() spec.Validate(invalid), ...
+                "gait_analysis:InvalidProject");
+        end
     end
 end

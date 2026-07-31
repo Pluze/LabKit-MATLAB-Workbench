@@ -47,6 +47,8 @@ function template = buildTemplate(segments, opts)
 %                         segment waveforms are available.
 %
 % Errors:
+%   labkit:biosignal:InvalidOptions - opts is not a scalar struct or contains
+%       an unknown field.
 %   labkit:biosignal:InvalidSegments - segments is not a structure with
 %       values and timeOffset fields. Invalid numeric values or an unusable
 %       topN value may also raise the originating MATLAB conversion error.
@@ -62,6 +64,7 @@ function template = buildTemplate(segments, opts)
     if nargin < 2
         opts = struct();
     end
+    validateOptionStruct(opts, "topN");
     validateSegments(segments);
 
     X = double(segments.values);

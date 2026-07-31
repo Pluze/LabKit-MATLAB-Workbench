@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "prompt": "Reject an unsupported ECG peak-method label without changing the three supported methods.",
+      "should_activate": true,
+      "rationale": "A scientific selector and its failure contract change."
+    },
+    {
+      "prompt": "Correct thermal emissivity and humidity range validation while preserving temperature units.",
+      "should_activate": true,
+      "rationale": "Scientific inputs, ranges, defaults, and outputs are in scope."
+    },
+    {
+      "prompt": "Adjust the zoom toolbar icon spacing.",
+      "should_activate": false,
+      "rationale": "Presentation-only work has no scientific meaning."
+    },
+    {
+      "prompt": "Rename a private variable without changing a formula or result.",
+      "should_activate": false,
+      "rationale": "A private semantic-preserving rename is outside this Skill."
+    }
+  ]
+}

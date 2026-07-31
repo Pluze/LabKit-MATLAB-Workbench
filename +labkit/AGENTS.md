@@ -58,6 +58,13 @@ Use `labkittest.explain` to find the exact owner and contract.
   remain legal and unique; references must resolve before UI mutation.
 - View snapshots must preserve unchanged graphics and viewports. Renderers own
   incremental overlay changes; interaction specs own user gestures.
+- Establish the legal domain of interdependent native properties before
+  assigning dependent values; constructor name-value order is not a contract
+  across MATLAB releases. Give responsive resize to one explicit container
+  owner and verify release-sensitive layout through native construction.
+- Show determinate progress only when work has a measurable denominator.
+  Otherwise report real named stages, and paint the stage before synchronous
+  expensive work.
 - One interaction target has one active gesture owner. A managed movable
   rectangle accepts movement from its visible box or interior, not only a thin
   edge; display-only affordances remain non-pickable.

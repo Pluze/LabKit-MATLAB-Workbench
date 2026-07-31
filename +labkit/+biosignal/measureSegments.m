@@ -47,6 +47,8 @@ function result = measureSegments(segments, template, opts)
 %   metadata.noiseWindowsSec - Noise intervals used for the calculation.
 %
 % Errors:
+%   labkit:biosignal:InvalidOptions - opts is not a scalar struct or contains
+%       an unknown field.
 %   labkit:biosignal:InvalidSegments - segments lacks values or timeOffset.
 %   labkit:biosignal:InvalidTemplate - template lacks values.
 %
@@ -65,6 +67,7 @@ function result = measureSegments(segments, template, opts)
     if nargin < 3
         opts = struct();
     end
+    validateOptionStruct(opts, ["signalWindowSec", "noiseWindowsSec"]);
     validateInputs(segments, template);
 
     X = double(segments.values);

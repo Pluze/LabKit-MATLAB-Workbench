@@ -2,6 +2,12 @@ classdef RhsFacadeSpec < matlab.unittest.TestCase
     %RHSFACADESPEC Specify public Intan RHS discovery and read behavior.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function rejectsUnknownReadWindowOptions(testCase)
+            testCase.verifyError(@() labkit.rhs.readWindow( ...
+                "missing.rhs", struct("familly", "amplifier")), ...
+                "labkit:rhs:InvalidOptions");
+        end
+
         function discoversAndIndexesSyntheticRhsInputs(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;

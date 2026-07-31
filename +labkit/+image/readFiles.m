@@ -63,7 +63,7 @@ function records = readFiles(paths, opts)
 %   labkit.image.assertSupportedPaths,
 %   labkit.image.writeFile
 
-    if nargin < 2 || isempty(opts)
+    if nargin < 2
         opts = struct();
     end
     opts = normalizeOptions(opts);
@@ -95,10 +95,8 @@ function records = readFiles(paths, opts)
 end
 
 function opts = normalizeOptions(opts)
-    if ~isstruct(opts) || ~isscalar(opts)
-        error('labkit:image:InvalidOptions', ...
-            'readFiles options must be a scalar struct.');
-    end
+    validateOptionStruct(opts, ["Normalize", "AllowEmpty", ...
+        "ValidateExtensions", "RequireExisting", "progressFcn"]);
     opts = struct( ...
         'Normalize', optionValue(opts, 'Normalize', true), ...
         'AllowEmpty', optionValue(opts, 'AllowEmpty', true), ...

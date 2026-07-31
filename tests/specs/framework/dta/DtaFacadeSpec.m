@@ -30,6 +30,7 @@ classdef DtaFacadeSpec < matlab.unittest.TestCase
             [items, report] = labkit.dta.loadFiles({chrono, eis, cvct}, "auto");
 
             testCase.verifyTrue(chronoStatus.ok, chronoStatus.message);
+            testCase.verifyEqual(chronoStatus.code, "ok");
             testCase.verifyEqual(chronoItem.type, "chrono");
             testCase.verifyTrue(all(isfield(chronoItem, {'t_s', 'Vf_V', 'Im_A'})));
             testCase.verifyFalse(any(isfield(chronoItem, {'t', 'Vf', 'Im'})));
@@ -43,10 +44,23 @@ classdef DtaFacadeSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(cvctItem.curves);
             testCase.verifyEmpty(mismatch);
             testCase.verifyFalse(mismatchStatus.ok);
+            testCase.verifyEqual(mismatchStatus.code, "kind_mismatch");
             testCase.verifyEqual(mismatchStatus.kind, "eis");
             testCase.verifySubstring(mismatchStatus.message, "Expected chrono DTA");
             testCase.verifyEqual(numel(items), 3);
             testCase.verifyEqual([report.nRequested, report.nLoaded, report.nFailed], [3, 3, 0]);
+        end
+
+        function reportsStableMachineReadableFailureCodes(testCase)
+            missing = fullfile(tempdir, "labkit-missing-dta-file.DTA");
+            [kind, detectStatus] = labkit.dta.detectType(missing);
+            [item, loadStatus] = labkit.dta.loadFile(missing, "chrono");
+
+            testCase.verifyEqual(kind, "unknown");
+            testCase.verifyEqual(detectStatus.code, "missing_file");
+            testCase.verifyEmpty(item);
+            testCase.verifyEqual(loadStatus.code, "missing_file");
+            testCase.verifySubstring(loadStatus.message, "File not found");
         end
     end
 end

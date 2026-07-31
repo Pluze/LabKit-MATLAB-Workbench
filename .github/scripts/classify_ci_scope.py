@@ -20,7 +20,9 @@ def is_governance_document(path: str) -> bool:
     item = PurePosixPath(path)
     return (
         item.name == "AGENTS.md"
-        or path.startswith(".agents/")
+        or (path.startswith(".agents/") and not (
+            path.startswith(".agents/skills/") and path.endswith(".m")
+        ))
         or path == ".github/PULL_REQUEST_TEMPLATE.md"
         or path.startswith(".github/ISSUE_TEMPLATE/")
     )

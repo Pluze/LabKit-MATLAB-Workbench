@@ -16,7 +16,8 @@ classdef SemanticDiagnosticsSpec < matlab.unittest.TestCase
 
             runtime.invokeAction("run");
 
-            testCase.verifyEqual(runtime.StatusLog(end), "Semantic status.");
+            testCase.verifyEqual(runtime.CurrentStatus, "Semantic status.");
+            testCase.verifySize(runtime.CurrentStatus, [1 1]);
             events = runtime.diagnosticEvents();
             status = events(string({events.eventName}) == "probe.status");
             checkpoint = events(string({events.eventName}) == "probe.checkpoint");

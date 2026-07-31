@@ -136,7 +136,12 @@ end
 ```
 
 Portable source records are opaque. Resolve their paths only at IO boundaries.
-Saved projects store portable references and use runtime relinking.
+Saved projects store portable references and use runtime relinking. A project
+Schema declares each durable source location with project-relative
+`SourceBindings`, such as `"inputs.sources"`; an explicit empty list means the
+project has no sources. Omitted bindings retain layout-derived inference for
+older external App definitions, while built-in Apps use explicit declarations
+so persistence does not depend on UI layout.
 
 ## Typed Events
 
@@ -252,7 +257,10 @@ confirmation choices. `Title` controls the dialog title, `DefaultChoice`
 selects the Enter-key action, and `CancelChoice` is returned when the user
 dismisses the dialog. All three named choices must be members of the declared
 nonempty unique choice row. File and folder methods remain separate because
-they return paths and use platform file choosers.
+they return paths and use platform file choosers. Successful input and output
+choices are remembered separately across App windows. A valid App-supplied
+start path takes precedence; cancellation or an invalid path does not replace
+the last successful folder.
 
 An App-specific project button may choose a MAT file and return
 `callbackContext.restoreProjectDocument(filepath)`. The context prepares the
@@ -334,6 +342,12 @@ through the App's ordinary controls.
 `labkit.app.project.Schema` owns current project creation, validation, and
 ordered version migration. Runtime owns the project envelope, atomic save,
 restore, recovery, and relinking loop.
+
+After a document is saved or accepted from restore, Runtime fingerprints the
+on-disk file. Saving again to the same path is rejected if another program has
+changed that file; **Save As** remains available. This prevents a stale App
+window from silently overwriting external edits without changing the project
+payload format.
 
 ### Saved-project compatibility boundary
 

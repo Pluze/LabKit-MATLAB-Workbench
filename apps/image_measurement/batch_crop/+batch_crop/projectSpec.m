@@ -4,7 +4,7 @@
 function spec = projectSpec()
     spec = labkit.app.project.Schema(Version=3, ...
         Create=@createProject, Validate=@validateProject, ...
-        Migrate=@migrateProject);
+        Migrate=@migrateProject, SourceBindings="inputs.sources");
 end
 
 function project = createProject()

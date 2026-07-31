@@ -25,6 +25,11 @@ function classification = classifyPath(file)
             "validation framework or CI policy behavior");
         return;
     end
+    if startsWith(file, ".agents/skills/") && endsWith(file, ".m")
+        classification = mapped(file, "validation-framework", "system/build", ...
+            "Skill-owned MATLAB automation executes repository behavior");
+        return;
+    end
     if startsWith(file, ".agents/") || file == "AGENTS.md" || ...
             endsWith(file, "/AGENTS.md") || file == ".gitignore"
         classification = mapped(file, "repository-policy", "system/repository", ...

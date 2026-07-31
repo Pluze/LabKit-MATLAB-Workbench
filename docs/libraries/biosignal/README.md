@@ -47,6 +47,8 @@ opts = struct('timeColumn', 'timestamp', 'timeUnit', 'milliseconds');
 ```
 
 Useful delimited-table options include `headerLine`, `hasHeader`, `timeColumn`, `timeUnit`, `signalColumns`, `fallbackFs`, and `timeRepair`.
+Option structures are closed contracts. Unknown fields or non-struct values
+raise `labkit:biosignal:InvalidOptions` instead of being silently ignored.
 
 ### `readRecording` Options
 

@@ -53,7 +53,8 @@ function [window, status] = readWindow(filepath, opts)
 %   values - Samples-by-channels numeric matrix in the unit named by unit.
 %
 % Errors:
-%   Throws labkit:rhs:InvalidFilepath for an invalid path,
+%   Throws labkit:rhs:InvalidOptions when opts is not a scalar struct or
+%   contains an unknown field, labkit:rhs:InvalidFilepath for an invalid path,
 %   labkit:rhs:InvalidFamily for an unsupported family,
 %   labkit:rhs:InvalidChannel for an unknown or out-of-range channel, and
 %   labkit:rhs:InvalidTimeRange for a malformed or reversed time range.
@@ -75,9 +76,10 @@ function [window, status] = readWindow(filepath, opts)
 % See also labkit.rhs.indexFile,
 %   labkit.rhs.inspectFile
 
-    if nargin < 2 || isempty(opts)
+    if nargin < 2
         opts = struct();
     end
+    validateOptionStruct(opts, ["family", "channels", "timeRangeSec"]);
 
     filepath = normalizeFilepath(filepath);
     [index, status] = labkit.rhs.indexFile(filepath);

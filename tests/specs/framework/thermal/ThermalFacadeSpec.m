@@ -2,6 +2,16 @@ classdef ThermalFacadeSpec < matlab.unittest.TestCase
     %THERMALFACADESPEC Specify public radiometric-image ingest behavior.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function rejectsUnknownOrNonstructPublicOptions(testCase)
+            calibration = struct("PlanckR1", 21106.77, "PlanckB", 1501, ...
+                "PlanckF", 1, "PlanckO", -7340, "PlanckR2", 0.012545258);
+            testCase.verifyError(@() labkit.thermal.rawToTemperatureC( ...
+                16000, calibration, struct("Corection", "planck-basic")), ...
+                "labkit:thermal:InvalidOptions");
+            testCase.verifyError(@() labkit.thermal.renderImage( ...
+                [1 2], "turbo"), "labkit:thermal:InvalidOptions");
+        end
+
         function readsRadiometricJpegWithTemperatureAndProgress(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -46,6 +56,39 @@ classdef ThermalFacadeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(records.path, string(thermalPath));
             testCase.verifyEqual([report.requested, report.loaded, report.skipped], [2, 1, 1]);
             testCase.verifyEqual(report.failures.name, "ordinary.jpg");
+        end
+
+        function validatesSuppliedEnvironmentalCalibration(testCase)
+            calibration = struct("PlanckR1", 21106.77, "PlanckB", 1501, ...
+                "PlanckF", 1, "PlanckO", -7340, "PlanckR2", 0.012545258);
+            raw = 16000;
+            [baseline, diagnostics] = labkit.thermal.rawToTemperatureC( ...
+                raw, calibration);
+            testCase.verifyTrue(isfinite(baseline));
+            testCase.verifyTrue(diagnostics.usedDefaults);
+
+            percentage = calibration;
+            percentage.RelativeHumidity = 50;
+            fraction = calibration;
+            fraction.RelativeHumidity = 0.5;
+            testCase.verifyEqual( ...
+                labkit.thermal.rawToTemperatureC(raw, percentage), ...
+                labkit.thermal.rawToTemperatureC(raw, fraction), ...
+                "AbsTol", 1e-12);
+
+            invalid = { ...
+                "Emissivity", 0; ...
+                "Emissivity", 1.01; ...
+                "IRWindowTransmission", 0; ...
+                "ObjectDistanceM", -1; ...
+                "RelativeHumidity", 101};
+            for k = 1:size(invalid, 1)
+                candidate = calibration;
+                candidate.(invalid{k, 1}) = invalid{k, 2};
+                testCase.verifyError( ...
+                    @() labkit.thermal.rawToTemperatureC(raw, candidate), ...
+                    'labkit:thermal:InvalidCalibration');
+            end
         end
     end
 end

@@ -1,7 +1,8 @@
 % App-owned durable FLIR Thermal contract. App SDK runtime calls this single entry
 % for current project creation and validation; version 1 needs no migration.
 function spec = projectSpec()
-    spec = labkit.app.project.Schema(Version=1,Create=@createProject,Validate=@validateProject);
+    spec = labkit.app.project.Schema(Version=1, Create=@createProject, ...
+        Validate=@validateProject, SourceBindings="inputs.sources");
 end
 
 function project = createProject()

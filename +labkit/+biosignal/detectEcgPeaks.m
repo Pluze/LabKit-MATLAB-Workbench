@@ -77,6 +77,8 @@ function events = detectEcgPeaks(signal, opts)
 %              method-specific settings used during detection.
 %
 % Errors:
+%   labkit:biosignal:InvalidOptions - opts is not a scalar struct or contains
+%       an unknown field.
 %   labkit:biosignal:InvalidSignal - signal lacks time, values, or fs.
 %   labkit:biosignal:UnsupportedPeakMethod - opts.method is unsupported.
 %   labkit:biosignal:UnsupportedPolarity - opts.polarity is unsupported.
@@ -97,15 +99,18 @@ function events = detectEcgPeaks(signal, opts)
     if nargin < 2
         opts = struct();
     end
+    validateOptionStruct(opts, ["method", "polarity", "minDistanceSec", ...
+        "threshold", "thresholdStd", "smoothSec", ...
+        "integrationWindowSec", "refineSearchSec", ...
+        "rawRefineSearchSec", "baselineWindowSec", ...
+        "envelopeWindowSec", "lookaheadSec", "minTemplateScore", ...
+        "medianPolarityCorrection", "medianReviewPeakCount"]);
     opts = mergeOptions(labkit.biosignal.defaultEcgPeakOptions(optionValue(opts, 'method', [])), opts);
     events = detectEcgPeaksImpl(signal, opts);
 end
 
 function merged = mergeOptions(defaults, overrides)
     merged = defaults;
-    if ~isstruct(overrides)
-        return;
-    end
     fields = fieldnames(overrides);
     for k = 1:numel(fields)
         merged.(fields{k}) = overrides.(fields{k});

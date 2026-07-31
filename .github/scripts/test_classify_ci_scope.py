@@ -30,6 +30,14 @@ class ClassifyCiScopeTest(unittest.TestCase):
             {"full": False, "docs": False, "governance": True},
         )
 
+    def test_skill_owned_matlab_automation_requires_full_matrix(self):
+        self.assertEqual(
+            MODULE.classify([
+                ".agents/skills/labkit-test-planner/scripts/probe.m"
+            ]),
+            {"full": True, "docs": False, "governance": False},
+        )
+
     def test_human_docs_request_docs_check_without_full_matrix(self):
         self.assertEqual(
             MODULE.classify(["docs/framework/README.md", "site/index.html"]),

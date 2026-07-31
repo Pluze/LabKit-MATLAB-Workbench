@@ -3,7 +3,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
     properties (SetAccess = private)
         State (1, 1) struct
         Presentation
-        StatusLog (1, :) string = "Ready."
+        CurrentStatus (1, 1) string = "Ready."
         Closed (1, 1) logical = false
         StartupFailed (1, 1) logical = false
     end
@@ -888,7 +888,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     obj.Contract.PlatformPlan, state, ...
                     @(records, role) ...
                         obj.presentationSourcePaths(records, role), ...
-                    obj.StatusLog);
+                    obj.CurrentStatus);
                 if isempty(obj.Application.PresentWorkbench)
                     custom = labkit.app.view.Snapshot();
                 else
@@ -916,7 +916,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 Exception=exception);
             if audience == "user" && ...
                     any(severity == ["info", "warning", "error", "critical"])
-                obj.StatusLog(end + 1) = message;
+                obj.CurrentStatus = message;
             end
         end
 

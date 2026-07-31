@@ -28,6 +28,6 @@ function info = version()
 % See also labkit.contract.versionInfo,
 %   labkit.contract.checkRequirements
 
-    info = labkit.contract.versionInfo("image", "2.0.3", ">=2.0 <3", ...
+    info = labkit.contract.versionInfo("image", "2.0.4", ">=2.0 <3", ...
         "stable", "GUI-free image file input, basic processing, and preview-budget helpers for responsive image apps.");
 end

@@ -1,6 +1,6 @@
 ---
 name: labkit-documentation-maintainer
-description: "Use for LabKit documentation architecture, public API reference, component history, path-derived navigation, the MATLAB documentation renderer, generated site consistency, or documentation deployment changes."
+description: "Use for LabKit documentation architecture, public API reference, component history, path-derived navigation, the MATLAB documentation renderer, generated site consistency, or documentation deployment changes. Do not use for source-only edits with no authored documentation contract."
 ---
 
 # LabKit Documentation Maintainer

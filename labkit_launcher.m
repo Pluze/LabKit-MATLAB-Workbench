@@ -31,12 +31,15 @@ function varargout = labkit_launcher(varargin)
         return;
     end
     try
-        addpath(root, "-begin");
-        rehash;
         dispatcher = str2func("labkit.app.internal.launcher.dispatch");
         if ~resolvesInstalledDispatch(dispatcher, entry)
-            error("labkit_launcher:InstalledEntryMismatch", ...
-                "The installed launcher entry does not resolve from this LabKit installation.");
+            addpath(root, "-begin");
+            rehash;
+            dispatcher = str2func("labkit.app.internal.launcher.dispatch");
+            if ~resolvesInstalledDispatch(dispatcher, entry)
+                error("labkit_launcher:InstalledEntryMismatch", ...
+                    "The installed launcher entry does not resolve from this LabKit installation.");
+            end
         end
         if nargout == 0
             dispatcher(root, varargin{:});
