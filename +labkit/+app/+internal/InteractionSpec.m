@@ -71,7 +71,7 @@ classdef (Sealed, Hidden) InteractionSpec
                     obj.Id, missing(1));
             end
             result = obj;
-            if numel(axisIds) == 1
+            if isscalar(axisIds)
                 result.Targets = repmat(plotId, size(obj.AxisIds));
             else
                 result.Targets = plotId + "." + obj.AxisIds;

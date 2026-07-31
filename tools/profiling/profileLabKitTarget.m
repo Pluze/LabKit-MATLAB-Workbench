@@ -4,8 +4,8 @@ function [htmlFile, artifacts] = profileLabKitTarget(target, htmlFile, varargin)
 % Expected caller: LabKit maintainers diagnosing startup, callbacks, scripts, or
 % helper-function cost.
 % Inputs:
-%   target   function name, command string, .m file path, function handle, or
-%            a profile('info') struct. Empty target opens a file picker.
+%   target   function name, .m file path, function handle, or a
+%            profile('info') struct. Empty target opens a file picker.
 %   htmlFile optional output HTML file. Defaults under artifacts/profile/.
 % Outputs:
 %   htmlFile  generated HTML report path
@@ -69,12 +69,7 @@ function [htmlFile, artifacts] = profileLabKitTarget(target, htmlFile, varargin)
     targetLabel = targetLabelText(target);
     [runner, runFolder, cleanupPath, targetFile] = prepareRunner(target);
 
-    oldFolder = pwd;
-    folderCleanup = [];
-    if opt.ChangeFolder && strlength(string(runFolder)) > 0 && exist(runFolder, 'dir') == 7
-        cd(runFolder);
-        folderCleanup = onCleanup(@() cd(oldFolder));
-    end
+    folderCleanup = enterRunFolder(opt.ChangeFolder, runFolder);
 
     fprintf('\n=== profileLabKitTarget ===\n');
     fprintf('Target: %s\n', targetLabel);
@@ -106,7 +101,7 @@ function [htmlFile, artifacts] = profileLabKitTarget(target, htmlFile, varargin)
     if opt.CloseFiguresAfterRun
         closeFigures(newFigures(beforeFigs));
     end
-    clear folderCleanup;
+    delete(folderCleanup);
     if isa(cleanupPath, 'function_handle')
         cleanupPath();
     end
@@ -187,7 +182,7 @@ function [runner, runFolder, cleanupPath, targetFile] = prepareRunner(target)
     end
     if ~ischar(target)
         error('profileLabKitTarget:InvalidTarget', ...
-            'Target must be a .m path, function name, command string, function handle, or profile info struct.');
+            'Target must be a .m path, function name, function handle, or profile info struct.');
     end
 
     target = strtrim(target);
@@ -204,13 +199,27 @@ function [runner, runFolder, cleanupPath, targetFile] = prepareRunner(target)
             cleanupPath = @() rmpath(runFolder);
         end
         if isFunctionOrClassFile(filePath)
-            runner = @() evalin('base', funcName);
+            runner = @() invokeResolvedFunction(funcName, filePath);
         else
-            runner = @() evalin('base', sprintf('run(''%s'')', quoteText(filePath)));
+            runner = @() run(filePath);
         end
         return;
     end
-    runner = @() evalin('base', target);
+    error('profileLabKitTarget:UnresolvedTarget', ...
+        ['String targets must resolve to one function or .m file. ' ...
+        'Use a function handle for calls with arguments or setup state.']);
+end
+
+function invokeResolvedFunction(funcName, filePath)
+resolved = string(which(funcName));
+if strlength(resolved) == 0 || ...
+        string(canonicalPath(resolved)) ~= string(canonicalPath(filePath))
+    error('profileLabKitTarget:TargetResolutionChanged', ...
+        'Profile target no longer resolves to the validated file: %s', funcName);
+end
+% Dynamic maintainer-tool boundary: the name is accepted only after it
+% resolves to the exact .m file selected by prepareRunner.
+feval(funcName);
 end
 
 function filePath = resolveMFile(text)
@@ -287,12 +296,15 @@ end
 
 function figs = newFigures(beforeFigs)
     afterFigs = currentFigures();
-    figs = gobjects(0);
+    figs = gobjects(size(afterFigs));
+    figureCount = 0;
     for k = 1:numel(afterFigs)
         if ~any(beforeFigs == afterFigs(k))
-            figs(end + 1) = afterFigs(k);
+            figureCount = figureCount + 1;
+            figs(figureCount) = afterFigs(k);
         end
     end
+    figs = figs(1:figureCount);
     try
         figs = figs(isvalid(figs));
     catch
@@ -338,7 +350,19 @@ function name = defaultHtmlName(target, outputRoot)
     if isempty(baseName)
         baseName = 'target';
     end
-    name = fullfile(char(outputRoot), ['profile_' baseName '_' datestr(now, 'yyyymmdd_HHMMSS') '.html']);
+    stamp = char(datetime("now", "Format", "yyyyMMdd_HHmmss"));
+    name = fullfile(char(outputRoot), ['profile_' baseName '_' stamp '.html']);
+end
+
+function cleanup = enterRunFolder(changeFolder, runFolder)
+    if changeFolder && strlength(string(runFolder)) > 0 && ...
+            exist(runFolder, 'dir') == 7
+        oldFolder = pwd;
+        cd(runFolder);
+        cleanup = onCleanup(@() cd(oldFolder));
+    else
+        cleanup = onCleanup(@() []);
+    end
 end
 
 function out = absoluteOutputPath(out)
@@ -383,10 +407,6 @@ end
 
 function ext = fileExt(filePath)
     [~, ~, ext] = fileparts(filePath);
-end
-
-function quoted = quoteText(text)
-    quoted = strrep(char(text), '''', '''''');
 end
 
 function tf = isOnPath(folderName)

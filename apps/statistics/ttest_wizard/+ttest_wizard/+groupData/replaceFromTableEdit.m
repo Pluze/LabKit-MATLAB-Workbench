@@ -38,7 +38,8 @@ end
 
 function [groups, ok, message] = groupsFromRows( ...
         labels, values, priorGroups)
-groups = repmat(ttest_wizard.groupData.emptyGroup("Group 1"), 0, 1);
+groups = repmat(ttest_wizard.groupData.emptyGroup("Group 1"), numel(values), 1);
+groupCount = 0;
 ok = true;
 message = "";
 priorLabel = "";
@@ -64,7 +65,7 @@ for row = 1:numel(values)
             'Row %d Value must be one finite number.', row);
         return;
     end
-    groupIndex = find(strcmpi(label, [groups.label]), 1);
+    groupIndex = find(strcmpi(label, [groups(1:groupCount).label]), 1);
     if isempty(groupIndex)
         group = ttest_wizard.groupData.emptyGroup(label);
         priorIndex = find(strcmpi(label, [priorGroups.label]), 1);
@@ -75,12 +76,14 @@ for row = 1:numel(values)
         else
             group.sourceDisplayName = "Manual data table";
         end
-        groups(end + 1, 1) = group;
-        groupIndex = numel(groups);
+        groupCount = groupCount + 1;
+        groups(groupCount, 1) = group;
+        groupIndex = groupCount;
     end
     groups(groupIndex).values(end + 1, 1) = number;
     priorLabel = groups(groupIndex).label;
 end
+groups = groups(1:groupCount);
 end
 
 function tf = isBlankValue(value)

@@ -43,7 +43,8 @@ function T = readTextDelimitedTable(filepath, info)
     skipNonDataRows = isLikelySignalHeader(headerLine) || ...
         isTimeLikeName(firstToken(header));
 
-    rows = {};
+    rows = cell(numel(lines) - info.headerLine, numel(names));
+    rowCount = 0;
     for k = info.headerLine + 1:numel(lines)
         line = strtrim(lines(k));
         if strlength(line) == 0
@@ -58,8 +59,10 @@ function T = readTextDelimitedTable(filepath, info)
         for j = 1:n
             row{j} = char(strip(tokens(j)));
         end
-        rows(end+1, :) = row;
+        rowCount = rowCount + 1;
+        rows(rowCount, :) = row;
     end
+    rows = rows(1:rowCount, :);
 
     if isempty(rows)
         T = cell2table(cell(0, numel(names)), 'VariableNames', names);
@@ -71,7 +74,8 @@ end
 function T = readHeaderlessTextDelimitedTable(filepath, info)
     lines = readlines(filepath);
     lines = erase(lines, char(13));
-    rows = {};
+    rows = cell(numel(lines) - info.headerLine + 1, 1);
+    rowCount = 0;
     maxWidth = 0;
     for k = info.headerLine:numel(lines)
         line = strtrim(lines(k));
@@ -80,8 +84,10 @@ function T = readHeaderlessTextDelimitedTable(filepath, info)
         end
         tokens = splitDelimitedLine(line);
         maxWidth = max(maxWidth, numel(tokens));
-        rows{end+1, 1} = tokens;
+        rowCount = rowCount + 1;
+        rows{rowCount, 1} = tokens;
     end
+    rows = rows(1:rowCount);
     if isempty(rows) || maxWidth == 0
         T = table();
         return;
@@ -105,7 +111,8 @@ function tokens = splitDelimitedLine(line)
         return;
     end
 
-    tokens = strings(0, 1);
+    tokens = strings(numel(line) + 1, 1);
+    tokenCount = 0;
     current = "";
     inQuotes = false;
     for k = 1:numel(line)
@@ -115,13 +122,16 @@ function tokens = splitDelimitedLine(line)
             continue;
         end
         if ch == ',' && ~inQuotes
-            tokens(end+1, 1) = current;
+            tokenCount = tokenCount + 1;
+            tokens(tokenCount, 1) = current;
             current = "";
         else
             current = current + string(ch);
         end
     end
-    tokens(end+1, 1) = current;
+    tokenCount = tokenCount + 1;
+    tokens(tokenCount, 1) = current;
+    tokens = tokens(1:tokenCount);
 end
 
 function tokens = trimTrailingEmptyTokens(tokens)

@@ -30,11 +30,12 @@ function [meta, tables, logmsg] = parseEISDTA(filepath)
     meta.tag = '';
     meta.title = '';
     meta.area_cm2 = NaN;
-    tables = struct('name', {}, 'headers', {}, 'units', {}, 'data', {}, 'numericMask', {});
-    logmsg = {};
-
     nLines = numel(lines);
-    logmsg{end+1} = sprintf('Parsing DTA: %s', filepath);
+    tableCells = cell(1, nLines);
+    tableCount = 0;
+    logmsg = cell(1, nLines + 1);
+    logCount = 1;
+    logmsg{logCount} = sprintf('Parsing DTA: %s', filepath);
 
     for i = 1:nLines
         tok = splitTabs(lines{i});
@@ -79,7 +80,8 @@ function [meta, tables, logmsg] = parseEISDTA(filepath)
                 dataStart = nextNonEmpty(lines, iUnits + 1);
             end
 
-            raw = [];
+            raw = nan(max(nLines - dataStart + 1, 0), numel(headers));
+            rawCount = 0;
             j = dataStart;
             while j <= nLines
                 tokj = splitTabs(lines{j});
@@ -103,21 +105,24 @@ function [meta, tables, logmsg] = parseEISDTA(filepath)
                 end
 
                 if anyNumeric
-                    raw(end+1, :) = row;
+                    rawCount = rawCount + 1;
+                    raw(rawCount, :) = row;
                 end
                 j = j + 1;
             end
 
+            raw = raw(1:rawCount, :);
             if ~isempty(raw)
                 numericMask = any(~isnan(raw), 1);
-                tables(end+1).name = name;
-                tables(end).headers = headers;
-                tables(end).units = units;
-                tables(end).data = raw;
-                tables(end).numericMask = numericMask;
-                logmsg{end+1} = sprintf('Table %s parsed: %d rows x %d cols.', name, size(raw, 1), size(raw, 2));
+                tableCount = tableCount + 1;
+                tableCells{tableCount} = struct('name', name, ...
+                    'headers', {headers}, 'units', {units}, ...
+                    'data', raw, 'numericMask', numericMask);
+                logCount = logCount + 1;
+                logmsg{logCount} = sprintf('Table %s parsed: %d rows x %d cols.', name, size(raw, 1), size(raw, 2));
             else
-                logmsg{end+1} = sprintf('Table %s found but no numeric rows.', name);
+                logCount = logCount + 1;
+                logmsg{logCount} = sprintf('Table %s found but no numeric rows.', name);
             end
 
             i = j;
@@ -125,6 +130,8 @@ function [meta, tables, logmsg] = parseEISDTA(filepath)
             i = i + 1;
         end
     end
+    tables = [tableCells{1:tableCount}];
+    logmsg = logmsg(1:logCount);
 
     if isempty(tables)
         error('No numeric TABLE section was parsed from this DTA file.');

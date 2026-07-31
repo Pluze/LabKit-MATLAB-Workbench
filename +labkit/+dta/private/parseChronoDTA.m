@@ -32,11 +32,12 @@ function [meta, tables, logmsg] = parseChronoDTA(filepath)
     meta.sampleTime_s = NaN;
     meta.controlMode = "unknown";
     meta.steps = struct('idx', {}, 'I', {}, 'V', {}, 'T', {});
-    tables = struct('name', {}, 'headers', {}, 'units', {}, 'data', {}, 'numericMask', {});
-    logmsg = {};
-
     nLines = numel(lines);
-    logmsg{end+1} = sprintf('Parsing DTA: %s', filepath);
+    tableCells = cell(1, nLines);
+    tableCount = 0;
+    logmsg = cell(1, nLines + 5);
+    logCount = 1;
+    logmsg{logCount} = sprintf('Parsing DTA: %s', filepath);
 
     stepI = containers.Map('KeyType', 'int32', 'ValueType', 'double');
     stepV = containers.Map('KeyType', 'int32', 'ValueType', 'double');
@@ -89,6 +90,8 @@ function [meta, tables, logmsg] = parseChronoDTA(filepath)
 
     allIdx = unique([cell2mat(keys(stepI)), cell2mat(keys(stepV)), cell2mat(keys(stepT))]);
     allIdx = sort(allIdx);
+    meta.steps = repmat(struct('idx', NaN, 'I', NaN, 'V', NaN, 'T', NaN), ...
+        1, numel(allIdx));
     for k = 1:numel(allIdx)
         idx = allIdx(k);
         I = NaN;
@@ -103,20 +106,24 @@ function [meta, tables, logmsg] = parseChronoDTA(filepath)
         if isKey(stepT, idx)
             T = stepT(idx);
         end
-        meta.steps(end+1) = struct('idx', double(idx), 'I', I, 'V', V, 'T', T);
+        meta.steps(k) = struct('idx', double(idx), 'I', I, 'V', V, 'T', T);
     end
     meta.controlMode = inferControlMode(meta.steps);
 
     if ~isempty(meta.steps)
         if any(isfinite([meta.steps.I]))
-            logmsg{end+1} = sprintf('Found %d ISTEP/TSTEP step(s).', numel(meta.steps));
+            logCount = logCount + 1;
+            logmsg{logCount} = sprintf('Found %d ISTEP/TSTEP step(s).', numel(meta.steps));
         elseif any(isfinite([meta.steps.V]))
-            logmsg{end+1} = sprintf('Found %d VSTEP/TSTEP step(s).', numel(meta.steps));
+            logCount = logCount + 1;
+            logmsg{logCount} = sprintf('Found %d VSTEP/TSTEP step(s).', numel(meta.steps));
         else
-            logmsg{end+1} = sprintf('Found %d step(s) with timing only.', numel(meta.steps));
+            logCount = logCount + 1;
+            logmsg{logCount} = sprintf('Found %d step(s) with timing only.', numel(meta.steps));
         end
     else
-        logmsg{end+1} = 'No ISTEP/TSTEP or VSTEP/TSTEP sequence found.';
+        logCount = logCount + 1;
+        logmsg{logCount} = 'No ISTEP/TSTEP or VSTEP/TSTEP sequence found.';
     end
 
     i = 1;
@@ -140,7 +147,8 @@ function [meta, tables, logmsg] = parseChronoDTA(filepath)
                 dataStart = nextNonEmpty(lines, iUnits + 1);
             end
 
-            raw = [];
+            raw = nan(max(nLines - dataStart + 1, 0), numel(headers));
+            rawCount = 0;
             j = dataStart;
             while j <= nLines
                 tokj = splitTabs(lines{j});
@@ -162,21 +170,24 @@ function [meta, tables, logmsg] = parseChronoDTA(filepath)
                     end
                 end
                 if anyNumeric
-                    raw(end+1, :) = row;
+                    rawCount = rawCount + 1;
+                    raw(rawCount, :) = row;
                 end
                 j = j + 1;
             end
 
+            raw = raw(1:rawCount, :);
             if ~isempty(raw)
                 numericMask = any(~isnan(raw), 1);
-                tables(end+1).name = name;
-                tables(end).headers = headers;
-                tables(end).units = units;
-                tables(end).data = raw;
-                tables(end).numericMask = numericMask;
-                logmsg{end+1} = sprintf('Table %s parsed: %d rows x %d cols.', name, size(raw, 1), size(raw, 2));
+                tableCount = tableCount + 1;
+                tableCells{tableCount} = struct('name', name, ...
+                    'headers', {headers}, 'units', {units}, ...
+                    'data', raw, 'numericMask', numericMask);
+                logCount = logCount + 1;
+                logmsg{logCount} = sprintf('Table %s parsed: %d rows x %d cols.', name, size(raw, 1), size(raw, 2));
             else
-                logmsg{end+1} = sprintf('Table %s found but no numeric rows.', name);
+                logCount = logCount + 1;
+                logmsg{logCount} = sprintf('Table %s found but no numeric rows.', name);
             end
 
             i = j;
@@ -184,6 +195,8 @@ function [meta, tables, logmsg] = parseChronoDTA(filepath)
             i = i + 1;
         end
     end
+    tables = [tableCells{1:tableCount}];
+    logmsg = logmsg(1:logCount);
 
     if isempty(tables)
         error('No numeric TABLE section was parsed from this DTA file.');

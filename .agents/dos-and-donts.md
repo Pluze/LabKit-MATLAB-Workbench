@@ -22,6 +22,7 @@ second architecture guide.
 
 ## Incubating lessons
 
-None. Add a lesson only after a future checkpoint produces recurring evidence
-that is not already owned by an `AGENTS.md`, Skill, test, source contract,
-manual, or component history record.
+- When the same ownership boundary needs a second local workaround, stop
+  extending the patch chain. Reconstruct the complete entry-to-owner call
+  graph, state the invariant that should make resolution deterministic, and
+  replace the boundary coherently before spending more time on symptoms.

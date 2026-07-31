@@ -6,7 +6,7 @@ sources = applicationState.project.inputs.sources;
 items = applicationState.project.inputs.items;
 wasEmpty = isempty(items);
 sourceIds = string({sources.id});
-retained = repmat(batch_crop.cropTasks.emptyTask(), 0, 1);
+retained = repmat(batch_crop.cropTasks.emptyTask(), numel(sourceIds), 1);
 for k = 1:numel(sourceIds)
     match = find(string({items.sourceId}) == sourceIds(k), 1);
     if isempty(match)
@@ -15,7 +15,7 @@ for k = 1:numel(sourceIds)
     else
         task = items(match);
     end
-    retained(end + 1, 1) = task;
+    retained(k, 1) = task;
 end
 applicationState.project.inputs.items = retained;
 applicationState.project.results = ...

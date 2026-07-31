@@ -326,11 +326,6 @@ function value = percentileValue(data, pct)
     value = percentileValues(data, pct);
 end
 
-function imageData = normalizeImage(imageData)
-    imageData = labkit.image.ensureRgb(labkit.image.im2double(imageData));
-    imageData = min(max(imageData, 0), 1);
-end
-
 function gray = luma(imageData)
     gray = labkit.image.rgb2gray(imageData);
 end

@@ -157,12 +157,14 @@ function [previousPyramid, currentPyramid] = buildPyramidPair( ...
 end
 
 function reduced = downsampleByTwo(image)
-    lastRow = 2 .* floor(size(image, 1) ./ 2);
-    lastColumn = 2 .* floor(size(image, 2) ./ 2);
-    oddRows = 1:2:lastRow;
-    evenRows = 2:2:lastRow;
-    oddColumns = 1:2:lastColumn;
-    evenColumns = 2:2:lastColumn;
+    lastRow = 2 * floor(size(image, 1) / 2);
+    lastColumn = 2 * floor(size(image, 2) / 2);
+    rowPairs = reshape(1:lastRow, 2, []);
+    columnPairs = reshape(1:lastColumn, 2, []);
+    oddRows = rowPairs(1, :);
+    evenRows = rowPairs(2, :);
+    oddColumns = columnPairs(1, :);
+    evenColumns = columnPairs(2, :);
     reduced = (image(oddRows, oddColumns) + image(evenRows, oddColumns) + ...
         image(oddRows, evenColumns) + image(evenRows, evenColumns)) ./ 4;
 end
@@ -231,8 +233,8 @@ function [bestPoint, bestScore, valid] = bestPatchMatch( ...
             if patchEnergy <= minimumPatchEnergy
                 continue;
             end
-            correlation = sum(template(:) .* patch(:)) ./ ...
-                (templateEnergy .* patchEnergy);
+            correlation = sum(template(:) .* patch(:)) / ...
+                (templateEnergy * patchEnergy);
             scoreGrid(yOffset + searchRadius + 1, ...
                 xOffset + searchRadius + 1) = correlation;
             if correlation > bestScore

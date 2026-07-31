@@ -480,7 +480,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         function copyAllPlots(obj)
             handles = obj.allAxes();
-            if numel(handles) == 1
+            if isscalar(handles)
                 copygraphics(handles(1), ContentType="image");
             elseif ~isempty(handles)
                 copygraphics(obj.Figure, ContentType="image");

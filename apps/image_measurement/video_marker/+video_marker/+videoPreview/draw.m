@@ -9,7 +9,7 @@ if isempty(model.image)
     box(ax, "on");
     return
 end
-if ndims(model.image) == 2
+if ismatrix(model.image)
     imagesc(ax, model.image);
     colormap(ax, gray(256));
 else

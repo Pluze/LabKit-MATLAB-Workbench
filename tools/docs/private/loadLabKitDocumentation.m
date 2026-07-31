@@ -54,7 +54,8 @@ end
 
 function pages = discoverNarrativePages(sourceRoot, apps)
     entries = dir(fullfile(sourceRoot, "**", "*.md"));
-    sources = strings(0, 1);
+    sources = strings(numel(entries), 1);
+    sourceCount = 0;
     for k = 1:numel(entries)
         filepath = string(fullfile(entries(k).folder, entries(k).name));
         source = replace(extractAfter(filepath, string(sourceRoot) + filesep), ...
@@ -62,9 +63,10 @@ function pages = discoverNarrativePages(sourceRoot, apps)
         if startsWith(source, "history/records/")
             continue;
         end
-        sources(end + 1, 1) = source;
+        sourceCount = sourceCount + 1;
+        sources(sourceCount, 1) = source;
     end
-    sources = sort(sources);
+    sources = sort(sources(1:sourceCount));
     pages = repmat(emptyPage(), numel(sources), 1);
     for k = 1:numel(sources)
         source = sources(k);
@@ -72,7 +74,7 @@ function pages = discoverNarrativePages(sourceRoot, apps)
         text = string(fileread(filepath));
         title = markdownTitle(text, source);
         [id, output, kind, nav, components] = ...
-            narrativeIdentity(source, title, apps);
+            narrativeIdentity(source, apps);
         raw = struct( ...
             "id", id, ...
             "source", source, ...
@@ -102,9 +104,8 @@ function title = markdownTitle(text, source)
 end
 
 function [id, output, kind, nav, components] = ...
-        narrativeIdentity(source, title, apps)
+        narrativeIdentity(source, apps)
     source = string(source);
-    title = string(title);
     isReadme = endsWith(source, "/README.md") || source == "README.md";
     stem = erase(source, ".md");
     if isReadme
@@ -290,7 +291,7 @@ function pages = discoverHistoryPages(sourceRoot)
         changeType = record.type;
         compatibility = record.compatibility;
         componentLines = record.components;
-        components = strings(0, 1);
+        components = strings(numel(componentLines), 1);
         for iLine = 1:numel(componentLines)
             token = regexp(componentLines(iLine), ...
                 '^`([^`]+)`', "tokens", "once");
@@ -298,7 +299,7 @@ function pages = discoverHistoryPages(sourceRoot)
                 error("LabKit:Docs:InvalidHistory", ...
                     "History page has malformed component metadata: %s", source);
             end
-            components(end + 1, 1) = string(token{1});
+            components(iLine, 1) = string(token{1});
         end
         raw = struct( ...
             "id", "history-" + historyId, ...
@@ -409,7 +410,8 @@ end
 function api = discoverLabKitPublicApi(repoRoot)
     root = fullfile(repoRoot, "+labkit");
     entries = dir(fullfile(root, "**", "*.m"));
-    api = repmat(emptyApi(), 0, 1);
+    api = repmat(emptyApi(), numel(entries), 1);
+    apiCount = 0;
     for k = 1:numel(entries)
         filepath = string(fullfile(entries(k).folder, entries(k).name));
         if contains(filepath, filesep + "private" + filesep)
@@ -425,8 +427,10 @@ function api = discoverLabKitPublicApi(repoRoot)
             continue;
         end
         item = readApiItem(repoRoot, filepath, "library", "labkit");
-        api(end + 1, 1) = item;
+        apiCount = apiCount + 1;
+        api(apiCount, 1) = item;
     end
+    api = api(1:apiCount);
     [~, order] = sort(string({api.symbol}));
     api = api(order);
 end
@@ -440,7 +444,8 @@ end
 
 function api = discoverAppPublicApi(repoRoot, apps)
     entries = dir(fullfile(repoRoot, "apps", "**", "*.m"));
-    api = repmat(emptyApi(), 0, 1);
+    api = repmat(emptyApi(), numel(entries), 1);
+    apiCount = 0;
     for k = 1:numel(entries)
         filepath = string(fullfile(entries(k).folder, entries(k).name));
         text = string(fileread(filepath));
@@ -467,8 +472,10 @@ function api = discoverAppPublicApi(repoRoot, apps)
         owner = replace(appId, "-", "_");
         item = readApiItem(repoRoot, filepath, "app", owner);
         item.family = char(string(apps(appIndex).familyTitle));
-        api(end + 1, 1) = item;
+        apiCount = apiCount + 1;
+        api(apiCount, 1) = item;
     end
+    api = api(1:apiCount);
 end
 
 function tf = hasPublicAppHelpContract(text)
@@ -517,7 +524,8 @@ function item = readApiItem(repoRoot, filepath, origin, owner)
     end
     signature = strjoin(strip(lines(start:finish)), newline);
     leadingHelp = leadingCommentBlock(lines, start);
-    helpLines = strings(0, 1);
+    helpLines = strings(max(numel(lines) - finish, 0), 1);
+    helpLineCount = 0;
     index = finish + 1;
     while index <= numel(lines)
         line = lines(index);
@@ -529,9 +537,11 @@ function item = readApiItem(repoRoot, filepath, origin, owner)
         if startsWith(text, " ")
             text = extractAfter(text, 1);
         end
-        helpLines(end + 1, 1) = text;
+        helpLineCount = helpLineCount + 1;
+        helpLines(helpLineCount, 1) = text;
         index = index + 1;
     end
+    helpLines = helpLines(1:helpLineCount);
     if isempty(helpLines) && ~isempty(leadingHelp)
         helpLines = leadingHelp;
     end
@@ -552,7 +562,8 @@ function item = readApiItem(repoRoot, filepath, origin, owner)
 end
 
 function comments = leadingCommentBlock(lines, functionStart)
-    comments = strings(0, 1);
+    comments = strings(max(functionStart - 1, 0), 1);
+    commentCount = 0;
     for k = 1:(functionStart - 1)
         trimmed = strtrim(lines(k));
         if startsWith(trimmed, "%")
@@ -560,11 +571,13 @@ function comments = leadingCommentBlock(lines, functionStart)
             if startsWith(text, " ")
                 text = extractAfter(text, 1);
             end
-            comments(end + 1, 1) = text;
+            commentCount = commentCount + 1;
+            comments(commentCount, 1) = text;
         elseif strlength(trimmed) > 0
-            comments = strings(0, 1);
+            commentCount = 0;
         end
     end
+    comments = comments(1:commentCount);
 end
 
 function item = emptyApi()

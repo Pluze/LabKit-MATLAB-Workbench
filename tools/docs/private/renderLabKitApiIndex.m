@@ -6,16 +6,16 @@ function [html, plainText] = renderLabKitApiIndex(model, outputPath)
 
     api = model.api;
     groups = apiGroups(api);
-    blocks = strings(0, 1);
-    words = strings(0, 1);
+    blocks = strings(numel(groups), 1);
+    words = strings(numel(groups), 1);
     for k = 1:numel(groups)
         items = api(groups(k).indices);
         [target, label] = categoryTarget(model, items, groups(k));
         rows = "<tr><td><a href=""" + relativeWebPath(outputPath, target) + ...
             """>" + htmlEscape(label) + "</a></td><td>" + ...
             htmlEscape(groups(k).description) + "</td></tr>";
-        words(end + 1, 1) = label + " " + groups(k).description;
-        blocks(end + 1, 1) = "<section class=""api-group""><h2 id=""" + ...
+        words(k, 1) = label + " " + groups(k).description;
+        blocks(k, 1) = "<section class=""api-group""><h2 id=""" + ...
             groups(k).id + """>" + htmlEscape(groups(k).title) + ...
             "</h2><p>" + htmlEscape(groups(k).description) + ...
             "</p><table class=""api-table""><thead><tr><th>Function</th>" + ...
@@ -49,8 +49,6 @@ function [target, label] = categoryTarget(model, items, group)
 end
 
 function groups = apiGroups(api)
-    groups = repmat(struct("id", "", "title", "", "description", "", ...
-        "indices", []), 0, 1);
     symbols = string({api.symbol});
     origin = string({api.origin});
     libraryIndices = find(origin == "library" & ...
@@ -62,25 +60,31 @@ function groups = apiGroups(api)
         libraryKeys(k) = strjoin(parts(1:depth), ".");
     end
     keys = unique(libraryKeys, "stable");
+    appIndices = find(origin == "app");
+    owners = string({api(appIndices).owner});
+    ownerKeys = unique(owners, "stable");
+    template = struct("id", "", "title", "", "description", "", ...
+        "indices", []);
+    groups = repmat(template, numel(keys) + numel(ownerKeys), 1);
+    groupCount = 0;
     for k = 1:numel(keys)
         key = keys(k);
         indices = libraryIndices(libraryKeys == key);
-        groups(end + 1, 1) = struct( ...
+        groupCount = groupCount + 1;
+        groups(groupCount, 1) = struct( ...
             "id", slug(key), ...
             "title", libraryTitle(key), ...
             "description", libraryDescription(key), ...
             "indices", indices(:).');
     end
 
-    appIndices = find(origin == "app");
     if ~isempty(appIndices)
-        owners = string({api(appIndices).owner});
-        ownerKeys = unique(owners, "stable");
         for k = 1:numel(ownerKeys)
             owner = ownerKeys(k);
             indices = appIndices(owners == owner);
             family = string(api(indices(1)).family);
-            groups(end + 1, 1) = struct( ...
+            groupCount = groupCount + 1;
+            groups(groupCount, 1) = struct( ...
                 "id", "app-" + slug(owner), ...
                 "title", humanize(owner) + " App API", ...
                 "description", "Supported GUI-free operations owned by the " + ...
@@ -88,6 +92,7 @@ function groups = apiGroups(api)
                 "indices", indices(:).');
         end
     end
+    groups = groups(1:groupCount);
 end
 
 function title = libraryTitle(key)
@@ -156,11 +161,6 @@ function description = libraryDescription(key)
         otherwise
             description = "Public functions in " + key + ".";
     end
-end
-
-function value = cleanSummary(value)
-    value = string(value);
-    value = regexprep(value, '^[A-Z][A-Z0-9_]*\s+', '');
 end
 
 function value = humanize(value)

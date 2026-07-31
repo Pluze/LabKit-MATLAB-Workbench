@@ -21,18 +21,18 @@ function classification = classifyPath(file)
     end
     if startsWith(file, "tests/+labkittest/") || file == "buildfile.m" || ...
             startsWith(file, ".github/")
-        classification = mapped(file, "validation-framework", "system/build", ...
+        classification = mapped(file, "validation-framework", "tests/labkittest", ...
             "validation framework or CI policy behavior");
         return;
     end
     if startsWith(file, ".agents/skills/") && endsWith(file, ".m")
-        classification = mapped(file, "validation-framework", "system/build", ...
+        classification = mapped(file, "validation-framework", "tests/labkittest", ...
             "Skill-owned MATLAB automation executes repository behavior");
         return;
     end
     if startsWith(file, ".agents/") || file == "AGENTS.md" || ...
             endsWith(file, "/AGENTS.md") || file == ".gitignore"
-        classification = mapped(file, "repository-policy", "system/repository", ...
+        classification = mapped(file, "repository-policy", "repository", ...
             "repository policy behavior");
         return;
     end
@@ -43,13 +43,23 @@ function classification = classifyPath(file)
         return;
     end
     if startsWith(file, "tools/maintenance/")
-        classification = mapped(file, "maintenance-tool", "system/maintenance", ...
+        classification = mapped(file, "maintenance-tool", "tools/maintenance", ...
             "independently callable repository maintenance tool");
         return;
     end
-    if file == "tools/deployment/manageLabKitVersions.m"
-        classification = mapped(file, "deployment-tool", "system/deployment", ...
-            "independently callable deployment and version-management tool");
+    if startsWith(file, "tools/profiling/")
+        classification = mapped(file, "profiling-tool", "tools/profiling", ...
+            "independently callable profiling target and report behavior");
+        return;
+    end
+    if startsWith(file, "tools/codecheck/")
+        classification = mapped(file, "codecheck-tool", "tools/codecheck", ...
+            "independently callable static-analysis and report behavior");
+        return;
+    end
+    if startsWith(file, "tools/deployment/")
+        classification = mapped(file, "deployment-tool", "tools/deployment", ...
+            "independently callable packaging and version-management behavior");
         return;
     end
     if startsWith(file, "artifacts/") || startsWith(file, ".Trash/") || ...
@@ -59,24 +69,25 @@ function classification = classifyPath(file)
         return;
     end
     if startsWith(file, "tests/+testfixtures/")
-        classification = mapped(file, "test-fixture", "system/build", ...
+        classification = mapped(file, "test-fixture", "tests/labkittest", ...
             "cross-owner synthetic fixture behavior");
         return;
     end
     if file == "labkit_launcher.m"
-        classification = mapped(file, "repair-launcher", "system/launcher", ...
+        classification = mapped(file, "repair-launcher", "labkit_launcher", ...
             "self-contained repair-launcher bootstrap behavior");
         return;
     end
     if startsWith(file, "+labkit/+app/+internal/+launcher/")
-        classification = mapped(file, "installed-launcher", "system/launcher", ...
+        classification = mapped(file, "installed-launcher", ...
+            "labkit/app/internal/launcher", ...
             "installed Launcher composition and routing behavior");
         return;
     end
     if startsWith(file, "+labkit/") && numel(parts) >= 2 && startsWith(parts(2), "+")
         area = erase(parts(2), "+");
         if ismember(area, ["app", "biosignal", "contract", "dta", "image", "rhs", "thermal"])
-            classification = mapped(file, "framework-facade", "framework/" + area, ...
+            classification = mapped(file, "framework-facade", "labkit/" + area, ...
                 "direct public facade behavior");
             return;
         end

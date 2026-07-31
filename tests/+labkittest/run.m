@@ -33,7 +33,8 @@ function result = run(varargin)
         end
         environmentCleanup = applyEnvironment(group.Environment);
         results{k} = runner.run(suite);
-        clear environmentCleanup cleanup
+        delete(environmentCleanup);
+        delete(cleanup);
     end
     failed = cellfun(@hasFailures, results);
     writeJUnit(fullfile(artifacts.Folder, "junit.xml"), results);
@@ -45,7 +46,7 @@ function result = run(varargin)
     result = struct("Plan", compiledPlan, "Results", {results}, ...
         "RunName", opts.RunName, "ArtifactsRoot", opts.ArtifactsRoot, ...
         "Artifacts", artifacts);
-    clear artifactEnvironment
+    delete(artifactEnvironment);
 end
 
 function reportPlanScope(compiledPlan)
@@ -106,9 +107,10 @@ function pairs = unmatchedPairs(values)
 end
 
 function tf = isPlanOrEmpty(value)
+    requiredFields = {'Descriptors', 'Groups', 'Reasons', 'Fallback', ...
+        'Scope', 'Classifications', 'ManualChecks'};
     tf = isstruct(value) && (isempty(fieldnames(value)) || ...
-        all(isfield(value, {"Descriptors", "Groups", "Reasons", "Fallback", ...
-        "Scope", "Classifications", "ManualChecks"})));
+        all(isfield(value, requiredFields)));
 end
 
 function tf = isTextScalar(value)

@@ -57,12 +57,14 @@ function report = checkRequirements(req, versions)
     entries = normalizeRequirements(req);
     versions = normalizeVersions(versions);
     failures = repmat(struct('facade', "", 'required', "", ...
-        'available', strings(0, 1), 'message', ""), 0, 1);
+        'available', strings(0, 1), 'message', ""), numel(entries), 1);
+    failureCount = 0;
 
     for k = 1:numel(entries)
         match = find([versions.facade] == entries(k).facade, 1);
         if isempty(match)
-            failures(end + 1, 1) = makeFailure(entries(k), strings(0, 1), ...
+            failureCount = failureCount + 1;
+            failures(failureCount, 1) = makeFailure(entries(k), strings(0, 1), ...
                 sprintf('Unknown LabKit facade "%s".', entries(k).facade));
             continue;
         end
@@ -73,16 +75,19 @@ function report = checkRequirements(req, versions)
             message = sprintf('labkit.%s current %s does not satisfy the app requirement %s. It advertises support for %s.', ...
                 entries(k).facade, current, entries(k).range, ...
                 strjoin(cellstr(advertised(:).'), ', '));
-            failures(end + 1, 1) = makeFailure(entries(k), advertised, message);
+            failureCount = failureCount + 1;
+            failures(failureCount, 1) = makeFailure(entries(k), advertised, message);
             continue;
         end
         if ~rangeIntersectsAny(entries(k).range, advertised)
             message = sprintf('labkit.%s current %s supports %s, but the app requires %s.', ...
                 entries(k).facade, current, ...
                 strjoin(cellstr(advertised(:).'), ', '), entries(k).range);
-            failures(end + 1, 1) = makeFailure(entries(k), advertised, message);
+            failureCount = failureCount + 1;
+            failures(failureCount, 1) = makeFailure(entries(k), advertised, message);
         end
     end
+    failures = failures(1:failureCount);
 
     report = struct();
     report.ok = isempty(failures);
@@ -284,7 +289,6 @@ end
 function [op, version] = parseConstraint(token)
     token = strtrim(string(token));
     operators = [">=", "<=", "==", ">", "<", "="];
-    op = "";
     for k = 1:numel(operators)
         candidate = operators(k);
         if startsWith(token, candidate)

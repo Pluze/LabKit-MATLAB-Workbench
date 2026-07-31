@@ -49,7 +49,7 @@ function [hotSpot, coldSpot, meanReading] = roiTemperatureMeanReading(temperatur
     hotSpot = emptyPointReading();
     coldSpot = emptyPointReading();
     meanReading = emptyRoiReading();
-    if isempty(values) || ndims(values) ~= 2
+    if isempty(values) || ~ismatrix(values)
         return;
     end
     startXY = double(startXY(:)).';

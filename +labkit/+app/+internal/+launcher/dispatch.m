@@ -297,7 +297,7 @@ resizeLauncher();
             addPathIfMissing(app.folder, "-end");
             reportLaunchStage(app, 2, ...
                 "initializing app window via " + app.command);
-            feval(app.command);
+            invokeDiscoveredApp(app);
             setStatus("Finishing startup for " + app.name + "...");
             drawnow;
             setStatus("Opened " + app.command + ".");
@@ -696,12 +696,45 @@ if added
     addpath(folder, "-begin");
     cleanup = onCleanup(@() rmpath(folder));
 end
+switch string(name)
+    case "manageLabKitVersions"
+        callable = @manageLabKitVersions;
+    case "cleanLabKitArtifacts"
+        callable = @cleanLabKitArtifacts;
+    case "renderLabKitDocs"
+        callable = @renderLabKitDocs;
+    case "runCodecheckReport"
+        callable = @runCodecheckReport;
+    case "profileLabKitTarget"
+        callable = @profileLabKitTarget;
+    case "packageLabKitApp"
+        callable = @packageLabKitApp;
+    otherwise
+        error("labkit:app:internal:launcher:UnknownTool", ...
+            "Launcher tool is not allowlisted: %s", name);
+end
 if nargout > 0
-    [varargout{1:nargout}] = feval(name, varargin{:});
+    [varargout{1:nargout}] = callable(varargin{:});
 else
-    feval(name, varargin{:});
+    callable(varargin{:});
 end
 clear cleanup
+end
+
+function invokeDiscoveredApp(app)
+command = string(app.command);
+resolved = string(which(char(command)));
+expected = fullfile(string(app.folder), command + [".m", ".p"]);
+available = arrayfun(@(candidate) exist(candidate, "file") == 2, expected);
+expected = expected(available);
+if strlength(resolved) == 0 || isempty(expected) || ...
+        ~any(normalizePathEntry(resolved) == normalizePathEntry(expected))
+    error("labkit:app:internal:launcher:AppEntryMismatch", ...
+        "Discovered App entry does not resolve from its owning folder: %s", command);
+end
+% Dynamic extension boundary: the command is derived from and revalidated
+% against one discovered labkit_*_app.m or .p file before invocation.
+feval(char(command));
 end
 
 function apps = discoverApps(root)

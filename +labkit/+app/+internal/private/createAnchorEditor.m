@@ -518,7 +518,7 @@ end
 function n = pointCount(points)
     if isempty(points)
         n = 0;
-    elseif isnumeric(points) && ndims(points) == 2
+    elseif isnumeric(points) && ismatrix(points)
         n = size(points, 1);
     else
         n = numel(points);

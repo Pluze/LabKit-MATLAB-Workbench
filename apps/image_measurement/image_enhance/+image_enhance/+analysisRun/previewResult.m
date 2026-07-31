@@ -3,9 +3,9 @@
 function imageOut = previewResult(sourceImage, steps, whiteRoi, scale)
     scale = max(eps, double(scale));
     for k = 1:numel(steps)
-        kind = lower(regexprep(char(string(steps(k).kind)), ...
-            '[^a-zA-Z0-9]', ''));
-        if any(strcmp(kind, {'localcontrast', 'sharpen'}))
+        kind = regexprep(char(string(steps(k).kind)), ...
+            '[^a-zA-Z0-9]', '');
+        if any(strcmpi(kind, {'localcontrast', 'sharpen'}))
             steps(k).secondary = steps(k).secondary .* scale;
         end
     end

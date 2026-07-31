@@ -1,4 +1,4 @@
-function list = createFilePanel(obj, node, parent)
+function list = createFilePanel(~, node, parent)
 % Class-folder implementation of MatlabPlatformAdapter.createFilePanel.
     config = node.Configuration;
     panel = uipanel(parent, BorderType="line", ...

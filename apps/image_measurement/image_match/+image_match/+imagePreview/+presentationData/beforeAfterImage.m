@@ -15,7 +15,7 @@ end
 
 function imageOut = normalizePreviewImage(imageIn)
     imageOut = min(max(labkit.image.im2double(imageIn), 0), 1);
-    if ndims(imageOut) == 2
+    if ismatrix(imageOut)
         imageOut = repmat(imageOut, 1, 1, 3);
     end
 end

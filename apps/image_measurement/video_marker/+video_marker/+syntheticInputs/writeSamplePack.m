@@ -10,7 +10,7 @@ end
 videoPath = sampleContext.samplePath( ...
     "video_marker/synthetic_video_marker.avi");
 writeSyntheticVideo(videoPath);
-[reader, info] = video_marker.videoSource.openVideo(videoPath);
+[~, info] = video_marker.videoSource.openVideo(videoPath);
 clear reader
 
 preset = video_marker.skeletonSetup.presets();

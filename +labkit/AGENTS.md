@@ -15,7 +15,8 @@ tests, and the one owning manual:
 - RHS: `docs/libraries/rhs/README.md`
 - biosignal: `docs/libraries/biosignal/README.md`
 
-Framework behavior specifications live under `tests/specs/framework/<area>/`.
+Library behavior specifications mirror the package below
+`tests/specs/labkit/<area>/`.
 Use `labkittest.explain` to find the exact owner and contract.
 
 ## Ownership
@@ -113,7 +114,8 @@ Use `labkittest.explain` to find the exact owner and contract.
 
 ## Validation
 
-Use the affected `labkit_framework/<area>` suite and add downstream app-family
-or hidden-GUI coverage when the app-facing contract can change. Package
-boundary and public-surface changes also run project guardrails. Exact commands
-belong in `docs/development/maintain-and-release/testing.md`.
+Use `labkittest.run(File=...)` to select the affected `labkit/<area>` owner and
+add downstream app-family or hidden-GUI coverage when the app-facing contract
+can change. Package boundary and public-surface changes also run project
+guardrails. Exact commands belong in
+`docs/development/maintain-and-release/testing.md`.

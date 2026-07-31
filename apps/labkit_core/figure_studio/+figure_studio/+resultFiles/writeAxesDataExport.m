@@ -38,7 +38,8 @@ function csvPath = writeCsvIfSimple(plotData, folder)
         return;
     end
 
-    rows = cell(0, 1);
+    rows = cell(numel(plotData.objects), 1);
+    rowCount = 0;
     for k = 1:numel(plotData.objects)
         object = plotData.objects(k);
         n = min(numel(object.x), numel(object.y));
@@ -56,8 +57,10 @@ function csvPath = writeCsvIfSimple(plotData, folder)
         else
             one.z = double(object.z(1:n));
         end
-        rows{end + 1, 1} = one;
+        rowCount = rowCount + 1;
+        rows{rowCount, 1} = one;
     end
+    rows = rows(1:rowCount);
     if isempty(rows)
         return;
     end

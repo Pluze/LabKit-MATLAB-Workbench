@@ -84,7 +84,6 @@ end
 
 function [ok, msg] = isEIS(filepath)
     ok = false;
-    msg = "";
     try
         [~, tables] = parseEISDTA(filepath);
         [~, ok, msg] = labkit.dta.getZCurve(tables);
@@ -95,7 +94,6 @@ end
 
 function [ok, msg] = isChrono(filepath)
     ok = false;
-    msg = "";
     try
         [~, tables] = parseChronoDTA(filepath);
         [curve, tableOk, msg] = labkit.dta.getMainCurve(tables);
@@ -118,7 +116,6 @@ end
 
 function [ok, msg] = isCVCT(filepath)
     ok = false;
-    msg = "";
     try
         [scanRate, curves, logmsg] = parseCVCTDTA(filepath);
         ok = ~isempty(curves) && isfinite(scanRate);

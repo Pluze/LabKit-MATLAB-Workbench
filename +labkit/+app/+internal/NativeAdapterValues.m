@@ -405,9 +405,13 @@ classdef (Sealed, Hidden) NativeAdapterValues
         if mod(numel(filters), 2) == 0
             filters = filters(1:2:end);
         end
+        patternChunks = cell(numel(filters), 1);
+        for k = 1:numel(filters)
+            patternChunks{k} = split(filters(k), ";");
+        end
         patterns = strings(0, 1);
-        for filter = filters.'
-            patterns = [patterns; split(filter, ";")];
+        if ~isempty(patternChunks)
+            patterns = vertcat(patternChunks{:});
         end
         patterns = unique(strtrim(patterns(strlength(strtrim(patterns)) > 0)), ...
             "stable");

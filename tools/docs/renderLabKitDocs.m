@@ -6,7 +6,8 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
 %   outputRoot - destination for generated HTML and static assets.
 % Output:
 %   result - struct with pageCount, apiCount, fileCount, and paths.
-% Side effects: synchronizes outputRoot with deterministic generated output.
+% Side effects: synchronizes outputRoot with deterministic generated output
+%   and reports stage plus completed/total progress to the console.
 
     repoRoot = fileparts(fileparts(fileparts(mfilename("fullpath"))));
     if nargin < 1 || strlength(string(sourceRoot)) == 0
@@ -18,6 +19,7 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
     sourceRoot = absoluteDocFolder(sourceRoot, false);
     outputRoot = absoluteDocFolder(outputRoot, true);
 
+    reportDocProgress("load sources", 0, 0);
     model = loadLabKitDocumentation(repoRoot, sourceRoot);
     stagingRoot = string(tempname);
     cleanup = onCleanup(@() removeDocFolder(stagingRoot));
@@ -25,6 +27,7 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
 
     renderedPages = renderNarrativePages(model, stagingRoot);
     apiPages = renderPublicApiPages(model, stagingRoot);
+    reportDocProgress("write assets", 0, 0);
     writeDocText(fullfile(stagingRoot, "assets", "style.css"), ...
         labKitDocumentationStyle());
     writeDocText(fullfile(stagingRoot, "assets", "app.js"), ...
@@ -36,6 +39,7 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
         "window.LABKIT_SEARCH_INDEX = " + searchJson + ";");
     writeDocText(fullfile(stagingRoot, ".nojekyll"), "");
 
+    reportDocProgress("synchronize output", 0, 0);
     syncLabKitDocTree(stagingRoot, outputRoot);
     clear cleanup
 
@@ -46,6 +50,7 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
         "fileCount", sum(~[files.isdir]), ...
         "sourceRoot", string(sourceRoot), ...
         "outputRoot", string(outputRoot));
+    reportDocProgress("complete", result.fileCount, result.fileCount);
 end
 
 function folder = absoluteDocFolder(folder, createIfMissing)
@@ -62,7 +67,9 @@ function folder = absoluteDocFolder(folder, createIfMissing)
 end
 
 function output = renderNarrativePages(model, stagingRoot)
-    entries = repmat(emptySearchEntry(), 0, 1);
+    entries = repmat(emptySearchEntry(), numel(model.pages), 1);
+    total = numel(model.pages);
+    reportDocProgress("narrative pages", 0, total);
     for k = 1:numel(model.pages)
         page = model.pages(k);
         [body, plainText] = renderLabKitMarkdown(model, page);
@@ -81,14 +88,19 @@ function output = renderNarrativePages(model, stagingRoot)
         html = renderLabKitPage(model, page.title, page.output, ...
             page.kind, body);
         writeDocText(fullfile(stagingRoot, page.output), html);
-        entries(end + 1, 1) = searchEntry(page.title, page.output, ...
+        entries(k, 1) = searchEntry(page.title, page.output, ...
             page.kind, page.keywords, plainText);
+        if mod(k, 25) == 0 || k == total
+            reportDocProgress("narrative pages", k, total);
+        end
     end
     output = struct("searchEntries", entries);
 end
 
 function output = renderPublicApiPages(model, stagingRoot)
-    entries = repmat(emptySearchEntry(), 0, 1);
+    entries = repmat(emptySearchEntry(), numel(model.api), 1);
+    total = numel(model.api);
+    reportDocProgress("public API pages", 0, total);
     for k = 1:numel(model.api)
         item = model.api(k);
         outputPath = "reference/api/" + replace(item.symbol, ".", "/") + ".html";
@@ -96,8 +108,11 @@ function output = renderPublicApiPages(model, stagingRoot)
         html = renderLabKitPage(model, item.symbol, outputPath, ...
             "reference", body);
         writeDocText(fullfile(stagingRoot, outputPath), html);
-        entries(end + 1, 1) = searchEntry(item.symbol, outputPath, ...
+        entries(k, 1) = searchEntry(item.symbol, outputPath, ...
             "reference", item.symbol, item.summary + " " + item.helpText);
+        if mod(k, 25) == 0 || k == total
+            reportDocProgress("public API pages", k, total);
+        end
     end
     output = struct("searchEntries", entries);
 end
@@ -150,5 +165,13 @@ end
 function removeDocFolder(folder)
     if isfolder(folder)
         rmdir(folder, "s");
+    end
+end
+
+function reportDocProgress(stage, completed, total)
+    if total > 0
+        fprintf("DOCS [%d/%d] %s\n", completed, total, stage);
+    else
+        fprintf("DOCS [stage] %s\n", stage);
     end
 end

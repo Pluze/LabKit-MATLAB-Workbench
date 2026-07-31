@@ -1,5 +1,5 @@
 % App-owned implementation for ttest_wizard.groupData.selectRows within the ttest_wizard product workflow.
-function state = selectRows(state, selection, context)
+function state = selectRows(state, selection, ~)
 %SELECTROWS Remember editable analysis-table cells selected by the user.
 %
 % Expected caller: dataTable OnCellSelectionChanged. This transition stores
@@ -8,7 +8,7 @@ function state = selectRows(state, selection, context)
 arguments
     state (1, 1) struct
     selection (1, 1) labkit.app.event.TableCellSelection
-    context (1, 1) labkit.app.CallbackContext
+    ~
 end
 
 state.session.selection.analysisCells = double(selection.CellIndices);

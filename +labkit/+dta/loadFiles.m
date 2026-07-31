@@ -65,24 +65,34 @@ function [items, report] = loadFiles(filepaths, expectedKind, opts)
 
     expectedKind = normalizeExpectedKind(expectedKind);
     filepaths = normalizeFilepaths(filepaths);
-    items = {};
     report = emptyReport();
+    items = cell(1, numel(filepaths));
+    report.statuses = repmat(statusTemplate(), 1, numel(filepaths));
+    report.loaded = cell(1, numel(filepaths));
+    report.failed = repmat(failureTemplate(), 1, numel(filepaths));
+    loadedCount = 0;
+    failedCount = 0;
 
     for k = 1:numel(filepaths)
         [item, status] = labkit.dta.loadFile(filepaths{k}, expectedKind, opts);
-        report.statuses(end+1) = status;
+        report.statuses(k) = status;
 
         if status.ok
-            items{end+1} = item;
-            report.loaded{end+1} = status.filepath;
+            loadedCount = loadedCount + 1;
+            items{loadedCount} = item;
+            report.loaded{loadedCount} = status.filepath;
         else
-            report.failed(end+1) = struct( ...
+            failedCount = failedCount + 1;
+            report.failed(failedCount) = struct( ...
                 'filepath', status.filepath, ...
                 'kind', status.kind, ...
                 'code', status.code, ...
                 'message', status.message);
         end
     end
+    items = items(1:loadedCount);
+    report.loaded = report.loaded(1:loadedCount);
+    report.failed = report.failed(1:failedCount);
 
     report.nRequested = numel(filepaths);
     report.nLoaded = numel(report.loaded);
@@ -122,15 +132,24 @@ end
 function report = emptyReport()
     report = struct();
     report.loaded = {};
-    report.failed = struct('filepath', {}, 'kind', {}, 'code', {}, 'message', {});
-    report.statuses = struct( ...
-        'ok', {}, ...
-        'code', {}, ...
-        'message', {}, ...
-        'kind', {}, ...
-        'expectedKind', {}, ...
-        'filepath', {});
+    report.failed = repmat(failureTemplate(), 1, 0);
+    report.statuses = repmat(statusTemplate(), 1, 0);
     report.nRequested = 0;
     report.nLoaded = 0;
     report.nFailed = 0;
+end
+
+function value = failureTemplate()
+    value = struct( ...
+        'filepath', '', 'kind', '', 'code', '', 'message', '');
+end
+
+function value = statusTemplate()
+    value = struct( ...
+        'ok', false, ...
+        'code', '', ...
+        'message', '', ...
+        'kind', '', ...
+        'expectedKind', '', ...
+        'filepath', '');
 end

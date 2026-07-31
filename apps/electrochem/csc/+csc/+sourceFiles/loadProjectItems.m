@@ -1,8 +1,8 @@
 % Expected caller: CSC session creation. Input is resolved DTA source
 % records. Output is decoded CV/CT items; invalid required sources throw.
 function items = loadProjectItems(sources)
-    items = struct([]);
     paths = string(sources);
+    itemCells = cell(1, numel(paths));
     for k = 1:numel(sources)
         filepath = paths(k);
         [item, status] = labkit.dta.loadFile(filepath, "cvct");
@@ -10,10 +10,10 @@ function items = loadProjectItems(sources)
             error('csc:SourceLoadFailed', 'Could not load %s: %s', ...
                 filepath, status.message);
         end
-        if isempty(items)
-            items = item;
-        else
-            items(end + 1) = item;
-        end
+        itemCells{k} = item;
+    end
+    items = struct([]);
+    if ~isempty(itemCells)
+        items = [itemCells{:}];
     end
 end

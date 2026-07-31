@@ -39,7 +39,7 @@ function reading = pointTemperatureReading(temperatureC, pointXY)
 
     values = double(temperatureC);
     reading = emptyReading();
-    if isempty(values) || ndims(values) ~= 2
+    if isempty(values) || ~ismatrix(values)
         return;
     end
     pointXY = double(pointXY(:)).';

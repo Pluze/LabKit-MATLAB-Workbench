@@ -4,7 +4,8 @@
 function lines = details(result, paths, registrationLines)
 %DETAILS Return user-facing focus-stack detail lines.
 
-    lines = { ...
+    lines = cell(1, 5 + result.inputCount + 1 + numel(registrationLines));
+    lines(1:5) = { ...
         sprintf('Method: %s', result.method), ...
         sprintf('Fused size: %d x %d px, channels: %d', ...
         result.imageWidth, result.imageHeight, result.channelCount), ...
@@ -14,11 +15,13 @@ function lines = details(result, paths, registrationLines)
         'Selected pixel coverage by source:'};
     names = focus_stack.focusPreview.displayImageNamesForDetails(paths, result.inputCount);
     for k = 1:result.inputCount
-        lines{end+1} = sprintf('  %d. %s: %.2f%%', ...
+        lines{5 + k} = sprintf('  %d. %s: %.2f%%', ...
             k, names{k}, 100 * result.focusCoverage(k));
     end
     if ~isempty(registrationLines)
-        lines{end+1} = 'Registration:';
-        lines = [lines, registrationLines(:).'];
+        lines{6 + result.inputCount} = 'Registration:';
+        lines(7 + result.inputCount:end) = registrationLines(:).';
+    else
+        lines = lines(1:5 + result.inputCount);
     end
 end

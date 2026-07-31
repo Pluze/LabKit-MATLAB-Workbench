@@ -1,6 +1,6 @@
 % App-owned implementation for image_enhance.enhancementPipeline.changeSecondary within the image_enhance product workflow.
 function applicationState = changeSecondary( ...
-        applicationState, value, callbackContext)
+        applicationState, value, ~)
 %CHANGESECONDARY Update and preview the secondary tool parameter.
 defaults = image_enhance.analysisRun.defaultStepValues( ...
     applicationState.session.view.toolKind);

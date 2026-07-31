@@ -32,7 +32,7 @@ function [padded, padding] = padImageEdges(imageData, paddingPercent)
     rowIdx = reflectedSubscripts(rowCoords, height);
     colIdx = reflectedSubscripts(colCoords, width);
 
-    if ndims(imageData) == 2
+    if ismatrix(imageData)
         padded = repaired(rowIdx, colIdx);
     else
         padded = repaired(rowIdx, colIdx, :);
@@ -88,7 +88,7 @@ function repaired = repairImageBorder(imageData, rowWidth, colWidth)
         return;
     end
 
-    if ndims(imageData) == 2
+    if ismatrix(imageData)
         repaired = repairPlane(imageData, rowWidth, colWidth);
     else
         repaired = imageData;

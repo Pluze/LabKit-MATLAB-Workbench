@@ -24,12 +24,15 @@ function text = missingWorkflowItemsText(items, missingKind)
 end
 
 function names = missingItemNames(items, missingKind)
-    names = strings(0, 1);
+    names = strings(numel(items), 1);
+    nameCount = 0;
     for k = 1:numel(items)
         if isMissing(items(k), missingKind)
-            names(end + 1, 1) = labkit.image.displayName(items(k).path);
+            nameCount = nameCount + 1;
+            names(nameCount, 1) = labkit.image.displayName(items(k).path);
         end
     end
+    names = names(1:nameCount);
 end
 
 function tf = isMissing(item, missingKind)

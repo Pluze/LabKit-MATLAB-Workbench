@@ -2,8 +2,8 @@
 
 `profileLabKitTarget` runs a MATLAB target under the profiler and exports an
 interactive HTML report plus a complete JSON sidecar. It supports launcher and
-app startup, callbacks, scripts, functions, command strings, and already
-captured `profile("info")` data.
+app startup, callbacks, scripts, functions, and already captured
+`profile("info")` data.
 
 ## Syntax
 
@@ -27,8 +27,10 @@ addpath(fullfile(repoRoot, "tools", "profiling"))
 ```
 
 Calling the function with an empty target opens a MATLAB file picker. A target
-may also be a function handle, function name, command string, `.m` path, or a
-profile-info struct containing `FunctionTable`.
+may also be a function handle, resolvable function name, `.m` path, or a
+profile-info struct containing `FunctionTable`. Use a function handle when the
+target needs arguments or setup state; arbitrary command strings are not
+executed.
 
 ## Options
 

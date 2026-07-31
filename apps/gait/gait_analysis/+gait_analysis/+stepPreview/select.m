@@ -1,11 +1,11 @@
 % App-owned implementation for gait_analysis.stepPreview.select within the gait_analysis product workflow.
 function applicationState = select( ...
-        applicationState, selection, callbackContext)
+        applicationState, selection, ~)
 %SELECT Use the selected result-table row as the active gait step.
 arguments
     applicationState (1, 1) struct
     selection (1, 1) labkit.app.event.TableCellSelection
-    callbackContext (1, 1) labkit.app.CallbackContext
+    ~
 end
 if isempty(selection.CellIndices)
     return

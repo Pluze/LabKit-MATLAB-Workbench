@@ -20,7 +20,7 @@ function filepaths = findDTAFilesRecursive(rootDir)
 %   changes; this helper only walks the tree.
 
     entries = dir(rootDir);
-    filepaths = {};
+    pathChunks = cell(1, numel(entries));
 
     for i = 1:numel(entries)
         name = entries(i).name;
@@ -32,13 +32,18 @@ function filepaths = findDTAFilesRecursive(rootDir)
         if entries(i).isdir
             subpaths = findDTAFilesRecursive(fullpath);
             if ~isempty(subpaths)
-                filepaths = [filepaths, subpaths];
+                pathChunks{i} = subpaths;
             end
         else
             [~, ~, ext] = fileparts(name);
             if strcmpi(ext, '.dta')
-                filepaths{end+1} = fullpath;
+                pathChunks{i} = {fullpath};
             end
         end
+    end
+    populated = ~cellfun("isempty", pathChunks);
+    filepaths = cell(1, 0);
+    if any(populated)
+        filepaths = [pathChunks{populated}];
     end
 end

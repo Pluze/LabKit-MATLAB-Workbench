@@ -87,7 +87,9 @@ function text = differenceSummary(item)
         readingTemperature(item, 'roiHotSpot')
         readingTemperature(item, 'roiColdSpot')
         readingTemperature(item, 'roiMean')];
-    parts = strings(1, 0);
+    pairCapacity = numel(values) * (numel(values) - 1) / 2;
+    parts = strings(1, pairCapacity);
+    partCount = 0;
     for a = 1:numel(values)
         if ~isfinite(values(a))
             continue;
@@ -96,10 +98,12 @@ function text = differenceSummary(item)
             if ~isfinite(values(b))
                 continue;
             end
-            parts(end+1) = sprintf('%s - %s = %.2f C', ...
+            partCount = partCount + 1;
+            parts(partCount) = sprintf('%s - %s = %.2f C', ...
                 names(a), names(b), values(a) - values(b));
         end
     end
+    parts = parts(1:partCount);
     if isempty(parts)
         text = "-";
     else

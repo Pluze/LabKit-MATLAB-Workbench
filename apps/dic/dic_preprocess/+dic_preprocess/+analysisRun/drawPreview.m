@@ -19,7 +19,7 @@ function drawOne(ax, model)
         isequaln(background.CData, model.imageData);
     if ~sameImage
         labkit.app.plot.clearAxes(ax);
-        if ndims(model.imageData) == 2
+        if ismatrix(model.imageData)
             background = imagesc(ax, model.imageData);
             colormap(ax, gray(256));
         else

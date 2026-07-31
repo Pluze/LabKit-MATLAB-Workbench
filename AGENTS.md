@@ -44,10 +44,14 @@ under `docs/`.
   durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
   agent procedure in skills rather than duplicating it in human manuals.
 - Treat `.agents/dos-and-donts.md` as an experience reservoir. After each
-  meaningful checkpoint, add only high-value experience whose rediscovery
-  would be costly. Let lessons accumulate and survive repeated use before
-  promoting them to the nearest `AGENTS.md`, skill, test, source contract, or
-  manual; then actively compress or remove the reservoir copy plus stale,
+  meaningful checkpoint, explicitly review repeated inspection, discarded
+  approaches, rollback, time lost on the same boundary, and user correction.
+  Record only the unresolved agent decision trap whose rediscovery would be
+  costly, including the signal that should trigger a different approach.
+  Never use the reservoir as a work log or duplicate behavior already enforced
+  by an `AGENTS.md`, skill, test, source contract, or manual. Let useful
+  lessons survive repeated use before promotion; once another owner prevents
+  the mistake, actively compress or remove the reservoir copy plus stale,
   duplicated, disproven, and low-value detail.
 
 ## Architecture and implementation
@@ -72,6 +76,12 @@ under `docs/`.
   governed by `+labkit/AGENTS.md`.
 - Do not convert struct state into classes, merge all apps into one entrypoint,
   or change implementation language without explicit approval.
+- Call fixed production symbols directly so static analysis, dependency
+  discovery, and refactoring can see them. Use `eval`, string-based `feval`,
+  or `str2func` only at a genuinely dynamic extension or compatibility
+  boundary with closed input validation, explicit ownership, and contract
+  tests; never construct a callable symbol from untrusted project or user
+  data.
 - File budgets count nonblank, non-comment MATLAB code. They are review
   backstops, not extraction targets. Keep callback-local glue local when that
   makes workflow order clearer.
@@ -158,6 +168,10 @@ tests, history, and details out of the public repository.
 - Automated hidden GUI tests do not prove native dialogs, visual quality,
   pointer feel, scientific validity, or full manual workflows. Do not run
   interactive workflows in MATLAB `-batch` mode.
+- A validation entry point expected to run longer than 30 seconds reports its
+  current stage and completed/total work, and emits a heartbeat at least every
+  30 seconds while one unit remains active. Reuse the owning progress plugin
+  or callback instead of making callers infer progress from process liveness.
 - For an accepted private workspace, run its own tests first. If
   `.labkit-accept-main-guardrails` is present and private changes are unpushed,
   also run the relevant public guardrail because the public changed-file

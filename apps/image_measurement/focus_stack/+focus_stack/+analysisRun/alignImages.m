@@ -20,22 +20,27 @@ function [alignedImages, lines] = alignImages(images)
     if numel(images) < 2
         return;
     end
+    lines = cell(1, numel(images));
 
     referenceIndex = round((numel(images) + 1) / 2);
     reference = images{referenceIndex};
-    lines{end+1} = sprintf('Registration reference image: %d.', referenceIndex);
+    lineCount = 1;
+    lines{lineCount} = sprintf('Registration reference image: %d.', referenceIndex);
     for k = 1:numel(images)
         if k == referenceIndex
             continue;
         end
         try
             [alignedImages{k}, method] = alignImageToReference(reference, images{k});
-            lines{end+1} = sprintf('Registered image %d using %s.', k, method);
+            lineCount = lineCount + 1;
+            lines{lineCount} = sprintf('Registered image %d using %s.', k, method);
         catch ME
             alignedImages{k} = focus_stack.analysisRun.resizeImageToReference(images{k}, size(reference));
-            lines{end+1} = sprintf('Image %d registration skipped: %s', k, ME.message);
+            lineCount = lineCount + 1;
+            lines{lineCount} = sprintf('Image %d registration skipped: %s', k, ME.message);
         end
     end
+    lines = lines(1:lineCount);
 end
 
 function [alignedImage, method] = alignImageToReference(referenceImage, movingImage)
@@ -70,7 +75,7 @@ function gray = alignmentGray(imageData)
 end
 
 function fillValues = backgroundFillValues(imageData)
-    if ndims(imageData) == 2
+    if ismatrix(imageData)
         border = [imageData(1, :), imageData(end, :), imageData(:, 1).', imageData(:, end).'];
         fillValues = median(double(border(:)));
         return;
@@ -125,7 +130,7 @@ function imageOut = translateImageByIntegerShift(imageIn, rowShift, colShift, fi
         return;
     end
 
-    if ndims(imageIn) == 2
+    if ismatrix(imageIn)
         imageOut(dstRows, dstCols) = imageIn(srcRows, srcCols);
     else
         imageOut(dstRows, dstCols, :) = imageIn(srcRows, srcCols, :);
@@ -134,7 +139,7 @@ end
 
 function imageOut = filledImageLike(imageIn, fillValues)
     imageOut = zeros(size(imageIn), class(imageIn));
-    if ndims(imageIn) == 2
+    if ismatrix(imageIn)
         imageOut(:) = cast(fillValues(1), class(imageIn));
         return;
     end

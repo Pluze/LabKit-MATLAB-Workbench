@@ -52,7 +52,10 @@ end
 
 function records = collectRecords(items, opts)
     opts = fillOptions(opts);
-    recordCells = {};
+    capacity = sum(arrayfun(@(item) ...
+        double(isfield(item, 'curves')) * numel(itemCurvesForCapacity(item)), items));
+    recordCells = cell(1, capacity);
+    recordCount = 0;
     for iItem = 1:numel(items)
         item = items(iItem);
         if ~isfield(item, 'curves') || isempty(item.curves)
@@ -62,14 +65,23 @@ function records = collectRecords(items, opts)
         for iCurve = indices
             record = curveRecord(item, iItem, iCurve);
             if record.ok
-                recordCells{end + 1} = rmfield(record, 'ok');
+                recordCount = recordCount + 1;
+                recordCells{recordCount} = rmfield(record, 'ok');
             end
         end
     end
+    recordCells = recordCells(1:recordCount);
     if isempty(recordCells)
         records = struct([]);
     else
         records = vertcat(recordCells{:});
+    end
+end
+
+function curves = itemCurvesForCapacity(item)
+    curves = struct([]);
+    if isfield(item, 'curves')
+        curves = item.curves;
     end
 end
 

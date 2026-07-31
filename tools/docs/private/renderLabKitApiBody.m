@@ -44,21 +44,27 @@ end
 
 function html = renderSyntax(syntax)
     lines = splitlines(string(syntax));
-    groups = strings(0, 1);
-    current = strings(0, 1);
+    groups = strings(numel(lines), 1);
+    groupCount = 0;
+    current = strings(numel(lines), 1);
+    currentCount = 0;
     for k = 1:numel(lines)
         if strlength(strip(lines(k))) == 0
-            if ~isempty(current)
-                groups(end + 1, 1) = syntaxGroup(current);
-                current = strings(0, 1);
+            if currentCount > 0
+                groupCount = groupCount + 1;
+                groups(groupCount, 1) = syntaxGroup(current(1:currentCount));
+                currentCount = 0;
             end
         else
-            current(end + 1, 1) = lines(k);
+            currentCount = currentCount + 1;
+            current(currentCount, 1) = lines(k);
         end
     end
-    if ~isempty(current)
-        groups(end + 1, 1) = syntaxGroup(current);
+    if currentCount > 0
+        groupCount = groupCount + 1;
+        groups(groupCount, 1) = syntaxGroup(current(1:currentCount));
     end
+    groups = groups(1:groupCount);
     html = "<div class=""syntax-signature"">" + strjoin(groups, "") + ...
         "</div>";
 end
@@ -74,7 +80,8 @@ function html = renderHelpSections(helpText, summaryLine, api, item, outputPath)
         lines(1) = [];
     end
     sections = parseSections(lines);
-    blocks = strings(0, 1);
+    blocks = strings(numel(sections), 1);
+    blockCount = 0;
     for k = 1:numel(sections)
         if any(lower(sections(k).name) == ...
                 ["usage", "app-facing contract", "see also"])
@@ -86,17 +93,19 @@ function html = renderHelpSections(helpText, summaryLine, api, item, outputPath)
         end
         title = displaySectionTitle(sections(k).name);
         id = slug(title);
-        blocks(end + 1, 1) = "<section class=""api-section""><h2 id=""" + ...
+        blockCount = blockCount + 1;
+        blocks(blockCount, 1) = "<section class=""api-section""><h2 id=""" + ...
             id + """>" + htmlEscape(title) + "</h2>" + ...
             renderSectionContent( ...
                 title, content, api, item, outputPath) + "</section>";
     end
-    html = strjoin(blocks, newline);
+    html = strjoin(blocks(1:blockCount), newline);
 end
 
 function syntax = publicCallSyntax(helpText, fallback)
     lines = splitlines(string(helpText));
-    syntaxLines = strings(0, 1);
+    syntaxLines = strings(numel(lines), 1);
+    syntaxLineCount = 0;
     collecting = false;
     for k = 1:numel(lines)
         line = lines(k);
@@ -112,9 +121,11 @@ function syntax = publicCallSyntax(helpText, fallback)
                 break;
             end
         elseif collecting
-            syntaxLines(end + 1, 1) = line;
+            syntaxLineCount = syntaxLineCount + 1;
+            syntaxLines(syntaxLineCount, 1) = line;
         end
     end
+    syntaxLines = syntaxLines(1:syntaxLineCount);
     syntaxLines = stripEmptyEdges(syntaxLines);
     if isempty(syntaxLines)
         syntax = string(fallback);
@@ -125,7 +136,7 @@ end
 
 function sections = parseSections(lines)
     template = struct("name", "Description", "lines", strings(0, 1));
-    sections = template;
+    sections = repmat(template, numel(lines) + 1, 1);
     current = 1;
     for k = 1:numel(lines)
         line = lines(k);
@@ -135,8 +146,7 @@ function sections = parseSections(lines)
         isSeeAlso = line == trimmed && ...
             startsWith(lower(trimmed), "see also ");
         if isSeeAlso
-            sections(end + 1, 1) = template;
-            current = numel(sections);
+            current = current + 1;
             sections(current).name = "See also";
             sections(current).lines = extractAfter( ...
                 trimmed, strlength("See also "));
@@ -146,14 +156,14 @@ function sections = parseSections(lines)
                     sections(current).name == "Description"
                 sections(current).name = name;
             else
-                sections(end + 1, 1) = template;
-                current = numel(sections);
+                current = current + 1;
                 sections(current).name = name;
             end
         else
             sections(current).lines(end + 1, 1) = line;
         end
     end
+    sections = sections(1:current);
 end
 
 function html = renderSectionContent(title, lines, api, item, outputPath)
@@ -180,27 +190,35 @@ function html = renderSectionContent(title, lines, api, item, outputPath)
 end
 
 function html = renderDefinitions(lines, api, item, outputPath)
-    entries = repmat(struct("term", "", "description", ""), 0, 1);
-    preface = strings(0, 1);
+    entries = repmat(struct("term", "", "description", ""), numel(lines), 1);
+    entryCount = 0;
+    preface = strings(numel(lines), 1);
+    prefaceCount = 0;
     current = 0;
     for k = 1:numel(lines)
         token = regexp(char(lines(k)), ...
             '^\s{2,}([A-Za-z][A-Za-z0-9_.:]*(?:\([^)]*\))?)\s+-\s+(.*)$', ...
             'tokens', 'once');
         if ~isempty(token)
-            entries(end + 1, 1) = struct("term", string(token{1}), ...
+            entryCount = entryCount + 1;
+            entries(entryCount, 1) = struct("term", string(token{1}), ...
                 "description", string(token{2}));
-            current = numel(entries);
+            current = entryCount;
         elseif current > 0 && strlength(strip(lines(k))) > 0
             entries(current).description = entries(current).description + " " + ...
                 strip(lines(k));
         elseif current == 0
-            preface(end + 1, 1) = lines(k);
+            prefaceCount = prefaceCount + 1;
+            preface(prefaceCount, 1) = lines(k);
         end
     end
-    parts = strings(0, 1);
+    entries = entries(1:entryCount);
+    preface = preface(1:prefaceCount);
+    parts = strings(2, 1);
+    partCount = 0;
     if any(strlength(strip(preface)) > 0)
-        parts(end + 1, 1) = renderParagraphs( ...
+        partCount = partCount + 1;
+        parts(partCount, 1) = renderParagraphs( ...
             preface, api, item, outputPath);
     end
     if ~isempty(entries)
@@ -211,29 +229,33 @@ function html = renderDefinitions(lines, api, item, outputPath)
                 renderApiText(entries(k).description, ...
                     api, item, outputPath) + "</dd></div>";
         end
-        parts(end + 1, 1) = "<dl class=""argument-list"">" + ...
+        partCount = partCount + 1;
+        parts(partCount, 1) = "<dl class=""argument-list"">" + ...
             strjoin(rows, "") + "</dl>";
     end
-    html = strjoin(parts, newline);
+    html = strjoin(parts(1:partCount), newline);
 end
 
 function html = renderParagraphs(lines, api, item, outputPath)
     text = strip(strjoin(lines, newline));
     paragraphs = regexp(char(text), '\n\s*\n', 'split');
-    blocks = strings(0, 1);
+    blocks = strings(numel(paragraphs), 1);
+    blockCount = 0;
     for k = 1:numel(paragraphs)
         value = strip(regexprep(string(paragraphs{k}), '\s+', ' '));
         if strlength(value) > 0
-            blocks(end + 1, 1) = "<p>" + ...
+            blockCount = blockCount + 1;
+            blocks(blockCount, 1) = "<p>" + ...
                 renderApiText(value, api, item, outputPath) + "</p>";
         end
     end
-    html = strjoin(blocks, newline);
+    html = strjoin(blocks(1:blockCount), newline);
 end
 
 function html = renderApiText(text, api, item, outputPath)
     protected = string(text);
-    replacements = strings(0, 1);
+    replacements = strings(strlength(protected), 1);
+    replacementCount = 0;
     symbols = string({api.symbol});
     symbols(symbols == string(item.symbol)) = [];
     [~, order] = sort(strlength(symbols), "descend");
@@ -251,15 +273,17 @@ function html = renderApiText(text, api, item, outputPath)
             end
             target = "reference/api/" + replace(symbol, ".", "/") + ...
                 ".html";
-            replacements(end + 1, 1) = ...
+            replacementCount = replacementCount + 1;
+            replacements(replacementCount, 1) = ...
                 "<a class=""api-inline-link"" href=""" + ...
                 relativeWebPath(outputPath, target) + """><code>" + ...
                 htmlEscape(symbol) + "</code></a>";
-            marker = "@@LABKITAPILINK" + string(numel(replacements)) + "@@";
+            marker = "@@LABKITAPILINK" + string(replacementCount) + "@@";
             protected = extractBefore(protected, first) + marker + ...
                 extractAfter(protected, last);
         end
     end
+    replacements = replacements(1:replacementCount);
     html = htmlEscape(protected);
     for k = 1:numel(replacements)
         marker = "@@LABKITAPILINK" + string(k) + "@@";
@@ -363,7 +387,8 @@ function indices = explicitRelatedIndices(api, helpText, localPrefix)
         '[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)*', ...
         'match'));
     symbols = string({api.symbol});
-    indices = zeros(1, 0);
+    indices = zeros(1, numel(tokens));
+    indexCount = 0;
     for k = 1:numel(tokens)
         token = tokens(k);
         index = find(symbols == token, 1);
@@ -372,15 +397,16 @@ function indices = explicitRelatedIndices(api, helpText, localPrefix)
         end
         if isempty(index) && ~contains(token, ".")
             suffixMatches = find(endsWith(symbols, "." + token));
-            if numel(suffixMatches) == 1
+            if isscalar(suffixMatches)
                 index = suffixMatches;
             end
         end
         if ~isempty(index)
-            indices(end + 1) = index;
+            indexCount = indexCount + 1;
+            indices(indexCount) = index;
         end
     end
-    indices = unique(indices, "stable");
+    indices = unique(indices(1:indexCount), "stable");
 end
 
 function value = displaySectionTitle(value)

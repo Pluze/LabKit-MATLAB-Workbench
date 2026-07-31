@@ -224,13 +224,25 @@ function type = embeddedImageType(bytes)
     probeLength = min(numel(bytes), 64);
     probe = bytes(1:probeLength);
     if numel(bytes) >= 8 && (isequal(bytes(1:8), pngSignature) || ...
-            ~isempty(strfind(probe, pngSignature)))
+            containsByteSequence(probe, pngSignature))
         type = "PNG";
     elseif numel(bytes) >= 3 && (isequal(bytes(1:3), uint8([255 216 255])) || ...
-            ~isempty(strfind(probe, uint8([255 216 255]))))
+            containsByteSequence(probe, uint8([255 216 255])))
         type = "JPG";
     else
         type = "DAT";
+    end
+end
+
+function tf = containsByteSequence(bytes, signature)
+    tf = false;
+    lastStart = numel(bytes) - numel(signature) + 1;
+    for startIndex = 1:lastStart
+        stopIndex = startIndex + numel(signature) - 1;
+        if isequal(bytes(startIndex:stopIndex), signature)
+            tf = true;
+            return;
+        end
     end
 end
 

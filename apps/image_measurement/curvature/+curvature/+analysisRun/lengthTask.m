@@ -28,7 +28,7 @@ function fingerprint = taskFingerprint(task)
         calibrationToken(task.calibration)
         pointBlock("point", task.points)
         pointBlock("lengthPath", task.lengthPath)];
-    fingerprint = strjoin(lines, sprintf('\n'));
+    fingerprint = strjoin(lines, newline);
 end
 
 function points = normalizePoints(points)
@@ -44,9 +44,10 @@ function points = normalizePoints(points)
 end
 
 function lines = pointBlock(label, points)
-    lines = label + "Count=" + string(size(points, 1));
+    lines = strings(size(points, 1) + 1, 1);
+    lines(1) = label + "Count=" + string(size(points, 1));
     for k = 1:size(points, 1)
-        lines(end + 1, 1) = label + "[" + string(k) + "]=" + ...
+        lines(k + 1, 1) = label + "[" + string(k) + "]=" + ...
             numberToken(points(k, 1)) + "," + numberToken(points(k, 2));
     end
 end
@@ -59,7 +60,7 @@ function token = calibrationToken(calibration)
         "unit=" + string(calibration.unit)
         "pixelsPerUnit=" + numberToken(calibration.pixelsPerUnit)
         "isCalibrated=" + string(logical(calibration.isCalibrated))
-        pointBlock("referenceLine", referenceLine)], sprintf('\n'));
+        pointBlock("referenceLine", referenceLine)], newline);
 end
 
 function token = numberToken(value)

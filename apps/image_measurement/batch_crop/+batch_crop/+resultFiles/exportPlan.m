@@ -22,7 +22,7 @@ function plan = exportPlan(items, opts)
         "outputFolder=" + plan.outputFolder
         optionLines(plan.options)
         "itemCount=" + string(numel(items))
-        plan.itemFingerprints], sprintf('\n'));
+        plan.itemFingerprints], newline);
 end
 
 function optsOut = normalizeOptions(opts)

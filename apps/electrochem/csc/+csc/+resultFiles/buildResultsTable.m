@@ -19,12 +19,15 @@ end
 
 function rows = collectRows(items, opts)
     choices = csc.analysisRun.analysisChoices();
-    rowCells = {};
+    capacity = sum(arrayfun(@(item) max(1, numel(itemCurves(item))), items));
+    rowCells = cell(1, capacity);
+    rowCount = 0;
     for iItem = 1:numel(items)
         item = items(iItem);
         curves = itemCurves(item);
         if isempty(curves)
-            rowCells{end + 1} = failedRow(item, 0, "", opts, "No curve found");
+            rowCount = rowCount + 1;
+            rowCells{rowCount} = failedRow(item, 0, "", opts, "No curve found");
             continue;
         end
         curveIndices = selectedCurveIndices(numel(curves), opts);
@@ -34,9 +37,11 @@ function rows = collectRows(items, opts)
                 'mode', char(choices.modes(1)), ...
                 'scanRate', itemScanRate(item), ...
                 'area_cm2', opts.area_cm2));
-            rowCells{end + 1} = resultRow(item, iCurve, curve, opts, result);
+            rowCount = rowCount + 1;
+            rowCells{rowCount} = resultRow(item, iCurve, curve, opts, result);
         end
     end
+    rowCells = rowCells(1:rowCount);
     if isempty(rowCells)
         rows = emptyRows();
     else

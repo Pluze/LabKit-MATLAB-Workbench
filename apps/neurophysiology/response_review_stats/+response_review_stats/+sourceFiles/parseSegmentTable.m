@@ -18,22 +18,25 @@ function segments = parseSegmentTable(T)
     if ~isempty(timeIdx)
         timeSec = double(T{:, timeIdx});
         signalIdx = setdiff(1:width(T), timeIdx);
-        segmentCells = {};
+        segmentCells = cell(1, numel(signalIdx));
+        segmentCount = 0;
         for k = signalIdx
             if ~isnumeric(T{:, k})
                 continue;
             end
-            segmentCells{end+1} = makeSegment(names(k), timeSec, ...
+            segmentCount = segmentCount + 1;
+            segmentCells{segmentCount} = makeSegment(names(k), timeSec, ...
                 double(T{:, k}));
         end
-        if ~isempty(segmentCells)
-            segments = [segmentCells{:}];
+        if segmentCount > 0
+            segments = [segmentCells{1:segmentCount}];
         end
         return;
     end
 
     timeCols = find(endsWith(normalizeName(names), "times"));
-    segmentCells = {};
+    segmentCells = cell(1, numel(timeCols));
+    segmentCount = 0;
     for k = 1:numel(timeCols)
         timeCol = timeCols(k);
         prefix = erase(normalizeName(names(timeCol)), "times");
@@ -43,11 +46,12 @@ function segments = parseSegmentTable(T)
         end
         label = erase(string(names(timeCol)), "_Time_s");
         label = erase(label, "_Time");
-        segmentCells{end+1} = makeSegment(label, double(T{:, timeCol}), ...
+        segmentCount = segmentCount + 1;
+        segmentCells{segmentCount} = makeSegment(label, double(T{:, timeCol}), ...
             double(T{:, signalCol}));
     end
-    if ~isempty(segmentCells)
-        segments = [segmentCells{:}];
+    if segmentCount > 0
+        segments = [segmentCells{1:segmentCount}];
     end
 
     if isempty(segments)

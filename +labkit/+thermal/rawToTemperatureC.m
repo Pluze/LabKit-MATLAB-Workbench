@@ -176,7 +176,8 @@ function [parameters, diagnostics] = environmentParameters(calibration)
     fields = string(fieldnames(defaults));
     parameters = struct();
     sources = struct();
-    defaultedFields = strings(0, 1);
+    defaultedFields = strings(numel(fields), 1);
+    defaultedCount = 0;
     for k = 1:numel(fields)
         field = fields(k);
         fallback = defaults.(field);
@@ -188,11 +189,13 @@ function [parameters, diagnostics] = environmentParameters(calibration)
         parameters.(field) = value;
         if usedDefault
             sources.(field) = "default";
-            defaultedFields(end + 1, 1) = field;
+            defaultedCount = defaultedCount + 1;
+            defaultedFields(defaultedCount) = field;
         else
             sources.(field) = "calibration";
         end
     end
+    defaultedFields = defaultedFields(1:defaultedCount);
     diagnostics = conversionDiagnostics("environment", defaultedFields, sources);
 end
 

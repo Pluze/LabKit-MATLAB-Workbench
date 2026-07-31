@@ -9,7 +9,7 @@ if isempty(model.imageData)
     box(ax, "on");
     return
 end
-if ndims(model.imageData) == 2
+if ismatrix(model.imageData)
     imagesc(ax, model.imageData, ...
         HitTest="off", PickableParts="none");
     colormap(ax, gray(256));

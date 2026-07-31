@@ -42,7 +42,7 @@ function req = requirements(varargin)
             'Requirements must be facade/range pairs.');
     end
 
-    entries = repmat(struct('facade', "", 'range', ""), 0, 1);
+    entries = repmat(struct('facade', "", 'range', ""), numel(varargin) / 2, 1);
     for k = 1:2:numel(varargin)
         facade = normalizeFacade(varargin{k});
         rangeText = normalizeRange(varargin{k + 1});
@@ -50,7 +50,8 @@ function req = requirements(varargin)
             error('labkit:contract:DuplicateRequirement', ...
                 'Facade "%s" is listed more than once.', facade);
         end
-        entries(end + 1, 1) = struct('facade', facade, 'range', rangeText);
+        entries((k + 1) / 2, 1) = struct( ...
+            'facade', facade, 'range', rangeText);
     end
 
     req = struct();

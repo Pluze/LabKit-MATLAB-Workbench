@@ -213,16 +213,19 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
         function [project, collected] = rebaseBoundSources( ...
                 obj, project, filepath)
             bindings = obj.projectSourceBindings();
-            collected = struct([]);
-            for path = bindings
+            chunks = cell(numel(bindings), 1);
+            for k = 1:numel(bindings)
+                path = bindings(k);
                 sources = getProjectBinding(project, path);
                 sources = obj.Sources.rebase(sources, filepath);
                 project = setProjectBinding(project, path, sources);
-                if isempty(collected)
-                    collected = sources;
-                elseif ~isempty(sources)
-                    collected = [collected; sources];
-                end
+                chunks{k} = sources;
+            end
+            chunks = chunks(~cellfun(@isempty, chunks));
+            if isempty(chunks)
+                collected = struct([]);
+            else
+                collected = vertcat(chunks{:});
             end
         end
 
@@ -263,7 +266,8 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
                 return;
             end
             plan = obj.Contract.PlatformPlan;
-            bindings = strings(1, 0);
+            bindings = strings(1, numel(plan.Nodes));
+            bindingCount = 0;
             for k = 1:numel(plan.Nodes)
                 node = plan.Nodes(k);
                 if node.Kind ~= "fileList" || ...
@@ -272,9 +276,11 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
                 end
                 path = node.Configuration.Bind;
                 if startsWith(path, "project.")
-                    bindings(end + 1) = extractAfter(path, "project.");
+                    bindingCount = bindingCount + 1;
+                    bindings(bindingCount) = extractAfter(path, "project.");
                 end
             end
+            bindings = bindings(1:bindingCount);
             bindings = unique(bindings, "stable");
         end
 
@@ -374,7 +380,7 @@ name = parts{1};
 if ~isstruct(owner) || ~isscalar(owner) || ~isfield(owner, name)
     invalidProject("Bound source path is absent: project.%s.", path);
 end
-if numel(parts) == 1
+if isscalar(parts)
     owner.(name) = value;
 else
     owner.(name) = assignProjectField( ...

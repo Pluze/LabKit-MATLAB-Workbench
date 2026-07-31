@@ -40,8 +40,6 @@ function [pulse, ok, msg] = pulsesFromMetadata(meta, t)
         return;
     end
 
-    stepMode = '';
-    stepVals = [];
     if any(isfinite(Ivals))
         stepVals = Ivals;
         stepMode = 'current';

@@ -93,15 +93,19 @@ function out = bestSafeString(items, modeLabel, unitLabel)
         out = '-';
         return;
     end
-    safeIdx = [];
-    vals = [];
+    safeIdx = zeros(1, numel(items));
+    vals = zeros(1, numel(items));
+    safeCount = 0;
     for i = 1:numel(items)
         A = itemAnalysis(items(i));
         if ~isempty(A) && isfield(A, 'ok') && A.ok && isfield(A, 'safe') && A.safe
-            safeIdx(end+1) = i;
-            vals(end+1) = selectedCICValue(A, modeLabel);
+            safeCount = safeCount + 1;
+            safeIdx(safeCount) = i;
+            vals(safeCount) = selectedCICValue(A, modeLabel);
         end
     end
+    safeIdx = safeIdx(1:safeCount);
+    vals = vals(1:safeCount);
     if isempty(safeIdx)
         out = 'No safe file in current batch';
         return;

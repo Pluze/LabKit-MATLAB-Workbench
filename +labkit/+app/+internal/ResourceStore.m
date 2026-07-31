@@ -43,16 +43,20 @@ classdef (Hidden, Sealed) ResourceStore < handle
         function clearScope(obj, scope)
             keys = string(obj.Entries.keys);
             selected = startsWith(keys, string(scope) + "|");
-            failures = {};
-            for key = keys(selected)
+            selectedKeys = keys(selected);
+            failures = cell(1, numel(selectedKeys));
+            failureCount = 0;
+            for key = selectedKeys
                 entry = obj.Entries(char(key));
                 remove(obj.Entries, char(key));
                 try
                     obj.dispose(entry);
                 catch cause
-                    failures{end + 1} = cause;
+                    failureCount = failureCount + 1;
+                    failures{failureCount} = cause;
                 end
             end
+            failures = failures(1:failureCount);
             if ~isempty(failures)
                 failure = MException( ...
                     "labkit:app:runtime:ResourceCleanupFailed", ...
@@ -65,14 +69,18 @@ classdef (Hidden, Sealed) ResourceStore < handle
         end
 
         function clearAll(obj)
-            failures = {};
-            for scope = ["event", "interaction", "document", "application"]
+            scopes = ["event", "interaction", "document", "application"];
+            failures = cell(1, numel(scopes));
+            failureCount = 0;
+            for scope = scopes
                 try
                     obj.clearScope(scope);
                 catch cause
-                    failures{end + 1} = cause;
+                    failureCount = failureCount + 1;
+                    failures{failureCount} = cause;
                 end
             end
+            failures = failures(1:failureCount);
             if ~isempty(failures)
                 failure = MException( ...
                     "labkit:app:runtime:ResourceCleanupFailed", ...

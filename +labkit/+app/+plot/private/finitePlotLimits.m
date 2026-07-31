@@ -57,8 +57,8 @@ function limits = expandAroundCenter(limits, span)
 end
 
 function [x, y] = collectFiniteXY(handles)
-    x = [];
-    y = [];
+    xChunks = cell(numel(handles), 1);
+    yChunks = cell(numel(handles), 1);
     handles = handles(:).';
     for k = 1:numel(handles)
         h = handles(k);
@@ -68,10 +68,12 @@ function [x, y] = collectFiniteXY(handles)
         childX = h.XData;
         childY = h.YData;
         if isnumeric(childX) && isnumeric(childY)
-            x = [x; childX(:)];
-            y = [y; childY(:)];
+            xChunks{k} = childX(:);
+            yChunks{k} = childY(:);
         end
     end
+    x = vertcat(xChunks{:});
+    y = vertcat(yChunks{:});
     x = x(isfinite(x));
     y = y(isfinite(y));
 end

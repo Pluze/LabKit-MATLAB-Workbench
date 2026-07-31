@@ -35,8 +35,9 @@ function recording = readCsvRecording(filepath, opts)
 
     names = T.Properties.VariableNames;
     [timeSec, timeColumn, timeInfo] = inferTableTime(T, opts, importInfo);
-    signals = struct([]);
     signalColumns = resolveSignalColumns(names, optionValue(opts, 'signalColumns', []));
+    signalCells = cell(1, numel(names));
+    signalCount = 0;
     for k = 1:numel(names)
         if k == timeColumn
             continue;
@@ -59,7 +60,12 @@ function recording = readCsvRecording(filepath, opts)
             'timeSource', timeInfo.source, ...
             'timeRepair', timeInfo.repair), ...
             opts);
-        signals = [signals sig];
+        signalCount = signalCount + 1;
+        signalCells{signalCount} = sig;
+    end
+    signals = struct([]);
+    if signalCount > 0
+        signals = [signalCells{1:signalCount}];
     end
 
     recording = makeRecording(filepath, "table", signals);

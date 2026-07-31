@@ -130,10 +130,10 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
     end
 
     function tf = isValid()
-        expectedCorners = 4 .* double(state.resizable);
+        expectedCorners = 4 * double(state.resizable);
         tf = isValidGraphic(state.box) && ...
             numel(state.cornerHandles) == expectedCorners && ...
-            all(isgraphics(state.cornerHandles));
+            all(isgraphics(state.cornerHandles), "all");
     end
 
     function handles = editorGraphics()

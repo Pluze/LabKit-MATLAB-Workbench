@@ -146,7 +146,8 @@ folders = folders([folders.isdir]);
 folders = folders(~ismember(string({folders.name}), [".", ".."]));
 template = struct("Folder", "", "SessionId", "", "State", "", ...
     "AppId", "", "Timestamp", "", "Bytes", 0);
-sessions = repmat(template, 0, 1);
+sessions = repmat(template, numel(folders), 1);
+sessionCount = 0;
 for index = 1:numel(folders)
     folder = string(fullfile(folders(index).folder, folders(index).name));
     manifest = readJson(fullfile(folder, "manifest.json"));
@@ -161,10 +162,12 @@ for index = 1:numel(folders)
     catch
         continue;
     end
-    sessions(end + 1, 1) = struct("Folder", folder, "SessionId", sessionId, ...
+    sessionCount = sessionCount + 1;
+    sessions(sessionCount, 1) = struct("Folder", folder, "SessionId", sessionId, ...
         "State", string(manifest.state), "AppId", string(manifest.appId), ...
         "Timestamp", sessionTimestamp(manifest), "Bytes", folderBytes(folder));
 end
+sessions = sessions(1:sessionCount);
 end
 
 function [didRecover, corruptTailCount] = recover(folder, abandonActive)
@@ -219,7 +222,6 @@ nowUtc = utcNow();
 if ~isempty(options.LeaseClock)
     nowUtc = string(options.LeaseClock());
 end
-probe = [];
 targetPid = -1;
 targetHost = "unknown";
 if isstruct(marker) && isscalar(marker)
@@ -260,7 +262,7 @@ content = fileread(char(filepath));
 if isempty(content)
     return;
 end
-breaks = find(content == char(10));
+breaks = find(content == newline);
 starts = [1, breaks + 1];
 ends = [breaks - 1, numel(content)];
 for index = numel(starts):-1:1
@@ -300,7 +302,7 @@ for appId = unique(string({sessions.AppId}))
         options.ClosedSessionLimitPerApp, options.AppByteLimit, ...
         options.ProtectedSessionIds);
     retention.perAppPrunedSessionCount = retention.perAppPrunedSessionCount + removed;
-    retainedAppSessions = find(string({sessions.AppId}) == appId);
+    retainedAppSessions = string({sessions.AppId}) == appId;
     retainedAppBytes = sum([sessions(retainedAppSessions).Bytes]);
     if retainedAppBytes > options.AppByteLimit
         retention.unsatisfiedAppIds(end + 1, 1) = appId;
@@ -394,12 +396,14 @@ end
 end
 
 function [events, corruptRecordCount] = readCanonicalEvents(folder)
-events = repmat(canonicalTemplate(), 0, 1);
 corruptRecordCount = 0;
 segments = journalSegments(folder);
+segmentEvents = cell(numel(segments), 1);
 for segmentIndex = 1:numel(segments)
     lines = splitlines(string(fileread(fullfile(segments(segmentIndex).folder, ...
         segments(segmentIndex).name))));
+    events = repmat(canonicalTemplate(), numel(lines), 1);
+    eventCount = 0;
     for lineIndex = 1:numel(lines)
         line = strtrim(lines(lineIndex));
         if strlength(line) == 0
@@ -411,11 +415,18 @@ for segmentIndex = 1:numel(segments)
                 error("labkit:app:runtime:JournalCorruptRecord", ...
                     "A retained journal record is not canonical.");
             end
-            events(end + 1, 1) = record;
+            eventCount = eventCount + 1;
+            events(eventCount, 1) = record;
         catch
             corruptRecordCount = corruptRecordCount + 1;
         end
     end
+    segmentEvents{segmentIndex} = events(1:eventCount);
+end
+events = repmat(canonicalTemplate(), 0, 1);
+segmentEvents = segmentEvents(~cellfun(@isempty, segmentEvents));
+if ~isempty(segmentEvents)
+    events = vertcat(segmentEvents{:});
 end
 end
 

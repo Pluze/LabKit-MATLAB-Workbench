@@ -39,6 +39,9 @@ scope: Project source ownership and external overwrite protection
 scope: Scientific input validation and machine-readable failures
 scope: Native dialog path memory and Launcher delegation
 scope: Repository Skill contracts
+scope: Static production call visibility
+scope: Code Analyzer zero-finding closure
+scope: Path-mirrored public and private test ownership
 ```
 
 ## Context
@@ -69,9 +72,22 @@ unchanged.
   invalid-input handling.
 - Replaced append-only runtime status history with one current status value and
   avoided redundant Launcher path refresh on a correctly resolved install.
+- Made the fixed repair-root dispatcher and fixed Launcher tool calls
+  statically visible. The three remaining production `feval` boundaries now
+  validate a discovered App file, a legacy named MATLAB callback, or an exact
+  profiler target file, and a repository test rejects any additional hidden
+  production call.
 - Added repository Skill manifests, activation examples, deterministic
   validation, CI routing, and a scientific-change workflow; compressed
   promoted experience out of the reservoir.
+- Replaced the `framework/*`, `system/*`, and private `tests/cases` test
+  taxonomies with production-path mirrors. Public and accepted private
+  specifications now use the same path-derived owner, contract/environment
+  metadata, compiled plan, progress, and heartbeat contracts.
+- Cleared Code Analyzer information, warning, and error findings across the
+  public MATLAB source and test tree without suppression pragmas. Collection
+  preallocation preserves each empty cell, struct, string, and numeric shape
+  rather than relying on append growth or untyped concatenation.
 
 ## User and data impact
 
@@ -87,17 +103,24 @@ The change is backward compatible. Existing project payload versions, saved
 source records, result schemas, and exports require no migration. Omitted
 `SourceBindings` keep the former inference behavior, and the restored dialog
 preferences reuse the published `LabKit/LastInputFolder` and
-`LabKit/LastOutputFolder` keys.
+`LabKit/LastOutputFolder` keys. The maintainer profiler no longer accepts an
+arbitrary command string; pass a function handle for calls that need arguments
+or setup state.
 
 ## Validation
 
 Focused App, facade, project, Launcher, repository-policy, and documentation
 specifications cover the changed contracts. The final branch gate selects the
 complete base-to-head evidence closure; required pull-request CI owns the
-supported MATLAB platform matrix. On Windows R2025b Update 3, the same warm
-`labkit_launcher("list")` profiler scenario decreased from about 0.614 seconds
-before the fast path to 0.243 seconds after it; nine ordinary warm calls had a
-0.133-second median.
+supported MATLAB platform matrix. On Windows R2025b Update 3, the final static
+resolver's profiled `labkit_launcher("list")` call spent about 0.666 seconds in
+the Launcher, while nine subsequent ordinary warm calls had a 0.138-second
+median. Repository architecture tests also scan all production MATLAB sources
+for hidden dynamic invocation, and dedicated profiler tests prove arbitrary
+command strings are rejected before execution.
+The final Code Analyzer report covers 1,559 MATLAB files and contains zero
+ordinary and zero suppressed findings; focused regression runs cover the
+typed-empty and preallocation paths changed while reaching that state.
 
 ## Evidence
 

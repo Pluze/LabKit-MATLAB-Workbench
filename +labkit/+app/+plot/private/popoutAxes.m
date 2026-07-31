@@ -205,15 +205,18 @@ end
 
 function addLegendIfNeeded(ax)
     children = ax.Children;
-    names = strings(0, 1);
+    names = strings(numel(children), 1);
+    nameCount = 0;
     for k = 1:numel(children)
         if isprop(children(k), 'DisplayName')
             name = string(children(k).DisplayName);
             if strlength(name) > 0 && ~startsWith(name, "_")
-                names(end+1, 1) = name;
+                nameCount = nameCount + 1;
+                names(nameCount) = name;
             end
         end
     end
+    names = names(1:nameCount);
     if ~isempty(names)
         legend(ax, 'show', 'Interpreter', 'none');
     end

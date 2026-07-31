@@ -300,11 +300,13 @@ classdef (Sealed) Snapshot
                 error("labkit:app:contract:InvalidValue", ...
                     "View snapshot overlay requires a View snapshot value.");
             end
-            operations = base.Operations;
+            operationCount = numel(base.Operations);
+            operations = cell(1, operationCount + numel(custom.Operations));
+            operations(1:operationCount) = base.Operations;
             for k = 1:numel(custom.Operations)
                 incoming = custom.Operations{k};
                 replaced = false;
-                for n = 1:numel(operations)
+                for n = 1:operationCount
                     current = operations{n};
                     if current.Kind == incoming.Kind && ...
                             current.Target == incoming.Target
@@ -314,9 +316,11 @@ classdef (Sealed) Snapshot
                     end
                 end
                 if ~replaced
-                    operations{end + 1} = incoming;
+                    operationCount = operationCount + 1;
+                    operations{operationCount} = incoming;
                 end
             end
+            operations = operations(1:operationCount);
             result = labkit.app.view.Snapshot();
             result.Operations = operations;
         end

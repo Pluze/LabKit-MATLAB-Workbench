@@ -21,7 +21,7 @@ function values = nearestValidValues(S, validMap, invalid)
     validValues = S(validMap);
     [invalidRows, invalidCols] = find(invalid);
 
-    if numel(validValues) == 1
+    if isscalar(validValues)
         values = repmat(validValues, size(invalidRows));
         return;
     end
