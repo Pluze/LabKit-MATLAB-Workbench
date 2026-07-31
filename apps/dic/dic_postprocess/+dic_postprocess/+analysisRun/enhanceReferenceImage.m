@@ -3,7 +3,7 @@
 % enhanced RGB image data. Side effects: none.
 function img = enhanceReferenceImage(referenceImage, opts)
     img = localIm2double(referenceImage);
-    if ndims(img) == 2
+    if ismatrix(img)
         img = repmat(img, [1 1 3]);
     end
     gains = reshape(opts.rgbGain, 1, 1, 3);

@@ -20,7 +20,8 @@ function task = exportTask(items, referenceItem, steps, opts)
 end
 
 function fingerprint = taskFingerprint(items, referenceItem, steps, task)
-    lines = [
+    lines = strings(6 + numel(items) + numel(steps), 1);
+    lines(1:6) = [
         "app=image_match"
         "outputFolder=" + task.outputFolder
         "format=" + task.options.format
@@ -29,15 +30,16 @@ function fingerprint = taskFingerprint(items, referenceItem, steps, task)
         "stepCount=" + string(numel(steps))];
 
     for k = 1:numel(items)
-        lines(end + 1, 1) = "source[" + string(k) + "]=" + ...
+        lines(6 + k, 1) = "source[" + string(k) + "]=" + ...
             string(items(k).path) + "|image=" + imageToken(items(k).image);
     end
 
     for k = 1:numel(steps)
-        lines(end + 1, 1) = "step[" + string(k) + "]=" + stepToken(steps(k));
+        lines(6 + numel(items) + k, 1) = ...
+            "step[" + string(k) + "]=" + stepToken(steps(k));
     end
 
-    fingerprint = strjoin(lines, sprintf('\n'));
+    fingerprint = strjoin(lines, newline);
 end
 
 function pathValue = referencePath(referenceItem)

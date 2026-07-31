@@ -106,7 +106,7 @@ function mask = currentMask(geometry)
     else
         mask = true(size(geometry.canvas, 1), size(geometry.canvas, 2));
     end
-    if ndims(mask) > 2
+    if ~ismatrix(mask)
         mask = mask(:, :, 1);
     end
     if ~any(mask, "all")

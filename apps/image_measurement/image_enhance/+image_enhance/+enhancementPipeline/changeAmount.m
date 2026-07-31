@@ -1,6 +1,6 @@
 % App-owned implementation for image_enhance.enhancementPipeline.changeAmount within the image_enhance product workflow.
 function applicationState = changeAmount( ...
-        applicationState, value, callbackContext)
+        applicationState, value, ~)
 %CHANGEAMOUNT Update and preview the primary tool parameter.
 defaults = image_enhance.analysisRun.defaultStepValues( ...
     applicationState.session.view.toolKind);

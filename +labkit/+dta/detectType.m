@@ -16,9 +16,10 @@ function [kind, status] = detectType(filepath)
 % Outputs:
 %   kind - String scalar: "chrono", "eis", "cvct", or "unknown".
 %   status - Scalar structure describing detection. ok is true only for a
-%       recognized file; message is empty on success and explains failure
-%       otherwise; kind repeats the detected value; and filepath contains the
-%       normalized character-vector path.
+%       recognized file; code is "ok", "missing_file", or
+%       "unsupported_content"; message is empty on success and explains
+%       failure otherwise; kind repeats the detected value; and filepath
+%       contains the normalized character-vector path.
 %
 % Errors:
 %   Throws labkit:dta:InvalidFilepath when filepath is not a character vector
@@ -37,9 +38,10 @@ function [kind, status] = detectType(filepath)
 
     filepath = normalizeFilepath(filepath);
     kind = "unknown";
-    status = makeStatus(filepath, kind, "");
+    status = makeStatus(filepath, kind, "unsupported_content", "");
 
     if exist(filepath, 'file') ~= 2
+        status.code = "missing_file";
         status.message = sprintf('File not found: %s', filepath);
         return;
     end
@@ -53,6 +55,7 @@ function [kind, status] = detectType(filepath)
         if ok
             kind = kinds(k);
             status.ok = true;
+            status.code = "ok";
             status.kind = kind;
             status.message = "";
             return;
@@ -70,9 +73,10 @@ function filepath = normalizeFilepath(filepath)
     filepath = char(filepath);
 end
 
-function status = makeStatus(filepath, kind, message)
+function status = makeStatus(filepath, kind, code, message)
     status = struct( ...
         'ok', false, ...
+        'code', string(code), ...
         'message', string(message), ...
         'kind', string(kind), ...
         'filepath', filepath);
@@ -80,7 +84,6 @@ end
 
 function [ok, msg] = isEIS(filepath)
     ok = false;
-    msg = "";
     try
         [~, tables] = parseEISDTA(filepath);
         [~, ok, msg] = labkit.dta.getZCurve(tables);
@@ -91,7 +94,6 @@ end
 
 function [ok, msg] = isChrono(filepath)
     ok = false;
-    msg = "";
     try
         [~, tables] = parseChronoDTA(filepath);
         [curve, tableOk, msg] = labkit.dta.getMainCurve(tables);
@@ -114,7 +116,6 @@ end
 
 function [ok, msg] = isCVCT(filepath)
     ok = false;
-    msg = "";
     try
         [scanRate, curves, logmsg] = parseCVCTDTA(filepath);
         ok = ~isempty(curves) && isfinite(scanRate);

@@ -40,7 +40,7 @@ function [hotSpot, coldSpot] = extremeTemperatureReadings(temperatureC)
     values = double(temperatureC);
     hotSpot = emptyReading();
     coldSpot = emptyReading();
-    if isempty(values) || ndims(values) ~= 2
+    if isempty(values) || ~ismatrix(values)
         return;
     end
     finiteMask = isfinite(values);

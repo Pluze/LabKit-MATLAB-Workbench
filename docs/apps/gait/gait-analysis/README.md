@@ -51,6 +51,9 @@ The pose source, analysis options, computed tables/events, and export record
 are saved. Decoded pose data and the currently selected step are reconstructed
 after load. Projects from the older stride-naming contract invalidate results
 whose scientific meaning changed, so rerun the analysis before export.
+Current projects validate finite numeric ranges, integer frame/window fields,
+the swing-frame ordering, nonempty role names, and logical origin settings
+before reconstructing a session.
 
 ## Two-Stage Workflow
 

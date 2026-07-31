@@ -260,7 +260,8 @@ function R = integrateCVCTSignSplit(t, V, I, scanRate)
     R.IcathDisp(I >= 0) = NaN;
     R.IanodDisp(I <= 0) = NaN;
 
-    dtErrList = [];
+    dtErrList = zeros(1, 2 * max(numel(t) - 1, 0));
+    dtErrCount = 0;
     useCV = isscalar(scanRate) && isfinite(scanRate) && scanRate > 0;
 
     for k = 1:numel(t)-1
@@ -272,12 +273,14 @@ function R = integrateCVCTSignSplit(t, V, I, scanRate)
             continue;
         end
 
-        bp = [0, 1];
+        bp = [0, 1, NaN];
+        bpCount = 2;
         s0 = crossingFraction(I1, I2, 0);
         if ~isempty(s0)
-            bp(end+1) = s0;
+            bpCount = bpCount + 1;
+            bp(bpCount) = s0;
         end
-        bp = unique(sort(bp));
+        bp = unique(sort(bp(1:bpCount)));
 
         for j = 1:numel(bp)-1
             sa = bp(j);
@@ -300,7 +303,8 @@ function R = integrateCVCTSignSplit(t, V, I, scanRate)
             if useCV
                 dt_act = tb - ta;
                 dt_cv = abs(Vb - Va) / scanRate;
-                dtErrList(end+1) = abs(dt_act - dt_cv);
+                dtErrCount = dtErrCount + 1;
+                dtErrList(dtErrCount) = abs(dt_act - dt_cv);
 
                 if Imid < 0
                     R.QcvCath = R.QcvCath + abs(trapz([0 dt_cv], [Ia Ib]));
@@ -311,8 +315,8 @@ function R = integrateCVCTSignSplit(t, V, I, scanRate)
         end
     end
 
-    if ~isempty(dtErrList)
-        R.dtErr = max(dtErrList);
+    if dtErrCount > 0
+        R.dtErr = max(dtErrList(1:dtErrCount));
     end
 end
 

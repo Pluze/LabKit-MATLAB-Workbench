@@ -1,6 +1,6 @@
 function tf = isGrowableTabChild(obj, node)
 % Class-folder implementation of MatlabPlatformAdapter.isGrowableTabChild.
-    if node.Kind == "section" && numel(node.ChildIds) == 1
+    if node.Kind == "section" && isscalar(node.ChildIds)
         tf = obj.isGrowableTabChild(obj.node(node.ChildIds(1)));
         return
     end

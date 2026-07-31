@@ -85,6 +85,10 @@ on every tab.
 | Smooth beats | 15 | Smoothing span used in exported per-segment trends |
 | Template plot | Template + residual band | Alternative view is template plus individual segments |
 
+Saved projects accept exactly the three displayed peak-method labels. A
+corrupt or hand-edited project containing another label is rejected instead
+of silently falling back to a detector.
+
 Peak polarity is selected automatically. The default detector threshold is
 2.8 standard deviations inside the app calculation.
 

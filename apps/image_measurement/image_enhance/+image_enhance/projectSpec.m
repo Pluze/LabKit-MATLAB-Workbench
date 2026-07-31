@@ -1,7 +1,8 @@
 % App-owned durable Image Enhance contract. App SDK runtime uses this one entry
 % for version-1 project creation and validation; no migration is required.
 function spec = projectSpec()
-    spec = labkit.app.project.Schema(Version=1,Create=@createProject,Validate=@validateProject);
+    spec = labkit.app.project.Schema(Version=1, Create=@createProject, ...
+        Validate=@validateProject, SourceBindings="inputs.sources");
 end
 
 function project = createProject()

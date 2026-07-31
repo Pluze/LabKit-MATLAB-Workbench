@@ -1,6 +1,6 @@
 ---
 name: labkit-app-builder
-description: "Use to create or substantially refactor a LabKit MATLAB app from scripts, functions, protocols, existing GUIs, workflow notes, or prose requirements."
+description: "Use to create or substantially refactor a LabKit MATLAB app from scripts, functions, protocols, existing GUIs, workflow notes, or prose requirements. Do not use for a narrow bug fix that preserves the existing App shape."
 ---
 
 # LabKit App Builder

@@ -34,6 +34,12 @@ classdef (Sealed) Schema
     %   RelinkSources - Fixed callback
     %       project = relink(project,unresolved,projectFile). Returning empty
     %       cancels the load. Default: empty.
+    %   SourceBindings - String or cell array of project-relative field paths
+    %       containing portable source records, for example
+    %       "inputs.sources". When omitted, Runtime infers bindings from
+    %       project-bound file-list nodes for compatibility with existing App
+    %       definitions. An explicitly empty value declares no source
+    %       bindings. Default: omitted compatibility inference.
     %
     % Outputs:
     %   contract - Immutable labkit.app.project.Schema value.
@@ -60,13 +66,15 @@ classdef (Sealed) Schema
         CreateResume
         ApplyResume
         RelinkSources
+        SourceBindings (1, :) string
+        UsesInferredSourceBindings (1, 1) logical
     end
 
     methods
         function obj = Schema(varargin)
             names = ["Version", "Create", "Validate", "Migrate", ...
                 "LegacyImports", "CreateResume", "ApplyResume", ...
-                "RelinkSources"];
+                "RelinkSources", "SourceBindings"];
             if isempty(varargin)
                 varargin = {"Version", 1, "Create", @createProject, ...
                     "Validate", @validateProject};
@@ -104,8 +112,39 @@ classdef (Sealed) Schema
                 options, "ApplyResume", 3, 1);
             obj.RelinkSources = optionalCallback( ...
                 options, "RelinkSources", 3, 1);
+            obj.UsesInferredSourceBindings = ~isfield(options, "SourceBindings");
+            obj.SourceBindings = sourceBindings( ...
+                optionValue(options, "SourceBindings", strings(1, 0)));
         end
     end
+end
+
+function bindings = sourceBindings(value)
+    if ischar(value)
+        value = string(value);
+    elseif iscell(value)
+        if ~all(cellfun(@(item) ischar(item) || ...
+                (isstring(item) && isscalar(item)), value), "all")
+            error("labkit:app:contract:InvalidValue", ...
+                "Project Schema SourceBindings must contain scalar text.");
+        end
+        value = string(value);
+    end
+    if ~isstring(value)
+        error("labkit:app:contract:InvalidValue", ...
+            "Project Schema SourceBindings must be text.");
+    end
+    bindings = reshape(value, 1, []);
+    for binding = bindings
+        parts = split(binding, ".");
+        if strlength(binding) == 0 || any(strlength(parts) == 0) || ...
+                startsWith(binding, "project.") || ...
+                ~all(cellfun(@isvarname, cellstr(parts)))
+            error("labkit:app:contract:InvalidValue", ...
+                "Project Schema SourceBindings must be project-relative field paths.");
+        end
+    end
+    bindings = unique(bindings, "stable");
 end
 
 function callback = optionalCallback(options, name, inputs, outputs)

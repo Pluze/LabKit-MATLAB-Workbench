@@ -27,11 +27,15 @@ function files = listLabKitDocTreeFiles(root)
             filesep, "/");
     end
     rootHiddenFiles = ".nojekyll";
+    rootHiddenPresent = strings(numel(rootHiddenFiles), 1);
+    presentCount = 0;
     for k = 1:numel(rootHiddenFiles)
         if isfile(fullfile(root, rootHiddenFiles(k))) && ...
                 ~any(files == rootHiddenFiles(k))
-            files(end + 1, 1) = rootHiddenFiles(k);
+            presentCount = presentCount + 1;
+            rootHiddenPresent(presentCount) = rootHiddenFiles(k);
         end
     end
+    files = [files; rootHiddenPresent(1:presentCount)];
     files = sort(unique(files));
 end

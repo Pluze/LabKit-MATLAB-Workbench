@@ -33,7 +33,8 @@ function payload = writeOutputs(items, opts)
     end
 
     results = repmat(batch_crop.resultFiles.emptyResult(), numel(items), 1);
-    reservedPaths = strings(0, 1);
+    reservedPaths = strings(numel(items), 1);
+    reservedCount = 0;
     for k = 1:numel(items)
         result = batch_crop.resultFiles.emptyResult();
         result.sourcePath = string(items(k).path);
@@ -50,8 +51,10 @@ function payload = writeOutputs(items, opts)
                 crop = batch_crop.cropGeometry.cropImage(items(k).image, cropOpts);
             end
             outputPath = uniqueBatchCropOutputPath(outputFolder, ...
-                string(items(k).path), outputFormat.extension, reservedPaths, "_crop");
-            reservedPaths(end+1, 1) = outputPath;
+                string(items(k).path), outputFormat.extension, ...
+                reservedPaths(1:reservedCount), "_crop");
+            reservedCount = reservedCount + 1;
+            reservedPaths(reservedCount, 1) = outputPath;
             labkit.image.writeFile(crop.image, outputPath);
 
             result = crop;
@@ -69,7 +72,8 @@ function payload = writeOutputs(items, opts)
 
     manifest = batch_crop.resultFiles.buildManifest(results);
     manifestPath = uniqueBatchCropOutputPath(outputFolder, ...
-        "batch_crop_manifest.csv", ".csv", reservedPaths, "");
+        "batch_crop_manifest.csv", ".csv", ...
+        reservedPaths(1:reservedCount), "");
     writetable(manifest, char(manifestPath));
 
     payload = struct();

@@ -1,11 +1,11 @@
 % App-owned implementation for rhs_preview.analysisRun.editFileFilter within the rhs_preview product workflow.
 function applicationState = editFileFilter( ...
-        applicationState, edit, callbackContext)
+        applicationState, edit, ~)
 %EDITFILEFILTER Apply typed label/comment edits and persist their source order.
 arguments
     applicationState (1, 1) struct
     edit (1, 1) labkit.app.event.TableCellEdit
-    callbackContext (1, 1) labkit.app.CallbackContext
+    ~
 end
 rows = rhs_preview.analysisRun.applyFileFilterTableData( ...
     applicationState.session.cache.filterRows, edit.Data);

@@ -139,51 +139,81 @@ end
 function [families, spikeTriggers, signalGroups] = readSignalGroups(fid)
     families = emptyFamilies();
     spikeTriggers = emptySpikeTrigger();
-    signalGroups = struct( ...
-        "name", {}, ...
-        "prefix", {}, ...
-        "enabled", {}, ...
-        "numChannels", {}, ...
-        "numAmplifierChannels", {});
-
     numberOfSignalGroups = readScalar(fid, "int16");
+    groupTemplate = struct("name", "", "prefix", "", "enabled", false, ...
+        "numChannels", 0, "numAmplifierChannels", 0);
+    signalGroups = repmat(groupTemplate, 1, numberOfSignalGroups);
+    familyNames = ["amplifier", "boardAdc", "boardDac", ...
+        "boardDigIn", "boardDigOut"];
+    familyChunks = cell(numel(familyNames), numberOfSignalGroups);
+    triggerChunks = cell(1, numberOfSignalGroups);
     for groupIndex = 1:numberOfSignalGroups
         groupName = readQString(fid);
         groupPrefix = readQString(fid);
         groupEnabled = readScalar(fid, "int16") ~= 0;
         groupNumChannels = readScalar(fid, "int16");
         groupNumAmplifierChannels = readScalar(fid, "int16");
-        signalGroups(end+1) = struct( ...
+        signalGroups(groupIndex) = struct( ...
             "name", string(groupName), ...
             "prefix", string(groupPrefix), ...
             "enabled", groupEnabled, ...
             "numChannels", double(groupNumChannels), ...
             "numAmplifierChannels", double(groupNumAmplifierChannels));
 
+        groupChannels = cell(numel(familyNames), groupNumChannels);
+        groupCounts = zeros(1, numel(familyNames));
+        groupTriggers = cell(1, groupNumChannels);
+        triggerCount = 0;
         for channelIndex = 1:groupNumChannels
             [channel, trigger, signalType, channelEnabled] = readChannel(fid, ...
                 groupName, groupPrefix, groupIndex);
             if ~(groupEnabled && channelEnabled)
                 continue;
             end
+            familyIndex = 0;
             switch signalType
                 case 0
-                    families.amplifier(end+1) = channel;
-                    spikeTriggers(end+1) = trigger;
+                    familyIndex = 1;
+                    triggerCount = triggerCount + 1;
+                    groupTriggers{triggerCount} = trigger;
                 case 3
-                    families.boardAdc(end+1) = channel;
+                    familyIndex = 2;
                 case 4
-                    families.boardDac(end+1) = channel;
+                    familyIndex = 3;
                 case 5
-                    families.boardDigIn(end+1) = channel;
+                    familyIndex = 4;
                 case 6
-                    families.boardDigOut(end+1) = channel;
+                    familyIndex = 5;
                 otherwise
                     % RHS files may include unused channel types inherited
                     % from the Intan header schema; only stored families are
                     % exposed by the RHS facade.
             end
+            if familyIndex > 0
+                groupCounts(familyIndex) = groupCounts(familyIndex) + 1;
+                groupChannels{familyIndex, groupCounts(familyIndex)} = channel;
+            end
         end
+        for familyIndex = 1:numel(familyNames)
+            if groupCounts(familyIndex) > 0
+                familyChunks{familyIndex, groupIndex} = ...
+                    [groupChannels{familyIndex, 1:groupCounts(familyIndex)}];
+            end
+        end
+        if triggerCount > 0
+            triggerChunks{groupIndex} = [groupTriggers{1:triggerCount}];
+        end
+    end
+    for familyIndex = 1:numel(familyNames)
+        chunks = familyChunks(familyIndex, :);
+        chunks = chunks(~cellfun(@isempty, chunks));
+        if ~isempty(chunks)
+            families.(familyNames(familyIndex)) = [chunks{:}];
+        end
+    end
+    triggerChunks = triggerChunks(~cellfun(@isempty, triggerChunks));
+    if ~isempty(triggerChunks)
+        spikeTriggers = [triggerChunks{:}];
     end
 end
 
@@ -296,31 +326,33 @@ function nBytes = blockBytes(samplesPerBlock, counts, dcAmplifierSaved)
 end
 
 function T = channelTable(families)
-    family = strings(0, 1);
-    nativeName = strings(0, 1);
-    customName = strings(0, 1);
-    nativeOrder = zeros(0, 1);
-    customOrder = zeros(0, 1);
-    chipChannel = zeros(0, 1);
-    boardStream = zeros(0, 1);
-    portName = strings(0, 1);
-    impedanceMagnitude = zeros(0, 1);
-    impedancePhase = zeros(0, 1);
-
     names = ["amplifier", "boardAdc", "boardDac", "boardDigIn", "boardDigOut"];
+    channelCount = sum(arrayfun(@(name) numel(families.(name)), names));
+    family = strings(channelCount, 1);
+    nativeName = strings(channelCount, 1);
+    customName = strings(channelCount, 1);
+    nativeOrder = zeros(channelCount, 1);
+    customOrder = zeros(channelCount, 1);
+    chipChannel = zeros(channelCount, 1);
+    boardStream = zeros(channelCount, 1);
+    portName = strings(channelCount, 1);
+    impedanceMagnitude = zeros(channelCount, 1);
+    impedancePhase = zeros(channelCount, 1);
+    row = 0;
     for iFamily = 1:numel(names)
         channels = families.(names(iFamily));
         for k = 1:numel(channels)
-            family(end+1, 1) = names(iFamily);
-            nativeName(end+1, 1) = channels(k).nativeName;
-            customName(end+1, 1) = channels(k).customName;
-            nativeOrder(end+1, 1) = channels(k).nativeOrder;
-            customOrder(end+1, 1) = channels(k).customOrder;
-            chipChannel(end+1, 1) = channels(k).chipChannel;
-            boardStream(end+1, 1) = channels(k).boardStream;
-            portName(end+1, 1) = channels(k).portName;
-            impedanceMagnitude(end+1, 1) = channels(k).electrodeImpedanceMagnitude;
-            impedancePhase(end+1, 1) = channels(k).electrodeImpedancePhase;
+            row = row + 1;
+            family(row, 1) = names(iFamily);
+            nativeName(row, 1) = channels(k).nativeName;
+            customName(row, 1) = channels(k).customName;
+            nativeOrder(row, 1) = channels(k).nativeOrder;
+            customOrder(row, 1) = channels(k).customOrder;
+            chipChannel(row, 1) = channels(k).chipChannel;
+            boardStream(row, 1) = channels(k).boardStream;
+            portName(row, 1) = channels(k).portName;
+            impedanceMagnitude(row, 1) = channels(k).electrodeImpedanceMagnitude;
+            impedancePhase(row, 1) = channels(k).electrodeImpedancePhase;
         end
     end
 

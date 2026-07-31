@@ -33,7 +33,7 @@ classdef (Sealed, Hidden) RuntimeStatePath
                 error("labkit:app:contract:UnknownReference", ...
                     "Bound state path is unavailable: %s.", path);
             end
-            if numel(parts) == 1
+            if isscalar(parts)
                 owner.(name) = value;
                 return;
             end

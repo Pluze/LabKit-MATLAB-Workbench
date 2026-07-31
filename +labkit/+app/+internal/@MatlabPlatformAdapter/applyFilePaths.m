@@ -21,7 +21,7 @@ function applyFilePaths(~, component, paths)
     if ~isempty(paths)
         if component.UserData.Compact
             text = string(paths(1));
-        elseif numel(paths) == 1
+        elseif isscalar(paths)
             text = "1 file";
         else
             text = string(numel(paths)) + " files";

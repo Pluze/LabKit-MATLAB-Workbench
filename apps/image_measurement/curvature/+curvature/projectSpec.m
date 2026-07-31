@@ -2,7 +2,8 @@
 % project creation, validation, and each required version migration step.
 function spec = projectSpec()
     spec = labkit.app.project.Schema(Version=2, Create=@createProject, ...
-        Validate=@validateProject, Migrate=@migrateProject);
+        Validate=@validateProject, Migrate=@migrateProject, ...
+        SourceBindings="inputs.sources");
 end
 
 function project = createProject()

@@ -42,7 +42,7 @@ function rgb = renderImage(values, opts)
 % See also labkit.thermal.rawToTemperatureC,
 %   labkit.thermal.readFile
 
-    if nargin < 2 || isempty(opts)
+    if nargin < 2
         opts = struct();
     end
     opts = normalizeOptions(values, opts);
@@ -56,6 +56,7 @@ function rgb = renderImage(values, opts)
 end
 
 function opts = normalizeOptions(values, opts)
+    validateOptionStruct(opts, ["Limits", "Palette", "Levels"]);
     opts = struct( ...
         'Limits', optionValue(opts, 'Limits', finiteLimits(values)), ...
         'Palette', lower(string(optionValue(opts, 'Palette', "turbo"))), ...

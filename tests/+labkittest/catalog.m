@@ -5,7 +5,8 @@ function descriptors = catalog(varargin)
 %   matlab.unittest.Test identity.
 %
 %   DESCRIPTORS = labkittest.catalog(Owner=OWNER) limits discovery to a
-%   path-derived test owner such as "apps/electrochem/cic/analysisRun".
+%   path-derived test owner such as "apps/electrochem/cic/analysisRun" or
+%   "tools/codecheck".
 %   OWNER must name a directory below tests/specs; it is never a substring
 %   selector.
 %
@@ -163,8 +164,8 @@ function [contracts, environment] = testMetadata(test)
     if numel(contractTags) ~= 1 || numel(environmentTags) ~= 1 || ...
             ~isempty(unexpected)
         error("LabKit:TestCatalog:InvalidMetadata", ...
-            ["Each test must declare exactly one Contract:<name> and one " + ...
-            "Env:<name> tag, with no other tags: %s."], test.Name);
+            "Each test must declare exactly one Contract:<name> and one " + ...
+            "Env:<name> tag, with no other tags: %s.", test.Name);
     end
     contracts = lower(extractAfter(contractTags, contractPrefix));
     environment = lower(extractAfter(environmentTags, environmentPrefix));

@@ -83,7 +83,8 @@ function payload = profileLabKitPayload(profInfo, targetLabel, runError, wrapper
 
     metadata = struct();
     metadata.Target = char(string(targetLabel));
-    metadata.GeneratedAt = datestr(now, 'yyyy-mm-dd HH:MM:SS');
+    metadata.GeneratedAt = char(datetime( ...
+        "now", "Format", "yyyy-MM-dd HH:mm:ss"));
     metadata.MatlabVersion = version;
     metadata.MatlabRoot = matlabRootValue;
     metadata.NumFunctions = numel(functions);
@@ -241,13 +242,6 @@ function value = matrixValue(raw, row, col)
     if size(raw, 2) >= col
         value = raw(row, col);
     end
-end
-
-function edges = keepEdges(edges, keepIndices)
-    if isempty(edges)
-        return;
-    end
-    edges = edges(ismember([edges.Index], keepIndices));
 end
 
 function total = executedLineTime(f)

@@ -158,7 +158,7 @@ classdef (Sealed) Definition
             %LAUNCH Answer metadata requests or show the native MATLAB App.
             initialProject = [];
             if ~isempty(varargin) && ...
-                    ~(numel(varargin) == 1 && ...
+                    ~(isscalar(varargin) && ...
                       (ischar(varargin{1}) || ...
                        (isstring(varargin{1}) && isscalar(varargin{1}))))
                 options = labkit.app.internal.OptionParser.parse( ...
@@ -222,7 +222,6 @@ classdef (Sealed) Definition
     end
 
 end
-
 function value = optionValue(options, name, defaultValue)
     value = defaultValue;
     if isfield(options, name)
@@ -317,9 +316,4 @@ function callback = optionalFixedCallback(options, name, inputs, outputs)
             "Definition %s requires %d inputs and %d outputs.", ...
             name, inputs, outputs);
     end
-end
-
-
-function state = runAnalysis(state, ~)
-    state.finished = true;
 end

@@ -5,7 +5,6 @@ steps = image_enhance.analysisRun.activeSteps(applicationState);
 if isempty(steps)
     return;
 end
-removed = steps(end);
 steps(end) = [];
 steps = steps(:);
 applicationState = image_enhance.analysisRun.setActiveSteps( ...

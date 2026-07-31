@@ -20,7 +20,13 @@ function task = exportTask(items, steps, opts)
 end
 
 function fingerprint = taskFingerprint(items, steps, task)
-    lines = [
+    itemStepLineCount = 0;
+    if ~isempty(task.itemSteps)
+        itemStepLineCount = numel(task.itemSteps) + ...
+            sum(cellfun(@numel, task.itemSteps));
+    end
+    lines = strings(5 + numel(items) + numel(steps) + itemStepLineCount, 1);
+    lines(1:5) = [
         "app=image_enhance"
         "outputFolder=" + task.outputFolder
         "format=" + task.options.format
@@ -28,27 +34,32 @@ function fingerprint = taskFingerprint(items, steps, task)
         "stepCount=" + string(numel(steps))];
 
     for k = 1:numel(items)
-        lines(end + 1, 1) = "source[" + string(k) + "]=" + ...
+        lines(5 + k, 1) = "source[" + string(k) + "]=" + ...
             string(items(k).path) + "|image=" + imageToken(items(k).image);
     end
 
     for k = 1:numel(steps)
-        lines(end + 1, 1) = "step[" + string(k) + "]=" + stepToken(steps(k));
+        lines(5 + numel(items) + k, 1) = ...
+            "step[" + string(k) + "]=" + stepToken(steps(k));
     end
     if ~isempty(task.itemSteps)
+        nextLine = 5 + numel(items) + numel(steps) + 1;
         for k = 1:numel(task.itemSteps)
             itemStepLines = itemStepTokens(k, task.itemSteps{k});
-            lines = [lines; itemStepLines];
+            destination = nextLine:nextLine + numel(itemStepLines) - 1;
+            lines(destination) = itemStepLines;
+            nextLine = destination(end) + 1;
         end
     end
 
-    fingerprint = strjoin(lines, sprintf('\n'));
+    fingerprint = strjoin(lines, newline);
 end
 
 function lines = itemStepTokens(itemIndex, steps)
-    lines = "itemStepCount[" + string(itemIndex) + "]=" + string(numel(steps));
+    lines = strings(numel(steps) + 1, 1);
+    lines(1) = "itemStepCount[" + string(itemIndex) + "]=" + string(numel(steps));
     for k = 1:numel(steps)
-        lines(end + 1, 1) = "itemStep[" + string(itemIndex) + "," + ...
+        lines(k + 1, 1) = "itemStep[" + string(itemIndex) + "," + ...
             string(k) + "]=" + stepToken(steps(k));
     end
 end

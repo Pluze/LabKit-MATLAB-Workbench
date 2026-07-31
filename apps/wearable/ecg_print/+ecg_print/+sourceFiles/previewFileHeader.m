@@ -5,7 +5,8 @@
 function lines = previewFileHeader(filepath, maxLines)
 %PREVIEWFILEHEADER Return numbered header preview lines for the ECG Print app.
 
-    lines = {};
+    lines = cell(maxLines, 1);
+    lineCount = 0;
     fid = fopen(filepath, 'r');
     if fid < 0
         lines = {'Could not open file preview.'};
@@ -17,8 +18,10 @@ function lines = previewFileHeader(filepath, maxLines)
         if ~ischar(line)
             break;
         end
-        lines{end+1, 1} = sprintf('%02d: %s', k, line);
+        lineCount = lineCount + 1;
+        lines{lineCount, 1} = sprintf('%02d: %s', k, line);
     end
+    lines = lines(1:lineCount);
     if isempty(lines)
         lines = {'File is empty or could not be previewed.'};
     end

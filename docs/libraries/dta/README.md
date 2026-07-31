@@ -72,6 +72,10 @@ end
 ```
 
 `report.statuses` contains one status in the same order as the input paths.
+Each status and failed record includes a stable `code`: `ok`, `missing_file`,
+`unsupported_content`, `kind_mismatch`, or `parse_failure`. Use the code for
+program logic and retain `message` for people; message wording is not a machine
+contract.
 `items` contains successful items only, so use the status array when you need
 to match a result to every original position.
 

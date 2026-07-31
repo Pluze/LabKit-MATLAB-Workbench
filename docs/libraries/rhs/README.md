@@ -40,6 +40,9 @@ if status.ok
 end
 ```
 
+RHS option structures are closed contracts. Unknown fields or non-struct
+values raise `labkit:rhs:InvalidOptions`.
+
 `window.values` is always samples-by-channels. `window.timeSec` contains the
 timestamps stored in the recording, converted to seconds.
 

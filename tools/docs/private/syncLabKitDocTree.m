@@ -74,14 +74,17 @@ end
 function removeEmptyFolders(root)
     entries = dir(fullfile(root, "**", "*"));
     entries = entries([entries.isdir]);
-    paths = strings(0, 1);
+    paths = strings(numel(entries), 1);
+    pathCount = 0;
     for k = 1:numel(entries)
         if any(string(entries(k).name) == [".", ".."])
             continue;
         end
-        paths(end + 1, 1) = string(fullfile( ...
+        pathCount = pathCount + 1;
+        paths(pathCount, 1) = string(fullfile( ...
             entries(k).folder, entries(k).name));
     end
+    paths = paths(1:pathCount);
     [~, order] = sort(strlength(paths), "descend");
     paths = paths(order);
     for k = 1:numel(paths)

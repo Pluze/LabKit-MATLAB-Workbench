@@ -1,6 +1,6 @@
 % Expected caller: RHS Preview direct callbacks. Inputs are one axes handle and app state
 % with an optional preview window. Side effect redraws stacked RHS waveforms.
-function drawStackedPreview(axesById, S)
+function drawPreview(axesById, S)
 %DRAWSTACKEDPREVIEW Draw time-aligned stacked RHS preview traces.
 
     ax = axesById.main;

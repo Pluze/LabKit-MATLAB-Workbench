@@ -7,7 +7,8 @@ function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
 %                      omitted, the function renders an independent reference.
 % Output:
 %   result - renderer result plus comparedFileCount.
-% Side effects: creates and removes one or two temporary generated sites.
+% Side effects: creates and removes one or two temporary generated sites and
+%   reports render/compare stages to the console.
 
     repoRoot = fileparts(fileparts(fileparts(mfilename("fullpath"))));
     if nargin < 1 || strlength(string(sourceRoot)) == 0
@@ -19,12 +20,15 @@ function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
         existingSiteRoot = tempname;
         referenceCleanup = onCleanup( ...
             @() removeDocFolder(existingSiteRoot));
+        fprintf("DOCS CHECK [1/3] render reference\n");
         renderLabKitDocs(sourceRoot, existingSiteRoot);
     end
 
     generatedRoot = tempname;
     cleanup = onCleanup(@() removeDocFolder(generatedRoot));
+    fprintf("DOCS CHECK [2/3] render candidate\n");
     result = renderLabKitDocs(sourceRoot, generatedRoot);
+    fprintf("DOCS CHECK [3/3] compare generated trees\n");
     [matches, diagnostic, count] = compareLabKitDocTrees( ...
         generatedRoot, existingSiteRoot);
     if ~matches

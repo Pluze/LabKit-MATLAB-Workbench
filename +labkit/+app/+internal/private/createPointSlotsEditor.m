@@ -130,12 +130,11 @@ function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
     end
 
     function index = nextPlacementIndex()
-        index = [];
         if any(~isfinite(value.points(value.selectedIndex, :)))
             index = value.selectedIndex;
-            return;
+        else
+            index = find(~all(isfinite(value.points), 2), 1);
         end
-        index = find(~all(isfinite(value.points), 2), 1);
     end
 
     function index = nextUnplacedIndex(placedIndex)

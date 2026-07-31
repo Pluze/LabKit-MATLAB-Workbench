@@ -452,7 +452,7 @@ classdef (Sealed, Hidden) LayoutNode
         function obj = workspace(varargin)
             content = {};
             if ~isempty(varargin) && isa(varargin{1}, "labkit.app.internal.LayoutNode")
-                content = {varargin{1}};
+                content = varargin(1);
                 varargin = varargin(2:end);
             end
             options = labkit.app.internal.OptionParser.parse( ...
@@ -541,7 +541,7 @@ classdef (Sealed, Hidden) LayoutNode
             labkit.app.internal.LayoutNodeValues.validateChildKinds(content, labkit.app.internal.LayoutNodeValues.workspaceContentKinds(), ...
                 "workspace page");
             pageNode = labkit.app.internal.LayoutNode("workspacePage", id, content, ...
-                ["workspacePage"], {}, [], strings(1, 0), ...
+                "workspacePage", {}, [], strings(1, 0), ...
                 struct("Title", labkit.app.internal.LayoutNodeValues.nonemptyText(title, "workspace page title")));
             obj.Children{end + 1} = pageNode;
             obj.PageIds(end + 1) = id;
@@ -594,8 +594,4 @@ function value = tooltipValue(options, name, defaultValue)
 value = labkit.app.internal.LayoutNodeValues.nonemptyText( ...
     labkit.app.internal.LayoutNodeValues.optionValue( ...
     options, name, defaultValue), name);
-end
-
-function state = runAnalysis(state, ~)
-    state.finished = true;
 end

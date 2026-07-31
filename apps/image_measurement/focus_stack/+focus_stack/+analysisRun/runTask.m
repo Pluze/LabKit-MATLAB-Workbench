@@ -27,7 +27,8 @@ function optsOut = normalizeOptions(opts)
 end
 
 function fingerprint = taskFingerprint(task, images)
-    lines = [
+    lines = strings(numel(images) + 6, 1);
+    lines(1:6) = [
         "app=focus_stack"
         "registerStack=" + string(task.registerStack)
         "focusWindow=" + numberToken(task.options.focusWindow)
@@ -40,11 +41,11 @@ function fingerprint = taskFingerprint(task, images)
         if k <= numel(task.sourcePaths)
             pathValue = task.sourcePaths(k);
         end
-        lines(end + 1, 1) = "image[" + string(k) + "]=" + ...
+        lines(k + 6, 1) = "image[" + string(k) + "]=" + ...
             pathValue + "|image=" + imageToken(images{k});
     end
 
-    fingerprint = strjoin(lines, sprintf('\n'));
+    fingerprint = strjoin(lines, newline);
 end
 
 function token = imageToken(imageData)

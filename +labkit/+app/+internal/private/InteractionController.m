@@ -67,13 +67,15 @@ end
 end
 
 function ids = actionIdsFor(specs)
-ids = strings(1, 0);
 names = string(fieldnames(specs));
-for name = names.'
+ids = strings(3, numel(names));
+for k = 1:numel(names)
+    name = names(k);
     spec = specs.(char(name));
-    ids = [ids, string(spec.Event), ...
-        string(spec.BackgroundEvent), string(spec.ScrollEvent)];
+    ids(:, k) = [string(spec.Event); ...
+        string(spec.BackgroundEvent); string(spec.ScrollEvent)];
 end
+ids = ids(:).';
 ids = unique(ids(strlength(ids) > 0), "stable");
 end
 

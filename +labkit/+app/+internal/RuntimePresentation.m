@@ -1,12 +1,12 @@
 % Derive the complete default Snapshot from compiled layout and App state.
 % Expected caller: RuntimeKernel before overlaying the App-owned Snapshot.
 % Inputs are a compiled platform plan, scalar application state, portable
-% source store, and status log. The method returns a new immutable Snapshot
+% source store, and current status. The method returns a new immutable Snapshot
 % and does not create or mutate native MATLAB graphics.
 classdef (Sealed, Hidden) RuntimePresentation
     methods (Static)
         function view = fromState( ...
-                plan, state, sourcePathsForRole, statusLog)
+                plan, state, sourcePathsForRole, currentStatus)
             view = labkit.app.view.Snapshot();
             for k = 1:numel(plan.Nodes)
                 node = plan.Nodes(k);
@@ -85,8 +85,8 @@ classdef (Sealed, Hidden) RuntimePresentation
                             ColumnEditable=config.ColumnEditable);
                     case "statusPanel"
                         status = config.Text;
-                        if isempty(status) && ~isempty(statusLog)
-                            status = statusLog(end);
+                        if isempty(status) && strlength(currentStatus) > 0
+                            status = currentStatus;
                         end
                         view = view.text(node.Id, join(status, newline));
                     case "workspacePage"

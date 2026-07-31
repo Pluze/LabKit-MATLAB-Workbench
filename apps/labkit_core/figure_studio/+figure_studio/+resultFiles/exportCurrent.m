@@ -71,5 +71,5 @@ if strlength(stem) == 0
     stem = "figure";
 end
 name = string(matlab.lang.makeValidName(char(stem))) + "_" + ...
-    string(datestr(now, "yyyymmdd_HHMMSS"));
+    string(datetime("now", "Format", "yyyyMMdd_HHmmss"));
 end

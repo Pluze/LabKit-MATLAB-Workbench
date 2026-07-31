@@ -90,6 +90,11 @@ previewing data, but the result is not evidence that the assumed emissivity,
 distance, humidity, or temperatures match the experiment. Check those values
 before using the temperatures in quantitative analysis.
 
+When supplied, emissivity and infrared-window transmission must be finite
+scalars in `(0, 1]`, object distance must be nonnegative, and relative
+humidity accepts either a fraction in `[0, 1]` or a percentage in `[0, 100]`.
+Invalid supplied calibration is rejected rather than replaced by a default.
+
 Choose `"planck-basic"` only when you intentionally want the conversion based
 on the five Planck constants alone:
 
@@ -114,6 +119,9 @@ Values outside `Limits` are clipped to the end colours. Supported palettes are
 `"turbo"`, `"parula"`, `"hot"`, `"gray"`, and `"iron"`. The FLIR Thermal app
 also offers display-only log and gamma controls; those controls are app
 features and do not alter exported temperature values.
+
+Option structures across this facade are closed contracts: unknown fields and
+non-struct option values raise `labkit:thermal:InvalidOptions`.
 
 ## Supported Files and Limitations
 

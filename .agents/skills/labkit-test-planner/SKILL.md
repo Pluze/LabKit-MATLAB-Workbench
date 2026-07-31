@@ -1,6 +1,6 @@
 ---
 name: labkit-test-planner
-description: "Use for validation planning, MATLAB test execution, pre-commit checks, CI scope, GUI checks, fixtures, or test-catalog changes."
+description: "Use for validation planning, MATLAB test execution, pre-commit checks, CI scope, GUI checks, fixtures, or test-catalog changes. Do not use to widen validation without a source-owned contract."
 ---
 
 # LabKit Test Planner

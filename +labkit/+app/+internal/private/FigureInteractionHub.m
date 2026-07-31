@@ -411,9 +411,10 @@ function targets = normalizeTargets(values)
         error("labkit:app:runtime:InvariantFailure", ...
             "Interaction targets must provide semantic ids and axes.");
     end
-    targets = struct("id", {}, "axes", {}, "listener", {});
+    targets = repmat(struct("id", "", "axes", [], "listener", []), ...
+        1, numel(values));
     for k = 1:numel(values)
-        targets(end + 1) = struct( ...
+        targets(k) = struct( ...
             "id", string(values(k).id), ...
             "axes", values(k).axes, "listener", []);
     end
@@ -466,9 +467,11 @@ function handles = normalizeHandles(value)
         return;
     end
     if iscell(value)
+        chunks = cell(1, numel(value));
         for k = 1:numel(value)
-            handles = [handles normalizeHandles(value{k})];
+            chunks{k} = normalizeHandles(value{k});
         end
+        handles = [chunks{:}];
         return;
     end
     value = value(:).';
@@ -525,8 +528,16 @@ function invokeCallback(callback, src, event)
     if isa(callback, 'function_handle')
         callback(src, event);
     elseif iscell(callback)
-        feval(callback{1}, src, event, callback{2:end});
+        callbackFunction = callback{1};
+        callbackFunction(src, event, callback{2:end});
     elseif ischar(callback) || isstring(callback)
+        if isempty(regexp(char(callback), ...
+                '^[A-Za-z]\w*(\.[A-Za-z]\w*)*$', 'once'))
+            error('labkit:app:FigureInteractionHub:InvalidCallbackName', ...
+                'Legacy string callbacks must contain one callable function name.');
+        end
+        % Compatibility boundary for MATLAB figures that still expose a
+        % legacy named callback instead of a function handle.
         feval(char(callback), src, event);
     end
 end

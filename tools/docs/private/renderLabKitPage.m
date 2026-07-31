@@ -121,7 +121,8 @@ end
 function html = renderContextAncestors(pages, outputPath, landingTarget)
     folder = replace(string(fileparts(char(outputPath))), "\\", "/");
     parts = split(folder, "/");
-    links = strings(0, 1);
+    links = strings(numel(parts), 1);
+    linkCount = 0;
     for k = 1:numel(parts)
         target = strjoin(parts(1:k), "/") + "/index.html";
         if target == outputPath || target == landingTarget
@@ -131,11 +132,12 @@ function html = renderContextAncestors(pages, outputPath, landingTarget)
         if isempty(index)
             continue;
         end
-        links(end + 1, 1) = "<a class=""context-parent"" href=""" + ...
+        linkCount = linkCount + 1;
+        links(linkCount, 1) = "<a class=""context-parent"" href=""" + ...
             relativeWebPath(outputPath, target) + """>" + ...
             htmlEscape(pages(index).title) + "</a>";
     end
-    html = strjoin(links, "");
+    html = strjoin(links(1:linkCount), "");
 end
 
 function html = renderSectionLinks(model, outputPath, section, apiItem)
@@ -178,11 +180,11 @@ function html = renderSiblingApis(api, item, outputPath)
     parts = split(symbol, ".");
     prefix = strjoin(parts(1:end - 1), ".") + ".";
     members = api(startsWith(string({api.symbol}), prefix));
-    links = strings(0, 1);
+    links = strings(numel(members), 1);
     for k = 1:numel(members)
         target = apiOutputPath(members(k));
         nameParts = split(string(members(k).symbol), ".");
-        links(end + 1, 1) = localLink(outputPath, target, nameParts(end));
+        links(k, 1) = localLink(outputPath, target, nameParts(end));
     end
     groupTitle = "Package Functions";
     if ~isempty(parts) && numel(parts) > 1
@@ -212,7 +214,8 @@ function html = renderAppNavigation(pages, currentIndex, outputPath)
     if ~isempty(currentIndex) && numel(pages(currentIndex).nav) > 1
         families = pages(currentIndex).nav(2);
     end
-    chunks = strings(0, 1);
+    chunks = strings(numel(families), 1);
+    chunkCount = 0;
     for k = 1:numel(families)
         family = families(k);
         members = appMembers(arrayfun( ...
@@ -225,11 +228,12 @@ function html = renderAppNavigation(pages, currentIndex, outputPath)
             if ~isempty(familyPage) && familyPage(1).output ~= outputPath
                 target = string(familyPage(1).output);
             end
-            chunks(end + 1, 1) = ...
+            chunkCount = chunkCount + 1;
+            chunks(chunkCount, 1) = ...
                 localSubgroup(family, content, outputPath, target);
         end
     end
-    html = strjoin(chunks, "");
+    html = strjoin(chunks(1:chunkCount), "");
 end
 
 function html = renderPageGroups(members, outputPath, defaultGroup, useNavGroup)
@@ -252,15 +256,17 @@ function html = renderPageGroups(members, outputPath, defaultGroup, useNavGroup)
         groupNames = repmat(string(defaultGroup), numel(members), 1);
         groups = string(defaultGroup);
     end
-    chunks = strings(0, 1);
+    chunks = strings(numel(groups), 1);
+    chunkCount = 0;
     for k = 1:numel(groups)
         content = renderPageGroupLinks( ...
             members(groupNames == groups(k)), outputPath, true);
         if strlength(content) > 0
-            chunks(end + 1, 1) = localSubgroup(groups(k), content);
+            chunkCount = chunkCount + 1;
+            chunks(chunkCount, 1) = localSubgroup(groups(k), content);
         end
     end
-    html = strjoin(chunks, "");
+    html = strjoin(chunks(1:chunkCount), "");
 end
 
 function html = renderPageGroupLinks(members, outputPath, indentChildren)
@@ -268,7 +274,7 @@ function html = renderPageGroupLinks(members, outputPath, indentChildren)
     members = members(memberOrder);
     parentKinds = ["overview", "app family"];
     hasParent = any(ismember(string({members.kind}), parentKinds));
-    links = strings(0, 1);
+    links = strings(numel(members), 1);
     for k = 1:numel(members)
         className = "local-link";
         isParent = any(string(members(k).kind) == parentKinds);
@@ -277,7 +283,7 @@ function html = renderPageGroupLinks(members, outputPath, indentChildren)
         elseif isParent
             className = className + " local-parent-link";
         end
-        links(end + 1, 1) = localLinkWithClass( ...
+        links(k, 1) = localLinkWithClass( ...
             outputPath, members(k).output, members(k).title, className);
     end
     html = strjoin(links, "");
@@ -309,12 +315,13 @@ end
 function html = renderOnThisPage(body)
     tokens = regexp(char(body), '<h2 id="([^"]+)">(.+?)</h2>', ...
         'tokens');
-    links = strings(0, 1);
-    for k = 1:min(numel(tokens), 24)
+    linkCount = min(numel(tokens), 24);
+    links = strings(linkCount, 1);
+    for k = 1:linkCount
         anchor = string(tokens{k}{1});
         label = regexprep(string(tokens{k}{2}), '<[^>]+>', '');
         label = decodeBasicEntities(label);
-        links(end + 1, 1) = "<a class=""toc-link"" href=""#" + ...
+        links(k, 1) = "<a class=""toc-link"" href=""#" + ...
             htmlEscape(anchor) + """>" + htmlEscape(label) + "</a>";
     end
     html = strjoin(links, "");

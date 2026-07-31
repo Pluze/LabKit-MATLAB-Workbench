@@ -297,7 +297,7 @@ function img = convertChannels(img, channels)
         end
         return;
     end
-    if ndims(img) == 2 || size(img, 3) == 1
+    if ismatrix(img) || size(img, 3) == 1
         img = repmat(img(:, :, 1), [1 1 3]);
     elseif size(img, 3) > 3
         img = img(:, :, 1:3);

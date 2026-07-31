@@ -4,7 +4,7 @@
 function spec = projectSpec()
     spec = labkit.app.project.Schema(Version=3, ...
         Create=@createProject, Validate=@validateProject, ...
-        Migrate=@migrateProject);
+        Migrate=@migrateProject, SourceBindings="inputs.sources");
 end
 
 function project = createProject()
@@ -63,8 +63,9 @@ if ~isfield(project, 'inputs') || ...
 end
 items = project.inputs.items;
 sources = project.inputs.sources;
-taskSources = emptySources();
-usedSourceIds = strings(0, 1);
+taskSourceCells = cell(numel(items), 1);
+usedSourceIds = strings(numel(items), 1);
+sourceCount = 0;
 for k = 1:numel(items)
     match = find(string({sources.id}) == string(items(k).sourceId), 1);
     if isempty(match)
@@ -73,16 +74,18 @@ for k = 1:numel(items)
     source = sources(match);
     sourceId = string(source.id);
     if any(usedSourceIds == sourceId)
-        sourceId = nextSourceId(sources, taskSources);
+        sourceId = nextSourceId( ...
+            sources, vertcat(taskSourceCells{1:sourceCount}));
         source.id = sourceId;
         items(k).sourceId = sourceId;
     end
-    if isempty(taskSources)
-        taskSources = source;
-    else
-        taskSources(end + 1, 1) = source;
-    end
-    usedSourceIds(end + 1, 1) = sourceId;
+    sourceCount = sourceCount + 1;
+    taskSourceCells{sourceCount, 1} = source;
+    usedSourceIds(sourceCount, 1) = sourceId;
+end
+taskSources = emptySources();
+if sourceCount > 0
+    taskSources = vertcat(taskSourceCells{1:sourceCount});
 end
 project.inputs.items = items;
 project.inputs.sources = taskSources;
@@ -110,25 +113,27 @@ function project = migrateVersionOne(project)
         return;
     end
     items = project.inputs.items;
-    sources = struct([]);
-    sourcePaths = strings(0, 1);
+    sourceCells = cell(numel(items), 1);
+    sourcePaths = strings(numel(items), 1);
+    sourceCount = 0;
     for k = 1:numel(items)
         path = string(items(k).path);
         match = find(sourcePaths == path, 1, 'first');
         if isempty(match)
-            sourceId = "image" + string(numel(sources) + 1);
+            sourceId = "image" + string(sourceCount + 1);
             source = labkit.app.project.sourceRecord( ...
                 sourceId, "cropSource", path, true);
-            if isempty(sources)
-                sources = source;
-            else
-                sources(end + 1, 1) = source;
-            end
-            sourcePaths(end + 1, 1) = path;
+            sourceCount = sourceCount + 1;
+            sourceCells{sourceCount} = source;
+            sourcePaths(sourceCount, 1) = path;
         else
-            sourceId = string(sources(match).id);
+            sourceId = string(sourceCells{match}.id);
         end
         items(k).sourceId = sourceId;
+    end
+    sources = emptySources();
+    if sourceCount > 0
+        sources = vertcat(sourceCells{1:sourceCount});
     end
     project.inputs.items = rmfield(items, 'path');
     project.inputs.sources = sources;

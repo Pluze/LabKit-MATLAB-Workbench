@@ -6,7 +6,6 @@ if isempty(steps)
     return
 end
 steps = steps(:);
-removed = steps(end);
 steps(end) = [];
 steps = steps(:);
 applicationState.project.annotations.steps = steps;

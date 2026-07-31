@@ -25,17 +25,16 @@ function [temperatureC, diagnostics] = rawToTemperatureC(raw, calibration, opts)
 %   PlanckF - Required finite scalar from the camera metadata.
 %   PlanckO - Required finite scalar from the camera metadata.
 %   PlanckR2 - Required finite scalar from the camera metadata.
-%   Emissivity - Object emissivity. Must be positive. Default: 1.
-%   ObjectDistanceM - Camera-to-object distance in metres. Negative values are
-%       treated as zero. Default: 1.
+%   Emissivity - Object emissivity in (0,1]. Default: 1.
+%   ObjectDistanceM - Nonnegative camera-to-object distance in metres.
+%       Default: 1.
 %   ReflectedApparentTemperatureC - Reflected apparent temperature in degrees
 %       Celsius. Default: 20.
 %   AtmosphericTemperatureC - Atmospheric temperature in degrees Celsius.
 %       Default: 20.
 %   IRWindowTemperatureC - Infrared-window temperature in degrees Celsius.
 %       Defaults to ReflectedApparentTemperatureC.
-%   IRWindowTransmission - Infrared-window transmission. Must be positive.
-%       Default: 1.
+%   IRWindowTransmission - Infrared-window transmission in (0,1]. Default: 1.
 %   RelativeHumidity - Relative humidity as a fraction from 0 to 1 or as a
 %       percentage greater than 2. Default: 0.5.
 %   AtmosphericTransAlpha1 - First atmospheric alpha coefficient. Default:
@@ -66,8 +65,9 @@ function [temperatureC, diagnostics] = rawToTemperatureC(raw, calibration, opts)
 %
 % Errors:
 %   Throws labkit:thermal:MissingCalibration when a required Planck field is
-%   absent or not finite, and labkit:thermal:InvalidOptions when Correction is
-%   not one of the two supported values.
+%   absent or not finite, labkit:thermal:InvalidCalibration when a supplied
+%   environmental field is outside its physical range, and
+%   labkit:thermal:InvalidOptions when Correction is unsupported.
 %
 % Example:
 %   calibration = struct("PlanckR1", 21106.77, "PlanckB", 1501, ...
@@ -80,9 +80,10 @@ function [temperatureC, diagnostics] = rawToTemperatureC(raw, calibration, opts)
 % See also labkit.thermal.readFile,
 %   labkit.thermal.renderImage
 
-    if nargin < 3 || isempty(opts)
+    if nargin < 3
         opts = struct();
     end
+    validateOptionStruct(opts, "Correction");
     mode = string(optionValue(opts, 'Correction', "environment"));
     if ~any(mode == ["environment", "planck-basic"])
         error('labkit:thermal:InvalidOptions', ...
@@ -121,7 +122,7 @@ function [rawObject, diagnostics] = environmentCorrectedRaw(raw, calibration)
     IRWTemp = parameters.IRWindowTemperatureC;
     IRT = parameters.IRWindowTransmission;
     RH = parameters.RelativeHumidity;
-    if RH > 2
+    if RH > 1
         RH = RH / 100;
     end
     ATA1 = parameters.AtmosphericTransAlpha1;
@@ -175,29 +176,49 @@ function [parameters, diagnostics] = environmentParameters(calibration)
     fields = string(fieldnames(defaults));
     parameters = struct();
     sources = struct();
-    defaultedFields = strings(0, 1);
+    defaultedFields = strings(numel(fields), 1);
+    defaultedCount = 0;
     for k = 1:numel(fields)
         field = fields(k);
         fallback = defaults.(field);
         if field == "IRWindowTemperatureC" && ~isfinite(fallback)
             fallback = fieldValue(parameters, 'ReflectedApparentTemperatureC', 20);
         end
+        validateEnvironmentalField(calibration, field);
         [value, usedDefault] = scalarField(calibration, field, fallback);
-        if any(field == ["Emissivity", "IRWindowTransmission"]) && value <= 0
-            value = fallback;
-            usedDefault = true;
-        elseif field == "ObjectDistanceM"
-            value = max(0, value);
-        end
         parameters.(field) = value;
         if usedDefault
             sources.(field) = "default";
-            defaultedFields(end + 1, 1) = field;
+            defaultedCount = defaultedCount + 1;
+            defaultedFields(defaultedCount) = field;
         else
             sources.(field) = "calibration";
         end
     end
+    defaultedFields = defaultedFields(1:defaultedCount);
     diagnostics = conversionDiagnostics("environment", defaultedFields, sources);
+end
+
+function validateEnvironmentalField(calibration, field)
+    if ~isfield(calibration, field)
+        return;
+    end
+    value = calibration.(field);
+    validScalar = isnumeric(value) && isscalar(value) && isfinite(double(value));
+    switch field
+        case {"Emissivity", "IRWindowTransmission"}
+            valid = validScalar && double(value) > 0 && double(value) <= 1;
+        case "ObjectDistanceM"
+            valid = validScalar && double(value) >= 0;
+        case "RelativeHumidity"
+            valid = validScalar && double(value) >= 0 && double(value) <= 100;
+        otherwise
+            return;
+    end
+    if ~valid
+        error('labkit:thermal:InvalidCalibration', ...
+            'Invalid FLIR environmental calibration field: %s.', field);
+    end
 end
 
 function value = defaultAtmosphericCoefficient(name)

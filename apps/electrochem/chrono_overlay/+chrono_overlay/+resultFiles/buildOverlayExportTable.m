@@ -3,10 +3,11 @@
 % file side effects.
 
 function T = buildOverlayExportTable(items)
-    timeUnion = [];
+    timeChunks = cell(numel(items), 1);
     for i = 1:numel(items)
-        timeUnion = [timeUnion; chronoAlignedTime(items(i))];
+        timeChunks{i} = chronoAlignedTime(items(i));
     end
+    timeUnion = vertcat(timeChunks{:});
     timeUnion = unique(timeUnion);
     timeUnion = sort(timeUnion);
 

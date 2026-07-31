@@ -1,6 +1,6 @@
 % App-owned implementation for image_match.matchPipeline.settingsChanged within the image_match product workflow.
 function applicationState = settingsChanged( ...
-        applicationState, changedValue, callbackContext)
+        applicationState, ~, callbackContext)
 %SETTINGSCHANGED Preview one bounded draft without committing history.
 parameters = applicationState.project.parameters;
 method = string(parameters.matchMethod);

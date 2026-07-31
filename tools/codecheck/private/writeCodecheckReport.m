@@ -59,7 +59,7 @@ function sources = collectSources(payload)
     paths = [paths; sourcePaths(fieldArray(payload, "Issues"))];
     paths = [paths; sourcePaths(fieldArray(payload, "SuppressedIssues"))];
     paths = unique(paths, "stable");
-    sources = repmat(struct("path", "", "lines", {{}}), 0, 1);
+    sources = repmat(struct("path", "", "lines", {{}}), numel(paths), 1);
     for k = 1:numel(paths)
         filepath = char(paths(k));
         if exist(filepath, "file") ~= 2
@@ -67,7 +67,7 @@ function sources = collectSources(payload)
         else
             lines = cellstr(splitlines(sanitizeSourceText(string(fileread(filepath)))));
         end
-        sources(end+1, 1) = struct("path", filepath, "lines", {lines});
+        sources(k, 1) = struct("path", filepath, "lines", {lines});
     end
 end
 
@@ -80,12 +80,15 @@ function text = sanitizeSourceText(text)
 end
 
 function paths = sourcePaths(issues)
-    paths = strings(0, 1);
+    paths = strings(numel(issues), 1);
+    pathCount = 0;
     for k = 1:numel(issues)
         if isfield(issues(k), "FullFilename") && ~isempty(issues(k).FullFilename)
-            paths(end+1, 1) = string(issues(k).FullFilename);
+            pathCount = pathCount + 1;
+            paths(pathCount, 1) = string(issues(k).FullFilename);
         end
     end
+    paths = paths(1:pathCount);
 end
 
 function html = buildHtml(jsonText, summary, sources)

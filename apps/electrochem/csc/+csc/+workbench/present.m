@@ -46,9 +46,10 @@ if itemIndex == 0
     return
 end
 item = items(itemIndex);
-labels = choices.allCycles;
+labels = strings(1, numel(item.curves) + 1);
+labels(1) = choices.allCycles;
 for k = 1:numel(item.curves)
-    labels(end + 1) = string(sprintf("%s (%d rows)", ...
+    labels(k + 1) = string(sprintf("%s (%d rows)", ...
         item.curves(k).name, size(item.curves(k).data, 1)));
 end
 if isempty(item.curves)

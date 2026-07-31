@@ -65,7 +65,7 @@ end
 function canvas = interpolateImage(imageData, xInput, yInput, mask, fillValue)
     outHeight = size(xInput, 1);
     outWidth = size(xInput, 2);
-    if ndims(imageData) == 2
+    if ismatrix(imageData)
         canvas = interpolatePlane(imageData, xInput, yInput, mask, fillValue);
     else
         canvas = repmat(castFillValue(fillValue, imageData), ...

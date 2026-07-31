@@ -120,29 +120,40 @@ plan = struct("Nodes", compiled);
 end
 
 function bindings = collectSignalBindings(nodes, start)
-bindings = {};
+capacity = sum(cellfun(@(node) numel(node.Signals), nodes)) + ~isempty(start);
+bindings = cell(1, capacity);
+bindingCount = 0;
 for k = 1:numel(nodes)
     signals = nodes{k}.Signals;
     for s = 1:numel(signals)
-        bindings{end + 1} = signals{s};
+        bindingCount = bindingCount + 1;
+        bindings{bindingCount} = signals{s};
     end
 end
 if ~isempty(start)
-    bindings{end + 1} = start;
+    bindingCount = bindingCount + 1;
+    bindings{bindingCount} = start;
 end
+bindings = bindings(1:bindingCount);
 bindings = uniqueBindings(bindings);
 end
 
 function interactions = collectInteractions(nodes)
-interactions = {};
+chunks = cell(1, numel(nodes));
 for k = 1:numel(nodes)
     if nodes{k}.Kind ~= "plotArea"
         continue;
     end
     configuration = nodes{k}.configurationForCompiler();
     if isfield(configuration, "Interactions")
-        interactions = [interactions configuration.Interactions];
+        chunks{k} = configuration.Interactions;
     end
+end
+populated = ~cellfun("isempty", chunks);
+if any(populated)
+    interactions = [chunks{populated}];
+else
+    interactions = cell(1, 0);
 end
 end
 
@@ -154,17 +165,19 @@ end
 end
 
 function values = uniqueBindings(values)
-uniqueValues = {};
+uniqueValues = cell(size(values));
+uniqueCount = 0;
 for k = 1:numel(values)
     value = values{k};
     sameId = find(cellfun(@(candidate) candidate.Id == value.Id, ...
-        uniqueValues), 1);
+        uniqueValues(1:uniqueCount)), 1);
     if isempty(sameId)
-        uniqueValues{end + 1} = value;
+        uniqueCount = uniqueCount + 1;
+        uniqueValues{uniqueCount} = value;
     elseif ~isequaln(uniqueValues{sameId}, value)
         error("labkit:app:contract:DuplicateId", ...
             "Layout signal ID %s has conflicting callbacks.", value.Id);
     end
 end
-values = uniqueValues;
+values = uniqueValues(1:uniqueCount);
 end

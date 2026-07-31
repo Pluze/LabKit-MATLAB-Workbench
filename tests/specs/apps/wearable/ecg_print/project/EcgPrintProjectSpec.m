@@ -15,5 +15,15 @@ classdef EcgPrintProjectSpec < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(migrated.inputs, "source"));
             testCase.verifyEqual(spec.Version, 2);
         end
+
+        function rejectsUnknownPeakMethodWithoutChangingSupportedProjects(testCase)
+            spec = ecg_print.projectSpec();
+            project = spec.Create();
+
+            testCase.verifyTrue(spec.Validate(project));
+            project.parameters.peakMethod = "unexpected";
+            testCase.verifyError(@() spec.Validate(project), ...
+                'ecg_print:InvalidProject');
+        end
     end
 end

@@ -11,7 +11,7 @@ function draw(axesById, model)
         box(ax, 'on');
         return;
     end
-    if ndims(model.imageData) == 2
+    if ismatrix(model.imageData)
         imagesc(ax, model.xData, model.yData, model.imageData);
         colormap(ax, gray(256));
     else

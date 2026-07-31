@@ -44,7 +44,7 @@ function result = maintainLabKitDocLinks(repoRoot, options)
     repoRoot = absoluteFolder(repoRoot);
     files = markdownFiles(repoRoot);
     pageInfo = markdownPageInfo(repoRoot, files);
-    unresolved = strings(0, 1);
+    unresolvedChunks = cell(numel(files), 1);
     repairedLinkCount = 0;
     updatedFileCount = 0;
 
@@ -54,11 +54,15 @@ function result = maintainLabKitDocLinks(repoRoot, options)
         [updated, repairs, failures] = repairFileLinks( ...
             repoRoot, filepath, original, pageInfo);
         repairedLinkCount = repairedLinkCount + repairs;
-        unresolved = [unresolved; failures];
+        unresolvedChunks{k} = failures;
         if options.Update && updated ~= original
             writeText(filepath, updated);
             updatedFileCount = updatedFileCount + 1;
         end
+    end
+    unresolved = strings(0, 1);
+    if ~isempty(unresolvedChunks)
+        unresolved = vertcat(unresolvedChunks{:});
     end
     result = struct( ...
         "checkedFileCount", numel(files), ...
@@ -86,7 +90,8 @@ end
 
 function files = markdownFiles(repoRoot)
     entries = dir(fullfile(repoRoot, "**", "*.md"));
-    files = strings(0, 1);
+    files = strings(numel(entries), 1);
+    fileCount = 0;
     for k = 1:numel(entries)
         filepath = string(fullfile(entries(k).folder, entries(k).name));
         relative = replace(extractAfter(filepath, repoRoot + filesep), ...
@@ -94,9 +99,10 @@ function files = markdownFiles(repoRoot)
         if startsWith(relative, ["site/", "artifacts/", ".git/"])
             continue;
         end
-        files(end + 1, 1) = filepath;
+        fileCount = fileCount + 1;
+        files(fileCount, 1) = filepath;
     end
-    files = sort(files);
+    files = sort(files(1:fileCount));
 end
 
 function info = markdownPageInfo(repoRoot, files)
@@ -128,7 +134,8 @@ function [updated, repaired, failures] = repairFileLinks( ...
         "start", "end", "tokens");
     updated = text;
     repaired = 0;
-    failures = strings(0, 1);
+    failures = strings(numel(starts), 1);
+    failureCount = 0;
     for k = numel(tokens):-1:1
         label = string(tokens{k}{1});
         rawTarget = string(tokens{k}{2});
@@ -145,7 +152,8 @@ function [updated, repaired, failures] = repairFileLinks( ...
         if strlength(candidate) == 0
             relativeSource = replace(extractAfter( ...
                 filepath, repoRoot + filesep), filesep, "/");
-            failures(end + 1, 1) = relativeSource + " -> " + rawTarget;
+            failureCount = failureCount + 1;
+            failures(failureCount, 1) = relativeSource + " -> " + rawTarget;
             continue;
         end
         newTarget = relativeMarkdownPath(currentFolder, candidate) + suffix;
@@ -154,6 +162,7 @@ function [updated, repaired, failures] = repairFileLinks( ...
             extractAfter(updated, finishes(k));
         repaired = repaired + 1;
     end
+    failures = failures(1:failureCount);
 end
 
 function [pathPart, suffix] = splitTarget(target)
@@ -183,11 +192,11 @@ function candidate = movedTargetCandidate(oldTarget, label, pageInfo)
         normalizedLabel = normalizedWords(label);
         titles = arrayfun(@(item) normalizedWords(item.title), pageInfo(matches));
         exact = matches(titles == normalizedLabel);
-        if numel(exact) == 1
+        if isscalar(exact)
             matches = exact;
         end
     end
-    if numel(matches) == 1
+    if isscalar(matches)
         candidate = string(pageInfo(matches).path);
     else
         candidate = "";

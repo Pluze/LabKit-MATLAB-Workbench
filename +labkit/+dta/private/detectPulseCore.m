@@ -45,9 +45,6 @@ function [pulse, msg] = detectPulseCore(t, Im, meta, opts)
         end
     end
 
-    pulse = emptyPulse();
-    msg = 'Pulse detection failed.';
-
     switch string(opts.mode)
         case "metadata_only"
             [pulse, ~, msg] = pulsesFromMetadata(meta, t);

@@ -54,30 +54,37 @@ function [records, report] = readFiles(paths, opts)
 % See also labkit.thermal.readFile,
 %   labkit.thermal.inspectFile
 
-    if nargin < 2 || isempty(opts)
+    if nargin < 2
         opts = struct();
     end
     opts = normalizeOptions(opts);
     paths = normalizePaths(paths, opts.AllowEmpty);
 
     template = emptyRecord();
-    records = repmat(template, 0, 1);
-    failures = repmat(emptyFailure(), 0, 1);
+    records = repmat(template, numel(paths), 1);
+    failures = repmat(emptyFailure(), numel(paths), 1);
+    recordCount = 0;
+    failureCount = 0;
     for k = 1:numel(paths)
         path = paths(k);
         reportProgress(opts.progressFcn, "beforeRead", k, numel(paths), path);
         readOpts = rmfield(opts, {'AllowEmpty', 'progressFcn', 'SkipInvalid'});
         try
-            records(end + 1, 1) = labkit.thermal.readFile(path, readOpts);
+            record = labkit.thermal.readFile(path, readOpts);
+            recordCount = recordCount + 1;
+            records(recordCount, 1) = record;
             reportProgress(opts.progressFcn, "afterRead", k, numel(paths), path);
         catch ME
             if ~opts.SkipInvalid
                 rethrow(ME);
             end
-            failures(end + 1, 1) = failureFromException(path, ME);
+            failureCount = failureCount + 1;
+            failures(failureCount, 1) = failureFromException(path, ME);
             reportProgress(opts.progressFcn, "skipped", k, numel(paths), path);
         end
     end
+    records = records(1:recordCount);
+    failures = failures(1:failureCount);
 
     report = struct( ...
         'requested', numel(paths), ...
@@ -87,10 +94,8 @@ function [records, report] = readFiles(paths, opts)
 end
 
 function opts = normalizeOptions(opts)
-    if ~isstruct(opts) || ~isscalar(opts)
-        error('labkit:thermal:InvalidOptions', ...
-            'readFiles options must be a scalar struct.');
-    end
+    validateOptionStruct(opts, ["AllowEmpty", "RequireExisting", ...
+        "SkipInvalid", "TemperatureCorrection", "progressFcn"]);
     opts = struct( ...
         'AllowEmpty', optionValue(opts, 'AllowEmpty', true), ...
         'RequireExisting', optionValue(opts, 'RequireExisting', true), ...

@@ -57,16 +57,23 @@ end
 function applicationState = storeAll(applicationState, items)
 sources = applicationState.project.inputs.sources;
 annotations = applicationState.project.annotations.items;
+annotationCells = cell(1, numel(annotations) + numel(items));
+annotationCount = numel(annotations);
+annotationCells(1:annotationCount) = num2cell(annotations);
 for k = 1:numel(items)
     annotation = flir_thermal.thermalAnnotations.fromItem( ...
         items(k), sources(k).id);
     match = find(string({annotations.sourceId}) == ...
         string(sources(k).id), 1);
     if isempty(match)
-        annotations(end + 1, 1) = annotation;
+        annotationCount = annotationCount + 1;
+        annotationCells{annotationCount} = annotation;
     else
-        annotations(match) = annotation;
+        annotationCells{match} = annotation;
     end
+end
+if annotationCount > 0
+    annotations = [annotationCells{1:annotationCount}].';
 end
 applicationState.project.annotations.items = annotations;
 index = applicationState.session.selection.currentIndex;

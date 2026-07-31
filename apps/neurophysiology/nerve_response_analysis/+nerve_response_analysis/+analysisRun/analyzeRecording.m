@@ -338,7 +338,8 @@ function pairs = inferredPairs(roles)
         return;
     end
     names = string(fieldnames(roles));
-    pairCells = {};
+    pairCells = cell(1, numel(names));
+    pairCount = 0;
     for k = 1:numel(names)
         role = roles.(char(names(k)));
         roleId = string(fieldOrDefault(role, "id", names(k)));
@@ -359,19 +360,20 @@ function pairs = inferredPairs(roles)
         if strlength(baseId) == 0
             baseId = "pair";
         end
-        pairCells{end + 1} = struct( ...
+        pairCount = pairCount + 1;
+        pairCells{pairCount} = struct( ...
             "id", baseId + "_diff", ...
             "label", upper(baseId), ...
             "positive", roleId, ...
             "negative", negativeId, ...
             "mode", "positive-minus-negative");
     end
-    if ~isempty(pairCells)
-        pairs = [pairCells{:}];
+    if pairCount > 0
+        pairs = [pairCells{1:pairCount}];
     end
 end
 
-function result = analyzePair(filepath, pair, roles, protocol, ...
+function result = analyzePair(filepath, pair, roles, ~, ...
         maxDurationSec, eventTimesSec, recordingId)
     result = struct("metrics", emptyMetrics(), "issues", emptyIssues());
     pairId = string(fieldOrDefault(pair, "id", "pair"));
@@ -452,16 +454,22 @@ function T = addRecordingId(T, recordingId)
 end
 
 function output = appendTables(output, tables)
+    chunks = cell(numel(tables) + 1, 1);
+    chunkCount = 0;
+    if ~isempty(output) && width(output) > 0
+        chunkCount = 1;
+        chunks{chunkCount} = output;
+    end
     for k = 1:numel(tables)
         input = tables{k};
         if isempty(input) || height(input) == 0
             continue;
         end
-        if isempty(output) || width(output) == 0
-            output = input;
-        else
-            output = [output; input];
-        end
+        chunkCount = chunkCount + 1;
+        chunks{chunkCount} = input;
+    end
+    if chunkCount > 0
+        output = vertcat(chunks{1:chunkCount});
     end
 end
 

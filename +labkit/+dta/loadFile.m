@@ -29,9 +29,11 @@ function [item, status] = loadFile(filepath, expectedKind, opts)
 % Outputs:
 %   item - Scalar parsed item structure when status.ok is true, or an empty
 %       structure array when loading fails. See Output Fields.
-%   status - Scalar structure with ok, message, kind, expectedKind, and
-%       filepath fields. A kind mismatch reports both the expected and detected
-%       family in message.
+%   status - Scalar structure with ok, code, message, kind, expectedKind, and
+%       filepath fields. code is "ok", "missing_file",
+%       "unsupported_content", "kind_mismatch", or "parse_failure".
+%       A kind mismatch reports both the expected and detected family in
+%       message.
 %
 % Output Fields:
 %   type - "chrono", "eis", or "cvct".
@@ -80,7 +82,8 @@ function [item, status] = loadFile(filepath, expectedKind, opts)
     filepath = normalizeFilepath(filepath);
     expectedKind = normalizeExpectedKind(expectedKind);
     item = struct([]);
-    status = makeStatus(filepath, "unknown", expectedKind, "");
+    status = makeStatus(filepath, "unknown", expectedKind, ...
+        "parse_failure", "");
 
     if expectedKind == "auto"
         [detectedKind, detectStatus] = labkit.dta.detectType(filepath);
@@ -93,9 +96,10 @@ function [item, status] = loadFile(filepath, expectedKind, opts)
         [detectedKind, detectStatus] = labkit.dta.detectType(filepath);
         if detectStatus.ok && detectedKind ~= expectedKind
             status.kind = detectedKind;
+            status.code = "kind_mismatch";
             status.message = sprintf('Expected %s DTA, detected %s.', expectedKind, detectedKind);
             return;
-        elseif ~detectStatus.ok && contains(detectStatus.message, 'File not found')
+        elseif ~detectStatus.ok && detectStatus.code == "missing_file"
             status = withExpectedKind(detectStatus, expectedKind);
             return;
         end
@@ -106,6 +110,7 @@ function [item, status] = loadFile(filepath, expectedKind, opts)
         item = loadByKind(filepath, kind, opts);
 
         status.ok = true;
+        status.code = "ok";
         status.kind = kind;
         status.message = "";
     catch ME
@@ -120,9 +125,10 @@ function filepath = normalizeFilepath(filepath)
     filepath = char(filepath);
 end
 
-function status = makeStatus(filepath, kind, expectedKind, message)
+function status = makeStatus(filepath, kind, expectedKind, code, message)
     status = struct( ...
         'ok', false, ...
+        'code', string(code), ...
         'message', string(message), ...
         'kind', string(kind), ...
         'expectedKind', string(expectedKind), ...
@@ -130,11 +136,13 @@ function status = makeStatus(filepath, kind, expectedKind, message)
 end
 
 function status = withExpectedKind(status, expectedKind)
-    status = makeStatus(status.filepath, status.kind, expectedKind, status.message);
+    status = makeStatus(status.filepath, status.kind, expectedKind, ...
+        status.code, status.message);
 end
 
 function status = statusForLoadFailure(filepath, kind, expectedKind, loadError)
-    status = makeStatus(filepath, kind, expectedKind, loadError.message);
+    status = makeStatus(filepath, kind, expectedKind, ...
+        "parse_failure", loadError.message);
     if expectedKind == "auto"
         return;
     end
@@ -142,9 +150,11 @@ function status = statusForLoadFailure(filepath, kind, expectedKind, loadError)
     [detectedKind, detectStatus] = labkit.dta.detectType(filepath);
     if detectStatus.ok && detectedKind ~= expectedKind
         status.kind = detectedKind;
+        status.code = "kind_mismatch";
         status.message = sprintf('Expected %s DTA, detected %s.', expectedKind, detectedKind);
-    elseif ~detectStatus.ok && contains(detectStatus.message, 'File not found')
+    elseif ~detectStatus.ok && detectStatus.code == "missing_file"
         status.kind = detectStatus.kind;
+        status.code = detectStatus.code;
         status.message = detectStatus.message;
     end
 end

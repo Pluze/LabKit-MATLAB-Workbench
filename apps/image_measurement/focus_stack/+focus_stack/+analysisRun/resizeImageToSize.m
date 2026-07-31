@@ -21,7 +21,7 @@ function imageOut = resizeImageToSize(imageIn, targetSize)
         return;
     end
     imageOut = resizeLinear(imageIn, [targetRows targetCols]);
-    if ndims(imageIn) == 3 && size(imageIn, 3) == 1 && ndims(imageOut) == 2
+    if ndims(imageIn) == 3 && size(imageIn, 3) == 1 && ismatrix(imageOut)
         imageOut = reshape(imageOut, targetRows, targetCols, 1);
     end
 end

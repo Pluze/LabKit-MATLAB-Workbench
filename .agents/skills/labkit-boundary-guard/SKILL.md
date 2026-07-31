@@ -1,6 +1,6 @@
 ---
 name: labkit-boundary-guard
-description: "Use for changes to +labkit, public APIs, package ownership, helper promotion, or app-versus-library boundary decisions."
+description: "Use for changes to +labkit, public APIs, package ownership, helper promotion, or app-versus-library boundary decisions. Do not use for an App-local implementation that cannot affect a shared boundary."
 ---
 
 # LabKit Boundary Guard

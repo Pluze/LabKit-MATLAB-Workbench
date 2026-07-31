@@ -52,7 +52,7 @@ function record = readFile(path, opts)
 %   labkit.thermal.readFiles,
 %   labkit.thermal.rawToTemperatureC
 
-    if nargin < 2 || isempty(opts)
+    if nargin < 2
         opts = struct();
     end
     opts = normalizeOptions(opts);
@@ -81,10 +81,7 @@ function record = readFile(path, opts)
 end
 
 function opts = normalizeOptions(opts)
-    if ~isstruct(opts) || ~isscalar(opts)
-        error('labkit:thermal:InvalidOptions', ...
-            'readFile options must be a scalar struct.');
-    end
+    validateOptionStruct(opts, ["RequireExisting", "TemperatureCorrection"]);
     opts = struct( ...
         'RequireExisting', optionValue(opts, 'RequireExisting', true), ...
         'TemperatureCorrection', string(optionValue(opts, ...

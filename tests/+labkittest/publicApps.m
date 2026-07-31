@@ -29,7 +29,7 @@ function values = publicApps()
                 "Public App %s must expose exactly one +package/definition.m.", ...
                 listing.Command(k));
         end
-        [packageFolder, packageName] = fileparts(definitions(1).folder);
+        [~, packageName] = fileparts(definitions(1).folder);
         packageName = erase(string(packageName), "+");
         relativeFolder = extractAfter(string(appFolder), string(root) + filesep);
         relativeFolder = replace(relativeFolder, filesep, "/");

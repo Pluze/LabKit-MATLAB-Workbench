@@ -100,7 +100,7 @@ function opts = parseOptions(args)
     if isempty(args)
         return;
     end
-    if numel(args) == 1 && isstruct(args{1})
+    if isscalar(args) && isstruct(args{1})
         opts = args{1};
         return;
     end
@@ -200,7 +200,7 @@ function limits = imageDataLimits(values, count)
         limits = [0.5, double(count) + 0.5];
         return;
     end
-    if numel(values) == 1
+    if isscalar(values)
         limits = [values(1) - 0.5, values(1) + double(count) - 0.5];
         return;
     end

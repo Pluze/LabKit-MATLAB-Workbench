@@ -44,15 +44,22 @@ under `docs/`.
   durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
   agent procedure in skills rather than duplicating it in human manuals.
 - Treat `.agents/dos-and-donts.md` as an experience reservoir. After each
-  meaningful checkpoint, add only high-value experience whose rediscovery
-  would be costly. Let lessons accumulate and survive repeated use before
-  promoting them to the nearest `AGENTS.md`, skill, test, source contract, or
-  manual; then actively compress or remove the reservoir copy plus stale,
+  meaningful checkpoint, explicitly review repeated inspection, discarded
+  approaches, rollback, time lost on the same boundary, and user correction.
+  Record only the unresolved agent decision trap whose rediscovery would be
+  costly, including the signal that should trigger a different approach.
+  Never use the reservoir as a work log or duplicate behavior already enforced
+  by an `AGENTS.md`, skill, test, source contract, or manual. Let useful
+  lessons survive repeated use before promotion; once another owner prevents
+  the mistake, actively compress or remove the reservoir copy plus stale,
   duplicated, disproven, and low-value detail.
 
 ## Architecture and implementation
 
 - Preserve behavior unless the user asks to change it.
+- Moving behavior to a new owner does not retire its observable contract.
+  Preserve appearance, interaction paths, status, results, and failure
+  semantics at the new boundary before deleting the old owner.
 - Apps own formulas, thresholds, units, workflow decisions, plots, results,
   exports, failures, and wording. Promote code into `+labkit` only when it is a
   stable domain-neutral contract useful beyond one app.
@@ -69,6 +76,12 @@ under `docs/`.
   governed by `+labkit/AGENTS.md`.
 - Do not convert struct state into classes, merge all apps into one entrypoint,
   or change implementation language without explicit approval.
+- Call fixed production symbols directly so static analysis, dependency
+  discovery, and refactoring can see them. Use `eval`, string-based `feval`,
+  or `str2func` only at a genuinely dynamic extension or compatibility
+  boundary with closed input validation, explicit ownership, and contract
+  tests; never construct a callable symbol from untrusted project or user
+  data.
 - File budgets count nonblank, non-comment MATLAB code. They are review
   backstops, not extraction targets. Keep callback-local glue local when that
   makes workflow order clearer.
@@ -155,6 +168,10 @@ tests, history, and details out of the public repository.
 - Automated hidden GUI tests do not prove native dialogs, visual quality,
   pointer feel, scientific validity, or full manual workflows. Do not run
   interactive workflows in MATLAB `-batch` mode.
+- A validation entry point expected to run longer than 30 seconds reports its
+  current stage and completed/total work, and emits a heartbeat at least every
+  30 seconds while one unit remains active. Reuse the owning progress plugin
+  or callback instead of making callers infer progress from process liveness.
 - For an accepted private workspace, run its own tests first. If
   `.labkit-accept-main-guardrails` is present and private changes are unpushed,
   also run the relevant public guardrail because the public changed-file
@@ -167,20 +184,27 @@ tests, history, and details out of the public repository.
    confirming that it was created from the current `origin/main`. Never edit
    or commit directly on `main`, including for documentation, CI, release
    preparation, emergency repairs, and bug fixes.
-2. When a multi-commit migration needs a roadmap, write it in
-   `.agents/migration_guide.md` as a standalone `develop` checkpoint before
-   implementation. Do not add a future-state migration page under `docs/`.
-   Remove the active entry in the final zero-debt squash merge after durable
-   final behavior and rationale are recorded in the owning manual and
-   component history.
-3. Use `develop` as the sole ordinary integration branch and keep one active
-   delivery stream. Push completed checkpoints promptly. Once a
+2. When a multi-commit migration needs a roadmap, maintain it locally in
+   `.agents/migration_guide.md` while the work is active. The roadmap is
+   disposable working state: do not require a standalone roadmap commit, push,
+   or preservation in `develop` or `main` history. Do not add a future-state
+   migration page under `docs/`. Remove local active entries before preparing
+   the final PR diff. The PR `Why`, net behavior and ownership decisions,
+   compatibility boundaries, exact evidence, and remaining risks are the
+   durable review record; delivered behavior and rationale still belong in
+   the owning manual and component history.
+3. Use `develop` as the sole ordinary integration branch, the only branch that
+   may receive direct pushes, and the one active delivery stream. Commit and
+   push logical checkpoints when the work benefits from them; do not delay a
+   coherent checkpoint merely to accumulate a larger batch. Once a
    `develop -> main` PR opens, freeze `develop` until the PR is merged or
    closed; do not mix later work into its moving head.
-4. Keep branch work stable with small logical purpose-based commits and focused
-   validation. Prepare user docs, component versions, and structured history as
-   the single net change that the PR will squash into; do not accumulate
-   release semantics from intermediate branch commits.
+4. Keep branch work stable with purpose-based commits and focused validation.
+   Intermediate commit count is not a merge criterion. Before opening or
+   merging the final PR, inspect the complete base-to-head diff, user docs,
+   component versions, structured history, validation evidence, and remaining
+   risks as one net change that `main` will squash into; do not derive release
+   semantics from intermediate branch commits.
 5. Main accepts PRs only from the repository-owned `develop` branch. Run
    `changedFast` once before final review, inspect required PR CI, and read only
    failing logs. Squash-merge with an explicit compliant subject.

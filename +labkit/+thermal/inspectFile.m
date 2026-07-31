@@ -32,6 +32,8 @@ function info = inspectFile(path, opts)
 %   with identifier and message populated; those reader exceptions are not
 %   rethrown. path must still be convertible to scalar text, and malformed
 %   MATLAB values may raise the originating conversion error.
+%   Unknown option fields or a non-struct opts value throw
+%   labkit:thermal:InvalidOptions.
 %
 % Example:
 %   info = labkit.thermal.inspectFile("candidate.jpg");
@@ -44,9 +46,10 @@ function info = inspectFile(path, opts)
 % See also labkit.thermal.readFile,
 %   labkit.thermal.isSupportedPath
 
-    if nargin < 2 || isempty(opts)
+    if nargin < 2
         opts = struct();
     end
+    validateOptionStruct(opts, ["RequireExisting", "TemperatureCorrection"]);
     [~, base, ext] = fileparts(char(string(path)));
     info = struct( ...
         'path', string(path), ...

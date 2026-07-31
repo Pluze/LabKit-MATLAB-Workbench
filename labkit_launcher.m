@@ -31,17 +31,19 @@ function varargout = labkit_launcher(varargin)
         return;
     end
     try
-        addpath(root, "-begin");
-        rehash;
-        dispatcher = str2func("labkit.app.internal.launcher.dispatch");
-        if ~resolvesInstalledDispatch(dispatcher, entry)
-            error("labkit_launcher:InstalledEntryMismatch", ...
-                "The installed launcher entry does not resolve from this LabKit installation.");
+        if ~installedDispatchResolves(entry)
+            prioritizeInstalledRoot(root);
+            clear('labkit.app.internal.launcher.dispatch');
+            rehash;
+            if ~installedDispatchResolves(entry)
+                error("labkit_launcher:InstalledEntryMismatch", ...
+                    "The installed launcher entry does not resolve from this LabKit installation.");
+            end
         end
         if nargout == 0
-            dispatcher(root, varargin{:});
+            labkit.app.internal.launcher.dispatch(root, varargin{:});
         else
-            [varargout{1:nargout}] = dispatcher(root, varargin{:});
+            [varargout{1:nargout}] = labkit.app.internal.launcher.dispatch(root, varargin{:});
         end
     catch cause
         if isempty(varargin) && isStructuralDelegateFailure(cause)
@@ -87,20 +89,23 @@ tf = startsWith(identifier, "MATLAB:UndefinedFunction") || ...
     startsWith(identifier, "MATLAB:parse") || startsWith(identifier, "MATLAB:dispatcher");
 end
 
-function tf = resolvesInstalledDispatch(dispatcher, entry)
+function tf = installedDispatchResolves(entry)
 tf = false;
 try
-    details = functions(dispatcher);
-    resolvedFile = "";
-    if isfield(details, "file")
-        resolvedFile = string(details.file);
-    end
-    if strlength(resolvedFile) == 0 && isfield(details, "function")
-        resolvedFile = string(which(char(details.function)));
-    end
+    resolvedFile = string(which('labkit.app.internal.launcher.dispatch'));
     tf = strlength(resolvedFile) > 0 && sameNormalizedPath(resolvedFile, entry);
 catch
 end
+end
+
+function prioritizeInstalledRoot(root)
+entries = string(strsplit(path, pathsep));
+for k = numel(entries):-1:1
+    if strlength(entries(k)) > 0 && sameNormalizedPath(entries(k), root)
+        rmpath(char(entries(k)));
+    end
+end
+addpath(root, "-begin");
 end
 
 function tf = sameNormalizedPath(leftPath, rightPath)

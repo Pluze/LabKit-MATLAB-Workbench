@@ -24,7 +24,7 @@ function cropped = cropCanvasFixedSize(canvas, centerXY, cropSize, fillValue)
     srcColStart = max(1, colStart);
     srcColEnd = min(canvasWidth, colEnd);
 
-    if ndims(canvas) == 2
+    if ismatrix(canvas)
         cropped = repmat(fillValue, height, width);
     else
         cropped = repmat(fillValue, height, width, size(canvas, 3));

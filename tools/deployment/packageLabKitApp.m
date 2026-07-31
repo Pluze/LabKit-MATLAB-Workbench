@@ -141,9 +141,11 @@ end
 
 function apps = resolvePackageApps(root, selector)
     if isstruct(selector)
-        apps = emptyPackageApp();
+        template = struct("command", "", "folder", "", "entryFile", "", ...
+            "packageRelativeFolder", "", "visibility", "");
+        apps = repmat(template, 1, numel(selector));
         for k = 1:numel(selector)
-            apps(end+1) = appFromLauncherStruct(root, selector(k));
+            apps(k) = appFromLauncherStruct(root, selector(k));
         end
         apps = uniquePackageApps(apps);
         return;
@@ -151,9 +153,11 @@ function apps = resolvePackageApps(root, selector)
 
     if iscell(selector) || (isstring(selector) && ~isscalar(selector))
         selectors = string(selector);
-        apps = emptyPackageApp();
+        template = struct("command", "", "folder", "", "entryFile", "", ...
+            "packageRelativeFolder", "", "visibility", "");
+        apps = repmat(template, 1, numel(selectors));
         for k = 1:numel(selectors)
-            apps(end+1) = resolvePackageApp(root, selectors(k));
+            apps(k) = resolvePackageApp(root, selectors(k));
         end
         apps = uniquePackageApps(apps);
         return;
@@ -293,18 +297,25 @@ function entries = appEntryFiles(appRoot)
 end
 
 function roots = appDiscoveryRoots(root)
-    roots = struct("appRoot", string(fullfile(root, "apps")), "visibility", "public");
     privateRoots = privateAppRoots(root);
+    roots = repmat(struct("appRoot", "", "visibility", ""), ...
+        1, numel(privateRoots) + 1);
+    roots(1) = struct("appRoot", string(fullfile(root, "apps")), ...
+        "visibility", "public");
     for k = 1:numel(privateRoots)
-        roots(end+1) = struct("appRoot", privateRoots(k), "visibility", "private");
+        roots(k + 1) = struct( ...
+            "appRoot", privateRoots(k), "visibility", "private");
     end
 end
 
 function roots = privateAppRoots(root)
-    roots = strings(1, 0);
+    candidates = strings(numel(strsplit(char(string(getenv( ...
+        "LABKIT_PRIVATE_APP_ROOTS"))), pathsep)) + 1, 1);
+    candidateCount = 0;
     localRoot = string(fullfile(root, "private_apps", "apps"));
     if exist(localRoot, "dir") == 7
-        roots(end+1) = localRoot;
+        candidateCount = candidateCount + 1;
+        candidates(candidateCount) = localRoot;
     end
 
     envValue = string(getenv("LABKIT_PRIVATE_APP_ROOTS"));
@@ -315,11 +326,12 @@ function roots = privateAppRoots(root)
         for k = 1:numel(parts)
             candidate = privateAppRootAppsFolder(parts(k));
             if exist(candidate, "dir") == 7
-                roots(end+1) = candidate;
+                candidateCount = candidateCount + 1;
+                candidates(candidateCount) = candidate;
             end
         end
     end
-    roots = unique(roots, "stable");
+    roots = unique(candidates(1:candidateCount), "stable");
 end
 
 function appRoot = privateAppRootAppsFolder(root)
@@ -408,12 +420,8 @@ function validateSourceFilesAvailable(root, app)
         string(app.entryFile)
         string(fullfile(root, "tools", "deployment", "packageLabKitApp.m"))
         string(fullfile(root, "tools", "profiling", "profileLabKitTarget.m"))];
-    missing = strings(1, 0);
-    for k = 1:numel(requiredSources)
-        if exist(requiredSources(k), "file") ~= 2
-            missing(end+1) = requiredSources(k);
-        end
-    end
+    missing = requiredSources(arrayfun( ...
+        @(path) exist(path, "file") ~= 2, requiredSources));
     if ~isempty(missing)
         error("packageLabKitApp:SourceUnavailable", ...
             "Source package format requires .m files. Use CodeFormat='pcode' for P-code roots. Missing: %s", ...
@@ -512,12 +520,12 @@ function pcodePackageCode(packageRoot)
 end
 
 function zipFile = defaultZipFile(outputRoot, apps)
-    timestamp = string(datestr(now, "yyyymmdd_HHMMSS"));
+    timestamp = string(datetime("now", "Format", "yyyyMMdd_HHmmss"));
     zipFile = fullfile(outputRoot, packageFolderName(apps) + "_" + timestamp + ".zip");
 end
 
 function name = packageFolderName(apps)
-    if numel(apps) == 1
+    if isscalar(apps)
         name = "LabKitApp_" + sanitizeFilename(apps.command);
     else
         name = "LabKitApps_" + string(numel(apps));

@@ -15,7 +15,8 @@ tests, and the one owning manual:
 - RHS: `docs/libraries/rhs/README.md`
 - biosignal: `docs/libraries/biosignal/README.md`
 
-Framework behavior specifications live under `tests/specs/framework/<area>/`.
+Library behavior specifications mirror the package below
+`tests/specs/labkit/<area>/`.
 Use `labkittest.explain` to find the exact owner and contract.
 
 ## Ownership
@@ -58,6 +59,13 @@ Use `labkittest.explain` to find the exact owner and contract.
   remain legal and unique; references must resolve before UI mutation.
 - View snapshots must preserve unchanged graphics and viewports. Renderers own
   incremental overlay changes; interaction specs own user gestures.
+- Establish the legal domain of interdependent native properties before
+  assigning dependent values; constructor name-value order is not a contract
+  across MATLAB releases. Give responsive resize to one explicit container
+  owner and verify release-sensitive layout through native construction.
+- Show determinate progress only when work has a measurable denominator.
+  Otherwise report real named stages, and paint the stage before synchronous
+  expensive work.
 - One interaction target has one active gesture owner. A managed movable
   rectangle accepts movement from its visible box or interior, not only a thin
   edge; display-only affordances remain non-pickable.
@@ -106,7 +114,8 @@ Use `labkittest.explain` to find the exact owner and contract.
 
 ## Validation
 
-Use the affected `labkit_framework/<area>` suite and add downstream app-family
-or hidden-GUI coverage when the app-facing contract can change. Package
-boundary and public-surface changes also run project guardrails. Exact commands
-belong in `docs/development/maintain-and-release/testing.md`.
+Use `labkittest.run(File=...)` to select the affected `labkit/<area>` owner and
+add downstream app-family or hidden-GUI coverage when the app-facing contract
+can change. Package boundary and public-surface changes also run project
+guardrails. Exact commands belong in
+`docs/development/maintain-and-release/testing.md`.

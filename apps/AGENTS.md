@@ -99,6 +99,9 @@ find the exact owner and contract; App authors never invent test paths.
   `labkit.app.view.Snapshot` values, and `labkit.app.CallbackContext`.
   File lists own portable source and selection bindings; `createSession`
   rebuilds transient data after source changes.
+  Treat file-list values as shape-agnostic collections and normalize parallel
+  source, task, path, and cache arrays at the callback boundary before aligned
+  insertion.
   Do not mutate registries, restore figure callbacks, create interaction
   runtimes, or add startup timers/readiness flags.
 - Interactive rectangles use managed `rectangle` or `regionSelection` specs.

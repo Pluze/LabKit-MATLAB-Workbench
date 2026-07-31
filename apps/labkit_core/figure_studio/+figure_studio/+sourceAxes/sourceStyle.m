@@ -128,7 +128,8 @@ function value = sourceAnnotationFontSize(ax, fallback)
     value = fallback;
     labels = {ax.Title, ax.XLabel, ax.YLabel, ax.ZLabel};
     texts = findall(ax, 'Type', 'text');
-    sizes = zeros(0, 1);
+    sizes = zeros(numel(texts), 1);
+    sizeCount = 0;
     for k = 1:numel(texts)
         if any(cellfun(@(label) texts(k) == label, labels))
             continue;
@@ -136,9 +137,11 @@ function value = sourceAnnotationFontSize(ax, fallback)
         sizeValue = finiteValue(optionalAxesValue( ...
             texts(k), 'FontSize'), NaN);
         if isfinite(sizeValue)
-            sizes(end + 1, 1) = sizeValue;
+            sizeCount = sizeCount + 1;
+            sizes(sizeCount) = sizeValue;
         end
     end
+    sizes = sizes(1:sizeCount);
     if ~isempty(sizes)
         value = median(sizes);
     end

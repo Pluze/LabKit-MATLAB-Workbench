@@ -15,6 +15,9 @@ function report = runCodecheckReport(root, varargin)
 
     root = char(string(p.Results.root));
     progressFcn = p.Results.ProgressFcn;
+    if isempty(progressFcn)
+        progressFcn = @writeConsoleProgress;
+    end
     excludedFolders = [".git", ".github", ".vscode", ".codes", ...
         "artifacts", "node_modules", "photos"];
     scanRoots = codecheckScanRoots(root);
@@ -37,7 +40,7 @@ function report = runCodecheckReport(root, varargin)
     notifyProgress(progressFcn, "Writing native codeIssues report...", 0.96);
     ensureFolder(fileparts(output));
     sourceRoot = commonSourceRoot([string(root), files]);
-    export(issues, output, "FileFormat", "json", "SourceRoot", sourceRoot);
+    exportCodeIssuesJson(issues, output, sourceRoot);
 
     notifyProgress(progressFcn, "Writing Code Analyzer HTML report...", 0.98);
     htmlOutput = reportBase + ".html";
@@ -55,9 +58,30 @@ function report = runCodecheckReport(root, varargin)
     notifyProgress(progressFcn, "codeIssues report complete.", 1.00);
 end
 
+function exportCodeIssuesJson(issues, output, sourceRoot)
+    if ismethod(issues, "export")
+        export(issues, output, "FileFormat", "json", ...
+            "SourceRoot", sourceRoot);
+        return;
+    end
+
+    % R2022b exposes the same public codeIssues properties but predates the
+    % codeIssues.export method. jsonencode preserves that native property
+    % schema for the report reader without resolving an unrelated export
+    % function from the MATLAB path.
+    fid = fopen(output, "w", "n", "UTF-8");
+    if fid < 0
+        error("LabKit:Codecheck:WriteFailed", ...
+            "Could not write Code Analyzer JSON report: %s", output);
+    end
+    cleanup = onCleanup(@() fclose(fid));
+    fprintf(fid, "%s\n", jsonencode(issues));
+    clear cleanup
+end
+
 function reportBase = uniqueReportBase(outputRoot)
     ensureFolder(outputRoot);
-    stamp = datestr(now, "yyyymmdd_HHMMSS");
+    stamp = string(datetime("now", "Format", "yyyyMMdd_HHmmss"));
     reportBase = fullfile(outputRoot, "matlab_code_issues_" + string(stamp));
     suffix = 1;
     while exist(reportBase + ".json", "file") == 2 || exist(reportBase + ".html", "file") == 2
@@ -143,12 +167,15 @@ function roots = acceptedPrivateAppRoots(root)
         return;
     end
 
-    roots = strings(0, 1);
+    roots = strings(numel(candidates), 1);
+    rootCount = 0;
     for k = 1:numel(candidates)
         if privateRootAcceptsMainGuardrails(candidates(k))
-            roots(end+1, 1) = candidates(k);
+            rootCount = rootCount + 1;
+            roots(rootCount, 1) = candidates(k);
         end
     end
+    roots = roots(1:rootCount);
 end
 
 function tf = forcePrivateAppGuardsEnabled()
@@ -157,10 +184,13 @@ function tf = forcePrivateAppGuardsEnabled()
 end
 
 function roots = configuredPrivateAppRoots(root)
-    roots = strings(0, 1);
+    candidateRoots = strings(numel(strsplit(char(string(getenv( ...
+        "LABKIT_PRIVATE_APP_ROOTS"))), pathsep)) + 1, 1);
+    candidateCount = 0;
     localPrivateRoot = string(fullfile(root, "private_apps", "apps"));
     if exist(localPrivateRoot, "dir") == 7
-        roots(end+1) = localPrivateRoot;
+        candidateCount = candidateCount + 1;
+        candidateRoots(candidateCount) = localPrivateRoot;
     end
 
     envValue = string(getenv("LABKIT_PRIVATE_APP_ROOTS"));
@@ -171,11 +201,12 @@ function roots = configuredPrivateAppRoots(root)
         for k = 1:numel(parts)
             candidate = privateAppRootAppsFolder(parts(k));
             if exist(candidate, "dir") == 7
-                roots(end+1) = candidate;
+                candidateCount = candidateCount + 1;
+                candidateRoots(candidateCount) = candidate;
             end
         end
     end
-    roots = unique(roots, "stable");
+    roots = unique(candidateRoots(1:candidateCount), "stable");
 end
 
 function appRoot = privateAppRootAppsFolder(root)
@@ -203,7 +234,8 @@ end
 
 function files = collectFiles(root, pattern, excludedFolders)
     entries = dir(fullfile(root, "**", pattern));
-    files = strings(1, 0);
+    files = strings(1, numel(entries));
+    fileCount = 0;
     for k = 1:numel(entries)
         if entries(k).isdir
             continue;
@@ -214,8 +246,10 @@ function files = collectFiles(root, pattern, excludedFolders)
         if any(ismember(parts, excludedFolders))
             continue;
         end
-        files(end+1) = filepath;
+        fileCount = fileCount + 1;
+        files(fileCount) = filepath;
     end
+    files = files(1:fileCount);
 end
 
 function rel = relativePath(root, filepath)
@@ -228,10 +262,11 @@ function rel = relativePath(root, filepath)
 end
 
 function notifyProgress(progressFcn, message, value)
-    if isempty(progressFcn)
-        return;
-    end
     progressFcn(message, value);
+end
+
+function writeConsoleProgress(message, value)
+    fprintf("CODECHECK [%3.0f%%] %s\n", 100 * value, message);
 end
 
 function ensureFolder(folder)

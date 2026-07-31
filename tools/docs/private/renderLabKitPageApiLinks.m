@@ -67,14 +67,18 @@ function [html, plainText] = renderAppSdkGroups(items, outputPath)
     order = ["Core", "layout", "view", "event", "interaction", ...
         "plot", "project", "result", "dialog", "diagnostic"];
     order = order(ismember(order, groups));
-    blocks = strings(0, 1);
-    words = strings(0, 1);
+    blocks = strings(numel(order), 1);
+    wordChunks = cell(numel(order), 1);
     for k = 1:numel(order)
         members = items(groups == order(k));
         [tableHtml, tableWords] = apiTable(members, outputPath);
-        blocks(end + 1, 1) = "<section class=""api-group""><h3>" + ...
+        blocks(k, 1) = "<section class=""api-group""><h3>" + ...
             htmlEscape(displayGroup(order(k))) + "</h3>" + tableHtml + "</section>";
-        words = [words; tableWords];
+        wordChunks{k} = tableWords;
+    end
+    words = strings(0, 1);
+    if ~isempty(wordChunks)
+        words = vertcat(wordChunks{:});
     end
     html = "<section class=""page-api-links""><h2 id=""functions-and-api"">" + ...
         "Complete App SDK API</h2><p>Open a function for exact MATLAB syntax, " + ...

@@ -1,5 +1,5 @@
 % App-owned implementation for ttest_wizard.sourceTable.selectCells within the ttest_wizard product workflow.
-function state = selectCells(state, selection, context)
+function state = selectCells(state, selection, ~)
 %SELECTCELLS Remember source-table cells and summarize numeric usability.
 %
 % Expected caller: sourceGrid OnCellSelectionChanged. Selection is the typed
@@ -9,7 +9,7 @@ function state = selectCells(state, selection, context)
 arguments
     state (1, 1) struct
     selection (1, 1) labkit.app.event.TableCellSelection
-    context (1, 1) labkit.app.CallbackContext
+    ~
 end
 
 indices = selection.CellIndices;

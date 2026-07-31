@@ -2,63 +2,79 @@ function [html, plainText] = renderLabKitMarkdown(model, page)
 %RENDERLABKITMARKDOWN Render the repository's documented Markdown subset.
 
     lines = readlines(page.sourcePath, "EmptyLineRule", "read");
-    output = strings(0, 1);
-    plain = strings(0, 1);
+    output = strings(2 * numel(lines) + 2, 1);
+    plain = strings(numel(lines), 1);
+    outputCount = 0;
+    plainCount = 0;
     index = 1;
     listType = "";
     inCode = false;
     codeLanguage = "";
-    codeLines = strings(0, 1);
+    codeLines = strings(numel(lines), 1);
+    codeLineCount = 0;
     while index <= numel(lines)
         line = lines(index);
         trimmed = strtrim(line);
         if inCode
             if startsWith(trimmed, "```")
-                output(end + 1, 1) = "<pre><code class=""language-" + ...
+                outputCount = outputCount + 1;
+                output(outputCount, 1) = "<pre><code class=""language-" + ...
                     htmlEscape(codeLanguage) + """>" + ...
-                    htmlEscape(strjoin(codeLines, newline)) + "</code></pre>";
-                plain = [plain; codeLines];
+                    htmlEscape(strjoin(codeLines(1:codeLineCount), newline)) + "</code></pre>";
+                destination = plainCount + (1:codeLineCount);
+                plain(destination, 1) = codeLines(1:codeLineCount);
+                plainCount = plainCount + codeLineCount;
                 inCode = false;
-                codeLines = strings(0, 1);
+                codeLineCount = 0;
             else
-                codeLines(end + 1, 1) = line;
+                codeLineCount = codeLineCount + 1;
+                codeLines(codeLineCount, 1) = line;
             end
             index = index + 1;
             continue;
         end
         if startsWith(trimmed, "```")
-            [output, listType] = closeList(output, listType);
+            [output, outputCount, listType] = ...
+                closeList(output, outputCount, listType);
             inCode = true;
             codeLanguage = strip(extractAfter(trimmed, 3));
             index = index + 1;
             continue;
         end
         if strlength(trimmed) == 0
-            [output, listType] = closeList(output, listType);
+            [output, outputCount, listType] = ...
+                closeList(output, outputCount, listType);
             index = index + 1;
             continue;
         end
         if startsWith(trimmed, "<!--") && endsWith(trimmed, "-->")
-            [output, listType] = closeList(output, listType);
+            [output, outputCount, listType] = ...
+                closeList(output, outputCount, listType);
             index = index + 1;
             continue;
         end
         if isTableStart(lines, index)
-            [output, listType] = closeList(output, listType);
+            [output, outputCount, listType] = ...
+                closeList(output, outputCount, listType);
             [tableHtml, tablePlain, index] = renderTable(model, page, lines, index);
-            output(end + 1, 1) = tableHtml;
-            plain(end + 1, 1) = tablePlain;
+            outputCount = outputCount + 1;
+            output(outputCount, 1) = tableHtml;
+            plainCount = plainCount + 1;
+            plain(plainCount, 1) = tablePlain;
             continue;
         end
         heading = regexp(char(trimmed), '^(#{1,6})\s+(.+)$', 'tokens', 'once');
         if ~isempty(heading)
-            [output, listType] = closeList(output, listType);
+            [output, outputCount, listType] = ...
+                closeList(output, outputCount, listType);
             level = strlength(string(heading{1}));
             label = string(heading{2});
             anchor = headingAnchor(label);
-            output(end + 1, 1) = "<h" + level + " id=""" + anchor + """>" + ...
+            outputCount = outputCount + 1;
+            output(outputCount, 1) = "<h" + level + " id=""" + anchor + """>" + ...
                 renderInline(model, page, label) + "</h" + level + ">";
-            plain(end + 1, 1) = label;
+            plainCount = plainCount + 1;
+            plain(plainCount, 1) = label;
             index = index + 1;
             continue;
         end
@@ -75,23 +91,30 @@ function [html, plainText] = renderLabKitMarkdown(model, page)
             index = index + 1;
             [itemText, index] = appendListItemContinuations( ...
                 lines, index, itemText);
-            [output, listType] = ensureList(output, listType, wanted);
-            output(end + 1, 1) = "<li>" + ...
+            [output, outputCount, listType] = ...
+                ensureList(output, outputCount, listType, wanted);
+            outputCount = outputCount + 1;
+            output(outputCount, 1) = "<li>" + ...
                 renderInline(model, page, itemText) + "</li>";
-            plain(end + 1, 1) = itemText;
+            plainCount = plainCount + 1;
+            plain(plainCount, 1) = itemText;
             continue;
         end
-        [output, listType] = closeList(output, listType);
+        [output, outputCount, listType] = ...
+            closeList(output, outputCount, listType);
         if startsWith(trimmed, ">")
             content = strip(extractAfter(trimmed, 1));
-            output(end + 1, 1) = "<aside class=""note"">" + ...
+            outputCount = outputCount + 1;
+            output(outputCount, 1) = "<aside class=""note"">" + ...
                 renderInline(model, page, content) + "</aside>";
-            plain(end + 1, 1) = content;
+            plainCount = plainCount + 1;
+            plain(plainCount, 1) = content;
             index = index + 1;
             continue;
         end
         if any(trimmed == ["---", "***"])
-            output(end + 1, 1) = "<hr>";
+            outputCount = outputCount + 1;
+            output(outputCount, 1) = "<hr>";
             index = index + 1;
             continue;
         end
@@ -102,17 +125,19 @@ function [html, plainText] = renderLabKitMarkdown(model, page)
             paragraph = paragraph + " " + strtrim(lines(index));
             index = index + 1;
         end
-        output(end + 1, 1) = "<p>" + ...
+        outputCount = outputCount + 1;
+        output(outputCount, 1) = "<p>" + ...
             renderInline(model, page, paragraph) + "</p>";
-        plain(end + 1, 1) = paragraph;
+        plainCount = plainCount + 1;
+        plain(plainCount, 1) = paragraph;
     end
-    [output, ~] = closeList(output, listType);
+    [output, outputCount, ~] = closeList(output, outputCount, listType);
     if inCode
         error("LabKit:Docs:UnclosedCodeFence", ...
             "Page %s has an unclosed code fence.", page.source);
     end
-    html = strjoin(output, newline);
-    plainText = strjoin(plain, " ");
+    html = strjoin(output(1:outputCount), newline);
+    plainText = strjoin(plain(1:plainCount), " ");
 end
 
 function [itemText, nextIndex] = appendListItemContinuations( ...
@@ -154,12 +179,15 @@ end
 function [html, plain, nextIndex] = renderTable(model, page, lines, index)
     headers = tableCells(lines(index));
     index = index + 2;
-    rows = cell(0, 1);
+    rows = cell(max(numel(lines) - index + 1, 0), 1);
+    rowCount = 0;
     while index <= numel(lines) && contains(lines(index), "|") && ...
             strlength(strtrim(lines(index))) > 0
-        rows{end + 1, 1} = tableCells(lines(index));
+        rowCount = rowCount + 1;
+        rows{rowCount, 1} = tableCells(lines(index));
         index = index + 1;
     end
+    rows = rows(1:rowCount);
     chunks = "<div class=""table-wrap""><table><thead><tr>";
     for k = 1:numel(headers)
         chunks = chunks + "<th>" + renderInline(model, page, headers(k)) + "</th>";
@@ -193,31 +221,36 @@ function cells = tableCells(line)
     cells = strip(split(line, "|")).';
 end
 
-function [output, listType] = ensureList(output, listType, wanted)
+function [output, outputCount, listType] = ...
+        ensureList(output, outputCount, listType, wanted)
     if listType == wanted
         return;
     end
-    [output, listType] = closeList(output, listType);
-    output(end + 1, 1) = "<" + wanted + ">";
+    [output, outputCount, ~] = closeList(output, outputCount, listType);
+    outputCount = outputCount + 1;
+    output(outputCount, 1) = "<" + wanted + ">";
     listType = wanted;
 end
 
-function [output, listType] = closeList(output, listType)
+function [output, outputCount, listType] = ...
+        closeList(output, outputCount, listType)
     if strlength(listType) > 0
-        output(end + 1, 1) = "</" + listType + ">";
+        outputCount = outputCount + 1;
+        output(outputCount, 1) = "</" + listType + ">";
     end
     listType = "";
 end
 
 function html = renderInline(model, page, text)
     text = string(text);
-    replacements = strings(0, 1);
+    replacements = strings(strlength(text), 1);
     [text, replacements] = protectTokens(text, replacements, ...
         '`([^`]+)`', "code", model, page);
     [text, replacements] = protectTokens(text, replacements, ...
         '!\[([^\]]*)\]\(([^)]+)\)', "image", model, page);
     [text, replacements] = protectTokens(text, replacements, ...
         '\[([^\]]+)\]\(([^)]+)\)', "link", model, page);
+    replacements = replacements(strlength(replacements) > 0);
     html = htmlEscape(text);
     html = regexprep(html, '\*\*([^*]+)\*\*', '<strong>$1</strong>');
     html = regexprep(html, '(?<!\*)\*([^*]+)\*(?!\*)', '<em>$1</em>');
@@ -231,6 +264,7 @@ end
 
 function [text, replacements] = protectTokens( ...
         text, replacements, pattern, tokenType, model, page)
+    replacementCount = nnz(strlength(replacements) > 0);
     while true
         [start, finish, tokens] = regexp(char(text), pattern, ...
             'start', 'end', 'tokens', 'once');
@@ -248,8 +282,9 @@ function [text, replacements] = protectTokens( ...
                 error("LabKit:Docs:UnknownInlineToken", ...
                     "Unknown Markdown inline token type: %s", tokenType);
         end
-        replacements(end + 1, 1) = replacement;
-        marker = tokenMarker(numel(replacements));
+        replacementCount = replacementCount + 1;
+        replacements(replacementCount, 1) = replacement;
+        marker = tokenMarker(replacementCount);
         text = extractBefore(text, start) + marker + extractAfter(text, finish);
     end
 end
@@ -303,17 +338,19 @@ end
 
 function path = normalizeDocPath(path)
     parts = split(replace(string(path), "\", "/"), "/");
-    kept = strings(0, 1);
+    kept = strings(numel(parts), 1);
+    keptCount = 0;
     for k = 1:numel(parts)
         if parts(k) == "." || strlength(parts(k)) == 0
             continue;
-        elseif parts(k) == ".." && ~isempty(kept) && kept(end) ~= ".."
-            kept(end, :) = [];
+        elseif parts(k) == ".." && keptCount > 0 && kept(keptCount) ~= ".."
+            keptCount = keptCount - 1;
         else
-            kept(end + 1, 1) = parts(k);
+            keptCount = keptCount + 1;
+            kept(keptCount, 1) = parts(k);
         end
     end
-    path = strjoin(kept, "/");
+    path = strjoin(kept(1:keptCount), "/");
 end
 
 function anchor = headingAnchor(label)

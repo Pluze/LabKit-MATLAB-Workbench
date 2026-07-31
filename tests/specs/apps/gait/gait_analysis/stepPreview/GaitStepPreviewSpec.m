@@ -1,0 +1,20 @@
+classdef GaitStepPreviewSpec < matlab.unittest.TestCase
+    %GAITSTEPPREVIEWSPEC Guard result-table step selection.
+
+    methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
+        function selectedRowIsClampedToTheAvailableSteps(testCase)
+            state = struct( ...
+                "project", struct("results", struct("analysis", struct( ...
+                    "stepTable", table([1; 2], VariableNames="value")))), ...
+                "session", struct("selection", struct( ...
+                    "currentStepIndex", 1)));
+            selection = labkit.app.event.TableCellSelection([7 1]);
+
+            state = gait_analysis.stepPreview.select( ...
+                state, selection, []);
+
+            testCase.verifyEqual( ...
+                state.session.selection.currentStepIndex, 2);
+        end
+    end
+end

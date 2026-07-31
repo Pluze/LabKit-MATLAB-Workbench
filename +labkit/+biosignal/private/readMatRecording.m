@@ -23,12 +23,17 @@ function recording = readMatRecording(filepath, opts)
 
     data = load(filepath);
     names = fieldnames(data);
-    signals = struct([]);
+    signalChunks = cell(1, numel(names));
     for i = 1:numel(names)
         value = data.(names{i});
         if istimetable(value)
-            signals = [signals readTimetableSignals(value, names{i}, opts)];
+            signalChunks{i} = readTimetableSignals(value, names{i}, opts);
         end
+    end
+    signalChunks = signalChunks(~cellfun(@isempty, signalChunks));
+    signals = struct([]);
+    if ~isempty(signalChunks)
+        signals = [signalChunks{:}];
     end
 
     recording = makeRecording(filepath, "mat", signals);
@@ -41,7 +46,8 @@ end
 function signals = readTimetableSignals(TT, sourceName, opts)
     varNames = TT.Properties.VariableNames;
     timeSec = timeToSeconds(TT.Properties.RowTimes);
-    signals = struct([]);
+    signalCells = cell(1, numel(varNames));
+    signalCount = 0;
     for k = 1:numel(varNames)
         values = TT.(varNames{k});
         if ~(isnumeric(values) || islogical(values)) || ~isvector(values)
@@ -54,6 +60,11 @@ function signals = readTimetableSignals(TT, sourceName, opts)
             double(values(:)), ...
             struct('sourceKind', "timetable", 'sourceVariable', string(sourceName)), ...
             opts);
-        signals = [signals sig];
+        signalCount = signalCount + 1;
+        signalCells{signalCount} = sig;
+    end
+    signals = struct([]);
+    if signalCount > 0
+        signals = [signalCells{1:signalCount}];
     end
 end

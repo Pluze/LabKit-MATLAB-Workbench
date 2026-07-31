@@ -1,7 +1,7 @@
 function text = packageManifestText(apps, entryRelativeFiles, codeFormat)
 % Build the deployment manifest for resolved app records and package entries.
 
-    if numel(apps) == 1
+    if isscalar(apps)
         text = singleAppManifestText(apps, entryRelativeFiles(1), codeFormat);
         return;
     end

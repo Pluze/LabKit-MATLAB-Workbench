@@ -41,6 +41,7 @@ jobs:
           fi
           git diff --check "${BASE_SHA}" "${HEAD_SHA}"
           python -m unittest discover -s .github/scripts -p 'test_*.py'
+          python .github/scripts/validate_agent_skills.py
           python .github/scripts/check_integration_policy.py \
             --event-name "${{ github.event_name }}" \
             --base-ref "${{ github.base_ref }}" \

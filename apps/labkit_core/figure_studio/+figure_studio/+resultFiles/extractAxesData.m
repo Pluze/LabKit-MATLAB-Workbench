@@ -41,18 +41,23 @@ function children = visiblePlotChildren(ax)
 end
 
 function children = expandVisibleGroups(children)
-    expanded = gobjects(0, 1);
+    if isempty(children)
+        children = gobjects(0, 1);
+        return;
+    end
+    chunks = cell(numel(children), 1);
     for k = 1:numel(children)
         child = children(k);
         if isgraphics(child, 'hggroup')
             if isprop(child, 'Visible') && string(child.Visible) == "off"
                 continue;
             end
-            expanded = [expanded; expandVisibleGroups(flipud(allchild(child)))];
+            chunks{k} = expandVisibleGroups(flipud(allchild(child)));
         else
-            expanded(end + 1, 1) = child;
+            chunks{k} = child;
         end
     end
+    expanded = vertcat(chunks{:});
     children = expanded;
 end
 

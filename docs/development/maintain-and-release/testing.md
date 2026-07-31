@@ -57,11 +57,19 @@ execution environment.
 
 ```text
 tests/specs/
-├── framework/<area>/
+├── labkit/<package>/...
+├── tools/<area>/...
+├── tests/labkittest/
 ├── apps/<family>/<app>/<capability>/
 ├── apps/conformance/
-└── system/<area>/
+├── labkit_launcher/
+└── repository/
 ```
+
+The owner path is a mechanical mirror of the production capability. Do not
+replace source paths with logical aliases such as `framework/<area>` or
+`system/<area>`; contract and environment tags describe behavior without
+changing physical ownership.
 
 `tests/+testfixtures/` contains only synthetic inputs reused by multiple
 specification owners. Keep an owner-specific fixture beside its specification;

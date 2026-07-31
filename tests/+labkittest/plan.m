@@ -118,16 +118,29 @@ function [queries, reasons, manualChecks, classifications] = planQueries(opts)
 end
 
 function [queries, reasons, manualChecks, classifications] = changedQueries(paths)
+    fprintf("LabKit test planning: 0/%d changed paths\n", numel(paths));
+    queryChunks = cell(1, numel(paths));
+    reasonChunks = cell(1, numel(paths));
+    manualCheckChunks = cell(1, numel(paths));
+    classifications = repmat(emptyClassification(), 1, numel(paths));
+    for k = 1:numel(paths)
+        [pathQueries, pathReasons, pathManualChecks, pathClassification] = queriesForChangedPath(paths(k));
+        queryChunks{k} = pathQueries;
+        reasonChunks{k} = pathReasons;
+        manualCheckChunks{k} = pathManualChecks;
+        classifications(k) = pathClassification;
+        if mod(k, 25) == 0 || k == numel(paths)
+            fprintf("LabKit test planning: %d/%d changed paths\n", ...
+                k, numel(paths));
+        end
+    end
     queries = repmat(emptyQuery(), 1, 0);
     reasons = strings(1, 0);
     manualChecks = strings(1, 0);
-    classifications = repmat(emptyClassification(), 1, 0);
-    for k = 1:numel(paths)
-        [pathQueries, pathReasons, pathManualChecks, pathClassification] = queriesForChangedPath(paths(k));
-        queries = [queries, pathQueries];
-        reasons = [reasons, pathReasons];
-        manualChecks = [manualChecks, pathManualChecks];
-        classifications = [classifications, pathClassification];
+    if ~isempty(paths)
+        queries = [queryChunks{:}];
+        reasons = [reasonChunks{:}];
+        manualChecks = [manualCheckChunks{:}];
     end
     if isempty(queries)
         if isempty(paths)
@@ -147,10 +160,10 @@ function [queries, reasons, manualChecks, classification] = queriesForChangedPat
             return;
         case "unknown"
             error("LabKit:TestPlan:UnknownOwnership", ...
-                ["No validation ownership exists for: %s\n\n" + ...
+                "No validation ownership exists for: %s\n\n" + ...
                 "The change either introduces a new production structure, is outside " + ...
                 "an existing owner, requires a routing rule, or requires an explicit " + ...
-                "no-test classification. Full CI cannot resolve missing ownership."], path);
+                "no-test classification. Full CI cannot resolve missing ownership.", path);
     end
     if classification.Role == "specification"
         queries = query(classification.Owner, "", "");
@@ -166,7 +179,10 @@ function [queries, reasons, manualChecks, classification] = queriesForChangedPat
 end
 
 function descriptors = descriptorsForQueries(opts, queries)
-    descriptors = repmat(emptyDescriptor(), 1, 0);
+    fprintf("LabKit evidence selection: 0/%d contract queries\n", ...
+        numel(queries));
+    descriptorChunks = cell(1, numel(queries));
+    missingRequirements = strings(1, numel(queries));
     for k = 1:numel(queries)
         current = queries(k);
         try
@@ -187,11 +203,26 @@ function descriptors = descriptorsForQueries(opts, queries)
                 "(App=" + current.App + ")"));
         end
         if isempty(selected)
-            error("LabKit:TestPlan:MissingContract", ...
-                "Required evidence is missing for owner=%s contract=%s environment=%s.", ...
+            missingRequirements(k) = sprintf( ...
+                "owner=%s contract=%s environment=%s", ...
                 current.Owner, current.Contract, current.Environment);
         end
-        descriptors = [descriptors, selected];
+        descriptorChunks{k} = selected;
+        if mod(k, 25) == 0 || k == numel(queries)
+            fprintf("LabKit evidence selection: %d/%d contract queries\n", ...
+                k, numel(queries));
+        end
+    end
+    missingRequirements = unique( ...
+        missingRequirements(strlength(missingRequirements) > 0), "stable");
+    if ~isempty(missingRequirements)
+        error("LabKit:TestPlan:MissingContract", ...
+            "Required evidence is missing for:\n%s", ...
+            strjoin(missingRequirements, newline));
+    end
+    descriptors = repmat(emptyDescriptor(), 1, 0);
+    if ~isempty(queries)
+        descriptors = [descriptorChunks{:}];
     end
 end
 
@@ -225,8 +256,8 @@ function value = emptyQuery()
 end
 
 function value = emptyClassification()
-    value = struct("Path", string(""), "Kind", string(""), ...
-        "Role", string(""), "Owner", string(""), "Reason", string(""));
+    value = struct("Path", "", "Kind", "", ...
+        "Role", "", "Owner", "", "Reason", "");
 end
 
 function scope = scopeForOptions(opts)
@@ -285,7 +316,8 @@ function root = repositoryRoot()
 end
 
 function paths = gitChangedPaths(root)
-    tracked = gitOutput(root, "diff --name-only HEAD");
+    tracked = gitOutput(root, ...
+        "diff --name-only --diff-filter=ACMRTUXB HEAD");
     untracked = gitOutput(root, "ls-files --others --exclude-standard");
     paths = unique(normalizeRepositoryPath([splitlines(tracked); splitlines(untracked)]), ...
         "stable");
@@ -293,13 +325,15 @@ function paths = gitChangedPaths(root)
     if ~isempty(paths) || ~gitRefExists(root, "HEAD~1")
         return;
     end
-    output = gitOutput(root, "diff --name-only HEAD~1 HEAD");
+    output = gitOutput(root, ...
+        "diff --name-only --diff-filter=ACMRTUXB HEAD~1 HEAD");
     paths = normalizeRepositoryPath(splitlines(output));
     paths = paths(strlength(paths) > 0).';
 end
 
 function output = gitOutput(root, gitArguments)
-    command = "git --no-pager -C " + shellQuote(root) + " " + gitArguments;
+    command = "git -c core.safecrlf=false --no-pager -C " + ...
+        shellQuote(root) + " " + gitArguments;
     [status, output] = system(char(command));
     if status ~= 0
         error("LabKit:TestPlan:GitInspection", ...
@@ -309,7 +343,8 @@ function output = gitOutput(root, gitArguments)
 end
 
 function tf = gitRefExists(root, reference)
-    command = "git --no-pager -C " + shellQuote(root) + " rev-parse --verify --quiet " + reference;
+    command = "git -c core.safecrlf=false --no-pager -C " + ...
+        shellQuote(root) + " rev-parse --verify --quiet " + reference;
     [status, ~] = system(char(command));
     tf = status == 0;
 end

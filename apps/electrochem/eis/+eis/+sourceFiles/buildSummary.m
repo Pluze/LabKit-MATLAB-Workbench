@@ -2,13 +2,13 @@
 % stable summary text cell array. No side effects.
 
 function summary = buildSummary(items)
-    summary = cell(0, 1);
-    summary{end+1} = sprintf('Loaded files: %d', numel(items));
+    summary = cell(numel(items) + 1, 1);
+    summary{1} = sprintf('Loaded files: %d', numel(items));
     for i = 1:numel(items)
         freq = items(i).freq_Hz;
         fmin = min(freq, [], 'omitnan');
         fmax = max(freq, [], 'omitnan');
-        summary{end+1} = sprintf('%s | N=%d | Freq %.4g to %.4g Hz | order: %s', ...
+        summary{i + 1} = sprintf('%s | N=%d | Freq %.4g to %.4g Hz | order: %s', ...
             items(i).name, items(i).n, fmin, fmax, ternary(items(i).freqDesc, 'high->low', 'low->high/mixed'));
     end
 end

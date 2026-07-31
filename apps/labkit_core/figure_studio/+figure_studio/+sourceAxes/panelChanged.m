@@ -1,8 +1,8 @@
 % App-owned implementation for Figure Studio's active single-panel selector.
-function state = panelChanged(state, event, callbackContext)
+function state = panelChanged(state, ~, callbackContext)
 arguments
     state (1, 1) struct
-    event
+    ~
     callbackContext (1, 1) labkit.app.CallbackContext
 end
 resource = callbackContext.getResource("document", "sourceFigure");
