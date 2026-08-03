@@ -14,14 +14,14 @@ classdef (Hidden, Sealed) CompiledDefinition
 
     methods (Access = ?labkit.app.Definition)
         function obj = CompiledDefinition(layout, startCallback)
-            if ~isa(layout, "labkit.app.internal.LayoutNode") || ...
+            if ~isa(layout, "labkit.app.internal.contract.LayoutNode") || ...
                     layout.Kind ~= "workbench"
                 error("labkit:app:contract:InvalidValue", ...
                     "Definition Workbench must be a workbench Layout value.");
             end
             onStart = [];
             if ~isempty(startCallback)
-                onStart = labkit.app.internal.SignalBinding( ...
+                onStart = labkit.app.internal.contract.SignalBinding( ...
                     "application", "started", startCallback);
             end
             nodes = layout.flattenForCompiler();

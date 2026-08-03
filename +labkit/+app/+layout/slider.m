@@ -33,5 +33,5 @@ function node = slider(id, varargin)
 %   node = labkit.app.layout.slider("frame", Limits=[1 100], Step=1);
 %
 % See also labkit.app.layout.field, labkit.app.layout.rangeField
-node = labkit.app.internal.LayoutNode.slider(id, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.slider(id, varargin{:});
 end

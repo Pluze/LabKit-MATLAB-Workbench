@@ -8,7 +8,7 @@ classdef (Hidden, Sealed) HeadlessPlatformAdapter < handle
         FailNext (1, 1) logical = false
     end
 
-    methods (Access = ?labkit.app.internal.RuntimeKernel)
+    methods (Access = ?labkit.app.internal.runtime.RuntimeKernel)
         function reconcile(obj, ~, ~)
             if obj.FailNext
                 obj.FailNext = false;

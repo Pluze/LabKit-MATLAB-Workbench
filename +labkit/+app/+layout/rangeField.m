@@ -29,5 +29,5 @@ function node = rangeField(id, varargin)
 %   node = labkit.app.layout.rangeField("window", Limits=[0 10]);
 %
 % See also labkit.app.layout.field, labkit.app.layout.slider
-node = labkit.app.internal.LayoutNode.rangeField(id, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.rangeField(id, varargin{:});
 end

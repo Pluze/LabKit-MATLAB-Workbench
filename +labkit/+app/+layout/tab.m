@@ -22,5 +22,5 @@ function node = tab(id, title, children)
 %   node = labkit.app.layout.tab("settings", "Settings", {gainField});
 %
 % See also labkit.app.layout.section, labkit.app.layout.workbench
-node = labkit.app.internal.LayoutNode.tab(id, title, children);
+node = labkit.app.internal.contract.LayoutNode.tab(id, title, children);
 end

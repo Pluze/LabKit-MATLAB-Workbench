@@ -72,5 +72,5 @@ function node = fileList(id, varargin)
 %
 % See also labkit.app.event.ListSelection,
 %   labkit.app.CallbackContext, labkit.app.view.Snapshot
-node = labkit.app.internal.LayoutNode.fileList(id, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.fileList(id, varargin{:});
 end

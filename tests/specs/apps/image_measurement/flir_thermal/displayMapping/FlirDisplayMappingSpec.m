@@ -9,7 +9,7 @@ classdef FlirDisplayMappingSpec < matlab.unittest.TestCase
                 labkit.app.synthetic.Context(folder));
             definition = flir_thermal.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
                 definition, pack.InitialProject, struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 

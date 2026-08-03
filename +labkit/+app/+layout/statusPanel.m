@@ -28,5 +28,5 @@ function node = statusPanel(id, varargin)
 %   node = labkit.app.layout.statusPanel("status");
 %
 % See also labkit.app.CallbackContext
-node = labkit.app.internal.LayoutNode.statusPanel(id, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.statusPanel(id, varargin{:});
 end

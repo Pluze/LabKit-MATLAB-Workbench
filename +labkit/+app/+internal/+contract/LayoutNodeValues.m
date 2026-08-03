@@ -12,7 +12,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
         end
 
         function value = normalizeId(value)
-            values = labkit.app.internal.LayoutNodeValues.idRow(value, "layout");
+            values = labkit.app.internal.contract.LayoutNodeValues.idRow(value, "layout");
             if numel(values) ~= 1
                 error("labkit:app:contract:InvalidValue", ...
                     "Layout id must be a scalar MATLAB identifier.");
@@ -21,7 +21,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
         end
 
         function values = idRow(values, label)
-            values = labkit.app.internal.LayoutNodeValues.textRow(values, label + " IDs");
+            values = labkit.app.internal.contract.LayoutNodeValues.textRow(values, label + " IDs");
             if any(strlength(values) == 0) || ...
                     any(~arrayfun(@(value) isvarname(char(value)), values)) || ...
                     numel(unique(values)) ~= numel(values)
@@ -32,7 +32,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
 
         function children = normalizeChildren(children)
             if ~iscell(children) || (~isempty(children) && ~isrow(children)) || ...
-                    ~all(cellfun(@(value) isa(value, "labkit.app.internal.LayoutNode"), children))
+                    ~all(cellfun(@(value) isa(value, "labkit.app.internal.contract.LayoutNode"), children))
                 error("labkit:app:contract:InvalidValue", ...
                     "Layout children must be a row cell array of Layout values.");
             end
@@ -58,7 +58,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
         end
 
         function kinds = workspaceContentKinds()
-            kinds = [labkit.app.internal.LayoutNodeValues.leafAndGroupKinds(), "section"];
+            kinds = [labkit.app.internal.contract.LayoutNodeValues.leafAndGroupKinds(), "section"];
         end
 
         function values = signalCell(signal)
@@ -69,19 +69,19 @@ classdef (Sealed, Hidden) LayoutNodeValues
         end
 
         function signal = namedSignal(target, options, optionName, signalName)
-        signal = labkit.app.internal.LayoutNodeValues.optionalSignal( ...
-            target, signalName, labkit.app.internal.LayoutNodeValues.optionValue(options, optionName, []));
+        signal = labkit.app.internal.contract.LayoutNodeValues.optionalSignal( ...
+            target, signalName, labkit.app.internal.contract.LayoutNodeValues.optionValue(options, optionName, []));
         end
 
         function signal = optionalSignal(target, signalName, callback)
         signal = [];
         if ~isempty(callback)
-            signal = labkit.app.internal.LayoutNodeValues.bindSignal(target, signalName, callback);
+            signal = labkit.app.internal.contract.LayoutNodeValues.bindSignal(target, signalName, callback);
         end
         end
 
         function signal = bindSignal(target, signalName, callback)
-        signal = labkit.app.internal.SignalBinding(target, signalName, callback);
+        signal = labkit.app.internal.contract.SignalBinding(target, signalName, callback);
         end
 
         function callback = rendererCallback(callback)
@@ -141,7 +141,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
         end
 
         function value = nonemptyText(value, label)
-            value = labkit.app.internal.LayoutNodeValues.scalarText(value, label);
+            value = labkit.app.internal.contract.LayoutNodeValues.scalarText(value, label);
             if strlength(value) == 0
                 error("labkit:app:contract:InvalidValue", ...
                     "Layout %s must be nonempty.", label);
@@ -149,7 +149,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
         end
 
         function value = enumText(value, allowed, label)
-            value = labkit.app.internal.LayoutNodeValues.scalarText(value, label);
+            value = labkit.app.internal.contract.LayoutNodeValues.scalarText(value, label);
             if ~any(value == allowed)
                 error("labkit:app:contract:InvalidValue", ...
                     "Layout %s has an unsupported value: %s.", label, value);
@@ -157,7 +157,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
         end
 
         function value = bindingPath(value)
-            value = labkit.app.internal.LayoutNodeValues.scalarText(value, "Bind");
+            value = labkit.app.internal.contract.LayoutNodeValues.scalarText(value, "Bind");
             if strlength(value) == 0
                 return;
             end
@@ -190,7 +190,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
         function values = optionalAxisText(options, name, axisCount)
             values = strings(1, 0);
             if isfield(options, name)
-                values = labkit.app.internal.LayoutNodeValues.textRow(options.(name), name);
+                values = labkit.app.internal.contract.LayoutNodeValues.textRow(options.(name), name);
                 if numel(values) ~= axisCount
                     error("labkit:app:contract:InvalidValue", ...
                         "Layout %s must contain one value per axis.", name);
@@ -232,7 +232,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
             if ~isfield(options, "ScrollZoomAxes")
                 return;
             end
-            values = labkit.app.internal.LayoutNodeValues.textRow(options.ScrollZoomAxes, "ScrollZoomAxes");
+            values = labkit.app.internal.contract.LayoutNodeValues.textRow(options.ScrollZoomAxes, "ScrollZoomAxes");
             if numel(values) ~= axisCount || ...
                     any(~ismember(values, ["xy", "x", "y"]))
                 error("labkit:app:contract:InvalidValue", ...

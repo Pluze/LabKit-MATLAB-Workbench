@@ -54,5 +54,5 @@ function node = plotArea(id, renderer, varargin)
 %
 % See also labkit.app.view.Snapshot, labkit.app.layout.workspace,
 %   labkit.app.interaction.anchorPath
-node = labkit.app.internal.LayoutNode.plotArea(id, renderer, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.plotArea(id, renderer, varargin{:});
 end

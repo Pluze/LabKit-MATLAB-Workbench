@@ -4,7 +4,7 @@ classdef (Hidden, Sealed) ResourceStore < handle
         Entries
     end
 
-    methods (Access = ?labkit.app.internal.RuntimeKernel)
+    methods (Access = ?labkit.app.internal.runtime.RuntimeKernel)
         function obj = ResourceStore()
             obj.Entries = containers.Map( ...
                 "KeyType", "char", "ValueType", "any");

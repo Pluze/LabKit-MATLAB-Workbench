@@ -121,7 +121,7 @@ classdef (Hidden, Sealed) SessionJournal < handle
         function written = flush(obj, varargin)
             deferFailureManifest = false;
             if ~isempty(varargin)
-                options = labkit.app.internal.OptionParser.parse( ...
+                options = labkit.app.internal.contract.OptionParser.parse( ...
                     "SessionJournal.flush", "DeferFailureManifest", varargin{:});
                 deferFailureManifest = optionValue(options, ...
                     "DeferFailureManifest", false);
@@ -342,7 +342,7 @@ classdef (Hidden, Sealed) SessionJournal < handle
             written = false;
             force = false;
             if ~isempty(varargin)
-                options = labkit.app.internal.OptionParser.parse( ...
+                options = labkit.app.internal.contract.OptionParser.parse( ...
                     "SessionJournal.writeManifest", "Force", varargin{:});
                 force = optionValue(options, "Force", false);
             end

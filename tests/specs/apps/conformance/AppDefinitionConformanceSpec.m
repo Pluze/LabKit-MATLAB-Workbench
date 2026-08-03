@@ -19,7 +19,7 @@ classdef AppDefinitionConformanceSpec < matlab.unittest.TestCase
 
         function declaresUnambiguousFileCollectionControls(testCase, App)
             definition = feval(char(App.Package + ".definition"));
-            plan = labkit.app.internal.DefinitionInspector.platformPlan( ...
+            plan = labkit.app.internal.contract.DefinitionInspector.platformPlan( ...
                 definition);
             nodes = plan.Nodes(string({plan.Nodes.Kind}) == "fileList");
 

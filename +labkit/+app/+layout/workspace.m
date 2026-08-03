@@ -32,5 +32,5 @@ function node = workspace(varargin)
 %
 % See also labkit.app.layout.workbench,
 %   labkit.app.layout.plotArea
-node = labkit.app.internal.LayoutNode.workspace(varargin{:});
+node = labkit.app.internal.contract.LayoutNode.workspace(varargin{:});
 end

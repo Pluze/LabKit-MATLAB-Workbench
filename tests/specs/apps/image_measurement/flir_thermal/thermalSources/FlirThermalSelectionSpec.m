@@ -3,7 +3,7 @@ classdef FlirThermalSelectionSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function declaresABatchFileChooserWithRadiometricFiltering(testCase)
-            plan = labkit.app.internal.DefinitionInspector.platformPlan( ...
+            plan = labkit.app.internal.contract.DefinitionInspector.platformPlan( ...
                 flir_thermal.definition());
             node = plan.Nodes(string({plan.Nodes.Id}) == "thermalFiles");
             config = node.Configuration;

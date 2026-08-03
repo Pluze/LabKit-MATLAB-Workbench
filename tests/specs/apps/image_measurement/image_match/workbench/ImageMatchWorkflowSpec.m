@@ -13,7 +13,7 @@ classdef ImageMatchWorkflowSpec < matlab.unittest.TestCase
                 "alert", @(~, ~) []);
             definition = image_match.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();

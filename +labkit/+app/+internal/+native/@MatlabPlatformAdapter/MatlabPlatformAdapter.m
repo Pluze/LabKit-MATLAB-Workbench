@@ -30,8 +30,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
     end
 
     methods (Access = { ...
-            ?labkit.app.internal.RuntimeKernel, ...
-            ?labkit.app.internal.RuntimeContractBoundary})
+            ?labkit.app.internal.runtime.RuntimeKernel, ...
+            ?labkit.app.internal.runtime.RuntimeContractBoundary})
         function obj = MatlabPlatformAdapter(plan, title)
             obj.Plan = labkit.app.internal.native.NativeAdapterValues.validatePlan(plan);
             if nargin < 2
@@ -65,7 +65,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function attachRuntime(obj, runtime)
-            if ~isa(runtime, "labkit.app.internal.RuntimeKernel")
+            if ~isa(runtime, "labkit.app.internal.runtime.RuntimeKernel")
                 error("labkit:app:runtime:InvariantFailure", ...
                     "MATLAB platform adapter requires its RuntimeKernel.");
             end

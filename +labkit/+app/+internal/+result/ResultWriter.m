@@ -7,7 +7,7 @@ classdef (Hidden, Sealed) ResultWriter < handle
         Document
     end
 
-    methods (Access = ?labkit.app.internal.RuntimeKernel)
+    methods (Access = ?labkit.app.internal.runtime.RuntimeKernel)
         function obj = ResultWriter(application, document)
             if ~isa(application, "labkit.app.Definition")
                 invalid("Result writer requires an Application value.");

@@ -21,7 +21,7 @@ classdef RhsPreviewWorkflowSpec < matlab.unittest.TestCase
                 "alert", @(~, ~) []);
             definition = rhs_preview.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 definition, project, backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();

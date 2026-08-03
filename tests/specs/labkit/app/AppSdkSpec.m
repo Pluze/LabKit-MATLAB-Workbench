@@ -14,14 +14,14 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             runtime.applyBinding("gain", 3);
 
             testCase.verifyEqual(runtime.State.project.parameters.gain, 3);
-            testCase.verifyEqual(labkit.app.internal.DefinitionInspector.signalIds(app), ...
+            testCase.verifyEqual(labkit.app.internal.contract.DefinitionInspector.signalIds(app), ...
                 "run__pressed");
             testCase.verifyFalse(isprop(app, "TargetIds"));
             clear cleanup
@@ -67,7 +67,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
         end
 
         function callbackContextHasOnlyNamedRuntimeCapabilities(testCase)
-            context = labkit.app.internal.CallbackContextFactory.disconnected();
+            context = labkit.app.internal.runtime.CallbackContextFactory.disconnected();
 
             testCase.verifyTrue(meta.class.fromName( ...
                 "labkit.app.CallbackContext").Sealed);
@@ -146,7 +146,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
 
         function sourceResolutionTreatsCharacterIdAsOneIdentifier(testCase)
             backend = struct("sourcePaths", @sourcePathsProbe);
-            context = labkit.app.internal.CallbackContextFactory.create(backend);
+            context = labkit.app.internal.runtime.CallbackContextFactory.create(backend);
 
             paths = context.resolveSourcePaths(struct(), 'source-1');
 
@@ -165,7 +165,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             unicodePath = fullfile(root, 'α-image.png');
@@ -224,7 +224,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             backend = struct("alert", @(message, title) ...
                 captureAlert(notices, message, title));
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
                 app, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
 
@@ -271,7 +271,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 Validate=@validateProject), CreateSession=@sampleSession, ...
                 OnStart=@startChangesGain, BuildSyntheticSample=@validSyntheticSample);
             journal = labkittest.temporarySessionJournal(app, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             stateBeforeGeneration = runtime.State;
@@ -298,7 +298,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 LegacyImports=struct("probeLegacy", @importProbeProject));
             app = AppSdkSpec.definition(layout, "ProjectSchema", schema);
             journal = labkittest.temporarySessionJournal(app, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
@@ -337,7 +337,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 Create=@createProject, Validate=@validateProject);
             app = AppSdkSpec.definition(layout, "ProjectSchema", schema);
             journal = labkittest.temporarySessionJournal(app, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             original = fullfile(folder, "project.mat");
@@ -410,7 +410,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -436,7 +436,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
@@ -460,7 +460,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             states = sdkArtifactFolder("states");
@@ -507,7 +507,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -550,7 +550,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -656,11 +656,9 @@ drawnow;
 end
 
 function folder = sdkArtifactFolder(category)
-folder = string(fileparts(which("labkit.app.internal.RuntimeKernel")));
-for index = 1:3
-    folder = string(fileparts(folder));
-end
-folder = fullfile(folder, "artifacts", category);
+versionPath = string(which("labkit.app.version"));
+root = string(fileparts(fileparts(fileparts(versionPath))));
+folder = fullfile(root, "artifacts", category);
 end
 
 function files = artifactFiles(folder, pattern)

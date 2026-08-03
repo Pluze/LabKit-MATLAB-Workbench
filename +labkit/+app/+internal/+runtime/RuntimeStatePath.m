@@ -21,7 +21,7 @@ classdef (Sealed, Hidden) RuntimeStatePath
 
         function state = write(state, path, value)
             parts = split(path, ".");
-            state = labkit.app.internal.RuntimeStatePath.assign( ...
+            state = labkit.app.internal.runtime.RuntimeStatePath.assign( ...
                 state, parts, value, path);
         end
     end
@@ -37,7 +37,7 @@ classdef (Sealed, Hidden) RuntimeStatePath
                 owner.(name) = value;
                 return;
             end
-            owner.(name) = labkit.app.internal.RuntimeStatePath.assign( ...
+            owner.(name) = labkit.app.internal.runtime.RuntimeStatePath.assign( ...
                 owner.(name), parts(2:end), value, path);
         end
     end

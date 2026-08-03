@@ -34,6 +34,6 @@ function node = button(id, label, onPressed, varargin)
 %       Tooltip="Compute the current analysis from the selected inputs.");
 %
 % See also labkit.app.layout.workbench, labkit.app.CallbackContext
-node = labkit.app.internal.LayoutNode.button( ...
+node = labkit.app.internal.contract.LayoutNode.button( ...
     id, label, onPressed, varargin{:});
 end

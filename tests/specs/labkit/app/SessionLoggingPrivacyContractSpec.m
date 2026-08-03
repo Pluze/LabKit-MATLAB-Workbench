@@ -4,7 +4,7 @@ classdef SessionLoggingPrivacyContractSpec < matlab.unittest.TestCase
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function passesCompleteDetailsToTheLoggingBackend(testCase)
             captured = cell(1, 7);
-            context = labkit.app.internal.CallbackContextFactory.create( ...
+            context = labkit.app.internal.runtime.CallbackContextFactory.create( ...
                 struct("log", @captureLog));
             syntheticPath = "/synthetic/input.csv";
 

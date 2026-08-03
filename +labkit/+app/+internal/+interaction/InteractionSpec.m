@@ -37,7 +37,7 @@ classdef (Sealed, Hidden) InteractionSpec
             end
             obj.Targets = strings(1, 0);
             obj.Capabilities = obj.Kind;
-            obj.Signals = {labkit.app.internal.SignalBinding( ...
+            obj.Signals = {labkit.app.internal.contract.SignalBinding( ...
                 obj.Id, "interactionChanged", onChanged)};
             obj.Options = optionValue(options, "Style", struct());
             if ~isstruct(obj.Options) || ~isscalar(obj.Options)
@@ -52,12 +52,12 @@ classdef (Sealed, Hidden) InteractionSpec
 
             background = optionValue(options, "OnBackgroundPressed", []);
             if ~isempty(background)
-                obj.Signals{end + 1} = labkit.app.internal.SignalBinding( ...
+                obj.Signals{end + 1} = labkit.app.internal.contract.SignalBinding( ...
                     obj.Id, "backgroundPressed", background);
             end
             scrolled = optionValue(options, "OnScrolled", []);
             if ~isempty(scrolled)
-                obj.Signals{end + 1} = labkit.app.internal.SignalBinding( ...
+                obj.Signals{end + 1} = labkit.app.internal.contract.SignalBinding( ...
                     obj.Id, "scrolled", scrolled);
             end
         end

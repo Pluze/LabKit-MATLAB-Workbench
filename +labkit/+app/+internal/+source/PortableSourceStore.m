@@ -5,7 +5,7 @@ classdef (Hidden, Sealed) PortableSourceStore < handle
     % relocate durable source references.  App code never receives this
     % storage owner or relies on the nested reference representation.
 
-    methods (Access = {?labkit.app.internal.RuntimeKernel, ?labkit.app.internal.project.ProjectDocumentStore})
+    methods (Access = {?labkit.app.internal.runtime.RuntimeKernel, ?labkit.app.internal.project.ProjectDocumentStore})
         function obj = PortableSourceStore()
         end
 

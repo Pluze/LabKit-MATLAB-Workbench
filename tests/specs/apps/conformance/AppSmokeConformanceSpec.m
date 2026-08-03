@@ -11,13 +11,13 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = feval(char(App.Package + ".definition"));
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figure = runtime.figureHandle();
 
             testCase.verifyTrue(isgraphics(figure, "figure"));
-            plan = labkit.app.internal.DefinitionInspector.platformPlan(definition);
+            plan = labkit.app.internal.contract.DefinitionInspector.platformPlan(definition);
             nodes = plan.Nodes;
             targets = string({nodes(~arrayfun(@(node) ...
                 isempty(node.Capabilities), nodes)).Id});
@@ -34,7 +34,7 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = feval(char(App.Package + ".definition"));
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 definition, [], struct(), ...
                 journal);
             cleanup = onCleanup(@() runtime.close());
@@ -57,7 +57,7 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             pack = labkit.app.internal.source.SyntheticInputGenerator.generate( ...
                 definition, folder);
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 definition, pack.InitialProject, struct(), ...
                 journal);
             cleanup = onCleanup(@() runtime.close());

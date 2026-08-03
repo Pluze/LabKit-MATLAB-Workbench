@@ -15,12 +15,12 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
         PendingFingerprint (1, 1) string = ""
     end
 
-    methods (Access = ?labkit.app.internal.RuntimeKernel)
+    methods (Access = ?labkit.app.internal.runtime.RuntimeKernel)
         function obj = ProjectDocumentStore(application, context, contract)
             if ~isa(application, "labkit.app.Definition") || ...
                     isempty(application.ProjectSchema) || ...
                     ~isa(context, "labkit.app.CallbackContext") || ...
-                    ~isa(contract, "labkit.app.internal.CompiledDefinition")
+                    ~isa(contract, "labkit.app.internal.contract.CompiledDefinition")
                 error("labkit:app:runtime:InvariantFailure", ...
                     "Project document storage requires an Application with Project.");
             end

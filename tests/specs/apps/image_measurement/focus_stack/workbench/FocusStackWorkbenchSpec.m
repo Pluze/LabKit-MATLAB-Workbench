@@ -5,7 +5,7 @@ classdef FocusStackWorkbenchSpec < matlab.unittest.TestCase
         function composesTheEmptyProjectSnapshot(testCase)
             project = focus_stack.projectSpec().Create();
             session = focus_stack.createSession(project, ...
-                labkit.app.internal.CallbackContextFactory.disconnected());
+                labkit.app.internal.runtime.CallbackContextFactory.disconnected());
 
             snapshot = focus_stack.workbench.present(struct( ...
                 "project", project, "session", session));
