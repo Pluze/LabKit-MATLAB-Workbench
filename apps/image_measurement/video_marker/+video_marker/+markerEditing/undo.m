@@ -7,7 +7,7 @@ if isempty(points)
 end
 points(end, :) = [];
 frame = state.session.cache.frameIndex;
-state = video_marker.markerEditing.setPoints(state, points);
+state = video_marker.markerEditing.setPoints(state, points, context);
 context.log("info", "video_marker.markerediting.undo.status", ...
     "Undid the last point on frame " + string(frame) + ".");
 end

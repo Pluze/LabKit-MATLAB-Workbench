@@ -10,7 +10,13 @@ end
 if isempty(selection.CellIndices)
     return
 end
-applicationState.session.selection.currentStepIndex = ...
+previous = applicationState.session.selection.currentStepIndex;
+selected = ...
     gait_analysis.stepPreview.boundedIndex( ...
         applicationState, selection.CellIndices(1, 1));
+applicationState.session.selection.currentStepIndex = selected;
+if selected ~= previous
+    applicationState.session.cache.plotViewRevision = ...
+        applicationState.session.cache.plotViewRevision + 1;
+end
 end

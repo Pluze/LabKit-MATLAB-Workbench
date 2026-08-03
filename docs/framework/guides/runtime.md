@@ -216,6 +216,24 @@ Renderers own drawing and viewport policy, not workflow decisions or project
 mutation. Display-only graphics disable hit testing. Managed interaction
 specs own editable gestures and event-scoped resources.
 
+For a multi-row plot dashboard, place multiple plot areas in one workspace
+page. Page content is arranged vertically, while each plot area independently
+chooses `single`, horizontal `pair`, or vertical `stack`. Two paired plot areas
+therefore form a 2-by-2 dashboard without App-owned native containers.
+`ColumnWidths={'1x', 90}` gives a pair a flexible main plot and a fixed-width
+scale or histogram; `RowHeights` provides the analogous control for a stack.
+
+```matlab
+top = labkit.app.layout.plotArea("topPlots", @drawTop, ...
+    Layout="pair", AxisIds=["image" "profile"]);
+bottom = labkit.app.layout.plotArea("bottomPlots", @drawBottom, ...
+    Layout="pair", AxisIds=["result" "scale"], ...
+    ColumnWidths={'1x', 90});
+workspace = labkit.app.layout.workspace(Title="Plots");
+workspace = workspace.page("plots", "Plots", {top, bottom});
+workspace = workspace.initialPage("plots");
+```
+
 Declare managed gestures statically on their plot area and provide their
 current value in the snapshot:
 

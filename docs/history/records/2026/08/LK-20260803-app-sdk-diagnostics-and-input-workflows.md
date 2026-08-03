@@ -12,6 +12,7 @@ scope: Automatic diagnostic export
 scope: Automatic utility artifacts
 scope: File-list validation and failure alerts
 scope: Point-only paired-anchor interaction
+scope: Multi-row plot composition guidance
 ```
 
 ## Context
@@ -74,6 +75,9 @@ wording they handle directly, and scientific interaction semantics.
 - Native file-panel actions surface otherwise-unhandled validation or parsing
   failures in an error alert after transactional rollback.
 - Paired-anchor interactions force point rendering without a connecting path.
+- Public plot-area help and the Runtime guide document how vertically arranged
+  workspace-page content composes paired plot rows, including fixed-width
+  scale or histogram columns, without App-owned native containers.
 
 ## User and data impact
 
@@ -85,6 +89,8 @@ inputs, results, paths, filenames, exception locations, and decoded images;
 external source files and screenshots remain excluded from bundles.
 Apps can accept mixed batch selections without losing compatible inputs, and
 unhandled source failures are visible instead of remaining callback output.
+App authors can discover the existing multi-row plot composition pattern from
+both the function help and the framework guide.
 
 ## Compatibility and migration
 

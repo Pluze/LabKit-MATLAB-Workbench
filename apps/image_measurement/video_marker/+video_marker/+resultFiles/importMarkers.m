@@ -47,6 +47,7 @@ state.project.parameters.coordinateStartFrame = 1;
 state.project.parameters.coordinateEndFrame = ...
     max(1, payload.videoInfo.frameCount);
 state = video_marker.resultFiles.clearExportState(state);
+state = video_marker.sessionControl.saveAutosave(state, context);
 context.log("info", "video_marker.resultfiles.importmarkers.completed", ...
     "Imported the marker CSV.");
 end
