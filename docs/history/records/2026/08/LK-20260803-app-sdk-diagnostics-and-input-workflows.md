@@ -52,6 +52,8 @@ wording they handle directly, and scientific interaction semantics.
   pause-follow controls.
 - Each viewer title names its owning App, and manual TRACE capture lives in the
   viewer instead of the App Tools menu.
+- Selecting an event in the viewer highlights its complete row while retaining
+  the same structured-detail inspection behavior.
 - ERROR and CRITICAL records enable TRACE capture for later activity; trace
   records now distinguish state update, validation, presentation, native
   commit, and rollback cleanup stages.
@@ -99,8 +101,8 @@ activation, distinct trace stages, generated ZIP and fallback names, redacted
 default export, full-detail retention, explicit state-inclusive export, and
 privacy-mode-preserving fallback. Hidden-GUI specifications cover App-specific
 titles, the single level selector, viewer-local TRACE control, continuous
-follow, complete event inspection, exports from both entry points, and
-automatic screenshot/project-state artifacts. App SDK source
+follow, full-row event selection, complete event inspection, exports from both
+entry points, and automatic screenshot/project-state artifacts. App SDK source
 evidence also covers file-predicate masks, aggregate notices, preserved source
 alignment, native failure alerts, and point-only paired anchors.
 

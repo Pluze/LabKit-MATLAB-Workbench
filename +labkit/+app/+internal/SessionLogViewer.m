@@ -198,6 +198,9 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
                 CellSelectionCallback=@(~, event) ...
                     obj.selectRow(event), ...
                 Tag="labkitSessionLogTable");
+            if isprop(obj.EventTable, "SelectionType")
+                obj.EventTable.SelectionType = "row";
+            end
             obj.EventTable.Layout.Row = 4;
 
             obj.DetailArea = uitextarea(root, ...

@@ -167,8 +167,9 @@ utilities do not compete with the App's workflow controls:
   a redacted log or a complete sensitive log containing current App state;
   redacted is the default. Runtime collection, the Session Log, and the local
   journal retain complete messages, attributes, exception text, and stack
-  locations. Privacy filtering begins only after the user selects redacted
-  export; a text fallback preserves the selected redacted or complete mode.
+  locations; selecting an event highlights its complete table row. Privacy
+  filtering begins only after the user selects redacted export; a text fallback
+  preserves the selected redacted or complete mode.
 
 These actions are framework-owned native behavior. Apps do not declare menu
 items, implement clipboard integration, or duplicate project persistence
