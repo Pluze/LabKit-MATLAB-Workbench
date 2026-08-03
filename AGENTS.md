@@ -262,6 +262,17 @@ explicit compliant squash subject; do not rely on GitHub defaults.
 - History records use stable Change ID and sequence metadata plus rationale,
   compatibility, user/data impact, validation, evidence, and follow-up. Do not
   restore a root changelog or separate history parser.
+- While work remains on `develop`, treat component history as the net pending
+  integration record rather than a commit diary. Merge compatible incremental
+  changes into an existing unpublished record when they share the same
+  component evolution, user outcome, and compatibility decision. Before the
+  squash PR is ready for review, compare the complete base-to-head change and
+  rewrite its history as the smallest coherent set of independently reviewable
+  product decisions: fold minor follow-on edits into their owning record,
+  remove records that describe no durable transition, and consolidate
+  development-only version steps so each affected component advances exactly
+  once for the net change. Update rationale, compatibility, user impact, and
+  evidence to describe the final PR diff rather than its commit sequence.
 - New release tags are `vX.Y.Z`; do not rename published legacy tags. Release
   titles are `LabKit MATLAB Workbench vX.Y.Z` with relevant `Highlights`,
   `Fixes`, `Upgrade Note`, and `Validation` sections.

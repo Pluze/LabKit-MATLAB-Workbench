@@ -21,6 +21,10 @@ called `changedFast` a pre-commit and pre-push gate. The CI repair loop also did
 not state explicitly that a known failure should be reproduced and rerun at its
 narrowest identity. In the Launcher, Family appeared after the App name and the
 local documentation action used a label too long for its compact button.
+The agent-only focused-spec runner also configured repository and test paths
+but not every independently launchable App root represented by a multi-file
+selection, so one invocation spanning several Apps could fail to resolve
+production packages after the first specification.
 
 ## Decision and rationale
 
@@ -29,6 +33,9 @@ iteration, one local integration gate before the PR, then failure-directed
 repairs while required CI owns the broad claim. Keep the Launcher catalog API
 unchanged while reordering only its visible columns. Use the short
 **Doc Generation** label and retain the existing tooltip and behavior.
+Let the focused-spec runner derive every represented App root from the selected
+specification paths, add the unique roots for the run, and remove only paths it
+added when execution ends.
 
 ## Changes
 
@@ -40,6 +47,9 @@ unchanged while reordering only its visible columns. Use the short
 - Reordered the visible application table to Package, Family, App, Version,
   Access, and Updated without changing `labkit_launcher("list")` output.
 - Shortened **Generate Local Documentation** to **Doc Generation**.
+- Corrected multi-App focused-spec execution so one explicit file list can
+  resolve production packages from every represented App without widening the
+  selected test identities.
 
 ## User and data impact
 
@@ -48,6 +58,8 @@ repair. Launcher users can scan families before individual App names, and the
 maintenance controls fit their available width more clearly. App discovery,
 launching, package selection, documentation generation, and programmatic
 catalog data are unchanged.
+Focused multi-App iterations no longer require manual path assembly or
+separate MATLAB startups per App.
 
 ## Compatibility and migration
 
@@ -68,6 +80,9 @@ covers authored links, history structure, and deterministic rendering.
   corrected GUI identity passed on its exact-method rerun.
 - Authored Markdown link validation.
 - Deterministic `docsCheck` generation.
+- One six-file focused invocation loaded App SDK evidence and source
+  specifications from five electrochemistry Apps; all 29 selected identities
+  passed after the path correction.
 
 ## Known limitations and follow-up
 

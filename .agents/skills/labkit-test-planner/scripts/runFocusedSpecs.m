@@ -31,13 +31,54 @@ function results = runFocusedSpecs(specFiles)
             matlab.unittest.TestSuite.fromFile(char(filepath));
     end
     suite = [selected{:}];
+    sourcePathCleanup = configureSourcePaths(repoRoot, specsRoot, selectedPaths);
     environmentCleanup = configureEnvironment(selectedPaths);
     fprintf("LabKit focused specifications: %d identities from %d file(s).\n", ...
         numel(suite), numel(specFiles));
     results = run(suite);
     disp(table(results));
     assertSuccess(results);
-    clear environmentCleanup
+    clear environmentCleanup sourcePathCleanup
+end
+
+function cleanup = configureSourcePaths(repoRoot, specsRoot, paths)
+% App specifications need their independently launchable App roots on path.
+% Add every represented App rather than assuming all selected specs share the
+% first App owner.
+appSpecsRoot = string(fullfile(specsRoot, "apps")) + filesep;
+sourceRoots = strings(0, 1);
+for filepath = paths.'
+    if ~startsWith(filepath, appSpecsRoot)
+        continue;
+    end
+    relative = extractAfter(filepath, strlength(appSpecsRoot));
+    parts = split(relative, filesep);
+    if numel(parts) < 3 || parts(1) == "conformance"
+        continue;
+    end
+    sourceRoot = string(fullfile(repoRoot, "apps", parts(1), parts(2)));
+    if isfolder(sourceRoot)
+        sourceRoots(end + 1, 1) = sourceRoot;
+    end
+end
+sourceRoots = unique(sourceRoots, "stable");
+existing = string(strsplit(path, pathsep));
+added = strings(0, 1);
+for sourceRoot = sourceRoots.'
+    if ~any(existing == sourceRoot)
+        addpath(char(sourceRoot), "-begin");
+        added(end + 1, 1) = sourceRoot;
+    end
+end
+cleanup = onCleanup(@() removeSourcePaths(added));
+end
+
+function removeSourcePaths(paths)
+for sourceRoot = paths.'
+    if any(string(strsplit(path, pathsep)) == sourceRoot)
+        rmpath(char(sourceRoot));
+    end
+end
 end
 
 function cleanup = configureEnvironment(paths)
