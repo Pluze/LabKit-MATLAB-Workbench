@@ -27,7 +27,7 @@ classdef (Hidden, Sealed) ProjectDocumentStore < handle
             obj.Application = application;
             obj.Contract = contract;
             obj.Context = context;
-            obj.Sources = labkit.app.internal.PortableSourceStore();
+            obj.Sources = labkit.app.internal.source.PortableSourceStore();
             nowUtc = utcNow();
             obj.Metadata = struct( ...
                 "id", newId(), ...
