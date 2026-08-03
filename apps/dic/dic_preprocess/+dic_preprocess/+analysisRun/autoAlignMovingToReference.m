@@ -1,8 +1,8 @@
-function [alignedImage, tformRigid, method] = autoAlignMovingToReference(referenceImage, movingImage)
+function [alignedImage, tformRigid, method, quality] = autoAlignMovingToReference(referenceImage, movingImage)
 %AUTOALIGNMOVINGTOREFERENCE Estimate and apply a rigid transform.
 %
 % Usage:
-%   [alignedImage, transform, method] = ...
+%   [alignedImage, transform, method, quality] = ...
 %       dic_preprocess.analysisRun.autoAlignMovingToReference( ...
 %       referenceImage, movingImage)
 %
@@ -17,17 +17,23 @@ function [alignedImage, tformRigid, method] = autoAlignMovingToReference(referen
 %   tformRigid - Three-by-three row-vector homogeneous rigid transform,
 %       shown as transform in the usage syntax.
 %   method - Character vector identifying the fixed coarse-to-fine method.
+%   quality - Scalar structure containing angleDegrees, translationX,
+%       translationY, and score for the accepted structural match.
 %
 % Description:
 %   Each image is converted to normalized grayscale independently. The search
-%   covers -30 through +30 degrees at three-degree spacing and refines the best
-%   neighborhood at half-degree spacing. Each candidate evaluates a toolbox-
-%   free, zero-padded phase-correlation translation on a response-limited
-%   preview. The accepted rotation and translation are then applied to the
-%   original moving image. Scale and deformation are not estimated; repeated
-%   texture and large nonoverlap can still produce a poor fit.
+%   covers -30 through +30 degrees at 1.5-degree spacing and refines the best
+%   neighborhood at quarter-degree spacing. Each candidate evaluates a
+%   toolbox-free, zero-padded phase-correlation translation on a bounded
+%   preview, then ranks the transform using oriented image structure at a
+%   finer resolution to avoid alias-driven angle selection. The accepted
+%   rotation and translation are applied to the original moving image. Scale
+%   and deformation are not estimated; repeated texture and large nonoverlap
+%   can still produce a poor fit.
 %
 % Failure Behavior:
+%   dic_preprocess:AutoAlignmentFailed - No candidate has a finite oriented
+%       structural match, including uniform or otherwise uninformative pairs.
 %   The function does not assign a confidence score or reject an ambiguous
 %   registration peak; low-texture or repeated-pattern inputs can return a
 %   numerically valid but poor transform. Empty arrays, unsupported image
@@ -49,10 +55,11 @@ function [alignedImage, tformRigid, method] = autoAlignMovingToReference(referen
     fixedGray = normalizeGray(referenceImage);
     movingGray = normalizeGray(movingImage);
 
-    tformRigid = estimateRigidTransform(fixedGray, movingGray);
+    [tformRigid, quality] = estimateRigidTransform(fixedGray, movingGray);
     alignedImage = dic_preprocess.analysisRun.applyRigidTransform( ...
         referenceImage, movingImage, tformRigid);
-    method = 'toolbox-free coarse-to-fine rigid phase-correlation registration';
+    method = ['toolbox-free coarse-to-fine rigid phase-correlation ' ...
+        'registration with fine structural scoring'];
 end
 
 function gray = normalizeGray(imageData)
@@ -74,44 +81,61 @@ function gray = normalizeGray(imageData)
     end
 end
 
-function transform = estimateRigidTransform(fixedGray, movingGray)
+function [transform, quality] = estimateRigidTransform(fixedGray, movingGray)
     % DIC camera repositioning is expected to be modest. Searching this
     % bounded range and two resolution stages keep interactive registration
     % responsive while restoring the rotation capability lost by the
-    % translation-only fallback. A 256-pixel preview bounds each candidate's
-    % work without changing the source-resolution output transform.
+    % translation-only fallback. A 256-pixel preview bounds translation work;
+    % a finer 1024-pixel structural score avoids selecting angles from an
+    % aliased DIC texture preview without changing the source-resolution
+    % output transform.
     maximumExpectedRotationDegrees = 30;
-    coarseAngleStepDegrees = 3;
-    fineAngleStepDegrees = .5;
+    coarseAngleStepDegrees = 1.5;
+    fineAngleStepDegrees = .25;
     maximumPreviewDimension = 256;
+    maximumScoreDimension = 1024;
     fixedSize = [size(fixedGray, 1), size(fixedGray, 2)];
     movingSize = [size(movingGray, 1), size(movingGray, 2)];
     sampleStep = max(1, ceil(max([fixedSize, movingSize]) / ...
         maximumPreviewDimension));
     fixedRows = 1:sampleStep:size(fixedGray, 1);
     fixedCols = 1:sampleStep:size(fixedGray, 2);
+    scoreStep = max(1, ceil(max([fixedSize, movingSize]) / ...
+        maximumScoreDimension));
+    scoreRows = 1:scoreStep:size(fixedGray, 1);
+    scoreCols = 1:scoreStep:size(fixedGray, 2);
     fixedPreview = fixedGray(fixedRows, fixedCols);
     fixedFeature = registrationFeature(fixedPreview);
     coarseAngles = -maximumExpectedRotationDegrees: ...
         coarseAngleStepDegrees:maximumExpectedRotationDegrees;
     [bestTransform, bestAngle, bestScore] = bestCandidate( ...
         coarseAngles, fixedGray, movingGray, fixedFeature, ...
-        fixedRows, fixedCols, sampleStep);
+        fixedRows, fixedCols, sampleStep, scoreRows, scoreCols);
     fineAngles = bestAngle + ...
         (-coarseAngleStepDegrees:fineAngleStepDegrees:coarseAngleStepDegrees);
     fineAngles = fineAngles(abs(fineAngles) <= maximumExpectedRotationDegrees);
     [fineTransform, ~, fineScore] = bestCandidate( ...
         fineAngles, fixedGray, movingGray, fixedFeature, ...
-        fixedRows, fixedCols, sampleStep);
+        fixedRows, fixedCols, sampleStep, scoreRows, scoreCols);
     if fineScore > bestScore
         bestTransform = fineTransform;
+        bestScore = fineScore;
+    end
+    if ~isfinite(bestScore)
+        error("dic_preprocess:AutoAlignmentFailed", ...
+            "Automatic alignment could not find a finite structural match.");
     end
     transform = bestTransform;
+    quality = struct( ...
+        "angleDegrees", atan2d(transform(1, 2), transform(1, 1)), ...
+        "translationX", transform(3, 1), ...
+        "translationY", transform(3, 2), ...
+        "score", bestScore);
 end
 
 function [bestTransform, bestAngle, bestScore] = bestCandidate( ...
         angles, fixedGray, movingGray, fixedFeature, ...
-        fixedRows, fixedCols, sampleStep)
+        fixedRows, fixedCols, sampleStep, scoreRows, scoreCols)
     fixedCenter = ([size(fixedGray, 2), size(fixedGray, 1)] + 1) / 2;
     movingCenter = ([size(movingGray, 2), size(movingGray, 1)] + 1) / 2;
     bestScore = -inf;
@@ -129,8 +153,9 @@ function [bestTransform, bestAngle, bestScore] = bestCandidate( ...
         translation = centerTranslation + ...
             sampleStep * [colShift rowShift];
         warped = warpPreview( ...
-            movingGray, rotation, translation, fixedRows, fixedCols);
-        score = alignmentScore(fixedGray(fixedRows, fixedCols), warped);
+            movingGray, rotation, translation, scoreRows, scoreCols);
+        score = orientedAlignmentScore( ...
+            fixedGray(scoreRows, scoreCols), warped);
         if score > bestScore
             bestScore = score;
             bestAngle = angle;
@@ -210,4 +235,19 @@ function score = alignmentScore(fixedImage, movingImage)
         return;
     end
     score = (fixedValues.' * movingValues) / denominator;
+end
+
+function score = orientedAlignmentScore(fixedImage, movingImage)
+    fixedHorizontal = [diff(fixedImage, 1, 2), ...
+        zeros(size(fixedImage, 1), 1)];
+    fixedVertical = [diff(fixedImage, 1, 1); ...
+        zeros(1, size(fixedImage, 2))];
+    movingHorizontal = [diff(movingImage, 1, 2), ...
+        zeros(size(movingImage, 1), 1)];
+    movingVertical = [diff(movingImage, 1, 1); ...
+        zeros(1, size(movingImage, 2))];
+    horizontalScore = alignmentScore( ...
+        fixedHorizontal, movingHorizontal);
+    verticalScore = alignmentScore(fixedVertical, movingVertical);
+    score = mean([horizontalScore, verticalScore]);
 end

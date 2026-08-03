@@ -24,10 +24,22 @@ classdef DicPreprocessWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual( ...
                 runtime.State.project.parameters.previewMode, ...
                 "Current moving image");
-            runtime.invokeAction("autoAlign");
-            runtime.invokeAction("startCropRoi");
+            runtime.applyInteraction("matchPoints", ...
+                "interactionChanged", ...
+                {[20 15; 30 24], [17 17; 27 26]});
             referenceAxes = findall(figureValue, "Tag", "preview.reference");
             movingAxes = findall(figureValue, "Tag", "preview.moving");
+            testCase.verifyFalse(hasVisibleConnectingLine(referenceAxes));
+            testCase.verifyFalse(hasVisibleConnectingLine(movingAxes));
+            runtime.invokeAction("autoAlign");
+            events = runtime.diagnosticEvents();
+            event = events(string({events.eventName}) == ...
+                "dic_preprocess.analysisrun.runautomaticregistration.status");
+            testCase.verifyNumElements(event, 1);
+            testCase.verifyEqual(sort(string(fieldnames(event.attributes))), ...
+                sort(["angleDegrees"; "score"; ...
+                "translationX"; "translationY"]));
+            runtime.invokeAction("startCropRoi");
             overlayTag = "labkitDicPreprocessPreviewOverlay";
             testCase.verifyNotEmpty(findall(referenceAxes, "Tag", overlayTag));
             testCase.verifyNotEmpty(findall(movingAxes, "Tag", overlayTag));
@@ -58,6 +70,19 @@ classdef DicPreprocessWorkflowSpec < matlab.unittest.TestCase
             clear cleanup
         end
     end
+end
+
+function tf = hasVisibleConnectingLine(ax)
+lines = findall(ax, "Type", "line");
+tf = false;
+for index = 1:numel(lines)
+    x = double(lines(index).XData);
+    if string(lines(index).LineStyle) ~= "none" && ...
+            nnz(isfinite(x)) >= 2
+        tf = true;
+        return;
+    end
+end
 end
 
 function writePair(referencePath, movingPath)

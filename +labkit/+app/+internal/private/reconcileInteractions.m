@@ -546,7 +546,10 @@ function options = anchorOptions(spec, callback)
     options = spec.Options;
     options.onChanged = callback;
     kind = lower(spec.Kind);
-    if any(kind == ["scalebarreference", "scalebar"])
+    if kind == "pairedanchors"
+        options.mode = "points";
+        options.closed = false;
+    elseif any(kind == ["scalebarreference", "scalebar"])
         options.closed = false;
         options.style = "Straight lines";
         options.maxPoints = 2;

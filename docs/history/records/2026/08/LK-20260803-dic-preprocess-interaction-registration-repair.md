@@ -7,6 +7,7 @@ sequence: 167
 type: fix
 compatibility: compatible
 component: `labkit_DICPreprocess_app` | `1.7.1 -> 1.7.2`
+component: `labkit.app`
 scope: DIC preprocess interaction repair
 scope: Rigid image registration
 ```
@@ -27,6 +28,9 @@ for mask boundaries, make matching and crop preview transitions explicit, and
 use the plot revision contract when the crop changes the image domain. Restore
 automatic rigid behavior with a bounded coarse-to-fine rotation search and
 amplitude-weighted, zero-padded phase correlation implemented in base MATLAB.
+Score candidate transforms at a finer structural resolution so DIC texture
+aliasing cannot select a plausible but wrong angle. Keep paired matching as a
+point interaction with no implied path between anchors.
 
 ## Changes
 
@@ -35,14 +39,18 @@ amplitude-weighted, zero-padded phase correlation implemented in base MATLAB.
   fits both axes to the new pixel domain.
 - Mask boundaries use a variable closed anchor path and can enter edit mode
   from an empty boundary.
-- Automatic alignment estimates rotation and translation over a response-
-  limited preview before applying the accepted transform at source resolution.
+- Paired match anchors render only numbered points and never a connecting line.
+- Automatic alignment estimates translation on a response-limited preview,
+  scores rotation candidates with finer oriented structure, applies the
+  accepted transform at source resolution, and records its numeric decision
+  details in the diagnostic event.
 
 ## User and data impact
 
-Users can activate mask editing, compare the same crop on both images, and see
-the cropped image without stale white margins. Automatic alignment is more
-useful for camera motion that includes rotation. Existing project fields,
+Users can activate mask editing, compare the same crop on both images, see the
+cropped image without stale white margins, and inspect uncluttered matched
+points. Automatic alignment is more reliable for camera motion that includes
+rotation and high-frequency DIC texture. Existing project fields,
 saved images, masks, coordinate conventions, and export schemas are unchanged.
 
 ## Compatibility and migration
@@ -54,11 +62,14 @@ three-by-three row-vector transform shape.
 
 ## Validation
 
-Focused scientific evidence covers existing integer translation and a
-controlled rotation-plus-translation case without optional Toolboxes. The
-hidden-GUI workflow covers moving-preview selection, crop overlays on both
-axes, fitted crop limits, successful mask activation, export, and project
-restore.
+Focused scientific evidence covers existing integer translation, a controlled
+rotation-plus-translation case, and finite transform-quality details without
+optional Toolboxes. The hidden-GUI workflow covers moving-preview selection,
+point-only paired anchors, numeric automatic-registration diagnostics, crop
+overlays on both axes, fitted crop limits, successful mask activation, export,
+and project restore. The supplied state/source pair confirmed the previous
+automatic estimate disagreed materially with two stable manual fits and that
+finer structural scoring recovered the same rotation neighborhood.
 
 ## Evidence
 

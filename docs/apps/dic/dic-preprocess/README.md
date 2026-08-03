@@ -64,10 +64,11 @@ the same feature in the moving image. Repeat this reference/moving order for at
 least two complete pairs. Numbered markers show correspondence and the preview
 subtitle states which image expects the next point.
 
-Drag an existing marker to refine it. **Undo point pair** removes the newest
-complete pair. **Cancel point matching** discards the pending point set without
-changing the current images. **Apply point alignment** estimates and applies a
-rigid two-dimensional transform.
+Markers are displayed as numbered points without connecting lines. Drag an
+existing marker to refine it. **Undo point pair** removes the newest complete
+pair. **Cancel point matching** discards the pending point set without changing
+the current images. **Apply point alignment** estimates and applies a rigid
+two-dimensional transform.
 
 Manual alignment uses all pairs in a least-squares rotation-and-translation
 fit. It does not estimate scale or shear and prevents a reflected solution.
@@ -77,13 +78,16 @@ clustered points provide weak rotational leverage.
 ## Automatic Alignment
 
 **Auto align current pair** runs the app-owned base-MATLAB rigid-registration
-path. It searches rotations from -30 to +30 degrees, refines the best angle,
-and estimates translation with zero-padded, amplitude-weighted phase
-correlation. It returns the same aligned image and rigid-transform fields as
-manual alignment. Automatic alignment is a starting estimate, not a guarantee
-of DIC-quality correspondence. Always inspect the false-color overlay and
-prefer manual points when rotation exceeds the search range or the image has
-repeated texture, large occlusion, scale change, deformation, or weak contrast.
+path. It searches rotations from -30 to +30 degrees, estimates translation
+with zero-padded amplitude-weighted phase correlation, and ranks candidate
+angles using oriented structure on a finer preview so subsampled DIC texture
+cannot dominate the decision through aliasing. Its diagnostic event records
+the accepted angle, translation, and structural score. It returns the same
+aligned image and rigid-transform fields as manual alignment. Automatic
+alignment remains a starting estimate, not a guarantee of DIC-quality
+correspondence. Always inspect the false-color overlay and prefer manual points
+when rotation exceeds the search range or the image has repeated texture,
+large occlusion, scale change, deformation, or weak contrast.
 
 ## Crop ROI
 
