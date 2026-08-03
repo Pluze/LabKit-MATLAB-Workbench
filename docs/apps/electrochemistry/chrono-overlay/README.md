@@ -14,11 +14,9 @@ labkit_ChronoOverlay_app
 
 ## Inputs
 
-Use **Add DTA files** to select one or more `.DTA` files from one directory.
-The app parses each file as chrono data and reports unreadable items. The file
-list controls curve order, legend labels, and removal; selection does not
-discard other loaded curves. Saved projects preserve the ordered file list and
-reopen it through portable source references.
+Inputs are one or more `.DTA` files containing chrono data. Source order
+controls curve order and legend labels. Saved projects preserve that order and
+reopen sources through portable references.
 
 ## Basic Workflow
 

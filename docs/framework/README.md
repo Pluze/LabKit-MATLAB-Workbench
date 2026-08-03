@@ -80,6 +80,11 @@ and renderer signatures, and builds one private native platform plan.
   Set `AllowDuplicatePaths=true` only when separate workflow tasks may share
   one resolved path, and present row-level workflow state with
   `Snapshot.fileItemStatuses`.
+  For content formats that cannot be distinguished by filename extension,
+  declare a pure batch `PathFilter` and a reader-facing
+  `PathFilterDescription`. The runtime applies the predicate only to newly
+  proposed files, omits rejected paths before source records are created, and
+  reports aggregate kept/filtered counts without exposing filenames.
   Source changes rebuild the transient session; Apps do not mirror choose,
   remove, clear, or selection UI events.
 - Give every scientific or workflow action an App-owned `Tooltip`. The

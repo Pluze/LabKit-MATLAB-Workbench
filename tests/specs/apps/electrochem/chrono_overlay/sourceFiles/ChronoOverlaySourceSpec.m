@@ -25,6 +25,18 @@ classdef ChronoOverlaySourceSpec < matlab.unittest.TestCase
             testCase.verifyEqual(aligned.tAligned_s, [0; 1; 2], "AbsTol", 1e-12);
             testCase.verifySubstring(string(message), "fallback to first sample");
         end
+
+        function acceptsOnlyChronoDtaPaths(testCase)
+            chrono = testfixtures.dtaFixturePath( ...
+                "chrono_chronopot_current_pulse_0p2ms.DTA");
+            eisPath = testfixtures.dtaFixturePath( ...
+                "eis_potentiostatic_zcurve.DTA");
+
+            accepted = chrono_overlay.sourceFiles.matchesDtaKind( ...
+                [chrono, eisPath]);
+
+            testCase.verifyEqual(accepted, [true false]);
+        end
     end
 
     methods (Static, Access = private)

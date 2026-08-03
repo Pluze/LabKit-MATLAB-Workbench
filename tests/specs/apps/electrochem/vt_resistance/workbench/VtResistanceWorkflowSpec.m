@@ -5,6 +5,8 @@ classdef VtResistanceWorkflowSpec < matlab.unittest.TestCase
         function loadsRecomputesExportsAndRestoresAChronoFile(testCase)
             source = testfixtures.dtaFixturePath( ...
                 "chrono_chronopot_current_pulse_0p2ms.DTA");
+            unsupported = testfixtures.dtaFixturePath( ...
+                "eis_potentiostatic_zcurve.DTA");
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             output = fullfile(folder, "resistance.csv");
@@ -18,13 +20,16 @@ classdef VtResistanceWorkflowSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 
-            runtime.applyFileSelection("files", source, 1);
+            testCase.verifyEqual(string( ...
+                findall(figureValue, "Tag", "files").Multiselect), "on");
+            runtime.applyFileSelection("files", [source, unsupported], 1:2);
             results = findall(figureValue, "Tag", "results");
             runtime.applyControlValue("steadyWindow", ...
                 vt_resistance.analysisRun.analysisChoices().steadyWindows(2));
             runtime.invokeAction("exportResults");
 
             testCase.verifyNumElements(runtime.State.session.cache.items, 1);
+            testCase.verifyNumElements(runtime.State.project.inputs.sources, 1);
             testCase.verifyEqual(size(results.Data), [1 9]);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "plotAxes.top").Children);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "plotAxes.bottom").Children);

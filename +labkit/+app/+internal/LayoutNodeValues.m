@@ -95,6 +95,21 @@ classdef (Sealed, Hidden) LayoutNodeValues
         end
         end
 
+        function callback = pathFilterCallback(callback)
+        if isempty(callback)
+            return;
+        end
+        if ~isa(callback, "function_handle") || ~isscalar(callback)
+            error("labkit:app:contract:InvalidValue", ...
+                "layout.fileList PathFilter must be a function handle.");
+        end
+        if nargin(callback) ~= 1 || nargout(callback) ~= 1
+            error("labkit:app:contract:CallbackRoleMismatch", ...
+                "layout.fileList PathFilter must accept paths and return " + ...
+                "one logical mask.");
+        end
+        end
+
         function specs = interactionSpecs(specs, plotId, axisIds)
         if isempty(specs)
             specs = {};

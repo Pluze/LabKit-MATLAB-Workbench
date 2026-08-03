@@ -67,6 +67,42 @@ classdef (Sealed, Hidden) RuntimeContractBoundary
                 state, config.Bind);
         end
 
+        function [paths, result] = filterFilePaths( ...
+                config, paths, currentPaths)
+            result = struct("changed", false, "acceptedCount", 0, ...
+                "rejectedCount", 0, "message", "");
+            if isempty(config.PathFilter) || isempty(paths)
+                return;
+            end
+            paths = normalizeFilePaths(paths);
+            currentPaths = normalizeFilePaths(currentPaths);
+            proposed = ~ismember(paths, currentPaths);
+            candidatePaths = paths(proposed);
+            if isempty(candidatePaths)
+                return;
+            end
+            accepted = config.PathFilter(candidatePaths);
+            if ~(islogical(accepted) && isrow(accepted) && ...
+                    numel(accepted) == numel(candidatePaths))
+                error("labkit:app:contract:InvalidValue", ...
+                    "fileList PathFilter must return one logical value " + ...
+                    "per newly proposed path.");
+            end
+            retained = ~proposed;
+            retained(proposed) = accepted;
+            paths = paths(retained);
+            rejectedCount = sum(~accepted);
+            result.changed = rejectedCount > 0;
+            if rejectedCount > 0
+                acceptedCount = sum(accepted);
+                result.acceptedCount = acceptedCount;
+                result.rejectedCount = rejectedCount;
+                result.message = filterNotice( ...
+                    acceptedCount, rejectedCount, ...
+                    config.PathFilterDescription);
+            end
+        end
+
         function adapter = createAdapter(application, contract, platform)
             if ~(ischar(platform) || ...
                     (isstring(platform) && isscalar(platform)))
@@ -157,4 +193,38 @@ classdef (Sealed, Hidden) RuntimeContractBoundary
             end
         end
     end
+end
+
+function paths = normalizeFilePaths(paths)
+if ischar(paths) || (isstring(paths) && isscalar(paths))
+    paths = string(paths);
+elseif isstring(paths)
+    paths = reshape(paths, 1, []);
+elseif iscell(paths)
+    valid = cellfun(@(value) ischar(value) || ...
+        (isstring(value) && isscalar(value)), paths);
+    if ~all(valid, "all")
+        invalidFilePaths();
+    end
+    paths = reshape(string(paths), 1, []);
+else
+    invalidFilePaths();
+end
+end
+
+function invalidFilePaths()
+error("labkit:app:contract:InvalidValue", ...
+    "fileList paths must be text paths.");
+end
+
+function message = filterNotice(acceptedCount, rejectedCount, description)
+if acceptedCount == 0
+    message = sprintf( ...
+        "No %s files matched. Filtered %d unsupported file(s).", ...
+        description, rejectedCount);
+else
+    message = sprintf( ...
+        "Kept %d %s file(s) and filtered %d unsupported file(s).", ...
+        acceptedCount, description, rejectedCount);
+end
 end

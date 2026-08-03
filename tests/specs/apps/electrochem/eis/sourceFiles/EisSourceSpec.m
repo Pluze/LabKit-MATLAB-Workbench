@@ -17,5 +17,16 @@ classdef EisSourceSpec < matlab.unittest.TestCase
             testCase.verifySubstring(string(summary{2}), "Freq");
             testCase.verifySubstring(string(summary{2}), "low->high/mixed");
         end
+
+        function acceptsOnlyEisDtaPaths(testCase)
+            eisPath = testfixtures.dtaFixturePath( ...
+                "eis_potentiostatic_zcurve.DTA");
+            chrono = testfixtures.dtaFixturePath( ...
+                "chrono_chronopot_current_pulse_0p2ms.DTA");
+
+            accepted = eis.sourceFiles.matchesDtaKind([eisPath, chrono]);
+
+            testCase.verifyEqual(accepted, [true false]);
+        end
     end
 end

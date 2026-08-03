@@ -14,13 +14,7 @@ the owning app. Source DTA files are never modified.
 | Impedance inspection and export | [EIS](eis/README.md) | `ZCURVE` | configurable Nyquist/Bode-style overlay |
 | Steady pulse resistance | [VT Resistance](vt-resistance/README.md) | biphasic chrono transient | cathodic, anodic, and mean resistance |
 
-## Shared File Behavior
-
-File controls accept one or more `.DTA` files from one folder in a single
-selection. A canceled chooser leaves the current project unchanged. CIC, CSC,
-and VT Resistance use the selected row as the active preview while retaining
-the loaded source list for batch export. Invalid items are reported per file;
-one failed item does not silently replace another result.
+## Shared DTA Contract
 
 The DTA library returns structured items, curve tables, headers, units,
 metadata, parser messages, and status. Apps use exact required columns for

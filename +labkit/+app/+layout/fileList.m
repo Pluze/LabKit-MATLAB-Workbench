@@ -35,6 +35,14 @@ function node = fileList(id, varargin)
 %   AllowDuplicatePaths - Preserve separate portable source records that
 %       resolve to the same path. Use this when each list row is a distinct
 %       workflow task. Default: false.
+%   PathFilter - Optional callback accepted = callback(paths). paths is a row
+%       string array containing newly proposed files. accepted must be a
+%       logical row with one value per path. Rejected paths are omitted before
+%       portable source records are created, and the runtime reports aggregate
+%       retained/filtered counts without exposing filenames. Default: empty.
+%   PathFilterDescription - Reader-facing description of files accepted by
+%       PathFilter, used in the aggregate filtering notice. Default:
+%       "supported".
 %   Bind - Project source-record field path. Default: "".
 %   SelectionBind - ListSelection field path. Default: "".
 %   OnSelectionChanged - Optional callback

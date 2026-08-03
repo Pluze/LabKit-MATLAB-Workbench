@@ -123,6 +123,11 @@ find the exact owner and contract; App authors never invent test paths.
 
 ## Version, docs, and tests
 
+- Document framework-provided default lifecycle and interaction behavior only
+  in the owning framework manual and public API help. Family manuals own
+  family-domain meaning; App manuals own only App-specific meaning or explicit
+  deviations. Never restate an SDK default across family or App pages, and
+  never copy one shared-behavior paragraph across every App page.
 - Source or user-visible behavior changes update `AppVersion` and `Updated` in
   the App's `definition.m`, owned documentation, and component history before
   the `develop` PR is merge-ready.

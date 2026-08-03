@@ -208,6 +208,58 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function sourcePathFilterKeepsMatchesAndReportsAggregateCounts(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.fileList("files", ...
+                    Bind="project.inputs.sources", ...
+                    PathFilter=@acceptPngPaths, ...
+                    PathFilterDescription="PNG image")});
+            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
+                labkit.app.project.Schema( ...
+                    Version=1, Create=@createSourceProject, ...
+                    Validate=@validateSourceProject));
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            notices = containers.Map("KeyType", "char", "ValueType", "any");
+            backend = struct("alert", @(message, title) ...
+                captureAlert(notices, message, title));
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                app, [], backend, journal);
+            cleanup = onCleanup(@() runtime.close());
+
+            runtime.applyFileSelection("files", ...
+                ["first.png", "notes.txt", "second.PNG"], 1:3);
+
+            sources = runtime.State.project.inputs.sources;
+            testCase.verifyEqual(numel(sources), 2);
+            testCase.verifyEqual(string(arrayfun(@(source) ...
+                source.reference.originalPath, sources)), ...
+                ["first.png"; "second.PNG"]);
+            testCase.verifyEqual(notices("title"), ...
+                "Unsupported files filtered");
+            testCase.verifyEqual(notices("message"), ...
+                "Kept 2 PNG image file(s) and filtered 1 unsupported file(s).");
+            records = runtime.diagnosticEvents();
+            filtered = records(find(string({records.eventName}) == ...
+                "source.paths_filtered", 1, "last"));
+            testCase.verifyEqual(filtered.attributes.acceptedCount, 2);
+            testCase.verifyEqual(filtered.attributes.rejectedCount, 1);
+
+            runtime.applyFileSelection("files", ...
+                ["first.png", "second.PNG", "readme.md"], 1:3);
+            testCase.verifyEqual(numel(runtime.State.project.inputs.sources), 2);
+            testCase.verifyEqual(notices("message"), ...
+                "No PNG image files matched. Filtered 1 unsupported file(s).");
+            clear cleanup
+        end
+
+        function rejectsMalformedFilePathFilters(testCase)
+            testCase.verifyError(@() labkit.app.layout.fileList("files", ...
+                PathFilter=@wrongPathFilter), ...
+                "labkit:app:contract:CallbackRoleMismatch");
+        end
+
         function syntheticInputsAreDeliberateAndDoNotChangeTheRuntime(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -415,6 +467,19 @@ end
 
 function paths = sourcePathsProbe(~, ids)
 paths = ("resolved-" + ids(:));
+end
+
+function accepted = acceptPngPaths(paths)
+accepted = endsWith(lower(paths), ".png");
+end
+
+function accepted = wrongPathFilter(~, ~)
+accepted = true;
+end
+
+function captureAlert(store, message, title)
+store("message") = string(message);
+store("title") = string(title);
 end
 
 function accepted = validateProject(project)
