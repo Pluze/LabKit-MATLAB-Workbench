@@ -1,0 +1,4 @@
+interface:
+  display_name: "LabKit PR Preparer"
+  short_description: "Audit and consolidate a LabKit develop-to-main PR"
+  default_prompt: "Use $labkit-pr-preparer to prepare develop for a squash PR into main."

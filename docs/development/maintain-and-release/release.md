@@ -26,9 +26,13 @@ major with minor and patch zero. The related component history record
 describes that direct `main baseline -> PR final` transition. CI verifies
 existing App, facade, and launcher transitions before MATLAB setup. This
 prevents temporary branch versions from accumulating into artificial public
-version jumps. Maintain user documentation with the same squash-oriented view:
-it describes the final branch behavior and one net compatibility transition,
-not the sequence of intermediate commits used to develop it.
+version jumps. Checkpoint history records may also remain provisional during
+ordinary branch iteration. Before PR review, merge related records, remove
+mechanical fragments and intermediate transitions, and leave each versioned
+component in exactly one changed history record. Maintain user documentation
+with the same squash-oriented view: it describes the final branch behavior and
+one net compatibility transition, not the sequence of intermediate commits
+used to develop it.
 
 ## Tags
 

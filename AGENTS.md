@@ -209,7 +209,11 @@ tests, history, and details out of the public repository.
    merging the final PR, inspect the complete base-to-head diff, user docs,
    component versions, structured history, validation evidence, and remaining
    risks as one net change that `main` will squash into; do not derive release
-   semantics from intermediate branch commits.
+   semantics from intermediate branch commits. Versions and small history
+   records may remain provisional during ordinary iteration, but PR preparation
+   rewrites them from the `origin/main` baseline: remove intermediate version
+   transitions, merge related checkpoint records, and leave exactly one changed
+   structured history record for each versioned component.
 5. Main accepts PRs only from the repository-owned `develop` branch. Run
    `changedFast` once before final review, inspect required PR CI, and read only
    failing logs. Squash-merge with an explicit compliant subject.
