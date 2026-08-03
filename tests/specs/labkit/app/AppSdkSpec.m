@@ -523,9 +523,111 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "Synthetic source parse failure");
             clear cleanup
         end
+
+        function delaysBusyFeedbackAndBlocksReentrantInput(testCase)
+            observed = containers.Map("KeyType", "char", ...
+                "ValueType", "any");
+            observed("secondaryCount") = 0;
+            setappdata(groot, "labkitAppSdkBusyProbe", observed);
+            probeCleanup = onCleanup(@() removeBusyProbe());
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.field("gain", Kind="numeric", ...
+                    Bind="project.parameters.gain"), ...
+                labkit.app.layout.button("quick", "Quick", ...
+                    @AppSdkSpec.quickBusyProbe, ...
+                    Tooltip="Run a short busy-state probe."), ...
+                labkit.app.layout.button("slow", "Slow", ...
+                    @AppSdkSpec.slowBusyProbe, ...
+                    BusyMessage="Initial stage", ...
+                    Tooltip="Run a delayed busy-state probe."), ...
+                labkit.app.layout.button("secondary", "Secondary", ...
+                    @AppSdkSpec.secondaryBusyProbe, ...
+                    Tooltip="Record a secondary action invocation.")});
+            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
+                labkit.app.project.Schema( ...
+                    Version=1, Create=@createProject, ...
+                    Validate=@validateProject));
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            figureValue = runtime.figureHandle();
+            observed("figure") = figureValue;
+            quick = oneTagged(figureValue, "quick");
+            slow = oneTagged(figureValue, "slow");
+            gain = oneTagged(figureValue, "gain");
+
+            quick.ButtonPushedFcn(quick, []);
+
+            testCase.verifyTrue(observed("quickBusy"));
+            testCase.verifyEqual(observed("quickPointer"), "arrow");
+            testCase.verifyFalse(contains( ...
+                observed("quickTitle"), "[Working:"));
+            testCase.verifyEqual(observed("secondaryCount"), 0);
+            testCase.verifyEqual(runtime.State.project.parameters.gain, 1);
+            testCase.verifyEqual(gain.Value, 1);
+
+            slow.ButtonPushedFcn(slow, []);
+
+            testCase.verifyEqual(observed("slowPointer"), "watch");
+            testCase.verifyTrue(contains( ...
+                observed("slowTitle"), "Initial stage"));
+            testCase.verifyEqual(observed("secondaryEnable"), "off");
+            testCase.verifyEqual(observed("secondaryCount"), 0);
+            testCase.verifyTrue(contains( ...
+                observed("progressTitle"), "Stage two"));
+            testCase.verifyEqual(runtime.State.project.parameters.gain, 1);
+            testCase.verifyEqual(gain.Value, 1);
+            testCase.verifyEqual(string(gain.Enable), "on");
+            testCase.verifyEqual(string(figureValue.Pointer), "arrow");
+            testCase.verifyFalse(contains( ...
+                string(figureValue.Name), "[Working:"));
+            testCase.verifyFalse(isappdata(figureValue, "labkitAppBusy"));
+            clear probeCleanup cleanup
+        end
     end
 
     methods (Static, Access = private)
+        function state = quickBusyProbe(state, ~)
+            observed = getappdata(groot, "labkitAppSdkBusyProbe");
+            figureValue = observed("figure");
+            observed("quickBusy") = ...
+                isappdata(figureValue, "labkitAppBusy");
+            observed("quickPointer") = string(figureValue.Pointer);
+            observed("quickTitle") = string(figureValue.Name);
+            secondary = oneTagged(figureValue, "secondary");
+            gain = oneTagged(figureValue, "gain");
+            secondary.ButtonPushedFcn(secondary, []);
+            gain.Value = 7;
+            gain.ValueChangedFcn(gain, []);
+        end
+
+        function state = slowBusyProbe(state, callbackContext)
+            observed = getappdata(groot, "labkitAppSdkBusyProbe");
+            pause(0.35);
+            drawnow;
+            figureValue = observed("figure");
+            secondary = oneTagged(figureValue, "secondary");
+            gain = oneTagged(figureValue, "gain");
+            observed("slowPointer") = string(figureValue.Pointer);
+            observed("slowTitle") = string(figureValue.Name);
+            observed("secondaryEnable") = string(secondary.Enable);
+            secondary.ButtonPushedFcn(secondary, []);
+            gain.Value = 9;
+            gain.ValueChangedFcn(gain, []);
+            callbackContext.log("info", ...
+                "probe.busy.stage", "Stage two");
+            observed("progressTitle") = string(figureValue.Name);
+        end
+
+        function state = secondaryBusyProbe(state, ~)
+            observed = getappdata(groot, "labkitAppSdkBusyProbe");
+            observed("secondaryCount") = ...
+                observed("secondaryCount") + 1;
+        end
+
         function app = definition(layout, varargin)
             app = labkit.app.Definition( ...
                 "Entrypoint", "labkit_AppSdkProbe_app", "AppId", "probe.app", ...
@@ -627,6 +729,12 @@ function state = runProbe(state, ~)
 end
 
 function state = startProbe(state, ~)
+end
+
+function removeBusyProbe()
+if isappdata(groot, "labkitAppSdkBusyProbe")
+    rmappdata(groot, "labkitAppSdkBusyProbe");
+end
 end
 
 function session = createSession(~, ~)

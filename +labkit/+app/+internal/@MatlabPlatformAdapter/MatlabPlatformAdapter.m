@@ -20,6 +20,12 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         InteractionDeclarations (1, :) cell = {}
         BaseWindowTitle (1, 1) string = "LabKit application"
         Busy (1, 1) logical = false
+        BusyVisible (1, 1) logical = false
+        BusyMessage (1, 1) string = ""
+        BusyRejectedInput (1, 1) logical = false
+        BusyTimer = []
+        BusyEnableHandles (1, :) cell = {}
+        BusyEnableValues (1, :) cell = {}
         PriorPointer (1, 1) string = "arrow"
         ClosePrompt
         DialogFolders
@@ -77,7 +83,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 obj.InteractionController = labkit.app.internal.NativeAdapterValues.interactionController( ...
                     obj.Figure, targets, ...
                     @(id, signal, value) ...
-                    runtime.applyInteraction(id, signal, value));
+                    obj.runUserInput(@() ...
+                    runtime.applyInteraction(id, signal, value)));
             end
         end
 
@@ -114,6 +121,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 obj.InteractionController.delete();
                 obj.InteractionController = [];
             end
+            obj.cancelBusyTimer();
             if ~isempty(obj.Figure) && isvalid(obj.Figure)
                 delete(obj.Figure);
             end
@@ -154,31 +162,65 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 message = "Working";
             end
             obj.Busy = true;
+            obj.BusyVisible = false;
+            obj.BusyMessage = message;
+            obj.BusyRejectedInput = false;
             obj.PriorPointer = string(obj.Figure.Pointer);
-            obj.Figure.Pointer = "watch";
-            obj.Figure.Name = char(obj.BaseWindowTitle + ...
-                " [Working: " + message + "]");
             setappdata(obj.Figure, "labkitAppBusy", true);
-            drawnow limitrate nocallbacks
+            obj.BusyTimer = timer( ...
+                ExecutionMode="singleShot", StartDelay=0.25, ...
+                BusyMode="drop", ...
+                TimerFcn=@(~, ~) obj.showBusy());
+            start(obj.BusyTimer);
         end
 
-        function endBusy(obj)
+        function updateBusy(obj, message)
+            if ~obj.Busy
+                return
+            end
+            message = strip(string(message));
+            if strlength(message) > 0
+                obj.BusyMessage = message;
+            end
+            if obj.BusyVisible && ...
+                    ~isempty(obj.Figure) && isvalid(obj.Figure)
+                obj.Figure.Name = char(obj.busyWindowTitle());
+                drawnow limitrate nocallbacks
+            end
+        end
+
+        function endBusy(obj, view)
             if obj.Starting
                 return
             end
             if ~obj.Busy
                 return
             end
+            wasVisible = obj.BusyVisible;
+            rejectedInput = obj.BusyRejectedInput;
             obj.Busy = false;
+            obj.BusyVisible = false;
+            obj.BusyRejectedInput = false;
+            obj.cancelBusyTimer();
             if isempty(obj.Figure) || ~isvalid(obj.Figure)
                 return
             end
-            obj.Figure.Pointer = char(obj.PriorPointer);
-            obj.Figure.Name = char(obj.BaseWindowTitle);
+            if wasVisible || rejectedInput
+                obj.restoreBusyControls();
+                if nargin >= 2 && isa(view, "labkit.app.view.Snapshot")
+                    obj.restoreBusyView(view, rejectedInput);
+                end
+            end
+            if wasVisible
+                obj.Figure.Pointer = char(obj.PriorPointer);
+                obj.Figure.Name = char(obj.BaseWindowTitle);
+            end
             if isappdata(obj.Figure, "labkitAppBusy")
                 rmappdata(obj.Figure, "labkitAppBusy");
             end
-            drawnow limitrate nocallbacks
+            if wasVisible
+                drawnow limitrate nocallbacks
+            end
         end
 
         function startupUpdate(obj, message)
@@ -223,6 +265,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         function failStartup(obj, cause)
             obj.Starting = false;
             obj.Busy = false;
+            obj.BusyVisible = false;
+            obj.cancelBusyTimer();
             if isempty(obj.Figure) || ~isvalid(obj.Figure)
                 return
             end
@@ -432,11 +476,98 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if nargin < 3
                 title = "LabKit Utility";
             end
+            if obj.Busy || obj.Starting
+                if obj.Busy
+                    obj.BusyRejectedInput = true;
+                end
+                return
+            end
             try
                 callback();
             catch cause
                 obj.alert(cause.message, title);
             end
+        end
+
+        function runUserInput(obj, callback)
+            if obj.Busy || obj.Starting
+                if obj.Busy
+                    obj.BusyRejectedInput = true;
+                end
+                return
+            end
+            callback();
+        end
+
+        function showBusy(obj)
+            if ~obj.Busy || obj.BusyVisible || ...
+                    isempty(obj.Figure) || ~isvalid(obj.Figure)
+                return
+            end
+            obj.BusyVisible = true;
+            obj.Figure.Pointer = "watch";
+            obj.Figure.Name = char(obj.busyWindowTitle());
+            obj.disableBusyControls();
+            drawnow limitrate nocallbacks
+        end
+
+        function title = busyWindowTitle(obj)
+            title = obj.BaseWindowTitle + ...
+                " [Working: " + obj.BusyMessage + "]";
+        end
+
+        function disableBusyControls(obj)
+            handles = findall(obj.Figure, "-property", "Enable");
+            obj.BusyEnableHandles = cell(1, numel(handles));
+            obj.BusyEnableValues = cell(1, numel(handles));
+            for index = 1:numel(handles)
+                handle = handles(index);
+                obj.BusyEnableHandles{index} = handle;
+                obj.BusyEnableValues{index} = handle.Enable;
+                handle.Enable = "off";
+            end
+        end
+
+        function restoreBusyControls(obj)
+            for index = 1:numel(obj.BusyEnableHandles)
+                handle = obj.BusyEnableHandles{index};
+                if ~isempty(handle) && isvalid(handle)
+                    handle.Enable = obj.BusyEnableValues{index};
+                end
+            end
+            obj.BusyEnableHandles = {};
+            obj.BusyEnableValues = {};
+        end
+
+        function restoreBusyView(obj, view, restoreValues)
+            operations = labkit.app.internal.NativeAdapterValues.orderedOperations( ...
+                view.operationsForCompiler());
+            for index = 1:numel(operations)
+                operation = operations{index};
+                if operation.Kind == "enabled" || ...
+                        (restoreValues && ...
+                        operation.Kind ~= "renderPlot" && ...
+                        ~labkit.app.internal.NativeAdapterValues.isInteractionKind( ...
+                        operation.Kind))
+                    obj.apply(operation);
+                elseif operation.Kind == "workspacePage"
+                    component = obj.component(operation.Target);
+                    labkit.app.internal.NativeAdapterValues.setIfProperty( ...
+                        component, "Enable", ...
+                        labkit.app.internal.NativeAdapterValues.onOff( ...
+                        operation.Value.Enabled));
+                end
+            end
+        end
+
+        function cancelBusyTimer(obj)
+            timerValue = obj.BusyTimer;
+            obj.BusyTimer = [];
+            if isempty(timerValue) || ~isvalid(timerValue)
+                return
+            end
+            stop(timerValue);
+            delete(timerValue);
         end
 
         function openSessionLog(obj)

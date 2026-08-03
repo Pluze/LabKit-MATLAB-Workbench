@@ -106,6 +106,17 @@ Failure rolls back both state and presentation and clears event-scoped
 resources. Apps do not implement busy flags, callback queues, readiness
 timers, or figure close guards.
 
+Runtime enters its non-reentrant busy state before invoking a callback. New
+button, field, table, file-list, workspace, and managed-interaction input is
+ignored until that transaction finishes. Visible feedback is delayed briefly:
+short callbacks therefore leave the pointer, title, and enabled appearance
+untouched, while longer callbacks show the action's `BusyMessage` (or its
+button label), switch to the busy pointer, and freeze mutable controls. The
+committed Snapshot restores the final enabled state. User-facing log messages
+emitted while that feedback is visible replace the current stage text, so an
+App can report real named stages through its existing diagnostic timeline
+without owning a second progress window.
+
 Use direct `Bind="project...."` or `Bind="session...."` paths for ordinary
 fields, ranges, sliders, file sources, and selection. Bound controls need no
 callback or presenter operation unless the App has additional derived meaning.

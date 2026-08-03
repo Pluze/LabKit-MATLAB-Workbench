@@ -15,6 +15,7 @@ scope: File-list validation and failure alerts
 scope: Point-only paired-anchor interaction
 scope: Open anchor-path insertion order
 scope: Multi-row plot composition guidance
+scope: Non-reentrant delayed busy feedback
 ```
 
 ## Context
@@ -33,6 +34,9 @@ File collections lacked a shared content predicate and native error-alert
 fallback, and the paired-anchor interaction could inherit a connecting path
 that implied meaning the App did not own. These were separate development
 checkpoints but one pending App SDK transition from the mainline baseline.
+The same Runtime immediately painted busy feedback around every callback,
+which made quick actions flash, while long actions did not freeze mutable
+controls or reject reentrant UI input consistently.
 
 ## Decision and rationale
 
@@ -56,6 +60,11 @@ point-only paired-anchor mode. Order open-path additions by their nearest
 visible location so prepend, interior insertion, and append behavior does not
 change with zoom. Apps continue to own file-type meaning, alert
 wording they handle directly, and scientific interaction semantics.
+Enter busy state immediately but defer its native presentation for 250 ms.
+This preserves transactional exclusion without showing a transient pointer,
+title, or disabled-control frame for short actions. Once feedback is visible,
+freeze mutable controls and let user-facing diagnostic messages update the
+current stage; restore the final committed Snapshot when work ends.
 
 ## Changes
 
@@ -97,6 +106,10 @@ wording they handle directly, and scientific interaction semantics.
 - Public plot-area help and the Runtime guide document how vertically arranged
   workspace-page content composes paired plot rows, including fixed-width
   scale or histogram columns, without App-owned native containers.
+- Runtime now blocks reentrant control and interaction callbacks immediately,
+  displays busy feedback only after a short delay, freezes native inputs for
+  longer work, updates the visible stage from user-facing log events, and
+  restores final enabled states from the committed Snapshot.
 
 ## User and data impact
 
@@ -112,6 +125,8 @@ Apps can accept mixed batch selections without losing compatible inputs, and
 unhandled source failures are visible instead of remaining callback output.
 App authors can discover the existing multi-row plot composition pattern from
 both the function help and the framework guide.
+Quick actions no longer flash busy chrome. Long actions prevent repeated
+submission and parameter edits while retaining App-owned stage wording.
 
 ## Compatibility and migration
 
@@ -147,6 +162,9 @@ for straight and curved paths.
 - DIC hidden-GUI evidence covered point-only paired anchors and mask activation.
 - Six focused Diagnostic Bundle identities and the Session Log Viewer's one
   export identity pass across exact state, compact state, and fallback behavior.
+- App SDK hidden-GUI evidence covers delayed presentation, long-task control
+  freezing, rejected reentrant input, log-driven stage updates, and committed
+  enabled-state restoration.
 - Authored-link validation passed; full deterministic documentation rendering
   remains part of final PR validation.
 

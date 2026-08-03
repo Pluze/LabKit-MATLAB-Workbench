@@ -14,7 +14,11 @@ function node = button(id, label, onPressed, varargin)
 %       state = onPressed(state,context).
 %
 % Options:
-%   BusyMessage - Status text while the action runs. Default: "".
+%   BusyMessage - Reader-facing stage text shown when the action remains
+%       active beyond the Runtime's brief busy-display delay. Empty text uses
+%       the button label. Runtime blocks new input immediately, freezes native
+%       controls when feedback becomes visible, and restores the committed
+%       view when the transaction ends. Default: "".
 %   Enabled - Initial logical enabled state. Default: true.
 %   Tooltip - Nonempty hover text explaining the action's scientific or
 %       workflow effect. Default: label.

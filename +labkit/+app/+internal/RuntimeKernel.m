@@ -1050,6 +1050,11 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if audience == "user" && ...
                     any(severity == ["info", "warning", "error", "critical"])
                 obj.CurrentStatus = message;
+                if obj.Processing && ...
+                        isa(obj.Adapter, ...
+                        "labkit.app.internal.MatlabPlatformAdapter")
+                    obj.Adapter.updateBusy(message);
+                end
             end
         end
 
@@ -1140,7 +1145,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         function finishProcessing(obj)
             obj.Processing = false;
             if isa(obj.Adapter, "labkit.app.internal.MatlabPlatformAdapter")
-                obj.Adapter.endBusy();
+                obj.Adapter.endBusy(obj.Presentation);
             end
         end
 

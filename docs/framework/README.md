@@ -97,6 +97,13 @@ and renderer signatures, and builds one private native platform plan.
   guardrails require tracked Apps to explain the action instead of repeating
   its visible label. File-list choose/folder/remove/clear controls expose
   dedicated tooltip options and domain-neutral label defaults.
+- Give a potentially long action a concise App-owned `BusyMessage`. Runtime
+  rejects reentrant input as soon as the action starts, but delays visible
+  busy feedback briefly so quick actions do not flash the pointer, title, or
+  disabled controls. If work outlives that delay, Runtime freezes mutable
+  controls and shows the busy stage until the latest committed view is
+  restored. User-facing `info`, `warning`, or failure logs emitted during the
+  action update the visible stage; Apps do not create progress windows.
 - Rebuild transient data with
   `session = createSession(project,context)` and resolve opaque source records
   with `context.resolveSourcePaths`.
