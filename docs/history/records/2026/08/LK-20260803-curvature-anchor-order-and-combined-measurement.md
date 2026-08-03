@@ -6,7 +6,6 @@ date: 2026-08-03
 sequence: 172
 type: fix
 compatibility: compatible
-component: `labkit.app` | `2.2.0 -> 2.2.1`
 component: `labkit_CurvatureMeasurement_app` | `1.6.1 -> 1.6.2`
 scope: Open anchor-path insertion order
 scope: Curvature editing overlay ownership

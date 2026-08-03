@@ -79,9 +79,13 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
         end
 
         function destination = writeFallback( ...
-                snapshot, preferredDestination, includeSensitiveDetails)
+                snapshot, preferredDestination, includeSensitiveDetails, ...
+                requestedPrivateState)
             if nargin < 3
                 includeSensitiveDetails = false;
+            end
+            if nargin < 4
+                requestedPrivateState = false;
             end
             snapshot = validateFallbackSnapshot(snapshot);
             includeSensitiveDetails = logical(includeSensitiveDetails);
@@ -101,7 +105,7 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
                     "The diagnostic text fallback folder is unavailable.");
             end
             writeText(destination, fallbackLines( ...
-                snapshot, includeSensitiveDetails));
+                snapshot, includeSensitiveDetails, requestedPrivateState));
         end
     end
 end
@@ -232,6 +236,8 @@ if includeSensitiveDetails
         ];
     if includesPrivateState
         value(end + 1, 1) = "app-state.mat contains the current App project and session state and may include paths, filenames, scientific values, results, and decoded images.";
+    else
+        value(end + 1, 1) = "Current App project/session state is not included. Export again with the state MAT option only when exact state values are required.";
     end
 else
     value = [ ...
@@ -241,13 +247,14 @@ else
 end
 end
 
-function value = fallbackLines(snapshot, includeSensitiveDetails)
+function value = fallbackLines( ...
+        snapshot, includeSensitiveDetails, requestedPrivateState)
 application = snapshot.application;
 capture = snapshot.capture;
 value = [
     "LabKit Diagnostic Text Fallback"
     ""
-    fallbackPrivacyLines(includeSensitiveDetails)
+    fallbackPrivacyLines(includeSensitiveDetails, requestedPrivateState)
     ""
     "Application:"
     "- Name: " + textField(application, "title")
@@ -276,12 +283,16 @@ value = [
     ];
 end
 
-function value = fallbackPrivacyLines(includeSensitiveDetails)
+function value = fallbackPrivacyLines( ...
+        includeSensitiveDetails, requestedPrivateState)
 if includeSensitiveDetails
     value = [ ...
         "The normal diagnostic ZIP could not be written. This fallback preserves the selected complete-log mode."
         "It contains full retained messages, attributes, exception messages, and stack locations and may contain sensitive paths, filenames, and scientific values."
         ];
+    if requestedPrivateState
+        value(end + 1, 1) = "The selected app-state.mat could not be represented in the plain-text fallback and is not included.";
+    end
 else
     value = [ ...
         "The normal diagnostic ZIP could not be written. This fallback preserves the selected redacted-log mode."
@@ -387,8 +398,13 @@ end
 function value = redactionReport( ...
         snapshot, includeSensitiveDetails, includesPrivateState)
 if includeSensitiveDetails
-    projection = "complete-retained-events-plus-opt-in-app-state";
-    excluded = ["screenshots"; "source-files"];
+    if includesPrivateState
+        projection = "complete-retained-events-plus-opt-in-app-state";
+        excluded = ["screenshots"; "source-files"];
+    else
+        projection = "complete-retained-events";
+        excluded = ["app-state"; "screenshots"; "source-files"];
+    end
 else
     projection = "redacted-at-export";
     excluded = [ ...

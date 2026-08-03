@@ -326,10 +326,19 @@ earlier detail.
 
 **Export Diagnostic Bundle** writes directly to ignored
 `artifacts/diagnostics/` with a generated App-specific, timestamped, unique ZIP
-name. If ZIP staging or publication fails, Runtime writes a generated text
-fallback beside that ZIP. Only when automatic output cannot be written does it
-ask for another location, with the generated fallback filename already filled
-in. The success or fallback alert reports the complete destination path.
+name. The export prompt offers three detail levels: **Redacted log** removes
+sensitive event details; **Complete log (sensitive, no MAT)** keeps complete
+events, attributes, exception messages, and stack locations without copying
+the current App state; **Complete log + state MAT (sensitive)** additionally
+writes `app-state.mat` with the current project and session values. The MAT
+option is intended for data-dependent reproduction and can be large because
+session caches may contain decoded images or other arrays. If ZIP staging or
+publication fails, Runtime writes a generated text fallback beside that ZIP.
+Only when automatic output cannot be written does it ask for another location,
+with the generated fallback filename already filled in. A text fallback keeps
+the selected redacted or complete event detail but cannot contain a requested
+MAT state, and says so explicitly. The success or fallback alert reports the
+complete destination path.
 Journal degradation remains visible in the surviving in-memory stream; logging
 failures never alter callback transaction semantics or scientific results.
 A callback exception is recorded as an ERROR with `failed` operation result,

@@ -152,7 +152,7 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
             backend = struct( ...
                 "alert", @(~, ~) [], ...
                 "choose", @(varargin) labkit.app.dialog.Choice( ...
-                "Complete log (sensitive)"));
+                "Complete log + state MAT (sensitive)"));
             runtime = viewerRuntime(testCase, backend);
             cleanup = onCleanup(@() runtime.close());
             runtime.invokeAction("run");
@@ -182,7 +182,7 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
             viewerFile = setdiff(afterViewer, [before menuFile]);
             testCase.verifyNumElements(viewerFile, 1);
             testCase.verifyTrue(contains(viewerFile, ...
-                "labkit-diagnostics-sensitive-probe-log-viewer-"));
+                "labkit-diagnostics-sensitive-state-probe-log-viewer-"));
             unpacked = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             unzip(fullfile(folder, viewerFile), unpacked);
