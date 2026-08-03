@@ -51,5 +51,30 @@ classdef DicPreprocessScientificSpec < matlab.unittest.TestCase
             testCase.verifyEqual(transform, [1 0 0; 0 1 0; 3 -2 1]);
             testCase.verifySubstring(method, 'toolbox-free');
         end
+
+        function reducesControlledRotationAndTranslationWithoutAToolbox(testCase)
+            [x, y] = meshgrid(1:96, 1:80);
+            reference = sin(x / 4) + cos(y / 7) + ...
+                2 * exp(-((x - 29).^2 + (y - 23).^2) / 90) + ...
+                3 * exp(-((x - 68).^2 + (y - 57).^2) / 55);
+            angle = 7 * pi / 180;
+            rotation = [cos(angle) sin(angle); -sin(angle) cos(angle)];
+            center = ([size(reference, 2), size(reference, 1)] + 1) / 2;
+            expected = [rotation [0; 0]; ...
+                center - center * rotation + [4 -3], 1];
+            moving = dic_preprocess.analysisRun.applyRigidTransform( ...
+                reference, reference, inv(expected));
+
+            [aligned, transform, method] = ...
+                dic_preprocess.analysisRun.autoAlignMovingToReference( ...
+                reference, moving);
+
+            initialError = norm(reference - moving, "fro");
+            alignedError = norm(reference - aligned, "fro");
+            testCase.verifyLessThan(alignedError, .45 * initialError);
+            testCase.verifyLessThan(norm(transform(1:2, 1:2) - ...
+                expected(1:2, 1:2), "fro"), .05);
+            testCase.verifySubstring(method, 'rigid');
+        end
     end
 end

@@ -20,9 +20,25 @@ classdef DicPreprocessWorkflowSpec < matlab.unittest.TestCase
 
             runtime.applyFileSelection("referenceFile", string(reference), 1);
             runtime.applyFileSelection("movingFile", string(moving), 1);
+            runtime.invokeAction("startPointMatching");
+            testCase.verifyEqual( ...
+                runtime.State.project.parameters.previewMode, ...
+                "Current moving image");
             runtime.invokeAction("autoAlign");
             runtime.invokeAction("startCropRoi");
+            referenceAxes = findall(figureValue, "Tag", "preview.reference");
+            movingAxes = findall(figureValue, "Tag", "preview.moving");
+            overlayTag = "labkitDicPreprocessPreviewOverlay";
+            testCase.verifyNotEmpty(findall(referenceAxes, "Tag", overlayTag));
+            testCase.verifyNotEmpty(findall(movingAxes, "Tag", overlayTag));
             runtime.invokeAction("applyCropRoi");
+            croppedSize = size(runtime.State.session.cache.currentReferenceImage);
+            testCase.verifyEqual(referenceAxes.XLim, ...
+                [.5 croppedSize(2) + .5], AbsTol=1e-12);
+            testCase.verifyEqual(referenceAxes.YLim, ...
+                [.5 croppedSize(1) + .5], AbsTol=1e-12);
+            runtime.invokeAction("startMaskEdit");
+            testCase.verifyEqual(runtime.State.session.workflow.mode, "mask");
             runtime.invokeAction("saveCurrentImages");
 
             cache = runtime.State.session.cache;

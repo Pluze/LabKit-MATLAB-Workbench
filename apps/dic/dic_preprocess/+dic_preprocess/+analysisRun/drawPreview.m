@@ -28,6 +28,8 @@ function drawOne(ax, model)
         background.Tag = backgroundTag();
         axis(ax, 'image');
         ax.YDir = 'reverse';
+        ax.XLim = [.5 size(model.imageData, 2) + .5];
+        ax.YLim = [.5 size(model.imageData, 1) + .5];
     end
 
     delete(findobj(ax, 'Tag', overlayTag()));
