@@ -102,15 +102,15 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
 
         function destination = exportBundle( ...
                 obj, destination, excludeOperationId, ...
-                includeSensitiveDetails, privateState)
+                privateState, stateMode)
             if nargin < 3
                 excludeOperationId = "";
             end
             if nargin < 4
-                includeSensitiveDetails = false;
+                privateState = [];
             end
             if nargin < 5
-                privateState = [];
+                stateMode = "exact";
             end
             obj.Journal.flush();
             streamSnapshot = obj.Stream.captureSnapshot();
@@ -148,17 +148,13 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                 "degradation", degradation, "capture", capture);
             destination = ...
                 labkit.app.internal.SessionDiagnosticBundle.write( ...
-                snapshot, destination, includeSensitiveDetails, privateState);
+                snapshot, destination, privateState, stateMode);
         end
 
         function destination = exportTextFallback( ...
-                obj, preferredDestination, failure, includeSensitiveDetails, ...
-                requestedPrivateState)
+                obj, preferredDestination, failure, stateMode)
             if nargin < 4
-                includeSensitiveDetails = false;
-            end
-            if nargin < 5
-                requestedPrivateState = false;
+                stateMode = "exact";
             end
             % Keep this path independent of the journal and ZIP staging so a
             % failure in either subsystem cannot consume the last evidence.
@@ -193,8 +189,7 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                 "failureIdentifier", failureIdentifier);
             destination = ...
                 labkit.app.internal.SessionDiagnosticBundle.writeFallback( ...
-                snapshot, preferredDestination, includeSensitiveDetails, ...
-                requestedPrivateState);
+                snapshot, preferredDestination, stateMode);
         end
 
         function close(obj)

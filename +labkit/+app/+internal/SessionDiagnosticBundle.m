@@ -1,29 +1,25 @@
 classdef (Hidden, Sealed) SessionDiagnosticBundle
     %SESSIONDIAGNOSTICBUNDLE Write one diagnostic ZIP snapshot.
-    % SessionDiagnostics supplies full retained events and manifest metadata.
-    % Redaction is applied only after the user selects a redacted export.
+    % SessionDiagnostics supplies full retained events, manifest metadata, and
+    % current App state. Every ZIP contains complete events plus either an
+    % exact or structurally compact diagnostic MAT projection.
 
     methods (Static)
-        function destination = write(snapshot, destination, ...
-                includeSensitiveDetails, privateState)
+        function destination = write( ...
+                snapshot, destination, privateState, stateMode)
             if nargin < 3
-                includeSensitiveDetails = false;
-            end
-            if nargin < 4
                 privateState = [];
             end
-            snapshot = validateSnapshot(snapshot);
-            includeSensitiveDetails = logical(includeSensitiveDetails);
-            if ~includeSensitiveDetails
-                snapshot.events = ...
-                    labkit.app.internal.SessionEventValidator.redactedRecords( ...
-                    snapshot.events);
+            if nargin < 4
+                stateMode = "exact";
             end
-            includesPrivateState = includeSensitiveDetails && ~isempty(privateState);
-            if includesPrivateState && ...
-                    (~isstruct(privateState) || ~isscalar(privateState))
+            snapshot = validateSnapshot(snapshot);
+            stateMode = ...
+                labkit.app.internal.SessionDiagnosticStateProjection.validateMode( ...
+                stateMode);
+            if ~isstruct(privateState) || ~isscalar(privateState)
                 error("labkit:app:runtime:InvariantFailure", ...
-                    "Private diagnostic App state must be one scalar struct.");
+                    "Diagnostic App state must be one scalar struct.");
             end
             destination = diagnosticZipPath(destination);
             parent = string(fileparts(destination));
@@ -38,8 +34,16 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
             staging = string(tempname);
             mkdir(char(staging));
             cleanup = onCleanup(@() removeStaging(staging));
+            [diagnosticState, stateReview] = ...
+                labkit.app.internal.SessionDiagnosticStateProjection.project( ...
+                privateState, stateMode);
+            stateFilename = diagnosticStateFilename(stateMode);
+            stateFilepath = fullfile(staging, stateFilename);
+            writePrivateState(stateFilepath, diagnosticState);
+            details = dir(stateFilepath);
+            stateReview.matFileBytes = double(details.bytes);
             writeText(fullfile(staging, "README.txt"), ...
-                readmeLines(snapshot, includeSensitiveDetails, includesPrivateState));
+                readmeLines(snapshot, stateReview, stateFilename));
             writeJson(fullfile(staging, "manifest.json"), ...
                 snapshot.manifest);
             writeEvents(fullfile(staging, "events.jsonl"), ...
@@ -48,12 +52,8 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
                 timeline(snapshot.events));
             writeJson(fullfile(staging, "errors.json"), ...
                 errorRecords(snapshot.events));
-            writeJson(fullfile(staging, "redaction-report.json"), ...
-                redactionReport(snapshot, includeSensitiveDetails, includesPrivateState));
-            if includesPrivateState
-                writePrivateState(fullfile(staging, "app-state.mat"), ...
-                    privateState);
-            end
+            writeJson(fullfile(staging, "bundle-report.json"), ...
+                bundleReport(snapshot, stateReview, stateFilename));
 
             temporaryZip = string(tempname(char(parent))) + ".zip";
             zipCleanup = onCleanup(@() removeFile(temporaryZip));
@@ -63,11 +63,9 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
                 "events.jsonl"
                 "session.log.txt"
                 "errors.json"
-                "redaction-report.json"
+                "bundle-report.json"
+                stateFilename
                 ];
-            if includesPrivateState
-                files(end + 1, 1) = "app-state.mat";
-            end
             zip(char(temporaryZip), cellstr(files), char(staging));
             [moved, message] = movefile( ...
                 char(temporaryZip), char(destination), "f");
@@ -79,21 +77,14 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
         end
 
         function destination = writeFallback( ...
-                snapshot, preferredDestination, includeSensitiveDetails, ...
-                requestedPrivateState)
+                snapshot, preferredDestination, stateMode)
             if nargin < 3
-                includeSensitiveDetails = false;
-            end
-            if nargin < 4
-                requestedPrivateState = false;
+                stateMode = "exact";
             end
             snapshot = validateFallbackSnapshot(snapshot);
-            includeSensitiveDetails = logical(includeSensitiveDetails);
-            if ~includeSensitiveDetails
-                snapshot.events = ...
-                    labkit.app.internal.SessionEventValidator.redactedRecords( ...
-                    snapshot.events);
-            end
+            stateMode = ...
+                labkit.app.internal.SessionDiagnosticStateProjection.validateMode( ...
+                stateMode);
             destination = fallbackPath(preferredDestination);
             folder = string(fileparts(destination));
             if strlength(folder) == 0
@@ -105,7 +96,7 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
                     "The diagnostic text fallback folder is unavailable.");
             end
             writeText(destination, fallbackLines( ...
-                snapshot, includeSensitiveDetails, requestedPrivateState));
+                snapshot, stateMode));
         end
     end
 end
@@ -200,14 +191,13 @@ elseif ~strcmpi(extension, ".zip")
 end
 end
 
-function value = readmeLines( ...
-        snapshot, includeSensitiveDetails, includesPrivateState)
+function value = readmeLines(snapshot, stateReview, stateFilename)
 capture = snapshot.capture;
 degradation = snapshot.degradation;
 value = [
     "LabKit Diagnostic Bundle"
     ""
-    privacyDescription(includeSensitiveDetails, includesPrivateState)
+    detailDescription(stateReview, stateFilename)
     ""
     "Capture notes:"
     "- TRACE enabled at export: " + yesNo(capture.traceEnabled)
@@ -222,39 +212,32 @@ value = [
     "- Expired journal segments: " + ...
         numericField(degradation, "expiredSegmentCount")
     ""
-    "Use manifest.json for session/component context, events.jsonl for structured history, session.log.txt for a readable timeline, errors.json for failures, and redaction-report.json for excluded-data categories."
+    "Use manifest.json for session/component context, events.jsonl for structured history, session.log.txt for a readable timeline, errors.json for failures, bundle-report.json for the state review, and the MAT file for App state."
     ];
 end
 
-function value = privacyDescription( ...
-        includeSensitiveDetails, includesPrivateState)
-if includeSensitiveDetails
-    value = [ ...
-        "Sensitive export was explicitly enabled by the user."
-        "Session events contain the complete retained messages, attributes, exception messages, and stack locations and may include paths, filenames, and scientific values."
-        "External source files and screenshots are not copied into this bundle."
-        ];
-    if includesPrivateState
-        value(end + 1, 1) = "app-state.mat contains the current App project and session state and may include paths, filenames, scientific values, results, and decoded images.";
-    else
-        value(end + 1, 1) = "Current App project/session state is not included. Export again with the state MAT option only when exact state values are required.";
-    end
+function value = detailDescription(stateReview, stateFilename)
+value = [ ...
+    "This bundle contains complete sensitive diagnostic details."
+    "Session events include full retained messages, attributes, exception messages, and stack locations and may include paths, filenames, and scientific values."
+    string(stateFilename) + " contains current App project and session state. External source files and screenshots are not copied separately."
+    ];
+if string(stateReview.mode) == "compact"
+    value(end + 1, 1) = ...
+        "Large supported state values were replaced with deterministic compressible placeholders. The compact MAT is diagnostic evidence, not scientifically valid input.";
 else
-    value = [ ...
-        "This bundle contains privacy-safe Runtime session records only."
-        "It does not contain projects, scientific inputs or results, images, screenshots, or source files."
-        ];
+    value(end + 1, 1) = ...
+        "The exact MAT retains all state values, including decoded caches when the App keeps them in memory.";
 end
 end
 
-function value = fallbackLines( ...
-        snapshot, includeSensitiveDetails, requestedPrivateState)
+function value = fallbackLines(snapshot, stateMode)
 application = snapshot.application;
 capture = snapshot.capture;
 value = [
     "LabKit Diagnostic Text Fallback"
     ""
-    fallbackPrivacyLines(includeSensitiveDetails, requestedPrivateState)
+    fallbackDetailLines(stateMode)
     ""
     "Application:"
     "- Name: " + textField(application, "title")
@@ -283,22 +266,13 @@ value = [
     ];
 end
 
-function value = fallbackPrivacyLines( ...
-        includeSensitiveDetails, requestedPrivateState)
-if includeSensitiveDetails
-    value = [ ...
-        "The normal diagnostic ZIP could not be written. This fallback preserves the selected complete-log mode."
-        "It contains full retained messages, attributes, exception messages, and stack locations and may contain sensitive paths, filenames, and scientific values."
-        ];
-    if requestedPrivateState
-        value(end + 1, 1) = "The selected app-state.mat could not be represented in the plain-text fallback and is not included.";
-    end
-else
-    value = [ ...
-        "The normal diagnostic ZIP could not be written. This fallback preserves the selected redacted-log mode."
-        "It excludes projects, scientific inputs or results, images, screenshots, source files, paths, and original filenames."
-        ];
-end
+function value = fallbackDetailLines(stateMode)
+stateFilename = diagnosticStateFilename(stateMode);
+value = [ ...
+    "The normal diagnostic ZIP could not be written. This fallback preserves complete sensitive event details."
+    "It contains full retained messages, attributes, exception messages, and stack locations and may contain sensitive paths, filenames, and scientific values."
+    "The selected " + stateFilename + " could not be represented in the plain-text fallback and is not included."
+    ];
 end
 
 function value = fallbackEventLines(events)
@@ -395,38 +369,23 @@ value = struct( ...
     "rootActionId", "", "exception", struct());
 end
 
-function value = redactionReport( ...
-        snapshot, includeSensitiveDetails, includesPrivateState)
-if includeSensitiveDetails
-    if includesPrivateState
-        projection = "complete-retained-events-plus-opt-in-app-state";
-        excluded = ["screenshots"; "source-files"];
-    else
-        projection = "complete-retained-events";
-        excluded = ["app-state"; "screenshots"; "source-files"];
-    end
-else
-    projection = "redacted-at-export";
-    excluded = [ ...
-        "paths"
-        "filenames"
-        "input-content"
-        "scientific-data"
-        "workspace-values"
-        "projects"
-        "images"
-        "screenshots"
-        "source-files"
-        ];
-end
+function value = bundleReport(snapshot, stateReview, stateFilename)
 value = struct( ...
     "schemaVersion", 1, ...
-    "privacyBoundary", "redacted-only-after-export-selection", ...
-    "exportProjection", projection, ...
-    "includesPrivateAppState", includesPrivateState, ...
-    "excludedData", excluded, ...
-    "removedValueCount", 0, ...
+    "eventProjection", "complete-retained-events", ...
+    "containsSensitiveDetails", true, ...
+    "stateFilename", stateFilename, ...
+    "stateReview", stateReview, ...
+    "notSeparatelyAttached", ["external-source-files"; "screenshots"], ...
     "degradation", snapshot.degradation);
+end
+
+function filename = diagnosticStateFilename(stateMode)
+if stateMode == "compact"
+    filename = "app-state-compact.mat";
+else
+    filename = "app-state.mat";
+end
 end
 
 function writePrivateState(filepath, privateState)

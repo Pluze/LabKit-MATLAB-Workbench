@@ -326,19 +326,25 @@ earlier detail.
 
 **Export Diagnostic Bundle** writes directly to ignored
 `artifacts/diagnostics/` with a generated App-specific, timestamped, unique ZIP
-name. The export prompt offers three detail levels: **Redacted log** removes
-sensitive event details; **Complete log (sensitive, no MAT)** keeps complete
-events, attributes, exception messages, and stack locations without copying
-the current App state; **Complete log + state MAT (sensitive)** additionally
-writes `app-state.mat` with the current project and session values. The MAT
-option is intended for data-dependent reproduction and can be large because
-session caches may contain decoded images or other arrays. If ZIP staging or
-publication fails, Runtime writes a generated text fallback beside that ZIP.
-Only when automatic output cannot be written does it ask for another location,
-with the generated fallback filename already filled in. A text fallback keeps
-the selected redacted or complete event detail but cannot contain a requested
-MAT state, and says so explicitly. The success or fallback alert reports the
-complete destination path.
+name. Every bundle contains complete sensitive events, attributes, exception
+messages, stack locations, and App state. **Complete bundle (exact MAT)**
+writes `app-state.mat` unchanged. **Complete bundle (compact synthetic MAT)**
+writes `app-state-compact.mat`: Runtime recursively reviews state containers
+and replaces supported numeric, logical, character, or string leaves larger
+than 1 MiB with deterministic compressible placeholders of the same class and
+dimensions. It preserves smaller parameters, annotations, results, and caches.
+`bundle-report.json` names structural state paths and sizes for every
+replacement without retaining the replaced values; it also lists oversized
+unsupported leaf types that had to remain exact. Compact state is diagnostic
+evidence, not scientifically valid input. Both modes may contain sensitive
+paths, filenames, scientific values, and decoded data; neither is a privacy
+filter. Exact is the default.
+
+If ZIP staging or publication fails, Runtime writes a generated complete-event
+text fallback beside that ZIP. Only when automatic output cannot be written
+does it ask for another location, with the generated fallback filename already
+filled in. Text cannot represent either MAT state and says so explicitly. The
+success or fallback alert reports the complete destination path.
 Journal degradation remains visible in the surviving in-memory stream; logging
 failures never alter callback transaction semantics or scientific results.
 A callback exception is recorded as an ERROR with `failed` operation result,

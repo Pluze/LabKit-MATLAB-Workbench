@@ -167,14 +167,15 @@ utilities do not compete with the App's workflow controls:
   `artifacts/states/` or loads a selected project when the App declares a
   project schema. A save dialog is used only if automatic output fails.
 - **Diagnostics** opens the App-named Session Log or exports a uniquely named
-  bundle beneath `artifacts/diagnostics/`. Every export offers a redacted log,
-  a complete sensitive log without App state, or a complete sensitive log with
-  an explicit `app-state.mat`; redacted is the default. Runtime collection, the
-  Session Log, and the local journal retain complete messages, attributes,
-  exception text, and stack locations; selecting an event highlights its
-  complete table row. Privacy filtering begins only after the user selects
-  redacted export. Text fallback preserves redacted versus complete log detail
-  and reports that a requested MAT state could not be represented as text.
+  bundle beneath `artifacts/diagnostics/`. Every export contains complete
+  sensitive messages, attributes, exception text, stack locations, and App
+  state. The exact option writes `app-state.mat`; the compact option writes
+  `app-state-compact.mat` after replacing supported state leaves larger than
+  1 MiB with same-class, same-dimension, compressible synthetic placeholders.
+  `bundle-report.json` records every replacement without storing its value.
+  Exact is the default. Selecting an event highlights its complete table row.
+  Text fallback retains complete events and reports that the selected MAT
+  state could not be represented as text.
 
 These actions are framework-owned native behavior. Apps do not declare menu
 items, implement clipboard integration, or duplicate project persistence

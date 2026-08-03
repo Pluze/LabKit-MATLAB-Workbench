@@ -9,7 +9,7 @@ compatibility: compatible
 component: `labkit.app` | `2.1.0 -> 2.2.0`
 scope: Session Log detail levels
 scope: Automatic diagnostic export
-scope: Optional App-state diagnostic payload
+scope: Exact and compact App-state diagnostic payloads
 scope: Automatic utility artifacts
 scope: File-list validation and failure alerts
 scope: Point-only paired-anchor interaction
@@ -23,8 +23,10 @@ The standard Session Log combined a severity selector with a second audience
 view, presented an unexplained Default choice, and exposed a pause-follow
 control that did not improve diagnosis. TRACE normally contained no more useful
 detail than DEBUG because capture was off and Runtime emitted few trace stages.
-Diagnostic ZIP export also asked for a destination before every attempt and
-coupled complete event detail to a potentially large App-state MAT, while
+Diagnostic ZIP export also asked for a destination before every attempt,
+offered a redacted projection that did not reliably remove scientific values,
+and could emit a potentially large App-state MAT without distinguishing exact
+reproduction from structurally sufficient evidence, while
 screenshot and project-state saves required manual naming and destination
 selection. Successful diagnostic export used MATLAB's default error icon.
 File collections lacked a shared content predicate and native error-alert
@@ -41,11 +43,13 @@ inside the owning log window. Give TRACE distinct transaction and presentation
 stage records. Treat the repository artifacts area as the first destination
 for diagnostics, screenshots, and project state, generate App-specific names,
 and ask for another location only after automatic output fails. Retain full
-diagnostic details in memory, the viewer, and the local journal. Apply privacy
-filtering only after the user explicitly chooses redacted export. Keep complete
-events independent from current App state so ordinary diagnosis stays small;
-make the state MAT a separate explicit choice for exact project/session
-reproduction.
+diagnostic details in memory, the viewer, local journal, and every bundle.
+Always include App state because parameter, annotation, result, and cache state
+cannot be reconstructed from the event timeline. Offer exact state and a
+compact structural variant. Compact state recursively replaces supported
+leaves larger than 1 MiB with deterministic, compressible values of the same
+class and dimensions, and reports every replacement without recording its
+content. Do not present either bundle as privacy-safe.
 Complete the same SDK transition with a domain-neutral file-list predicate,
 aggregate rejection notice, native file-action failure alert, and an explicit
 point-only paired-anchor mode. Order open-path additions by their nearest
@@ -68,11 +72,14 @@ wording they handle directly, and scientific interaction semantics.
 - Diagnostic export generates a unique App-specific filename beneath
   `artifacts/diagnostics/`; its text fallback uses the same base name, and a
   prefilled save dialog appears only when automatic output fails.
-- Each diagnostic export prompts for redacted content, complete-sensitive
-  events without MAT, or complete-sensitive events plus `app-state.mat`.
-  Complete logs omit App state unless the user selects it explicitly. ZIP
-  fallback inherits redacted versus complete event detail and reports that a
-  requested MAT state cannot be represented as text.
+- Each diagnostic export contains complete-sensitive events and prompts for
+  exact `app-state.mat` or `app-state-compact.mat`. Compact mode preserves state
+  structure and small diagnostic values while replacing supported leaves over
+  1 MiB with synthetic compressible placeholders. `bundle-report.json` records
+  the mode, MAT size, and replacement paths, types, dimensions, and original
+  byte counts, plus any oversized unsupported leaf types retained unchanged.
+  Text fallback preserves complete events and reports that the selected MAT
+  cannot be represented as text.
 - Screenshot and project-state saves now generate App-specific names beneath
   `artifacts/screenshots/` and `artifacts/states/`, with chooser fallback only
   when automatic output fails.
@@ -94,13 +101,13 @@ wording they handle directly, and scientific interaction semantics.
 ## User and data impact
 
 Users can distinguish concurrent App logs, select a meaningful amount of detail
-with one control, and export diagnostics without choosing a path. Redacted
-diagnostics are filtered only when that export is selected. The local journal,
-Session Log, complete export, and complete fallback may contain paths,
-filenames, scientific values, and exception locations. Current projects,
-results, decoded images, and other session caches enter the bundle only through
-the explicit state-MAT option; external source files and screenshots remain
-excluded.
+with one control, and export diagnostics without choosing a path. The local
+journal, Session Log, every export, and every fallback may contain paths,
+filenames, scientific values, and exception locations. Every ZIP includes
+current project and session state. Exact state retains decoded caches; compact
+state replaces only individually large supported values and is not
+scientifically valid input. External source files and screenshots are not
+attached separately.
 Apps can accept mixed batch selections without losing compatible inputs, and
 unhandled source failures are visible instead of remaining callback output.
 App authors can discover the existing multi-row plot composition pattern from
@@ -116,12 +123,11 @@ is available in the Session Log window.
 
 ## Validation
 
-Focused headless specifications cover three-level projection, automatic trace
-activation, distinct trace stages, generated ZIP and fallback names, redacted
-default export, full-detail retention, explicit state-inclusive export, and
-privacy-mode-preserving fallback. They also cover complete export without MAT,
-state-specific filenames, and explicit fallback disclosure when MAT cannot be
-written. Hidden-GUI specifications cover App-specific
+Focused headless specifications cover three-level viewer projection, automatic
+trace activation, distinct trace stages, generated ZIP and fallback names,
+full-detail retention, exact state, compact state replacement, preserved small
+values, replacement reporting, and explicit fallback disclosure when MAT
+cannot be written. Hidden-GUI specifications cover App-specific
 titles, the single level selector, viewer-local TRACE control, continuous
 follow, full-row event selection, complete event inspection, exports from both
 entry points, and automatic screenshot/project-state artifacts. App SDK source
@@ -139,8 +145,8 @@ for straight and curved paths.
   the Session Log viewer specification passed 4 hidden-GUI identities.
 - App SDK and cross-App file-entry focused specifications passed 64 identities.
 - DIC hidden-GUI evidence covered point-only paired anchors and mask activation.
-- Diagnostic bundle and Session Log Viewer focused specifications passed 10
-  identities across the three export choices and fallback behavior.
+- Six focused Diagnostic Bundle identities and the Session Log Viewer's one
+  export identity pass across exact state, compact state, and fallback behavior.
 - Authored-link validation passed; full deterministic documentation rendering
   remains part of final PR validation.
 
