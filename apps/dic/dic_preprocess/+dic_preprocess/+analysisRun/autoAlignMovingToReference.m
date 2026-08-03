@@ -18,18 +18,19 @@ function [alignedImage, tformRigid, method, quality] = autoAlignMovingToReferenc
 %       shown as transform in the usage syntax.
 %   method - Character vector identifying the fixed coarse-to-fine method.
 %   quality - Scalar structure containing angleDegrees, translationX,
-%       translationY, and score for the accepted structural match.
+%       translationY, score, overlapFraction, scoreMargin, and
+%       translationPeakMargin for the accepted match.
 %
 % Description:
 %   Each image is converted to normalized grayscale independently. The search
-%   covers -30 through +30 degrees at 1.5-degree spacing and refines the best
-%   neighborhood at quarter-degree spacing. Each candidate evaluates a
-%   toolbox-free, zero-padded phase-correlation translation on a bounded
-%   preview, then ranks the transform using oriented image structure at a
-%   finer resolution to avoid alias-driven angle selection. The accepted
-%   rotation and translation are applied to the original moving image. Scale
-%   and deformation are not estimated; repeated texture and large nonoverlap
-%   can still produce a poor fit.
+%   covers the full rotation circle at six-degree spacing, then refines the
+%   best neighborhood at one-degree and quarter-degree spacing. Anti-aliased
+%   previews and zero-padded amplitude-weighted phase correlation provide subpixel
+%   translation estimates. Candidates are ranked with robust, overlap-aware
+%   oriented structure at a finer resolution. The accepted rotation and
+%   translation are applied to the original moving image. Scale and
+%   deformation are not estimated; repeated texture and large nonoverlap can
+%   still produce a poor fit.
 %
 % Failure Behavior:
 %   dic_preprocess:AutoAlignmentFailed - No candidate has a finite oriented
@@ -70,28 +71,43 @@ function gray = normalizeGray(imageData)
         gray = labkit.image.im2double(imageData);
     end
     values = gray(:);
-    values = values(~isnan(values));
+    values = values(isfinite(values));
     if isempty(values)
         return;
     end
-    mn = min(values);
-    mx = max(values);
+    values = sort(values);
+    mn = percentileValue(values, .01);
+    mx = percentileValue(values, .99);
+    if ~(isfinite(mn) && isfinite(mx) && mx > mn)
+        mn = values(1);
+        mx = values(end);
+    end
     if isfinite(mn) && isfinite(mx) && mx > mn
         gray = (gray - mn) ./ (mx - mn);
+        gray = min(1, max(0, gray));
     end
 end
 
+function value = percentileValue(sortedValues, fraction)
+    position = 1 + fraction * (numel(sortedValues) - 1);
+    lower = floor(position);
+    upper = ceil(position);
+    weight = position - lower;
+    value = (1 - weight) * sortedValues(lower) + ...
+        weight * sortedValues(upper);
+end
+
 function [transform, quality] = estimateRigidTransform(fixedGray, movingGray)
-    % DIC camera repositioning is expected to be modest. Searching this
-    % bounded range and two resolution stages keep interactive registration
-    % responsive while restoring the rotation capability lost by the
-    % translation-only fallback. A 256-pixel preview bounds translation work;
+    % A global-to-fine full-circle search supports camera reorientation while
+    % keeping the expensive high-resolution scoring bounded. A 256-pixel
+    % preview bounds translation work;
     % a finer 1024-pixel structural score avoids selecting angles from an
     % aliased DIC texture preview without changing the source-resolution
     % output transform.
-    maximumExpectedRotationDegrees = 30;
-    coarseAngleStepDegrees = 1.5;
+    coarseAngleStepDegrees = 6;
+    intermediateAngleStepDegrees = 1;
     fineAngleStepDegrees = .25;
+    maximumTranslationFraction = .75;
     maximumPreviewDimension = 256;
     maximumScoreDimension = 1024;
     fixedSize = [size(fixedGray, 1), size(fixedGray, 2)];
@@ -104,22 +120,43 @@ function [transform, quality] = estimateRigidTransform(fixedGray, movingGray)
         maximumScoreDimension));
     scoreRows = 1:scoreStep:size(fixedGray, 1);
     scoreCols = 1:scoreStep:size(fixedGray, 2);
-    fixedPreview = fixedGray(fixedRows, fixedCols);
+    fixedTranslationImage = antiAliasForStep(fixedGray, sampleStep);
+    movingTranslationImage = antiAliasForStep(movingGray, sampleStep);
+    fixedScoreImage = antiAliasForStep(fixedGray, scoreStep);
+    movingScoreImage = antiAliasForStep(movingGray, scoreStep);
+    fixedPreview = fixedTranslationImage(fixedRows, fixedCols);
+    fixedScorePreview = fixedScoreImage(scoreRows, scoreCols);
     fixedFeature = registrationFeature(fixedPreview);
-    coarseAngles = -maximumExpectedRotationDegrees: ...
-        coarseAngleStepDegrees:maximumExpectedRotationDegrees;
-    [bestTransform, bestAngle, bestScore] = bestCandidate( ...
-        coarseAngles, fixedGray, movingGray, fixedFeature, ...
-        fixedRows, fixedCols, sampleStep, scoreRows, scoreCols);
-    fineAngles = bestAngle + ...
-        (-coarseAngleStepDegrees:fineAngleStepDegrees:coarseAngleStepDegrees);
-    fineAngles = fineAngles(abs(fineAngles) <= maximumExpectedRotationDegrees);
-    [fineTransform, ~, fineScore] = bestCandidate( ...
-        fineAngles, fixedGray, movingGray, fixedFeature, ...
-        fixedRows, fixedCols, sampleStep, scoreRows, scoreCols);
-    if fineScore > bestScore
+    coarseAngles = -180:coarseAngleStepDegrees: ...
+        180 - coarseAngleStepDegrees;
+    [bestTransform, bestAngle, bestScore, bestDetails] = bestCandidate( ...
+        coarseAngles, fixedGray, movingTranslationImage, movingScoreImage, ...
+        fixedFeature, fixedScorePreview, fixedRows, fixedCols, sampleStep, ...
+        scoreRows, scoreCols, maximumTranslationFraction);
+    intermediateAngles = angleNeighborhood(bestAngle, ...
+        coarseAngleStepDegrees, intermediateAngleStepDegrees);
+    [intermediateTransform, intermediateAngle, intermediateScore, ...
+            intermediateDetails] = bestCandidate( ...
+        intermediateAngles, fixedGray, movingTranslationImage, ...
+        movingScoreImage, fixedFeature, fixedScorePreview, fixedRows, ...
+        fixedCols, sampleStep, scoreRows, scoreCols, ...
+        maximumTranslationFraction);
+    if intermediateScore >= bestScore
+        bestTransform = intermediateTransform;
+        bestAngle = intermediateAngle;
+        bestScore = intermediateScore;
+        bestDetails = intermediateDetails;
+    end
+    fineAngles = angleNeighborhood(bestAngle, ...
+        intermediateAngleStepDegrees, fineAngleStepDegrees);
+    [fineTransform, ~, fineScore, fineDetails] = bestCandidate( ...
+        fineAngles, fixedGray, movingTranslationImage, movingScoreImage, ...
+        fixedFeature, fixedScorePreview, fixedRows, fixedCols, sampleStep, ...
+        scoreRows, scoreCols, maximumTranslationFraction);
+    if fineScore >= bestScore
         bestTransform = fineTransform;
         bestScore = fineScore;
+        bestDetails = fineDetails;
     end
     if ~isfinite(bestScore)
         error("dic_preprocess:AutoAlignmentFailed", ...
@@ -130,38 +167,66 @@ function [transform, quality] = estimateRigidTransform(fixedGray, movingGray)
         "angleDegrees", atan2d(transform(1, 2), transform(1, 1)), ...
         "translationX", transform(3, 1), ...
         "translationY", transform(3, 2), ...
-        "score", bestScore);
+        "score", bestScore, ...
+        "overlapFraction", bestDetails.overlapFraction, ...
+        "scoreMargin", bestDetails.scoreMargin, ...
+        "translationPeakMargin", bestDetails.translationPeakMargin);
 end
 
-function [bestTransform, bestAngle, bestScore] = bestCandidate( ...
-        angles, fixedGray, movingGray, fixedFeature, ...
-        fixedRows, fixedCols, sampleStep, scoreRows, scoreCols)
+function angles = angleNeighborhood(centerAngle, radius, step)
+    angles = centerAngle + (-radius:step:radius);
+    angles = mod(angles + 180, 360) - 180;
+    angles = unique(angles, "stable");
+end
+
+function [bestTransform, bestAngle, bestScore, bestDetails] = bestCandidate( ...
+        angles, fixedGray, movingTranslationImage, movingScoreImage, ...
+        fixedFeature, fixedScorePreview, fixedRows, fixedCols, sampleStep, ...
+        scoreRows, scoreCols, maximumTranslationFraction)
     fixedCenter = ([size(fixedGray, 2), size(fixedGray, 1)] + 1) / 2;
-    movingCenter = ([size(movingGray, 2), size(movingGray, 1)] + 1) / 2;
+    movingCenter = ([size(movingScoreImage, 2), ...
+        size(movingScoreImage, 1)] + 1) / 2;
     bestScore = -inf;
     bestAngle = 0;
     bestTransform = eye(3);
-    for angle = angles
+    bestDetails = candidateDetails();
+    candidateScores = -inf(size(angles));
+    for angleIndex = 1:numel(angles)
+        angle = angles(angleIndex);
         radians = angle * pi / 180;
         rotation = [cos(radians) sin(radians); ...
             -sin(radians) cos(radians)];
         centerTranslation = fixedCenter - movingCenter * rotation;
         centered = warpPreview( ...
-            movingGray, rotation, centerTranslation, fixedRows, fixedCols);
-        [rowShift, colShift] = estimateTranslation( ...
-            fixedFeature, registrationFeature(centered));
+            movingTranslationImage, rotation, centerTranslation, ...
+            fixedRows, fixedCols);
+        [rowShift, colShift, translationPeakMargin] = estimateTranslation( ...
+            fixedFeature, registrationFeature(centered), ...
+            maximumTranslationFraction);
         translation = centerTranslation + ...
             sampleStep * [colShift rowShift];
         warped = warpPreview( ...
-            movingGray, rotation, translation, scoreRows, scoreCols);
-        score = orientedAlignmentScore( ...
-            fixedGray(scoreRows, scoreCols), warped);
+            movingScoreImage, rotation, translation, scoreRows, scoreCols);
+        [score, overlapFraction] = orientedAlignmentScore( ...
+            fixedScorePreview, warped);
+        candidateScores(angleIndex) = score;
         if score > bestScore
             bestScore = score;
             bestAngle = angle;
             bestTransform = [rotation [0; 0]; translation 1];
+            bestDetails.overlapFraction = overlapFraction;
+            bestDetails.translationPeakMargin = translationPeakMargin;
         end
     end
+    finiteScores = sort(candidateScores(isfinite(candidateScores)), "descend");
+    if numel(finiteScores) >= 2
+        bestDetails.scoreMargin = finiteScores(1) - finiteScores(2);
+    end
+end
+
+function value = candidateDetails()
+    value = struct("overlapFraction", 0, "scoreMargin", 0, ...
+        "translationPeakMargin", 0);
 end
 
 function preview = warpPreview(imageData, rotation, translation, rows, cols)
@@ -179,7 +244,8 @@ function feature = registrationFeature(imageData)
     feature = hypot(horizontal, vertical);
 end
 
-function [rowShift, colShift] = estimateTranslation(fixedFeature, movingFeature)
+function [rowShift, colShift, peakMargin] = estimateTranslation( ...
+        fixedFeature, movingFeature, maximumTranslationFraction)
     fixedFeature = fixedFeature - finiteMean(fixedFeature);
     movingFeature = movingFeature - finiteMean(movingFeature);
     fixedFeature(~isfinite(fixedFeature)) = 0;
@@ -199,14 +265,72 @@ function [rowShift, colShift] = estimateTranslation(fixedFeature, movingFeature)
         rowValues(rowValues > size(correlation, 1) / 2) - size(correlation, 1);
     colValues(colValues > size(correlation, 2) / 2) = ...
         colValues(colValues > size(correlation, 2) / 2) - size(correlation, 2);
-    allowedRows = abs(rowValues) <= floor(.45 * size(fixedFeature, 1));
-    allowedCols = abs(colValues) <= floor(.45 * size(fixedFeature, 2));
+    allowedRows = abs(rowValues) <= ...
+        floor(maximumTranslationFraction * size(fixedFeature, 1));
+    allowedCols = abs(colValues) <= ...
+        floor(maximumTranslationFraction * size(fixedFeature, 2));
     correlation(~allowedRows, :) = -inf;
     correlation(:, ~allowedCols) = -inf;
     [~, idx] = max(correlation(:));
     [peakRow, peakCol] = ind2sub(size(correlation), idx);
-    rowShift = rowValues(peakRow);
-    colShift = colValues(peakCol);
+    rowOffset = quadraticPeakOffset( ...
+        correlation, peakRow, peakCol, 1);
+    colOffset = quadraticPeakOffset( ...
+        correlation, peakRow, peakCol, 2);
+    rowShift = rowValues(peakRow) + rowOffset;
+    colShift = colValues(peakCol) + colOffset;
+    peakValue = correlation(peakRow, peakCol);
+    sidelobes = correlation;
+    rowWindow = max(1, peakRow - 2):min(size(correlation, 1), peakRow + 2);
+    colWindow = max(1, peakCol - 2):min(size(correlation, 2), peakCol + 2);
+    sidelobes(rowWindow, colWindow) = -inf;
+    secondPeak = max(sidelobes(:));
+    if isfinite(secondPeak)
+        peakMargin = (peakValue - secondPeak) / max(abs(peakValue), eps);
+    else
+        peakMargin = 0;
+    end
+end
+
+function offset = quadraticPeakOffset(values, row, col, dimension)
+    offset = 0;
+    if dimension == 1
+        if row <= 1 || row >= size(values, 1)
+            return;
+        end
+        previous = values(row - 1, col);
+        center = values(row, col);
+        following = values(row + 1, col);
+    else
+        if col <= 1 || col >= size(values, 2)
+            return;
+        end
+        previous = values(row, col - 1);
+        center = values(row, col);
+        following = values(row, col + 1);
+    end
+    denominator = previous - 2 * center + following;
+    if all(isfinite([previous center following])) && denominator < -eps
+        offset = .5 * (previous - following) / denominator;
+        offset = min(.5, max(-.5, offset));
+    end
+end
+
+function filtered = antiAliasForStep(imageData, sampleStep)
+    filtered = double(imageData);
+    if sampleStep <= 1
+        return;
+    end
+    kernelWidth = 2 * floor(sampleStep / 2) + 1;
+    kernel = ones(1, kernelWidth) / kernelWidth;
+    valid = isfinite(filtered);
+    filtered(~valid) = 0;
+    weights = conv2(conv2(double(valid), kernel, "same"), ...
+        kernel.', "same");
+    filtered = conv2(conv2(filtered, kernel, "same"), ...
+        kernel.', "same");
+    filtered = filtered ./ max(weights, eps);
+    filtered(weights == 0) = NaN;
 end
 
 function value = finiteMean(imageData)
@@ -218,7 +342,7 @@ function value = finiteMean(imageData)
     end
 end
 
-function score = alignmentScore(fixedImage, movingImage)
+function [score, overlapFraction] = alignmentScore(fixedImage, movingImage)
     valid = isfinite(fixedImage) & isfinite(movingImage);
     overlapFraction = nnz(valid) / numel(valid);
     if overlapFraction < .2
@@ -234,10 +358,50 @@ function score = alignmentScore(fixedImage, movingImage)
         score = -inf;
         return;
     end
-    score = (fixedValues.' * movingValues) / denominator;
+    globalScore = (fixedValues.' * movingValues) / denominator;
+    tileScores = localCorrelationScores(fixedImage, movingImage, valid);
+    if isempty(tileScores)
+        robustScore = globalScore;
+    else
+        robustScore = median(tileScores);
+    end
+    score = .6 * globalScore + .4 * robustScore - ...
+        .1 * (1 - overlapFraction);
 end
 
-function score = orientedAlignmentScore(fixedImage, movingImage)
+function scores = localCorrelationScores(fixedImage, movingImage, valid)
+    tileCount = 4;
+    rowEdges = round(linspace(1, size(fixedImage, 1) + 1, tileCount + 1));
+    colEdges = round(linspace(1, size(fixedImage, 2) + 1, tileCount + 1));
+    scores = zeros(tileCount^2, 1);
+    scoreCount = 0;
+    for rowIndex = 1:tileCount
+        rows = rowEdges(rowIndex):rowEdges(rowIndex + 1) - 1;
+        for colIndex = 1:tileCount
+            cols = colEdges(colIndex):colEdges(colIndex + 1) - 1;
+            tileValid = valid(rows, cols);
+            if nnz(tileValid) < max(4, ceil(.5 * numel(tileValid)))
+                continue;
+            end
+            fixedTile = fixedImage(rows, cols);
+            movingTile = movingImage(rows, cols);
+            fixedValues = fixedTile(tileValid);
+            movingValues = movingTile(tileValid);
+            fixedValues = fixedValues - mean(fixedValues);
+            movingValues = movingValues - mean(movingValues);
+            denominator = norm(fixedValues) * norm(movingValues);
+            if denominator > eps
+                scoreCount = scoreCount + 1;
+                scores(scoreCount, 1) = ...
+                    (fixedValues.' * movingValues) / denominator;
+            end
+        end
+    end
+    scores = scores(1:scoreCount);
+end
+
+function [score, overlapFraction] = orientedAlignmentScore( ...
+        fixedImage, movingImage)
     fixedHorizontal = [diff(fixedImage, 1, 2), ...
         zeros(size(fixedImage, 1), 1)];
     fixedVertical = [diff(fixedImage, 1, 1); ...
@@ -246,8 +410,20 @@ function score = orientedAlignmentScore(fixedImage, movingImage)
         zeros(size(movingImage, 1), 1)];
     movingVertical = [diff(movingImage, 1, 1); ...
         zeros(1, size(movingImage, 2))];
-    horizontalScore = alignmentScore( ...
+    [horizontalScore, horizontalOverlap] = alignmentScore( ...
         fixedHorizontal, movingHorizontal);
-    verticalScore = alignmentScore(fixedVertical, movingVertical);
-    score = mean([horizontalScore, verticalScore]);
+    [verticalScore, verticalOverlap] = alignmentScore( ...
+        fixedVertical, movingVertical);
+    [magnitudeScore, magnitudeOverlap] = alignmentScore( ...
+        hypot(fixedHorizontal, fixedVertical), ...
+        hypot(movingHorizontal, movingVertical));
+    componentScores = [horizontalScore, verticalScore, magnitudeScore];
+    componentScores = componentScores(isfinite(componentScores));
+    if isempty(componentScores)
+        score = -inf;
+    else
+        score = mean(componentScores);
+    end
+    overlapFraction = min( ...
+        [horizontalOverlap, verticalOverlap, magnitudeOverlap]);
 end

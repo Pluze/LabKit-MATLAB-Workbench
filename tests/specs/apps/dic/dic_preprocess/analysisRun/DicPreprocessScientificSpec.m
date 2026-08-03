@@ -47,8 +47,9 @@ classdef DicPreprocessScientificSpec < matlab.unittest.TestCase
             [aligned, transform, method] = ...
                 dic_preprocess.analysisRun.autoAlignMovingToReference(reference, moving);
 
-            testCase.verifyEqual(aligned, reference);
-            testCase.verifyEqual(transform, [1 0 0; 0 1 0; 3 -2 1]);
+            testCase.verifyEqual(aligned, reference, AbsTol=.002);
+            testCase.verifyEqual(transform, ...
+                [1 0 0; 0 1 0; 3 -2 1], AbsTol=.002);
             testCase.verifySubstring(method, 'toolbox-free');
         end
 
@@ -80,6 +81,65 @@ classdef DicPreprocessScientificSpec < matlab.unittest.TestCase
             testCase.verifyEqual(quality.translationX, transform(3, 1));
             testCase.verifyEqual(quality.translationY, transform(3, 2));
             testCase.verifyTrue(isfinite(quality.score));
+        end
+
+        function recoversSubpixelMotionWithOutliersAndPartialOcclusion(testCase)
+            [x, y] = meshgrid(1:144, 1:128);
+            reference = .35 * sin(x / 3.8) .* cos(y / 5.2) + ...
+                .24 * sin((x + 2 * y) / 9.1) + ...
+                exp(-((x - 42).^2 + (y - 31).^2) / 120) + ...
+                .7 * exp(-((x - 106).^2 + (y - 89).^2) / 85);
+            angle = 5.5 * pi / 180;
+            rotation = [cos(angle) sin(angle); -sin(angle) cos(angle)];
+            center = ([size(reference, 2), size(reference, 1)] + 1) / 2;
+            expected = [rotation [0; 0]; ...
+                center - center * rotation + [2.4 -1.7], 1];
+            moving = dic_preprocess.analysisRun.applyRigidTransform( ...
+                reference, reference, inv(expected));
+            moving(18:43, 102:132) = median(moving(:));
+            moving(7, 9) = 100 * max(abs(moving(:)));
+
+            [aligned, transform, ~, quality] = ...
+                dic_preprocess.analysisRun.autoAlignMovingToReference( ...
+                reference, moving);
+
+            testCase.verifyLessThan(norm(reference - aligned, "fro"), ...
+                .7 * norm(reference - moving, "fro"));
+            testCase.verifyEqual(quality.angleDegrees, 5.5, AbsTol=.75);
+            testCase.verifyLessThan(norm(transform(3, 1:2) - ...
+                expected(3, 1:2)), 2.5);
+            testCase.verifyGreaterThanOrEqual(quality.overlapFraction, .2);
+            testCase.verifyLessThanOrEqual(quality.overlapFraction, 1);
+            testCase.verifyTrue(all(isfinite([quality.scoreMargin, ...
+                quality.translationPeakMargin])));
+        end
+
+        function recoversLargeRotationAndTranslation(testCase)
+            [x, y] = meshgrid(1:176, 1:160);
+            reference = .28 * sin(x / 4.1) .* cos(y / 6.3) + ...
+                .19 * cos((2 * x - y) / 10.7) + ...
+                1.2 * exp(-((x - 39).^2 + (y - 45).^2) / 95) + ...
+                .8 * exp(-((x - 137).^2 + (y - 112).^2) / 130);
+            angleDegrees = 112;
+            angle = angleDegrees * pi / 180;
+            rotation = [cos(angle) sin(angle); -sin(angle) cos(angle)];
+            center = ([size(reference, 2), size(reference, 1)] + 1) / 2;
+            expected = [rotation [0; 0]; ...
+                center - center * rotation + [82 -18], 1];
+            moving = dic_preprocess.analysisRun.applyRigidTransform( ...
+                reference, reference, inv(expected));
+
+            [aligned, transform, ~, quality] = ...
+                dic_preprocess.analysisRun.autoAlignMovingToReference( ...
+                reference, moving);
+
+            testCase.verifyLessThan(norm(reference - aligned, "fro"), ...
+                .75 * norm(reference - moving, "fro"));
+            testCase.verifyEqual(quality.angleDegrees, ...
+                angleDegrees, AbsTol=1.5);
+            testCase.verifyLessThan(norm(transform(3, 1:2) - ...
+                expected(3, 1:2)), 6);
+            testCase.verifyGreaterThanOrEqual(quality.overlapFraction, .2);
         end
 
         function rejectsPairsWithoutFiniteRegistrationStructure(testCase)

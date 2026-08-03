@@ -45,7 +45,6 @@ derived working pair and replays no edits.
 | Mode | Display |
 | --- | --- |
 | Current pair | current reference above the current moving image |
-| Current moving image | moving image in the main comparison view |
 | False-color overlay | red/green registration comparison of the current pair |
 | Original pair | source images before applied edits |
 | ROI mask | current binary mask over the image domain |
@@ -78,16 +77,18 @@ clustered points provide weak rotational leverage.
 ## Automatic Alignment
 
 **Auto align current pair** runs the app-owned base-MATLAB rigid-registration
-path. It searches rotations from -30 to +30 degrees, estimates translation
-with zero-padded amplitude-weighted phase correlation, and ranks candidate
-angles using oriented structure on a finer preview so subsampled DIC texture
-cannot dominate the decision through aliasing. Its diagnostic event records
-the accepted angle, translation, and structural score. It returns the same
+path. It searches the complete rotation circle in global, one-degree, and
+quarter-degree stages; translation candidates may span up to 75% of either
+preview dimension. It estimates translation with anti-aliased, zero-padded
+amplitude-weighted phase correlation and subpixel peak refinement, then ranks candidate angles using robust,
+overlap-aware oriented structure on a finer preview. Its diagnostic event
+records the accepted angle, translation, overlap, structural score, score
+margin, and translation-peak margin. It returns the same
 aligned image and rigid-transform fields as manual alignment. Automatic
 alignment remains a starting estimate, not a guarantee of DIC-quality
 correspondence. Always inspect the false-color overlay and prefer manual points
-when rotation exceeds the search range or the image has repeated texture,
-large occlusion, scale change, deformation, or weak contrast.
+when the image has repeated texture, extremely small overlap, scale change,
+deformation, large occlusion, or weak contrast.
 
 ## Crop ROI
 
