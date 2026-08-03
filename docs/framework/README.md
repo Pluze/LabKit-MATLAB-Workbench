@@ -152,9 +152,15 @@ utilities do not compete with the App's workflow controls:
 
 - **Plots** opens, copies, or saves the App's plot surfaces.
 - **Screenshot** copies the complete App surface to the system clipboard or
-  saves it to an image file.
-- **Project State** saves or loads the current project document when the App
-  declares a project schema.
+  writes a uniquely named PNG beneath `artifacts/screenshots/`. A save dialog
+  is used only if automatic artifact output fails.
+- **Project State** writes a uniquely named project beneath
+  `artifacts/states/` or loads a selected project when the App declares a
+  project schema. A save dialog is used only if automatic output fails.
+- **Diagnostics** opens the App-named Session Log or exports a uniquely named
+  bundle beneath `artifacts/diagnostics/`. Every export asks whether to write
+  a redacted log or a complete sensitive log containing current App state;
+  redacted is the default.
 
 These actions are framework-owned native behavior. Apps do not declare menu
 items, implement clipboard integration, or duplicate project persistence

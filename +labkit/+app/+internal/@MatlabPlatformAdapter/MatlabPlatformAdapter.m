@@ -245,8 +245,20 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             drawnow limitrate nocallbacks
         end
 
-        function alert(obj, message, title)
-            uialert(obj.Figure, char(string(message)), char(string(title)));
+        function alert(obj, message, title, icon)
+            if nargin < 4
+                icon = "error";
+            end
+            if string(obj.Figure.Visible) == "off" && ...
+                    labkit.app.internal.NativeAdapterValues.startupGuiMode() == ...
+                    "hidden"
+                setappdata(obj.Figure, "labkitAppLastAlert", struct( ...
+                    "message", string(message), "title", string(title), ...
+                    "icon", string(icon)));
+                return;
+            end
+            uialert(obj.Figure, char(string(message)), char(string(title)), ...
+                Icon=char(string(icon)));
         end
 
         function result = chooseOption(obj, prompt, choices, title, ...
@@ -488,12 +500,24 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function saveScreenshot(obj)
-            choice = obj.chooseOutputFile( ...
-                {"*.png", "PNG image (*.png)"; ...
-                 "*.pdf", "PDF file (*.pdf)"}, "app.png");
-            if ~choice.Cancelled
-                exportapp(obj.Figure, choice.Value);
+            filename = obj.Runtime.automaticArtifactFilename( ...
+                "screenshot", ".png");
+            try
+                destination = obj.Runtime.automaticArtifactDestination( ...
+                    "screenshots", "screenshot", ".png");
+                exportapp(obj.Figure, destination);
+            catch
+                choice = obj.chooseOutputFile( ...
+                    {"*.png", "PNG image (*.png)"; ...
+                     "*.pdf", "PDF file (*.pdf)"}, filename);
+                if choice.Cancelled
+                    return;
+                end
+                destination = string(choice.Value);
+                exportapp(obj.Figure, destination);
             end
+            obj.alert("Screenshot written to:" + newline + destination, ...
+                "Screenshot Saved", "info");
         end
 
         function copyScreenshot(obj)
@@ -510,16 +534,23 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function saveState(obj)
-            metadata = obj.Runtime.documentMetadata();
-            startPath = string(metadata.path);
-            if strlength(startPath) == 0
-                startPath = "project.mat";
+            filename = obj.Runtime.automaticArtifactFilename( ...
+                "state", ".mat");
+            try
+                destination = obj.Runtime.automaticArtifactDestination( ...
+                    "states", "state", ".mat");
+                obj.Runtime.saveProject(obj.Runtime.State, destination);
+            catch
+                choice = obj.chooseOutputFile( ...
+                    {"*.mat", "LabKit project (*.mat)"}, filename);
+                if choice.Cancelled
+                    return;
+                end
+                destination = string(choice.Value);
+                obj.Runtime.saveProject(obj.Runtime.State, destination);
             end
-            choice = obj.chooseOutputFile( ...
-                {"*.mat", "LabKit project (*.mat)"}, startPath);
-            if ~choice.Cancelled
-                obj.Runtime.saveProject(obj.Runtime.State, choice.Value);
-            end
+            obj.alert("App state written to:" + newline + destination, ...
+                "State Saved", "info");
         end
 
         function loadState(obj)

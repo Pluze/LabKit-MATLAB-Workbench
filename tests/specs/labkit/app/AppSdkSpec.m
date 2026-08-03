@@ -429,6 +429,51 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "Generate Synthetic Inputs...");
             clear cleanup
         end
+
+        function namesScreenshotTargetsAndSavesProjectStateToArtifacts(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.field("gain", Kind="numeric", ...
+                    Bind="project.parameters.gain")});
+            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
+                labkit.app.project.Schema( ...
+                    Version=1, Create=@createProject, ...
+                    Validate=@validateProject));
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            states = sdkArtifactFolder("states");
+            beforeStates = artifactFiles( ...
+                states, "labkit-state-probe-app-*.mat");
+            fileCleanup = onCleanup(@() deleteNewStateArtifacts( ...
+                states, beforeStates));
+            figureValue = runtime.figureHandle();
+            screenshotMenu = oneTagged( ...
+                figureValue, "labkitAppUtilityScreenshot");
+            stateMenu = oneTagged( ...
+                figureValue, "labkitAppUtilitySaveState");
+
+            testCase.verifyEqual(string(screenshotMenu.Text), ...
+                "Save to Artifacts");
+            testCase.verifyEqual(string(stateMenu.Text), "Save State");
+            screenshotTarget = runtime.automaticArtifactDestination( ...
+                "screenshots", "screenshot", ".png");
+            testCase.verifyTrue(contains(screenshotTarget, ...
+                fullfile("artifacts", "screenshots")));
+            testCase.verifyTrue(endsWith(screenshotTarget, ".png"));
+            invokeMenu(stateMenu);
+
+            afterStates = artifactFiles( ...
+                states, "labkit-state-probe-app-*.mat");
+            testCase.verifyNumElements( ...
+                setdiff(afterStates, beforeStates), 1);
+            notice = getappdata(figureValue, "labkitAppLastAlert");
+            testCase.verifyEqual(notice.title, "State Saved");
+            testCase.verifyEqual(notice.icon, "info");
+            clear fileCleanup cleanup
+        end
     end
 
     methods (Static, Access = private)
@@ -447,6 +492,47 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "Updated", "2026-07-19", "Requirements", [], "Workbench", layout);
         end
     end
+end
+
+function handle = oneTagged(parent, tag)
+handle = findall(parent, "Tag", tag);
+assert(isscalar(handle), "Expected one handle tagged " + tag + ".");
+end
+
+function invokeMenu(menu)
+menu.MenuSelectedFcn(menu, []);
+drawnow;
+end
+
+function folder = sdkArtifactFolder(category)
+folder = string(fileparts(which("labkit.app.internal.RuntimeKernel")));
+for index = 1:3
+    folder = string(fileparts(folder));
+end
+folder = fullfile(folder, "artifacts", category);
+end
+
+function files = artifactFiles(folder, pattern)
+if ~isfolder(folder)
+    files = strings(1, 0);
+    return;
+end
+entries = dir(fullfile(folder, pattern));
+files = string({entries.name});
+end
+
+function deleteNewStateArtifacts(stateFolder, beforeStates)
+deleteArtifactSet(stateFolder, setdiff(artifactFiles( ...
+    stateFolder, "labkit-state-probe-app-*.mat"), beforeStates));
+end
+
+function deleteArtifactSet(folder, files)
+for filename = files
+    filepath = fullfile(folder, filename);
+    if isfile(filepath)
+        delete(filepath);
+    end
+end
 end
 
 function project = createProject()

@@ -1,5 +1,5 @@
 classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
-    % SESSIONDIAGNOSTICBUNDLESPEC Regression: explicit diagnostic export produces one privacy-safe complete ZIP from the current ordinary session.
+    % SESSIONDIAGNOSTICBUNDLESPEC Specify redacted and opt-in sensitive bundles.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function exportsTheExactSafeBundleFromAnActiveSession(testCase)
@@ -89,6 +89,32 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function explicitlyIncludesCurrentAppStateOnlyWhenRequested(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = bundleDefinition();
+            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+                definition, [], struct(), [], JournalRoot=folder);
+            cleanup = onCleanup(@() runtime.close());
+
+            destination = runtime.exportDiagnosticBundle( ...
+                fullfile(folder, "sensitive.zip"), true);
+            unpacked = fullfile(folder, "sensitive");
+            unzip(destination, unpacked);
+            saved = load(fullfile(unpacked, "app-state.mat"));
+            redaction = jsondecode(fileread( ...
+                fullfile(unpacked, "redaction-report.json")));
+
+            testCase.verifyTrue(isfield(saved, "applicationState"));
+            testCase.verifyEqual( ...
+                string(fieldnames(saved.applicationState)), ...
+                ["project"; "session"]);
+            testCase.verifyTrue(redaction.includesPrivateAppState);
+            testCase.verifyEqual(string(redaction.exportProjection), ...
+                "canonical-safe-events-plus-opt-in-app-state");
+            clear cleanup
+        end
+
         function writesOneReadableTextFallbackBesideTheAutomaticZip(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -126,8 +152,12 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = bundleDefinition();
+            selection = containers.Map("KeyType", "char", ...
+                "ValueType", "any");
             backend = struct( ...
                 "chooseOutputFile", @failOutputDialog, ...
+                "choose", @(varargin) captureDiagnosticChoice( ...
+                selection, varargin{:}), ...
                 "alert", @(~, ~) []);
             runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
                 definition, [], backend, [], JournalRoot=folder);
@@ -144,6 +174,14 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             testCase.verifyTrue(startsWith( ...
                 string(filename) + string(extension), ...
                 "labkit-diagnostics-probe-diagnostic-bundle-"));
+            testCase.verifyEqual(selection("choices"), ...
+                ["Redacted log", "Complete log (sensitive)", "Cancel"]);
+            testCase.verifyEqual(selection("default"), "Redacted log");
+            testCase.verifyEqual(selection("cancel"), "Cancel");
+            unpacked = fullfile(folder, "redacted-interactive");
+            unzip(destination, unpacked);
+            testCase.verifyFalse(isfile( ...
+                fullfile(unpacked, "app-state.mat")));
             clear fileCleanup cleanup
         end
     end
@@ -216,4 +254,12 @@ function choice = failOutputDialog(varargin)
 choice = MException("labkit:test:OutputDialogFailure", ...
     "Intentional output dialog failure.");
 throw(choice);
+end
+
+function choice = captureDiagnosticChoice( ...
+        store, ~, choices, ~, defaultChoice, cancelChoice)
+store("choices") = string(choices);
+store("default") = string(defaultChoice);
+store("cancel") = string(cancelChoice);
+choice = labkit.app.dialog.Choice(string(defaultChoice));
 end

@@ -184,13 +184,23 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.Recorder.setTraceEnabled(enabled);
         end
 
-        function destination = exportDiagnosticBundle(obj, destination)
+        function destination = exportDiagnosticBundle( ...
+                obj, destination, includePrivateState)
+            if nargin < 3
+                includePrivateState = false;
+            end
+            includePrivateState = logicalScalar( ...
+                includePrivateState, "includePrivateState");
             operation = obj.Recorder.begin( ...
                 "runtime.lifecycle", "diagnostics.bundle_exported", ...
                 "Exporting diagnostic bundle.");
             try
+                privateState = [];
+                if includePrivateState
+                    privateState = obj.State;
+                end
                 destination = obj.Recorder.exportBundle( ...
-                    destination, operation.Id);
+                    destination, operation.Id, privateState);
                 obj.Recorder.finish( ...
                     operation, "completed", "notApplicable", []);
             catch cause
@@ -202,17 +212,30 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function destination = exportDiagnosticBundleInteractive(obj)
+            selection = obj.Context.chooseOption( ...
+                ["Choose the diagnostic detail to export. Complete logs " + ...
+                 "include current App state and may contain paths, " + ...
+                 "scientific values, results, and decoded images."], ...
+                ["Redacted log", "Complete log (sensitive)", "Cancel"], ...
+                Title="Export Diagnostic Bundle", ...
+                DefaultChoice="Redacted log", CancelChoice="Cancel");
+            if selection.Cancelled || selection.Value == "Cancel"
+                destination = "";
+                return;
+            end
+            includePrivateState = ...
+                selection.Value == "Complete log (sensitive)";
             destination = "";
             try
                 automaticDestination = ...
-                    obj.automaticDiagnosticDestination();
+                    obj.automaticDiagnosticDestination(includePrivateState);
                 destination = obj.exportDiagnosticBundle( ...
-                    automaticDestination);
+                    automaticDestination, includePrivateState);
                 if endsWith(destination, ".txt", ...
                         IgnoreCase=true)
                     obj.alertDiagnosticTextFallback(destination);
                 else
-                    obj.Context.alert( ...
+                    obj.notifyUser( ...
                         "Diagnostic bundle written to:" + newline + ...
                         string(destination), ...
                         "Diagnostic Bundle Exported");
@@ -220,7 +243,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 return;
             catch automaticFailure
                 fallbackName = diagnosticFallbackName( ...
-                    obj.automaticDiagnosticFilename());
+                    obj.automaticDiagnosticFilename(includePrivateState));
             end
             choice = obj.Context.chooseOutputFile( ...
                 {"*.txt", "Diagnostic text fallback (*.txt)"}, ...
@@ -283,6 +306,40 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.Context.alert( ...
                 "Synthetic inputs were written to the selected folder.", ...
                 "Synthetic Inputs");
+        end
+
+        function destination = automaticArtifactDestination( ...
+                obj, category, stem, extension)
+            category = artifactToken(category, "category");
+            filename = obj.automaticArtifactFilename(stem, extension);
+            folder = artifactFolder(category);
+            if exist(char(folder), "dir") ~= 7
+                [created, message] = mkdir(char(folder));
+                if ~created
+                    error("labkit:app:runtime:ArtifactWriteFailed", ...
+                        "Could not create the LabKit artifacts folder: %s", ...
+                        message);
+                end
+            end
+            destination = fullfile(folder, filename);
+        end
+
+        function filename = automaticArtifactFilename( ...
+                obj, stem, extension)
+            stem = artifactToken(stem, "stem");
+            extension = string(extension);
+            if ~isscalar(extension) || ...
+                    isempty(regexp(char(extension), '^\.[a-z0-9]+$', "once"))
+                error("labkit:app:runtime:InvariantFailure", ...
+                    "Artifact extension must be a lowercase file extension.");
+            end
+            appId = artifactToken(obj.Application.AppId, "App ID");
+            timestamp = string(datetime("now", TimeZone="UTC", ...
+                Format="yyyyMMdd-HHmmss"));
+            nonce = extractBefore( ...
+                string(java.util.UUID.randomUUID()), 9);
+            filename = "labkit-" + stem + "-" + appId + "-" + ...
+                timestamp + "-" + nonce + extension;
         end
 
         function figure = figureHandle(obj)
@@ -1093,30 +1150,26 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.refreshWindowTitle();
         end
 
-        function destination = automaticDiagnosticDestination(obj)
-            folder = diagnosticArtifactsFolder();
-            if exist(char(folder), "dir") ~= 7
-                [created, message] = mkdir(char(folder));
-                if ~created
-                    error("labkit:app:runtime:DiagnosticWriteFailed", ...
-                        "Could not create the diagnostic artifacts folder: %s", ...
-                        message);
-                end
-            end
-            destination = fullfile( ...
-                folder, obj.automaticDiagnosticFilename());
+        function destination = automaticDiagnosticDestination( ...
+                obj, includePrivateState)
+            stem = diagnosticArtifactStem(includePrivateState);
+            destination = obj.automaticArtifactDestination( ...
+                "diagnostics", stem, ".zip");
         end
 
-        function filename = automaticDiagnosticFilename(obj)
-            appId = regexprep(lower(obj.Application.AppId), ...
-                "[^a-z0-9]+", "-");
-            appId = regexprep(appId, "(^-+|-+$)", "");
-            timestamp = string(datetime("now", TimeZone="UTC", ...
-                Format="yyyyMMdd-HHmmss"));
-            nonce = extractBefore( ...
-                string(java.util.UUID.randomUUID()), 9);
-            filename = "labkit-diagnostics-" + appId + "-" + ...
-                timestamp + "-" + nonce + ".zip";
+        function filename = automaticDiagnosticFilename( ...
+                obj, includePrivateState)
+            filename = obj.automaticArtifactFilename( ...
+                diagnosticArtifactStem(includePrivateState), ".zip");
+        end
+
+        function notifyUser(obj, message, title)
+            if isa(obj.Adapter, ...
+                    "labkit.app.internal.MatlabPlatformAdapter")
+                obj.Adapter.alert(message, title, "info");
+            else
+                obj.Context.alert(message, title);
+            end
         end
 
         function refreshWindowTitle(obj)
@@ -1171,12 +1224,36 @@ for index = 1:numel(failures)
 end
 end
 
-function folder = diagnosticArtifactsFolder()
+function folder = artifactFolder(category)
 folder = string(fileparts(mfilename("fullpath")));
 for index = 1:3
     folder = string(fileparts(folder));
 end
-folder = fullfile(folder, "artifacts", "diagnostics");
+folder = fullfile(folder, "artifacts", category);
+end
+
+function value = artifactToken(value, label)
+value = regexprep(lower(string(value)), "[^a-z0-9]+", "-");
+value = regexprep(value, "(^-+|-+$)", "");
+if ~isscalar(value) || strlength(value) == 0
+    error("labkit:app:runtime:InvariantFailure", ...
+        "Artifact %s must contain an alphanumeric token.", label);
+end
+end
+
+function stem = diagnosticArtifactStem(includePrivateState)
+if includePrivateState
+    stem = "diagnostics-sensitive";
+else
+    stem = "diagnostics";
+end
+end
+
+function value = logicalScalar(value, name)
+if ~(islogical(value) && isscalar(value))
+    error("labkit:app:contract:InvalidValue", ...
+        "%s must be one logical value.", name);
+end
 end
 
 function filename = diagnosticFallbackName(zipFilename)

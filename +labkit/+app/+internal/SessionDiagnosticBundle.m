@@ -1,11 +1,21 @@
 classdef (Hidden, Sealed) SessionDiagnosticBundle
-    %SESSIONDIAGNOSTICBUNDLE Write one privacy-safe diagnostic ZIP snapshot.
-    % SessionDiagnostics supplies canonical events and manifest metadata.
-    % This writer never receives App state, source files, results, or images.
+    %SESSIONDIAGNOSTICBUNDLE Write one diagnostic ZIP snapshot.
+    % SessionDiagnostics supplies canonical privacy-safe events and manifest
+    % metadata. Runtime may additionally supply one explicitly user-authorized
+    % App state value; safe export remains the default.
 
     methods (Static)
-        function destination = write(snapshot, destination)
+        function destination = write(snapshot, destination, privateState)
+            if nargin < 3
+                privateState = [];
+            end
             snapshot = validateSnapshot(snapshot);
+            includesPrivateState = ~isempty(privateState);
+            if includesPrivateState && ...
+                    (~isstruct(privateState) || ~isscalar(privateState))
+                error("labkit:app:runtime:InvariantFailure", ...
+                    "Private diagnostic App state must be one scalar struct.");
+            end
             destination = diagnosticZipPath(destination);
             parent = string(fileparts(destination));
             if strlength(parent) == 0
@@ -20,7 +30,7 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
             mkdir(char(staging));
             cleanup = onCleanup(@() removeStaging(staging));
             writeText(fullfile(staging, "README.txt"), ...
-                readmeLines(snapshot));
+                readmeLines(snapshot, includesPrivateState));
             writeJson(fullfile(staging, "manifest.json"), ...
                 snapshot.manifest);
             writeEvents(fullfile(staging, "events.jsonl"), ...
@@ -30,7 +40,11 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
             writeJson(fullfile(staging, "errors.json"), ...
                 errorRecords(snapshot.events));
             writeJson(fullfile(staging, "redaction-report.json"), ...
-                redactionReport(snapshot));
+                redactionReport(snapshot, includesPrivateState));
+            if includesPrivateState
+                writePrivateState(fullfile(staging, "app-state.mat"), ...
+                    privateState);
+            end
 
             temporaryZip = string(tempname(char(parent))) + ".zip";
             zipCleanup = onCleanup(@() removeFile(temporaryZip));
@@ -42,6 +56,9 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
                 "errors.json"
                 "redaction-report.json"
                 ];
+            if includesPrivateState
+                files(end + 1, 1) = "app-state.mat";
+            end
             zip(char(temporaryZip), cellstr(files), char(staging));
             [moved, message] = movefile( ...
                 char(temporaryZip), char(destination), "f");
@@ -159,14 +176,13 @@ elseif ~strcmpi(extension, ".zip")
 end
 end
 
-function value = readmeLines(snapshot)
+function value = readmeLines(snapshot, includesPrivateState)
 capture = snapshot.capture;
 degradation = snapshot.degradation;
 value = [
     "LabKit Diagnostic Bundle"
     ""
-    "This bundle contains privacy-safe Runtime session records only."
-    "It does not contain projects, scientific inputs or results, images, screenshots, or source files."
+    privacyDescription(includesPrivateState)
     ""
     "Capture notes:"
     "- TRACE enabled at export: " + yesNo(capture.traceEnabled)
@@ -183,6 +199,21 @@ value = [
     ""
     "Use manifest.json for session/component context, events.jsonl for structured history, session.log.txt for a readable timeline, errors.json for failures, and redaction-report.json for excluded-data categories."
     ];
+end
+
+function value = privacyDescription(includesPrivateState)
+if includesPrivateState
+    value = [ ...
+        "Sensitive export was explicitly enabled by the user."
+        "app-state.mat contains the current App project and session state and may include paths, filenames, scientific values, results, and decoded images."
+        "External source files and screenshots are not copied into this bundle."
+        ];
+else
+    value = [ ...
+        "This bundle contains privacy-safe Runtime session records only."
+        "It does not contain projects, scientific inputs or results, images, screenshots, or source files."
+        ];
+end
 end
 
 function value = fallbackLines(snapshot)
@@ -301,12 +332,13 @@ value = struct( ...
     "rootActionId", "", "exception", struct());
 end
 
-function value = redactionReport(snapshot)
-value = struct( ...
-    "schemaVersion", 1, ...
-    "privacyBoundary", "validated-before-retention", ...
-    "exportProjection", "canonical-safe-events-only", ...
-    "excludedData", [ ...
+function value = redactionReport(snapshot, includesPrivateState)
+if includesPrivateState
+    projection = "canonical-safe-events-plus-opt-in-app-state";
+    excluded = ["screenshots"; "source-files"];
+else
+    projection = "canonical-safe-events-only";
+    excluded = [ ...
         "paths"
         "filenames"
         "input-content"
@@ -316,9 +348,21 @@ value = struct( ...
         "images"
         "screenshots"
         "source-files"
-        ], ...
+        ];
+end
+value = struct( ...
+    "schemaVersion", 1, ...
+    "privacyBoundary", "validated-before-retention", ...
+    "exportProjection", projection, ...
+    "includesPrivateAppState", includesPrivateState, ...
+    "excludedData", excluded, ...
     "removedValueCount", 0, ...
     "degradation", snapshot.degradation);
+end
+
+function writePrivateState(filepath, privateState)
+applicationState = privateState;
+save(char(filepath), "applicationState", "-mat");
 end
 
 function writeEvents(filepath, events)

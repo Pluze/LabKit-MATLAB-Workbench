@@ -9,6 +9,7 @@ compatibility: compatible
 component: `labkit.app` | `2.1.0 -> 2.2.0`
 scope: Session Log detail levels
 scope: Automatic diagnostic export
+scope: Automatic utility artifacts
 ```
 
 ## Context
@@ -17,7 +18,9 @@ The standard Session Log combined a severity selector with a second audience
 view, presented an unexplained Default choice, and exposed a pause-follow
 control that did not improve diagnosis. TRACE normally contained no more useful
 detail than DEBUG because capture was off and Runtime emitted few trace stages.
-Diagnostic ZIP export also asked for a destination before every attempt.
+Diagnostic ZIP export also asked for a destination before every attempt, while
+screenshot and project-state saves required manual naming and destination
+selection. Successful diagnostic export used MATLAB's default error icon.
 
 ## Decision and rationale
 
@@ -25,8 +28,11 @@ Use one three-level display contract while keeping capture cost independent of
 the selected view. Retain DEBUG and higher during ordinary operation, enable
 TRACE automatically after the first error, and keep an explicit capture toggle
 inside the owning log window. Give TRACE distinct transaction and presentation
-stage records. Treat the repository artifacts area as the first diagnostic
-destination and ask for another location only after automatic recovery fails.
+stage records. Treat the repository artifacts area as the first destination
+for diagnostics, screenshots, and project state, generate App-specific names,
+and ask for another location only after automatic output fails. Keep retained
+events privacy-safe, but let each export explicitly choose between the redacted
+bundle and an opt-in sensitive bundle containing current App state.
 
 ## Changes
 
@@ -41,13 +47,21 @@ destination and ask for another location only after automatic recovery fails.
 - Diagnostic export generates a unique App-specific filename beneath
   `artifacts/diagnostics/`; its text fallback uses the same base name, and a
   prefilled save dialog appears only when automatic output fails.
+- Each diagnostic export prompts for redacted or complete-sensitive content;
+  complete export adds the current project/session state as `app-state.mat`.
+- Screenshot and project-state saves now generate App-specific names beneath
+  `artifacts/screenshots/` and `artifacts/states/`, with chooser fallback only
+  when automatic output fails.
+- Successful utility exports use an information icon rather than MATLAB's
+  default error icon.
 
 ## User and data impact
 
 Users can distinguish concurrent App logs, select a meaningful amount of detail
-with one control, and export diagnostics without choosing a path. Diagnostic
-contents remain limited to validated privacy-safe Runtime records. Projects,
-inputs, results, paths, filenames, images, and screenshots remain excluded.
+with one control, and export diagnostics without choosing a path. Redacted
+diagnostics remain limited to validated privacy-safe Runtime records. Complete
+export is explicit and may contain projects, inputs, results, paths, filenames,
+and decoded images; external source files and screenshots remain excluded.
 
 ## Compatibility and migration
 
@@ -60,10 +74,11 @@ is available in the Session Log window.
 ## Validation
 
 Focused headless specifications cover three-level projection, automatic trace
-activation, distinct trace stages, generated ZIP and fallback names, and the
-privacy boundary. Hidden-GUI specifications cover App-specific titles, the
-single level selector, viewer-local TRACE control, continuous follow, removed
-duplicate controls, and exports from both entry points.
+activation, distinct trace stages, generated ZIP and fallback names, redacted
+default export, and explicit state-inclusive export. Hidden-GUI specifications
+cover App-specific titles, the single level selector, viewer-local TRACE
+control, continuous follow, removed duplicate controls, exports from both entry
+points, and automatic screenshot/project-state artifacts.
 
 ## Evidence
 

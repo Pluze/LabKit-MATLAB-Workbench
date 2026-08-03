@@ -145,7 +145,10 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
         end
 
         function exportsTheLiveBundleFromToolsAndTheViewer(testCase)
-            backend = struct("alert", @(~, ~) []);
+            backend = struct( ...
+                "alert", @(~, ~) [], ...
+                "choose", @(varargin) labkit.app.dialog.Choice( ...
+                "Complete log (sensitive)"));
             runtime = viewerRuntime(testCase, backend);
             cleanup = onCleanup(@() runtime.close());
             runtime.invokeAction("run");
@@ -172,6 +175,19 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
             invoke(exportButton.ButtonPushedFcn, exportButton, []);
             afterViewer = diagnosticFiles(folder);
             testCase.verifyNumElements(setdiff(afterViewer, before), 2);
+            viewerFile = setdiff(afterViewer, [before menuFile]);
+            testCase.verifyNumElements(viewerFile, 1);
+            testCase.verifyTrue(contains(viewerFile, ...
+                "labkit-diagnostics-sensitive-probe-log-viewer-"));
+            unpacked = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            unzip(fullfile(folder, viewerFile), unpacked);
+            testCase.verifyTrue(isfile( ...
+                fullfile(unpacked, "app-state.mat")));
+            notice = getappdata(appFigure, "labkitAppLastAlert");
+            testCase.verifyEqual(notice.title, ...
+                "Diagnostic Bundle Exported");
+            testCase.verifyEqual(notice.icon, "info");
             records = runtime.diagnosticEvents();
             testCase.verifyGreaterThanOrEqual(sum( ...
                 string({records.eventName}) == ...
@@ -255,7 +271,7 @@ end
 
 function files = diagnosticFiles(folder)
 entries = dir(fullfile(folder, ...
-    "labkit-diagnostics-probe-log-viewer-*.zip"));
+    "labkit-diagnostics*-probe-log-viewer-*.zip"));
 files = string({entries.name});
 end
 

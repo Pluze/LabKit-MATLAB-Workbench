@@ -101,9 +101,12 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
         end
 
         function destination = exportBundle( ...
-                obj, destination, excludeOperationId)
+                obj, destination, excludeOperationId, privateState)
             if nargin < 3
                 excludeOperationId = "";
+            end
+            if nargin < 4
+                privateState = [];
             end
             obj.Journal.flush();
             streamSnapshot = obj.Stream.captureSnapshot();
@@ -141,7 +144,7 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                 "degradation", degradation, "capture", capture);
             destination = ...
                 labkit.app.internal.SessionDiagnosticBundle.write( ...
-                snapshot, destination);
+                snapshot, destination, privateState);
         end
 
         function destination = exportTextFallback( ...
