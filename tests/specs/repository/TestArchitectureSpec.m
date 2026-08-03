@@ -40,6 +40,23 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             end
         end
 
+        function runtimeKernelKeepsCompleteWorkflowsInClassFolder(testCase)
+            root = labkittest.setup();
+            folder = fullfile(root, "+labkit", "+app", "+internal", ...
+                "+runtime", "@RuntimeKernel");
+            required = ["RuntimeKernel" "applyBoundControl" ...
+                "applyFileSelection" "commitFilePanel" "completeBackend" ...
+                "execute" "present" "restoreProject" ...
+                "wrapDialogOperations"] + ".m";
+
+            testCase.verifyTrue(all(arrayfun(@(name) ...
+                isfile(fullfile(folder, name)), required)), ...
+                "RuntimeKernel workflow methods must remain separately owned.");
+            main = string(fileread(fullfile(folder, "RuntimeKernel.m")));
+            testCase.verifyLessThanOrEqual(numel(splitlines(main)), 800, ...
+                "RuntimeKernel definition is accumulating workflow bodies again.");
+        end
+
         function activeEntryPointsDescribeOnlyTheCatalogModel(testCase)
             root = labkittest.setup();
             build = text(root, "buildfile.m");

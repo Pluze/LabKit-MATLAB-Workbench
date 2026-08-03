@@ -41,6 +41,10 @@ general service bag.
 - `RuntimeKernel` owns transaction order and cross-subsystem commit/rollback.
   It delegates independent storage, export, diagnostics, naming, and native
   lifecycle mechanics rather than implementing them inline.
+- Keep `RuntimeKernel` as a class-folder coordinator. Complete callback,
+  presentation, bound-control, file-selection, backend-composition, dialog,
+  and project-restore workflows stay in their named class methods rather than
+  accumulating again in the class definition file.
 - `MatlabPlatformAdapter` owns translation between semantic Snapshot
   operations and native components. It delegates independent busy, startup,
   close, acquisition, and utility workflows once they have state or lifecycle
