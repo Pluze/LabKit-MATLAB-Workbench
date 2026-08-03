@@ -27,6 +27,9 @@ general service bag.
 - Put concrete MATLAB window behavior under `+native` and keep the platform
   adapter as the semantic reconciliation boundary, not the owner of every
   window lifecycle.
+- Keep `+launcher/dispatch.m` as entry routing only. Discovery, catalog
+  projection, documentation resolution, request parsing, metadata, and the
+  stateful launcher window remain separately named package functions.
 - Put artifact naming and scratch-destination policy under `+artifact`.
 - Put Runtime-level diagnostic viewing and export coordination under
   `+diagnostics`; keep event, journal, and bundle primitives focused and move

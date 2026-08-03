@@ -25,6 +25,21 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "The governed App SDK internal subsystem map is incomplete.");
         end
 
+        function launcherDispatchRemainsCompositionOnly(testCase)
+            root = labkittest.setup();
+            source = text(root, ...
+                "+labkit/+app/+internal/+launcher/dispatch.m");
+            definitions = regexp(source, "(?m)^function ", "match");
+
+            testCase.verifyNumElements(definitions, 1, ...
+                "Launcher dispatch must not reacquire local subsystem implementations.");
+            for owner = ["parseRequest" "discoverApps" "appCatalogTable" ...
+                    "documentationPage" "launcherVersion" "createLauncher"]
+                testCase.verifySubstring(source, ...
+                    "labkit.app.internal.launcher." + owner);
+            end
+        end
+
         function activeEntryPointsDescribeOnlyTheCatalogModel(testCase)
             root = labkittest.setup();
             build = text(root, "buildfile.m");
@@ -75,7 +90,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             files = files(files == "labkit_launcher.m" | ...
                 startsWith(files, ["+labkit/" "apps/" "tools/"]));
             allowedFiles = [ ...
-                "+labkit/+app/+internal/+launcher/dispatch.m"
+                "+labkit/+app/+internal/+launcher/createLauncher.m"
                 "+labkit/+app/+internal/+native/private/FigureInteractionHub.m"
                 "tools/profiling/profileLabKitTarget.m"];
             markers = [ ...
