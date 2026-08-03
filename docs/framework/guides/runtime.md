@@ -288,36 +288,34 @@ and safe for display. Pass caught exceptions through the dedicated
 `Exception` option instead of copying stack, path, identifier, or scientific
 data into free text.
 
-The App's **Tools > Diagnostics** menu opens the live session viewer, enables
-more detailed trace capture for future activity, and exports a diagnostic
-bundle from the same session history. Enabling trace does not restart the App
-or reconstruct earlier detail. Journal degradation is itself exposed in the
-surviving in-memory stream; logging failures never alter callback transaction
-semantics or scientific results. Native open and save dialogs normalize their
-file filters to MATLAB character-cell tables before calling the platform
-dialog, including the diagnostic ZIP destination on Windows releases.
-If the save dialog, staging, ZIP creation, or final publish step fails,
-Runtime writes the surviving privacy-safe records as one plain-text diagnostic
-fallback. It first uses the selected destination folder when that folder is
-available and otherwise uses MATLAB's user-writable temporary folder; the
-failure alert reports the complete fallback path.
+The App's **Tools > Diagnostics** menu opens the live session viewer and exports
+a diagnostic bundle from the same session history. Each viewer title names the
+App that owns the session. Its single **Level** selector has three modes:
+**Full TRACE** displays every retained record, **DEBUG** hides trace-only
+stages, and **User** shows user-audience INFO and higher events. Full TRACE is
+the default view; it does not manufacture detail that was not captured. The
+**Action** filter groups a top-level user or lifecycle action with its nested
+callback, presentation, dialog, resource, and transaction records.
 
-The viewer's **View** filter describes intended readers, not access control.
-**Useful** shows user-workflow events plus developer warnings and failures;
-**User workflow**, **Developer details**, and **Everything** select the two
-event audiences explicitly. The **Action** filter groups a top-level user or
-lifecycle action with its nested callback, presentation, dialog, resource, and
-transaction records. Its readable label includes time and a semantic message
-while retaining the stable `op-*` correlation identifier for exported
-diagnostics.
+Runtime initially captures DEBUG and higher records to bound ordinary-session
+cost. The first ERROR or CRITICAL event automatically enables TRACE for later
+activity. The viewer also provides an explicit **Enable TRACE** / **Disable
+TRACE** control when a user needs detailed capture before an error. TRACE adds
+callback state-update and validation stages, App/runtime presentation stages,
+native presentation commit, and post-failure rollback cleanup; DEBUG retains
+operation start and terminal boundaries. Enabling TRACE never reconstructs
+earlier detail.
 
-TRACE capture is independent of ordinary failure capture. With TRACE off,
-Runtime still retains DEBUG lifecycle/callback start and completion boundaries
-and all INFO, WARNING, ERROR, and CRITICAL events. The default viewer hides
-normal developer DEBUG/INFO records; selecting **DEBUG+** and **Developer
-details** reveals earlier retained callback boundaries. A callback exception
-is recorded as an ERROR with `failed` operation result, rollback disposition,
-safe exception identifier, and sanitized function stack.
+**Export Diagnostic Bundle** writes directly to ignored
+`artifacts/diagnostics/` with a generated App-specific, timestamped, unique ZIP
+name. If ZIP staging or publication fails, Runtime writes a generated text
+fallback beside that ZIP. Only when automatic output cannot be written does it
+ask for another location, with the generated fallback filename already filled
+in. The success or fallback alert reports the complete destination path.
+Journal degradation remains visible in the surviving in-memory stream; logging
+failures never alter callback transaction semantics or scientific results.
+A callback exception is recorded as an ERROR with `failed` operation result,
+rollback disposition, safe exception identifier, and sanitized function stack.
 
 Runtime close is also an instrumented lifecycle operation. Resource and native
 adapter cleanup continue independently; a cleanup exception is retained and

@@ -28,7 +28,6 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         StartupPanel
         StartupLabel
         LogViewer
-        TraceCaptureMenu
     end
 
     methods (Access = { ...
@@ -434,26 +433,6 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 obj.LogViewer.refresh();
             end
             obj.LogViewer.show();
-        end
-
-        function toggleTraceCapture(obj)
-            enabled = true;
-            if ~isempty(obj.TraceCaptureMenu) && ...
-                    isvalid(obj.TraceCaptureMenu)
-                enabled = string(obj.TraceCaptureMenu.Checked) ~= "on";
-            end
-            obj.Runtime.setTraceCapture(enabled);
-            if ~isempty(obj.TraceCaptureMenu) && ...
-                    isvalid(obj.TraceCaptureMenu)
-                if enabled
-                    obj.TraceCaptureMenu.Checked = "on";
-                else
-                    obj.TraceCaptureMenu.Checked = "off";
-                end
-            end
-            if ~isempty(obj.LogViewer) && isvalid(obj.LogViewer)
-                obj.LogViewer.refresh();
-            end
         end
 
         function handles = allAxes(obj)

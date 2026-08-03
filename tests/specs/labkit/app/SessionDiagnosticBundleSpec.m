@@ -89,7 +89,7 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function zipFailureWritesOneReadableTextFallback(testCase)
+        function writesOneReadableTextFallbackBesideTheAutomaticZip(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = bundleDefinition();
@@ -98,8 +98,11 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
             runtime.invokeAction("run");
 
-            destination = runtime.exportDiagnosticBundle(fullfile( ...
-                folder, "unavailable", "diagnostics.zip"));
+            destination = runtime.exportDiagnosticTextFallback( ...
+                fullfile(folder, "diagnostics.zip"), ...
+                MException( ...
+                    "labkit:app:runtime:DiagnosticWriteFailed", ...
+                    "Synthetic ZIP failure."));
             fileCleanup = onCleanup(@() deleteIfFile(destination));
             fallback = string(fileread(destination));
 
@@ -110,7 +113,7 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             testCase.verifyTrue(contains( ...
                 fallback, "analysis.failed"));
             testCase.verifyTrue(contains( ...
-                fallback, "diagnostics.bundle_exported.failed"));
+                fallback, "diagnostics.text_fallback.started"));
             testCase.verifyTrue(contains(fallback, ...
                 "labkit:app:runtime:DiagnosticWriteFailed"));
             testCase.verifyFalse(contains(fallback, string(folder)));
@@ -119,7 +122,7 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             clear fileCleanup cleanup
         end
 
-        function saveDialogFailureStillWritesTheTextFallback(testCase)
+        function automaticExportUsesArtifactsAndDoesNotAskForAPath(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = bundleDefinition();
@@ -132,12 +135,15 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
 
             destination = runtime.exportDiagnosticBundleInteractive();
             fileCleanup = onCleanup(@() deleteIfFile(destination));
-            fallback = string(fileread(destination));
 
             testCase.verifyTrue(isfile(destination));
-            testCase.verifyTrue(endsWith(destination, ".txt"));
-            testCase.verifyTrue(contains( ...
-                fallback, "labkit:test:OutputDialogFailure"));
+            testCase.verifyTrue(endsWith(destination, ".zip"));
+            testCase.verifyTrue(contains(destination, ...
+                fullfile("artifacts", "diagnostics")));
+            [~, filename, extension] = fileparts(destination);
+            testCase.verifyTrue(startsWith( ...
+                string(filename) + string(extension), ...
+                "labkit-diagnostics-probe-diagnostic-bundle-"));
             clear fileCleanup cleanup
         end
     end

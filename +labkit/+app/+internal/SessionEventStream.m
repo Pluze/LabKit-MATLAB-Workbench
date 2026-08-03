@@ -181,6 +181,10 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             end
             record.exception = exception;
             obj.retain(record);
+            if any(severity == ["error", "critical"]) && ...
+                    ~obj.TraceEnabled
+                obj.setTraceEnabled(true);
+            end
         end
 
         function records = records(obj)

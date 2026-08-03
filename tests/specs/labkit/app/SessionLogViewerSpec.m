@@ -2,18 +2,20 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
     % SESSIONLOGVIEWERSPEC Regression: ordinary hidden GUI sessions expose one interactive standard log viewer without mutating canonical history.
 
     methods (Test, TestTags = {'Contract:source', 'Env:hidden-gui'})
-        function toolsMenuOpensOneLiveViewerAndControlsTrace(testCase)
+        function toolsMenuOpensNamedViewerWithManualTraceControl(testCase)
             runtime = viewerRuntime(testCase);
             cleanup = onCleanup(@() runtime.close());
             appFigure = runtime.figureHandle();
             openMenu = oneHandle( ...
                 appFigure, "labkitAppUtilitySessionLog");
-            traceMenu = oneHandle( ...
-                appFigure, "labkitAppUtilityTraceCapture");
+            testCase.verifyEmpty(findall( ...
+                appFigure, "Tag", "labkitAppUtilityTraceCapture"));
 
             invoke(openMenu.MenuSelectedFcn, openMenu, []);
             viewerFigure = oneHandle( ...
                 groot, "labkitSessionLogViewer");
+            testCase.verifyEqual(string(viewerFigure.Name), ...
+                "Log viewer probe — Session Log");
             testCase.verifyEqual(string(viewerFigure.Visible), "off");
             tableHandle = oneHandle( ...
                 viewerFigure, "labkitSessionLogTable");
@@ -31,13 +33,17 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
             invoke(openMenu.MenuSelectedFcn, openMenu, []);
             testCase.verifyNumElements(findall( ...
                 groot, "Tag", "labkitSessionLogViewer"), 1);
+            viewerFigure = oneHandle( ...
+                groot, "labkitSessionLogViewer");
 
-            invoke(traceMenu.MenuSelectedFcn, traceMenu, []);
-            testCase.verifyEqual(string(traceMenu.Checked), "on");
+            traceButton = oneHandle( ...
+                viewerFigure, "labkitSessionLogTraceCapture");
+            invoke(traceButton.ButtonPushedFcn, traceButton, []);
+            testCase.verifyEqual(string(traceButton.Text), "Disable TRACE");
             snapshot = runtime.diagnosticSnapshot();
             testCase.verifyTrue(snapshot.traceEnabled);
-            invoke(traceMenu.MenuSelectedFcn, traceMenu, []);
-            testCase.verifyEqual(string(traceMenu.Checked), "off");
+            invoke(traceButton.ButtonPushedFcn, traceButton, []);
+            testCase.verifyEqual(string(traceButton.Text), "Enable TRACE");
             snapshot = runtime.diagnosticSnapshot();
             testCase.verifyFalse(snapshot.traceEnabled);
             clear cleanup
@@ -58,10 +64,6 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
                 viewerFigure, "labkitSessionLogTable");
             level = oneHandle( ...
                 viewerFigure, "labkitSessionLogLevel");
-            audience = oneHandle( ...
-                viewerFigure, "labkitSessionLogAudience");
-            audienceLabel = oneHandle( ...
-                viewerFigure, "labkitSessionLogAudienceLabel");
             rootLabel = oneHandle( ...
                 viewerFigure, "labkitSessionLogRootLabel");
             rootAction = oneHandle( ...
@@ -70,11 +72,14 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
             testCase.verifyEqual( ...
                 string(tableHandle.Data.Properties.VariableNames), ...
                 ["Time", "Level", "Area", "Message"]);
-            testCase.verifyEqual(string(audienceLabel.Text), "View");
+            testCase.verifyEmpty(findall( ...
+                viewerFigure, "Tag", "labkitSessionLogAudience"));
+            testCase.verifyEmpty(findall( ...
+                viewerFigure, "Tag", "labkitSessionLogFollow"));
             testCase.verifyEqual(string(rootLabel.Text), "Action");
-            testCase.verifyEqual(string(audience.Items), ...
-                ["Useful (default)", "Everything", ...
-                "User workflow", "Developer details"]);
+            testCase.verifyEqual(string(level.Items), ...
+                ["Full TRACE", "DEBUG", "User"]);
+            testCase.verifyEqual(string(level.Value), "trace");
             rootIds = string(rootAction.ItemsData(2:end));
             rootLabels = string(rootAction.Items(2:end));
             testCase.verifyTrue(all(startsWith(rootIds, "op-")));
@@ -85,8 +90,8 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
                 string(tableHandle.Data.Level) == "ERROR"));
             level.Value = "debug";
             invoke(level.ValueChangedFcn, level, []);
-            audience.Value = "all";
-            invoke(audience.ValueChangedFcn, audience, []);
+            testCase.verifyFalse(any( ...
+                string(tableHandle.Data.Level) == "TRACE"));
             testCase.verifyTrue(any( ...
                 string(tableHandle.Data.Message) == ...
                 "Synthetic branch selected."));
@@ -140,21 +145,22 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
         end
 
         function exportsTheLiveBundleFromToolsAndTheViewer(testCase)
-            folder = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            destination = fullfile(folder, "live-diagnostics.zip");
-            backend = struct( ...
-                "chooseOutputFile", @(~, ~) ...
-                    labkit.app.dialog.Choice(destination));
+            backend = struct("alert", @(~, ~) []);
             runtime = viewerRuntime(testCase, backend);
             cleanup = onCleanup(@() runtime.close());
             runtime.invokeAction("run");
+            folder = diagnosticArtifactsFolder();
+            before = diagnosticFiles(folder);
             appFigure = runtime.figureHandle();
             exportMenu = oneHandle( ...
                 appFigure, "labkitAppUtilityExportDiagnostics");
 
             invoke(exportMenu.MenuSelectedFcn, exportMenu, []);
-            testCase.verifyTrue(isfile(destination));
+            afterMenu = diagnosticFiles(folder);
+            menuFile = setdiff(afterMenu, before);
+            testCase.verifyNumElements(menuFile, 1);
+            fileCleanup = onCleanup(@() deleteDiagnostics( ...
+                folder, setdiff(diagnosticFiles(folder), before)));
 
             openMenu = oneHandle( ...
                 appFigure, "labkitAppUtilitySessionLog");
@@ -164,12 +170,13 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
             exportButton = oneHandle( ...
                 viewerFigure, "labkitSessionLogExport");
             invoke(exportButton.ButtonPushedFcn, exportButton, []);
-            testCase.verifyTrue(isfile(destination));
+            afterViewer = diagnosticFiles(folder);
+            testCase.verifyNumElements(setdiff(afterViewer, before), 2);
             records = runtime.diagnosticEvents();
             testCase.verifyGreaterThanOrEqual(sum( ...
                 string({records.eventName}) == ...
                     "diagnostics.bundle_exported.completed"), 2);
-            clear cleanup
+            clear fileCleanup cleanup
         end
     end
 end
@@ -235,4 +242,28 @@ end
 
 function invoke(callback, varargin)
 callback(varargin{:});
+end
+
+function folder = diagnosticArtifactsFolder()
+folder = string(fileparts(which( ...
+    "labkit.app.internal.RuntimeKernel")));
+for index = 1:3
+    folder = string(fileparts(folder));
+end
+folder = fullfile(folder, "artifacts", "diagnostics");
+end
+
+function files = diagnosticFiles(folder)
+entries = dir(fullfile(folder, ...
+    "labkit-diagnostics-probe-log-viewer-*.zip"));
+files = string({entries.name});
+end
+
+function deleteDiagnostics(folder, files)
+for file = files
+    filepath = fullfile(folder, file);
+    if isfile(filepath)
+        delete(filepath);
+    end
+end
 end

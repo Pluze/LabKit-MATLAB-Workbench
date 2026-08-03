@@ -35,6 +35,21 @@ For focused MATLAB execution, add `tests` to the path and call
 changed `projectSpec.m` must explain to nonempty App-owned `persistence`
 evidence even when an end-to-end save/restore workflow also passes.
 
+If `explain` shows that a framework source shares an intentionally broad owner
+and `labkittest.run(File=...)` would expand a narrow iteration into that whole
+owner, report the selected identity count before executing. For a user-requested
+narrow iteration, run only the already identified owning specification files
+with `scripts/runFocusedSpecs.m`; this helper establishes the repository and
+test paths and rejects paths outside `tests/specs`. It is an iteration tool,
+not a substitute for missing catalog evidence, `changedFast`, or CI.
+
+```matlab
+addpath("/absolute/repo/.agents/skills/labkit-test-planner/scripts")
+runFocusedSpecs([ ...
+    "tests/specs/labkit/app/SessionLogProjectionSpec.m"
+    "tests/specs/labkit/app/SessionDiagnosticBundleSpec.m"]);
+```
+
 ## Choose Evidence
 
 Use the smallest behavior that proves the change:

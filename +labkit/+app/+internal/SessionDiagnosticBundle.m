@@ -53,26 +53,20 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
         end
 
         function destination = writeFallback(snapshot, preferredDestination)
-            % RuntimeKernel supplies sanitized in-memory records. Prefer a
-            % surviving selected folder, then MATLAB's writable temp folder.
+            % RuntimeKernel supplies sanitized in-memory records and an
+            % automatic or explicitly selected destination.
             snapshot = validateFallbackSnapshot(snapshot);
-            folders = fallbackFolders(preferredDestination);
-            failure = [];
-            for index = 1:numel(folders)
-                destination = availableFallbackPath(folders(index));
-                try
-                    writeText(destination, fallbackLines(snapshot));
-                    return;
-                catch cause
-                    failure = cause;
-                end
+            destination = fallbackPath(preferredDestination);
+            folder = string(fileparts(destination));
+            if strlength(folder) == 0
+                folder = string(pwd);
+                destination = fullfile(folder, destination);
             end
-            if isempty(failure)
+            if exist(char(folder), "dir") ~= 7
                 error("labkit:app:runtime:DiagnosticWriteFailed", ...
-                    "No diagnostic text fallback folder is available.");
+                    "The diagnostic text fallback folder is unavailable.");
             end
-            error("labkit:app:runtime:DiagnosticWriteFailed", ...
-                "Could not write the diagnostic text fallback.");
+            writeText(destination, fallbackLines(snapshot));
         end
     end
 end
@@ -251,44 +245,20 @@ if isfield(structure, name) && isscalar(structure.(name))
 end
 end
 
-function folders = fallbackFolders(preferredDestination)
-folders = strings(0, 1);
-if ischar(preferredDestination) || ...
-        (isstring(preferredDestination) && isscalar(preferredDestination))
-    preferredDestination = strip(string(preferredDestination));
-    if strlength(preferredDestination) > 0
-        folder = string(fileparts(preferredDestination));
-        if strlength(folder) == 0
-            folder = string(pwd);
-        end
-        if exist(char(folder), "dir") == 7
-            folders(end + 1, 1) = folder;
-        end
-    end
+function destination = fallbackPath(preferredDestination)
+if ~(ischar(preferredDestination) || ...
+        (isstring(preferredDestination) && isscalar(preferredDestination))) || ...
+        strlength(strip(string(preferredDestination))) == 0
+    error("labkit:app:contract:InvalidValue", ...
+        "Diagnostic text fallback destination must be nonempty scalar text.");
 end
-temporaryFolder = string(tempdir);
-if exist(char(temporaryFolder), "dir") == 7
-    folders(end + 1, 1) = temporaryFolder;
+preferredDestination = string(preferredDestination);
+[folder, name, extension] = fileparts(preferredDestination);
+if strcmpi(extension, ".txt")
+    destination = preferredDestination;
+else
+    destination = fullfile(folder, name + "-fallback.txt");
 end
-folders = unique(folders, "stable");
-end
-
-function destination = availableFallbackPath(folder)
-destination = fullfile(folder, "labkit-diagnostics-fallback.txt");
-if exist(char(destination), "file") ~= 2 && ...
-        exist(char(destination), "dir") ~= 7
-    return;
-end
-for index = 2:1000
-    candidate = fullfile(folder, ...
-        "labkit-diagnostics-fallback-" + string(index) + ".txt");
-    if exist(char(candidate), "file") ~= 2 && ...
-            exist(char(candidate), "dir") ~= 7
-        destination = candidate;
-        return;
-    end
-end
-destination = string(tempname(char(folder))) + ".txt";
 end
 
 function value = timeline(events)

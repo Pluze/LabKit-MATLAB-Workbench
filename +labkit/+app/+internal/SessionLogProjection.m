@@ -16,8 +16,7 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
         ExpiredSegmentCount (1, 1) double = 0
         DegradationReason (1, 1) string = ""
         ClearedThroughSequence (1, 1) double = 0
-        LevelFilter (1, 1) string = "default"
-        AudienceFilter (1, 1) string = "default"
+        LevelFilter (1, 1) string = "trace"
         CategoryFilter (1, 1) string = ""
         RootActionFilter (1, 1) string = ""
         SearchText (1, 1) string = ""
@@ -65,16 +64,11 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
         function setFilters(obj, varargin)
             options = labkit.app.internal.OptionParser.parse( ...
                 "SessionLogProjection.setFilters", ...
-                ["Level", "Audience", "Category", "RootAction", "Search"], ...
+                ["Level", "Category", "RootAction", "Search"], ...
                 varargin{:});
             if isfield(options, "Level")
                 obj.LevelFilter = oneOf(options.Level, ...
-                    ["default", "trace", "debug", "info", ...
-                    "warning", "error", "critical"], "Level");
-            end
-            if isfield(options, "Audience")
-                obj.AudienceFilter = oneOf(options.Audience, ...
-                    ["default", "all", "user", "developer"], "Audience");
+                    ["trace", "debug", "user"], "Level");
             end
             if isfield(options, "Category")
                 obj.CategoryFilter = optionalText( ...
@@ -109,6 +103,7 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
                 "categories", choices(string({obj.Events.category})), ...
                 "rootActions", rootActionIds, ...
                 "rootActionLabels", rootActionLabels, ...
+                "traceEnabled", obj.TraceEnabled, ...
                 "notices", obj.notices(), ...
                 "clearedThroughSequence", obj.ClearedThroughSequence);
         end
@@ -135,21 +130,12 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
             keep = sequence > obj.ClearedThroughSequence;
             levels = lower(string({selected.severity}));
             audiences = lower(string({selected.audience}));
-            if obj.LevelFilter == "default"
-                rank = severityRank(levels);
-                keep = keep & ((audiences == "user" & rank >= 3) | ...
-                    rank >= 4);
+            if obj.LevelFilter == "user"
+                keep = keep & audiences == "user" & ...
+                    severityRank(levels) >= severityRank("info");
             else
                 keep = keep & severityRank(levels) >= ...
                     severityRank(obj.LevelFilter);
-            end
-            if obj.AudienceFilter == "user"
-                keep = keep & audiences == "user";
-            elseif obj.AudienceFilter == "developer"
-                keep = keep & audiences == "developer";
-            elseif obj.AudienceFilter == "default"
-                rank = severityRank(levels);
-                keep = keep & (audiences == "user" | rank >= 4);
             end
             if strlength(obj.CategoryFilter) > 0
                 keep = keep & ...
@@ -174,8 +160,8 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
             value = strings(0, 1);
             if ~obj.TraceEnabled
                 value(end + 1, 1) = ...
-                    "TRACE detail is off; DEBUG lifecycle and all warnings and errors " + ...
-                    "are still captured. Earlier TRACE detail is unavailable.";
+                    "TRACE capture starts automatically after the first ERROR; " + ...
+                    "DEBUG and higher detail is complete so far.";
             end
             if obj.InMemoryTruncated
                 value(end + 1, 1) = ...
