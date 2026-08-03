@@ -112,7 +112,7 @@ buildtool docsCheck
 
 | Task | Purpose |
 | --- | --- |
-| `changedFast` | Local final pre-commit/pre-push gate. Reads tracked and untracked working-tree paths; on a clean checkpoint it reads `HEAD^..HEAD`. |
+| `changedFast` | Final local pre-PR review gate, run once after the complete `develop` diff is ready. Reads tracked and untracked working-tree paths; on a clean checkpoint it reads `HEAD^..HEAD`. |
 | `headless` | Every headless catalog identity. |
 | `gui` | Every hidden-GUI catalog identity. |
 | `isolated` | Every path-isolated catalog identity. |
@@ -153,9 +153,30 @@ coverage-html/      coverage runs only
 ```
 
 After a failure, copy its exact class/method identity from the output and run
-the smallest owner/contract or exact source that proves the repair. A zero
-selection or missing-contract error is a test-authoring defect, never passing
-evidence.
+the smallest method, specification file, owner/contract, or exact source that
+proves the repair. Do not invoke the planner again when the failing identity is
+already known. A zero selection or missing-contract error is a test-authoring
+defect, never passing evidence.
+
+### CI Repair Loop
+
+Once the pull request exists, required CI owns the broad platform claim. For a
+failed check:
+
+1. inspect only the failed check and the log for its exact failing identity;
+2. reproduce that method, specification file, or smallest owner/contract
+   locally when reproduction is useful;
+3. repair the smallest responsible source boundary and rerun only that focused
+   evidence;
+4. push the repair to the existing PR branch and let CI rerun its required
+   profiles.
+
+Do not run `changedFast`, `headless`, `gui`, `isolated`, or the complete local
+matrix after every CI repair. The one pre-PR `changedFast` run remains the local
+integration checkpoint; CI re-establishes the complete claim after later
+focused fixes. Re-run a wider local closure only when the repair itself expands
+the intended behavior, component ownership, or compatibility boundary beyond
+the original failure.
 
 When a mapped layout change leaves a non-automatable boundary, its plan can
 name a manual check. It is printed and recorded in `plan.json`, but it never

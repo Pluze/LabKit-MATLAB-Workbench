@@ -299,7 +299,7 @@ folder is ignored by Git and may be deleted or regenerated at any time.
 The Documentation Pages workflow performs the same build from the exact
 `main` source and deploys the resulting artifact to GitHub Pages. It never
 commits generated files back to `main` or `develop`. The visible Launcher opens
-that online site by default. Its **Generate Local Documentation** maintenance
+that online site by default. Its **Doc Generation** maintenance
 action always rebuilds the complete ignored `site/` folder from current
 sources; it does not open a page or choose a reading destination.
 

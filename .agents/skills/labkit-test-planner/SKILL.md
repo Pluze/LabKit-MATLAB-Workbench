@@ -94,3 +94,12 @@ Report the exact owner/contract or profile command, selected identity count,
 pass/fail result, artifact folder, GUI/manual boundary, and why any broader
 gate is intentionally deferred. For final integration, report `changedFast`
 and the CI state for the exact pushed commit.
+
+## Repair CI Failures
+
+Read only the failed check and copy its exact test identity. Reproduce the
+smallest method, owning specification file, or owner/contract; repair that
+source boundary; rerun the same focused evidence; then push and let CI restore
+the full platform claim. Do not rerun `changedFast` or a full local profile for
+each CI repair. Re-plan only when the repair intentionally changes additional
+behavior or ownership.

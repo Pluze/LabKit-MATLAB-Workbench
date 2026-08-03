@@ -154,8 +154,13 @@ tests, history, and details out of the public repository.
   changed task; required PR CI owns complete validation.
   The protected main-push run repeats only policy and the aggregate gate for
   the exact squash commit because its tree is the already-validated PR result.
-- After failure, fix and rerun the narrowest failed file, method, or suite; do not repeatedly
-  invoke the planner. Exact commands and scope live in
+- After a local or hosted-CI failure, inspect only the failing identity and its
+  log, fix the smallest responsible source boundary, and rerun the narrowest
+  failed method, specification file, or owner/contract. Push the focused repair
+  and let required CI re-establish the complete claim; do not rerun
+  `changedFast` or a local full profile after every CI repair. Re-plan only when
+  the repair intentionally widens the changed behavior or ownership boundary.
+  Exact commands and scope live in
   `docs/development/maintain-and-release/testing.md`.
 - MATLAB and GitHub inspection require host runtime/network permissions. Run
   every `gh` command with host permissions on its first attempt, including
