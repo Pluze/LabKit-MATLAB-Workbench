@@ -35,7 +35,9 @@ classdef (Sealed) CallbackContext < handle
     %   eventName - Stable semantic event identifier.
     %   Category - Semantic App capability category. Default: "workflow".
     %   Audience - "user" or "developer"; default: "user".
-    %   Attributes - Scalar privacy-safe structured details. Default: struct().
+    %   Attributes - Scalar structured diagnostic details. The Session Log,
+    %       persistent journal, and complete export retain these values. Only
+    %       a user-selected redacted export applies filtering. Default: struct().
     %   Exception - Scalar MException associated with the event. Default: [].
     %   id - Stable semantic diagnostic or resource identifier.
     %   count - Nonnegative integer diagnostic count.

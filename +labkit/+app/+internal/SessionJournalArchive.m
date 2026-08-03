@@ -1,7 +1,7 @@
 classdef (Hidden, Sealed) SessionJournalArchive
     %SESSIONJOURNALARCHIVE Inspect, recover, retain, and export closed journals.
     % This private archive boundary never receives live events or decides their
-    % privacy semantics; it consumes only the canonical journal representation.
+    % privacy semantics; journals retain the complete canonical representation.
 
     methods (Static)
         function inspection = inspect(rootFolder, varargin)
@@ -462,10 +462,8 @@ value.retention = retention;
 end
 
 function value = redactionMetadata()
-value = struct("semanticEventPrivacy", "validated-before-retention", ...
-    "exportProjection", "canonical-safe-events-only", ...
-    "excludedData", ["paths", "filenames", "input-content", ...
-        "scientific-data", "workspace-values"]);
+value = struct("semanticEventPrivacy", "complete-retained-details", ...
+    "exportProjection", "none", "excludedData", strings(0, 1));
 end
 
 function writeEvents(filepath, events)

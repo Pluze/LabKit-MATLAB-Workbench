@@ -433,7 +433,7 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile(exportFolder, "degradation.json")));
             redaction = readJson(exportFolder, "redaction.json");
             testCase.verifyEqual(string(redaction.exportProjection), ...
-                "canonical-safe-events-only");
+                "none");
             bundleText = join([string(fileread(fullfile(exportFolder, "events.jsonl"))); ...
                 string(fileread(fullfile(exportFolder, "timeline.txt")))], newline);
             testCase.verifyFalse(contains(bundleText, string(root)));

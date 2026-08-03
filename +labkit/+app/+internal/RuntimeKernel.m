@@ -185,29 +185,30 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function destination = exportDiagnosticBundle( ...
-                obj, destination, includePrivateState)
+                obj, destination, includeSensitiveDetails)
             if nargin < 3
-                includePrivateState = false;
+                includeSensitiveDetails = false;
             end
-            includePrivateState = logicalScalar( ...
-                includePrivateState, "includePrivateState");
+            includeSensitiveDetails = logicalScalar( ...
+                includeSensitiveDetails, "includeSensitiveDetails");
             operation = obj.Recorder.begin( ...
                 "runtime.lifecycle", "diagnostics.bundle_exported", ...
                 "Exporting diagnostic bundle.");
             try
                 privateState = [];
-                if includePrivateState
+                if includeSensitiveDetails
                     privateState = obj.State;
                 end
                 destination = obj.Recorder.exportBundle( ...
-                    destination, operation.Id, privateState);
+                    destination, operation.Id, ...
+                    includeSensitiveDetails, privateState);
                 obj.Recorder.finish( ...
                     operation, "completed", "notApplicable", []);
             catch cause
                 obj.Recorder.finish( ...
                     operation, "failed", "notApplicable", cause);
                 destination = obj.exportDiagnosticTextFallback( ...
-                    destination, cause);
+                    destination, cause, includeSensitiveDetails);
             end
         end
 
@@ -223,14 +224,14 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 destination = "";
                 return;
             end
-            includePrivateState = ...
+            includeSensitiveDetails = ...
                 selection.Value == "Complete log (sensitive)";
             destination = "";
             try
                 automaticDestination = ...
-                    obj.automaticDiagnosticDestination(includePrivateState);
+                    obj.automaticDiagnosticDestination(includeSensitiveDetails);
                 destination = obj.exportDiagnosticBundle( ...
-                    automaticDestination, includePrivateState);
+                    automaticDestination, includeSensitiveDetails);
                 if endsWith(destination, ".txt", ...
                         IgnoreCase=true)
                     obj.alertDiagnosticTextFallback(destination);
@@ -243,7 +244,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 return;
             catch automaticFailure
                 fallbackName = diagnosticFallbackName( ...
-                    obj.automaticDiagnosticFilename(includePrivateState));
+                    obj.automaticDiagnosticFilename(includeSensitiveDetails));
             end
             choice = obj.Context.chooseOutputFile( ...
                 {"*.txt", "Diagnostic text fallback (*.txt)"}, ...
@@ -252,19 +253,22 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 return;
             end
             destination = obj.exportDiagnosticTextFallback( ...
-                choice.Value, automaticFailure);
+                choice.Value, automaticFailure, includeSensitiveDetails);
             obj.alertDiagnosticTextFallback(destination);
         end
 
         function destination = exportDiagnosticTextFallback( ...
-                obj, preferredDestination, cause)
+                obj, preferredDestination, cause, includeSensitiveDetails)
+            if nargin < 4
+                includeSensitiveDetails = false;
+            end
             obj.Recorder.log( ...
                 "warning", "diagnostics.text_fallback.started", ...
                 "Diagnostic ZIP export failed; writing a plain-text fallback.", ...
                 Category="runtime.lifecycle", Audience="user", ...
                 Exception=cause);
             destination = obj.Recorder.exportTextFallback( ...
-                preferredDestination, cause);
+                preferredDestination, cause, includeSensitiveDetails);
         end
 
         function alertDiagnosticTextFallback(obj, destination)
@@ -1151,16 +1155,16 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function destination = automaticDiagnosticDestination( ...
-                obj, includePrivateState)
-            stem = diagnosticArtifactStem(includePrivateState);
+                obj, includeSensitiveDetails)
+            stem = diagnosticArtifactStem(includeSensitiveDetails);
             destination = obj.automaticArtifactDestination( ...
                 "diagnostics", stem, ".zip");
         end
 
         function filename = automaticDiagnosticFilename( ...
-                obj, includePrivateState)
+                obj, includeSensitiveDetails)
             filename = obj.automaticArtifactFilename( ...
-                diagnosticArtifactStem(includePrivateState), ".zip");
+                diagnosticArtifactStem(includeSensitiveDetails), ".zip");
         end
 
         function notifyUser(obj, message, title)
@@ -1241,8 +1245,8 @@ if ~isscalar(value) || strlength(value) == 0
 end
 end
 
-function stem = diagnosticArtifactStem(includePrivateState)
-if includePrivateState
+function stem = diagnosticArtifactStem(includeSensitiveDetails)
+if includeSensitiveDetails
     stem = "diagnostics-sensitive";
 else
     stem = "diagnostics";

@@ -111,7 +111,8 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(failed.operationResult), "failed");
             testCase.verifyEqual(string(failed.stateDisposition), "rolledBack");
             testCase.verifyEqual(string(failed.exception.identifier), "probe:ExpectedFailure");
-            testCase.verifyEqual(string(failed.exception.message), "Exception captured.");
+            testCase.verifyEqual(string(failed.exception.message), ...
+                "Expected rollback failure.");
             testCase.verifyEqual(string(snapshot.manifest.state), "closed");
             clear cleanup
         end

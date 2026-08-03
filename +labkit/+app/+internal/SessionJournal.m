@@ -1,5 +1,5 @@
 classdef (Hidden, Sealed) SessionJournal < handle
-    %SESSIONJOURNAL Buffered writer for already-validated canonical events.
+    %SESSIONJOURNAL Buffered writer for full-detail canonical events.
     % This private projection owns one live session only. Archive inspection,
     % recovery, retention, and export belong to SessionJournalArchive.
 

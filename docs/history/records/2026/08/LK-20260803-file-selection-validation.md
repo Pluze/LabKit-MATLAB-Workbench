@@ -6,13 +6,12 @@ date: 2026-08-03
 sequence: 170
 type: fix
 compatibility: compatible
-component: `labkit.app`
 component: `labkit_ChronoOverlay_app` | `1.6.1 -> 1.6.2`
 component: `labkit_CIC_app` | `1.6.1 -> 1.6.2`
 component: `labkit_CSC_app` | `1.6.1 -> 1.6.2`
 component: `labkit_EIS_app` | `1.6.1 -> 1.6.2`
 component: `labkit_VTResistance_app` | `1.6.1 -> 1.6.2`
-component: `labkit_BatchCrop_app` | `1.9.2 -> 1.9.3`
+component: `labkit_BatchImageCrop_app` | `1.9.2 -> 1.9.3`
 component: `labkit_FLIRThermal_app` | `1.6.1 -> 1.6.2`
 component: `labkit_FocusStack_app` | `1.7.1 -> 1.7.2`
 component: `labkit_ImageEnhance_app` | `1.8.1 -> 1.8.2`
@@ -21,7 +20,7 @@ component: `labkit_FigureStudio_app` | `0.7.2 -> 0.7.3`
 component: `labkit_RHSPreview_app` | `1.6.1 -> 1.6.2`
 scope: Electrochemistry multi-file import
 scope: Folder and recursive DTA filtering
-scope: App SDK file-list path predicates
+scope: Shared file-list predicate adoption
 scope: Cross-App file chooser consistency
 scope: FLIR radiometric candidate validation
 ```
@@ -35,31 +34,19 @@ containing another Gamry experiment type caused session reconstruction to
 fail transactionally and discarded compatible files in the same batch.
 FLIR Thermal, Batch Crop, and Figure Studio also represented file collections
 with single-selection controls, while several file buttons still duplicated
-legacy folder wording despite separate folder actions. File-panel parsing
-exceptions had no framework-owned alert fallback.
+legacy folder wording despite separate folder actions.
 
 ## Decision and rationale
 
-Extend the existing App SDK file-list contract with a domain-neutral batch
-path predicate and a standard aggregate filtering notice. Keep experiment
-type detection in each electrochemistry App through the DTA facade: the SDK
-owns selection lifecycle and interaction consistency, while Apps retain the
-scientific meaning of chrono, CV/CT, and EIS inputs.
-Apply the same acquisition contract across every public App: collections are
-multi-select, semantic one-file slots remain explicitly bounded, and file
-buttons do not claim folder behavior. Keep radiometric acceptance in FLIR
-Thermal through the thermal facade, and let the private native adapter surface
-otherwise-unhandled file-action failures without changing App-owned wording.
+Adopt the shared file-list predicate while keeping experiment type detection
+in each electrochemistry App through the DTA facade. Apply the same acquisition
+contract across every public App: collections are multi-select, semantic
+one-file slots remain explicitly bounded, and file buttons do not claim folder
+behavior. Keep radiometric acceptance in FLIR Thermal through the thermal
+facade.
 
 ## Changes
 
-- Added `PathFilter` and `PathFilterDescription` to
-  `labkit.app.layout.fileList`.
-- Applied predicates only to newly proposed paths, retained previously
-  accepted sources, validated the returned logical mask, and omitted rejected
-  paths before portable source records were created.
-- Added one aggregate, filename-free notice when unsupported files are
-  filtered.
 - Enabled native multi-file selection for CIC, CSC, and VT Resistance.
 - Declared chrono, CV/CT, or EIS predicates for all five electrochemistry Apps.
 - Enabled multi-file selection for FLIR Thermal, Batch Crop, and Figure Studio.
@@ -67,8 +54,6 @@ otherwise-unhandled file-action failures without changing App-owned wording.
   neurophysiology Apps while preserving the separate folder/tree controls.
 - Added FLIR content-level candidate inspection so ordinary JPEGs, unreadable
   payloads, and wrong file types are omitted with the standard aggregate alert.
-- Added a native file-panel error fallback so an unhandled parsing or
-  validation failure is presented in an alert after transactional rollback.
 
 ## User and data impact
 
@@ -90,10 +75,8 @@ result schemas, and export values are unchanged.
 
 ## Validation
 
-Focused App SDK source specifications cover callback signature validation,
-batch mask application, preservation of existing sources, portable-source
-alignment, and aggregate notice wording. App-owned source specifications cover
-chrono, CV/CT, and EIS discrimination. One existing hidden-GUI workflow per
+App-owned source specifications cover chrono, CV/CT, and EIS discrimination.
+One existing hidden-GUI workflow per
 electrochemistry App covers the mixed batch through plotting, analysis,
 export, and project restore; CIC, CSC, and VT Resistance also verify native
 multiple selection.

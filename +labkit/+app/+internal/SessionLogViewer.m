@@ -202,7 +202,7 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
 
             obj.DetailArea = uitextarea(root, ...
                 Editable="off", ...
-                Value="Select an event to inspect safe structured details.", ...
+                Value="Select an event to inspect complete structured details.", ...
                 FontName="Consolas", ...
                 Tag="labkitSessionLogDetail");
             obj.DetailArea.Layout.Row = 5;
@@ -231,7 +231,7 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
         function clearView(obj)
             obj.Projection.clearView();
             obj.DetailArea.Value = ...
-                "Select an event to inspect safe structured details.";
+                "Select an event to inspect complete structured details.";
             obj.CopyButton.Enable = "off";
             obj.refreshView();
         end
@@ -431,6 +431,7 @@ value = [
     "Severity: " + string(record.severity) + ...
         "   Audience: " + string(record.audience)
     "Category: " + string(record.category)
+    "Message: " + string(record.message)
     "Operation: " + string(record.operationId)
     "Parent: " + string(record.parentOperationId)
     "Root action: " + string(record.rootActionId)
@@ -438,6 +439,7 @@ value = [
         "   State: " + string(record.stateDisposition)
     "Duration (s): " + numericText(record.durationSeconds)
     "Exception: " + string(exception.identifier)
+    "Exception message: " + string(exception.message)
     "Attributes:"
     attributes
     "Stack:"

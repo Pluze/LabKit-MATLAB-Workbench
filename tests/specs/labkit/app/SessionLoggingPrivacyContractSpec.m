@@ -1,28 +1,27 @@
 classdef SessionLoggingPrivacyContractSpec < matlab.unittest.TestCase
-    %SESSIONLOGGINGPRIVACYCONTRACTSPEC Freeze App-facing retained-data privacy rules.
+    %SESSIONLOGGINGPRIVACYCONTRACTSPEC Freeze full-detail logging boundary.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function rejectsRawPathsBeforeInvokingAnyLoggingBackend(testCase)
-            context = labkit.app.internal.CallbackContextFactory.disconnected();
-            folder = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            syntheticPath = string(fullfile(folder, "input.csv"));
+        function passesCompleteDetailsToTheLoggingBackend(testCase)
+            captured = cell(1, 7);
+            context = labkit.app.internal.CallbackContextFactory.create( ...
+                struct("log", @captureLog));
+            syntheticPath = "/synthetic/input.csv";
 
-            testCase.verifyError(@() context.log("info", "source.loaded", ...
-                "Loaded " + syntheticPath + ".", ...
-                Category="sourceFiles"), "labkit:app:contract:UnsafeLogData");
-        end
+            context.log("info", "source.loaded", ...
+                "Loaded " + syntheticPath + ".", Category="sourceFiles", ...
+                Audience="developer", ...
+                Attributes=struct("sourcePath", syntheticPath, ...
+                    "values", [1 2 3]));
 
-        function rejectsRawFilenamesInAttributesBeforeInvokingAnyLoggingBackend(testCase)
-            context = labkit.app.internal.CallbackContextFactory.disconnected();
-            folder = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            syntheticPath = string(fullfile(folder, "input.csv"));
+            testCase.verifyEqual(captured{3}, ...
+                "Loaded /synthetic/input.csv.");
+            testCase.verifyEqual(captured{6}.sourcePath, syntheticPath);
+            testCase.verifyEqual(captured{6}.values, [1 2 3]);
 
-            testCase.verifyError(@() context.log("info", "source.loaded", ...
-                "Selected source loaded.", Category="sourceFiles", ...
-                Attributes=struct("sourcePath", syntheticPath)), ...
-                "labkit:app:contract:UnsafeLogData");
+            function captureLog(varargin)
+                captured = varargin;
+            end
         end
     end
 end

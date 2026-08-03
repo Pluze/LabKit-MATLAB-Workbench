@@ -1,5 +1,5 @@
 classdef (Hidden, Sealed) SessionEventValidator
-    %SESSIONEVENTVALIDATOR Validate privacy-safe private session event inputs.
+    %SESSIONEVENTVALIDATOR Validate and project private session event inputs.
 
     methods (Static)
         function values = logInputs(severity, eventName, message, ...
@@ -8,14 +8,23 @@ classdef (Hidden, Sealed) SessionEventValidator
                 "severity", labkit.app.internal.SessionEventValidator.severity(severity), ...
                 "eventName", labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
                 eventName, "eventName"), ...
-                "message", labkit.app.internal.SessionEventValidator.privacySafeText( ...
-                message, "message"), ...
+                "message", diagnosticText(message, "message"), ...
                 "category", labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
                 category, "category"), ...
                 "audience", labkit.app.internal.SessionEventValidator.audience(audience), ...
-                "attributes", labkit.app.internal.SessionEventValidator.privacySafeAttributes( ...
-                attributes), ...
+                "attributes", diagnosticAttributes(attributes), ...
                 "exception", labkit.app.internal.SessionEventValidator.exception(exception));
+        end
+
+        function records = redactedRecords(records)
+            for index = 1:numel(records)
+                records(index).message = retainedTextProjection( ...
+                    records(index).message);
+                records(index).attributes = retainedAttributesProjection( ...
+                    records(index).attributes);
+                records(index).exception = redactedExceptionProjection( ...
+                    records(index).exception);
+            end
         end
 
         function value = semanticIdentifier(value, name)
@@ -166,6 +175,90 @@ classdef (Hidden, Sealed) SessionEventValidator
             end
         end
     end
+end
+
+function value = diagnosticText(value, name)
+if ~(ischar(value) || (isstring(value) && isscalar(value))) || ...
+        ismissing(string(value))
+    error("labkit:app:contract:InvalidValue", ...
+        "Session event %s must be scalar text.", name);
+end
+value = string(value);
+if strlength(value) > 65536
+    error("labkit:app:contract:InvalidValue", ...
+        "Session event %s exceeds the live diagnostic-text limit.", name);
+end
+end
+
+function attributes = diagnosticAttributes(attributes)
+if ~isstruct(attributes) || ~isscalar(attributes)
+    error("labkit:app:contract:InvalidValue", ...
+        "Session event attributes must be one scalar struct.");
+end
+if numel(fieldnames(attributes)) > 64
+    error("labkit:app:contract:InvalidValue", ...
+        "Session event attributes exceed the live diagnostic field limit.");
+end
+try
+    encoded = jsonencode(attributes);
+catch
+    error("labkit:app:contract:InvalidValue", ...
+        "Session event attributes must be JSON serializable.");
+end
+if utf8ByteCount(encoded) > 262144
+    error("labkit:app:contract:InvalidValue", ...
+        "Session event attributes exceed the diagnostic JSON byte limit.");
+end
+end
+
+function value = retainedTextProjection(value)
+try
+    value = labkit.app.internal.SessionEventValidator.privacySafeText( ...
+        value, "message");
+catch
+    value = "Sensitive diagnostic detail was removed from this redacted export.";
+end
+end
+
+function attributes = retainedAttributesProjection(attributes)
+try
+    attributes = ...
+        labkit.app.internal.SessionEventValidator.privacySafeAttributes( ...
+        attributes);
+catch
+    attributes = struct("reason", "sensitive-detail-redacted");
+end
+end
+
+function exception = redactedExceptionProjection(exception)
+if ~isstruct(exception) || ~isscalar(exception) || ...
+        ~all(isfield(exception, ["identifier", "message", "stack"]))
+    exception = struct("identifier", "", "message", "", ...
+        "stack", strings(0, 1));
+    return;
+end
+exception.identifier = string(exception.identifier);
+if strlength(exception.identifier) == 0
+    exception.message = "";
+    exception.stack = strings(0, 1);
+    return;
+end
+exception.message = "Exception captured.";
+stack = string(exception.stack(:));
+for index = 1:numel(stack)
+    marker = strfind(stack(index), " (");
+    if ~isempty(marker)
+        stack(index) = extractBefore(stack(index), marker(1));
+    end
+    try
+        stack(index) = ...
+            labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
+            stack(index), "exceptionStackName");
+    catch
+        stack(index) = "unknown";
+    end
+end
+exception.stack = stack;
 end
 
 function value = ternary(condition, trueValue, falseValue)

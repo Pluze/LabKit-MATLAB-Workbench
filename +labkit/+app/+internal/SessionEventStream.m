@@ -1,5 +1,5 @@
 classdef (Hidden, Sealed) SessionEventStream < handle
-    %SESSIONEVENTSTREAM Private privacy-safe in-memory session event stream.
+    %SESSIONEVENTSTREAM Private full-detail in-memory session event stream.
     % Expected callers are the private App Runtime and focused framework tests.
     % Records are validated before entering the bounded ring; persistence and
     % viewer projections intentionally belong to later migration checkpoints.
@@ -72,10 +72,11 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 category, "category");
             eventName = labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
                 eventName, "eventName");
-            message = labkit.app.internal.SessionEventValidator.privacySafeText( ...
-                message, "message");
-            attributes = labkit.app.internal.SessionEventValidator.privacySafeAttributes( ...
-                optionValue(varargin, "Attributes", struct()));
+            values = labkit.app.internal.SessionEventValidator.logInputs( ...
+                "debug", eventName, message, category, "developer", ...
+                optionValue(varargin, "Attributes", struct()), []);
+            message = values.message;
+            attributes = values.attributes;
             obj.OperationSequence = obj.OperationSequence + 1;
             parent = obj.currentOperation();
             operation = struct( ...
@@ -530,6 +531,11 @@ if ~isa(value, "MException") || ~isscalar(value)
         "Session event Exception must be a scalar MException.");
 end
 exception.identifier = string(value.identifier);
-exception.message = "Exception captured.";
-exception.stack = string({value.stack.name}).';
+exception.message = string(value.message);
+stack = value.stack;
+exception.stack = strings(numel(stack), 1);
+for index = 1:numel(stack)
+    exception.stack(index) = string(stack(index).name) + " (" + ...
+        string(stack(index).file) + ":" + string(stack(index).line) + ")";
+end
 end

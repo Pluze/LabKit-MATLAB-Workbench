@@ -68,8 +68,9 @@ Every current LabKit app exposes one top-level **Tools** menu:
   document.
 - **Tools > Diagnostics > Open Session Log...** opens the current App's named
   live log with Full TRACE, DEBUG, and User views.
-- **Tools > Diagnostics > Export Diagnostic Bundle** writes an automatically
-  named privacy-safe ZIP beneath `artifacts/diagnostics/`.
+- **Tools > Diagnostics > Export Diagnostic Bundle** asks for redacted or
+  complete-sensitive content, then writes an automatically named ZIP beneath
+  `artifacts/diagnostics/`.
 
 State files preserve app projects. They are different from exported result
 files and from ignored diagnostic manifests under `artifacts/diagnostics/`.

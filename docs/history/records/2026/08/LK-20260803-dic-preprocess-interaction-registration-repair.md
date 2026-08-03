@@ -7,7 +7,6 @@ sequence: 167
 type: fix
 compatibility: compatible
 component: `labkit_DICPreprocess_app` | `1.7.1 -> 1.7.2`
-component: `labkit.app`
 scope: DIC preprocess interaction repair
 scope: Rigid image registration
 ```
@@ -75,7 +74,7 @@ finer structural scoring recovered the same rotation neighborhood.
 
 - `labkittest.run(Owner="apps/dic/dic_preprocess/analysisrun", Contract="scientific")`
 - `labkittest.run(Owner="apps/dic/dic_preprocess/workbench", Contract="presentation")`
-- The privacy-safe diagnostic bundle reported
+- The redacted diagnostic bundle reported
   `labkit:app:runtime:InvalidPointSlotsValue` from mask activation.
 
 ## Known limitations and follow-up

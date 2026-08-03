@@ -101,11 +101,15 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
         end
 
         function destination = exportBundle( ...
-                obj, destination, excludeOperationId, privateState)
+                obj, destination, excludeOperationId, ...
+                includeSensitiveDetails, privateState)
             if nargin < 3
                 excludeOperationId = "";
             end
             if nargin < 4
+                includeSensitiveDetails = false;
+            end
+            if nargin < 5
                 privateState = [];
             end
             obj.Journal.flush();
@@ -144,11 +148,14 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                 "degradation", degradation, "capture", capture);
             destination = ...
                 labkit.app.internal.SessionDiagnosticBundle.write( ...
-                snapshot, destination, privateState);
+                snapshot, destination, includeSensitiveDetails, privateState);
         end
 
         function destination = exportTextFallback( ...
-                obj, preferredDestination, failure)
+                obj, preferredDestination, failure, includeSensitiveDetails)
+            if nargin < 4
+                includeSensitiveDetails = false;
+            end
             % Keep this path independent of the journal and ZIP staging so a
             % failure in either subsystem cannot consume the last evidence.
             try
@@ -182,7 +189,7 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                 "failureIdentifier", failureIdentifier);
             destination = ...
                 labkit.app.internal.SessionDiagnosticBundle.writeFallback( ...
-                snapshot, preferredDestination);
+                snapshot, preferredDestination, includeSensitiveDetails);
         end
 
         function close(obj)
