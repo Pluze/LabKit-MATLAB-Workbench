@@ -288,7 +288,7 @@ classdef (Sealed) Snapshot
 
     methods (Access = { ...
             ?labkit.app.internal.CompiledDefinition, ...
-            ?labkit.app.internal.MatlabPlatformAdapter})
+            ?labkit.app.internal.native.MatlabPlatformAdapter})
         function operations = operationsForCompiler(obj)
             operations = obj.Operations;
         end

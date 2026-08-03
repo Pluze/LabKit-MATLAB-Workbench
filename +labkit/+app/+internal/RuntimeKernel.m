@@ -78,7 +78,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 labkit.app.internal.RuntimeContractBoundary.validateState( ...
                     obj.Application, obj.State);
                 obj.updateStartup("Preparing first view...");
-                if isa(obj.Adapter, "labkit.app.internal.MatlabPlatformAdapter")
+                if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                     obj.Adapter.attachRuntime(obj);
                 end
                 obj.Presentation = obj.present(obj.State);
@@ -90,14 +90,14 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 end
                 obj.Recorder.finish( ...
                     startupOperation, "completed", "committed", []);
-                if isa(obj.Adapter, "labkit.app.internal.MatlabPlatformAdapter")
+                if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                     obj.Adapter.finishStartup();
                 end
             catch cause
                 obj.Recorder.finish( ...
                     startupOperation, "failed", "notApplicable", cause);
                 if isa(obj.Adapter, ...
-                        "labkit.app.internal.MatlabPlatformAdapter")
+                        "labkit.app.internal.native.MatlabPlatformAdapter")
                     obj.StartupFailed = true;
                     obj.Adapter.failStartup(cause);
                     return
@@ -119,7 +119,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 return;
             end
             obj.Processing = true;
-            if isa(obj.Adapter, "labkit.app.internal.MatlabPlatformAdapter")
+            if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                 obj.Adapter.beginBusy( ...
                     labkit.app.internal.RuntimeContractBoundary.busyMessage( ...
                     obj.Contract, binding));
@@ -264,7 +264,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function figure = figureHandle(obj)
-            if ~isa(obj.Adapter, "labkit.app.internal.MatlabPlatformAdapter")
+            if ~isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                 error("labkit:app:runtime:InvariantFailure", ...
                     "Headless runtime has no MATLAB figure.");
             end
@@ -272,7 +272,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function showFigure(obj)
-            if isa(obj.Adapter, "labkit.app.internal.MatlabPlatformAdapter")
+            if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                 obj.Adapter.show(obj.formattedWindowTitle());
             end
         end
@@ -827,7 +827,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.writeResult(folder, result);
             builtins.sourcePaths = @(sources, ids) ...
                 obj.sourcePaths(sources, ids);
-            if isa(obj.Adapter, "labkit.app.internal.MatlabPlatformAdapter")
+            if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                 builtins.alert = @(message, title) obj.Adapter.alert(message, title);
                 builtins.choose = @(prompt, choices, title, ...
                     defaultChoice, cancelChoice) ...
@@ -965,7 +965,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.CurrentStatus = message;
                 if obj.Processing && ...
                         isa(obj.Adapter, ...
-                        "labkit.app.internal.MatlabPlatformAdapter")
+                        "labkit.app.internal.native.MatlabPlatformAdapter")
                     obj.Adapter.updateBusy(message);
                 end
             end
@@ -1057,13 +1057,13 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function finishProcessing(obj)
             obj.Processing = false;
-            if isa(obj.Adapter, "labkit.app.internal.MatlabPlatformAdapter")
+            if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                 obj.Adapter.endBusy(obj.Presentation);
             end
         end
 
         function updateStartup(obj, message)
-            if isa(obj.Adapter, "labkit.app.internal.MatlabPlatformAdapter")
+            if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                 obj.Adapter.startupUpdate(message);
             end
         end
@@ -1078,7 +1078,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function notifyUser(obj, message, title)
             if isa(obj.Adapter, ...
-                    "labkit.app.internal.MatlabPlatformAdapter")
+                    "labkit.app.internal.native.MatlabPlatformAdapter")
                 obj.Adapter.alert(message, title, "info");
             else
                 obj.Context.alert(message, title);
@@ -1086,7 +1086,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function refreshWindowTitle(obj)
-            if isa(obj.Adapter, "labkit.app.internal.MatlabPlatformAdapter")
+            if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                 obj.Adapter.setWindowTitle(obj.formattedWindowTitle());
             end
         end

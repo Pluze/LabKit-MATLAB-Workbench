@@ -31,5 +31,5 @@ function spec = pointSlots(id, onChanged, varargin)
 options = labkit.app.internal.OptionParser.parse( ...
     "labkit.app.interaction.pointSlots", ...
     ["Axis", "Style", "Instruction", "ViewportPolicy"], varargin{:});
-spec = labkit.app.internal.InteractionSpec("pointSlots",id,onChanged,options);
+spec = labkit.app.internal.interaction.InteractionSpec("pointSlots",id,onChanged,options);
 end

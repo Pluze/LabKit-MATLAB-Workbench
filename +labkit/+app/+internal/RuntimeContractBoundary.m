@@ -111,7 +111,7 @@ classdef (Sealed, Hidden) RuntimeContractBoundary
             end
             switch string(platform)
                 case "headless"
-                    adapter = labkit.app.internal.HeadlessPlatformAdapter();
+                    adapter = labkit.app.internal.native.HeadlessPlatformAdapter();
                 case "matlab"
                     plan = contract.PlatformPlan;
                     title = application.Title + " v" + ...
@@ -120,7 +120,7 @@ classdef (Sealed, Hidden) RuntimeContractBoundary
                     if ~isempty(application.ProjectSchema)
                         title = title + " *";
                     end
-                    adapter = labkit.app.internal.MatlabPlatformAdapter( ...
+                    adapter = labkit.app.internal.native.MatlabPlatformAdapter( ...
                         plan, title);
                 otherwise
                     error("labkit:app:runtime:InvariantFailure", ...

@@ -61,7 +61,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 startsWith(files, ["+labkit/" "apps/" "tools/"]));
             allowedFiles = [ ...
                 "+labkit/+app/+internal/+launcher/dispatch.m"
-                "+labkit/+app/+internal/private/FigureInteractionHub.m"
+                "+labkit/+app/+internal/+native/private/FigureInteractionHub.m"
                 "tools/profiling/profileLabKitTarget.m"];
             markers = [ ...
                 "Dynamic extension boundary"

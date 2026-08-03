@@ -3,7 +3,7 @@ function installContentGrid(obj, node, component)
     if isempty(node.ChildIds)
         return;
     end
-    policy = labkit.app.internal.NativeAdapterValues.layoutPolicy();
+    policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
     padding = policy.ContentPadding;
     if node.Kind == "group"
         padding = [0 0 0 0];
@@ -55,14 +55,14 @@ function installContentGrid(obj, node, component)
         end
         grid.RowHeight = heights;
         if node.Kind == "tab" && isprop(grid, "Scrollable")
-            grid.Scrollable = labkit.app.internal.NativeAdapterValues.onOff(~singleGrowable);
+            grid.Scrollable = labkit.app.internal.native.NativeAdapterValues.onOff(~singleGrowable);
         end
     end
     grid.Tag = char(node.Id + ".layout");
     obj.Layouts(char(node.Id)) = grid;
     if node.Kind == "tab"
         for k = 1:numel(node.ChildIds)
-            labkit.app.internal.NativeAdapterValues.installRowDivider(obj.Figure, grid, 2 * k - 1, 2 * k);
+            labkit.app.internal.native.NativeAdapterValues.installRowDivider(obj.Figure, grid, 2 * k - 1, 2 * k);
         end
     end
 end

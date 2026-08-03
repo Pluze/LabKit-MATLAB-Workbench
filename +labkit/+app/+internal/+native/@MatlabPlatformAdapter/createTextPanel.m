@@ -16,7 +16,7 @@ function textArea = createTextPanel(obj, node, parent, config, isLog)
             Padding=[7 7 7 7], RowHeight={30, '1x'}, ...
             RowSpacing=4);
         follow = uibutton(grid, Text="Pause auto-scroll");
-        labkit.app.internal.NativeAdapterValues.fitText(follow, ...
+        labkit.app.internal.native.NativeAdapterValues.fitText(follow, ...
             CharsPerStep=18, MaxShrinkSteps=2);
         follow.Tag = char(node.Id + ".follow");
         follow.Layout.Row = 1;
@@ -38,7 +38,7 @@ function textArea = createTextPanel(obj, node, parent, config, isLog)
         grid = uigridlayout(panel, [1 1], Padding=[7 7 7 7]);
         textArea = uitextarea(grid, Editable="off");
         if isfield(config, "Lines") && config.Lines <= 2
-            policy = labkit.app.internal.NativeAdapterValues.layoutPolicy();
+            policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
             textArea.FontSize = policy.SummaryFontSize;
             setappdata(textArea, ...
                 "labkitAppTextFitMinFontSize", policy.SummaryFontSize);

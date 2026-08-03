@@ -1,6 +1,6 @@
 function installWorkbenchLayout(obj, node, component)
 % Class-folder implementation of MatlabPlatformAdapter.installWorkbenchLayout.
-    policy = labkit.app.internal.NativeAdapterValues.layoutPolicy();
+    policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
     nodes = obj.nodes(node.ChildIds);
     hasWorkspace = any(string({nodes.Kind}) == "workspace");
     columns = 1 + hasWorkspace;
@@ -41,7 +41,7 @@ function installWorkbenchLayout(obj, node, component)
     controlContainer.Layout.Column = 1;
     obj.WorkbenchControls = controlParent;
     if hasWorkspace
-        labkit.app.internal.NativeAdapterValues.installColumnDivider(obj.Figure, grid, 1, 2);
+        labkit.app.internal.native.NativeAdapterValues.installColumnDivider(obj.Figure, grid, 1, 2);
         workspaceNode = nodes(string({nodes.Kind}) == "workspace");
         workspace = uipanel(grid, ...
             Title=char(workspaceNode.Configuration.Title), ...

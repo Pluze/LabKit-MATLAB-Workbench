@@ -21,11 +21,11 @@ function createAxes(obj, node, parent)
         case "pair"
             layout = uigridlayout(root, [1 axisCount]);
             layout.RowHeight = {'1x'};
-            layout.ColumnWidth = labkit.app.internal.NativeAdapterValues.repeatedOrConfigured( ...
+            layout.ColumnWidth = labkit.app.internal.native.NativeAdapterValues.repeatedOrConfigured( ...
                 config.ColumnWidths, axisCount);
         case "stack"
             layout = uigridlayout(root, [axisCount 1]);
-            layout.RowHeight = labkit.app.internal.NativeAdapterValues.repeatedOrConfigured( ...
+            layout.RowHeight = labkit.app.internal.native.NativeAdapterValues.repeatedOrConfigured( ...
                 config.RowHeights, axisCount);
             layout.ColumnWidth = {'1x'};
         otherwise
@@ -40,7 +40,7 @@ function createAxes(obj, node, parent)
     layout.ColumnSpacing = 2;
     for k = 1:numel(node.AxisIds)
         axisId = node.AxisIds(k);
-        key = labkit.app.internal.NativeAdapterValues.axisKey(node.Id, axisId);
+        key = labkit.app.internal.native.NativeAdapterValues.axisKey(node.Id, axisId);
         ax = uiaxes(layout, Tag=char(key));
         if config.Layout == "stack"
             ax.Layout.Row = k;
@@ -52,9 +52,9 @@ function createAxes(obj, node, parent)
             ax.Layout.Row = 1;
             ax.Layout.Column = 1;
         end
-        title(ax, labkit.app.internal.NativeAdapterValues.axisText(config.AxisTitles, node.AxisIds, k));
-        xlabel(ax, labkit.app.internal.NativeAdapterValues.axisText(config.XLabels, strings(1, axisCount), k));
-        ylabel(ax, labkit.app.internal.NativeAdapterValues.axisText(config.YLabels, strings(1, axisCount), k));
+        title(ax, labkit.app.internal.native.NativeAdapterValues.axisText(config.AxisTitles, node.AxisIds, k));
+        xlabel(ax, labkit.app.internal.native.NativeAdapterValues.axisText(config.XLabels, strings(1, axisCount), k));
+        ylabel(ax, labkit.app.internal.native.NativeAdapterValues.axisText(config.YLabels, strings(1, axisCount), k));
         if config.ScrollZoomAxes(k) ~= "xy"
             setappdata(ax, "labkitPreviewScrollZoomAxes", ...
                 config.ScrollZoomAxes(k));

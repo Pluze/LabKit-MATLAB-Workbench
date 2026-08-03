@@ -438,7 +438,7 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
 
         function path = safeStartPath(value)
-        path = labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+        path = labkit.app.internal.native.NativeAdapterValues.dialogStartFolder( ...
             "input", value);
         end
 

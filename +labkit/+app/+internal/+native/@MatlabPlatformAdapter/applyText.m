@@ -10,7 +10,7 @@ function applyText(~, component, value)
         else
             component.UserData.Status.Value = cellstr(string(value));
         end
-        labkit.app.internal.NativeAdapterValues.fitText(component.UserData.Status);
+        labkit.app.internal.native.NativeAdapterValues.fitText(component.UserData.Status);
         return
     elseif isprop(component, "Text")
         component.Text = value;
@@ -19,7 +19,7 @@ function applyText(~, component, value)
     elseif isprop(component, "Title")
         component.Title = value;
     end
-    labkit.app.internal.NativeAdapterValues.fitText(component);
+    labkit.app.internal.native.NativeAdapterValues.fitText(component);
     if isappdata(component, "labkitAppLogFollowLatest") && ...
             getappdata(component, "labkitAppLogFollowLatest")
         try

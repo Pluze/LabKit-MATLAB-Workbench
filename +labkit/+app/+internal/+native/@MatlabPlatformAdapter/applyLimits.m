@@ -1,14 +1,14 @@
 function applyLimits(~, component, limits)
 % Class-folder implementation of MatlabPlatformAdapter.applyLimits.
-    rangeEnd = labkit.app.internal.NativeAdapterValues.linkedRangeEnd(component);
+    rangeEnd = labkit.app.internal.native.NativeAdapterValues.linkedRangeEnd(component);
     if ~isempty(rangeEnd)
         component.Limits = limits;
         rangeEnd.Limits = limits;
         return
     end
-    linked = labkit.app.internal.NativeAdapterValues.linkedPannerSlider(component);
+    linked = labkit.app.internal.native.NativeAdapterValues.linkedPannerSlider(component);
     if isempty(linked)
-        labkit.app.internal.NativeAdapterValues.setIfProperty(component, "Limits", limits);
+        labkit.app.internal.native.NativeAdapterValues.setIfProperty(component, "Limits", limits);
         return
     end
     value = min(limits(2), ...

@@ -6,11 +6,11 @@ function applyFilePaths(~, component, paths)
         data.ItemStatuses = strings(1, 0);
     end
     component.UserData = data;
-    labels = labkit.app.internal.NativeAdapterValues.formatFileLabels(paths, data.ItemStatuses);
+    labels = labkit.app.internal.native.NativeAdapterValues.formatFileLabels(paths, data.ItemStatuses);
     if isempty(labels) && ~data.Compact
         labels = data.EmptyText;
     end
-    labkit.app.internal.NativeAdapterValues.setIfProperty(component, "Items", labels);
+    labkit.app.internal.native.NativeAdapterValues.setIfProperty(component, "Items", labels);
     if ~isstruct(component.UserData) || ...
             ~isfield(component.UserData, "Status") || ...
             isempty(component.UserData.Status) || ...

@@ -11,11 +11,11 @@ function installTableCallbacks(obj, node, component)
         if isprop(component, "SelectionChangedFcn")
             component.SelectionChangedFcn = @(~, event) ...
                 obj.runUserInput(@() obj.Runtime.applyTableSelection( ...
-                    node.Id, labkit.app.internal.NativeAdapterValues.tableSelectionCells(event)));
+                    node.Id, labkit.app.internal.native.NativeAdapterValues.tableSelectionCells(event)));
         else
             component.CellSelectionCallback = @(~, event) ...
                 obj.runUserInput(@() obj.Runtime.applyTableSelection( ...
-                    node.Id, labkit.app.internal.NativeAdapterValues.tableSelectionCells(event)));
+                    node.Id, labkit.app.internal.native.NativeAdapterValues.tableSelectionCells(event)));
         end
     end
 end

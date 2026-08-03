@@ -40,5 +40,5 @@ end
 function spec = makeSpec(kind, id, callback, names, varargin)
 options = labkit.app.internal.OptionParser.parse( ...
     "labkit.app.interaction." + kind, names, varargin{:});
-spec = labkit.app.internal.InteractionSpec(kind, id, callback, options);
+spec = labkit.app.internal.interaction.InteractionSpec(kind, id, callback, options);
 end

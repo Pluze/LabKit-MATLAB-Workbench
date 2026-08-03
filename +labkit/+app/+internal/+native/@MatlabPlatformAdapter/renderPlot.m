@@ -5,10 +5,10 @@ function renderPlot(obj, operation)
     axesById = struct();
     axes = gobjects(1, numel(node.AxisIds));
     for k = 1:numel(node.AxisIds)
-        axes(k) = obj.Axes(char(labkit.app.internal.NativeAdapterValues.axisKey(node.Id, node.AxisIds(k))));
+        axes(k) = obj.Axes(char(labkit.app.internal.native.NativeAdapterValues.axisKey(node.Id, node.AxisIds(k))));
         axesById.(char(node.AxisIds(k))) = axes(k);
     end
-    viewport = labkit.app.internal.NativeAdapterValues.captureViewport(axes);
+    viewport = labkit.app.internal.native.NativeAdapterValues.captureViewport(axes);
     value = operation.Value;
     revisionKey = "labkitAppPlotViewRevision";
     preserveViewport = all(arrayfun(@(ax) ...
@@ -20,6 +20,6 @@ function renderPlot(obj, operation)
         setappdata(axes(k), revisionKey, value.ViewRevision);
     end
     if preserveViewport
-        labkit.app.internal.NativeAdapterValues.restoreViewport(axes, viewport);
+        labkit.app.internal.native.NativeAdapterValues.restoreViewport(axes, viewport);
     end
 end

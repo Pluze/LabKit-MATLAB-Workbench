@@ -9,7 +9,7 @@ function targets = interactionTargetAxes(obj)
             continue;
         end
         for axisId = node.AxisIds
-            key = labkit.app.internal.NativeAdapterValues.axisKey(node.Id, axisId);
+            key = labkit.app.internal.native.NativeAdapterValues.axisKey(node.Id, axisId);
             targetId = key;
             if isscalar(node.AxisIds)
                 targetId = node.Id;

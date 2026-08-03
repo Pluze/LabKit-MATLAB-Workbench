@@ -33,7 +33,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             ?labkit.app.internal.RuntimeKernel, ...
             ?labkit.app.internal.RuntimeContractBoundary})
         function obj = MatlabPlatformAdapter(plan, title)
-            obj.Plan = labkit.app.internal.NativeAdapterValues.validatePlan(plan);
+            obj.Plan = labkit.app.internal.native.NativeAdapterValues.validatePlan(plan);
             if nargin < 2
                 title = "LabKit application";
             end
@@ -45,7 +45,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 "ValueType", "any");
             obj.DialogFolders = containers.Map("KeyType", "char", ...
                 "ValueType", "char");
-            policy = labkit.app.internal.NativeAdapterValues.layoutPolicy();
+            policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
             obj.Figure = uifigure(Visible="off", ...
                 Name=char(string(title)), ...
                 Position=policy.InitialFigurePosition);
@@ -77,7 +77,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             obj.InteractionDeclarations = obj.collectInteractionDeclarations();
             targets = obj.interactionTargetAxes();
             if ~isempty(targets)
-                obj.InteractionController = labkit.app.internal.NativeAdapterValues.interactionController( ...
+                obj.InteractionController = labkit.app.internal.native.NativeAdapterValues.interactionController( ...
                     obj.Figure, targets, ...
                     @(id, signal, value) ...
                     obj.runUserInput(@() ...
@@ -131,7 +131,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         function show(obj, title)
             if ~isempty(obj.Figure) && isvalid(obj.Figure)
                 obj.setWindowTitle(title);
-                mode = labkit.app.internal.NativeAdapterValues.startupGuiMode();
+                mode = labkit.app.internal.native.NativeAdapterValues.startupGuiMode();
                 if mode == "hidden"
                     return
                 end
@@ -172,7 +172,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 obj.StartupLabel.Text = char(string(message));
             end
             if toc(obj.StartupStarted) >= 0.25 && ...
-                    ~any(labkit.app.internal.NativeAdapterValues.startupGuiMode() == ["hidden", "minimized"])
+                    ~any(labkit.app.internal.native.NativeAdapterValues.startupGuiMode() == ["hidden", "minimized"])
                 obj.StartupPanel.Visible = "on";
                 obj.Figure.Visible = "on";
                 drawnow limitrate nocallbacks
@@ -196,7 +196,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if isappdata(obj.Figure, "labkitAppBusy")
                 rmappdata(obj.Figure, "labkitAppBusy");
             end
-            if labkit.app.internal.NativeAdapterValues.startupGuiMode() == "minimized" && ...
+            if labkit.app.internal.native.NativeAdapterValues.startupGuiMode() == "minimized" && ...
                     isprop(obj.Figure, "WindowState")
                 obj.Figure.Visible = "on";
                 obj.Figure.WindowState = "minimized";
@@ -209,7 +209,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if isempty(obj.Figure) || ~isvalid(obj.Figure)
                 return
             end
-            message = "Startup failed: " + labkit.app.internal.NativeAdapterValues.deepestCauseMessage(cause);
+            message = "Startup failed: " + labkit.app.internal.native.NativeAdapterValues.deepestCauseMessage(cause);
             if ~isempty(obj.StartupLabel) && isvalid(obj.StartupLabel)
                 obj.StartupLabel.Text = char(message);
             end
@@ -233,7 +233,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 icon = "error";
             end
             if string(obj.Figure.Visible) == "off" && ...
-                    labkit.app.internal.NativeAdapterValues.startupGuiMode() == ...
+                    labkit.app.internal.native.NativeAdapterValues.startupGuiMode() == ...
                     "hidden"
                 setappdata(obj.Figure, "labkitAppLastAlert", struct( ...
                     "message", string(message), "title", string(title), ...
@@ -255,49 +255,49 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function result = chooseInputFile(~, filters, startPath)
-            filters = labkit.app.internal.NativeAdapterValues.dialogFilters(filters);
+            filters = labkit.app.internal.native.NativeAdapterValues.dialogFilters(filters);
             [name, folder] = uigetfile(filters, "Choose input file", ...
-                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                labkit.app.internal.native.NativeAdapterValues.dialogStartFolder( ...
                 "input", startPath));
             if ~isequal(name, 0)
-                labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                labkit.app.internal.native.NativeAdapterValues.rememberDialogFolder( ...
                     "input", folder);
             end
-            result = labkit.app.internal.NativeAdapterValues.dialogPath(name, folder);
+            result = labkit.app.internal.native.NativeAdapterValues.dialogPath(name, folder);
         end
 
         function result = chooseInputFolder(~, startPath)
             folder = uigetdir( ...
-                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                labkit.app.internal.native.NativeAdapterValues.dialogStartFolder( ...
                 "input", startPath), "Choose input folder");
             if ~isequal(folder, 0)
-                labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                labkit.app.internal.native.NativeAdapterValues.rememberDialogFolder( ...
                     "input", folder);
             end
-            result = labkit.app.internal.NativeAdapterValues.folderDialogPath(folder);
+            result = labkit.app.internal.native.NativeAdapterValues.folderDialogPath(folder);
         end
 
         function result = chooseOutputFile(~, filters, startPath)
-            filters = labkit.app.internal.NativeAdapterValues.dialogFilters(filters);
+            filters = labkit.app.internal.native.NativeAdapterValues.dialogFilters(filters);
             [name, folder] = uiputfile(filters, "Choose output file", ...
-                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                labkit.app.internal.native.NativeAdapterValues.dialogStartFolder( ...
                 "output", startPath));
             if ~isequal(name, 0)
-                labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                labkit.app.internal.native.NativeAdapterValues.rememberDialogFolder( ...
                     "output", folder);
             end
-            result = labkit.app.internal.NativeAdapterValues.dialogPath(name, folder);
+            result = labkit.app.internal.native.NativeAdapterValues.dialogPath(name, folder);
         end
 
         function result = chooseOutputFolder(~, startPath)
             folder = uigetdir( ...
-                labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                labkit.app.internal.native.NativeAdapterValues.dialogStartFolder( ...
                 "output", startPath), "Choose output folder");
             if ~isequal(folder, 0)
-                labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+                labkit.app.internal.native.NativeAdapterValues.rememberDialogFolder( ...
                     "output", folder);
             end
-            result = labkit.app.internal.NativeAdapterValues.folderDialogPath(folder);
+            result = labkit.app.internal.native.NativeAdapterValues.folderDialogPath(folder);
         end
     end
 
@@ -491,7 +491,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             for k = 1:numel(handles)
                 output = filepath;
                 if numel(handles) > 1
-                    output = labkit.app.internal.NativeAdapterValues.plotFilepath(filepath, handles(k), k);
+                    output = labkit.app.internal.native.NativeAdapterValues.plotFilepath(filepath, handles(k), k);
                 end
                 exportgraphics(handles(k), output, ContentType="image");
             end
@@ -590,7 +590,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             obj.ClosePrompt = uipanel(obj.Figure, ...
                 Title="Close LabKit app?", ...
                 Tag="labkitAppClosePrompt", ...
-                Position=labkit.app.internal.NativeAdapterValues.closePromptPosition(obj.Figure));
+                Position=labkit.app.internal.native.NativeAdapterValues.closePromptPosition(obj.Figure));
             grid = uigridlayout(obj.ClosePrompt, [2 3], ...
                 RowHeight={'1x', 34}, ColumnWidth={'1x', 86, 86}, ...
                 Padding=[10 8 10 8], RowSpacing=6, ColumnSpacing=8);
@@ -624,7 +624,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             value = min(component.Limits(2), ...
                 max(component.Limits(1), double(value)));
             component.Value = value;
-            linked = labkit.app.internal.NativeAdapterValues.linkedPannerSlider(component);
+            linked = labkit.app.internal.native.NativeAdapterValues.linkedPannerSlider(component);
             if ~isempty(linked)
                 linked.Value = value;
             end
@@ -633,7 +633,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         function rangeChanged(obj, target)
             component = obj.component(target);
-            rangeEnd = labkit.app.internal.NativeAdapterValues.linkedRangeEnd(component);
+            rangeEnd = labkit.app.internal.native.NativeAdapterValues.linkedRangeEnd(component);
             value = [component.Value, rangeEnd.Value];
             obj.Runtime.applyControlValue(target, value);
         end
@@ -642,13 +642,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         function dispatchTableEdit(obj, target, component, event)
             indices = event.Indices;
-            rowId = labkit.app.internal.NativeAdapterValues.tableLabel(component.RowName, indices(1));
-            columnId = labkit.app.internal.NativeAdapterValues.tableLabel(component.ColumnName, indices(2));
+            rowId = labkit.app.internal.native.NativeAdapterValues.tableLabel(component.RowName, indices(1));
+            columnId = labkit.app.internal.native.NativeAdapterValues.tableLabel(component.ColumnName, indices(2));
             edit = labkit.app.event.TableCellEdit( ...
                 RowIndex=indices(1), ColumnIndex=indices(2), ...
                 RowId=rowId, ColumnId=columnId, ...
                 PreviousValue=event.PreviousData, ...
-                NewValue=labkit.app.internal.NativeAdapterValues.editedValue(event), Data=component.Data);
+                NewValue=labkit.app.internal.native.NativeAdapterValues.editedValue(event), Data=component.Data);
             obj.Runtime.applyTableEdit(target, edit);
         end
 
@@ -657,14 +657,14 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         function chooseFiles(obj, target)
             config = obj.node(target).Configuration;
             startPath = obj.dialogStartFolder(target, config.StartPath);
-            [names, folder] = uigetfile(labkit.app.internal.NativeAdapterValues.dialogFilters(config.Filters), ...
+            [names, folder] = uigetfile(labkit.app.internal.native.NativeAdapterValues.dialogFilters(config.Filters), ...
                 char(config.ChooseLabel), ...
-                startPath, MultiSelect=labkit.app.internal.NativeAdapterValues.multiSelectValue(config.SelectionMode));
+                startPath, MultiSelect=labkit.app.internal.native.NativeAdapterValues.multiSelectValue(config.SelectionMode));
             if isequal(names, 0)
                 return;
             end
             obj.DialogFolders(char(target)) = char(folder);
-            labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+            labkit.app.internal.native.NativeAdapterValues.rememberDialogFolder( ...
                 "input", folder);
             paths = string(folder) + filesep + string(names);
             if config.SelectionMode == "single"
@@ -685,9 +685,9 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 return
             end
             obj.DialogFolders(char(target)) = char(folder);
-            labkit.app.internal.NativeAdapterValues.rememberDialogFolder( ...
+            labkit.app.internal.native.NativeAdapterValues.rememberDialogFolder( ...
                 "input", folder);
-            paths = labkit.app.internal.NativeAdapterValues.filesInFolder(folder, config.Filters, recursive);
+            paths = labkit.app.internal.native.NativeAdapterValues.filesInFolder(folder, config.Filters, recursive);
             if recursive && ...
                     numel(paths) > config.FolderWarningThreshold
                 message = sprintf([ ...
@@ -713,7 +713,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         function removeSelectedFiles(obj, target, list)
             obj.Runtime.removeFileSelection( ...
-                target, labkit.app.internal.NativeAdapterValues.selectedIndices(list));
+                target, labkit.app.internal.native.NativeAdapterValues.selectedIndices(list));
         end
 
         function folder = dialogStartFolder(obj, target, configured)
@@ -725,7 +725,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             end
             folder = char(string(configured));
             if isempty(folder) || ~isfolder(folder)
-                folder = labkit.app.internal.NativeAdapterValues.dialogStartFolder( ...
+                folder = labkit.app.internal.native.NativeAdapterValues.dialogStartFolder( ...
                     "input", "");
             end
         end

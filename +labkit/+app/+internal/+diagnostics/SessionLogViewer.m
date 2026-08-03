@@ -44,7 +44,7 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
                 return;
             end
             mode = ...
-                labkit.app.internal.NativeAdapterValues.startupGuiMode();
+                labkit.app.internal.native.NativeAdapterValues.startupGuiMode();
             if mode == "hidden"
                 return;
             end

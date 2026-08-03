@@ -1,10 +1,10 @@
 function applyView(obj, view)
 % Class-folder implementation of MatlabPlatformAdapter.applyView.
-    operations = labkit.app.internal.NativeAdapterValues.orderedOperations(view.operationsForCompiler());
+    operations = labkit.app.internal.native.NativeAdapterValues.orderedOperations(view.operationsForCompiler());
     interactionOperations = operations(cellfun(@(operation) ...
-        labkit.app.internal.NativeAdapterValues.isInteractionKind(operation.Kind), operations));
+        labkit.app.internal.native.NativeAdapterValues.isInteractionKind(operation.Kind), operations));
     operations = operations(~cellfun(@(operation) ...
-        labkit.app.internal.NativeAdapterValues.isInteractionKind(operation.Kind), operations));
+        labkit.app.internal.native.NativeAdapterValues.isInteractionKind(operation.Kind), operations));
     for k = 1:numel(operations)
         obj.apply(operations{k});
     end

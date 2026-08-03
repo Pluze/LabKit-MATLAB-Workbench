@@ -11,7 +11,7 @@ function placeInParent(obj, node, component)
     if isempty(index)
         return
     end
-    handle = labkit.app.internal.NativeAdapterValues.layoutHandle(component);
+    handle = labkit.app.internal.native.NativeAdapterValues.layoutHandle(component);
     if isempty(handle) || ~isprop(handle, "Layout")
         return
     end
