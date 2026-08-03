@@ -15,10 +15,12 @@ labkit_FLIRThermal_app
 
 ## Inputs And Navigation
 
-Use **Add FLIR files or folder** to load one or more radiometric images. The
-selected row is the current image; Previous/Next change selection without
-discarding per-image display range or measurement annotations. Source files
-are read-only.
+Use **Add FLIR files** to select one or more radiometric images. Use the
+separate folder buttons for one folder or a recursive folder tree. Candidates
+that are not readable radiometric FLIR images are omitted with an aggregate
+notice. The selected row is the current image; Previous/Next change selection
+without discarding per-image display range or measurement annotations. Source
+files are read-only.
 
 ## Basic Workflow
 

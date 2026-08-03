@@ -474,6 +474,36 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(notice.icon, "info");
             clear fileCleanup cleanup
         end
+
+        function filePanelFailuresAlwaysShowAnAlert(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.fileList("files", ...
+                    Bind="project.inputs.sources", ...
+                    SelectionMode="single", MaxFiles=1, ...
+                    OnSelectionChanged=@failSourceSelection)});
+            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
+                labkit.app.project.Schema( ...
+                    Version=1, Create=@createUnreadableSourceProject, ...
+                    Validate=@validateSourceProject));
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            figureValue = runtime.figureHandle();
+            list = oneTagged(figureValue, "files");
+
+            list.ValueChangedFcn(list, []);
+            drawnow;
+
+            notice = getappdata(figureValue, "labkitAppLastAlert");
+            testCase.verifyEqual(notice.title, "Could not select file");
+            testCase.verifyEqual(notice.icon, "error");
+            testCase.verifySubstring(notice.message, ...
+                "Synthetic source parse failure");
+            clear cleanup
+        end
     end
 
     methods (Static, Access = private)
@@ -618,6 +648,16 @@ end
 
 function project = createCurrentProject()
 project = struct("parameters", struct("gain", 1, "unit", "base"));
+end
+
+function project = createUnreadableSourceProject()
+project = createSourceProject();
+project.inputs.sources = labkit.app.project.sourceRecord( ...
+    "source1", "files", "unreadable.dat", true);
+end
+
+function applicationState = failSourceSelection(applicationState, ~, ~)
+error("probe:UnreadableSource", "Synthetic source parse failure.");
 end
 
 function accepted = validateCurrentProject(project)

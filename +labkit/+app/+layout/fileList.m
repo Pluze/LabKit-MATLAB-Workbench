@@ -15,7 +15,10 @@ function node = fileList(id, varargin)
 %   Label - Reader-facing collection label. Default: id.
 %   Mode - "files" or "folder". Default: "files".
 %   Filters - File-dialog filter text row. Default: strings(1,0).
-%   SelectionMode - "single" or "multiple". Default: "multiple".
+%   SelectionMode - "single" or "multiple" for both the native file chooser
+%       and list-row selection. Multi-file collections use "multiple"; a
+%       single semantic input normally combines "single" with MaxFiles=1.
+%       Default: "multiple".
 %   MaxFiles - Positive scalar or Inf. Default: Inf.
 %   FolderWarningThreshold - Positive scalar or Inf. Default: 500.
 %   ShowStatus - Logical status visibility. Default: true.
@@ -59,6 +62,8 @@ function node = fileList(id, varargin)
 %
 % Errors:
 %   Throws labkit:app:contract:* for invalid options, paths, or callbacks.
+%   In a native App, an unhandled file-panel validation or parsing exception
+%   is rolled back and shown in an alert.
 %
 % Typical Call:
 %   node = labkit.app.layout.fileList("files", ...

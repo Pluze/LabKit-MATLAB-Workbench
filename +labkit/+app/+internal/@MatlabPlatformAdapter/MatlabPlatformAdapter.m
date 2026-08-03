@@ -428,11 +428,14 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         installUtilityMenus(obj)
 
-        function runUtility(obj, callback)
+        function runUtility(obj, callback, title)
+            if nargin < 3
+                title = "LabKit Utility";
+            end
             try
                 callback();
             catch cause
-                obj.alert(cause.message, "LabKit Utility");
+                obj.alert(cause.message, title);
             end
         end
 

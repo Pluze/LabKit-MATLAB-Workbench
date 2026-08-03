@@ -77,6 +77,9 @@ and renderer signatures, and builds one private native platform plan.
 
 - Bind ordinary state with `Bind="project..."` or `Bind="session..."`.
 - Use `labkit.app.layout.fileList` for portable file records and selection.
+  Multi-file collections use native multi-selection; a semantic single-file
+  slot declares `MaxFiles=1` and single selection. File buttons describe only
+  files because folder and recursive-tree acquisition have separate controls.
   Set `AllowDuplicatePaths=true` only when separate workflow tasks may share
   one resolved path, and present row-level workflow state with
   `Snapshot.fileItemStatuses`.
@@ -85,6 +88,8 @@ and renderer signatures, and builds one private native platform plan.
   `PathFilterDescription`. The runtime applies the predicate only to newly
   proposed files, omits rejected paths before source records are created, and
   reports aggregate kept/filtered counts without exposing filenames.
+  Unhandled validation or parsing failures from file-panel actions roll back
+  transactionally and appear in an alert rather than only in callback output.
   Source changes rebuild the transient session; Apps do not mirror choose,
   remove, clear, or selection UI events.
 - Give every scientific or workflow action an App-owned `Tooltip`. The

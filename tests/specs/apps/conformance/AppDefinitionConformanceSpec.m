@@ -16,5 +16,25 @@ classdef AppDefinitionConformanceSpec < matlab.unittest.TestCase
             testCase.verifyTrue(labkit.contract.checkRequirements( ...
                 definition.Requirements).ok);
         end
+
+        function declaresUnambiguousFileCollectionControls(testCase, App)
+            definition = feval(char(App.Package + ".definition"));
+            plan = labkit.app.internal.DefinitionInspector.platformPlan( ...
+                definition);
+            nodes = plan.Nodes(string({plan.Nodes.Kind}) == "fileList");
+
+            for index = 1:numel(nodes)
+                config = nodes(index).Configuration;
+                if config.MaxFiles ~= 1
+                    testCase.verifyEqual(config.SelectionMode, "multiple", ...
+                        "Multi-file collection must support file multi-selection: " + ...
+                        App.Package + "." + nodes(index).Id);
+                end
+                testCase.verifyFalse(contains(lower(config.ChooseLabel), ...
+                    ["folder", "directory"]), ...
+                    "The file button must not duplicate the separate folder controls: " + ...
+                    App.Package + "." + nodes(index).Id);
+            end
+        end
     end
 end
