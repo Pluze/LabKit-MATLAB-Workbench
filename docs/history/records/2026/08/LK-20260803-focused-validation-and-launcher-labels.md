@@ -11,6 +11,7 @@ component: `repository`
 scope: Focused local and CI repair validation
 scope: Launcher application table readability
 scope: Launcher documentation action wording
+scope: Squash PR version and history inventory
 ```
 
 ## Context
@@ -36,6 +37,10 @@ unchanged while reordering only its visible columns. Use the short
 Let the focused-spec runner derive every represented App root from the selected
 specification paths, add the unique roots for the run, and remove only paths it
 added when execution ends.
+Make final PR preparation equally source-driven: resolve the complete
+main-to-develop boundary, inventory component transitions and changed history,
+and follow version metadata when an internal owner moves instead of relying on
+one historical path.
 
 ## Changes
 
@@ -50,6 +55,12 @@ added when execution ends.
 - Corrected multi-App focused-spec execution so one explicit file list can
   resolve production packages from every represented App without widening the
   selected test identities.
+- Added a PR-preparation inventory that reports resolved SHAs, commit and path
+  counts, every direct component transition, its owning source, changed history
+  record, sequence, and policy result before manual consolidation.
+- Made Launcher version policy tolerate the delivered metadata extraction from
+  the legacy dispatcher to its focused owner without losing the main-baseline
+  `1.8.2 -> 1.8.3` transition.
 
 ## User and data impact
 
@@ -83,6 +94,9 @@ covers authored links, history structure, and deterministic rendering.
 - One six-file focused invocation loaded App SDK evidence and source
   specifications from five electrochemistry Apps; all 29 selected identities
   passed after the path correction.
+- Eight lightweight integration-policy regression tests passed, including the
+  Launcher metadata-owner migration; the PR inventory resolved all changed
+  component transitions to exactly one changed history record.
 
 ## Known limitations and follow-up
 

@@ -12,8 +12,9 @@ labkit_EIS_app
 
 ## Inputs
 
-Add one or more `.DTA` files containing a readable EIS `ZCURVE`. Files that do
-not contain the required curve are reported and omitted from the plot. The
+The Files list retains `.DTA` sources containing a readable EIS `ZCURVE`.
+Other Gamry experiment kinds and files without the required curve are omitted
+before plotting. The
 successfully decoded source list and its order are preserved in project state
 through portable references.
 

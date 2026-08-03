@@ -195,6 +195,27 @@ class IntegrationPolicyTest(unittest.TestCase):
             [],
         )
 
+    def test_launcher_metadata_can_move_without_losing_the_transition(self):
+        current = MODULE.LAUNCHER_METADATA
+        legacy = MODULE.LEGACY_LAUNCHER_METADATA
+        before = (
+            'info = struct("name", "labkit_launcher", '
+            '"version", "1.8.2");'
+        )
+        after = before.replace("1.8.2", "1.8.3")
+        history = "docs/history/records/2026/08/LK-launcher.md"
+        paths = [legacy, current, history]
+        base = {legacy: before}
+        head = {
+            current: after,
+            history: "component: `labkit_launcher` | `1.8.2 -> 1.8.3`",
+        }
+
+        self.assertEqual(
+            MODULE.validate_versions(paths, base.get, head.get),
+            [],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -14,8 +14,9 @@ labkit_CIC_app
 
 ## Inputs And Batch Behavior
 
-Add one or more chrono `.DTA` files. The selected row is decoded for immediate
-preview; batch calculation is performed with the same analysis settings when
+The Files list retains chrono `.DTA` transients and omits other Gamry
+experiment kinds before session reconstruction. The selected row is decoded
+for immediate preview; batch calculation uses the same analysis settings when
 results are exported. This avoids repeatedly decoding every large file while
 the user is only switching previews. Saved projects preserve file order and
 portable source identity through removal, later additions, and reopen.

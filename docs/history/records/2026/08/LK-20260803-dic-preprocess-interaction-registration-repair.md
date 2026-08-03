@@ -88,7 +88,7 @@ finer structural scoring recovered the same rotation neighborhood.
 - `labkittest.run(Owner="apps/dic/dic_preprocess/workbench", Contract="presentation")`
 - Final focused evidence passed 7 scientific, 3 persistence/result/presentation,
   and 1 hidden-GUI workflow identities.
-- The redacted diagnostic bundle reported
+- The supplied diagnostic bundle reported
   `labkit:app:runtime:InvalidPointSlotsValue` from mask activation.
 
 ## Known limitations and follow-up

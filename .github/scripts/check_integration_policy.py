@@ -24,7 +24,9 @@ LAUNCHER_VERSION = re.compile(
     r'"version"\s*,\s*"(\d+\.\d+\.\d+)"',
     re.DOTALL,
 )
-LAUNCHER_METADATA = "+labkit/+app/+internal/+launcher/dispatch.m"
+LAUNCHER_METADATA = "+labkit/+app/+internal/+launcher/launcherVersion.m"
+LEGACY_LAUNCHER_METADATA = "+labkit/+app/+internal/+launcher/dispatch.m"
+LAUNCHER_METADATA_PATHS = (LAUNCHER_METADATA, LEGACY_LAUNCHER_METADATA)
 HISTORY_COMPONENT = re.compile(
     r"^component:\s*`([^`]+)`"
     r"(?:\s*\|\s*`([^`]+)\s*->\s*([^`]+)`)?\s*$",
@@ -69,7 +71,7 @@ def parse_version(path: str, source: str | None) -> tuple[str, str] | None:
         match = FACADE_VERSION.search(source)
         if match:
             return f"labkit.{match.group(1)}", match.group(2)
-    if path == LAUNCHER_METADATA:
+    if path in LAUNCHER_METADATA_PATHS:
         match = LAUNCHER_VERSION.search(source)
         if match:
             return "labkit_launcher", match.group(1)
@@ -103,6 +105,18 @@ def metadata_path_for_source(path: str) -> str | None:
         parts = item.parts
         if len(parts) >= 2:
             return f"+labkit/{parts[1]}/version.m"
+    return None
+
+
+def version_for_owner(
+    path: str, read: Callable[[str], str | None]
+) -> tuple[str, str] | None:
+    if path != LAUNCHER_METADATA:
+        return parse_version(path, read(path))
+    for candidate in LAUNCHER_METADATA_PATHS:
+        parsed = parse_version(candidate, read(candidate))
+        if parsed is not None:
+            return parsed
     return None
 
 
@@ -160,8 +174,8 @@ def validate_versions(
 
     transitions: list[tuple[str, str, str]] = []
     for path in sorted(metadata):
-        before = parse_version(path, read_base(path))
-        after = parse_version(path, read_head(path))
+        before = version_for_owner(path, read_base)
+        after = version_for_owner(path, read_head)
         if before is None or after is None:
             continue
         component_before, version_before = before

@@ -13,8 +13,9 @@ labkit_ImageEnhance_app
 
 ## Inputs And Batch Mode
 
-Add supported image files or a folder. In **Batch shared processing** mode, one
-shared step history is applied to every source. When batch mode is off, each
+The batch accepts selected image files; directory actions can collect a flat
+or recursive image set. In **Batch shared processing** mode, one shared step history is applied
+to every source. When batch mode is off, each
 image keeps a separate history and optional white ROI. Selecting another image
 updates the preview without recalculating unrelated files.
 

@@ -1,6 +1,6 @@
 ---
 name: labkit-pr-preparer
-description: "Prepare LabKit develop for a squash PR into main by auditing the complete base-to-head diff, consolidating component versions and structured history, running the one final local gate, and assembling the repository PR record. Use only when the user asks to prepare, open, update, review, or make merge-ready a develop-to-main PR; do not use during ordinary branch iteration."
+description: "Prepare LabKit develop for a squash PR into main by auditing the complete base-to-head diff, consolidating component versions and structured history, running the one final local gate, and assembling the repository PR record. Use only when the user asks to prepare, open, update, review, or make merge-ready a develop-to-main PR. Do not use during ordinary branch iteration."
 ---
 
 # LabKit PR Preparer
@@ -31,6 +31,16 @@ Use `labkit-documentation-maintainer` when rewriting component history and
 Do not merge `main` into `develop`, create a sync commit, force-push, or rewrite
 Git commits without explicit approval. PR preparation rewrites the proposed
 tree and authored component history; GitHub performs the final squash.
+
+Run the bundled inventory before editing versions or history. It resolves
+versions from both current and legacy metadata owners, maps every net
+transition to changed history, and reports policy errors without reconstructing
+the inventory by hand:
+
+```bash
+python3 .agents/skills/labkit-pr-preparer/scripts/audit_pr.py \
+  --base origin/main --head develop
+```
 
 ## Consolidate versions and history
 
@@ -89,6 +99,13 @@ Then:
 
 Do not declare merge readiness when the policy audit, final local gate,
 required PR CI, review, or conversation resolution is incomplete.
+
+After merge, use resolved SHAs rather than branch-name assumptions. Verify the
+PR is merged, the exact main-push policy gate passed, no open PR depends on
+`develop`, and `develop` contains no unmerged commit. Only then delete and
+recreate local and remote `develop` at `origin/main`, restore its protection,
+and verify both refs are identical. Never delete a branch based only on a
+successful merge command response.
 
 ## Handoff
 

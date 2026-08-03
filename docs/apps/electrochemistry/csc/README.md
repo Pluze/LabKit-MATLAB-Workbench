@@ -15,7 +15,8 @@ labkit_CSC_app
 
 ## Inputs And Selection
 
-Add one or more CV/CT `.DTA` files. The selected file determines the current
+The Files list retains CV/CT `.DTA` sources and omits other Gamry experiment
+kinds before session reconstruction. The selected file determines the current
 curve list, readout, and plots. Selecting another file resets the curve
 selection and default plot quantities to that file; it does not silently keep
 a cycle from the previous source. Saved projects preserve the successfully

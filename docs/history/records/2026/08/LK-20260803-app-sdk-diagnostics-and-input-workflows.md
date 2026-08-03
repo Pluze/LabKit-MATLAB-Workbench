@@ -16,6 +16,8 @@ scope: Point-only paired-anchor interaction
 scope: Open anchor-path insertion order
 scope: Multi-row plot composition guidance
 scope: Non-reentrant delayed busy feedback
+scope: App SDK internal subsystem ownership
+scope: Downstream App test seams
 ```
 
 ## Context
@@ -37,6 +39,10 @@ checkpoints but one pending App SDK transition from the mainline baseline.
 The same Runtime immediately painted busy feedback around every callback,
 which made quick actions flash, while long actions did not freeze mutable
 controls or reject reentrant UI input consistently.
+The SDK's private implementation had also accumulated unrelated contract,
+native, diagnostics, storage, launcher, and runtime classes in one internal
+root. Downstream App specifications named those private classes directly, so
+an ownership-only reorganization broke otherwise valid private App evidence.
 
 ## Decision and rationale
 
@@ -65,6 +71,11 @@ This preserves transactional exclusion without showing a transient pointer,
 title, or disabled-control frame for short actions. Once feedback is visible,
 freeze mutable controls and let user-facing diagnostic messages update the
 current stage; restore the final committed Snapshot when work ends.
+Group every SDK internal implementation by one named subsystem and split the
+largest launcher and runtime owners along existing workflow boundaries. Keep
+white-box SDK specifications free to test private behavior, but route public
+and accepted-private App specifications through focused `labkittest` seams so
+internal package movement has one test-owned compatibility boundary.
 
 ## Changes
 
@@ -110,6 +121,14 @@ current stage; restore the final committed Snapshot when work ends.
   displays busy feedback only after a short delay, freezes native inputs for
   longer work, updates the visible stage from user-facing log events, and
   restores final enabled states from the committed Snapshot.
+- App SDK internals now live under explicit artifact, contract, diagnostics,
+  interaction, launcher, native, project, resource, result, runtime, and source
+  owners; the launcher dispatcher and Runtime kernel delegate cohesive
+  workflows to focused files instead of retaining mixed monoliths.
+- Downstream App and conformance specifications now use concentrated
+  `labkittest` seams for runtime construction, callback contexts, definition
+  inspection, and synthetic input generation. SDK-owned white-box tests retain
+  direct internal access, and a repository guard prevents App-spec leakage.
 
 ## User and data impact
 
@@ -134,7 +153,9 @@ The App SDK change is compatible with existing version-2 App requirements and
 does not change callback logging syntax, canonical event fields, projects, or
 results. Existing App definitions require no migration. The removed Tools-menu
 TRACE item was a Runtime utility, not an App-facing API; the same manual ability
-is available in the Session Log window.
+is available in the Session Log window. Internal class paths are not an
+App-facing compatibility contract; downstream production Apps contain no such
+references, and downstream tests use the repository-owned test seams.
 
 ## Validation
 
@@ -150,12 +171,14 @@ evidence also covers file-predicate masks, aggregate notices, preserved source
 alignment, native failure alerts, and point-only paired anchors.
 Open-path source evidence covers prepend, interior insertion, and append order
 for straight and curved paths.
+Repository structure evidence covers the internal subsystem map, allowed
+dependency edges, bounded launcher/runtime owners, and the prohibition on SDK
+internal references from App specifications.
 
 ## Evidence
 
-- `labkittest.run(File="+labkit/+app/+internal/SessionLogProjection.m")`
-- `labkittest.run(File="+labkit/+app/+internal/SessionLogViewer.m")`
-- `labkittest.run(File="+labkit/+app/+internal/SessionDiagnosticBundle.m")`
+- Focused Session Log projection, viewer, and diagnostic bundle specifications
+  under the diagnostics subsystem.
 - Five focused logging/journal specifications passed 62 headless identities;
   the Session Log viewer specification passed 4 hidden-GUI identities.
 - App SDK and cross-App file-entry focused specifications passed 64 identities.
@@ -165,6 +188,9 @@ for straight and curved paths.
 - App SDK hidden-GUI evidence covers delayed presentation, long-task control
   freezing, rejected reentrant input, log-driven stage updates, and committed
   enabled-state restoration.
+- Internal structure and dependency-edge specifications passed after the
+  subsystem split; downstream App test-seam and explicit-journal guard methods
+  passed after direct App-spec references were removed.
 - Authored-link validation passed; full deterministic documentation rendering
   remains part of final PR validation.
 

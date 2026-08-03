@@ -14,8 +14,9 @@ labkit_VTResistance_app
 
 ## Inputs And Batch Behavior
 
-Add one or more chrono `.DTA` files. The transient session decodes and analyzes
-the registered batch so shared setting changes update every result together.
+The Files list retains chrono `.DTA` transients and omits other Gamry
+experiment kinds before session reconstruction. The transient session decodes
+and analyzes the registered batch so shared setting changes update every result together.
 No electrode-area normalization is performed because the reported quantity is
 electrical resistance in ohms. Saved projects preserve source order and
 portable identity through removal, later additions, and reopen.
