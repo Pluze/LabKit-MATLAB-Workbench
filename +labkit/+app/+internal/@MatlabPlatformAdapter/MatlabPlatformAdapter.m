@@ -18,14 +18,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         Runtime
         InteractionController
         InteractionDeclarations (1, :) cell = {}
-        BaseWindowTitle (1, 1) string = "LabKit application"
-        Busy (1, 1) logical = false
-        BusyVisible (1, 1) logical = false
-        BusyMessage (1, 1) string = ""
-        BusyRejectedInput (1, 1) logical = false
-        BusyTimer = []
-        BusyEnableHandles (1, :) cell = {}
-        BusyEnableValues (1, :) cell = {}
+        BusyLifecycle
         PriorPointer (1, 1) string = "arrow"
         ClosePrompt
         DialogFolders
@@ -44,7 +37,6 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if nargin < 2
                 title = "LabKit application";
             end
-            obj.BaseWindowTitle = string(title);
             obj.Components = containers.Map("KeyType", "char", ...
                 "ValueType", "any");
             obj.Axes = containers.Map("KeyType", "char", ...
@@ -55,8 +47,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 "ValueType", "char");
             policy = labkit.app.internal.NativeAdapterValues.layoutPolicy();
             obj.Figure = uifigure(Visible="off", ...
-                Name=char(obj.BaseWindowTitle), ...
+                Name=char(string(title)), ...
                 Position=policy.InitialFigurePosition);
+            obj.BusyLifecycle = ...
+                labkit.app.internal.native.BusyLifecycle( ...
+                obj.Figure, title, ...
+                @(view, restoreValues) ...
+                obj.restoreBusyView(view, restoreValues));
             obj.Starting = true;
             obj.StartupStarted = tic;
             obj.PriorPointer = string(obj.Figure.Pointer);
@@ -121,7 +118,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 obj.InteractionController.delete();
                 obj.InteractionController = [];
             end
-            obj.cancelBusyTimer();
+            obj.BusyLifecycle.close();
             if ~isempty(obj.Figure) && isvalid(obj.Figure)
                 delete(obj.Figure);
             end
@@ -146,81 +143,25 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function setWindowTitle(obj, title)
-            obj.BaseWindowTitle = string(title);
-            if ~obj.Busy && ~isempty(obj.Figure) && isvalid(obj.Figure)
-                obj.Figure.Name = char(obj.BaseWindowTitle);
-            end
+            obj.BusyLifecycle.setWindowTitle(title);
         end
 
         function beginBusy(obj, message)
-            if obj.Starting || obj.Busy || ...
-                    isempty(obj.Figure) || ~isvalid(obj.Figure)
+            if obj.Starting
                 return
             end
-            message = strip(string(message));
-            if strlength(message) == 0
-                message = "Working";
-            end
-            obj.Busy = true;
-            obj.BusyVisible = false;
-            obj.BusyMessage = message;
-            obj.BusyRejectedInput = false;
-            obj.PriorPointer = string(obj.Figure.Pointer);
-            setappdata(obj.Figure, "labkitAppBusy", true);
-            obj.BusyTimer = timer( ...
-                ExecutionMode="singleShot", StartDelay=0.25, ...
-                BusyMode="drop", ...
-                TimerFcn=@(~, ~) obj.showBusy());
-            start(obj.BusyTimer);
+            obj.BusyLifecycle.begin(message);
         end
 
         function updateBusy(obj, message)
-            if ~obj.Busy
-                return
-            end
-            message = strip(string(message));
-            if strlength(message) > 0
-                obj.BusyMessage = message;
-            end
-            if obj.BusyVisible && ...
-                    ~isempty(obj.Figure) && isvalid(obj.Figure)
-                obj.Figure.Name = char(obj.busyWindowTitle());
-                drawnow limitrate nocallbacks
-            end
+            obj.BusyLifecycle.update(message);
         end
 
         function endBusy(obj, view)
             if obj.Starting
                 return
             end
-            if ~obj.Busy
-                return
-            end
-            wasVisible = obj.BusyVisible;
-            rejectedInput = obj.BusyRejectedInput;
-            obj.Busy = false;
-            obj.BusyVisible = false;
-            obj.BusyRejectedInput = false;
-            obj.cancelBusyTimer();
-            if isempty(obj.Figure) || ~isvalid(obj.Figure)
-                return
-            end
-            if wasVisible || rejectedInput
-                obj.restoreBusyControls();
-                if nargin >= 2 && isa(view, "labkit.app.view.Snapshot")
-                    obj.restoreBusyView(view, rejectedInput);
-                end
-            end
-            if wasVisible
-                obj.Figure.Pointer = char(obj.PriorPointer);
-                obj.Figure.Name = char(obj.BaseWindowTitle);
-            end
-            if isappdata(obj.Figure, "labkitAppBusy")
-                rmappdata(obj.Figure, "labkitAppBusy");
-            end
-            if wasVisible
-                drawnow limitrate nocallbacks
-            end
+            obj.BusyLifecycle.finish(view);
         end
 
         function startupUpdate(obj, message)
@@ -264,9 +205,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         function failStartup(obj, cause)
             obj.Starting = false;
-            obj.Busy = false;
-            obj.BusyVisible = false;
-            obj.cancelBusyTimer();
+            obj.BusyLifecycle.close();
             if isempty(obj.Figure) || ~isvalid(obj.Figure)
                 return
             end
@@ -476,10 +415,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if nargin < 3
                 title = "LabKit Utility";
             end
-            if obj.Busy || obj.Starting
-                if obj.Busy
-                    obj.BusyRejectedInput = true;
-                end
+            if obj.Starting || ~obj.BusyLifecycle.acceptInput()
                 return
             end
             try
@@ -490,85 +426,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function runUserInput(obj, callback)
-            if obj.Busy || obj.Starting
-                if obj.Busy
-                    obj.BusyRejectedInput = true;
-                end
+            if obj.Starting || ~obj.BusyLifecycle.acceptInput()
                 return
             end
             callback();
         end
 
-        function showBusy(obj)
-            if ~obj.Busy || obj.BusyVisible || ...
-                    isempty(obj.Figure) || ~isvalid(obj.Figure)
-                return
-            end
-            obj.BusyVisible = true;
-            obj.Figure.Pointer = "watch";
-            obj.Figure.Name = char(obj.busyWindowTitle());
-            obj.disableBusyControls();
-            drawnow limitrate nocallbacks
-        end
-
-        function title = busyWindowTitle(obj)
-            title = obj.BaseWindowTitle + ...
-                " [Working: " + obj.BusyMessage + "]";
-        end
-
-        function disableBusyControls(obj)
-            handles = findall(obj.Figure, "-property", "Enable");
-            obj.BusyEnableHandles = cell(1, numel(handles));
-            obj.BusyEnableValues = cell(1, numel(handles));
-            for index = 1:numel(handles)
-                handle = handles(index);
-                obj.BusyEnableHandles{index} = handle;
-                obj.BusyEnableValues{index} = handle.Enable;
-                handle.Enable = "off";
-            end
-        end
-
-        function restoreBusyControls(obj)
-            for index = 1:numel(obj.BusyEnableHandles)
-                handle = obj.BusyEnableHandles{index};
-                if ~isempty(handle) && isvalid(handle)
-                    handle.Enable = obj.BusyEnableValues{index};
-                end
-            end
-            obj.BusyEnableHandles = {};
-            obj.BusyEnableValues = {};
-        end
-
-        function restoreBusyView(obj, view, restoreValues)
-            operations = labkit.app.internal.NativeAdapterValues.orderedOperations( ...
-                view.operationsForCompiler());
-            for index = 1:numel(operations)
-                operation = operations{index};
-                if operation.Kind == "enabled" || ...
-                        (restoreValues && ...
-                        operation.Kind ~= "renderPlot" && ...
-                        ~labkit.app.internal.NativeAdapterValues.isInteractionKind( ...
-                        operation.Kind))
-                    obj.apply(operation);
-                elseif operation.Kind == "workspacePage"
-                    component = obj.component(operation.Target);
-                    labkit.app.internal.NativeAdapterValues.setIfProperty( ...
-                        component, "Enable", ...
-                        labkit.app.internal.NativeAdapterValues.onOff( ...
-                        operation.Value.Enabled));
-                end
-            end
-        end
-
-        function cancelBusyTimer(obj)
-            timerValue = obj.BusyTimer;
-            obj.BusyTimer = [];
-            if isempty(timerValue) || ~isvalid(timerValue)
-                return
-            end
-            stop(timerValue);
-            delete(timerValue);
-        end
+        restoreBusyView(obj, view, restoreValues)
 
         function openSessionLog(obj)
             if isempty(obj.LogViewer) || ~isvalid(obj.LogViewer) || ...
@@ -715,7 +579,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 return
             end
             message = "Close this LabKit app?";
-            if obj.Busy
+            if obj.BusyLifecycle.Active
                 message = "LabKit is still working. Close anyway?";
             elseif obj.hasProjectDocument()
                 metadata = obj.Runtime.documentMetadata();
