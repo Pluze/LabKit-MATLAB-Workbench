@@ -13,6 +13,13 @@ only synthetic inputs reused by more than one specification owner; a fixture
 used by one owner stays beside that specification. Do not create a generic
 shared, support, or helper directory.
 
+Production Apps and downstream App specifications, including accepted private
+repositories, never call `labkit.app.internal`. Use the focused
+`labkittest` test seams for runtime construction, callback contexts, compiled
+definition inspection, and synthetic input materialization. Only SDK-owned
+white-box specifications under `tests/specs/labkit/app/` and the concentrated
+`tests/+labkittest/` adapters may name SDK internals directly.
+
 Start from production with `labkittest.explain`. Create a missing App-owned
 specification with `labkittest.createSpec`; never create test paths, suite
 folders, selector registries, wrappers, or stage tags by hand. Run focused

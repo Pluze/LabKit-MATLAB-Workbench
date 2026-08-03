@@ -324,6 +324,28 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "file dialogs so platform/version adaptation remains in SDK.");
         end
 
+        function appSpecificationsUseLabKitTestSeams(testCase)
+            root = labkittest.setup();
+            specsRoot = fullfile(root, "tests", "specs", "apps");
+            listing = dir(fullfile(specsRoot, "**", "*.m"));
+            violations = strings(numel(listing), 1);
+            violationCount = 0;
+            for index = 1:numel(listing)
+                file = fullfile(listing(index).folder, listing(index).name);
+                if contains(string(fileread(file)), "labkit.app.internal")
+                    violationCount = violationCount + 1;
+                    violations(violationCount) = erase( ...
+                        string(file), string(root) + filesep);
+                end
+            end
+
+            violations = violations(1:violationCount);
+            testCase.verifyEmpty(violations, ...
+                "App and conformance specifications must use focused " + ...
+                "labkittest seams instead of SDK internals: " + ...
+                strjoin(violations, ", "));
+        end
+
         function testsPassAnExplicitJournalOrJournalRootToEveryRuntimeFactory(testCase)
             root = labkittest.setup();
             files = dir(fullfile(root, "tests", "**", "*.m"));
@@ -359,6 +381,19 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
 
             testCase.verifyNumElements(calls, 1);
             testCase.verifyEqual(calls.Method, "createHeadless");
+            testCase.verifyNumElements(calls.Arguments, 4);
+            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
+        end
+
+        function runtimeFactoryParserAcceptsLabKitTestRuntimeSeam(testCase)
+            source = strjoin([ ...
+                "runtime = labkittest.createMatlabRuntime( ...", ...
+                "    app, [], struct(), journal);"], newline);
+
+            calls = labkittest.runtimeFactoryCalls(source);
+
+            testCase.verifyNumElements(calls, 1);
+            testCase.verifyEqual(calls.Method, "createMatlab");
             testCase.verifyNumElements(calls.Arguments, 4);
             testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
         end

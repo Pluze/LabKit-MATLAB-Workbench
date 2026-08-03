@@ -89,7 +89,7 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
                     labkit.app.dialog.Choice(output), ...
                 "writeResult", @writeResultProbe, ...
                 "log", @ignoreLog);
-            context = labkit.app.internal.runtime.CallbackContextFactory.create(backend);
+            context = labkittest.createCallbackContext(backend);
 
             figure_studio.resultFiles.exportGraphic(state, context, "png");
 

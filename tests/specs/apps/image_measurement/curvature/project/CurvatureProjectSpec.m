@@ -6,7 +6,7 @@ classdef CurvatureProjectSpec < matlab.unittest.TestCase
             definition = curvature.definition();
             project = definition.ProjectSchema.Create();
             session = definition.CreateSession(project, ...
-                labkit.app.internal.runtime.CallbackContextFactory.disconnected());
+                labkittest.disconnectedCallbackContext());
             legacy = project;
             legacy.inputs.source = struct("absolutePath", "/tmp/image.png");
             legacy.inputs = rmfield(legacy.inputs, "sources");

@@ -23,7 +23,7 @@ classdef ImageEnhancePresentationSpec < matlab.unittest.TestCase
         function whiteRoiControlsRequirePerImageModeAndASelectedRoi(testCase)
             project = image_enhance.projectSpec().Create();
             session = image_enhance.createSession(project, ...
-                labkit.app.internal.runtime.CallbackContextFactory.disconnected());
+                labkittest.disconnectedCallbackContext());
             project.inputs.sources = struct("id", "image-1", "required", true, ...
                 "role", "source-image", "reference", struct());
             annotation = image_enhance.enhancementAnnotations.empty();
