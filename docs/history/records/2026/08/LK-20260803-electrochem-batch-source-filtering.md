@@ -6,7 +6,7 @@ date: 2026-08-03
 sequence: 170
 type: fix
 compatibility: compatible
-component: `labkit.app` | `2.2.0 -> 2.3.0`
+component: `labkit.app`
 component: `labkit_ChronoOverlay_app` | `1.6.1 -> 1.6.2`
 component: `labkit_CIC_app` | `1.6.1 -> 1.6.2`
 component: `labkit_CSC_app` | `1.6.1 -> 1.6.2`
