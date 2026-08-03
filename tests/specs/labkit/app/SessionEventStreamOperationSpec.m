@@ -3,7 +3,7 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function preservesNestedAncestryAndOneTerminalResult(testCase)
-            stream = labkit.app.internal.SessionEventStream(operationProbeDefinition());
+            stream = labkit.app.internal.diagnostics.SessionEventStream(operationProbeDefinition());
             cleanup = onCleanup(@() stream.close());
 
             outer = stream.begin("runtime.callback", "callback.run", ...
@@ -32,7 +32,7 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
         end
 
         function rejectsDoubleUnknownAndOutOfOrderFinishes(testCase)
-            stream = labkit.app.internal.SessionEventStream(operationProbeDefinition());
+            stream = labkit.app.internal.diagnostics.SessionEventStream(operationProbeDefinition());
             cleanup = onCleanup(@() stream.close());
 
             outer = stream.begin("runtime.callback", "callback.run", ...
@@ -53,7 +53,7 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
         end
 
         function rejectsFinishingAnOperationAfterStreamClose(testCase)
-            stream = labkit.app.internal.SessionEventStream(operationProbeDefinition());
+            stream = labkit.app.internal.diagnostics.SessionEventStream(operationProbeDefinition());
             operation = stream.begin("runtime.callback", "callback.run", ...
                 "Dispatching callback.");
             stream.close();
@@ -63,7 +63,7 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
         end
 
         function closesActiveOperationsAsAbandonedFromInnerToOuter(testCase)
-            stream = labkit.app.internal.SessionEventStream(operationProbeDefinition());
+            stream = labkit.app.internal.diagnostics.SessionEventStream(operationProbeDefinition());
             outer = stream.begin("runtime.callback", "callback.run", ...
                 "Dispatching callback.");
             inner = stream.begin("app.probe", "analysis.run", ...
@@ -94,7 +94,7 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
         end
 
         function rejectsUnsupportedTerminalOutcomes(testCase)
-            stream = labkit.app.internal.SessionEventStream(operationProbeDefinition());
+            stream = labkit.app.internal.diagnostics.SessionEventStream(operationProbeDefinition());
             cleanup = onCleanup(@() stream.close());
             operation = stream.begin("runtime.callback", "callback.run", ...
                 "Dispatching callback.");
@@ -117,7 +117,7 @@ classdef SessionEventStreamOperationSpec < matlab.unittest.TestCase
         end
 
         function isolatesAFailingPrivateConsumerAfterRetention(testCase)
-            stream = labkit.app.internal.SessionEventStream( ...
+            stream = labkit.app.internal.diagnostics.SessionEventStream( ...
                 operationProbeDefinition(), ProjectionHook=@throwFromConsumer);
             cleanup = onCleanup(@() stream.close());
 

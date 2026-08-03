@@ -7,9 +7,9 @@ classdef (Hidden, Sealed) SessionLease
                 error("labkit:app:contract:InvalidValue", ...
                     "SessionLease requires one explicit LeaseNonce.");
             end
-            nonce = labkit.app.internal.SessionLease.validateNonce(nonce);
+            nonce = labkit.app.internal.diagnostics.SessionLease.validateNonce(nonce);
             if nargin < 6 || isempty(probe)
-                probe = labkit.app.internal.SessionLease.localProbe();
+                probe = labkit.app.internal.diagnostics.SessionLease.localProbe();
             end
             pid = -1;
             if isfield(probe, "pid") && isnumeric(probe.pid) && isscalar(probe.pid) && ...
@@ -25,7 +25,7 @@ classdef (Hidden, Sealed) SessionLease
 
         function nonce = createNonce()
             [~, leaf] = fileparts(tempname);
-            nonce = labkit.app.internal.SessionLease.validateNonce("lease-" + string(leaf));
+            nonce = labkit.app.internal.diagnostics.SessionLease.validateNonce("lease-" + string(leaf));
         end
 
         function nonce = validateNonce(nonce)
@@ -34,7 +34,7 @@ classdef (Hidden, Sealed) SessionLease
                 error("labkit:app:contract:InvalidValue", ...
                     "SessionLease LeaseNonce must be one nonempty semantic identifier.");
             end
-            nonce = labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
+            nonce = labkit.app.internal.diagnostics.SessionEventValidator.semanticIdentifier( ...
                 nonce, "LeaseNonce");
         end
 
@@ -48,7 +48,7 @@ classdef (Hidden, Sealed) SessionLease
                     return;
                 end
                 if nargin < 4 || isempty(probe)
-                    probe = labkit.app.internal.SessionLease.localProbe();
+                    probe = labkit.app.internal.diagnostics.SessionLease.localProbe();
                 end
                 fields = ["sessionId", "appId", "state", "host", "pid", "nonce", ...
                     "startedAtUtc", "heartbeatAtUtc", "leaseVersion"];

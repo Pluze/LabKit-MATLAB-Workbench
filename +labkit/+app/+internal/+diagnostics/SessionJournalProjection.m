@@ -17,7 +17,7 @@ classdef (Hidden, Sealed) SessionJournalProjection < handle
 
     methods
         function obj = SessionJournalProjection(journal, projectionFaultInjector)
-            if ~isa(journal, "labkit.app.internal.SessionJournal") || ~isscalar(journal)
+            if ~isa(journal, "labkit.app.internal.diagnostics.SessionJournal") || ~isscalar(journal)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "SessionJournalProjection requires one SessionJournal.");
             end

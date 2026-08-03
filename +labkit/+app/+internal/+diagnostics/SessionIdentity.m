@@ -5,7 +5,7 @@ classdef (Hidden, Sealed) SessionIdentity
         function sessionId = create()
             temporaryPath = string(tempname);
             [~, leaf] = fileparts(temporaryPath);
-            sessionId = labkit.app.internal.SessionEventValidator.semanticIdentifier( ...
+            sessionId = labkit.app.internal.diagnostics.SessionEventValidator.semanticIdentifier( ...
                 "session-" + string(leaf), "sessionId");
         end
     end

@@ -438,7 +438,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if isempty(obj.LogViewer) || ~isvalid(obj.LogViewer) || ...
                     ~obj.LogViewer.isOpen()
                 obj.LogViewer = ...
-                    labkit.app.internal.SessionLogViewer(obj.Runtime);
+                    labkit.app.internal.diagnostics.SessionLogViewer(obj.Runtime);
             else
                 obj.LogViewer.refresh();
             end

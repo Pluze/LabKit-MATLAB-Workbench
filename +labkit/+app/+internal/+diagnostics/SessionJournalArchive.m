@@ -30,7 +30,7 @@ classdef (Hidden, Sealed) SessionJournalArchive
         end
 
         function exportFolder = exportSnapshot(rootFolder, sessionId, exportFolder)
-            snapshot = labkit.app.internal.SessionJournalArchive.snapshot( ...
+            snapshot = labkit.app.internal.diagnostics.SessionJournalArchive.snapshot( ...
                 rootFolder, sessionId);
             exportFolder = string(exportFolder);
             if exist(char(exportFolder), "dir") ~= 7
@@ -238,12 +238,12 @@ try
     if ~isempty(options.LeaseProbe)
         probe = options.LeaseProbe(targetPid, targetHost);
     else
-        probe = labkit.app.internal.SessionLease.localProbe(targetPid);
+        probe = labkit.app.internal.diagnostics.SessionLease.localProbe(targetPid);
     end
 catch
     probe = [];
 end
-state = labkit.app.internal.SessionLease.classify( ...
+state = labkit.app.internal.diagnostics.SessionLease.classify( ...
     marker, manifest, nowUtc, probe, options.LeaseFreshSeconds);
 end
 
@@ -516,12 +516,12 @@ fields = ["schemaVersion", "sequence", "timestampUtc", "elapsedSeconds", ...
     "exception"];
 tf = isstruct(record) && isscalar(record) && ...
     isequal(string(fieldnames(record)), fields.') && ...
-    labkit.app.internal.SessionEventValidator.canonicalTerminalPair( ...
+    labkit.app.internal.diagnostics.SessionEventValidator.canonicalTerminalPair( ...
     record.operationResult, record.stateDisposition);
 end
 
 function value = semanticSessionId(value, label)
-value = labkit.app.internal.SessionEventValidator.semanticIdentifier(value, label);
+value = labkit.app.internal.diagnostics.SessionEventValidator.semanticIdentifier(value, label);
 end
 
 function value = utcNow()

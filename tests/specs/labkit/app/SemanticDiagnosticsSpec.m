@@ -40,7 +40,7 @@ classdef SemanticDiagnosticsSpec < matlab.unittest.TestCase
         end
 
         function streamClosesAbandonedOperationsInMemory(testCase)
-            stream = labkit.app.internal.SessionEventStream( ...
+            stream = labkit.app.internal.diagnostics.SessionEventStream( ...
                 probeDefinition(labkit.app.layout.workbench({})));
             cleanup = onCleanup(@() stream.close());
 

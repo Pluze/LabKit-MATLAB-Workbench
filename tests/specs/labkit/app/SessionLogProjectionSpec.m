@@ -7,7 +7,7 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
             runtime.invokeAction("run");
             before = runtime.diagnosticEvents();
-            projection = labkit.app.internal.SessionLogProjection( ...
+            projection = labkit.app.internal.diagnostics.SessionLogProjection( ...
                 runtime.diagnosticSnapshot());
 
             defaultView = projection.view();
@@ -98,7 +98,7 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
             snapshot.expiredSegmentCount = 1;
             snapshot.degradationReason = "write-failure";
             projection = ...
-                labkit.app.internal.SessionLogProjection(snapshot);
+                labkit.app.internal.diagnostics.SessionLogProjection(snapshot);
 
             notices = projection.view().notices;
             testCase.verifyTrue(any(contains(notices, "TRACE")));
@@ -113,10 +113,10 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
 
         function streamsProjectionHealthToConsumersInSequenceOrder(testCase)
             definition = projectionDefinition();
-            stream = labkit.app.internal.SessionEventStream( ...
+            stream = labkit.app.internal.diagnostics.SessionEventStream( ...
                 definition, ProjectionHealthHook=@oneHealthNotice);
             cleanup = onCleanup(@() stream.close());
-            projection = labkit.app.internal.SessionLogProjection( ...
+            projection = labkit.app.internal.diagnostics.SessionLogProjection( ...
                 completeSnapshot(stream.captureSnapshot()));
             token = stream.subscribe(@projection.append);
 

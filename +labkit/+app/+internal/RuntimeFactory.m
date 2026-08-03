@@ -47,11 +47,11 @@ classdef (Hidden, Sealed) RuntimeFactory
             end
             journal = prepareJournal(definition, journal, journalRoot);
             try
-                projection = labkit.app.internal.SessionJournalProjection(journal);
-                stream = labkit.app.internal.SessionEventStream(definition, ...
+                projection = labkit.app.internal.diagnostics.SessionJournalProjection(journal);
+                stream = labkit.app.internal.diagnostics.SessionEventStream(definition, ...
                     SessionId=journal.sessionId(), ProjectionHook=@projection.project, ...
                     ProjectionHealthHook=@projection.drainHealth);
-                recorder = labkit.app.internal.SessionDiagnostics( ...
+                recorder = labkit.app.internal.diagnostics.SessionDiagnostics( ...
                     definition, stream, projection, journal);
             catch cause
                 try
@@ -76,14 +76,14 @@ end
 function journal = prepareJournal(definition, journal, journalRoot)
 if isempty(journal)
     if strlength(journalRoot) == 0
-        journal = labkit.app.internal.SessionJournal(definition);
+        journal = labkit.app.internal.diagnostics.SessionJournal(definition);
     else
-        journal = labkit.app.internal.SessionJournal(definition, ...
+        journal = labkit.app.internal.diagnostics.SessionJournal(definition, ...
             RootFolder=journalRoot);
     end
     return;
 end
-if ~isa(journal, "labkit.app.internal.SessionJournal") || ~isscalar(journal)
+if ~isa(journal, "labkit.app.internal.diagnostics.SessionJournal") || ~isscalar(journal)
     error("labkit:app:runtime:InvariantFailure", ...
         "RuntimeFactory journal seam requires one SessionJournal.");
 end
