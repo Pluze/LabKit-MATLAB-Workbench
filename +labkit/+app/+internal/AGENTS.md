@@ -16,9 +16,12 @@ Definition / CallbackContext
                      `-- native -> interaction + MATLAB handles
 ```
 
-Lower owners never look up or invoke `RuntimeKernel`. A lifecycle may receive
-one narrow callback from its caller, but must not acquire the caller or a
-general service bag.
+Contract, storage, artifact, source, result, resource, and journal owners do
+not look up or invoke `RuntimeKernel`. The native adapter and Session Log
+viewer are the two explicit UI callback edges: they may receive the Runtime at
+construction and call its named boundary methods, but must not expose it,
+redistribute it, or turn it into a general service bag. A narrower lifecycle
+receives one callback from its caller rather than acquiring the caller.
 
 - Put immutable definition compilation under `+contract`; it must not acquire
   runtime state, native handles, persistence, or diagnostics.
