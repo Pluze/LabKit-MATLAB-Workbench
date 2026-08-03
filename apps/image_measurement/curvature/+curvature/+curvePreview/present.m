@@ -4,7 +4,8 @@ function view = present( ...
         editMode, calibration)
 %PRESENT Prepare the preview renderer and mutually exclusive interactions.
 model = curvature.curvePreview.model( ...
-    imageData, points, fit, showDensePoints, scaleBar);
+    imageData, points, fit, showDensePoints, scaleBar, ...
+    editMode == "curve");
 imageSize = [];
 if ~isempty(imageData)
     imageSize = size(imageData);

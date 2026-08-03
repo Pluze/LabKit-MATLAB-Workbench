@@ -7,6 +7,10 @@ function spec = anchorPath(id, onChanged, varargin)
 % Description:
 %   Creates the semantic declaration for a managed multi-anchor path editor;
 %   the runtime owns native graphics, viewport preservation, and dispatch.
+%   On an open path, a point placed beyond the visible start is prepended, a
+%   point beyond the visible end is appended, and all other points are inserted
+%   after the nearest visible curve segment. This ordering is independent of
+%   the current axes zoom.
 %
 % Inputs:
 %   id - Unique MATLAB identifier for this interaction.

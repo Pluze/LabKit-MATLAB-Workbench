@@ -377,6 +377,25 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 SourceBindings="project.inputs.sources"), ...
                 "labkit:app:contract:InvalidValue");
         end
+
+        function insertsOpenAnchorsByVisiblePathLocation(testCase)
+            points = [20 50; 50 50; 80 50];
+            imageSize = [100 100];
+
+            for style = ["Straight lines", "Curve"]
+                prepended = labkit.app.internal.addOrInsertAnchor( ...
+                    points, [5 60], imageSize, style, false, inf);
+                inserted = labkit.app.internal.addOrInsertAnchor( ...
+                    points, [35 90], imageSize, style, false, inf);
+                appended = labkit.app.internal.addOrInsertAnchor( ...
+                    points, [95 60], imageSize, style, false, inf);
+
+                testCase.verifyEqual(prepended, [[5 60]; points]);
+                testCase.verifyEqual(inserted, ...
+                    [points(1, :); 35 90; points(2:3, :)]);
+                testCase.verifyEqual(appended, [points; 95 60]);
+            end
+        end
     end
 
     methods (Test, TestTags = {'Contract:source', 'Env:hidden-gui'})

@@ -385,8 +385,9 @@ function editor = createAnchorEditor(runtime, imageSize, opts)
             end
             return;
         end
-        points = addOrInsertAnchor(points, point, state.ax, ...
-            state.imageSize, state.style, state.closed, state.maxPoints);
+        points = labkit.app.internal.addOrInsertAnchor( ...
+            points, point, state.imageSize, state.style, ...
+            state.closed, state.maxPoints);
     end
 
     function applyStoredView()

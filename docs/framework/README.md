@@ -124,6 +124,10 @@ and renderer signatures, and builds one private native platform plan.
   remain scrollable.
 - Declare editable overlays with `labkit.app.interaction.*` on the plot area;
   supply their current values with same-named Snapshot methods.
+- Open `anchorPath` editors order a new point by the nearest location on the
+  visible path: points beyond the start prepend, points beyond the end append,
+  and interior points insert into the owning curve segment. Zoom does not
+  change that ordering decision.
 - For a managed rectangle with `OnBackgroundPressed`, an un-dragged click
   anywhere on its plot—including inside the rectangle—uses that point
   callback; dragging the rectangle still uses its change callback.
