@@ -36,6 +36,8 @@ state.project.results.analysis = result;
 state.project.results.lastExport = [];
 state.session.cache.lastRunFingerprint = task.fingerprint;
 state.session.selection.currentStepIndex = 1;
+state.session.cache.plotViewRevision = ...
+    state.session.cache.plotViewRevision + 1;
 context.log("info", "gait_analysis.analysisrun.runfromworkbench.status", sprintf("Gait analysis complete: %d valid step(s).", ...
     sum(result.stepTable.is_valid)));
 end

@@ -13,12 +13,18 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
                 "alert", @(~, ~) []);
             definition = gait_analysis.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 
             runtime.applyFileSelection("poseFile", posePath, 1);
+            skeletonAxes = oneHandle( ...
+                figureValue, "gaitStepAxes.skeleton");
+            overviewAxes = oneHandle( ...
+                figureValue, "gaitContextAxes.overview");
+            verifyVisibleLineData(testCase, skeletonAxes);
+            verifyVisibleLineData(testCase, overviewAxes);
             runtime.applyControlValue("originAtFirstFrameFirstPoint", true);
             runtime.invokeAction("runAnalysis");
             result = runtime.State.project.results.analysis;
@@ -34,8 +40,17 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyTrue(result.ok);
             testCase.verifyGreaterThan(height(result.frameTable), 0);
             testCase.verifyGreaterThan(height(result.stepTable), 0);
-            testCase.verifyNotEmpty(findall(figureValue, "Tag", "gaitAxes.skeleton").Children);
-            testCase.verifyNotEmpty(findall(figureValue, "Tag", "gaitAxes.angles").Children);
+            anglesAxes = oneHandle(figureValue, "gaitStepAxes.angles");
+            segmentsAxes = oneHandle( ...
+                figureValue, "gaitContextAxes.segments");
+            verifyVisibleLineData(testCase, skeletonAxes);
+            verifyVisibleLineData(testCase, anglesAxes);
+            verifyVisibleLineData(testCase, segmentsAxes);
+            verifyVisibleLineData(testCase, overviewAxes);
+            verifyEqualDataUnits(testCase, skeletonAxes);
+            verifyEqualDataUnits(testCase, overviewAxes);
+            labels = string(skeletonAxes.Legend.String);
+            testCase.verifyFalse(any(startsWith(labels, "data")));
             [~, stem] = fileparts(posePath);
             testCase.verifyTrue(isfile(fullfile(folder, stem + "_summary.csv")));
             testCase.verifyTrue(isfile(fullfile(folder, stem + "_gait.labkit.json")));
@@ -48,4 +63,34 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
             clear cleanup
         end
     end
+end
+
+function handle = oneHandle(parent, tag)
+handle = findall(parent, "Tag", tag);
+if numel(handle) ~= 1
+    error("GaitWorkflowSpec:UnexpectedHandleCount", ...
+        "Expected one handle tagged %s.", tag);
+end
+end
+
+function verifyVisibleLineData(testCase, ax)
+lines = findobj(ax, "Type", "line");
+x = cell2mat(arrayfun(@(line) ...
+    double(line.XData(:)), lines, UniformOutput=false));
+y = cell2mat(arrayfun(@(line) ...
+    double(line.YData(:)), lines, UniformOutput=false));
+x = x(isfinite(x));
+y = y(isfinite(y));
+testCase.verifyNotEmpty(x);
+testCase.verifyNotEmpty(y);
+testCase.verifyLessThanOrEqual(min(x), ax.XLim(2));
+testCase.verifyGreaterThanOrEqual(max(x), ax.XLim(1));
+testCase.verifyLessThanOrEqual(min(y), ax.YLim(2));
+testCase.verifyGreaterThanOrEqual(max(y), ax.YLim(1));
+end
+
+function verifyEqualDataUnits(testCase, ax)
+testCase.verifyEqual(string(ax.DataAspectRatioMode), "manual");
+testCase.verifyEqual(ax.DataAspectRatio(1), ...
+    ax.DataAspectRatio(2), "RelTol", 1e-10);
 end

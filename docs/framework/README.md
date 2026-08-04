@@ -77,9 +77,19 @@ and renderer signatures, and builds one private native platform plan.
 
 - Bind ordinary state with `Bind="project..."` or `Bind="session..."`.
 - Use `labkit.app.layout.fileList` for portable file records and selection.
+  Multi-file collections use native multi-selection; a semantic single-file
+  slot declares `MaxFiles=1` and single selection. File buttons describe only
+  files because folder and recursive-tree acquisition have separate controls.
   Set `AllowDuplicatePaths=true` only when separate workflow tasks may share
   one resolved path, and present row-level workflow state with
   `Snapshot.fileItemStatuses`.
+  For content formats that cannot be distinguished by filename extension,
+  declare a pure batch `PathFilter` and a reader-facing
+  `PathFilterDescription`. The runtime applies the predicate only to newly
+  proposed files, omits rejected paths before source records are created, and
+  reports aggregate kept/filtered counts without exposing filenames.
+  Unhandled validation or parsing failures from file-panel actions roll back
+  transactionally and appear in an alert rather than only in callback output.
   Source changes rebuild the transient session; Apps do not mirror choose,
   remove, clear, or selection UI events.
 - Give every scientific or workflow action an App-owned `Tooltip`. The
@@ -87,6 +97,13 @@ and renderer signatures, and builds one private native platform plan.
   guardrails require tracked Apps to explain the action instead of repeating
   its visible label. File-list choose/folder/remove/clear controls expose
   dedicated tooltip options and domain-neutral label defaults.
+- Give a potentially long action a concise App-owned `BusyMessage`. Runtime
+  rejects reentrant input as soon as the action starts, but delays visible
+  busy feedback briefly so quick actions do not flash the pointer, title, or
+  disabled controls. If work outlives that delay, Runtime freezes mutable
+  controls and shows the busy stage until the latest committed view is
+  restored. User-facing `info`, `warning`, or failure logs emitted during the
+  action update the visible stage; Apps do not create progress windows.
 - Rebuild transient data with
   `session = createSession(project,context)` and resolve opaque source records
   with `context.resolveSourcePaths`.
@@ -114,6 +131,10 @@ and renderer signatures, and builds one private native platform plan.
   remain scrollable.
 - Declare editable overlays with `labkit.app.interaction.*` on the plot area;
   supply their current values with same-named Snapshot methods.
+- Open `anchorPath` editors order a new point by the nearest location on the
+  visible path: points beyond the start prepend, points beyond the end append,
+  and interior points insert into the owning curve segment. Zoom does not
+  change that ordering decision.
 - For a managed rectangle with `OnBackgroundPressed`, an un-dragged click
   anywhere on its plot—including inside the rectangle—uses that point
   callback; dragging the rectangle still uses its change callback.
@@ -147,9 +168,21 @@ utilities do not compete with the App's workflow controls:
 
 - **Plots** opens, copies, or saves the App's plot surfaces.
 - **Screenshot** copies the complete App surface to the system clipboard or
-  saves it to an image file.
-- **Project State** saves or loads the current project document when the App
-  declares a project schema.
+  writes a uniquely named PNG beneath `artifacts/screenshots/`. A save dialog
+  is used only if automatic artifact output fails.
+- **Project State** writes a uniquely named project beneath
+  `artifacts/states/` or loads a selected project when the App declares a
+  project schema. A save dialog is used only if automatic output fails.
+- **Diagnostics** opens the App-named Session Log or exports a uniquely named
+  bundle beneath `artifacts/diagnostics/`. Every export contains complete
+  sensitive messages, attributes, exception text, stack locations, and App
+  state. The exact option writes `app-state.mat`; the compact option writes
+  `app-state-compact.mat` after replacing supported state leaves larger than
+  1 MiB with same-class, same-dimension, compressible synthetic placeholders.
+  `bundle-report.json` records every replacement without storing its value.
+  Exact is the default. Selecting an event highlights its complete table row.
+  Text fallback retains complete events and reports that the selected MAT
+  state could not be represented as text.
 
 These actions are framework-owned native behavior. Apps do not declare menu
 items, implement clipboard integration, or duplicate project persistence

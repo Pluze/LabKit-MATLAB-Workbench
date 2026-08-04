@@ -15,13 +15,17 @@ classdef CurvatureWorkflowSpec < matlab.unittest.TestCase
                 "alert", @(~, ~) []);
             definition = curvature.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 
             runtime.applyFileSelection("imageFile", string(imagePath), 1);
+            runtime.invokeAction("startCurveEdit");
             runtime.applyInteraction("curve", "interactionChanged", arcPoints());
+            testCase.verifyEmpty(findobj( ...
+                figureValue, DisplayName="curve"));
+            runtime.invokeAction("startCurveEdit");
             runtime.applyControlValue("scaleReferencePixels", 40);
             runtime.applyControlValue("scaleReferenceLength", 10);
             runtime.applyControlValue("scaleCalibrationUnit", "mm");
@@ -30,6 +34,12 @@ classdef CurvatureWorkflowSpec < matlab.unittest.TestCase
             runtime.invokeAction("exportOverlay");
 
             testCase.verifyTrue(runtime.State.project.results.fit.ok);
+            testCase.verifyTrue(runtime.State.project.results.length.ok);
+            measureButton = findall(figureValue, "Tag", "fitCurvature");
+            testCase.verifyEqual(string(measureButton.Text), ...
+                "Measure length + curvature");
+            testCase.verifyEmpty(findall(figureValue, ...
+                "Tag", "measureCurveLength"));
             testCase.verifyGreaterThan(runtime.State.project.results.fit.R_show, 0);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.image").Children);
             testCase.verifyTrue(isfile(csvPath));

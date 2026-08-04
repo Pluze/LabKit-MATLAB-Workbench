@@ -28,8 +28,8 @@ follows the restored source.
 
 ## Load And Select Figures
 
-On **Figures**, choose **Add FIG files or scan folder**. The source list accepts
-MATLAB `.fig` files and keeps one current selection. Selecting another source
+On **Figures**, use **Add FIG files**, **Add folder**, or **Add folder tree**.
+The source list accepts MATLAB `.fig` files and keeps one current selection. Selecting another source
 opens its native graphics without rerunning the analysis. A mixed FIG is
 listed as ordered **Subplot panel** choices (top-left to bottom-right, with a
 title where one exists). Select one panel to preview, restyle, recalculate, and

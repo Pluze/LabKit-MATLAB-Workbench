@@ -154,8 +154,13 @@ tests, history, and details out of the public repository.
   changed task; required PR CI owns complete validation.
   The protected main-push run repeats only policy and the aggregate gate for
   the exact squash commit because its tree is the already-validated PR result.
-- After failure, fix and rerun the narrowest failed file, method, or suite; do not repeatedly
-  invoke the planner. Exact commands and scope live in
+- After a local or hosted-CI failure, inspect only the failing identity and its
+  log, fix the smallest responsible source boundary, and rerun the narrowest
+  failed method, specification file, or owner/contract. Push the focused repair
+  and let required CI re-establish the complete claim; do not rerun
+  `changedFast` or a local full profile after every CI repair. Re-plan only when
+  the repair intentionally widens the changed behavior or ownership boundary.
+  Exact commands and scope live in
   `docs/development/maintain-and-release/testing.md`.
 - MATLAB and GitHub inspection require host runtime/network permissions. Run
   every `gh` command with host permissions on its first attempt, including
@@ -204,7 +209,11 @@ tests, history, and details out of the public repository.
    merging the final PR, inspect the complete base-to-head diff, user docs,
    component versions, structured history, validation evidence, and remaining
    risks as one net change that `main` will squash into; do not derive release
-   semantics from intermediate branch commits.
+   semantics from intermediate branch commits. Versions and small history
+   records may remain provisional during ordinary iteration, but PR preparation
+   rewrites them from the `origin/main` baseline: remove intermediate version
+   transitions, merge related checkpoint records, and leave exactly one changed
+   structured history record for each versioned component.
 5. Main accepts PRs only from the repository-owned `develop` branch. Run
    `changedFast` once before final review, inspect required PR CI, and read only
    failing logs. Squash-merge with an explicit compliant subject.
@@ -257,6 +266,17 @@ explicit compliant squash subject; do not rely on GitHub defaults.
 - History records use stable Change ID and sequence metadata plus rationale,
   compatibility, user/data impact, validation, evidence, and follow-up. Do not
   restore a root changelog or separate history parser.
+- While work remains on `develop`, treat component history as the net pending
+  integration record rather than a commit diary. Merge compatible incremental
+  changes into an existing unpublished record when they share the same
+  component evolution, user outcome, and compatibility decision. Before the
+  squash PR is ready for review, compare the complete base-to-head change and
+  rewrite its history as the smallest coherent set of independently reviewable
+  product decisions: fold minor follow-on edits into their owning record,
+  remove records that describe no durable transition, and consolidate
+  development-only version steps so each affected component advances exactly
+  once for the net change. Update rationale, compatibility, user impact, and
+  evidence to describe the final PR diff rather than its commit sequence.
 - New release tags are `vX.Y.Z`; do not rename published legacy tags. Release
   titles are `LabKit MATLAB Workbench vX.Y.Z` with relevant `Highlights`,
   `Fixes`, `Upgrade Note`, and `Validation` sections.

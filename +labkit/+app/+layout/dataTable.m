@@ -34,5 +34,5 @@ function node = dataTable(id, varargin)
 %
 % See also labkit.app.event.TableCellEdit,
 %   labkit.app.event.TableCellSelection
-node = labkit.app.internal.LayoutNode.dataTable(id, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.dataTable(id, varargin{:});
 end

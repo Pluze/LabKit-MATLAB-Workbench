@@ -14,7 +14,7 @@ classdef ResponseReviewWorkflowSpec < matlab.unittest.TestCase
                 "chooseOutputFolder", @(~) labkit.app.dialog.Choice(alternateFolder));
             definition = response_review_stats.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();

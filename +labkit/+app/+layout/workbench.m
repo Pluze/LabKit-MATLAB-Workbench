@@ -27,5 +27,5 @@ function node = workbench(children, varargin)
 %
 % See also labkit.app.Definition,
 %   labkit.app.layout.workspace
-node = labkit.app.internal.LayoutNode.workbench(children, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.workbench(children, varargin{:});
 end

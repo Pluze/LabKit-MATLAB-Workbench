@@ -106,6 +106,17 @@ Failure rolls back both state and presentation and clears event-scoped
 resources. Apps do not implement busy flags, callback queues, readiness
 timers, or figure close guards.
 
+Runtime enters its non-reentrant busy state before invoking a callback. New
+button, field, table, file-list, workspace, and managed-interaction input is
+ignored until that transaction finishes. Visible feedback is delayed briefly:
+short callbacks therefore leave the pointer, title, and enabled appearance
+untouched, while longer callbacks show the action's `BusyMessage` (or its
+button label), switch to the busy pointer, and freeze mutable controls. The
+committed Snapshot restores the final enabled state. User-facing log messages
+emitted while that feedback is visible replace the current stage text, so an
+App can report real named stages through its existing diagnostic timeline
+without owning a second progress window.
+
 Use direct `Bind="project...."` or `Bind="session...."` paths for ordinary
 fields, ranges, sliders, file sources, and selection. Bound controls need no
 callback or presenter operation unless the App has additional derived meaning.
@@ -216,6 +227,24 @@ Renderers own drawing and viewport policy, not workflow decisions or project
 mutation. Display-only graphics disable hit testing. Managed interaction
 specs own editable gestures and event-scoped resources.
 
+For a multi-row plot dashboard, place multiple plot areas in one workspace
+page. Page content is arranged vertically, while each plot area independently
+chooses `single`, horizontal `pair`, or vertical `stack`. Two paired plot areas
+therefore form a 2-by-2 dashboard without App-owned native containers.
+`ColumnWidths={'1x', 90}` gives a pair a flexible main plot and a fixed-width
+scale or histogram; `RowHeights` provides the analogous control for a stack.
+
+```matlab
+top = labkit.app.layout.plotArea("topPlots", @drawTop, ...
+    Layout="pair", AxisIds=["image" "profile"]);
+bottom = labkit.app.layout.plotArea("bottomPlots", @drawBottom, ...
+    Layout="pair", AxisIds=["result" "scale"], ...
+    ColumnWidths={'1x', 90});
+workspace = labkit.app.layout.workspace(Title="Plots");
+workspace = workspace.page("plots", "Plots", {top, bottom});
+workspace = workspace.initialPage("plots");
+```
+
 Declare managed gestures statically on their plot area and provide their
 current value in the snapshot:
 
@@ -288,36 +317,49 @@ and safe for display. Pass caught exceptions through the dedicated
 `Exception` option instead of copying stack, path, identifier, or scientific
 data into free text.
 
-The App's **Tools > Diagnostics** menu opens the live session viewer, enables
-more detailed trace capture for future activity, and exports a diagnostic
-bundle from the same session history. Enabling trace does not restart the App
-or reconstruct earlier detail. Journal degradation is itself exposed in the
-surviving in-memory stream; logging failures never alter callback transaction
-semantics or scientific results. Native open and save dialogs normalize their
-file filters to MATLAB character-cell tables before calling the platform
-dialog, including the diagnostic ZIP destination on Windows releases.
-If the save dialog, staging, ZIP creation, or final publish step fails,
-Runtime writes the surviving privacy-safe records as one plain-text diagnostic
-fallback. It first uses the selected destination folder when that folder is
-available and otherwise uses MATLAB's user-writable temporary folder; the
-failure alert reports the complete fallback path.
+The App's **Tools > Diagnostics** menu opens the live session viewer and exports
+a diagnostic bundle from the same session history. Each viewer title names the
+App that owns the session. Its single **Level** selector has three modes:
+**Full TRACE** displays every retained record, **DEBUG** hides trace-only
+stages, and **User** shows user-audience INFO and higher events. Full TRACE is
+the default view; it does not manufacture detail that was not captured. The
+**Action** filter groups a top-level user or lifecycle action with its nested
+callback, presentation, dialog, resource, and transaction records.
 
-The viewer's **View** filter describes intended readers, not access control.
-**Useful** shows user-workflow events plus developer warnings and failures;
-**User workflow**, **Developer details**, and **Everything** select the two
-event audiences explicitly. The **Action** filter groups a top-level user or
-lifecycle action with its nested callback, presentation, dialog, resource, and
-transaction records. Its readable label includes time and a semantic message
-while retaining the stable `op-*` correlation identifier for exported
-diagnostics.
+Runtime initially captures DEBUG and higher records to bound ordinary-session
+cost. The first ERROR or CRITICAL event automatically enables TRACE for later
+activity. The viewer also provides an explicit **Enable TRACE** / **Disable
+TRACE** control when a user needs detailed capture before an error. TRACE adds
+callback state-update and validation stages, App/runtime presentation stages,
+native presentation commit, and post-failure rollback cleanup; DEBUG retains
+operation start and terminal boundaries. Enabling TRACE never reconstructs
+earlier detail.
 
-TRACE capture is independent of ordinary failure capture. With TRACE off,
-Runtime still retains DEBUG lifecycle/callback start and completion boundaries
-and all INFO, WARNING, ERROR, and CRITICAL events. The default viewer hides
-normal developer DEBUG/INFO records; selecting **DEBUG+** and **Developer
-details** reveals earlier retained callback boundaries. A callback exception
-is recorded as an ERROR with `failed` operation result, rollback disposition,
-safe exception identifier, and sanitized function stack.
+**Export Diagnostic Bundle** writes directly to ignored
+`artifacts/diagnostics/` with a generated App-specific, timestamped, unique ZIP
+name. Every bundle contains complete sensitive events, attributes, exception
+messages, stack locations, and App state. **Complete bundle (exact MAT)**
+writes `app-state.mat` unchanged. **Complete bundle (compact synthetic MAT)**
+writes `app-state-compact.mat`: Runtime recursively reviews state containers
+and replaces supported numeric, logical, character, or string leaves larger
+than 1 MiB with deterministic compressible placeholders of the same class and
+dimensions. It preserves smaller parameters, annotations, results, and caches.
+`bundle-report.json` names structural state paths and sizes for every
+replacement without retaining the replaced values; it also lists oversized
+unsupported leaf types that had to remain exact. Compact state is diagnostic
+evidence, not scientifically valid input. Both modes may contain sensitive
+paths, filenames, scientific values, and decoded data; neither is a privacy
+filter. Exact is the default.
+
+If ZIP staging or publication fails, Runtime writes a generated complete-event
+text fallback beside that ZIP. Only when automatic output cannot be written
+does it ask for another location, with the generated fallback filename already
+filled in. Text cannot represent either MAT state and says so explicitly. The
+success or fallback alert reports the complete destination path.
+Journal degradation remains visible in the surviving in-memory stream; logging
+failures never alter callback transaction semantics or scientific results.
+A callback exception is recorded as an ERROR with `failed` operation result,
+rollback disposition, safe exception identifier, and sanitized function stack.
 
 Runtime close is also an instrumented lifecycle operation. Resource and native
 adapter cleanup continue independently; a cleanup exception is retained and

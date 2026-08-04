@@ -36,5 +36,5 @@ function node = field(id, varargin)
 %       Bind="project.parameters.gain");
 %
 % See also labkit.app.layout.rangeField, labkit.app.layout.slider
-node = labkit.app.internal.LayoutNode.field(id, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.field(id, varargin{:});
 end

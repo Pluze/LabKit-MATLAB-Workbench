@@ -34,9 +34,9 @@ function summary = summaryViewData(imagePath, xPix, fit, lengthResult, curveEdit
         elseif referenceEditActive
             summary.details = {'Reference-pixel edit active. Double-click two endpoints or drag existing endpoints; this sets the calibration pixel length only.'};
         elseif numel(xPix) >= 3
-            summary.details = {'Curve points are ready. Fit curvature or measure curve length.'};
+            summary.details = {'Curve points are ready. Measure length and curvature together.'};
         elseif numel(xPix) >= 2
-            summary.details = {'Curve points are ready. Measure curve length, or add more points before fitting curvature.'};
+            summary.details = {'Add at least one more point before measuring length and curvature.'};
         else
             summary.details = {'Load an image and start curve editing.'};
         end

@@ -1,11 +1,13 @@
 function calls = runtimeFactoryCalls(source)
-%RUNTIMEFACTORYCALLS Parse executable RuntimeFactory calls from MATLAB source.
-% Expected caller: repository test guardrails. Strings and comments are masked
-% before matching, while balanced delimiters preserve complete multi-line calls.
+%RUNTIMEFACTORYCALLS Parse executable SDK runtime test-construction calls.
+% Expected caller: repository test guardrails. Direct RuntimeFactory calls and
+% the stable labkittest runtime seams are recognized. Strings and comments are
+% masked before matching, while balanced delimiters preserve complete calls.
 
 source = char(join(string(source), newline));
 masked = maskNonCode(source);
-pattern = "RuntimeFactory\.(createHeadless|createMatlab)\s*\(";
+pattern = "(?:RuntimeFactory|labkittest)\." + ...
+    "(createHeadless|createMatlab)(?:Runtime)?\s*\(";
 [starts, ends, tokens] = regexp(masked, pattern, "start", "end", "tokens");
 calls = repmat(struct("Method", "", "Line", 0, ...
     "Arguments", strings(1, 0), "JournalRoot", ""), 1, numel(starts));

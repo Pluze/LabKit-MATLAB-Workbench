@@ -15,7 +15,10 @@ function node = fileList(id, varargin)
 %   Label - Reader-facing collection label. Default: id.
 %   Mode - "files" or "folder". Default: "files".
 %   Filters - File-dialog filter text row. Default: strings(1,0).
-%   SelectionMode - "single" or "multiple". Default: "multiple".
+%   SelectionMode - "single" or "multiple" for both the native file chooser
+%       and list-row selection. Multi-file collections use "multiple"; a
+%       single semantic input normally combines "single" with MaxFiles=1.
+%       Default: "multiple".
 %   MaxFiles - Positive scalar or Inf. Default: Inf.
 %   FolderWarningThreshold - Positive scalar or Inf. Default: 500.
 %   ShowStatus - Logical status visibility. Default: true.
@@ -35,6 +38,14 @@ function node = fileList(id, varargin)
 %   AllowDuplicatePaths - Preserve separate portable source records that
 %       resolve to the same path. Use this when each list row is a distinct
 %       workflow task. Default: false.
+%   PathFilter - Optional callback accepted = callback(paths). paths is a row
+%       string array containing newly proposed files. accepted must be a
+%       logical row with one value per path. Rejected paths are omitted before
+%       portable source records are created, and the runtime reports aggregate
+%       retained/filtered counts without exposing filenames. Default: empty.
+%   PathFilterDescription - Reader-facing description of files accepted by
+%       PathFilter, used in the aggregate filtering notice. Default:
+%       "supported".
 %   Bind - Project source-record field path. Default: "".
 %   SelectionBind - ListSelection field path. Default: "".
 %   OnSelectionChanged - Optional callback
@@ -51,6 +62,8 @@ function node = fileList(id, varargin)
 %
 % Errors:
 %   Throws labkit:app:contract:* for invalid options, paths, or callbacks.
+%   In a native App, an unhandled file-panel validation or parsing exception
+%   is rolled back and shown in an alert.
 %
 % Typical Call:
 %   node = labkit.app.layout.fileList("files", ...
@@ -59,5 +72,5 @@ function node = fileList(id, varargin)
 %
 % See also labkit.app.event.ListSelection,
 %   labkit.app.CallbackContext, labkit.app.view.Snapshot
-node = labkit.app.internal.LayoutNode.fileList(id, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.fileList(id, varargin{:});
 end

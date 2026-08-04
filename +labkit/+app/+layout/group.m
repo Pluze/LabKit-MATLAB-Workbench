@@ -26,5 +26,5 @@ function node = group(id, children, varargin)
 %   node = labkit.app.layout.group("inputs", {gainField});
 %
 % See also labkit.app.layout.section, labkit.app.layout.workbench
-node = labkit.app.internal.LayoutNode.group(id, children, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.group(id, children, varargin{:});
 end

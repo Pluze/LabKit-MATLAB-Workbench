@@ -26,7 +26,7 @@ tool availability, or the active maintenance operation.
 | Versions and Install | **Latest** | Installs the current `main` branch archive. |
 | Versions and Install | **Release** | Installs the latest stable GitHub release. |
 | Versions and Install | **Versions** | Opens the release, tag, and commit selector for deliberate upgrade or rollback. |
-| Development and Maintenance | **Generate Local Documentation** | Rebuilds the complete ignored `site/` folder from the current Markdown and public MATLAB help. It does not open a page or choose between online and local help. |
+| Development and Maintenance | **Doc Generation** | Rebuilds the complete ignored `site/` folder from the current Markdown and public MATLAB help. It does not open a page or choose between online and local help. |
 | Development and Maintenance | **Run Code Analyzer** | Scans the checkout and writes JSON and HTML Code Analyzer reports. |
 | Development and Maintenance | **Profile Selected App** | Starts the selected app under the MATLAB profiler and saves its report when the app closes. |
 | Development and Maintenance | **Clean Artifacts** | Removes ignored generated reports under `artifacts/`; it does not delete app projects or exported laboratory results. |
@@ -35,7 +35,9 @@ tool availability, or the active maintenance operation.
 
 Double-clicking an app row is equivalent to selecting it and opening it
 normally. The checkbox column controls package membership; ordinary launch
-selection does not change the checked set.
+selection does not change the checked set. The application table places
+**Family** immediately before **App** so related tools remain visually grouped
+while their individual names stay easy to scan.
 
 When startup begins, the launcher immediately disables its App table and
 actions, changes the open button to **Starting App...**, shows a wait pointer,
@@ -47,8 +49,9 @@ opened command; failure reports the failing identifier and message, with repair
 guidance only for structural installation failures.
 
 Every launch uses the same clean App path. Use the App's **Tools >
-Diagnostics** menu to inspect its live session log, enable trace capture, or
-export a diagnostic ZIP after a problem occurs. Apps that declare a synthetic
+Diagnostics** menu to inspect its live session log or export a diagnostic
+bundle after a problem occurs. The Session Log window owns manual TRACE
+capture when earlier detail is needed. Apps that declare a synthetic
 input pack expose **Tools > Developer Tools > Generate Synthetic Inputs...**.
 Generation writes anonymous fixture files and a manifest into a new folder but
 does not load them or mutate the running project.
@@ -82,7 +85,7 @@ Documentation lookup uses the discovered public App folder and the unique
 path-conventional manual at `docs/apps/<family>/<app>/README.md`. It does not
 require a separately maintained App catalog. The visible launcher opens online
 documentation by default. Local generation is an explicit source-checkout
-convenience: **Generate Local Documentation** always rebuilds the ignored
+convenience: **Doc Generation** always rebuilds the ignored
 `site/` folder and reports completion without opening a browser. The deployed
 site is generated independently from `main` by GitHub Actions.
 

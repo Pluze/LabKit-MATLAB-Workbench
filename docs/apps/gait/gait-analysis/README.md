@@ -71,11 +71,18 @@ names; `iliac_crest` is accepted for the iliac role.
 ### 2. Analyze And Review One Step
 
 Choose **Run analysis**. Select a row in the step table or use **Previous
-step** and **Next step**. The workspace then shows only that step:
+step** and **Next step**. The 2-by-2 workspace shows:
 
 1. all skeleton poses from lift-off through landing, with point trajectories;
 2. hip, knee, and ankle angle traces;
-3. iliac-hip, hip-knee, knee-ankle, and ankle-foot length traces.
+3. iliac-hip, hip-knee, knee-ankle, and ankle-foot length traces;
+4. the complete recording's overlaid skeletons and all named point
+   trajectories as persistent context.
+
+Both spatial plots preserve equal X/Y data units so gait shape is not stretched
+by the available panel geometry. Loading a new source, running analysis, or
+changing the selected step fits the new data once; later redraws preserve the
+user's zoom.
 
 The skeleton plot annotates swing duration, step length, iliac/hip/knee/ankle/
 foot translations, and each joint's minimum, maximum, and range of motion. This

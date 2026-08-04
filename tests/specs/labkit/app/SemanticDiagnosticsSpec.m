@@ -10,7 +10,7 @@ classdef SemanticDiagnosticsSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = probeDefinition(layout);
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createHeadless( ...
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
                 definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
@@ -40,7 +40,7 @@ classdef SemanticDiagnosticsSpec < matlab.unittest.TestCase
         end
 
         function streamClosesAbandonedOperationsInMemory(testCase)
-            stream = labkit.app.internal.SessionEventStream( ...
+            stream = labkit.app.internal.diagnostics.SessionEventStream( ...
                 probeDefinition(labkit.app.layout.workbench({})));
             cleanup = onCleanup(@() stream.close());
 

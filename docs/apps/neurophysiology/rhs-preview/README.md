@@ -46,8 +46,8 @@ reference, and response channels explicit.
 
 ## Prepare A File Filter
 
-Use **Add RHS files or folder** to collect recordings for a later analysis.
-The file table lets you assign a label and comment to each recording. Remove
+Use **Add RHS files**, **Add folder**, or **Add folder tree** to collect the
+recordings for later analysis. The file table lets you assign a label and comment to each recording. Remove
 individual entries or clear the list as needed, then choose **Save Filter
 Record**.
 

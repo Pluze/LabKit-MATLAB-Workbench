@@ -36,7 +36,7 @@ classdef (Sealed) Choice
 
     methods
         function obj = Choice(value, varargin)
-            options = labkit.app.internal.OptionParser.parse( ...
+            options = labkit.app.internal.contract.OptionParser.parse( ...
                 "labkit.app.dialog.Choice", "Cancelled", varargin{:});
             cancelled = false;
             if isfield(options, "Cancelled")

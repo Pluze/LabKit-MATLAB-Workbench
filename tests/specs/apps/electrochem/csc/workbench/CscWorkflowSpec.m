@@ -5,16 +5,20 @@ classdef CscWorkflowSpec < matlab.unittest.TestCase
         function loadsACvCtFileAndUpdatesComparisonPlots(testCase)
             source = testfixtures.dtaFixturePath( ...
                 "cv_cyclic_voltammetry_pt_reference.DTA");
+            unsupported = testfixtures.dtaFixturePath( ...
+                "eis_potentiostatic_zcurve.DTA");
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = csc.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
-                definition, [], struct(), journal);
+            runtime = labkittest.createMatlabRuntime( ...
+                definition, [], struct("alert", @(~, ~) []), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 
-            runtime.applyFileSelection("files", source, 1);
+            testCase.verifyEqual(string( ...
+                findall(figureValue, "Tag", "files").Multiselect), "on");
+            runtime.applyFileSelection("files", [source, unsupported], 1:2);
             tableValue = findall(figureValue, "Tag", "cycleResults");
             top = findall(figureValue, "Tag", "plotAxes.top");
             bottom = findall(figureValue, "Tag", "plotAxes.bottom");
@@ -22,6 +26,7 @@ classdef CscWorkflowSpec < matlab.unittest.TestCase
                 csc.analysisRun.analysisChoices().modes(2));
 
             testCase.verifyNumElements(runtime.State.session.cache.items, 1);
+            testCase.verifyNumElements(runtime.State.project.inputs.sources, 1);
             testCase.verifyGreaterThan(size(tableValue.Data, 1), 0);
             testCase.verifyNotEmpty(top.Children);
             testCase.verifyNotEmpty(bottom.Children);

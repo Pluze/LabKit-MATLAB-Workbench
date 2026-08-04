@@ -17,7 +17,7 @@ points = points(all(isfinite(points), 2), :);
 total = numel(state.project.annotations.skeleton.pointIds);
 points = points(1:min(size(points, 1), total), :);
 frame = state.session.cache.frameIndex;
-state = video_marker.markerEditing.setPoints(state, points);
+state = video_marker.markerEditing.setPoints(state, points, context);
 context.log("info", "video_marker.markerediting.changepoints.status", ...
     "Frame " + string(frame) + " points: " + ...
     string(size(points, 1)) + " / " + string(total) + ".");

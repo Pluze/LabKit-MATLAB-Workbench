@@ -21,8 +21,8 @@ The **Files + Analysis** tab contains the complete workflow:
 4. Use **Start curve edit** and place ordered anchors along the feature.
 5. Drag anchors to refine the trace; undo or clear as needed, then finish
    curve editing.
-6. Choose the densification settings, fit the circle, and measure curve
-   length.
+6. Choose the densification settings and use **Measure length + curvature**
+   to produce both results together.
 7. Export the result CSV and overlay PNG.
 
 The edit buttons change to **Finish curve edit** or **Finish reference edit**
@@ -44,7 +44,9 @@ upgraded on load without changing the curve, calibration, or result meaning.
 Curve points are ordered by placement. **Undo last point** removes the newest
 anchor and **Clear curve** removes the complete trace. Neighboring duplicate
 points are removed before numeric fitting. At least three distinct points are
-required for a circle fit; length requires at least two.
+required for the combined measurement. While curve editing is active, only the
+managed editable curve is drawn; the inactive static curve returns after the
+edit is finished.
 
 ## Fit Parameters And Semantics
 

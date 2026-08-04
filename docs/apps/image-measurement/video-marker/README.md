@@ -2,7 +2,7 @@
 
 Video Marker defines an ordered landmark skeleton, records coordinates across
 video frames, predicts forward positions between manual anchors, and saves a
-portable project with an explicit source-adjacent autosave copy.
+portable project with a source-adjacent autosave copy.
 
 ## Requirements And Launch
 
@@ -22,8 +22,10 @@ loader as the window's top-level Load State action and accepts an explicit
 project or compatible autosave. **Save autosave** immediately updates
 `Video Marker Autosaves/<video>.video_marker.autosave.mat` beside the source
 video without asking for a path and without turning that recovery copy into the
-named project file. **New setup** offers Cancel, Save and start new, or Discard
-and start new; it never silently clears the current session.
+named project file. Point placement, dragging, undo, clear, imported marker
+coordinates, and newly predicted frames update the same autosave automatically.
+**New setup** offers Cancel, Save and start new, or Discard and start new; it
+never silently clears the current session.
 
 For a new project, choose a preset or add keypoints, edit their names, reorder
 them, and define connections. **Connect in order** links every adjacent pair.
@@ -70,12 +72,15 @@ conversion. Raw pixel coordinates remain available in the project.
 
 ## Autosave, Recovery, And Portability
 
-**Save autosave** writes atomically to `Video Marker Autosaves` beside the
-source video. It is an explicit action, not a background timer. Autosave and
-named project MAT files contain the same project data: frame count, frame rate,
-duration, image dimensions, skeleton edges, annotation status/source,
-calibration, and durable coordinates. The video itself remains an external
-portable source and can be relinked without discarding annotations.
+Every committed point-information change writes atomically to
+`Video Marker Autosaves` beside the source video. This includes point placement
+and dragging, undo and clear, marker CSV import, and forward prediction. The
+**Save autosave** action remains available to force an immediate write without
+waiting for another point change. Autosave and named project MAT files contain
+the same project data: frame count, frame rate, duration, image dimensions,
+skeleton edges, annotation status/source, calibration, and durable coordinates.
+The video itself remains an external portable source and can be relinked
+without discarding annotations.
 
 When a project tree moves between folders, users, or operating systems, the
 relative reference is tried first. If no candidate exists, the app asks the

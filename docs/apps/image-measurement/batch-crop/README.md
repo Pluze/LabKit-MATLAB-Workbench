@@ -12,8 +12,8 @@ labkit_BatchImageCrop_app
 
 ## Inputs
 
-Use **Add images or folder** to load supported image files. A folder selection
-loads supported files from that folder. Each list row stores its own crop center,
+Use **Add images** for selected files, **Add folder** for one directory, or
+**Add folder tree** for nested sources. Each list row stores its own crop center,
 rotation, padding, and optional scale calibration. **Duplicate image** creates
 another task for the same source so multiple ROIs can be exported without
 loading duplicate files. Duplicate tasks remain aligned with their source and

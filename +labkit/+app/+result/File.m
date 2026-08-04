@@ -50,7 +50,7 @@ classdef (Sealed) File
     methods
         function obj = File(id, role, relativePath, varargin)
             names = ["MediaType", "Status", "Message", "Warnings"];
-            options = labkit.app.internal.OptionParser.parse( ...
+            options = labkit.app.internal.contract.OptionParser.parse( ...
                 "labkit.app.result.File", names, varargin{:});
             obj.Id = nonemptyText(id, "id");
             obj.Role = nonemptyText(role, "role");

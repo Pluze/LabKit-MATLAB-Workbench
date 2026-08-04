@@ -13,6 +13,8 @@ applicationState.project.results.analysis = ...
 applicationState.project.results.lastExport = [];
 applicationState.session.cache.lastRunFingerprint = "";
 applicationState.session.selection.currentStepIndex = 1;
+applicationState.session.cache.plotViewRevision = ...
+    applicationState.session.cache.plotViewRevision + 1;
 if ~pose.ok || isempty(selection.Indices)
     return
 end

@@ -1,9 +1,11 @@
 % Expected caller: Gait Analysis plot-area renderer. Inputs are axes by ID
 % and a pure gait preview model. Side effects are limited to those axes.
 function draw(axesById, model)
-drawOne(axesById.skeleton, withKind(model, "skeleton"));
-drawOne(axesById.angles, withKind(model, "angles"));
-drawOne(axesById.segments, withKind(model, "segments"));
+axisIds = string(fieldnames(axesById));
+for k = 1:numel(axisIds)
+    axisId = axisIds(k);
+    drawOne(axesById.(char(axisId)), withKind(model, axisId));
+end
 end
 
 function model = withKind(model, kind)
@@ -17,7 +19,9 @@ function drawOne(ax, model)
         labkit.app.plot.showMessage(ax, ...
             "Load pose data to preview gait analysis.");
     elseif model.kind == "skeleton"
-        drawSkeletons(ax, model);
+        drawSkeletons(ax, model, false);
+    elseif model.kind == "overview"
+        drawSkeletons(ax, model, true);
     elseif ~model.result.ok
         ax.YDir = "normal";
         labkit.app.plot.showMessage(ax, ...
@@ -34,11 +38,12 @@ function drawOne(ax, model)
     disableHitTesting(ax);
 end
 
-function drawSkeletons(ax, model)
+function drawSkeletons(ax, model, showFullRecording)
     pose = model.pose;
     frames = 1:size(pose.coords, 1);
     titleText = "All overlaid skeleton trajectories";
-    if model.result.ok && ~isempty(model.result.stepTable)
+    if ~showFullRecording && model.result.ok && ...
+            ~isempty(model.result.stepTable)
         row = model.result.stepTable(model.selectedStep, :);
         frames = row.lift_off_frame:row.landing_frame;
         titleText = sprintf("Step %d | frames %d-%d", ...
@@ -54,7 +59,9 @@ function drawSkeletons(ax, model)
             pose.coords(frames, second, 1), NaN(numel(frames), 1)].';
         y = [pose.coords(frames, first, 2), ...
             pose.coords(frames, second, 2), NaN(numel(frames), 1)].';
-        plot(ax, x(:), y(:), "-", "Color", [0.55 0.55 0.55]);
+        plot(ax, x(:), y(:), "-", ...
+            "Color", [0.55 0.55 0.55], ...
+            "HandleVisibility", "off");
     end
     for k = 1:numel(pose.pointNames)
         plot(ax, pose.coords(frames, k, 1), pose.coords(frames, k, 2), ...
@@ -67,7 +74,9 @@ function drawSkeletons(ax, model)
     ylabel(ax, "Pixel Y");
     grid(ax, "on");
     legend(ax, "Location", "best");
-    if model.result.ok && ~isempty(model.result.stepTable)
+    labkit.app.plot.fitAxesToGraphics(ax, EqualDataUnits=true);
+    if ~showFullRecording && model.result.ok && ...
+            ~isempty(model.result.stepTable)
         addStepAnnotation(ax, model.result.stepTable(model.selectedStep, :));
     end
 end
@@ -91,6 +100,7 @@ function drawAngles(ax, model)
     ylabel(ax, "Angle (deg)");
     grid(ax, "on");
     legend(ax, "Location", "best");
+    labkit.app.plot.fitAxesToGraphics(ax);
 end
 
 function drawSegments(ax, model)
@@ -114,6 +124,7 @@ function drawSegments(ax, model)
     ylabel(ax, "Length (" + unit + ")");
     grid(ax, "on");
     legend(ax, "Location", "best");
+    labkit.app.plot.fitAxesToGraphics(ax);
 end
 
 function value = selectedFrames(model)

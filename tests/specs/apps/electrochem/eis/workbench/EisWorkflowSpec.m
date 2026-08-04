@@ -4,6 +4,8 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
     methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
         function loadsPlotsExportsAndRestoresAnEisFile(testCase)
             source = testfixtures.dtaFixturePath("eis_potentiostatic_zcurve.DTA");
+            unsupported = testfixtures.dtaFixturePath( ...
+                "chrono_chronopot_current_pulse_0p2ms.DTA");
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             output = fullfile(folder, "eis.csv");
@@ -12,12 +14,12 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
                 "alert", @(~, ~) []);
             definition = eis.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkit.app.internal.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 
-            runtime.applyFileSelection("files", source, 1);
+            runtime.applyFileSelection("files", [source, unsupported], 1:2);
             axesValue = findall(figureValue, "Tag", "plot.main");
             units = eis.impedanceDisplay.catalog();
             runtime.applyControlValue("impedanceUnit", units.choices(4));
@@ -25,6 +27,7 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             runtime.invokeAction("exportPlot");
 
             testCase.verifyNumElements(runtime.State.session.cache.items, 1);
+            testCase.verifyNumElements(runtime.State.project.inputs.sources, 1);
             testCase.verifyNotEmpty(axesValue.Children);
             testCase.verifySubstring(string(axesValue.XLabel.String), ...
                 units.choices(4));

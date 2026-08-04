@@ -48,7 +48,7 @@ classdef (Sealed) Pack
     methods
         function obj = Pack(varargin)
             names = ["Scenario", "InitialProject", "Artifacts"];
-            options = labkit.app.internal.OptionParser.parse( ...
+            options = labkit.app.internal.contract.OptionParser.parse( ...
                 "labkit.app.synthetic.Pack", names, varargin{:});
             for name = names
                 if ~isfield(options, name)

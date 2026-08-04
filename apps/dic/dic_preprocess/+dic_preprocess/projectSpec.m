@@ -2,8 +2,9 @@
 % Expected caller: dic_preprocess.definition. Output owns the current payload
 % version, creation defaults, and validation. Side effects are none.
 function spec = projectSpec()
-    spec = labkit.app.project.Schema(Version=1, Create=@createProject, ...
-        Validate=@validateProject, SourceBindings="inputs.sources");
+    spec = labkit.app.project.Schema(Version=2, Create=@createProject, ...
+        Validate=@validateProject, Migrate=@migrateProject, ...
+        SourceBindings="inputs.sources");
 end
 
 function project = createProject()
@@ -38,7 +39,28 @@ function accepted = validateProject(project)
         {'previewMode', 'maskBoundaryStyle'})), ...
         'dic_preprocess:InvalidProject', ...
         'DIC preprocess project parameters are incomplete.');
+    previewMode = string(project.parameters.previewMode);
+    assert(isscalar(previewMode) && ~ismissing(previewMode) && ...
+        any(previewMode == ["Current pair", "False-color overlay", ...
+        "Original pair", "ROI mask"]), ...
+        'dic_preprocess:InvalidProject', ...
+        'DIC preprocess preview mode is unsupported.');
     accepted = true;
+end
+
+function project = migrateProject(project, fromVersion)
+    if double(fromVersion) ~= 1
+        error('dic_preprocess:UnsupportedProjectMigration', ...
+            'DIC Preprocess cannot migrate project version %d.', fromVersion);
+    end
+    if isfield(project, "parameters") && ...
+            isfield(project.parameters, "previewMode")
+        previewMode = string(project.parameters.previewMode);
+        if isscalar(previewMode) && ...
+                previewMode == "Current moving image"
+            project.parameters.previewMode = "Current pair";
+        end
+    end
 end
 
 function history = emptyEditHistory()

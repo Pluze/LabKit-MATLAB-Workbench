@@ -1,0 +1,6 @@
+function apps = emptyApps()
+%EMPTYAPPS Return the canonical empty launcher-entry collection.
+apps = struct("command", {}, "folder", {}, "relativePath", {}, ...
+    "family", {}, "name", {}, "description", {}, "visibility", {}, ...
+    "version", {}, "updated", {});
+end

@@ -20,8 +20,10 @@ end
 axis(ax, "image");
 ax.YDir = "reverse";
 hold(ax, "on");
-curvature.curvePreview.presentationData.plotStaticCurveAnchors( ...
-    ax, model.points, model.curve, model.fit, model.showDensePoints);
+if model.showStaticCurve
+    curvature.curvePreview.presentationData.plotStaticCurveAnchors( ...
+        ax, model.points, model.curve, model.fit, model.showDensePoints);
+end
 drawFit(ax, model.fit);
 drawScaleBar(ax, model.scaleBar);
 hold(ax, "off");

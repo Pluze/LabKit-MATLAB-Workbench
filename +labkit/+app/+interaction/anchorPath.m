@@ -7,6 +7,10 @@ function spec = anchorPath(id, onChanged, varargin)
 % Description:
 %   Creates the semantic declaration for a managed multi-anchor path editor;
 %   the runtime owns native graphics, viewport preservation, and dispatch.
+%   On an open path, a point placed beyond the visible start is prepended, a
+%   point beyond the visible end is appended, and all other points are inserted
+%   after the nearest visible curve segment. This ordering is independent of
+%   the current axes zoom.
 %
 % Inputs:
 %   id - Unique MATLAB identifier for this interaction.
@@ -34,7 +38,7 @@ spec = makeSpec("anchorPath", id, onChanged, ...
 end
 
 function spec = makeSpec(kind, id, callback, names, varargin)
-options = labkit.app.internal.OptionParser.parse( ...
+options = labkit.app.internal.contract.OptionParser.parse( ...
     "labkit.app.interaction." + kind, names, varargin{:});
-spec = labkit.app.internal.InteractionSpec(kind, id, callback, options);
+spec = labkit.app.internal.interaction.InteractionSpec(kind, id, callback, options);
 end

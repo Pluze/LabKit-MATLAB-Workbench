@@ -6,7 +6,7 @@ classdef NerveResponseSourceSpec < matlab.unittest.TestCase
             state = struct("session", struct("workflow", ...
                 struct("lastAction", "Selected filter record", "statusMessage", "ready")));
             selection = labkit.app.event.ListSelection();
-            context = labkit.app.internal.CallbackContextFactory.disconnected();
+            context = labkittest.disconnectedCallbackContext();
 
             actual = nerve_response_analysis.sourceFiles.filterChanged(state, selection, context);
 

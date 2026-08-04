@@ -13,8 +13,9 @@ labkit_FocusStack_app
 
 ## Inputs
 
-Add selected image files or choose a folder. Remove blurred, displaced, or
-otherwise invalid frames before running. The first image defines working
+Choose focal planes directly, or discover them from a flat or nested image
+directory. Remove blurred, displaced, or otherwise invalid frames before running.
+The first image defines working
 geometry; differently sized inputs are resized and the result records how many
 images required resizing.
 

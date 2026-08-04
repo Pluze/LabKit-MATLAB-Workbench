@@ -43,7 +43,16 @@ function node = plotArea(id, renderer, varargin)
 %   node = labkit.app.layout.plotArea("preview", @drawTrace, ...
 %       AxisIds="trace");
 %
+%   top = labkit.app.layout.plotArea("top", @drawTop, ...
+%       Layout="pair", AxisIds=["left" "right"]);
+%   bottom = labkit.app.layout.plotArea("bottom", @drawBottom, ...
+%       Layout="pair", AxisIds=["summary" "scale"], ...
+%       ColumnWidths={'1x', 90});
+%   workspace = labkit.app.layout.workspace(Title="Four plots");
+%   workspace = workspace.page("plots", "Plots", {top, bottom});
+%   workspace = workspace.initialPage("plots");
+%
 % See also labkit.app.view.Snapshot, labkit.app.layout.workspace,
 %   labkit.app.interaction.anchorPath
-node = labkit.app.internal.LayoutNode.plotArea(id, renderer, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.plotArea(id, renderer, varargin{:});
 end

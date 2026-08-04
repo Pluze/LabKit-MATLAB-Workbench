@@ -95,8 +95,9 @@ choices, workflow-specific defaults, result schemas, and exports. See the
 [App Framework](../framework/README.md) for behavior shared across apps.
 
 Every App opens as a clean project. Use **Tools > Diagnostics** to inspect the
-current session history, enable future trace capture, or export a diagnostic
-bundle after a problem. Apps with declared sample generation expose **Tools >
+current session history or export a diagnostic bundle after a problem. Manual
+TRACE capture is controlled inside the Session Log window. Apps with declared
+sample generation expose **Tools >
 Developer Tools > Generate Synthetic Inputs...**; generation writes anonymous
 inputs without loading them or changing the open project. The
 [runtime guide](../framework/guides/runtime.md) defines these shared contracts.

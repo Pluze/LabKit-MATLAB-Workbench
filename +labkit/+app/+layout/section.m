@@ -26,5 +26,5 @@ function node = section(id, title, children, varargin)
 %   node = labkit.app.layout.section("inputs", "Inputs", {gainField});
 %
 % See also labkit.app.layout.group, labkit.app.layout.tab
-node = labkit.app.internal.LayoutNode.section(id, title, children, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.section(id, title, children, varargin{:});
 end

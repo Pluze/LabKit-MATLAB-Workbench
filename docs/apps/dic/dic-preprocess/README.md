@@ -45,26 +45,29 @@ derived working pair and replays no edits.
 | Mode | Display |
 | --- | --- |
 | Current pair | current reference above the current moving image |
-| Current moving image | moving image in the main comparison view |
 | False-color overlay | red/green registration comparison of the current pair |
 | Original pair | source images before applied edits |
 | ROI mask | current binary mask over the image domain |
 
 Changing preview mode does not change project data. Point placement, point
-dragging, crop editing, mask editing, and applying an operation preserve the
-current axes zoom. Use the plot **Fit** action when a full-image view is wanted.
+dragging, crop editing, mask editing, and alignment preserve the current axes
+zoom. Applying a crop fits both axes to the new pixel domain so the removed
+image area does not remain as white plot margins. Use the plot **Fit** action
+when a full-image view is otherwise wanted.
 
 ## Manual Point Matching
 
-Press **Start point matching**. Click a feature in the reference image, then
-click the same feature in the moving image. Repeat this reference/moving order
-for at least two complete pairs. Numbered markers show correspondence and the
-preview subtitle states which image expects the next point.
+Press **Start point matching**. The preview switches to the current reference
+and current moving images. Click a feature in the reference image, then click
+the same feature in the moving image. Repeat this reference/moving order for at
+least two complete pairs. Numbered markers show correspondence and the preview
+subtitle states which image expects the next point.
 
-Drag an existing marker to refine it. **Undo point pair** removes the newest
-complete pair. **Cancel point matching** discards the pending point set without
-changing the current images. **Apply point alignment** estimates and applies a
-rigid two-dimensional transform.
+Markers are displayed as numbered points without connecting lines. Drag an
+existing marker to refine it. **Undo point pair** removes the newest complete
+pair. **Cancel point matching** discards the pending point set without changing
+the current images. **Apply point alignment** estimates and applies a rigid
+two-dimensional transform.
 
 Manual alignment uses all pairs in a least-squares rotation-and-translation
 fit. It does not estimate scale or shear and prevents a reflected solution.
@@ -73,19 +76,29 @@ clustered points provide weak rotational leverage.
 
 ## Automatic Alignment
 
-**Auto align current pair** runs the app-owned base-MATLAB registration path.
-It returns the same aligned image and transform fields as manual alignment.
-Automatic alignment is a starting estimate, not a guarantee of DIC-quality
+**Auto align current pair** runs the app-owned base-MATLAB rigid-registration
+path. It searches the complete rotation circle in global, one-degree, and
+quarter-degree stages; translation candidates may span up to 75% of either
+preview dimension. It estimates translation with anti-aliased, zero-padded
+amplitude-weighted phase correlation and subpixel peak refinement, then ranks candidate angles using robust,
+overlap-aware oriented structure on a finer preview. Its diagnostic event
+records the accepted angle, translation, overlap, structural score, score
+margin, and translation-peak margin. It returns the same
+aligned image and rigid-transform fields as manual alignment. Automatic
+alignment remains a starting estimate, not a guarantee of DIC-quality
 correspondence. Always inspect the false-color overlay and prefer manual points
-when the image has repeated texture, large occlusion, or weak contrast.
+when the image has repeated texture, extremely small overlap, scale change,
+deformation, large occlusion, or weak contrast.
 
 ## Crop ROI
 
 **Start/reset crop ROI** creates a square rectangle constrained to the current
-reference image. Drag the rectangle to move it and use its resize handles to
-change its size. **Apply ROI crop** uses exactly the same integer image-domain
-rectangle on the reference and aligned moving image. **Cancel ROI** exits the
-editor without adding a crop step.
+reference image and draws the same rectangle on the moving preview for direct
+comparison. Drag the reference rectangle to move it and use its resize handles
+to change its size. **Apply ROI crop** uses exactly the same integer
+image-domain rectangle on the reference and aligned moving image, then fits
+both axes to the cropped domain. **Cancel ROI** exits the editor without adding
+a crop step.
 
 Applied crops change the coordinate domain for later operations. Undo the crop
 before reusing point coordinates defined on the larger image.

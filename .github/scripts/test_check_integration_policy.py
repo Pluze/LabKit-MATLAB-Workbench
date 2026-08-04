@@ -109,6 +109,73 @@ class IntegrationPolicyTest(unittest.TestCase):
             ],
         )
 
+    def test_history_rejects_intermediate_and_split_component_records(self):
+        version_path = "+labkit/+app/version.m"
+        first_history = "docs/history/records/2026/08/LK-first.md"
+        second_history = "docs/history/records/2026/08/LK-second.md"
+        before = 'labkit.contract.versionInfo("app", "2.1.0", ">=2 <3")'
+        after = before.replace("2.1.0", "2.2.0")
+        base = {version_path: before}
+        head = {
+            version_path: after,
+            first_history: "component: `labkit.app` | `2.1.0 -> 2.2.0`",
+            second_history: "\n".join([
+                "component: `labkit.app` | `2.2.0 -> 2.3.0`",
+                "component: `sample_app` | `1.0.0 -> 1.0.1`",
+            ]),
+        }
+
+        errors = MODULE.validate_versions(
+            [version_path, first_history, second_history],
+            base.get,
+            head.get,
+        )
+
+        self.assertIn(
+            "labkit.app: changed history is split across "
+            f"{first_history}, {second_history}; consolidate the component's "
+            "net PR history into one record.",
+            errors,
+        )
+        self.assertIn(
+            f"{second_history}: history records `labkit.app` as "
+            "`2.2.0 -> 2.3.0`, but the net PR transition is "
+            "`2.1.0 -> 2.2.0`.",
+            errors,
+        )
+        self.assertIn(
+            f"{second_history}: history records `sample_app` as "
+            "`1.0.0 -> 1.0.1`, but the component has no net version change "
+            "from the PR base.",
+            errors,
+        )
+
+    def test_one_consolidated_history_record_accepts_the_net_transition(self):
+        version_path = "+labkit/+app/version.m"
+        history_path = "docs/history/records/2026/08/LK-sdk.md"
+        before = 'labkit.contract.versionInfo("app", "2.1.0", ">=2 <3")'
+        after = before.replace("2.1.0", "2.2.0")
+        base = {version_path: before}
+        head = {
+            version_path: after,
+            history_path: "\n".join([
+                "component: `labkit.app` | `2.1.0 -> 2.2.0`",
+                "component: `sample_app` | `1.0.0 -> 1.0.1`",
+            ]),
+        }
+
+        errors = MODULE.validate_versions(
+            [version_path, history_path], base.get, head.get
+        )
+
+        self.assertEqual(
+            errors,
+            [
+                f"{history_path}: history records `sample_app` as "
+                "`1.0.0 -> 1.0.1`, but the component has no net version "
+                "change from the PR base."
+            ],
+        )
     def test_launcher_source_uses_launcher_metadata(self):
         metadata = MODULE.LAUNCHER_METADATA
         before = (
@@ -123,6 +190,27 @@ class IntegrationPolicyTest(unittest.TestCase):
             metadata: after,
             history: "component: `labkit_launcher` | `1.7.1 -> 1.7.2`",
         }
+        self.assertEqual(
+            MODULE.validate_versions(paths, base.get, head.get),
+            [],
+        )
+
+    def test_launcher_metadata_can_move_without_losing_the_transition(self):
+        current = MODULE.LAUNCHER_METADATA
+        legacy = MODULE.LEGACY_LAUNCHER_METADATA
+        before = (
+            'info = struct("name", "labkit_launcher", '
+            '"version", "1.8.2");'
+        )
+        after = before.replace("1.8.2", "1.8.3")
+        history = "docs/history/records/2026/08/LK-launcher.md"
+        paths = [legacy, current, history]
+        base = {legacy: before}
+        head = {
+            current: after,
+            history: "component: `labkit_launcher` | `1.8.2 -> 1.8.3`",
+        }
+
         self.assertEqual(
             MODULE.validate_versions(paths, base.get, head.get),
             [],

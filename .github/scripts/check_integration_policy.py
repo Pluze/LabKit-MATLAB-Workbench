@@ -24,7 +24,14 @@ LAUNCHER_VERSION = re.compile(
     r'"version"\s*,\s*"(\d+\.\d+\.\d+)"',
     re.DOTALL,
 )
-LAUNCHER_METADATA = "+labkit/+app/+internal/+launcher/dispatch.m"
+LAUNCHER_METADATA = "+labkit/+app/+internal/+launcher/launcherVersion.m"
+LEGACY_LAUNCHER_METADATA = "+labkit/+app/+internal/+launcher/dispatch.m"
+LAUNCHER_METADATA_PATHS = (LAUNCHER_METADATA, LEGACY_LAUNCHER_METADATA)
+HISTORY_COMPONENT = re.compile(
+    r"^component:\s*`([^`]+)`"
+    r"(?:\s*\|\s*`([^`]+)\s*->\s*([^`]+)`)?\s*$",
+    re.MULTILINE,
+)
 
 
 def command(*arguments: str, allow_missing: bool = False) -> str | None:
@@ -64,7 +71,7 @@ def parse_version(path: str, source: str | None) -> tuple[str, str] | None:
         match = FACADE_VERSION.search(source)
         if match:
             return f"labkit.{match.group(1)}", match.group(2)
-    if path == LAUNCHER_METADATA:
+    if path in LAUNCHER_METADATA_PATHS:
         match = LAUNCHER_VERSION.search(source)
         if match:
             return "labkit_launcher", match.group(1)
@@ -99,6 +106,33 @@ def metadata_path_for_source(path: str) -> str | None:
         if len(parts) >= 2:
             return f"+labkit/{parts[1]}/version.m"
     return None
+
+
+def version_for_owner(
+    path: str, read: Callable[[str], str | None]
+) -> tuple[str, str] | None:
+    if path != LAUNCHER_METADATA:
+        return parse_version(path, read(path))
+    for candidate in LAUNCHER_METADATA_PATHS:
+        parsed = parse_version(candidate, read(candidate))
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def parse_history_components(
+    source: str | None,
+) -> list[tuple[str, str | None, str | None]]:
+    if source is None:
+        return []
+    return [
+        (
+            component.strip(),
+            before.strip() if before else None,
+            after.strip() if after else None,
+        )
+        for component, before, after in HISTORY_COMPONENT.findall(source)
+    ]
 
 
 def validate_branch(
@@ -140,8 +174,8 @@ def validate_versions(
 
     transitions: list[tuple[str, str, str]] = []
     for path in sorted(metadata):
-        before = parse_version(path, read_base(path))
-        after = parse_version(path, read_head(path))
+        before = version_for_owner(path, read_base)
+        after = version_for_owner(path, read_head)
         if before is None or after is None:
             continue
         component_before, version_before = before
@@ -163,21 +197,60 @@ def validate_versions(
             )
         transitions.append((component_after, version_before, version_after))
 
-    history = "\n".join(
-        read_head(path) or ""
+    history_records = {
+        path: parse_history_components(read_head(path))
         for path in paths
         if path.startswith("docs/history/records/") and path.endswith(".md")
-    )
+    }
+    net_transitions = {
+        component: (before, after)
+        for component, before, after in transitions
+    }
     for component, before, after in transitions:
-        expected = re.compile(
-            rf"component:\s*`{re.escape(component)}`\s*\|\s*"
-            rf"`{re.escape(before)}\s*->\s*{re.escape(after)}`"
-        )
-        if not expected.search(history):
+        occurrences = [
+            (path, recorded_before, recorded_after)
+            for path, records in history_records.items()
+            for recorded_component, recorded_before, recorded_after in records
+            if recorded_component == component
+        ]
+        record_paths = sorted({path for path, _, _ in occurrences})
+        if len(record_paths) > 1:
+            errors.append(
+                f"{component}: changed history is split across "
+                f"{', '.join(record_paths)}; consolidate the component's "
+                "net PR history into one record."
+            )
+        exact = [
+            item for item in occurrences
+            if item[1:] == (before, after)
+        ]
+        if not exact:
             errors.append(
                 f"{component}: history must record `{before} -> {after}` "
                 "in this change."
             )
+        elif len(exact) > 1:
+            errors.append(
+                f"{component}: history records `{before} -> {after}` more "
+                "than once; keep one net transition."
+            )
+    for path, records in history_records.items():
+        for component, before, after in records:
+            if before is None:
+                continue
+            expected = net_transitions.get(component)
+            if expected is None:
+                errors.append(
+                    f"{path}: history records `{component}` as "
+                    f"`{before} -> {after}`, but the component has no net "
+                    "version change from the PR base."
+                )
+            elif expected != (before, after):
+                errors.append(
+                    f"{path}: history records `{component}` as "
+                    f"`{before} -> {after}`, but the net PR transition is "
+                    f"`{expected[0]} -> {expected[1]}`."
+                )
     return errors
 
 

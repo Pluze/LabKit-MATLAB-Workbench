@@ -1,6 +1,6 @@
 % App-owned implementation for video_marker.markerEditing.setPoints within the video_marker product workflow.
-function applicationState = setPoints(applicationState, points)
-%SETPOINTS Store one frame's ordered points and invalidate stale exports.
+function applicationState = setPoints(applicationState, points, callbackContext)
+%SETPOINTS Store one frame's ordered points and update its autosave.
 total = numel(applicationState.project.annotations.skeleton.pointIds);
 status = "draft";
 if isempty(points)
@@ -15,4 +15,6 @@ applicationState.project.annotations.frames = ...
         "manual", ones(size(points, 1), 1));
 applicationState = ...
     video_marker.resultFiles.clearExportState(applicationState);
+applicationState = video_marker.sessionControl.saveAutosave( ...
+    applicationState, callbackContext);
 end

@@ -14,8 +14,9 @@ labkit_ImageMatch_app
 
 ## Inputs
 
-Choose one reference image and add source images or a source folder. The
-reference supplies appearance statistics and is not exported as a matched
+Choose one reference image. Sources may be selected individually or discovered
+from a flat or nested directory; the reference remains a separate single-file
+role. It supplies appearance statistics and is not exported as a matched
 source. All images are normalized to RGB double data in `[0,1]`; output retains
 the source height and width.
 
