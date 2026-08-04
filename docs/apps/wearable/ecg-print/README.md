@@ -2,8 +2,8 @@
 
 ECG Print reads a wearable recording, filters one channel, detects beats,
 builds event-centered segments and a representative template, and reports
-signal quality over time. It can export the segment measurements and a
-printable waveform image.
+signal quality over time. It can export the analyzed sample region as a
+MATLAB timetable, the segment measurements, and a printable waveform image.
 
 ## Open ECG Print
 
@@ -93,6 +93,16 @@ Peak polarity is selected automatically. The default detector threshold is
 2.8 standard deviations inside the app calculation.
 
 ## Output Files
+
+**Export ROI timetable to workspace** assigns `ecgAnalysisRegion` in the
+MATLAB base workspace. **Export ROI timetable MAT** saves the same timetable
+as `ecgAnalysisRegion` in `ecg_analysis_region.mat` and writes a matching
+`ecg_analysis_region.labkit.json` manifest. Both commands use the most recent
+successful analysis, not unapplied control edits. Timetable row times match
+the analysis preview; its columns retain source time in seconds, raw and
+filtered channel samples, and a logical detected-peak marker. Channel name,
+signal unit, sample rate, and requested source range are stored in timetable
+metadata.
 
 **Export segment SNR CSV** writes `ecg_segment_snr.csv` and a matching
 `ecg_segment_snr.labkit.json` manifest. The CSV contains per-segment

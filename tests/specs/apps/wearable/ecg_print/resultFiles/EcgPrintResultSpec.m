@@ -28,5 +28,39 @@ classdef EcgPrintResultSpec < matlab.unittest.TestCase
             testCase.verifyEqual(summary.channel, "ECG");
             testCase.verifyEqual(summary.eventCount, 4);
         end
+
+        function buildsAnalysisRegionTimetableWithSourceTimeAndPeaks(testCase)
+            original = signal([10; 10.5; 11; 11.5; 12], ...
+                [1; 2; 3; 4; 5]);
+            working = signal([0; 0.5; 1], [2; 3; 4]);
+            working.metadata.cropTimeRangeSec = [10.25 11.75];
+            filtered = working;
+            filtered.values = [20; 30; 40];
+            cache = struct("signal", original, "workingSignal", working, ...
+                "filteredSignal", filtered, "events", struct("index", 2));
+
+            actual = ecg_print.resultFiles.analysisRegionTimetable(cache);
+
+            testCase.verifyClass(actual, "timetable");
+            testCase.verifyEqual(actual.Properties.DimensionNames{1}, ...
+                'AnalysisTime');
+            testCase.verifyEqual(seconds(actual.Properties.RowTimes), ...
+                [0; 0.5; 1]);
+            testCase.verifyEqual(actual.SourceTimeSeconds, [10.5; 11; 11.5]);
+            testCase.verifyEqual(actual.RawSignal, [2; 3; 4]);
+            testCase.verifyEqual(actual.FilteredSignal, [20; 30; 40]);
+            testCase.verifyEqual(actual.DetectedPeak, [false; true; false]);
+            testCase.verifyEqual(actual.Properties.VariableUnits, ...
+                {'s', 'mV', 'mV', ''});
+            testCase.verifyEqual(actual.Properties.UserData.Channel, "ECG");
+            testCase.verifyEqual( ...
+                actual.Properties.UserData.RequestedSourceTimeRangeSeconds, ...
+                [10.25 11.75]);
+        end
     end
+end
+
+function value = signal(time, samples)
+value = struct("time", time, "values", samples, "fs", 2, ...
+    "displayName", "ECG", "unit", "mV", "metadata", struct());
 end

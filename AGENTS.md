@@ -81,7 +81,10 @@ under `docs/`.
   or `str2func` only at a genuinely dynamic extension or compatibility
   boundary with closed input validation, explicit ownership, and contract
   tests; never construct a callable symbol from untrusted project or user
-  data.
+  data. `assignin` is permitted only for an explicit result export to the
+  literal `base` workspace and a literal MATLAB variable name, with a
+  data-shaped value and contract tests; never use it to inject runtime
+  objects, handles, callbacks, or dynamically named state.
 - File budgets count nonblank, non-comment MATLAB code. They are review
   backstops, not extraction targets. Keep callback-local glue local when that
   makes workflow order clearer.

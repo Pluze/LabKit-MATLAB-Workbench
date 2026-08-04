@@ -13,7 +13,19 @@ classdef EcgPrintProjectSpec < matlab.unittest.TestCase
 
             testCase.verifyEqual(migrated.inputs.sources, expected);
             testCase.verifyFalse(isfield(migrated.inputs, "source"));
-            testCase.verifyEqual(spec.Version, 2);
+            testCase.verifyEqual(spec.Version, 3);
+        end
+
+        function migratesVersionTwoWithAnEmptyRegionExportRecord(testCase)
+            spec = ecg_print.projectSpec();
+            project = spec.Create();
+            project.results = rmfield(project.results, "lastRegionExport");
+
+            migrated = spec.Migrate(project, 2);
+
+            testCase.verifyTrue(isfield(migrated.results, "lastRegionExport"));
+            testCase.verifyEmpty(migrated.results.lastRegionExport);
+            testCase.verifyTrue(spec.Validate(migrated));
         end
 
         function rejectsUnknownPeakMethodWithoutChangingSupportedProjects(testCase)

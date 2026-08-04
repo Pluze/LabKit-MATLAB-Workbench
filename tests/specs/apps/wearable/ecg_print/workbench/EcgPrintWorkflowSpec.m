@@ -9,9 +9,10 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             pack = ecg_print.syntheticInputs.writeSamplePack(context);
             segmentPath = context.outputPath("segments.csv");
             waveformPath = context.outputPath("waveform.png");
+            regionPath = context.outputPath("analysis_region.mat");
             backend = struct( ...
                 "chooseOutputFile", @(~, defaultPath) chooseOutput( ...
-                    defaultPath, segmentPath, waveformPath), ...
+                    defaultPath, segmentPath, waveformPath, regionPath), ...
                 "alert", @(~, ~) []);
             definition = ecg_print.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
@@ -23,6 +24,10 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
 
             runtime.applyControlValue("peakMethod", "Local peaks");
             runtime.invokeAction("analyze");
+            clearRegion = onCleanup(@() evalin( ...
+                "base", "clear ecgAnalysisRegion"));
+            runtime.invokeAction("exportRegionWorkspace");
+            runtime.invokeAction("exportRegionFile");
             runtime.invokeAction("exportSegments");
             runtime.invokeAction("exportWaveform");
 
@@ -34,20 +39,31 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             end
             testCase.verifyTrue(isfile(segmentPath));
             testCase.verifyTrue(isfile(waveformPath));
+            testCase.verifyTrue(isfile(regionPath));
+            workspaceRegion = evalin("base", "ecgAnalysisRegion");
+            fileRegion = load(regionPath, "ecgAnalysisRegion");
+            testCase.verifyClass(workspaceRegion, "timetable");
+            testCase.verifyEqual(fileRegion.ecgAnalysisRegion, workspaceRegion);
+            testCase.verifyEqual(height(workspaceRegion), ...
+                numel(runtime.State.session.cache.workingSignal.time));
+            testCase.verifyTrue(isfile( ...
+                runtime.State.project.results.lastRegionExport.manifestPath));
             testCase.verifyTrue(isfile(runtime.State.project.results.lastSegmentExport.manifestPath));
             testCase.verifyTrue(isfile(runtime.State.project.results.lastWaveformExport.manifestPath));
             saved = fullfile(folder, "ecg-project.mat");
             runtime.saveProject(runtime.State, saved);
             runtime.restoreProject(saved);
             testCase.verifyNotEmpty(runtime.State.session.cache.measurements);
-            clear cleanup
+            clear clearRegion cleanup
         end
     end
 end
 
-function choice = chooseOutput(defaultPath, segmentPath, waveformPath)
+function choice = chooseOutput(defaultPath, segmentPath, waveformPath, regionPath)
 if contains(string(defaultPath), "segment", IgnoreCase=true)
     choice = labkit.app.dialog.Choice(segmentPath);
+elseif contains(string(defaultPath), "analysis_region", IgnoreCase=true)
+    choice = labkit.app.dialog.Choice(regionPath);
 else
     choice = labkit.app.dialog.Choice(waveformPath);
 end
