@@ -77,10 +77,9 @@ largest launcher and runtime owners along existing workflow boundaries. Keep
 white-box SDK specifications free to test private behavior, but route public
 and accepted-private App specifications through focused `labkittest` seams so
 internal package movement has one test-owned compatibility boundary.
-When equal screen units are requested, apply the fitted limits before reading
-the rendered axes geometry, then incorporate any release-specific layout
-change into the final limits. This preserves one visual scale without treating
-pre-layout pixel geometry as stable across MATLAB releases.
+When equal screen units are requested, use MATLAB's native data-aspect-ratio
+contract while retaining the fitted data limits. This preserves one visual
+scale without inferring it from version-specific tiled-layout pixel geometry.
 
 ## Changes
 
@@ -134,9 +133,9 @@ pre-layout pixel geometry as stable across MATLAB releases.
   `labkittest` seams for runtime construction, callback contexts, definition
   inspection, and synthetic input generation. SDK-owned white-box tests retain
   direct internal access, and a repository guard prevents App-spec leakage.
-- Equal-data-unit plot fitting now incorporates axes layout changes that occur
-  after limits are applied, including the older MATLAB graphics behavior used
-  by the supported R2022b validation profile.
+- Equal-data-unit plot fitting now uses a native manual data aspect ratio
+  instead of axes outer-box pixel geometry, including on the supported R2022b
+  validation profile.
 
 ## User and data impact
 
@@ -182,8 +181,8 @@ for straight and curved paths.
 Repository structure evidence covers the internal subsystem map, allowed
 dependency edges, bounded launcher/runtime owners, and the prohibition on SDK
 internal references from App specifications.
-Gait source and workflow evidence exercises equal-data-unit fitting after
-rendered layout settlement.
+Gait source and workflow evidence exercises the native equal-data-unit aspect
+contract.
 
 ## Evidence
 

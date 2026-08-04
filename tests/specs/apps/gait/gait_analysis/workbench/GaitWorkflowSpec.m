@@ -90,9 +90,7 @@ testCase.verifyGreaterThanOrEqual(max(y), ax.YLim(1));
 end
 
 function verifyEqualDataUnits(testCase, ax)
-position = getpixelposition(ax, true);
-xUnitsPerPixel = diff(double(ax.XLim)) / position(3);
-yUnitsPerPixel = diff(double(ax.YLim)) / position(4);
-testCase.verifyEqual( ...
-    xUnitsPerPixel, yUnitsPerPixel, "RelTol", 1e-10);
+testCase.verifyEqual(string(ax.DataAspectRatioMode), "manual");
+testCase.verifyEqual(ax.DataAspectRatio(1), ...
+    ax.DataAspectRatio(2), "RelTol", 1e-10);
 end

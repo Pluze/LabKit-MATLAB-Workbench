@@ -16,10 +16,10 @@ function limits = fitAxesToGraphics(ax, varargin)
 %   Padding - Nonnegative fractional padding added on each side of the data
 %       range. Default: 0.02. For logarithmic axes, padding is computed in
 %       base-10 logarithmic space.
-%   EqualDataUnits - Logical value. true expands one fitted dimension so one
-%       data unit occupies the same screen distance on X and Y without
-%       changing the axes position. For logarithmic dimensions, equality is
-%       evaluated in base-10 logarithmic space. Default: false.
+%   EqualDataUnits - Logical value. true applies an equal data aspect ratio so
+%       one data unit occupies the same screen distance on X and Y. The fitted
+%       limits are retained; MATLAB may use only part of the available plot
+%       box to preserve that ratio. Default: false.
 %
 % Outputs:
 %   limits - Scalar struct with x and y fields. Each field contains the applied
@@ -51,18 +51,12 @@ function limits = fitAxesToGraphics(ax, varargin)
     validateAxesHandle(ax, 'fit');
     [handles, opts] = parseFitInputs(ax, varargin);
     equalDataUnits = logicalScalar(opts.EqualDataUnits);
-    [xLim, yLim] = finitePlotLimits( ...
-        ax, handles, opts.Padding, false);
+    [xLim, yLim] = finitePlotLimits(ax, handles, opts.Padding);
     applyLimits(ax, xLim, yLim);
-    if equalDataUnits && ~isempty(xLim) && ~isempty(yLim)
-        % Applying limits can change the axes layout on older MATLAB
-        % releases. Refit against the rendered position until that layout
-        % change has been incorporated into the equal-unit limits.
-        for pass = 1:2
-            [xLim, yLim] = finitePlotLimits( ...
-                ax, handles, opts.Padding, true);
-            applyLimits(ax, xLim, yLim);
-        end
+    if equalDataUnits
+        daspect(ax, [1 1 1]);
+    else
+        daspect(ax, 'auto');
     end
     limits = struct('x', xLim, 'y', yLim);
 end
