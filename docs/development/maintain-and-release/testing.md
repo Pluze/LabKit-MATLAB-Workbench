@@ -163,13 +163,22 @@ defect, never passing evidence.
 Once the pull request exists, required CI owns the broad platform claim. For a
 failed check:
 
-1. inspect only the failed check and the log for its exact failing identity;
-2. reproduce that method, specification file, or smallest owner/contract
+1. let an already-running platform matrix finish when its remaining jobs can
+   still provide independent failure evidence; collect the complete set of
+   failed identities before pushing another head;
+2. inspect only the failed checks and logs for those exact failing identities;
+3. reproduce each method, specification file, or smallest owner/contract
    locally when reproduction is useful;
-3. repair the smallest responsible source boundary and rerun only that focused
+4. repair the smallest responsible source boundaries and rerun only that focused
    evidence;
-4. push the repair to the existing PR branch and let CI rerun its required
-   profiles.
+5. batch the verified repairs into one push to the existing PR branch and let
+   CI rerun its required profiles.
+
+An early repair push is appropriate only when a prerequisite failure, such as
+branch policy, checkout, dependency setup, or test discovery, prevents the
+remaining jobs from producing useful evidence. A first completed test failure
+is not evidence that the matrix has no other failures. Do not invalidate a
+mostly complete run merely because the first failure is simple to repair.
 
 Do not run `changedFast`, `headless`, `gui`, `isolated`, or the complete local
 matrix after every CI repair. The one pre-PR `changedFast` run remains the local

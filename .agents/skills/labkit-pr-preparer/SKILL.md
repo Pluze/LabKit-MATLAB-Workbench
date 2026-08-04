@@ -94,8 +94,11 @@ Then:
 4. Fill the repository PR template with net behavior and exact evidence.
 5. Push the final develop checkpoint, open or update the PR, and freeze
    `develop` until the PR is merged or closed.
-6. Read only failing CI logs. Repair the narrowest failure and rerun its exact
-   evidence; do not repeat `changedFast` after every repair.
+6. Unless a prerequisite failure prevents useful downstream execution, let an
+   active platform matrix finish and collect every failed identity before the
+   next push. Read only those failing logs, repair the narrowest responsible
+   boundaries, rerun exact evidence, and batch the verified repairs into one
+   push. Do not repeat `changedFast` after every repair.
 
 Do not declare merge readiness when the policy audit, final local gate,
 required PR CI, review, or conversation resolution is incomplete.

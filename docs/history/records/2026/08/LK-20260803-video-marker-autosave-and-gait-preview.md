@@ -31,7 +31,8 @@ source, result, or selected step changes so the renderer's new limits are
 accepted once and later user zoom remains stable. Compose two paired plot rows
 for a 2-by-2 preview, retain the selected-step plots, and add an equal-scale
 full-recording overlay. These remain App-owned workflow and presentation
-decisions; the shared SDK is unchanged.
+decisions; the shared fit helper only makes its existing equal-data-unit
+contract stable after release-specific axes layout changes.
 
 ## Changes
 

@@ -50,8 +50,24 @@ function limits = fitAxesToGraphics(ax, varargin)
 
     validateAxesHandle(ax, 'fit');
     [handles, opts] = parseFitInputs(ax, varargin);
+    equalDataUnits = logicalScalar(opts.EqualDataUnits);
     [xLim, yLim] = finitePlotLimits( ...
-        ax, handles, opts.Padding, logicalScalar(opts.EqualDataUnits));
+        ax, handles, opts.Padding, false);
+    applyLimits(ax, xLim, yLim);
+    if equalDataUnits && ~isempty(xLim) && ~isempty(yLim)
+        % Applying limits can change the axes layout on older MATLAB
+        % releases. Refit against the rendered position until that layout
+        % change has been incorporated into the equal-unit limits.
+        for pass = 1:2
+            [xLim, yLim] = finitePlotLimits( ...
+                ax, handles, opts.Padding, true);
+            applyLimits(ax, xLim, yLim);
+        end
+    end
+    limits = struct('x', xLim, 'y', yLim);
+end
+
+function applyLimits(ax, xLim, yLim)
     if isempty(xLim)
         xlim(ax, 'auto');
     else
@@ -62,7 +78,6 @@ function limits = fitAxesToGraphics(ax, varargin)
     else
         ylim(ax, yLim);
     end
-    limits = struct('x', xLim, 'y', yLim);
 end
 
 function [handles, opts] = parseFitInputs(ax, args)

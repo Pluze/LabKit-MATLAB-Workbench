@@ -265,11 +265,8 @@ callback(varargin{:});
 end
 
 function folder = diagnosticArtifactsFolder()
-folder = string(fileparts(which( ...
-    "labkit.app.internal.runtime.RuntimeKernel")));
-for index = 1:3
-    folder = string(fileparts(folder));
-end
+versionPath = string(which("labkit.app.version"));
+folder = string(fileparts(fileparts(fileparts(versionPath))));
 folder = fullfile(folder, "artifacts", "diagnostics");
 end
 

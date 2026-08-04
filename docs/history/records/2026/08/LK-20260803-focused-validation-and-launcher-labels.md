@@ -19,8 +19,8 @@ scope: Squash PR version and history inventory
 The validation policy already required focused tests during development and a
 single `changedFast` run before PR review, but one build-task description still
 called `changedFast` a pre-commit and pre-push gate. The CI repair loop also did
-not state explicitly that a known failure should be reproduced and rerun at its
-narrowest identity. In the Launcher, Family appeared after the App name and the
+not state explicitly that a running matrix should finish and contribute every
+independent failure before one batched repair push. In the Launcher, Family appeared after the App name and the
 local documentation action used a label too long for its compact button.
 The agent-only focused-spec runner also configured repository and test paths
 but not every independently launchable App root represented by a multi-file
@@ -31,7 +31,9 @@ production packages after the first specification.
 
 Describe validation as an explicit staged workflow: focused evidence during
 iteration, one local integration gate before the PR, then failure-directed
-repairs while required CI owns the broad claim. Keep the Launcher catalog API
+repairs collected across one complete matrix while required CI owns the broad
+claim. Reserve an early restart for prerequisite failures that prevent later
+jobs from producing useful evidence. Keep the Launcher catalog API
 unchanged while reordering only its visible columns. Use the short
 **Doc Generation** label and retain the existing tooltip and behavior.
 Let the focused-spec runner derive every represented App root from the selected
@@ -47,8 +49,9 @@ one historical path.
 - Clarified that ordinary commits and checkpoint pushes do not require
   `changedFast`, and that it runs once when the complete `develop` diff is ready
   for PR review.
-- Added a CI repair loop that reads only failed logs, reruns the smallest known
-  identity, pushes the focused repair, and leaves broad revalidation to CI.
+- Added a CI repair loop that lets useful matrix jobs finish, reads only all
+  failed logs, reruns the smallest known identities, batches verified repairs
+  into one push, and leaves broad revalidation to CI.
 - Reordered the visible application table to Package, Family, App, Version,
   Access, and Updated without changing `labkit_launcher("list")` output.
 - Shortened **Generate Local Documentation** to **Doc Generation**.
@@ -65,7 +68,8 @@ one historical path.
 ## User and data impact
 
 Developers avoid repeated broad local validation during fast iteration and CI
-repair. Launcher users can scan families before individual App names, and the
+repair without discarding the diagnostic value of an almost-complete hosted
+matrix. Launcher users can scan families before individual App names, and the
 maintenance controls fit their available width more clearly. App discovery,
 launching, package selection, documentation generation, and programmatic
 catalog data are unchanged.
