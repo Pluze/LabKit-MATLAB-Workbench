@@ -56,6 +56,13 @@ shape, time semantics, units, peak markers, workspace assignment, MAT
 round-trip, and manifest creation. The repository architecture specification
 guards the single reviewed workspace-write boundary.
 
+## Evidence
+
+- Seven focused ECG result, workflow, and project identities passed.
+- The exact dynamic-invocation architecture identity passed.
+- The hidden-GUI workflow verified workspace assignment, MAT round-trip,
+  manifest creation, project save, and project restore.
+
 ## Known limitations and follow-up
 
 Automated tests do not assess whether downstream user scripts prefer different

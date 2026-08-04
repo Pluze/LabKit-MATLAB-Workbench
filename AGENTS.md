@@ -281,7 +281,7 @@ explicit compliant squash subject; do not rely on GitHub defaults.
   once for the net change. Update rationale, compatibility, user impact, and
   evidence to describe the final PR diff rather than its commit sequence.
 - New release tags are `vX.Y.Z`; do not rename published legacy tags. Release
-  titles are `LabKit MATLAB Workbench vX.Y.Z` with relevant `Highlights`,
+  titles contain only `VX.Y.Z` with an uppercase `V` and relevant `Highlights`,
   `Fixes`, `Upgrade Note`, and `Validation` sections.
 - Start the manual `Release` workflow only after developer-led interactive App
   validation, successful required PR validation, and a successful lightweight

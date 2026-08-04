@@ -80,8 +80,11 @@ preparing a release.
 Use the release title format:
 
 ```text
-LabKit MATLAB Workbench vX.Y.Z
+VX.Y.Z
 ```
+
+The title contains only the uppercase `V` and three-part semantic version.
+The Git tag remains lowercase `vX.Y.Z`.
 
 Use this note structure:
 
