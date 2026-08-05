@@ -95,7 +95,8 @@ Peak polarity is selected automatically. The default detector threshold is
 ## Output Files
 
 **Export ROI timetable to workspace** assigns `ecgAnalysisRegion` in the
-MATLAB base workspace. **Export ROI timetable MAT** saves the same timetable
+MATLAB base workspace and confirms success with an information notice.
+**Export ROI timetable MAT** saves the same timetable
 as `ecgAnalysisRegion` in `ecg_analysis_region.mat` and writes a matching
 `ecg_analysis_region.labkit.json` manifest. Both commands use the most recent
 successful analysis, not unapplied control edits. Timetable row times match

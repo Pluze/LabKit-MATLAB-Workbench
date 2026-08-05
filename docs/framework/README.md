@@ -180,13 +180,19 @@ utilities do not compete with the App's workflow controls:
   `app-state-compact.mat` after replacing supported state leaves larger than
   1 MiB with same-class, same-dimension, compressible synthetic placeholders.
   `bundle-report.json` records every replacement without storing its value.
-  Exact is the default. Selecting an event highlights its complete table row.
+  Compact is the default; exact remains an explicit choice. After the first
+  ERROR or CRITICAL event, closing the App automatically writes a compact
+  diagnostic bundle. Selecting an event highlights its complete table row.
   Text fallback retains complete events and reports that the selected MAT
   state could not be represented as text.
 
 These actions are framework-owned native behavior. Apps do not declare menu
 items, implement clipboard integration, or duplicate project persistence
 callbacks.
+
+App callbacks use `CallbackContext.inform` for successful or neutral
+information and reserve `CallbackContext.alert` for blocking problems. The two
+capabilities map explicitly to native information and error icons.
 
 Framework concepts and source names are versionless. Compatibility belongs to
 `labkit.app.version`; saved-data versions belong to

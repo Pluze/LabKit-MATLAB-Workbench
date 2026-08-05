@@ -114,7 +114,10 @@ find the exact owner and contract; App authors never invent test paths.
   valid for the smallest supported source geometry.
 - Placing or editing overlays must preserve the user's viewport unless the
   user explicitly requests fit/reset.
-- File and folder dialogs outside `fileList` and alerts use CallbackContext.
+- File and folder dialogs outside `fileList` use `CallbackContext`. Use
+  `CallbackContext.inform` for successful or neutral information and
+  `CallbackContext.alert` only for a blocking problem; never present an INFO
+  outcome through the error-style alert capability.
 - External files in saved projects use portable references and field-specific
   relinking. Current saves use the project envelope; compatibility importers
   are read-only.

@@ -3,6 +3,7 @@ classdef (Sealed) CallbackContext < handle
     %
     % Usage:
     %   context.log(severity, eventName, message, Name=Value)
+    %   context.inform(message, title)
     %   context.alert(message, title)
     %   result = context.chooseOption(prompt, choices, Name=Value)
     %   result = context.chooseInputFile(filters, startPath)
@@ -41,7 +42,9 @@ classdef (Sealed) CallbackContext < handle
     %   Exception - Scalar MException associated with the event. Default: [].
     %   id - Stable semantic diagnostic or resource identifier.
     %   count - Nonnegative integer diagnostic count.
-    %   title - Scalar reader-facing dialog title.
+    %   title - Scalar reader-facing dialog title. inform presents non-error
+    %       information with the native information icon; alert presents a
+    %       blocking problem with the native error icon.
     %   prompt - Scalar reader-facing choice prompt.
     %   choices - Row string or cellstr array.
     %   Title - Reader-facing choice-dialog title. Default:
@@ -131,6 +134,12 @@ classdef (Sealed) CallbackContext < handle
 
         function alert(obj, message, title)
             obj.invoke("alert", "dialogs", ...
+                {scalarText(message, "message"), ...
+                 scalarText(title, "title")}, 0);
+        end
+
+        function inform(obj, message, title)
+            obj.invoke("inform", "dialogs", ...
                 {scalarText(message, "message"), ...
                  scalarText(title, "title")}, 0);
         end

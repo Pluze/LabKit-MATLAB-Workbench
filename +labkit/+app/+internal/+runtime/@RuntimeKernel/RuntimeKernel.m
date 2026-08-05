@@ -196,7 +196,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         function destination = exportDiagnosticBundle( ...
                 obj, destination, stateMode)
             if nargin < 3
-                stateMode = "exact";
+                stateMode = "compact";
             end
             destination = obj.Diagnostics.exportBundle( ...
                 destination, obj.State, stateMode);
@@ -209,7 +209,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         function destination = exportDiagnosticTextFallback( ...
                 obj, preferredDestination, cause, stateMode)
             if nargin < 4
-                stateMode = "exact";
+                stateMode = "compact";
             end
             destination = obj.Diagnostics.exportTextFallback( ...
                 preferredDestination, cause, stateMode);
@@ -247,7 +247,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
             folder = obj.uniqueSyntheticInputFolder(choice.Value);
             obj.generateSyntheticInputs(folder);
-            obj.Context.alert( ...
+            obj.Context.inform( ...
                 "Synthetic inputs were written to the selected folder.", ...
                 "Synthetic Inputs");
         end
@@ -583,6 +583,9 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.Recorder.finish( ...
                     operation, "failed", "notApplicable", failure);
             end
+            if ~isempty(obj.Diagnostics)
+                obj.Diagnostics.exportAfterErrorOnClose(obj.State);
+            end
             if ~isempty(obj.Recorder)
                 obj.Recorder.close();
             end
@@ -698,7 +701,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     "labkit.app.internal.native.MatlabPlatformAdapter")
                 obj.Adapter.alert(message, title, "info");
             else
-                obj.Context.alert(message, title);
+                obj.Context.inform(message, title);
             end
         end
 

@@ -74,6 +74,27 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyFalse(any(string(properties(context)) == "Backend"));
             testCase.verifyError(@() context.alert("message", "title"), ...
                 "labkit:app:runtime:InvariantFailure");
+            testCase.verifyError(@() context.inform("message", "title"), ...
+                "labkit:app:runtime:InvariantFailure");
+        end
+
+        function separatesInformationalAndErrorDialogs(testCase)
+            observed = containers.Map("KeyType", "char", "ValueType", "any");
+            backend = struct( ...
+                "inform", @(message, title) captureDialog( ...
+                    observed, "info", message, title), ...
+                "alert", @(message, title) captureDialog( ...
+                    observed, "error", message, title));
+            context = ...
+                labkit.app.internal.runtime.CallbackContextFactory.create(backend);
+
+            context.inform("Export completed.", "Exported");
+            testCase.verifyEqual(observed("kind"), "info");
+            testCase.verifyEqual(observed("message"), "Export completed.");
+            testCase.verifyEqual(observed("title"), "Exported");
+
+            context.alert("Export failed.", "Export error");
+            testCase.verifyEqual(observed("kind"), "error");
         end
 
         function nativeDialogFiltersContainOnlyLegacyCharacterCells(testCase)
@@ -715,6 +736,11 @@ end
 function captureAlert(store, message, title)
 store("message") = string(message);
 store("title") = string(title);
+end
+
+function captureDialog(store, kind, message, title)
+store("kind") = string(kind);
+captureAlert(store, message, title);
 end
 
 function accepted = validateProject(project)

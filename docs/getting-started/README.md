@@ -69,8 +69,10 @@ Every current LabKit app exposes one top-level **Tools** menu:
 - **Tools > Diagnostics > Open Session Log...** opens the current App's named
   live log with Full TRACE, DEBUG, and User views.
 - **Tools > Diagnostics > Export Diagnostic Bundle** asks for exact or compact
-  synthetic App state, then writes complete sensitive logs plus the selected
-  MAT in an automatically named ZIP beneath `artifacts/diagnostics/`.
+  synthetic App state, defaults to compact, then writes complete sensitive
+  logs plus the selected MAT in an automatically named ZIP beneath
+  `artifacts/diagnostics/`. After an ERROR or CRITICAL event, closing the App
+  automatically writes the compact bundle there.
 
 State files preserve app projects. They are different from exported result
 files and from ignored diagnostic manifests under `artifacts/diagnostics/`.

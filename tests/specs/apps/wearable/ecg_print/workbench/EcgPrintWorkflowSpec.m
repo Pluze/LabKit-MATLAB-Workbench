@@ -27,6 +27,9 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             clearRegion = onCleanup(@() evalin( ...
                 "base", "clear ecgAnalysisRegion"));
             runtime.invokeAction("exportRegionWorkspace");
+            notice = getappdata(figureValue, "labkitAppLastAlert");
+            testCase.verifyEqual(notice.title, "ROI timetable exported");
+            testCase.verifyEqual(notice.icon, "info");
             runtime.invokeAction("exportRegionFile");
             runtime.invokeAction("exportSegments");
             runtime.invokeAction("exportWaveform");
