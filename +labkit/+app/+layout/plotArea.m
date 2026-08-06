@@ -27,7 +27,8 @@ function node = plotArea(id, renderer, varargin)
 %   RowHeights - One positive pixel, "fit", or "1x" value per axis for
 %       stack layout. Default: equal flexible heights.
 %   ScrollZoomAxes - One "xy", "x", or "y" value per axis. Default: "xy".
-%   ViewModes - App-owned mode labels. Default: strings(1,0).
+%   ViewModes - App-owned mode labels. When nonempty, OnValueChanged is
+%       required. Default: strings(1,0).
 %   OnValueChanged - Scalar callback
 %       state = callback(state,value,context). Default: [].
 %   Interactions - Row cell array returned by named
@@ -37,7 +38,8 @@ function node = plotArea(id, renderer, varargin)
 %   node - Immutable internal layout node accepted by workspace.
 %
 % Errors:
-%   Throws labkit:app:contract:* for invalid IDs, options, or handlers.
+%   Throws labkit:app:contract:* for invalid IDs, options, handlers, or
+%   ViewModes without an OnValueChanged owner.
 %
 % Typical Call:
 %   node = labkit.app.layout.plotArea("preview", @drawTrace, ...

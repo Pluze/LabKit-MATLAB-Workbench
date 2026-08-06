@@ -110,27 +110,11 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
     methods
         function dispatch(obj, binding, payload)
-            obj.assertOpen();
-            labkit.app.internal.runtime.RuntimeContractBoundary.validateDispatch( ...
-                obj.Contract, binding, payload);
-            obj.Queue{end + 1} = struct( ...
-                "Binding", binding, "Payload", {payload});
-            if obj.Processing
-                return;
-            end
-            obj.Processing = true;
-            if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
-                obj.Adapter.beginBusy( ...
-                    labkit.app.internal.runtime.RuntimeContractBoundary.busyMessage( ...
-                    obj.Contract, binding));
-            end
-            cleanup = onCleanup(@() obj.finishProcessing());
-            while ~isempty(obj.Queue)
-                item = obj.Queue{1};
-                obj.Queue(1) = [];
-                obj.execute(item.Binding, item.Payload);
-            end
-            clear cleanup
+            obj.enqueueTransition( ...
+                binding, payload, @(state) state, ...
+                "Callback " + binding.Id, ...
+                labkit.app.internal.runtime.RuntimeContractBoundary.busyMessage( ...
+                obj.Contract, binding));
         end
 
         function setResource(obj, scope, id, value, cleanup)
@@ -486,6 +470,18 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 @() obj.dispatch(binding, selection));
         end
 
+        function applyWorkspacePage(obj, target, pageId)
+            obj.assertOpen();
+            binding = ...
+                labkit.app.internal.runtime.RuntimeContractBoundary.signalForTarget( ...
+                obj.Contract, target, "pageChanged");
+            obj.recordOperation( ...
+                "runtime.interaction", "interaction.page_changed", ...
+                "Applying workspace page selection.", ...
+                "committed", "rolledBack", ...
+                @() obj.dispatch(binding, string(pageId)));
+        end
+
         function applyInteraction(obj, interactionId, signal, payload)
             obj.assertOpen();
             binding = ...
@@ -614,7 +610,10 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         backend = completeBackend(obj, backend)
 
-        execute(obj, binding, payload)
+        execute(obj, binding, payload, prepareState, failureLabel)
+
+        enqueueTransition(obj, binding, payload, prepareState, ...
+            failureLabel, busyMessage)
 
         view = present(obj, state)
 

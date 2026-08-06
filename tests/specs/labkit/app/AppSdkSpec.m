@@ -281,6 +281,45 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "labkit:app:contract:CallbackRoleMismatch");
         end
 
+        function rejectsInteractiveLayoutsWithoutBehaviorOwners(testCase)
+            nodes = { ...
+                labkit.app.layout.field("field", Kind="numeric"), ...
+                labkit.app.layout.rangeField("range"), ...
+                labkit.app.layout.slider("slider"), ...
+                labkit.app.layout.fileList("files"), ...
+                labkit.app.layout.plotArea("plot", @drawNothing, ...
+                    ViewModes=["First", "Second"]), ...
+                labkit.app.layout.dataTable("table", ...
+                    Columns="Value", ColumnEditable=true)};
+            for index = 1:numel(nodes)
+                node = nodes{index};
+                testCase.verifyError(@() AppSdkSpec.definition( ...
+                    labkit.app.layout.workbench({node})), ...
+                    "labkit:app:contract:InvalidValue");
+            end
+            workspace = labkit.app.layout.workspace( ...
+                OnPageChanged=@recordWorkspacePage);
+            testCase.verifyError(@() AppSdkSpec.definition( ...
+                labkit.app.layout.workbench({}, Workspace=workspace)), ...
+                "labkit:app:contract:InvalidValue");
+        end
+
+        function rejectsDynamicallyEditableTableWithoutEditCallback(testCase)
+            tableNode = labkit.app.layout.dataTable( ...
+                "table", Columns="Value");
+            app = AppSdkSpec.definition( ...
+                labkit.app.layout.workbench({tableNode}), ...
+                "PresentWorkbench", @presentEditableTable);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+
+            testCase.verifyError(@() ...
+                labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+                app, [], struct(), journal), ...
+                "labkit:app:contract:InvalidValue");
+        end
+
         function syntheticInputsAreDeliberateAndDoNotChangeTheRuntime(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -420,6 +459,133 @@ classdef AppSdkSpec < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = {'Contract:source', 'Env:hidden-gui'})
+        function nativeInputBridgeDispatchesEverySemanticControl(testCase)
+            layout = nativeBridgeLayout();
+            app = AppSdkSpec.definition(layout, ...
+                "CreateSession", @createNativeBridgeSession);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            figureValue = runtime.figureHandle();
+
+            field = oneTagged(figureValue, "nativeField");
+            field.Value = 2;
+            invokeNativeCallback(field.ValueChangedFcn, field, struct());
+
+            rangeStart = oneTagged(figureValue, "nativeRange");
+            rangeEnd = oneTagged(figureValue, "nativeRange.end");
+            rangeStart.Value = 0.2;
+            rangeEnd.Value = 0.8;
+            invokeNativeCallback( ...
+                rangeEnd.ValueChangedFcn, rangeEnd, struct());
+
+            spinner = oneTagged(figureValue, "nativeSlider");
+            slider = oneTagged(figureValue, "nativeSlider.slider");
+            spinner.Value = 0.4;
+            invokeNativeCallback( ...
+                spinner.ValueChangedFcn, spinner, struct());
+            invokeNativeCallback( ...
+                slider.ValueChangingFcn, slider, struct("Value", 0.6));
+
+            mode = oneTagged(figureValue, "nativePlot.viewMode");
+            mode.Value = "Second";
+            invokeNativeCallback(mode.ValueChangedFcn, mode, struct());
+
+            tableHandle = oneTagged(figureValue, "nativeTable");
+            tableHandle.Data = {2};
+            editEvent = struct("Indices", [1 1], ...
+                "PreviousData", 1, "NewData", 2, "EditData", 2);
+            invokeNativeCallback( ...
+                tableHandle.CellEditCallback, tableHandle, editEvent);
+            if isprop(tableHandle, "SelectionChangedFcn") && ...
+                    ~isempty(tableHandle.SelectionChangedFcn)
+                selectionCallback = tableHandle.SelectionChangedFcn;
+            else
+                selectionCallback = tableHandle.CellSelectionCallback;
+            end
+            selectionEvent = struct( ...
+                "Selection", [1 1], "Indices", [1 1]);
+            invokeNativeCallback( ...
+                selectionCallback, tableHandle, selectionEvent);
+
+            state = runtime.State.session;
+            testCase.verifyEqual(state.fieldValue, 2);
+            testCase.verifyEqual(state.rangeValue, [0.2 0.8]);
+            testCase.verifyEqual(state.sliderValue, 0.6);
+            testCase.verifyEqual(state.plotMode, "Second");
+            testCase.verifyEqual(state.editedValue, 2);
+            testCase.verifyEqual(state.selectedCells, [1 1]);
+            testCase.verifyEqual(string(figureValue.Tag), "labkitApp");
+            events = runtime.diagnosticEvents();
+            aliases = callbackStartAliases(events);
+            testCase.verifyTrue(all(ismember([ ...
+                "nativeField__valueChanged", ...
+                "nativeRange__valueChanged", ...
+                "nativeSlider__valueChanged", ...
+                "nativePlot__valueChanged", ...
+                "nativeTable__cellEdited", ...
+                "nativeTable__cellSelectionChanged"], aliases)));
+            clear cleanup
+        end
+
+        function workspacePagesWithoutCallbackUseNativeSelectionOnly(testCase)
+            workspace = labkit.app.layout.workspace();
+            workspace = workspace.page("firstPage", "First", ...
+                labkit.app.layout.statusPanel("firstStatus"));
+            workspace = workspace.page("secondPage", "Second", ...
+                labkit.app.layout.statusPanel("secondStatus"));
+            layout = labkit.app.layout.workbench({}, Workspace=workspace);
+            app = AppSdkSpec.definition(layout);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            figureValue = runtime.figureHandle();
+            group = oneTagged(figureValue, "workspace");
+            secondPage = oneTagged(figureValue, "secondPage");
+
+            testCase.verifyEmpty(group.SelectionChangedFcn);
+            group.SelectedTab = secondPage;
+            drawnow;
+
+            testCase.verifyEqual(string(group.SelectedTab.Tag), "secondPage");
+            clear cleanup
+        end
+
+        function workspacePageCallbackReceivesSelectedPageId(testCase)
+            workspace = labkit.app.layout.workspace( ...
+                OnPageChanged=@recordWorkspacePage);
+            workspace = workspace.page("firstPage", "First", ...
+                labkit.app.layout.statusPanel("firstStatus"));
+            workspace = workspace.page("secondPage", "Second", ...
+                labkit.app.layout.statusPanel("secondStatus"));
+            layout = labkit.app.layout.workbench({}, Workspace=workspace);
+            app = AppSdkSpec.definition(layout, ...
+                "CreateSession", @createWorkspaceSession);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            figureValue = runtime.figureHandle();
+            group = oneTagged(figureValue, "workspace");
+            secondPage = oneTagged(figureValue, "secondPage");
+
+            group.SelectedTab = secondPage;
+            group.SelectionChangedFcn(group, []);
+            drawnow;
+
+            testCase.verifyEqual( ...
+                runtime.State.session.selectedPage, "secondPage");
+            clear cleanup
+        end
+
         function updatesAFieldAndItsCachedLabelWithoutTreeDiscovery(testCase)
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.field("gain", Kind="numeric", ...
@@ -676,6 +842,28 @@ menu.MenuSelectedFcn(menu, []);
 drawnow;
 end
 
+function invokeNativeCallback(callback, source, event)
+if isa(callback, "function_handle")
+    callback(source, event);
+else
+    callbackFunction = callback{1};
+    callbackFunction(source, event, callback{2:end});
+end
+drawnow;
+end
+
+function aliases = callbackStartAliases(events)
+aliases = strings(1, 0);
+for index = 1:numel(events)
+    event = events(index);
+    if event.category == "runtime.callback" && ...
+            endsWith(event.eventName, ".started") && ...
+            isfield(event.attributes, "runtimeAlias")
+        aliases(end + 1) = string(event.attributes.runtimeAlias);
+    end
+end
+end
+
 function folder = sdkArtifactFolder(category)
 versionPath = string(which("labkit.app.version"));
 root = string(fileparts(fileparts(fileparts(versionPath))));
@@ -765,8 +953,74 @@ function session = createSession(~, ~)
 session = struct();
 end
 
+function session = createWorkspaceSession(~, ~)
+session = struct("selectedPage", "");
+end
+
+function applicationState = recordWorkspacePage( ...
+        applicationState, pageId, ~)
+applicationState.session.selectedPage = pageId;
+end
+
 function view = presentProbe(~)
 view = labkit.app.view.Snapshot();
+end
+
+function view = presentEditableTable(~)
+view = labkit.app.view.Snapshot().tableData( ...
+    "table", {1}, Columns="Value", ColumnEditable=true);
+end
+
+function layout = nativeBridgeLayout()
+controls = { ...
+    labkit.app.layout.field("nativeField", Kind="numeric", ...
+        Bind="session.fieldValue", OnValueChanged=@recordNativeField), ...
+    labkit.app.layout.rangeField("nativeRange", ...
+        Bind="session.rangeValue", OnValueChanged=@recordNativeRange), ...
+    labkit.app.layout.slider("nativeSlider", ...
+        Bind="session.sliderValue", OnValueChanged=@recordNativeSlider), ...
+    labkit.app.layout.plotArea("nativePlot", @drawNothing, ...
+        ViewModes=["First", "Second"], ...
+        OnValueChanged=@recordNativePlotMode), ...
+    labkit.app.layout.dataTable("nativeTable", ...
+        Columns="Value", ColumnEditable=true, ...
+        OnCellEdited=@recordNativeTableEdit, ...
+        OnCellSelectionChanged=@recordNativeTableSelection)};
+layout = labkit.app.layout.workbench(controls);
+end
+
+function session = createNativeBridgeSession(~, ~)
+session = struct( ...
+    "fieldValue", 0, "rangeValue", [0 1], ...
+    "sliderValue", 0, "plotMode", "First", ...
+    "editedValue", 0, "selectedCells", zeros(0, 2));
+end
+
+function state = recordNativeField(state, value, ~)
+state.session.fieldValue = value;
+end
+
+function state = recordNativeRange(state, value, ~)
+state.session.rangeValue = value;
+end
+
+function state = recordNativeSlider(state, value, ~)
+state.session.sliderValue = value;
+end
+
+function state = recordNativePlotMode(state, value, ~)
+state.session.plotMode = value;
+end
+
+function state = recordNativeTableEdit(state, edit, ~)
+state.session.editedValue = edit.NewValue;
+end
+
+function state = recordNativeTableSelection(state, selection, ~)
+state.session.selectedCells = selection.CellIndices;
+end
+
+function drawNothing(~, ~)
 end
 
 function pack = syntheticSample(~)

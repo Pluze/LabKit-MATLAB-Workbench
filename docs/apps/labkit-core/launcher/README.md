@@ -126,6 +126,10 @@ After LabKit is installed, **Latest**, **Release**, and **Versions** in the full
 Launcher provide the richer source-checkout version workflow. Every downloaded
 archive is validated before replacement. Existing repairs preserve a recovery
 copy transactionally and retain known local workspace folders when required.
+Close every running LabKit App before replacing an installation. Standalone
+repair and the full Launcher's version update workflows refuse to replace
+framework files while an App remains open so live callbacks and delayed UI
+work cannot lose their MATLAB class definitions mid-operation.
 Keep experimental data and exports outside the runtime folder because installed
 code is replaceable.
 

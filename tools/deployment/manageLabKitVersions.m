@@ -372,6 +372,7 @@ function result = installSource(root, source, opts)
             "", false, 0);
         return;
     end
+    assertNoRunningLabKitApps();
     notify(opts.ProgressFcn, "Preparing update workspace...", .10);
     temporary = string(tempname);
     cleanup = onCleanup(@() removeFolder(temporary));
@@ -408,6 +409,7 @@ function result = installSource(root, source, opts)
 end
 
 function replacement = replaceInstallation(root, candidate, failAfterBackup)
+    assertNoRunningLabKitApps();
     parent = fileparts(root);
     [~, name] = fileparts(root);
     backup = fullfile(parent, name + ".version-backup-" + string(java.util.UUID.randomUUID()));
@@ -452,6 +454,20 @@ function replacement = replaceInstallation(root, candidate, failAfterBackup)
         end
     end
     delete(cleanup)
+end
+
+function assertNoRunningLabKitApps()
+    figures = findall(groot, "Type", "figure");
+    for index = 1:numel(figures)
+        figureHandle = figures(index);
+        isMarkedApp = strcmp(string(figureHandle.Tag), "labkitApp");
+        hasWorkbench = ~isempty(findall( ...
+            figureHandle, "Tag", "labkitAppWorkbenchGrid"));
+        if isMarkedApp || hasWorkbench
+            error("LabKit:Deployment:AppsStillRunning", ...
+                "Close every running LabKit App before updating LabKit.");
+        end
+    end
 end
 
 function rollback(root, backup, cause)

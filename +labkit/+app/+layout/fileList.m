@@ -46,7 +46,7 @@ function node = fileList(id, varargin)
 %   PathFilterDescription - Reader-facing description of files accepted by
 %       PathFilter, used in the aggregate filtering notice. Default:
 %       "supported".
-%   Bind - Project source-record field path. Default: "".
+%   Bind - Required project or session source-record field path.
 %   SelectionBind - ListSelection field path. Default: "".
 %   OnSelectionChanged - Optional callback
 %       applicationState = callback(applicationState,selection,callbackContext)
@@ -61,7 +61,8 @@ function node = fileList(id, varargin)
 %   node - Immutable internal layout node accepted by layout containers.
 %
 % Errors:
-%   Throws labkit:app:contract:* for invalid options, paths, or callbacks.
+%   Throws labkit:app:contract:* for invalid options, paths, callbacks, or
+%   a missing Bind owner.
 %   In a native App, an unhandled file-panel validation or parsing exception
 %   is rolled back and shown in an alert.
 %

@@ -76,6 +76,13 @@ and renderer signatures, and builds one private native platform plan.
 ## Paved Road
 
 - Bind ordinary state with `Bind="project..."` or `Bind="session..."`.
+- Give every editable semantic surface one declared behavior owner before
+  launch: editable fields, ranges, and sliders use `Bind` or
+  `OnValueChanged`; file lists require `Bind`; plot view modes require
+  `OnValueChanged`; and editable table columns require `OnCellEdited`.
+  Workspace page callbacks require named pages. Runtime applies binding and
+  callback effects through the same queued transaction, validates the final
+  state, and rolls back state and presentation together on failure.
 - Use `labkit.app.layout.fileList` for portable file records and selection.
   Multi-file collections use native multi-selection; a semantic single-file
   slot declares `MaxFiles=1` and single selection. File buttons describe only

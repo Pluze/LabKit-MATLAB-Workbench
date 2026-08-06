@@ -24,12 +24,14 @@ function node = field(id, varargin)
 %   Enabled - Initial logical enabled state. Default: true.
 %   OnValueChanged - Scalar callback
 %       state = callback(state,value,context). Default: [].
+%   Every non-readonly field must declare Bind or OnValueChanged.
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by layout containers.
 %
 % Errors:
-%   Throws labkit:app:contract:* for invalid IDs, options, or handlers.
+%   Throws labkit:app:contract:* for invalid IDs, options, handlers, or an
+%   editable field with no declared state or callback owner.
 %
 % Typical Call:
 %   node = labkit.app.layout.field("gain", Kind="numeric", ...

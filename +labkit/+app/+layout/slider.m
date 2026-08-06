@@ -22,6 +22,7 @@ function node = slider(id, varargin)
 %   Enabled - Initial logical enabled state. Default: true.
 %   OnValueChanged - Scalar callback
 %       state = callback(state,value,context). Default: [].
+%   Every slider must declare Bind or OnValueChanged.
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by layout containers.
@@ -30,7 +31,8 @@ function node = slider(id, varargin)
 %   Throws labkit:app:contract:* for invalid IDs, options, or callbacks.
 %
 % Typical Call:
-%   node = labkit.app.layout.slider("frame", Limits=[1 100], Step=1);
+%   node = labkit.app.layout.slider("frame", Limits=[1 100], Step=1, ...
+%       Bind="session.frame");
 %
 % See also labkit.app.layout.field, labkit.app.layout.rangeField
 node = labkit.app.internal.contract.LayoutNode.slider(id, varargin{:});
