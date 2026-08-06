@@ -14,9 +14,8 @@ labkit_EIS_app
 
 The Files list retains `.DTA` sources containing a readable EIS `ZCURVE`.
 Other Gamry experiment kinds and files without the required curve are omitted
-before plotting. The
-successfully decoded source list and its order are preserved in project state
-through portable references.
+before plotting. Saved projects preserve the accepted source order and ask you
+to locate a source if it has moved.
 
 ## Basic Workflow
 

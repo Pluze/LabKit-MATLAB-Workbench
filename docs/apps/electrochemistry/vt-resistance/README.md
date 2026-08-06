@@ -14,12 +14,11 @@ labkit_VTResistance_app
 
 ## Inputs And Batch Behavior
 
-The Files list retains chrono `.DTA` transients and omits other Gamry
-experiment kinds before session reconstruction. The transient session decodes
-and analyzes the registered batch so shared setting changes update every result together.
+The Files list accepts chrono `.DTA` transients and omits other Gamry
+experiment kinds. Changing a shared analysis setting updates the whole batch.
 No electrode-area normalization is performed because the reported quantity is
-electrical resistance in ohms. Saved projects preserve source order and
-portable identity through removal, later additions, and reopen.
+electrical resistance in ohms. Saved projects preserve source order and ask
+you to locate a source if it has moved.
 
 ## Basic Workflow
 

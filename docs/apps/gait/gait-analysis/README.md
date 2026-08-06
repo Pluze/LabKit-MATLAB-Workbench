@@ -1,6 +1,6 @@
 # Gait Analysis
 
-Gait Analysis 2 converts a current Video Marker project into independently
+Gait Analysis converts a current Video Marker project into independently
 segmented treadmill swing steps, per-frame kinematics, per-step gait
 parameters, visual step reports, and reproducible CSV outputs. Loading and
 analysis are deliberately separate: loading first shows the complete tracked
@@ -15,14 +15,10 @@ source checkout, run:
 labkit_GaitAnalysis_app
 ```
 
-## Input Contract
+## Supported Input
 
-The only file input is a current Video Marker `labkitProject` MAT document or
-autosave. The MAT file is the analysis source of truth and the cross-App data
-contract; Gait Analysis does not call the Video Marker package at runtime. The
-saved fields are described by
-[Video Marker project and session state](../../image-measurement/video-marker/README.md#project-and-session-state).
-Gait Analysis reads:
+The only file input is a current Video Marker project MAT file or autosave.
+It must contain:
 
 - frames-by-points-by-2 pixel coordinates;
 - point IDs, point names, and skeleton edges;
@@ -30,13 +26,11 @@ Gait Analysis reads:
 - video frame count, frame rate, duration, width, and height;
 - scale calibration and physical unit when calibrated.
 
-The app does not reopen the original video to obtain scientific metadata.
-Video Marker payloads older than the embedded-video-metadata contract must be
-opened and saved with the current Video Marker before analysis. Gait Analysis
-rejects generic coordinate tables and arbitrary MAT variables because they do
-not jointly own timing, skeleton, calibration, and annotation provenance.
-`computeGait` still accepts an in-memory normalized pose for deterministic
-tests and programmatic calculations.
+The App uses the timing, skeleton, calibration, and annotation information in
+the Video Marker project; it does not reopen the video to infer missing
+metadata. Generic coordinate tables and unrelated MAT files are therefore not
+accepted. If an older Video Marker project lacks the required metadata, open
+and save it with the current Video Marker before analysis.
 
 The Video Marker document is stored as a portable project source. Older Gait
 Analysis projects are upgraded on load.
@@ -45,15 +39,13 @@ Coordinates use image convention: the origin is at the upper left and Y
 increases downward. The skeleton preview preserves that convention. Angle and
 length time series use conventional plot axes.
 
-## Project And Session State
+## Saving And Reopening A Project
 
-The pose source, analysis options, computed tables/events, and export record
-are saved. Decoded pose data and the currently selected step are reconstructed
-after load. Projects from the older stride-naming contract invalidate results
-whose scientific meaning changed, so rerun the analysis before export.
-Current projects validate finite numeric ranges, integer frame/window fields,
-the swing-frame ordering, nonempty role names, and logical origin settings
-before reconstructing a session.
+The project saves the Video Marker source reference, analysis options,
+completed results, and export record. If an older project contains results
+from before the step-length correction, Gait Analysis asks you to rerun the
+analysis before export. If the Video Marker source has moved, the App asks you
+to locate it.
 
 ## Two-Stage Workflow
 
@@ -85,9 +77,8 @@ changing the selected step fits the new data once; later redraws preserve the
 user's zoom.
 
 The skeleton plot annotates swing duration, step length, iliac/hip/knee/ankle/
-foot translations, and each joint's minimum, maximum, and range of motion. This
-is the app version of the earlier per-step gait figure; the figures no longer
-need to be generated as an intermediate image set merely to inspect each step.
+foot translations, and each joint's minimum, maximum, and range of motion. You
+can inspect each step directly without first exporting intermediate figures.
 
 ## Step Segmentation
 
@@ -99,10 +90,9 @@ interval retain the higher peak. Every accepted lift-off is independently paired
 subsequent foot X value before the next lift-off, or before the recording ends.
 That following minimum is the landing event.
 
-This pairing is important: a completed last swing remains a valid step even
-when the recording ends before another lift-off. Earlier contact-to-contact
-implementations lost that final step. These are image-kinematic treadmill
-events, not force-plate contact measurements.
+This pairing keeps a completed last swing valid even when the recording ends
+before another lift-off. These are image-kinematic treadmill events, not
+force-plate contact measurements.
 
 When a later lift-off exists, the app additionally derives cycle time, stance
 time, cadence, and duty factor. Those values are legitimately unavailable for
@@ -118,17 +108,16 @@ the final independently complete swing if no next lift-off was recorded.
 | Unit name | `px` | Physical unit label associated with pixels per unit. |
 | First-frame first point as origin | Off | Shifts scaled coordinate exports; raw pixel coordinates remain unchanged. |
 | Smooth window | 5 frames | Centered finite-value mean applied independently to each point and axis. |
-| Minimum foot-X prominence | 20 source units | Minimum lift-off peak prominence inherited from the legacy treadmill workflow. |
-| Peak-height sigma | 2 | Requires a lift-off peak to be at least mean foot X minus this many standard deviations, matching the legacy treadmill detector. |
+| Minimum foot-X prominence | 20 source units | Minimum prominence required for a lift-off peak. |
+| Peak-height sigma | 2 | Requires a lift-off peak to be at least mean foot X minus this many standard deviations. |
 | Minimum interval | 0.2 s | Minimum time between lift-off peaks; converted to frames from source timing. |
 | Minimum swing | 3 frames | Minimum accepted inclusive lift-off-to-landing span and timing-free separation fallback. |
 | Maximum swing | 300 frames | Maximum accepted inclusive lift-off-to-landing span. |
 | Minimum step length | 1 output unit | Minimum two-dimensional foot endpoint displacement. |
 | Maximum hip translation | 1,000,000 output units | Upper endpoint-displacement QC rule; the default normally leaves it inactive. |
 
-Changing any parameter invalidates the previous result. Repeating a run with
-the same source and parameters is skipped when its deterministic fingerprint
-is unchanged.
+Changing any parameter makes the previous result out of date. Running analysis
+again with unchanged source and parameters reuses the completed result.
 
 ## Calculations
 
@@ -148,9 +137,8 @@ For each lift-off-to-landing step it calculates:
 - validity and a concrete rejection reason for duration, step length, or hip
   translation rules.
 
-The former scripts sometimes called foot displacement `stride_length` even
-though only one active swing was measured. Version 2 uses `step_length` so the
-column name matches the calculation.
+Foot displacement is exported as `step_length` because each row describes one
+active swing rather than a complete stride.
 
 ## Outputs
 

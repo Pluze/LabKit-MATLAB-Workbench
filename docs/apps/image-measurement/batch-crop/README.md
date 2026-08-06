@@ -16,8 +16,8 @@ Use **Add images** for selected files, **Add folder** for one directory, or
 **Add folder tree** for nested sources. Each list row stores its own crop center,
 rotation, padding, and optional scale calibration. **Duplicate image** creates
 another task for the same source so multiple ROIs can be exported without
-loading duplicate files. Duplicate tasks remain aligned with their source and
-cached preview when the native file list supplies row- or column-shaped state.
+loading duplicate files. Duplicate tasks stay linked to the same source while
+each keeps its own crop and calibration settings.
 
 ## Basic Workflow
 
@@ -76,9 +76,8 @@ parameters and identifies each output file.
 Saved projects preserve one independent task per list row, so duplicated tasks
 can resolve to the same image while retaining separate crop geometry and
 calibration. Crop dimensions, physical-scale settings, output format, output
-folder, and scale-bar choices are also saved. Image pixels and preview caches
-are reconstructed from the sources after load rather than embedded in the
-project.
+folder, and scale-bar choices are also saved. Images remain external source
+files and are read again when the project opens.
 
 Older projects are upgraded on open while preserving each task's center,
 rotation, padding, and calibration. If a source moved, the standard relinking

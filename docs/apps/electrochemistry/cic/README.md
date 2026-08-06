@@ -14,12 +14,11 @@ labkit_CIC_app
 
 ## Inputs And Batch Behavior
 
-The Files list retains chrono `.DTA` transients and omits other Gamry
-experiment kinds before session reconstruction. The selected row is decoded
-for immediate preview; batch calculation uses the same analysis settings when
-results are exported. This avoids repeatedly decoding every large file while
-the user is only switching previews. Saved projects preserve file order and
-portable source identity through removal, later additions, and reopen.
+The Files list accepts chrono `.DTA` transients and omits other Gamry
+experiment kinds. Selecting a row updates the preview. Export applies the
+current analysis settings to every accepted file in the displayed order.
+Saved projects preserve that order through removal, later additions, and
+reopen.
 
 Electrode area comes from a positive UI override when supplied, otherwise from
 the parsed DTA metadata. Without a valid positive area, charge in coulombs can
@@ -68,7 +67,7 @@ Maximum cathodic and anodic polarization potentials are interpolated at
 `phase end + delay`. The app does not extrapolate: if either requested time is
 outside the recorded range, that file fails with an explicit delay message.
 Baseline candidates are selected from pre-pulse, interpulse, and post-pulse
-windows, with documented fallbacks recorded in the result struct.
+windows. The exported result identifies the baseline used.
 
 Water-window status compares the calculated polarization potentials with the
 selected cathodic and anodic limits. The limits are an app policy and do not

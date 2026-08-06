@@ -76,18 +76,11 @@ clustered points provide weak rotational leverage.
 
 ## Automatic Alignment
 
-**Auto align current pair** runs the app-owned base-MATLAB rigid-registration
-path. It searches the complete rotation circle in global, one-degree, and
-quarter-degree stages; translation candidates may span up to 75% of either
-preview dimension. It estimates translation with anti-aliased, zero-padded
-amplitude-weighted phase correlation and subpixel peak refinement, then ranks candidate angles using robust,
-overlap-aware oriented structure on a finer preview. Its diagnostic event
-records the accepted angle, translation, overlap, structural score, score
-margin, and translation-peak margin. It returns the same
-aligned image and rigid-transform fields as manual alignment. Automatic
-alignment remains a starting estimate, not a guarantee of DIC-quality
-correspondence. Always inspect the false-color overlay and prefer manual points
-when the image has repeated texture, extremely small overlap, scale change,
+**Auto align current pair** estimates a rigid rotation and translation without
+changing scale or shear. It can search large rotations and displacements, but
+the result is only a starting estimate, not a guarantee of DIC-quality
+correspondence. Always inspect the false-color overlay. Prefer manual points
+when the images have repeated texture, very little overlap, scale change,
 deformation, large occlusion, or weak contrast.
 
 ## Crop ROI
@@ -124,10 +117,10 @@ the selected file. LabKit result manifests record source references,
 parameters, output roles, and generated filenames; the manifest JSON is
 provenance metadata, not an additional scientific result.
 
-The saved project stores portable source references, preview choices, edit
-steps, crop and mask annotations, and result references. Decoded source images
-and intermediate working images are loaded or recomputed when the project is
-opened; they are not duplicated inside the project file.
+The saved project stores source references, preview choices, applied edits,
+crop and mask annotations, and result references. Source and intermediate
+images are read or recreated when the project opens rather than copied into
+the project file.
 
 ## Use Without The GUI
 

@@ -45,11 +45,11 @@ segment's original range remain `NaN`.
 The selected input is saved as a portable project source. Older projects are
 upgraded on load.
 
-## Project And Session State
+## Saving And Reopening A Project
 
 The project saves the source, baseline/noise windows, and last export
-reference. Metric tables, aligned waveforms, and summaries are recalculated
-from that source after load.
+location. When the project is reopened, metric tables, aligned waveforms, and
+summaries are recalculated from that source.
 
 ## Measurements And Summary
 

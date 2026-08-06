@@ -60,16 +60,13 @@ The preview recording, optional protocol, and filter recordings are saved as
 distinct portable project sources. Older projects that stored these sources
 separately are combined automatically on load.
 
-## Project And Session State
+## Saving And Reopening A Project
 
-The durable project stores portable references for one preview recording, one
-optional protocol, and an ordered collection of filter recordings. It also
-stores preview settings, channel-role drafts, manual filter labels/comments,
-and compact export records.
-
-Header indices, decoded preview windows, table presentation state, current ROI
-and window position, status text, and log messages are transient session data.
-They are reconstructed from the project sources when a project is opened.
+The project stores references to the preview recording, optional protocol, and
+ordered filter recordings together with preview settings, channel assignments,
+labels, and comments. Waveform samples are not copied into the project. When a
+project is reopened, the App reads the required window from the source file;
+if a source has moved, it asks you to locate it.
 
 ## Review Recording Information
 

@@ -13,9 +13,8 @@ experiment-specific formula.
 
 ## Workbench Entry Point
 
-The launcher is documented here because users operate it as the first LabKit
-application. Its implementation remains a self-contained root file so it can
-repair a damaged installation without depending on the app framework.
+The launcher is documented here because it is the first LabKit application
+most users open. It can also install LabKit or repair a damaged installation.
 
 ## Figure Handoff
 

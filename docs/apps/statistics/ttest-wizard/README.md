@@ -219,11 +219,11 @@ returns one canonical
 [`runTTest`](../../../reference/api/ttest_wizard/testRun/runTTest.html)
 result per later group.
 
-## Project Recovery
+## Opening Existing Projects
 
-Project schema version 2 stores ordered groups, test settings, plot settings,
-completed comparison results, and source references. Version-1 A/B projects
-migrate by preserving A as the first group and B as the second group.
+Projects preserve the ordered groups, test and plot settings, completed
+comparisons, and source references. When an older two-group project is opened,
+group A remains the first or reference group and group B remains the second.
 
 ## Assumptions And Limitations
 

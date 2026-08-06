@@ -14,13 +14,12 @@ the owning app. Source DTA files are never modified.
 | Impedance inspection and export | [EIS](eis/README.md) | `ZCURVE` | configurable Nyquist/Bode-style overlay |
 | Steady pulse resistance | [VT Resistance](vt-resistance/README.md) | biphasic chrono transient | cathodic, anodic, and mean resistance |
 
-## Shared DTA Contract
+## Supported DTA Data
 
-The DTA library returns structured items, curve tables, headers, units,
-metadata, parser messages, and status. Apps use exact required columns for
-scientific calculations and do not infer missing physical quantities from a
-plot label. The Apps require the version 3 unit-explicit DTA contract rather
-than branching between duplicate legacy and canonical item fields.
+Each App checks for the measurements it needs, including their units, before
+running a calculation. A plotted label is not used to guess a missing physical
+quantity. See the individual App manual for its required experiment type and
+columns.
 
 ## Units And Traceability
 
@@ -30,9 +29,9 @@ or CSC is reported in the unit shown by the app. UI display conversions do not
 change stored base-unit calculations.
 
 Export tables include the source identity and analysis settings needed to
-interpret the result. Runtime-generated `.labkit.json` files are provenance
-manifests describing inputs, parameters, and output roles; they are not a
-second numerical result and can be kept with the corresponding CSV.
+interpret the result. Keep the accompanying `.labkit.json` file with its CSV;
+it records which inputs and settings produced the export but contains no
+additional numerical result.
 
 ## Use Without The GUI
 

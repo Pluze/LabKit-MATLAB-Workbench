@@ -78,11 +78,10 @@ outputs remain Celsius regardless of palette or mapping mode.
 
 ## Project And State
 
-Saved projects keep portable source references, display parameters, export
-settings, and lightweight per-image ranges and readings. Raw sensor matrices
-and decoded Celsius matrices are loaded again from the selected source when a
-project opens. Missing source files use the standard relinking flow rather
-than relying on a local absolute path.
+Saved projects keep source references, display parameters, export settings,
+and per-image ranges and readings. Thermal data remains in the source files
+and is read again when a project opens. If a source has moved, the App asks you
+to locate it.
 An existing source that is no longer a readable radiometric file aborts the
 restore and preserves the current document. Batch import may still report and
 skip rejected selections before they become project sources.

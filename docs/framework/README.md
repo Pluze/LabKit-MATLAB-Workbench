@@ -78,17 +78,15 @@ and renderer signatures, and builds one private native platform plan.
 - Bind ordinary state with `Bind="project..."` or `Bind="session..."`.
 - Keep ordinary actions on the framework's consistent single-line native
   button rhythm. A readonly `field` automatically wraps its current text and
-  grows or shrinks with the available value-column width; Apps do not declare
-  line counts or a separate message type. Control-group dividers appear only
-  between adjacent resizable sections, never as a trailing bar after the final
+  adjusts to the available width; Apps do not declare line counts or a separate
+  message type. Dividers belong between resizable sections, not after the final
   section.
 - Give every editable semantic surface one declared behavior owner before
   launch: editable fields, ranges, and sliders use `Bind` or
   `OnValueChanged`; file lists require `Bind`; plot view modes require
   `OnValueChanged`; and editable table columns require `OnCellEdited`.
-  Workspace page callbacks require named pages. Runtime applies binding and
-  callback effects through the same queued transaction, validates the final
-  state, and rolls back state and presentation together on failure.
+  Workspace page callbacks require named pages. Binding and callback changes
+  use the same validation and rollback behavior.
 - Use `labkit.app.layout.fileList` for portable file records and selection.
   Multi-file collections use native multi-selection; a semantic single-file
   slot declares `MaxFiles=1` and single selection. File buttons describe only
