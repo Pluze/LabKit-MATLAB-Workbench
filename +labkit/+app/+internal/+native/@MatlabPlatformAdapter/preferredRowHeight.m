@@ -23,17 +23,19 @@ function height = preferredRowHeight(obj, node)
                     node.Configuration.Lines * policy.StatusLineHeight;
             end
         case "button"
-            height = labkit.app.internal.native.NativeAdapterValues.estimatedControlHeight( ...
-                node.Configuration.Label, 22, 2, ...
-                policy.ButtonHeight);
+            height = policy.ButtonHeight;
         case "slider"
             height = policy.SliderHeight;
         case "field"
             if node.Configuration.Kind == "readonly"
-                text = [string(node.Configuration.Label), ...
-                    string(node.Configuration.Value)];
-                height = labkit.app.internal.native.NativeAdapterValues.estimatedControlHeight( ...
-                    text, 34, 3, policy.FieldHeight);
+                key = char(node.Id);
+                if isKey(obj.ReadonlyHeights, key)
+                    height = obj.ReadonlyHeights(key);
+                else
+                    height = labkit.app.internal.native.NativeAdapterValues.readonlyHeight( ...
+                        node.Configuration.Value, policy.ReadonlyDefaultWidth, ...
+                        policy.ReadonlyFontSize);
+                end
             elseif node.Configuration.Kind == "logical"
                 height = labkit.app.internal.native.NativeAdapterValues.estimatedControlHeight( ...
                     node.Configuration.Label, 42, 2, ...

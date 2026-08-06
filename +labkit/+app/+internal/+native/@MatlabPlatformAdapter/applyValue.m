@@ -1,5 +1,11 @@
-function applyValue(~, component, value)
+function applyValue(obj, component, value)
 % Class-folder implementation of MatlabPlatformAdapter.applyValue.
+    if isstruct(component.UserData) && ...
+            isfield(component.UserData, "Readonly") && ...
+            component.UserData.Readonly
+        obj.applyText(component, value);
+        return
+    end
     mode = labkit.app.internal.native.NativeAdapterValues.linkedPlotMode(component);
     if ~isempty(mode)
         mode.Value = value;

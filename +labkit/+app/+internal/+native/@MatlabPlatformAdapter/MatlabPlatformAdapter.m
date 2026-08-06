@@ -22,6 +22,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         PriorPointer (1, 1) string = "arrow"
         ClosePrompt
         DialogFolders
+        ReadonlyHeights
         Starting (1, 1) logical = false
         StartupStarted
         StartupPanel
@@ -45,6 +46,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 "ValueType", "any");
             obj.DialogFolders = containers.Map("KeyType", "char", ...
                 "ValueType", "char");
+            obj.ReadonlyHeights = containers.Map("KeyType", "char", ...
+                "ValueType", "double");
             policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
             obj.Figure = uifigure(Visible="off", ...
                 Name=char(string(title)), ...
@@ -61,6 +64,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             obj.Figure.Pointer = "watch";
             setappdata(obj.Figure, "labkitAppBusy", true);
             obj.buildTree();
+            setappdata(obj.Figure, "labkitAppLayoutChanged", ...
+                @() obj.refreshReadonlySurfaces());
             obj.createStartupSurface();
             obj.startupUpdate("Preparing runtime...");
         end
@@ -137,6 +142,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                     return
                 end
                 obj.Figure.Visible = "on";
+                drawnow limitrate nocallbacks
+                obj.refreshReadonlySurfaces();
                 if mode == "minimized" && isprop(obj.Figure, "WindowState")
                     obj.Figure.WindowState = "minimized";
                 end
@@ -347,9 +354,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         applyTableData(~, component, model)
 
-        applyText(~, component, value)
+        applyText(obj, component, value)
 
-        applyValue(~, component, value)
+        applyValue(obj, component, value)
+
+        updateReadonlyHeight(obj, component, value)
+
+        refreshReadonlySurfaces(obj)
 
         applyLimits(~, component, limits)
 

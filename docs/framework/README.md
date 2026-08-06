@@ -76,6 +76,12 @@ and renderer signatures, and builds one private native platform plan.
 ## Paved Road
 
 - Bind ordinary state with `Bind="project..."` or `Bind="session..."`.
+- Keep ordinary actions on the framework's consistent single-line native
+  button rhythm. A readonly `field` automatically wraps its current text and
+  grows or shrinks with the available value-column width; Apps do not declare
+  line counts or a separate message type. Control-group dividers appear only
+  between adjacent resizable sections, never as a trailing bar after the final
+  section.
 - Give every editable semantic surface one declared behavior owner before
   launch: editable fields, ranges, and sliders use `Bind` or
   `OnValueChanged`; file lists require `Bind`; plot view modes require

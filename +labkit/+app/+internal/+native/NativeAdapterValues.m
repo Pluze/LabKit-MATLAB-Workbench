@@ -266,6 +266,41 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
         end
 
+        function height = readonlyHeight(value, width, fontSize)
+        policy = nativeLayoutPolicy();
+        width = double(width);
+        if ~isscalar(width) || ~isfinite(width) || width <= 0
+            width = policy.ReadonlyDefaultWidth;
+        end
+        fontSize = double(fontSize);
+        if ~isscalar(fontSize) || ~isfinite(fontSize) || fontSize <= 0
+            fontSize = policy.ReadonlyFontSize;
+        end
+        charactersPerLine = max(8, floor( ...
+            (width - 12) / (0.58 * fontSize)));
+        lines = labkit.app.internal.native.NativeAdapterValues.readonlyLines(value);
+        if isempty(lines)
+            lineCount = 1;
+        else
+            lineCount = 0;
+            for index = 1:numel(lines)
+                units = sum(1 + (double(char(lines(index))) > 255));
+                lineCount = lineCount + max(1, ceil(units / charactersPerLine));
+            end
+        end
+        height = max(policy.ReadonlyMinimumHeight, ...
+            policy.ReadonlyChromeHeight + ...
+            max(1, lineCount) * policy.ReadonlyLineHeight);
+        end
+
+        function lines = readonlyLines(value)
+        if ischar(value)
+            lines = string(value);
+        else
+            lines = string(value(:));
+        end
+        end
+
         function key = axisKey(target, axisId)
         key = string(target) + "." + string(axisId);
         end
