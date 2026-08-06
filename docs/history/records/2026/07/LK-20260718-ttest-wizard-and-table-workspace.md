@@ -122,6 +122,7 @@ repository.
 - [T-Test Wizard](../../../../apps/statistics/ttest-wizard/README.md)
 - [Statistics Apps](../../../../apps/statistics/README.md)
 - [Simple Scientific CSV Exchange](../../../../development/data-and-designs/scientific-csv-interchange.md)
+- [T-Test Wizard design](../../../../development/data-and-designs/group-comparison-app-design.md)
 - [Runtime and Lifecycle](../../../../framework/guides/runtime.md)
 
 ## Known limitations and follow-up

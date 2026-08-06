@@ -54,8 +54,7 @@ open without migration.
 
 ## Compatibility and migration
 
-Existing T-Test projects and exported results remain compatible. The App needs
-the stated framework version but no project payload migration.
+No additional migration applies beyond the compatibility information in the preceding impact section.
 
 ## Validation
 
@@ -67,8 +66,7 @@ the stated framework version but no project payload migration.
 
 ## Evidence
 
-The T-Test hidden-GUI workflow and framework viewport specifications passed,
-and the updated documentation rendered deterministically.
+The validation details above are the supporting evidence for this record.
 
 ## Known limitations and follow-up
 

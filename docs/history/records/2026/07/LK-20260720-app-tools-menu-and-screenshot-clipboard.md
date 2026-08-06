@@ -55,8 +55,7 @@ noninteractive MATLAB session.
 
 ## Compatibility and migration
 
-The menu reorganization is compatible with existing projects, calculations,
-plots, and result files. No saved-data migration is required.
+No additional migration applies beyond the compatibility information in the preceding impact section.
 
 ## Validation
 
@@ -69,8 +68,7 @@ plots, and result files. No saved-data migration is required.
 
 ## Evidence
 
-The focused App SDK and hidden native-adapter specifications passed, and the
-updated documentation rendered deterministically.
+The validation details above are the supporting evidence for this record.
 
 ## Known limitations and follow-up
 

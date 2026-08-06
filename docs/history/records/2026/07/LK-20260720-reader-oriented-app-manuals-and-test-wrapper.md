@@ -82,8 +82,7 @@ official test runner and does not add another CI or public build interface.
 
 ## Compatibility and migration
 
-This documentation and test-tooling change does not alter App runtime behavior,
-saved data, public APIs, or result files.
+No additional migration applies beyond the compatibility information in the preceding impact section.
 
 ## Validation
 
@@ -103,8 +102,7 @@ saved data, public APIs, or result files.
 
 ## Evidence
 
-The App-manual boilerplate guard, deterministic documentation render, and
-focused test-wrapper specifications passed.
+The validation details above are the supporting evidence for this record.
 
 ## Known limitations and follow-up
 

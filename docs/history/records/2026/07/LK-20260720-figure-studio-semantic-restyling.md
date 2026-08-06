@@ -86,8 +86,7 @@ window presentation.
 
 ## Compatibility and migration
 
-Schema 1 Figure Studio projects migrate automatically to schema 2 while
-preserving saved values. Other App projects and result contracts are unchanged.
+No additional migration applies beyond the compatibility information in the preceding impact section.
 
 ## Validation
 
@@ -107,8 +106,7 @@ preserving saved values. Other App projects and result contracts are unchanged.
 
 ## Evidence
 
-Figure import, result reconstruction, semantic styling, hidden-GUI, and
-single-process runner specifications passed with the recorded timing evidence.
+The validation details above are the supporting evidence for this record.
 
 ## Known limitations and follow-up
 

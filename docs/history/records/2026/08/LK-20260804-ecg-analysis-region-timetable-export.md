@@ -6,7 +6,7 @@ date: 2026-08-04
 sequence: 173
 type: feat
 compatibility: compatible
-component: `labkit_ECGPrint_app` | `1.6.1 -> 1.6.2`
+component: `labkit_ECGPrint_app` | `1.6.1 -> 1.7.0`
 scope: Current analysis-region timetable export
 ```
 
