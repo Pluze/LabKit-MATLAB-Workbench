@@ -13,6 +13,24 @@ only synthetic inputs reused by more than one specification owner; a fixture
 used by one owner stays beside that specification. Do not create a generic
 shared, support, or helper directory.
 
+Tests protect current observable contracts and costly regressions, not the
+history of how the repository reached its present design. Remove a test when
+its behavior is retired; do not keep rejection tests for already-removed
+options, absence checks for completed migration paths, exact implementation
+file maps, arbitrary size/count limits, or assertions whose only purpose is to
+enforce taste. When compatibility remains supported, test the saved input and
+current output rather than the migration project or intermediate shape that
+introduced it. Before adding a narrow regression, first extend an existing
+owner-level behavior proof when that preserves a clear failure identity.
+
+Place a rule that applies uniformly to every App in `apps/conformance/`, or at
+the narrowest family root when it truly applies to that whole family. Do not
+copy the same guard into individual Apps, because that both duplicates upkeep
+and leaves unlisted Apps unprotected. Keep App-local tests when scientific
+meaning, fixtures, workflow state, output schema, or failure semantics are
+genuinely App-owned; do not force abstraction when it would hide those
+differences or require a parallel test-only product model.
+
 Production Apps and downstream App specifications, including accepted private
 repositories, never call `labkit.app.internal`. Use the focused
 `labkittest` test seams for runtime construction, callback contexts, compiled

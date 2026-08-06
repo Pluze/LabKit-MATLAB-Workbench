@@ -3,7 +3,8 @@ classdef ImageEnhancePresentationSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function declaresSourceHistoryPreviewAndExportWorkflow(testCase)
-            ids = nodeIds(image_enhance.workbench.buildLayout());
+            plan = labkittest.inspectDefinition(image_enhance.definition());
+            ids = string({plan.Nodes.Id});
 
             testCase.verifyTrue(all(ismember( ...
                 ["sourceImages" "applyTool" "historyTable" "exportImages"], ids)));
@@ -59,12 +60,4 @@ classdef ImageEnhancePresentationSpec < matlab.unittest.TestCase
             testCase.verifyEqual(small, [1 1 5 6]);
         end
     end
-end
-
-function ids = nodeIds(node)
-ids = string(node.Id);
-if ~isempty(node.Children)
-    childIds = cellfun(@nodeIds, node.Children, UniformOutput=false);
-    ids = [ids; vertcat(childIds{:})];
-end
 end

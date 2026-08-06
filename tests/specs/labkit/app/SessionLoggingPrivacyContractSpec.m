@@ -1,5 +1,5 @@
 classdef SessionLoggingPrivacyContractSpec < matlab.unittest.TestCase
-    %SESSIONLOGGINGPRIVACYCONTRACTSPEC Freeze full-detail logging boundary.
+    %SESSIONLOGGINGPRIVACYCONTRACTSPEC Specify the full-detail logging boundary.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function passesCompleteDetailsToTheLoggingBackend(testCase)

@@ -1,8 +1,8 @@
 classdef SessionLoggingContractSpec < matlab.unittest.TestCase
-    %SESSIONLOGGINGCONTRACTSPEC Freeze the v1 retained-event migration target.
+    %SESSIONLOGGINGCONTRACTSPEC Specify the canonical retained-event schema.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function retainsOnlyTheMinimalV1EventSchema(testCase)
+        function retainsOnlyTheCanonicalEventFields(testCase)
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = loggingProbeDefinition();

@@ -3,7 +3,8 @@ classdef ImageMatchPresentationSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function declaresReferenceSourceHistoryAndExportControls(testCase)
-            ids = nodeIds(image_match.workbench.buildLayout());
+            plan = labkittest.inspectDefinition(image_match.definition());
+            ids = string({plan.Nodes.Id});
 
             testCase.verifyTrue(all(ismember( ...
                 ["referenceImage" "sourceImages" "applyMatch" "historyTable" "exportImages"], ids)));
@@ -20,12 +21,4 @@ classdef ImageMatchPresentationSpec < matlab.unittest.TestCase
                 "390 x 260 px");
         end
     end
-end
-
-function ids = nodeIds(node)
-ids = string(node.Id);
-if ~isempty(node.Children)
-    childIds = cellfun(@nodeIds, node.Children, UniformOutput=false);
-    ids = [ids; vertcat(childIds{:})];
-end
 end

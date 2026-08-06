@@ -41,14 +41,6 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "CreateSession", @wrongSession), "labkit:app:contract:CallbackRoleMismatch");
         end
 
-        function rejectsRetiredLaunchDiagnosticsOption(testCase)
-            app = AppSdkSpec.definition(labkit.app.layout.workbench({}));
-
-            testCase.verifyError(@() app.launch( ...
-                Diagnostics=struct()), ...
-                "labkit:app:contract:UnknownArgument");
-        end
-
         function exposesTypedEventsRatherThanAmbiguousTransport(testCase)
             edit = labkit.app.event.TableCellEdit( ...
                 RowId="row-a", RowIndex=1, ColumnId="group", ColumnIndex=2, ...
@@ -97,7 +89,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(observed("kind"), "error");
         end
 
-        function nativeDialogFiltersContainOnlyLegacyCharacterCells(testCase)
+        function nativeDialogFiltersUseMatlabCharacterCells(testCase)
             filters = labkit.app.internal.native.NativeAdapterValues.dialogFilters( ...
                 {"*.zip", "Diagnostic bundle (*.zip)"});
             scalarFilter = ...
@@ -417,7 +409,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function explicitSourceBindingsPreserveLegacyInference(testCase)
+        function explicitSourceBindingsOverrideDefaultInference(testCase)
             inferred = labkit.app.project.Schema(Version=1, ...
                 Create=@createSourceProject, Validate=@validateSourceProject);
             explicit = labkit.app.project.Schema(Version=1, ...
