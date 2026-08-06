@@ -1,8 +1,8 @@
 # ECG Print exports the analyzed region as a timetable
 
 ```labkit-change
-id: LK-20260804-ecg-analysis-region-timetable-export
-date: 2026-08-04
+id: LK-20260806-ecg-analysis-region-timetable-export
+date: 2026-08-06
 sequence: 173
 type: feat
 compatibility: compatible
@@ -31,7 +31,7 @@ boundary; it does not expand the shared App SDK for one consumer.
 - The Exports section adds actions for the MATLAB base workspace and a MAT
   file.
 - Both actions produce `ecgAnalysisRegion`, including channel, unit, sample
-rate, and requested source-range metadata.
+  rate, and requested source-range metadata.
 - The MAT export writes the normal LabKit result manifest beside the data.
 
 ## User and data impact

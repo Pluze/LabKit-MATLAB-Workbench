@@ -53,6 +53,12 @@ Update history only with a versioned component change or a meaningful project
 evolution record. Do not create records for mechanical regeneration, typo-only
 copy edits, or generated-site churn.
 
+When a current page is retired or moved, repair or remove stale links in
+published history instead of retaining an obsolete compatibility page. Keep
+the published record's metadata and decision content unchanged. Link-only
+maintenance does not create a new component transition, but the documentation
+retirement policy itself needs a project-evolution record when it changes.
+
 ## GitHub templates
 
 When creating or updating public GitHub artifacts, use the matching template
@@ -66,7 +72,9 @@ PR.
 
 ## Workflow
 
-1. Change authored sources or renderer code. After moving Markdown, run
+1. Change authored sources or renderer code. After moving or retiring
+   Markdown, inspect current manuals and published history for inbound links,
+   remove obsolete links when no replacement page exists, then run
    `maintainLabKitDocLinks(repoRoot, "Update", true)` and review every rewrite.
 2. Run `maintainLabKitDocLinks(repoRoot)` and the smallest documentation
    contract/regression test during iteration.

@@ -50,6 +50,9 @@ launcher metadata file, manual, and structured history record.
 - Derive every final component version directly from `origin/main`, never from
   an intermediate develop version. Choose exactly one direct patch, minor, or
   major step for the net behavior.
+- Align each new versioned history record's date and date-bearing Change ID
+  with the final component `Updated` date in the squash candidate. Intermediate
+  checkpoint dates do not survive consolidation.
 - Delete intermediate transitions such as `2.1.0 -> 2.2.0` followed by
   `2.2.0 -> 2.3.0`. The merge-ready history contains only the chosen direct
   main-baseline-to-PR-final transition.
@@ -59,7 +62,10 @@ launcher metadata file, manual, and structured history record.
   duplicate unversioned component references that fragment the same PR story.
 - Rewrite titles, IDs, filenames, scopes, rationale, compatibility, evidence,
   and follow-up as the net delivered behavior. Preserve published mainline
-  history; freely consolidate records introduced only on `develop` while
+  history metadata and decision content. When this PR retires or moves a
+  current document, repair or remove stale links in published records without
+  changing their identity, sequence, components, scopes, or version
+  transitions. Freely consolidate records introduced only on `develop` while
   keeping global sequence metadata valid.
 - Update each owning manual once for the net public behavior. Do not repeat
   framework defaults in App manuals or preserve prose that merely narrates

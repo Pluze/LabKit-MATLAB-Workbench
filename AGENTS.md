@@ -132,6 +132,11 @@ under `docs/`.
   rationale and compatibility evidence in component history, and delete a
   delivered design page once the current manual and API reference own its
   useful behavior.
+- When current documentation is retired or moved, update or remove stale links
+  in published history so readers reach supported documentation. Keep the
+  published record's ID, date, sequence, type, compatibility, component, scope,
+  and version-transition metadata unchanged; do not rewrite its decision or
+  evidence merely to modernize prose.
 - Every public library function documents syntax, inputs, outputs, options,
   defaults, legal values, errors, and related APIs immediately after its
   declaration. Cataloged scientific app APIs also document units, assumptions,
@@ -284,6 +289,10 @@ explicit compliant squash subject; do not rely on GitHub defaults.
   each existing component advances by exactly one direct patch, minor, or
   major step. Cross-component changes use one record listing all affected
   components.
+- For a history record introduced on `develop`, align its date and date-bearing
+  Change ID with the final component `Updated` date used by the squash
+  candidate. Do not preserve an intermediate checkpoint date after versions
+  and history have been consolidated.
 - History records use stable Change ID and sequence metadata plus rationale,
   compatibility, user/data impact, validation, evidence, and follow-up. Do not
   restore a root changelog or separate history parser.
