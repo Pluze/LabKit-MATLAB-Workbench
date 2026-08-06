@@ -74,7 +74,8 @@ carry domain-specific explanations.
 
 ## Compatibility and migration
 
-No additional migration applies beyond the compatibility information in the preceding impact section.
+Tooltip additions do not change action callbacks, calculations, projects, or
+results. Existing layouts remain source compatible and need no data migration.
 
 ## Validation
 
@@ -86,7 +87,8 @@ No additional migration applies beyond the compatibility information in the prec
 
 ## Evidence
 
-The validation details above are the supporting evidence for this record.
+App SDK, cross-App definition, native-adapter, and DIC Postprocess GUI
+specifications passed with the new tooltip contract.
 
 ## Known limitations and follow-up
 

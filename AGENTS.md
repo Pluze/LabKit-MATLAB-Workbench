@@ -123,6 +123,15 @@ under `docs/`.
 - Update human docs for user behavior or public contracts, scoped AGENTS for
   execution/ownership rules, and both only when both changed. Do not duplicate
   agent workflow in human manuals.
+- Treat documentation as a reader interface, not a diff narrative or an
+  accumulation sink. Every addition must help a reader perform a supported
+  task, call a public API, understand current behavior, interpret an output,
+  or recover from a documented failure. Do not mechanically restate private
+  source structure, implementation order, test inventories, commit evidence,
+  or completed migration plans in current manuals. Put durable change
+  rationale and compatibility evidence in component history, and delete a
+  delivered design page once the current manual and API reference own its
+  useful behavior.
 - Every public library function documents syntax, inputs, outputs, options,
   defaults, legal values, errors, and related APIs immediately after its
   declaration. Cataloged scientific app APIs also document units, assumptions,

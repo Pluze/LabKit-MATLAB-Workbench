@@ -47,7 +47,8 @@ are unchanged. The rule affects future design choices and review evidence.
 
 ## Compatibility and migration
 
-No additional migration applies beyond the compatibility information in the preceding impact section.
+This guidance-only change adds no public API, runtime behavior, saved-data
+format, or migration requirement.
 
 ## Validation
 
@@ -58,7 +59,8 @@ No additional migration applies beyond the compatibility information in the prec
 
 ## Evidence
 
-The validation details above are the supporting evidence for this record.
+Skill validation and deterministic documentation rendering passed; repository
+inspection confirmed the escalation order at each intended ownership layer.
 
 ## Known limitations and follow-up
 

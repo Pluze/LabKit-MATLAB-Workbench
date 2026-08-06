@@ -55,7 +55,8 @@ the retired string-mode or request-adapter contracts.
 
 ## Compatibility and migration
 
-No additional migration applies beyond the compatibility information in the preceding impact section.
+Public Launcher commands, ordinary App launch, projects, and result files
+remain compatible. The retired integration seam requires no data migration.
 
 ## Validation
 
@@ -67,7 +68,8 @@ No additional migration applies beyond the compatibility information in the prec
 
 ## Evidence
 
-The validation details above are the supporting evidence for this record.
+Focused Launcher and App SDK specifications passed, diagnostic artifacts were
+inspected through DIC Preprocess, and documentation guardrails passed.
 
 ## Known limitations and follow-up
 

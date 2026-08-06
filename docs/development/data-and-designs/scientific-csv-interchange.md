@@ -2,7 +2,6 @@
 
 [Development index](../README.md) |
 [T-Test Wizard](../../apps/statistics/ttest-wizard/README.md) |
-[T-Test Wizard design](group-comparison-app-design.md) |
 [App development](../build-apps/app-development.md) | [Architecture](../build-apps/architecture.md)
 
 ## Status And Purpose
@@ -315,7 +314,6 @@ their names, paths, identifiers, or values into the repository.
 
 ## Related Guidance
 
-- [T-Test Wizard Design](group-comparison-app-design.md)
 - [T-Test Wizard](../../apps/statistics/ttest-wizard/README.md)
 - [App Development](../build-apps/app-development.md)
 - [Architecture](../build-apps/architecture.md)

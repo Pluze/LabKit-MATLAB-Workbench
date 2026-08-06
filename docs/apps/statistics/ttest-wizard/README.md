@@ -240,7 +240,6 @@ migrate by preserving A as the first group and B as the second group.
 ## Related Documentation
 
 - [Statistics Apps](../README.md)
-- [T-Test Wizard design](../../../development/data-and-designs/group-comparison-app-design.md)
 - [Simple Scientific CSV Exchange](../../../development/data-and-designs/scientific-csv-interchange.md)
 - [Figure Studio](../../labkit-core/figure-studio/README.md)
 - [App Framework](../../../framework/README.md)

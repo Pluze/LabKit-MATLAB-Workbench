@@ -202,68 +202,26 @@ CI includes each profile's `visual-evidence/` folder in the platform artifact.
 
 ## CI and Manual Evidence
 
-Continuous Integration runs `headless`, `gui`, and `isolated` on Linux, macOS,
-and Windows against R2022b and the latest release available to
-`matlab-actions/setup-matlab`. R2022b is the LabKit minimum supported release
-and also the first release with MATLAB Build Tool. macOS runs only the latest
-release as an Apple Silicon and native-platform sentinel; Linux and Windows
-cover both release boundaries. This matrix is compatibility evidence for the
-supported product boundary. CI uses clean MATLAB runtimes without optional
-Toolboxes. The R2022b entries use the fixed Ubuntu 22.04 and Windows Server
-2022 runner images supported by that MATLAB release; latest MATLAB uses the
-current runner images. Each matrix job installs MATLAB once and runs its
-scheduled profiles in separate batch sessions, so a shard shares setup cost
-without sharing MATLAB session state. Historical
-timings showed that the latest Windows and macOS GUI sessions formed the CI
-critical path. Those two sentinels therefore run a `gui` shard in parallel
-with a `headless` plus `isolated` shard. Linux and the R2022b Windows floor
-retain one all-profile job because splitting their shorter sessions would
-mostly duplicate setup. This selective sharding keeps complete evidence while
-avoiding both the long fully serial critical path and the setup cost of a
-15-job Cartesian matrix. Linux jobs provide an X virtual framebuffer before
-running MATLAB so native graphics tests have a real display service instead
-of relying on release-specific no-display behavior. CI runs `docsCheck` once
-on the latest release, then reports one aggregate `CI Gate` result that depends
-on every required shard. Configure repository branch protection to require
-`CI Gate`; the workflow does not silently replace repository protection
-policy. It uploads the catalog artifacts even after failure. Coverage is an
-explicit report, not a duplicate CI gate.
+Continuous Integration runs the `headless`, `gui`, and `isolated` profiles on
+the supported Linux, Windows, and macOS boundaries using clean MATLAB runtimes
+without optional Toolboxes. R2022b is the minimum supported release; the
+latest available release supplies the current boundary. Linux GUI jobs use a
+real virtual display service. CI also runs `docsCheck` once and uploads catalog
+artifacts after failures. Coverage is an explicit report, not a duplicate
+merge gate.
 
-`main` is release-only and accepts pull requests only from the
-repository-owned `develop` branch. The lightweight policy job rejects every
-other PR source before MATLAB setup. It also compares
-the PR base and head for App, facade, and launcher source ownership, direct
-semantic version steps, and matching component-history transitions. Branch
-protection separately rejects direct pushes, including administrator pushes.
-Because the required PR check runs against an up-to-date merge result, the
-squash-merged `main` commit has the same file tree that the PR matrix already
-validated. A `main` push therefore repeats only the lightweight policy and
-aggregate gate for the exact commit SHA; it does not pay for a second MATLAB
-matrix or documentation render. This optimization depends on required strict
-PR checks, administrator enforcement, and the direct-push prohibition. If any
-of those protections are relaxed, restore full validation on `main` pushes.
-Documentation delivery is separate from the tracked source tree: relevant
-`main` changes trigger the Documentation Pages workflow, which installs MATLAB,
-generates ignored `site/` output from that exact commit, and deploys the Pages
-artifact. No workflow commits generated HTML back to a protected branch.
+`CI Gate` is the required aggregate result. `main` accepts pull requests only
+from the repository-owned `develop` branch, and policy checks verify source
+ownership, direct semantic version steps, and matching component history.
+Branch protection rejects direct pushes. Because the pull request validates an
+up-to-date merge result, the resulting `main` push repeats only policy and the
+aggregate gate. If those protection assumptions change, restore full
+validation on `main` pushes.
 
-Every matrix shard publishes one evidence-oriented job summary after its
-scheduled independent MATLAB sessions finish. All-profile summaries make the
-platform compatibility claim; split summaries name `Core` or `Hidden GUI` and
-claim only that shard's evidence. Their profile tables state what the scheduled
-profiles prove instead of treating intentionally unscheduled profiles as
-failures. A successful summary records the scoped claim, clean runtime
-assumptions, display configuration, slowest tests, artifact name, and the
-manual boundaries that automation does not prove. A failed summary preserves
-any profiles that still passed, separates a missing JUnit report from a
-reported test failure, names failed test identities, includes recorded MATLAB
-diagnostics, and collapses active-test and log-tail evidence below the primary
-failure. Build tasks define descriptions so the upstream MATLAB Build Results
-table is meaningful as well. The repository-owned summary helper has no
-third-party Python dependency and is regression-tested by the lightweight
-change-policy job. A cancelled or skipped scheduled profile makes that shard
-`incomplete`, not `failed`; passing profiles remain valid evidence, but the
-unfinished job cannot establish its scoped claim.
+Job summaries identify the profiles actually run, failed test identities,
+available diagnostics, artifacts, and manual boundaries. A cancelled or
+skipped required profile is incomplete rather than passing. Read the summary
+first, then inspect only the named failing artifact or log.
 
 CI classifies the exact pushed or pull-request diff before scheduling MATLAB.
 Source, test, build, workflow, and tool changes run the complete platform
@@ -271,8 +229,8 @@ matrix. Human documentation-only changes run `docsCheck` without the platform
 matrix. Agent guidance and GitHub contribution-template-only changes run the
 lightweight change-policy check without starting MATLAB. Mixed changes run the
 union of their required profiles, and `CI Gate` verifies every profile selected
-by the classifier. Changing the classifier or workflow is itself a full-matrix
-change.
+by the classifier. Documentation Pages independently generates ignored `site/`
+output from the accepted `main` source; generated HTML is never committed.
 
 Manual App validation remains required for native file dialogs, visual design,
 pointer interaction, real-data suitability, and scientific interpretation.

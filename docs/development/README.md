@@ -11,7 +11,6 @@ only [Getting started](../getting-started/README.md) and the
 | Understand repository and package ownership | [Architecture](build-apps/architecture.md) |
 | Create or refactor an app | [App development](build-apps/app-development.md) and [complete app tutorial](build-apps/complete-app.md) |
 | Exchange simple scientific tables or gradually improve an App CSV export | [Simple scientific CSV exchange](data-and-designs/scientific-csv-interchange.md) |
-| Develop the proposed cell-selection-based t-test App | [T-Test Wizard design](data-and-designs/group-comparison-app-design.md) |
 | Work with an ignored private app repository | [Private apps](maintain-and-release/private-apps.md) |
 | Select tests, GUI checks, or profiling | [Testing](maintain-and-release/testing.md) |
 | Call source-checkout packaging, profiling, codecheck, or documentation tools | [Maintainer tools](tools/README.md) |
