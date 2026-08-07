@@ -120,7 +120,7 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
             --title "V${RELEASE_TAG#v}" \
-            --generate-notes \
+            --notes-file .github/RELEASE_NOTES_TEMPLATE.md \
             --draft
           local_digest="sha256:$(cut -d' ' -f1 \
             "artifacts/release/${RELEASE_TAG}/asset.sha256")"
@@ -141,5 +141,5 @@ jobs:
             echo "::error::Remote launcher byte count does not match the tag blob."
             exit 1
           fi
-          echo "Review and complete the release notes, asset, and validation evidence before publishing the draft." \
+          echo "Rewrite the release notes for users, then review the asset and validation evidence before publishing the draft." \
             >> "$GITHUB_STEP_SUMMARY"

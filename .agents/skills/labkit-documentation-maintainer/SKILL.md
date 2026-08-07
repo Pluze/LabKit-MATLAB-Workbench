@@ -70,6 +70,18 @@ scope, behavior, documentation/boundary decisions, delivery state, and data
 hygiene. Never place sensitive lab data or local absolute paths in an Issue or
 PR.
 
+## Release notes
+
+Treat a GitHub Release as a user interface for deciding whether and how to
+upgrade. Preserve historical facts, breaking changes, safety warnings, and
+required migration actions, but express them through user-visible workflows
+and supported contracts. Do not turn the note into a delivery log: omit commit
+and run identifiers, shell commands, test inventories, CI routing, internal
+package moves, hashes, byte counts, and asset-verification procedure. Summarize
+validation only at the level useful to a user, such as supported MATLAB and OS
+coverage or completed interactive checks. Keep exact evidence in the PR,
+workflow record, structured component history, and release verification.
+
 ## Workflow
 
 1. Change authored sources or renderer code. After moving or retiring

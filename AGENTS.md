@@ -314,6 +314,12 @@ explicit compliant squash subject; do not rely on GitHub defaults.
 - New release tags are `vX.Y.Z`; do not rename published legacy tags. Release
   titles contain only `VX.Y.Z` with an uppercase `V` and relevant `Highlights`,
   `Fixes`, `Upgrade Note`, and `Validation` sections.
+- Treat release notes as a user-facing product summary, not a release audit.
+  Describe observable behavior, affected workflows, compatibility, and actions
+  a user may need to take. Do not publish commit or run identifiers, commands,
+  test inventories, CI architecture, internal package movement, hashes, byte
+  counts, or maintainer-only evidence; keep those in the PR, workflow record,
+  structured history, or release asset verification.
 - Start the manual `Release` workflow only after developer-led interactive App
   validation, successful required PR validation, and a successful lightweight
   `Continuous Integration` main-push run for the exact squash commit. It then
