@@ -15,7 +15,8 @@ function node = dataTable(id, varargin)
 %       supplies its title when this is blank. Default: blank.
 %   Columns - Column-label text row. Default: strings(1,0).
 %   RowNames - Row-label text row. Default: strings(1,0).
-%   ColumnEditable - Logical scalar or row matching Columns. Default: false.
+%   ColumnEditable - Logical scalar or row matching Columns. Any editable
+%       column requires OnCellEdited. Default: false.
 %   OnCellEdited - Scalar callback
 %       state = callback(state,edit,context), where edit is a
 %       labkit.app.event.TableCellEdit. Default: [].
@@ -27,7 +28,8 @@ function node = dataTable(id, varargin)
 %   node - Immutable internal layout node accepted by layout containers.
 %
 % Errors:
-%   Throws labkit:app:contract:* for invalid options or callback signatures.
+%   Throws labkit:app:contract:* for invalid options, callback signatures,
+%   or editable columns without an OnCellEdited owner.
 %
 % Typical Call:
 %   node = labkit.app.layout.dataTable("results", Columns=["Name" "Value"]);

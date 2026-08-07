@@ -7,36 +7,35 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.event_name == 'workflow_dispatch' && github.run_id || github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  change-scope:
-    name: Change scope and policy
+  policy:
+    name: Repository policy
     runs-on: ubuntu-latest
-    outputs:
-      full: ${{ steps.scope.outputs.full }}
-      docs: ${{ steps.scope.outputs.docs }}
-      governance: ${{ steps.scope.outputs.governance }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Resolve validation scope
-        id: scope
+      - name: Validate repository policy
         shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+          if [ -z "${BASE_SHA}" ]; then
+            git fetch origin main
+            BASE_SHA="$(git merge-base origin/main "${HEAD_SHA}")"
+          elif ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
             BASE_SHA="$(git rev-list --max-parents=0 "${HEAD_SHA}")"
           fi
           git diff --check "${BASE_SHA}" "${HEAD_SHA}"
@@ -51,16 +50,11 @@ jobs:
             --repository "${{ github.repository }}" \
             --base-sha "${BASE_SHA}" \
             --head-sha "${HEAD_SHA}"
-          git diff --name-only -z "${BASE_SHA}" "${HEAD_SHA}" |
-            python .github/scripts/classify_ci_scope.py \
-              --null --github-output "${GITHUB_OUTPUT}"
 
   platform-matrix:
     name: MATLAB / ${{ matrix.label }} / ${{ matrix.release }} / ${{ matrix.shard }}
-    needs: change-scope
-    if: >-
-      github.event_name == 'pull_request' &&
-      needs.change-scope.outputs.full == 'true'
+    needs: policy
+    if: github.event_name != 'push'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 100
     strategy:
@@ -252,11 +246,8 @@ jobs:
 
   docs-check:
     name: Documentation check
-    needs: change-scope
-    if: >-
-      github.event_name == 'pull_request' &&
-      (needs.change-scope.outputs.full == 'true' ||
-      needs.change-scope.outputs.docs == 'true')
+    needs: policy
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -277,7 +268,7 @@ jobs:
     name: CI Gate
     if: always()
     needs:
-      - change-scope
+      - policy
       - platform-matrix
       - docs-check
     runs-on: ubuntu-latest
@@ -285,13 +276,8 @@ jobs:
       - name: Require all validation profiles
         shell: bash
         run: |
-          test '${{ needs.change-scope.result }}' = 'success'
-          if [ '${{ github.event_name }}' = 'pull_request' ] &&
-             [ '${{ needs.change-scope.outputs.full }}' = 'true' ]; then
+          test '${{ needs.policy.result }}' = 'success'
+          if [ '${{ github.event_name }}' != 'push' ]; then
             test '${{ needs.platform-matrix.result }}' = 'success'
-          fi
-          if [ '${{ github.event_name }}' = 'pull_request' ] &&
-             { [ '${{ needs.change-scope.outputs.full }}' = 'true' ] ||
-               [ '${{ needs.change-scope.outputs.docs }}' = 'true' ]; }; then
             test '${{ needs.docs-check.result }}' = 'success'
           fi

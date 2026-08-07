@@ -81,7 +81,10 @@ under `docs/`.
   or `str2func` only at a genuinely dynamic extension or compatibility
   boundary with closed input validation, explicit ownership, and contract
   tests; never construct a callable symbol from untrusted project or user
-  data.
+  data. `assignin` is permitted only for an explicit result export to the
+  literal `base` workspace and a literal MATLAB variable name, with a
+  data-shaped value and contract tests; never use it to inject runtime
+  objects, handles, callbacks, or dynamically named state.
 - File budgets count nonblank, non-comment MATLAB code. They are review
   backstops, not extraction targets. Keep callback-local glue local when that
   makes workflow order clearer.
@@ -120,6 +123,20 @@ under `docs/`.
 - Update human docs for user behavior or public contracts, scoped AGENTS for
   execution/ownership rules, and both only when both changed. Do not duplicate
   agent workflow in human manuals.
+- Treat documentation as a reader interface, not a diff narrative or an
+  accumulation sink. Every addition must help a reader perform a supported
+  task, call a public API, understand current behavior, interpret an output,
+  or recover from a documented failure. Do not mechanically restate private
+  source structure, implementation order, test inventories, commit evidence,
+  or completed migration plans in current manuals. Put durable change
+  rationale and compatibility evidence in component history, and delete a
+  delivered design page once the current manual and API reference own its
+  useful behavior.
+- When current documentation is retired or moved, update or remove stale links
+  in published history so readers reach supported documentation. Keep the
+  published record's ID, date, sequence, type, compatibility, component, scope,
+  and version-transition metadata unchanged; do not rewrite its decision or
+  evidence merely to modernize prose.
 - Every public library function documents syntax, inputs, outputs, options,
   defaults, legal values, errors, and related APIs immediately after its
   declaration. Cataloged scientific app APIs also document units, assumptions,
@@ -181,6 +198,10 @@ tests, history, and details out of the public repository.
   `.labkit-accept-main-guardrails` is present and private changes are unpushed,
   also run the relevant public guardrail because the public changed-file
   planner cannot see the nested diff.
+- CI has two validation modes: pull requests run complete validation, while a
+  protected `main` push records repository policy for the exact accepted
+  commit. Manual recovery reuses complete pull-request validation in an
+  independent concurrency group; it is a trigger fallback, not a third scope.
 
 ## Git workflow
 
@@ -204,7 +225,16 @@ tests, history, and details out of the public repository.
    coherent checkpoint merely to accumulate a larger batch. Once a
    `develop -> main` PR opens, freeze `develop` until the PR is merged or
    closed; do not mix later work into its moving head.
-4. Keep branch work stable with purpose-based commits and focused validation.
+4. Before every commit, inspect the complete intended diff against its
+   baseline and account for every changed file and meaningful hunk. Keep only
+   changes necessary for the requested outcome, its owned contract, and
+   proportionate evidence. Remove speculative APIs, types, options, App-owned
+   declarations, compatibility work, documentation, tests, and incidental
+   cleanup introduced while pursuing a narrower symptom. If the net diff is
+   substantially larger or more conceptual than the user outcome, stop and
+   revisit the design boundary before committing; do not preserve iteration
+   history or a discarded design merely because it has already been written.
+5. Keep branch work stable with purpose-based commits and focused validation.
    Intermediate commit count is not a merge criterion. Before opening or
    merging the final PR, inspect the complete base-to-head diff, user docs,
    component versions, structured history, validation evidence, and remaining
@@ -214,17 +244,17 @@ tests, history, and details out of the public repository.
    rewrites them from the `origin/main` baseline: remove intermediate version
    transitions, merge related checkpoint records, and leave exactly one changed
    structured history record for each versioned component.
-5. Main accepts PRs only from the repository-owned `develop` branch. Run
+6. Main accepts PRs only from the repository-owned `develop` branch. Run
    `changedFast` once before final review, inspect required PR CI, and read only
    failing logs. Squash-merge with an explicit compliant subject.
-6. After the merge, inspect the exact lightweight main-push policy gate once
+7. After the merge, inspect the exact lightweight main-push policy gate once
    and complete any authorized release from that exact commit. Do not repeat
    the MATLAB matrix already required on the up-to-date PR. Before deleting
    `develop`, verify its PR is merged, it has no unmerged commits, and no open
    PR depends on it. Delete local and remote `develop`, recreate both at the
    exact new `origin/main` commit, restore branch protection, and verify
    `develop == origin/main` before new work starts. Never create a sync commit.
-7. Never force-push without explicit approval. Stop and report permission,
+8. Never force-push without explicit approval. Stop and report permission,
    protection, review, CI, sync, or cleanup blockers rather than bypassing them.
    Branch protection must require `CI Gate`, PR review flow, linear main
    history, and conversation resolution for administrators as well as ordinary
@@ -263,6 +293,10 @@ explicit compliant squash subject; do not rely on GitHub defaults.
   each existing component advances by exactly one direct patch, minor, or
   major step. Cross-component changes use one record listing all affected
   components.
+- For a history record introduced on `develop`, align its date and date-bearing
+  Change ID with the final component `Updated` date used by the squash
+  candidate. Do not preserve an intermediate checkpoint date after versions
+  and history have been consolidated.
 - History records use stable Change ID and sequence metadata plus rationale,
   compatibility, user/data impact, validation, evidence, and follow-up. Do not
   restore a root changelog or separate history parser.
@@ -278,7 +312,7 @@ explicit compliant squash subject; do not rely on GitHub defaults.
   once for the net change. Update rationale, compatibility, user impact, and
   evidence to describe the final PR diff rather than its commit sequence.
 - New release tags are `vX.Y.Z`; do not rename published legacy tags. Release
-  titles are `LabKit MATLAB Workbench vX.Y.Z` with relevant `Highlights`,
+  titles contain only `VX.Y.Z` with an uppercase `V` and relevant `Highlights`,
   `Fixes`, `Upgrade Note`, and `Validation` sections.
 - Start the manual `Release` workflow only after developer-led interactive App
   validation, successful required PR validation, and a successful lightweight

@@ -2,8 +2,8 @@
 
 ECG Print reads a wearable recording, filters one channel, detects beats,
 builds event-centered segments and a representative template, and reports
-signal quality over time. It can export the segment measurements and a
-printable waveform image.
+signal quality over time. It can export the analyzed sample region as a
+MATLAB timetable, the segment measurements, and a printable waveform image.
 
 ## Open ECG Print
 
@@ -35,18 +35,13 @@ the detected channels and lets you select one for analysis.
 The recording is saved as a portable project source. Older projects are
 upgraded on load.
 
-## Project And Session State
+## Saving And Reopening A Project
 
-ECG Print stores only durable workflow state in its project file:
-
-- the portable recording source;
-- import, channel, ROI, filter, detector, segment, template, and view settings;
-- the compact last-analysis summary and export records.
-
-Decoded recordings, signal arrays, events, segments, templates, measurements,
-header previews, and plot models are transient session data. They are rebuilt
-from the recording and durable parameters when a project is opened. This keeps
-saved projects portable and avoids duplicating large waveform caches.
+The project stores a reference to the recording, the import and analysis
+settings, the last analysis summary, and export records. It does not copy the
+full waveform or derived signal arrays. When the project is reopened, ECG
+Print reads the recording again and rebuilds the preview and analysis data. If
+the recording has moved, the App asks you to locate it.
 
 ## Analyze ECG
 
@@ -85,14 +80,24 @@ on every tab.
 | Smooth beats | 15 | Smoothing span used in exported per-segment trends |
 | Template plot | Template + residual band | Alternative view is template plus individual segments |
 
-Saved projects accept exactly the three displayed peak-method labels. A
-corrupt or hand-edited project containing another label is rejected instead
-of silently falling back to a detector.
+Saved projects accept the three peak methods shown in the App. An unrecognized
+value is reported as an error rather than silently selecting another method.
 
 Peak polarity is selected automatically. The default detector threshold is
 2.8 standard deviations inside the app calculation.
 
 ## Output Files
+
+**Export ROI timetable to workspace** assigns `ecgAnalysisRegion` in the
+MATLAB base workspace and confirms success with an information notice.
+**Export ROI timetable MAT** saves the same timetable
+as `ecgAnalysisRegion` in `ecg_analysis_region.mat` and writes a matching
+`ecg_analysis_region.labkit.json` manifest. Both commands use the most recent
+successful analysis, not unapplied control edits. Timetable row times match
+the analysis preview; its columns retain source time in seconds, raw and
+filtered channel samples, and a logical detected-peak marker. Channel name,
+signal unit, sample rate, and requested source range are stored in timetable
+metadata.
 
 **Export segment SNR CSV** writes `ecg_segment_snr.csv` and a matching
 `ecg_segment_snr.labkit.json` manifest. The CSV contains per-segment

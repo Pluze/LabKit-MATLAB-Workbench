@@ -11,7 +11,7 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
                 privateState = [];
             end
             if nargin < 4
-                stateMode = "exact";
+                stateMode = "compact";
             end
             snapshot = validateSnapshot(snapshot);
             stateMode = ...
@@ -79,7 +79,7 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
         function destination = writeFallback( ...
                 snapshot, preferredDestination, stateMode)
             if nargin < 3
-                stateMode = "exact";
+                stateMode = "compact";
             end
             snapshot = validateFallbackSnapshot(snapshot);
             stateMode = ...

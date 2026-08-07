@@ -61,7 +61,7 @@ classdef (Hidden, Sealed) RuntimeDiagnostics < handle
         function destination = exportBundle( ...
                 obj, destination, state, stateMode)
             if nargin < 4
-                stateMode = "exact";
+                stateMode = "compact";
             end
             stateMode = validateStateMode(stateMode);
             operation = obj.Recorder.begin( ...
@@ -80,24 +80,37 @@ classdef (Hidden, Sealed) RuntimeDiagnostics < handle
             end
         end
 
+        function destination = exportAfterErrorOnClose(obj, state)
+            destination = "";
+            if ~obj.Recorder.hasErrorOrCriticalEvent()
+                return
+            end
+            try
+                destination = obj.exportBundle( ...
+                    obj.automaticDestination("compact"), state, "compact");
+            catch
+                % Diagnostic persistence must not change Runtime close semantics.
+            end
+        end
+
         function destination = exportInteractive(obj, state)
             selection = obj.Context.chooseOption( ...
                 "Every bundle contains complete sensitive logs and App " + ...
                  "state. Compact MAT replaces supported state values over " + ...
                  "1 MiB with structural synthetic placeholders.", ...
-                ["Complete bundle (exact MAT)", ...
-                 "Complete bundle (compact synthetic MAT)", ...
+                ["Complete bundle (compact synthetic MAT)", ...
+                 "Complete bundle (exact MAT)", ...
                  "Cancel"], ...
                 Title="Export Diagnostic Bundle", ...
-                DefaultChoice="Complete bundle (exact MAT)", ...
+                DefaultChoice="Complete bundle (compact synthetic MAT)", ...
                 CancelChoice="Cancel");
             if selection.Cancelled || selection.Value == "Cancel"
                 destination = "";
                 return
             end
-            stateMode = "exact";
-            if selection.Value == "Complete bundle (compact synthetic MAT)"
-                stateMode = "compact";
+            stateMode = "compact";
+            if selection.Value == "Complete bundle (exact MAT)"
+                stateMode = "exact";
             end
             destination = "";
             try
@@ -131,7 +144,7 @@ classdef (Hidden, Sealed) RuntimeDiagnostics < handle
         function destination = exportTextFallback( ...
                 obj, preferredDestination, cause, stateMode)
             if nargin < 4
-                stateMode = "exact";
+                stateMode = "compact";
             end
             stateMode = validateStateMode(stateMode);
             obj.Recorder.log( ...

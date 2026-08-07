@@ -28,5 +28,4 @@ experiment schema.
 
 - [T-Test Wizard manual](ttest-wizard/README.md)
 - [Simple Scientific CSV Exchange](../../development/data-and-designs/scientific-csv-interchange.md)
-- [T-Test Wizard design](../../development/data-and-designs/group-comparison-app-design.md)
 - [All Apps](../README.md)

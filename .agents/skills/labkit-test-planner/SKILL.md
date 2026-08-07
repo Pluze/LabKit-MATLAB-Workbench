@@ -103,3 +103,9 @@ source boundary; rerun the same focused evidence; then push and let CI restore
 the full platform claim. Do not rerun `changedFast` or a full local profile for
 each CI repair. Re-plan only when the repair intentionally changes additional
 behavior or ownership.
+
+When GitHub did not create a usable required check, use the CI workflow's
+manual recovery dispatch for the exact ref. It must reuse the complete
+pull-request validation jobs in an independent concurrency group; do not add a
+third scope-selection mode, create an empty commit merely to replace a normal
+rerun, or treat reduced manual evidence as merge evidence.

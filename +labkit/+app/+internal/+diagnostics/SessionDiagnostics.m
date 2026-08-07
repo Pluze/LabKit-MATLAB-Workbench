@@ -100,6 +100,10 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
             obj.Stream.setTraceEnabled(enabled);
         end
 
+        function observed = hasErrorOrCriticalEvent(obj)
+            observed = obj.Stream.hasErrorOrCriticalEvent();
+        end
+
         function destination = exportBundle( ...
                 obj, destination, excludeOperationId, ...
                 privateState, stateMode)
@@ -110,7 +114,7 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                 privateState = [];
             end
             if nargin < 5
-                stateMode = "exact";
+                stateMode = "compact";
             end
             obj.Journal.flush();
             streamSnapshot = obj.Stream.captureSnapshot();
@@ -154,7 +158,7 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
         function destination = exportTextFallback( ...
                 obj, preferredDestination, failure, stateMode)
             if nargin < 4
-                stateMode = "exact";
+                stateMode = "compact";
             end
             % Keep this path independent of the journal and ZIP staging so a
             % failure in either subsystem cannot consume the last evidence.

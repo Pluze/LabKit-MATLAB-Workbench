@@ -76,6 +76,17 @@ and renderer signatures, and builds one private native platform plan.
 ## Paved Road
 
 - Bind ordinary state with `Bind="project..."` or `Bind="session..."`.
+- Keep ordinary actions on the framework's consistent single-line native
+  button rhythm. A readonly `field` automatically wraps its current text and
+  adjusts to the available width; Apps do not declare line counts or a separate
+  message type. Dividers belong between resizable sections, not after the final
+  section.
+- Give every editable semantic surface one declared behavior owner before
+  launch: editable fields, ranges, and sliders use `Bind` or
+  `OnValueChanged`; file lists require `Bind`; plot view modes require
+  `OnValueChanged`; and editable table columns require `OnCellEdited`.
+  Workspace page callbacks require named pages. Binding and callback changes
+  use the same validation and rollback behavior.
 - Use `labkit.app.layout.fileList` for portable file records and selection.
   Multi-file collections use native multi-selection; a semantic single-file
   slot declares `MaxFiles=1` and single selection. File buttons describe only
@@ -180,13 +191,19 @@ utilities do not compete with the App's workflow controls:
   `app-state-compact.mat` after replacing supported state leaves larger than
   1 MiB with same-class, same-dimension, compressible synthetic placeholders.
   `bundle-report.json` records every replacement without storing its value.
-  Exact is the default. Selecting an event highlights its complete table row.
+  Compact is the default; exact remains an explicit choice. After the first
+  ERROR or CRITICAL event, closing the App automatically writes a compact
+  diagnostic bundle. Selecting an event highlights its complete table row.
   Text fallback retains complete events and reports that the selected MAT
   state could not be represented as text.
 
 These actions are framework-owned native behavior. Apps do not declare menu
 items, implement clipboard integration, or duplicate project persistence
 callbacks.
+
+App callbacks use `CallbackContext.inform` for successful or neutral
+information and reserve `CallbackContext.alert` for blocking problems. The two
+capabilities map explicitly to native information and error icons.
 
 Framework concepts and source names are versionless. Compatibility belongs to
 `labkit.app.version`; saved-data versions belong to

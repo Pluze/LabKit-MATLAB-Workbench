@@ -3,19 +3,12 @@ classdef FigureStudioPresentationSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function declaresFigureSourceStyleAndExportControls(testCase)
-            ids = nodeIds(figure_studio.workbench.buildLayout());
+            plan = labkittest.inspectDefinition(figure_studio.definition());
+            ids = string({plan.Nodes.Id});
 
             testCase.verifyTrue(all(ismember( ...
                 ["preview" "outputFolder" "exportCurrent"], ids)));
             testCase.verifyFalse(any(ids == "appLog"));
         end
     end
-end
-
-function ids = nodeIds(node)
-ids = string(node.Id);
-if ~isempty(node.Children)
-    childIds = cellfun(@nodeIds, node.Children, UniformOutput=false);
-    ids = [ids; vertcat(childIds{:})];
-end
 end

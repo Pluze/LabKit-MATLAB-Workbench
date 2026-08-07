@@ -197,11 +197,20 @@ def validate_versions(
             )
         transitions.append((component_after, version_before, version_after))
 
-    history_records = {
-        path: parse_history_components(read_head(path))
-        for path in paths
-        if path.startswith("docs/history/records/") and path.endswith(".md")
-    }
+    history_records = {}
+    for path in paths:
+        if not path.startswith("docs/history/records/") or not path.endswith(".md"):
+            continue
+        base_source = read_base(path)
+        head_source = read_head(path)
+        if base_source is not None and head_source is None:
+            errors.append(f"{path}: published history records cannot be deleted.")
+            continue
+        base_components = parse_history_components(base_source)
+        head_components = parse_history_components(head_source)
+        if base_source is not None and base_components == head_components:
+            continue
+        history_records[path] = head_components
     net_transitions = {
         component: (before, after)
         for component, before, after in transitions

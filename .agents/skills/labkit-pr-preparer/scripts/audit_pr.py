@@ -94,7 +94,15 @@ def main() -> int:
     for path in paths:
         if not path.startswith("docs/history/records/") or not path.endswith(".md"):
             continue
+        base_source = git_text(base_sha, path)
         source = git_text(head_sha, path)
+        if (
+            base_source is not None
+            and source is not None
+            and policy.parse_history_components(base_source)
+            == policy.parse_history_components(source)
+        ):
+            continue
         histories.append(
             (
                 metadata(source, "sequence"),

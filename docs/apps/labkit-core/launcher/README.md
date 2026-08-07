@@ -1,10 +1,9 @@
 # LabKit Launcher
 
-The LabKit Launcher is the installed workbench entry point. It discovers apps,
-prepares their MATLAB paths, checks requirements, starts App SDK sessions,
-manages installed versions, opens app documentation, and exposes
-source-checkout maintenance tools. It is intentionally self-contained so a
-single surviving `labkit_launcher.m` can repair an incomplete ZIP installation.
+The LabKit Launcher is the main place to find and open Apps, check their
+requirements, manage installed versions, open documentation, and use
+source-checkout maintenance tools. A downloaded `labkit_launcher.m` can also
+install LabKit or repair an incomplete installation.
 
 ## Start The Launcher
 
@@ -20,7 +19,7 @@ tool availability, or the active maintenance operation.
 
 | Group | Action | Behavior |
 | --- | --- | --- |
-| Run Apps | **Open Selected App** | Checks the selected app requirements, adds the app root, and calls its App SDK entrypoint without retired runtime launch arguments. |
+| Run Apps | **Open Selected App** | Checks the selected App's requirements and opens it. |
 | Run Apps | **Refresh App List** | Repeats public and configured private-app discovery without restarting the launcher. |
 | Run Apps | **Documentation and History** | Opens the current online manual for the selected app. |
 | Versions and Install | **Latest** | Installs the current `main` branch archive. |
@@ -39,21 +38,19 @@ selection does not change the checked set. The application table places
 **Family** immediately before **App** so related tools remain visually grouped
 while their individual names stay easy to scan.
 
-When startup begins, the launcher immediately disables its App table and
-actions, changes the open button to **Starting App...**, shows a wait pointer,
-and reports two explicit stages: preparing the selected App path, then
-initializing its window through the named entry point. This feedback is painted
-before the potentially slow App entry point runs. Duplicate clicks are ignored
-while startup is active. Completion restores the controls and reports the
-opened command; failure reports the failing identifier and message, with repair
-guidance only for structural installation failures.
+When startup begins, the launcher disables its App table and actions, changes
+the open button to **Starting App...**, and reports whether it is preparing the
+App or opening its window. Duplicate clicks are ignored until startup
+finishes. Success restores the controls and reports the opened command;
+failure reports the identifier and message and offers repair guidance when the
+installation itself is incomplete.
 
 Every launch uses the same clean App path. Use the App's **Tools >
 Diagnostics** menu to inspect its live session log or export a diagnostic
 bundle after a problem occurs. The Session Log window owns manual TRACE
 capture when earlier detail is needed. Apps that declare a synthetic
 input pack expose **Tools > Developer Tools > Generate Synthetic Inputs...**.
-Generation writes anonymous fixture files and a manifest into a new folder but
+Generation writes anonymous example files and a manifest into a new folder but
 does not load them or mutate the running project.
 
 ## Programmatic Calls
@@ -126,6 +123,10 @@ After LabKit is installed, **Latest**, **Release**, and **Versions** in the full
 Launcher provide the richer source-checkout version workflow. Every downloaded
 archive is validated before replacement. Existing repairs preserve a recovery
 copy transactionally and retain known local workspace folders when required.
+Close every running LabKit App before replacing an installation. Standalone
+repair and the full Launcher's version update workflows refuse to replace
+LabKit while an App is open, preventing a partial update from disrupting a
+running session.
 Keep experimental data and exports outside the runtime folder because installed
 code is replaceable.
 

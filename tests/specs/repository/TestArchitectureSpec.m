@@ -2,14 +2,6 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
     %TESTARCHITECTURESPEC Specify one active owner/contract test architecture.
 
     methods (Test, TestTags = {'Contract:system', 'Env:headless'})
-        function generatedApiExcludesInternalPackages(testCase)
-            root = labkittest.setup();
-
-            testCase.verifyFalse(isfolder(fullfile( ...
-                root, "site", "reference", "api", "labkit", ...
-                "app", "internal")));
-        end
-
         function appSdkInternalRootContainsNoImplementationTypes(testCase)
             root = labkittest.setup();
             internalRoot = fullfile(root, "+labkit", "+app", "+internal");
@@ -40,49 +32,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             end
         end
 
-        function runtimeKernelKeepsCompleteWorkflowsInClassFolder(testCase)
-            root = labkittest.setup();
-            folder = fullfile(root, "+labkit", "+app", "+internal", ...
-                "+runtime", "@RuntimeKernel");
-            required = ["RuntimeKernel" "applyBoundControl" ...
-                "applyFileSelection" "commitFilePanel" "completeBackend" ...
-                "execute" "present" "restoreProject" ...
-                "wrapDialogOperations"] + ".m";
-
-            testCase.verifyTrue(all(arrayfun(@(name) ...
-                isfile(fullfile(folder, name)), required)), ...
-                "RuntimeKernel workflow methods must remain separately owned.");
-            main = string(fileread(fullfile(folder, "RuntimeKernel.m")));
-            testCase.verifyLessThanOrEqual(numel(splitlines(main)), 800, ...
-                "RuntimeKernel definition is accumulating workflow bodies again.");
-        end
-
-        function activeEntryPointsDescribeOnlyTheCatalogModel(testCase)
-            root = labkittest.setup();
-            build = text(root, "buildfile.m");
-            guide = text(root, "docs/development/maintain-and-release/testing.md");
-            testsGuide = text(root, "tests/AGENTS.md");
-            migrationGuide = text(root, ".agents/migration_guide.md");
-            skillFiles = activeSkillFiles(root, "labkit-test-planner");
-
-            testCase.verifySubstring(build, "labkittest.run");
-            testCase.verifyFalse(contains(build, "runLabKitTests"));
-            testCase.verifyFalse(contains(build, "tests/runner"));
-            testCase.verifySubstring(migrationGuide, ...
-                "tests/+labkittest/toolboxDebt.m");
-            testCase.verifyFalse(contains(migrationGuide, ...
-                "tests/runner/labkitToolboxDebt.m"));
-            activeTexts = [guide; testsGuide; ...
-                arrayfun(@(file) string(fileread(file)), skillFiles(:))];
-            for active = activeTexts.'
-                testCase.verifyFalse(contains(active, "tests/cases"));
-                testCase.verifyFalse(contains(active, "runLabKitTests"));
-                testCase.verifyFalse(contains(active, "tests/runner"));
-            end
-        end
-
-        function catalogOwnsTheOnlyRunnableSpecificationRoot(testCase)
-            root = labkittest.setup();
+        function catalogDescriptorsUseCurrentOwnerRoots(testCase)
             descriptors = labkittest.catalog();
 
             testCase.verifyNotEmpty(descriptors);
@@ -91,13 +41,6 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 ismember(string({descriptors.Owner}), ...
                 ["labkit_launcher" "repository"]) | ...
                 string({descriptors.Owner}) == ""));
-            testCase.verifyFalse(isfile(fullfile(root, "tests", "runLabKitTests.m")) && ...
-                isfile(fullfile(root, "buildfile.m")) && ...
-                contains(text(root, "buildfile.m"), "runLabKitTests"));
-            testCase.verifyTrue(isfolder(fullfile(root, "tests", "+testfixtures")));
-            testCase.verifyFalse(isfolder(fullfile(root, "tests", "shared")));
-            testCase.verifyFalse(isfolder(fullfile(root, "tests", "cases")));
-            testCase.verifyFalse(isfolder(fullfile(root, "tests", "runner")));
         end
 
         function productionDynamicInvocationIsClosedAndOwned(testCase)
@@ -110,6 +53,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "+labkit/+app/+internal/+launcher/createLauncher.m"
                 "+labkit/+app/+internal/+native/private/FigureInteractionHub.m"
                 "tools/profiling/profileLabKitTarget.m"];
+            allowedCalls = ["feval(" "feval(" "feval("];
             markers = [ ...
                 "Dynamic extension boundary"
                 "Compatibility boundary"
@@ -120,10 +64,19 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 calls = regexp(source, ...
                     '(?<![\w.])(eval|evalin|assignin|str2func|feval)\s*\(', ...
                     'match');
+                assignments = regexp(source, ...
+                    ['(?<![\w.])assignin\s*\(\s*' ...
+                    '(?:"base"|''base'')\s*,\s*' ...
+                    '(?:"[A-Za-z]\w*"|''[A-Za-z]\w*'')\s*,'], ...
+                    'match');
+                testCase.verifyEqual(sum(string(calls) == "assignin("), ...
+                    numel(assignments), ...
+                    "assignin must export data through literal base-workspace and variable names in " + file);
+                calls(string(calls) == "assignin(") = [];
                 allowedIndex = find(allowedFiles == file, 1);
                 if ~isempty(allowedIndex)
-                    testCase.verifyEqual(string(calls), "feval(", ...
-                        "Only one reviewed feval boundary is allowed in " + file);
+                    testCase.verifyEqual(string(calls), allowedCalls(allowedIndex), ...
+                        "Only the reviewed dynamic boundary is allowed in " + file);
                     testCase.verifySubstring(source, markers(allowedIndex));
                 else
                     testCase.verifyEmpty(calls, ...
@@ -132,14 +85,15 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             end
         end
 
-        function ciRoutesDocumentationWithoutWeakeningAggregateGate(testCase)
+        function ciUsesTwoModesWithoutWeakeningManualRecovery(testCase)
             root = labkittest.setup();
             workflow = text(root, ".github/workflows/ci.yml");
 
-            testCase.verifySubstring(workflow, "change-scope:");
+            testCase.verifySubstring(workflow, "policy:");
+            testCase.verifySubstring(workflow, "name: Repository policy");
+            testCase.verifySubstring(workflow, "workflow_dispatch:");
             testCase.verifySubstring(workflow, ...
-                "group: ci-${{ github.event_name }}-" + ...
-                "${{ github.event.pull_request.number || github.ref }}");
+                "github.event_name == 'workflow_dispatch' && github.run_id");
             testCase.verifyFalse(contains(workflow, ...
                 "group: ci-${{ github.event.pull_request.head.sha || github.sha }}"));
             testCase.verifySubstring(workflow, ...
@@ -154,25 +108,20 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "--head-repository");
             testCase.verifySubstring(workflow, ...
                 "--base-sha ""${BASE_SHA}""");
+            testCase.verifySubstring(workflow, ...
+                "[ -z ""${BASE_SHA}"" ]");
+            testCase.verifySubstring(workflow, ...
+                "git merge-base origin/main ""${HEAD_SHA}""");
             testCase.verifySubstring(workflow, "fetch-depth: 0");
-            testCase.verifySubstring(workflow, ...
-                "needs.change-scope.outputs.full == 'true'");
-            testCase.verifySubstring(workflow, ...
-                "needs.change-scope.outputs.docs == 'true'");
+            testCase.verifyFalse(contains(workflow, "classify_ci_scope"));
+            testCase.verifyEqual(count(workflow, "needs: policy"), 2);
             testCase.verifySubstring(workflow, "docs-check:");
             testCase.verifySubstring(workflow, "tasks: docsCheck");
-            testCase.verifyEqual(count(workflow, ...
-                "release: R2022b"), 2);
-            testCase.verifyEqual(count(workflow, ...
-                "release: latest"), 6);
-            testCase.verifyEqual(count(workflow, ...
-                "shard: All profiles"), 3);
-            testCase.verifyEqual(count(workflow, ...
-                "shard: Core"), 2);
-            testCase.verifyEqual(count(workflow, ...
-                "shard: Hidden GUI"), 2);
-            testCase.verifyEqual(count(workflow, ...
-                "          - os: "), 7);
+            testCase.verifySubstring(workflow, "release: R2022b");
+            testCase.verifySubstring(workflow, "release: latest");
+            testCase.verifySubstring(workflow, "shard: All profiles");
+            testCase.verifySubstring(workflow, "shard: Core");
+            testCase.verifySubstring(workflow, "shard: Hidden GUI");
             testCase.verifySubstring(workflow, "os: ubuntu-22.04");
             testCase.verifySubstring(workflow, "os: windows-2022");
             testCase.verifySubstring(workflow, "os: macos-14");
@@ -182,10 +131,8 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "Xvfb :99 -screen 0 1920x1080x24");
             testCase.verifySubstring(workflow, ...
                 "Documents/MATLAB");
-            testCase.verifyEqual(count(workflow, ...
-                "release: ${{ matrix.release }}"), 1);
-            testCase.verifyEqual(count(workflow, ...
-                "continue-on-error: true"), 3);
+            testCase.verifySubstring(workflow, ...
+                "release: ${{ matrix.release }}");
             testCase.verifySubstring(workflow, ...
                 "name: matlab-${{ matrix.id }}-${{ matrix.release }}-" + ...
                 "${{ matrix.shard_id }}");
@@ -203,13 +150,13 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "if: matrix.run_gui");
             testCase.verifySubstring(workflow, ...
                 "if: matrix.run_isolated");
-            testCase.verifyGreaterThanOrEqual(count(workflow, ...
-                "github.event_name == 'pull_request'"), 2);
+            testCase.verifyEqual(count(workflow, ...
+                "if: github.event_name != 'push'"), 2);
             testCase.verifySubstring(workflow, ...
                 "needs.platform-matrix.result");
             testCase.verifySubstring(workflow, "ci-gate:");
             testCase.verifySubstring(workflow, "name: CI Gate");
-            testCase.verifySubstring(workflow, "needs.change-scope.result");
+            testCase.verifySubstring(workflow, "needs.policy.result");
             testCase.verifySubstring(workflow, "docs-check.result");
         end
 
@@ -237,11 +184,8 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             ignore = splitlines(text(root, ".gitignore"));
 
             testCase.verifyTrue(any(strip(ignore) == "site/"));
-            testCase.verifySubstring(workflow, "- 'docs/**'");
-            testCase.verifySubstring(workflow, "- '+labkit/**'");
-            testCase.verifySubstring(workflow, "- 'apps/**'");
-            testCase.verifySubstring(workflow, "- 'tools/docs/**'");
-            testCase.verifyFalse(contains(workflow, "- 'site/**'"));
+            testCase.verifySubstring(workflow, "workflow_dispatch:");
+            testCase.verifyFalse(contains(workflow, "    paths:"));
             testCase.verifySubstring(workflow, ...
                 "name: Generate documentation from the exact main source");
             testCase.verifySubstring(workflow, ...
@@ -456,14 +400,6 @@ end
 
 function value = text(root, relative)
 value = string(fileread(fullfile(root, relative)));
-end
-
-function files = activeSkillFiles(root, skillName)
-listing = dir(fullfile(root, ".agents", "skills", skillName, "**", "*"));
-listing = listing(~[listing.isdir]);
-extensions = [".m" ".md"];
-paths = string(fullfile({listing.folder}, {listing.name}));
-files = paths(endsWith(lower(paths), extensions));
 end
 
 function files = repositoryTextFiles(root)

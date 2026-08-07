@@ -171,10 +171,6 @@ generic `+actions`, `+renderers`, `+ops`, `+io`, `+ui`, `+userInterface`,
 family-level `private/` helpers, `*Workflow.m` string dispatchers, and
 `+core/dispatch.m` routers.
 
-`+state`, `+actions`, `+ui`, `+view`, `+ops`, `+io`, and `+export` packages
-were retired with the workflow-first migration. Current app work should follow
-the workflow-first shape.
-
 ## App SDK Boundary
 
 App GUIs use the explicit `labkit.app` SDK:

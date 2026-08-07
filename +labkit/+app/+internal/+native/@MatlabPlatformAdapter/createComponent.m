@@ -35,7 +35,10 @@ function component = createComponent(obj, node, parent)
                 Enable=labkit.app.internal.native.NativeAdapterValues.onOff(config.Enabled), ...
                 Tooltip=char(config.Tooltip));
             labkit.app.internal.native.NativeAdapterValues.fitText(component, ...
-                CharsPerStep=18, MaxShrinkSteps=3);
+                CharsPerStep=28, MaxShrinkSteps=2);
+            if isprop(component, "WordWrap")
+                component.WordWrap = "off";
+            end
         case "field"
             component = obj.createField(parent, config, node.Id);
         case "rangeField"

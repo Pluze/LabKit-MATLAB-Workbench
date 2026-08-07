@@ -1,0 +1,73 @@
+function updateReadonlyHeight(obj, component, value)
+% Class-folder implementation of MatlabPlatformAdapter.updateReadonlyHeight.
+    if isempty(component) || ~isvalid(component) || ...
+            ~isstruct(component.UserData) || ...
+            ~isfield(component.UserData, "NodeId")
+        return
+    end
+    id = string(component.UserData.NodeId);
+    policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
+    width = policy.ReadonlyDefaultWidth;
+    figureHandle = ancestor(component, "figure");
+    if ~isempty(figureHandle) && isvalid(figureHandle) && ...
+            figureHandle.Visible == "on" && component.Position(3) > 0
+        width = component.Position(3);
+    end
+    height = labkit.app.internal.native.NativeAdapterValues.readonlyHeight( ...
+        value, width, component.FontSize);
+    key = char(id);
+    node = obj.node(id);
+    chain = node;
+    owner = obj.owningNode(id);
+    while ~isempty(owner) && owner.Kind ~= "workbench"
+        chain(end + 1) = owner;
+        owner = obj.owningNode(owner.Id);
+    end
+    before = cell(1, numel(chain));
+    for index = 1:numel(chain)
+        before{index} = obj.preferredRowHeight(chain(index));
+    end
+    if isKey(obj.ReadonlyHeights, key) && ...
+            abs(obj.ReadonlyHeights(key) - height) < 0.5
+        component.Position = [0 0 width height];
+        return
+    end
+    obj.ReadonlyHeights(key) = height;
+    for index = 1:numel(chain)
+        after = obj.preferredRowHeight(chain(index));
+        if ~(isnumeric(before{index}) && isnumeric(after))
+            continue
+        end
+        delta = after - before{index};
+        if abs(delta) < 0.5
+            continue
+        end
+        if index == 1
+            handle = component.UserData.LayoutContainer;
+        else
+            handle = obj.component(chain(index).Id);
+            handle = labkit.app.internal.native.NativeAdapterValues.layoutHandle(handle);
+        end
+        adjustOwningRow(handle, delta);
+    end
+    component.Position = [0 0 width height];
+end
+
+function adjustOwningRow(handle, delta)
+if isempty(handle) || ~isvalid(handle) || ...
+        ~isprop(handle, "Layout") || ...
+        ~isa(handle.Parent, "matlab.ui.container.GridLayout")
+    return
+end
+row = handle.Layout.Row;
+if ~isscalar(row) || row < 1 || row > numel(handle.Parent.RowHeight)
+    return
+end
+heights = handle.Parent.RowHeight;
+current = heights{row};
+if ~(isnumeric(current) && isscalar(current) && isfinite(current))
+    return
+end
+heights{row} = max(1, current + delta);
+handle.Parent.RowHeight = heights;
+end

@@ -66,6 +66,34 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             delete(cleanup); delete(toolCleanup)
         end
 
+        function updateRefusesTaggedAndLegacyRunningApps(testCase)
+            root = fixtureRoot(testCase, "old");
+            candidate = fixtureCandidate(testCase, "new");
+            toolCleanup = isolatedTool("");
+            hookCleanup = setHook(struct( ...
+                "CandidateRoot", candidate, "Confirm", true));
+
+            for marker = ["figure", "workbench"]
+                appFigure = uifigure("Visible", "off");
+                if marker == "figure"
+                    appFigure.Tag = "labkitApp";
+                else
+                    workbench = uigridlayout(appFigure, [1 1]);
+                    workbench.Tag = "labkitAppWorkbenchGrid";
+                end
+                appCleanup = onCleanup(@() delete(appFigure));
+
+                testCase.verifyError(@() manageLabKitVersions( ...
+                    root, "install", "Source", selectedSource()), ...
+                    "LabKit:Deployment:AppsStillRunning");
+                testCase.verifyEqual(readMarker(root), "old");
+                testCase.verifyEmpty(dir(fullfile( ...
+                    fileparts(root), "*.version-backup-*")));
+                delete(appCleanup)
+            end
+            delete(hookCleanup); delete(toolCleanup)
+        end
+
         function replacementAndRollbackRestoreOnlyValidRootPathSubtrees(testCase)
             root = fixtureRoot(testCase, "old");
             candidate = fixtureCandidate(testCase, "new");

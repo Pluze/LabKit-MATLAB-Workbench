@@ -85,5 +85,9 @@ drag = struct("Active", false, "Motion", [], "Up", [], "Down", [], ...
         figureHandle.WindowKeyPressFcn = drag.Key;
         figureHandle.Pointer = drag.Pointer;
         drag.Active = false;
+        if isappdata(figureHandle, "labkitAppLayoutChanged")
+            callback = getappdata(figureHandle, "labkitAppLayoutChanged");
+            callback();
+        end
     end
 end

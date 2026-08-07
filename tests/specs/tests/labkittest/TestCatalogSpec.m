@@ -598,6 +598,10 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 ".size')");
             testCase.verifyFalse(contains(workflow, ...
                 "gh release verify-asset"));
+            testCase.verifySubstring(workflow, ...
+                '--title "V${RELEASE_TAG#v}"');
+            testCase.verifyFalse(contains(workflow, ...
+                '--title "LabKit MATLAB Workbench'));
         end
 
         function explainChangedReportsClassificationAndExactEvidence(testCase)

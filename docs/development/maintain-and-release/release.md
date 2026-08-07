@@ -80,8 +80,11 @@ preparing a release.
 Use the release title format:
 
 ```text
-LabKit MATLAB Workbench vX.Y.Z
+VX.Y.Z
 ```
+
+The title contains only the uppercase `V` and three-part semantic version.
+The Git tag remains lowercase `vX.Y.Z`.
 
 Use this note structure:
 
@@ -150,6 +153,14 @@ metadata. Do not copy its narrative into multiple app pages. Current versions
 come from launcher, facade, and app source metadata, so there is no separate
 lookup table to synchronize. Git branches, PRs, tags, and commits express
 delivery state; do not add a second pending/unreleased hierarchy.
+
+Published history remains a durable decision record, but its reader-facing
+links are not immutable. When a current page is moved or retired, update or
+remove the stale history link instead of preserving an obsolete page solely as
+a redirect. Keep the record's identity, sequence, classification, components,
+scopes, and version transitions unchanged. Integration policy treats such
+metadata-preserving maintenance as documentation work rather than a new
+component transition.
 
 Before tagging a release that adds, renames, or removes release-blocking
 guardrail tests, verify that the buildfile CI tasks still discover the intended

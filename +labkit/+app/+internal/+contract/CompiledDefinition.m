@@ -31,6 +31,7 @@ classdef (Hidden, Sealed) CompiledDefinition
             interactionIds = string(cellfun(@(value) value.Id, ...
                 interactions, "UniformOutput", false));
             assertUnique([ids interactionIds], "Layout and interaction");
+            validateLayoutContracts(nodes);
             targetMask = cellfun(@(value) ...
                 ~isempty(value.Capabilities), nodes);
             obj.TargetNodes = [nodes(targetMask) interactions];
@@ -70,6 +71,13 @@ classdef (Hidden, Sealed) CompiledDefinition
                         "Target %s does not declare a renderer.", ...
                         operation.Target);
                 end
+                if operation.Kind == "tableData" && ...
+                        any(operation.Value.ColumnEditable) && ...
+                        ~hasSignal(node, "cellEdited")
+                    error("labkit:app:contract:InvalidValue", ...
+                        "Editable dataTable %s must declare OnCellEdited.", ...
+                        operation.Target);
+                end
                 covered(index) = true;
             end
             missing = obj.TargetIds(~covered);
@@ -95,6 +103,57 @@ classdef (Hidden, Sealed) CompiledDefinition
                 isequaln(candidate, binding), obj.SignalBindings));
         end
     end
+end
+
+function validateLayoutContracts(nodes)
+for k = 1:numel(nodes)
+    node = nodes{k};
+    config = node.configurationForCompiler();
+    switch node.Kind
+        case "field"
+            if config.Kind ~= "readonly"
+                requireValueOwner(node, config);
+            end
+        case {"rangeField", "slider"}
+            requireValueOwner(node, config);
+        case "fileList"
+            if strlength(config.Bind) == 0
+                error("labkit:app:contract:InvalidValue", ...
+                    "fileList %s must declare Bind.", node.Id);
+            end
+        case "plotArea"
+            if ~isempty(config.ViewModes) && ...
+                    ~hasSignal(node, "valueChanged")
+                error("labkit:app:contract:InvalidValue", ...
+                    "plotArea %s with ViewModes must declare OnValueChanged.", ...
+                    node.Id);
+            end
+        case "dataTable"
+            if any(config.ColumnEditable) && ...
+                    ~hasSignal(node, "cellEdited")
+                error("labkit:app:contract:InvalidValue", ...
+                    "Editable dataTable %s must declare OnCellEdited.", ...
+                    node.Id);
+            end
+        case "workspace"
+            if hasSignal(node, "pageChanged") && isempty(node.PageIds)
+                error("labkit:app:contract:InvalidValue", ...
+                    "Workspace OnPageChanged requires named pages.");
+            end
+    end
+end
+end
+
+function requireValueOwner(node, config)
+if strlength(config.Bind) == 0 && ~hasSignal(node, "valueChanged")
+    error("labkit:app:contract:InvalidValue", ...
+        "Interactive %s %s must declare Bind or OnValueChanged.", ...
+        node.Kind, node.Id);
+end
+end
+
+function tf = hasSignal(node, signal)
+tf = any(cellfun(@(value) value.Signal == signal, node.Signals));
 end
 
 function plan = compilePlatformPlan(nodes)

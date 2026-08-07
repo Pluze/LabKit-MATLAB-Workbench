@@ -18,18 +18,25 @@ function installContentGrid(obj, node, component)
             Padding=padding, ...
             RowSpacing=policy.ContentSpacing, ...
             ColumnSpacing=policy.ContentSpacing);
-        grid.RowHeight = repmat({'fit'}, 1, rows);
+        grid.RowHeight = repmat({policy.ButtonHeight}, 1, rows);
         grid.ColumnWidth = repmat({'1x'}, 1, columns);
     elseif horizontal
         grid = uigridlayout(component, [1 numel(node.ChildIds)], ...
             Padding=padding, ...
             RowSpacing=policy.ContentSpacing, ...
             ColumnSpacing=policy.ContentSpacing);
+        allButtons = true;
+        for k = 1:numel(node.ChildIds)
+            allButtons = allButtons && obj.node(node.ChildIds(k)).Kind == "button";
+        end
+        if allButtons
+            grid.RowHeight = {policy.ButtonHeight};
+        end
         grid.ColumnWidth = repmat({'1x'}, 1, numel(node.ChildIds));
     else
         rowCount = numel(node.ChildIds);
         if node.Kind == "tab"
-            rowCount = 2 * rowCount;
+            rowCount = max(1, 2 * rowCount - 1);
         end
         grid = uigridlayout(component, [rowCount 1], ...
             Padding=padding, ...
@@ -48,9 +55,11 @@ function installContentGrid(obj, node, component)
             heights{1} = "1x";
         end
         if node.Kind == "tab"
-            expanded = cell(1, 2 * numel(heights));
+            expanded = cell(1, max(1, 2 * numel(heights) - 1));
             expanded(1:2:end) = heights;
-            expanded(2:2:end) = {policy.SplitterThickness};
+            if numel(heights) > 1
+                expanded(2:2:end) = {policy.SplitterThickness};
+            end
             heights = expanded;
         end
         grid.RowHeight = heights;
@@ -61,7 +70,7 @@ function installContentGrid(obj, node, component)
     grid.Tag = char(node.Id + ".layout");
     obj.Layouts(char(node.Id)) = grid;
     if node.Kind == "tab"
-        for k = 1:numel(node.ChildIds)
+        for k = 1:max(0, numel(node.ChildIds) - 1)
             labkit.app.internal.native.NativeAdapterValues.installRowDivider(obj.Figure, grid, 2 * k - 1, 2 * k);
         end
     end

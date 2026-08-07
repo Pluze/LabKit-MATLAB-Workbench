@@ -18,6 +18,7 @@ function node = rangeField(id, varargin)
 %   Bind - Project or session field path. Default: "".
 %   OnValueChanged - Scalar callback
 %       state = callback(state,value,context). Default: [].
+%   Every range field must declare Bind or OnValueChanged.
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by layout containers.
@@ -26,7 +27,8 @@ function node = rangeField(id, varargin)
 %   Throws labkit:app:contract:* for invalid IDs, options, or callbacks.
 %
 % Typical Call:
-%   node = labkit.app.layout.rangeField("window", Limits=[0 10]);
+%   node = labkit.app.layout.rangeField("window", Limits=[0 10], ...
+%       Bind="session.window");
 %
 % See also labkit.app.layout.field, labkit.app.layout.slider
 node = labkit.app.internal.contract.LayoutNode.rangeField(id, varargin{:});

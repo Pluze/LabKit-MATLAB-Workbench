@@ -15,12 +15,12 @@ labkit_CSC_app
 
 ## Inputs And Selection
 
-The Files list retains CV/CT `.DTA` sources and omits other Gamry experiment
-kinds before session reconstruction. The selected file determines the current
+The Files list accepts CV/CT `.DTA` sources and omits other Gamry experiment
+kinds. The selected file determines the current
 curve list, readout, and plots. Selecting another file resets the curve
 selection and default plot quantities to that file; it does not silently keep
-a cycle from the previous source. Saved projects preserve the successfully
-decoded file order through removal, later additions, and reopen.
+a cycle from the previous source. Saved projects preserve the accepted file
+order through removal, later additions, and reopen.
 
 The default curve selection is **All cycles**. Individual cycle selection
 updates the comparison readout for that cycle.

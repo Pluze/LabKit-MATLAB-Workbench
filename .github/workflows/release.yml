@@ -119,7 +119,7 @@ jobs:
             "${asset}#labkit_launcher.m" \
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
-            --title "LabKit MATLAB Workbench ${RELEASE_TAG}" \
+            --title "V${RELEASE_TAG#v}" \
             --generate-notes \
             --draft
           local_digest="sha256:$(cut -d' ' -f1 \

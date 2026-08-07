@@ -30,5 +30,9 @@ function apply(obj, operation)
         case "workspacePage"
             labkit.app.internal.native.NativeAdapterValues.setIfProperty(component, "Enable", labkit.app.internal.native.NativeAdapterValues.onOff(operation.Value.Enabled));
             component.UserData = struct("Status", operation.Value.Status);
+        otherwise
+            error("labkit:app:runtime:InvariantFailure", ...
+                "No native presentation policy for operation %s.", ...
+                operation.Kind);
     end
 end

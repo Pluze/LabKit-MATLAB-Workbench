@@ -1,6 +1,27 @@
 classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
     % SESSIONDIAGNOSTICBUNDLESPEC Specify complete exact and compact bundles.
 
+    properties (Access = private)
+        DiagnosticFilesBefore (1, :) string = strings(1, 0)
+    end
+
+    methods (TestMethodSetup)
+        function rememberDiagnosticArtifacts(testCase)
+            testCase.DiagnosticFilesBefore = diagnosticFiles( ...
+                diagnosticArtifactsFolder()).';
+        end
+    end
+
+    methods (TestMethodTeardown)
+        function removeGeneratedDiagnosticArtifacts(testCase)
+            folder = diagnosticArtifactsFolder();
+            created = setdiff( ...
+                diagnosticFiles(folder), ...
+                testCase.DiagnosticFilesBefore);
+            deleteDiagnostics(folder, created);
+        end
+    end
+
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function exportsCompleteEventsAndExactState(testCase)
             folder = testCase.applyFixture( ...
@@ -14,7 +35,7 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             runtime.invokeAction("run");
 
             destination = runtime.exportDiagnosticBundle( ...
-                fullfile(folder, "diagnostics"));
+                fullfile(folder, "diagnostics"), "exact");
             unpacked = fullfile(folder, "unpacked");
             unzip(destination, unpacked);
             files = dir(unpacked);
@@ -180,7 +201,7 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             testCase.verifyTrue(contains( ...
                 fallback, "private-source.png"));
             testCase.verifyTrue(contains(fallback, ...
-                "app-state.mat could not be represented"));
+                "app-state-compact.mat could not be represented"));
             clear fileCleanup cleanup
         end
 
@@ -215,8 +236,6 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             definition = bundleDefinition();
             selection = containers.Map("KeyType", "char", ...
                 "ValueType", "any");
-            selection("selection") = ...
-                "Complete bundle (compact synthetic MAT)";
             backend = struct( ...
                 "chooseOutputFile", @failOutputDialog, ...
                 "choose", @(varargin) captureDiagnosticChoice( ...
@@ -238,11 +257,11 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
                 string(filename) + string(extension), ...
                 "labkit-diagnostics-sensitive-compact-state-probe-diagnostic-bundle-"));
             testCase.verifyEqual(selection("choices"), ...
-                ["Complete bundle (exact MAT)", ...
-                 "Complete bundle (compact synthetic MAT)", ...
+                ["Complete bundle (compact synthetic MAT)", ...
+                 "Complete bundle (exact MAT)", ...
                  "Cancel"]);
             testCase.verifyEqual(selection("default"), ...
-                "Complete bundle (exact MAT)");
+                "Complete bundle (compact synthetic MAT)");
             testCase.verifyEqual(selection("cancel"), "Cancel");
             unpacked = fullfile(folder, "compact-interactive");
             unzip(destination, unpacked);
@@ -254,6 +273,50 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
                 "complete-retained-events");
             testCase.verifyEqual(string(report.stateReview.mode), "compact");
             clear fileCleanup cleanup
+        end
+
+        function closeAfterErrorAutomaticallyExportsCompactBundle(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            artifacts = diagnosticArtifactsFolder();
+            before = diagnosticFiles(artifacts);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+                bundleDefinition(), [], struct(), [], JournalRoot=folder);
+            runtime.invokeAction("run");
+            runtime.setTraceCapture(false);
+
+            runtime.close();
+
+            created = setdiff(diagnosticFiles(artifacts), before);
+            fileCleanup = onCleanup(@() deleteDiagnostics(artifacts, created));
+            testCase.verifyNumElements(created, 1);
+            testCase.verifyTrue(contains(created, ...
+                "diagnostics-sensitive-compact-state"));
+            unpacked = fullfile(folder, "automatic-close");
+            unzip(fullfile(artifacts, created), unpacked);
+            testCase.verifyTrue(isfile( ...
+                fullfile(unpacked, "app-state-compact.mat")));
+            events = readEvents(unpacked);
+            names = string({events.eventName});
+            testCase.verifyTrue(any(names == "analysis.failed"));
+            testCase.verifyTrue(any(names == "runtime.close.completed"));
+            clear fileCleanup
+        end
+
+        function cleanCloseDoesNotAutomaticallyExportBundle(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            artifacts = diagnosticArtifactsFolder();
+            before = diagnosticFiles(artifacts);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+                bundleDefinition(), [], struct(), [], JournalRoot=folder);
+
+            runtime.close();
+
+            created = setdiff(diagnosticFiles(artifacts), before);
+            fileCleanup = onCleanup(@() deleteDiagnostics(artifacts, created));
+            testCase.verifyEmpty(created);
+            clear fileCleanup
         end
     end
 end
@@ -275,11 +338,10 @@ definition = labkit.app.Definition( ...
 end
 
 function applicationState = emitLargeState( ...
-        applicationState, callbackContext)
-applicationState = emitBundleIncident(applicationState, callbackContext);
+        applicationState, ~)
 stream = RandStream("mt19937ar", "Seed", 41);
 applicationState.session.cache = struct( ...
-    "largePayload", uint8(randi(stream, 256, 1200, 1200) - 1), ...
+    "largePayload", uint8(randi(stream, 256, 1100, 1100) - 1), ...
     "smallDiagnosticValues", [2, 3, 5, 7]);
 end
 
@@ -332,6 +394,28 @@ end
 function deleteIfFile(filepath)
 if isfile(filepath)
     delete(filepath);
+end
+end
+
+function folder = diagnosticArtifactsFolder()
+versionPath = string(which("labkit.app.version"));
+root = string(fileparts(fileparts(fileparts(versionPath))));
+folder = fullfile(root, "artifacts", "diagnostics");
+end
+
+function files = diagnosticFiles(folder)
+files = strings(0, 1);
+if exist(char(folder), "dir") ~= 7
+    return
+end
+listing = dir(fullfile(folder, ...
+    "labkit-diagnostics-*-probe-diagnostic-bundle-*.zip"));
+files = string({listing.name}).';
+end
+
+function deleteDiagnostics(folder, files)
+for index = 1:numel(files)
+    deleteIfFile(fullfile(folder, files(index)));
 end
 end
 

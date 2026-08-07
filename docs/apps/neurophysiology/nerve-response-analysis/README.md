@@ -31,17 +31,14 @@ an export cannot silently use outdated settings.
 The filter record and optional protocol are saved as distinct portable project
 sources. Older projects with separate source fields are upgraded on load.
 
-## Project And Session State
+## Saving And Reopening A Project
 
-The durable project stores portable references for the filter record and
-optional protocol, the two run limits, and the last export paths.
-
-Parsed JSON, analysis tables, issue details, preview selection, log messages,
-and output-folder convenience are transient session state. Opening a project
-reparses its JSON sources but does not persist or silently reuse old analysis
-tables; choose **Analyze Filtered Files** to calculate them again.
-If an existing selected JSON file is malformed, project restore stops and
-preserves the current document. An absent optional protocol remains valid.
+The project stores references to the filter record and optional protocol, the
+two run limits, and the last export locations. It does not save a completed
+analysis. After reopening, choose **Analyze Filtered Files** to calculate the
+results again from the referenced recordings. If a required JSON file is
+malformed, the project remains unchanged so you can correct or replace that
+file. A missing optional protocol is allowed.
 
 ## What The Analysis Does
 

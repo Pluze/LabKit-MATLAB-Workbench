@@ -88,14 +88,12 @@ user to locate the video without discarding skeleton or annotations. A
 compatible old Video Marker project or autosave opens through **Open MAT** or
 **Tools > Project State > Load State...**.
 
-## Project And Session State
+## What The Project Saves
 
-Durable state consists of video metadata, the portable video source, skeleton,
-frame annotations and provenance, calibration, export parameters, and output
-manifest paths. The video reader, decoded frame, current interaction,
-selection, preview graphics, and frame cache are transient session resources.
-Only the current frame number is saved as navigation convenience; annotations
-remain the authoritative scientific data.
+The project saves the video reference and metadata, skeleton, frame
+annotations, calibration, export settings, and current frame number. It does
+not copy the video or a frame cache. When the project is reopened, Video Marker
+reads frames from the source video and preserves the saved annotations.
 
 Older compatible project and autosave formats are upgraded when opened. Save
 the upgraded project before moving it into another workflow.

@@ -338,6 +338,24 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
             delete(folderCleanup); delete(hookCleanup); delete(cleanup)
         end
 
+        function repairUiRefusesReplacementWhileALabKitAppIsOpen(testCase)
+            root = damagedRepairRoot(testCase, "old-marker", false);
+            candidate = validRepairCandidate(testCase, "new-marker", false);
+            [repairFigure, cleanup] = openRepairFixture(root);
+            hookCleanup = setRepairHook(struct("CandidateRoot", candidate));
+            appFigure = uifigure("Visible", "off", "Tag", "labkitApp");
+            appCleanup = onCleanup(@() delete(appFigure));
+
+            clickRepair(repairFigure);
+
+            testCase.verifyTrue(contains(repairStatus(repairFigure), ...
+                "labkit_launcher:AppsStillRunning"));
+            testCase.verifyEqual(readMarker(root), "old-marker");
+            testCase.verifyEmpty(dir(fullfile( ...
+                fileparts(root), "*.repair-backup-*")));
+            delete(appCleanup); delete(hookCleanup); delete(cleanup)
+        end
+
         function repairMigratesLocalDataAndRetainsARecoveryBackup(testCase)
             root = damagedRepairRoot(testCase, "old-marker", false);
             candidate = validRepairCandidate(testCase, "new-marker", false);

@@ -24,6 +24,8 @@ function backend = completeBackend(obj, backend)
         obj.sourcePaths(sources, ids);
     if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
         builtins.alert = @(message, title) obj.Adapter.alert(message, title);
+        builtins.inform = @(message, title) ...
+            obj.Adapter.alert(message, title, "info");
         builtins.choose = @(prompt, choices, title, ...
             defaultChoice, cancelChoice) ...
             obj.Adapter.chooseOption(prompt, choices, title, ...
@@ -36,6 +38,9 @@ function backend = completeBackend(obj, backend)
             obj.Adapter.chooseOutputFile(filters, startPath);
         builtins.chooseOutputFolder = @(startPath) ...
             obj.Adapter.chooseOutputFolder(startPath);
+    elseif isfield(backend, "alert") && ~isfield(backend, "inform")
+        % Headless test backends may use one nonvisual dialog observer.
+        builtins.inform = backend.alert;
     end
     names = string(fieldnames(builtins));
     for k = 1:numel(names)

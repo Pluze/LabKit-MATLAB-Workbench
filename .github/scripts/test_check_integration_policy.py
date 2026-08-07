@@ -150,6 +150,32 @@ class IntegrationPolicyTest(unittest.TestCase):
             errors,
         )
 
+    def test_published_history_link_maintenance_keeps_version_inventory_stable(self):
+        history_path = "docs/history/records/2026/07/LK-existing.md"
+        component = "component: `sample_app` | `1.0.0 -> 1.1.0`"
+        base = {
+            history_path: component + "\n[Retired design](old-design.md)\n",
+        }
+        head = {
+            history_path: component + "\nCurrent manual owns the behavior.\n",
+        }
+
+        self.assertEqual(
+            MODULE.validate_versions([history_path], base.get, head.get),
+            [],
+        )
+
+    def test_published_history_record_cannot_be_deleted(self):
+        history_path = "docs/history/records/2026/07/LK-existing.md"
+        base = {
+            history_path: "component: `sample_app` | `1.0.0 -> 1.1.0`",
+        }
+
+        self.assertEqual(
+            MODULE.validate_versions([history_path], base.get, {}.get),
+            [f"{history_path}: published history records cannot be deleted."],
+        )
+
     def test_one_consolidated_history_record_accepts_the_net_transition(self):
         version_path = "+labkit/+app/version.m"
         history_path = "docs/history/records/2026/08/LK-sdk.md"

@@ -256,6 +256,7 @@ updateTargetSummary();
         setRepairStatus("Step 1 of 4 — Preparing target", ...
             "Preparing " + plan.action + " target...");
         try
+            assertNoRunningLabKitApps();
             prepareBootstrapTarget(target, root);
             result = repairFromZip(target, string(sourceChoice.Value), ...
                 string(releaseChoice.Value), @setRepairStatus);
@@ -691,6 +692,7 @@ end
 end
 
 function replacement = replaceInstall(root, candidate, failAfterBackup)
+assertNoRunningLabKitApps();
 parent = fileparts(root);
 [~, name] = fileparts(root);
 backup = fullfile(parent, name + ".repair-backup-" + string(java.util.UUID.randomUUID()));
@@ -736,6 +738,20 @@ else
     end
 end
 delete(cleanup)
+end
+
+function assertNoRunningLabKitApps()
+figures = findall(groot, "Type", "figure");
+for index = 1:numel(figures)
+    figureHandle = figures(index);
+    isMarkedApp = strcmp(string(figureHandle.Tag), "labkitApp");
+    hasWorkbench = ~isempty(findall( ...
+        figureHandle, "Tag", "labkitAppWorkbenchGrid"));
+    if isMarkedApp || hasWorkbench
+        error("labkit_launcher:AppsStillRunning", ...
+            "Close every running LabKit App before installing or repairing LabKit.");
+    end
+end
 end
 
 function preservation = copyPreservedLocalContent(backup, root)

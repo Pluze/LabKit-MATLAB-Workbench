@@ -277,6 +277,12 @@ documents, result packages, render surfaces, and managed resources. It does
 not expose figures, component registries, queues, lifecycle handles, or a
 nested service bag.
 
+Use `callbackContext.inform(message,title)` for successful or neutral
+information; it presents the native information icon. Reserve
+`callbackContext.alert(message,title)` for a blocking problem; it presents the
+native error icon. Keeping these operations distinct prevents completed INFO
+outcomes from inheriting failure styling.
+
 Use context methods only at a callback or reconstruction boundary. Pure
 readers, calculations, result builders, and render-model builders accept
 ordinary explicit values.
@@ -349,7 +355,10 @@ replacement without retaining the replaced values; it also lists oversized
 unsupported leaf types that had to remain exact. Compact state is diagnostic
 evidence, not scientifically valid input. Both modes may contain sensitive
 paths, filenames, scientific values, and decoded data; neither is a privacy
-filter. Exact is the default.
+filter. Compact is the default; exact remains an explicit choice. If the
+session records any ERROR or CRITICAL event, Runtime automatically writes a
+compact bundle after the App closes, including the completed close lifecycle
+event. A clean session does not create a bundle on close.
 
 If ZIP staging or publication fails, Runtime writes a generated complete-event
 text fallback beside that ZIP. Only when automatic output cannot be written
