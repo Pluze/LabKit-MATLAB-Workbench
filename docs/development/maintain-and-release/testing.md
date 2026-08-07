@@ -213,24 +213,29 @@ merge gate.
 `CI Gate` is the required aggregate result. `main` accepts pull requests only
 from the repository-owned `develop` branch, and policy checks verify source
 ownership, direct semantic version steps, and matching component history.
-Branch protection rejects direct pushes. Because the pull request validates an
-up-to-date merge result, the resulting `main` push repeats only policy and the
-aggregate gate. If those protection assumptions change, restore full
-validation on `main` pushes.
+Strict branch protection rejects direct pushes and requires the pull request to
+be current with `main`. The accepted `main` push therefore records policy for
+the exact squash commit instead of repeating the MATLAB matrix. If those
+protection assumptions change, restore full validation on `main` pushes.
 
 Job summaries identify the profiles actually run, failed test identities,
 available diagnostics, artifacts, and manual boundaries. A cancelled or
 skipped required profile is incomplete rather than passing. Read the summary
 first, then inspect only the named failing artifact or log.
 
-CI classifies the exact pushed or pull-request diff before scheduling MATLAB.
-Source, test, build, workflow, and tool changes run the complete platform
-matrix. Human documentation-only changes run `docsCheck` without the platform
-matrix. Agent guidance and GitHub contribution-template-only changes run the
-lightweight change-policy check without starting MATLAB. Mixed changes run the
-union of their required profiles, and `CI Gate` verifies every profile selected
-by the classifier. Documentation Pages independently generates ignored `site/`
-output from the accepted `main` source; generated HTML is never committed.
+Pull requests always run repository policy, the complete MATLAB platform
+matrix, and `docsCheck`. This single claim is intentionally independent of the
+changed paths. Every accepted `main` push starts Documentation Pages, which
+generates ignored `site/` output from that exact source; generated HTML is
+never committed.
+
+`Continuous Integration` also has a manual recovery trigger. Dispatch a named
+ref only when GitHub did not create a usable required check, rerun is
+unavailable, or an existing check record is stuck. It resolves the ref against
+`main`, then reuses the same policy, complete platform matrix, documentation
+check, and aggregate gate as a pull request. Each dispatch has independent
+concurrency state. Manual recovery changes how full validation starts, not what
+it proves.
 
 Manual App validation remains required for native file dialogs, visual design,
 pointer interaction, real-data suitability, and scientific interpretation.

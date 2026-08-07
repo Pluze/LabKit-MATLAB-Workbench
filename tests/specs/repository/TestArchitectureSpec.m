@@ -85,14 +85,15 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             end
         end
 
-        function ciRoutesDocumentationWithoutWeakeningAggregateGate(testCase)
+        function ciUsesTwoModesWithoutWeakeningManualRecovery(testCase)
             root = labkittest.setup();
             workflow = text(root, ".github/workflows/ci.yml");
 
-            testCase.verifySubstring(workflow, "change-scope:");
+            testCase.verifySubstring(workflow, "policy:");
+            testCase.verifySubstring(workflow, "name: Repository policy");
+            testCase.verifySubstring(workflow, "workflow_dispatch:");
             testCase.verifySubstring(workflow, ...
-                "group: ci-${{ github.event_name }}-" + ...
-                "${{ github.event.pull_request.number || github.ref }}");
+                "github.event_name == 'workflow_dispatch' && github.run_id");
             testCase.verifyFalse(contains(workflow, ...
                 "group: ci-${{ github.event.pull_request.head.sha || github.sha }}"));
             testCase.verifySubstring(workflow, ...
@@ -107,11 +108,13 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "--head-repository");
             testCase.verifySubstring(workflow, ...
                 "--base-sha ""${BASE_SHA}""");
+            testCase.verifySubstring(workflow, ...
+                "[ -z ""${BASE_SHA}"" ]");
+            testCase.verifySubstring(workflow, ...
+                "git merge-base origin/main ""${HEAD_SHA}""");
             testCase.verifySubstring(workflow, "fetch-depth: 0");
-            testCase.verifySubstring(workflow, ...
-                "needs.change-scope.outputs.full == 'true'");
-            testCase.verifySubstring(workflow, ...
-                "needs.change-scope.outputs.docs == 'true'");
+            testCase.verifyFalse(contains(workflow, "classify_ci_scope"));
+            testCase.verifyEqual(count(workflow, "needs: policy"), 2);
             testCase.verifySubstring(workflow, "docs-check:");
             testCase.verifySubstring(workflow, "tasks: docsCheck");
             testCase.verifySubstring(workflow, "release: R2022b");
@@ -147,13 +150,13 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "if: matrix.run_gui");
             testCase.verifySubstring(workflow, ...
                 "if: matrix.run_isolated");
-            testCase.verifyGreaterThanOrEqual(count(workflow, ...
-                "github.event_name == 'pull_request'"), 2);
+            testCase.verifyEqual(count(workflow, ...
+                "if: github.event_name != 'push'"), 2);
             testCase.verifySubstring(workflow, ...
                 "needs.platform-matrix.result");
             testCase.verifySubstring(workflow, "ci-gate:");
             testCase.verifySubstring(workflow, "name: CI Gate");
-            testCase.verifySubstring(workflow, "needs.change-scope.result");
+            testCase.verifySubstring(workflow, "needs.policy.result");
             testCase.verifySubstring(workflow, "docs-check.result");
         end
 
@@ -181,11 +184,8 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             ignore = splitlines(text(root, ".gitignore"));
 
             testCase.verifyTrue(any(strip(ignore) == "site/"));
-            testCase.verifySubstring(workflow, "- 'docs/**'");
-            testCase.verifySubstring(workflow, "- '+labkit/**'");
-            testCase.verifySubstring(workflow, "- 'apps/**'");
-            testCase.verifySubstring(workflow, "- 'tools/docs/**'");
-            testCase.verifyFalse(contains(workflow, "- 'site/**'"));
+            testCase.verifySubstring(workflow, "workflow_dispatch:");
+            testCase.verifyFalse(contains(workflow, "    paths:"));
             testCase.verifySubstring(workflow, ...
                 "name: Generate documentation from the exact main source");
             testCase.verifySubstring(workflow, ...

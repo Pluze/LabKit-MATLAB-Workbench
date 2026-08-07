@@ -4,14 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'docs/**'
-      - '+labkit/**'
-      - 'apps/**'
-      - 'tools/docs/**'
-      - 'buildfile.m'
-      - 'labkit_launcher.m'
-      - '.github/workflows/docs-pages.yml'
   workflow_dispatch:
 
 permissions:

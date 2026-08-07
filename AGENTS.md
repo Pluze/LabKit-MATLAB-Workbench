@@ -198,6 +198,10 @@ tests, history, and details out of the public repository.
   `.labkit-accept-main-guardrails` is present and private changes are unpushed,
   also run the relevant public guardrail because the public changed-file
   planner cannot see the nested diff.
+- CI has two validation modes: pull requests run complete validation, while a
+  protected `main` push records repository policy for the exact accepted
+  commit. Manual recovery reuses complete pull-request validation in an
+  independent concurrency group; it is a trigger fallback, not a third scope.
 
 ## Git workflow
 
