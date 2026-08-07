@@ -105,7 +105,23 @@ Use this note structure:
 ```
 
 Omit an empty section when it does not apply. Keep validation factual: name the
-commands or CI workflow that passed and the commit used for the release.
+supported MATLAB and operating-system coverage, relevant interactive checks,
+or other assurance a user can interpret.
+
+Release notes are a user-facing product summary, not a release audit or a
+shortened PR description. Each statement should help a reader understand what
+changed in a supported workflow, whether an issue they experienced was fixed,
+whether existing work remains compatible, or what action an upgrade requires.
+Use App and workflow names that users recognize. Preserve safety warnings and
+breaking-change guidance even when they affect only custom App authors.
+
+Do not publish commit or workflow-run identifiers, pull-request links, shell
+commands, test inventories, CI routing, internal package movement, file hashes,
+byte counts, or asset-verification procedure in release notes. Those details
+remain available in the PR review record, structured component history,
+workflow record, and release asset checks. The
+`.github/RELEASE_NOTES_TEMPLATE.md` draft prompts the required reader-facing
+sections and must be rewritten for the actual release before publication.
 
 After it verifies the required CI run, the workflow exports
 `labkit_launcher.m` from the annotated tag blob, verifies its SHA-256 against
@@ -116,8 +132,8 @@ by that Base MATLAB CI run; a later advance of `main` does not move it.
 Automation deliberately stops at a draft. Before publishing, rewrite or
 complete the generated notes with the required sections above, confirm the
 version and tag target, inspect the launcher asset, and record the final manual
-and CI evidence. Publishing the draft is a developer release decision, not a
-side effect of ordinary CI.
+and CI evidence outside the public note. Publishing the draft is a developer
+release decision, not a side effect of ordinary CI.
 
 Attach `labkit_launcher.m` to each GitHub release. The root README download
 link points at the latest release asset so browsers download the launcher

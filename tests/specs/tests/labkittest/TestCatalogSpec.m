@@ -587,6 +587,8 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             root = labkittest.setup();
             workflow = string(fileread(fullfile( ...
                 root, ".github", "workflows", "release.yml")));
+            notes = string(fileread(fullfile( ...
+                root, ".github", "RELEASE_NOTES_TEMPLATE.md")));
 
             testCase.verifySubstring(workflow, ...
                 "Remote launcher digest does not match the tag blob.");
@@ -600,8 +602,14 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "gh release verify-asset"));
             testCase.verifySubstring(workflow, ...
                 '--title "V${RELEASE_TAG#v}"');
+            testCase.verifySubstring(workflow, ...
+                "--notes-file .github/RELEASE_NOTES_TEMPLATE.md");
+            testCase.verifyFalse(contains(workflow, "--generate-notes"));
             testCase.verifyFalse(contains(workflow, ...
                 '--title "LabKit MATLAB Workbench'));
+            testCase.verifySubstring(notes, "## Highlights");
+            testCase.verifySubstring(notes, "## Upgrade Note");
+            testCase.verifySubstring(notes, "## Validation");
         end
 
         function explainChangedReportsClassificationAndExactEvidence(testCase)
