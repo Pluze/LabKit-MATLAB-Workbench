@@ -306,12 +306,19 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
 
         function viewport = captureViewport(axes)
-        viewport = repmat(struct("XLim", [], "YLim", [], ...
-            "XLimMode", "", "YLimMode", ""), 1, numel(axes));
-        for k = 1:numel(axes)
-            viewport(k) = struct("XLim", axes(k).XLim, "YLim", axes(k).YLim, ...
-                "XLimMode", axes(k).XLimMode, "YLimMode", axes(k).YLimMode);
-        end
+            viewport = repmat(struct("XLim", [], "YLim", [], ...
+                "XLimMode", "", "YLimMode", "", ...
+                "YLimits", {{}}, "YLimitModes", strings(1, 0)), ...
+                1, numel(axes));
+            for k = 1:numel(axes)
+                rulers = num2cell(axes(k).YAxis);
+                viewport(k) = struct("XLim", axes(k).XLim, "YLim", axes(k).YLim, ...
+                    "XLimMode", axes(k).XLimMode, "YLimMode", axes(k).YLimMode, ...
+                    "YLimits", {cellfun(@(r) r.Limits, rulers, ...
+                        'UniformOutput', false)}, ...
+                    "YLimitModes", string(cellfun(@(r) r.LimitsMode, rulers, ...
+                        'UniformOutput', false)));
+            end
         end
 
         function restoreViewport(axes, viewport)
@@ -320,9 +327,14 @@ classdef (Sealed, Hidden) NativeAdapterValues
                 axes(k).XLim = viewport(k).XLim;
                 axes(k).XLimMode = "manual";
             end
-            if viewport(k).YLimMode == "manual"
-                axes(k).YLim = viewport(k).YLim;
-                axes(k).YLimMode = "manual";
+            rulers = num2cell(axes(k).YAxis);
+            for rulerIndex = 1:min(numel(rulers), ...
+                    numel(viewport(k).YLimits))
+                if viewport(k).YLimitModes(rulerIndex) == "manual"
+                    rulers{rulerIndex}.Limits = ...
+                        viewport(k).YLimits{rulerIndex};
+                    rulers{rulerIndex}.LimitsMode = "manual";
+                end
             end
         end
         end

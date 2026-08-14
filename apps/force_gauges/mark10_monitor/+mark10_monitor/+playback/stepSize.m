@@ -3,6 +3,6 @@ function count = stepSize(sampleCount)
 arguments
     sampleCount (1, 1) double {mustBeInteger, mustBeNonnegative}
 end
-targetFrames = 10 / mark10_monitor.viewRefreshPeriod();
+targetFrames = 10 / mark10_monitor.playback.framePeriod();
 count = max(1, ceil(sampleCount / targetFrames));
 end

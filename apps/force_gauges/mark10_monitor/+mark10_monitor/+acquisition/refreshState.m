@@ -21,6 +21,7 @@ if a.elapsed_s > 0
     a.actualRate_Hz = a.sampleCount / a.elapsed_s;
 end
 state.session.acquisition = a;
+state = mark10_monitor.livePlots.updateLimits(state, false);
 state.session.connection.acquisitionMode = connection.AcquisitionMode;
 state.session.connection.lastFailure = buffer("lastFailure");
 end

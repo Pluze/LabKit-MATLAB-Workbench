@@ -61,9 +61,18 @@ Disconnect hardware, choose **Load**, and select an App CSV, MESUR gauge LOG,
 or complete MAT export. Load immediately displays the complete curves.
 **Reset** stops replay and restores that complete view. **Play from Start**
 always begins at the first sample; **Pause / Resume** retains and resumes the
-current cursor. Replay uses a fixed visual progression of approximately ten
-seconds rather than recorded timestamps. Hardware connection is disabled
-during replay and replay controls are disabled while connected.
+current cursor. Replay uses a fixed 10-frame-per-second visual progression of
+approximately ten seconds rather than recorded timestamps. Live acquisition
+and replay share buffered range updates: empty plots begin with 10 mm travel
+and 1 N force headroom, then limits change only when displayed data escapes
+the current range. Later headroom is estimated from recent sample changes,
+observed span, signal level, and acquisition rate rather than repeatedly using
+the initial fixed margins. **Refit Plot Limits** recalculates both plots from
+all currently displayed samples, including the independent travel and force Y
+limits in the upper plot; it is available during both live monitoring and
+replay. Select MATLAB's Pan tool in an axes toolbar when drag panning is
+needed. Hardware connection is disabled during replay and replay controls are
+disabled while connected.
 
 This App intentionally has no project schema: connections, samples, playback,
 and visible state are transient. Closing the App does not prompt to save every

@@ -41,10 +41,10 @@ classdef Mark10PlaybackSpec < matlab.unittest.TestCase
 
             mark10_monitor.playback.tick(playback, context);
 
-            testCase.verifyEqual(playback("index"), 14);
+            testCase.verifyEqual(playback("index"), 41);
             testCase.verifyEqual(observed("id"), "mark10.playback.refresh");
             testCase.verifyEqual( ...
-                mark10_monitor.playback.stepSize(sampleCount), 14);
+                mark10_monitor.playback.stepSize(sampleCount), 41);
         end
 
         function vectorizedLogUnitsMatchTheDriverDecoder(testCase)
@@ -103,18 +103,36 @@ classdef Mark10PlaybackSpec < matlab.unittest.TestCase
             state = mark10_monitor.playback.reset(state, context);
             testCase.verifyNumElements( ...
                 state.session.acquisition.plotTime_s, count);
+            testCase.verifyEqual(state.session.cache.plotViewRevision, 2);
 
             state = mark10_monitor.playback.play(state, context);
             timerEntry = resources("application|mark10PlaybackTimer");
             testCase.verifyEqual(playback("index"), 0);
             testCase.verifyEmpty(state.session.acquisition.plotTime_s);
-            testCase.verifyEqual(timerEntry.Value.Period, 0.034);
+            testCase.verifyEqual(timerEntry.Value.Period, 0.1);
 
+            playback("index") = 41;
             state = mark10_monitor.playback.pause(state, context);
             testCase.verifyFalse(state.session.playback.playing);
+            testCase.verifyEqual(state.session.playback.cursor, 41);
             state = mark10_monitor.playback.pause(state, context);
             testCase.verifyTrue(state.session.playback.playing);
             clear cleanup
+        end
+
+        function refitRequestsAReusableLiveOrReplayViewport(testCase)
+            state = struct("session", struct( ...
+                "acquisition", struct("rate", "50 Hz", ...
+                "actualRate_Hz", 50, "plotTime_s", [0; 1], ...
+                "plotForce_N", [0; 2], "plotTravel_mm", [0; 4]), ...
+                "cache", struct("plotViewRevision", 4, ...
+                "plotLimits", mark10_monitor.livePlots.defaultLimits(50))));
+
+            state = mark10_monitor.livePlots.refit(state, []);
+
+            testCase.verifyEqual(state.session.cache.plotViewRevision, 5);
+            testCase.verifyEqual(state.session.cache.plotLimits.force_N, [-2, 4]);
+            testCase.verifyEqual(state.session.cache.plotLimits.travel_mm, [-4, 8]);
         end
     end
 end

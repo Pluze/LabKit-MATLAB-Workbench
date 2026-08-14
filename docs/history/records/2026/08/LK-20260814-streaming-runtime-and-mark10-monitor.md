@@ -40,7 +40,8 @@ Force Gauges App.
   stream producers through one fixed state-update callback.
 - Pending posts with the same ID are latest-wins coalesced, serialized,
   validated, presented, diagnosed, rolled back on failure, and ignored after
-  close.
+  close. Posts remain in the coalescing pump while a user transaction is
+  active, preventing a continuous producer from extending that transaction.
 - Session-only transactions no longer mark project documents dirty.
 - `labkit.mark10` adds port discovery, connect/disconnect, synchronized sample
   reads with fallback, LIST decoding, safe setting readback, and verified
@@ -51,7 +52,15 @@ Force Gauges App.
   presentation cadence at 30 Hz, reuses plot objects, and shows
   dual-axis time series above the standard force-versus-travel curve.
 - Loading a recording displays complete curves immediately; Reset restores
-  that view, Play restarts a fixed-speed replay, and Pause toggles resume.
+  that view, Play restarts a 10-frame-per-second replay, and Pause toggles
+  resume. Live and replay use the same buffered range updater: 10 mm and 1 N
+  are empty-stream defaults, then signal dynamics and estimated sample rate
+  determine later headroom so limits change only after data leaves the current
+  range. Non-pickable clipped traces remain compatible with MATLAB's
+  axes-toolbar navigation, and both panels can explicitly refit X and
+  independent Y limits. Exactly vertical force/travel segments are retained
+  as points but disconnected from the continuous UIAxes trace to avoid MATLAB
+  extending them outside the plot.
 - Official LOG loading converts the declared file units once per column while
   preserving the driver decoder's exact unit factors, avoiding per-row
   protocol parsing during file import.
@@ -82,9 +91,10 @@ definition and initial lifecycle.
 
 ## Evidence
 
-- All 22 App SDK headless identities passed on MATLAB R2026a, including
-  coalescing, queued failure isolation, rollback, close, and dirty state.
-- Five Mark-10 facade identities and fourteen App capability identities passed
+- All 24 App SDK headless identities passed on MATLAB R2026a, including
+  coalescing, active-transaction deferral, queued failure isolation, rollback,
+  close, and dirty state.
+- Five Mark-10 facade identities and seventeen App capability identities passed
   without hardware.
 - All 44 public-App definition identities passed with the new App discovered
   from its normal launcher path.

@@ -5,6 +5,8 @@ index = playback("index");
 count = numel(playback("time_s"));
 if state.session.playback.playing
     context.removeResource("application", "mark10PlaybackTimer");
+    state = mark10_monitor.playback.applyCursor( ...
+        state, playback, index);
     state.session.playback.playing = false;
     state.session.playback.status = compose( ...
         "Paused at sample %d of %d.", index, count);

@@ -70,6 +70,29 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "labkit:app:runtime:InvariantFailure");
         end
 
+        function preservesBothDualYAxisViewports(testCase)
+            figureHandle = figure("Visible", "off");
+            cleanup = onCleanup(@() close(figureHandle));
+            ax = axes(figureHandle);
+            yyaxis(ax, "left");
+            ylim(ax, [-2, 8]);
+            yyaxis(ax, "right");
+            ylim(ax, [10, 30]);
+            viewport = labkit.app.internal.native.NativeAdapterValues. ...
+                captureViewport(ax);
+
+            yyaxis(ax, "left");
+            ylim(ax, [0, 1]);
+            yyaxis(ax, "right");
+            ylim(ax, [0, 1]);
+            labkit.app.internal.native.NativeAdapterValues. ...
+                restoreViewport(ax, viewport);
+
+            testCase.verifyEqual(ax.YAxis(1).Limits, [-2, 8]);
+            testCase.verifyEqual(ax.YAxis(2).Limits, [10, 30]);
+            clear cleanup
+        end
+
         function validatesPostedEventCapability(testCase)
             observed = containers.Map("KeyType", "char", "ValueType", "any");
             backend = struct("postEvent", @(eventId, updateState) ...
@@ -113,6 +136,32 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             context.postEvent("stream.refresh", @latestStreamRefresh);
             pause(0.02);
             testCase.verifyTrue(runtime.Closed);
+            clear cleanup
+        end
+
+        function defersPostedEventsUntilTheActiveTransactionCompletes(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.button("post", "Post", ...
+                    @postFromActiveTransaction, ...
+                    Tooltip="Post while the synthetic action remains active.")});
+            app = AppSdkSpec.definition(layout, ...
+                "CreateSession", @createPostedEventSession);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() closePostedEventRuntime(runtime));
+
+            started = tic;
+            runtime.invokeAction("post");
+            actionSeconds = toc(started);
+
+            testCase.verifyLessThan(actionSeconds, 0.5, ...
+                "A background producer must not extend its active user transaction.");
+            pause(0.08);
+            drawnow;
+            testCase.verifyEqual(runtime.State.session.refreshValue, 2);
             clear cleanup
         end
 
@@ -1024,6 +1073,24 @@ callbackContext.postEvent("stream.refresh", @firstStreamRefresh);
 callbackContext.postEvent("stream.refresh", @latestStreamRefresh);
 callbackContext.postEvent("dashboard.refresh", @refreshDashboard);
 callbackContext.postEvent("failure.refresh", @failPostedRefresh);
+end
+
+function state = postFromActiveTransaction(state, callbackContext)
+replayTimer = timer("ExecutionMode", "fixedSpacing", "Period", 0.01, ...
+    "TasksToExecute", 100, "TimerFcn", @(~, ~) ...
+    callbackContext.postEvent("stream.refresh", @latestStreamRefresh));
+callbackContext.setResource("application", "postedEventProbe", ...
+    replayTimer, @deleteTimer);
+start(replayTimer);
+pause(0.03);
+drawnow;
+end
+
+function deleteTimer(value)
+if isa(value, "timer") && isvalid(value)
+    stop(value);
+    delete(value);
+end
 end
 
 function state = firstStreamRefresh(state, ~)

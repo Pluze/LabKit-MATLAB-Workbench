@@ -121,7 +121,8 @@ and renderer signatures, and builds one private native platform plan.
 - Use `context.postEvent(eventId,updateState)` when a timer, serial callback,
   network stream, monitor, or dashboard needs to publish fresh App state.
   Runtime coalesces pending posts with the same semantic ID, runs the latest
-  update as a normal validated transaction, and ignores posts after close.
+  update as a normal validated transaction after any active transaction has
+  completed, and ignores posts after close.
 - Return only derived view state from `labkit.app.view.Snapshot`; runtime
   supplies layout defaults, bindings, file state, log text, and status text.
 - Give short `statusPanel` summaries an explicit `Lines` hint so the native

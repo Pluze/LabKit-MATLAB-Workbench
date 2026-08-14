@@ -661,6 +661,14 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if obj.Closed
                 return;
             end
+            if obj.Processing
+                % A timer or stream can fire while a native presentation
+                % yields to MATLAB's event loop. Keep the coalesced event in
+                % its pump instead of extending the active user transaction
+                % with an unbounded producer-driven transition chain.
+                obj.PostedEvents.post(eventId, updateState);
+                return;
+            end
             try
                 obj.enqueueTransition( ...
                     [], [], @(state) updateState(state, obj.Context), ...

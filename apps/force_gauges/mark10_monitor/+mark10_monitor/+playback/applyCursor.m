@@ -28,4 +28,5 @@ end
 state.session.acquisition = a;
 state.session.playback.cursor = index;
 state.session.playback.count = count;
+state = mark10_monitor.livePlots.updateLimits(state, false);
 end

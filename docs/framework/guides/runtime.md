@@ -221,7 +221,10 @@ surviving update through the ordinary serialized validation, presentation,
 diagnostics, commit, and rollback path. Posts after Runtime close are ignored.
 An update failure rolls back that posted transaction and is recorded without
 failing the producer callback that submitted it, including when the post was
-queued while another App transaction was still completing.
+queued while another App transaction was still completing. A queued post does
+not execute inside that active transaction; it remains coalesced until the
+transaction and its native presentation have completed, preventing a fast
+producer from starving the initiating control callback.
 Protocol parsing, buffering, retry policy, sampling, and reconnect behavior
 remain App-local or belong to the relevant driver facade.
 
