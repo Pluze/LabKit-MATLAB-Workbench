@@ -118,6 +118,10 @@ and renderer signatures, and builds one private native platform plan.
 - Rebuild transient data with
   `session = createSession(project,context)` and resolve opaque source records
   with `context.resolveSourcePaths`.
+- Use `context.postEvent(eventId,updateState)` when a timer, serial callback,
+  network stream, monitor, or dashboard needs to publish fresh App state.
+  Runtime coalesces pending posts with the same semantic ID, runs the latest
+  update as a normal validated transaction, and ignores posts after close.
 - Return only derived view state from `labkit.app.view.Snapshot`; runtime
   supplies layout defaults, bindings, file state, log text, and status text.
 - Give short `statusPanel` summaries an explicit `Lines` hint so the native
@@ -208,6 +212,12 @@ capabilities map explicitly to native information and error icons.
 Framework concepts and source names are versionless. Compatibility belongs to
 `labkit.app.version`; saved-data versions belong to
 `labkit.app.project.Schema`.
+
+Project persistence is optional. An App that declares no `ProjectSchema` can
+keep an entire live monitor or replay workflow in transient `session` state
+and managed resources. Runtime marks a document changed only when the
+validated `project` value actually changes; session-only refreshes do not
+create false unsaved-change state.
 
 ## Related Topics
 

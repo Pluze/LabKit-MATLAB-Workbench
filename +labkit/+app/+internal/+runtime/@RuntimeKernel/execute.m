@@ -53,7 +53,10 @@ function execute(obj, binding, payload, prepareState, failureLabel)
         obj.State = candidate;
         obj.Presentation = view;
         if isempty(obj.PendingDocumentMetadata)
-            obj.markDocumentChanged();
+            if ~isempty(obj.Documents) && ...
+                    ~isequaln(previousState.project, candidate.project)
+                obj.markDocumentChanged();
+            end
         else
             obj.Documents.acceptRestore(obj.PendingDocumentMetadata);
             obj.refreshWindowTitle();

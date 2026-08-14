@@ -1,0 +1,26 @@
+function state = refreshState(state, context)
+%REFRESHSTATE Copy one bounded resource snapshot into visible session state.
+if ~state.session.connection.connected
+    return;
+end
+buffer = context.getResource("application", "mark10Buffer");
+connectionBox = context.getResource("application", "mark10Connection");
+connection = connectionBox("connection");
+a = state.session.acquisition;
+a.sampleCount = buffer("sampleCount");
+a.validCount = buffer("validCount");
+a.invalidCount = buffer("invalidCount");
+a.recordedValidCount = sum(buffer("valid"));
+a.elapsed_s = buffer("lastTime_s");
+a.force_N = buffer("lastForce_N");
+a.travel_mm = buffer("lastTravel_mm") - a.travelZeroOffset_mm;
+a.plotTime_s = buffer("plotTime_s");
+a.plotForce_N = buffer("plotForce_N");
+a.plotTravel_mm = buffer("plotTravel_mm") - a.travelZeroOffset_mm;
+if a.elapsed_s > 0
+    a.actualRate_Hz = a.sampleCount / a.elapsed_s;
+end
+state.session.acquisition = a;
+state.session.connection.acquisitionMode = connection.AcquisitionMode;
+state.session.connection.lastFailure = buffer("lastFailure");
+end

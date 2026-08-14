@@ -14,6 +14,7 @@ tests, and the one owning manual:
 - DTA: `docs/libraries/dta/README.md`
 - RHS: `docs/libraries/rhs/README.md`
 - biosignal: `docs/libraries/biosignal/README.md`
+- Mark-10: `docs/libraries/mark10/README.md`
 
 Library behavior specifications mirror the package below
 `tests/specs/labkit/<area>/`.
@@ -33,7 +34,7 @@ Use `labkittest.explain` to find the exact owner and contract.
   exports, file queues, and workflow decisions in apps.
 - Do not add public helper-dump packages such as `analysis`, `data`, `io`, or
   `util`.
-- `labkit.image`, `thermal`, `dta`, `rhs`, and `biosignal` stay GUI-free and
+- `labkit.image`, `thermal`, `dta`, `rhs`, `biosignal`, and `mark10` stay GUI-free and
   app-free. Each owns its documented file/data/scientific primitive contract,
   not an app's task orchestration.
 - `labkit.app` owns the App SDK. Registry mutation, queueing, concrete

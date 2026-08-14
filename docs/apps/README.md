@@ -37,6 +37,7 @@ interactive and programmatic surface.
 | Inspect impedance curves | [EIS](electrochemistry/eis/README.md) | EIS DTA | Nyquist/Bode plots and CSV |
 | Estimate voltage-transient resistance | [VT Resistance](electrochemistry/vt-resistance/README.md) | Chrono DTA | Resistance table and CSV |
 | Convert tracked points into gait metrics | [Gait Analysis](gait/gait-analysis/README.md) | Current Video Marker project MAT | Frame, step, coordinate, and summary tables |
+| Monitor, record, and replay Mark-10 force and travel | [Mark-10 Monitor](force-gauges/mark10-monitor/README.md) | ESM303 + Series 5, CSV, LOG, or MAT | Live plots, CSV, MESUR LOG, and MAT |
 | Crop image batches at repeatable geometry | [Batch Image Crop](image-measurement/batch-crop/README.md) | Image files | Same-size crops and manifest |
 | Measure curve radius, curvature, and length | [Curvature Measurement](image-measurement/curvature/README.md) | Image | Overlay and measurement CSV |
 | Decode and measure radiometric images | [FLIR Thermal](image-measurement/flir-thermal/README.md) | FLIR radiometric image | Temperature data, measurements, rendered image |
@@ -57,6 +58,8 @@ interactive and programmatic surface.
 - [Electrochemistry](electrochemistry/README.md) - DTA-based chrono, CV/CT,
   impedance, charge, and resistance workflows.
 - [Gait](gait/README.md) - pose-coordinate analysis and gait metrics.
+- [Force Gauges](force-gauges/README.md) - force/travel monitoring,
+  recording, safe gauge setup, and replay.
 - [Image Measurement](image-measurement/README.md) - calibrated image,
   thermal, annotation, crop, fusion, and appearance workflows.
 - [LabKit Core](labkit-core/README.md) - the launcher and general MATLAB graphics tools.

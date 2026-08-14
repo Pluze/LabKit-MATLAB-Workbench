@@ -255,6 +255,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
 
         function locateMapsPublicFrameworkFacadeToItsOwner(testCase)
             location = labkittest.locate("+labkit/+dta/loadFile.m");
+            mark10 = labkittest.locate("+labkit/+mark10/readSample.m");
             root = labkittest.setup();
 
             testCase.verifyEqual(location.Owner, "labkit/dta");
@@ -262,6 +263,11 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(location.Environment, "headless");
             testCase.verifyEqual(location.Folder, string(fullfile(root, ...
                 "tests", "specs", "labkit", "dta")));
+            testCase.verifyEqual(mark10.Owner, "labkit/mark10");
+            testCase.verifyEqual(mark10.Contract, "source");
+            testCase.verifyEqual(mark10.Environment, "headless");
+            testCase.verifyEqual(mark10.Folder, string(fullfile(root, ...
+                "tests", "specs", "labkit", "mark10")));
         end
 
         function installedLauncherUsesItsFocusedSystemOwner(testCase)

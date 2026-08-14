@@ -54,7 +54,8 @@ function targets = locate(file, varargin)
             startsWith(parts(2), "+")
         area = erase(parts(2), "+");
         if ismember(area, ...
-                ["app", "biosignal", "contract", "dta", "image", "rhs", "thermal"])
+                ["app", "biosignal", "contract", "dta", "image", ...
+                "mark10", "rhs", "thermal"])
             targets = target(opts.SpecsRoot, classification.Owner, "source", ...
                 "headless", "", true, "direct public facade behavior");
             return;

@@ -20,6 +20,7 @@ classdef (Sealed) CallbackContext < handle
     %   value = context.getResource(scope, id)
     %   context.removeResource(scope, id)
     %   context.clearResourceScope(scope)
+    %   context.postEvent(eventId, updateState)
     %   result = context.writeResultPackage(folder, result)
     %
     % Description:
@@ -41,6 +42,10 @@ classdef (Sealed) CallbackContext < handle
     %       values. Diagnostic bundles are sensitive. Default: struct().
     %   Exception - Scalar MException associated with the event. Default: [].
     %   id - Stable semantic diagnostic or resource identifier.
+    %   eventId - Stable semantic identifier used to coalesce pending events.
+    %   updateState - Fixed callback
+    %       state = callback(state,callbackContext). The callback receives the
+    %       latest committed state when Runtime dispatches the event.
     %   count - Nonnegative integer diagnostic count.
     %   title - Scalar reader-facing dialog title. inform presents non-error
     %       information with the native information icon; alert presents a
@@ -87,6 +92,9 @@ classdef (Sealed) CallbackContext < handle
     %       callbackContext.log("info", "analysis.started", ...
     %           "Analysis started.");
     %   end
+    %
+    % Typical Call:
+    %   callbackContext.postEvent("stream.refresh", @refreshStreamView);
     %
     % See also labkit.app.Definition, labkit.app.dialog.Choice,
     %   labkit.app.result.Package
@@ -260,6 +268,19 @@ classdef (Sealed) CallbackContext < handle
                 {resourceScope(scope)}, 0);
         end
 
+        function postEvent(obj, eventId, updateState)
+            eventId = semanticId(eventId, "eventId");
+            if ~isa(updateState, "function_handle") || ...
+                    ~isscalar(updateState) || nargin(updateState) ~= 2 || ...
+                    nargout(updateState) ~= 1
+                error("labkit:app:contract:InvalidValue", ...
+                    "CallbackContext updateState must accept state/context " + ...
+                    "and return one state value.");
+            end
+            obj.invoke("postEvent", "events", ...
+                {eventId, updateState}, 0);
+        end
+
         function written = writeResultPackage(obj, folder, result)
             folder = scalarText(folder, "result folder");
             if ~isa(result, "labkit.app.result.Package")
@@ -320,6 +341,14 @@ function value = nonemptyText(value, label)
         error("labkit:app:contract:InvalidValue", ...
             "CallbackContext %s must be nonempty.", label);
     end
+end
+
+function value = semanticId(value, label)
+value = nonemptyText(value, label);
+if isempty(regexp(char(value), "^[A-Za-z][A-Za-z0-9._-]*$", "once"))
+    error("labkit:app:contract:InvalidValue", ...
+        "CallbackContext %s must be a semantic identifier.", label);
+end
 end
 
 function values = textRow(values, label)

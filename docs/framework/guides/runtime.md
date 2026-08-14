@@ -106,6 +106,14 @@ Failure rolls back both state and presentation and clears event-scoped
 resources. Apps do not implement busy flags, callback queues, readiness
 timers, or figure close guards.
 
+A project schema is optional. Use one only when the App has durable,
+reconstructible setup that users need to save and reopen. Live samples,
+connection handles, timers, decoded caches, playback cursors, and bounded plot
+snapshots normally belong in `session` or a managed resource. Runtime compares
+the validated project before and after each transaction and marks a document
+dirty only when that project value changes; session-only monitoring refreshes
+do not create unsaved-project prompts.
+
 Runtime enters its non-reentrant busy state before invoking a callback. New
 button, field, table, file-list, workspace, and managed-interaction input is
 ignored until that transaction finishes. Visible feedback is delayed briefly:
@@ -187,6 +195,35 @@ end
 
 Do not pass the complete state or callback context into calculation code that
 only needs groups and one edited value.
+
+## Posted Stream Events
+
+Timers and asynchronous serial, TCP, UDP, or other streaming callbacks cannot
+mutate App state or native controls directly. They publish one semantic state
+update through the callback context:
+
+```matlab
+function onSample(buffer, callbackContext)
+buffer.append(readOneSample());
+callbackContext.postEvent("stream.live.refresh", @refreshLiveState);
+end
+
+function state = refreshLiveState(state, callbackContext)
+buffer = callbackContext.getResource("application", "sampleBuffer");
+state.session.live = buffer.visibleSnapshot();
+end
+```
+
+`postEvent` accepts a fixed `state = update(state,callbackContext)` callback.
+Pending posts with the same event ID are latest-wins coalesced, so a fast
+producer cannot build an unbounded UI refresh queue. Runtime executes the
+surviving update through the ordinary serialized validation, presentation,
+diagnostics, commit, and rollback path. Posts after Runtime close are ignored.
+An update failure rolls back that posted transaction and is recorded without
+failing the producer callback that submitted it, including when the post was
+queued while another App transaction was still completing.
+Protocol parsing, buffering, retry policy, sampling, and reconnect behavior
+remain App-local or belong to the relevant driver facade.
 
 ## Complete View Snapshots
 
@@ -276,6 +313,11 @@ operations for dialogs, status and diagnostics, portable sources, project
 documents, result packages, render surfaces, and managed resources. It does
 not expose figures, component registries, queues, lifecycle handles, or a
 nested service bag.
+
+`postEvent` is the single generic boundary for timer-, serial-, network-, and
+monitor-driven refresh. The producer owns protocol and buffering; Runtime owns
+coalescing, serialization, validation, presentation, rollback, diagnostics,
+and close behavior.
 
 Use `callbackContext.inform(message,title)` for successful or neutral
 information; it presents the native information icon. Reserve
@@ -388,7 +430,9 @@ validated `labkit.app.synthetic.Pack` and `synthetic-input-pack.json` into a
 new folder beneath the selected destination. Generation does not load the
 pack, mutate the open project, or suppress `OnStart`; every App launch follows
 the same clean startup path. Users deliberately import the generated files
-through the App's ordinary controls.
+through the App's ordinary controls. Apps without a `ProjectSchema` declare an
+empty `InitialProject`; their pack may still contain replay or import
+artifacts.
 
 `labkit.app.project.Schema` owns current project creation, validation, and
 ordered version migration. Runtime owns the project envelope, atomic save,

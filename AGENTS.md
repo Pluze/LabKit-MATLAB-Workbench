@@ -69,7 +69,7 @@ under `docs/`.
   need the stable contract or extending an existing API would turn it into an
   ambiguous bucket.
 - App-facing packages are `labkit.app`, `image`, `thermal`, `dta`, `rhs`,
-  and `biosignal`. Do not create public `analysis`, `data`, `io`, `util`, or
+  `biosignal`, and `mark10`. Do not create public `analysis`, `data`, `io`, `util`, or
   app-specific helper surfaces.
 - App shape, capability naming, callbacks, persistence, and Debug behavior are
   governed by `apps/AGENTS.md`; App SDK internals and facade contracts are

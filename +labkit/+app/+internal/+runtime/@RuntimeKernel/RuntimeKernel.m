@@ -21,6 +21,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         Recorder
         Artifacts
         Diagnostics
+        PostedEvents
         PendingDocumentMetadata = []
     end
 
@@ -43,6 +44,10 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "Constructing application runtime.");
             obj.Resources = labkit.app.internal.resource.ResourceStore();
             obj.Sources = labkit.app.internal.source.PortableSourceStore();
+            obj.PostedEvents = ...
+                labkit.app.internal.runtime.PostedEventQueue( ...
+                @(eventId, updateState) ...
+                obj.dispatchPostedEvent(eventId, updateState));
             if nargin < 4
                 platform = "headless";
             end
@@ -143,6 +148,13 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "Clearing runtime resource scope.", ...
                 "committed", "notApplicable", ...
                 @() obj.Resources.clearScope(scope));
+        end
+
+        function postEvent(obj, eventId, updateState)
+            if obj.Closed
+                return;
+            end
+            obj.PostedEvents.post(eventId, updateState);
         end
 
         function failNextCommit(obj)
@@ -552,8 +564,16 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "Closing application runtime.");
             obj.Queue = {};
             obj.Closed = true;
-            failures = cell(1, 2);
+            failures = cell(1, 3);
             failureCount = 0;
+            if ~isempty(obj.PostedEvents)
+                try
+                    obj.PostedEvents.close();
+                catch cause
+                    failureCount = failureCount + 1;
+                    failures{failureCount} = cause;
+                end
+            end
             if ~isempty(obj.Resources)
                 try
                     obj.Resources.clearAll();
@@ -613,7 +633,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         execute(obj, binding, payload, prepareState, failureLabel)
 
         enqueueTransition(obj, binding, payload, prepareState, ...
-            failureLabel, busyMessage)
+            failureLabel, busyMessage, failureHandler)
 
         view = present(obj, state)
 
@@ -635,6 +655,27 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     obj.Adapter.updateBusy(message);
                 end
             end
+        end
+
+        function dispatchPostedEvent(obj, eventId, updateState)
+            if obj.Closed
+                return;
+            end
+            try
+                obj.enqueueTransition( ...
+                    [], [], @(state) updateState(state, obj.Context), ...
+                    "Posted event " + eventId, "Updating...", ...
+                    @(cause) obj.logPostedEventFailure(eventId, cause));
+            catch cause
+                obj.logPostedEventFailure(eventId, cause);
+            end
+        end
+
+        function logPostedEventFailure(obj, eventId, cause)
+            obj.log("error", "callback.posted_failed", ...
+                "Posted application event failed.", ...
+                "runtime.callback", "developer", ...
+                struct("runtimeAlias", eventId), cause);
         end
 
         backend = wrapDialogOperations(obj, backend)
