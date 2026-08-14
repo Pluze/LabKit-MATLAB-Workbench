@@ -27,6 +27,10 @@ view = view.value("outputFormat", ...
     displaySetting("outputFormat", s.settingsDraft.outputFormat));
 view = view.value("autoOutput", ...
     displaySetting("autoOutput", s.settingsDraft.autoOutput));
+view = view.value("analysisForceZero", ...
+    analysisValue(s.analysis, "forceZero_N", 0));
+view = view.value("analysisTravelZero", ...
+    analysisValue(s.analysis, "travelZero_mm", 0));
 view = view.value("gaugeLength", s.analysis.gaugeLength_mm);
 view = view.value("specimenWidth", s.analysis.width_mm);
 view = view.value("specimenThickness", s.analysis.thickness_mm);
@@ -94,6 +98,13 @@ function value = analysisRevision(analysis)
 value = 0;
 if isfield(analysis, "resultRevision")
     value = analysis.resultRevision;
+end
+end
+
+function value = analysisValue(analysis, name, fallback)
+value = fallback;
+if isfield(analysis, name)
+    value = analysis.(name);
 end
 end
 

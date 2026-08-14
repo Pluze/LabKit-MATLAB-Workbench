@@ -90,23 +90,35 @@ monotonic travel branch. This shared path accepts either a complete loaded
 CSV/LOG/MAT recording or the complete valid sample buffer from a stopped live
 recording. It does not fit only the currently visible replay prefix.
 
+**Analysis Zero** accepts the raw force level in N and raw travel level in mm
+that should be treated as zero. The App subtracts those finite scalar levels
+before calculating and drawing engineering stress and strain. A constant zero
+shift changes the analysis coordinates and fitted intercepts but not the
+stress/strain slope or Young's modulus. **Reset Analysis Zero** restores both
+levels to 0 and clears the previous analysis result. These controls do not
+modify the source recording, the live/replay plots, or the standard
+CSV/LOG/MAT export.
+
 Enter rectangular-specimen gauge length, width, and thickness in mm, then
 select **Geometry reviewed**. Width and thickness are both required because
 Young's modulus needs cross-sectional area; thickness alone is not silently
 treated as area. The calculation uses:
 
 ```text
-engineering strain = branch-local displacement / gauge length
-engineering stress (MPa) = branch-local force change / (width * thickness)
+engineering strain = (travel - travel zero) / gauge length
+engineering stress (MPa) = (force - force zero) / (width * thickness)
 Young's modulus (MPa) = absolute fitted stress/strain slope
 stiffness (N/mm) = Young's modulus * area / gauge length
 ```
 
-Branch-local magnitudes let loading and recovery branches be compared even
-when the gauge polarity is inverted. The selected experiment type supplies
-tension/compression wording; the normal Mark-10 compression-positive polarity
-is used only to label a cyclic branch when no single test direction applies.
-Raw measurements and recording exports are never smoothed or rewritten.
+Each branch retains the same corrected absolute stress-strain coordinates,
+while region selection measures displacement from that branch's own start.
+Taking the absolute fitted slope lets loading and recovery moduli be compared
+even when their traversal directions differ. The selected experiment type
+supplies tension/compression wording; the normal Mark-10
+compression-positive polarity is used only to label a cyclic branch when no
+single test direction applies. Raw measurements and recording exports are
+never smoothed or rewritten.
 
 **Automatic** fitting considers multiple contiguous regions from 5--35% to
 45--85% of each branch's travel span, selects the best combination of
@@ -122,7 +134,8 @@ beside summary statistics, with the full per-branch table below. Green solid
 fits meet the R² criterion; orange dashed fits require review. Summary
 statistics prefer accepted fits and fall back to all finite estimates when
 none meet the threshold. **Export Modulus CSV** writes every row, including
-review flags, rather than hiding rejected or unusual cycles. The analysis
+review flags and the applied force/travel zero levels, rather than hiding
+rejected or unusual cycles. The analysis
 renderer rebuilds from the current result on every presentation, so prior fits
 cannot accumulate. Fit endpoints and legend identities are ordinary plot
 objects and remain present when the axes is popped into a MATLAB figure.

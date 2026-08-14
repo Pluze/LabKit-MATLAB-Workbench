@@ -1,12 +1,16 @@
 function result = compute(time_s, force_N, travel_mm, parameters, experimentType)
 %COMPUTE Estimate branch stiffness and engineering Young's modulus.
 %
-% Inputs are finite SI-force / millimetre records. Each monotonic travel
-% branch is fitted independently in branch-local displacement. Engineering
-% stress uses N/mm^2 (= MPa), and engineering strain uses gauge length.
+% Inputs are finite SI-force / millimetre records. Force and travel zero
+% levels define the absolute engineering stress-strain coordinates. Each
+% monotonic branch is selected in branch-local displacement and fitted in
+% those corrected coordinates. Stress uses N/mm^2 (= MPa).
 
 [time_s, force_N, travel_mm] = cleanColumns(time_s, force_N, travel_mm);
 validateGeometry(parameters);
+[forceZero_N, travelZero_mm] = zeroLevels(parameters);
+force_N = force_N - forceZero_N;
+travel_mm = travel_mm - travelZero_mm;
 if numel(time_s) < 16
     error("mark10_monitor:analysis:InsufficientData", ...
         "At least 16 finite force/travel samples are required.");
@@ -28,9 +32,8 @@ pointsPerBranch = max(20, floor(2000 / segmentCount));
 for k = 1:segmentCount
     indices = (segments(k, 1):segments(k, 2)).';
     displacement = abs(travel_mm(indices) - travel_mm(indices(1)));
-    loadChange = abs(force_N(indices) - force_N(indices(1)));
-    strain = displacement / parameters.gaugeLength_mm;
-    stress = loadChange / area_mm2;
+    strain = travel_mm(indices) / parameters.gaugeLength_mm;
+    stress = force_N(indices) / area_mm2;
     [fit, status] = fitBranch(displacement, strain, stress, parameters);
     phase = phaseLabel(force_N(indices), experimentType);
     rows(k, :) = {k, char(phase), time_s(indices(1)), ...
@@ -94,6 +97,22 @@ end
 if ~logical(p.geometryConfirmed)
     error("mark10_monitor:analysis:GeometryNotConfirmed", ...
         "Review the specimen dimensions and select Geometry reviewed.");
+end
+end
+
+function [forceZero_N, travelZero_mm] = zeroLevels(parameters)
+forceZero_N = optionalFiniteScalar(parameters, "forceZero_N", 0);
+travelZero_mm = optionalFiniteScalar(parameters, "travelZero_mm", 0);
+end
+
+function value = optionalFiniteScalar(parameters, name, fallback)
+value = fallback;
+if isfield(parameters, name)
+    value = double(parameters.(name));
+end
+if ~isscalar(value) || ~isfinite(value)
+    error("mark10_monitor:analysis:InvalidZeroLevel", ...
+        "%s must be a finite scalar.", name);
 end
 end
 

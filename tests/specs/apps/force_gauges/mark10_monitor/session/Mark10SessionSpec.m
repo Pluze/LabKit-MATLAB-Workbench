@@ -19,6 +19,8 @@ classdef Mark10SessionSpec < matlab.unittest.TestCase
             testCase.verifyEqual(session.cache.plotLimits.travel_mm, [-10, 10]);
             testCase.verifyTrue(isscalar(session.analysis));
             testCase.verifyEqual(session.analysis.dataSource, "None");
+            testCase.verifyEqual(session.analysis.forceZero_N, 0);
+            testCase.verifyEqual(session.analysis.travelZero_mm, 0);
             testCase.verifySize(session.analysis.resultRows, [0, 11]);
             testCase.verifyEqual(observed("scope"), "application");
             testCase.verifyEqual(observed("id"), "mark10Buffer");

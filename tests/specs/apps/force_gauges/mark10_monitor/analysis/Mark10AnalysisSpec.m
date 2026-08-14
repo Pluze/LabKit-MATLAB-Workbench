@@ -63,6 +63,37 @@ classdef Mark10AnalysisSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(result.rows(1, 11)), "Accepted");
         end
 
+        function zeroLevelsShiftCoordinatesWithoutChangingModulus(testCase)
+            travel = 5 + linspace(0, 3, 151).';
+            force = 4 + 2 * (travel - 5);
+            time = (0:numel(travel)-1).' / 50;
+            unshifted = mark10_monitor.analysis.compute( ...
+                time, force, travel, parameters("Automatic"), "Tension");
+            shiftedParameters = parameters("Automatic");
+            shiftedParameters.forceZero_N = 4;
+            shiftedParameters.travelZero_mm = 5;
+
+            shifted = mark10_monitor.analysis.compute( ...
+                time, force, travel, shiftedParameters, "Tension");
+
+            testCase.verifyEqual(shifted.plotStrain_percent(1), 0, ...
+                "AbsTol", 1e-12);
+            testCase.verifyEqual(shifted.plotStress_MPa(1), 0, ...
+                "AbsTol", 1e-12);
+            testCase.verifyNotEqual(unshifted.plotStrain_percent(1), ...
+                shifted.plotStrain_percent(1));
+            testCase.verifyEqual(cell2mat(shifted.rows(:, 9)), ...
+                cell2mat(unshifted.rows(:, 9)), "AbsTol", 1e-10);
+        end
+
+        function rejectsNonfiniteZeroLevels(testCase)
+            p = parameters("Automatic");
+            p.forceZero_N = NaN;
+            testCase.verifyError(@() mark10_monitor.analysis.compute( ...
+                (0:20).', (0:20).', (0:20).', p, "Tension"), ...
+                "mark10_monitor:analysis:InvalidZeroLevel");
+        end
+
         function exportsNamedScientificColumns(testCase)
             rows = {1, 'Tension loading', 0, 1, 0.1, 0.8, 20, ...
                 2, 10, 0.99, 'Accepted'};
@@ -77,7 +108,27 @@ classdef Mark10AnalysisSpec < matlab.unittest.TestCase
             testCase.verifyEqual(exported.GaugeLength_mm, 10);
             testCase.verifyEqual(exported.Width_mm, 2);
             testCase.verifyEqual(exported.Thickness_mm, 1);
+            testCase.verifyEqual(exported.ForceZero_N, 0);
+            testCase.verifyEqual(exported.TravelZero_mm, 0);
             testCase.verifyEqual(exported.FitMode, "Automatic");
+        end
+
+        function resetRestoresBothAnalysisZeroLevels(testCase)
+            backend = struct("setResource", @(~, ~, ~, ~) []);
+            context = labkittest.createCallbackContext(backend);
+            session = mark10_monitor.createSession(struct(), context);
+            session.analysis.forceZero_N = 3;
+            session.analysis.travelZero_mm = -2;
+            session.analysis.resultRows = cell(1, 11);
+
+            state = mark10_monitor.analysis.resetZero( ...
+                struct("session", session), context);
+
+            testCase.verifyEqual(state.session.analysis.forceZero_N, 0);
+            testCase.verifyEqual(state.session.analysis.travelZero_mm, 0);
+            testCase.verifyEmpty(state.session.analysis.resultRows);
+            testCase.verifyEqual(state.session.analysis.status, ...
+                "Analysis force and travel zero levels reset to 0.");
         end
     end
 
@@ -122,5 +173,6 @@ end
 function value = parameters(mode)
 value = struct("gaugeLength_mm", 10, "width_mm", 2, ...
     "thickness_mm", 1, "geometryConfirmed", true, ...
+    "forceZero_N", 0, "travelZero_mm", 0, ...
     "fitMode", mode, "manualStart_mm", 0, "manualEnd_mm", 1);
 end
