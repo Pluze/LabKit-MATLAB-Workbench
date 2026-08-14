@@ -47,6 +47,14 @@ Force Gauges App.
   force/travel zero behavior.
 - Mark-10 Monitor adds live plotting, independent recording, safe settings,
   standard CSV, MESUR gauge-compatible LOG, complete MAT, and offline replay.
+- The monitor uses 10--50 Hz acquisition with a 50 Hz default, caps its
+  presentation cadence at 30 Hz, reuses plot objects, and shows
+  dual-axis time series above the standard force-versus-travel curve.
+- Loading a recording displays complete curves immediately; Reset restores
+  that view, Play restarts a fixed-speed replay, and Pause toggles resume.
+- Official LOG loading converts the declared file units once per column while
+  preserving the driver decoder's exact unit factors, avoiding per-row
+  protocol parsing during file import.
 
 ## User and data impact
 
@@ -76,7 +84,7 @@ definition and initial lifecycle.
 
 - All 22 App SDK headless identities passed on MATLAB R2026a, including
   coalescing, queued failure isolation, rollback, close, and dirty state.
-- Five Mark-10 facade identities and ten App capability identities passed
+- Five Mark-10 facade identities and fourteen App capability identities passed
   without hardware.
 - All 44 public-App definition identities passed with the new App discovered
   from its normal launcher path.

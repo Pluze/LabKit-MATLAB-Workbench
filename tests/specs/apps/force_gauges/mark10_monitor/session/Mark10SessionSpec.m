@@ -12,6 +12,7 @@ classdef Mark10SessionSpec < matlab.unittest.TestCase
 
             testCase.verifyFalse(session.connection.connected);
             testCase.verifyFalse(session.playback.loaded);
+            testCase.verifyEqual(session.acquisition.rate, "50 Hz");
             testCase.verifyEqual(observed("scope"), "application");
             testCase.verifyEqual(observed("id"), "mark10Buffer");
             testCase.verifyClass(observed("value"), "containers.Map");

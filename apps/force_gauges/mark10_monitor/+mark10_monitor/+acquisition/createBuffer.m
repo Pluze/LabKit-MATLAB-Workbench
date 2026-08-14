@@ -23,4 +23,5 @@ buffer("lastTime_s") = 0;
 buffer("lastForce_N") = NaN;
 buffer("lastTravel_mm") = NaN;
 buffer("lastFailure") = "";
+buffer("lastRefresh_s") = -Inf;
 end

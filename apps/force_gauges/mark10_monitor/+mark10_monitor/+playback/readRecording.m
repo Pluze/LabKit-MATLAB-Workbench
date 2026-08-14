@@ -48,15 +48,42 @@ end
 loadValue = str2double(rows(:, 2));
 travelValue = str2double(rows(:, 3));
 time = str2double(rows(:, 4));
-forceN = NaN(size(loadValue));
-travelMm = NaN(size(travelValue));
-for index = 1:numel(time)
-    sample = labkit.mark10.decodeSample(compose("%.12g %s\n%.12g %s", ...
-        loadValue(index), loadUnit, travelValue(index), travelUnit));
-    forceN(index) = sample.Force_N;
-    travelMm(index) = sample.Travel_mm;
-end
+forceN = loadValue * forceScaleToN(loadUnit);
+travelMm = travelValue * travelScaleToMm(travelUnit);
 recording = result(time, forceN, travelMm, "MESUR gauge LOG");
+end
+
+function scale = forceScaleToN(unit)
+% Exact Series 5 display-unit conversions used by labkit.mark10.decodeSample.
+switch lower(strip(unit))
+    case "n"
+        scale = 1;
+    case "mn"
+        scale = 1 / 1000;
+    case "kn"
+        scale = 1000;
+    case "lbf"
+        scale = 4.4482216152605;
+    case "ozf"
+        scale = 0.278013850953781;
+    case "kgf"
+        scale = 9.80665;
+    case "gf"
+        scale = 0.00980665;
+    otherwise
+        scale = NaN;
+end
+end
+
+function scale = travelScaleToMm(unit)
+switch lower(strip(unit))
+    case "mm"
+        scale = 1;
+    case "in"
+        scale = 25.4;
+    otherwise
+        scale = NaN;
+end
 end
 
 function requireColumns(value, names)

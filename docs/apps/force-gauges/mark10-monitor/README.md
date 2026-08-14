@@ -5,8 +5,15 @@ displays live force and travel, records without controlling stand motion, and
 replays previously exported data.
 
 The central workspace follows the official monitoring workflow with separate
-**Live Plots** and **Recent Data** pages. The table shows the latest 200 valid
-visible samples while the full recording remains in the managed buffer.
+**Live Plots** and **Recent Data** pages. The upper plot combines travel and
+force against time on two Y axes; the lower plot is the standard force-versus-
+travel curve. The table shows the latest 200 valid visible samples while the
+full recording remains in the managed buffer.
+
+The control side is split into task-focused **Monitor**, **Record**,
+**Replay**, and **Settings** tabs. Connection, live readout, recording,
+file playback, and device configuration therefore remain independent instead
+of sharing one long scrolling panel.
 
 ## Connect And Record
 
@@ -15,10 +22,11 @@ port, and choose **Connect**. Monitoring begins immediately. **Start
 Recording** clears the retained recording and starts capture; **Stop
 Recording** leaves the live monitor running.
 
-Choose 5, 10, or 20 Hz for paced acquisition. **Maximum** requests samples as
-quickly as the device and MATLAB event loop permit; measured rate is shown
-instead of assuming the requested value. The App uses synchronized `n` reads
-when possible and reports fallback `x + ?C` acquisition in diagnostics.
+Choose 10, 20, 30, 40, or 50 Hz paced acquisition; 50 Hz is the default.
+Measured rate is shown instead of assuming the requested value. Sampling and
+recording remain at the requested rate while plots, controls, and diagnostics
+refresh at no more than 30 frames per second. The App uses synchronized `n`
+reads when possible and reports fallback `x + ?C` acquisition in diagnostics.
 
 **Zero Force** verifies the Series 5 zero against its displayed resolution.
 **Zero Travel** uses hardware zero only when stand status proves that command
@@ -49,11 +57,13 @@ omitted from the clean CSV and LOG.
 
 ## Open And Replay
 
-Disconnect hardware, choose **Open Recording**, and select an App CSV, MESUR
-gauge LOG, or complete MAT export. **Play** follows the recorded relative time;
-**Pause** retains the current cursor. Replay uses the same bounded plot and
-coalesced Runtime refresh path as live acquisition. Hardware connection is
-disabled during replay and replay controls are disabled while connected.
+Disconnect hardware, choose **Load**, and select an App CSV, MESUR gauge LOG,
+or complete MAT export. Load immediately displays the complete curves.
+**Reset** stops replay and restores that complete view. **Play from Start**
+always begins at the first sample; **Pause / Resume** retains and resumes the
+current cursor. Replay uses a fixed visual progression of approximately ten
+seconds rather than recorded timestamps. Hardware connection is disabled
+during replay and replay controls are disabled while connected.
 
 This App intentionally has no project schema: connections, samples, playback,
 and visible state are transient. Closing the App does not prompt to save every

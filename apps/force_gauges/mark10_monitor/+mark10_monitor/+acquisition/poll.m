@@ -28,13 +28,20 @@ try
         buffer("valid") = [buffer("valid"); sample.Valid];
         buffer("mode") = [buffer("mode"); string(sample.AcquisitionMode)];
     end
-    context.postEvent("mark10.live.refresh", ...
-        @mark10_monitor.acquisition.refreshState);
+    postRefreshIfDue(buffer, elapsed, context);
 catch cause
     buffer("lastFailure") = string(cause.message);
-    context.postEvent("mark10.live.refresh", ...
-        @mark10_monitor.acquisition.refreshState);
+    postRefreshIfDue(buffer, toc(buffer("started")), context);
 end
+end
+
+function postRefreshIfDue(buffer, elapsed, context)
+if elapsed - buffer("lastRefresh_s") < mark10_monitor.viewRefreshPeriod()
+    return;
+end
+buffer("lastRefresh_s") = elapsed;
+context.postEvent("mark10.live.refresh", ...
+    @mark10_monitor.acquisition.refreshState);
 end
 
 function appendPlot(buffer, time, force, travel)
