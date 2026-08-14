@@ -1,17 +1,19 @@
 # Mark-10 Force/Travel Monitor
 
 Mark-10 Monitor connects to an ESM303 with an attached Series 5 gauge,
-displays live force and travel, records without controlling stand motion, and
-replays previously exported data.
+displays live force and travel, records without controlling stand motion,
+replays previously exported data, and estimates branch stiffness and
+engineering Young's modulus.
 
 The central workspace follows the official monitoring workflow with separate
-**Live Plots** and **Recent Data** pages. The upper plot combines travel and
+**Live Plots**, **Recent Data**, and **Modulus Analysis** pages. The upper live
+plot combines travel and
 force against time on two Y axes; the lower plot is the standard force-versus-
 travel curve. The table shows the latest 200 valid visible samples while the
 full recording remains in the managed buffer.
 
 The control side is split into task-focused **Monitor**, **Record**,
-**Replay**, and **Settings** tabs. Connection, live readout, recording,
+**Analysis**, and **Settings** tabs. Connection, live readout, recording,
 file playback, and device configuration therefore remain independent instead
 of sharing one long scrolling panel.
 
@@ -36,10 +38,19 @@ offset. The App never sends UP, DOWN, motion speed, limit, cycle, or automatic
 
 ## Gauge Settings
 
-The settings tab reads and verifies Series 5 unit, measurement mode, current
-and display filters, output format, and Auto Output. **Apply + Verify** checks
-each change with `LIST`. It does not persist settings with `SAVE`. Auto Output
-is held at zero during synchronous monitoring and restored on disconnect.
+The settings tab follows the official Gauge Settings grouping: measurement
+and display choices are separate from RS-232 output and read/apply actions.
+It reads and verifies Series 5 unit, measurement mode, current and display
+filters, output format, and Auto Output. Every dropdown uses a readable label
+followed by its exact GCL2 token, such as **Peak tension (PT)** and **Numeric
+value + units (FULL)**. Filter labels show both the moving-average sample count
+and `FLTCn` or `FLTPn`; `n` is the protocol exponent and the sample count is
+`2^n`. These terms and values follow the Series 5 Gauge Settings screen,
+manual, and verified `LIST` probe behavior.
+
+**Apply + Verify** checks each change with `LIST`. It does not persist settings
+with `SAVE`. Auto Output is held at zero during synchronous monitoring and
+restored on disconnect.
 
 ## Exported Data
 
@@ -55,7 +66,7 @@ One export writes three data files and a LabKit manifest:
 The LOG uses N and mm consistently. Invalid attempts remain in MAT but are
 omitted from the clean CSV and LOG.
 
-## Open And Replay
+## Load, Replay, And Analyze
 
 Disconnect hardware, choose **Load**, and select an App CSV, MESUR gauge LOG,
 or complete MAT export. Load immediately displays the complete curves.
@@ -73,6 +84,48 @@ limits in the upper plot; it is available during both live monitoring and
 replay. Select MATLAB's Pan tool in an axes toolbar when drag panning is
 needed. Hardware connection is disabled during replay and replay controls are
 disabled while connected.
+
+The **Analysis** tab also calculates one fit for each sufficiently long
+monotonic travel branch. This shared path accepts either a complete loaded
+CSV/LOG/MAT recording or the complete valid sample buffer from a stopped live
+recording. It does not fit only the currently visible replay prefix.
+
+Enter rectangular-specimen gauge length, width, and thickness in mm, then
+select **Geometry reviewed**. Width and thickness are both required because
+Young's modulus needs cross-sectional area; thickness alone is not silently
+treated as area. The calculation uses:
+
+```text
+engineering strain = branch-local displacement / gauge length
+engineering stress (MPa) = branch-local force change / (width * thickness)
+Young's modulus (MPa) = absolute fitted stress/strain slope
+stiffness (N/mm) = Young's modulus * area / gauge length
+```
+
+Branch-local magnitudes let loading and recovery branches be compared even
+when the gauge polarity is inverted. The selected experiment type supplies
+tension/compression wording; the normal Mark-10 compression-positive polarity
+is used only to label a cyclic branch when no single test direction applies.
+Raw measurements and recording exports are never smoothed or rewritten.
+
+**Automatic** fitting considers multiple contiguous regions from 5--35% to
+45--85% of each branch's travel span, selects the best combination of
+linearity and usable span, and marks fits with R² below 0.95 for review.
+This avoids the initial toe region and the late peak/fracture region in common
+tension, compression, and cyclic records. **Manual** fitting applies the same
+branch-local start/end displacement range in mm to every branch. A branch
+needs at least eight fit points and nonzero travel span. Results always retain
+the exact fit range, point count, stiffness, modulus, R², and review status.
+
+The **Modulus Analysis** workspace shows stress-strain curves and fitted lines
+beside summary statistics, with the full per-branch table below. Green solid
+fits meet the R² criterion; orange dashed fits require review. Summary
+statistics prefer accepted fits and fall back to all finite estimates when
+none meet the threshold. **Export Modulus CSV** writes every row, including
+review flags, rather than hiding rejected or unusual cycles. The analysis
+renderer rebuilds from the current result on every presentation, so prior fits
+cannot accumulate. Fit endpoints and legend identities are ordinary plot
+objects and remain present when the axes is popped into a MATLAB figure.
 
 This App intentionally has no project schema: connections, samples, playback,
 and visible state are transient. Closing the App does not prompt to save every
@@ -94,5 +147,9 @@ Use `labkit.mark10.connect`, `readSample`, `readSettings`, `writeSetting`,
   checked by the operator.
 - Identity and stand-status commands can be mode-dependent; readable force or
   travel remains the primary connection evidence.
+- Reported modulus is an engineering estimate for a rectangular section. It
+  does not correct grip compliance, machine compliance, changing area,
+  extensometer offset, viscoelastic rate effects, or specimen slip. Review
+  branch segmentation and the fitted region before reporting material data.
 - Hidden-GUI tests do not validate physical hardware behavior or subjective
   plot quality.

@@ -17,5 +17,7 @@ state.session.acquisition.recording = true;
 state.session.acquisition.validCount = 0;
 state.session.acquisition.invalidCount = 0;
 state.session.acquisition.recordedValidCount = 0;
+state = mark10_monitor.analysis.invalidate(state, context, []);
+state.session.analysis.dataSource = "Live Recording";
 state.session.export.status = "Recording in progress.";
 end

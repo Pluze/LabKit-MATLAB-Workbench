@@ -14,6 +14,30 @@ classdef Mark10SettingsSpec < matlab.unittest.TestCase
             testCase.verifyEqual(state.session.settingsDraft.currentFilter, "8");
             testCase.verifyEqual(state.session.settingsDraft.autoOutput, "25");
         end
+        function readableLabelsRoundTripEveryProtocolValue(testCase)
+            options = mark10_monitor.settings.options();
+            names = string(fieldnames(options));
+            for name = names.'
+                option = options.(name);
+                for k = 1:numel(option.Values)
+                    testCase.verifyEqual( ...
+                        mark10_monitor.settings.displayChoice( ...
+                            name, option.Values(k)), option.Labels(k));
+                    testCase.verifyEqual( ...
+                        mark10_monitor.settings.settingValue( ...
+                            name, option.Labels(k)), option.Values(k));
+                end
+            end
+            testCase.verifyEqual(options.mode.Labels(2), ...
+                "Peak tension (PT)");
+            testCase.verifyEqual(options.unit.Labels(2), ...
+                "Millinewtons (mN)");
+            testCase.verifyEqual(options.outputFormat.Labels(1), ...
+                "Numeric value + units (FULL)");
+            testCase.verifyError(@() ...
+                mark10_monitor.settings.settingValue("mode", "Unknown"), ...
+                "mark10_monitor:settings:InvalidChoice");
+        end
     end
 end
 

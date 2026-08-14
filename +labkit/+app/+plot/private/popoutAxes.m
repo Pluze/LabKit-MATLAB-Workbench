@@ -38,7 +38,11 @@ function newFig = popoutAxes(srcAx, varargin)
     dstAx = axes('Parent', newFig);
     copyAxesState(srcAx, dstAx);
 
-    children = srcAx.Children(:);
+    % HandleVisibility controls discovery and legend participation, not
+    % whether a graphics object is visibly part of the axes. A popout is a
+    % visual copy, so include every child regardless of handle visibility.
+    children = allchild(srcAx);
+    children = children(:);
     if ~isempty(children)
         copiedChildren = copyobj(children, dstAx);
         try

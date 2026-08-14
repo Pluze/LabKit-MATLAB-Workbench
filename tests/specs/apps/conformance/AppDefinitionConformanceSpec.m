@@ -36,5 +36,21 @@ classdef AppDefinitionConformanceSpec < matlab.unittest.TestCase
                     App.Package + "." + nodes(index).Id);
             end
         end
+
+        function createsAndPresentsTheInitialSessionHeadlessly(testCase, App)
+            definition = feval(char(App.Package + ".definition"));
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(definition, folder);
+            runtime = labkittest.createHeadlessRuntime( ...
+                definition, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+
+            testCase.verifyFalse(runtime.StartupFailed, ...
+                "Initial App presentation failed: " + App.Package);
+            testCase.verifyTrue(isstruct(runtime.State));
+            clear cleanup
+        end
+
     end
 end

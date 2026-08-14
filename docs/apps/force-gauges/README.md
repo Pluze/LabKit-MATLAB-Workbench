@@ -7,7 +7,7 @@ owning test-stand motion.
 
 | Task | App |
 | --- | --- |
-| Monitor an ESM303 and Series 5 gauge, record, export, or replay data | [Mark-10 Monitor](mark10-monitor/README.md) |
+| Monitor an ESM303 and Series 5 gauge, record/replay data, and estimate branch modulus | [Mark-10 Monitor](mark10-monitor/README.md) |
 
 The [Mark-10 driver](../../libraries/mark10/README.md) is also available for
 GUI-free MATLAB acquisition and settings work.

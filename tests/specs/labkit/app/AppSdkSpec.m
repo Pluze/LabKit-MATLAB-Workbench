@@ -594,6 +594,30 @@ classdef AppSdkSpec < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = {'Contract:source', 'Env:hidden-gui'})
+        function popoutPreservesVisibleGraphicsWithHiddenHandles(testCase)
+            existingFigures = findall(groot, "Type", "figure");
+            sourceFigure = figure("Visible", "off");
+            cleanup = onCleanup(@() closeNewFigures(existingFigures));
+            sourceAxes = axes(sourceFigure);
+            plot(sourceAxes, 1:3, 1:3, DisplayName="data");
+            hold(sourceAxes, "on");
+            plot(sourceAxes, 1:3, 2:4, HandleVisibility="off");
+            hold(sourceAxes, "off");
+            labkit.app.plot.enablePopout(sourceAxes);
+            menu = findall(sourceFigure, "Tag", "labkitAxesPopoutMenu");
+
+            menu.MenuSelectedFcn(menu, []);
+            drawnow;
+
+            figures = setdiff(findall(groot, "Type", "figure"), ...
+                [existingFigures; sourceFigure]);
+            testCase.verifyNumElements(figures, 1);
+            popped = figures(1);
+            poppedAxes = findall(popped, "Type", "axes");
+            testCase.verifyNumElements(findall(poppedAxes, "Type", "line"), 2);
+            clear cleanup
+        end
+
         function nativeLayoutUsesConsistentButtonsAndBoundedDividers(testCase)
             controls = { ...
                 labkit.app.layout.tab("controls", "Controls", { ...
@@ -1030,6 +1054,11 @@ end
 function invokeMenu(menu)
 menu.MenuSelectedFcn(menu, []);
 drawnow;
+end
+
+function closeNewFigures(existingFigures)
+figures = setdiff(findall(groot, "Type", "figure"), existingFigures);
+close(figures(isvalid(figures)));
 end
 
 function invokeNativeCallback(callback, source, event)

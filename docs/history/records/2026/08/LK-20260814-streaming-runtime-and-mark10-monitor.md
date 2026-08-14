@@ -13,6 +13,7 @@ scope: Generic timer and streaming state publication
 scope: Optional project persistence and precise dirty state
 scope: Mark-10 ESM303 and Series 5 monitoring
 scope: Standard CSV, MESUR gauge LOG, MAT export, and replay
+scope: Per-branch stiffness and engineering modulus analysis
 ```
 
 ## Context
@@ -64,6 +65,21 @@ Force Gauges App.
 - Official LOG loading converts the declared file units once per column while
   preserving the driver decoder's exact unit factors, avoiding per-row
   protocol parsing during file import.
+- Replay controls now live under **Analysis**. Complete loaded or stopped live
+  recordings share one branch segmentation and fitting path. Automatic or
+  branch-local manual regions produce stiffness, engineering Young's modulus,
+  R², review status, stress-strain plots, statistics, and standard CSV.
+  Gauge length, width, and thickness are explicit mm inputs, and geometry must
+  be reviewed before calculation.
+- Plot popouts copy every visible graphics child even when its handle is
+  hidden from ordinary discovery. Modulus fits keep every branch line and
+  endpoint marker in the standalone figure while suppressing duplicate legend
+  entries independently.
+- Series 5 settings are grouped like the official Gauge Settings workflow.
+  Dropdowns pair readable meaning with the exact `LIST`/GCL2 token while the
+  driver continues to receive canonical values.
+- Public-App headless conformance creates and presents every initial session,
+  catching presenter parser/runtime failures before hidden-GUI smoke tests.
 
 ## User and data impact
 
@@ -72,6 +88,9 @@ prompts. Mark-10 users can monitor and record force/travel while leaving stand
 motion under existing hardware controls. Clean CSV and LOG omit invalid sample
 attempts; MAT retains validity, acquisition mode, settings, and diagnostics.
 Exports can include device metadata and should be reviewed before sharing.
+Modulus CSV retains every branch and review flag. The engineering estimate
+assumes a rectangular initial area and does not compensate fixture or specimen
+compliance.
 
 ## Compatibility and migration
 
@@ -82,21 +101,21 @@ intentionally session-only.
 
 ## Validation
 
-Focused SDK specifications cover validation, coalescing, close behavior, and
-session-only dirty state. Offline Mark-10 specifications cover response
-contamination, unit normalization, LIST parsing, fallback sampling, and facade
-metadata. App result specifications cover exact LOG bytes, CSV/LOG/MAT reopen,
-and replay rate mapping; headless Runtime construction covers the complete App
-definition and initial lifecycle.
+Focused SDK specifications cover validation, coalescing, close behavior,
+session-only dirty state, and complete plot-popout copying. Offline Mark-10
+specifications cover response contamination, unit normalization, LIST parsing,
+fallback sampling, and facade metadata. App result specifications cover exact
+LOG bytes, CSV/LOG/MAT reopen, and replay rate mapping; headless Runtime
+construction covers the complete App definition and initial lifecycle.
 
 ## Evidence
 
-- All 24 App SDK headless identities passed on MATLAB R2026a, including
+- All 34 focused App SDK identities passed on MATLAB R2026a, including
   coalescing, active-transaction deferral, queued failure isolation, rollback,
-  close, and dirty state.
-- Five Mark-10 facade identities and seventeen App capability identities passed
+  close, dirty state, and hidden-handle plot copying.
+- Five Mark-10 facade identities and 25 App capability identities passed
   without hardware.
-- All 44 public-App definition identities passed with the new App discovered
+- All 66 public-App definition identities passed with the new App discovered
   from its normal launcher path.
 - Documentation rendered deterministically to 405 generated files.
 
