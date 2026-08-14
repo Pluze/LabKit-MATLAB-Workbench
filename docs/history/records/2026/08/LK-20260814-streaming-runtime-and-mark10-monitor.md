@@ -71,10 +71,15 @@ Force Gauges App.
   R², review status, stress-strain plots, statistics, and standard CSV.
   Gauge length, width, and thickness are explicit mm inputs, and geometry must
   be reviewed before calculation.
-- Analysis-only force and travel zero levels shift the stress-strain
-  coordinates without rewriting recordings or changing fitted modulus.
-  Reset restores both baselines to zero, and modulus CSV records the applied
-  levels as calculation provenance.
+- Pending force and travel zero levels apply together on explicit request,
+  shifting both live/replay plots and the shared modulus coordinates without
+  rewriting recordings or changing fitted modulus. Reset immediately restores
+  both plots and baselines, and modulus CSV records the applied levels as
+  calculation provenance.
+- Manual modulus fitting uses one applied-zero travel window across every
+  branch instead of reinterpreting the window from each branch start. Branches
+  outside that window remain explicit result rows without fabricated fit
+  graphics; automatic endpoints use the same corrected coordinate.
 - Plot popouts copy every visible graphics child even when its handle is
   hidden from ordinary discovery. Modulus fits keep every branch line and
   endpoint marker in the standalone figure while suppressing duplicate legend
@@ -117,7 +122,7 @@ construction covers the complete App definition and initial lifecycle.
 - All 34 focused App SDK identities passed on MATLAB R2026a, including
   coalescing, active-transaction deferral, queued failure isolation, rollback,
   close, dirty state, and hidden-handle plot copying.
-- Five Mark-10 facade identities and 28 App capability identities passed
+- Five Mark-10 facade identities and 30 App capability identities passed
   without hardware.
 - All 66 public-App definition identities passed with the new App discovered
   from its normal launcher path.

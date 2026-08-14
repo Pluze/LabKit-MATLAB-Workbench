@@ -8,7 +8,8 @@ function result = compute(time_s, force_N, travel_mm, parameters, experimentType
 
 [time_s, force_N, travel_mm] = cleanColumns(time_s, force_N, travel_mm);
 validateGeometry(parameters);
-[forceZero_N, travelZero_mm] = zeroLevels(parameters);
+[forceZero_N, travelZero_mm] = ...
+    mark10_monitor.analysis.appliedZeroLevels(parameters);
 force_N = force_N - forceZero_N;
 travel_mm = travel_mm - travelZero_mm;
 if numel(time_s) < 16
@@ -24,8 +25,9 @@ end
 area_mm2 = parameters.width_mm * parameters.thickness_mm;
 segmentCount = size(segments, 1);
 rows = cell(segmentCount, 11);
-fits = repmat(struct("strain_percent", zeros(2, 1), ...
+fitCandidates = repmat(struct("strain_percent", zeros(2, 1), ...
     "stress_MPa", zeros(2, 1), "accepted", false), segmentCount, 1);
+fitCount = 0;
 plotStrainByBranch = cell(segmentCount, 1);
 plotStressByBranch = cell(segmentCount, 1);
 pointsPerBranch = max(20, floor(2000 / segmentCount));
@@ -34,7 +36,8 @@ for k = 1:segmentCount
     displacement = abs(travel_mm(indices) - travel_mm(indices(1)));
     strain = travel_mm(indices) / parameters.gaugeLength_mm;
     stress = force_N(indices) / area_mm2;
-    [fit, status] = fitBranch(displacement, strain, stress, parameters);
+    [fit, status] = fitBranch( ...
+        displacement, travel_mm(indices), strain, stress, parameters);
     phase = phaseLabel(force_N(indices), experimentType);
     rows(k, :) = {k, char(phase), time_s(indices(1)), ...
         time_s(indices(end)), fit.start_mm, fit.end_mm, fit.count, ...
@@ -44,10 +47,14 @@ for k = 1:segmentCount
         100 * strain, stress, pointsPerBranch);
     plotStrainByBranch{k} = [branchStrain; NaN];
     plotStressByBranch{k} = [branchStress; NaN];
-    fits(k) = struct( ...
-        "strain_percent", 100 * fit.strainLine, ...
-        "stress_MPa", fit.stressLine, "accepted", fit.accepted);
+    if all(isfinite(fit.strainLine)) && all(isfinite(fit.stressLine))
+        fitCount = fitCount + 1;
+        fitCandidates(fitCount) = struct( ...
+            "strain_percent", 100 * fit.strainLine, ...
+            "stress_MPa", fit.stressLine, "accepted", fit.accepted);
+    end
 end
+fits = fitCandidates(1:fitCount);
 plotStrain = vertcat(plotStrainByBranch{:});
 plotStress = vertcat(plotStressByBranch{:});
 
@@ -100,22 +107,6 @@ if ~logical(p.geometryConfirmed)
 end
 end
 
-function [forceZero_N, travelZero_mm] = zeroLevels(parameters)
-forceZero_N = optionalFiniteScalar(parameters, "forceZero_N", 0);
-travelZero_mm = optionalFiniteScalar(parameters, "travelZero_mm", 0);
-end
-
-function value = optionalFiniteScalar(parameters, name, fallback)
-value = fallback;
-if isfield(parameters, name)
-    value = double(parameters.(name));
-end
-if ~isscalar(value) || ~isfinite(value)
-    error("mark10_monitor:analysis:InvalidZeroLevel", ...
-        "%s must be a finite scalar.", name);
-end
-end
-
 function segments = monotonicSegments(x)
 dx = diff(x);
 nonzero = abs(dx(isfinite(dx) & dx ~= 0));
@@ -154,11 +145,12 @@ end
 segments = segmentCandidates(1:segmentCount, :);
 end
 
-function [fit, status] = fitBranch(displacement, strain, stress, p)
+function [fit, status] = fitBranch( ...
+        displacement, correctedTravel, strain, stress, p)
 if string(p.fitMode) == "Manual"
     low = min(p.manualStart_mm, p.manualEnd_mm);
     high = max(p.manualStart_mm, p.manualEnd_mm);
-    selected = displacement >= low & displacement <= high;
+    selected = correctedTravel >= low & correctedTravel <= high;
 else
     selected = automaticRegion(displacement, stress);
 end
@@ -182,8 +174,8 @@ else
 end
 stiffness = abs(coefficients(1)) * ...
     (p.width_mm * p.thickness_mm) / p.gaugeLength_mm;
-fit = struct("start_mm", min(displacement(indices)), ...
-    "end_mm", max(displacement(indices)), "count", numel(indices), ...
+fit = struct("start_mm", min(correctedTravel(indices)), ...
+    "end_mm", max(correctedTravel(indices)), "count", numel(indices), ...
     "stiffness_N_per_mm", stiffness, ...
     "modulus_MPa", abs(coefficients(1)), "rSquared", rSquared, ...
     "strainLine", [min(x); max(x)], ...

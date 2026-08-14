@@ -15,8 +15,10 @@ a.elapsed_s = buffer("lastTime_s");
 a.force_N = buffer("lastForce_N");
 a.travel_mm = buffer("lastTravel_mm") - a.travelZeroOffset_mm;
 a.plotTime_s = buffer("plotTime_s");
-a.plotForce_N = buffer("plotForce_N");
-a.plotTravel_mm = buffer("plotTravel_mm") - a.travelZeroOffset_mm;
+[a.plotForce_N, a.plotTravel_mm] = ...
+    mark10_monitor.analysis.shiftPlotData( ...
+    buffer("plotForce_N"), buffer("plotTravel_mm"), ...
+    state.session.analysis, a.travelZeroOffset_mm);
 if a.elapsed_s > 0
     a.actualRate_Hz = a.sampleCount / a.elapsed_s;
 end

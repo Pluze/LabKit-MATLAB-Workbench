@@ -90,14 +90,18 @@ monotonic travel branch. This shared path accepts either a complete loaded
 CSV/LOG/MAT recording or the complete valid sample buffer from a stopped live
 recording. It does not fit only the currently visible replay prefix.
 
-**Analysis Zero** accepts the raw force level in N and raw travel level in mm
-that should be treated as zero. The App subtracts those finite scalar levels
-before calculating and drawing engineering stress and strain. A constant zero
-shift changes the analysis coordinates and fitted intercepts but not the
-stress/strain slope or Young's modulus. **Reset Analysis Zero** restores both
-levels to 0 and clears the previous analysis result. These controls do not
-modify the source recording, the live/replay plots, or the standard
-CSV/LOG/MAT export.
+**Plot Zero** accepts the raw force level in N and raw travel level in mm
+that should be treated as zero. Editing only changes the pending values;
+**Apply Zero** commits both values together, immediately translates force and
+travel in the upper time-series plot and both coordinates in the lower
+force-versus-travel plot, then refits their limits. Replay advancement and
+live refresh continue using those applied levels. Modulus analysis uses the
+same applied coordinates, so there is no second zero-point interpretation.
+A constant zero shift changes coordinates and fitted intercepts but not the
+stress/strain slope or Young's modulus. **Reset Zero** restores both applied
+and pending levels to 0, immediately restores the two plots, and clears the
+previous modulus result. Neither action modifies the source recording or the
+standard CSV/LOG/MAT export.
 
 Enter rectangular-specimen gauge length, width, and thickness in mm, then
 select **Geometry reviewed**. Width and thickness are both required because
@@ -124,10 +128,15 @@ never smoothed or rewritten.
 45--85% of each branch's travel span, selects the best combination of
 linearity and usable span, and marks fits with R² below 0.95 for review.
 This avoids the initial toe region and the late peak/fracture region in common
-tension, compression, and cyclic records. **Manual** fitting applies the same
-branch-local start/end displacement range in mm to every branch. A branch
-needs at least eight fit points and nonzero travel span. Results always retain
-the exact fit range, point count, stiffness, modulus, R², and review status.
+tension, compression, and cyclic records. **Manual** fitting uses one explicit
+window in the applied-zero travel coordinate. For example, an applied travel
+zero of 30 mm and a manual 0--10 mm window fits the original 30--40 mm portion
+of every loading or recovery branch that crosses it. A branch outside that
+window, with fewer than eight selected points, or with zero selected travel
+span is reported as **Insufficient fit region** and has no fitted line. Results
+always retain the exact corrected-travel fit range, point count, stiffness,
+modulus, R², and review status. Automatic mode still selects a branch-local
+linear candidate but reports its endpoints in that same corrected coordinate.
 
 The **Modulus Analysis** workspace shows stress-strain curves and fitted lines
 beside summary statistics, with the full per-branch table below. Green solid

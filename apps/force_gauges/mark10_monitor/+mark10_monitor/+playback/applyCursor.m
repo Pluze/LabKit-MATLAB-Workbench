@@ -9,8 +9,9 @@ time = playback("time_s");
 force = playback("force_N");
 travel = playback("travel_mm");
 a.plotTime_s = time(indices);
-a.plotForce_N = force(indices);
-a.plotTravel_mm = travel(indices);
+[a.plotForce_N, a.plotTravel_mm] = ...
+    mark10_monitor.analysis.shiftPlotData( ...
+    force(indices), travel(indices), state.session.analysis, 0);
 a.sampleCount = index;
 a.validCount = index;
 a.invalidCount = 0;
