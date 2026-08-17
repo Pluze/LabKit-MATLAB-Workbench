@@ -26,3 +26,15 @@ second architecture guide.
   extending the patch chain. Reconstruct the complete entry-to-owner call
   graph, state the invariant that should make resolution deterministic, and
   replace the boundary coherently before spending more time on symptoms.
+- When an action promises a physical device state change, a successful
+  software-only approximation is a contract violation, not graceful
+  degradation. If the device operation cannot be sent and verified, report
+  the unavailable capability and leave readings, retained data, analysis, and
+  exports unchanged; expose any legitimate post-processing transform as a
+  separately named workflow.
+- When read-only device traffic succeeds but a status or control request is
+  silent, do not infer a parser or timeout defect from connectivity alone.
+  Distinguish OS enumeration, port availability, data-channel support,
+  operating mode, licensed capability, and command authorization, then compare
+  an independent raw request with the authoritative protocol before changing
+  transport timing or response handling.
