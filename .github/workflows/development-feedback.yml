@@ -1,0 +1,95 @@
+name: Development Feedback
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: development-feedback-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-feedback:
+    name: Latest Linux / MATLAB / changed paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve complete pushed range
+        shell: bash
+        env:
+          EVENT_BEFORE: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          base_sha="${EVENT_BEFORE}"
+          if [ -z "${base_sha}" ] || \
+             [ "${base_sha}" = "0000000000000000000000000000000000000000" ] || \
+             ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+            git fetch origin main
+            base_sha="$(git merge-base origin/main "${HEAD_SHA}")"
+          fi
+          mkdir -p artifacts/development-feedback artifacts/logs/development-feedback
+          git diff --check "${base_sha}" "${HEAD_SHA}"
+          git diff --name-only --diff-filter=ACMRTUXB \
+            "${base_sha}" "${HEAD_SHA}" \
+            > artifacts/development-feedback/changed-paths.txt
+          printf '%s\n' "${base_sha}" \
+            > artifacts/development-feedback/base-sha.txt
+          printf '%s\n' "${HEAD_SHA}" \
+            > artifacts/development-feedback/head-sha.txt
+
+      - name: Validate lightweight repository policy
+        shell: bash
+        run: |
+          python -m unittest discover -s .github/scripts -p 'test_*.py'
+          python .github/scripts/validate_agent_skills.py
+
+      - name: Set up clean latest MATLAB runtime
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: latest
+
+      - name: Start Linux virtual display
+        shell: bash
+        run: |
+          Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp \
+            > "${RUNNER_TEMP}/xvfb.log" 2>&1 &
+          xvfb_pid=$!
+          echo "DISPLAY=:99" >> "${GITHUB_ENV}"
+          sleep 1
+          if ! kill -0 "${xvfb_pid}"; then
+            cat "${RUNNER_TEMP}/xvfb.log"
+            exit 1
+          fi
+
+      - name: Run focused changed-path feedback
+        uses: matlab-actions/run-command@v3
+        with:
+          command: addpath(fullfile(pwd,'.github','scripts')); runDevelopmentFeedback(fullfile(pwd,'artifacts','development-feedback','changed-paths.txt'))
+          startup-options: -logfile artifacts/logs/development-feedback/matlab.log
+
+      - name: Verify generated documentation
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: docsCheck
+
+      - name: Upload feedback artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: development-feedback-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            artifacts/development-feedback/**
+            artifacts/test-results/development-feedback/**
+            artifacts/logs/development-feedback/**

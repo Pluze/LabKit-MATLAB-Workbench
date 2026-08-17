@@ -184,10 +184,17 @@ tests, history, and details out of the public repository.
   `.labkit-accept-main-guardrails` is present and private changes are unpushed,
   also run the relevant public guardrail because the public changed-file
   planner cannot see the nested diff.
-- CI has two validation modes: pull requests run complete validation, while a
-  protected `main` push records repository policy for the exact accepted
-  commit. Manual recovery reuses complete pull-request validation in an
-  independent concurrency group; it is a trigger fallback, not a third scope.
+- CI has two merge-validation modes: pull requests run complete validation,
+  while a protected `main` push records repository policy for the exact
+  accepted commit. A `develop` push may run one non-gating latest-Linux
+  development-feedback job over the complete pushed range; it is rapid author
+  feedback, not merge evidence, and never replaces the one local pre-PR
+  `changedFast` run or complete PR validation. New pushes cancel superseded
+  feedback runs. Inspect this non-gating result only when the user requests it,
+  a checkpoint needs its evidence, or a failure blocks the current work; do not
+  poll it during ordinary iteration. Manual recovery reuses complete
+  pull-request validation in an independent concurrency group; it is a trigger
+  fallback, not a third merge-validation scope.
 
 ## Git workflow
 

@@ -37,6 +37,14 @@ Repository profiles are headless, hidden GUI, path-isolated, coverage, and
 `changedFast`. Documentation belongs to `docsCheck`; unknown changed paths fail
 planning until assigned an owner or explicit ignore reason.
 
+For hosted `develop` feedback, pass the complete push range's explicit changed
+paths to the existing changed planner. Never infer a multi-commit push from a
+clean checkout's `HEAD^..HEAD`, and never report the single-platform feedback
+job as merge safety or as a replacement for local pre-PR and complete PR gates.
+Let a newer push cancel superseded feedback, and inspect hosted feedback only
+on user request, when checkpoint evidence needs it, or when a reported failure
+blocks the current task. Do not continuously poll non-gating development runs.
+
 ## Report and repair
 
 Report exact owner/contract or profile command, selected count, result,

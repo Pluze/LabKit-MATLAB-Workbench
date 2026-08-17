@@ -137,6 +137,16 @@ Run focused behavior during iteration. Run `changedFast` once when `develop`
 is ready for final PR review. CI owns broad platform validation; do not
 repeatedly run broad tasks after each small edit.
 
+Every push to `develop` also starts a non-gating `Development Feedback`
+workflow on latest Ubuntu and latest Base MATLAB. It passes the complete GitHub
+push range to the same changed-path planner, runs its focused evidence, and
+checks deterministic documentation. This job is rapid cross-environment author
+feedback only: a green result does not establish merge safety, replace the one
+local pre-PR `changedFast` checkpoint, or reduce the complete PR matrix. A new
+push cancels an older in-progress feedback run so rapid iteration does not build
+a stale queue. Read the non-gating result when its evidence is needed rather
+than monitoring it throughout ordinary development.
+
 ## Artifacts and Failures
 
 Each run writes one folder beneath `artifacts/test-results/<run-name>/`:
