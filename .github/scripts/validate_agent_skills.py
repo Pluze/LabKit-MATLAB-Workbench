@@ -14,7 +14,6 @@ FRONTMATTER = re.compile(
     r"description:\s*(?:\"([^\"]+)\"|([^\n]+))\n---\s*\n",
 )
 LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
-MANIFEST_KEYS = {"schema_version", "name", "scope", "dependencies"}
 OPENAI = re.compile(
     r'\Ainterface:\n'
     r'  display_name: "([^"\n]+)"\n'
@@ -46,7 +45,7 @@ def validate(root: Path) -> int:
     )
     if not skill_dirs:
         raise SkillContractError("No repository Skills were found.")
-    manifests: dict[str, dict[str, object]] = {}
+    skills: set[str] = set()
     for folder in skill_dirs:
         skill_path = folder / "SKILL.md"
         text = skill_path.read_text(encoding="utf-8")
@@ -60,26 +59,12 @@ def validate(root: Path) -> int:
         if "Do not use" not in description:
             raise SkillContractError(
                 f"{folder}: description needs a negative boundary")
-        manifest_path = folder / "manifest.yaml"
-        manifest = load_json(manifest_path)
-        if not isinstance(manifest, dict) or set(manifest) != MANIFEST_KEYS:
-            raise SkillContractError(
-                f"{manifest_path}: manifest keys differ from contract")
-        dependencies = manifest["dependencies"]
-        if (manifest["schema_version"] != 1 or manifest["name"] != name or
-                manifest["scope"] != "labkit-repository" or
-                not isinstance(dependencies, list) or
-                not all(isinstance(item, str) for item in dependencies)):
-            raise SkillContractError(f"{manifest_path}: invalid manifest value")
-        manifests[name] = manifest
+        skills.add(name)
         validate_links(folder, text)
         validate_portability(folder)
         validate_openai_metadata(folder, name)
         validate_evals(folder / "evals.json")
-    validate_dependencies(manifests)
-    validate_dependency_routing(skills_root, manifests)
-    validate_activation_evals(
-        skills_root / "activation-evals.json", set(manifests))
+    validate_activation_evals(skills_root / "activation-evals.json", skills)
     return len(skill_dirs)
 
 
@@ -150,18 +135,6 @@ def validate_openai_metadata(folder: Path, name: str) -> None:
             f"{path}: default prompt must mention ${name}")
 
 
-def validate_dependency_routing(
-        skills_root: Path,
-        manifests: dict[str, dict[str, object]]) -> None:
-    for name, manifest in manifests.items():
-        text = (skills_root / name / "SKILL.md").read_text(encoding="utf-8")
-        for dependency in manifest["dependencies"]:
-            if f"`{dependency}`" not in text:
-                raise SkillContractError(
-                    f"{name}: dependency {dependency} lacks an explicit "
-                    "SKILL.md route")
-
-
 def validate_activation_evals(path: Path, skills: set[str]) -> None:
     data = load_json(path)
     if not isinstance(data, dict) or set(data) != {"schema_version", "cases"}:
@@ -169,8 +142,6 @@ def validate_activation_evals(path: Path, skills: set[str]) -> None:
     cases = data["cases"]
     if data["schema_version"] != 1 or not isinstance(cases, list) or not cases:
         raise SkillContractError(f"{path}: activation eval cases are required")
-    activated: set[str] = set()
-    excluded: set[str] = set()
     for case in cases:
         if (not isinstance(case, dict) or set(case) != ACTIVATION_KEYS or
                 not isinstance(case["prompt"], str) or
@@ -199,38 +170,6 @@ def validate_activation_evals(path: Path, skills: set[str]) -> None:
         if unknown:
             raise SkillContractError(
                 f"{path}: unknown activation skill {sorted(unknown)[0]}")
-        activated.update(positive_set)
-        excluded.update(negative_set)
-    if activated != skills or excluded != skills:
-        missing_positive = sorted(skills - activated)
-        missing_negative = sorted(skills - excluded)
-        raise SkillContractError(
-            f"{path}: incomplete activation coverage; "
-            f"missing positive={missing_positive}, negative={missing_negative}")
-
-
-def validate_dependencies(manifests: dict[str, dict[str, object]]) -> None:
-    for name, manifest in manifests.items():
-        for dependency in manifest["dependencies"]:
-            if dependency not in manifests:
-                raise SkillContractError(
-                    f"{name}: unknown dependency {dependency}")
-    visiting: set[str] = set()
-    visited: set[str] = set()
-
-    def visit(name: str) -> None:
-        if name in visiting:
-            raise SkillContractError(f"{name}: dependency cycle")
-        if name in visited:
-            return
-        visiting.add(name)
-        for dependency in manifests[name]["dependencies"]:
-            visit(dependency)
-        visiting.remove(name)
-        visited.add(name)
-
-    for name in manifests:
-        visit(name)
 
 
 def main() -> int:

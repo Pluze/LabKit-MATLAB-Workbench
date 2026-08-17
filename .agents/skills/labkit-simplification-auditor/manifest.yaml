@@ -1,1 +1,0 @@
-{"schema_version":1,"name":"labkit-simplification-auditor","scope":"labkit-repository","dependencies":["labkit-boundary-guard","labkit-scientific-change-guard","labkit-test-planner"]}

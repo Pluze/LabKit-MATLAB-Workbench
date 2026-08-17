@@ -16,25 +16,16 @@ SPEC.loader.exec_module(MODULE)
 
 
 class ValidateAgentSkillsTest(unittest.TestCase):
-    def make_skill(self, root, name="probe", dependencies=None):
+    def make_skill(self, root, name="probe"):
         folder = root / ".agents" / "skills" / name
         folder.mkdir(parents=True)
-        dependency_routes = "".join(
-            f"Use `{dependency}` when required.\n"
-            for dependency in dependencies or [])
         (folder / "SKILL.md").write_text(
             "---\n"
             f"name: {name}\n"
             'description: "Use for a probe. Do not use outside the probe."\n'
-            f"---\n\n# Probe\n\n{dependency_routes}",
+            "---\n\n# Probe\n",
             encoding="utf-8",
         )
-        (folder / "manifest.yaml").write_text(json.dumps({
-            "schema_version": 1,
-            "name": name,
-            "scope": "labkit-repository",
-            "dependencies": dependencies or [],
-        }), encoding="utf-8")
         agents = folder / "agents"
         agents.mkdir()
         (agents / "openai.yaml").write_text(
@@ -80,7 +71,7 @@ class ValidateAgentSkillsTest(unittest.TestCase):
             self.make_skill(root)
             self.assertEqual(MODULE.validate(root), 1)
 
-    def test_rejects_name_drift_and_unknown_dependency(self):
+    def test_rejects_name_drift_and_missing_negative_boundary(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
             folder = self.make_skill(root)
@@ -91,18 +82,17 @@ class ValidateAgentSkillsTest(unittest.TestCase):
                 MODULE.validate(root)
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
-            self.make_skill(root, dependencies=["missing"])
+            folder = self.make_skill(root)
+            skill = folder / "SKILL.md"
+            skill.write_text(
+                skill.read_text(encoding="utf-8").replace(
+                    " Do not use outside the probe.", ""),
+                encoding="utf-8",
+            )
             with self.assertRaises(MODULE.SkillContractError):
                 MODULE.validate(root)
 
-    def test_rejects_dependency_cycles_and_unportable_content(self):
-        with tempfile.TemporaryDirectory() as raw:
-            root = pathlib.Path(raw)
-            self.make_skill(root, "first", ["second"])
-            self.make_skill(root, "second", ["first"])
-            self.write_activation_evals(root, ["first", "second"])
-            with self.assertRaises(MODULE.SkillContractError):
-                MODULE.validate(root)
+    def test_rejects_unportable_content(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
             folder = self.make_skill(root)
@@ -113,7 +103,7 @@ class ValidateAgentSkillsTest(unittest.TestCase):
             with self.assertRaises(MODULE.SkillContractError):
                 MODULE.validate(root)
 
-    def test_rejects_missing_ui_metadata_and_dependency_route(self):
+    def test_rejects_missing_ui_metadata_and_unbalanced_evals(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
             folder = self.make_skill(root)
@@ -122,15 +112,11 @@ class ValidateAgentSkillsTest(unittest.TestCase):
                 MODULE.validate(root)
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
-            folder = self.make_skill(root, "first", ["second"])
-            self.make_skill(root, "second")
-            self.write_activation_evals(root, ["first", "second"])
-            skill = folder / "SKILL.md"
-            skill.write_text(
-                skill.read_text(encoding="utf-8").replace(
-                    "Use `second` when required.\n", ""),
-                encoding="utf-8",
-            )
+            folder = self.make_skill(root)
+            path = folder / "evals.json"
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["cases"] = [data["cases"][0]]
+            path.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaises(MODULE.SkillContractError):
                 MODULE.validate(root)
 
@@ -141,6 +127,15 @@ class ValidateAgentSkillsTest(unittest.TestCase):
             path = root / ".agents" / "skills" / "activation-evals.json"
             data = json.loads(path.read_text(encoding="utf-8"))
             data["cases"][0]["activate"] = ["missing"]
+            path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaises(MODULE.SkillContractError):
+                MODULE.validate(root)
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            self.make_skill(root)
+            path = root / ".agents" / "skills" / "activation-evals.json"
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["cases"][0]["do_not_activate"] = ["probe"]
             path.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaises(MODULE.SkillContractError):
                 MODULE.validate(root)

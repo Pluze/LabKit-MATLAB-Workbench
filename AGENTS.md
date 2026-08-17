@@ -27,6 +27,8 @@ under `docs/`.
 - Use `labkit-agent-governance` whenever adding, changing, reviewing, or
   retiring `AGENTS.md`, repository Skills, their metadata/evals/scripts,
   `.agents/dos-and-donts.md`, or `.agents/migration_guide.md`.
+- Use `labkit-checkpoint-guard` before an ordinary requested commit or push;
+  use `labkit-pr-preparer` only for final `develop -> main` integration.
 - Treat repeated reasoning, command assembly, selector discovery, and
   trial-and-error as signals to improve the responsible skill or its scripts.
   Prefer one reusable improvement over carrying the same procedural burden
@@ -207,15 +209,10 @@ tests, history, and details out of the public repository.
    coherent checkpoint merely to accumulate a larger batch. Once a
    `develop -> main` PR opens, freeze `develop` until the PR is merged or
    closed; do not mix later work into its moving head.
-4. Before every commit, inspect the complete intended diff against its
-   baseline and account for every changed file and meaningful hunk. Keep only
-   changes necessary for the requested outcome, its owned contract, and
-   proportionate evidence. Remove speculative APIs, types, options, App-owned
-   declarations, compatibility work, documentation, tests, and incidental
-   cleanup introduced while pursuing a narrower symptom. If the net diff is
-   substantially larger or more conceptual than the user outcome, stop and
-   revisit the design boundary before committing; do not preserve iteration
-   history or a discarded design merely because it has already been written.
+4. Before every requested commit or push, use `labkit-checkpoint-guard`. Keep
+   only the requested outcome, its owned contract, and proportionate evidence.
+   If the net diff is substantially larger or more conceptual than the user
+   outcome, revisit the design boundary before committing.
 5. Keep branch work stable with purpose-based commits and focused validation.
    Intermediate commit count is not a merge criterion. Before opening or
    merging the final PR, inspect the complete base-to-head diff, user docs,

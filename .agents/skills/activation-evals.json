@@ -5,49 +5,55 @@
       "prompt": "Correct an unsupported ECG peak-method selector and run its focused evidence.",
       "activate": ["labkit-scientific-change-guard", "labkit-test-planner"],
       "do_not_activate": ["labkit-app-builder", "labkit-pr-preparer"],
-      "rationale": "The change affects scientific selection and evidence, but not App shape or final PR preparation."
+      "rationale": "Scientific selection and evidence do not imply App construction or final integration."
     },
     {
-      "prompt": "Build a new App from scripts and add a genuinely shared public SDK capability.",
+      "prompt": "Build a new App and add a genuinely shared public SDK capability.",
       "activate": ["labkit-app-builder", "labkit-boundary-guard", "labkit-test-planner"],
       "do_not_activate": ["labkit-pr-preparer"],
-      "rationale": "App construction, shared ownership, and validation are required before final integration."
+      "rationale": "Construction, shared ownership, and focused evidence precede final integration."
     },
     {
-      "prompt": "Move a documentation page and repair the renderer navigation without changing MATLAB APIs.",
+      "prompt": "Move a documentation page and repair renderer navigation without changing MATLAB APIs.",
       "activate": ["labkit-documentation-maintainer"],
       "do_not_activate": ["labkit-boundary-guard", "labkit-scientific-change-guard", "labkit-test-planner"],
-      "rationale": "This is documentation architecture without a package or scientific boundary."
+      "rationale": "Documentation architecture alone has one owner."
     },
     {
-      "prompt": "Measure an App callback regression, fix the owning cost, and run focused regression evidence.",
+      "prompt": "Measure an App callback regression and run focused evidence.",
       "activate": ["labkit-performance-profiler", "labkit-test-planner"],
       "do_not_activate": ["labkit-app-builder", "labkit-documentation-maintainer"],
-      "rationale": "Measured performance and focused evidence do not imply an App rebuild."
+      "rationale": "Measured performance and focused evidence do not imply rebuilding the App."
     },
     {
       "prompt": "Prepare the finished develop branch for its squash PR into main.",
       "activate": ["labkit-pr-preparer", "labkit-documentation-maintainer", "labkit-test-planner"],
-      "do_not_activate": ["labkit-app-builder", "labkit-performance-profiler"],
-      "rationale": "Final integration uses the declared PR-preparer dependencies, not unrelated construction or profiling."
+      "do_not_activate": ["labkit-app-builder", "labkit-checkpoint-guard", "labkit-performance-profiler"],
+      "rationale": "Final integration is distinct from an ordinary checkpoint."
     },
     {
-      "prompt": "Audit AGENTS.md, Skills, and dos-and-donts for unclear activation, duplication, and stale guidance.",
+      "prompt": "Audit AGENTS.md, Skills, and dos-and-donts for duplication and stale guidance.",
       "activate": ["labkit-agent-governance"],
       "do_not_activate": ["labkit-code-review", "labkit-simplification-auditor"],
-      "rationale": "Agent instruction maintenance has a dedicated governance owner rather than a product-code review or cleanup workflow."
+      "rationale": "Agent governance is not product-code review or cleanup."
     },
     {
-      "prompt": "Review this branch diff for correctness, scientific risk, ownership, and test sufficiency without changing files.",
-      "activate": ["labkit-code-review", "labkit-scientific-change-guard", "labkit-boundary-guard", "labkit-test-planner"],
-      "do_not_activate": ["labkit-agent-governance", "labkit-simplification-auditor"],
-      "rationale": "A semantic code review uses conditional contract reviewers but does not imply agent governance or broad cleanup."
+      "prompt": "Review this branch for correctness without changing or committing files.",
+      "activate": ["labkit-code-review", "labkit-test-planner"],
+      "do_not_activate": ["labkit-checkpoint-guard", "labkit-pr-preparer"],
+      "rationale": "Review-only work must not trigger commit or final integration workflows."
     },
     {
-      "prompt": "Find and prove removable duplicate state and obsolete compatibility paths in this App family.",
+      "prompt": "Find and prove removable duplicate state and obsolete compatibility paths.",
       "activate": ["labkit-simplification-auditor", "labkit-boundary-guard", "labkit-test-planner"],
       "do_not_activate": ["labkit-agent-governance", "labkit-code-review", "labkit-pr-preparer"],
-      "rationale": "This requests evidence-backed simplification rather than review, governance, or final integration."
+      "rationale": "Evidence-backed removal is distinct from governance, review, and integration."
+    },
+    {
+      "prompt": "Inspect, commit, and push this focused ordinary develop checkpoint.",
+      "activate": ["labkit-checkpoint-guard", "labkit-test-planner"],
+      "do_not_activate": ["labkit-code-review", "labkit-pr-preparer"],
+      "rationale": "Ordinary checkpoint hygiene uses focused evidence without final PR preparation."
     }
   ]
 }
