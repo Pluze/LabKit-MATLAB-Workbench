@@ -1,23 +1,19 @@
 function connection = stopMark10SamplingState(state)
-% Stop one background sampler, flush its final batch, and retain the port.
+% Stop one Base MATLAB sampler and retain the serial connection.
 if state("stopped")
     connection = state("connection");
     return;
 end
 state("stopped") = true;
-deliveryTimer = state("timer");
-if isa(deliveryTimer, "timer") && isvalid(deliveryTimer)
+samplingTimer = state("timer");
+if isa(samplingTimer, "timer") && isvalid(samplingTimer)
     try
-        stop(deliveryTimer);
+        stop(samplingTimer);
     catch
     end
-    delete(deliveryTimer);
+    delete(samplingTimer);
 end
 connection = state("connection");
-service = state("service");
-[~, ~] = mark10ServiceRequest(connection, "stop", struct());
-mark10ServiceDrain(service);
-service("consumer") = [];
-connection = mark10ServiceConnection(service);
+state("consumer") = [];
 state("connection") = connection;
 end

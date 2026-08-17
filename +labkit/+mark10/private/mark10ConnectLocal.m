@@ -1,5 +1,5 @@
 function connection = mark10ConnectLocal(port, varargin)
-%MARK10CONNECTLOCAL Open the physical port inside the driver worker.
+%MARK10CONNECTLOCAL Open and probe the physical serial port.
 %
 % Usage:
 %   connection = labkit.mark10.connect(port)

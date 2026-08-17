@@ -6,9 +6,9 @@ date: 2026-08-17
 sequence: 178
 type: feat
 compatibility: compatible
-component: `labkit.app` | `2.3.0 -> 2.4.1`
-component: `labkit.mark10` | `new -> 1.1.1`
-component: `labkit_Mark10Monitor_app` | `new -> 1.1.1`
+component: `labkit.app` | `2.3.0 -> 2.4.2`
+component: `labkit.mark10` | `new -> 1.1.2`
+component: `labkit_Mark10Monitor_app` | `new -> 1.1.2`
 scope: Background acquisition and streaming state publication
 scope: Optional project persistence and precise dirty state
 scope: Mark-10 ESM303 and Series 5 monitoring
@@ -58,9 +58,10 @@ Force Gauges App.
 - Session-only transactions no longer mark project documents dirty.
 - `labkit.mark10` adds port discovery, connect/disconnect, synchronized sample
   reads with fallback, LIST decoding, safe setting readback, verified
-  force/travel zero behavior, and background sampling. One persistent worker
-  exclusively owns the physical port, timestamps complete responses, batches
-  delivery to the client, and returns to connected-idle when sampling stops.
+  force/travel zero behavior, and paced sampling. A facade-owned Base MATLAB
+  fixed-rate timer owns sampling, timestamps complete responses, drops overdue
+  callbacks instead of queuing stale work, and leaves the connection open when
+  sampling stops.
 - Mark-10 Monitor adds explicit live monitoring with in-memory retention, safe
   settings, standard CSV, MESUR gauge-compatible LOG, complete MAT export, and
   offline replay without a separate recording state.
@@ -71,7 +72,7 @@ Force Gauges App.
 - The driver enforces and verifies Series 5 `IPOL1` at connection and before
   sampling, making tension positive and compression negative in device serial
   output, live views, retained data, exports, analysis, and replay.
-- The monitor uses 10--50 Hz acquisition with a 50 Hz default. Its background
+- The monitor uses 10--50 Hz acquisition with a 50 Hz default. Its paced
   producer writes every completed response to memory, while an independent
   latest-value consumer caps presentation at 2 Hz, coalesces pending
   refreshes, reuses plot objects, and shows
@@ -133,7 +134,7 @@ compliance.
 
 The App SDK addition remains in the version-2 compatibility range. Existing
 Apps need no callback or project migration. The new driver and App begin at
-version 1.1.1 and introduce no saved-project format because the monitor is
+version 1.1.2 and introduce no saved-project format because the monitor is
 intentionally session-only.
 
 ## Validation
@@ -142,7 +143,7 @@ Focused SDK specifications cover validation, coalescing, close behavior,
 session-only dirty state, unchanged native-operation suppression, semantic
 control updates, and complete plot-popout copying. Offline Mark-10
 specifications cover response contamination, unit normalization, LIST parsing,
-fallback transactions, background-only sampling validation, and facade
+fallback transactions, Base MATLAB timer ownership, and facade
 metadata. App result specifications cover exact LOG bytes, CSV/LOG/MAT
 reopen, replay rate mapping, acquisition-source replacement, and retained
 samples, strict device-only travel zero, and refusal to send `z` without
@@ -156,9 +157,16 @@ App definition and initial lifecycle.
   close, dirty state, and hidden-handle plot copying.
 - Nine Mark-10 facade identities and 24 affected App capability identities
   passed without hardware.
-- A 6-second approved-device background-driver probe retained 294 synchronized
-  samples at 47.88 Hz. The complete hidden App retained 538 samples over
-  11.24 seconds at 47.88 Hz while presenting at its independent lower rate.
+- A profiler-backed synthetic 18 ms response probe retained 301 samples over
+  6.299 seconds at 47.623 Hz through the facade timer, sample decoder, and real
+  App buffer consumer without an optional Toolbox.
+- A 12-second approved-device probe retained 583 of 583 valid synchronized
+  samples over 11.998 seconds at 48.509 Hz, exceeding the retired worker's
+  47.88 Hz baseline. The synchronous start call took 0.174 seconds.
+- An anonymized pre-change device diagnostic contained no errors but measured
+  two Start Monitoring interactions at 1.42 and 10.97 seconds. The Base timer
+  defers its first callback by 0.25 seconds so the owning App transaction can
+  publish before serial polling enters the event loop.
 - All 66 public-App definition identities passed with the new App discovered
   from its normal launcher path.
 - Documentation rendered deterministically to 408 generated files.
@@ -166,6 +174,8 @@ App definition and initial lifecycle.
 ## Known limitations and follow-up
 
 Automated tests do not prove physical cabling, serial-port exclusivity,
-fixture safety, hardware zero load, stand mode, or subjective plot quality.
-Developer-led testing on an approved device remains required. The App does not
-send stand motion, limit, cycle, or automatic `SAVE` commands.
+fixture safety, hardware zero load, stand mode, subjective plot quality, or
+the visible App's perceived Start Monitoring responsiveness after the timer
+migration. Developer-led visible-App confirmation remains required before
+release. The App does not send stand motion, limit, cycle, or automatic `SAVE`
+commands.

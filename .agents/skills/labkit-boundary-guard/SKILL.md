@@ -1,6 +1,6 @@
 ---
 name: labkit-boundary-guard
-description: "Use for changes to +labkit, public APIs, package ownership, helper promotion, or app-versus-library boundary decisions. Do not use for an App-local implementation that cannot affect a shared boundary."
+description: "Use for changes to +labkit, public APIs, package ownership, helper promotion, App-versus-library boundaries, or production runtime dependency decisions. Do not use for an App-local implementation that cannot affect a shared boundary or dependency."
 ---
 
 # LabKit Boundary Guard
@@ -27,6 +27,27 @@ Use this order:
 Do not create a public helper merely because implementation is shared, or add
 unrelated modes to avoid every new name. Keep domain facades GUI-free and
 App-free; keep runtime and concrete UI mechanics private.
+
+## Guard the Base MATLAB boundary
+
+For every new or changed production dependency, identify the direct callable
+symbol and its owning MathWorks product before accepting the design. Production
+Apps, facades, launchers, and shipped tools may use only Base MATLAB and
+repository code. Do not retain an optional Toolbox call behind `exist`,
+`license`, `try/catch`, acceleration, or fallback logic; replace it or report an
+architecture blocker.
+
+Use `matlab.codetools.requiredFilesAndProducts` as advisory discovery, not as
+sole proof: trace every non-MATLAB product to a direct source symbol because
+name collisions can produce false positives. Search the complete production
+diff for that symbol and qualified package, run focused behavior without the
+product, and rely on clean no-Toolbox CI for executable closure. When retiring
+a concrete Toolbox gateway, add the smallest source guard that prevents its
+return. Do not create a product-debt registry.
+
+When an App calls `labkit.<facade>`, require the matching facade range in its
+definition and conformance coverage for declaration completeness. Runtime
+launch must assert declared ranges before native window creation.
 
 ## Prove the result
 

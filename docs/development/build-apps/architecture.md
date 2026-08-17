@@ -28,32 +28,18 @@ workflow.
 
 ## Runtime Dependency Boundary
 
-LabKit apps run from MATLAB and repository-owned code. Production apps and
-facades do not create Python or Conda environments, install third-party runtime
-packages, download model weights, or require a network connection on first
-use. This keeps source checkouts, offline packages, and restored lab systems
-reproducible.
+LabKit Apps, facades, launchers, and shipped maintainer tools run from Base
+MATLAB and repository-owned code. Production must not call or conditionally
+accelerate with an optional MathWorks Toolbox, create Python or Conda
+environments, install third-party runtime packages, download model weights, or
+require a network connection on first use. This keeps source checkouts,
+offline packages, and restored lab systems reproducible.
 
-During rapid development, an app may temporarily accelerate a capability with
-a MathWorks Toolbox only when it also ships a repository-owned base-MATLAB
-implementation with comparable user-visible behavior. The app must remain
-usable without the product, and automated tests must exercise that fallback.
-When values feed scientific interpretation, branching, exports, or later
-calculations, identical inputs must be idempotent: pure calculations reproduce
-the same app-consumed values, while safely repeated stateful operations do not
-compound state or side effects. A parity test must compare app-consumed outputs
-against the Toolbox reference within a documented tolerance. Visual similarity
-is not sufficient evidence.
-
-Record each temporary Toolbox dependency with its source function, MathWorks
-product, responsible app, fallback tests, idempotency/parity evidence, and
-replacement plan. Dependency reports continue to show the Toolbox call while
-that debt is open. The debt closes when the repository implementation replaces
-the Toolbox branch and the branch is removed.
-
-Adding any third-party runtime remains an architecture and deployment decision
-requiring explicit approval; it is not an ordinary app-local implementation
-choice.
+When Base MATLAB cannot satisfy a proposed contract, that proposal stops at an
+architecture decision; the repository does not carry temporary Toolbox debt or
+fallback branches. A clean CI runtime without optional Toolboxes exercises the
+shipped behavior, and focused source guards prevent retired concrete Toolbox
+entry points from returning.
 
 ## Version Ownership
 

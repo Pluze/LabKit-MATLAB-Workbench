@@ -1,13 +1,12 @@
 function connection = stopSampling(sampler)
-%STOPSAMPLING Stop background sampling and return the current connection.
+%STOPSAMPLING Stop paced sampling and return the current connection.
 %
 % Usage:
 %   connection = labkit.mark10.stopSampling(sampler)
 %
 % Description:
-%   Stops client batch delivery, asks the background driver to stop reading,
-%   and delivers its final batch before returning. The operation is idempotent
-%   and leaves the serial port connected.
+%   Stops and deletes the Base MATLAB sampling timer. The operation is
+%   idempotent and leaves the serial port connected.
 %
 % Inputs:
 %   sampler - Opaque token returned by labkit.mark10.startSampling.

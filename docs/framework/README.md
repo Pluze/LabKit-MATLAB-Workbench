@@ -70,8 +70,9 @@ end
 ```
 
 The entrypoint calls `definition().launch(...)`. Definition compiles the
-immutable semantic graph before creating a figure, validates direct callback
-and renderer signatures, and builds one private native platform plan.
+immutable semantic graph, validates direct callback and renderer signatures,
+and checks every declared LabKit facade version before creating a figure and
+building one private native platform plan.
 
 ## Paved Road
 

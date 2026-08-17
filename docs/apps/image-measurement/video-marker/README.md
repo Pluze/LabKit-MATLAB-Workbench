@@ -6,10 +6,10 @@ portable project with a source-adjacent autosave copy.
 
 ## Requirements And Launch
 
-The app declares compatibility with `labkit.app` 1.x and uses image functions
-shipped with the same workbench. Video decoding uses MATLAB's available video
-support. Predictive navigation is implemented in repository-owned MATLAB code;
-no model weights or third-party runtime package are downloaded.
+The app declares compatibility with `labkit.app` 2.x and `labkit.image` 2.x.
+Video decoding uses Base MATLAB's available video support. Predictive
+navigation is implemented in repository-owned MATLAB code; no optional
+Toolbox, model weight, or third-party runtime package is required.
 
 ```matlab
 labkit_VideoMarker_app

@@ -64,9 +64,9 @@ function [port, report] = discover(varargin)
             break;
         end
     end
-    report = cell2table(rows(1:rowCount, :), VariableNames={ ...
+    report = cell2table(rows(1:rowCount, :), VariableNames=[ ...
         "Port", "Plausible", "CombinedStatus", "TravelStatus", ...
-        "Series5Status"});
+        "Series5Status"]);
 end
 
 function options = parseOptions(varargin)

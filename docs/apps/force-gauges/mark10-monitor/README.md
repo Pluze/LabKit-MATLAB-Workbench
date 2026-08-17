@@ -32,19 +32,22 @@ force/travel sample and updates only **Live Readout**. It does not start a run,
 append to the monitoring buffer, or change export eligibility.
 
 Choose 10, 20, 30, 40, or 50 Hz paced acquisition; 50 Hz is the default.
-Measured rate is shown instead of assuming the requested value. One persistent
-background driver owns the port, requests and timestamps synchronized samples,
-and sends them to the App in batches. The App retains every delivered attempt
-but refreshes plots, controls, and diagnostics at no more than 2 frames per
-second. Only one unhandled display refresh is queued, so rendering cannot set
-the acquisition pace or build a presentation backlog ahead of **Stop
-Monitoring** or the Tools menu. Stopping flushes the driver's final batch and
-commits one final buffer snapshot while keeping the port connected.
+Measured rate is shown instead of assuming the requested value. A facade-owned
+Base MATLAB fixed-rate timer requests and timestamps synchronized samples with
+`BusyMode="drop"`, so delayed work skips an overdue attempt instead of building
+a stale callback backlog. The App retains every completed attempt but refreshes
+plots, controls, and diagnostics at no more than 2 frames per second. Only one
+unhandled display refresh is queued, keeping presentation work bounded ahead
+of **Stop Monitoring** or the Tools menu. Stopping deletes the sampling timer,
+commits one final buffer snapshot, and keeps the serial port connected.
+The first read starts after a 0.25-second handoff so the Start Monitoring action
+can finish publishing its UI state before polling begins; the selected 10--50
+Hz period applies unchanged after that handoff.
 
 The ESM303 `n` response does not include a device timestamp. Recorded `Time_s`
-is the background driver's monotonic host time when the complete force/travel
-response is accepted; it includes communication latency and is independent of
-batch delivery and the lower GUI frame rate. The App uses synchronized `n`
+is the monotonic host time when the complete force/travel response is accepted;
+it includes communication latency and is independent of the lower GUI frame
+rate. The App uses synchronized `n`
 reads and reports invalid or timed-out responses without fabricating
 force/travel values. Force uses one convention everywhere: tension is positive
 and compression is negative. Connect and Start Monitoring verify the gauge's

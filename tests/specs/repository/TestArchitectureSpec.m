@@ -85,6 +85,36 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             end
         end
 
+        function productionHasNoParallelToolboxRuntime(testCase)
+            root = labkittest.setup();
+            files = replace(repositoryTextFiles(root), "\", "/");
+            files = files(endsWith(lower(files), ".m"));
+            files = files(files == "labkit_launcher.m" | ...
+                startsWith(files, ["+labkit/" "apps/" "tools/"]));
+            expression = ["parallel" + "\." ...
+                "background" + "Pool" ...
+                "par" + "feval\s*\("];
+            probe = ["parallel.pool.PollableDataQueue" ...
+                "backgroundPool" "parfeval(backgroundPool, @work)"];
+            testCase.verifyTrue(all(arrayfun(@(index) ~isempty(regexp( ...
+                probe(index), expression(index), "once")), ...
+                1:numel(expression))), ...
+                "The retired-symbol guard patterns must prove their own coverage.");
+            violations = strings(0, 1);
+            for file = files.'
+                source = string(fileread(fullfile(root, file)));
+                for token = expression
+                    if ~isempty(regexp(source, token, "once"))
+                        violations(end + 1, 1) = file + ": " + token;
+                    end
+                end
+            end
+
+            testCase.verifyEmpty(violations, ...
+                "Production must remain independent of Parallel Computing Toolbox: " + ...
+                strjoin(violations, ", "));
+        end
+
         function ciUsesTwoModesWithoutWeakeningManualRecovery(testCase)
             root = labkittest.setup();
             workflow = text(root, ".github/workflows/ci.yml");

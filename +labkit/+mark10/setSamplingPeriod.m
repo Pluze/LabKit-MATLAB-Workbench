@@ -1,12 +1,12 @@
 function sampler = setSamplingPeriod(sampler, period)
-%SETSAMPLINGPERIOD Change the background driver's sampling period.
+%SETSAMPLINGPERIOD Change the sampling timer period.
 %
 % Usage:
 %   sampler = labkit.mark10.setSamplingPeriod(sampler,period)
 %
 % Description:
-%   Sends one ordered rate command to the persistent driver without stopping
-%   acquisition, replacing the serial owner, or changing GUI delivery rate.
+%   Changes the Base MATLAB sampling timer period without replacing the
+%   serial connection or changing an App's independent presentation rate.
 %
 % Inputs:
 %   sampler - Opaque token returned by labkit.mark10.startSampling.
@@ -29,9 +29,14 @@ if ~(isnumeric(period) && isscalar(period) && isfinite(period) && period > 0)
     error("labkit:mark10:InvalidValue", ...
         "Mark-10 sampling period must be a positive finite scalar.");
 end
-connection = state("connection");
-[connection, ~] = mark10ServiceRequest( ...
-    connection, "setPeriod", struct("Period", double(period)));
-state("connection") = connection;
+samplingTimer = state("timer");
+wasRunning = string(samplingTimer.Running) == "on";
+if wasRunning
+    stop(samplingTimer);
+end
+samplingTimer.Period = double(period);
 state("period") = double(period);
+if wasRunning
+    start(samplingTimer);
+end
 end

@@ -1,14 +1,15 @@
 function sampler = startSampling(connection, period, onSample)
-%STARTSAMPLING Start background synchronized force/travel acquisition.
+%STARTSAMPLING Start paced synchronized force/travel acquisition.
 %
 % Usage:
 %   sampler = labkit.mark10.startSampling(connection,period,onSample)
 %
 % Description:
-%   Starts acquisition in the persistent background driver that owns the
-%   physical serial port. The driver timestamps samples at receipt and sends
-%   them to the MATLAB client in batches. A lightweight delivery timer invokes
-%   the consumer without allowing GUI rendering to set the acquisition pace.
+%   Uses a Base MATLAB fixed-rate timer to request samples at the specified
+%   period. Busy callbacks are dropped instead of queued, so delayed work does
+%   not create a stale backlog. Each completed sample is timestamped at receipt
+%   and delivered directly to the consumer. Apps remain independent of the
+%   timer implementation and can keep presentation slower than acquisition.
 %
 % Inputs:
 %   connection - Opaque token returned by labkit.mark10.connect.
@@ -19,8 +20,7 @@ function sampler = startSampling(connection, period, onSample)
 %   sampler - Opaque token accepted by labkit.mark10.stopSampling.
 %
 % Errors:
-%   labkit:mark10:InvalidConnection - Connection is malformed or is not a
-%       background-owned connection.
+%   labkit:mark10:InvalidConnection - Connection is malformed.
 %   labkit:mark10:InvalidValue - Period or callback is malformed.
 %
 % Typical Call:
@@ -42,43 +42,37 @@ if callbackInputs >= 0 && callbackInputs ~= 2
     error("labkit:mark10:InvalidValue", ...
         "Mark-10 sample consumer must accept connection and sample inputs.");
 end
-if ~mark10IsServiceConnection(connection)
-    error("labkit:mark10:InvalidConnection", ...
-        "Sampling requires a background-owned Mark-10 connection.");
-end
-
-service = connection.Service;
-service("consumer") = onSample;
-[connection, ~] = mark10ServiceRequest( ...
-    connection, "start", struct("Period", double(period)));
+connection = mark10EnsureForceConvention(connection);
 state = containers.Map("KeyType", "char", "ValueType", "any");
 state("connection") = connection;
 state("period") = double(period);
 state("stopped") = false;
-state("service") = service;
-deliveryTimer = timer( ...
-    "ExecutionMode", "fixedSpacing", "BusyMode", "drop", ...
-    "Period", 0.05, "TimerFcn", @(~, ~) deliverSamples(state));
-state("timer") = deliveryTimer;
+state("consumer") = onSample;
+state("started") = tic;
+% Let the owning App transaction publish its starting view before polling.
+startupDeferral_s = 0.25;
+samplingTimer = timer( ...
+    "ExecutionMode", "fixedRate", "BusyMode", "drop", ...
+    "StartDelay", startupDeferral_s, "Period", double(period), ...
+    "TimerFcn", @(~, ~) acquireSample(state));
+state("timer") = samplingTimer;
 try
-    start(deliveryTimer);
+    start(samplingTimer);
 catch cause
-    service("consumer") = [];
-    try
-        mark10ServiceRequest(connection, "stop", struct());
-    catch
-    end
-    delete(deliveryTimer);
+    delete(samplingTimer);
     rethrow(cause);
 end
 sampler = struct("Type", "labkit.mark10.sampler", "State", state);
 end
 
-function deliverSamples(state)
+function acquireSample(state)
 if state("stopped")
     return;
 end
-service = state("service");
-mark10ServiceDrain(service);
-state("connection") = mark10ServiceConnection(service);
+connection = state("connection");
+[connection, sample] = labkit.mark10.readSample(connection);
+sample.HostTime_s = toc(state("started"));
+state("connection") = connection;
+consumer = state("consumer");
+consumer(connection, sample);
 end

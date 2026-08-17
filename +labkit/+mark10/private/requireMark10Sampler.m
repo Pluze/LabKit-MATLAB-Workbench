@@ -1,5 +1,5 @@
 function state = requireMark10Sampler(sampler)
-%REQUIREMARK10SAMPLER Validate the opaque background sampler token.
+%REQUIREMARK10SAMPLER Validate the opaque Base MATLAB sampler token.
 % Called by public sampler lifecycle operations. SAMPLER must be the scalar
 % structure returned by startSampling and must retain its handle-semantic
 % state map with connection and stop state. Returns that state map without
@@ -13,7 +13,7 @@ if ~isstruct(sampler) || ~isscalar(sampler) || ...
         "Expected a sampler returned by labkit.mark10.startSampling.");
 end
 state = sampler.State;
-required = ["stopped", "connection", "period", "timer", "service"];
+required = ["stopped", "connection", "period", "timer", "consumer", "started"];
 if ~all(isKey(state, cellstr(required)))
     error("labkit:mark10:InvalidSampler", ...
         "Mark-10 sampler state is invalid.");

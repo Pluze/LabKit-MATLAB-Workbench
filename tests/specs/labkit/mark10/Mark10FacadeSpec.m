@@ -69,11 +69,22 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             info = labkit.mark10.version();
 
             testCase.verifyEqual(info.name, "labkit.mark10");
-            testCase.verifyEqual(info.current, "1.1.1");
+            testCase.verifyEqual(info.current, "1.1.2");
             testCase.verifyError(@() labkit.mark10.decodeSample({"bad"}), ...
                 "labkit:mark10:InvalidValue");
             testCase.verifyError(@() labkit.mark10.writeSetting( ...
                 struct(), "unit", "N"), "labkit:mark10:InvalidConnection");
+        end
+
+        function discoveryReportUsesStableTableVariables(testCase)
+            [port, report] = labkit.mark10.discover( ...
+                Ports=strings(0, 1));
+
+            testCase.verifyEqual(port, "");
+            testCase.verifyEqual(string(report.Properties.VariableNames), ...
+                ["Port", "Plausible", "CombinedStatus", ...
+                "TravelStatus", "Series5Status"]);
+            testCase.verifyEqual(height(report), 0);
         end
 
         function verifiesSilentForceZeroFromDisplayedResolution(testCase)
@@ -169,17 +180,41 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(result.Command, "IPOL1");
         end
 
-        function samplingRequiresTheBackgroundDriverContract(testCase)
-            connection = Mark10FacadeSpec.connectionToken(struct( ...
-                "Write", @(~) [], "Flush", @() [], ...
-                "ReadUntil", @(~, ~) uint8([]), ...
+        function samplingUsesBaseMatlabFixedRateTimer(testCase)
+            state = containers.Map("KeyType", "char", "ValueType", "any");
+            state("command") = "";
+            state("inverted") = true;
+            deliveries = containers.Map("KeyType", "char", "ValueType", "any");
+            deliveries("count") = 0;
+            transport = struct( ...
+                "Write", @(bytes) Mark10FacadeSpec.polarityWrite(state, bytes), ...
+                "Flush", @() [], ...
+                "ReadUntil", @(~, ~) Mark10FacadeSpec.samplingRead(state), ...
                 "ReadFor", @(~) uint8([]), "Pause", @(~) [], ...
-                "Close", @() [], "IsOpen", @() true));
+                "Close", @() [], "IsOpen", @() true);
+            connection = Mark10FacadeSpec.connectionToken(transport);
             testCase.verifyError(@() labkit.mark10.startSampling( ...
                 connection, 1, @() []), "labkit:mark10:InvalidValue");
-            testCase.verifyError(@() labkit.mark10.startSampling( ...
-                connection, 1, @(~, ~) []), ...
-                "labkit:mark10:InvalidConnection");
+            sampler = labkit.mark10.startSampling(connection, 1, ...
+                @(~, ~) Mark10FacadeSpec.recordDelivery(deliveries));
+            cleanup = onCleanup(@() labkit.mark10.stopSampling(sampler));
+
+            samplingTimer = sampler.State("timer");
+            testCase.verifyEqual(string(samplingTimer.ExecutionMode), "fixedRate");
+            testCase.verifyEqual(string(samplingTimer.BusyMode), "drop");
+            testCase.verifyEqual(samplingTimer.StartDelay, 0.25);
+            testCase.verifyEqual(samplingTimer.Period, 1);
+            labkit.mark10.setSamplingPeriod(sampler, 0.5);
+            testCase.verifyEqual(sampler.State("period"), 0.5);
+            testCase.verifyEqual(samplingTimer.Period, 0.5);
+
+            stopped = labkit.mark10.stopSampling(sampler);
+            testCase.verifyEqual(stopped.Type, "labkit.mark10.connection");
+            testCase.verifyTrue(sampler.State("stopped"));
+            testCase.verifyEqual( ...
+                labkit.mark10.stopSampling(sampler).Type, ...
+                "labkit.mark10.connection");
+            clear cleanup
         end
     end
 
@@ -229,6 +264,20 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             token = "IPOL" + double(state("inverted"));
             raw = uint8(char("V1.00;N;CUR;FLTC0;FLTP0;AOUT0;" + ...
                 "AOFF0;FULL;" + token + ";OPOL0" + newline));
+        end
+
+        function raw = samplingRead(state)
+            if state("command") == "LIST"
+                raw = Mark10FacadeSpec.polarityRead(state);
+            elseif state("command") == "n"
+                raw = uint8(sprintf('1.00 N\r\n2.00 mm\r\n'));
+            else
+                raw = uint8([]);
+            end
+        end
+
+        function recordDelivery(deliveries)
+            deliveries("count") = deliveries("count") + 1;
         end
 
         function raw = readUntil(state, ~, ~)

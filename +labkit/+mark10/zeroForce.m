@@ -27,12 +27,6 @@ function [connection, result] = zeroForce(connection)
 %
 % See also labkit.mark10.zeroTravel
     connection = requireMark10Connection(connection);
-    if mark10IsServiceConnection(connection)
-        [connection, payload] = mark10ServiceRequest( ...
-            connection, "zeroForce", struct());
-        result = payload{1};
-        return;
-    end
     [beforeRaw, ~] = mark10GaugeRequest(connection, "?C");
     before = mark10ForceReading(beforeRaw);
     [~, commandOutcome] = mark10GaugeCommand(connection, "Z");

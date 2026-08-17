@@ -21,27 +21,29 @@ if sample.Valid
 end
 ```
 
-For a responsive live application, use background sampling rather than
-calling `readSample` from a GUI timer:
+For a responsive live application, use facade-owned paced sampling rather than
+creating an App-local timer:
 
 ```matlab
 sampler = labkit.mark10.startSampling(connection, 0.02, @consumeSample);
 samplingCleanup = onCleanup(@() labkit.mark10.stopSampling(sampler));
 ```
 
-`connect` starts one persistent background worker that exclusively owns the
-physical serial port until `disconnect`. `startSampling` changes that driver's
-state from connected-idle to monitoring; the driver assembles and timestamps
-each synchronized two-line response, then transfers samples to the client in
-batches. GUI rendering and batch delivery therefore do not set the serial
-request pace. `setSamplingPeriod` changes the producer rate without replacing
-the owner. `stopSampling` flushes the final batch and returns to connected-idle
-without closing the port.
+`connect` opens and probes one Base MATLAB serial transport that remains owned
+by the facade until `disconnect`. `startSampling` creates a Base MATLAB
+fixed-rate timer with `BusyMode="drop"`; it assembles and timestamps each
+synchronized two-line response, then invokes the caller's lightweight sample
+consumer. An overdue callback is skipped instead of accumulating stale work.
+The first callback is deferred for 0.25 seconds so an App action can finish its
+state publication and presentation before serial polling enters the MATLAB
+event loop; this does not change the requested steady-state period.
+`setSamplingPeriod` restarts that timer at the new period without replacing the
+serial connection. `stopSampling` deletes the timer and returns the updated
+connected token without closing the port.
 
 The ESM303 `n` response contains force and travel but no device timestamp.
-Each sample therefore includes `HostTime_s`, a monotonic timestamp taken by
-the background driver when the complete response is accepted. It is not the
-later GUI-delivery time.
+Each sample therefore includes `HostTime_s`, a monotonic timestamp taken when
+the complete response is accepted. It is not the later plot-refresh time.
 
 Connection probes are independent: identity commands may be unavailable while
 force/travel acquisition remains usable. `readSample` first requests the
@@ -56,7 +58,7 @@ without discarding the connection or earlier caller-owned records.
 | List or probe serial ports | `labkit.mark10.ports`, `labkit.mark10.discover` |
 | Connect and disconnect | `labkit.mark10.connect`, `labkit.mark10.disconnect` |
 | Read force and travel | `labkit.mark10.readSample` |
-| Control background sampling | `labkit.mark10.startSampling`, `labkit.mark10.setSamplingPeriod`, `labkit.mark10.stopSampling` |
+| Control paced sampling | `labkit.mark10.startSampling`, `labkit.mark10.setSamplingPeriod`, `labkit.mark10.stopSampling` |
 | Decode offline responses | `labkit.mark10.decodeSample`, `labkit.mark10.decodeSettings` |
 | Read or verify one setting | `labkit.mark10.readSettings`, `labkit.mark10.writeSetting` |
 | Zero force or travel | `labkit.mark10.zeroForce`, `labkit.mark10.zeroTravel` |

@@ -103,19 +103,21 @@ under `docs/`.
 
 ## Dependencies and scientific replacements
 
-- Production apps and facades use MATLAB, explicitly declared MathWorks
-  products, and repository code. No Python/Conda runtime, downloaded weights,
-  first-run installation, or new third-party runtime dependency without
-  explicit architecture/deployment/offline approval.
-- Temporary Toolbox use requires a visible direct call and a repository-owned
-  base-MATLAB implementation with comparable behavior. Declare source, symbol,
-  product, owner, fallback test, idempotency test, parity test, tolerance, and
-  removal condition in `tests/+labkittest/toolboxDebt.m` and the migration
-  ledger.
-- When a replacement affects numbers, scientific meaning, branching, exports,
-  or later calculation, identical inputs must be idempotent and tests compare
-  app-consumed outputs against the Toolbox reference within a justified
-  tolerance. Visual similarity is not parity evidence.
+- Production Apps, facades, launchers, and shipped maintainer tools use only
+  Base MATLAB and repository code. They must not call or conditionally
+  accelerate with any optional MathWorks Toolbox, Python/Conda runtime,
+  downloaded weights, first-run installation, or third-party runtime. A need
+  that Base MATLAB cannot satisfy is an architecture blocker requiring an
+  explicit user decision; it is not temporary dependency debt.
+- Clean CI runtimes without optional Toolboxes are the executable dependency
+  boundary. Keep fixed production symbols directly visible, exercise shipped
+  paths there, and add a focused source guard when retiring a concrete Toolbox
+  entry point so the dependency cannot silently return.
+- When replacing a Toolbox implementation affects numbers, scientific meaning,
+  branching, exports, or later calculation, identical inputs must be
+  idempotent and tests compare App-consumed outputs against preserved reference
+  evidence within a justified tolerance. Visual similarity is not parity
+  evidence; the retired Toolbox call must not remain in production or tests.
 
 ## Documentation
 
