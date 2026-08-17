@@ -594,6 +594,35 @@ classdef AppSdkSpec < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = {'Contract:source', 'Env:hidden-gui'})
+        function nativeReconciliationSkipsUnchangedPlotModels(testCase)
+            setappdata(groot, "labkitAppSdkRenderCount", 0);
+            renderCleanup = onCleanup(@() ...
+                rmappdata(groot, "labkitAppSdkRenderCount"));
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.button("refreshStatus", "Refresh status", ...
+                    @refreshStatusOnly, Tooltip="Refresh only status text."), ...
+                labkit.app.layout.statusPanel("refreshSummary"), ...
+                labkit.app.layout.plotArea("stablePlot", @countStablePlot)});
+            app = AppSdkSpec.definition(layout, ...
+                "CreateSession", @createStablePlotSession, ...
+                "PresentWorkbench", @presentStablePlot);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            initialCount = getappdata(groot, "labkitAppSdkRenderCount");
+
+            runtime.invokeAction("refreshStatus");
+
+            testCase.verifyEqual(initialCount, 1);
+            testCase.verifyEqual( ...
+                getappdata(groot, "labkitAppSdkRenderCount"), 1, ...
+                "An unchanged renderer model must not touch native axes.");
+            clear cleanup renderCleanup
+        end
+
         function popoutPreservesVisibleGraphicsWithHiddenHandles(testCase)
             existingFigures = findall(groot, "Type", "figure");
             sourceFigure = figure("Visible", "off");
@@ -1049,6 +1078,25 @@ end
 function handle = oneTagged(parent, tag)
 handle = findall(parent, "Tag", tag);
 assert(isscalar(handle), "Expected one handle tagged " + tag + ".");
+end
+
+function session = createStablePlotSession(~, ~)
+session = struct("statusCount", 0);
+end
+
+function state = refreshStatusOnly(state, ~)
+state.session.statusCount = state.session.statusCount + 1;
+end
+
+function view = presentStablePlot(state)
+view = labkit.app.view.Snapshot() ...
+    .text("refreshSummary", compose("Refresh %d", state.session.statusCount)) ...
+    .renderPlot("stablePlot", struct("value", 1));
+end
+
+function countStablePlot(~, ~)
+count = getappdata(groot, "labkitAppSdkRenderCount");
+setappdata(groot, "labkitAppSdkRenderCount", count + 1);
 end
 
 function invokeMenu(menu)

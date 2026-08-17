@@ -1,15 +1,15 @@
 # Streaming runtime support and Mark-10 force/travel monitoring
 
 ```labkit-change
-id: LK-20260814-streaming-runtime-and-mark10-monitor
-date: 2026-08-14
+id: LK-20260817-streaming-runtime-and-mark10-monitor
+date: 2026-08-17
 sequence: 178
 type: feat
 compatibility: compatible
-component: `labkit.app` | `2.3.0 -> 2.4.0`
-component: `labkit.mark10` | `new -> 1.0.0`
-component: `labkit_Mark10Monitor_app` | `new -> 1.0.0`
-scope: Generic timer and streaming state publication
+component: `labkit.app` | `2.3.0 -> 2.4.1`
+component: `labkit.mark10` | `new -> 1.1.0`
+component: `labkit_Mark10Monitor_app` | `new -> 1.1.0`
+scope: Background acquisition and streaming state publication
 scope: Optional project persistence and precise dirty state
 scope: Mark-10 ESM303 and Series 5 monitoring
 scope: Standard CSV, MESUR gauge LOG, MAT export, and replay
@@ -43,6 +43,11 @@ Force Gauges App.
   validated, presented, diagnosed, rolled back on failure, and ignored after
   close. Posts remain in the coalescing pump while a user transaction is
   active, preventing a continuous producer from extending that transaction.
+- Posted stream refreshes do not enter the user-action busy lifecycle, set the
+  watch pointer, or disable controls while monitoring continues.
+- Complete snapshots remain the App authoring contract, while the private
+  native reconciler applies only operations whose values changed. Unchanged
+  plots, tables, choices, text, and enabled states perform no native write.
 - Successful presentation boundaries are TRACE-only so an ordinary streaming
   session does not serialize and journal two DEBUG records for every display
   refresh. Presentation failures remain ERROR records with their nested
@@ -52,21 +57,31 @@ Force Gauges App.
   complete visible projection once per incoming TRACE record.
 - Session-only transactions no longer mark project documents dirty.
 - `labkit.mark10` adds port discovery, connect/disconnect, synchronized sample
-  reads with fallback, LIST decoding, safe setting readback, and verified
-  force/travel zero behavior.
+  reads with fallback, LIST decoding, safe setting readback, verified
+  force/travel zero behavior, and background sampling. One persistent worker
+  exclusively owns the physical port, timestamps complete responses, batches
+  delivery to the client, and returns to connected-idle when sampling stops.
 - Mark-10 Monitor adds explicit live monitoring with in-memory retention, safe
   settings, standard CSV, MESUR gauge-compatible LOG, complete MAT export, and
   offline replay without a separate recording state.
-- The monitor uses 10--50 Hz acquisition with a 50 Hz default, caps its
-  presentation cadence at 10 Hz, coalesces pending refreshes, reuses plot
-  objects, and shows
+- A connected-idle **Read Once** action updates only the live force/travel
+  readout, while Travel Zero immediately updates the displayed coordinate even
+  when no monitoring refresh is active.
+- The driver enforces and verifies Series 5 `IPOL1` at connection and before
+  sampling, making tension positive and compression negative in device serial
+  output, live views, retained data, exports, analysis, and replay.
+- The monitor uses 10--50 Hz acquisition with a 50 Hz default. Its background
+  producer writes every completed response to memory, while an independent
+  latest-value consumer caps presentation at 2 Hz, coalesces pending
+  refreshes, reuses plot objects, and shows
   dual-axis time series above the standard force-versus-travel curve.
 - Loading a recording displays complete curves immediately; Reset restores
   that view, Play restarts a 10-frame-per-second replay, and Pause toggles
   resume. Live and replay use the same deterministic range updater: 10 mm and
   1 N are empty-stream defaults, then signal dynamics and estimated sample rate
-  determine populated headroom. Equal visible sample prefixes derive equal
-  limits independent of refresh history. Non-pickable clipped traces remain
+  determine populated headroom. Limits remain unchanged until a sample
+  crosses the viewport, then refit tightly with a small margin. Non-pickable
+  clipped traces remain
   compatible with MATLAB's
   axes-toolbar navigation, and both panels can explicitly refit X and
   independent Y limits. Exactly vertical force/travel segments are retained
@@ -117,28 +132,34 @@ compliance.
 
 The App SDK addition remains in the version-2 compatibility range. Existing
 Apps need no callback or project migration. The new driver and App begin at
-version 1.0.0 and introduce no saved-project format because the monitor is
+version 1.1.0 and introduce no saved-project format because the monitor is
 intentionally session-only.
 
 ## Validation
 
 Focused SDK specifications cover validation, coalescing, close behavior,
-session-only dirty state, and complete plot-popout copying. Offline Mark-10
+session-only dirty state, unchanged native-operation suppression, semantic
+control updates, and complete plot-popout copying. Offline Mark-10
 specifications cover response contamination, unit normalization, LIST parsing,
-fallback sampling, and facade metadata. App result specifications cover exact
-LOG bytes, CSV/LOG/MAT reopen, and replay rate mapping; headless Runtime
-construction covers the complete App definition and initial lifecycle.
+fallback transactions, background-only sampling validation, and facade
+metadata. App result specifications cover exact LOG bytes, CSV/LOG/MAT
+reopen, replay rate mapping, acquisition-source replacement, and retained
+samples; headless Runtime construction covers the complete App definition and
+initial lifecycle.
 
 ## Evidence
 
 - All 34 focused App SDK identities passed on MATLAB R2026a, including
   coalescing, active-transaction deferral, queued failure isolation, rollback,
   close, dirty state, and hidden-handle plot copying.
-- Five Mark-10 facade identities and 30 App capability identities passed
-  without hardware.
+- Seven Mark-10 facade identities and 16 affected App capability identities
+  passed without hardware.
+- A 6-second approved-device background-driver probe retained 294 synchronized
+  samples at 47.88 Hz. The complete hidden App retained 538 samples over
+  11.24 seconds at 47.88 Hz while presenting at its independent lower rate.
 - All 66 public-App definition identities passed with the new App discovered
   from its normal launcher path.
-- Documentation rendered deterministically to 405 generated files.
+- Documentation rendered deterministically to 408 generated files.
 
 ## Known limitations and follow-up
 

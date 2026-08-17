@@ -66,6 +66,7 @@ view = view.enabled("connectDevice", ...
 view = view.enabled("disconnectDevice", connected);
 view = view.enabled("startMonitoring", connected && ~monitoring);
 view = view.enabled("stopMonitoring", monitoring);
+view = view.enabled("readOnce", connected && ~monitoring);
 view = view.enabled("zeroForce", connected);
 view = view.enabled("zeroTravel", connected);
 view = view.enabled("refitLiveAxes", ...
@@ -88,7 +89,7 @@ view = view.enabled("refitReplayAxes", ...
 view = view.enabled("runModulusAnalysis", analysisDataAvailable(s));
 view = view.enabled("exportModulusResults", ...
     ~isempty(s.analysis.resultRows));
-view = view.tableData("recentData", recentTable(s.acquisition), ...
+view = view.tableData("recentData", recentTable(s.acquisition, monitoring), ...
     Columns=["Time_s", "Force_N", "Travel_mm"]);
 view = view.tableData("modulusResults", s.analysis.resultRows, ...
     Columns=["Seg.", "Phase", "Start s", "End s", ...
@@ -127,17 +128,28 @@ tf = (source == "Loaded Recording" && s.playback.loaded) || ...
     s.acquisition.retainedValidCount >= 16);
 end
 
-function value = recentTable(acquisition)
+function value = recentTable(acquisition, monitoring)
+if monitoring
+    % The native web table is intentionally a stopped-session consumer.
+    % Replacing hundreds of cells during acquisition starves serial events;
+    % the live readout and plots already own monitoring-time presentation.
+    value = emptyRecentTable();
+    return;
+end
 count = numel(acquisition.plotTime_s);
 first = max(1, count - 199);
 if count == 0
-    value = table(zeros(0, 1), zeros(0, 1), zeros(0, 1), ...
-        'VariableNames', {'Time_s', 'Force_N', 'Travel_mm'});
+    value = emptyRecentTable();
     return;
 end
 value = table(acquisition.plotTime_s(first:end), ...
     acquisition.plotForce_N(first:end), ...
     acquisition.plotTravel_mm(first:end), ...
+    'VariableNames', {'Time_s', 'Force_N', 'Travel_mm'});
+end
+
+function value = emptyRecentTable()
+value = table(zeros(0, 1), zeros(0, 1), zeros(0, 1), ...
     'VariableNames', {'Time_s', 'Force_N', 'Travel_mm'});
 end
 
@@ -175,9 +187,9 @@ function text = settingsText(value)
 if strlength(value.raw) == 0
     text = "Settings not read.";
 else
-    text = compose("%s | %s | FLTC %g | FLTP %g | %s | AOUT %g", ...
+    text = compose("%s | %s | FLTC %g | FLTP %g | %s | AOUT %g | IPOL%d", ...
         value.unit, value.mode, value.currentFilter, value.displayFilter, ...
-        value.outputFormat, value.autoOutput);
+        value.outputFormat, value.autoOutput, double(value.invertPolarity));
 end
 end
 

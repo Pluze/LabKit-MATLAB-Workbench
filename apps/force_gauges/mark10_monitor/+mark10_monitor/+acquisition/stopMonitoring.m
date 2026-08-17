@@ -4,7 +4,7 @@ if ~state.session.acquisition.monitoring
     return;
 end
 buffer = context.getResource("application", "mark10Buffer");
-context.removeResource("application", "mark10Timer");
+context.removeResource("application", "mark10Sampler");
 state = mark10_monitor.acquisition.refreshState(state, context);
 state.session.acquisition.monitoring = false;
 state.session.acquisition.retainedValidCount = sum(buffer("valid"));

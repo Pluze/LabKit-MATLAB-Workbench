@@ -131,8 +131,10 @@ classdef Mark10PlaybackSpec < matlab.unittest.TestCase
             state = mark10_monitor.livePlots.refit(state, []);
 
             testCase.verifyEqual(state.session.cache.plotViewRevision, 5);
-            testCase.verifyEqual(state.session.cache.plotLimits.force_N, [-2, 4]);
-            testCase.verifyEqual(state.session.cache.plotLimits.travel_mm, [-4, 8]);
+            testCase.verifyEqual(state.session.cache.plotLimits.force_N, ...
+                [-0.04, 2.04], "AbsTol", eps(2.04));
+            testCase.verifyEqual(state.session.cache.plotLimits.travel_mm, ...
+                [-0.08, 4.08], "AbsTol", eps(4.08));
         end
     end
 end

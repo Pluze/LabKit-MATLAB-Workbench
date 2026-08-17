@@ -29,6 +29,12 @@ function [connection, sample] = readSample(connection)
 %
 % See also labkit.mark10.decodeSample, labkit.mark10.connect
     connection = requireMark10Connection(connection);
+    if mark10IsServiceConnection(connection)
+        [connection, payload] = mark10ServiceRequest( ...
+            connection, "readSample", struct());
+        sample = payload{1};
+        return;
+    end
     connection.SampleCount = connection.SampleCount + uint64(1);
     [raw, outcome, elapsed] = mark10StandRequest( ...
         connection, "n", 2, false);

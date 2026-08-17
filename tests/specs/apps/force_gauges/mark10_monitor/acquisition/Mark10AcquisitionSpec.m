@@ -9,7 +9,7 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
             periods = arrayfun(@mark10_monitor.acquisition.ratePeriod, labels);
             testCase.verifyEqual(periods, 1 ./ [10, 20, 30, 40, 50], ...
                 "AbsTol", eps);
-            testCase.verifyEqual(mark10_monitor.viewRefreshPeriod(), 0.1);
+            testCase.verifyEqual(mark10_monitor.viewRefreshPeriod(), 0.5);
             testCase.verifyEmpty(buffer("plotTime_s"));
             testCase.verifyEqual(buffer("lastRefresh_s"), -Inf);
             testCase.verifyFalse(buffer("refreshPending"));
@@ -23,27 +23,22 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
             posts("count") = 0;
             context = labkittest.createCallbackContext(struct( ...
                 "postEvent", @(~, ~) increment(posts)));
-            transport = struct( ...
-                "Write", @(~) [], "Flush", @() [], ...
-                "ReadUntil", @(~, ~) uint8(sprintf('1.00 N\r\n2.00 mm\r\n')), ...
-                "ReadFor", @(~) uint8([]), "Pause", @(~) [], ...
-                "Close", @() [], "IsOpen", @() true);
-            connection = struct( ...
-                "Type", "labkit.mark10.connection", "Port", "SYNTHETIC", ...
-                "Timeout", 0.01, "Transport", transport, ...
-                "Identity", struct(), "Capabilities", struct(), ...
-                "Settings", struct(), "RestoreAutoOutput", "AOUT0", ...
-                "AcquisitionMode", "Unknown", "SampleCount", uint64(0), ...
-                "LastFailure", struct("Status", "", "Message", ""));
             connectionBox = containers.Map( ...
                 "KeyType", "char", "ValueType", "any");
-            connectionBox("connection") = connection;
+            connectionBox("connection") = struct("AcquisitionMode", "Unknown");
             buffer = mark10_monitor.acquisition.createBuffer();
             buffer("lastRefresh_s") = Inf;
+            sample = struct("Valid", true, "Force_N", 1, ...
+                "Travel_mm", 2, "ForceRawValue", 1, ...
+                "TravelRawValue", 2, "ForceUnit", "N", ...
+                "TravelUnit", "mm", "FailureStatus", "", ...
+                "AcquisitionMode", "Synchronized n");
 
             for index = 1:50
-                mark10_monitor.acquisition.poll( ...
-                    connectionBox, buffer, context);
+                connection = struct("AcquisitionMode", "Synchronized n", ...
+                    "SampleCount", uint64(index));
+                mark10_monitor.acquisition.receiveSample( ...
+                    connectionBox, buffer, context, connection, sample);
             end
             testCase.verifyEqual(buffer("sampleCount"), 50);
             testCase.verifyNumElements(buffer("time_s"), 50, ...
@@ -51,31 +46,15 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
             testCase.verifyEqual(posts("count"), 0);
 
             buffer("lastRefresh_s") = -Inf;
-            mark10_monitor.acquisition.poll(connectionBox, buffer, context);
+            mark10_monitor.acquisition.receiveSample( ...
+                connectionBox, buffer, context, connection, sample);
             testCase.verifyEqual(posts("count"), 1);
             testCase.verifyTrue(buffer("refreshPending"));
             buffer("lastRefresh_s") = -Inf;
-            mark10_monitor.acquisition.poll(connectionBox, buffer, context);
+            mark10_monitor.acquisition.receiveSample( ...
+                connectionBox, buffer, context, connection, sample);
             testCase.verifyEqual(posts("count"), 1, ...
                 "An unhandled refresh must coalesce later refresh requests.");
-        end
-
-        function fixedRateSamplingDropsOverdueCallbacks(testCase)
-            connectionBox = containers.Map( ...
-                "KeyType", "char", "ValueType", "any");
-            buffer = mark10_monitor.acquisition.createBuffer();
-            context = labkittest.createCallbackContext(struct());
-            monitorTimer = mark10_monitor.acquisition.createTimer( ...
-                connectionBox, buffer, context, 0.02);
-            cleanup = onCleanup(@() delete(monitorTimer));
-
-            testCase.verifyEqual(string(monitorTimer.ExecutionMode), ...
-                "fixedRate");
-            testCase.verifyEqual(string(monitorTimer.BusyMode), "drop");
-            testCase.verifyEqual(monitorTimer.StartDelay, 0.2);
-            testCase.verifyEqual(monitorTimer.Period, 0.02);
-            testCase.verifyNotEmpty(monitorTimer.TimerFcn);
-            clear cleanup
         end
 
         function monitoringIsExplicitAndIndependentFromConnection(testCase)
@@ -83,8 +62,9 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
             cleanups = containers.Map("KeyType", "char", "ValueType", "any");
             connectionBox = containers.Map( ...
                 "KeyType", "char", "ValueType", "any");
-            connectionBox("connection") = struct( ...
-                "AcquisitionMode", "synchronized");
+            connectionBox("connection") = samplingConnection();
+            serviceCleanup = onCleanup(@() ...
+                cancelSamplingService(connectionBox("connection")));
             resources("mark10Connection") = connectionBox;
             resources("mark10Buffer") = ...
                 mark10_monitor.acquisition.createBuffer();
@@ -109,8 +89,21 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
 
             testCase.verifyTrue(state.session.connection.connected);
             testCase.verifyTrue(state.session.acquisition.monitoring);
-            testCase.verifyTrue(isKey(resources, "mark10Timer"));
-            testCase.verifyEqual(string(resources("mark10Timer").Running), "on");
+            testCase.verifyTrue(isKey(resources, "mark10Sampler"));
+            testCase.verifyEqual( ...
+                string(resources("mark10Sampler").Type), ...
+                "labkit.mark10.sampler");
+            sampler = resources("mark10Sampler");
+            testCase.verifyEqual( ...
+                sampler.State("connection").LastFailure.Message, ...
+                "monitoring");
+            state = mark10_monitor.acquisition.changeRate( ...
+                state, "20 Hz", context);
+            testCase.verifyEqual(state.session.acquisition.rate, "20 Hz");
+            testCase.verifyEqual(sampler.State("period"), 0.05);
+            testCase.verifyEqual( ...
+                sampler.State("connection").LastFailure.Message, ...
+                "period=0.05");
             buffer = resources("mark10Buffer");
             buffer("valid") = [true; false; true];
 
@@ -120,7 +113,11 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
             testCase.verifyFalse(state.session.acquisition.monitoring);
             testCase.verifyEqual( ...
                 state.session.acquisition.retainedValidCount, 2);
-            testCase.verifyFalse(isKey(resources, "mark10Timer"));
+            testCase.verifyFalse(isKey(resources, "mark10Sampler"));
+            testCase.verifyEqual( ...
+                connectionBox("connection").LastFailure.Message, ...
+                "connected-idle");
+            clear serviceCleanup
         end
     end
 end
@@ -137,6 +134,79 @@ end
 
 function increment(posts)
 posts("count") = posts("count") + 1;
+end
+
+function connection = samplingConnection()
+events = parallel.pool.PollableDataQueue;
+service = containers.Map("KeyType", "char", "ValueType", "any");
+service("commands") = [];
+service("events") = events;
+service("responses") = containers.Map( ...
+    "KeyType", "char", "ValueType", "any");
+service("nextRequestId") = uint64(0);
+service("consumer") = [];
+service("metadata") = samplingMetadata("");
+service("closed") = false;
+service("future") = parfeval( ...
+    backgroundPool, @fakeSamplingService, 0, events);
+ready = poll(events, 10);
+assert(~isempty(ready), "Fake Mark-10 driver did not become ready.");
+service("commands") = ready.Payload{1};
+service("metadata") = ready.Metadata;
+connection = ready.Metadata;
+connection.Type = "labkit.mark10.connection";
+connection.Transport = struct();
+connection.Service = service;
+end
+
+function cancelSamplingService(connection)
+if ~isstruct(connection) || ~isfield(connection, "Service")
+    return;
+end
+future = connection.Service("future");
+if isvalid(future) && string(future.State) ~= "finished"
+    cancel(future);
+end
+end
+
+function fakeSamplingService(events)
+commands = parallel.pool.PollableDataQueue;
+metadata = samplingMetadata("");
+send(events, samplingEvent("ready", 0, {commands}, metadata));
+running = true;
+while running
+    command = poll(commands, 0.1);
+    if isempty(command)
+        continue;
+    end
+    switch string(command.Action)
+        case "start"
+            metadata.LastFailure.Message = "monitoring";
+        case "setPeriod"
+            metadata.LastFailure.Message = compose( ...
+                "period=%.2f", command.Payload.Period);
+        case "stop"
+            metadata.LastFailure.Message = "connected-idle";
+        case "disconnect"
+            running = false;
+    end
+    send(events, samplingEvent( ...
+        "response", command.RequestId, {}, metadata));
+end
+end
+
+function metadata = samplingMetadata(message)
+metadata = struct("Port", "SYNTHETIC", "Timeout", 1, ...
+    "Identity", struct(), "Capabilities", struct( ...
+    "CombinedSample", "SUPPORTED"), "Settings", struct(), ...
+    "RestoreAutoOutput", "AOUT0", ...
+    "AcquisitionMode", "Synchronized n", "SampleCount", uint64(0), ...
+    "LastFailure", struct("Status", "", "Message", string(message)));
+end
+
+function value = samplingEvent(type, requestId, payload, metadata)
+value = struct("Type", string(type), "RequestId", uint64(requestId), ...
+    "Payload", {payload}, "Metadata", metadata);
 end
 
 function setResource(resources, cleanups, id, value, cleanup)

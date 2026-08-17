@@ -13,15 +13,43 @@ classdef Mark10ActionsSpec < matlab.unittest.TestCase
                 "alert", @(~, ~) []);
             context = labkittest.createCallbackContext(backend);
             state = struct("session", struct( ...
-                "acquisition", struct("travelZeroOffset_mm", 0), ...
+                "acquisition", struct("travelZeroOffset_mm", 0, ...
+                    "travel_mm", 2, "plotTravel_mm", [1; 2]), ...
                 "connection", struct("status", "", "lastFailure", "")));
 
             state = mark10_monitor.actions.zeroTravel(state, context);
 
             testCase.verifyEqual( ...
                 state.session.acquisition.travelZeroOffset_mm, 2);
+            testCase.verifyEqual(state.session.acquisition.travel_mm, 0);
+            testCase.verifyEqual( ...
+                state.session.acquisition.plotTravel_mm, [-1; 0]);
             testCase.verifySubstring(state.session.connection.status, ...
                 "software zero active");
+        end
+
+        function readsOnceWithoutStartingOrRetainingMonitoring(testCase)
+            command = containers.Map("KeyType", "char", "ValueType", "any");
+            command("value") = "";
+            box = containers.Map("KeyType", "char", "ValueType", "any");
+            box("connection") = Mark10ActionsSpec.connection(command);
+            context = labkittest.createCallbackContext(struct( ...
+                "getResource", @(~, ~) box, "alert", @(~, ~) []));
+            state = struct("session", struct( ...
+                "acquisition", struct("monitoring", false, ...
+                    "sampleCount", 7, "force_N", NaN, "travel_mm", NaN, ...
+                    "travelZeroOffset_mm", 0.5), ...
+                "connection", struct("status", "", "lastFailure", "", ...
+                    "acquisitionMode", "Unknown")));
+
+            state = mark10_monitor.actions.readOnce(state, context);
+
+            testCase.verifyEqual(state.session.acquisition.force_N, 1);
+            testCase.verifyEqual(state.session.acquisition.travel_mm, 1.5);
+            testCase.verifyEqual(state.session.acquisition.sampleCount, 7, ...
+                "A manual read must not become monitoring data.");
+            testCase.verifyEqual(state.session.connection.status, ...
+                "Manual device reading updated.");
         end
     end
 
@@ -47,7 +75,9 @@ classdef Mark10ActionsSpec < matlab.unittest.TestCase
         end
 
         function raw = read(command)
-            if command("value") == "x"
+            if command("value") == "n"
+                raw = uint8(sprintf('1.00 N\r\n2.00 mm\r\n'));
+            elseif command("value") == "x"
                 raw = uint8(sprintf('2.00 mm\r\n'));
             else
                 raw = uint8([]);

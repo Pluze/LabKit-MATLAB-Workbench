@@ -97,11 +97,11 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                     "MATLAB platform adapter requires a Presentation value.");
             end
             try
-                obj.applyView(view);
+                obj.applyView(view, previous);
             catch cause
                 if isa(previous, "labkit.app.view.Snapshot")
                     try
-                        obj.applyView(previous);
+                        obj.applyView(previous, view);
                     catch rollbackCause
                         failure = MException( ...
                             "labkit:app:runtime:InvariantFailure", ...
@@ -340,7 +340,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         table = createDataTable(obj, node, parent)
 
-        applyView(obj, view)
+        applyView(obj, view, previous)
 
         apply(obj, operation)
 

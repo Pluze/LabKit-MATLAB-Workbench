@@ -69,7 +69,7 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             info = labkit.mark10.version();
 
             testCase.verifyEqual(info.name, "labkit.mark10");
-            testCase.verifyEqual(info.current, "1.0.0");
+            testCase.verifyEqual(info.current, "1.1.0");
             testCase.verifyError(@() labkit.mark10.decodeSample({"bad"}), ...
                 "labkit:mark10:InvalidValue");
             testCase.verifyError(@() labkit.mark10.writeSetting( ...
@@ -101,11 +101,63 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(result.Resolution_N, 0.01);
             testCase.verifyEqual(result.Message, "");
         end
+
+        function verifiesTensionPositiveOutputPolarityByReadback(testCase)
+            state = containers.Map("KeyType", "char", "ValueType", "any");
+            state("command") = "";
+            state("inverted") = false;
+            transport = struct( ...
+                "Write", @(bytes) Mark10FacadeSpec.polarityWrite(state, bytes), ...
+                "Flush", @() [], ...
+                "ReadUntil", @(~, ~) Mark10FacadeSpec.polarityRead(state), ...
+                "ReadFor", @(~) uint8([]), "Pause", @(~) [], ...
+                "Close", @() [], "IsOpen", @() true);
+            connection = Mark10FacadeSpec.connectionToken(transport);
+
+            [~, settings, result] = labkit.mark10.writeSetting( ...
+                connection, "invertPolarity", true);
+
+            testCase.verifyTrue(result.Success);
+            testCase.verifyTrue(settings.InvertPolarity);
+            testCase.verifyEqual(result.Command, "IPOL1");
+        end
+
+        function samplingRequiresTheBackgroundDriverContract(testCase)
+            connection = Mark10FacadeSpec.connectionToken(struct( ...
+                "Write", @(~) [], "Flush", @() [], ...
+                "ReadUntil", @(~, ~) uint8([]), ...
+                "ReadFor", @(~) uint8([]), "Pause", @(~) [], ...
+                "Close", @() [], "IsOpen", @() true));
+            testCase.verifyError(@() labkit.mark10.startSampling( ...
+                connection, 1, @() []), "labkit:mark10:InvalidValue");
+            testCase.verifyError(@() labkit.mark10.startSampling( ...
+                connection, 1, @(~, ~) []), ...
+                "labkit:mark10:InvalidConnection");
+        end
     end
 
     methods (Static, Access = private)
         function writeBytes(state, bytes)
             state("command") = string(native2unicode(uint8(bytes(:).'), "UTF-8"));
+        end
+
+        function polarityWrite(state, bytes)
+            command = strip(string(native2unicode( ...
+                uint8(bytes(:).'), "UTF-8")));
+            state("command") = erase(command, char(13));
+            if state("command") == "IPOL1"
+                state("inverted") = true;
+            end
+        end
+
+        function raw = polarityRead(state)
+            if state("command") ~= "LIST"
+                raw = uint8([]);
+                return;
+            end
+            token = "IPOL" + double(state("inverted"));
+            raw = uint8(char("V1.00;N;CUR;FLTC0;FLTP0;AOUT0;" + ...
+                "AOFF0;FULL;" + token + ";OPOL0" + newline));
         end
 
         function raw = readUntil(state, ~, ~)

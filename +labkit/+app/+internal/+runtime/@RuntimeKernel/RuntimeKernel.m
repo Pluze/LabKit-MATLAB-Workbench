@@ -633,7 +633,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         execute(obj, binding, payload, prepareState, failureLabel)
 
         enqueueTransition(obj, binding, payload, prepareState, ...
-            failureLabel, busyMessage, failureHandler)
+            failureLabel, busyMessage, failureHandler, showBusy)
 
         view = present(obj, state)
 
@@ -673,7 +673,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.enqueueTransition( ...
                     [], [], @(state) updateState(state, obj.Context), ...
                     "Posted event " + eventId, "Updating...", ...
-                    @(cause) obj.logPostedEventFailure(eventId, cause));
+                    @(cause) obj.logPostedEventFailure(eventId, cause), false);
             catch cause
                 obj.logPostedEventFailure(eventId, cause);
             end
@@ -723,9 +723,10 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
         end
 
-        function finishProcessing(obj)
+        function finishProcessing(obj, showBusy)
             obj.Processing = false;
-            if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
+            if showBusy && ...
+                    isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                 obj.Adapter.endBusy(obj.Presentation);
             end
         end

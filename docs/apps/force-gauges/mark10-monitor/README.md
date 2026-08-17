@@ -27,21 +27,40 @@ clears the preceding in-memory run, then retains every sample attempt while
 updating the plots. Choose **Export CSV + LOG + MAT** to save that retained
 run; no separate recording mode is required.
 
+While connected and not monitoring, **Read Once** requests one synchronized
+force/travel sample and updates only **Live Readout**. It does not start a run,
+append to the monitoring buffer, or change export eligibility.
+
 Choose 10, 20, 30, 40, or 50 Hz paced acquisition; 50 Hz is the default.
-Measured rate is shown instead of assuming the requested value. Sampling runs
-at the requested pace while plots, controls, and diagnostics refresh at no
-more than 10 frames per second. Only one unhandled plot refresh is queued at a
-time, so a slow render cannot build an event backlog ahead of controls. The
-App uses synchronized `n`
-reads when possible and reports fallback `x + ?C` acquisition in diagnostics.
-Plot limits are derived from the currently visible sample prefix, so the same
-samples produce the same viewport during monitoring, after stopping, and in
-replay regardless of the preceding refresh history.
+Measured rate is shown instead of assuming the requested value. One persistent
+background driver owns the port, requests and timestamps synchronized samples,
+and sends them to the App in batches. The App retains every delivered attempt
+but refreshes plots, controls, and diagnostics at no more than 2 frames per
+second. Only one unhandled display refresh is queued, so rendering cannot set
+the acquisition pace or build a presentation backlog ahead of **Stop
+Monitoring** or the Tools menu. Stopping flushes the driver's final batch and
+commits one final buffer snapshot while keeping the port connected.
+
+The ESM303 `n` response does not include a device timestamp. Recorded `Time_s`
+is the background driver's monotonic host time when the complete force/travel
+response is accepted; it includes communication latency and is independent of
+batch delivery and the lower GUI frame rate. The App uses synchronized `n`
+reads and reports invalid or timed-out responses without fabricating
+force/travel values. Force uses one convention everywhere: tension is positive
+and compression is negative. Connect and Start Monitoring verify the gauge's
+`IPOL1` output setting, so live values, exports, replay, and device serial
+output agree.
+Plot limits stay fixed while new samples remain visible. A sample outside the
+current viewport triggers one tight refit with a small margin; the explicit
+**Refit Plot Limits** action uses the same rule. Monitoring, stopped data, and
+replay therefore share one range policy without recomputing axes every frame.
 
 **Zero Force** verifies the Series 5 zero against its displayed resolution.
 **Zero Travel** uses hardware zero only when stand status proves that command
 path is available; otherwise it applies a visible and exported software-zero
-offset. The App never sends UP, DOWN, motion speed, limit, cycle, or automatic
+offset. A successful software zero immediately shifts the live readout and
+displayed live curve, including while monitoring is stopped. The App never
+sends UP, DOWN, motion speed, limit, cycle, or automatic
 `SAVE` commands.
 
 ## Gauge Settings

@@ -7,12 +7,11 @@ connectionBox = context.getResource("application", "mark10Connection");
 buffer = context.getResource("application", "mark10Buffer");
 resetMonitor(buffer);
 state = mark10_monitor.acquisition.refreshState(state, context);
-monitorTimer = mark10_monitor.acquisition.createTimer( ...
+sampler = mark10_monitor.acquisition.createSampler( ...
     connectionBox, buffer, context, ...
     mark10_monitor.acquisition.ratePeriod(state.session.acquisition.rate));
-context.setResource("application", "mark10Timer", monitorTimer, ...
-    @cleanupTimer);
-start(monitorTimer);
+context.setResource("application", "mark10Sampler", sampler, ...
+    @(value) cleanupSampler(value, connectionBox));
 state.session.acquisition.monitoring = true;
 state.session.acquisition.retainedValidCount = 0;
 state.session.connection.status = "Connected and monitoring.";
@@ -47,9 +46,6 @@ buffer("lastRefresh_s") = -Inf;
 buffer("refreshPending") = false;
 end
 
-function cleanupTimer(value)
-if isa(value, "timer") && isvalid(value)
-    stop(value);
-    delete(value);
-end
+function cleanupSampler(value, connectionBox)
+connectionBox("connection") = labkit.mark10.stopSampling(value);
 end

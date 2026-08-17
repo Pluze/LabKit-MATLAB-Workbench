@@ -1,6 +1,6 @@
 function enqueueTransition( ...
         obj, binding, payload, prepareState, failureLabel, busyMessage, ...
-        failureHandler)
+        failureHandler, showBusy)
 %ENQUEUETRANSITION Queue one state preparation and optional App callback.
 % Caller: RuntimeKernel input boundaries. PREPARESTATE receives the latest
 % committed state when the queued item executes, so reentrant transitions do
@@ -8,6 +8,9 @@ function enqueueTransition( ...
 
     if nargin < 7
         failureHandler = [];
+    end
+    if nargin < 8
+        showBusy = true;
     end
 
     obj.assertOpen();
@@ -35,10 +38,11 @@ function enqueueTransition( ...
         return;
     end
     obj.Processing = true;
-    if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
+    if showBusy && ...
+            isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
         obj.Adapter.beginBusy(busyMessage);
     end
-    cleanup = onCleanup(@() obj.finishProcessing());
+    cleanup = onCleanup(@() obj.finishProcessing(showBusy));
     try
         while ~isempty(obj.Queue)
             item = obj.Queue{1};

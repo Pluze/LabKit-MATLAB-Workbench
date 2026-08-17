@@ -1,7 +1,9 @@
 function period = viewRefreshPeriod()
 %VIEWREFRESHPERIOD Return the bounded UI refresh period in seconds.
-% Sampling and in-memory retention may run at 50 Hz, while a 10 Hz plot is
-% responsive to the eye and leaves the MATLAB event queue available for
-% controls and serial work.
-period = 0.1;
+% Sampling and in-memory retention may run near 50 Hz. MATLAB serial and
+% native-graphics callbacks share the client event thread, so the plot is a
+% deliberately slower latest-snapshot consumer. Two visual updates per
+% second leave most event-loop time to the device without changing which
+% samples are retained for export.
+period = 0.5;
 end

@@ -21,6 +21,28 @@ if sample.Valid
 end
 ```
 
+For a responsive live application, use background sampling rather than
+calling `readSample` from a GUI timer:
+
+```matlab
+sampler = labkit.mark10.startSampling(connection, 0.02, @consumeSample);
+samplingCleanup = onCleanup(@() labkit.mark10.stopSampling(sampler));
+```
+
+`connect` starts one persistent background worker that exclusively owns the
+physical serial port until `disconnect`. `startSampling` changes that driver's
+state from connected-idle to monitoring; the driver assembles and timestamps
+each synchronized two-line response, then transfers samples to the client in
+batches. GUI rendering and batch delivery therefore do not set the serial
+request pace. `setSamplingPeriod` changes the producer rate without replacing
+the owner. `stopSampling` flushes the final batch and returns to connected-idle
+without closing the port.
+
+The ESM303 `n` response contains force and travel but no device timestamp.
+Each sample therefore includes `HostTime_s`, a monotonic timestamp taken by
+the background driver when the complete response is accepted. It is not the
+later GUI-delivery time.
+
 Connection probes are independent: identity commands may be unavailable while
 force/travel acquisition remains usable. `readSample` first requests the
 synchronized ESM303 `n` response, quiesces and retries after contamination,
@@ -34,6 +56,7 @@ without discarding the connection or earlier caller-owned records.
 | List or probe serial ports | `labkit.mark10.ports`, `labkit.mark10.discover` |
 | Connect and disconnect | `labkit.mark10.connect`, `labkit.mark10.disconnect` |
 | Read force and travel | `labkit.mark10.readSample` |
+| Control background sampling | `labkit.mark10.startSampling`, `labkit.mark10.setSamplingPeriod`, `labkit.mark10.stopSampling` |
 | Decode offline responses | `labkit.mark10.decodeSample`, `labkit.mark10.decodeSettings` |
 | Read or verify one setting | `labkit.mark10.readSettings`, `labkit.mark10.writeSetting` |
 | Zero force or travel | `labkit.mark10.zeroForce`, `labkit.mark10.zeroTravel` |
@@ -46,6 +69,12 @@ output format, polarity flags, Auto Output, and auto shutoff. Every setter is
 checked against a subsequent `LIST` readback. A silent setter can therefore
 return `NO_ACK_BUT_READBACK_CONFIRMED`. Nonzero Auto Output is verified, held
 at zero during synchronous monitoring, and restored by `disconnect`.
+
+LabKit defines tension as positive and compression as negative. The Series 5
+default is the opposite, so the driver applies `IPOL1` and verifies it by
+`LIST` at connect and before sampling. It never repairs polarity with `abs` or
+an App-only sign flip. `SAVE` is still not sent; reconnecting re-establishes
+the convention after a gauge power cycle.
 
 Travel zero uses the stand status command to gate hardware `z`. When the
 current stand mode does not expose that command path but travel is readable,

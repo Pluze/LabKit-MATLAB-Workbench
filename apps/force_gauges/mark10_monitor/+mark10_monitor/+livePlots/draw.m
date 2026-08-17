@@ -29,7 +29,7 @@ if isempty(travelLine) || isempty(forceLine)
     title(ax, "Travel and Force vs Time");
     grid(ax, "on");
     legend(ax, [travelLine, forceLine], ["Travel", "Force"], ...
-        "Location", "best");
+        "Location", "northeast", "AutoUpdate", "off");
     configureNavigation(ax);
 else
     set(travelLine, "XData", model.time_s, "YData", model.travel_mm);

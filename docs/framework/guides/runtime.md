@@ -199,8 +199,11 @@ only needs groups and one edited value.
 ## Posted Stream Events
 
 Timers and asynchronous serial, TCP, UDP, or other streaming callbacks cannot
-mutate App state or native controls directly. They publish one semantic state
-update through the callback context:
+mutate App state or native controls directly. A device callback must drain
+already-available input and return; it must not wait, poll, draw, or perform
+per-sample presentation on MATLAB's shared event thread. The producer writes
+to its own buffer and publishes one semantic state update through the callback
+context:
 
 ```matlab
 function onSample(buffer, callbackContext)
@@ -219,6 +222,8 @@ Pending posts with the same event ID are latest-wins coalesced, so a fast
 producer cannot build an unbounded UI refresh queue. Runtime executes the
 surviving update through the ordinary serialized validation, presentation,
 diagnostics, commit, and rollback path. Posts after Runtime close are ignored.
+Posted updates do not enter the user-action busy lifecycle: they neither set a
+watch pointer nor disable controls while a live stream is presenting.
 An update failure rolls back that posted transaction and is recorded without
 failing the producer callback that submitted it, including when the post was
 queued while another App transaction was still completing. A queued post does
@@ -247,6 +252,12 @@ end
 The combined snapshot must cover every semantic target exactly as its layout
 capabilities require. `Snapshot.include` composes feature-owned fragments
 without opening a generic property-patch schema.
+
+The native adapter compares each complete snapshot operation with the last
+committed operation and applies only changed values. An unchanged plot model,
+table, choice list, enabled state, or text value therefore performs no native
+write. Complete snapshots remain the atomic authoring contract; Apps do not
+construct patches themselves.
 
 Plot presentation passes a prepared model to the renderer declared by its
 plot area:
