@@ -2,21 +2,16 @@ classdef AutomaticInstrumentationSpec < matlab.unittest.TestCase
     %AUTOMATICINSTRUMENTATIONSPEC Prove Runtime-owned semantic event chains.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function nestsPresentationUnderConstructionAndCallbacks(testCase)
+        function capturesSuccessfulPresentationOnlyAtTraceLevel(testCase)
             runtime = instrumentationRuntime( ...
                 testCase, @incrementProject, @presentProject);
             cleanup = onCleanup(@() runtime.close());
 
             records = runtime.diagnosticEvents();
-            construction = oneRecord(records, "runtime.construct.started");
-            initialPresentation = ...
-                oneRecord(records, "presentation.rendered.started");
-            testCase.verifyEqual( ...
-                initialPresentation.parentOperationId, ...
-                construction.operationId);
-            testCase.verifyEqual( ...
-                initialPresentation.rootActionId, construction.rootActionId);
+            testCase.verifyFalse(any(string({records.eventName}) == ...
+                "presentation.rendered.started"));
 
+            runtime.setTraceCapture(true);
             runtime.invokeAction("run");
             records = runtime.diagnosticEvents();
             callbacks = records(string({records.eventName}) == ...
@@ -28,8 +23,8 @@ classdef AutomaticInstrumentationSpec < matlab.unittest.TestCase
                 "presentation.rendered.completed");
 
             testCase.verifyNumElements(callbacks, 1);
-            testCase.verifyNumElements(presentations, 2);
-            testCase.verifyNumElements(completed, 2);
+            testCase.verifyNumElements(presentations, 1);
+            testCase.verifyNumElements(completed, 1);
             testCase.verifyEqual(callbackPresentation.parentOperationId, ...
                 callbacks.operationId);
             testCase.verifyEqual(callbackPresentation.rootActionId, ...
@@ -75,6 +70,7 @@ classdef AutomaticInstrumentationSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
             projectFile = fullfile(folder, "project.mat");
 
+            runtime.setTraceCapture(true);
             runtime.saveProject(runtime.State, projectFile);
             runtime.invokeAction("run");
             runtime.restoreProject(projectFile);

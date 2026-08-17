@@ -20,6 +20,8 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
         EventTable
         DetailArea
         VisibleSequences (1, :) double = zeros(1, 0)
+        RefreshPump = []
+        RefreshPending (1, 1) logical = false
         Closed (1, 1) logical = false
     end
 
@@ -34,6 +36,10 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
             obj.Projection = labkit.app.internal.diagnostics.SessionLogProjection( ...
                 runtime.diagnosticSnapshot());
             obj.createFigure();
+            obj.RefreshPump = timer( ...
+                "ExecutionMode", "singleShot", ...
+                "StartDelay", 0.1, ...
+                "TimerFcn", @(~, ~) obj.drainRefresh());
             obj.SubscriptionToken = ...
                 runtime.subscribeDiagnostics(@obj.acceptRecord);
             obj.refresh();
@@ -61,6 +67,7 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
                 return;
             end
             obj.Projection.update(obj.Runtime.diagnosticSnapshot());
+            obj.RefreshPending = false;
             obj.refreshView();
         end
 
@@ -83,6 +90,12 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
                     obj.SubscriptionToken);
             end
             obj.SubscriptionToken = "";
+            pump = obj.RefreshPump;
+            obj.RefreshPump = [];
+            if ~isempty(pump) && isvalid(pump)
+                stop(pump);
+                delete(pump);
+            end
             if ~isempty(obj.Figure) && isvalid(obj.Figure)
                 delete(obj.Figure);
             end
@@ -219,6 +232,18 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
                 return;
             end
             obj.Projection.append(record);
+            obj.RefreshPending = true;
+            if ~isempty(obj.RefreshPump) && isvalid(obj.RefreshPump) && ...
+                    string(obj.RefreshPump.Running) == "off"
+                start(obj.RefreshPump);
+            end
+        end
+
+        function drainRefresh(obj)
+            if obj.Closed || ~obj.RefreshPending
+                return;
+            end
+            obj.RefreshPending = false;
             obj.refreshView(true);
         end
 
@@ -264,15 +289,16 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
                 projection.rootActionLabels);
             rows = projection.rows;
             sequences = rows.Sequence.';
+            previousCount = numel(obj.VisibleSequences);
             appended = incremental && ...
-                numel(sequences) == numel(obj.VisibleSequences) + 1 && ...
-                isequal(sequences(1:end - 1), obj.VisibleSequences);
+                numel(sequences) > previousCount && ...
+                isequal(sequences(1:previousCount), obj.VisibleSequences);
             unchanged = incremental && ...
                 isequal(sequences, obj.VisibleSequences);
             if appended
-                obj.EventTable.Data(end + 1, :) = rows(end, 1:4);
-                obj.applySeverityStyle( ...
-                    rows.Level(end), height(rows));
+                added = rows(previousCount + 1:end, :);
+                obj.EventTable.Data = [obj.EventTable.Data; added(:, 1:4)];
+                obj.applyAppendedSeverityStyles(added.Level, previousCount);
             elseif ~unchanged
                 obj.EventTable.Data = rows(:, 1:4);
                 obj.applySeverityStyles(rows.Level);
@@ -383,22 +409,20 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
             end
         end
 
-        function applySeverityStyle(obj, level, row)
+        function applyAppendedSeverityStyles(obj, levels, rowOffset)
             try
-                level = string(level);
-                if level == "WARNING"
-                    addSeverityStyle( ...
-                        obj.EventTable, level, "WARNING", ...
-                        [1.00 0.96 0.78], [0.35 0.25 0.00], row);
-                elseif level == "ERROR"
-                    addSeverityStyle( ...
-                        obj.EventTable, level, "ERROR", ...
-                        [1.00 0.86 0.86], [0.55 0.00 0.00], row);
-                elseif level == "CRITICAL"
-                    addSeverityStyle( ...
-                        obj.EventTable, level, "CRITICAL", ...
-                        [0.55 0.05 0.05], [1.00 1.00 1.00], row);
-                end
+                addSeverityStyle( ...
+                    obj.EventTable, levels, "WARNING", ...
+                    [1.00 0.96 0.78], [0.35 0.25 0.00], ...
+                    rowOffset + find(string(levels) == "WARNING"));
+                addSeverityStyle( ...
+                    obj.EventTable, levels, "ERROR", ...
+                    [1.00 0.86 0.86], [0.55 0.00 0.00], ...
+                    rowOffset + find(string(levels) == "ERROR"));
+                addSeverityStyle( ...
+                    obj.EventTable, levels, "CRITICAL", ...
+                    [0.55 0.05 0.05], [1.00 1.00 1.00], ...
+                    rowOffset + find(string(levels) == "CRITICAL"));
             catch
                 % Severity text remains authoritative on older MATLAB releases.
             end

@@ -1,13 +1,11 @@
 function monitorTimer = createTimer(connectionBox, buffer, context, period)
-%CREATETIMER Create UI-cooperative paced acquisition for Mark-10 monitoring.
-% The serial read is synchronous and can outlast a requested sample period.
-% The initial delay lets the Connect transaction commit and render its first
-% connected view before acquisition can interrupt the MATLAB event loop.
-% Fixed delay then leaves one complete period after every read so overdue
-% callbacks cannot continuously starve later UI work.
-initialPresentationDelay_s = 1;
+%CREATETIMER Create paced acquisition that drops overdue sampling callbacks.
+% Fixed-rate scheduling avoids adding one full requested period after a
+% synchronous device response. BusyMode=drop prevents overdue callbacks from
+% accumulating in front of controls and coalesced presentation events.
+initialPresentationDelay_s = 0.2;
 monitorTimer = timer( ...
-    "ExecutionMode", "fixedDelay", ...
+    "ExecutionMode", "fixedRate", ...
     "BusyMode", "drop", ...
     "StartDelay", initialPresentationDelay_s, ...
     "Period", period, ...

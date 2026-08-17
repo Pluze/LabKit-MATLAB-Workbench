@@ -30,8 +30,13 @@ run; no separate recording mode is required.
 Choose 10, 20, 30, 40, or 50 Hz paced acquisition; 50 Hz is the default.
 Measured rate is shown instead of assuming the requested value. Sampling runs
 at the requested pace while plots, controls, and diagnostics refresh at no
-more than 30 frames per second. The App uses synchronized `n`
+more than 10 frames per second. Only one unhandled plot refresh is queued at a
+time, so a slow render cannot build an event backlog ahead of controls. The
+App uses synchronized `n`
 reads when possible and reports fallback `x + ?C` acquisition in diagnostics.
+Plot limits are derived from the currently visible sample prefix, so the same
+samples produce the same viewport during monitoring, after stopping, and in
+replay regardless of the preceding refresh history.
 
 **Zero Force** verifies the Series 5 zero against its displayed resolution.
 **Zero Travel** uses hardware zero only when stand status proves that command
@@ -77,21 +82,23 @@ or complete MAT export. Load immediately displays the complete curves.
 always begins at the first sample; **Pause / Resume** retains and resumes the
 current cursor. Replay uses a fixed 10-frame-per-second visual progression of
 approximately ten seconds rather than recorded timestamps. Live acquisition
-and replay share buffered range updates: empty plots begin with 10 mm travel
-and 1 N force headroom, then limits change only when displayed data escapes
-the current range. Later headroom is estimated from recent sample changes,
-observed span, signal level, and acquisition rate rather than repeatedly using
-the initial fixed margins. **Refit Plot Limits** recalculates both plots from
-all currently displayed samples, including the independent travel and force Y
-limits in the upper plot; it is available during both live monitoring and
-replay. Select MATLAB's Pan tool in an axes toolbar when drag panning is
-needed. Hardware connection is disabled during replay and replay controls are
-disabled while connected.
+and replay derive limits from the same currently displayed sample prefix.
+Empty plots begin with 10 mm travel and 1 N force headroom; populated plots use
+recent sample changes, observed span, signal level, and acquisition rate. The
+result does not depend on earlier refreshes. **Refit Plot Limits** reapplies
+that deterministic range after manual pan or zoom, including the independent
+travel and force Y limits in the upper plot; it is available during both live
+monitoring and replay. Select MATLAB's Pan tool in an axes toolbar when drag
+panning is needed. Hardware connection is disabled during replay and replay
+controls are disabled while connected.
 
 The **Analysis** tab also calculates one fit for each sufficiently long
 monotonic travel branch. This shared path accepts either a complete loaded
 CSV/LOG/MAT recording or the complete valid sample buffer from a stopped
 monitoring run. It does not fit only the currently visible replay prefix.
+For a manual travel window, a branch needs at least four distinct travel
+coordinates; accepted results must still meet the displayed R-squared quality
+threshold.
 
 **Plot Zero** accepts the raw force level in N and raw travel level in mm
 that should be treated as zero. Editing only changes the pending values;

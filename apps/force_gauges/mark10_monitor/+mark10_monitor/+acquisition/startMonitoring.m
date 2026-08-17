@@ -6,6 +6,7 @@ end
 connectionBox = context.getResource("application", "mark10Connection");
 buffer = context.getResource("application", "mark10Buffer");
 resetMonitor(buffer);
+state = mark10_monitor.acquisition.refreshState(state, context);
 monitorTimer = mark10_monitor.acquisition.createTimer( ...
     connectionBox, buffer, context, ...
     mark10_monitor.acquisition.ratePeriod(state.session.acquisition.rate));
@@ -43,6 +44,7 @@ buffer("lastForce_N") = NaN;
 buffer("lastTravel_mm") = NaN;
 buffer("lastFailure") = "";
 buffer("lastRefresh_s") = -Inf;
+buffer("refreshPending") = false;
 end
 
 function cleanupTimer(value)

@@ -156,9 +156,17 @@ else
 end
 indices = find(selected);
 fit = emptyFit();
-if numel(indices) < 8 || ...
+% A line has two fitted coefficients. Four distinct coordinates retain two
+% residual degrees of freedom without rejecting a visibly resolved sparse
+% branch solely because the acquisition cadence fell below its target.
+minimumFitPoints = 4;
+if numel(indices) < minimumFitPoints
+    status = "Need at least 4 fit points";
+    return;
+end
+if numel(unique(displacement(indices))) < minimumFitPoints || ...
         max(displacement(indices)) - min(displacement(indices)) <= 0
-    status = "Insufficient fit region";
+    status = "Insufficient travel span";
     return;
 end
 x = strain(indices);

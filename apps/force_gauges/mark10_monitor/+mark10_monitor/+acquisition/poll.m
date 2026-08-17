@@ -34,12 +34,19 @@ end
 end
 
 function postRefreshIfDue(buffer, elapsed, context)
-if elapsed - buffer("lastRefresh_s") < mark10_monitor.viewRefreshPeriod()
+if buffer("refreshPending") || ...
+        elapsed - buffer("lastRefresh_s") < mark10_monitor.viewRefreshPeriod()
     return;
 end
 buffer("lastRefresh_s") = elapsed;
-context.postEvent("mark10.live.refresh", ...
-    @mark10_monitor.acquisition.refreshState);
+buffer("refreshPending") = true;
+try
+    context.postEvent("mark10.live.refresh", ...
+        @mark10_monitor.acquisition.refreshState);
+catch cause
+    buffer("refreshPending") = false;
+    rethrow(cause);
+end
 end
 
 function appendPlot(buffer, time, force, travel)

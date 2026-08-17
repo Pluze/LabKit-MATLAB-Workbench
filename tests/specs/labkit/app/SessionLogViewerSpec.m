@@ -135,7 +135,9 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
             tableHandle = oneHandle( ...
                 viewerFigure, "labkitSessionLogTable");
 
+            runtime.setTraceCapture(true);
             runtime.invokeAction("burst");
+            waitForRows(tableHandle, 300);
 
             testCase.verifyTrue(isvalid(tableHandle));
             testCase.verifyEqual( ...
@@ -229,10 +231,18 @@ function applicationState = emitBurst( ...
         applicationState, callbackContext)
 for index = 1:300
     callbackContext.log( ...
-        "info", "analysis.progress", ...
+        "trace", "analysis.progress", ...
         "Synthetic progress update.", ...
         Category="app.probe.log-viewer.analysis", ...
         Audience="user", Attributes=struct("count", index));
+end
+end
+
+function waitForRows(tableHandle, count)
+started = tic;
+while height(tableHandle.Data) < count && toc(started) < 3
+    drawnow;
+    pause(0.01);
 end
 end
 

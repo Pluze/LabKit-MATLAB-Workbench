@@ -375,16 +375,24 @@ App that owns the session. Its single **Level** selector has three modes:
 stages, and **User** shows user-audience INFO and higher events. Full TRACE is
 the default view; it does not manufacture detail that was not captured. The
 **Action** filter groups a top-level user or lifecycle action with its nested
-callback, presentation, dialog, resource, and transaction records.
+callback, dialog, resource, transaction, and—when TRACE capture is active—
+presentation records.
 
 Runtime initially captures DEBUG and higher records to bound ordinary-session
 cost. The first ERROR or CRITICAL event automatically enables TRACE for later
 activity. The viewer also provides an explicit **Enable TRACE** / **Disable
 TRACE** control when a user needs detailed capture before an error. TRACE adds
-callback state-update and validation stages, App/runtime presentation stages,
-native presentation commit, and post-failure rollback cleanup; DEBUG retains
-operation start and terminal boundaries. Enabling TRACE never reconstructs
-earlier detail.
+callback state-update and validation stages, successful App/runtime
+presentation stages, native presentation commit, and post-failure rollback
+cleanup. DEBUG retains ordinary operation start and terminal boundaries plus
+all presentation failures, but does not journal successful high-frequency
+presentation boundaries. Enabling TRACE never reconstructs earlier detail.
+The live viewer appends incoming records to its bounded projection immediately
+but batches native table updates at up to 10 Hz. A TRACE burst therefore
+causes one table refresh per batch rather than one complete filter, dropdown,
+style, and scroll pass per record; manual filters and **Refresh** still apply
+immediately. The durable journal and exported bundle retain their independent
+bounded histories.
 
 **Export Diagnostic Bundle** writes directly to ignored
 `artifacts/diagnostics/` with a generated App-specific, timestamped, unique ZIP

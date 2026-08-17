@@ -55,7 +55,25 @@ classdef Mark10AnalysisSpec < matlab.unittest.TestCase
 
             testCase.verifyEmpty(result.fitLines);
             testCase.verifyTrue(all(string(result.rows(:, 11)) == ...
-                "Insufficient fit region"));
+                "Need at least 4 fit points"));
+        end
+
+        function manualRegionFitsSparseResolvedBranches(testCase)
+            travel = [linspace(0, 20, 10), linspace(20, 0, 10), ...
+                linspace(0, 20, 10)].';
+            p = parameters("Manual");
+            p.manualStart_mm = 5;
+            p.manualEnd_mm = 15;
+
+            result = mark10_monitor.analysis.compute( ...
+                (0:numel(travel)-1).' / 5, 2 * travel, travel, ...
+                p, "Tension");
+
+            testCase.verifyGreaterThanOrEqual(result.segmentCount, 3);
+            testCase.verifyTrue(all(cell2mat(result.rows(:, 7)) >= 4));
+            testCase.verifyEqual(cell2mat(result.rows(:, 9)), ...
+                10 * ones(result.segmentCount, 1), "AbsTol", 1e-10);
+            testCase.verifyTrue(all(string(result.rows(:, 11)) == "Accepted"));
         end
 
         function rejectsUnconfirmedGeometry(testCase)

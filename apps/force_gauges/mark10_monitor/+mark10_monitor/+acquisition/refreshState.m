@@ -1,9 +1,10 @@
 function state = refreshState(state, context)
 %REFRESHSTATE Copy one bounded resource snapshot into visible session state.
+buffer = context.getResource("application", "mark10Buffer");
+buffer("refreshPending") = false;
 if ~state.session.connection.connected
     return;
 end
-buffer = context.getResource("application", "mark10Buffer");
 connectionBox = context.getResource("application", "mark10Connection");
 connection = connectionBox("connection");
 a = state.session.acquisition;
@@ -21,6 +22,8 @@ a.plotTime_s = buffer("plotTime_s");
     state.session.analysis, a.travelZeroOffset_mm);
 if a.elapsed_s > 0
     a.actualRate_Hz = a.sampleCount / a.elapsed_s;
+else
+    a.actualRate_Hz = 0;
 end
 state.session.acquisition = a;
 state = mark10_monitor.livePlots.updateLimits(state, false);

@@ -43,21 +43,31 @@ Force Gauges App.
   validated, presented, diagnosed, rolled back on failure, and ignored after
   close. Posts remain in the coalescing pump while a user transaction is
   active, preventing a continuous producer from extending that transaction.
+- Successful presentation boundaries are TRACE-only so an ordinary streaming
+  session does not serialize and journal two DEBUG records for every display
+  refresh. Presentation failures remain ERROR records with their nested
+  operation context.
+- The live session viewer batches subscribed records into at most 10 native
+  table updates per second instead of filtering, styling, and scrolling the
+  complete visible projection once per incoming TRACE record.
 - Session-only transactions no longer mark project documents dirty.
 - `labkit.mark10` adds port discovery, connect/disconnect, synchronized sample
   reads with fallback, LIST decoding, safe setting readback, and verified
   force/travel zero behavior.
-- Mark-10 Monitor adds live plotting, independent recording, safe settings,
-  standard CSV, MESUR gauge-compatible LOG, complete MAT, and offline replay.
+- Mark-10 Monitor adds explicit live monitoring with in-memory retention, safe
+  settings, standard CSV, MESUR gauge-compatible LOG, complete MAT export, and
+  offline replay without a separate recording state.
 - The monitor uses 10--50 Hz acquisition with a 50 Hz default, caps its
-  presentation cadence at 30 Hz, reuses plot objects, and shows
+  presentation cadence at 10 Hz, coalesces pending refreshes, reuses plot
+  objects, and shows
   dual-axis time series above the standard force-versus-travel curve.
 - Loading a recording displays complete curves immediately; Reset restores
   that view, Play restarts a 10-frame-per-second replay, and Pause toggles
-  resume. Live and replay use the same buffered range updater: 10 mm and 1 N
-  are empty-stream defaults, then signal dynamics and estimated sample rate
-  determine later headroom so limits change only after data leaves the current
-  range. Non-pickable clipped traces remain compatible with MATLAB's
+  resume. Live and replay use the same deterministic range updater: 10 mm and
+  1 N are empty-stream defaults, then signal dynamics and estimated sample rate
+  determine populated headroom. Equal visible sample prefixes derive equal
+  limits independent of refresh history. Non-pickable clipped traces remain
+  compatible with MATLAB's
   axes-toolbar navigation, and both panels can explicitly refit X and
   independent Y limits. Exactly vertical force/travel segments are retained
   as points but disconnected from the continuous UIAxes trace to avoid MATLAB
@@ -79,7 +89,9 @@ Force Gauges App.
 - Manual modulus fitting uses one applied-zero travel window across every
   branch instead of reinterpreting the window from each branch start. Branches
   outside that window remain explicit result rows without fabricated fit
-  graphics; automatic endpoints use the same corrected coordinate.
+  graphics; automatic endpoints use the same corrected coordinate. Four
+  distinct fit coordinates retain two residual degrees of freedom for sparse
+  resolved branches, while the R-squared acceptance gate remains unchanged.
 - Plot popouts copy every visible graphics child even when its handle is
   hidden from ordinary discovery. Modulus fits keep every branch line and
   endpoint marker in the standalone figure while suppressing duplicate legend
@@ -93,7 +105,7 @@ Force Gauges App.
 ## User and data impact
 
 Live Apps can refresh state without private UI access or false unsaved-project
-prompts. Mark-10 users can monitor and record force/travel while leaving stand
+prompts. Mark-10 users can monitor and retain force/travel while leaving stand
 motion under existing hardware controls. Clean CSV and LOG omit invalid sample
 attempts; MAT retains validity, acquisition mode, settings, and diagnostics.
 Exports can include device metadata and should be reviewed before sharing.

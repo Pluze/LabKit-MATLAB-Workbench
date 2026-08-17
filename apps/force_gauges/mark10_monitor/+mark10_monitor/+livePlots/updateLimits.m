@@ -1,5 +1,5 @@
 function state = updateLimits(state, reset)
-%UPDATELIMITS Expand buffered plot limits only after displayed data escapes.
+%UPDATELIMITS Derive one path-independent viewport from displayed samples.
 arguments
     state (1, 1) struct
     reset (1, 1) logical = false
@@ -11,13 +11,12 @@ current = state.session.cache.plotLimits;
 if isempty(a.plotTime_s)
     proposed = mark10_monitor.livePlots.defaultLimits(rate_Hz);
 else
-    proposed = current;
-    proposed.time_s = bufferedLimits(current.time_s, a.plotTime_s, ...
-        policy.timeMargin_s, reset, true);
-    proposed.force_N = bufferedLimits(current.force_N, a.plotForce_N, ...
-        estimatedSignalMargin(a.plotForce_N), reset, false);
-    proposed.travel_mm = bufferedLimits(current.travel_mm, a.plotTravel_mm, ...
-        estimatedSignalMargin(a.plotTravel_mm), reset, false);
+    proposed = struct( ...
+        "time_s", dataLimits(a.plotTime_s, policy.timeMargin_s, true), ...
+        "force_N", dataLimits(a.plotForce_N, ...
+            estimatedSignalMargin(a.plotForce_N), false), ...
+        "travel_mm", dataLimits(a.plotTravel_mm, ...
+            estimatedSignalMargin(a.plotTravel_mm), false));
 end
 changed = reset || ~isequaln(current, proposed);
 state.session.cache.plotLimits = proposed;
@@ -42,24 +41,9 @@ end
 margin = max([0.1 * span, 0.1 * level, predicted, eps(max(1, level))]);
 end
 
-function limits = bufferedLimits(current, values, margin, reset, nonnegative)
+function limits = dataLimits(values, margin, nonnegative)
 values = double(values(isfinite(values)));
-if isempty(values)
-    limits = current;
-    return;
-end
-dataLimits = [min(values), max(values)];
-if reset
-    limits = dataLimits + [-margin, margin];
-else
-    limits = current;
-    if dataLimits(1) < current(1)
-        limits(1) = dataLimits(1) - margin;
-    end
-    if dataLimits(2) > current(2)
-        limits(2) = dataLimits(2) + margin;
-    end
-end
+limits = [min(values), max(values)] + [-margin, margin];
 if nonnegative
     limits(1) = max(0, limits(1));
 end

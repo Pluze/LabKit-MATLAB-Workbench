@@ -85,7 +85,7 @@ classdef Mark10LivePlotsSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function expandsBufferedLimitsOnlyAfterDataEscapes(testCase)
+        function derivesTheSameLimitsFromTheSameVisibleSamples(testCase)
             acquisition = struct("rate", "50 Hz", "actualRate_Hz", 0, ...
                 "plotTime_s", [0; 4], "plotForce_N", [0; 0.8], ...
                 "plotTravel_mm", [0; 8]);
@@ -94,20 +94,30 @@ classdef Mark10LivePlotsSpec < matlab.unittest.TestCase
                 "plotLimits", mark10_monitor.livePlots.defaultLimits(50))));
 
             state = mark10_monitor.livePlots.updateLimits(state, false);
-            testCase.verifyEqual(state.session.cache.plotViewRevision, 0);
+            testCase.verifyEqual(state.session.cache.plotViewRevision, 1);
+            firstLimits = state.session.cache.plotLimits;
+
+            otherHistory = state;
+            otherHistory.session.cache.plotLimits = struct( ...
+                "time_s", [0, 100], "force_N", [-50, 50], ...
+                "travel_mm", [-500, 500]);
+            otherHistory = mark10_monitor.livePlots.updateLimits( ...
+                otherHistory, false);
+            testCase.verifyEqual(otherHistory.session.cache.plotLimits, ...
+                firstLimits, "The viewport must not depend on prior limits.");
 
             state.session.acquisition.plotTime_s(end + 1) = 6;
             state.session.acquisition.plotForce_N(end + 1) = 1.1;
             state.session.acquisition.plotTravel_mm(end + 1) = 11;
             state = mark10_monitor.livePlots.updateLimits(state, false);
 
-            testCase.verifyEqual(state.session.cache.plotViewRevision, 1);
+            testCase.verifyEqual(state.session.cache.plotViewRevision, 2);
             testCase.verifyEqual(state.session.cache.plotLimits.time_s, [0, 11]);
-            testCase.verifyEqual(state.session.cache.plotLimits.force_N, [-1, 2.2], ...
+            testCase.verifyEqual(state.session.cache.plotLimits.force_N, [-1.1, 2.2], ...
                 "AbsTol", eps(2.2));
-            testCase.verifyEqual(state.session.cache.plotLimits.travel_mm, [-10, 22]);
+            testCase.verifyEqual(state.session.cache.plotLimits.travel_mm, [-11, 22]);
             unchanged = mark10_monitor.livePlots.updateLimits(state, false);
-            testCase.verifyEqual(unchanged.session.cache.plotViewRevision, 1);
+            testCase.verifyEqual(unchanged.session.cache.plotViewRevision, 2);
         end
     end
 end
