@@ -182,9 +182,16 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, "shard: All profiles");
             testCase.verifySubstring(workflow, "shard: Core");
             testCase.verifySubstring(workflow, "shard: Hidden GUI");
+            testCase.verifySubstring(workflow, "shard: Desktop boundaries");
             testCase.verifySubstring(workflow, "os: ubuntu-22.04");
             testCase.verifySubstring(workflow, "os: windows-2022");
+            testCase.verifySubstring(workflow, "os: windows-latest");
             testCase.verifySubstring(workflow, "os: macos-14");
+            testCase.verifyEqual(count(workflow, "- os: "), 6);
+            testCase.verifyEqual(count(workflow, "run_headless: true"), 3);
+            testCase.verifyEqual(count(workflow, "run_gui: true"), 5);
+            testCase.verifyEqual(count(workflow, "run_isolated: true"), 5);
+            testCase.verifyEqual(count(workflow, "cache: true"), 3);
             testCase.verifySubstring(workflow, ...
                 "name: Start Linux virtual display");
             testCase.verifySubstring(workflow, ...

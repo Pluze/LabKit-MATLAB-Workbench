@@ -71,18 +71,32 @@ jobs:
             run_headless: true
             run_gui: true
             run_isolated: true
+            cache: false
             claim: Supported MATLAB floor on the pinned Linux runner and legacy graphics/export paths
           - os: ubuntu-latest
             id: linux
             label: Linux
             release: latest
-            shard: All profiles
-            shard_id: all
-            profiles: headless,gui,isolated
+            shard: Core
+            shard_id: core
+            profiles: headless,isolated
             run_headless: true
-            run_gui: true
+            run_gui: false
             run_isolated: true
-            claim: Current MATLAB and Ubuntu integration, including virtual-display graphics
+            cache: true
+            claim: Current MATLAB and Ubuntu product, SDK, export, and path-isolation evidence
+          - os: ubuntu-latest
+            id: linux
+            label: Linux
+            release: latest
+            shard: Hidden GUI
+            shard_id: gui
+            profiles: gui
+            run_headless: false
+            run_gui: true
+            run_isolated: false
+            cache: true
+            claim: Current MATLAB and Ubuntu virtual-display App, graphics, and export evidence
           - os: windows-2022
             id: windows
             label: Windows
@@ -93,51 +107,32 @@ jobs:
             run_headless: true
             run_gui: true
             run_isolated: true
-            claim: Supported MATLAB floor on Windows, including native file and off-screen graphics behavior
+            cache: false
+            claim: Supported MATLAB floor on Windows, including background services, native files, and off-screen graphics
           - os: windows-latest
             id: windows
             label: Windows
             release: latest
-            shard: Core
-            shard_id: core
-            profiles: headless,isolated
-            run_headless: true
-            run_gui: false
-            run_isolated: true
-            claim: Current MATLAB and Windows product, SDK, export, and path-isolation evidence
-          - os: windows-latest
-            id: windows
-            label: Windows
-            release: latest
-            shard: Hidden GUI
-            shard_id: gui
-            profiles: gui
+            shard: Desktop boundaries
+            shard_id: desktop
+            profiles: gui,isolated
             run_headless: false
             run_gui: true
-            run_isolated: false
-            claim: Current MATLAB and Windows native App, graphics, and export evidence
+            run_isolated: true
+            cache: false
+            claim: Current MATLAB and Windows native App, graphics, export, and path-isolation evidence
           - os: macos-14
             id: macos
             label: macOS
             release: latest
-            shard: Core
-            shard_id: core
-            profiles: headless,isolated
-            run_headless: true
-            run_gui: false
-            run_isolated: true
-            claim: Current Apple Silicon product, SDK, export, and path-isolation evidence
-          - os: macos-14
-            id: macos
-            label: macOS
-            release: latest
-            shard: Hidden GUI
-            shard_id: gui
-            profiles: gui
+            shard: Desktop boundaries
+            shard_id: desktop
+            profiles: gui,isolated
             run_headless: false
             run_gui: true
-            run_isolated: false
-            claim: Current Apple Silicon native App, graphics, and export evidence
+            run_isolated: true
+            cache: false
+            claim: Current Apple Silicon native App, graphics, export, and path-isolation evidence
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -148,6 +143,7 @@ jobs:
         uses: matlab-actions/setup-matlab@v3
         with:
           release: ${{ matrix.release }}
+          cache: ${{ matrix.cache }}
 
       - name: Start Linux virtual display
         if: runner.os == 'Linux'
@@ -258,6 +254,7 @@ jobs:
         uses: matlab-actions/setup-matlab@v3
         with:
           release: latest
+          cache: true
 
       - name: Verify generated documentation
         uses: matlab-actions/run-build@v3

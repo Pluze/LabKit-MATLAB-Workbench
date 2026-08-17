@@ -393,6 +393,19 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(source.Contract, "source");
         end
 
+        function locateMapsCombinedAnalysisCapabilityToOwnedContracts(testCase)
+            locations = labkittest.locate( ...
+                "apps/force_gauges/mark10_monitor/+mark10_monitor/" + ...
+                "+analysis/compute.m");
+
+            testCase.verifyEqual(string({locations.Owner}), ...
+                repmat("apps/force_gauges/mark10_monitor/analysis", 1, 2));
+            testCase.verifyEqual(string({locations.Contract}), ...
+                ["scientific", "presentation"]);
+            testCase.verifyEqual(string({locations.Environment}), ...
+                ["headless", "headless"]);
+        end
+
         function everyProductionSourceHasAnExplicitEvidenceLocation(testCase)
             root = labkittest.setup();
             files = [ ...
@@ -528,16 +541,23 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             mkdir(repositoryOwner);
             testCase.writeSpec(repositoryOwner, "RepositoryPolicySpec", "system");
 
-            result = labkittest.plan("Profile", "changed", ...
-                "ChangedPaths", [ ...
+            changedPaths = [ ...
                 "apps/electrochem/cic/+cic/+analysisRun/computeCIC.m", ...
-                ".agents/migration_guide.md"], ...
-                "SpecsRoot", specsRoot);
+                ".agents/migration_guide.md"];
+            output = evalc([ ...
+                "result = labkittest.plan('Profile', 'changed', " + ...
+                "'ChangedPaths', changedPaths, 'SpecsRoot', specsRoot);"]);
 
             testCase.verifyFalse(result.Fallback);
             testCase.verifyEqual(string({result.Descriptors.Contracts}), ...
                 ["scientific", "result", "presentation", "system"]);
             testCase.verifyEqual(numel(unique(string({result.Descriptors.Id}))), 4);
+            testCase.verifyEqual(count(output, newline), 1);
+            testCase.verifySubstring(output, "paths=2");
+            testCase.verifySubstring(output, "evidence-owners=4");
+            testCase.verifySubstring(output, "contract-queries=4");
+            testCase.verifySubstring(output, "unique-tests=4");
+            testCase.verifyFalse(contains(output, "0/"));
         end
 
         function scopedAgentPolicySelectsRepositoryEvidence(testCase)
