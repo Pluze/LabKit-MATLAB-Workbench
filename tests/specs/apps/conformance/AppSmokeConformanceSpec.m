@@ -1,16 +1,17 @@
 classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
-    %APPSMOKECONFORMANCESPEC Verify each public App materializes its declared layout.
+    %APPSMOKECONFORMANCESPEC Verify each public App's native synthetic workflow.
 
     properties (TestParameter)
         App = labkittest.publicApps()
     end
 
     methods (Test, TestTags = {'Contract:product', 'Env:hidden-gui'})
-        function launchesThroughTheSupportedDefinition(testCase, App)
+        function materializesDefinitionAndLaunchesSyntheticProject(testCase, App)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = feval(char(App.Package + ".definition"));
-            journal = labkittest.temporarySessionJournal(definition, folder);
+            journal = labkittest.temporarySessionJournal( ...
+                definition, fullfile(folder, "default-session"));
             runtime = labkittest.createMatlabRuntime( ...
                 definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
@@ -26,18 +27,6 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
                 testCase.verifyNumElements(findall(figure, "Tag", target), 1, ...
                     "Declared semantic target was not materialized exactly once: " + target);
             end
-            clear cleanup
-        end
-
-        function generatesSyntheticInputsWithoutMutatingRunningApp(testCase, App)
-            folder = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            definition = feval(char(App.Package + ".definition"));
-            journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkittest.createMatlabRuntime( ...
-                definition, [], struct(), ...
-                journal);
-            cleanup = onCleanup(@() runtime.close());
             stateBeforeGeneration = runtime.State;
 
             pack = runtime.generateSyntheticInputs(folder);
@@ -48,23 +37,18 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile( ...
                 folder, "synthetic-input-pack.json")));
             clear cleanup
-        end
 
-        function launchesEverySyntheticProjectNatively(testCase, App)
-            folder = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            definition = feval(char(App.Package + ".definition"));
-            pack = labkittest.generateSyntheticInputs( ...
-                definition, folder);
-            journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkittest.createMatlabRuntime( ...
+            syntheticJournal = labkittest.temporarySessionJournal( ...
+                definition, fullfile(folder, "synthetic-session"));
+            syntheticRuntime = labkittest.createMatlabRuntime( ...
                 definition, pack.InitialProject, struct(), ...
-                journal);
-            cleanup = onCleanup(@() runtime.close());
+                syntheticJournal);
+            syntheticCleanup = onCleanup(@() syntheticRuntime.close());
 
-            testCase.verifyTrue(isgraphics(runtime.figureHandle(), "figure"));
-            testCase.verifyFalse(runtime.StartupFailed);
-            clear cleanup
+            testCase.verifyTrue(isgraphics( ...
+                syntheticRuntime.figureHandle(), "figure"));
+            testCase.verifyFalse(syntheticRuntime.StartupFailed);
+            clear syntheticCleanup
         end
     end
 end
