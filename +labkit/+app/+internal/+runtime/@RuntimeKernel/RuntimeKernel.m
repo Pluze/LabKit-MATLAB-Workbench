@@ -154,7 +154,11 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if obj.Closed
                 return;
             end
-            obj.PostedEvents.post(eventId, updateState);
+            if obj.Processing
+                obj.PostedEvents.defer(eventId, updateState);
+            else
+                obj.PostedEvents.post(eventId, updateState);
+            end
         end
 
         function failNextCommit(obj)
@@ -663,10 +667,10 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
             if obj.Processing
                 % A timer or stream can fire while a native presentation
-                % yields to MATLAB's event loop. Keep the coalesced event in
-                % its pump instead of extending the active user transaction
-                % with an unbounded producer-driven transition chain.
-                obj.PostedEvents.post(eventId, updateState);
+                % yields to MATLAB's event loop. Retain the coalesced event
+                % with its pump suspended instead of extending the active
+                % transaction with a producer-driven transition chain.
+                obj.PostedEvents.defer(eventId, updateState);
                 return;
             end
             try
@@ -725,6 +729,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function finishProcessing(obj, showBusy)
             obj.Processing = false;
+            obj.PostedEvents.resume();
             if showBusy && ...
                     isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                 obj.Adapter.endBusy(obj.Presentation);

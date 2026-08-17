@@ -10,6 +10,7 @@ classdef (Hidden, Sealed) PostedEventQueue < handle
         Updates (1, :) cell = {}
         Pump = []
         Draining (1, 1) logical = false
+        Suspended (1, 1) logical = false
         Closed (1, 1) logical = false
     end
 
@@ -32,21 +33,30 @@ classdef (Hidden, Sealed) PostedEventQueue < handle
             if obj.Closed
                 return;
             end
-            match = find(obj.EventIds == eventId, 1);
-            if isempty(match)
-                obj.EventIds(end + 1) = eventId;
-                obj.Updates{end + 1} = updateState;
-            else
-                obj.Updates{match} = updateState;
+            obj.retain(eventId, updateState);
+            obj.startIfReady();
+        end
+
+        function defer(obj, eventId, updateState)
+            if obj.Closed
+                return;
             end
-            if string(obj.Pump.Running) == "off"
-                start(obj.Pump);
+            obj.Suspended = true;
+            obj.retain(eventId, updateState);
+        end
+
+        function resume(obj)
+            if obj.Closed
+                return;
             end
+            obj.Suspended = false;
+            obj.startIfReady();
         end
 
         function drain(obj)
-            if obj.Closed || obj.Draining || isempty(obj.EventIds)
-                obj.stopIfEmpty();
+            if obj.Closed || obj.Suspended || obj.Draining || ...
+                    isempty(obj.EventIds)
+                obj.stopIfInactive();
                 return;
             end
             obj.Draining = true;
@@ -66,6 +76,7 @@ classdef (Hidden, Sealed) PostedEventQueue < handle
                 return;
             end
             obj.Closed = true;
+            obj.Suspended = false;
             obj.EventIds = strings(1, 0);
             obj.Updates = {};
             pump = obj.Pump;
@@ -83,13 +94,32 @@ classdef (Hidden, Sealed) PostedEventQueue < handle
     end
 
     methods (Access = private)
-        function finishDrain(obj)
-            obj.Draining = false;
-            obj.stopIfEmpty();
+        function retain(obj, eventId, updateState)
+            match = find(obj.EventIds == eventId, 1);
+            if isempty(match)
+                obj.EventIds(end + 1) = eventId;
+                obj.Updates{end + 1} = updateState;
+            else
+                obj.Updates{match} = updateState;
+            end
         end
 
-        function stopIfEmpty(obj)
-            if ~isempty(obj.EventIds) || isempty(obj.Pump) || ...
+        function startIfReady(obj)
+            if obj.Suspended || isempty(obj.EventIds) || isempty(obj.Pump) || ...
+                    ~isvalid(obj.Pump) || string(obj.Pump.Running) ~= "off"
+                return;
+            end
+            start(obj.Pump);
+        end
+
+        function finishDrain(obj)
+            obj.Draining = false;
+            obj.stopIfInactive();
+        end
+
+        function stopIfInactive(obj)
+            if (~obj.Suspended && ~isempty(obj.EventIds)) || ...
+                    isempty(obj.Pump) || ...
                     ~isvalid(obj.Pump) || string(obj.Pump.Running) == "off"
                 return;
             end
