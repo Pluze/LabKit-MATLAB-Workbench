@@ -42,6 +42,14 @@ function [connection, settings, result] = writeSetting( ...
 %
 % See also labkit.mark10.readSettings, labkit.mark10.disconnect
     connection = requireMark10Connection(connection);
+    if mark10IsServiceConnection(connection)
+        request = struct("Name", string(name), "Value", value);
+        [connection, payload] = mark10ServiceRequest( ...
+            connection, "writeSetting", request);
+        settings = payload{1};
+        result = payload{2};
+        return;
+    end
     [connection, baseline] = labkit.mark10.readSettings(connection);
     [command, expected] = settingCommand(name, value);
     if lower(string(name)) == "autooutput" && expected > 0

@@ -32,17 +32,16 @@ force/travel sample and updates only **Live Readout**. It does not start a run,
 append to the monitoring buffer, or change export eligibility.
 
 Choose 10, 20, 30, 40, or 50 Hz paced acquisition; 50 Hz is the default.
-Measured rate is shown instead of assuming the requested value. A facade-owned
-Base MATLAB fixed-rate timer requests and timestamps synchronized samples with
-`BusyMode="drop"`, so delayed work skips an overdue attempt instead of building
-a stale callback backlog. The App retains every completed attempt but refreshes
-plots, controls, and diagnostics at no more than 2 frames per second. Only one
+Measured rate is shown instead of assuming the requested value. One
+facade-owned Base MATLAB background worker exclusively owns the serial port
+while monitoring, follows absolute sample deadlines, and returns completed
+samples in bounded batches. A slow response may therefore be followed by an
+immediate real read to recover the requested average rate; no sample or
+timestamp is fabricated. The App retains every completed attempt but refreshes
+plots, controls, and diagnostics at no more than 10 frames per second. Only one
 unhandled display refresh is queued, keeping presentation work bounded ahead
-of **Stop Monitoring** or the Tools menu. Stopping deletes the sampling timer,
-commits one final buffer snapshot, and keeps the serial port connected.
-The first read starts after a 0.25-second handoff so the Start Monitoring action
-can finish publishing its UI state before polling begins; the selected 10--50
-Hz period applies unchanged after that handoff.
+of **Stop Monitoring** or the Tools menu. Stopping flushes the final sample
+batch, commits one final buffer snapshot, and keeps the serial port connected.
 
 The ESM303 `n` response does not include a device timestamp. Recorded `Time_s`
 is the monotonic host time when the complete force/travel response is accepted;

@@ -45,6 +45,13 @@ product, and rely on clean no-Toolbox CI for executable closure. When retiring
 a concrete Toolbox gateway, add the smallest source guard that prevents its
 return. Do not create a product-debt registry.
 
+Do not infer product ownership from a `parallel.*` namespace alone. MATLAB
+owns `backgroundPool`, explicit `parfeval(backgroundPool,...)`, and
+`parallel.pool.PollableDataQueue`; their no-Toolbox contract is one background
+worker. Parallel Computing Toolbox owns `parpool`, `parfor`, `spmd`, pool and
+cluster objects, and multi-worker acceleration. Guards should reject those
+specific boundaries while allowing the explicit Base MATLAB background path.
+
 When an App calls `labkit.<facade>`, require the matching facade range in its
 definition and conformance coverage for declaration completeness. Runtime
 launch must assert declared ranges before native window creation.

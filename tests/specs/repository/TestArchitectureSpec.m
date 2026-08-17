@@ -85,21 +85,20 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             end
         end
 
-        function productionHasNoParallelToolboxRuntime(testCase)
+        function productionUsesOnlyBaseMatlabBackgroundRuntime(testCase)
             root = labkittest.setup();
             files = replace(repositoryTextFiles(root), "\", "/");
             files = files(endsWith(lower(files), ".m"));
             files = files(files == "labkit_launcher.m" | ...
                 startsWith(files, ["+labkit/" "apps/" "tools/"]));
-            expression = ["parallel" + "\." ...
-                "background" + "Pool" ...
-                "par" + "feval\s*\("];
-            probe = ["parallel.pool.PollableDataQueue" ...
-                "backgroundPool" "parfeval(backgroundPool, @work)"];
+            expression = ["parpool\s*\(" "parfor\s+" "spmd\s*\(" ...
+                "parallel\.Pool" "parallel\.Cluster"];
+            probe = ["parpool('threads')" "parfor index = 1:2" ...
+                "spmd(2)" "parallel.Pool.empty" "parallel.Cluster"];
             testCase.verifyTrue(all(arrayfun(@(index) ~isempty(regexp( ...
                 probe(index), expression(index), "once")), ...
                 1:numel(expression))), ...
-                "The retired-symbol guard patterns must prove their own coverage.");
+                "The Toolbox-only guard patterns must prove their own coverage.");
             violations = strings(0, 1);
             for file = files.'
                 source = string(fileread(fullfile(root, file)));
@@ -111,8 +110,34 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             end
 
             testCase.verifyEmpty(violations, ...
-                "Production must remain independent of Parallel Computing Toolbox: " + ...
+                "Production must not open or address Parallel Computing Toolbox pools: " + ...
                 strjoin(violations, ", "));
+
+            driver = text(root, "+labkit/+mark10/connect.m");
+            testCase.verifySubstring(driver, ...
+                "parfeval(backgroundPool, @mark10ServiceLoop");
+            testCase.verifySubstring(driver, ...
+                "parallel.pool.PollableDataQueue");
+            testCase.verifyFalse(contains(driver, "parfeval(@"), ...
+                "Background work must explicitly name backgroundPool.");
+        end
+
+        function developFeedbackUsesOneCancelableBaseMatlabLane(testCase)
+            root = labkittest.setup();
+            workflow = text(root, ...
+                ".github/workflows/development-feedback.yml");
+
+            testCase.verifySubstring(workflow, "branches:");
+            testCase.verifySubstring(workflow, "- develop");
+            testCase.verifySubstring(workflow, "runs-on: ubuntu-latest");
+            testCase.verifySubstring(workflow, "release: latest");
+            testCase.verifyFalse(contains(workflow, "products:"));
+            testCase.verifySubstring(workflow, "cancel-in-progress: true");
+            testCase.verifySubstring(workflow, "github.event.before");
+            testCase.verifySubstring(workflow, ...
+                "artifacts/development-feedback/changed-paths.txt");
+            testCase.verifySubstring(workflow, "runDevelopmentFeedback");
+            testCase.verifySubstring(workflow, "tasks: docsCheck");
         end
 
         function ciUsesTwoModesWithoutWeakeningManualRecovery(testCase)

@@ -32,8 +32,10 @@ have matching declarations.
 - The root and App governance contracts, architecture guide, and getting
   started guide now state the Base MATLAB-only boundary.
 - Obsolete Toolbox-debt registry and ledger language were removed. A focused
-  repository guard prevents the retired Parallel Computing Toolbox gateways
-  from returning while clean CI remains the executable general boundary.
+  repository guard prevents pool and cluster APIs owned by Parallel Computing
+  Toolbox from entering production while preserving MATLAB's explicit
+  single-worker `backgroundPool` path. Clean CI remains the executable general
+  boundary.
 - `Definition.launch` asserts declared facade compatibility before creating a
   native figure. Public-App conformance scans App source for undeclared facade
   calls.
@@ -58,22 +60,24 @@ LabKit facade they call; an omitted declaration is now a conformance failure.
 
 Focused App SDK coverage verifies pre-window requirement enforcement. Public
 App definition conformance checks declared versions and call completeness.
-Repository policy scans production source for the retired Parallel Computing
-Toolbox entry points, while the platform matrix runs without optional
-Toolboxes.
+Repository policy scans production source for Parallel Computing Toolbox pool,
+cluster, and parallel-language entry points while allowing explicit Base MATLAB
+background dispatch. The platform matrix runs without optional Toolboxes.
 
 ## Evidence
 
 All 88 public-App conformance identities passed, including facade-call
 completeness and Video Marker's corrected declaration. Ten Mark-10 facade and
 three acquisition identities passed without Parallel Computing Toolbox. The
-focused pre-window launch assertion and retired-PCT source guard passed. The
+focused pre-window launch assertion and PCT pool/cluster source guard passed. The
 repository Skill validator accepted all 11 Skill contracts after the boundary
 skill gained its Base MATLAB dependency procedure.
 
 ## Known limitations and follow-up
 
 MATLAB's static product report currently misclassifies the App layout `Step`
-property as Control System Toolbox usage, so it is not used as a merge gate.
-Clean Base MATLAB execution and focused retired-symbol guards remain the
-authoritative evidence unless MathWorks provides a precise product trace.
+property as Control System Toolbox usage and conservatively reports Parallel
+Computing Toolbox for MATLAB's no-license `backgroundPool` APIs. It is therefore
+not used as a merge gate. Clean Base MATLAB execution, direct symbol-contract
+review, and focused Toolbox-only source guards remain the authoritative
+evidence unless MathWorks provides a more precise product trace.

@@ -9,7 +9,8 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
             periods = arrayfun(@mark10_monitor.acquisition.ratePeriod, labels);
             testCase.verifyEqual(periods, 1 ./ [10, 20, 30, 40, 50], ...
                 "AbsTol", eps);
-            testCase.verifyEqual(mark10_monitor.viewRefreshPeriod(), 0.5);
+            testCase.verifyEqual( ...
+                mark10_monitor.acquisition.viewRefreshPeriod(), 0.1);
             testCase.verifyEmpty(buffer("plotTime_s"));
             testCase.verifyEqual(buffer("lastRefresh_s"), -Inf);
             testCase.verifyFalse(buffer("refreshPending"));
@@ -63,6 +64,8 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
             connectionBox = containers.Map( ...
                 "KeyType", "char", "ValueType", "any");
             connectionBox("connection") = samplingConnection();
+            serviceCleanup = onCleanup(@() ...
+                cancelSamplingService(connectionBox("connection")));
             resources("mark10Connection") = connectionBox;
             resources("mark10Buffer") = ...
                 mark10_monitor.acquisition.createBuffer();
@@ -94,15 +97,16 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
                 "labkit.mark10.sampler");
             sampler = resources("mark10Sampler");
             testCase.verifyEqual( ...
-                string(sampler.State("timer").ExecutionMode), "fixedRate");
+                string(sampler.State("timer").ExecutionMode), "fixedSpacing");
             testCase.verifyEqual( ...
                 string(sampler.State("timer").BusyMode), "drop");
+            samplerService = sampler.State("service");
+            testCase.verifyClass(samplerService("future"), ...
+                "parallel.FevalFuture");
             state = mark10_monitor.acquisition.changeRate( ...
                 state, "20 Hz", context);
             testCase.verifyEqual(state.session.acquisition.rate, "20 Hz");
             testCase.verifyEqual(sampler.State("period"), 0.05);
-            testCase.verifyEqual( ...
-                sampler.State("timer").Period, 0.05);
             buffer = resources("mark10Buffer");
             buffer("valid") = [true; false; true];
 
@@ -111,11 +115,15 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
             testCase.verifyTrue(state.session.connection.connected);
             testCase.verifyFalse(state.session.acquisition.monitoring);
             testCase.verifyEqual( ...
+                state.session.acquisition.retainedValidCount, ...
+                sum(buffer("valid")));
+            testCase.verifyGreaterThanOrEqual( ...
                 state.session.acquisition.retainedValidCount, 2);
             testCase.verifyFalse(isKey(resources, "mark10Sampler"));
             testCase.verifyEqual( ...
                 connectionBox("connection").Type, ...
                 "labkit.mark10.connection");
+            clear serviceCleanup
         end
     end
 end
@@ -135,16 +143,58 @@ posts("count") = posts("count") + 1;
 end
 
 function connection = samplingConnection()
-state = containers.Map("KeyType", "char", "ValueType", "any");
-state("command") = "";
-transport = struct( ...
-    "Write", @(bytes) samplingWrite(state, bytes), ...
-    "Flush", @() [], ...
-    "ReadUntil", @(~, ~) samplingRead(state), ...
-    "ReadFor", @(~) uint8([]), ...
-    "Pause", @(~) [], "Close", @() [], "IsOpen", @() true);
-connection = struct("Type", "labkit.mark10.connection", ...
-    "Port", "SYNTHETIC", "Timeout", 1, "Transport", transport, ...
+events = parallel.pool.PollableDataQueue;
+service = containers.Map("KeyType", "char", "ValueType", "any");
+service("commands") = [];
+service("events") = events;
+service("responses") = containers.Map( ...
+    "KeyType", "char", "ValueType", "any");
+service("nextRequestId") = uint64(0);
+service("consumer") = [];
+service("metadata") = samplingMetadata();
+service("closed") = false;
+service("future") = parfeval( ...
+    backgroundPool, @fakeSamplingService, 0, events);
+ready = poll(events, 10);
+assert(~isempty(ready), "Fake Mark-10 driver did not become ready.");
+service("commands") = ready.Payload{1};
+service("metadata") = ready.Metadata;
+connection = ready.Metadata;
+connection.Type = "labkit.mark10.connection";
+connection.Transport = struct();
+connection.Service = service;
+end
+
+function cancelSamplingService(connection)
+if ~isstruct(connection) || ~isfield(connection, "Service")
+    return;
+end
+future = connection.Service("future");
+if isvalid(future) && string(future.State) ~= "finished"
+    cancel(future);
+end
+end
+
+function fakeSamplingService(events)
+commands = parallel.pool.PollableDataQueue;
+metadata = samplingMetadata();
+send(events, samplingEvent("ready", 0, {commands}, metadata));
+running = true;
+while running
+    command = poll(commands, 0.1);
+    if isempty(command)
+        continue;
+    end
+    if string(command.Action) == "disconnect"
+        running = false;
+    end
+    send(events, samplingEvent( ...
+        "response", command.RequestId, {}, metadata));
+end
+end
+
+function metadata = samplingMetadata()
+metadata = struct("Port", "SYNTHETIC", "Timeout", 1, ...
     "Identity", struct(), "Capabilities", struct( ...
     "CombinedSample", "SUPPORTED"), "Settings", struct(), ...
     "RestoreAutoOutput", "AOUT0", ...
@@ -152,20 +202,9 @@ connection = struct("Type", "labkit.mark10.connection", ...
     "LastFailure", struct("Status", "", "Message", ""));
 end
 
-function samplingWrite(state, bytes)
-state("command") = strip(erase(string(native2unicode( ...
-    uint8(bytes(:).'), "UTF-8")), char(13)));
-end
-
-function raw = samplingRead(state)
-if state("command") == "LIST"
-    raw = uint8(char("V1.00;N;CUR;FLTC0;FLTP0;AOUT0;" + ...
-        "AOFF0;FULL;IPOL1;OPOL0" + newline));
-elseif state("command") == "n"
-    raw = uint8(sprintf('1.00 N\r\n2.00 mm\r\n'));
-else
-    raw = uint8([]);
-end
+function value = samplingEvent(type, requestId, payload, metadata)
+value = struct("Type", string(type), "RequestId", uint64(requestId), ...
+    "Payload", {payload}, "Metadata", metadata);
 end
 
 function setResource(resources, cleanups, id, value, cleanup)

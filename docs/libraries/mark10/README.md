@@ -30,16 +30,22 @@ samplingCleanup = onCleanup(@() labkit.mark10.stopSampling(sampler));
 ```
 
 `connect` opens and probes one Base MATLAB serial transport that remains owned
-by the facade until `disconnect`. `startSampling` creates a Base MATLAB
-fixed-rate timer with `BusyMode="drop"`; it assembles and timestamps each
-synchronized two-line response, then invokes the caller's lightweight sample
-consumer. An overdue callback is skipped instead of accumulating stale work.
-The first callback is deferred for 0.25 seconds so an App action can finish its
-state publication and presentation before serial polling enters the MATLAB
-event loop; this does not change the requested steady-state period.
-`setSamplingPeriod` restarts that timer at the new period without replacing the
-serial connection. `stopSampling` deletes the timer and returns the updated
-connected token without closing the port.
+by the facade until `disconnect`. During `startSampling`, one Base MATLAB
+`backgroundPool` worker exclusively owns that transport. It follows absolute
+sample deadlines, assembles and timestamps each synchronized two-line response,
+and sends batches of at most 10 completed samples to the client. Occasional
+slow responses therefore do not permanently lower the requested average rate;
+the driver immediately performs the next real read when a deadline has passed,
+without inventing samples or rewriting receipt timestamps.
+
+A lightweight 20 Hz client timer drains those batches and invokes the caller's
+sample consumer. GUI rendering cannot set the serial acquisition pace, and the
+App may present a much slower latest snapshot while retaining every completed
+sample. `setSamplingPeriod` updates the worker without replacing the serial
+connection. `stopSampling` flushes the final batch, stops the worker, deletes
+the delivery timer, and returns the updated connected token without closing
+the port. The explicit background APIs remain available with one worker in a
+Base MATLAB installation; no Parallel Computing Toolbox pool is opened.
 
 The ESM303 `n` response contains force and travel but no device timestamp.
 Each sample therefore includes `HostTime_s`, a monotonic timestamp taken when

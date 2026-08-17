@@ -41,6 +41,13 @@ fallback branches. A clean CI runtime without optional Toolboxes exercises the
 shipped behavior, and focused source guards prevent retired concrete Toolbox
 entry points from returning.
 
+MATLAB's namespace names do not by themselves identify a Toolbox dependency.
+Base MATLAB includes one `backgroundPool` worker when Parallel Computing
+Toolbox is absent, together with explicit `parfeval(backgroundPool,...)` and
+`parallel.pool.PollableDataQueue` messaging. Production may use that explicit
+single-worker background path, but it must not open parallel pools, use
+parallel language constructs, or rely on Toolbox multi-worker acceleration.
+
 ## Version Ownership
 
 Facade and App compatibility is expressed by the existing version metadata and

@@ -24,6 +24,10 @@ function disconnect(connection)
 %
 % See also labkit.mark10.connect
     connection = requireConnection(connection);
+    if mark10IsServiceConnection(connection)
+        disconnectService(connection);
+        return;
+    end
     t = connection.Transport;
     if ~t.IsOpen()
         return;
@@ -50,8 +54,31 @@ function connection = requireConnection(connection)
 if ~isstruct(connection) || ~isscalar(connection) || ...
         ~isfield(connection, "Type") || ...
         string(connection.Type) ~= "labkit.mark10.connection" || ...
-        ~isfield(connection, "Transport")
+        (~isfield(connection, "Transport") && ...
+        ~mark10IsServiceConnection(connection))
     error("labkit:mark10:InvalidConnection", ...
         "Expected a connection returned by labkit.mark10.connect.");
+end
+end
+
+function disconnectService(connection)
+service = connection.Service;
+if service("closed")
+    return;
+end
+try
+    mark10ServiceRequest(connection, "disconnect", struct());
+catch
+end
+service("closed") = true;
+service("consumer") = [];
+future = service("future");
+started = tic;
+while ~isempty(future) && isvalid(future) && ...
+        string(future.State) ~= "finished" && toc(started) < 1
+    pause(0.005);
+end
+if ~isempty(future) && isvalid(future) && string(future.State) ~= "finished"
+    cancel(future);
 end
 end

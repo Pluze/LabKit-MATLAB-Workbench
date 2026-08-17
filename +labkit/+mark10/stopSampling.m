@@ -5,7 +5,8 @@ function connection = stopSampling(sampler)
 %   connection = labkit.mark10.stopSampling(sampler)
 %
 % Description:
-%   Stops and deletes the Base MATLAB sampling timer. The operation is
+%   Stops the Base MATLAB background worker, drains its final sample batch,
+%   and deletes the lightweight client delivery timer. The operation is
 %   idempotent and leaves the serial port connected.
 %
 % Inputs:

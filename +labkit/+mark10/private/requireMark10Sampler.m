@@ -13,7 +13,7 @@ if ~isstruct(sampler) || ~isscalar(sampler) || ...
         "Expected a sampler returned by labkit.mark10.startSampling.");
 end
 state = sampler.State;
-required = ["stopped", "connection", "period", "timer", "consumer", "started"];
+required = ["stopped", "connection", "period", "timer", "service"];
 if ~all(isKey(state, cellstr(required)))
     error("labkit:mark10:InvalidSampler", ...
         "Mark-10 sampler state is invalid.");

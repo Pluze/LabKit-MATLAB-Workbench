@@ -32,7 +32,8 @@ end
 
 function postRefreshIfDue(buffer, elapsed, context)
 if buffer("refreshPending") || ...
-        elapsed - buffer("lastRefresh_s") < mark10_monitor.viewRefreshPeriod()
+        elapsed - buffer("lastRefresh_s") < ...
+        mark10_monitor.acquisition.viewRefreshPeriod()
     return;
 end
 buffer("lastRefresh_s") = elapsed;

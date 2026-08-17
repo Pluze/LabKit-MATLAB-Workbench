@@ -109,6 +109,12 @@ under `docs/`.
   downloaded weights, first-run installation, or third-party runtime. A need
   that Base MATLAB cannot satisfy is an architecture blocker requiring an
   explicit user decision; it is not temporary dependency debt.
+- Product ownership follows the documented MATLAB function contract, not a
+  namespace prefix. Base MATLAB `backgroundPool`, explicit
+  `parfeval(backgroundPool,...)`, and `parallel.pool.PollableDataQueue` are
+  permitted background primitives; without Parallel Computing Toolbox they
+  provide one worker. Do not use `parpool`, `parfor`, `spmd`, Toolbox pool or
+  cluster objects, or implicit `parfeval` dispatch in production.
 - Clean CI runtimes without optional Toolboxes are the executable dependency
   boundary. Keep fixed production symbols directly visible, exercise shipped
   paths there, and add a focused source guard when retiring a concrete Toolbox

@@ -7,8 +7,8 @@ sequence: 178
 type: feat
 compatibility: compatible
 component: `labkit.app` | `2.3.0 -> 2.4.2`
-component: `labkit.mark10` | `new -> 1.1.2`
-component: `labkit_Mark10Monitor_app` | `new -> 1.1.2`
+component: `labkit.mark10` | `new -> 1.1.3`
+component: `labkit_Mark10Monitor_app` | `new -> 1.1.3`
 scope: Background acquisition and streaming state publication
 scope: Optional project persistence and precise dirty state
 scope: Mark-10 ESM303 and Series 5 monitoring
@@ -58,10 +58,11 @@ Force Gauges App.
 - Session-only transactions no longer mark project documents dirty.
 - `labkit.mark10` adds port discovery, connect/disconnect, synchronized sample
   reads with fallback, LIST decoding, safe setting readback, verified
-  force/travel zero behavior, and paced sampling. A facade-owned Base MATLAB
-  fixed-rate timer owns sampling, timestamps complete responses, drops overdue
-  callbacks instead of queuing stale work, and leaves the connection open when
-  sampling stops.
+  force/travel zero behavior, and paced sampling. One facade-owned Base MATLAB
+  background worker exclusively owns the serial port while sampling, follows
+  absolute deadlines, timestamps complete responses, and sends bounded batches
+  to a lightweight client delivery timer. Sampling stop flushes the final batch
+  and leaves the connection open.
 - Mark-10 Monitor adds explicit live monitoring with in-memory retention, safe
   settings, standard CSV, MESUR gauge-compatible LOG, complete MAT export, and
   offline replay without a separate recording state.
@@ -74,7 +75,7 @@ Force Gauges App.
   output, live views, retained data, exports, analysis, and replay.
 - The monitor uses 10--50 Hz acquisition with a 50 Hz default. Its paced
   producer writes every completed response to memory, while an independent
-  latest-value consumer caps presentation at 2 Hz, coalesces pending
+  latest-value consumer caps presentation at 10 Hz, coalesces pending
   refreshes, reuses plot objects, and shows
   dual-axis time series above the standard force-versus-travel curve.
 - Loading a recording displays complete curves immediately; Reset restores
@@ -134,7 +135,7 @@ compliance.
 
 The App SDK addition remains in the version-2 compatibility range. Existing
 Apps need no callback or project migration. The new driver and App begin at
-version 1.1.2 and introduce no saved-project format because the monitor is
+version 1.1.3 and introduce no saved-project format because the monitor is
 intentionally session-only.
 
 ## Validation
@@ -143,7 +144,7 @@ Focused SDK specifications cover validation, coalescing, close behavior,
 session-only dirty state, unchanged native-operation suppression, semantic
 control updates, and complete plot-popout copying. Offline Mark-10
 specifications cover response contamination, unit normalization, LIST parsing,
-fallback transactions, Base MATLAB timer ownership, and facade
+fallback transactions, Base MATLAB background-worker ownership, and facade
 metadata. App result specifications cover exact LOG bytes, CSV/LOG/MAT
 reopen, replay rate mapping, acquisition-source replacement, and retained
 samples, strict device-only travel zero, and refusal to send `z` without
@@ -157,16 +158,18 @@ App definition and initial lifecycle.
   close, dirty state, and hidden-handle plot copying.
 - Nine Mark-10 facade identities and 24 affected App capability identities
   passed without hardware.
-- A profiler-backed synthetic 18 ms response probe retained 301 samples over
-  6.299 seconds at 47.623 Hz through the facade timer, sample decoder, and real
-  App buffer consumer without an optional Toolbox.
-- A 12-second approved-device probe retained 583 of 583 valid synchronized
-  samples over 11.998 seconds at 48.509 Hz, exceeding the retired worker's
-  47.88 Hz baseline. The synchronous start call took 0.174 seconds.
+- A profiler-backed hidden-UI probe updated both 2000-point live plots 20 times
+  with a 2.32 ms mean wall-clock update, leaving substantial margin inside the
+  100 ms presentation period after one-time axes and legend construction.
+- A 12-second approved-device probe of the delivered facade retained 606 of
+  606 valid synchronized samples over 12.117 seconds at 50.012 Hz while the
+  client incurred 32 simulated 90 ms GUI stalls. The largest worker sample gap
+  was 33.8 ms, all 606 queued samples arrived, and the device's measured
+  continuous-read ceiling was 63.95 Hz.
 - An anonymized pre-change device diagnostic contained no errors but measured
-  two Start Monitoring interactions at 1.42 and 10.97 seconds. The Base timer
-  defers its first callback by 0.25 seconds so the owning App transaction can
-  publish before serial polling enters the event loop.
+  two Start Monitoring interactions at 1.42 and 10.97 seconds. Sampling now
+  leaves serial reads on the background worker while the client publishes and
+  renders its state independently.
 - All 66 public-App definition identities passed with the new App discovered
   from its normal launcher path.
 - Documentation rendered deterministically to 408 generated files.

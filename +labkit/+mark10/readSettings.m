@@ -25,6 +25,12 @@ function [connection, settings] = readSettings(connection)
 %
 % See also labkit.mark10.writeSetting, labkit.mark10.decodeSettings
     connection = requireMark10Connection(connection);
+    if mark10IsServiceConnection(connection)
+        [connection, payload] = mark10ServiceRequest( ...
+            connection, "readSettings", struct());
+        settings = payload{1};
+        return;
+    end
     [raw, outcome] = mark10GaugeRequest(connection, "LIST");
     settings = labkit.mark10.decodeSettings(raw);
     if strlength(settings.Raw) > 0
