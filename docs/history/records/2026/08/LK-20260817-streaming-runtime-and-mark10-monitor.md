@@ -6,9 +6,9 @@ date: 2026-08-17
 sequence: 178
 type: feat
 compatibility: compatible
-component: `labkit.app` | `2.3.0 -> 2.4.2`
-component: `labkit.mark10` | `new -> 1.1.3`
-component: `labkit_Mark10Monitor_app` | `new -> 1.1.3`
+component: `labkit.app` | `2.3.0 -> 2.4.0`
+component: `labkit.mark10` | `new -> 1.0.0`
+component: `labkit_Mark10Monitor_app` | `new -> 1.0.0`
 scope: Background acquisition and streaming state publication
 scope: Optional project persistence and precise dirty state
 scope: Mark-10 ESM303 and Series 5 monitoring
@@ -135,7 +135,7 @@ compliance.
 
 The App SDK addition remains in the version-2 compatibility range. Existing
 Apps need no callback or project migration. The new driver and App begin at
-version 1.1.3 and introduce no saved-project format because the monitor is
+version 1.0.0 and introduce no saved-project format because the monitor is
 intentionally session-only.
 
 ## Validation
