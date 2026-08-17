@@ -41,6 +41,20 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "CreateSession", @wrongSession), "labkit:app:contract:CallbackRoleMismatch");
         end
 
+        function enforcesFacadeRequirementsBeforeNativeLaunch(testCase)
+            app = labkit.app.Definition( ...
+                "Entrypoint", "labkit_AppSdkProbe_app", ...
+                "AppId", "probe.app", "Title", "SDK probe", ...
+                "Family", "Tests", "AppVersion", "1.0.0", ...
+                "Updated", "2026-08-17", ...
+                "Requirements", labkit.contract.requirements( ...
+                "missing_facade", ">=1 <2"), ...
+                "Workbench", labkit.app.layout.workbench({}));
+
+            testCase.verifyError(@() app.launch(), ...
+                "labkit_AppSdkProbe_app:IncompatibleLabKit");
+        end
+
         function exposesTypedEventsRatherThanAmbiguousTransport(testCase)
             edit = labkit.app.event.TableCellEdit( ...
                 RowId="row-a", RowIndex=1, ColumnId="group", ColumnIndex=2, ...
@@ -68,6 +82,131 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "labkit:app:runtime:InvariantFailure");
             testCase.verifyError(@() context.inform("message", "title"), ...
                 "labkit:app:runtime:InvariantFailure");
+        end
+
+        function preservesBothDualYAxisViewports(testCase)
+            figureHandle = figure("Visible", "off");
+            cleanup = onCleanup(@() close(figureHandle));
+            ax = axes(figureHandle);
+            yyaxis(ax, "left");
+            ylim(ax, [-2, 8]);
+            yyaxis(ax, "right");
+            ylim(ax, [10, 30]);
+            viewport = labkit.app.internal.native.NativeAdapterValues. ...
+                captureViewport(ax);
+
+            yyaxis(ax, "left");
+            ylim(ax, [0, 1]);
+            yyaxis(ax, "right");
+            ylim(ax, [0, 1]);
+            labkit.app.internal.native.NativeAdapterValues. ...
+                restoreViewport(ax, viewport);
+
+            testCase.verifyEqual(ax.YAxis(1).Limits, [-2, 8]);
+            testCase.verifyEqual(ax.YAxis(2).Limits, [10, 30]);
+            clear cleanup
+        end
+
+        function validatesPostedEventCapability(testCase)
+            observed = containers.Map("KeyType", "char", "ValueType", "any");
+            backend = struct("postEvent", @(eventId, updateState) ...
+                capturePostedEvent(observed, eventId, updateState));
+            context = ...
+                labkit.app.internal.runtime.CallbackContextFactory.create(backend);
+
+            context.postEvent("stream.refresh", @latestStreamRefresh);
+
+            testCase.verifyEqual(observed("eventId"), "stream.refresh");
+            testCase.verifyEqual(string(func2str(observed("updateState"))), ...
+                "latestStreamRefresh");
+            testCase.verifyError(@() context.postEvent("bad event", ...
+                @latestStreamRefresh), "labkit:app:contract:InvalidValue");
+            testCase.verifyError(@() context.postEvent("stream.refresh", ...
+                @invalidPostedUpdate), "labkit:app:contract:InvalidValue");
+        end
+
+        function coalescesPostedEventsAndIgnoresThemAfterClose(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.button("post", "Post", @postStreamRefresh, ...
+                    Tooltip="Post synthetic stream refreshes.")});
+            app = AppSdkSpec.definition(layout, ...
+                "CreateSession", @createPostedEventSession);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() closePostedEventRuntime(runtime));
+
+            runtime.invokeAction("post");
+            pause(0.05);
+            drawnow;
+
+            testCase.verifyEqual(runtime.State.session.refreshValue, 2);
+            testCase.verifyEqual(runtime.State.session.dashboardCount, 1);
+            testCase.verifyEqual(runtime.State.session.failedCount, 0);
+            context = getappdata(groot, "labkitPostedEventContext");
+            runtime.close();
+            context.postEvent("stream.refresh", @latestStreamRefresh);
+            pause(0.02);
+            testCase.verifyTrue(runtime.Closed);
+            clear cleanup
+        end
+
+        function defersPostedEventsUntilTheActiveTransactionCompletes(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.button("post", "Post", ...
+                    @postFromActiveTransaction, ...
+                    Tooltip="Post while the synthetic action remains active.")});
+            app = AppSdkSpec.definition(layout, ...
+                "CreateSession", @createPostedEventSession);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() closePostedEventRuntime(runtime));
+
+            started = tic;
+            runtime.invokeAction("post");
+            actionSeconds = toc(started);
+
+            testCase.verifyLessThan(actionSeconds, 0.5, ...
+                "A background producer must not extend its active user transaction.");
+            pause(0.08);
+            drawnow;
+            testCase.verifyEqual(runtime.State.session.refreshValue, 2);
+            clear cleanup
+        end
+
+        function sessionOnlyTransactionsDoNotDirtyProjects(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.button("session", "Session", ...
+                    @changeSessionOnly, Tooltip="Change transient state."), ...
+                labkit.app.layout.button("project", "Project", ...
+                    @changeProject, Tooltip="Change durable state.")});
+            app = AppSdkSpec.definition(layout, ...
+                "ProjectSchema", labkit.app.project.Schema( ...
+                Version=1, Create=@createProject, Validate=@validateProject), ...
+                "CreateSession", @createDirtyTrackingSession);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            projectFile = fullfile(root, "project.mat");
+            runtime.saveProject(runtime.State, projectFile);
+
+            runtime.invokeAction("session");
+
+            testCase.verifyEqual(runtime.State.session.refreshCount, 1);
+            testCase.verifyFalse(runtime.documentMetadata().dirty);
+
+            runtime.invokeAction("project");
+
+            testCase.verifyTrue(runtime.documentMetadata().dirty);
+            clear cleanup
         end
 
         function separatesInformationalAndErrorDialogs(testCase)
@@ -337,6 +476,24 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile( ...
                 folder, "synthetic-input-pack.json")));
             clear cleanup
+
+            projectFreeApp = AppSdkSpec.definition( ...
+                labkit.app.layout.workbench({}), ...
+                BuildSyntheticSample=@projectFreeSyntheticSample);
+            projectFreeJournal = labkittest.temporarySessionJournal( ...
+                projectFreeApp, folder);
+            projectFreeRuntime = ...
+                labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+                projectFreeApp, [], struct(), projectFreeJournal);
+            projectFreeCleanup = onCleanup(@() projectFreeRuntime.close());
+            stateBeforeGeneration = projectFreeRuntime.State;
+
+            projectFreePack = projectFreeRuntime.generateSyntheticInputs(folder);
+
+            testCase.verifyEqual(projectFreeRuntime.State, ...
+                stateBeforeGeneration);
+            testCase.verifyEmpty(fieldnames(projectFreePack.InitialProject));
+            clear projectFreeCleanup
         end
 
         function restoresDeclaredMigrationsAndReadOnlyImports(testCase)
@@ -451,6 +608,59 @@ classdef AppSdkSpec < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = {'Contract:source', 'Env:hidden-gui'})
+        function nativeReconciliationSkipsUnchangedPlotModels(testCase)
+            setappdata(groot, "labkitAppSdkRenderCount", 0);
+            renderCleanup = onCleanup(@() ...
+                rmappdata(groot, "labkitAppSdkRenderCount"));
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.button("refreshStatus", "Refresh status", ...
+                    @refreshStatusOnly, Tooltip="Refresh only status text."), ...
+                labkit.app.layout.statusPanel("refreshSummary"), ...
+                labkit.app.layout.plotArea("stablePlot", @countStablePlot)});
+            app = AppSdkSpec.definition(layout, ...
+                "CreateSession", @createStablePlotSession, ...
+                "PresentWorkbench", @presentStablePlot);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            initialCount = getappdata(groot, "labkitAppSdkRenderCount");
+
+            runtime.invokeAction("refreshStatus");
+
+            testCase.verifyEqual(initialCount, 1);
+            testCase.verifyEqual( ...
+                getappdata(groot, "labkitAppSdkRenderCount"), 1, ...
+                "An unchanged renderer model must not touch native axes.");
+            clear cleanup renderCleanup
+        end
+
+        function popoutPreservesVisibleGraphicsWithHiddenHandles(testCase)
+            existingFigures = findall(groot, "Type", "figure");
+            sourceFigure = figure("Visible", "off");
+            cleanup = onCleanup(@() closeNewFigures(existingFigures));
+            sourceAxes = axes(sourceFigure);
+            plot(sourceAxes, 1:3, 1:3, DisplayName="data");
+            hold(sourceAxes, "on");
+            plot(sourceAxes, 1:3, 2:4, HandleVisibility="off");
+            hold(sourceAxes, "off");
+            labkit.app.plot.enablePopout(sourceAxes);
+            menu = findall(sourceFigure, "Tag", "labkitAxesPopoutMenu");
+
+            menu.MenuSelectedFcn(menu, []);
+            drawnow;
+
+            figures = setdiff(findall(groot, "Type", "figure"), ...
+                [existingFigures; sourceFigure]);
+            testCase.verifyNumElements(figures, 1);
+            popped = figures(1);
+            poppedAxes = findall(popped, "Type", "axes");
+            testCase.verifyNumElements(findall(poppedAxes, "Type", "line"), 2);
+            clear cleanup
+        end
+
         function nativeLayoutUsesConsistentButtonsAndBoundedDividers(testCase)
             controls = { ...
                 labkit.app.layout.tab("controls", "Controls", { ...
@@ -884,9 +1094,33 @@ handle = findall(parent, "Tag", tag);
 assert(isscalar(handle), "Expected one handle tagged " + tag + ".");
 end
 
+function session = createStablePlotSession(~, ~)
+session = struct("statusCount", 0);
+end
+
+function state = refreshStatusOnly(state, ~)
+state.session.statusCount = state.session.statusCount + 1;
+end
+
+function view = presentStablePlot(state)
+view = labkit.app.view.Snapshot() ...
+    .text("refreshSummary", compose("Refresh %d", state.session.statusCount)) ...
+    .renderPlot("stablePlot", struct("value", 1));
+end
+
+function countStablePlot(~, ~)
+count = getappdata(groot, "labkitAppSdkRenderCount");
+setappdata(groot, "labkitAppSdkRenderCount", count + 1);
+end
+
 function invokeMenu(menu)
 menu.MenuSelectedFcn(menu, []);
 drawnow;
+end
+
+function closeNewFigures(existingFigures)
+figures = setdiff(findall(groot, "Type", "figure"), existingFigures);
+close(figures(isvalid(figures)));
 end
 
 function invokeNativeCallback(callback, source, event)
@@ -909,6 +1143,83 @@ for index = 1:numel(events)
         aliases(end + 1) = string(event.attributes.runtimeAlias);
     end
 end
+end
+
+function capturePostedEvent(observed, eventId, updateState)
+observed("eventId") = eventId;
+observed("updateState") = updateState;
+end
+
+function state = invalidPostedUpdate(state)
+state = state;
+end
+
+function session = createPostedEventSession(~, ~)
+session = struct("refreshValue", 0, "dashboardCount", 0, "failedCount", 0);
+end
+
+function state = postStreamRefresh(state, callbackContext)
+setappdata(groot, "labkitPostedEventContext", callbackContext);
+callbackContext.postEvent("stream.refresh", @firstStreamRefresh);
+callbackContext.postEvent("stream.refresh", @latestStreamRefresh);
+callbackContext.postEvent("dashboard.refresh", @refreshDashboard);
+callbackContext.postEvent("failure.refresh", @failPostedRefresh);
+end
+
+function state = postFromActiveTransaction(state, callbackContext)
+replayTimer = timer("ExecutionMode", "fixedSpacing", "Period", 0.01, ...
+    "TasksToExecute", 100, "TimerFcn", @(~, ~) ...
+    callbackContext.postEvent("stream.refresh", @latestStreamRefresh));
+callbackContext.setResource("application", "postedEventProbe", ...
+    replayTimer, @deleteTimer);
+start(replayTimer);
+pause(0.03);
+drawnow;
+end
+
+function deleteTimer(value)
+if isa(value, "timer") && isvalid(value)
+    stop(value);
+    delete(value);
+end
+end
+
+function state = firstStreamRefresh(state, ~)
+state.session.refreshValue = 1;
+end
+
+function state = latestStreamRefresh(state, ~)
+state.session.refreshValue = 2;
+end
+
+function state = refreshDashboard(state, ~)
+state.session.dashboardCount = state.session.dashboardCount + 1;
+end
+
+function state = failPostedRefresh(state, ~)
+state.session.failedCount = state.session.failedCount + 1;
+error("AppSdkSpec:PostedFailure", "Synthetic posted event failure.");
+end
+
+function closePostedEventRuntime(runtime)
+if isappdata(groot, "labkitPostedEventContext")
+    rmappdata(groot, "labkitPostedEventContext");
+end
+if ~runtime.Closed
+    runtime.close();
+end
+end
+
+function session = createDirtyTrackingSession(~, ~)
+session = struct("refreshCount", 0);
+end
+
+function state = changeSessionOnly(state, ~)
+state.session.refreshCount = state.session.refreshCount + 1;
+end
+
+function state = changeProject(state, ~)
+state.project.parameters.gain = state.project.parameters.gain + 1;
 end
 
 function folder = sdkArtifactFolder(category)
@@ -1086,6 +1397,13 @@ function pack = validSyntheticSample(~)
 pack = labkit.app.synthetic.Pack( ...
     Scenario="sdk-probe", ...
     InitialProject=struct("parameters", struct("gain", 7)), ...
+    Artifacts={});
+end
+
+function pack = projectFreeSyntheticSample(~)
+pack = labkit.app.synthetic.Pack( ...
+    Scenario="project-free-sdk-probe", ...
+    InitialProject=struct(), ...
     Artifacts={});
 end
 

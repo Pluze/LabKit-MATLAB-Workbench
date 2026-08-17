@@ -16,7 +16,7 @@ SPEC.loader.exec_module(MODULE)
 
 
 class ValidateAgentSkillsTest(unittest.TestCase):
-    def make_skill(self, root, name="probe", dependencies=None, evals=False):
+    def make_skill(self, root, name="probe"):
         folder = root / ".agents" / "skills" / name
         folder.mkdir(parents=True)
         (folder / "SKILL.md").write_text(
@@ -26,31 +26,52 @@ class ValidateAgentSkillsTest(unittest.TestCase):
             "---\n\n# Probe\n",
             encoding="utf-8",
         )
-        (folder / "manifest.yaml").write_text(json.dumps({
+        agents = folder / "agents"
+        agents.mkdir()
+        (agents / "openai.yaml").write_text(
+            "interface:\n"
+            '  display_name: "Probe Skill"\n'
+            '  short_description: "Exercise the repository Skill validator"\n'
+            f'  default_prompt: "Use ${name} to exercise validation."\n',
+            encoding="utf-8",
+        )
+        (folder / "evals.json").write_text(json.dumps({
             "schema_version": 1,
-            "name": name,
-            "scope": "labkit-repository",
-            "dependencies": dependencies or [],
+            "cases": [
+                {"prompt": "use it", "should_activate": True,
+                 "rationale": "in scope"},
+                {"prompt": "skip it", "should_activate": False,
+                 "rationale": "out of scope"},
+            ],
         }), encoding="utf-8")
-        if evals:
-            (folder / "evals.json").write_text(json.dumps({
-                "schema_version": 1,
-                "cases": [
-                    {"prompt": "use it", "should_activate": True,
-                     "rationale": "in scope"},
-                    {"prompt": "skip it", "should_activate": False,
-                     "rationale": "out of scope"},
-                ],
-            }), encoding="utf-8")
+        self.write_activation_evals(root, [name])
         return folder
+
+    def write_activation_evals(self, root, names):
+        path = root / ".agents" / "skills" / "activation-evals.json"
+        path.write_text(json.dumps({
+            "schema_version": 1,
+            "cases": [
+                {"prompt": f"activate {name}", "activate": [name],
+                 "do_not_activate": [other for other in names if other != name],
+                 "rationale": "positive coverage"}
+                for name in names
+            ] + [
+                {"prompt": f"exclude {name}",
+                 "activate": [other for other in names if other != name],
+                 "do_not_activate": [name],
+                 "rationale": "negative coverage"}
+                for name in names
+            ],
+        }), encoding="utf-8")
 
     def test_accepts_complete_contract_with_balanced_evals(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
-            self.make_skill(root, evals=True)
+            self.make_skill(root)
             self.assertEqual(MODULE.validate(root), 1)
 
-    def test_rejects_name_drift_and_unknown_dependency(self):
+    def test_rejects_name_drift_and_missing_negative_boundary(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
             folder = self.make_skill(root)
@@ -61,17 +82,17 @@ class ValidateAgentSkillsTest(unittest.TestCase):
                 MODULE.validate(root)
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
-            self.make_skill(root, dependencies=["missing"])
+            folder = self.make_skill(root)
+            skill = folder / "SKILL.md"
+            skill.write_text(
+                skill.read_text(encoding="utf-8").replace(
+                    " Do not use outside the probe.", ""),
+                encoding="utf-8",
+            )
             with self.assertRaises(MODULE.SkillContractError):
                 MODULE.validate(root)
 
-    def test_rejects_dependency_cycles_and_unportable_content(self):
-        with tempfile.TemporaryDirectory() as raw:
-            root = pathlib.Path(raw)
-            self.make_skill(root, "first", ["second"])
-            self.make_skill(root, "second", ["first"])
-            with self.assertRaises(MODULE.SkillContractError):
-                MODULE.validate(root)
+    def test_rejects_unportable_content(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
             folder = self.make_skill(root)
@@ -79,6 +100,43 @@ class ValidateAgentSkillsTest(unittest.TestCase):
             (folder / "notes.md").write_text(
                 "C:" + slash + "Users" + slash + "Example" + slash + "private",
                 encoding="utf-8")
+            with self.assertRaises(MODULE.SkillContractError):
+                MODULE.validate(root)
+
+    def test_rejects_missing_ui_metadata_and_unbalanced_evals(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            folder = self.make_skill(root)
+            (folder / "agents" / "openai.yaml").unlink()
+            with self.assertRaises(MODULE.SkillContractError):
+                MODULE.validate(root)
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            folder = self.make_skill(root)
+            path = folder / "evals.json"
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["cases"] = [data["cases"][0]]
+            path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaises(MODULE.SkillContractError):
+                MODULE.validate(root)
+
+    def test_rejects_unknown_activation_skill(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            self.make_skill(root)
+            path = root / ".agents" / "skills" / "activation-evals.json"
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["cases"][0]["activate"] = ["missing"]
+            path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaises(MODULE.SkillContractError):
+                MODULE.validate(root)
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            self.make_skill(root)
+            path = root / ".agents" / "skills" / "activation-evals.json"
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["cases"][0]["do_not_activate"] = ["probe"]
+            path.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaises(MODULE.SkillContractError):
                 MODULE.validate(root)
 

@@ -6,8 +6,9 @@ description: "Use for measured LabKit startup, callback, file-loading, or launch
 # LabKit Performance Profiler
 
 Read `AGENTS.md`, the measured source path, nearby tests, and the profiling
-section of `docs/development/maintain-and-release/testing.md`. Use the boundary
-guard if ownership moves and the test planner for validation.
+section of `docs/development/maintain-and-release/testing.md`. Use
+`labkit-boundary-guard` if ownership moves and `labkit-test-planner` for
+validation.
 
 Run a narrow scenario with `profileLabKitTarget`, `OpenReport=false`, and an
 explicit target. Record the artifact path and distinguish normal from debug

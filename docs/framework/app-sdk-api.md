@@ -26,6 +26,7 @@ page provides syntax, inputs, outputs, options, errors, and related APIs.
 | Managed interactions | [App SDK interaction API](../reference/api/labkit/app/interaction/anchorPath.html) |
 | Plot mechanics | [App SDK plot API](../reference/api/labkit/app/plot/clearAxes.html) |
 | Runtime diagnostics | [Runtime diagnostics and session logging](guides/runtime.md#diagnostics-and-session-logging) |
+| Timers and streaming refresh | [Posted stream events](guides/runtime.md#posted-stream-events) through [CallbackContext](../reference/api/labkit/app/CallbackContext.html) |
 | Dialog results | [App SDK dialog API](../reference/api/labkit/app/dialog/Choice.html) |
 
 ## Related Topics

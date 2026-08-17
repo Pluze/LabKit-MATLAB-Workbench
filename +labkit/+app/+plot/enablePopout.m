@@ -14,7 +14,9 @@ function enablePopout(ax)
 % Description:
 %   The menu copies the current axes content, limits, labels, colors, and
 %   visible legend entries into a normal MATLAB figure with publication and
-%   export tools. Existing axes context-menu items are preserved. Children
+%   export tools. Visible graphics are copied even when their HandleVisibility
+%   is off; that property may still control legend and handle discovery in the
+%   standalone figure. Existing axes context-menu items are preserved. Children
 %   without their own context menu inherit the axes menu, including children
 %   added after this call. Repeated calls do not add duplicate menu items.
 %

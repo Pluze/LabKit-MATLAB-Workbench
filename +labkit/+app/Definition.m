@@ -209,6 +209,10 @@ classdef (Sealed) Definition
                 error("labkit:app:contract:InvalidValue", ...
                     "Definition launch returns at most one figure.");
             end
+            if ~isempty(obj.Requirements)
+                labkit.contract.assertRequirements( ...
+                    obj.Entrypoint, obj.Requirements);
+            end
             runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 obj, initialProject, struct());
             runtime.showFigure();

@@ -5,130 +5,43 @@ description: "Use to create or substantially refactor a LabKit MATLAB app from s
 
 # LabKit App Builder
 
-## Read and intake
+Read the root and App rules, source or protocol, closest genuinely similar App,
+and affected docs/tests. Read framework rules only when its boundary may move.
 
-Read `AGENTS.md`, `apps/AGENTS.md`, the source/protocol, the closest genuinely
-similar app, and affected app docs/tests. Read `+labkit/AGENTS.md` only if a
-facade may change and `tests/AGENTS.md` when creating fixtures or test policy.
+Map inputs, action order, formulas, units, defaults, plots, results, exports,
+failure behavior, durable state, transient state, and sensitive examples that
+must become synthetic. Treat legacy code as evidence rather than architecture;
+preserve science and observable contracts while discarding workspace plumbing,
+hard-coded paths, globals, pauses, and exploratory branches.
 
-Before coding, map:
+Keep a narrow correction inside the current App shape unless the defect proves
+a boundary change. Do not use a bug fix to justify unrelated rebuilding.
 
-- accepted inputs and file variability;
-- user actions and order;
-- parameters, defaults, units, formulas, and thresholds;
-- plots, annotations, results, exports, and failed-row behavior;
-- state that must persist versus transient view/cache state;
-- sensitive examples that must become synthetic fixtures.
+## Design and build
 
-Treat legacy code as evidence, not the target architecture. Preserve science,
-units, result/export contracts, and relied-upon status meanings unless the user
-requests change. Discard workspace plumbing, hard-coded paths, debug staging,
-globals, `evalin/assignin`, repeated dialogs, pauses, and exploratory branches.
-Do not invent missing scientific definitions.
+Write a short brief covering product state, capabilities, preserved behavior,
+changed flow, evidence, and manual GUI checks. Apply `apps/AGENTS.md` as the App
+shape authority. Add only capabilities with a named product or lifecycle owner.
 
-If the user asks to correct behavior in an existing App, keep the current App
-shape and public boundary unless the defect itself proves a boundary change is
-necessary. Do not relabel a bug fix or UX correction as a refactor, and do not
-use the full architecture build sequence to justify unrelated cleanup.
+Make layout read in workflow order. Keep each capability's layout, direct
+actions, presentation, and renderer together when they change together. Use
+SDK bindings and defaults before callback glue; pass narrow domain values below
+the callback boundary.
 
-Treat a new framework public API as the last solution. Keep App-specific
-meaning local, prefer a natural extension of an existing focused SDK contract,
-and prefer private framework mechanics when no App-authored call is needed.
-Add a new public name only after repeated multi-App need is demonstrated or
-when extending the nearest API would make it an ambiguous bucket.
+Build in this order:
 
-## Design
+1. identity, requirements, layout, and required project/session capabilities;
+2. GUI-free readers, calculations, results, and synthetic tests;
+3. feature-owned presentation, rendering, and managed interactions;
+4. lazy batch input, preview/full-resolution separation, and exports;
+5. portable persistence and only supported compatibility imports;
+6. direct calculation, state, renderer, export, then bounded GUI evidence;
+7. version, manual, and component history for the delivered contract.
 
-Write a short working brief with app/family, inputs, project/session shape,
-controls, calculations, preserved compatibility, intentionally discarded flow,
-previews, results, exports, tests, and manual GUI checks.
+Synthetic input must be anonymous, validated headlessly, and launched through
+the ordinary native Developer Tools path; clean construction is insufficient.
 
-Begin with the smallest complete shape:
-
-```text
-labkit_<Name>_app.m
-+<slug>/definition.m
-+<slug>/+workbench/buildLayout.m
-```
-
-Add only capabilities the product needs:
-
-```text
-+<slug>/projectSpec.m
-+<slug>/createSession.m
-+<slug>/+workbench/present.m
-+<slug>/+<workflowCapability>/...
-```
-
-The entrypoint only calls `definition().launch(...)`. `definition.m` owns
-identity, version, requirements, layout, and references to optional
-capabilities. Layout controls bind concrete semantic callbacks directly;
-there is no handler or renderer registry. `labkit.app.layout.*` bindings and
-runtime lifecycle behavior require no placeholder callbacks. One `projectSpec.m`
-returns a `labkit.app.project.Schema` owning
-local create, validate, and
-version-aware migrate functions when durable state exists; Runtime owns the
-migration loop. Root `createSession.m` uses the fixed `(project,context)`
-signature and rebuilds only App-specific transient data; opaque source paths
-are resolved with `context.resolveSourcePaths`. File lists bind portable
-sources and selection directly. Layout nodes are data-only;
-`labkit.app.view.Snapshot` is a pure state-to-view mapping.
-
-`+workbench/buildLayout.m` should read as the product's user workflow. For a
-complex App it composes layout fragments from capability packages in user
-order. `+workbench/present.m` composes their snapshot fragments with
-`Snapshot.include`. Renderers live with the plot capability they draw.
-
-When the App declares `BuildSyntheticSample`, make it return a validated synthetic
-project and anonymous artifacts without changing startup semantics. There is
-no separate Debug launch; generated inputs are selected
-deliberately through the ordinary Developer Tools action. Seed interactive
-fields with finite representative
-values that survive the smallest supported native control limits. Validate the
-sample contract headlessly and launch the sample project through the native
-adapter; clean construction alone does not prove the sample is operational.
-
-On the App SDK paved road, bind ordinary project/session fields directly in
-`labkit.app.layout.*` and let runtime defaults complete the view snapshot.
-Add a direct callback only for real business effects and a view operation only
-for derived visible state. At callback boundaries name `applicationState`,
-the exact typed event value, and `callbackContext`; delegate calculations,
-state transforms, and exports through narrow explicit inputs rather than
-passing the full state or context deeper than needed.
-
-Do not add separate `requirements.m`, `version.m`, generic `+appLifecycle` or
-`+appState` packages, per-version migration files, or a `StartupHandler` that
-only constructs default state. Add a semantically named Start function only
-for real post-layout request or resource initialization.
-
-Use concrete workflow packages such as `sourceFiles`, `analysisRun`,
-`cropGeometry`, or `resultFiles`. Keep small callback glue local. Do not create
-technical buckets, package-root runners, alternate interaction runtimes,
-control mutation facades, or helpers merely to meet a line budget. Public SDK
-names must state their capability directly; do not add general buckets such as
-`Manager`, `Service`, `Helper`, or `Data`.
-
-## Build order
-
-1. Define identity, version, requirements, layout, and only the optional
-   project/session capabilities the App needs.
-2. Declare the semantic layout with direct business callbacks.
-3. Implement GUI-free readers/calculations/result builders with synthetic
-   tests.
-4. Implement feature-owned snapshot fragments, renderers, and managed
-   interactions. Give overlapping gestures one active owner; a movable
-   rectangle must expose its visible interior or center as an ordinary drag
-   target.
-5. Keep selection cheap and batch loading lazy; separate preview-resolution
-   work from original-resolution Run/Export.
-6. Add portable project references, relinking, current-envelope save, and only
-   the read-only compatibility imports/migrations actually required.
-7. Test calculations, state transitions, renderers, and exports directly.
-   Run the bounded GUI workflow once after those smaller checks are stable;
-   do not use a long end-to-end GUI method as the edit-fail-edit loop.
-8. Update the App definition version, manual, and component history.
-
-Use `labkit-boundary-guard` before changing a public facade API,
-record active compatibility retirement directly in `.agents/migration_guide.md`,
-and use `labkit-test-planner` for validation. Report preserved science, changed flow,
-files, tests, manual checks, and anything intentionally left app-local.
+Use `labkit-boundary-guard` before changing a public facade,
+`labkit-scientific-change-guard` when scientific meaning changes, and
+`labkit-test-planner` for evidence. Report preserved science, changed flow,
+validation, manual checks, and intentionally App-local behavior.

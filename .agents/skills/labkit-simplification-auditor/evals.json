@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "prompt": "Find dead, duplicated, or speculative LabKit surfaces that can be safely removed from this subsystem.",
+      "should_activate": true,
+      "rationale": "Evidence-backed simplification discovery is the Skill's primary purpose."
+    },
+    {
+      "prompt": "Prove whether this compatibility adapter still has a supported consumer, then remove it if obsolete.",
+      "should_activate": true,
+      "rationale": "Consumer classification and bounded removal are in scope."
+    },
+    {
+      "prompt": "Split every MATLAB file over 300 lines into helpers.",
+      "should_activate": false,
+      "rationale": "File length alone is not evidence for an ownership change."
+    },
+    {
+      "prompt": "Rename variables and reorder methods to match my preferred style.",
+      "should_activate": false,
+      "rationale": "Style-only cleanup is outside evidence-backed simplification."
+    }
+  ]
+}

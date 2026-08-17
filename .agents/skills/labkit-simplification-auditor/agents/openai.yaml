@@ -1,0 +1,4 @@
+interface:
+  display_name: "LabKit Simplification Auditor"
+  short_description: "Find and prove safe LabKit simplifications"
+  default_prompt: "Use $labkit-simplification-auditor to find evidence-backed simplifications in this scope."

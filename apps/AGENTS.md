@@ -76,10 +76,10 @@ find the exact owner and contract; App authors never invent test paths.
 - Use `labkit.dta`, `rhs`, `biosignal`, `image`, and `thermal` only for their
   documented reusable contracts. Do not duplicate a facade primitive in an
   app or push app policy into the facade.
-- Production code uses MATLAB, declared MathWorks products, and repository
-  code only. Temporary Toolbox use requires the repository-owned fallback,
-  debt declaration, idempotency test, and numeric parity test required by the
-  root rules.
+- Production code uses only Base MATLAB and repository code. Do not call or
+  conditionally accelerate with an optional MathWorks Toolbox. If Base MATLAB
+  cannot satisfy the App contract, stop at the architecture boundary defined
+  by the root rules.
 - Numeric UI values are finite scalars before entering state. Scientific
   constants have semantic names and nearby rationale.
 - State enums and repeated user-visible choices have one app-local owner.

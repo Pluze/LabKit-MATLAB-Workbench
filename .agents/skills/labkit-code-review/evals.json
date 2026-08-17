@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "prompt": "Review this LabKit pull request for correctness, ownership, tests, and compatibility risks.",
+      "should_activate": true,
+      "rationale": "A pull-request review is the Skill's primary workflow."
+    },
+    {
+      "prompt": "Audit the current branch diff and tell me whether any changes are unsafe or insufficiently tested.",
+      "should_activate": true,
+      "rationale": "A branch-level review for defects and evidence is in scope."
+    },
+    {
+      "prompt": "Implement the missing export callback and tests.",
+      "should_activate": false,
+      "rationale": "Implementation is not a review request."
+    },
+    {
+      "prompt": "Prepare develop, consolidate versions, and open the final PR to main.",
+      "should_activate": false,
+      "rationale": "Final integration is owned by the PR preparer."
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "LabKit Checkpoint Guard"
+  short_description: "Guard ordinary LabKit commits and pushes"
+  default_prompt: "Use $labkit-checkpoint-guard to prepare this ordinary development checkpoint."

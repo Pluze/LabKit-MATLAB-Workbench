@@ -1,0 +1,4 @@
+interface:
+  display_name: "LabKit Scientific Change Guard"
+  short_description: "Protect formulas, units, and scientific meaning"
+  default_prompt: "Use $labkit-scientific-change-guard to preserve and verify the scientific contract of this change."

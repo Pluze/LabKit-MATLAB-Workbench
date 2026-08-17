@@ -31,6 +31,7 @@ function result = plan(varargin)
             "The requested plan has no validated automated evidence.");
     end
     descriptors = uniqueDescriptors(descriptors);
+    reportChangedPlan(opts, queries, descriptors, classifications);
     result = struct( ...
         "Descriptors", descriptors, ...
         "Groups", executionGroups(descriptors), ...
@@ -118,7 +119,6 @@ function [queries, reasons, manualChecks, classifications] = planQueries(opts)
 end
 
 function [queries, reasons, manualChecks, classifications] = changedQueries(paths)
-    fprintf("LabKit test planning: 0/%d changed paths\n", numel(paths));
     queryChunks = cell(1, numel(paths));
     reasonChunks = cell(1, numel(paths));
     manualCheckChunks = cell(1, numel(paths));
@@ -129,10 +129,6 @@ function [queries, reasons, manualChecks, classifications] = changedQueries(path
         reasonChunks{k} = pathReasons;
         manualCheckChunks{k} = pathManualChecks;
         classifications(k) = pathClassification;
-        if mod(k, 25) == 0 || k == numel(paths)
-            fprintf("LabKit test planning: %d/%d changed paths\n", ...
-                k, numel(paths));
-        end
     end
     queries = repmat(emptyQuery(), 1, 0);
     reasons = strings(1, 0);
@@ -179,24 +175,30 @@ function [queries, reasons, manualChecks, classification] = queriesForChangedPat
 end
 
 function descriptors = descriptorsForQueries(opts, queries)
-    fprintf("LabKit evidence selection: 0/%d contract queries\n", ...
-        numel(queries));
     descriptorChunks = cell(1, numel(queries));
     missingRequirements = strings(1, numel(queries));
+    ownerCatalogs = containers.Map("KeyType", "char", "ValueType", "any");
     for k = 1:numel(queries)
         current = queries(k);
-        try
-            selected = labkittest.catalog( ...
-                "Owner", current.Owner, ...
-                "Contract", current.Contract, ...
-                "Environment", current.Environment, ...
-                "SpecsRoot", opts.SpecsRoot);
-        catch exception
-            if exception.identifier == "LabKit:TestCatalog:UnknownOwner"
-                selected = repmat(emptyDescriptor(), 1, 0);
-            else
-                rethrow(exception)
+        ownerKey = char(lower(current.Owner));
+        if ~isKey(ownerCatalogs, ownerKey)
+            try
+                ownerCatalogs(ownerKey) = labkittest.catalog( ...
+                    "Owner", current.Owner, "SpecsRoot", opts.SpecsRoot);
+            catch exception
+                if exception.identifier == "LabKit:TestCatalog:UnknownOwner"
+                    ownerCatalogs(ownerKey) = repmat(emptyDescriptor(), 1, 0);
+                else
+                    rethrow(exception)
+                end
             end
+        end
+        selected = ownerCatalogs(ownerKey);
+        if ~isempty(selected) && strlength(current.Contract) > 0
+            selected = selected([selected.Contracts] == lower(current.Contract));
+        end
+        if ~isempty(selected) && strlength(current.Environment) > 0
+            selected = selected([selected.Environment] == lower(current.Environment));
         end
         if strlength(current.App) > 0
             selected = selected(contains(string({selected.Id}), ...
@@ -208,10 +210,6 @@ function descriptors = descriptorsForQueries(opts, queries)
                 current.Owner, current.Contract, current.Environment);
         end
         descriptorChunks{k} = selected;
-        if mod(k, 25) == 0 || k == numel(queries)
-            fprintf("LabKit evidence selection: %d/%d contract queries\n", ...
-                k, numel(queries));
-        end
     end
     missingRequirements = unique( ...
         missingRequirements(strlength(missingRequirements) > 0), "stable");
@@ -224,6 +222,18 @@ function descriptors = descriptorsForQueries(opts, queries)
     if ~isempty(queries)
         descriptors = [descriptorChunks{:}];
     end
+end
+
+function reportChangedPlan(opts, queries, descriptors, classifications)
+    if opts.Profile ~= "changed"
+        return;
+    end
+    owners = string({queries.Owner});
+    owners = owners(strlength(owners) > 0);
+    fprintf(["LabKit changed plan: paths=%d, evidence-owners=%d, " + ...
+        "contract-queries=%d, unique-tests=%d\n"], ...
+        numel(classifications), numel(unique(lower(owners))), ...
+        numel(queries), numel(descriptors));
 end
 
 function values = uniqueDescriptors(values)

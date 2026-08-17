@@ -11,10 +11,6 @@ classdef (Hidden, Sealed) SyntheticInputGenerator
                 error("labkit:app:contract:UnsupportedOperation", ...
                     "Definition does not declare BuildSyntheticSample.");
             end
-            if isempty(definition.ProjectSchema)
-                error("labkit:app:contract:UnsupportedOperation", ...
-                    "Synthetic inputs require ProjectSchema.");
-            end
             context = labkit.app.synthetic.Context(folder);
             pack = definition.BuildSyntheticSample(context);
             if ~isa(pack, "labkit.app.synthetic.Pack") || ~isscalar(pack)
@@ -33,6 +29,14 @@ classdef (Hidden, Sealed) SyntheticInputGenerator
 
     methods (Static, Access = private)
         function validateProject(definition, pack)
+            if isempty(definition.ProjectSchema)
+                if ~isempty(fieldnames(pack.InitialProject))
+                    error("labkit:app:contract:InvalidValue", ...
+                        ["BuildSyntheticSample must return an empty " + ...
+                        "InitialProject when the App has no ProjectSchema."]);
+                end
+                return;
+            end
             try
                 accepted = definition.ProjectSchema.Validate( ...
                     pack.InitialProject);

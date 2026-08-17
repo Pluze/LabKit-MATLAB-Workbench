@@ -24,6 +24,11 @@ under `docs/`.
 
 ## Agent skills and automation
 
+- Use `labkit-agent-governance` whenever adding, changing, reviewing, or
+  retiring `AGENTS.md`, repository Skills, their metadata/evals/scripts,
+  `.agents/dos-and-donts.md`, or `.agents/migration_guide.md`.
+- Use `labkit-checkpoint-guard` before an ordinary requested commit or push;
+  use `labkit-pr-preparer` only for final `develop -> main` integration.
 - Treat repeated reasoning, command assembly, selector discovery, and
   trial-and-error as signals to improve the responsible skill or its scripts.
   Prefer one reusable improvement over carrying the same procedural burden
@@ -43,9 +48,12 @@ under `docs/`.
 - Validate an edited skill and exercise the changed script path. Record
   durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
   agent procedure in skills rather than duplicating it in human manuals.
-- Treat `.agents/dos-and-donts.md` as an experience reservoir. After each
-  meaningful checkpoint, explicitly review repeated inspection, discarded
-  approaches, rollback, time lost on the same boundary, and user correction.
+- Treat `.agents/dos-and-donts.md` as an experience reservoir. Run its review
+  through `labkit-agent-governance` after choosing a non-obvious boundary,
+  replacing a failed approach, completing focused validation, receiving a user
+  correction, and before commit or handoff. Repeated inspection, discarded
+  approaches, rollback, time lost on the same boundary, or user correction are
+  explicit activation signals even when no agent file was otherwise changed.
   Record only the unresolved agent decision trap whose rediscovery would be
   costly, including the signal that should trigger a different approach.
   Never use the reservoir as a work log or duplicate behavior already enforced
@@ -69,7 +77,7 @@ under `docs/`.
   need the stable contract or extending an existing API would turn it into an
   ambiguous bucket.
 - App-facing packages are `labkit.app`, `image`, `thermal`, `dta`, `rhs`,
-  and `biosignal`. Do not create public `analysis`, `data`, `io`, `util`, or
+  `biosignal`, and `mark10`. Do not create public `analysis`, `data`, `io`, `util`, or
   app-specific helper surfaces.
 - App shape, capability naming, callbacks, persistence, and Debug behavior are
   governed by `apps/AGENTS.md`; App SDK internals and facade contracts are
@@ -95,48 +103,37 @@ under `docs/`.
 
 ## Dependencies and scientific replacements
 
-- Production apps and facades use MATLAB, explicitly declared MathWorks
-  products, and repository code. No Python/Conda runtime, downloaded weights,
-  first-run installation, or new third-party runtime dependency without
-  explicit architecture/deployment/offline approval.
-- Temporary Toolbox use requires a visible direct call and a repository-owned
-  base-MATLAB implementation with comparable behavior. Declare source, symbol,
-  product, owner, fallback test, idempotency test, parity test, tolerance, and
-  removal condition in `tests/+labkittest/toolboxDebt.m` and the migration
-  ledger.
-- When a replacement affects numbers, scientific meaning, branching, exports,
-  or later calculation, identical inputs must be idempotent and tests compare
-  app-consumed outputs against the Toolbox reference within a justified
-  tolerance. Visual similarity is not parity evidence.
+- Production Apps, facades, launchers, and shipped maintainer tools use only
+  Base MATLAB and repository code. They must not call or conditionally
+  accelerate with any optional MathWorks Toolbox, Python/Conda runtime,
+  downloaded weights, first-run installation, or third-party runtime. A need
+  that Base MATLAB cannot satisfy is an architecture blocker requiring an
+  explicit user decision; it is not temporary dependency debt.
+- Product ownership follows the documented MATLAB function contract, not a
+  namespace prefix. Base MATLAB `backgroundPool`, explicit
+  `parfeval(backgroundPool,...)`, and `parallel.pool.PollableDataQueue` are
+  permitted background primitives; without Parallel Computing Toolbox they
+  provide one worker. Do not use `parpool`, `parfor`, `spmd`, Toolbox pool or
+  cluster objects, or implicit `parfeval` dispatch in production.
+- Clean CI runtimes without optional Toolboxes are the executable dependency
+  boundary. Keep fixed production symbols directly visible, exercise shipped
+  paths there, and add a focused source guard when retiring a concrete Toolbox
+  entry point so the dependency cannot silently return.
+- When replacing a Toolbox implementation affects numbers, scientific meaning,
+  branching, exports, or later calculation, identical inputs must be
+  idempotent and tests compare App-consumed outputs against preserved reference
+  evidence within a justified tolerance. Visual similarity is not parity
+  evidence; the retired Toolbox call must not remain in production or tests.
 
 ## Documentation
 
 - Human sources are path-organized Markdown under `docs/` and public MATLAB
-  help. Narrative pages, App manuals, and App APIs are discovered from paths,
-  launcher metadata, and complete public help contracts. `site/` is generated only by
-  `tools/docs/renderLabKitDocs.m`, ignored locally, and rebuilt from `main` for
-  GitHub Pages; never track or edit generated assets directly.
-- Add a `docs/` page only for the currently supported architecture or a
-  delivered new feature. Keep active migration plans, checkpoints, legacy
-  removal lists, and future-state acceptance gates in
-  `.agents/migration_guide.md`.
+  help. Follow `docs/AGENTS.md` for authored page ownership and
+  `labkit-documentation-maintainer` for renderer, history, link, or deployment
+  workflows. `site/` is ignored generated output; never track or edit it.
 - Update human docs for user behavior or public contracts, scoped AGENTS for
   execution/ownership rules, and both only when both changed. Do not duplicate
   agent workflow in human manuals.
-- Treat documentation as a reader interface, not a diff narrative or an
-  accumulation sink. Every addition must help a reader perform a supported
-  task, call a public API, understand current behavior, interpret an output,
-  or recover from a documented failure. Do not mechanically restate private
-  source structure, implementation order, test inventories, commit evidence,
-  or completed migration plans in current manuals. Put durable change
-  rationale and compatibility evidence in component history, and delete a
-  delivered design page once the current manual and API reference own its
-  useful behavior.
-- When current documentation is retired or moved, update or remove stale links
-  in published history so readers reach supported documentation. Keep the
-  published record's ID, date, sequence, type, compatibility, component, scope,
-  and version-transition metadata unchanged; do not rewrite its decision or
-  evidence merely to modernize prose.
 - Every public library function documents syntax, inputs, outputs, options,
   defaults, legal values, errors, and related APIs immediately after its
   declaration. Cataloged scientific app APIs also document units, assumptions,
@@ -145,11 +142,6 @@ under `docs/`.
 - `Example:` help is executable in a clean MATLAB session and covered by the
   docs runner. Use `Typical Call:` for interactive or user-file-dependent
   sketches.
-- Run deterministic documentation generation checks after source pages, public
-  help, discovery rules, or renderer changes. Generate the ignored local site
-  only when local reading or visual inspection is useful. After moving
-  Markdown, use `maintainLabKitDocLinks(..., "Update", true)` to repair
-  standard relative links before rendering.
 
 ## Sensitive data
 
@@ -198,10 +190,17 @@ tests, history, and details out of the public repository.
   `.labkit-accept-main-guardrails` is present and private changes are unpushed,
   also run the relevant public guardrail because the public changed-file
   planner cannot see the nested diff.
-- CI has two validation modes: pull requests run complete validation, while a
-  protected `main` push records repository policy for the exact accepted
-  commit. Manual recovery reuses complete pull-request validation in an
-  independent concurrency group; it is a trigger fallback, not a third scope.
+- CI has two merge-validation modes: pull requests run complete validation,
+  while a protected `main` push records repository policy for the exact
+  accepted commit. A `develop` push may run one non-gating latest-Linux
+  development-feedback job over the complete pushed range; it is rapid author
+  feedback, not merge evidence, and never replaces the one local pre-PR
+  `changedFast` run or complete PR validation. New pushes cancel superseded
+  feedback runs. Inspect this non-gating result only when the user requests it,
+  a checkpoint needs its evidence, or a failure blocks the current work; do not
+  poll it during ordinary iteration. Manual recovery reuses complete
+  pull-request validation in an independent concurrency group; it is a trigger
+  fallback, not a third merge-validation scope.
 
 ## Git workflow
 
@@ -225,15 +224,10 @@ tests, history, and details out of the public repository.
    coherent checkpoint merely to accumulate a larger batch. Once a
    `develop -> main` PR opens, freeze `develop` until the PR is merged or
    closed; do not mix later work into its moving head.
-4. Before every commit, inspect the complete intended diff against its
-   baseline and account for every changed file and meaningful hunk. Keep only
-   changes necessary for the requested outcome, its owned contract, and
-   proportionate evidence. Remove speculative APIs, types, options, App-owned
-   declarations, compatibility work, documentation, tests, and incidental
-   cleanup introduced while pursuing a narrower symptom. If the net diff is
-   substantially larger or more conceptual than the user outcome, stop and
-   revisit the design boundary before committing; do not preserve iteration
-   history or a discarded design merely because it has already been written.
+4. Before every requested commit or push, use `labkit-checkpoint-guard`. Keep
+   only the requested outcome, its owned contract, and proportionate evidence.
+   If the net diff is substantially larger or more conceptual than the user
+   outcome, revisit the design boundary before committing.
 5. Keep branch work stable with purpose-based commits and focused validation.
    Intermediate commit count is not a merge criterion. Before opening or
    merging the final PR, inspect the complete base-to-head diff, user docs,

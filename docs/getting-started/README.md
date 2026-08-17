@@ -6,13 +6,11 @@ app. For source development, continue with the
 
 ## Requirements
 
-- A supported MATLAB installation.
+- A supported Base MATLAB installation. LabKit production Apps do not require
+  optional MathWorks Toolboxes.
 - Internet access for the first launcher download or update. Installed source
   and P-code packages run offline unless an app's own input lives on a network
   drive.
-- Any MathWorks products declared by the selected app. The launcher shows app
-  requirements before launch.
-
 Production apps do not create Python or Conda environments, download model
 weights, or install third-party packages on first use.
 
@@ -47,8 +45,8 @@ is not a substitute for backing up lab data.
 ## Open An App
 
 Select one row in the launcher and choose **Open**. The launcher prepares the
-MATLAB path, checks the app's LabKit version requirements, and displays startup
-progress until the app is ready.
+MATLAB path, and the App checks its declared LabKit facade versions before
+creating a window. Startup progress remains visible until the App is ready.
 
 Use the [app catalog](../apps/README.md) to choose a workflow and confirm its
 input and output formats.

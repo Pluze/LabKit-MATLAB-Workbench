@@ -1,0 +1,83 @@
+function [connection, result] = zeroTravel(connection)
+%ZEROTRAVEL Zero ESM303 travel and verify the device reading.
+%
+% Usage:
+%   [connection,result] = labkit.mark10.zeroTravel(connection)
+%
+% Description:
+%   Reads current travel and requests stand status. Hardware z is sent only
+%   when status proves the command-capable PC-control path. If device zero is
+%   unavailable, the operation fails without changing the caller's coordinate
+%   system. Verification uses the official ESM303 0.02 mm travel resolution
+%   and accepts two increments.
+%
+% Inputs:
+%   connection - Opaque token returned by labkit.mark10.connect.
+%
+% Outputs:
+%   connection - Updated token with LastFailure.
+%   result - Scalar struct with Success, Status, HardwareApplied,
+%       SoftwareOffset_mm, After_mm, and Message. SoftwareOffset_mm is zero
+%       after success and NaN after failure; this API never applies a
+%       software zero.
+%
+% Errors:
+%   labkit:mark10:InvalidConnection - connection is malformed.
+%
+% Typical Call:
+%   [connection,result] = labkit.mark10.zeroTravel(connection);
+%
+% See also labkit.mark10.zeroForce
+    connection = requireMark10Connection(connection);
+    if mark10IsServiceConnection(connection)
+        [connection, payload] = mark10ServiceRequest( ...
+            connection, "zeroTravel", struct());
+        result = payload{1};
+        return;
+    end
+    [beforeRaw, beforeOutcome] = mark10StandRequest(connection, "x", 1, true);
+    before = mark10TravelReading(beforeRaw);
+    [statusRaw, statusOutcome] = mark10StandRequest(connection, "p", 1, true);
+    standStatus = upper(strip(mark10ResponseText(statusRaw)));
+    pcControlAvailable = statusOutcome == "RESPONSE" && ...
+        any(standStatus == ["U", "D", "S", "C", "L", "M", "UL", "DL"]);
+    if ~before.Valid
+        result = failure(beforeOutcome, "Travel was unavailable before zero.");
+        connection.LastFailure = struct("Status", result.Status, ...
+            "Message", result.Message);
+        return;
+    end
+    if ~pcControlAvailable
+        result = failure("CURRENT_MODE_UNAVAILABLE", ...
+            "ESM303 device zero is unavailable because stand status did " + ...
+            "not confirm PC-control command access.");
+        connection.LastFailure = struct("Status", result.Status, ...
+            "Message", result.Message);
+        return;
+    end
+    connection.Transport.Flush();
+    connection.Transport.Write(uint8('z'));
+    connection.Transport.Pause(0.05);
+    [afterRaw, afterOutcome] = mark10StandRequest(connection, "x", 1, true);
+    after = mark10TravelReading(afterRaw);
+    success = after.Valid && abs(after.Travel_mm) <= 0.04;
+    if success
+        status = "SUPPORTED";
+    else
+        status = afterOutcome;
+    end
+    result = struct("Success", success, "Status", status, ...
+        "HardwareApplied", success, "SoftwareOffset_mm", 0, ...
+        "After_mm", after.Travel_mm, "Message", "");
+    if ~success
+        result.Message = "Hardware travel zero could not be confirmed.";
+        connection.LastFailure = struct("Status", status, ...
+            "Message", result.Message);
+    end
+end
+
+function result = failure(status, message)
+result = struct("Success", false, "Status", status, ...
+    "HardwareApplied", false, "SoftwareOffset_mm", NaN, ...
+    "After_mm", NaN, "Message", message);
+end

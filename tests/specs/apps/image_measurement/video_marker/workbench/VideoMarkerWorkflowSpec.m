@@ -1,7 +1,7 @@
 classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
     %VIDEOMARKERWORKFLOWSPEC Specify marking, prediction, exports, restoration.
 
-    methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
+    methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function marksPredictsExportsAndRestoresSyntheticVideo(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -15,7 +15,7 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
                 "alert", @(~, ~) []);
             definition = video_marker.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
-            runtime = labkittest.createMatlabRuntime( ...
+            runtime = labkittest.createHeadlessRuntime( ...
                 definition, pack.InitialProject, backend, ...
                 journal);
             cleanup = onCleanup(@() runtime.close());

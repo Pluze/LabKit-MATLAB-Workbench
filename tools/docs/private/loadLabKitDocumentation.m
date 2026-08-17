@@ -57,6 +57,9 @@ function pages = discoverNarrativePages(sourceRoot, apps)
     sources = strings(numel(entries), 1);
     sourceCount = 0;
     for k = 1:numel(entries)
+        if strcmpi(entries(k).name, "AGENTS.md")
+            continue;
+        end
         filepath = string(fullfile(entries(k).folder, entries(k).name));
         source = replace(extractAfter(filepath, string(sourceRoot) + filesep), ...
             filesep, "/");

@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "prompt": "Move a framework guide, repair inbound history links, and verify the generated documentation site.",
+      "should_activate": true,
+      "rationale": "Documentation topology, history links, and renderer output are in scope."
+    },
+    {
+      "prompt": "Add complete public MATLAB help for a new facade function and update its reference page.",
+      "should_activate": true,
+      "rationale": "Public API reference is an authored documentation contract."
+    },
+    {
+      "prompt": "Rename a private MATLAB local variable without changing help or user behavior.",
+      "should_activate": false,
+      "rationale": "A source-only private rename has no authored documentation contract."
+    },
+    {
+      "prompt": "Fix a numerical formula while leaving its documented scientific contract unchanged.",
+      "should_activate": false,
+      "rationale": "The source correction alone does not require documentation architecture work."
+    }
+  ]
+}

@@ -137,6 +137,19 @@ Run focused behavior during iteration. Run `changedFast` once when `develop`
 is ready for final PR review. CI owns broad platform validation; do not
 repeatedly run broad tasks after each small edit.
 
+Every push to `develop` also starts a non-gating `Development Feedback`
+workflow on latest Ubuntu and latest Base MATLAB. It passes the complete GitHub
+push range to the same changed-path planner, runs its focused evidence, and
+checks deterministic documentation. This job is rapid cross-environment author
+feedback only: a green result does not establish merge safety, replace the one
+local pre-PR `changedFast` checkpoint, or reduce the complete PR matrix. A new
+push cancels an older in-progress feedback run so rapid iteration does not build
+a stale queue. While an open `develop`-to-`main` PR owns complete validation,
+push-triggered feedback stops after a quick scope check instead of repeating
+MATLAB and documentation work; a manual dispatch still runs the complete
+feedback lane. Read the non-gating result when its evidence is needed rather
+than monitoring it throughout ordinary development.
+
 ## Artifacts and Failures
 
 Each run writes one folder beneath `artifacts/test-results/<run-name>/`:
@@ -202,13 +215,18 @@ CI includes each profile's `visual-evidence/` folder in the platform artifact.
 
 ## CI and Manual Evidence
 
-Continuous Integration runs the `headless`, `gui`, and `isolated` profiles on
-the supported Linux, Windows, and macOS boundaries using clean MATLAB runtimes
-without optional Toolboxes. R2022b is the minimum supported release; the
-latest available release supplies the current boundary. Linux GUI jobs use a
-real virtual display service. CI also runs `docsCheck` once and uploads catalog
-artifacts after failures. Coverage is an explicit report, not a duplicate
-merge gate.
+Continuous Integration separates MATLAB-version compatibility from desktop
+platform compatibility instead of repeating their Cartesian product. Clean
+Linux and Windows R2022b runtimes run `headless`, `gui`, and `isolated` at the
+minimum supported MATLAB boundary. Current Linux runs the complete profiles in
+one clean runtime so setup cost and installation tail latency are paid once.
+Current Windows and Apple Silicon macOS run the platform-sensitive `gui` and
+`isolated` profiles; the full headless catalog is not repeated on those
+current-version jobs. No job installs optional Toolboxes.
+Linux GUI jobs use a real virtual display service. The current Linux runtime
+is cached between runs; floor and desktop-platform installations remain clean
+and uncached. CI also runs `docsCheck` once and uploads catalog artifacts after
+failures. Coverage is an explicit report, not a duplicate merge gate.
 
 `CI Gate` is the required aggregate result. `main` accepts pull requests only
 from the repository-owned `develop` branch, and policy checks verify source

@@ -85,6 +85,66 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             end
         end
 
+        function productionUsesOnlyBaseMatlabBackgroundRuntime(testCase)
+            root = labkittest.setup();
+            files = replace(repositoryTextFiles(root), "\", "/");
+            files = files(endsWith(lower(files), ".m"));
+            files = files(files == "labkit_launcher.m" | ...
+                startsWith(files, ["+labkit/" "apps/" "tools/"]));
+            expression = ["parpool\s*\(" "parfor\s+" "spmd\s*\(" ...
+                "parallel\.Pool" "parallel\.Cluster"];
+            probe = ["parpool('threads')" "parfor index = 1:2" ...
+                "spmd(2)" "parallel.Pool.empty" "parallel.Cluster"];
+            testCase.verifyTrue(all(arrayfun(@(index) ~isempty(regexp( ...
+                probe(index), expression(index), "once")), ...
+                1:numel(expression))), ...
+                "The Toolbox-only guard patterns must prove their own coverage.");
+            violations = strings(0, 1);
+            for file = files.'
+                source = string(fileread(fullfile(root, file)));
+                for token = expression
+                    if ~isempty(regexp(source, token, "once"))
+                        violations(end + 1, 1) = file + ": " + token;
+                    end
+                end
+            end
+
+            testCase.verifyEmpty(violations, ...
+                "Production must not open or address Parallel Computing Toolbox pools: " + ...
+                strjoin(violations, ", "));
+
+            driver = text(root, "+labkit/+mark10/connect.m");
+            testCase.verifySubstring(driver, ...
+                "parfeval(backgroundPool, @mark10ServiceLoop");
+            testCase.verifySubstring(driver, ...
+                "parallel.pool.PollableDataQueue");
+            testCase.verifyFalse(contains(driver, "parfeval(@"), ...
+                "Background work must explicitly name backgroundPool.");
+        end
+
+        function developFeedbackUsesOneCancelableBaseMatlabLane(testCase)
+            root = labkittest.setup();
+            workflow = text(root, ...
+                ".github/workflows/development-feedback.yml");
+
+            testCase.verifySubstring(workflow, "branches:");
+            testCase.verifySubstring(workflow, "- develop");
+            testCase.verifySubstring(workflow, "runs-on: ubuntu-latest");
+            testCase.verifySubstring(workflow, "release: latest");
+            testCase.verifyFalse(contains(workflow, "products:"));
+            testCase.verifySubstring(workflow, "cancel-in-progress: true");
+            testCase.verifySubstring(workflow, "pull-requests: read");
+            testCase.verifySubstring(workflow, ...
+                "steps.scope.outputs.should_run == 'true'");
+            testCase.verifySubstring(workflow, ...
+                "Open develop-to-main PR owns complete validation");
+            testCase.verifySubstring(workflow, "github.event.before");
+            testCase.verifySubstring(workflow, ...
+                "artifacts/development-feedback/changed-paths.txt");
+            testCase.verifySubstring(workflow, "runDevelopmentFeedback");
+            testCase.verifySubstring(workflow, "tasks: docsCheck");
+        end
+
         function ciUsesTwoModesWithoutWeakeningManualRecovery(testCase)
             root = labkittest.setup();
             workflow = text(root, ".github/workflows/ci.yml");
@@ -120,11 +180,16 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, "release: R2022b");
             testCase.verifySubstring(workflow, "release: latest");
             testCase.verifySubstring(workflow, "shard: All profiles");
-            testCase.verifySubstring(workflow, "shard: Core");
-            testCase.verifySubstring(workflow, "shard: Hidden GUI");
+            testCase.verifySubstring(workflow, "shard: Desktop boundaries");
             testCase.verifySubstring(workflow, "os: ubuntu-22.04");
             testCase.verifySubstring(workflow, "os: windows-2022");
+            testCase.verifySubstring(workflow, "os: windows-latest");
             testCase.verifySubstring(workflow, "os: macos-14");
+            testCase.verifyEqual(count(workflow, "- os: "), 5);
+            testCase.verifyEqual(count(workflow, "run_headless: true"), 3);
+            testCase.verifyEqual(count(workflow, "run_gui: true"), 5);
+            testCase.verifyEqual(count(workflow, "run_isolated: true"), 5);
+            testCase.verifyEqual(count(workflow, "cache: true"), 2);
             testCase.verifySubstring(workflow, ...
                 "name: Start Linux virtual display");
             testCase.verifySubstring(workflow, ...

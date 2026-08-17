@@ -73,9 +73,11 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 category, "category");
             eventName = labkit.app.internal.diagnostics.SessionEventValidator.semanticIdentifier( ...
                 eventName, "eventName");
+            successSeverity = optionValue(varargin, "Severity", "debug");
             values = labkit.app.internal.diagnostics.SessionEventValidator.logInputs( ...
-                "debug", eventName, message, category, "developer", ...
+                successSeverity, eventName, message, category, "developer", ...
                 optionValue(varargin, "Attributes", struct()), []);
+            successSeverity = values.severity;
             message = values.message;
             attributes = values.attributes;
             obj.OperationSequence = obj.OperationSequence + 1;
@@ -85,12 +87,13 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 "ParentId", parent.Id, ...
                 "RootActionId", parent.RootActionId, ...
                 "Category", category, "EventName", eventName, ...
-                "SessionId", obj.SessionId, "Timer", tic);
+                "SessionId", obj.SessionId, "Timer", tic, ...
+                "SuccessSeverity", successSeverity);
             if strlength(operation.RootActionId) == 0
                 operation.RootActionId = operation.Id;
             end
             obj.OperationStack{end + 1} = operation;
-            obj.log("debug", eventName + ".started", message, ...
+            obj.log(successSeverity, eventName + ".started", message, ...
                 Category=category, Audience="developer", Attributes=attributes, ...
                 Operation=operation);
         end
@@ -112,7 +115,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 error("labkit:app:contract:InvalidValue", ...
                     "A session exception requires a failed operation result.");
             end
-            severity = "debug";
+            severity = operation.SuccessSeverity;
             if ~isempty(exception)
                 severity = "error";
             elseif terminal.operationResult ~= "completed"
@@ -467,7 +470,8 @@ end
 end
 
 function operation = validOperation(operation)
-needed = ["Id", "ParentId", "RootActionId", "Category", "EventName", "SessionId", "Timer"];
+needed = ["Id", "ParentId", "RootActionId", "Category", "EventName", ...
+    "SessionId", "Timer", "SuccessSeverity"];
 if ~isstruct(operation) || ~isscalar(operation) || ~all(isfield(operation, needed))
     error("labkit:app:runtime:InvariantFailure", "Session operation is invalid.");
 end

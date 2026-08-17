@@ -1,0 +1,6 @@
+function tf = mark10IsServiceConnection(connection)
+% Identify a valid background-service proxy without touching the port.
+tf = isstruct(connection) && isscalar(connection) && ...
+    isfield(connection, "Service") && ...
+    isa(connection.Service, "containers.Map");
+end
