@@ -87,6 +87,7 @@ jobs:
         uses: matlab-actions/setup-matlab@v3
         with:
           release: latest
+          cache: true
 
       - name: Start Linux virtual display
         if: steps.scope.outputs.should_run == 'true'
