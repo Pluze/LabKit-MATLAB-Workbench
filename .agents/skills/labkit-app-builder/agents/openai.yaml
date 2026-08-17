@@ -1,0 +1,4 @@
+interface:
+  display_name: "LabKit App Builder"
+  short_description: "Build or substantially reshape a LabKit App"
+  default_prompt: "Use $labkit-app-builder to design and build a complete LabKit MATLAB App."

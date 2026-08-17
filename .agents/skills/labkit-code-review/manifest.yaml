@@ -1,0 +1,1 @@
+{"schema_version":1,"name":"labkit-code-review","scope":"labkit-repository","dependencies":["labkit-boundary-guard","labkit-documentation-maintainer","labkit-scientific-change-guard","labkit-test-planner"]}

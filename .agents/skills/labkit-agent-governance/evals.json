@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "prompt": "Audit the repository AGENTS.md and Skills for duplicated rules and unclear activation.",
+      "should_activate": true,
+      "rationale": "Agent instruction architecture and activation are the Skill's direct scope."
+    },
+    {
+      "prompt": "We discarded two approaches at the same ownership boundary; decide whether dos-and-donts needs a durable lesson.",
+      "should_activate": true,
+      "rationale": "Repeated boundary cost is an explicit experience-reservoir checkpoint."
+    },
+    {
+      "prompt": "Fix a calculation bug in one App without changing agent files or workflow.",
+      "should_activate": false,
+      "rationale": "Ordinary product implementation does not change agent governance."
+    },
+    {
+      "prompt": "Update an App user manual for a new export option.",
+      "should_activate": false,
+      "rationale": "A product documentation contract is owned by documentation maintenance."
+    }
+  ]
+}

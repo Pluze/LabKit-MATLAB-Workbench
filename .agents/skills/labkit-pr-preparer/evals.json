@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "prompt": "Prepare develop for its squash PR into main and make the PR review-ready.",
+      "should_activate": true,
+      "rationale": "This explicitly requests the develop-to-main preparation workflow."
+    },
+    {
+      "prompt": "Audit the existing develop-to-main PR, consolidate versions and history, and update its review record.",
+      "should_activate": true,
+      "rationale": "Reviewing and making the integration PR coherent is in scope."
+    },
+    {
+      "prompt": "Commit this focused implementation checkpoint on develop.",
+      "should_activate": false,
+      "rationale": "Ordinary branch iteration is outside final PR preparation."
+    },
+    {
+      "prompt": "Run the smallest test for the source file I just changed.",
+      "should_activate": false,
+      "rationale": "Focused iteration evidence belongs to the test planner."
+    }
+  ]
+}

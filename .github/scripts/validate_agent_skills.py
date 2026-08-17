@@ -15,6 +15,15 @@ FRONTMATTER = re.compile(
 )
 LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 MANIFEST_KEYS = {"schema_version", "name", "scope", "dependencies"}
+OPENAI = re.compile(
+    r'\Ainterface:\n'
+    r'  display_name: "([^"\n]+)"\n'
+    r'  short_description: "([^"\n]+)"\n'
+    r'  default_prompt: "([^"\n]+)"\s*\Z',
+)
+ACTIVATION_KEYS = {
+    "prompt", "activate", "do_not_activate", "rationale",
+}
 
 
 class SkillContractError(ValueError):
@@ -65,10 +74,12 @@ def validate(root: Path) -> int:
         manifests[name] = manifest
         validate_links(folder, text)
         validate_portability(folder)
-        eval_path = folder / "evals.json"
-        if eval_path.exists():
-            validate_evals(eval_path)
+        validate_openai_metadata(folder, name)
+        validate_evals(folder / "evals.json")
     validate_dependencies(manifests)
+    validate_dependency_routing(skills_root, manifests)
+    validate_activation_evals(
+        skills_root / "activation-evals.json", set(manifests))
     return len(skill_dirs)
 
 
@@ -117,6 +128,85 @@ def validate_evals(path: Path) -> None:
     if decisions != {False, True}:
         raise SkillContractError(
             f"{path}: evals need positive and negative cases")
+
+
+def validate_openai_metadata(folder: Path, name: str) -> None:
+    path = folder / "agents" / "openai.yaml"
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as cause:
+        raise SkillContractError(f"{path}: missing UI metadata") from cause
+    match = OPENAI.match(text)
+    if not match:
+        raise SkillContractError(f"{path}: invalid UI metadata")
+    display_name, short_description, default_prompt = match.groups()
+    if not display_name.strip():
+        raise SkillContractError(f"{path}: display name is required")
+    if not 25 <= len(short_description) <= 64:
+        raise SkillContractError(
+            f"{path}: short description must be 25-64 characters")
+    if f"${name}" not in default_prompt:
+        raise SkillContractError(
+            f"{path}: default prompt must mention ${name}")
+
+
+def validate_dependency_routing(
+        skills_root: Path,
+        manifests: dict[str, dict[str, object]]) -> None:
+    for name, manifest in manifests.items():
+        text = (skills_root / name / "SKILL.md").read_text(encoding="utf-8")
+        for dependency in manifest["dependencies"]:
+            if f"`{dependency}`" not in text:
+                raise SkillContractError(
+                    f"{name}: dependency {dependency} lacks an explicit "
+                    "SKILL.md route")
+
+
+def validate_activation_evals(path: Path, skills: set[str]) -> None:
+    data = load_json(path)
+    if not isinstance(data, dict) or set(data) != {"schema_version", "cases"}:
+        raise SkillContractError(f"{path}: invalid activation eval contract")
+    cases = data["cases"]
+    if data["schema_version"] != 1 or not isinstance(cases, list) or not cases:
+        raise SkillContractError(f"{path}: activation eval cases are required")
+    activated: set[str] = set()
+    excluded: set[str] = set()
+    for case in cases:
+        if (not isinstance(case, dict) or set(case) != ACTIVATION_KEYS or
+                not isinstance(case["prompt"], str) or
+                not case["prompt"].strip() or
+                not isinstance(case["rationale"], str) or
+                not case["rationale"].strip()):
+            raise SkillContractError(f"{path}: malformed activation case")
+        positive = case["activate"]
+        negative = case["do_not_activate"]
+        if (not isinstance(positive, list) or
+                not isinstance(negative, list) or
+                not all(isinstance(item, str) for item in positive + negative)):
+            raise SkillContractError(
+                f"{path}: activation lists must contain only skill names")
+        if not positive and not negative:
+            raise SkillContractError(
+                f"{path}: activation case must classify at least one skill")
+        positive_set = set(positive)
+        negative_set = set(negative)
+        if len(positive_set) != len(positive) or len(negative_set) != len(negative):
+            raise SkillContractError(f"{path}: duplicate skill in activation case")
+        if positive_set & negative_set:
+            raise SkillContractError(
+                f"{path}: a skill cannot be activated and excluded together")
+        unknown = (positive_set | negative_set) - skills
+        if unknown:
+            raise SkillContractError(
+                f"{path}: unknown activation skill {sorted(unknown)[0]}")
+        activated.update(positive_set)
+        excluded.update(negative_set)
+    if activated != skills or excluded != skills:
+        missing_positive = sorted(skills - activated)
+        missing_negative = sorted(skills - excluded)
+        raise SkillContractError(
+            f"{path}: incomplete activation coverage; "
+            f"missing positive={missing_positive}, negative={missing_negative}")
 
 
 def validate_dependencies(manifests: dict[str, dict[str, object]]) -> None:

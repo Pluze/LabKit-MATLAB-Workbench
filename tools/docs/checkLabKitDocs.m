@@ -28,6 +28,7 @@ function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
     cleanup = onCleanup(@() removeDocFolder(generatedRoot));
     fprintf("DOCS CHECK [2/3] render candidate\n");
     result = renderLabKitDocs(sourceRoot, generatedRoot);
+    assertAgentInstructionsExcluded(sourceRoot, generatedRoot);
     fprintf("DOCS CHECK [3/3] compare generated trees\n");
     [matches, diagnostic, count] = compareLabKitDocTrees( ...
         generatedRoot, existingSiteRoot);
@@ -43,6 +44,20 @@ function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
     clear cleanup
     if compareIndependentRenders
         clear referenceCleanup
+    end
+end
+
+function assertAgentInstructionsExcluded(sourceRoot, generatedRoot)
+    instructions = dir(fullfile(sourceRoot, "**", "AGENTS.md"));
+    for k = 1:numel(instructions)
+        source = string(fullfile(instructions(k).folder, instructions(k).name));
+        relative = extractAfter(source, string(sourceRoot) + filesep);
+        output = replace(relative, [filesep, ".md"], ["/", ".html"]);
+        if isfile(fullfile(generatedRoot, output))
+            error("LabKit:Docs:AgentInstructionsPublished", ...
+                "Agent instruction file was published as documentation: %s", ...
+                relative);
+        end
     end
 end
 

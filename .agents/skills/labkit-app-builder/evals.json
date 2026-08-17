@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "prompt": "Turn this collection of MATLAB analysis scripts and workflow notes into a new LabKit App.",
+      "should_activate": true,
+      "rationale": "Creating a complete App from scripts and workflow evidence is the core workflow."
+    },
+    {
+      "prompt": "Reshape this legacy GUIDE GUI into the current Definition, layout, project, and session App architecture.",
+      "should_activate": true,
+      "rationale": "A substantial App architecture migration belongs to the App builder."
+    },
+    {
+      "prompt": "Fix one callback that formats an existing status label incorrectly.",
+      "should_activate": false,
+      "rationale": "A narrow behavior fix that preserves the App shape does not need the build workflow."
+    },
+    {
+      "prompt": "Correct the valid humidity range in an existing thermal calculation without changing the App structure.",
+      "should_activate": false,
+      "rationale": "This is a scientific contract correction, not an App construction task."
+    }
+  ]
+}

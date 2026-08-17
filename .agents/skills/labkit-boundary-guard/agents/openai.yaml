@@ -1,0 +1,4 @@
+interface:
+  display_name: "LabKit Boundary Guard"
+  short_description: "Decide App, facade, and framework ownership"
+  default_prompt: "Use $labkit-boundary-guard to decide the correct LabKit ownership boundary for this change."

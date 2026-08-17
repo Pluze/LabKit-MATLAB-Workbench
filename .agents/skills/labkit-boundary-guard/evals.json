@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "prompt": "Move this helper from one App into +labkit so a second App can use it.",
+      "should_activate": true,
+      "rationale": "Helper promotion and multi-App ownership require a boundary decision."
+    },
+    {
+      "prompt": "Add a new public labkit.app API for a repeated lifecycle problem in three Apps.",
+      "should_activate": true,
+      "rationale": "A new public framework surface requires the public-boundary gate."
+    },
+    {
+      "prompt": "Rename a private variable inside one App calculation.",
+      "should_activate": false,
+      "rationale": "A private App-local rename cannot affect a shared boundary."
+    },
+    {
+      "prompt": "Adjust spacing between two controls in an existing App layout.",
+      "should_activate": false,
+      "rationale": "Presentation-only App-local work has no package ownership decision."
+    }
+  ]
+}

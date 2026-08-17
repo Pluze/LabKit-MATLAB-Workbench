@@ -1,0 +1,4 @@
+interface:
+  display_name: "LabKit Agent Governance"
+  short_description: "Maintain LabKit agent rules and Skill contracts"
+  default_prompt: "Use $labkit-agent-governance to audit and improve the repository's agent guidance."

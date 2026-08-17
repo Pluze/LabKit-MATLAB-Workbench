@@ -43,70 +43,23 @@ Write a short working brief with app/family, inputs, project/session shape,
 controls, calculations, preserved compatibility, intentionally discarded flow,
 previews, results, exports, tests, and manual GUI checks.
 
-Begin with the smallest complete shape:
+Use the required shape and prohibited forms in `apps/AGENTS.md` as the single
+architecture authority. Start with only the entrypoint, `definition.m`, and
+`+workbench/buildLayout.m`; add project, session, presentation, synthetic-input,
+Start, and capability packages only when the working brief names the product
+state or lifecycle each one owns.
 
-```text
-labkit_<Name>_app.m
-+<slug>/definition.m
-+<slug>/+workbench/buildLayout.m
-```
+Make `buildLayout.m` read in user-workflow order. Partition a complex workflow
+by product capability and keep its layout, direct actions, presentation
+fragment, and renderer together when they change together. Use ordinary SDK
+bindings and defaults before adding callback or presenter glue. At a callback
+boundary, name the complete application state, typed event value, and callback
+context, then pass narrow domain values deeper.
 
-Add only capabilities the product needs:
-
-```text
-+<slug>/projectSpec.m
-+<slug>/createSession.m
-+<slug>/+workbench/present.m
-+<slug>/+<workflowCapability>/...
-```
-
-The entrypoint only calls `definition().launch(...)`. `definition.m` owns
-identity, version, requirements, layout, and references to optional
-capabilities. Layout controls bind concrete semantic callbacks directly;
-there is no handler or renderer registry. `labkit.app.layout.*` bindings and
-runtime lifecycle behavior require no placeholder callbacks. One `projectSpec.m`
-returns a `labkit.app.project.Schema` owning
-local create, validate, and
-version-aware migrate functions when durable state exists; Runtime owns the
-migration loop. Root `createSession.m` uses the fixed `(project,context)`
-signature and rebuilds only App-specific transient data; opaque source paths
-are resolved with `context.resolveSourcePaths`. File lists bind portable
-sources and selection directly. Layout nodes are data-only;
-`labkit.app.view.Snapshot` is a pure state-to-view mapping.
-
-`+workbench/buildLayout.m` should read as the product's user workflow. For a
-complex App it composes layout fragments from capability packages in user
-order. `+workbench/present.m` composes their snapshot fragments with
-`Snapshot.include`. Renderers live with the plot capability they draw.
-
-When the App declares `BuildSyntheticSample`, make it return a validated synthetic
-project and anonymous artifacts without changing startup semantics. There is
-no separate Debug launch; generated inputs are selected
-deliberately through the ordinary Developer Tools action. Seed interactive
-fields with finite representative
-values that survive the smallest supported native control limits. Validate the
-sample contract headlessly and launch the sample project through the native
-adapter; clean construction alone does not prove the sample is operational.
-
-On the App SDK paved road, bind ordinary project/session fields directly in
-`labkit.app.layout.*` and let runtime defaults complete the view snapshot.
-Add a direct callback only for real business effects and a view operation only
-for derived visible state. At callback boundaries name `applicationState`,
-the exact typed event value, and `callbackContext`; delegate calculations,
-state transforms, and exports through narrow explicit inputs rather than
-passing the full state or context deeper than needed.
-
-Do not add separate `requirements.m`, `version.m`, generic `+appLifecycle` or
-`+appState` packages, per-version migration files, or a `StartupHandler` that
-only constructs default state. Add a semantically named Start function only
-for real post-layout request or resource initialization.
-
-Use concrete workflow packages such as `sourceFiles`, `analysisRun`,
-`cropGeometry`, or `resultFiles`. Keep small callback glue local. Do not create
-technical buckets, package-root runners, alternate interaction runtimes,
-control mutation facades, or helpers merely to meet a line budget. Public SDK
-names must state their capability directly; do not add general buckets such as
-`Manager`, `Service`, `Helper`, or `Data`.
+When synthetic input is required, build an anonymous validated project through
+the ordinary Developer Tools path, choose finite representative native-control
+values, validate it headlessly, and launch it through the native adapter. Clean
+construction alone is not operational evidence.
 
 ## Build order
 

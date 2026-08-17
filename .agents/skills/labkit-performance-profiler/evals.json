@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "prompt": "Measure why the launcher is slow and provide before-and-after profile evidence for a fix.",
+      "should_activate": true,
+      "rationale": "Measured launcher performance work is the skill's purpose."
+    },
+    {
+      "prompt": "Profile an App Run callback and identify the owning measured bottleneck.",
+      "should_activate": true,
+      "rationale": "Callback profiling with an owner-aligned scenario is in scope."
+    },
+    {
+      "prompt": "Review this callback for correctness without making a performance claim.",
+      "should_activate": false,
+      "rationale": "Ordinary correctness review does not require profiling."
+    },
+    {
+      "prompt": "Remove a loop because it looks slow from inspection alone.",
+      "should_activate": false,
+      "rationale": "The skill must not justify performance changes without measurement."
+    }
+  ]
+}

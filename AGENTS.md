@@ -24,6 +24,9 @@ under `docs/`.
 
 ## Agent skills and automation
 
+- Use `labkit-agent-governance` whenever adding, changing, reviewing, or
+  retiring `AGENTS.md`, repository Skills, their metadata/evals/scripts,
+  `.agents/dos-and-donts.md`, or `.agents/migration_guide.md`.
 - Treat repeated reasoning, command assembly, selector discovery, and
   trial-and-error as signals to improve the responsible skill or its scripts.
   Prefer one reusable improvement over carrying the same procedural burden
@@ -43,9 +46,12 @@ under `docs/`.
 - Validate an edited skill and exercise the changed script path. Record
   durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
   agent procedure in skills rather than duplicating it in human manuals.
-- Treat `.agents/dos-and-donts.md` as an experience reservoir. After each
-  meaningful checkpoint, explicitly review repeated inspection, discarded
-  approaches, rollback, time lost on the same boundary, and user correction.
+- Treat `.agents/dos-and-donts.md` as an experience reservoir. Run its review
+  through `labkit-agent-governance` after choosing a non-obvious boundary,
+  replacing a failed approach, completing focused validation, receiving a user
+  correction, and before commit or handoff. Repeated inspection, discarded
+  approaches, rollback, time lost on the same boundary, or user correction are
+  explicit activation signals even when no agent file was otherwise changed.
   Record only the unresolved agent decision trap whose rediscovery would be
   costly, including the signal that should trigger a different approach.
   Never use the reservoir as a work log or duplicate behavior already enforced
@@ -112,31 +118,12 @@ under `docs/`.
 ## Documentation
 
 - Human sources are path-organized Markdown under `docs/` and public MATLAB
-  help. Narrative pages, App manuals, and App APIs are discovered from paths,
-  launcher metadata, and complete public help contracts. `site/` is generated only by
-  `tools/docs/renderLabKitDocs.m`, ignored locally, and rebuilt from `main` for
-  GitHub Pages; never track or edit generated assets directly.
-- Add a `docs/` page only for the currently supported architecture or a
-  delivered new feature. Keep active migration plans, checkpoints, legacy
-  removal lists, and future-state acceptance gates in
-  `.agents/migration_guide.md`.
+  help. Follow `docs/AGENTS.md` for authored page ownership and
+  `labkit-documentation-maintainer` for renderer, history, link, or deployment
+  workflows. `site/` is ignored generated output; never track or edit it.
 - Update human docs for user behavior or public contracts, scoped AGENTS for
   execution/ownership rules, and both only when both changed. Do not duplicate
   agent workflow in human manuals.
-- Treat documentation as a reader interface, not a diff narrative or an
-  accumulation sink. Every addition must help a reader perform a supported
-  task, call a public API, understand current behavior, interpret an output,
-  or recover from a documented failure. Do not mechanically restate private
-  source structure, implementation order, test inventories, commit evidence,
-  or completed migration plans in current manuals. Put durable change
-  rationale and compatibility evidence in component history, and delete a
-  delivered design page once the current manual and API reference own its
-  useful behavior.
-- When current documentation is retired or moved, update or remove stale links
-  in published history so readers reach supported documentation. Keep the
-  published record's ID, date, sequence, type, compatibility, component, scope,
-  and version-transition metadata unchanged; do not rewrite its decision or
-  evidence merely to modernize prose.
 - Every public library function documents syntax, inputs, outputs, options,
   defaults, legal values, errors, and related APIs immediately after its
   declaration. Cataloged scientific app APIs also document units, assumptions,
@@ -145,11 +132,6 @@ under `docs/`.
 - `Example:` help is executable in a clean MATLAB session and covered by the
   docs runner. Use `Typical Call:` for interactive or user-file-dependent
   sketches.
-- Run deterministic documentation generation checks after source pages, public
-  help, discovery rules, or renderer changes. Generate the ignored local site
-  only when local reading or visual inspection is useful. After moving
-  Markdown, use `maintainLabKitDocLinks(..., "Update", true)` to repair
-  standard relative links before rendering.
 
 ## Sensitive data
 

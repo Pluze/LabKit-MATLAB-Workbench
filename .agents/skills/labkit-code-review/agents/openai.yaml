@@ -1,0 +1,4 @@
+interface:
+  display_name: "LabKit Code Review"
+  short_description: "Review LabKit changes against product contracts"
+  default_prompt: "Use $labkit-code-review to review this change and report actionable findings."

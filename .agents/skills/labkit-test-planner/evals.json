@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "prompt": "Find and run the smallest LabKit specification that owns this changed source file.",
+      "should_activate": true,
+      "rationale": "Source-owned focused validation is the core workflow."
+    },
+    {
+      "prompt": "Diagnose this failed hidden-GUI CI identity and rerun only its responsible specification.",
+      "should_activate": true,
+      "rationale": "CI failure scoping and GUI evidence selection are in scope."
+    },
+    {
+      "prompt": "Improve the wording of one documentation paragraph without running MATLAB tests.",
+      "should_activate": false,
+      "rationale": "A documentation-only edit is owned by documentation checks."
+    },
+    {
+      "prompt": "Run every local test even though no source-owned contract requires that scope.",
+      "should_activate": false,
+      "rationale": "The skill rejects unjustified validation widening."
+    }
+  ]
+}
