@@ -26,7 +26,8 @@ function [status, output] = runIsolatedAppProbes(apps)
         app = apps(k);
         appScratch = fullfile(scratch, num2str(k));
         try
-            restoredefaultpath;
+            % The probe owns the reset; restore only the test package path so
+            % the next call resolves after the previous App removed it.
             addpath(testsFolder);
             labkittest.isolatedAppProbe(root, app.Folder, app.Package, appScratch);
             messages(k) = "ISOLATED_APP_PROBE " + app.Package + " PASS";
