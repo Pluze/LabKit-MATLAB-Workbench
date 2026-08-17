@@ -7,8 +7,8 @@ sequence: 178
 type: feat
 compatibility: compatible
 component: `labkit.app` | `2.3.0 -> 2.4.1`
-component: `labkit.mark10` | `new -> 1.1.0`
-component: `labkit_Mark10Monitor_app` | `new -> 1.1.0`
+component: `labkit.mark10` | `new -> 1.1.1`
+component: `labkit_Mark10Monitor_app` | `new -> 1.1.1`
 scope: Background acquisition and streaming state publication
 scope: Optional project persistence and precise dirty state
 scope: Mark-10 ESM303 and Series 5 monitoring
@@ -65,8 +65,9 @@ Force Gauges App.
   settings, standard CSV, MESUR gauge-compatible LOG, complete MAT export, and
   offline replay without a separate recording state.
 - A connected-idle **Read Once** action updates only the live force/travel
-  readout, while Travel Zero immediately updates the displayed coordinate even
-  when no monitoring refresh is active.
+  readout. Force Zero and Travel Zero are verified device operations; an
+  unavailable ESM303 hardware `z` command fails without applying an App-local
+  offset to live values, retained samples, analysis, or exports.
 - The driver enforces and verifies Series 5 `IPOL1` at connection and before
   sampling, making tension positive and compression negative in device serial
   output, live views, retained data, exports, analysis, and replay.
@@ -132,7 +133,7 @@ compliance.
 
 The App SDK addition remains in the version-2 compatibility range. Existing
 Apps need no callback or project migration. The new driver and App begin at
-version 1.1.0 and introduce no saved-project format because the monitor is
+version 1.1.1 and introduce no saved-project format because the monitor is
 intentionally session-only.
 
 ## Validation
@@ -144,15 +145,16 @@ specifications cover response contamination, unit normalization, LIST parsing,
 fallback transactions, background-only sampling validation, and facade
 metadata. App result specifications cover exact LOG bytes, CSV/LOG/MAT
 reopen, replay rate mapping, acquisition-source replacement, and retained
-samples; headless Runtime construction covers the complete App definition and
-initial lifecycle.
+samples, strict device-only travel zero, and refusal to send `z` without
+confirmed command access; headless Runtime construction covers the complete
+App definition and initial lifecycle.
 
 ## Evidence
 
 - All 34 focused App SDK identities passed on MATLAB R2026a, including
   coalescing, active-transaction deferral, queued failure isolation, rollback,
   close, dirty state, and hidden-handle plot copying.
-- Seven Mark-10 facade identities and 16 affected App capability identities
+- Nine Mark-10 facade identities and 24 affected App capability identities
   passed without hardware.
 - A 6-second approved-device background-driver probe retained 294 synchronized
   samples at 47.88 Hz. The complete hidden App retained 538 samples over

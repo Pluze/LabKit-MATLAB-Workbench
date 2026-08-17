@@ -14,8 +14,7 @@ if ~sample.Valid
     return;
 end
 state.session.acquisition.force_N = sample.Force_N;
-state.session.acquisition.travel_mm = sample.Travel_mm - ...
-    state.session.acquisition.travelZeroOffset_mm;
+state.session.acquisition.travel_mm = sample.Travel_mm;
 state.session.connection.acquisitionMode = sample.AcquisitionMode;
 state.session.connection.lastFailure = "";
 state.session.connection.status = "Manual device reading updated.";

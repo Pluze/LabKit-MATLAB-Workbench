@@ -1,33 +1,21 @@
 function state = zeroTravel(state, context)
-%ZEROTRAVEL Request hardware travel zero or adopt a software offset.
+%ZEROTRAVEL Request and verify ESM303 device travel zero.
 box = context.getResource("application", "mark10Connection");
 connection = box("connection");
 [connection, result] = labkit.mark10.zeroTravel(connection);
 box("connection") = connection;
-if result.Success
+if result.Success && result.HardwareApplied
     acquisition = state.session.acquisition;
-    previousOffset_mm = acquisition.travelZeroOffset_mm;
-    acquisition.travelZeroOffset_mm = result.SoftwareOffset_mm;
-    if result.HardwareApplied
-        acquisition.travel_mm = result.After_mm;
-        state.session.connection.status = "Hardware travel zero verified.";
-    else
-        offsetChange_mm = result.SoftwareOffset_mm - previousOffset_mm;
-        if isfield(acquisition, "travel_mm") && ...
-                isfinite(acquisition.travel_mm)
-            acquisition.travel_mm = ...
-                acquisition.travel_mm - offsetChange_mm;
-        end
-        if isfield(acquisition, "plotTravel_mm")
-            acquisition.plotTravel_mm = ...
-                acquisition.plotTravel_mm - offsetChange_mm;
-        end
-        state.session.connection.status = ...
-            "Hardware zero unavailable in this mode; software zero active.";
-    end
+    acquisition.travel_mm = result.After_mm;
+    state.session.connection.status = "ESM303 device travel zero verified.";
+    state.session.connection.lastFailure = "";
     state.session.acquisition = acquisition;
 else
-    state.session.connection.lastFailure = result.Message;
-    context.alert(result.Message, "Zero Travel");
+    message = result.Message;
+    if strlength(message) == 0
+        message = "ESM303 device travel zero was not applied.";
+    end
+    state.session.connection.lastFailure = message;
+    context.alert(message, "Zero Travel");
 end
 end

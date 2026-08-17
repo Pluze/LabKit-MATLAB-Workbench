@@ -1,31 +1,35 @@
 classdef Mark10ActionsSpec < matlab.unittest.TestCase
-    %MARK10ACTIONSSPEC Specify mode-gated software travel zero behavior.
+    %MARK10ACTIONSSPEC Specify device-only zero and manual read behavior.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function adoptsSoftwareZeroWhenStandStatusIsUnavailable(testCase)
+        function rejectsTravelZeroWhenDeviceCommandIsUnavailable(testCase)
             command = containers.Map("KeyType", "char", "ValueType", "any");
             command("value") = "";
+            alerts = containers.Map("KeyType", "char", "ValueType", "any");
+            alerts("message") = "";
             connection = Mark10ActionsSpec.connection(command);
             box = containers.Map("KeyType", "char", "ValueType", "any");
             box("connection") = connection;
             backend = struct( ...
                 "getResource", @(~, ~) box, ...
-                "alert", @(~, ~) []);
+                "alert", @(message, ~) Mark10ActionsSpec.captureAlert( ...
+                    alerts, message));
             context = labkittest.createCallbackContext(backend);
             state = struct("session", struct( ...
-                "acquisition", struct("travelZeroOffset_mm", 0, ...
+                "acquisition", struct( ...
                     "travel_mm", 2, "plotTravel_mm", [1; 2]), ...
                 "connection", struct("status", "", "lastFailure", "")));
 
             state = mark10_monitor.actions.zeroTravel(state, context);
 
+            testCase.verifyEqual(state.session.acquisition.travel_mm, 2);
             testCase.verifyEqual( ...
-                state.session.acquisition.travelZeroOffset_mm, 2);
-            testCase.verifyEqual(state.session.acquisition.travel_mm, 0);
-            testCase.verifyEqual( ...
-                state.session.acquisition.plotTravel_mm, [-1; 0]);
-            testCase.verifySubstring(state.session.connection.status, ...
-                "software zero active");
+                state.session.acquisition.plotTravel_mm, [1; 2]);
+            testCase.verifySubstring(state.session.connection.lastFailure, ...
+                "device zero is unavailable");
+            testCase.verifyEqual(command("value"), "p");
+            testCase.verifyEqual(alerts("message"), ...
+                state.session.connection.lastFailure);
         end
 
         function readsOnceWithoutStartingOrRetainingMonitoring(testCase)
@@ -37,15 +41,14 @@ classdef Mark10ActionsSpec < matlab.unittest.TestCase
                 "getResource", @(~, ~) box, "alert", @(~, ~) []));
             state = struct("session", struct( ...
                 "acquisition", struct("monitoring", false, ...
-                    "sampleCount", 7, "force_N", NaN, "travel_mm", NaN, ...
-                    "travelZeroOffset_mm", 0.5), ...
+                    "sampleCount", 7, "force_N", NaN, "travel_mm", NaN), ...
                 "connection", struct("status", "", "lastFailure", "", ...
                     "acquisitionMode", "Unknown")));
 
             state = mark10_monitor.actions.readOnce(state, context);
 
             testCase.verifyEqual(state.session.acquisition.force_N, 1);
-            testCase.verifyEqual(state.session.acquisition.travel_mm, 1.5);
+            testCase.verifyEqual(state.session.acquisition.travel_mm, 2);
             testCase.verifyEqual(state.session.acquisition.sampleCount, 7, ...
                 "A manual read must not become monitoring data.");
             testCase.verifyEqual(state.session.connection.status, ...
@@ -54,6 +57,10 @@ classdef Mark10ActionsSpec < matlab.unittest.TestCase
     end
 
     methods (Static, Access = private)
+        function captureAlert(alerts, message)
+            alerts("message") = string(message);
+        end
+
         function value = connection(command)
             transport = struct( ...
                 "Write", @(bytes) Mark10ActionsSpec.write(command, bytes), ...

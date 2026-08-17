@@ -1,15 +1,15 @@
 function [connection, result] = zeroTravel(connection)
-%ZEROTRAVEL Zero ESM303 travel or return a software-zero offset.
+%ZEROTRAVEL Zero ESM303 travel and verify the device reading.
 %
 % Usage:
 %   [connection,result] = labkit.mark10.zeroTravel(connection)
 %
 % Description:
 %   Reads current travel and requests stand status. Hardware z is sent only
-%   when status proves the command-capable PC-control path. Otherwise the
-%   current travel is returned as SoftwareOffset_mm and the operation succeeds
-%   as SUPPORTED_BUT_CURRENT_MODE_UNAVAILABLE. Hardware verification uses the
-%   official ESM303 0.02 mm travel resolution and accepts two increments.
+%   when status proves the command-capable PC-control path. If device zero is
+%   unavailable, the operation fails without changing the caller's coordinate
+%   system. Verification uses the official ESM303 0.02 mm travel resolution
+%   and accepts two increments.
 %
 % Inputs:
 %   connection - Opaque token returned by labkit.mark10.connect.
@@ -17,7 +17,9 @@ function [connection, result] = zeroTravel(connection)
 % Outputs:
 %   connection - Updated token with LastFailure.
 %   result - Scalar struct with Success, Status, HardwareApplied,
-%       SoftwareOffset_mm, and After_mm.
+%       SoftwareOffset_mm, After_mm, and Message. SoftwareOffset_mm is zero
+%       after success and NaN after failure; this API never applies a
+%       software zero.
 %
 % Errors:
 %   labkit:mark10:InvalidConnection - connection is malformed.
@@ -39,17 +41,16 @@ function [connection, result] = zeroTravel(connection)
     standStatus = upper(strip(mark10ResponseText(statusRaw)));
     pcControlAvailable = statusOutcome == "RESPONSE" && ...
         any(standStatus == ["U", "D", "S", "C", "L", "M", "UL", "DL"]);
-    if before.Valid && ~pcControlAvailable
-        result = struct("Success", true, ...
-            "Status", "SUPPORTED_BUT_CURRENT_MODE_UNAVAILABLE", ...
-            "HardwareApplied", false, ...
-            "SoftwareOffset_mm", before.Travel_mm, ...
-            "After_mm", before.Travel_mm, ...
-            "Message", "Using the current travel as a software-zero offset.");
-        return;
-    end
     if ~before.Valid
         result = failure(beforeOutcome, "Travel was unavailable before zero.");
+        connection.LastFailure = struct("Status", result.Status, ...
+            "Message", result.Message);
+        return;
+    end
+    if ~pcControlAvailable
+        result = failure("CURRENT_MODE_UNAVAILABLE", ...
+            "ESM303 device zero is unavailable because stand status did " + ...
+            "not confirm PC-control command access.");
         connection.LastFailure = struct("Status", result.Status, ...
             "Message", result.Message);
         return;

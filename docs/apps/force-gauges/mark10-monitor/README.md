@@ -55,13 +55,13 @@ current viewport triggers one tight refit with a small margin; the explicit
 **Refit Plot Limits** action uses the same rule. Monitoring, stopped data, and
 replay therefore share one range policy without recomputing axes every frame.
 
-**Zero Force** verifies the Series 5 zero against its displayed resolution.
-**Zero Travel** uses hardware zero only when stand status proves that command
-path is available; otherwise it applies a visible and exported software-zero
-offset. A successful software zero immediately shifts the live readout and
-displayed live curve, including while monitoring is stopped. The App never
-sends UP, DOWN, motion speed, limit, cycle, or automatic
-`SAVE` commands.
+**Zero Force** verifies the Series 5 device zero against its displayed
+resolution. **Zero Travel** sends the ESM303 hardware `z` command only when
+stand status proves that command path is available, then verifies the device
+travel reading. If hardware zero cannot be verified, the action fails and the
+App does not alter live values, retained samples, plots, or exports with a
+software offset. The App never sends UP, DOWN, motion speed, limit, cycle, or
+automatic `SAVE` commands.
 
 ## Gauge Settings
 

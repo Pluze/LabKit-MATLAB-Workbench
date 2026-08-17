@@ -23,8 +23,7 @@ matName = string(stem) + ".mat";
 matPath = fullfile(folder, matName);
 time = buffer("time_s");
 force = buffer("force_N");
-travel = buffer("travel_mm") - ...
-    state.session.acquisition.travelZeroOffset_mm;
+travel = buffer("travel_mm");
 mode = buffer("mode");
 clean = table(time(valid), force(valid), travel(valid), ...
     'VariableNames', {'Time_s', 'Force_N', 'Travel_mm'});

@@ -76,11 +76,12 @@ default is the opposite, so the driver applies `IPOL1` and verifies it by
 an App-only sign flip. `SAVE` is still not sent; reconnecting re-establishes
 the convention after a gauge power cycle.
 
-Travel zero uses the stand status command to gate hardware `z`. When the
-current stand mode does not expose that command path but travel is readable,
-the result supplies a software offset. Force zero is verified against the
-displayed gauge resolution. Callers must still confirm that the fixture is in
-a mechanically safe state before any zero operation.
+Travel zero uses the stand status command to gate hardware `z` and succeeds
+only after the ESM303 reports a zero position within its documented travel
+resolution. When the current stand mode does not expose that command path, the
+operation fails without creating a software offset. Force zero is likewise a
+verified device command. Callers must still confirm that the fixture is in a
+mechanically safe state before any zero operation.
 
 ## Hardware Configuration
 

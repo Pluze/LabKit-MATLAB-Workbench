@@ -19,8 +19,7 @@ buffer = context.getResource("application", "mark10Buffer");
 valid = buffer("valid");
 time_s = buffer("time_s");
 force_N = buffer("force_N");
-travel_mm = buffer("travel_mm") - ...
-    state.session.acquisition.travelZeroOffset_mm;
+travel_mm = buffer("travel_mm");
 time_s = time_s(valid);
 force_N = force_N(valid);
 travel_mm = travel_mm(valid);

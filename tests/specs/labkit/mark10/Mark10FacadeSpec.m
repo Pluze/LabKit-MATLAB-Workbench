@@ -69,7 +69,7 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             info = labkit.mark10.version();
 
             testCase.verifyEqual(info.name, "labkit.mark10");
-            testCase.verifyEqual(info.current, "1.1.0");
+            testCase.verifyEqual(info.current, "1.1.1");
             testCase.verifyError(@() labkit.mark10.decodeSample({"bad"}), ...
                 "labkit:mark10:InvalidValue");
             testCase.verifyError(@() labkit.mark10.writeSetting( ...
@@ -100,6 +100,53 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(result.After_N, 0);
             testCase.verifyEqual(result.Resolution_N, 0.01);
             testCase.verifyEqual(result.Message, "");
+        end
+
+        function rejectsTravelZeroWithoutDeviceCommandAccess(testCase)
+            state = containers.Map("KeyType", "char", "ValueType", "any");
+            state("command") = "";
+            transport = struct( ...
+                "Write", @(bytes) Mark10FacadeSpec.writeBytes(state, bytes), ...
+                "Flush", @() [], ...
+                "ReadUntil", @(lines, seconds) ...
+                    Mark10FacadeSpec.readUntil(state, lines, seconds), ...
+                "ReadFor", @(seconds) uint8([]), "Pause", @(seconds) [], ...
+                "Close", @() [], "IsOpen", @() true);
+            connection = Mark10FacadeSpec.connectionToken(transport);
+
+            [connection, result] = labkit.mark10.zeroTravel(connection);
+
+            testCase.verifyFalse(result.Success);
+            testCase.verifyFalse(result.HardwareApplied);
+            testCase.verifyEqual(result.Status, "CURRENT_MODE_UNAVAILABLE");
+            testCase.verifyTrue(isnan(result.SoftwareOffset_mm));
+            testCase.verifyEqual(state("command"), "p", ...
+                "The driver must not send z without confirmed device access.");
+            testCase.verifyEqual(connection.LastFailure.Status, ...
+                "CURRENT_MODE_UNAVAILABLE");
+        end
+
+        function sendsAndVerifiesEsm303TravelZero(testCase)
+            state = containers.Map("KeyType", "char", "ValueType", "any");
+            state("command") = "";
+            state("travelReads") = 0;
+            state("sentZ") = false;
+            transport = struct( ...
+                "Write", @(bytes) Mark10FacadeSpec.travelZeroWrite( ...
+                    state, bytes), ...
+                "Flush", @() [], ...
+                "ReadUntil", @(~, ~) Mark10FacadeSpec.travelZeroRead(state), ...
+                "ReadFor", @(~) uint8([]), "Pause", @(~) [], ...
+                "Close", @() [], "IsOpen", @() true);
+            connection = Mark10FacadeSpec.connectionToken(transport);
+
+            [~, result] = labkit.mark10.zeroTravel(connection);
+
+            testCase.verifyTrue(result.Success);
+            testCase.verifyTrue(result.HardwareApplied);
+            testCase.verifyTrue(state("sentZ"));
+            testCase.verifyEqual(result.After_mm, 0);
+            testCase.verifyEqual(result.SoftwareOffset_mm, 0);
         end
 
         function verifiesTensionPositiveOutputPolarityByReadback(testCase)
@@ -147,6 +194,30 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             state("command") = erase(command, char(13));
             if state("command") == "IPOL1"
                 state("inverted") = true;
+            end
+        end
+
+        function travelZeroWrite(state, bytes)
+            command = strip(string(native2unicode( ...
+                uint8(bytes(:).'), "UTF-8")));
+            state("command") = erase(command, char(13));
+            if state("command") == "z"
+                state("sentZ") = true;
+            end
+        end
+
+        function raw = travelZeroRead(state)
+            if state("command") == "p"
+                raw = uint8(sprintf('S\r\n'));
+            elseif state("command") == "x"
+                state("travelReads") = state("travelReads") + 1;
+                if state("travelReads") == 1
+                    raw = uint8(sprintf('2.00 mm\r\n'));
+                else
+                    raw = uint8(sprintf('0.00 mm\r\n'));
+                end
+            else
+                raw = uint8([]);
             end
         end
 

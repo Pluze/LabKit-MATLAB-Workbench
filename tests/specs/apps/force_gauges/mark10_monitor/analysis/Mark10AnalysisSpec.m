@@ -200,16 +200,16 @@ classdef Mark10AnalysisSpec < matlab.unittest.TestCase
                 "Plot force and travel zero levels reset to 0.");
         end
 
-        function sharedPlotShiftIncludesHardwareTravelZero(testCase)
+        function sharedPlotShiftAppliesAnalysisZero(testCase)
             analysis = parameters("Automatic");
             analysis.forceZero_N = 2;
             analysis.travelZero_mm = 30;
 
             [force, travel] = mark10_monitor.analysis.shiftPlotData( ...
-                [2; 3], [35; 36], analysis, 5);
+                [2; 3], [35; 36], analysis);
 
             testCase.verifyEqual(force, [0; 1]);
-            testCase.verifyEqual(travel, [0; 1]);
+            testCase.verifyEqual(travel, [5; 6]);
         end
     end
 

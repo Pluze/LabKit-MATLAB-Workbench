@@ -19,10 +19,10 @@ function info = version()
 %
 % Example:
 %   info = labkit.mark10.version();
-%   assert(info.current == "1.1.0")
+%   assert(info.current == "1.1.1")
 %
 % See also labkit.mark10.connect, labkit.mark10.readSample
     info = labkit.contract.versionInfo( ...
-        "mark10", "1.1.0", ">=1 <2", "stable", ...
+        "mark10", "1.1.1", ">=1 <2", "stable", ...
         "Mark-10 ESM303 and Series 5 monitor and settings driver.");
 end
