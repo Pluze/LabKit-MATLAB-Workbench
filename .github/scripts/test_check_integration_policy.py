@@ -92,6 +92,29 @@ class IntegrationPolicyTest(unittest.TestCase):
             [],
         )
 
+    def test_new_components_require_new_version_history(self):
+        facade = "+labkit/+sample/version.m"
+        app = "apps/examples/sample/+sample/definition.m"
+        history = "docs/history/records/2026/08/LK-new-components.md"
+        head = {
+            facade: 'labkit.contract.versionInfo("sample", "1.0.0", ">=1 <2")',
+            app: (
+                'labkit.app.Definition(Entrypoint="labkit_Sample_app", '
+                'AppVersion="1.0.0")'
+            ),
+            history: "\n".join([
+                "component: `labkit.sample` | `new -> 1.0.0`",
+                "component: `labkit_Sample_app` | `new -> 1.0.0`",
+            ]),
+        }
+
+        self.assertEqual(
+            MODULE.validate_versions(
+                [facade, app, history], {}.get, head.get
+            ),
+            [],
+        )
+
     def test_facade_double_jump_is_rejected(self):
         path = "+labkit/+app/version.m"
         before = 'labkit.contract.versionInfo("app", "2.0.1", ">=2 <3")'

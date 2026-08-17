@@ -176,7 +176,11 @@ def validate_versions(
     for path in sorted(metadata):
         before = version_for_owner(path, read_base)
         after = version_for_owner(path, read_head)
-        if before is None or after is None:
+        if after is None:
+            continue
+        if before is None:
+            component_after, version_after = after
+            transitions.append((component_after, "new", version_after))
             continue
         component_before, version_before = before
         component_after, version_after = after

@@ -28,6 +28,12 @@ python3 .agents/skills/labkit-pr-preparer/scripts/audit_pr.py \
 ## Consolidate the squash result
 
 - Derive one direct patch, minor, or major component transition from main.
+- After choosing each final version, search the complete proposed tree and
+  reconcile every owned version consumer: App `Requirements`, facade ranges,
+  public help examples, exact test expectations, saved-data compatibility or
+  migration branches, and release metadata. Distinguish unrelated components
+  that happen to use the same numeric version; do not perform a blind global
+  replacement.
 - Leave one coherent changed history record per versioned component; combine a
   cross-component decision and remove intermediate checkpoint narration.
 - Align final version, updated date, Change ID date, manual, rationale,
