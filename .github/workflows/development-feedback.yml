@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: development-feedback-${{ github.ref }}
@@ -19,12 +20,39 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
+      - name: Decide whether focused feedback is needed
+        id: scope
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "${EVENT_NAME}" = "workflow_dispatch" ]; then
+            echo "should_run=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          open_prs="$(gh api --method GET \
+            "repos/${GITHUB_REPOSITORY}/pulls" \
+            -f state=open \
+            -f base=main \
+            -f head="${GITHUB_REPOSITORY_OWNER}:develop" \
+            --jq 'length')"
+          if [ "${open_prs}" -gt 0 ]; then
+            echo "should_run=false" >> "${GITHUB_OUTPUT}"
+            echo "Open develop-to-main PR owns complete validation; skipping duplicate feedback."
+          else
+            echo "should_run=true" >> "${GITHUB_OUTPUT}"
+          fi
+
       - name: Check out repository history
+        if: steps.scope.outputs.should_run == 'true'
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Resolve complete pushed range
+        if: steps.scope.outputs.should_run == 'true'
         shell: bash
         env:
           EVENT_BEFORE: ${{ github.event.before }}
@@ -48,17 +76,20 @@ jobs:
             > artifacts/development-feedback/head-sha.txt
 
       - name: Validate lightweight repository policy
+        if: steps.scope.outputs.should_run == 'true'
         shell: bash
         run: |
           python -m unittest discover -s .github/scripts -p 'test_*.py'
           python .github/scripts/validate_agent_skills.py
 
       - name: Set up clean latest MATLAB runtime
+        if: steps.scope.outputs.should_run == 'true'
         uses: matlab-actions/setup-matlab@v3
         with:
           release: latest
 
       - name: Start Linux virtual display
+        if: steps.scope.outputs.should_run == 'true'
         shell: bash
         run: |
           Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp \
@@ -72,18 +103,20 @@ jobs:
           fi
 
       - name: Run focused changed-path feedback
+        if: steps.scope.outputs.should_run == 'true'
         uses: matlab-actions/run-command@v3
         with:
           command: addpath(fullfile(pwd,'.github','scripts')); runDevelopmentFeedback(fullfile(pwd,'artifacts','development-feedback','changed-paths.txt'))
           startup-options: -logfile artifacts/logs/development-feedback/matlab.log
 
       - name: Verify generated documentation
+        if: steps.scope.outputs.should_run == 'true'
         uses: matlab-actions/run-build@v3
         with:
           tasks: docsCheck
 
       - name: Upload feedback artifacts
-        if: always()
+        if: always() && steps.scope.outputs.should_run == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: development-feedback-${{ github.run_id }}

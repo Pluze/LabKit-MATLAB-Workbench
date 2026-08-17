@@ -144,7 +144,10 @@ checks deterministic documentation. This job is rapid cross-environment author
 feedback only: a green result does not establish merge safety, replace the one
 local pre-PR `changedFast` checkpoint, or reduce the complete PR matrix. A new
 push cancels an older in-progress feedback run so rapid iteration does not build
-a stale queue. Read the non-gating result when its evidence is needed rather
+a stale queue. While an open `develop`-to-`main` PR owns complete validation,
+push-triggered feedback stops after a quick scope check instead of repeating
+MATLAB and documentation work; a manual dispatch still runs the complete
+feedback lane. Read the non-gating result when its evidence is needed rather
 than monitoring it throughout ordinary development.
 
 ## Artifacts and Failures

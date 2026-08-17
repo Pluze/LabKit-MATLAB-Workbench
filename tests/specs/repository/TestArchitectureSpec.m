@@ -133,6 +133,11 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, "release: latest");
             testCase.verifyFalse(contains(workflow, "products:"));
             testCase.verifySubstring(workflow, "cancel-in-progress: true");
+            testCase.verifySubstring(workflow, "pull-requests: read");
+            testCase.verifySubstring(workflow, ...
+                "steps.scope.outputs.should_run == 'true'");
+            testCase.verifySubstring(workflow, ...
+                "Open develop-to-main PR owns complete validation");
             testCase.verifySubstring(workflow, "github.event.before");
             testCase.verifySubstring(workflow, ...
                 "artifacts/development-feedback/changed-paths.txt");

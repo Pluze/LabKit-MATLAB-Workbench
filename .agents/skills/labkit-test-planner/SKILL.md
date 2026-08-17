@@ -43,7 +43,10 @@ clean checkout's `HEAD^..HEAD`, and never report the single-platform feedback
 job as merge safety or as a replacement for local pre-PR and complete PR gates.
 Let a newer push cancel superseded feedback, and inspect hosted feedback only
 on user request, when checkpoint evidence needs it, or when a reported failure
-blocks the current task. Do not continuously poll non-gating development runs.
+blocks the current task. When an open develop-to-main PR owns complete
+validation, let push-triggered feedback stop before MATLAB setup; use manual
+dispatch only when independent focused evidence is explicitly needed. Do not
+continuously poll non-gating development runs.
 
 ## Report and repair
 
