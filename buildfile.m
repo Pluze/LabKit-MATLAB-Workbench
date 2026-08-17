@@ -1,6 +1,6 @@
 function plan = buildfile
 %BUILDFILE Stable LabKit validation and documentation entry points.
-%   buildtool changedFast  local semantic pre-commit evidence
+%   buildtool changedFast  final local pre-PR review evidence
 %   buildtool headless     every headless specification
 %   buildtool gui          every hidden-GUI specification
 %   buildtool isolated     every path-isolated specification
@@ -10,7 +10,7 @@ function plan = buildfile
 
 plan = buildplan(localfunctions);
 plan.DefaultTasks = "headless";
-plan("changedFast").Description = "Run focused pre-commit specifications selected from the local diff";
+plan("changedFast").Description = "Run focused final pre-PR specifications selected from the local diff";
 plan("headless").Description = "Run all non-GUI product, SDK, persistence, and export specifications";
 plan("gui").Description = "Run hidden native-App, callback, graphics, and export workflows";
 plan("isolated").Description = "Start every public App from a reset path to detect undeclared dependencies";
@@ -50,7 +50,7 @@ end
 
 function listTasksTask(~)
 fprintf("LabKit build tasks:\n");
-fprintf("  changedFast  local semantic pre-commit evidence\n");
+fprintf("  changedFast  final local pre-PR review evidence\n");
 fprintf("  headless     every headless specification\n");
 fprintf("  gui          every hidden-GUI specification\n");
 fprintf("  isolated     every path-isolated specification\n");

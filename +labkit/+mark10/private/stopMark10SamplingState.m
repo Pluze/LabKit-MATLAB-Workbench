@@ -15,7 +15,7 @@ if isa(deliveryTimer, "timer") && isvalid(deliveryTimer)
 end
 connection = state("connection");
 service = state("service");
-[connection, ~] = mark10ServiceRequest(connection, "stop", struct());
+[~, ~] = mark10ServiceRequest(connection, "stop", struct());
 mark10ServiceDrain(service);
 service("consumer") = [];
 connection = mark10ServiceConnection(service);

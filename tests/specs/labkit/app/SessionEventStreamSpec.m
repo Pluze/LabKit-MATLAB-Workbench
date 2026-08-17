@@ -489,30 +489,6 @@ attributes = struct("enum", "normal", "unit", "mV/s", "reason", "fallback", ...
     "sampleCount", 1, "signalCount", 1, "fileCount", 1);
 end
 
-function attributes = dimensionsWithFiveAxes()
-attributes = struct("dimensions", struct("a", 1, "b", 1, "c", 1, "d", 1, "e", 1));
-end
-
-function attributes = attributesWithSeventeenFields()
-attributes = struct();
-for index = 1:17
-    attributes.("count" + string(index)) = index;
-end
-end
-
-function attributes = attributesWithThirteenRootFieldsAndFourAxes()
-attributes = struct("dimensions", struct("x", 1, "y", 1, "z", 1, "t", 1));
-for index = 1:12
-    attributes.("metric" + string(index)) = index;
-end
-end
-
-function attributes = attributeWithOverlongKey()
-attributes = struct();
-name = "metric" + string(repmat('x', 1, 64 - strlength("metric")));
-attributes.(char(name)) = 1;
-end
-
 function attributes = attributesAtCanonicalByteCount(targetBytes)
 attributes = struct();
 prefixes = "metric" + string(1:16);
