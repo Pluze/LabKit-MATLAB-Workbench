@@ -35,12 +35,13 @@ else
     set(travelLine, "XData", model.time_s, "YData", model.travel_mm);
     set(forceLine, "XData", model.time_s, "YData", model.force_N);
 end
-if requestsFit(model)
+if requestsFit(ax, model)
     xlim(ax, model.limits.time_s);
     yyaxis(ax, "left");
     ylim(ax, model.limits.travel_mm);
     yyaxis(ax, "right");
     ylim(ax, model.limits.force_N);
+    recordFit(ax, model);
 end
 end
 
@@ -73,9 +74,10 @@ else
     [displayTravel, displayForce] = visiblePointData(pointTravel, pointForce);
     set(stationaryPoints, "XData", displayTravel, "YData", displayForce);
 end
-if requestsFit(model)
+if requestsFit(ax, model)
     xlim(ax, model.limits.travel_mm);
     ylim(ax, model.limits.force_N);
+    recordFit(ax, model);
 end
 end
 
@@ -117,6 +119,17 @@ if isempty(x)
 end
 end
 
-function tf = requestsFit(model)
-tf = isfield(model, "fitViewport") && logical(model.fitViewport);
+function tf = requestsFit(ax, model)
+if ~isfield(model, "limitRevision")
+    tf = isfield(model, "fitViewport") && logical(model.fitViewport);
+    return;
+end
+tf = ~isappdata(ax, "mark10LimitRevision") || ...
+    getappdata(ax, "mark10LimitRevision") ~= model.limitRevision;
+end
+
+function recordFit(ax, model)
+if isfield(model, "limitRevision")
+    setappdata(ax, "mark10LimitRevision", model.limitRevision);
+end
 end

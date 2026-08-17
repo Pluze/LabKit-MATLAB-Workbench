@@ -2,12 +2,14 @@ function view = present(state)
 %PRESENT Compose the complete transient Mark-10 monitor view.
 s = state.session;
 connected = s.connection.connected;
+monitoring = acquisitionFlag(s.acquisition, "monitoring", connected);
 ports = s.connection.ports;
 if isempty(ports), ports = "No ports"; end
 model = struct("time_s", s.acquisition.plotTime_s, ...
     "force_N", s.acquisition.plotForce_N, ...
     "travel_mm", s.acquisition.plotTravel_mm, ...
-    "limits", s.cache.plotLimits, "fitViewport", true);
+    "limits", s.cache.plotLimits, ...
+    "limitRevision", s.cache.plotViewRevision);
 analysisModel = struct( ...
     "strain_percent", s.analysis.plotStrain_percent, ...
     "stress_MPa", s.analysis.plotStress_MPa, ...
@@ -62,10 +64,8 @@ view = view.enabled("refreshPorts", ~connected);
 view = view.enabled("connectDevice", ...
     ~connected && any(ports ~= "No ports"));
 view = view.enabled("disconnectDevice", connected);
-view = view.enabled("startRecording", ...
-    connected && ~s.acquisition.recording);
-view = view.enabled("stopRecording", ...
-    connected && s.acquisition.recording);
+view = view.enabled("startMonitoring", connected && ~monitoring);
+view = view.enabled("stopMonitoring", monitoring);
 view = view.enabled("zeroForce", connected);
 view = view.enabled("zeroTravel", connected);
 view = view.enabled("refitLiveAxes", ...
@@ -73,7 +73,7 @@ view = view.enabled("refitLiveAxes", ...
 view = view.enabled("refreshSettings", connected);
 view = view.enabled("applySettings", connected);
 view = view.enabled("exportRecording", ...
-    s.acquisition.recordedValidCount > 0);
+    ~monitoring && s.acquisition.retainedValidCount > 0);
 view = view.enabled("openRecording", ...
     ~connected && ~s.playback.playing);
 view = view.enabled("resetRecording", ...
@@ -115,15 +115,16 @@ end
 end
 
 function tf = analysisDataAvailable(s)
-source = "Live Recording";
+source = "Live Monitoring";
 if isfield(s.analysis, "dataSource")
     source = string(s.analysis.dataSource);
 elseif s.playback.loaded
     source = "Loaded Recording";
 end
 tf = (source == "Loaded Recording" && s.playback.loaded) || ...
-    (source == "Live Recording" && ...
-    ~s.acquisition.recording && s.acquisition.recordedValidCount >= 16);
+    (source == "Live Monitoring" && ...
+    ~acquisitionFlag(s.acquisition, "monitoring", false) && ...
+    s.acquisition.retainedValidCount >= 16);
 end
 
 function value = recentTable(acquisition)
@@ -153,10 +154,21 @@ if isfinite(value), text = compose("%.6g", value); else, text = "—"; end
 end
 
 function text = acquisitionText(value)
-mode = ternary(value.recording, "recording", "monitoring");
+if acquisitionFlag(value, "monitoring", false)
+    mode = "monitoring";
+else
+    mode = "stopped";
+end
 text = compose("%s | samples %d (%d valid, %d invalid) | %.2f Hz", ...
     mode, value.sampleCount, value.validCount, value.invalidCount, ...
     value.actualRate_Hz);
+end
+
+function value = acquisitionFlag(acquisition, name, fallback)
+value = fallback;
+if isfield(acquisition, name)
+    value = logical(acquisition.(name));
+end
 end
 
 function text = settingsText(value)
@@ -171,8 +183,4 @@ end
 
 function value = blankFallback(value)
 if strlength(value) == 0, value = "None"; end
-end
-
-function value = ternary(condition, whenTrue, whenFalse)
-if condition, value = whenTrue; else, value = whenFalse; end
 end

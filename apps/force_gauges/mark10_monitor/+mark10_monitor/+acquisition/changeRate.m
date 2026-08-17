@@ -1,7 +1,7 @@
 function state = changeRate(state, value, context)
 %CHANGERATE Update requested rate and an active monitor timer.
 state.session.acquisition.rate = string(value);
-if state.session.connection.connected
+if state.session.acquisition.monitoring
     monitorTimer = context.getResource("application", "mark10Timer");
     wasRunning = strcmp(monitorTimer.Running, "on");
     if wasRunning, stop(monitorTimer); end

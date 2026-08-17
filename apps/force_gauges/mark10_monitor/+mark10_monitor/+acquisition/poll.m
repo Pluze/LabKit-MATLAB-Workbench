@@ -17,17 +17,15 @@ try
         buffer("invalidCount") = buffer("invalidCount") + 1;
         buffer("lastFailure") = sample.FailureStatus;
     end
-    if buffer("recording")
-        buffer("time_s") = [buffer("time_s"); elapsed];
-        buffer("force_N") = [buffer("force_N"); sample.Force_N];
-        buffer("travel_mm") = [buffer("travel_mm"); sample.Travel_mm];
-        buffer("forceRaw") = [buffer("forceRaw"); sample.ForceRawValue];
-        buffer("travelRaw") = [buffer("travelRaw"); sample.TravelRawValue];
-        buffer("forceUnit") = [buffer("forceUnit"); string(sample.ForceUnit)];
-        buffer("travelUnit") = [buffer("travelUnit"); string(sample.TravelUnit)];
-        buffer("valid") = [buffer("valid"); sample.Valid];
-        buffer("mode") = [buffer("mode"); string(sample.AcquisitionMode)];
-    end
+    buffer("time_s") = [buffer("time_s"); elapsed];
+    buffer("force_N") = [buffer("force_N"); sample.Force_N];
+    buffer("travel_mm") = [buffer("travel_mm"); sample.Travel_mm];
+    buffer("forceRaw") = [buffer("forceRaw"); sample.ForceRawValue];
+    buffer("travelRaw") = [buffer("travelRaw"); sample.TravelRawValue];
+    buffer("forceUnit") = [buffer("forceUnit"); string(sample.ForceUnit)];
+    buffer("travelUnit") = [buffer("travelUnit"); string(sample.TravelUnit)];
+    buffer("valid") = [buffer("valid"); sample.Valid];
+    buffer("mode") = [buffer("mode"); string(sample.AcquisitionMode)];
     postRefreshIfDue(buffer, elapsed, context);
 catch cause
     buffer("lastFailure") = string(cause.message);

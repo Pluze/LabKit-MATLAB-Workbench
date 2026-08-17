@@ -1,7 +1,7 @@
 # Mark-10 Force/Travel Monitor
 
 Mark-10 Monitor connects to an ESM303 with an attached Series 5 gauge,
-displays live force and travel, records without controlling stand motion,
+displays and retains live force and travel without controlling stand motion,
 replays previously exported data, and estimates branch stiffness and
 engineering Young's modulus.
 
@@ -10,24 +10,27 @@ The central workspace follows the official monitoring workflow with separate
 plot combines travel and
 force against time on two Y axes; the lower plot is the standard force-versus-
 travel curve. The table shows the latest 200 valid visible samples while the
-full recording remains in the managed buffer.
+full monitoring run remains in the managed buffer.
 
-The control side is split into task-focused **Monitor**, **Record**,
-**Analysis**, and **Settings** tabs. Connection, live readout, recording,
-file playback, and device configuration therefore remain independent instead
-of sharing one long scrolling panel.
+The control side is split into task-focused **Monitor**, **Analysis**, and
+**Settings** tabs. Connection, live monitoring/export, file playback, and
+device configuration therefore remain independent instead of sharing one
+long scrolling panel.
 
-## Connect And Record
+## Connect, Monitor, And Export
 
 Run `labkit_Mark10Monitor_app`, choose **Refresh Ports**, select the serial
-port, and choose **Connect**. Monitoring begins immediately. **Start
-Recording** clears the retained recording and starts capture; **Stop
-Recording** leaves the live monitor running.
+port, and choose **Connect**. Connection only opens and probes the device;
+choose **Start Monitoring** to begin live reads. **Stop Monitoring** stops
+reads while keeping the serial connection open. Starting a monitoring run
+clears the preceding in-memory run, then retains every sample attempt while
+updating the plots. Choose **Export CSV + LOG + MAT** to save that retained
+run; no separate recording mode is required.
 
 Choose 10, 20, 30, 40, or 50 Hz paced acquisition; 50 Hz is the default.
-Measured rate is shown instead of assuming the requested value. Sampling and
-recording remain at the requested rate while plots, controls, and diagnostics
-refresh at no more than 30 frames per second. The App uses synchronized `n`
+Measured rate is shown instead of assuming the requested value. Sampling runs
+at the requested pace while plots, controls, and diagnostics refresh at no
+more than 30 frames per second. The App uses synchronized `n`
 reads when possible and reports fallback `x + ?C` acquisition in diagnostics.
 
 **Zero Force** verifies the Series 5 zero against its displayed resolution.
@@ -87,8 +90,8 @@ disabled while connected.
 
 The **Analysis** tab also calculates one fit for each sufficiently long
 monotonic travel branch. This shared path accepts either a complete loaded
-CSV/LOG/MAT recording or the complete valid sample buffer from a stopped live
-recording. It does not fit only the currently visible replay prefix.
+CSV/LOG/MAT recording or the complete valid sample buffer from a stopped
+monitoring run. It does not fit only the currently visible replay prefix.
 
 **Plot Zero** accepts the raw force level in N and raw travel level in mm
 that should be treated as zero. Editing only changes the pending values;

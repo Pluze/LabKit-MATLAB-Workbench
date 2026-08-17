@@ -11,6 +11,7 @@ classdef Mark10SessionSpec < matlab.unittest.TestCase
             session = mark10_monitor.createSession(struct(), context);
 
             testCase.verifyFalse(session.connection.connected);
+            testCase.verifyFalse(session.acquisition.monitoring);
             testCase.verifyFalse(session.playback.loaded);
             testCase.verifyEqual(session.acquisition.rate, "50 Hz");
             testCase.verifyEqual(session.cache.plotViewRevision, 0);

@@ -1,6 +1,6 @@
 function [time_s, force_N, travel_mm, description] = sourceData(state, context)
-%SOURCEDATA Return the complete loaded replay or retained live recording.
-source = "Live Recording";
+%SOURCEDATA Return the complete loaded replay or retained monitoring run.
+source = "Live Monitoring";
 if isfield(state.session.analysis, "dataSource")
     source = string(state.session.analysis.dataSource);
 elseif state.session.playback.loaded
@@ -24,5 +24,5 @@ travel_mm = buffer("travel_mm") - ...
 time_s = time_s(valid);
 force_N = force_N(valid);
 travel_mm = travel_mm(valid);
-description = "retained live recording";
+description = "retained monitoring run";
 end

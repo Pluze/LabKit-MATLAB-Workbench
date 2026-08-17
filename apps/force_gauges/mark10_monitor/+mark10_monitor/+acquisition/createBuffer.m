@@ -2,8 +2,7 @@ function buffer = createBuffer()
 %CREATEBUFFER Create the handle-semantic transient acquisition store.
 buffer = containers.Map("KeyType", "char", "ValueType", "any");
 buffer("started") = tic;
-buffer("recordingStartedAt") = datetime("now");
-buffer("recording") = false;
+buffer("monitoringStartedAt") = datetime("now");
 buffer("time_s") = zeros(0, 1);
 buffer("force_N") = zeros(0, 1);
 buffer("travel_mm") = zeros(0, 1);
