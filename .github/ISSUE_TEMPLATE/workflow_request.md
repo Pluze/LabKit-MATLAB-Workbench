@@ -6,9 +6,7 @@ labels: ""
 assignees: ""
 ---
 
-Use this template for user-facing app workflows. LabKit keeps app-specific
-formulas, plots, exports, wording, and result schemas inside the owning app
-unless a shared foundation contract is clearly needed.
+Use this template for user-facing app workflows. LabKit keeps app-specific formulas, plots, exports, wording, and result schemas inside the owning app unless a shared foundation contract is clearly needed.
 
 ## App family
 

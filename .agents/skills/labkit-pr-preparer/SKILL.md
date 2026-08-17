@@ -48,8 +48,10 @@ Inspect this judgment manually even when inventory automation passes.
 Run integration policy for the actual refs, repair authored links, then run
 `changedFast` exactly once for the final tree. Inspect the complete diff,
 sensitive data, versions, history, manuals, evidence, and native/manual gaps.
-Fill the repository PR template, push the final checkpoint, open or update the
-PR, and freeze develop.
+Fill the repository PR template, normalize it with
+`.github/scripts/normalize_github_markdown.py`, push the final checkpoint, open
+or update the PR, and freeze develop. Keep one physical line per prose paragraph
+or list item; do not wrap GitHub-authored text to a terminal column width.
 
 Let required CI establish the complete platform claim. For a repair, inspect
 only failed identities, use `labkit-test-planner` for focused reproduction, and

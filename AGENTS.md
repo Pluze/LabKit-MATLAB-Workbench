@@ -270,6 +270,14 @@ net behavior and ownership decisions, exact local/manual evidence, and risks
 or follow-up, including compatibility, versions, documentation, boundaries,
 and data handling when relevant.
 
+Write GitHub Issue, pull-request, review, and Release Markdown as one physical
+line per prose paragraph and one physical line per list item. Do not insert
+column-width wrapping; GitHub owns visual wrapping. Preserve newlines only for
+Markdown structure, fenced or indented code, tables, separate standalone links,
+or an intentional hard break. Before a `gh` body or notes write, pass drafted
+Markdown through `.github/scripts/normalize_github_markdown.py`; use `--check`
+for repository-owned GitHub templates.
+
 Commit and squash subjects use exactly one lowercase Conventional Commit type:
 `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `ci`, or `chore`. Pass an
 explicit compliant squash subject; do not rely on GitHub defaults.
