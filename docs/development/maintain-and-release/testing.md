@@ -218,10 +218,11 @@ CI includes each profile's `visual-evidence/` folder in the platform artifact.
 Continuous Integration separates MATLAB-version compatibility from desktop
 platform compatibility instead of repeating their Cartesian product. Clean
 Linux and Windows R2022b runtimes run `headless`, `gui`, and `isolated` at the
-minimum supported MATLAB boundary. Current Linux runs the complete profiles
-in parallel core and GUI jobs. Current Windows and Apple Silicon macOS run the
-platform-sensitive `gui` and `isolated` profiles; the full headless catalog is
-not repeated on those current-version jobs. No job installs optional Toolboxes.
+minimum supported MATLAB boundary. Current Linux runs the complete profiles in
+one clean runtime so setup cost and installation tail latency are paid once.
+Current Windows and Apple Silicon macOS run the platform-sensitive `gui` and
+`isolated` profiles; the full headless catalog is not repeated on those
+current-version jobs. No job installs optional Toolboxes.
 Linux GUI jobs use a real virtual display service. The current Linux runtime
 is cached between runs; floor and desktop-platform installations remain clean
 and uncached. CI also runs `docsCheck` once and uploads catalog artifacts after

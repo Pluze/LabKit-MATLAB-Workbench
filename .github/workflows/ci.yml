@@ -77,26 +77,14 @@ jobs:
             id: linux
             label: Linux
             release: latest
-            shard: Core
-            shard_id: core
-            profiles: headless,isolated
+            shard: All profiles
+            shard_id: all
+            profiles: headless,gui,isolated
             run_headless: true
-            run_gui: false
+            run_gui: true
             run_isolated: true
             cache: true
-            claim: Current MATLAB and Ubuntu product, SDK, export, and path-isolation evidence
-          - os: ubuntu-latest
-            id: linux
-            label: Linux
-            release: latest
-            shard: Hidden GUI
-            shard_id: gui
-            profiles: gui
-            run_headless: false
-            run_gui: true
-            run_isolated: false
-            cache: true
-            claim: Current MATLAB and Ubuntu virtual-display App, graphics, and export evidence
+            claim: Current MATLAB and Ubuntu complete product, App, graphics, export, and path-isolation evidence
           - os: windows-2022
             id: windows
             label: Windows
