@@ -8,7 +8,8 @@ classdef VideoMarkerPresentationSpec < matlab.unittest.TestCase
 
             testCase.verifyTrue(all(ismember( ...
                 ["skeletonPreset" "videoFile" "currentFrame" ...
-                 "exportCoordinateCsv" "summaryTable"], ids)));
+                 "exportCoordinateCsv" "exportAnnotatedVideo" ...
+                 "summaryTable"], ids)));
         end
     end
 end

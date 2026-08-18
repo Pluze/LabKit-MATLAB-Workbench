@@ -5,7 +5,7 @@ if isempty(state.session.cache.currentImage)
     context.alert("Open a video before exporting marker CSV.", "No video");
     return
 end
-paths = context.resolveSourcePaths(state.project.inputs.sources, "video");
+paths = context.resolveSourcePaths(state.project.inputs.sources);
 startPath = video_marker.resultFiles.defaultOutputPath( ...
     paths(1), "video_marker_markers.csv");
 choice = context.chooseOutputFile( ...
