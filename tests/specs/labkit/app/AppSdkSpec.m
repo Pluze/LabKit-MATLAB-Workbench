@@ -107,6 +107,16 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function delegatesCommandWToNativeWindowClose(testCase)
+            handlesShortcut = ...
+                @labkit.app.internal.native.NativeAdapterValues.handlesCloseShortcut;
+
+            testCase.verifyFalse(handlesShortcut("w", "command"));
+            testCase.verifyFalse(handlesShortcut("w", ["control", "command"]));
+            testCase.verifyTrue(handlesShortcut("w", "control"));
+            testCase.verifyFalse(handlesShortcut("x", "control"));
+        end
+
         function validatesPostedEventCapability(testCase)
             observed = containers.Map("KeyType", "char", "ValueType", "any");
             backend = struct("postEvent", @(eventId, updateState) ...

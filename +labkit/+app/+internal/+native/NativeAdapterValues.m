@@ -101,6 +101,13 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
         end
 
+        function tf = handlesCloseShortcut(key, modifiers)
+        modifiers = lower(string(modifiers));
+        tf = strcmpi(string(key), "w") && ...
+            any(modifiers == "control") && ...
+            ~any(modifiers == "command");
+        end
+
         function setIfProperty(component, name, value)
         if ~isprop(component, name) || isequaln(component.(name), value)
             return

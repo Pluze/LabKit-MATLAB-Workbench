@@ -578,8 +578,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if isprop(event, "Modifier")
                 modifiers = string(event.Modifier);
             end
-            if strcmpi(string(event.Key), "w") && ...
-                    any(ismember(lower(modifiers), ["control", "command"]))
+            if labkit.app.internal.native.NativeAdapterValues. ...
+                    handlesCloseShortcut(event.Key, modifiers)
                 obj.requestClose();
             end
         end
