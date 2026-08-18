@@ -28,10 +28,12 @@ Extend the existing GUI-free `labkit.biosignal.readRecording` import boundary be
 - Successful and failed imports expose file facts, resolved format, fallback state, and attempt details through the existing outputs.
 - Decoded channels are uniformly sampled by default after removing non-finite times, ordering samples, dropping duplicate timestamps, and applying segmented linear interpolation with explicit normalization metadata.
 - ECG Print declares the newer biosignal contract and reports format, fallback, and uniform-sampling cleanup.
+- ECG Print never sends binary MAT contents to the Summary header-preview control; MAT recordings show a bounded format notice instead.
 
 ## User and data impact
 
 Users can open supported BIOPAC MAT and text exports, MAT tables, timetables, and simple numeric MAT recordings directly in ECG Print. BIOPAC channels use exported names and units. Uniform input samples are not rescaled; irregular continuous sections are linearly resampled, and large timestamp gaps are compressed between independently resampled sections rather than bridged.
+Opening Summary after analyzing a MAT recording no longer risks rendering an unbounded binary line as UI text.
 
 ## Compatibility and migration
 
@@ -39,11 +41,11 @@ Existing calls and saved ECG Print projects require no migration. The format and
 
 ## Validation
 
-Focused biosignal source specifications cover BIOPAC MAT interval conversion, labels, units, start-sample provenance, BIOPAC text preamble mapping, ranked MAT fallback, table and numeric MAT inputs, quoted time headers, segmented uniform resampling, its opt-out, and existing timetable and delimited imports. The supplied recording samples and format inventory are checked through the public importer without copying them into the repository.
+Focused biosignal source specifications cover BIOPAC MAT interval conversion, labels, units, start-sample provenance, BIOPAC text preamble mapping, ranked MAT fallback, table and numeric MAT inputs, quoted time headers, segmented uniform resampling, its opt-out, and existing timetable and delimited imports. ECG source specifications restrict header preview to supported text extensions and bound both bytes read and rendered line length. The supplied recording samples and format inventory are checked through the public importer without copying them into the repository.
 
 ## Evidence
 
-Ten focused biosignal source identities, two ECG source-file identities, and six ECG definition/product conformance identities passed. The nine supplied MAT/text/CSV samples, both supplied MAX86178 CSVs, and representative real MAT table and timetable files imported successfully with uniform output time. Private recording data was not copied into the repository.
+Ten focused biosignal source identities, four ECG source-file identities, two ECG workbench presentation identities, and six ECG definition/product conformance identities passed. The workbench workflow includes analysis followed by a Summary-tab switch. The nine supplied MAT/text/CSV samples, both supplied MAX86178 CSVs, and representative real MAT table and timetable files imported successfully with uniform output time. Private recording data was not copied into the repository.
 
 ## Known limitations and follow-up
 

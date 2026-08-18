@@ -44,6 +44,36 @@ classdef EcgPrintSourceSpec < matlab.unittest.TestCase
 
             testCase.verifyEqual(lines, {'01: time_s,LeadI'; '02: 0,1'});
         end
+
+        function previewsOnlySupportedTextFileExtensions(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            matPath = fullfile(folder, 'recording.mat');
+            values = zeros(1, 250000);
+            save(matPath, 'values');
+            binaryPath = fullfile(folder, 'recording.bin');
+
+            matLines = ecg_print.sourceFiles.previewFileHeader(matPath, 18);
+            binaryLines = ecg_print.sourceFiles.previewFileHeader(binaryPath, 18);
+
+            expected = ...
+                {'Header preview is available only for delimited text recordings.'};
+            testCase.verifyEqual(matLines, expected);
+            testCase.verifyEqual(binaryLines, expected);
+        end
+
+        function boundsTextPreviewBytesAndLineLength(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            path = fullfile(folder, 'oversized.txt');
+            writeText(path, repmat('x', 1, 100000));
+
+            lines = ecg_print.sourceFiles.previewFileHeader(path, 18);
+
+            testCase.verifySize(lines, [1 1]);
+            testCase.verifyLessThan(numel(lines{1}), 300);
+            testCase.verifySubstring(lines{1}, '[truncated]');
+        end
     end
 end
 

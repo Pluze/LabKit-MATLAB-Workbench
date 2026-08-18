@@ -37,6 +37,8 @@ For a difficult text file, choose **Preview file header**, then set:
 
 Choose **Parse / refresh file** after changing import settings. The app reports
 the detected channels and lets you select one for analysis.
+MAT recordings show a short format notice in the header-preview area instead
+of decoding binary file contents as text.
 
 The recording is saved as a portable project source. Older projects are
 upgraded on load.
