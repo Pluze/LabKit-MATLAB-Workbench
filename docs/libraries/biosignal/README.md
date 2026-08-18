@@ -32,12 +32,35 @@ measurements = labkit.biosignal.measureSegments(segments, template, measureOptio
 comparison = labkit.biosignal.compareGroups(values, groups);
 ```
 
-`readRecording` accepts MAT files containing timetable variables and delimited
-text tables such as CSV and TSV.
+`readRecording` accepts MAT files containing timetable or table variables,
+BIOPAC AcqKnowledge MAT exports containing `data`, `isi`, `isi_units`, `labels`,
+and `units`, MAT files containing one unambiguous nonscalar numeric array, and
+delimited text tables such as CSV, TSV, and TXT. BIOPAC MAT sample intervals
+are converted to seconds while channel labels, engineering units, and the
+exported start-sample value remain available in signal metadata.
+
+The public call remains the same across formats. Lightweight file inspection
+ranks compatible readers, the importer falls back when the highest-ranked
+reader rejects the content, and `status.format`, `status.attempts`,
+`status.fallbackUsed`, and `status.fileInfo` explain the result. Matching fields
+in `recording.metadata` keep this information with successful data. This is a
+closed internal reader plan rather than a public device registry.
+
+Every decoded channel is normalized to uniform sampling by default. The target
+interval is the median positive input interval. Already uniform data keeps its
+sample values and receives an exact grid. Before interpolation, non-finite time
+rows are removed, samples are sorted by time, and duplicate timestamps retain
+their first sample. Irregular continuous sections then use linear interpolation.
+Gaps larger than `gapFactor` delimit sections and are compressed rather than
+filled with invented samples across the gap. Per-channel and recording-level
+`samplingNormalization` metadata records whether values were resampled, input
+and output counts, removed times, the nominal interval, timing deviation, and
+compressed gaps. Pass `resampleUniform=false` only when a workflow requires the
+parser-produced irregular time axis.
 
 For delimited text tables, time handling is deliberately conservative. The reader does not treat an arbitrary monotonic numeric column as seconds. It uses a table column as time only when the column is `datetime`/`duration`, when the column name is time-like such as `time_s` or `time_ms`, or when the caller explicitly passes `timeColumn` and optionally `timeUnit`. Otherwise the recording uses a synthetic sample-index time axis and keeps numeric columns as signal channels.
 
-CSV and TXT files from wearable workflows can contain preamble rows, headerless numeric data, `I0/I1`-style Arduino columns, `sec`/channel tables with per-column count rows, epoch timestamps, footer metadata rows, gaps, duplicated rows, or time axes that jump backward. The table reader tries to handle the common cases automatically and records import choices in `recording.metadata`. Backward or duplicate time steps are stitched forward with a nominal sample interval; large positive gaps are preserved and counted in `metadata.timeRepair`. If auto-detection is ambiguous, the app or caller should pass explicit import options rather than relying on inference.
+CSV and TXT files from wearable workflows can contain preamble rows, headerless numeric data, `I0/I1`-style Arduino columns, BIOPAC `sec`/channel tables with channel-label and unit preambles plus per-column count rows, epoch timestamps, footer metadata rows, gaps, duplicated rows, or time axes that jump backward. The table reader tries to handle the common cases automatically and records import choices in `recording.metadata`. For a recognized BIOPAC text preamble, displayed channel names and signal units come from that preamble rather than generic `CH` column identifiers. Backward or duplicate time steps are stitched forward with a nominal sample interval; large positive gaps are preserved and counted in `metadata.timeRepair`. If auto-detection is ambiguous, the app or caller should pass explicit import options rather than relying on inference.
 
 Example explicit text-table time options:
 
@@ -63,6 +86,7 @@ raise `labkit:biosignal:InvalidOptions` instead of being silently ignored.
 | `timeRepair` | string | `auto` | `auto` stitches duplicate/backward time steps; `none`/`off` disables repair. |
 | `gapFactor` | positive scalar | `20` | Positive gaps larger than this multiple of nominal `dt` are counted as large gaps. |
 | `useFirstNumericColumnAsTime` | logical | `false` | Opt-in fallback for ambiguous text tables. |
+| `resampleUniform` | logical | `true` | Normalize decoded channels onto a uniform seconds grid; false preserves parser time. |
 
 ## Data Structures
 

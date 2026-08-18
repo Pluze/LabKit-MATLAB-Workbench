@@ -30,6 +30,6 @@ function info = version()
 % See also labkit.contract.versionInfo,
 %   labkit.contract.checkRequirements
 
-    info = labkit.contract.versionInfo("biosignal", "1.0.4", ">=1.0 <2", ...
+    info = labkit.contract.versionInfo("biosignal", "2.0.0", ">=2.0 <3", ...
         "stable", "Biosignal recording, filtering, event, segmentation, and ECG facade contract.");
 end

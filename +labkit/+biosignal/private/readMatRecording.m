@@ -3,7 +3,7 @@
 % recording, time, or option values. Side effects: file reads only in importer
 % helpers; assumes public callers own workflow validation and user-facing errors.
 function recording = readMatRecording(filepath, opts)
-%READMATRECORDING Read timetable channels from a MAT file recording.
+%READMATRECORDING Read timetable channels from a MAT recording.
 %
 % Called by:
 %   labkit.biosignal.readRecording
@@ -24,12 +24,15 @@ function recording = readMatRecording(filepath, opts)
     data = load(filepath);
     names = fieldnames(data);
     signalChunks = cell(1, numel(names));
+    chunkCount = 0;
     for i = 1:numel(names)
         value = data.(names{i});
         if istimetable(value)
-            signalChunks{i} = readTimetableSignals(value, names{i}, opts);
+            chunkCount = chunkCount + 1;
+            signalChunks{chunkCount} = readTimetableSignals(value, names{i}, opts);
         end
     end
+    signalChunks = signalChunks(1:chunkCount);
     signalChunks = signalChunks(~cellfun(@isempty, signalChunks));
     signals = struct([]);
     if ~isempty(signalChunks)
@@ -37,6 +40,7 @@ function recording = readMatRecording(filepath, opts)
     end
 
     recording = makeRecording(filepath, "mat", signals);
+    recording.metadata.sourceKind = "timetable_mat";
     if isempty(recording.signals)
         error('labkit:biosignal:NoSignals', ...
             'No numeric timetable channels were found in MAT file.');

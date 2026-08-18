@@ -49,8 +49,9 @@ function recording = readCsvRecording(filepath, opts)
         if ~isNumericColumn || ~isvector(values)
             continue;
         end
+        [channelName, channelUnit] = importedChannelIdentity(importInfo, names, k, timeColumn);
         sig = makeSignalStruct( ...
-            string(names{k}), ...
+            channelName, ...
             "table", ...
             timeSec, ...
             double(values(:)), ...
@@ -60,6 +61,7 @@ function recording = readCsvRecording(filepath, opts)
             'timeSource', timeInfo.source, ...
             'timeRepair', timeInfo.repair), ...
             opts);
+        sig.unit = channelUnit;
         signalCount = signalCount + 1;
         signalCells{signalCount} = sig;
     end
@@ -75,8 +77,26 @@ function recording = readCsvRecording(filepath, opts)
     recording.metadata.timeRepair = timeInfo.repair;
     recording.metadata.importHeaderLine = importInfo.headerLine;
     recording.metadata.importHasHeader = importInfo.hasHeader;
+    if ~isempty(importInfo.biopacChannelNames)
+        recording.metadata.sourceKind = "biopac_text";
+    end
     if isempty(recording.signals)
         error('labkit:biosignal:NoSignals', ...
             'No numeric signal columns were found in table file.');
     end
+end
+
+function [name, unit] = importedChannelIdentity(importInfo, names, column, timeColumn)
+    name = string(names{column});
+    unit = "";
+    if isempty(importInfo.biopacChannelNames)
+        return;
+    end
+    signalColumns = setdiff(1:numel(names), timeColumn, 'stable');
+    channelIndex = find(signalColumns == column, 1);
+    if isempty(channelIndex) || channelIndex > numel(importInfo.biopacChannelNames)
+        return;
+    end
+    name = importInfo.biopacChannelNames(channelIndex);
+    unit = importInfo.biopacChannelUnits(channelIndex);
 end
