@@ -37,6 +37,15 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(runtime.State.session.cache.plotData);
             testCase.verifyNotEmpty(preview.Children);
             testCase.verifyEmpty(findall(preview, "Type", "image"));
+            activeStyle = runtime.State.project.parameters.style;
+            standard = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            testCase.verifyEqual(runtime.State.project.parameters.aspectPreset, ...
+                "Reference");
+            testCase.verifyEqual([activeStyle.canvasWidth ...
+                activeStyle.canvasHeight], [standard.canvasWidth ...
+                standard.canvasHeight]);
+            testCase.verifyEqual(activeStyle.tickFontSize, ...
+                standard.tickFontSize);
             testCase.verifyEqual(string(export.Enable), "on");
             runtime.invokeAction("exportPng");
             testCase.verifyTrue(isfile(outputPath));

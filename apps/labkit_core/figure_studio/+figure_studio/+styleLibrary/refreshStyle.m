@@ -22,6 +22,8 @@ elseif changedId == "gridVisible"
     p.style.gridVisible = p.gridChoice == "On";
 elseif changedId == "boundaryLines"
     p.style.boundaryLines = p.boundaryChoice == "On";
+elseif changedId == "xTickLabelAngle"
+    p.style.wrapXTickLabels = false;
 end
 p.style = applyAspectPreset( ...
     p.style, p.aspectPreset, p.canvasSize, changedId, ...

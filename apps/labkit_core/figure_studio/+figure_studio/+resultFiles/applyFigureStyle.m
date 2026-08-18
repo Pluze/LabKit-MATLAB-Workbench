@@ -59,7 +59,6 @@ function applyStyleStruct(ax, style)
     ax.Box = onOff(style.boundaryLines);
     ax.TickDir = char(style.tickDirection);
     ax.ColorOrder = style.colorOrder;
-    applyTickLabelAngle(ax, style.xTickLabelAngle);
     if style.gridVisible
         grid(ax, 'on');
         ax.GridAlpha = style.gridAlpha;
@@ -70,6 +69,8 @@ function applyStyleStruct(ax, style)
     styleLabelsFromStyle(ax, style);
     styleDataChildren(ax, style);
     unifyAnnotationFont(ax, style);
+    reflowComparisonAnnotations(ax, style);
+    applyTickLabelLayout(ax, style);
     styleLegend(ax, style);
     layoutExportCanvas(ax, style);
 end
@@ -83,6 +84,7 @@ function style = defaultNatureStyle()
         "tickFontSize", 11, ...
         "annotationFontSize", 10, ...
         "xTickLabelAngle", "Source", ...
+        "wrapXTickLabels", false, ...
         "dataLineWidth", 1.75, ...
         "uncertaintyLineWidth", 1.25, ...
         "boundaryLineWidth", 1.25, ...
@@ -150,6 +152,7 @@ function style = fillStyle(style)
     style.gridVisible = logical(style.gridVisible);
     style.boxVisible = logical(style.boxVisible);
     style.boundaryLines = logical(style.boundaryLines);
+    style.wrapXTickLabels = logical(style.wrapXTickLabels);
     style.canvasWidth = finiteScalar(style.canvasWidth, defaults.canvasWidth);
     style.canvasHeight = finiteScalar(style.canvasHeight, defaults.canvasHeight);
     style.referenceCanvasWidth = finiteScalar( ...
@@ -247,11 +250,29 @@ function styleDataChildren(ax, style)
                 child.LineWidth = style.dataLineWidth;
             case "boundary"
                 child.LineWidth = style.boundaryLineWidth;
+                if lower(string(child.Type)) == "bar"
+                    standardizeBarAppearance(child, style);
+                end
             case "reference"
                 child.LineWidth = style.referenceLineWidth;
             case "uncertainty"
                 child.LineWidth = style.uncertaintyLineWidth;
         end
+    end
+end
+
+function standardizeBarAppearance(barHandle, style)
+    count = numel(barHandle.YData);
+    if count < 1 || isempty(style.colorOrder)
+        return;
+    end
+    indices = mod((0:(count - 1)), size(style.colorOrder, 1)) + 1;
+    try
+        barHandle.CData = style.colorOrder(indices, :);
+        barHandle.FaceColor = "none";
+        barHandle.EdgeColor = "flat";
+        barHandle.FaceAlpha = 1;
+    catch
     end
 end
 
@@ -270,8 +291,8 @@ function kind = graphicStrokeKind(handle)
     catch
         return;
     end
-    if type == "line" && preserveSourceLineWidth(handle)
-        return;
+    if type == "line" && hiddenFromLegend(handle)
+        kind = "reference";
     elseif any(type == ["line", "scatter", "surface"])
         kind = "data";
     elseif type == "errorbar"
@@ -283,16 +304,10 @@ function kind = graphicStrokeKind(handle)
     end
 end
 
-function tf = preserveSourceLineWidth(handle)
+function tf = hiddenFromLegend(handle)
     tf = false;
     try
-        if string(handle.HandleVisibility) == "off"
-            tf = true;
-            return;
-        end
-        xData = handle.XData;
-        yData = handle.YData;
-        tf = numel(xData) <= 2 || numel(yData) <= 2;
+        tf = string(handle.HandleVisibility) == "off";
     catch
     end
 end
@@ -318,13 +333,134 @@ function unifyAnnotationFont(ax, style)
     end
 end
 
-function applyTickLabelAngle(ax, choice)
-    switch string(choice)
+function reflowComparisonAnnotations(ax, style)
+    brackets = findall(ax, "Type", "line", "HandleVisibility", "off");
+    if isempty(brackets)
+        return;
+    end
+    axisLabels = [ax.Title, ax.XLabel, ax.YLabel, ax.ZLabel];
+    texts = findall(ax, "Type", "text");
+    texts = texts(~arrayfun(@(value) any(value == axisLabels), texts));
+    if isempty(texts)
+        return;
+    end
+    xLimits = double(ax.XLim);
+    yLimits = double(ax.YLim);
+    xRange = max(diff(xLimits), eps);
+    yRange = max(diff(yLimits), eps);
+    dpi = 96;
+    try
+        dpi = double(get(groot, "ScreenPixelsPerInch"));
+    catch
+    end
+    if ~isscalar(dpi) || ~isfinite(dpi) || dpi <= 0
+        dpi = 96;
+    end
+    fontHeight = yRange * style.annotationFontSize * dpi / ...
+        (72 * max(style.canvasHeight, 1));
+    textGap = 0.82 * fontHeight;
+    requiredTop = yLimits(2);
+    used = false(size(texts));
+    for bracket = reshape(brackets, 1, [])
+        x = double(bracket.XData(:).');
+        y = double(bracket.YData(:).');
+        if numel(x) ~= 4 || numel(y) ~= 4 || ...
+                abs(x(1) - x(2)) > eps(xRange) || ...
+                abs(x(3) - x(4)) > eps(xRange) || ...
+                abs(y(1) - y(4)) > eps(yRange) || ...
+                abs(y(2) - y(3)) > eps(yRange) || y(2) <= y(1)
+            continue;
+        end
+        center = 0.5 * (x(1) + x(3));
+        top = y(2);
+        scores = inf(size(texts));
+        for k = 1:numel(texts)
+            if used(k)
+                continue;
+            end
+            position = double(texts(k).Position);
+            if numel(position) < 2 || any(~isfinite(position(1:2)))
+                continue;
+            end
+            scores(k) = abs(position(1) - center) / xRange + ...
+                abs(position(2) - top) / yRange;
+        end
+        [score, index] = min(scores);
+        if isempty(index) || ~isfinite(score) || score > 0.25
+            continue;
+        end
+        position = texts(index).Position;
+        position(2) = top + textGap;
+        texts(index).Position = position;
+        texts(index).VerticalAlignment = "bottom";
+        used(index) = true;
+        requiredTop = max(requiredTop, position(2) + 1.1 * fontHeight);
+    end
+    if requiredTop > yLimits(2)
+        ax.YLim = [yLimits(1), requiredTop + 0.06 * yRange];
+    end
+end
+
+function applyTickLabelLayout(ax, style)
+    tag = "figureStudioWrappedXTickLabel";
+    sourceKey = "figureStudioSourceXTickLabel";
+    delete(findall(ax, "Type", "text", "Tag", tag));
+    if isappdata(ax, sourceKey)
+        sourceLabels = string(getappdata(ax, sourceKey));
+    else
+        sourceLabels = string(ax.XTickLabel);
+    end
+    switch string(style.xTickLabelAngle)
         case "Horizontal"
             ax.XTickLabelRotation = 0;
         case "45 deg"
             ax.XTickLabelRotation = 45;
     end
+    if style.wrapXTickLabels
+        ticks = double(ax.XTick(:));
+        labels = sourceLabels(:);
+        count = min(numel(ticks), numel(labels));
+        setappdata(ax, sourceKey, cellstr(sourceLabels));
+        ax.XTickLabel = repmat({''}, size(ax.XTickLabel));
+        y = ax.YLim(1);
+        for k = 1:count
+            label = balancedTwoLineLabel(labels(k));
+            text(ax, ticks(k), y, label, ...
+                "HorizontalAlignment", "center", ...
+                "VerticalAlignment", "top", ...
+                "Interpreter", "none", ...
+                "FontName", char(style.fontName), ...
+                "FontSize", style.tickFontSize, ...
+                "Clipping", "off", "HitTest", "off", ...
+                "PickableParts", "none", "HandleVisibility", "off", ...
+                "Tag", tag);
+        end
+        ax.XTickLabelRotation = 0;
+    elseif isappdata(ax, sourceKey)
+        ax.XTickLabel = cellstr(sourceLabels);
+        rmappdata(ax, sourceKey);
+    end
+end
+
+function label = balancedTwoLineLabel(label)
+    words = split(strip(label));
+    words(words == "") = [];
+    if numel(words) < 2
+        return;
+    end
+    bestIndex = 1;
+    bestDifference = Inf;
+    for index = 1:(numel(words) - 1)
+        first = join(words(1:index), " ");
+        second = join(words(index + 1:end), " ");
+        difference = abs(strlength(first) - strlength(second));
+        if difference < bestDifference
+            bestDifference = difference;
+            bestIndex = index;
+        end
+    end
+    label = join(words(1:bestIndex), " ") + newline + ...
+        join(words(bestIndex + 1:end), " ");
 end
 
 function value = onOff(tf)

@@ -15,8 +15,11 @@ labkit_FigureStudio_app
 
 A LabKit plot can also send its current axes to Figure Studio through the plot
 context menu. That handoff embeds a serializable plot snapshot in the project
-and immediately applies the **LabKit figure** preset. The source style remains
-available through **FIG default**.
+and immediately applies the **LabKit figure** preset. Studio restores the
+calibrated reference plot frame together with its standard LabKit typography,
+semantic strokes, colors, and frame treatment. Long categorical X-axis labels
+wrap automatically instead of widening or distorting the reference panel.
+The source presentation remains available through **FIG default**.
 
 ## Project And Handoff
 
@@ -40,8 +43,18 @@ panel. **Clear figures** removes all sources from the project.
 For a source using **FIG default**, Figure Studio adopts its font, semantic
 line widths, annotations, legend, grid, and axes appearance. Selecting
 **LabKit figure** applies the calibrated single-panel publication hierarchy
-while retaining the source legend placement. Switching a text preset never
-changes the selected plot-frame width, aspect, or export scale.
+while retaining the source legend placement. When a new source or subplot is
+selected, Studio reapplies the calibrated reference frame and automatically
+wraps categorical labels that cannot fit horizontally, without importing
+source geometry, typography, or line styling.
+Hidden comparison brackets and other legend-excluded annotation lines use the
+standard reference-line width; visible line series keep the standard data-line
+width, including series containing only two points.
+Standard bars use an unfilled white-ground treatment with the calibrated color
+sequence on their boundaries, matching the maintained reference panels rather
+than retaining large source-color fills.
+Switching a text preset never changes the selected plot-frame width, aspect,
+or export scale.
 
 ## Style And Canvas Controls
 

@@ -33,6 +33,71 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function standardizesSemanticStrokeCategories(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            figureValue = figure(Visible="off");
+            axesValue = axes(Parent=figureValue);
+            hold(axesValue, "on");
+            data = plot(axesValue, [1 2], [2 3], LineWidth=9);
+            comparison = plot(axesValue, [1 1 2 2], [3 3.2 3.2 3], ...
+                HandleVisibility="off", LineWidth=9);
+            comparisonLabel = text(axesValue, 1.5, 3.21, "**", ...
+                HorizontalAlignment="center", VerticalAlignment="bottom");
+            boundary = bar(axesValue, 3, 2.5, LineWidth=9);
+            uncertainty = errorbar(axesValue, 3, 2.5, 0.4, LineWidth=9);
+            hold(axesValue, "off");
+            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+
+            figure_studio.resultFiles.applyFigureStyle(axesValue, style);
+
+            testCase.verifyEqual(data.LineWidth, style.dataLineWidth);
+            testCase.verifyEqual(comparison.LineWidth, ...
+                style.referenceLineWidth);
+            testCase.verifyEqual(boundary.LineWidth, ...
+                style.boundaryLineWidth);
+            testCase.verifyEqual(string(boundary.FaceColor), "none");
+            testCase.verifyEqual(string(boundary.EdgeColor), "flat");
+            testCase.verifyEqual(boundary.CData, style.colorOrder(1, :));
+            testCase.verifyEqual(uncertainty.LineWidth, ...
+                style.uncertaintyLineWidth);
+            testCase.verifyEqual(axesValue.LineWidth, style.axesLineWidth);
+            testCase.verifyGreaterThan(comparisonLabel.Position(2), 3.2);
+            testCase.verifyGreaterThan(axesValue.YLim(2), ...
+                comparisonLabel.Position(2));
+            clear cleanup
+        end
+
+        function wrapsLongCategoryLabelsWithoutChangingTheFrame(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            figureValue = figure(Visible="off");
+            axesValue = axes(Parent=figureValue);
+            bar(axesValue, 1:3, [2 3 4]);
+            axesValue.XTick = 1:3;
+            axesValue.XTickLabel = {"Reference group", ...
+                "Treatment group A", "Treatment group B"};
+            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            style.wrapXTickLabels = true;
+
+            figure_studio.resultFiles.applyFigureStyle(axesValue, style);
+
+            labels = findall(axesValue, "Type", "text", ...
+                "Tag", "figureStudioWrappedXTickLabel");
+            testCase.verifyNumElements(labels, 3);
+            for label = reshape(labels, 1, [])
+                value = label.String;
+                isMultipleRows = ischar(value) && size(value, 1) >= 2;
+                textRows = string(value);
+                hasNewline = any(contains(textRows, newline));
+                testCase.verifyTrue(isMultipleRows || ...
+                    numel(textRows) >= 2 || hasNewline);
+            end
+            testCase.verifyEqual(axesValue.XTickLabelRotation, 0);
+            pixelPosition = getpixelposition(axesValue, true);
+            testCase.verifyEqual(pixelPosition(3:4), ...
+                [style.canvasWidth style.canvasHeight], AbsTol=1);
+            clear cleanup
+        end
+
         function figImportPreservesCompositeScientificGraphicsAndLegend(testCase)
             cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
             sourceFigure = figure(Visible="off");

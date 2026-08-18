@@ -21,13 +21,17 @@ function [initialProject, dispatchArgs] = launchRequest(args)
         initialProject.annotations.transientSourceAxes = ax;
         labkitStyle = figure_studio.styleLibrary.styleForPreset( ...
             "LabKit figure");
+        [labkitStyle, aspectPreset, canvasSize] = ...
+            figure_studio.sourceAxes.applyStandardLayout( ...
+            labkitStyle, initialProject.annotations.embeddedPlot);
         initialProject.parameters.preset = "LabKit figure";
         initialProject.parameters.style = labkitStyle;
         initialProject.parameters.gridChoice = onOff( ...
             labkitStyle.gridVisible);
         initialProject.parameters.boundaryChoice = onOff( ...
             labkitStyle.boundaryLines);
-        initialProject.parameters.aspectPreset = "Reference";
+        initialProject.parameters.aspectPreset = aspectPreset;
+        initialProject.parameters.canvasSize = canvasSize;
         dispatchArgs = {};
     end
 end

@@ -143,8 +143,11 @@ create a new family.
 The plot uses the copied completed-result observations, not live editor values.
 Choose **Mean bars with SD** or **Box plot** without recalculating the tests.
 Both styles use numeric y-axis ticks, ordinary horizontal x-axis tick labels,
-and the same annotation geometry. Figure Studio can adjust typography and
-label presentation after the plot is popped out.
+and the same annotation geometry. Comparison brackets are legend-excluded
+annotation lines, allowing Figure Studio to apply its standard reference-line
+weight independently from data, uncertainty, boundary, and axes strokes.
+Figure Studio can adjust typography and label presentation after the plot is
+popped out.
 
 The bar visual contract is:
 

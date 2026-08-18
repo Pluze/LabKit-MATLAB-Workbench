@@ -75,10 +75,10 @@ ax = axesById.main;
         minimumSpan = 0.1 * dataScale;
     end
     span = max(dataRange, minimumSpan);
-    basePad = max(0.075 * span, eps);
-    levelStep = max(0.12 * span, eps);
-    capHeight = max(0.022 * span, eps);
-    textPad = max(0.024 * span, eps);
+    basePad = max(0.05 * span, eps);
+    levelStep = max(0.09 * span, eps);
+    capHeight = max(0.025 * span, eps);
+    textPad = max(0.03 * span, eps);
     annotationTop = annotationBase;
     if parameters.showPValue
         for resultIndex = 1:numel(results)
@@ -297,7 +297,8 @@ end
 function drawSignificanceBracket(ax, x1, x2, y, height, textPad, label)
     line(ax, [x1 x1 x2 x2], ...
         [y y + height y + height y], ...
-        'Color', 'black', 'LineWidth', 1.2, 'HitTest', 'off');
+        'Color', 'black', 'LineWidth', 1.2, ...
+        'HandleVisibility', 'off', 'HitTest', 'off');
     text(ax, (x1 + x2) / 2, y + height + textPad, label, ...
         'HorizontalAlignment', 'center', ...
         'VerticalAlignment', 'bottom', ...

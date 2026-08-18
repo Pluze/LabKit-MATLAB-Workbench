@@ -65,6 +65,10 @@ if p.preset == "FIG default"
     p.style = sourceStyle;
     p.aspectPreset = "Source";
     p.canvasSize = "Source size";
+else
+    [p.style, p.aspectPreset, p.canvasSize] = ...
+        figure_studio.sourceAxes.applyStandardLayout( ...
+        p.style, state.session.cache.plotData);
 end
 p.gridChoice = onOff(p.style.gridVisible);
 p.boundaryChoice = onOff(p.style.boundaryLines);
