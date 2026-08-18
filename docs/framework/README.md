@@ -204,6 +204,14 @@ utilities do not compete with the App's workflow controls:
   Text fallback retains complete events and reports that the selected MAT
   state could not be represented as text.
 
+Each App session keeps its persistent structured journal beneath
+`artifacts/logs/sessions/` in the active LabKit installation. LabKit does not
+automatically migrate or delete journals from this folder; users can inspect,
+archive, or remove generated artifacts with ordinary filesystem tools. Releases
+that previously wrote session journals beneath MATLAB's `prefdir/LabKit/logs/`
+leave those existing files unchanged. The journal subsystem does not inspect or
+prune other sessions in the background.
+
 These actions are framework-owned native behavior. Apps do not declare menu
 items, implement clipboard integration, or duplicate project persistence
 callbacks.

@@ -102,6 +102,17 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function defaultRootFolderUsesInstallationArtifacts(testCase)
+            versionPath = string(which("labkit.app.version"));
+            installationRoot = string(fileparts(fileparts(fileparts(versionPath))));
+
+            folder = ...
+                labkit.app.internal.diagnostics.SessionJournal.defaultRootFolder();
+
+            testCase.verifyEqual(folder, ...
+                fullfile(installationRoot, "artifacts", "logs"));
+        end
+
         function buffersContextAndFlushesAroundWarnings(testCase)
             testfixtures.StateStore.set("journalStages", strings(0, 1));
             resetObserver = onCleanup(@resetJournalObserver);
@@ -212,33 +223,13 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
                 RootFolder=root, SessionId="session-state");
             journalFolder = journal.folder();
 
-            testCase.verifyTrue(isfile(fullfile(journalFolder, "active.json")));
             testCase.verifyEqual(string(journal.manifest().state), "active");
-            marker = readJson(journalFolder, "active.json");
             manifest = journal.manifest();
-            testCase.verifyEqual(string(fieldnames(marker)), [ ...
-                "sessionId"; "appId"; "state"; "host"; "pid"; "nonce"; ...
-                "startedAtUtc"; "heartbeatAtUtc"; "leaseVersion"]);
-            testCase.verifyEqual(string(marker.sessionId), "session-state");
-            testCase.verifyEqual(string(marker.appId), string(app.AppId));
-            testCase.verifyEqual(string(marker.state), "active");
-            testCase.verifyTrue(isstring(string(marker.host)) && isscalar(string(marker.host)) && ...
-                strlength(string(marker.host)) > 0);
-            testCase.verifyTrue(isnumeric(marker.pid) && isscalar(marker.pid) && ...
-                isfinite(marker.pid) && marker.pid == fix(marker.pid) && marker.pid >= -1);
-            testCase.verifyGreaterThan(strlength(string(marker.nonce)), 0);
-            startedAtUtc = datetime(marker.startedAtUtc, ...
-                InputFormat="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", TimeZone="UTC");
-            heartbeatAtUtc = datetime(marker.heartbeatAtUtc, ...
+            startedAtUtc = datetime(manifest.startedAtUtc, ...
                 InputFormat="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", TimeZone="UTC");
             testCase.verifyFalse(isnat(startedAtUtc));
-            testCase.verifyFalse(isnat(heartbeatAtUtc));
-            testCase.verifyEqual(marker.leaseVersion, 1);
-            testCase.verifyEqual(string(manifest.lease.nonce), string(marker.nonce));
-            testCase.verifyEqual(manifest.lease.leaseVersion, marker.leaseVersion);
             journal.close();
 
-            testCase.verifyFalse(isfile(fullfile(journalFolder, "active.json")));
             testCase.verifyEqual(string(journal.manifest().state), "closed");
         end
 
@@ -399,337 +390,33 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             clear streamCleanup cleanup
         end
 
-        function inspectionOnlyAbandonsConfirmedStaleSessions(testCase)
+        function snapshotAndExportDoNotMutateRetainedSession(testCase)
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            [currentFolder, currentEvents] = writeJournalSession( ...
+            [folder, expectedEvents] = writeJournalSession( ...
                 root, "session-current", "probe.session-journal");
-            nowUtc = "2030-01-01T00:10:00.000Z";
-            markSessionActive(currentFolder, "2030-01-01T00:00:00.000Z", ...
-                "nonce-current", 41);
-            [staleFolder, ~] = writeJournalSession( ...
-                root, "session-stale", "probe.session-journal");
-            markSessionActive(staleFolder, "2030-01-01T00:00:00.000Z", ...
-                "nonce-stale", 42);
 
-            snapshot = labkit.app.internal.diagnostics.SessionJournalArchive.snapshot(root, ...
-                "session-current");
+            snapshot = labkit.app.internal.diagnostics.SessionJournalArchive.snapshot( ...
+                root, "session-current");
             exportFolder = fullfile(root, "safe-export");
-            labkit.app.internal.diagnostics.SessionJournalArchive.exportSnapshot(root, ...
-                "session-current", exportFolder);
+            labkit.app.internal.diagnostics.SessionJournalArchive.exportSnapshot( ...
+                root, "session-current", exportFolder);
 
-            currentManifest = readJson(currentFolder, "manifest.json");
-            staleManifest = readJson(staleFolder, "manifest.json");
-            testCase.verifyEqual(string(currentManifest.state), "active");
-            testCase.verifyTrue(isfile(fullfile(currentFolder, "active.json")));
-            testCase.verifyEqual(numel(snapshot.events), numel(currentEvents));
+            manifest = readJson(folder, "manifest.json");
+            testCase.verifyEqual(string(manifest.state), "closed");
+            testCase.verifyEqual(numel(snapshot.events), numel(expectedEvents));
             testCase.verifyEqual(string(snapshot.events(1).eventName), ...
-                string(jsondecode(currentEvents(1)).eventName));
-            testCase.verifyEqual(string(staleManifest.state), "active");
-            testCase.verifyTrue(isfile(fullfile(staleFolder, "active.json")));
+                string(jsondecode(expectedEvents(1)).eventName));
             testCase.verifyTrue(isfile(fullfile(exportFolder, "events.jsonl")));
             testCase.verifyTrue(isfile(fullfile(exportFolder, "manifest.json")));
             testCase.verifyTrue(isfile(fullfile(exportFolder, "timeline.txt")));
             testCase.verifyTrue(isfile(fullfile(exportFolder, "degradation.json")));
             redaction = readJson(exportFolder, "redaction.json");
-            testCase.verifyEqual(string(redaction.exportProjection), ...
-                "none");
-            bundleText = join([string(fileread(fullfile(exportFolder, "events.jsonl"))); ...
+            testCase.verifyEqual(string(redaction.exportProjection), "none");
+            bundleText = join([ ...
+                string(fileread(fullfile(exportFolder, "events.jsonl"))); ...
                 string(fileread(fullfile(exportFolder, "timeline.txt")))], newline);
             testCase.verifyFalse(contains(bundleText, string(root)));
-
-            labkit.app.internal.diagnostics.SessionJournalArchive.inspect(root, ...
-                ProtectedSessionIds="session-current", LeaseClock=@() nowUtc, ...
-                LeaseProbe=@deadLeaseProbe);
-            staleManifest = readJson(staleFolder, "manifest.json");
-            testCase.verifyEqual(string(staleManifest.state), "abandoned");
-            testCase.verifyFalse(isfile(fullfile(staleFolder, "active.json")));
-            testCase.verifyTrue(isfile(fullfile(currentFolder, "active.json")));
-        end
-
-        function classifiesLeaseOwnershipConservativelyAndNeverThrows(testCase)
-            startedAtUtc = "2030-01-01T00:00:00.000Z";
-            marker = labkit.app.internal.diagnostics.SessionLease.create( ...
-                "session-lease", "probe.session-journal", startedAtUtc, ...
-                startedAtUtc, "nonce-lease", leaseOwnerProbe());
-            manifest = activeLeaseManifest(marker);
-            freshProbe = leaseProcessProbe(41, "alive");
-
-            testCase.verifyEqual(labkit.app.internal.diagnostics.SessionLease.classify( ...
-                marker, manifest, "2030-01-01T00:00:10.000Z", freshProbe, 60), "live");
-            testCase.verifyEqual(labkit.app.internal.diagnostics.SessionLease.classify( ...
-                marker, manifest, "2030-01-01T00:02:00.000Z", ...
-                leaseProcessProbe(41, "dead"), 60), "stale");
-            testCase.verifyEqual(labkit.app.internal.diagnostics.SessionLease.classify( ...
-                marker, manifest, "2030-01-01T00:02:00.000Z", freshProbe, 60), "uncertain");
-            wrongTargetProbe = leaseProcessProbe(99, "dead");
-            testCase.verifyEqual(labkit.app.internal.diagnostics.SessionLease.classify( ...
-                marker, manifest, "2030-01-01T00:02:00.000Z", wrongTargetProbe, 60), "uncertain");
-            testCase.verifyEqual(labkit.app.internal.diagnostics.SessionLease.classify( ...
-                marker, manifest, "2030-01-01T00:00:10.000Z", ...
-                remoteLeaseProbe(41, "dead"), 60), "live");
-            testCase.verifyEqual(labkit.app.internal.diagnostics.SessionLease.classify( ...
-                marker, manifest, "2030-01-01T00:02:00.000Z", ...
-                remoteLeaseProbe(41, "dead"), 60), "uncertain");
-
-            nonceMismatch = manifest;
-            nonceMismatch.lease.nonce = "different-nonce";
-            futureMarker = marker;
-            futureMarker.heartbeatAtUtc = "2030-01-01T00:03:00.000Z";
-            malformed = marker;
-            malformed.host = ["fixture-host", "other-host"];
-            testCase.verifyEqual(labkit.app.internal.diagnostics.SessionLease.classify( ...
-                struct(), manifest, "2030-01-01T00:02:00.000Z", freshProbe, 60), "uncertain");
-            testCase.verifyEqual(labkit.app.internal.diagnostics.SessionLease.classify( ...
-                marker, nonceMismatch, "2030-01-01T00:02:00.000Z", freshProbe, 60), "uncertain");
-            testCase.verifyEqual(labkit.app.internal.diagnostics.SessionLease.classify( ...
-                futureMarker, manifest, "2030-01-01T00:02:00.000Z", freshProbe, 60), "uncertain");
-            testCase.verifyEqual(labkit.app.internal.diagnostics.SessionLease.classify( ...
-                malformed, manifest, "2030-01-01T00:02:00.000Z", freshProbe, 60), "uncertain");
-        end
-
-        function inspectionReportsLiveUncertainAndStaleLeaseCounts(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            liveFolder = writeJournalSession(root, "session-live", "probe.session-journal");
-            staleFolder = writeJournalSession(root, "session-stale", "probe.session-journal");
-            uncertainFolder = writeJournalSession(root, "session-uncertain", "probe.session-journal");
-            markSessionActive(liveFolder, "2030-01-01T00:09:30.000Z", "nonce-live", 41);
-            markSessionActive(staleFolder, "2030-01-01T00:00:00.000Z", "nonce-stale", 42);
-            markSessionActive(uncertainFolder, "2030-01-01T00:00:00.000Z", "nonce-uncertain", 43);
-
-            inspection = labkit.app.internal.diagnostics.SessionJournalArchive.inspect(root, ...
-                LeaseClock=@() "2030-01-01T00:10:00.000Z", ...
-                LeaseProbe=@mixedLeaseProbe);
-
-            testCase.verifyEqual(inspection.liveSessionCount, 1);
-            testCase.verifyEqual(inspection.uncertainSessionCount, 1);
-            testCase.verifyEqual(inspection.staleSessionCount, 1);
-            testCase.verifyEqual(string(readJson(staleFolder, "manifest.json").state), "abandoned");
-            testCase.verifyEqual(string(readJson(liveFolder, "manifest.json").state), "active");
-            testCase.verifyEqual(string(readJson(uncertainFolder, "manifest.json").state), "active");
-        end
-
-        function inspectionTreatsMalformedMarkerFieldsAsUncertainWithoutMutation(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            folder = writeJournalSession(root, "session-malformed-marker", ...
-                "probe.session-journal");
-            markSessionActive(folder, "2030-01-01T00:00:00.000Z", ...
-                "nonce-malformed", 41);
-            marker = readJson(folder, "active.json");
-            marker.host = {"fixture-host", "other-host"};
-            writeJson(fullfile(folder, "active.json"), marker);
-
-            inspection = labkit.app.internal.diagnostics.SessionJournalArchive.inspect(root, ...
-                LeaseClock=@() "2030-01-01T00:10:00.000Z", ...
-                LeaseProbe=@deadLeaseProbe);
-
-            testCase.verifyEqual(inspection.uncertainSessionCount, 1);
-            testCase.verifyEqual(inspection.recoveredSessionCount, 0);
-            testCase.verifyTrue(isfile(fullfile(folder, "active.json")));
-            testCase.verifyEqual(string(readJson(folder, "manifest.json").state), "active");
-        end
-
-        function heartbeatsOnlyAfterTheConfiguredFlushInterval(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            resetLeaseClock(["2030-01-01T00:00:00.000Z"; ...
-                "2030-01-01T00:00:00.000Z"; "2030-01-01T00:00:05.000Z"; ...
-                "2030-01-01T00:00:31.000Z"; "2030-01-01T00:00:31.000Z"]);
-            clockCleanup = onCleanup(@resetLeaseClock);
-            app = journalProbeDefinition();
-            journal = labkit.app.internal.diagnostics.SessionJournal(app, RootFolder=root, ...
-                SessionId="session-heartbeat", LeaseClock=@nextLeaseClock, ...
-                LeaseProbe=@() leaseOwnerProbe(), HeartbeatIntervalSeconds=30);
-            cleanup = onCleanup(@() journal.close());
-            stream = labkit.app.internal.diagnostics.SessionEventStream(app, SessionId="session-heartbeat");
-            streamCleanup = onCleanup(@() stream.close());
-            record = stream.records();
-
-            journal.append(record(end));
-            journal.flush();
-            withinInterval = readJson(journal.folder(), "active.json");
-            journal.append(record(end));
-            journal.flush();
-            afterInterval = readJson(journal.folder(), "active.json");
-
-            testCase.verifyEqual(string(journal.manifest().startedAtUtc), ...
-                "2030-01-01T00:00:00.000Z");
-            testCase.verifyEqual(string(withinInterval.heartbeatAtUtc), ...
-                "2030-01-01T00:00:00.000Z");
-            testCase.verifyEqual(string(afterInterval.heartbeatAtUtc), ...
-                "2030-01-01T00:00:31.000Z");
-            clear streamCleanup cleanup clockCleanup
-        end
-
-        function retentionNeverPrunesLiveOrUncertainSessionsUnderZeroLimits(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            liveFolder = writeJournalSession(root, "session-live-bound", "probe.retention-live");
-            uncertainFolder = writeJournalSession(root, "session-uncertain-bound", "probe.retention-uncertain");
-            markSessionActive(liveFolder, "2030-01-01T00:09:30.000Z", "nonce-live-bound", 41);
-            markSessionActive(uncertainFolder, "2030-01-01T00:00:00.000Z", ...
-                "nonce-uncertain-bound", 43);
-
-            inspection = labkit.app.internal.diagnostics.SessionJournalArchive.inspect(root, ...
-                ClosedSessionLimitPerApp=0, AppByteLimit=0, GlobalByteLimit=0, ...
-                LeaseClock=@() "2030-01-01T00:10:00.000Z", ...
-                LeaseProbe=@mixedLeaseProbe);
-
-            testCase.verifyTrue(isfolder(liveFolder));
-            testCase.verifyTrue(isfolder(uncertainFolder));
-            testCase.verifyEqual(inspection.liveSessionCount, 1);
-            testCase.verifyEqual(inspection.uncertainSessionCount, 1);
-            testCase.verifyEqual(sort(inspection.retention.unsatisfiedAppIds), ...
-                ["probe.retention-live"; "probe.retention-uncertain"]);
-            testCase.verifyTrue(inspection.retention.unsatisfiedGlobalByteLimit);
-            testCase.verifyGreaterThan(inspection.retention.retainedGlobalBytes, 0);
-        end
-
-        function initializationAndClosePreserveObservableLeaseOrdering(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            app = journalProbeDefinition();
-            resetManifestFault();
-            manifestCleanup = onCleanup(@resetManifestFault);
-            journal = labkit.app.internal.diagnostics.SessionJournal(app, RootFolder=root, ...
-                SessionId="session-initialize-order", FaultInjector=@failActiveMarker);
-            initializeFolder = journal.folder();
-            testCase.verifyTrue(isfile(fullfile(initializeFolder, "manifest.json")));
-            testCase.verifyFalse(isfile(fullfile(initializeFolder, "active.json")));
-            testCase.verifyEqual(string(readJson(initializeFolder, "manifest.json").state), "active");
-            initializationInspection = labkit.app.internal.diagnostics.SessionJournalArchive.inspect(root);
-            testCase.verifyEqual(initializationInspection.uncertainSessionCount, 1);
-            testCase.verifyEqual(initializationInspection.recoveredSessionCount, 0);
-            testCase.verifyTrue(isfolder(initializeFolder));
-            testCase.verifyEqual(string(readJson(initializeFolder, "manifest.json").state), "active");
-
-            resetManifestFault();
-            journal = labkit.app.internal.diagnostics.SessionJournal(app, RootFolder=root, ...
-                SessionId="session-close-order", FaultInjector=@failSecondManifest);
-            closeFolder = journal.folder();
-            journal.close();
-            testCase.verifyTrue(isfile(fullfile(closeFolder, "active.json")));
-            testCase.verifyEqual(string(readJson(closeFolder, "manifest.json").state), "active");
-            clear manifestCleanup
-        end
-
-        function rejectsMalformedLeaseNonceOption(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            app = journalProbeDefinition();
-
-            testCase.verifyError(@() labkit.app.internal.diagnostics.SessionJournal(app, ...
-                RootFolder=root, SessionId="session-invalid-nonce", LeaseNonce=[1, 2]), ...
-                "labkit:app:contract:InvalidValue");
-        end
-
-        function inspectionPreservesCleanClosedSession(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            folder = writeJournalSession(root, "session-closed", ...
-                "probe.session-journal");
-
-            labkit.app.internal.diagnostics.SessionJournalArchive.inspect(root);
-            manifest = readJson(folder, "manifest.json");
-
-            testCase.verifyEqual(string(manifest.state), "closed");
-            testCase.verifyFalse(isfile(fullfile(folder, "active.json")));
-        end
-
-        function recoveryTruncatesOnlyCorruptTailAndReportsMiddleCorruption(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            [folder, expectedEvents] = writeJournalSession( ...
-                root, "session-recovery", "probe.session-journal");
-            segment = onlySegment(folder);
-            appendText(segment, "{");
-
-            inspection = labkit.app.internal.diagnostics.SessionJournalArchive.inspect(root);
-            recoveredLines = nonemptyLines(segment);
-            snapshot = labkit.app.internal.diagnostics.SessionJournalArchive.snapshot(root, ...
-                "session-recovery");
-
-            testCase.verifyEqual(numel(recoveredLines), numel(expectedEvents));
-            testCase.verifyEqual(recoveredLines, expectedEvents);
-            testCase.verifyEqual(numel(snapshot.events), numel(expectedEvents));
-            testCase.verifyEqual(inspection.corruptTailCount, 1);
-
-            appendText(segment, "{invalid-middle}" + newline + ...
-                expectedEvents(end));
-            snapshot = labkit.app.internal.diagnostics.SessionJournalArchive.snapshot(root, ...
-                "session-recovery");
-
-            testCase.verifyEqual(snapshot.degradation.snapshotCorruptRecordCount, 1);
-            testCase.verifyEqual(numel(snapshot.events), numel(expectedEvents) + 1);
-        end
-
-        function retentionPrunesAgeThenPerAppThenGlobalWithoutCurrentSession(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            ageFolder = writeJournalSession(root, "session-age", "probe.retention-a");
-            appOldFolder = writeJournalSession(root, "session-app-old", "probe.retention-a");
-            appNewFolder = writeJournalSession(root, "session-app-new", "probe.retention-a");
-            otherFolder = writeJournalSession(root, "session-other", "probe.retention-b");
-            currentFolder = writeJournalSession(root, "session-current", "probe.retention-b");
-            markSessionTimestamp(ageFolder, "closed", utcOffset(-20));
-            markSessionTimestamp(appOldFolder, "closed", utcOffset(-3));
-            markSessionTimestamp(appNewFolder, "closed", utcOffset(-1));
-            markSessionTimestamp(otherFolder, "closed", utcOffset(-2));
-            markSessionActive(currentFolder);
-
-            inspection = labkit.app.internal.diagnostics.SessionJournalArchive.inspect(root, ...
-                ClosedSessionAgeDays=14, ClosedSessionLimitPerApp=1, ...
-                AppByteLimit=1024 * 1024, GlobalByteLimit=1, ...
-                ProtectedSessionIds="session-current");
-
-            testCase.verifyFalse(isfolder(ageFolder));
-            testCase.verifyFalse(isfolder(appOldFolder));
-            testCase.verifyFalse(isfolder(appNewFolder));
-            testCase.verifyFalse(isfolder(otherFolder));
-            testCase.verifyTrue(isfolder(currentFolder));
-            testCase.verifyEqual(inspection.retention.expiredSessionCount, 1);
-            testCase.verifyEqual(inspection.retention.perAppPrunedSessionCount, 1);
-            testCase.verifyEqual(inspection.retention.globalPrunedSessionCount, 2);
-        end
-
-        function retentionReportsProtectedActiveBoundOverflow(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            folder = writeJournalSession(root, "session-current", "probe.retention");
-            markSessionActive(folder);
-
-            inspection = labkit.app.internal.diagnostics.SessionJournalArchive.inspect(root, ...
-                ProtectedSessionIds="session-current", AppByteLimit=1, ...
-                GlobalByteLimit=1);
-
-            testCase.verifyTrue(isfolder(folder));
-            testCase.verifyEqual(inspection.retention.unsatisfiedAppIds, ...
-                "probe.retention");
-            testCase.verifyTrue(inspection.retention.unsatisfiedGlobalByteLimit);
-            testCase.verifyGreaterThan(inspection.retention.retainedGlobalBytes, 1);
-        end
-
-        function retentionDoesNotMisattributeBoundsAfterAnotherAppPrunes(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            firstFolder = writeJournalSession(root, "session-first", "probe.retention-a");
-            secondFolder = writeJournalSession(root, "session-second", "probe.retention-a");
-            currentFolder = writeJournalSession(root, "session-current", "probe.retention-b");
-            markSessionTimestamp(firstFolder, "closed", utcOffset(-2));
-            markSessionTimestamp(secondFolder, "closed", utcOffset(-1));
-            markSessionActive(currentFolder);
-
-            inspection = labkit.app.internal.diagnostics.SessionJournalArchive.inspect(root, ...
-                ProtectedSessionIds="session-current", ClosedSessionLimitPerApp=1, ...
-                AppByteLimit=1, GlobalByteLimit=1024 * 1024);
-
-            testCase.verifyFalse(isfolder(firstFolder));
-            testCase.verifyFalse(isfolder(secondFolder));
-            testCase.verifyTrue(isfolder(currentFolder));
-            testCase.verifyEqual(inspection.retention.unsatisfiedAppIds, ...
-                "probe.retention-b");
         end
     end
 end
@@ -779,127 +466,8 @@ folder = journal.folder();
 events = readCanonicalEvents(folder);
 end
 
-function marker = markSessionActive(folder, heartbeatAtUtc, nonce, pid)
-if nargin < 2
-    heartbeatAtUtc = utcOffset(0);
-end
-if nargin < 3
-    nonce = "nonce-active";
-end
-if nargin < 4
-    pid = 41;
-end
-manifest = readJson(folder, "manifest.json");
-manifest.state = "active";
-manifest.closedAtUtc = "";
-manifest.lease = struct("nonce", string(nonce), "leaseVersion", 1);
-writeJson(fullfile(folder, "manifest.json"), manifest);
-marker = labkit.app.internal.diagnostics.SessionLease.create( ...
-    manifest.sessionId, manifest.appId, "2029-12-31T23:59:00.000Z", ...
-    heartbeatAtUtc, nonce, leaseOwnerProbe(pid));
-writeJson(fullfile(folder, "active.json"), marker);
-end
-
-function probe = leaseOwnerProbe(pid)
-if nargin < 1
-    pid = 41;
-end
-probe = struct("host", "fixture-host", "pid", pid, "targetPid", pid, ...
-    "processState", "unknown");
-end
-
-function manifest = activeLeaseManifest(marker)
-manifest = struct("sessionId", marker.sessionId, "appId", marker.appId, ...
-    "state", "active", "lease", struct("nonce", marker.nonce, ...
-    "leaseVersion", marker.leaseVersion));
-end
-
-function probe = leaseProcessProbe(targetPid, state)
-probe = struct("host", "fixture-host", "pid", 99, "targetPid", targetPid, ...
-    "processState", string(state));
-end
-
-function probe = remoteLeaseProbe(targetPid, state)
-probe = struct("host", "remote-host", "pid", 99, "targetPid", targetPid, ...
-    "processState", string(state));
-end
-
-function probe = deadLeaseProbe(targetPid, ~)
-probe = leaseProcessProbe(targetPid, "dead");
-end
-
-function probe = mixedLeaseProbe(targetPid, ~)
-if targetPid == 42
-    state = "dead";
-elseif targetPid == 43
-    state = "unknown";
-else
-    state = "alive";
-end
-probe = leaseProcessProbe(targetPid, state);
-end
-
-function failActiveMarker(stage)
-if string(stage) == "activeMarker"
-    error("labkit:test:LeaseMarkerFailure", "Intentional active marker failure.");
-end
-end
-
-function resetManifestFault()
-testfixtures.StateStore.set("sessionJournalManifestCount", 0);
-end
-
-function resetLeaseClock(values)
-if nargin < 1
-    values = strings(0, 1);
-else
-    values = string(values(:));
-end
-testfixtures.StateStore.set("sessionJournalLeaseClockValues", values);
-testfixtures.StateStore.set("sessionJournalLeaseClockIndex", 0);
-end
-
-function value = nextLeaseClock()
-values = testfixtures.StateStore.get( ...
-    "sessionJournalLeaseClockValues", strings(0, 1));
-index = testfixtures.StateStore.get("sessionJournalLeaseClockIndex", 0) + 1;
-testfixtures.StateStore.set("sessionJournalLeaseClockIndex", index);
-value = values(min(index, numel(values)));
-end
-
-function failSecondManifest(stage)
-if string(stage) ~= "manifest"
-    return;
-end
-count = testfixtures.StateStore.get("sessionJournalManifestCount", 0) + 1;
-testfixtures.StateStore.set("sessionJournalManifestCount", count);
-if count >= 2
-    error("labkit:test:LeaseManifestFailure", "Intentional closing manifest failure.");
-end
-end
-
-function markSessionTimestamp(folder, state, timestamp)
-manifest = readJson(folder, "manifest.json");
-manifest.state = state;
-manifest.closedAtUtc = timestamp;
-manifest.updatedAtUtc = timestamp;
-writeJson(fullfile(folder, "manifest.json"), manifest);
-end
-
-function value = utcOffset(dayOffset)
-value = string(datetime("now", TimeZone="UTC") + days(dayOffset), ...
-    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-end
-
 function value = readJson(folder, filename)
 value = jsondecode(fileread(fullfile(folder, filename)));
-end
-
-function writeJson(filepath, value)
-file = fopen(filepath, "w", "n", "UTF-8");
-cleanup = onCleanup(@() fclose(file));
-fprintf(file, "%s", jsonencode(value));
-clear cleanup
 end
 
 function segment = onlySegment(folder)

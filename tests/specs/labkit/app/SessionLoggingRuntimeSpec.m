@@ -314,7 +314,6 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
                 "probe:SessionConstructionFailure");
 
             testCase.verifyEqual(string(journal.manifest().state), "closed");
-            testCase.verifyFalse(isfile(fullfile(journal.folder(), "active.json")));
         end
     end
 end
