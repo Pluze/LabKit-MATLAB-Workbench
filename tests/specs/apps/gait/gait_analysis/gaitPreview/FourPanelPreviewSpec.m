@@ -1,5 +1,5 @@
 classdef FourPanelPreviewSpec < matlab.unittest.TestCase
-    % FOURPANELPREVIEWSPEC Regression: gait data must remain visible in a two-by-two preview with equal-scale spatial overlays.
+    % FOURPANELPREVIEWSPEC Regression: gait data must remain visible without in-axes metric text in the equal-scale preview.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function provesFourPanelPreview(testCase)
@@ -30,6 +30,9 @@ classdef FourPanelPreviewSpec < matlab.unittest.TestCase
             end
             verifyEqualDataUnits(testCase, axesById.skeleton);
             verifyEqualDataUnits(testCase, axesById.overview);
+            testCase.verifyEmpty(axesById.skeleton.Subtitle.String);
+            testCase.verifyEmpty(findobj( ...
+                axesById.skeleton.Children, "Type", "text"));
             overviewPoint = findobj(axesById.overview, ...
                 "Type", "line", "DisplayName", pose.pointNames(1));
             testCase.verifyNumElements(overviewPoint, 1);

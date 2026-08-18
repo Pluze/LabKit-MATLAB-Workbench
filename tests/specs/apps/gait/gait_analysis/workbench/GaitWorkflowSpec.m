@@ -28,6 +28,14 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
             runtime.applyControlValue("originAtFirstFrameFirstPoint", true);
             runtime.invokeAction("runAnalysis");
             result = runtime.State.project.results.analysis;
+            sourceTab = oneHandle(figureValue, "source");
+            stepDetails = oneHandle(figureValue, "stepDetails");
+            testCase.verifyEqual(string(sourceTab.Title), ...
+                "Source + Step Review");
+            testCase.verifyTrue(isDescendantOf(stepDetails, sourceTab));
+            detailsText = join(string(stepDetails.Value), newline);
+            testCase.verifyTrue(contains(detailsText, "Swing"));
+            testCase.verifyTrue(contains(detailsText, "ROM"));
             if height(result.stepTable) > 1
                 runtime.applyTableSelection("stepTable", [2 1]);
                 runtime.invokeAction("previousStep");
@@ -49,6 +57,8 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
             verifyVisibleLineData(testCase, overviewAxes);
             verifyEqualDataUnits(testCase, skeletonAxes);
             verifyEqualDataUnits(testCase, overviewAxes);
+            testCase.verifyEmpty(findobj( ...
+                skeletonAxes.Children, "Type", "text"));
             labels = string(skeletonAxes.Legend.String);
             testCase.verifyFalse(any(startsWith(labels, "data")));
             [~, stem] = fileparts(posePath);
@@ -63,6 +73,18 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
             clear cleanup
         end
     end
+end
+
+function tf = isDescendantOf(component, expectedAncestor)
+tf = false;
+current = component.Parent;
+while ~isempty(current)
+    if current == expectedAncestor
+        tf = true;
+        return
+    end
+    current = current.Parent;
+end
 end
 
 function handle = oneHandle(parent, tag)
