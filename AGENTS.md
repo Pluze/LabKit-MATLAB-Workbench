@@ -121,6 +121,15 @@ under `docs/`.
   permitted background primitives; without Parallel Computing Toolbox they
   provide one worker. Do not use `parpool`, `parfor`, `spmd`, Toolbox pool or
   cluster objects, or implicit `parfeval` dispatch in production.
+- Do not treat `backgroundPool` as the default App responsiveness architecture,
+  move a state/UI callback onto it wholesale, or add a generic SDK task layer
+  merely to make a synchronous workflow appear asynchronous. Use
+  `labkit-boundary-guard` before adopting background execution.
+- When a GUI or diagnostic viewer must remain usable after the client event
+  loop hangs, use a user- or environment-managed independent MATLAB process;
+  `backgroundPool`, timers, and additional figures in the same client are not
+  fault isolation. Repository production code must not spawn that process
+  through a shell command.
 - Clean CI runtimes without optional Toolboxes are the executable dependency
   boundary. Keep fixed production symbols directly visible, exercise shipped
   paths there, and add a focused source guard when retiring a concrete Toolbox
@@ -183,6 +192,10 @@ tests, history, and details out of the public repository.
   falsely report a valid token as invalid. Never ask the user to reauthenticate
   based only on sandboxed output. If MATLAB exits before a build/test banner,
   diagnose launcher access rather than source failure.
+- Never launch or open the MATLAB IDE or MATLAB Desktop for any task. Use a
+  bounded noninteractive MATLAB process for tests, analysis, and MATLAB API
+  screenshot capture. If a required check cannot run without the IDE, report
+  that boundary instead of opening it.
 - Do not add Code Analyzer suppression pragmas.
 - `artifacts/` is ignored scratch output, never tracked design state.
 - Automated hidden GUI tests do not prove native dialogs, visual quality,
@@ -193,7 +206,8 @@ tests, history, and details out of the public repository.
   deliberately adds or removes UI elements or changes the design. Capture
   every LabKit App screenshot through MATLAB's own APIs: locate the target
   figure by its stable handle or tag and export the App window with
-  `exportapp`; do not use desktop screenshot automation.
+  `exportapp` from a bounded noninteractive MATLAB process; do not use desktop
+  screenshot automation.
 - A validation entry point expected to run longer than 30 seconds reports its
   current stage and completed/total work, and emits a heartbeat at least every
   30 seconds while one unit remains active. Reuse the owning progress plugin
