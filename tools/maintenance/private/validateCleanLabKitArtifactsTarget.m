@@ -23,14 +23,28 @@ function validateCleanLabKitArtifactsTarget(root, target, relativeTarget)
 end
 
 function resolvedPath = realExistingPath(filepath)
-file = java.io.File(char(filepath));
-linkOptions = javaArray("java.nio.file.LinkOption", 0);
-resolvedPath = char(file.toPath().toRealPath(linkOptions).toString());
+filepath = char(filepath);
+if exist(filepath, "dir") == 7
+    originalFolder = pwd;
+    cleanup = onCleanup(@() cd(originalFolder));
+    cd(filepath);
+    resolvedPath = pwd;
+    clear cleanup
+    return;
+end
+[folder, name, extension] = fileparts(filepath);
+if strlength(string(folder)) == 0
+    folder = ".";
+end
+originalFolder = pwd;
+cleanup = onCleanup(@() cd(originalFolder));
+cd(folder);
+resolvedPath = fullfile(pwd, [name extension]);
+clear cleanup
 end
 
 function resolvedPath = lexicalPath(filepath)
-file = java.io.File(char(filepath));
-resolvedPath = char(file.toPath().toAbsolutePath().normalize().toString());
+resolvedPath = char(labkit.app.internal.filesystem.absolutePath(filepath));
 end
 
 function tf = isDescendant(filepath, root)

@@ -423,7 +423,8 @@ end
 
 function resolvedPath = canonicalPath(filePath)
     try
-        resolvedPath = char(java.io.File(char(filePath)).getCanonicalPath());
+        resolvedPath = char( ...
+            labkit.app.internal.filesystem.absolutePath(filePath));
     catch
         resolvedPath = char(filePath);
     end

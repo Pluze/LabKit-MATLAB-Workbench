@@ -1,0 +1,6 @@
+function apps = emptyApps()
+%EMPTYAPPS Return the canonical empty discovered-App collection.
+apps = struct("command", {}, "folder", {}, "relativePath", {}, ...
+    "family", {}, "name", {}, "description", {}, "visibility", {}, ...
+    "version", {}, "updated", {});
+end

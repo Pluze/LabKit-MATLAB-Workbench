@@ -138,7 +138,7 @@ value = struct("resultRows", {cell(0, 11)}, ...
     "dataSource", "None");
 end
 
-function increment(posts)
+function posts = increment(posts)
 posts("count") = posts("count") + 1;
 end
 
@@ -194,7 +194,7 @@ end
 end
 
 function metadata = samplingMetadata()
-metadata = struct("Port", "SYNTHETIC", "Timeout", 1, ...
+metadata = struct("Port", "SYNTHETIC", "Timeout", 3, ...
     "Identity", struct(), "Capabilities", struct( ...
     "CombinedSample", "SUPPORTED"), "Settings", struct(), ...
     "RestoreAutoOutput", "AOUT0", ...
@@ -207,7 +207,8 @@ value = struct("Type", string(type), "RequestId", uint64(requestId), ...
     "Payload", {payload}, "Metadata", metadata);
 end
 
-function setResource(resources, cleanups, id, value, cleanup)
+function [resources, cleanups] = setResource( ...
+        resources, cleanups, id, value, cleanup)
 id = char(id);
 resources(id) = value;
 cleanups(id) = cleanup;

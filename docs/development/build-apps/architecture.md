@@ -35,6 +35,16 @@ environments, install third-party runtime packages, download model weights, or
 require a network connection on first use. This keeps source checkouts,
 offline packages, and restored lab systems reproducible.
 
+Public-repository `.m` source also remains inside the MATLAB language runtime. It does
+not call Java, Python, Conda, .NET, shell commands, MEX/native libraries, or
+ActiveX/COM. Repository-owned MATLAB implementations provide lexical path
+identity, opaque identifiers, and streaming SHA-256 where older Base MATLAB
+releases do not have a suitable public one-call API. The repository guard scans
+production, tools, and tests. Its only allowances are five exact, marked, and
+counted test-infrastructure shell calls for isolated MATLAB processes,
+synthetic Git state, and filesystem-link fixtures, so another entry point
+cannot silently return.
+
 When Base MATLAB cannot satisfy a proposed contract, that proposal stops at an
 architecture decision; the repository does not carry temporary Toolbox debt or
 fallback branches. A clean CI runtime without optional Toolboxes exercises the
@@ -84,11 +94,13 @@ rather than mixing private app files into the public repo history. The public
 structure guide is [private-apps.md](../maintain-and-release/private-apps.md); private app
 documentation belongs in the private workspace.
 
-The launcher keeps update, discovery, and repair logic self-contained: it uses
-native MATLAB UI and local helper functions so users can repair a damaged zip
-install even if packages, apps, docs, or scripts have been deleted. It
-configures the MATLAB path for app entry points. MATLAB desktop project
-metadata belongs to each developer's local workspace.
+A GUI-free private discovery boundary scans App entry points, activates their
+paths, and invokes a selected entry only after revalidating its owning folder.
+The Launcher, documentation catalog, and plot-to-App handoffs share that
+boundary without acquiring a Launcher window. The standalone launcher keeps
+installation and repair self-contained so users can recover a damaged zip
+install even if packages, apps, docs, or scripts have been deleted. MATLAB
+desktop project metadata belongs to each developer's local workspace.
 
 Tools under `tools/` are source-checkout support utilities rather than app
 runtime APIs. The launcher may call a small, explicit subset for maintenance

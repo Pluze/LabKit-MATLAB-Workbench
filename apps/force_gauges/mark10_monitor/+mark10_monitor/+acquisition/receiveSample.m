@@ -1,6 +1,6 @@
 function receiveSample(connectionBox, buffer, context, connection, sample)
 %RECEIVESAMPLE Retain one background-delivered sample and coalesce its view.
-connectionBox("connection") = connection;
+mark10_monitor.connection.retain(connectionBox, connection);
 if isfield(sample, "HostTime_s") && isfinite(sample.HostTime_s)
     elapsed = double(sample.HostTime_s);
 else
@@ -30,7 +30,7 @@ buffer("mode") = [buffer("mode"); string(sample.AcquisitionMode)];
 postRefreshIfDue(buffer, elapsed, context);
 end
 
-function postRefreshIfDue(buffer, elapsed, context)
+function buffer = postRefreshIfDue(buffer, elapsed, context)
 if buffer("refreshPending") || ...
         elapsed - buffer("lastRefresh_s") < ...
         mark10_monitor.acquisition.viewRefreshPeriod()
@@ -42,12 +42,16 @@ try
     context.postEvent("mark10.live.refresh", ...
         @mark10_monitor.acquisition.refreshState);
 catch cause
-    buffer("refreshPending") = false;
+    setBufferValue(buffer, "refreshPending", false);
     rethrow(cause);
 end
 end
 
-function appendPlot(buffer, time, force, travel)
+function buffer = setBufferValue(buffer, key, value)
+buffer(char(key)) = value;
+end
+
+function buffer = appendPlot(buffer, time, force, travel)
 maximumPoints = 2000;
 t = [buffer("plotTime_s"); time];
 f = [buffer("plotForce_N"); force];

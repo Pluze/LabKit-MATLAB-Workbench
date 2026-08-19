@@ -23,13 +23,10 @@ classdef FlirThermalSourceSpec < matlab.unittest.TestCase
 
             [values, units, label] = ...
                 flir_thermal.thermalPreview.presentationData.valueMatrix(item);
-            entries = flir_thermal.thermalPreview.presentationData.filePanelEntries(item);
 
             testCase.verifyEqual(values, item.raw);
             testCase.verifyEqual(units, "raw");
             testCase.verifyEqual(label, "Raw thermal signal");
-            testCase.verifyEqual(entries.status, ...
-                "needs range; temperature unavailable");
         end
 
         function marksCorrectionDefaultsAsAReaderFacingWarning(testCase)
@@ -41,11 +38,8 @@ classdef FlirThermalSourceSpec < matlab.unittest.TestCase
                 "available", true, "correction", "environment", ...
                 "usedDefaults", true, "defaultedFields", "Emissivity");
 
-            entries = flir_thermal.thermalPreview.presentationData.filePanelEntries(item);
             details = flir_thermal.thermalPreview.presentationData.detailLines(item, 1, "");
 
-            testCase.verifyEqual(entries.status, ...
-                "needs range; calibration defaults used");
             testCase.verifyTrue(any(contains(string(details), ...
                 "Warning: default thermal correction parameters used: Emissivity")));
         end

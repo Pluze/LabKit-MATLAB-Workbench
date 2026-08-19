@@ -8,9 +8,7 @@ assignees: ""
 
 Thanks for reporting a LabKit problem.
 
-Do not upload raw lab files, identifying file names, subject names, device
-serials, local absolute paths, timestamps, or private experiment labels. Use
-synthetic or redacted examples when possible.
+Do not upload raw lab files, identifying file names, subject names, device serials, local absolute paths, timestamps, or private experiment labels. Use synthetic or redacted examples when possible.
 
 ## Area
 

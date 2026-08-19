@@ -10,7 +10,7 @@ unless an explicit destination is supplied.
 
 | Goal | Entry point | Reference |
 | --- | --- | --- |
-| Scan MATLAB source and export reviewable issues | `runCodecheckReport` | [Code Analyzer Reports](codecheck.md) |
+| Scan MATLAB source for analyzer issues and release compatibility | `runCodecheckReport` | [Code Analysis Reports](codecheck.md) |
 | Package one or more apps for offline use | `packageLabKitApp` | [App Deployment Packages](deployment.md) |
 | Regenerate or verify the static documentation site | `renderLabKitDocs`, `checkLabKitDocs` | [Documentation Build Tools](documentation.md) |
 | Profile startup, callbacks, scripts, or functions | `profileLabKitTarget` | [Performance Profiling](profiling.md) |

@@ -17,12 +17,7 @@ function updateReadonlyHeight(obj, component, value)
         value, width, component.FontSize);
     key = char(id);
     node = obj.node(id);
-    chain = node;
-    owner = obj.owningNode(id);
-    while ~isempty(owner) && owner.Kind ~= "workbench"
-        chain(end + 1) = owner;
-        owner = obj.owningNode(owner.Id);
-    end
+    chain = readonlyChain(obj, node);
     before = cell(1, numel(chain));
     for index = 1:numel(chain)
         before{index} = obj.preferredRowHeight(chain(index));
@@ -51,6 +46,15 @@ function updateReadonlyHeight(obj, component, value)
         adjustOwningRow(handle, delta);
     end
     component.Position = [0 0 width height];
+end
+
+function chain = readonlyChain(obj, node)
+owner = obj.owningNode(node.Id);
+if isempty(owner) || owner.Kind == "workbench"
+    chain = node;
+else
+    chain = [node, readonlyChain(obj, owner)];
+end
 end
 
 function adjustOwningRow(handle, delta)

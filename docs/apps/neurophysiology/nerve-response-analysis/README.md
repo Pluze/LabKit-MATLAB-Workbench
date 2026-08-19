@@ -4,6 +4,9 @@ Nerve Response Analysis reads the recording list prepared in RHS Preview,
 finds stimulation events, groups them into trains, and measures compound action
 potential responses in the assigned channels.
 
+Differential metrics are produced by the analysis run that owns the selected
+recording and protocol, so later review and export consume one result schema.
+
 ## Open Nerve Response Analysis
 
 From the launcher, select **Nerve Response Analysis** and choose **Open**. From

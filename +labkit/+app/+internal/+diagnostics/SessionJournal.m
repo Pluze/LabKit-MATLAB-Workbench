@@ -1,7 +1,7 @@
 classdef (Hidden, Sealed) SessionJournal < handle
     %SESSIONJOURNAL Buffered writer for full-detail canonical events.
-    % This private projection owns one live session only. Archive inspection,
-    % recovery, retention, and export belong to SessionJournalArchive.
+    % This private projection owns one live session only. Reading retained
+    % events for diagnostic export belongs to SessionJournalArchive.
 
     properties (Access = private)
         Application
@@ -9,7 +9,6 @@ classdef (Hidden, Sealed) SessionJournal < handle
         SessionId (1, 1) string
         Folder (1, 1) string
         ManifestFile (1, 1) string
-        ActiveFile (1, 1) string
         SegmentFile (1, 1) string = ""
         SegmentHandle (1, 1) double = -1
         SegmentIndex (1, 1) double = 0
@@ -37,11 +36,6 @@ classdef (Hidden, Sealed) SessionJournal < handle
         LastCoalescingElapsedSeconds (1, 1) double = -inf
         FaultInjector = []
         TestObserver = []
-        LeaseClock = []
-        LeaseProbe = []
-        LeaseNonce (1, 1) string = ""
-        HeartbeatIntervalSeconds (1, 1) double = 30
-        LastHeartbeatUtc (1, 1) string = ""
     end
 
     properties (Constant, Access = private)
@@ -56,12 +50,15 @@ classdef (Hidden, Sealed) SessionJournal < handle
                     "SessionJournal requires one Definition.");
             end
             options = parseOptions(varargin{:});
+            if strlength(options.RootFolder) == 0
+                options.RootFolder = ...
+                    labkit.app.internal.diagnostics.SessionJournal.defaultRootFolder();
+            end
             obj.Application = application;
             obj.RootFolder = options.RootFolder;
             obj.SessionId = options.SessionId;
             obj.Folder = fullfile(obj.RootFolder, "sessions", obj.SessionId);
             obj.ManifestFile = fullfile(obj.Folder, "manifest.json");
-            obj.ActiveFile = fullfile(obj.Folder, "active.json");
             obj.SegmentByteLimit = options.SegmentByteLimit;
             obj.SegmentLimit = options.SegmentLimit;
             obj.SessionByteLimit = options.SessionByteLimit;
@@ -69,11 +66,8 @@ classdef (Hidden, Sealed) SessionJournal < handle
             obj.BufferByteLimit = options.BufferByteLimit;
             obj.FaultInjector = options.FaultInjector;
             obj.TestObserver = options.TestObserver;
-            obj.LeaseClock = options.LeaseClock;
-            obj.LeaseProbe = options.LeaseProbe;
-            obj.LeaseNonce = options.LeaseNonce;
-            obj.HeartbeatIntervalSeconds = options.HeartbeatIntervalSeconds;
-            obj.StartedAt = parseLeaseUtc(leaseNow(obj.LeaseClock));
+            obj.StartedAt = datetime("now", TimeZone="UTC", ...
+                Format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
             obj.initialize();
         end
 
@@ -144,7 +138,6 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 obj.BufferLines = strings(1, 0);
                 obj.BufferBytes = 0;
                 failureReason = "flush-failure";
-                obj.writeActiveMarker();
                 obj.enforceSessionRetention();
                 written = obj.writeManifest();
             catch
@@ -167,18 +160,7 @@ classdef (Hidden, Sealed) SessionJournal < handle
             end
             obj.Closed = true;
             obj.ClosedAtUtc = utcNow();
-            try
-                obj.writeActiveMarker(true);
-            catch
-                obj.recordPersistenceFailure("close-failure");
-            end
-            if obj.writeManifest(Force=true)
-                try
-                    obj.removeActiveMarker();
-                catch
-                    obj.recordPersistenceFailure("close-failure");
-                end
-            end
+            obj.writeManifest(Force=true);
         end
 
         function folder = folder(obj)
@@ -227,6 +209,13 @@ classdef (Hidden, Sealed) SessionJournal < handle
         end
     end
 
+    methods (Static)
+        function folder = defaultRootFolder()
+            % RuntimeFactory uses the installation-owned artifact boundary.
+            folder = labkit.app.internal.artifact.Store.folder("logs");
+        end
+    end
+
     methods (Access = private)
         function initialize(obj)
             try
@@ -238,7 +227,6 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 if ~obj.writeManifest()
                     return;
                 end
-                obj.writeActiveMarker(true);
             catch
                 obj.recordPersistenceFailure("initialize-failure");
             end
@@ -308,34 +296,6 @@ classdef (Hidden, Sealed) SessionJournal < handle
             obj.rememberDegradationReason(reason);
             obj.LastCoalescingKey = "";
             obj.LastCoalescingElapsedSeconds = -inf;
-        end
-
-        function writeActiveMarker(obj, force)
-            if nargin < 2
-                force = false;
-            end
-            if ~obj.Available
-                return;
-            end
-            nowUtc = leaseNow(obj.LeaseClock);
-            if ~force && strlength(obj.LastHeartbeatUtc) > 0 && ...
-                    seconds(parseLeaseUtc(nowUtc) - parseLeaseUtc(obj.LastHeartbeatUtc)) < ...
-                    obj.HeartbeatIntervalSeconds
-                return;
-            end
-            probe = leaseProbe(obj.LeaseProbe);
-            marker = labkit.app.internal.diagnostics.SessionLease.create( ...
-                obj.SessionId, obj.Application.AppId, string(obj.StartedAt), ...
-                nowUtc, obj.LeaseNonce, probe);
-            obj.invokeFault("activeMarker");
-            atomicWriteJson(obj.ActiveFile, marker);
-            obj.LastHeartbeatUtc = nowUtc;
-        end
-
-        function removeActiveMarker(obj)
-            if exist(char(obj.ActiveFile), "file") == 2
-                delete(char(obj.ActiveFile));
-            end
         end
 
         function written = writeManifest(obj, varargin)
@@ -429,15 +389,14 @@ function options = parseOptions(varargin)
 % Provisional private bounds: rotation avoids one unbounded file; five
 % segments cap ordinary context; 64 records/64 KiB bound buffered writes.
 options = struct( ...
-    "RootFolder", string(fullfile(prefdir, "LabKit", "logs")), ...
+    "RootFolder", "", ...
     "SessionId", labkit.app.internal.diagnostics.SessionIdentity.create(), ...
     "SegmentByteLimit", 10 * 1024 * 1024, ...
     "SegmentLimit", 5, ...
     "SessionByteLimit", 50 * 1024 * 1024, ...
     "BufferRecordLimit", 64, ...
     "BufferByteLimit", 64 * 1024, ...
-    "FaultInjector", [], "TestObserver", [], "LeaseClock", [], "LeaseProbe", [], ...
-    "LeaseNonce", "", "HeartbeatIntervalSeconds", 30);
+    "FaultInjector", [], "TestObserver", []);
 if mod(numel(varargin), 2) ~= 0
     error("labkit:app:contract:InvalidValue", ...
         "SessionJournal options must be name-value pairs.");
@@ -463,44 +422,12 @@ for name = ["SegmentByteLimit", "SegmentLimit", "SessionByteLimit", ...
     end
     options.(name) = double(value);
 end
-for name = ["FaultInjector", "TestObserver", "LeaseClock", "LeaseProbe"]
+for name = ["FaultInjector", "TestObserver"]
     if ~isempty(options.(name)) && ~isa(options.(name), "function_handle")
         error("labkit:app:contract:InvalidValue", ...
             "SessionJournal %s must be a function handle.", name);
     end
 end
-isTextNonce = (isstring(options.LeaseNonce) && isscalar(options.LeaseNonce)) || ...
-    (ischar(options.LeaseNonce) && isrow(options.LeaseNonce));
-if isTextNonce && strlength(string(options.LeaseNonce)) == 0
-    options.LeaseNonce = labkit.app.internal.diagnostics.SessionLease.createNonce();
-end
-options.LeaseNonce = labkit.app.internal.diagnostics.SessionLease.validateNonce(options.LeaseNonce);
-if ~(isnumeric(options.HeartbeatIntervalSeconds) && isscalar(options.HeartbeatIntervalSeconds) && ...
-        isfinite(options.HeartbeatIntervalSeconds) && options.HeartbeatIntervalSeconds > 0)
-    error("labkit:app:contract:InvalidValue", ...
-        "SessionJournal HeartbeatIntervalSeconds must be positive.");
-end
-end
-
-function value = leaseNow(clock)
-if isempty(clock)
-    value = utcNow();
-else
-    value = string(clock());
-end
-end
-
-function value = leaseProbe(probe)
-if isempty(probe)
-    value = labkit.app.internal.diagnostics.SessionLease.localProbe();
-else
-    value = probe();
-end
-end
-
-function value = parseLeaseUtc(text)
-value = datetime(text, InputFormat="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", ...
-    TimeZone="UTC", Format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 end
 
 function value = optionValue(options, name, defaultValue)
@@ -574,8 +501,7 @@ payload = struct("schemaVersion", 1, "sessionId", obj.SessionId, ...
     "appId", obj.Application.AppId, "state", ternary(obj.Closed, "closed", "active"), ...
     "startedAtUtc", string(obj.StartedAt), "closedAtUtc", obj.ClosedAtUtc, ...
     "updatedAtUtc", utcNow(), "segmentCount", numel(segments), ...
-    "retainedBytes", sum([segments.bytes]), "lease", struct( ...
-    "nonce", obj.LeaseNonce, "leaseVersion", 1), "degradation", struct( ...
+    "retainedBytes", sum([segments.bytes]), "degradation", struct( ...
     "droppedRecordCount", obj.DroppedRecordCount, ...
     "dropReasons", struct("invalidCanonicalRecord", obj.InvalidRecordDropCount, ...
     "writeFailure", obj.WriteFailureDropCount), ...

@@ -48,5 +48,54 @@ classdef VideoMarkerResultSpec < matlab.unittest.TestCase
             testCase.verifyEqual(payload.annotations.trackingConfidence, ...
                 annotations.trackingConfidence, AbsTol=1e-12);
         end
+
+        function rendersEveryFrameWithPixelSpaceLandmarks(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            context = labkit.app.synthetic.Context(folder);
+            pack = video_marker.syntheticInputs.writeSamplePack(context);
+            sourcePath = ...
+                pack.InitialProject.inputs.sources(1).reference.originalPath;
+            outputPath = fullfile(folder, "annotated.mp4");
+            project = pack.InitialProject;
+            project.annotations.frames = ...
+                video_marker.frameAnnotations.setFramePoints( ...
+                project.annotations.frames, 1, ...
+                [24 34; 32 38; 40 42; 48 46; 56 50], "confirmed");
+            events = cell(0, 3);
+
+            if ~(ismac || ispc)
+                testCase.verifyError(@() ...
+                    video_marker.resultFiles.writeAnnotatedVideo( ...
+                    sourcePath, outputPath, project.annotations.frames, ...
+                    project.annotations.skeleton, @recordProgress), ...
+                    "video_marker:Mpeg4Unavailable");
+                return
+            end
+
+            summary = video_marker.resultFiles.writeAnnotatedVideo( ...
+                sourcePath, outputPath, project.annotations.frames, ...
+                project.annotations.skeleton, @recordProgress);
+
+            source = VideoReader(sourcePath);
+            rendered = VideoReader(outputPath);
+            sourceFrame = readFrame(source);
+            renderedFrame = readFrame(rendered);
+            testCase.verifyTrue(isfile(outputPath));
+            testCase.verifyEqual(summary.frameCount, 6);
+            testCase.verifyEqual(summary.frameRate, source.FrameRate, ...
+                AbsTol=1e-12);
+            testCase.verifySize(renderedFrame, size(sourceFrame));
+            testCase.verifyGreaterThan( ...
+                max(abs(double(renderedFrame(:)) - ...
+                double(sourceFrame(:)))), 20);
+            testCase.verifyEqual(events{1, 1}, "started");
+            testCase.verifyEqual(events{end, 1}, "completed");
+            testCase.verifyEqual(events{end, 2}, 6);
+
+            function recordProgress(stage, completed, total)
+                events(end + 1, :) = {stage, completed, total};
+            end
+        end
     end
 end

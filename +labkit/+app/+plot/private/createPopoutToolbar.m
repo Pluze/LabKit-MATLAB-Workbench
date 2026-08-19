@@ -27,7 +27,7 @@ callbacks = {
     @(~,~) applyStyleAndLayout(fig, toolbar, ax, "gridIncrease")
     @(~,~) applyStyleAndLayout(fig, toolbar, ax, "gridDecrease")
     @(tool,~) toggleXLabelRotation(tool, fig, toolbar, ax)
-    @(~,~) sendToStudio(fig, ax)};
+    @(~,~) sendToStudio(ax)};
 for k = 1:numel(labels)
     addTool(toolbar, labels(k), tags(k), ...
         k, numel(labels), callbacks{k});
@@ -88,17 +88,18 @@ ax.ActivePositionProperty = 'outerposition';
 drawnow limitrate nocallbacks;
 end
 
-function sendToStudio(fig, ax)
-launcher = [];
-if isappdata(groot, 'labkitFigureStudioLauncher')
-    launcher = getappdata(groot, 'labkitFigureStudioLauncher');
+function sendToStudio(ax)
+root = fileparts(mfilename("fullpath"));
+for level = 1:4
+    root = fileparts(root);
 end
-if isa(launcher, 'function_handle')
-    launcher(ax);
+apps = labkit.app.internal.discovery.discoverApps(root);
+match = find(string({apps.command}) == "labkit_FigureStudio_app", 1);
+if isempty(match)
+    warning('labkit:app:plot:FigureStudioUnavailable', ...
+        'Figure Studio is not available in this LabKit installation.');
     return;
 end
-setappdata(fig, 'labkitFigureStudioPendingAxes', ax);
-warning('labkit:app:plot:FigureStudioUnavailable', ...
-    ['Figure Studio is not available yet. The copied axes were marked ' ...
-    'for Studio handoff.']);
+labkit.app.internal.discovery.invokeDiscoveredApp( ...
+    apps(match), "axes", ax);
 end

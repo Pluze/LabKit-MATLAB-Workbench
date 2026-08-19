@@ -24,6 +24,19 @@ state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
 state.project.annotations.sourceDefaultStyle = sourceStyle;
 state.project.annotations.panelIndex = panelIndex;
 state.project.annotations.limitOverrides = emptyLimitOverrides();
+p = state.project.parameters;
+if p.preset == "FIG default"
+    p.style = sourceStyle;
+    p.aspectPreset = "Source";
+    p.canvasSize = "Source size";
+else
+    [p.style, p.aspectPreset, p.canvasSize] = ...
+        figure_studio.sourceAxes.applyStandardLayout( ...
+        p.style, plotData);
+end
+p.gridChoice = onOff(p.style.gridVisible);
+p.boundaryChoice = onOff(p.style.boundaryLines);
+state.project.parameters = p;
 state.project.results.lastExport = [];
 state.project.results.resultManifestPath = "";
 state.session.workflow.status = "Editing " + panelLabel + ".";
@@ -33,4 +46,12 @@ end
 
 function limits = emptyLimitOverrides()
 limits = struct("xLim", [], "yLim", []);
+end
+
+function value = onOff(tf)
+if tf
+    value = "On";
+else
+    value = "Off";
+end
 end

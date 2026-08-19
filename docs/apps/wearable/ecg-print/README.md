@@ -17,9 +17,15 @@ labkit_ECGPrint_app
 ## Supported Inputs
 
 Choose **Open recording** to load a MAT, CSV, TXT, or TSV biosignal file. MAT
-files can contain a supported timetable or recording structure. Delimited text
-files can be detected automatically or parsed with the controls under
-**Import Parsing**.
+files can contain a supported timetable or a BIOPAC AcqKnowledge export.
+They may also contain ordinary table variables or one unambiguous numeric
+array. Delimited text files can be detected automatically or parsed with the
+controls under **Import Parsing**. For BIOPAC MAT and text exports, the App
+uses the exported channel labels, channel units, and sample interval
+automatically. The import status reports the selected format, parser fallback,
+and uniform-sampling cleanup. Every channel reaches analysis on a uniform time
+grid; large timestamp gaps separate resampling sections instead of being
+interpolated across.
 
 For a difficult text file, choose **Preview file header**, then set:
 
@@ -31,6 +37,8 @@ For a difficult text file, choose **Preview file header**, then set:
 
 Choose **Parse / refresh file** after changing import settings. The app reports
 the detected channels and lets you select one for analysis.
+MAT recordings show a short format notice in the header-preview area instead
+of decoding binary file contents as text.
 
 The recording is saved as a portable project source. Older projects are
 upgraded on load.

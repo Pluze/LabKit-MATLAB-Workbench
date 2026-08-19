@@ -4,6 +4,9 @@ Batch Image Crop defines one crop task per image, previews rotation and
 edge-continuous padding, and exports repeatable same-size crops in pixel or
 physical-scale mode.
 
+Crop edits preserve the active preview viewport through the managed image
+interaction; the App does not keep a second private viewport snapshot.
+
 ## Requirements And Launch
 
 ```matlab

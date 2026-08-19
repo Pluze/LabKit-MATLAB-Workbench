@@ -107,6 +107,16 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function delegatesCommandWToNativeWindowClose(testCase)
+            handlesShortcut = ...
+                @labkit.app.internal.native.NativeAdapterValues.handlesCloseShortcut;
+
+            testCase.verifyFalse(handlesShortcut("w", "command"));
+            testCase.verifyFalse(handlesShortcut("w", ["control", "command"]));
+            testCase.verifyTrue(handlesShortcut("w", "control"));
+            testCase.verifyFalse(handlesShortcut("x", "control"));
+        end
+
         function validatesPostedEventCapability(testCase)
             observed = containers.Map("KeyType", "char", "ValueType", "any");
             backend = struct("postEvent", @(eventId, updateState) ...
@@ -658,6 +668,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             popped = figures(1);
             poppedAxes = findall(popped, "Type", "axes");
             testCase.verifyNumElements(findall(poppedAxes, "Type", "line"), 2);
+            testCase.verifyNumElements(findall(popped, ...
+                "Tag", "labkitAxesPopoutStudioTool"), 1);
             clear cleanup
         end
 
@@ -1031,6 +1043,32 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyFalse(isappdata(figureValue, "labkitAppBusy"));
             clear probeCleanup cleanup
         end
+
+        function privatePrimitivesUsePureMatlabContracts(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            filepath = fullfile(root, "sha256.txt");
+            writeBytes(filepath, uint8('abc'));
+            testCase.verifyEqual( ...
+                labkit.app.internal.integrity.fileSha256(filepath), ...
+                "ba7816bf8f01cfea414140de5dae2223" + ...
+                "b00361a396177a9cb410ff61f20015ad");
+            longVector = ...
+                "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
+            writeBytes(filepath, uint8(char(longVector)));
+            testCase.verifyEqual( ...
+                labkit.app.internal.integrity.fileSha256(filepath), ...
+                "248d6a61d20638b8e5c026930c3e6039" + ...
+                "a33ce45964ff2167f6ecedd419db06c1");
+            testCase.verifyEqual( ...
+                labkit.app.internal.filesystem.absolutePath( ...
+                    fullfile(root, "one", "..", "two")), ...
+                string(fullfile(root, "two")));
+            first = labkit.app.internal.identity.newId();
+            second = labkit.app.internal.identity.newId();
+            testCase.verifyGreaterThan(strlength(first), 0);
+            testCase.verifyNotEqual(first, second);
+        end
     end
 
     methods (Static, Access = private)
@@ -1040,7 +1078,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             observed("quickBusy") = ...
                 isappdata(figureValue, "labkitAppBusy");
             observed("quickPointer") = string(figureValue.Pointer);
-            observed("quickTitle") = string(figureValue.Name);
+            storeMapValue(observed, "quickTitle", string(figureValue.Name));
             secondary = oneTagged(figureValue, "secondary");
             gain = oneTagged(figureValue, "gain");
             secondary.ButtonPushedFcn(secondary, []);
@@ -1063,13 +1101,13 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             gain.ValueChangedFcn(gain, []);
             callbackContext.log("info", ...
                 "probe.busy.stage", "Stage two");
-            observed("progressTitle") = string(figureValue.Name);
+            storeMapValue(observed, "progressTitle", string(figureValue.Name));
         end
 
         function state = secondaryBusyProbe(state, ~)
             observed = getappdata(groot, "labkitAppSdkBusyProbe");
-            observed("secondaryCount") = ...
-                observed("secondaryCount") + 1;
+            storeMapValue(observed, "secondaryCount", ...
+                observed("secondaryCount") + 1);
         end
 
         function app = definition(layout, varargin)
@@ -1087,6 +1125,18 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "Updated", "2026-07-19", "Requirements", [], "Workbench", layout);
         end
     end
+end
+
+function values = storeMapValue(values, key, value)
+values(char(key)) = value;
+end
+
+function writeBytes(filepath, bytes)
+file = fopen(filepath, "wb");
+assert(file >= 0, "Could not create primitive fixture.");
+cleanup = onCleanup(@() fclose(file));
+fwrite(file, bytes, "uint8");
+delete(cleanup);
 end
 
 function handle = oneTagged(parent, tag)
@@ -1134,24 +1184,27 @@ drawnow;
 end
 
 function aliases = callbackStartAliases(events)
-aliases = strings(1, 0);
+aliases = strings(1, numel(events));
+aliasCount = 0;
 for index = 1:numel(events)
     event = events(index);
     if event.category == "runtime.callback" && ...
             endsWith(event.eventName, ".started") && ...
             isfield(event.attributes, "runtimeAlias")
-        aliases(end + 1) = string(event.attributes.runtimeAlias);
+        aliasCount = aliasCount + 1;
+        aliases(aliasCount) = string(event.attributes.runtimeAlias);
     end
 end
+aliases = aliases(1:aliasCount);
 end
 
-function capturePostedEvent(observed, eventId, updateState)
+function observed = capturePostedEvent(observed, eventId, updateState)
 observed("eventId") = eventId;
 observed("updateState") = updateState;
 end
 
-function state = invalidPostedUpdate(state)
-state = state;
+function state = invalidPostedUpdate(inputs)
+state = inputs;
 end
 
 function session = createPostedEventSession(~, ~)
@@ -1279,12 +1332,12 @@ function accepted = wrongPathFilter(~, ~)
 accepted = true;
 end
 
-function captureAlert(store, message, title)
+function store = captureAlert(store, message, title)
 store("message") = string(message);
 store("title") = string(title);
 end
 
-function captureDialog(store, kind, message, title)
+function store = captureDialog(store, kind, message, title)
 store("kind") = string(kind);
 captureAlert(store, message, title);
 end
@@ -1426,8 +1479,10 @@ project.inputs.sources = labkit.app.project.sourceRecord( ...
     "source1", "files", "unreadable.dat", true);
 end
 
-function applicationState = failSourceSelection(applicationState, ~, ~)
-error("probe:UnreadableSource", "Synthetic source parse failure.");
+function output = failSourceSelection(~, ~, ~)
+output = MException( ...
+    "probe:UnreadableSource", "Synthetic source parse failure.");
+throw(output);
 end
 
 function accepted = validateCurrentProject(project)

@@ -1,6 +1,6 @@
 function page = documentationPage(root, command, source)
 %DOCUMENTATIONPAGE Resolve one public App's online or generated local page.
-apps = labkit.app.internal.launcher.discoverApps(root);
+apps = labkit.app.internal.discovery.discoverApps(root);
 match = find(string({apps.command}) == string(command), 1);
 if isempty(match) || apps(match).visibility ~= "public"
     error("labkit:app:internal:launcher:DocumentationUnavailable", ...

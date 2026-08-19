@@ -48,27 +48,27 @@ if ~mark10IsServiceConnection(connection)
 end
 
 service = connection.Service;
-service("consumer") = onSample;
+mark10StoreState(service, "consumer", onSample);
 try
     [connection, ~] = mark10ServiceRequest( ...
         connection, "start", struct("Period", double(period)));
 catch cause
-    service("consumer") = [];
+    mark10StoreState(service, "consumer", []);
     rethrow(cause);
 end
 state = containers.Map("KeyType", "char", "ValueType", "any");
-state("connection") = connection;
-state("period") = double(period);
-state("stopped") = false;
-state("service") = service;
+mark10StoreState(state, "connection", connection);
+mark10StoreState(state, "period", double(period));
+mark10StoreState(state, "stopped", false);
+mark10StoreState(state, "service", service);
 deliveryTimer = timer( ...
     "ExecutionMode", "fixedSpacing", "BusyMode", "drop", ...
     "Period", 0.05, "TimerFcn", @(~, ~) deliverSamples(state));
-state("timer") = deliveryTimer;
+mark10StoreState(state, "timer", deliveryTimer);
 try
     start(deliveryTimer);
 catch cause
-    service("consumer") = [];
+    mark10StoreState(service, "consumer", []);
     try
         mark10ServiceRequest(connection, "stop", struct());
     catch
@@ -85,5 +85,5 @@ if state("stopped")
 end
 service = state("service");
 mark10ServiceDrain(service);
-state("connection") = mark10ServiceConnection(service);
+mark10StoreState(state, "connection", mark10ServiceConnection(service));
 end

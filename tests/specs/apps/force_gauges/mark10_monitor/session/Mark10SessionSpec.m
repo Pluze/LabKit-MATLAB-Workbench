@@ -32,7 +32,7 @@ classdef Mark10SessionSpec < matlab.unittest.TestCase
     end
 end
 
-function captureResource(observed, scope, id, value, cleanup)
+function observed = captureResource(observed, scope, id, value, cleanup)
 observed("scope") = scope;
 observed("id") = id;
 observed("value") = value;

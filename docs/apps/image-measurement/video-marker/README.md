@@ -105,8 +105,14 @@ the upgraded project before moving it into another workflow.
 - coordinate CSV for analysis and plotting;
 - output manifests recording coordinate options and file roles.
 
-CSV dialogs start in a source-adjacent `video_marker` output folder. Result
-manifests are written beside the chosen CSV.
+CSV and annotated-video dialogs start in a source-adjacent `video_marker`
+output folder. **Render annotated video** writes every source frame at the
+source frame rate, burning in the current landmark points and skeleton
+connections. Even source dimensions are retained; MATLAB pads an odd width or
+height by one pixel for MPEG-4. Frames without points remain unmarked. Output uses
+MP4 with H.264 encoding for ordinary-player compatibility. MATLAB supports
+MPEG-4 writing on macOS and Windows; the render button is unavailable on
+Linux. Result manifests are written beside the chosen output.
 
 ## Diagnostics And Synthetic Inputs
 
@@ -141,6 +147,13 @@ coordinateTable = video_marker.coordinateExport.buildTable( ...
     annotations, skeleton, videoInfo, struct(), options);
 ```
 
+The same renderer used by the export button can be called without the GUI:
+
+```matlab
+summary = video_marker.resultFiles.writeAnnotatedVideo( ...
+    "source.avi", "annotated.mp4", annotations, skeleton);
+```
+
 ## Function Reference
 
 Use the generated
@@ -150,6 +163,9 @@ calibration requirements, output columns, failures, and related marker APIs.
 The
 [`trackPoints`](../../../reference/api/video_marker/motionEstimate/trackPoints.html)
 page documents the repository-owned prediction contract separately.
+[`writeAnnotatedVideo`](../../../reference/api/video_marker/resultFiles/writeAnnotatedVideo.html)
+documents supported video containers, progress reporting, output metadata, and
+failure behavior.
 
 ## Errors And Limitations
 

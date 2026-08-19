@@ -109,12 +109,27 @@ under `docs/`.
   downloaded weights, first-run installation, or third-party runtime. A need
   that Base MATLAB cannot satisfy is an architecture blocker requiring an
   explicit user decision; it is not temporary dependency debt.
+- MATLAB source also stays in the MATLAB language runtime: do not
+  call Java, Python, Conda, .NET, shell commands, MEX/native libraries, or
+  ActiveX/COM. Use public Base MATLAB functions or repository-owned MATLAB
+  implementations. Test infrastructure may use only the exact marked shell
+  boundaries owned by the codecheck allowance ledger for isolated MATLAB,
+  Git, or filesystem-link fixtures; every additional call is a violation.
 - Product ownership follows the documented MATLAB function contract, not a
   namespace prefix. Base MATLAB `backgroundPool`, explicit
   `parfeval(backgroundPool,...)`, and `parallel.pool.PollableDataQueue` are
   permitted background primitives; without Parallel Computing Toolbox they
   provide one worker. Do not use `parpool`, `parfor`, `spmd`, Toolbox pool or
   cluster objects, or implicit `parfeval` dispatch in production.
+- Do not treat `backgroundPool` as the default App responsiveness architecture,
+  move a state/UI callback onto it wholesale, or add a generic SDK task layer
+  merely to make a synchronous workflow appear asynchronous. Use
+  `labkit-boundary-guard` before adopting background execution.
+- When a GUI or diagnostic viewer must remain usable after the client event
+  loop hangs, use a user- or environment-managed independent MATLAB process;
+  `backgroundPool`, timers, and additional figures in the same client are not
+  fault isolation. Repository production code must not spawn that process
+  through a shell command.
 - Clean CI runtimes without optional Toolboxes are the executable dependency
   boundary. Keep fixed production symbols directly visible, exercise shipped
   paths there, and add a focused source guard when retiring a concrete Toolbox
@@ -177,11 +192,22 @@ tests, history, and details out of the public repository.
   falsely report a valid token as invalid. Never ask the user to reauthenticate
   based only on sandboxed output. If MATLAB exits before a build/test banner,
   diagnose launcher access rather than source failure.
+- Never launch or open the MATLAB IDE or MATLAB Desktop for any task. Use a
+  bounded noninteractive MATLAB process for tests, analysis, and MATLAB API
+  screenshot capture. If a required check cannot run without the IDE, report
+  that boundary instead of opening it.
 - Do not add Code Analyzer suppression pragmas.
 - `artifacts/` is ignored scratch output, never tracked design state.
 - Automated hidden GUI tests do not prove native dialogs, visual quality,
   pointer feel, scientific validity, or full manual workflows. Do not run
   interactive workflows in MATLAB `-batch` mode.
+- Before editing an App when the change risks unintended visual differences,
+  save a before-change interface baseline unless the requested outcome
+  deliberately adds or removes UI elements or changes the design. Capture
+  every LabKit App screenshot through MATLAB's own APIs: locate the target
+  figure by its stable handle or tag and export the App window with
+  `exportapp` from a bounded noninteractive MATLAB process; do not use desktop
+  screenshot automation.
 - A validation entry point expected to run longer than 30 seconds reports its
   current stage and completed/total work, and emits a heartbeat at least every
   30 seconds while one unit remains active. Reuse the owning progress plugin
@@ -226,6 +252,10 @@ tests, history, and details out of the public repository.
    closed; do not mix later work into its moving head.
 4. Before every requested commit or push, use `labkit-checkpoint-guard`. Keep
    only the requested outcome, its owned contract, and proportionate evidence.
+   Run `buildtool codecheck` against the exact worktree before staging the
+   checkpoint; any analyzer issue, suppression, compatibility recommendation,
+   or unreviewed secondary-runtime call blocks the commit. Re-run it when later
+   edits change MATLAB source.
    If the net diff is substantially larger or more conceptual than the user
    outcome, revisit the design boundary before committing.
 5. Keep branch work stable with purpose-based commits and focused validation.
@@ -269,6 +299,14 @@ conditional alternatives and `N/A` choices. Record why the change exists, its
 net behavior and ownership decisions, exact local/manual evidence, and risks
 or follow-up, including compatibility, versions, documentation, boundaries,
 and data handling when relevant.
+
+Write GitHub Issue, pull-request, review, and Release Markdown as one physical
+line per prose paragraph and one physical line per list item. Do not insert
+column-width wrapping; GitHub owns visual wrapping. Preserve newlines only for
+Markdown structure, fenced or indented code, tables, separate standalone links,
+or an intentional hard break. Before a `gh` body or notes write, pass drafted
+Markdown through `.github/scripts/normalize_github_markdown.py`; use `--check`
+for repository-owned GitHub templates.
 
 Commit and squash subjects use exactly one lowercase Conventional Commit type:
 `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `ci`, or `chore`. Pass an

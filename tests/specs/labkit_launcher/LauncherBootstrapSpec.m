@@ -36,14 +36,14 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
             testCase.verifyTrue(contains(string(view.targetHint.Text), ...
                 "New installation"));
             testCase.verifyEqual(string(view.sourceChoice.ItemsData), ...
-                ["stable", "tag", "main"]);
-            testCase.verifyEqual(string(view.sourceChoice.Value), "stable");
+                ["latest", "release"]);
+            testCase.verifyEqual(string(view.sourceChoice.Value), "latest");
             testCase.verifyEqual(string(view.releaseChoice.Enable), "off");
             testCase.verifyEqual(string(view.loadReleases.Enable), "off");
             testCase.verifyEqual(string(view.stage.Text), "Ready");
             testCase.verifyEmpty(findall(repairFigure, "Type", "uilineargauge"));
 
-            view.sourceChoice.Value = "tag";
+            view.sourceChoice.Value = "release";
             invokeRepairCallback(view.sourceChoice.ValueChangedFcn, ...
                 view.sourceChoice, struct());
             testCase.verifyEqual(string(view.releaseChoice.Enable), "off");
@@ -69,7 +69,7 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
                 ];
             sequenceCleanup = setWebreadSequence({releases});
             view = getappdata(repairFigure, "labkitRepairView");
-            view.sourceChoice.Value = "tag";
+            view.sourceChoice.Value = "release";
             invokeRepairCallback(view.sourceChoice.ValueChangedFcn, ...
                 view.sourceChoice, struct());
 
@@ -456,18 +456,21 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
             delete(networkCleanup); delete(cleanup)
         end
 
-        function stableTagFallbackSkipsPrereleasesAndUsesTheFirstStableTag(testCase)
+        function latestReleaseUsesThePublishedReleaseArchive(testCase)
             root = damagedRepairRoot(testCase, "old-marker", false);
             networkFolder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             writeNetworkStubs(networkFolder);
             [repairFigure, cleanup] = openRepairFixture(root);
             networkCleanup = isolatedNetworkStubs(networkFolder);
-            sequenceCleanup = setWebreadSequence({struct(), struct("name", ...
-                {"v2.0.0-rc1", "v1.4.2", "preview"})});
+            sequenceCleanup = setWebreadSequence({struct( ...
+                "tag_name", "v1.4.2", ...
+                "zipball_url", "https://github.com/Pluze/" + ...
+                    "LabKit-MATLAB-Workbench/archive/refs/tags/v1.4.2.zip", ...
+                "draft", false, "prerelease", false)});
 
             clickRepair(repairFigure);
 
-            testCase.verifyEqual(getappdata(groot, "fixtureWebreadCount"), 2);
+            testCase.verifyEqual(getappdata(groot, "fixtureWebreadCount"), 1);
             testCase.verifyTrue(isappdata(groot, "fixtureWebsaveCalled"));
             arguments = getappdata(groot, "fixtureWebsaveArguments");
             testCase.verifyTrue(contains(string(arguments{2}), "refs/tags/v1.4.2.zip"));
@@ -475,55 +478,46 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
             delete(sequenceCleanup); delete(networkCleanup); delete(cleanup)
         end
 
-        function stableTagFallbackRejectsPagesWithoutASemverRelease(testCase)
+        function latestReleaseRejectsAnUnavailableRelease(testCase)
             root = damagedRepairRoot(testCase, "old-marker", false);
             networkFolder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             writeNetworkStubs(networkFolder);
             [repairFigure, cleanup] = openRepairFixture(root);
             networkCleanup = isolatedNetworkStubs(networkFolder);
-            sequenceCleanup = setWebreadSequence({struct(), struct("name", ...
-                {"v2.0.0-rc1", "release-candidate", "v1.2"})});
+            sequenceCleanup = setWebreadSequence({struct()});
 
             clickRepair(repairFigure);
 
             testCase.verifyTrue(contains(repairStatus(repairFigure), ...
-                "labkit_launcher:StableSourceUnavailable"));
-            testCase.verifyEqual(getappdata(groot, "fixtureWebreadCount"), 2);
+                "labkit_launcher:LatestReleaseUnavailable"));
+            testCase.verifyEqual(getappdata(groot, "fixtureWebreadCount"), 1);
             testCase.verifyFalse(isappdata(groot, "fixtureWebsaveCalled"));
             delete(sequenceCleanup); delete(networkCleanup); delete(cleanup)
         end
 
-        function explicitMainAndReleaseTagSelectionsUseExactArchives(testCase)
-            cases = {
-                "main", "", "refs/heads/main.zip"
-                "tag", "v2.4.0", "refs/tags/v2.4.0.zip"
-                };
-            for index = 1:size(cases, 1)
-                root = damagedRepairRoot(testCase, "old-marker", false);
-                networkFolder = testCase.applyFixture( ...
-                    matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-                writeNetworkStubs(networkFolder);
-                [repairFigure, cleanup] = openRepairFixture(root);
-                networkCleanup = isolatedNetworkStubs(networkFolder);
-                view = getappdata(repairFigure, "labkitRepairView");
-                view.sourceChoice.Value = cases{index, 1};
-                invokeRepairCallback(view.sourceChoice.ValueChangedFcn, ...
-                    view.sourceChoice, struct());
-                if cases{index, 1} == "tag"
-                    view.releaseChoice.Items = "LabKit " + cases{index, 2};
-                    view.releaseChoice.ItemsData = cases{index, 2};
-                    view.releaseChoice.Value = cases{index, 2};
-                end
+        function explicitReleaseSelectionUsesItsExactArchive(testCase)
+            root = damagedRepairRoot(testCase, "old-marker", false);
+            networkFolder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            writeNetworkStubs(networkFolder);
+            [repairFigure, cleanup] = openRepairFixture(root);
+            networkCleanup = isolatedNetworkStubs(networkFolder);
+            view = getappdata(repairFigure, "labkitRepairView");
+            view.sourceChoice.Value = "release";
+            invokeRepairCallback(view.sourceChoice.ValueChangedFcn, ...
+                view.sourceChoice, struct());
+            view.releaseChoice.Items = "LabKit v2.4.0";
+            view.releaseChoice.ItemsData = "v2.4.0";
+            view.releaseChoice.Value = "v2.4.0";
 
-                clickRepair(repairFigure);
+            clickRepair(repairFigure);
 
-                arguments = getappdata(groot, "fixtureWebsaveArguments");
-                testCase.verifyTrue(contains(string(arguments{2}), ...
-                    cases{index, 3}));
-                testCase.verifyTrue(contains(repairStatus(repairFigure), ...
-                    "fixture:UnexpectedDownload"));
-                delete(networkCleanup); delete(cleanup)
-            end
+            arguments = getappdata(groot, "fixtureWebsaveArguments");
+            testCase.verifyTrue(contains(string(arguments{2}), ...
+                "refs/tags/v2.4.0.zip"));
+            testCase.verifyTrue(contains(repairStatus(repairFigure), ...
+                "fixture:UnexpectedDownload"));
+            delete(networkCleanup); delete(cleanup)
         end
 
         function networkFailureIsActionableAndDoesNotAttemptDownload(testCase)
@@ -536,8 +530,8 @@ classdef LauncherBootstrapSpec < matlab.unittest.TestCase
             clickRepair(repairFigure);
 
             testCase.verifyTrue(contains(repairStatus(repairFigure), ...
-                "labkit_launcher:StableSourceUnavailable"));
-            testCase.verifyEqual(getappdata(groot, "fixtureWebreadCount"), 2);
+                "labkit_launcher:LatestReleaseUnavailable"));
+            testCase.verifyEqual(getappdata(groot, "fixtureWebreadCount"), 1);
             testCase.verifyFalse(isappdata(groot, "fixtureWebsaveCalled"));
             delete(networkCleanup); delete(cleanup)
         end
@@ -770,8 +764,7 @@ if hadSequence, setappdata(groot, "fixtureWebreadResponseSequence", sequence); e
 end
 
 function value = normalizedPath(value)
-pathValue = java.nio.file.Paths.get(char(value), javaArray("java.lang.String", 0));
-value = string(pathValue.toAbsolutePath().normalize().toString());
+value = labkit.app.internal.filesystem.absolutePath(value);
 if ispc
     value = lower(value);
 end

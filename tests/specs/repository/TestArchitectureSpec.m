@@ -9,7 +9,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
 
             testCase.verifyEmpty(string({files.name}), ...
                 "App SDK internal implementations must belong to a named subsystem.");
-            required = ["+artifact" "+contract" "+diagnostics" ...
+            required = ["+artifact" "+contract" "+diagnostics" "+discovery" ...
                 "+interaction" "+launcher" "+native" "+project" ...
                 "+resource" "+result" "+runtime" "+source"];
             testCase.verifyTrue(all(arrayfun(@(name) ...
@@ -25,11 +25,32 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
 
             testCase.verifyNumElements(definitions, 1, ...
                 "Launcher dispatch must not reacquire local subsystem implementations.");
-            for owner = ["parseRequest" "discoverApps" "appCatalogTable" ...
+            for owner = ["parseRequest" "appCatalog" ...
                     "documentationPage" "launcherVersion" "createLauncher"]
                 testCase.verifySubstring(source, ...
                     "labkit.app.internal.launcher." + owner);
             end
+        end
+
+        function launcherDoesNotOwnFigureStudioOrDocumentationConsumers(testCase)
+            root = labkittest.setup();
+            controller = text(root, ...
+                "+labkit/+app/+internal/+launcher/createLauncher.m");
+            popout = text(root, ...
+                "+labkit/+app/+plot/private/createPopoutToolbar.m");
+            documentation = text(root, ...
+                "tools/docs/private/loadLabKitDocumentation.m");
+
+            testCase.verifyFalse(any(contains(controller, ...
+                ["labkit_FigureStudio_app" "labkitFigureStudioLauncher"])));
+            testCase.verifyFalse(contains(popout, ...
+                "labkitFigureStudioLauncher"));
+            testCase.verifySubstring(popout, ...
+                "labkit.app.internal.discovery.discoverApps");
+            testCase.verifySubstring(documentation, ...
+                "labkit.app.internal.launcher.appCatalog");
+            testCase.verifyFalse(contains(documentation, ...
+                "labkit_launcher("));
         end
 
         function catalogDescriptorsUseCurrentOwnerRoots(testCase)
@@ -50,10 +71,13 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             files = files(files == "labkit_launcher.m" | ...
                 startsWith(files, ["+labkit/" "apps/" "tools/"]));
             allowedFiles = [ ...
-                "+labkit/+app/+internal/+launcher/createLauncher.m"
+                "+labkit/+app/+internal/+discovery/invokeDiscoveredApp.m"
                 "+labkit/+app/+internal/+native/private/FigureInteractionHub.m"
                 "tools/profiling/profileLabKitTarget.m"];
-            allowedCalls = ["feval(" "feval(" "feval("];
+            allowedCalls = { ...
+                ["feval(" "feval("]
+                "feval("
+                "feval("};
             markers = [ ...
                 "Dynamic extension boundary"
                 "Compatibility boundary"
@@ -75,7 +99,8 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 calls(string(calls) == "assignin(") = [];
                 allowedIndex = find(allowedFiles == file, 1);
                 if ~isempty(allowedIndex)
-                    testCase.verifyEqual(string(calls), allowedCalls(allowedIndex), ...
+                    testCase.verifyEqual(string(calls), ...
+                        string(allowedCalls{allowedIndex}), ...
                         "Only the reviewed dynamic boundary is allowed in " + file);
                     testCase.verifySubstring(source, markers(allowedIndex));
                 else
@@ -87,10 +112,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
 
         function productionUsesOnlyBaseMatlabBackgroundRuntime(testCase)
             root = labkittest.setup();
-            files = replace(repositoryTextFiles(root), "\", "/");
-            files = files(endsWith(lower(files), ".m"));
-            files = files(files == "labkit_launcher.m" | ...
-                startsWith(files, ["+labkit/" "apps/" "tools/"]));
+            files = productionMatlabFiles(root);
             expression = ["parpool\s*\(" "parfor\s+" "spmd\s*\(" ...
                 "parallel\.Pool" "parallel\.Cluster"];
             probe = ["parpool('threads')" "parfor index = 1:2" ...
@@ -99,15 +121,18 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 probe(index), expression(index), "once")), ...
                 1:numel(expression))), ...
                 "The Toolbox-only guard patterns must prove their own coverage.");
-            violations = strings(0, 1);
+            violations = strings(numel(files) * numel(expression), 1);
+            violationCount = 0;
             for file = files.'
                 source = string(fileread(fullfile(root, file)));
                 for token = expression
                     if ~isempty(regexp(source, token, "once"))
-                        violations(end + 1, 1) = file + ": " + token;
+                        violationCount = violationCount + 1;
+                        violations(violationCount) = file + ": " + token;
                     end
                 end
             end
+            violations = violations(1:violationCount);
 
             testCase.verifyEmpty(violations, ...
                 "Production must not open or address Parallel Computing Toolbox pools: " + ...
@@ -467,7 +492,15 @@ function value = text(root, relative)
 value = string(fileread(fullfile(root, relative)));
 end
 
+function files = productionMatlabFiles(root)
+files = replace(repositoryTextFiles(root), "\", "/");
+files = files(endsWith(lower(files), ".m"));
+files = files(files == "labkit_launcher.m" | ...
+    startsWith(files, ["+labkit/" "apps/" "tools/"]));
+end
+
 function files = repositoryTextFiles(root)
+% Secondary-runtime test boundary: a synthetic Git repository proves policy.
 [status, output] = system("git -C " + shellQuote(root) + ...
     " ls-files --cached --others --exclude-standard");
 if status ~= 0

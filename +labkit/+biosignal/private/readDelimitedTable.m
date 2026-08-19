@@ -51,7 +51,9 @@ function T = readTextDelimitedTable(filepath, info)
             continue;
         end
         tokens = splitDelimitedLine(line);
-        if skipNonDataRows && ~isDecimalDataToken(firstToken(tokens))
+        first = firstToken(tokens);
+        if skipNonDataRows && ~isDecimalDataToken(first) && ...
+                ~isExplicitMissingNumericToken(first)
             continue;
         end
         row = repmat({''}, 1, numel(names));
@@ -141,7 +143,9 @@ function tokens = trimTrailingEmptyTokens(tokens)
 end
 
 function info = detectDelimitedLayout(filepath)
-    info = struct('headerLine', 1, 'hasHeader', true);
+    info = struct('headerLine', 1, 'hasHeader', true, ...
+        'biopacChannelNames', strings(0, 1), ...
+        'biopacChannelUnits', strings(0, 1));
     lines = readlines(filepath);
     lines = erase(lines, char(13));
     maxInspect = min(numel(lines), 120);
@@ -160,12 +164,14 @@ function info = detectDelimitedLayout(filepath)
         if isNumericDelimitedLine(line) && isNumericDelimitedLine(nextLine)
             info.headerLine = k;
             info.hasHeader = false;
+            info = detectBiopacTextMetadata(lines, info);
             return;
         end
 
         if isLikelySignalHeader(line) && isNumericDelimitedLine(nextLine)
             info.headerLine = k;
             info.hasHeader = true;
+            info = detectBiopacTextMetadata(lines, info);
             return;
         end
 
@@ -173,9 +179,48 @@ function info = detectDelimitedLayout(filepath)
                 isNumericDelimitedLine(nextLine)
             info.headerLine = k;
             info.hasHeader = true;
+            info = detectBiopacTextMetadata(lines, info);
             return;
         end
     end
+    info = detectBiopacTextMetadata(lines, info);
+end
+
+function info = detectBiopacTextMetadata(lines, info)
+    if ~info.hasHeader || info.headerLine < 4
+        return;
+    end
+    channelLine = 0;
+    channelCount = 0;
+    for k = 1:info.headerLine - 1
+        match = regexp(char(strtrim(lines(k))), ...
+            '^([0-9]+)\s+channels?$', 'tokens', 'once', 'ignorecase');
+        if ~isempty(match)
+            channelLine = k;
+            channelCount = str2double(match{1});
+            break;
+        end
+    end
+    if channelLine == 0 || channelCount < 1 || ...
+            channelLine + 2 * channelCount >= info.headerLine + 1
+        return;
+    end
+
+    header = trimTrailingEmptyTokens(splitDelimitedLine(strtrim(lines(info.headerLine))));
+    if numel(header) ~= channelCount + 1 || ~isTimeLikeName(firstToken(header))
+        return;
+    end
+    names = strings(channelCount, 1);
+    units = strings(channelCount, 1);
+    for k = 1:channelCount
+        names(k) = strtrim(lines(channelLine + 2 * k - 1));
+        units(k) = strtrim(lines(channelLine + 2 * k));
+    end
+    if any(strlength(names) == 0)
+        return;
+    end
+    info.biopacChannelNames = names;
+    info.biopacChannelUnits = units;
 end
 
 function line = nextNonemptyLine(lines, startIndex, maxInspect)
@@ -229,6 +274,12 @@ function tf = isDecimalDataToken(token)
     tf = isfinite(value);
 end
 
+function tf = isExplicitMissingNumericToken(token)
+    clean = strtrim(char(string(token)));
+    tf = any(strcmpi(clean, {'nan', '+nan', '-nan', 'inf', '+inf', '-inf', ...
+        'na', 'missing'}));
+end
+
 function tf = hasMultipleDelimitedFields(line)
     tokens = split(string(line), ',');
     tokens = strip(tokens);
@@ -242,13 +293,13 @@ end
 
 function tf = isLikelySignalHeader(line)
     tokens = split(string(line), ',');
-    clean = lower(regexprep(strjoin(tokens, " "), '[^a-z0-9]+', ''));
+    clean = regexprep(lower(strjoin(tokens, " ")), '[^a-z0-9]+', '');
     tf = contains(clean, 'time') || contains(clean, 'timestamp') || ...
         contains(clean, 'ecg') || contains(clean, 'lead') || ...
         contains(clean, 'rawecg') || contains(clean, 'filteredecg') || ...
         contains(clean, 'sample');
     if ~tf
-        tokenClean = lower(regexprep(strip(tokens), '[^a-z0-9]+', ''));
+        tokenClean = regexprep(lower(strip(tokens)), '[^a-z0-9]+', '');
         tf = numel(tokenClean) >= 2 && all(startsWith(tokenClean, "i"));
     end
 end

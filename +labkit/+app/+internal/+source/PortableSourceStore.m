@@ -318,9 +318,9 @@ end
 targetPath = "";
 matchKind = "none";
 for k = 1:numel(candidates)
-    [exists, attributes] = fileattrib(char(candidates(k)));
-    if exists && ~attributes.directory
-        targetPath = string(attributes.Name);
+    candidate = candidates(k);
+    if isfile(candidate)
+        targetPath = labkit.app.internal.filesystem.absolutePath(candidate);
         matchKind = kinds(k);
         return;
     end

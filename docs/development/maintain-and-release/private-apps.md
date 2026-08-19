@@ -60,10 +60,10 @@ Private entries appear in the app catalog with `Visibility` set to `private`.
 They launch like ordinary LabKit apps after the launcher adds the app folder to
 the MATLAB path.
 
-The launcher can also package a selected private app for offline deployment as
-either source `.m` files or encoded `.p` files. The generated zip preserves the
-private app under `private_apps/apps/...` and includes the packaged launcher
-plus the deployment/profiling tool folders it uses. Private apps discovered
+The launcher can also package selected private Apps as MATLAB source for
+offline deployment. The generated zip preserves each private App under
+`private_apps/apps/...` and includes the packaged Launcher plus the
+deployment/profiling tool folders it uses. Private Apps discovered
 through `LABKIT_PRIVATE_APP_ROOTS` are copied into that same
 `private_apps/apps/...` package shape so the zip does not depend on the source
 machine's environment variable or private workspace path.

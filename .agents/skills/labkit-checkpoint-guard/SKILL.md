@@ -18,6 +18,12 @@ Use `labkit-pr-preparer` instead for final merge readiness.
    speculative contracts, generated output, and abandoned approaches.
 4. Check the intended diff for sensitive data, local paths, debug residue, and
    whitespace errors.
+5. Run `buildtool codecheck` against the exact intended worktree before
+   staging. Require the single `CODECHECK_RESULT` line to report `PASS`, zero
+   issues, zero suppressions, zero compatibility recommendations, and zero
+   unreviewed secondary-runtime calls. Re-run after any later MATLAB source
+   edit; do not inspect large analyzer JSON for an ordinary checkpoint and do
+   not bypass the gate with suppression or a broad source exclusion.
 
 Use `labkit-test-planner` only when source-aligned evidence remains to be
 selected or run. Use `labkit-agent-governance` for agent contracts and

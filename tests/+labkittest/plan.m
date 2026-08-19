@@ -230,8 +230,8 @@ function reportChangedPlan(opts, queries, descriptors, classifications)
     end
     owners = string({queries.Owner});
     owners = owners(strlength(owners) > 0);
-    fprintf(["LabKit changed plan: paths=%d, evidence-owners=%d, " + ...
-        "contract-queries=%d, unique-tests=%d\n"], ...
+    fprintf("LabKit changed plan: paths=%d, evidence-owners=%d, " + ...
+        "contract-queries=%d, unique-tests=%d\n", ...
         numel(classifications), numel(unique(lower(owners))), ...
         numel(queries), numel(descriptors));
 end
@@ -344,6 +344,7 @@ end
 function output = gitOutput(root, gitArguments)
     command = "git -c core.safecrlf=false --no-pager -C " + ...
         shellQuote(root) + " " + gitArguments;
+    % Secondary-runtime test boundary: Git selects changed test ownership.
     [status, output] = system(char(command));
     if status ~= 0
         error("LabKit:TestPlan:GitInspection", ...
@@ -355,6 +356,7 @@ end
 function tf = gitRefExists(root, reference)
     command = "git -c core.safecrlf=false --no-pager -C " + ...
         shellQuote(root) + " rev-parse --verify --quiet " + reference;
+    % Secondary-runtime test boundary: Git confirms the comparison baseline.
     [status, ~] = system(char(command));
     tf = status == 0;
 end

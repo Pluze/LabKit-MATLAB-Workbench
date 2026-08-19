@@ -8,9 +8,8 @@ app. For source development, continue with the
 
 - A supported Base MATLAB installation. LabKit production Apps do not require
   optional MathWorks Toolboxes.
-- Internet access for the first launcher download or update. Installed source
-  and P-code packages run offline unless an app's own input lives on a network
-  drive.
+- Internet access for the first launcher download or update. Installed packages
+  run offline unless an app's own input lives on a network drive.
 Production apps do not create Python or Conda environments, download model
 weights, or install third-party packages on first use.
 
@@ -33,10 +32,9 @@ for every button, programmatic mode, discovery rule, and maintenance action.
 
 ## Choose A Version
 
-- **Release** installs the latest stable GitHub release.
-- **Latest** installs the current `main` branch.
-- **Versions** selects a recent release, tag, or commit for a deliberate
-  upgrade or rollback.
+- **Latest** installs the latest published stable GitHub Release.
+- **Versions** shows published stable Releases and their release information,
+  and installs the selected Release for a deliberate upgrade or rollback.
 
 Before replacing an installed runtime, the launcher moves its current contents
 to a dated `LabKit-previous-*` folder. This provides a local recovery point but

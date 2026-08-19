@@ -1,7 +1,8 @@
 classdef (Hidden, Sealed) Store
     % Own App-specific artifact naming and repository scratch destinations.
-    % Caller: RuntimeKernel. Inputs are domain-neutral artifact tokens; output
-    % paths always remain below the checkout's ignored artifacts directory.
+    % Callers: RuntimeKernel and SessionJournal. Inputs are domain-neutral
+    % artifact tokens; paths remain below the checkout's ignored artifacts
+    % directory.
 
     properties (Access = private)
         AppId (1, 1) string
@@ -13,9 +14,8 @@ classdef (Hidden, Sealed) Store
         end
 
         function destination = destination(obj, category, stem, extension)
-            category = artifactToken(category, "category");
             filename = obj.filename(stem, extension);
-            folder = artifactFolder(category);
+            folder = labkit.app.internal.artifact.Store.folder(category);
             if exist(char(folder), "dir") ~= 7
                 [created, message] = mkdir(char(folder));
                 if ~created
@@ -39,9 +39,17 @@ classdef (Hidden, Sealed) Store
             timestamp = string(datetime("now", TimeZone="UTC", ...
                 Format="yyyyMMdd-HHmmss"));
             nonce = extractBefore( ...
-                string(java.util.UUID.randomUUID()), 9);
+                labkit.app.internal.identity.newId(), 9);
             filename = "labkit-" + stem + "-" + obj.AppId + "-" + ...
                 timestamp + "-" + nonce + extension;
+        end
+    end
+
+    methods (Static)
+        function folder = folder(category)
+            % Return one category folder beneath the active LabKit artifacts root.
+            category = artifactToken(category, "category");
+            folder = artifactFolder(category);
         end
     end
 end

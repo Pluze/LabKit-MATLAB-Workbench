@@ -9,12 +9,9 @@ function files = listLabKitDocTreeFiles(root)
         files = strings(0, 1);
         return;
     end
-    [status, attributes] = fileattrib(root);
-    if ~status
-        error("LabKit:Docs:UnreadableTree", ...
-            "Could not resolve documentation tree: %s", string(root));
-    end
-    root = string(attributes.Name);
+    root = resolveLabKitDocFolder(root, ...
+        "LabKit:Docs:UnreadableTree", ...
+        "Could not resolve documentation tree: %s");
     entries = dir(fullfile(root, "**", "*"));
     entries = entries(~[entries.isdir]);
     entries = entries(~ismember(string({entries.name}), ...

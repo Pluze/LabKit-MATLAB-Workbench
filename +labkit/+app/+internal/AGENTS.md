@@ -9,6 +9,10 @@ The dependency direction is:
 ```text
 Definition / CallbackContext
     |-- contract -> immutable layout, signal, and compiled plan
+    |-- discovery -> App descriptors, scanning, path activation, invocation
+    |-- filesystem -> lexical absolute path identity
+    |-- identity -> opaque process-unique identifiers
+    |-- integrity -> streaming SHA-256 file digests
     `-- runtime  -> transaction ordering and callback capabilities
                      |-- diagnostics
                      |-- project / source / result / resource
@@ -30,10 +34,19 @@ receives one callback from its caller rather than acquiring the caller.
 - Put concrete MATLAB window behavior under `+native` and keep the platform
   adapter as the semantic reconciliation boundary, not the owner of every
   window lifecycle.
-- Keep `+launcher/dispatch.m` as entry routing only. Discovery, catalog
-  projection, documentation resolution, request parsing, metadata, and the
-  stateful launcher window remain separately named package functions.
+- Keep `+launcher/dispatch.m` as entry routing only. Put App descriptors,
+  scanning, path activation, and revalidated dynamic App invocation under
+  `+discovery`; Launcher, documentation consumers, and Plot-to-App handoffs may
+  use that GUI-free boundary. Keep request parsing, documentation resolution,
+  metadata tables, native view construction, stateful controller callbacks,
+  and fixed maintainer-tool adapters under `+launcher`. Plot-to-App handoffs
+  must not acquire a Launcher window, global Launcher callback, or app-specific
+  Launcher dependency.
 - Put artifact naming and scratch-destination policy under `+artifact`.
+- Keep `+filesystem`, `+identity`, and `+integrity` as leaf private primitives.
+  They use MATLAB language and Base MATLAB only, expose no App-facing API, and
+  own lexical path identity, opaque identifiers, and file digests respectively.
+  Do not turn them into a generic utility bucket or add workflow policy there.
 - Put Runtime-level diagnostic viewing and export coordination under
   `+diagnostics`; keep event, journal, and bundle primitives focused and move
   them only when the move clarifies ownership independently of taxonomy.

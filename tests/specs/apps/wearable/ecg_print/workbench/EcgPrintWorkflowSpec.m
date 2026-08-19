@@ -24,6 +24,9 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
 
             runtime.applyControlValue("peakMethod", "Local peaks");
             runtime.invokeAction("analyze");
+            summaryTab = findall(figureValue, "Tag", "summaryResults");
+            summaryTab.Parent.SelectedTab = summaryTab;
+            drawnow;
             clearRegion = onCleanup(@() evalin( ...
                 "base", "clear ecgAnalysisRegion"));
             runtime.invokeAction("exportRegionWorkspace");
@@ -36,6 +39,8 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
 
             testCase.verifyNotEmpty(runtime.State.session.cache.recording);
             testCase.verifyNotEmpty(runtime.State.session.cache.measurements);
+            testCase.verifyEqual(string(summaryTab.Parent.SelectedTab.Tag), ...
+                "summaryResults");
             for id = ["wave" "noise" "snr" "template"]
                 testCase.verifyNotEmpty(findall(figureValue, "Tag", ...
                     "previewAxes." + id).Children);

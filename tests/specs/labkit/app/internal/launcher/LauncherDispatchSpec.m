@@ -43,18 +43,13 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function sourceEntriesWinOverPcodeAndPcodeOnlyRemainsDiscoverable(testCase)
+        function discoveryFindsMatlabSourceEntries(testCase)
             root = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            folder = fullfile(root, "apps", "source", "probe");
             writeEntry(root, fullfile("apps", "source", "probe"), "labkit_Probe_app");
-            fclose(fopen(fullfile(folder, "labkit_Probe_app.p"), "w"));
-            pOnly = fullfile(root, "apps", "source", "p_only"); mkdir(pOnly);
-            fclose(fopen(fullfile(pOnly, "labkit_Ponly_app.p"), "w"));
             catalog = labkit.app.internal.launcher.dispatch(root, "list");
             probe = catalog(catalog.Command == "labkit_Probe_app", :);
             testCase.verifyEqual(height(probe), 1);
             testCase.verifyEqual(string(probe.Version), "1.0.0");
-            testCase.verifyEqual(sum(catalog.Command == "labkit_Ponly_app"), 1);
         end
 
         function documentationMapsManualToOnlinePageByDefault(testCase)
@@ -209,10 +204,10 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 [62 120 180 70 72 90]);
             testCase.verifyTrue(all(ismember([ ...
                 "Open Selected App", "Refresh App List", ...
-                "Documentation and History", "Latest", "Release", "Versions", ...
+                "Documentation and History", "Latest", "Versions", ...
                 "Doc Generation", "Run Code Analyzer", ...
                 "Profile Selected App", "Clean Artifacts", ...
-                "Package Checked", "Checked P-code"], buttons)));
+                "Package Checked"], buttons)));
             testCase.verifyFalse(any(buttons == "Open Debug"));
 
             invokeTableSelection(appTable, 2);
@@ -249,16 +244,16 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             cleanup = launcherGuiFixture("manageLabKitVersions");
 
             fig = labkit.app.internal.launcher.dispatch(root);
-            for buttonText = ["Latest", "Release", "Versions"]
+            for buttonText = ["Latest", "Versions"]
                 button = findall(fig, "Type", "uibutton", "Text", buttonText);
                 button.ButtonPushedFcn(button, []);
             end
 
             calls = getappdata(groot, "fixtureVersionCalls");
-            testCase.verifyNumElements(calls, 3);
+            testCase.verifyNumElements(calls, 2);
             testCase.verifyEqual(string(cellfun( ...
                 @(call) call{2}, calls, "UniformOutput", false)), ...
-                ["main", "stable", "browse"]);
+                ["latest", "browse"]);
             for index = 1:numel(calls)
                 testCase.verifyEqual(string(calls{index}{1}), string(root));
                 testCase.verifyEqual(string(calls{index}{3}), "ProgressFcn");
@@ -269,7 +264,7 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             delete(fig); delete(cleanup)
         end
 
-        function packageCheckboxesDriveMultiAppSourceAndPcodeCalls(testCase)
+        function packageCheckboxesDriveOneMultiAppSourceCall(testCase)
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             commands = ["labkit_Alpha_app", "labkit_Beta_app"];
@@ -282,25 +277,18 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             appTable = findall(fig, "Type", "uitable");
             invokePackageEdit(appTable, 1, true);
             invokePackageEdit(appTable, 2, true);
-            for buttonText = ["Package Checked", "Checked P-code"]
-                button = findall(fig, "Type", "uibutton", "Text", buttonText);
-                button.ButtonPushedFcn(button, []);
-            end
+            button = findall(fig, "Type", "uibutton", "Text", "Package Checked");
+            button.ButtonPushedFcn(button, []);
 
             calls = getappdata(groot, "fixtureToolCalls");
-            testCase.verifyNumElements(calls, 2);
-            for index = 1:2
-                args = calls{index}.args;
-                testCase.verifyEqual(sort(string(args{1})), sort(commands));
-                testCase.verifyEmpty(args{2});
-                expectedFormat = ["source", "pcode"];
-                testCase.verifyEqual(string(args{3}), "Root");
-                testCase.verifyEqual(string(args{4}), string(root));
-                testCase.verifyEqual(string(args{5}), "CodeFormat");
-                testCase.verifyEqual(string(args{6}), expectedFormat(index));
-                testCase.verifyEqual(string(args{7}), "ProgressFcn");
-                testCase.verifyClass(args{8}, "function_handle");
-            end
+            testCase.verifyNumElements(calls, 1);
+            args = calls{1}.args;
+            testCase.verifyEqual(sort(string(args{1})), sort(commands));
+            testCase.verifyEmpty(args{2});
+            testCase.verifyEqual(string(args{3}), "Root");
+            testCase.verifyEqual(string(args{4}), string(root));
+            testCase.verifyEqual(string(args{5}), "ProgressFcn");
+            testCase.verifyClass(args{6}, "function_handle");
             delete(fig); delete(cleanup)
         end
 
@@ -318,36 +306,6 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                     "labkit_launcher(""repair"")")), cases{index, 2});
                 delete(fig); delete(cleanup)
             end
-        end
-
-        function figureStudioHookForwardsTheExactAxesSentinel(testCase)
-            root = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            folder = fullfile(root, "apps", "labkit_core", "figure_studio");
-            mkdir(folder);
-            writeText(fullfile(folder, "labkit_FigureStudio_app.m"), ...
-                "function labkit_FigureStudio_app(mode, ax); setappdata(groot,'fixtureFigureStudioArgs',struct('mode',mode,'axes',ax)); end");
-            previousPath = path;
-            existing = which("labkit_FigureStudio_app");
-            if strlength(string(existing)) > 0, rmpath(fileparts(existing)); end
-            clear labkit_FigureStudio_app
-            if isappdata(groot, "fixtureFigureStudioArgs"), rmappdata(groot, "fixtureFigureStudioArgs"); end
-            hadHook = isappdata(groot, "labkitFigureStudioLauncher");
-            priorHook = [];
-            hadMode = isappdata(groot, "labkitLauncherGuiTestMode"); priorMode = [];
-            hadPayload = isappdata(groot, "fixtureFigureStudioArgs"); priorPayload = [];
-            if hadHook, priorHook = getappdata(groot, "labkitFigureStudioLauncher"); end
-            if hadMode, priorMode = getappdata(groot, "labkitLauncherGuiTestMode"); end
-            if hadPayload, priorPayload = getappdata(groot, "fixtureFigureStudioArgs"); end
-            setappdata(groot, "labkitLauncherGuiTestMode", "hidden");
-            cleanup = onCleanup(@() restoreFigureStudioFixture(previousPath, hadHook, priorHook, hadMode, priorMode, hadPayload, priorPayload));
-            fig = labkit.app.internal.launcher.dispatch(root);
-            sentinel = axes(figure("Visible", "off"));
-            hook = getappdata(groot, "labkitFigureStudioLauncher");
-            hook(sentinel);
-            args = getappdata(groot, "fixtureFigureStudioArgs");
-            testCase.verifyEqual(string(args.mode), "axes");
-            testCase.verifyEqual(args.axes, sentinel);
-            delete(ancestor(sentinel, "figure")); delete(fig); delete(cleanup)
         end
 
         function toolButtonsAdaptExactPublicContracts(testCase)
@@ -445,14 +403,6 @@ fprintf(file, "%s", contents);
 delete(cleanup)
 end
 
-function restoreFigureStudioFixture(previousPath, hadHook, priorHook, hadMode, priorMode, hadPayload, priorPayload)
-path(previousPath);
-clear labkit_FigureStudio_app
-if hadPayload, setappdata(groot, "fixtureFigureStudioArgs", priorPayload); elseif isappdata(groot, "fixtureFigureStudioArgs"), rmappdata(groot, "fixtureFigureStudioArgs"); end
-if hadHook, setappdata(groot, "labkitFigureStudioLauncher", priorHook); elseif isappdata(groot, "labkitFigureStudioLauncher"), rmappdata(groot, "labkitFigureStudioLauncher"); end
-if hadMode, setappdata(groot, "labkitLauncherGuiTestMode", priorMode); elseif isappdata(groot, "labkitLauncherGuiTestMode"), rmappdata(groot, "labkitLauncherGuiTestMode"); end
-end
-
 function writeToolStub(root, area, name)
 folder = fullfile(root, "tools", area); mkdir(folder);
 contents = [
@@ -507,9 +457,7 @@ end
 
 function commands = publicEntryCommands(root)
 sourceEntries = dir(fullfile(root, "apps", "**", "labkit_*_app.m"));
-pcodeEntries = dir(fullfile(root, "apps", "**", "labkit_*_app.p"));
-names = [string({sourceEntries.name}), string({pcodeEntries.name})];
-commands = unique(erase(names, [".m", ".p"]), "stable").';
+commands = unique(erase(string({sourceEntries.name}), ".m"), "stable").';
 end
 
 function writeLaunchProbeEntry(filepath, command)
@@ -534,7 +482,6 @@ previousPath = path;
 functionNames = string(functionNames(:));
 keys = [
     "labkitLauncherGuiTestMode"
-    "labkitFigureStudioLauncher"
     "fixtureLaunchedCommand"
     "fixtureLaunchSnapshot"
     "fixtureVersionCalls"
@@ -637,8 +584,7 @@ end
 end
 
 function value = normalizePath(value)
-pathValue = java.nio.file.Paths.get(char(value), javaArray("java.lang.String", 0));
-value = string(pathValue.toAbsolutePath().normalize().toString());
+value = labkit.app.internal.filesystem.absolutePath(value);
 if ispc, value = lower(value); end
 end
 
@@ -651,15 +597,13 @@ writeText(fullfile(folder, command + ".m"), ...
 writeText(fullfile(folder, "+probe", "definition.m"), ...
     "function value = definition; value = struct(""AppVersion"", ""1.0.0"", ""Updated"", ""2026-01-01""); end");
 previousPath = path; hadMode = isappdata(groot, "labkitLauncherGuiTestMode"); priorMode = [];
-hadHook = isappdata(groot, "labkitFigureStudioLauncher"); priorHook = [];
 if hadMode, priorMode = getappdata(groot, "labkitLauncherGuiTestMode"); end
-if hadHook, priorHook = getappdata(groot, "labkitFigureStudioLauncher"); end
 setappdata(groot, "labkitLauncherGuiTestMode", "hidden");
-cleanup = onCleanup(@() restoreHiddenLauncherFixture(previousPath, command, hadMode, priorMode, hadHook, priorHook));
+cleanup = onCleanup(@() restoreHiddenLauncherFixture( ...
+    previousPath, command, hadMode, priorMode));
 end
 
-function restoreHiddenLauncherFixture(previousPath, command, hadMode, priorMode, hadHook, priorHook)
+function restoreHiddenLauncherFixture(previousPath, command, hadMode, priorMode)
 path(previousPath); clear(command)
 if hadMode, setappdata(groot, "labkitLauncherGuiTestMode", priorMode); elseif isappdata(groot, "labkitLauncherGuiTestMode"), rmappdata(groot, "labkitLauncherGuiTestMode"); end
-if hadHook, setappdata(groot, "labkitFigureStudioLauncher", priorHook); elseif isappdata(groot, "labkitFigureStudioLauncher"), rmappdata(groot, "labkitFigureStudioLauncher"); end
 end

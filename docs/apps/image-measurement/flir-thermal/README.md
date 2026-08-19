@@ -4,6 +4,10 @@ FLIR Thermal decodes radiometric FLIR JPEG/RJPEG files, displays calibrated
 temperature maps, measures rectangular ROI hot/cold/mean values, and exports
 rendered images with Celsius data.
 
+Palette, range, ROI, and point labels are derived from the current thermal
+frame whenever the presentation refreshes, so no separate display-state cache
+must be maintained.
+
 ## Requirements And Launch
 
 A `.jpg`, `.jpeg`, or `.rjpg` extension alone is insufficient; the file must

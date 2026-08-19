@@ -130,16 +130,17 @@ function [timeSec, info] = convertColumnToSeconds(values, name, opts, source)
     end
 
     raw = double(raw(:));
-    if isempty(raw) || any(~isfinite(raw))
+    finiteRaw = find(isfinite(raw));
+    if numel(finiteRaw) < 2
         error('labkit:biosignal:InvalidTimeColumn', ...
-            'Time column contains missing or non-finite values.');
+            'Time column must contain at least two finite values.');
     end
 
     scale = unitScale(optionValue(opts, 'timeUnit', []), name);
     if hasPreciseRelative && numel(relativeRaw) == numel(raw) && all(isfinite(relativeRaw))
         raw = relativeRaw;
     else
-        raw = raw - raw(1);
+        raw = raw - raw(finiteRaw(1));
     end
     [timeSec, repair] = repairTimeSeconds(raw * scale, opts);
     info = makeTimeInfo(unitLabel(scale), source, repair);
@@ -161,7 +162,7 @@ function idx = inferImplicitTimeColumn(T, names)
         return;
     end
 
-    clean = lower(regexprep(char(firstName), '[^a-z0-9]+', ''));
+    clean = regexprep(lower(char(firstName)), '[^a-z0-9]+', '');
     if startsWith(clean, 'var')
         idx = 1;
         return;
@@ -219,7 +220,7 @@ function scale = unitScale(explicitUnit, name)
 end
 
 function unit = unitFromName(name)
-    clean = lower(regexprep(char(name), '[^a-z0-9]+', ''));
+    clean = regexprep(lower(char(name)), '[^a-z0-9]+', '');
     if strcmp(clean, 'i0')
         unit = "milliseconds";
     elseif contains(clean, 'millisecond') || endsWith(clean, 'ms') || strcmp(clean, 'ms')
@@ -261,8 +262,9 @@ function [timeSec, repair] = repairTimeSeconds(timeSec, opts)
     timeSec = double(timeSec(:));
     repair = emptyTimeRepair();
     if numel(timeSec) < 2 || mode == "none" || mode == "off"
-        if ~isempty(timeSec)
-            timeSec = timeSec - timeSec(1);
+        firstFinite = find(isfinite(timeSec), 1);
+        if ~isempty(firstFinite)
+            timeSec = timeSec - timeSec(firstFinite);
         end
         return;
     end
@@ -283,17 +285,27 @@ function [timeSec, repair] = repairTimeSeconds(timeSec, opts)
     repair.largeGapCount = nnz(positiveDt > gapFactor * nominalDt);
     repair.nominalDt = nominalDt;
 
-    repaired = zeros(size(timeSec));
-    for k = 2:numel(timeSec)
-        delta = timeSec(k) - timeSec(k - 1);
+    repaired = nan(size(timeSec));
+    previousFinite = 0;
+    for k = 1:numel(timeSec)
+        if ~isfinite(timeSec(k))
+            continue;
+        end
+        if previousFinite == 0
+            repaired(k) = 0;
+            previousFinite = k;
+            continue;
+        end
+        delta = timeSec(k) - timeSec(previousFinite);
         if isfinite(delta) && delta > 0
-            repaired(k) = repaired(k - 1) + delta;
+            repaired(k) = repaired(previousFinite) + delta;
         else
-            repaired(k) = repaired(k - 1) + nominalDt;
+            repaired(k) = repaired(previousFinite) + nominalDt;
             repair.repairedBackwardCount = repair.repairedBackwardCount + 1;
         end
+        previousFinite = k;
     end
-    timeSec = repaired - repaired(1);
+    timeSec = repaired;
 end
 
 function dt = fallbackDt(opts)

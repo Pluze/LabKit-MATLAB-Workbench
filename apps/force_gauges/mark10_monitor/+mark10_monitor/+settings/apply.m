@@ -20,7 +20,7 @@ for index = 1:size(requests, 1)
         connection, requests{index, 1}, requests{index, 2});
     statuses(index) = string(requests{index, 1}) + ": " + result.Status;
 end
-box("connection") = connection;
+mark10_monitor.connection.retain(box, connection);
 state = mark10_monitor.settings.copyReadback(state, settings);
 state.session.connection.status = "Settings applied without SAVE.";
 state.session.connection.lastFailure = join( ...

@@ -101,6 +101,13 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
         end
 
+        function tf = handlesCloseShortcut(key, modifiers)
+        modifiers = lower(string(modifiers));
+        tf = strcmpi(string(key), "w") && ...
+            any(modifiers == "control") && ...
+            ~any(modifiers == "command");
+        end
+
         function setIfProperty(component, name, value)
         if ~isprop(component, name) || isequaln(component.(name), value)
             return
@@ -671,15 +678,9 @@ value = strip(string(value));
 if ~isscalar(value) || strlength(value) == 0 || ~isfolder(value)
     return
 end
-try
-    value = string(char(java.io.File(char(value)).getCanonicalPath()));
-catch
-end
+value = labkit.app.internal.filesystem.absolutePath(value);
 root = string(fileparts(fileparts(fileparts(fileparts(mfilename("fullpath"))))));
-try
-    root = string(char(java.io.File(char(root)).getCanonicalPath()));
-catch
-end
+root = labkit.app.internal.filesystem.absolutePath(root);
 comparison = value;
 rootComparison = root;
 if ispc

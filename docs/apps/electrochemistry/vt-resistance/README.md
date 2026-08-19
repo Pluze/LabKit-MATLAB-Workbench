@@ -3,6 +3,9 @@
 VT Resistance estimates cathodic and anodic steady resistance from a biphasic
 voltage transient and reports the mean of their absolute values.
 
+CSV export writes the current resistance result table with its declared column
+names and units; it does not maintain a separate export-only result model.
+
 ## Requirements And Launch
 
 The app requires a chrono DTA curve with valid time, voltage, and current

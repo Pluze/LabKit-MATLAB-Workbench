@@ -5,6 +5,7 @@ function plan = buildfile
 %   buildtool gui          every hidden-GUI specification
 %   buildtool isolated     every path-isolated specification
 %   buildtool coverage     headless specifications with coverage artifacts
+%   buildtool codecheck    require zero analysis and runtime-boundary findings
 %   buildtool docs         render documentation
 %   buildtool docsCheck    verify generated documentation
 
@@ -15,6 +16,7 @@ plan("headless").Description = "Run all non-GUI product, SDK, persistence, and e
 plan("gui").Description = "Run hidden native-App, callback, graphics, and export workflows";
 plan("isolated").Description = "Start every public App from a reset path to detect undeclared dependencies";
 plan("coverage").Description = "Run headless specifications and publish source coverage artifacts";
+plan("codecheck").Description = "Require zero code, compatibility, suppression, and runtime findings";
 plan("docs").Description = "Regenerate the path-owned documentation site";
 plan("docsCheck").Description = "Verify generated documentation matches its source contracts";
 plan("listTasks").Description = "List the stable LabKit build entry points";
@@ -40,6 +42,16 @@ function coverageTask(~)
 runTests("coverage", Coverage=true);
 end
 
+function codecheckTask(~)
+root = fileparts(mfilename("fullpath"));
+toolFolder = fullfile(root, "tools", "codecheck");
+addpath(toolFolder);
+cleanup = onCleanup(@() rmpath(toolFolder));
+runCodecheckReport(root, "OpenReport", false, ...
+    "WriteArtifacts", false, "RequireClean", true);
+delete(cleanup);
+end
+
 function docsTask(~)
 runDocumentationTask(false);
 end
@@ -55,6 +67,7 @@ fprintf("  headless     every headless specification\n");
 fprintf("  gui          every hidden-GUI specification\n");
 fprintf("  isolated     every path-isolated specification\n");
 fprintf("  coverage     headless specifications with coverage artifacts\n");
+fprintf("  codecheck    require zero analysis and runtime-boundary findings\n");
 fprintf("  docs         render documentation\n");
 fprintf("  docsCheck    verify generated documentation\n");
 end

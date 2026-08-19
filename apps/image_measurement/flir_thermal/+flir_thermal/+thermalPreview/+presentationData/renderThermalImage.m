@@ -32,9 +32,8 @@ function rgb = renderThermalImage(values, range, palette, colorMapping, gammaVal
         displayGamma = flir_thermal.thermalPreview.presentationData.normalizeGammaValue(gammaValue);
         mapped = scaled .^ (1 / displayGamma);
     end
-    cmap = paletteMap(palette, 256);
-    indices = floor(mapped .* (size(cmap, 1) - 1)) + 1;
-    rgb = reshape(cmap(indices(:), :), [size(values, 1), size(values, 2), 3]);
+    rgb = labkit.thermal.renderImage(mapped, ...
+        struct("Limits", [0 1], "Palette", palette));
 end
 
 function range = normalizeRange(range)
@@ -45,37 +44,5 @@ function range = normalizeRange(range)
     range = sort(range);
     if range(2) <= range(1)
         range(2) = range(1) + 1;
-    end
-end
-
-function cmap = paletteMap(name, levels)
-    switch lower(string(name))
-        case "parula"
-            cmap = parula(levels);
-        case "hot"
-            cmap = hot(levels);
-        case "gray"
-            cmap = gray(levels);
-        case "iron"
-            cmap = ironPalette(levels);
-        otherwise
-            cmap = turbo(levels);
-    end
-end
-
-function cmap = ironPalette(levels)
-    anchors = [
-        0.00 0.00 0.00
-        0.12 0.00 0.30
-        0.45 0.00 0.45
-        0.80 0.08 0.05
-        1.00 0.55 0.00
-        1.00 1.00 0.35
-        1.00 1.00 1.00];
-    x = linspace(0, 1, size(anchors, 1));
-    xi = linspace(0, 1, levels);
-    cmap = zeros(levels, 3);
-    for k = 1:3
-        cmap(:, k) = interp1(x, anchors(:, k), xi, 'linear');
     end
 end

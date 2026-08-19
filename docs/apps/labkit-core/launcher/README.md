@@ -22,15 +22,13 @@ tool availability, or the active maintenance operation.
 | Run Apps | **Open Selected App** | Checks the selected App's requirements and opens it. |
 | Run Apps | **Refresh App List** | Repeats public and configured private-app discovery without restarting the launcher. |
 | Run Apps | **Documentation and History** | Opens the current online manual for the selected app. |
-| Versions and Install | **Latest** | Installs the current `main` branch archive. |
-| Versions and Install | **Release** | Installs the latest stable GitHub release. |
-| Versions and Install | **Versions** | Opens the release, tag, and commit selector for deliberate upgrade or rollback. |
+| Versions and Install | **Latest** | Installs the latest published stable GitHub Release. |
+| Versions and Install | **Versions** | Lists published stable GitHub Releases with their publication date and release information for deliberate upgrade or rollback. |
 | Development and Maintenance | **Doc Generation** | Rebuilds the complete ignored `site/` folder from the current Markdown and public MATLAB help. It does not open a page or choose between online and local help. |
 | Development and Maintenance | **Run Code Analyzer** | Scans the checkout and writes JSON and HTML Code Analyzer reports. |
 | Development and Maintenance | **Profile Selected App** | Starts the selected app under the MATLAB profiler and saves its report when the app closes. |
 | Development and Maintenance | **Clean Artifacts** | Removes ignored generated reports under `artifacts/`; it does not delete app projects or exported laboratory results. |
 | Package and Publish | **Package Checked** | Creates one source ZIP containing all checked apps and their runtime support. |
-| Package and Publish | **Checked P-code** | Creates a runtime-only ZIP with MATLAB source encoded as P-code. |
 
 Double-clicking an app row is equivalent to selecting it and opening it
 normally. The checkbox column controls package membership; ordinary launch
@@ -100,6 +98,12 @@ The launcher adds only the paths needed for the selected app. It does not use
 `genpath` to expose every app helper globally. Refresh the app list after adding,
 removing, or updating an app while the launcher remains open.
 
+The App catalog is GUI-free and shared with documentation generation. Opening
+the Launcher is not required to query the catalog or use an App capability.
+In particular, a popout plot's **Send to Studio** action discovers and starts
+Figure Studio from the plot boundary; the Launcher does not register a global
+callback or depend directly on Figure Studio.
+
 ## Installation And Recovery
 
 The downloaded `labkit_launcher.m` can begin by itself. When no installed
@@ -107,8 +111,8 @@ Launcher is available, it opens a focused install/repair window with:
 
 - an editable installation folder and native **Browse...** action;
 - a clear new-installation, existing-installation, or unsafe-target result;
-- **Latest stable release** (recommended), a GitHub-backed selector of
-  published stable versions, and **Current main branch** (development);
+- **Latest stable release** (recommended) or a GitHub-backed selector of
+  published stable Releases;
 - honest preparation, download, package-validation, installation, and outcome
   stages with current-action or error details; and
 - confirmation before replacing an existing installation.
@@ -119,8 +123,8 @@ only the standalone launcher and ordinary OS metadata. Repair accepts an
 existing LabKit installation. Filesystem roots, Git checkouts, files, missing
 parents, and non-LabKit folders containing unrelated content are rejected.
 
-After LabKit is installed, **Latest**, **Release**, and **Versions** in the full
-Launcher provide the richer source-checkout version workflow. Every downloaded
+After LabKit is installed, **Latest** and **Versions** in the full Launcher use
+the same published-Release boundary. Every downloaded
 archive is validated before replacement. Existing repairs preserve a recovery
 copy transactionally and retain known local workspace folders when required.
 Close every running LabKit App before replacing an installation. Standalone
@@ -131,8 +135,8 @@ Keep experimental data and exports outside the runtime folder because installed
 code is replaceable.
 
 Installed apps run offline unless their own inputs use a network location.
-Version discovery and update actions require network access. Source and P-code
-deployment packages have different contents; see
+Version discovery and update actions require network access. Deployment
+packages contain MATLAB source; see
 [App Deployment Packages](../../../development/tools/deployment.md).
 
 ## Maintenance Tools
@@ -140,7 +144,7 @@ deployment packages have different contents; see
 Maintenance buttons are enabled only when their corresponding source-checkout
 tool is available. The same operations can be called directly from MATLAB:
 
-- [Code Analyzer Reports](../../../development/tools/codecheck.md)
+- [Code Analysis Reports](../../../development/tools/codecheck.md)
 - [App Deployment Packages](../../../development/tools/deployment.md)
 - [Documentation Build Tools](../../../development/tools/documentation.md)
 - [Performance Profiling](../../../development/tools/profiling.md)

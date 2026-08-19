@@ -8,6 +8,9 @@ capability probing, force/travel decoding, synchronized acquisition with a
 safe fallback, settings readback, and zero verification. It never sends stand
 motion, limit, cycle, or automatic `SAVE` commands.
 
+Sampling-period changes are applied through the facade's owned sampling state;
+callers do not need to reconnect or replace their sample callback.
+
 ## Connect And Read
 
 ```matlab

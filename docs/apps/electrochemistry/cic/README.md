@@ -4,6 +4,10 @@ The CIC app measures charge delivered by a biphasic current pulse, normalizes
 charge by electrode area, and reports voltage-transient polarization metrics
 at a controlled delay after each pulse phase.
 
+Each selected DTA source is loaded into the current analysis state, and
+charge-density text is formatted from that same result so display and export
+cannot diverge through a second cached representation.
+
 ## Requirements And Launch
 
 The app requires a chrono DTA curve with valid `T`, `Vf`, and `Im` columns.

@@ -7,9 +7,7 @@ function varargout = dispatch(root, varargin)
     labkit.app.internal.launcher.parseRequest(varargin);
 switch mode
     case "list"
-        apps = labkit.app.internal.launcher.discoverApps(root);
-        varargout = { ...
-            labkit.app.internal.launcher.appCatalogTable(apps)};
+        varargout = {labkit.app.internal.launcher.appCatalog(root)};
     case "documentation"
         varargout = {labkit.app.internal.launcher.documentationPage( ...
             root, modeArgs.command, modeArgs.source)};
