@@ -5,13 +5,12 @@ function varargout = manageLabKitVersions(root, mode, varargin)
 %   that contains this tool.
 %
 %   MANAGELABKITVERSIONS(ROOT) opens the Version Manager for ROOT. The window
-%   lists recent non-draft releases, tags, and main-branch commits. Refresh
-%   obtains current candidates. Double-click or Install Selected asks for
-%   confirmation before downloading and replacing the installation.
+%   lists recent published, non-prerelease GitHub Releases with their date and
+%   release information. Refresh obtains the current list. Double-click or
+%   Install Selected asks for confirmation before replacement.
 %
-%   RESULT = MANAGELABKITVERSIONS(ROOT, "main") installs the GitHub main ZIP.
-%   RESULT = MANAGELABKITVERSIONS(ROOT, "stable") installs the latest stable
-%   release, falling back to the first strict v<major>.<minor>.<patch> tag.
+%   RESULT = MANAGELABKITVERSIONS(ROOT, "latest") installs the latest stable
+%   GitHub Release.
 %   RESULT = MANAGELABKITVERSIONS(ROOT, "install", Source=SOURCE) installs a
 %   selected source. SOURCE is a scalar struct with nonempty scalar-text Kind,
 %   Label, Url, and Name fields. Url must identify a ZIP in this repository's
@@ -22,8 +21,8 @@ function varargout = manageLabKitVersions(root, mode, varargin)
 %   fraction is between 0 and 1. The default [] reports no programmatic
 %   progress. Progress callback failures never interrupt discovery or install.
 %
-%   ROOT is a nonempty scalar path. MODE is "browse" (default), "main",
-%   "stable", or "install". Browse returns the Version Manager figure when an
+%   ROOT is a nonempty scalar path. MODE is "browse" (default), "latest", or
+%   "install". Browse returns the Version Manager figure when an
 %   output is requested. Install modes return a scalar RESULT struct with root,
 %   source, updated, message, backupFolder, backupRetained, and
 %   preservedItemCount. Canceling confirmation returns updated=false.
@@ -49,10 +48,10 @@ function varargout = manageLabKitVersions(root, mode, varargin)
 %   Typical Call:
 %      addpath(fullfile("tools", "deployment"))
 %      manager = manageLabKitVersions(pwd)
-%      result = manageLabKitVersions(pwd, "stable")
+%      result = manageLabKitVersions(pwd, "latest")
 %      progress = @(message, fraction) fprintf("%s %.0f%%\n", ...
 %          message, 100*fraction);
-%      result = manageLabKitVersions(pwd, "main", ProgressFcn=progress)
+%      result = manageLabKitVersions(pwd, "latest", ProgressFcn=progress)
 %
 %   See also WEBREAD, WEBSAVE, UNZIP.
 
@@ -66,12 +65,12 @@ function varargout = manageLabKitVersions(root, mode, varargin)
     root = string(normalizedPath(root));
     if ~isTextScalar(mode) || ismissing(string(mode))
         error("LabKit:Deployment:InvalidMode", ...
-            "Mode must be browse, main, stable, or install.");
+            "Mode must be browse, latest, or install.");
     end
     mode = lower(strtrim(string(mode)));
-    if ~ismember(mode, ["browse", "main", "stable", "install"])
+    if ~ismember(mode, ["browse", "latest", "install"])
         error("LabKit:Deployment:InvalidMode", ...
-            "Mode must be browse, main, stable, or install.");
+            "Mode must be browse, latest, or install.");
     end
     if mode == "browse"
         fig = openManager(root, opts);
@@ -80,10 +79,8 @@ function varargout = manageLabKitVersions(root, mode, varargin)
     end
     assertUpdateRoot(root);
     switch mode
-        case "main"
-            source = mainSource();
-        case "stable"
-            source = stableSource();
+        case "latest"
+            source = latestReleaseSource();
         case "install"
             if isempty(opts.Source)
                 error("LabKit:Deployment:InvalidSource", ...
@@ -121,7 +118,7 @@ function fig = openManager(root, opts)
         "Value", currentInstallLines(root));
     current.Layout.Row = 1;
     sourceTable = uitable(layout, ...
-        "ColumnName", {"Type", "Version or commit", "Date", "Summary"}, ...
+        "ColumnName", {"Type", "Release", "Published", "Release information"}, ...
         "RowName", {}, "FontSize", 14);
     sourceTable.ColumnWidth = {100, 170, 170, "auto"};
     sourceTable.Layout.Row = 2;
@@ -138,12 +135,12 @@ function fig = openManager(root, opts)
         "ButtonPushedFcn", @(~, ~) close(fig));
     closeButton.Layout.Column = 4;
     if isprop(refresh, "Tooltip")
-        refresh.Tooltip = "Fetch recent GitHub releases, tags, and main commits.";
+        refresh.Tooltip = "Fetch recent published GitHub Releases.";
         install.Tooltip = "Download and apply the selected LabKit version.";
         closeButton.Tooltip = "Close version manager.";
     end
     status = uitextarea(layout, "Editable", "off", ...
-        "Value", "Choose a recent release, tag, or main-branch commit.");
+        "Value", "Choose a published GitHub Release.");
     status.Layout.Row = 4;
     state = struct("sources", emptySources(), "selectedRow", 1, "busy", false);
     refresh.ButtonPushedFcn = @onRefresh;
@@ -162,7 +159,7 @@ function fig = openManager(root, opts)
             sourceTable.Data = sourceRows(state.sources);
             if isempty(state.sources)
                 status.Value = ...
-                    "No release, tag, or commit options were returned by GitHub.";
+                    "No published Releases were returned by GitHub.";
             else
                 status.Value = "Loaded " + numel(state.sources) + ...
                     " version option(s).";
@@ -239,19 +236,7 @@ function row = eventRow(event)
 end
 
 function sources = discoverSources()
-    sources = [ ...
-        safeSources(@() recentReleases(5)), ...
-        safeSources(@() recentTags(5)), ...
-        safeSources(@() recentCommits(8)) ...
-        ];
-end
-
-function sources = safeSources(fetch)
-    try
-        sources = fetch();
-    catch
-        sources = emptySources();
-    end
+    sources = recentReleases(20);
 end
 
 function sources = recentReleases(limit)
@@ -273,8 +258,9 @@ function sources = recentReleases(limit)
             name = tag;
         end
         count = count + 1;
-        sources(count) = tagSource("Release", tag, ...
-            name + " (" + tag + ")", textField(raw(index), "published_at"));
+        sources(count) = releaseSource(tag, ...
+            releaseInformation(name, textField(raw(index), "body")), ...
+            textField(raw(index), "published_at"));
         if count == limit
             break;
         end
@@ -282,45 +268,19 @@ function sources = recentReleases(limit)
     sources = sources(1:count);
 end
 
-function sources = recentTags(limit)
-    raw = githubRead("tags?per_page=" + limit);
-    template = makeSource("", "", "", "", "", "");
-    sources = repmat(template, 1, limit);
-    count = 0;
-    for index = 1:min(numel(raw), limit)
-        tag = textField(raw(index), "name");
-        if strlength(tag) == 0
-            continue;
-        end
-        count = count + 1;
-        sources(count) = tagSource("Tag", tag, "Tag " + tag, "");
+function information = releaseInformation(name, body)
+    body = strip(replace(string(body), newline, " "));
+    body = regexprep(body, '\s+', ' ');
+    if strlength(body) > 240
+        body = extractBefore(body, 238) + "...";
     end
-    sources = sources(1:count);
+    information = string(name);
+    if strlength(body) > 0
+        information = information + " — " + body;
+    end
 end
 
-function sources = recentCommits(limit)
-    raw = githubRead("commits?sha=main&per_page=" + limit);
-    template = makeSource("", "", "", "", "", "");
-    sources = repmat(template, 1, limit);
-    count = 0;
-    for index = 1:min(numel(raw), limit)
-        sha = textField(raw(index), "sha");
-        if strlength(sha) < 7
-            continue;
-        end
-        short = extractBefore(sha, 8);
-        message = nestedText(raw(index), ["commit", "message"]);
-        message = extractBefore(message + newline, newline);
-        count = count + 1;
-        sources(count) = makeSource("Commit", "main commit " + short, ...
-            "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/" + ...
-            sha + ".zip", short, ...
-            nestedText(raw(index), ["commit", "author", "date"]), message);
-    end
-    sources = sources(1:count);
-end
-
-function source = stableSource()
+function source = latestReleaseSource()
     try
         latest = githubRead("releases/latest");
         if isstruct(latest) && ~logicalField(latest, "draft") && ...
@@ -331,36 +291,19 @@ function source = stableSource()
                 if strlength(name) == 0
                     name = tag;
                 end
-                source = tagSource("Release", tag, name + " (" + tag + ")", ...
+                source = releaseSource(tag, ...
+                    releaseInformation(name, textField(latest, "body")), ...
                     textField(latest, "published_at"));
                 return;
             end
         end
-    catch
+    catch cause
+        error("LabKit:Deployment:LatestReleaseUnavailable", ...
+            "Could not load the latest published GitHub Release: %s", ...
+            cause.message);
     end
-    try
-        tags = recentTags(20);
-    catch
-        error("LabKit:Deployment:StableSourceUnavailable", ...
-            "Could not find a stable GitHub release or tag.");
-    end
-    for index = 1:numel(tags)
-        if isempty(regexp(char(tags(index).Name), ...
-                '^v[0-9]+\.[0-9]+\.[0-9]+$', 'once'))
-            continue;
-        end
-        source = tags(index);
-        source.Kind = "Stable";
-        source.Label = "GitHub stable tag " + source.Name;
-        return;
-    end
-    error("LabKit:Deployment:StableSourceUnavailable", "Could not find a stable GitHub release or tag.");
-end
-
-function source = mainSource()
-    source = makeSource("Main", "GitHub main", ...
-        "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/" + ...
-        "refs/heads/main.zip", "main", "", "Main branch");
+    error("LabKit:Deployment:LatestReleaseUnavailable", ...
+        "GitHub did not return a published stable Release.");
 end
 
 function result = installSource(root, source, opts)
@@ -583,9 +526,9 @@ function value = makeSource(kind, label, url, name, date, summary)
         "Summary", string(summary));
 end
 
-function value = tagSource(kind, tag, summary, date)
-    value = makeSource(kind, ...
-        "GitHub " + lower(string(kind)) + " " + tag, ...
+function value = releaseSource(tag, summary, date)
+    value = makeSource("Release", ...
+        "GitHub release " + tag, ...
         "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/" + ...
         "refs/tags/" + tag + ".zip", tag, date, summary);
 end
@@ -672,19 +615,6 @@ function value = textField(item, field)
     candidate = item.(field);
     if ischar(candidate) || (isstring(candidate) && isscalar(candidate))
         value = string(candidate);
-    end
-end
-
-function value = nestedText(item, fields)
-    value = "";
-    for field = fields
-        if ~isstruct(item) || ~isfield(item, field)
-            return;
-        end
-        item = item.(field);
-    end
-    if ischar(item) || (isstring(item) && isscalar(item))
-        value = string(item);
     end
 end
 

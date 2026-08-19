@@ -668,6 +668,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             popped = figures(1);
             poppedAxes = findall(popped, "Type", "axes");
             testCase.verifyNumElements(findall(poppedAxes, "Type", "line"), 2);
+            testCase.verifyNumElements(findall(popped, ...
+                "Tag", "labkitAxesPopoutStudioTool"), 1);
             clear cleanup
         end
 

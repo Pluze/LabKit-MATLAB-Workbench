@@ -71,15 +71,9 @@ if outputCount == 1, outputs = {fig}; end
 end
 
 function entry = installedDispatchFile(root)
-base = fullfile(root, "+labkit", "+app", "+internal", "+launcher", "dispatch");
-entry = "";
-for extension = [".m", ".p"]
-    candidate = base + extension;
-    if exist(candidate, "file") == 2
-        entry = candidate;
-        return;
-    end
-end
+entry = string(fullfile(root, "+labkit", "+app", "+internal", ...
+    "+launcher", "dispatch.m"));
+if exist(entry, "file") ~= 2, entry = ""; end
 end
 
 function tf = isStructuralDelegateFailure(cause)
@@ -175,10 +169,9 @@ uilabel(sourceGrid, "Text", "Version");
 sourceChoice = uidropdown(sourceGrid, ...
     "Items", [ ...
         "Latest stable release (recommended)", ...
-        "Choose a released version", ...
-        "Current main branch (development)"], ...
-    "ItemsData", ["stable", "tag", "main"], ...
-    "Value", "stable", "Tag", "labkitRepairSource");
+        "Choose a released version"], ...
+    "ItemsData", ["latest", "release"], ...
+    "Value", "latest", "Tag", "labkitRepairSource");
 sourceChoice.Layout.Column = 2;
 releaseChoice = uidropdown(sourceGrid, ...
     "Items", "Load versions first", "ItemsData", "", ...
@@ -188,7 +181,7 @@ loadReleases = uibutton(sourceGrid, "Text", "Load versions", ...
     "Enable", "off", "Tag", "labkitRepairLoadReleases");
 loadReleases.Layout.Column = 4;
 sourceHint = uilabel(sourceGrid, "Text", ...
-    "Stable is recommended. Main is for deliberate development installs.", ...
+    "Install the latest or choose another published stable Release.", ...
     "WordWrap", "on");
 sourceHint.Layout.Row = 2;
 sourceHint.Layout.Column = [1 4];
@@ -220,7 +213,7 @@ repair.ButtonPushedFcn = @runRepair;
 updateTargetSummary();
 
     function runRepair(~, ~)
-        if string(sourceChoice.Value) == "tag" && ...
+        if string(sourceChoice.Value) == "release" && ...
                 strlength(string(releaseChoice.Value)) == 0
             setRepairStatus("Needs attention", ...
                 "Load the published versions and choose one before continuing.");
@@ -294,7 +287,7 @@ updateTargetSummary();
     end
 
     function sourceChanged(~, ~)
-        chooseRelease = string(sourceChoice.Value) == "tag";
+        chooseRelease = string(sourceChoice.Value) == "release";
         controlsEnabled = string(repair.Enable) == "on";
         hasReleases = any(strlength(string(releaseChoice.ItemsData)) > 0);
         releaseChoice.Enable = char(matlab.lang.OnOffSwitchState( ...
@@ -304,9 +297,6 @@ updateTargetSummary();
         if chooseRelease
             sourceHint.Text = ...
                 "Load the published versions, then choose one from the list.";
-        elseif string(sourceChoice.Value) == "main"
-            sourceHint.Text = ...
-                "Main may contain unreleased changes; use it deliberately.";
         else
             sourceHint.Text = ...
                 "Downloads the latest published stable release.";
@@ -507,13 +497,9 @@ end
 
 function source = resolveZipSource(mode, requestedTag)
 switch string(mode)
-    case "stable"
-        source = resolveStableZipSource();
-    case "main"
-        source = struct( ...
-            "label", "the current GitHub main branch", ...
-            "url", "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/refs/heads/main.zip");
-    case "tag"
+    case "latest"
+        source = resolveLatestReleaseZipSource();
+    case "release"
         tag = string(strtrim(requestedTag));
         if ~isStableReleaseTag(tag)
             error("labkit_launcher:InvalidReleaseSelection", ...
@@ -524,7 +510,7 @@ switch string(mode)
             "url", "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/refs/tags/" + tag + ".zip");
     otherwise
         error("labkit_launcher:InvalidDownloadSource", ...
-            "Choose latest stable, current main, or a specific stable release tag.");
+            "Choose the latest or a specific published stable Release.");
 end
 end
 result = summaryStruct(root, message);
@@ -548,30 +534,30 @@ if isappdata(groot, key)
 end
 end
 
-function source = resolveStableZipSource()
-release = latestStableRelease();
-if strlength(release.tag) > 0
-    source = struct("label", "GitHub release " + release.tag, "url", release.zipUrl);
-    return;
-end
-tag = latestGitHubTag();
-if strlength(tag) == 0
-    error("labkit_launcher:StableSourceUnavailable", ...
-        "Could not find a stable GitHub release or tag to repair LabKit.");
-end
-source = struct("label", "GitHub tag " + tag, ...
-    "url", "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/refs/tags/" + tag + ".zip");
+function source = resolveLatestReleaseZipSource()
+release = latestPublishedRelease();
+source = struct("label", "GitHub release " + release.tag, ...
+    "url", release.zipUrl);
 end
 
-function release = latestStableRelease()
+function release = latestPublishedRelease()
 release = struct("tag", "", "zipUrl", "");
 try
     raw = webread("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/releases/latest");
-    if isfield(raw, "tag_name") && isfield(raw, "zipball_url")
+    if isfield(raw, "tag_name") && isfield(raw, "zipball_url") && ...
+            (~isfield(raw, "draft") || ~logical(raw.draft)) && ...
+            (~isfield(raw, "prerelease") || ~logical(raw.prerelease))
         release.tag = string(raw.tag_name);
         release.zipUrl = string(raw.zipball_url);
     end
-catch
+catch cause
+    error("labkit_launcher:LatestReleaseUnavailable", ...
+        "Could not load the latest published GitHub Release: %s", ...
+        cause.message);
+end
+if strlength(release.tag) == 0 || strlength(release.zipUrl) == 0
+    error("labkit_launcher:LatestReleaseUnavailable", ...
+        "GitHub did not return a published stable Release.");
 end
 end
 
@@ -606,24 +592,6 @@ versions = unique(versions, "stable");
 if isempty(versions)
     error("labkit_launcher:ReleaseListUnavailable", ...
         "GitHub did not return any published stable LabKit versions.");
-end
-end
-
-function tag = latestGitHubTag()
-tag = "";
-try
-    stableTagPageSize = 20;
-    raw = webread("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/tags?per_page=" + stableTagPageSize);
-    if ~isempty(raw) && isfield(raw, "name")
-        for index = 1:numel(raw)
-            candidate = string(raw(index).name);
-            if isStableReleaseTag(candidate)
-                tag = candidate;
-                return;
-            end
-        end
-    end
-catch
 end
 end
 

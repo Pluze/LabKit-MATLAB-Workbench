@@ -59,19 +59,13 @@ end
 end
 
 function entries = appEntryFiles(appRoot)
-entries = [dir(fullfile(char(appRoot), "**", "labkit_*_app.m")); ...
-    dir(fullfile(char(appRoot), "**", "labkit_*_app.p"))];
+entries = dir(fullfile(char(appRoot), "**", "labkit_*_app.m"));
 entries = entries(~[entries.isdir]);
 if isempty(entries), return; end
-count = numel(entries);
-paths = strings(count, 1); commands = strings(count, 1); isSource = false(count, 1);
-for index = 1:count
-    paths(index) = string(fullfile(entries(index).folder, entries(index).name));
-    [~, commands(index), extension] = fileparts(paths(index));
-    isSource(index) = string(extension) == ".m";
-end
-[~, order] = sortrows([commands, string(~isSource), paths]);
-entries = entries(order); commands = string(commands(order));
+paths = string(fullfile({entries.folder}, {entries.name})).';
+[~, commands] = fileparts(paths);
+[~, order] = sortrows([commands, paths]);
+entries = entries(order); commands = commands(order);
 [~, keep] = unique(commands, "stable");
 entries = entries(keep);
 end

@@ -182,6 +182,12 @@ tests, history, and details out of the public repository.
 - Automated hidden GUI tests do not prove native dialogs, visual quality,
   pointer feel, scientific validity, or full manual workflows. Do not run
   interactive workflows in MATLAB `-batch` mode.
+- Before editing an App when the change risks unintended visual differences,
+  save a before-change interface baseline unless the requested outcome
+  deliberately adds or removes UI elements or changes the design. Capture
+  every LabKit App screenshot through MATLAB's own APIs: locate the target
+  figure by its stable handle or tag and export the App window with
+  `exportapp`; do not use desktop screenshot automation.
 - A validation entry point expected to run longer than 30 seconds reports its
   current stage and completed/total work, and emits a heartbeat at least every
   30 seconds while one unit remains active. Reuse the owning progress plugin

@@ -2,8 +2,8 @@
 
 `packageLabKitApp` creates one ZIP containing one or more selected LabKit apps,
 their assets, the shared `+labkit` runtime, standalone entry files, and a
-machine-readable package manifest. Source and P-code packages serve different
-deployment needs.
+machine-readable package manifest. Packages contain MATLAB source and can be
+started through their standalone entries or the included Launcher.
 
 ## Syntax
 
@@ -23,8 +23,6 @@ one = packageLabKitApp("labkit_CIC_app");
 several = packageLabKitApp( ...
     ["labkit_CIC_app", "labkit_EIS_app"], [], ...
     "OutputRoot", fullfile(repoRoot, "artifacts", "deployment"));
-runtimeOnly = packageLabKitApp( ...
-    "labkit_CIC_app", [], "CodeFormat", "pcode");
 ```
 
 ## App Selector
@@ -48,26 +46,22 @@ folder entries, or unavailable source files raise an error before packaging.
 | `Root` | Repository root | Source/runtime root containing `+labkit`, apps, launcher, and tools. |
 | `OutputRoot` | `artifacts/deployment/` | Folder used when `zipFile` is empty. |
 | `ProgressFcn` | Empty | Function handle called as `fcn(message, value)` from 0 to 1. |
-| `CodeFormat` | `"source"` | `"source"`/`"m"` for M-files, or `"pcode"`/`"p"` for runtime-only P-code. |
 
-## Source And P-code Packages
+## Package Contents
 
-| Property | Source | P-code |
-| --- | --- | --- |
-| App implementation | `.m` files | `.p` files |
-| Standalone entry | `run_<command>.m` | `run_<command>.p` |
-| `labkit_launcher.m` | Included | Omitted |
-| Deployment/profiling tools | Included | Omitted |
-| `+labkit` and selected app assets | Included | Included in encoded runtime form |
+- selected App folders and assets;
+- the shared `+labkit` runtime;
+- `labkit_launcher.m`;
+- deployment and profiling tools used by the packaged Launcher;
+- one `run_<command>.m` standalone entry per selected App;
+- `README.txt` and `packaged_app_manifest.json`.
 
-Both formats include `README.txt` and `packaged_app_manifest.json`. Neither
-format includes unrelated sibling apps. P-code is a deployment format, not a
-source backup; retain the corresponding private or public source repository.
+The package does not include unrelated sibling Apps.
 
 ## Result Structure
 
 The result identifies `zipFile`, `packageRootName`, `entryFiles`,
-`appCommands`, app-relative folders, visibility values, `codeFormat`, and
+`appCommands`, app-relative folders, visibility values, and
 `fileCount`. Legacy scalar fields `entryFile`, `appCommand`,
 `appRelativeFolder`, and `visibility` describe the first selected app.
 

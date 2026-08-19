@@ -1,7 +1,7 @@
 classdef VersionManagementSpec < matlab.unittest.TestCase
     methods (Test, TestTags = {'Contract:system', 'Env:headless'})
         function gitFilesAndDirectoriesRejectEveryInstallModeBeforeNetwork(testCase)
-            modes = ["main", "stable", "install"];
+            modes = ["latest", "install"];
             for gitKind = ["file", "directory"]
                 root = fixtureRoot(testCase, "old");
                 if gitKind == "file"
@@ -28,7 +28,7 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             [networkFolder, networkCleanup] = networkStubs(testCase);
             toolCleanup = isolatedTool(networkFolder);
 
-            testCase.verifyError(@() manageLabKitVersions(root, "main"), ...
+            testCase.verifyError(@() manageLabKitVersions(root, "latest"), ...
                 "LabKit:Deployment:InvalidRoot");
             testCase.verifyFalse(isappdata(groot, "versionToolWebreadCount"));
             testCase.verifyFalse(isappdata(groot, "versionToolWebsaveCalled"));
@@ -147,7 +147,8 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             toolCleanup = isolatedTool(networkFolder);
             cleanup = setHook(struct("Confirm", false));
 
-            result = manageLabKitVersions(root, "main");
+            result = manageLabKitVersions(root, "install", ...
+                "Source", selectedSource());
 
             testCase.verifyFalse(result.updated);
             testCase.verifyFalse(isappdata(groot, "versionToolWebsaveCalled"));
@@ -214,8 +215,9 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             toolCleanup = isolatedTool(networkFolder);
             responseCleanup = setAppdata("versionToolWebreadResponses", { ...
                 struct("tag_name", {"v1.0.0", "v1.1.0"}, "name", {"First", "Second"}, ...
-                    "published_at", {"2026-01-01", "2026-02-01"}, "draft", {false, false}, "prerelease", {false, false}), ...
-                struct("name", {}), struct("sha", {})});
+                    "published_at", {"2026-01-01", "2026-02-01"}, ...
+                    "body", {"First notes", "Second notes"}, ...
+                    "draft", {false, false}, "prerelease", {false, false})});
             modeCleanup = setAppdata("labkitVersionManagerGuiTestMode", "hidden");
             hookCleanup = setHook(struct("CandidateRoot", candidate, "Confirm", true));
 
@@ -248,7 +250,8 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             candidate = fixtureCandidate(testCase, "new");
             [networkFolder, networkCleanup] = networkStubs(testCase);
             toolCleanup = isolatedTool(networkFolder);
-            responseCleanup = setAppdata("versionToolWebreadResponses", {struct("tag_name", {}) , struct("name", {}), struct("sha", {})});
+            responseCleanup = setAppdata( ...
+                "versionToolWebreadResponses", {struct("tag_name", {})});
             modeCleanup = setAppdata("labkitVersionManagerGuiTestMode", "hidden");
 
             fig = manageLabKitVersions(candidate);
@@ -261,7 +264,7 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             delete(fig); delete(modeCleanup); delete(responseCleanup); delete(toolCleanup); delete(networkCleanup)
         end
 
-        function discoveryFiltersAndOrdersIndependentSourceGroups(testCase)
+        function discoveryShowsOnlyPublishedReleasesAndTheirInformation(testCase)
             root = fixtureCandidate(testCase, "new");
             [networkFolder, networkCleanup] = networkStubs(testCase);
             toolCleanup = isolatedTool(networkFolder);
@@ -269,53 +272,46 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
                 struct("tag_name", {"v2.0.0", "v2.0.0-rc1", "v1.9.0"}, ...
                     "name", {"Release two", "Release candidate", "Draft"}, ...
                     "published_at", {"2026-02-01", "2026-01-31", "2026-01-30"}, ...
-                    "draft", {false, false, true}, "prerelease", {false, true, false}), ...
-                struct("name", {"v1.8.0", "build-42"}), ...
-                struct("sha", {"abcdef123456", "123456789abc"}, ...
-                    "commit", {struct("message", "First commit", "author", struct("date", "2026-01-01")), ...
-                    struct("message", "Second commit", "author", struct("date", "2025-12-31"))})});
+                    "body", {"Release details", "Candidate details", "Draft details"}, ...
+                    "draft", {false, false, true}, "prerelease", {false, true, false})});
             modeCleanup = setAppdata("labkitVersionManagerGuiTestMode", "hidden");
 
             fig = manageLabKitVersions(root);
             sourceTable = findall(fig, "Type", "uitable");
             rows = string(sourceTable.Data);
 
-            testCase.verifyEqual(rows(:, 1), ["Release"; "Tag"; "Tag"; "Commit"; "Commit"]);
+            testCase.verifyEqual(rows(:, 1), "Release");
             testCase.verifyEqual(rows(1, 2), "v2.0.0");
+            testCase.verifySubstring(rows(1, 4), "Release details");
             testCase.verifyFalse(any(contains(rows(:, 2), "rc1")));
             testCase.verifyFalse(any(contains(rows(:, 2), "v1.9.0")));
+            testCase.verifyEqual(getappdata(groot, ...
+                "versionToolWebreadCount"), 1);
             delete(fig); delete(modeCleanup); delete(responseCleanup); delete(toolCleanup); delete(networkCleanup)
         end
 
-        function discoveryRetainsOtherGroupsWhenOneEndpointFails(testCase)
+        function discoveryReportsReleaseEndpointFailure(testCase)
             root = fixtureCandidate(testCase, "new");
             [networkFolder, networkCleanup] = networkStubs(testCase);
             toolCleanup = isolatedTool(networkFolder);
             responseCleanup = setAppdata("versionToolWebreadResponses", { ...
-                struct("Error", "release endpoint unavailable"), ...
-                struct("name", "v1.8.0"), ...
-                struct("sha", "abcdef123456", "commit", struct("message", "Commit", "author", struct("date", "2026-01-01")))});
+                struct("Error", "release endpoint unavailable")});
             modeCleanup = setAppdata("labkitVersionManagerGuiTestMode", "hidden");
 
             fig = manageLabKitVersions(root);
             sourceTable = findall(fig, "Type", "uitable");
-            rows = string(sourceTable.Data);
-
-            testCase.verifyEqual(rows(:, 1), ["Tag"; "Commit"]);
-            testCase.verifyEqual(rows(1, 2), "v1.8.0");
+            testCase.verifyEmpty(sourceTable.Data);
+            testCase.verifyTrue(any(contains( ...
+                textareaValues(fig), "Version lookup failed")));
             delete(fig); delete(modeCleanup); delete(responseCleanup); delete(toolCleanup); delete(networkCleanup)
         end
 
-        function mainAndSelectedModesRequestTheirExactZipUrlsAfterConfirmation(testCase)
+        function selectedReleaseUsesItsExactUrl(testCase)
             root = fixtureRoot(testCase, "old");
             [networkFolder, networkCleanup] = networkStubs(testCase);
             toolCleanup = isolatedTool(networkFolder);
             hookCleanup = setHook(struct("Confirm", true));
 
-            testCase.verifyError(@() manageLabKitVersions(root, "main"), "fixture:Download");
-            mainArguments = getappdata(groot, "versionToolWebsaveArguments");
-            testCase.verifyTrue(contains(string(mainArguments{2}), "refs/heads/main.zip"));
-            rmappdata(groot, "versionToolWebsaveArguments");
             selected = selectedSource();
             testCase.verifyError(@() manageLabKitVersions(root, "install", "Source", selected), "fixture:Download");
             selectedArguments = getappdata(groot, "versionToolWebsaveArguments");
@@ -323,16 +319,17 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             delete(hookCleanup); delete(toolCleanup); delete(networkCleanup)
         end
 
-        function stableModeUsesLatestStableReleaseBeforeTags(testCase)
+        function latestModeUsesTheLatestPublishedRelease(testCase)
             root = fixtureRoot(testCase, "old");
             [networkFolder, networkCleanup] = networkStubs(testCase);
             toolCleanup = isolatedTool(networkFolder);
             responseCleanup = setAppdata("versionToolWebreadResponses", { ...
                 struct("tag_name", "v2.3.4", "name", "Stable", "draft", false, ...
-                    "prerelease", false, "published_at", "2026-01-01")});
+                    "prerelease", false, "published_at", "2026-01-01", ...
+                    "body", "Release notes")});
             hookCleanup = setHook(struct("Confirm", true));
 
-            testCase.verifyError(@() manageLabKitVersions(root, "stable"), "fixture:Download");
+            testCase.verifyError(@() manageLabKitVersions(root, "latest"), "fixture:Download");
 
             arguments = getappdata(groot, "versionToolWebsaveArguments");
             testCase.verifyTrue(contains(string(arguments{2}), "refs/tags/v2.3.4.zip"));
@@ -340,32 +337,16 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             delete(hookCleanup); delete(responseCleanup); delete(toolCleanup); delete(networkCleanup)
         end
 
-        function stableModeFallsBackOnlyToStrictSemverTags(testCase)
+        function latestModeRejectsAnUnavailableRelease(testCase)
             root = fixtureRoot(testCase, "old");
             [networkFolder, networkCleanup] = networkStubs(testCase);
             toolCleanup = isolatedTool(networkFolder);
             responseCleanup = setAppdata("versionToolWebreadResponses", { ...
-                struct(), struct("name", {"v3.0.0-rc1", "build-42", "v2.3.5"})});
+                struct()});
             hookCleanup = setHook(struct("Confirm", true));
 
-            testCase.verifyError(@() manageLabKitVersions(root, "stable"), "fixture:Download");
-
-            arguments = getappdata(groot, "versionToolWebsaveArguments");
-            testCase.verifyTrue(contains(string(arguments{2}), "refs/tags/v2.3.5.zip"));
-            testCase.verifyEqual(getappdata(groot, "versionToolWebreadCount"), 2);
-            delete(hookCleanup); delete(responseCleanup); delete(toolCleanup); delete(networkCleanup)
-        end
-
-        function stableModeRejectsPagesWithoutAStableTag(testCase)
-            root = fixtureRoot(testCase, "old");
-            [networkFolder, networkCleanup] = networkStubs(testCase);
-            toolCleanup = isolatedTool(networkFolder);
-            responseCleanup = setAppdata("versionToolWebreadResponses", { ...
-                struct(), struct("name", {"v2.0.0-rc1", "build-42", "v2.3"})});
-            hookCleanup = setHook(struct("Confirm", true));
-
-            testCase.verifyError(@() manageLabKitVersions(root, "stable"), ...
-                "LabKit:Deployment:StableSourceUnavailable");
+            testCase.verifyError(@() manageLabKitVersions(root, "latest"), ...
+                "LabKit:Deployment:LatestReleaseUnavailable");
             testCase.verifyFalse(isappdata(groot, "versionToolWebsaveCalled"));
             delete(hookCleanup); delete(responseCleanup); delete(toolCleanup); delete(networkCleanup)
         end
@@ -432,8 +413,8 @@ end
 
 function source = selectedSource()
 source = struct( ...
-    "Kind", "Tag", ...
-    "Label", "Synthetic tag", ...
+    "Kind", "Release", ...
+    "Label", "Synthetic release", ...
     "Url", "https://github.com/Pluze/LabKit-MATLAB-Workbench/" + ...
         "archive/refs/tags/v1.2.3.zip", ...
     "Name", "v1.2.3", ...

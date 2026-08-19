@@ -349,14 +349,14 @@ function apps = discoverPublicApps(repoRoot, sourceRoot)
     oldPath = path;
     cleanup = onCleanup(@() path(oldPath));
     addpath(repoRoot, "-begin");
-    catalog = labkit_launcher("list");
+    catalog = labkit.app.internal.launcher.appCatalog(repoRoot);
     clear cleanup
     required = ["Command", "DisplayName", "Family", "Visibility", "Folder", ...
         "Description"];
     if ~istable(catalog) || ~all(ismember(required, ...
             string(catalog.Properties.VariableNames)))
         error("LabKit:Docs:InvalidAppDiscovery", ...
-            "labkit_launcher(""list"") did not return the required App metadata.");
+            "Launcher App discovery did not return the required metadata.");
     end
     catalog = catalog(string(catalog.Visibility) == "public", :);
     template = struct("id", "", "command", "", "family", "", ...

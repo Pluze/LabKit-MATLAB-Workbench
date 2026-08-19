@@ -13,14 +13,11 @@ function result = packageLabKitApp(appSelector, zipFile, varargin)
 %   Root        LabKit source/runtime root. Defaults to the current repo root.
 %   OutputRoot  default folder for generated zip files.
 %   ProgressFcn function handle called as fcn(message, value), where value is 0..1.
-%   CodeFormat  "source" keeps .m files and launcher tools; "pcode" ships a
-%               runtime-only package with .p files and no launcher.
 %
 % Examples:
 %   addpath(fullfile("tools", "deployment"))
 %   packageLabKitApp("labkit_CIC_app")
 %   packageLabKitApp(["labkit_CIC_app", "labkit_EIS_app"])
-%   packageLabKitApp("labkit_PrivateProbe_app", [], "CodeFormat", "pcode")
 
     if nargin < 1
         appSelector = "";
@@ -30,13 +27,12 @@ function result = packageLabKitApp(appSelector, zipFile, varargin)
     end
 
     opt = parsePackageOptions(varargin{:});
-    codeFormat = normalizeCodeFormat(opt.CodeFormat);
     root = char(canonicalPath(opt.Root));
     outputRoot = char(opt.OutputRoot);
     notifyProgress(opt.ProgressFcn, "Resolving app entry points...", 0.05);
     apps = resolvePackageApps(root, appSelector);
 
-    validatePackageInputs(root, apps, codeFormat);
+    validatePackageInputs(root, apps);
     if strlength(string(zipFile)) == 0
         zipFile = defaultZipFile(outputRoot, apps);
     end
@@ -51,13 +47,10 @@ function result = packageLabKitApp(appSelector, zipFile, varargin)
     mkdir(packageRoot);
 
     notifyProgress(opt.ProgressFcn, "Copying package support files...", 0.18);
-    if codeFormat == "source"
-        launcherFile = matlabCodeFile(fullfile(root, "labkit_launcher"));
-        [~, launcherName, launcherExt] = fileparts(launcherFile);
-        copyfile(launcherFile, fullfile(packageRoot, string(launcherName) + string(launcherExt)));
-        copyRequiredToolFolder(root, packageRoot, "deployment");
-        copyRequiredToolFolder(root, packageRoot, "profiling");
-    end
+    copyfile(fullfile(root, "labkit_launcher.m"), ...
+        fullfile(packageRoot, "labkit_launcher.m"));
+    copyRequiredToolFolder(root, packageRoot, "deployment");
+    copyRequiredToolFolder(root, packageRoot, "profiling");
 
     notifyProgress(opt.ProgressFcn, "Copying LabKit library...", 0.30);
     copyfile(fullfile(root, "+labkit"), fullfile(packageRoot, "+labkit"));
@@ -74,22 +67,13 @@ function result = packageLabKitApp(appSelector, zipFile, varargin)
     entryRelativeFiles = strings(numel(apps), 1);
     for k = 1:numel(apps)
         entryFileNames(k) = "run_" + string(apps(k).command) + ".m";
-        if codeFormat == "pcode"
-            entryRelativeFiles(k) = replace(entryFileNames(k), ".m", ".p");
-        else
-            entryRelativeFiles(k) = entryFileNames(k);
-        end
+        entryRelativeFiles(k) = entryFileNames(k);
         writeText(fullfile(packageRoot, entryFileNames(k)), entryFileText(apps(k)));
     end
     writeText(fullfile(packageRoot, "README.txt"), ...
-        readmeText(apps, entryRelativeFiles, codeFormat));
+        readmeText(apps, entryRelativeFiles));
     writeText(fullfile(packageRoot, "packaged_app_manifest.json"), ...
-        packageManifestText(apps, entryRelativeFiles, codeFormat));
-
-    if codeFormat == "pcode"
-        notifyProgress(opt.ProgressFcn, "Encoding MATLAB files as P-code...", 0.75);
-        pcodePackageCode(packageRoot);
-    end
+        packageManifestText(apps, entryRelativeFiles));
 
     notifyProgress(opt.ProgressFcn, "Creating zip package...", 0.85);
     if exist(zipFile, "file") == 2
@@ -109,7 +93,6 @@ function result = packageLabKitApp(appSelector, zipFile, varargin)
         "appRelativeFolders", string({apps.packageRelativeFolder}).', ...
         "visibility", string(apps(1).visibility), ...
         "visibilities", string({apps.visibility}).', ...
-        "codeFormat", codeFormat, ...
         "fileCount", numel(listFiles(packageRoot)));
     clear cleanup;
     removeFolderIfPresent(stageParent);
@@ -121,22 +104,8 @@ function opt = parsePackageOptions(varargin)
     addParameter(p, "Root", repoRoot(), @isTextScalar);
     addParameter(p, "OutputRoot", fullfile(repoRoot(), "artifacts", "deployment"), @isTextScalar);
     addParameter(p, "ProgressFcn", [], @(value) isempty(value) || isa(value, "function_handle"));
-    addParameter(p, "CodeFormat", "source", @isTextScalar);
     parse(p, varargin{:});
     opt = p.Results;
-end
-
-function codeFormat = normalizeCodeFormat(value)
-    value = lower(strtrim(string(value)));
-    switch value
-        case {"source", "m", "mfile", "m-file"}
-            codeFormat = "source";
-        case {"pcode", "p", "pfile", "p-file"}
-            codeFormat = "pcode";
-        otherwise
-            error("packageLabKitApp:InvalidCodeFormat", ...
-                "CodeFormat must be 'source' or 'pcode'.");
-    end
 end
 
 function apps = resolvePackageApps(root, selector)
@@ -252,10 +221,10 @@ function app = appFromEntry(root, entryFile, visibility, appRoot)
     end
     entryFile = string(canonicalPath(entryFile));
     [folder, command, ext] = fileparts(entryFile);
-    if ~ismember(string(ext), [".m", ".p"]) || ...
+    if string(ext) ~= ".m" || ...
             ~startsWith(string(command), "labkit_") || ~endsWith(string(command), "_app")
         error("packageLabKitApp:InvalidAppEntry", ...
-            "App entry file must be named labkit_*_app.m or labkit_*_app.p: %s", entryFile);
+            "App entry file must be named labkit_*_app.m: %s", entryFile);
     end
     if strlength(string(appRoot)) == 0
         appRoot = matchingAppRoot(root, folder);
@@ -275,21 +244,18 @@ function app = emptyPackageApp()
 end
 
 function entries = appEntryFiles(appRoot)
-    entries = [dir(fullfile(appRoot, "**", "labkit_*_app.m")); ...
-        dir(fullfile(appRoot, "**", "labkit_*_app.p"))];
+    entries = dir(fullfile(appRoot, "**", "labkit_*_app.m"));
     entries = entries(~[entries.isdir]);
     if isempty(entries)
         return;
     end
     paths = strings(numel(entries), 1);
     commands = strings(numel(entries), 1);
-    isSource = false(numel(entries), 1);
     for k = 1:numel(entries)
         paths(k) = string(fullfile(entries(k).folder, entries(k).name));
-        [~, commands(k), ext] = fileparts(paths(k));
-        isSource(k) = string(ext) == ".m";
+        [~, commands(k)] = fileparts(paths(k));
     end
-    [~, order] = sortrows([commands, string(~isSource), paths]);
+    [~, order] = sortrows([commands, paths]);
     entries = entries(order);
     commands = commands(order);
     [~, keep] = unique(commands, "stable");
@@ -375,7 +341,7 @@ function entryFile = uniqueAppEntryInFolder(folder)
     entries = appEntryFiles(folder);
     if isempty(entries)
         error("packageLabKitApp:AppNotFound", ...
-            "No labkit_*_app.m or labkit_*_app.p entry point found in folder: %s", folder);
+            "No labkit_*_app.m entry point found in folder: %s", folder);
     elseif numel(entries) > 1
         error("packageLabKitApp:AmbiguousApp", ...
             "Multiple labkit_*_app entry points found in folder: %s", folder);
@@ -383,24 +349,21 @@ function entryFile = uniqueAppEntryInFolder(folder)
     entryFile = string(fullfile(entries(1).folder, entries(1).name));
 end
 
-function validatePackageInputs(root, app, codeFormat)
-    if string(codeFormat) == "source" && ...
-            strlength(string(matlabCodeFile(fullfile(root, "labkit_launcher")))) == 0
+function validatePackageInputs(root, app)
+    if exist(fullfile(root, "labkit_launcher.m"), "file") ~= 2
         error("packageLabKitApp:MissingLauncher", ...
-            "Cannot package app because labkit_launcher.m or labkit_launcher.p was not found under: %s", root);
+            "Cannot package app because labkit_launcher.m was not found under: %s", root);
     end
     if exist(fullfile(root, "+labkit"), "dir") ~= 7
         error("packageLabKitApp:MissingLabKit", ...
             "Cannot package app because +labkit was not found under: %s", root);
     end
-    if string(codeFormat) == "source"
-        requiredToolFolders = ["deployment", "profiling"];
-        for k = 1:numel(requiredToolFolders)
-            toolFolder = fullfile(root, "tools", requiredToolFolders(k));
-            if exist(toolFolder, "dir") ~= 7
-                error("packageLabKitApp:MissingTool", ...
-                    "Cannot package app because %s was not found.", toolFolder);
-            end
+    requiredToolFolders = ["deployment", "profiling"];
+    for k = 1:numel(requiredToolFolders)
+        toolFolder = fullfile(root, "tools", requiredToolFolders(k));
+        if exist(toolFolder, "dir") ~= 7
+            error("packageLabKitApp:MissingTool", ...
+                "Cannot package app because %s was not found.", toolFolder);
         end
     end
     for k = 1:numel(app)
@@ -408,35 +371,23 @@ function validatePackageInputs(root, app, codeFormat)
             error("packageLabKitApp:MissingApp", ...
                 "Cannot package app because its entry file was not found: %s", app(k).entryFile);
         end
-        if string(codeFormat) == "source"
-            validateSourceFilesAvailable(root, app(k));
-        end
+        validateSourceFilesAvailable(root, app(k));
     end
 end
 
 function validateSourceFilesAvailable(root, app)
+    [entryFolder, entryName] = fileparts(app.entryFile);
     requiredSources = [
         string(fullfile(root, "labkit_launcher.m"))
-        string(app.entryFile)
+        string(fullfile(entryFolder, entryName + ".m"))
         string(fullfile(root, "tools", "deployment", "packageLabKitApp.m"))
         string(fullfile(root, "tools", "profiling", "profileLabKitTarget.m"))];
     missing = requiredSources(arrayfun( ...
         @(path) exist(path, "file") ~= 2, requiredSources));
     if ~isempty(missing)
         error("packageLabKitApp:SourceUnavailable", ...
-            "Source package format requires .m files. Use CodeFormat='pcode' for P-code roots. Missing: %s", ...
+            "Source packaging requires MATLAB source files. Missing: %s", ...
             strjoin(cellstr(missing), ", "));
-    end
-end
-
-function file = matlabCodeFile(baseFile)
-    candidates = string(baseFile) + [".m", ".p"];
-    file = "";
-    for k = 1:numel(candidates)
-        if exist(candidates(k), "file") == 2
-            file = char(candidates(k));
-            return;
-        end
     end
 end
 
@@ -469,54 +420,30 @@ function text = entryFileText(app)
         app.command, upper(app.command), strrep(app.packageRelativeFolder, "\", "/"));
 end
 
-function text = readmeText(apps, entryFileNames, codeFormat)
+function text = readmeText(apps, entryFileNames)
     appCount = numel(apps);
     commandLines = strings(appCount, 1);
     for k = 1:appCount
         commandLines(k) = sprintf("- %s: %s", apps(k).command, ...
-            erase(erase(entryFileNames(k), ".m"), ".p"));
+            erase(entryFileNames(k), ".m"));
     end
-    if string(codeFormat) == "pcode"
-        contentsLine = ['This P-code package intentionally includes only the selected app folders, their assets, ' ...
-            'the shared +labkit library, and the direct app entry file.'];
-        launcherLines = "";
-    else
-        contentsLine = ['This package intentionally includes only the selected app folders, the LabKit launcher, ' ...
-            'selected launcher tools, and the shared +labkit library.'];
-        launcherLines = sprintf([ ...
-            '\n' ...
-            'You can also start from the packaged launcher by running:\n' ...
-            'labkit_launcher\n']);
-    end
+    contentsLine = ['This package intentionally includes only the selected app folders, the LabKit launcher, ' ...
+        'selected launcher tools, and the shared +labkit library.'];
+    launcherLines = sprintf([ ...
+        '\n' ...
+        'You can also start from the packaged launcher by running:\n' ...
+        'labkit_launcher\n']);
     text = sprintf([ ...
         'LabKit app package\n' ...
         '\n' ...
         'Apps: %d\n' ...
-        'Code format: %s\n' ...
-        '\n' ...
         'To run an app, unzip the package, open MATLAB in this folder, and run one entry:\n' ...
         '%s\n' ...
         '\n' ...
         '%s' ...
         '%s\n'], ...
-        appCount, codeFormat, strjoin(commandLines, newline), ...
+        appCount, strjoin(commandLines, newline), ...
         launcherLines, contentsLine);
-end
-
-function pcodePackageCode(packageRoot)
-    files = listFiles(packageRoot);
-    mFiles = files(endsWith(files, ".m"));
-    for k = 1:numel(mFiles)
-        file = char(mFiles(k));
-        pcode(file, '-inplace');
-        [folder, name] = fileparts(file);
-        pFile = string(fullfile(folder, name + ".p"));
-        if exist(pFile, "file") ~= 2
-            error("packageLabKitApp:PcodeFailed", ...
-                "Expected P-code file was not generated: %s", pFile);
-        end
-        delete(file);
-    end
 end
 
 function zipFile = defaultZipFile(outputRoot, apps)
