@@ -144,7 +144,7 @@ packages contain MATLAB source; see
 Maintenance buttons are enabled only when their corresponding source-checkout
 tool is available. The same operations can be called directly from MATLAB:
 
-- [Code Analyzer Reports](../../../development/tools/codecheck.md)
+- [Code Analysis Reports](../../../development/tools/codecheck.md)
 - [App Deployment Packages](../../../development/tools/deployment.md)
 - [Documentation Build Tools](../../../development/tools/documentation.md)
 - [Performance Profiling](../../../development/tools/profiling.md)

@@ -1,11 +1,37 @@
 function report = runCodecheckReport(root, varargin)
-%RUNCODECHECKREPORT Run MATLAB codeIssues and write LabKit report artifacts.
+%RUNCODECHECKREPORT Run MATLAB code and compatibility analysis.
 %
-% Expected caller: LabKit launcher or a maintainer command line. Inputs are a
-% LabKit root folder and optional ProgressFcn/OpenReport values. Output is a
-% struct describing the JSON and HTML artifacts. Side effects are limited to
-% scanning MATLAB source files, writing artifacts/code-check reports, and
-% optionally opening the generated HTML report.
+% Syntax:
+%   report = runCodecheckReport(root)
+%   report = runCodecheckReport(root, "OpenReport", false)
+%   report = runCodecheckReport(root, "ProgressFcn", progressFcn)
+%
+% Inputs:
+%   root - LabKit checkout folder as a character vector or string scalar.
+%
+% Name-Value Options:
+%   OpenReport - Logical scalar controlling whether the generated HTML opens
+%       in the system browser. Default is true.
+%   ProgressFcn - Empty or a function handle called as fcn(message, value),
+%       where value is a scalar between zero and one. Default writes progress
+%       to the command window.
+%
+% Outputs:
+%   report - Scalar struct describing the generated artifacts and counts.
+%       jsonFile and compatibilityJsonFile contain the native Code Analyzer
+%       and CodeCompatibilityAnalysis data. htmlFile combines both analyses.
+%       fileCount, issueCount, suppressedIssueCount,
+%       compatibilityCheckCount, and compatibilityRecommendationCount report
+%       the corresponding result sizes.
+%
+% Errors:
+%   Analyzer, file-access, and report-write failures propagate to the caller.
+%   Invalid inputs are rejected by inputParser.
+%
+% Example:
+%   report = runCodecheckReport(pwd, "OpenReport", false);
+%
+% See also codeIssues, analyzeCodeCompatibility, codeCompatibilityReport
 
     p = inputParser;
     p.addRequired("root", @isTextScalar);
@@ -33,29 +59,42 @@ function report = runCodecheckReport(root, varargin)
         sprintf("Running codeIssues on %d MATLAB file(s)...", numel(files)), ...
         0.08);
     issues = codeIssues(files(:));
+    notifyProgress(progressFcn, ...
+        sprintf("Running Code Compatibility Analyzer on %d MATLAB file(s)...", ...
+        numel(files)), 0.48);
+    compatibility = analyzeCodeCompatibility(files(:));
 
     outputRoot = fullfile(root, "artifacts", "code-check");
     reportBase = uniqueReportBase(outputRoot);
     output = reportBase + ".json";
-    notifyProgress(progressFcn, "Writing native codeIssues report...", 0.96);
+    notifyProgress(progressFcn, "Writing native codeIssues report...", 0.92);
     ensureFolder(fileparts(output));
     sourceRoot = commonSourceRoot([string(root), files]);
     exportCodeIssuesJson(issues, output, sourceRoot);
 
-    notifyProgress(progressFcn, "Writing Code Analyzer HTML report...", 0.98);
+    compatibilityOutput = reportBase + "_compatibility.json";
+    notifyProgress(progressFcn, ...
+        "Writing CodeCompatibilityAnalysis report...", 0.95);
+    exportCodeCompatibilityJson(compatibility, compatibilityOutput);
+
+    notifyProgress(progressFcn, "Writing combined code analysis HTML report...", 0.98);
     htmlOutput = reportBase + ".html";
-    writeCodecheckReport(output, htmlOutput);
+    writeCodecheckReport(output, compatibilityOutput, htmlOutput);
     if p.Results.OpenReport
         openHtmlReport(htmlOutput);
     end
 
     report = struct();
     report.jsonFile = string(output);
+    report.compatibilityJsonFile = string(compatibilityOutput);
     report.htmlFile = string(htmlOutput);
     report.fileCount = numel(files);
     report.issueCount = height(issues.Issues);
     report.suppressedIssueCount = height(issues.SuppressedIssues);
-    notifyProgress(progressFcn, "codeIssues report complete.", 1.00);
+    report.compatibilityCheckCount = height(compatibility.ChecksPerformed);
+    report.compatibilityRecommendationCount = ...
+        height(compatibility.Recommendations);
+    notifyProgress(progressFcn, "Code analysis report complete.", 1.00);
 end
 
 function exportCodeIssuesJson(issues, output, sourceRoot)
@@ -79,12 +118,35 @@ function exportCodeIssuesJson(issues, output, sourceRoot)
     clear cleanup
 end
 
+function exportCodeCompatibilityJson(analysis, output)
+    payload = struct();
+    payload.Date = analysis.Date;
+    payload.MATLABVersion = analysis.MATLABVersion;
+    payload.Files = analysis.Files;
+    payload.ChecksPerformed = table2struct(analysis.ChecksPerformed);
+    payload.Recommendations = table2struct(analysis.Recommendations);
+    writeJson(output, payload, "Code Compatibility Analysis");
+end
+
+function writeJson(output, payload, label)
+    fid = fopen(output, "w", "n", "UTF-8");
+    if fid < 0
+        error("LabKit:Codecheck:WriteFailed", ...
+            "Could not write %s JSON report: %s", label, output);
+    end
+    cleanup = onCleanup(@() fclose(fid));
+    fprintf(fid, "%s\n", jsonencode(payload));
+    clear cleanup
+end
+
 function reportBase = uniqueReportBase(outputRoot)
     ensureFolder(outputRoot);
     stamp = string(datetime("now", "Format", "yyyyMMdd_HHmmss"));
     reportBase = fullfile(outputRoot, "matlab_code_issues_" + string(stamp));
     suffix = 1;
-    while exist(reportBase + ".json", "file") == 2 || exist(reportBase + ".html", "file") == 2
+    while exist(reportBase + ".json", "file") == 2 || ...
+            exist(reportBase + "_compatibility.json", "file") == 2 || ...
+            exist(reportBase + ".html", "file") == 2
         reportBase = fullfile(outputRoot, ...
             "matlab_code_issues_" + string(stamp) + "_" + string(suffix));
         suffix = suffix + 1;
