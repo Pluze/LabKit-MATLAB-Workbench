@@ -23,7 +23,24 @@ function validateCleanLabKitArtifactsTarget(root, target, relativeTarget)
 end
 
 function resolvedPath = realExistingPath(filepath)
-resolvedPath = char(labkit.app.internal.filesystem.absolutePath(filepath));
+filepath = char(filepath);
+if exist(filepath, "dir") == 7
+    originalFolder = pwd;
+    cleanup = onCleanup(@() cd(originalFolder));
+    cd(filepath);
+    resolvedPath = pwd;
+    clear cleanup
+    return;
+end
+[folder, name, extension] = fileparts(filepath);
+if strlength(string(folder)) == 0
+    folder = ".";
+end
+originalFolder = pwd;
+cleanup = onCleanup(@() cd(originalFolder));
+cd(folder);
+resolvedPath = fullfile(pwd, [name extension]);
+clear cleanup
 end
 
 function resolvedPath = lexicalPath(filepath)

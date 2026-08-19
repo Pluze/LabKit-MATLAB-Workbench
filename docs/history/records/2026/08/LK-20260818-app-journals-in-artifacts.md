@@ -24,6 +24,7 @@ Place new session journals beneath the existing installation-owned `artifacts` b
 - New App sessions write their manifest and JSONL event segments beneath `artifacts/logs/sessions/` in the active LabKit installation.
 - The existing private artifact store owns the shared category-folder calculation used by journals and other runtime artifacts.
 - Cross-session automatic inspection, stale-session recovery, lease markers, and retention pruning were removed because no shipped runtime consumed them.
+- Restored portable sources now retain an absolute normalized resolved path, including when a project first finds the source through its relative reference.
 - Existing journals beneath MATLAB's preferences directory are neither migrated nor deleted.
 
 ## User and data impact
@@ -37,6 +38,7 @@ The change is compatible with existing App definitions and saved projects. No mi
 ## Validation
 
 Focused App SDK source evidence verifies that the default journal root resolves beneath the active LabKit installation's `artifacts/logs` folder while explicit test journal roots remain supported. Session snapshot/export and active-session segment-bound coverage remain intact after removing the unconsumed cross-session cleanup path. Deterministic documentation validation covers the updated framework manual and structured history.
+Portable-source workflow evidence restores an autosave with a runtime-generated source ID and verifies that source-adjacent result defaults still use the resolved source folder.
 
 ## Evidence
 

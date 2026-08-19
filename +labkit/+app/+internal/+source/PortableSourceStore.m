@@ -320,7 +320,7 @@ matchKind = "none";
 for k = 1:numel(candidates)
     candidate = candidates(k);
     if isfile(candidate)
-        targetPath = candidate;
+        targetPath = labkit.app.internal.filesystem.absolutePath(candidate);
         matchKind = kinds(k);
         return;
     end
