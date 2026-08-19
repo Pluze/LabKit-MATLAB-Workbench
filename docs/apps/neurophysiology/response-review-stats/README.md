@@ -5,6 +5,9 @@ table, displays the measurements, and exports a clean CSV for review or
 downstream statistics. Segment tables can also be aligned and measured again
 with new baseline and noise windows.
 
+Loading or recalculating a source produces the presentation data consumed by
+the review pages directly, without a second source-file presenter state.
+
 ## Open Response Review And Stats
 
 From the launcher, select **Response Review Stats** and choose **Open**. From a

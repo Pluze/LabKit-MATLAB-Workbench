@@ -69,7 +69,7 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             info = labkit.mark10.version();
 
             testCase.verifyEqual(info.name, "labkit.mark10");
-            testCase.verifyEqual(info.current, "1.0.0");
+            testCase.verifyEqual(info.current, "1.0.1");
             testCase.verifyError(@() labkit.mark10.decodeSample({"bad"}), ...
                 "labkit:mark10:InvalidValue");
             testCase.verifyError(@() labkit.mark10.writeSetting( ...

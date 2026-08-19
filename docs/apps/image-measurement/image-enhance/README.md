@@ -3,6 +3,9 @@
 Image Enhance builds an ordered, reversible processing history for one image
 or a batch and exports the resulting images with the exact step sequence.
 
+Preview details and synthetic-sample generation use the current processing
+history directly, keeping one authoritative sequence for display and export.
+
 ## Requirements And Launch
 
 All processing uses MATLAB and repository-owned code.

@@ -3,6 +3,9 @@
 Image Match transfers tone and color statistics from one reference image to
 one or more source images while preserving each source image's geometry.
 
+Preview details are derived from the selected source and its current matching
+history, rather than retained in a parallel presentation model.
+
 ## Requirements And Launch
 
 The app performs appearance matching only; it does not geometrically register

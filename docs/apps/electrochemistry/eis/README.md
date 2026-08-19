@@ -4,6 +4,9 @@ EIS overlays impedance data from one or more Gamry `ZCURVE` tables, supports
 Nyquist and Bode-style axis combinations, and exports the values currently
 selected for plotting.
 
+Source summaries are derived from the currently parsed EIS recording, so file
+selection, plots, and exported values refer to the same loaded result.
+
 ## Requirements And Launch
 
 ```matlab

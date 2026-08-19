@@ -12,6 +12,10 @@ force against time on two Y axes; the lower plot is the standard force-versus-
 travel curve. The table shows the latest 200 valid visible samples while the
 full monitoring run remains in the managed buffer.
 
+Connection, settings, read-once, playback, and monitoring controls call their
+owned workflow directly, while retained samples remain the single source for
+plots and export.
+
 The control side is split into task-focused **Monitor**, **Analysis**, and
 **Settings** tabs. Connection, live monitoring/export, file playback, and
 device configuration therefore remain independent instead of sharing one

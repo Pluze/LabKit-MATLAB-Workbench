@@ -7,6 +7,10 @@ app. They recognize chrono, electrochemical impedance spectroscopy (EIS), and
 cyclic-voltammetry/charge-time (CV/CT) data, and return ordinary MATLAB
 structures and numeric arrays for further analysis.
 
+Chrono and EIS readers apply the same table-section rules for headers, numeric
+rows, and malformed trailing content, so equivalent DTA sections have the same
+acceptance and failure behavior across both workflows.
+
 ## Start Here
 
 Use `loadFile` when you know the path to one file:

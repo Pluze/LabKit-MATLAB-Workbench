@@ -3,6 +3,9 @@
 Focus Stack fuses at least two focal planes into one all-in-focus image using
 multilevel Laplacian focus evidence and exports a focus-depth index map.
 
+The preview is derived directly from the selected focal plane and current
+stack result; changing selection does not retain an independent preview copy.
+
 ## Requirements And Launch
 
 Inputs should show the same field of view at different focus positions.

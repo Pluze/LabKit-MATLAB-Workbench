@@ -4,6 +4,10 @@ Curvature Measurement fits a circle to an ordered image curve, reports radius
 and curvature, measures traced arc length, and supports pixel-to-physical scale
 calibration.
 
+The combined measurement action computes traced length and circle-fit results
+from the same current curve and scale options, keeping the displayed summary
+and exported row aligned.
+
 ## Requirements And Launch
 
 ```matlab
