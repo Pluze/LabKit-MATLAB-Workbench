@@ -93,13 +93,13 @@ root = fileparts(mfilename("fullpath"));
 for level = 1:4
     root = fileparts(root);
 end
-apps = labkit.app.internal.launcher.discoverApps(root);
+apps = labkit.app.internal.discovery.discoverApps(root);
 match = find(string({apps.command}) == "labkit_FigureStudio_app", 1);
 if isempty(match)
     warning('labkit:app:plot:FigureStudioUnavailable', ...
         'Figure Studio is not available in this LabKit installation.');
     return;
 end
-labkit.app.internal.launcher.invokeDiscoveredApp( ...
+labkit.app.internal.discovery.invokeDiscoveredApp( ...
     apps(match), "axes", ax);
 end

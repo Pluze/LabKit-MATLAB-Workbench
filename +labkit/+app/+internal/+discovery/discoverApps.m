@@ -1,8 +1,8 @@
 function apps = discoverApps(root)
-%DISCOVERAPPS Discover normalized public and private launcher entries.
+%DISCOVERAPPS Discover normalized public and private App entries.
 % ROOT supplies the public Apps tree and optional local private roots. The
 % returned struct array is sorted and contains no executable handles.
-apps = labkit.app.internal.launcher.emptyApps();
+apps = labkit.app.internal.discovery.emptyApps();
 roots = [string(fullfile(root, "apps")); privateAppRoots(root)];
 entrySets = cell(numel(roots), 1);
 entryCount = 0;

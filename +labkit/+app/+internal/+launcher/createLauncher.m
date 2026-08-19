@@ -7,7 +7,7 @@ function fig = createLauncher(root)
 view = labkit.app.internal.launcher.createLauncherView();
 fig = view.figure;
 state = struct( ...
-    "apps", labkit.app.internal.launcher.emptyApps(), ...
+    "apps", labkit.app.internal.discovery.emptyApps(), ...
     "selected", 1, ...
     "checkedCommands", strings(0, 1), ...
     "status", "Loading app list...", ...
@@ -34,7 +34,7 @@ refreshApps();
         selectedCommand = currentSelectedCommand();
         beginAction("Refreshing app list...");
         try
-            state.apps = labkit.app.internal.launcher.discoverApps(root);
+            state.apps = labkit.app.internal.discovery.discoverApps(root);
             state.tools = ...
                 labkit.app.internal.launcher.launcherToolAvailability(root);
             state.checkedCommands = retainedCommands( ...
@@ -82,10 +82,10 @@ refreshApps();
         beginAction("Starting " + app.name + "...");
         try
             reportLaunchStage(app, 1, "preparing app path");
-            labkit.app.internal.launcher.addPathIfMissing(app.folder, "-end");
+            labkit.app.internal.discovery.addPathIfMissing(app.folder, "-end");
             reportLaunchStage(app, 2, ...
                 "initializing app window via " + app.command);
-            labkit.app.internal.launcher.invokeDiscoveredApp(app);
+            labkit.app.internal.discovery.invokeDiscoveredApp(app);
             setStatus("Finishing startup for " + app.name + "...");
             drawnow;
             setStatus("Opened " + app.command + ".");

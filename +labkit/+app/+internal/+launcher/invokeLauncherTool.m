@@ -8,7 +8,7 @@ if exist(fullfile(folder, name + ".m"), "file") ~= 2
     error("labkit:app:internal:launcher:ToolUnavailable", ...
         "Tool is unavailable: %s", name);
 end
-added = labkit.app.internal.launcher.addPathIfMissing(folder, "-begin");
+added = labkit.app.internal.discovery.addPathIfMissing(folder, "-begin");
 if added
     cleanup = onCleanup(@() rmpath(folder));
 end

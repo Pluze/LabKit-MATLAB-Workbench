@@ -1,4 +1,4 @@
-# Launcher owns discovery and published-Release workflows only
+# Launcher separates shared discovery and published-Release workflows
 
 ```labkit-change
 id: LK-20260819-launcher-release-boundary
@@ -8,6 +8,7 @@ type: refactor
 compatibility: breaking
 component: `labkit_launcher` | `1.8.4 -> 2.0.0`
 scope: Launcher controller and native view ownership
+scope: Shared App discovery and invocation ownership
 scope: Published GitHub Release installation
 scope: Source-only App deployment packages
 scope: Figure Studio plot handoff
@@ -19,11 +20,11 @@ The Launcher window combined native layout, mutable state, App discovery, dynami
 
 ## Decision and rationale
 
-Keep the Launcher as the visible App catalog and command surface while giving each dependency boundary one focused owner. A GUI-free catalog serves both the Launcher and documentation generation. The native view owns handles and responsive layout, the controller owns state and callbacks, fixed adapters own maintainer tools, and one revalidated dynamic boundary invokes discovered App entries. Version installation accepts only published stable GitHub Releases. Deployment packages contain MATLAB source only. Plot-to-Studio handoff belongs to the popout plot capability and must not require a Launcher window or global callback.
+Keep the Launcher as the visible App catalog and command surface while giving each dependency boundary one focused owner. A GUI-free private discovery boundary owns App descriptors, scanning, path activation, and revalidated invocation for the Launcher, documentation catalog, and plot-to-App handoffs. The native view owns handles and responsive layout, the controller owns state and callbacks, and fixed adapters own maintainer tools. Version installation accepts only published stable GitHub Releases. Deployment packages contain MATLAB source only. Plot-to-Studio handoff belongs to the popout plot capability and must not require a Launcher window or global callback.
 
 ## Changes
 
-- Split Launcher view construction, controller state, App catalog projection, tool availability, tool invocation, and discovered-App invocation into focused internal owners.
+- Split Launcher view construction, controller state, App catalog projection, tool availability, and tool invocation into focused internal owners; moved App scanning, path activation, and discovered-App invocation to the shared private discovery boundary.
 - Removed the documentation-to-public-Launcher call that completed the Launcher dependency cycle.
 - Removed the global `labkitFigureStudioLauncher` callback and direct Launcher-to-Figure-Studio dependency; **Send to Studio** now discovers and invokes the installed Studio App from the plot boundary.
 - Reduced the visible version controls to **Latest** and **Versions**. Both use published stable GitHub Releases; Versions shows release date and release information.
@@ -45,7 +46,7 @@ Focused Launcher, standalone repair, version-management, App SDK plot, deploymen
 
 ## Evidence
 
-Static dependency guards prohibit Launcher ownership of Figure Studio and prohibit documentation from re-entering `labkit_launcher`. Dynamic invocation remains limited to a discovered `labkit_*_app.m` entry revalidated against its owning folder. Source searches verify that production and current manuals no longer contain P-code behavior.
+Static dependency guards prohibit Launcher ownership of Figure Studio, require plot handoffs to use the shared discovery boundary, and prohibit documentation from re-entering `labkit_launcher`. Dynamic invocation remains limited to a discovered `labkit_*_app.m` entry revalidated against its owning folder. Source searches verify that production and current manuals no longer contain P-code behavior.
 
 ## Known limitations and follow-up
 

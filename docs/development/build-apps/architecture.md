@@ -84,11 +84,13 @@ rather than mixing private app files into the public repo history. The public
 structure guide is [private-apps.md](../maintain-and-release/private-apps.md); private app
 documentation belongs in the private workspace.
 
-The launcher keeps update, discovery, and repair logic self-contained: it uses
-native MATLAB UI and local helper functions so users can repair a damaged zip
-install even if packages, apps, docs, or scripts have been deleted. It
-configures the MATLAB path for app entry points. MATLAB desktop project
-metadata belongs to each developer's local workspace.
+A GUI-free private discovery boundary scans App entry points, activates their
+paths, and invokes a selected entry only after revalidating its owning folder.
+The Launcher, documentation catalog, and plot-to-App handoffs share that
+boundary without acquiring a Launcher window. The standalone launcher keeps
+installation and repair self-contained so users can recover a damaged zip
+install even if packages, apps, docs, or scripts have been deleted. MATLAB
+desktop project metadata belongs to each developer's local workspace.
 
 Tools under `tools/` are source-checkout support utilities rather than app
 runtime APIs. The launcher may call a small, explicit subset for maintenance

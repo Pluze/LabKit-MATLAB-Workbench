@@ -1,5 +1,5 @@
 function added = addPathIfMissing(folder, position)
-%ADDPATHIFMISSING Add one validated launcher-owned folder once.
+%ADDPATHIFMISSING Add one validated repository entry folder once.
 % POSITION is "-begin" or "-end". The logical result reports whether this
 % call changed the MATLAB path so a caller can own any required cleanup.
 

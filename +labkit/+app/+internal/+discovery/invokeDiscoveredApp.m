@@ -3,7 +3,7 @@ function varargout = invokeDiscoveredApp(app, varargin)
 % APP is one descriptor returned by discoverApps. Optional inputs are passed
 % only after the command resolves to the discovered owning folder.
 
-labkit.app.internal.launcher.addPathIfMissing(app.folder, "-end");
+labkit.app.internal.discovery.addPathIfMissing(app.folder, "-end");
 command = string(app.command);
 resolved = string(which(char(command)));
 expected = fullfile(string(app.folder), command + ".m");

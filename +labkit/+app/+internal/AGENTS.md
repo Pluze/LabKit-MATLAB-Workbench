@@ -9,6 +9,7 @@ The dependency direction is:
 ```text
 Definition / CallbackContext
     |-- contract -> immutable layout, signal, and compiled plan
+    |-- discovery -> App descriptors, scanning, path activation, invocation
     `-- runtime  -> transaction ordering and callback capabilities
                      |-- diagnostics
                      |-- project / source / result / resource
@@ -30,14 +31,14 @@ receives one callback from its caller rather than acquiring the caller.
 - Put concrete MATLAB window behavior under `+native` and keep the platform
   adapter as the semantic reconciliation boundary, not the owner of every
   window lifecycle.
-- Keep `+launcher/dispatch.m` as entry routing only. The GUI-free App catalog
-  is the shared discovery boundary for Launcher and documentation consumers.
-  Keep request parsing, documentation resolution, metadata, native view
-  construction, stateful controller callbacks, fixed maintainer-tool adapters,
-  and revalidated dynamic App invocation in separately named package
-  functions. Plot-to-App handoffs may use discovery and invocation but must not
-  acquire a Launcher window, global Launcher callback, or app-specific Launcher
-  dependency.
+- Keep `+launcher/dispatch.m` as entry routing only. Put App descriptors,
+  scanning, path activation, and revalidated dynamic App invocation under
+  `+discovery`; Launcher, documentation consumers, and Plot-to-App handoffs may
+  use that GUI-free boundary. Keep request parsing, documentation resolution,
+  metadata tables, native view construction, stateful controller callbacks,
+  and fixed maintainer-tool adapters under `+launcher`. Plot-to-App handoffs
+  must not acquire a Launcher window, global Launcher callback, or app-specific
+  Launcher dependency.
 - Put artifact naming and scratch-destination policy under `+artifact`.
 - Put Runtime-level diagnostic viewing and export coordination under
   `+diagnostics`; keep event, journal, and bundle primitives focused and move
