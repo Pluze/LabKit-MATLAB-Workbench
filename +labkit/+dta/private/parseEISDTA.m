@@ -31,8 +31,6 @@ function [meta, tables, logmsg] = parseEISDTA(filepath)
     meta.title = '';
     meta.area_cm2 = NaN;
     nLines = numel(lines);
-    tableCells = cell(1, nLines);
-    tableCount = 0;
     logmsg = cell(1, nLines + 1);
     logCount = 1;
     logmsg{logCount} = sprintf('Parsing DTA: %s', filepath);
@@ -59,81 +57,6 @@ function [meta, tables, logmsg] = parseEISDTA(filepath)
         end
     end
 
-    i = 1;
-    while i <= nLines
-        tok = splitTabs(lines{i});
-        if numel(tok) >= 2 && strcmpi(tok{2}, 'TABLE')
-            name = tok{1};
-            iHeader = nextNonEmpty(lines, i + 1);
-            iUnits = nextNonEmpty(lines, iHeader + 1);
-            if isnan(iHeader) || isnan(iUnits)
-                i = i + 1;
-                continue;
-            end
-
-            headers = splitTabs(lines{iHeader});
-            units = splitTabs(lines{iUnits});
-            if isDataLike(units)
-                dataStart = iUnits;
-                units = repmat({''}, size(headers));
-            else
-                dataStart = nextNonEmpty(lines, iUnits + 1);
-            end
-
-            raw = nan(max(nLines - dataStart + 1, 0), numel(headers));
-            rawCount = 0;
-            j = dataStart;
-            while j <= nLines
-                tokj = splitTabs(lines{j});
-                if isempty(tokj)
-                    j = j + 1;
-                    continue;
-                end
-                if numel(tokj) >= 2 && strcmpi(tokj{2}, 'TABLE')
-                    break;
-                end
-
-                row = nan(1, numel(headers));
-                nKeep = min(numel(tokj), numel(headers));
-                anyNumeric = false;
-                for c = 1:nKeep
-                    v = str2double(tokj{c});
-                    if ~isnan(v)
-                        row(c) = v;
-                        anyNumeric = true;
-                    end
-                end
-
-                if anyNumeric
-                    rawCount = rawCount + 1;
-                    raw(rawCount, :) = row;
-                end
-                j = j + 1;
-            end
-
-            raw = raw(1:rawCount, :);
-            if ~isempty(raw)
-                numericMask = any(~isnan(raw), 1);
-                tableCount = tableCount + 1;
-                tableCells{tableCount} = struct('name', name, ...
-                    'headers', {headers}, 'units', {units}, ...
-                    'data', raw, 'numericMask', numericMask);
-                logCount = logCount + 1;
-                logmsg{logCount} = sprintf('Table %s parsed: %d rows x %d cols.', name, size(raw, 1), size(raw, 2));
-            else
-                logCount = logCount + 1;
-                logmsg{logCount} = sprintf('Table %s found but no numeric rows.', name);
-            end
-
-            i = j;
-        else
-            i = i + 1;
-        end
-    end
-    tables = [tableCells{1:tableCount}];
-    logmsg = logmsg(1:logCount);
-
-    if isempty(tables)
-        error('No numeric TABLE section was parsed from this DTA file.');
-    end
+    [tables, tableLog] = parseTableSections(lines, 2);
+    logmsg = [logmsg(1:logCount), tableLog];
 end

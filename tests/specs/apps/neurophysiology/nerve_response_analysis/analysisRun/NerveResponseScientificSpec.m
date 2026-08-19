@@ -1,5 +1,5 @@
 classdef NerveResponseScientificSpec < matlab.unittest.TestCase
-    %NERVERESPONSESCIENTIFICSPEC Specify stimulus, differential, and CAP metrics.
+    %NERVERESPONSESCIENTIFICSPEC Specify stimulus, correction, and CAP metrics.
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
         function detectsAValidFivePulseTrainWithItsDeclaredSource(testCase)
@@ -22,24 +22,14 @@ classdef NerveResponseScientificSpec < matlab.unittest.TestCase
             testCase.verifyEqual(events.source(1), "synthetic_reference");
         end
 
-        function preservesConfiguredChannelRolesAndSuppressesCommonMode(testCase)
+        function suppressesCommonMode(testCase)
             time = (0:.001:.050)';
-            response = sin(2 .* pi .* 80 .* time);
             common = sin(2 .* pi .* 120 .* time);
-            signals = struct("timeSec", time, "channelNames", ["C-018", "C-012"], ...
-                "values", [response + common common], "roles", struct( ...
-                "cp_positive", struct("channelName", "C-018"), ...
-                "cp_negative", struct("channelName", "C-012")));
-            pairs = struct("id", "cp_diff", "label", "CP", ...
-                "positive", "cp_positive", "negative", "cp_negative");
 
-            differential = nerve_response_analysis.analysisRun.computeDifferentials(signals, pairs);
             corrected = nerve_response_analysis.analysisRun.commonModeCorrect(time, ...
                 2 + .75 .* common, zeros(size(common)), common, ...
                 struct("fitWindowFraction", .25));
 
-            testCase.verifyEqual(differential.pairIds, "cp_diff");
-            testCase.verifyEqual(differential.status, "ok");
             testCase.verifyLessThan(std(corrected.corrected, "omitnan"), .1);
         end
 

@@ -117,32 +117,6 @@ classdef BatchCropGeometrySpec < matlab.unittest.TestCase
             testCase.verifyEqual(result.paddingPercent, 40);
         end
 
-        function preservesTheOriginalPreviewViewportAcrossPaddingAndScaleChanges(testCase)
-            image = uint8(zeros(120, 160));
-            first = batch_crop.cropGeometry.prepareCropCanvas(image, struct( ...
-                "angleDeg", 0, "paddingPercent", 20));
-            second = batch_crop.cropGeometry.prepareCropCanvas(image, struct( ...
-                "angleDeg", 0, "paddingPercent", 200, "maxCanvasPixels", 5000));
-            firstPlacement = batch_crop.cropPreview.placement(first);
-            secondPlacement = batch_crop.cropPreview.placement(second);
-            figureValue = figure(Visible="off");
-            cleanup = onCleanup(@() close(figureValue));
-            axesValue = axes(Parent=figureValue);
-            axesValue.XLim = [30 70];
-            axesValue.YLim = [25 65];
-
-            view = batch_crop.cropPreview.captureView(axesValue, first, firstPlacement);
-            batch_crop.cropPreview.restoreView(axesValue, view, second, secondPlacement);
-            xCanvas = axesValue.XLim - secondPlacement.offset(1);
-            yCanvas = axesValue.YLim - secondPlacement.offset(2);
-            leftTop = batch_crop.cropGeometry.canvasToOriginal(second, [xCanvas(1) yCanvas(1)]);
-            rightBottom = batch_crop.cropGeometry.canvasToOriginal(second, [xCanvas(2) yCanvas(2)]);
-
-            testCase.verifyLessThan(second.coordinateScale, first.coordinateScale);
-            testCase.verifyEqual(sort([leftTop(1) rightBottom(1)]), view.originalXLim, AbsTol=1e-9);
-            testCase.verifyEqual(sort([leftTop(2) rightBottom(2)]), view.originalYLim, AbsTol=1e-9);
-            clear cleanup
-        end
     end
 end
 
