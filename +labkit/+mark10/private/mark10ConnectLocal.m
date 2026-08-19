@@ -219,7 +219,6 @@ token = struct( ...
 end
 
 function [connection, settings] = quiesceAutoOutput(connection)
-settings = emptySettings();
 t = connection.Transport;
 t.Flush();
 t.ReadFor(min(0.15, connection.Timeout));

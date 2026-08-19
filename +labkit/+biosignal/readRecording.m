@@ -160,36 +160,44 @@ function [recording, status] = readRecording(filepath, opts)
         return;
     end
 
+    attempts = repmat(makeAttempt("", false, ""), numel(plan), 1);
+    attemptCount = 0;
+
     for k = 1:numel(plan)
         try
             candidateRecording = plan(k).reader(filepath, opts);
         catch ME
-            attempts(end + 1) = makeAttempt(plan(k).format, false, string(ME.message)); %#ok<AGROW>
+            attemptCount = attemptCount + 1;
+            attempts(attemptCount) = makeAttempt( ...
+                plan(k).format, false, string(ME.message));
             continue;
         end
 
         resolvedFormat = resolveFormat(plan(k).format, candidateRecording);
-        attempts(end + 1) = makeAttempt(resolvedFormat, true, ""); %#ok<AGROW>
+        attemptCount = attemptCount + 1;
+        attempts(attemptCount) = makeAttempt(resolvedFormat, true, "");
+        completedAttempts = attempts(1:attemptCount);
         try
             candidateRecording = normalizeRecordingSampling(candidateRecording, opts);
         catch ME
             status = makeStatus(filepath, false, plan(k).kind, resolvedFormat, ...
-                string(ME.message), k > 1, attempts, fileInfo);
+                string(ME.message), k > 1, completedAttempts, fileInfo);
             return;
         end
         fileInfo.resolvedFormat = resolvedFormat;
         candidateRecording.metadata.detectedFormat = resolvedFormat;
         candidateRecording.metadata.importFallbackUsed = k > 1;
-        candidateRecording.metadata.importAttempts = attempts;
+        candidateRecording.metadata.importAttempts = completedAttempts;
         candidateRecording.metadata.fileInfo = fileInfo;
         recording = candidateRecording;
         status = makeStatus(filepath, true, plan(k).kind, resolvedFormat, ...
-            "", k > 1, attempts, fileInfo);
+            "", k > 1, completedAttempts, fileInfo);
         return;
     end
 
     messages = string({attempts.message});
     messages = messages(strlength(messages) > 0);
+    attempts = attempts(1:attemptCount);
     status = makeStatus(filepath, false, fileInfo.extension, ...
         fileInfo.detectedFormat, strjoin(messages, " | "), ...
         numel(attempts) > 1, attempts, fileInfo);

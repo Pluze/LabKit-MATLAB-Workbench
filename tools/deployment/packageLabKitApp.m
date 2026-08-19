@@ -526,7 +526,11 @@ function root = repoRoot()
 end
 
 function resolvedPath = canonicalPath(filepath)
-    resolvedPath = char(java.io.File(char(filepath)).getCanonicalPath());
+    resolvedPath = labkit.app.internal.filesystem.absolutePath(filepath);
+    if ispc
+        resolvedPath = lower(resolvedPath);
+    end
+    resolvedPath = char(resolvedPath);
 end
 
 function rel = relativePath(root, filepath)

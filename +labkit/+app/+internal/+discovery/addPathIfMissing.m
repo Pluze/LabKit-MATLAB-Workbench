@@ -26,13 +26,6 @@ tf = any(normalizePath(entries) == target);
 end
 
 function value = normalizePath(value)
-values = string(value);
-for index = 1:numel(values)
-    pathValue = java.nio.file.Paths.get( ...
-        char(values(index)), javaArray("java.lang.String", 0));
-    values(index) = string( ...
-        pathValue.toAbsolutePath().normalize().toString());
-end
-value = values;
+value = labkit.app.internal.filesystem.absolutePath(value);
 if ispc, value = lower(value); end
 end

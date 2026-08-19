@@ -58,12 +58,9 @@ function folder = absoluteDocFolder(folder, createIfMissing)
     if createIfMissing && ~isfolder(folder)
         mkdir(folder);
     end
-    [status, attributes] = fileattrib(folder);
-    if ~status || ~attributes.directory
-        error("LabKit:Docs:InvalidFolder", ...
-            "Documentation folder does not exist: %s", folder);
-    end
-    folder = string(attributes.Name);
+    folder = resolveLabKitDocFolder(folder, ...
+        "LabKit:Docs:InvalidFolder", ...
+        "Documentation folder does not exist: %s");
 end
 
 function output = renderNarrativePages(model, stagingRoot)

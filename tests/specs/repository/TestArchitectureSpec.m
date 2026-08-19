@@ -112,10 +112,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
 
         function productionUsesOnlyBaseMatlabBackgroundRuntime(testCase)
             root = labkittest.setup();
-            files = replace(repositoryTextFiles(root), "\", "/");
-            files = files(endsWith(lower(files), ".m"));
-            files = files(files == "labkit_launcher.m" | ...
-                startsWith(files, ["+labkit/" "apps/" "tools/"]));
+            files = productionMatlabFiles(root);
             expression = ["parpool\s*\(" "parfor\s+" "spmd\s*\(" ...
                 "parallel\.Pool" "parallel\.Cluster"];
             probe = ["parpool('threads')" "parfor index = 1:2" ...
@@ -124,15 +121,18 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 probe(index), expression(index), "once")), ...
                 1:numel(expression))), ...
                 "The Toolbox-only guard patterns must prove their own coverage.");
-            violations = strings(0, 1);
+            violations = strings(numel(files) * numel(expression), 1);
+            violationCount = 0;
             for file = files.'
                 source = string(fileread(fullfile(root, file)));
                 for token = expression
                     if ~isempty(regexp(source, token, "once"))
-                        violations(end + 1, 1) = file + ": " + token;
+                        violationCount = violationCount + 1;
+                        violations(violationCount) = file + ": " + token;
                     end
                 end
             end
+            violations = violations(1:violationCount);
 
             testCase.verifyEmpty(violations, ...
                 "Production must not open or address Parallel Computing Toolbox pools: " + ...
@@ -492,7 +492,15 @@ function value = text(root, relative)
 value = string(fileread(fullfile(root, relative)));
 end
 
+function files = productionMatlabFiles(root)
+files = replace(repositoryTextFiles(root), "\", "/");
+files = files(endsWith(lower(files), ".m"));
+files = files(files == "labkit_launcher.m" | ...
+    startsWith(files, ["+labkit/" "apps/" "tools/"]));
+end
+
 function files = repositoryTextFiles(root)
+% Secondary-runtime test boundary: a synthetic Git repository proves policy.
 [status, output] = system("git -C " + shellQuote(root) + ...
     " ls-files --cached --others --exclude-standard");
 if status ~= 0

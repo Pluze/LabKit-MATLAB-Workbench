@@ -63,7 +63,7 @@ function tf = isFolderPath(value)
 end
 
 function root = normalizedFolder(value)
-    root = string(java.io.File(char(value)).getCanonicalPath());
+    root = labkit.app.internal.filesystem.absolutePath(value);
     root = replace(root, "\", "/");
     while endsWith(root, "/")
         root = extractBefore(root, strlength(root));

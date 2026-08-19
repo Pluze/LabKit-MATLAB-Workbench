@@ -480,7 +480,7 @@ value = string(datetime("now", "TimeZone", "UTC", ...
 end
 
 function value = newId()
-value = string(char(java.util.UUID.randomUUID()));
+value = labkit.app.internal.identity.newId();
 end
 
 function deleteIfPresent(filepath)
@@ -490,32 +490,17 @@ end
 end
 
 function value = fileFingerprint(filepath)
-stream = fopen(char(filepath), "r");
-if stream < 0
-    error("labkit:app:runtime:ProjectReadFailed", ...
-        "Could not read project file for conflict detection: %s.", filepath);
-end
-cleanup = onCleanup(@() fclose(stream));
-digest = java.security.MessageDigest.getInstance("SHA-256");
-while true
-    bytes = fread(stream, 1024 * 1024, "*uint8");
-    if isempty(bytes)
-        break;
-    end
-    digest.update(typecast(bytes, "int8"));
-end
-value = lower(string(reshape(dec2hex(typecast(digest.digest(), "uint8"), 2).', 1, [])));
-clear cleanup
+value = labkit.app.internal.integrity.fileSha256(filepath, ...
+    "labkit:app:runtime:ProjectReadFailed", ...
+    "Could not read project file for conflict detection: %s.");
 end
 
 function tf = samePath(left, right)
-left = java.nio.file.Paths.get(char(left), javaArray("java.lang.String", 0));
-right = java.nio.file.Paths.get(char(right), javaArray("java.lang.String", 0));
-tf = string(left.toAbsolutePath().normalize().toString()) == ...
-    string(right.toAbsolutePath().normalize().toString());
+left = labkit.app.internal.filesystem.absolutePath(left);
+right = labkit.app.internal.filesystem.absolutePath(right);
+tf = left == right;
 if ispc
-    tf = lower(string(left.toAbsolutePath().normalize().toString())) == ...
-        lower(string(right.toAbsolutePath().normalize().toString()));
+    tf = lower(left) == lower(right);
 end
 end
 

@@ -251,7 +251,7 @@ classdef Mark10AnalysisSpec < matlab.unittest.TestCase
     end
 end
 
-function storeResource(resources, scope, id, value, cleanup)
+function resources = storeResource(resources, scope, id, value, cleanup)
 key = char(string(scope) + "|" + string(id));
 resources(key) = struct("Value", value, "Cleanup", cleanup);
 end

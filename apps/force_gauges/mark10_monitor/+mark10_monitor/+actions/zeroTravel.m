@@ -3,7 +3,7 @@ function state = zeroTravel(state, context)
 box = context.getResource("application", "mark10Connection");
 connection = box("connection");
 [connection, result] = labkit.mark10.zeroTravel(connection);
-box("connection") = connection;
+mark10_monitor.connection.retain(box, connection);
 if result.Success && result.HardwareApplied
     acquisition = state.session.acquisition;
     acquisition.travel_mm = result.After_mm;

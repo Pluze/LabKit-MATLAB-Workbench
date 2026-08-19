@@ -3,7 +3,7 @@ function state = zeroForce(state, context)
 box = context.getResource("application", "mark10Connection");
 connection = box("connection");
 [connection, result] = labkit.mark10.zeroForce(connection);
-box("connection") = connection;
+mark10_monitor.connection.retain(box, connection);
 if result.Success
     state.session.connection.status = "Force zero verified.";
 else

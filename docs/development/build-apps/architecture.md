@@ -35,6 +35,16 @@ environments, install third-party runtime packages, download model weights, or
 require a network connection on first use. This keeps source checkouts,
 offline packages, and restored lab systems reproducible.
 
+Public-repository `.m` source also remains inside the MATLAB language runtime. It does
+not call Java, Python, Conda, .NET, shell commands, MEX/native libraries, or
+ActiveX/COM. Repository-owned MATLAB implementations provide lexical path
+identity, opaque identifiers, and streaming SHA-256 where older Base MATLAB
+releases do not have a suitable public one-call API. The repository guard scans
+production, tools, and tests. Its only allowances are five exact, marked, and
+counted test-infrastructure shell calls for isolated MATLAB processes,
+synthetic Git state, and filesystem-link fixtures, so another entry point
+cannot silently return.
+
 When Base MATLAB cannot satisfy a proposed contract, that proposal stops at an
 architecture decision; the repository does not carry temporary Toolbox debt or
 fallback branches. A clean CI runtime without optional Toolboxes exercises the

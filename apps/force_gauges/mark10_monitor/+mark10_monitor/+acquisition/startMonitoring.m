@@ -20,7 +20,7 @@ state = mark10_monitor.analysis.invalidate(state, context, []);
 state.session.analysis.dataSource = "Live Monitoring";
 end
 
-function resetMonitor(buffer)
+function buffer = resetMonitor(buffer)
 buffer("started") = tic;
 buffer("monitoringStartedAt") = datetime("now");
 buffer("time_s") = zeros(0, 1);
@@ -47,5 +47,6 @@ buffer("refreshPending") = false;
 end
 
 function cleanupSampler(value, connectionBox)
-connectionBox("connection") = labkit.mark10.stopSampling(value);
+mark10_monitor.connection.retain( ...
+    connectionBox, labkit.mark10.stopSampling(value));
 end

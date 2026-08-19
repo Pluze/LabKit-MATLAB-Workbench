@@ -128,22 +128,9 @@ function value = aggregateStatus(outputs)
 end
 
 function digest = sha256File(filepath)
-    file = fopen(filepath, "rb");
-    if file < 0
-        invalid("Could not read exported output for checksum.");
-    end
-    cleanup = onCleanup(@() fclose(file));
-    algorithm = java.security.MessageDigest.getInstance("SHA-256");
-    while true
-        buffer = fread(file, 65536, "*uint8");
-        if isempty(buffer)
-            break;
-        end
-        algorithm.update(typecast(buffer, "int8"));
-    end
-    raw = typecast(algorithm.digest(), "uint8");
-    digest = lower(string(reshape(dec2hex(raw, 2).', 1, [])));
-    clear cleanup
+    digest = labkit.app.internal.integrity.fileSha256(filepath, ...
+        "labkit:app:runtime:InvalidResultManifest", ...
+        "Could not read exported output for checksum.");
 end
 
 function writeAtomic(filepath, manifest)
@@ -179,7 +166,7 @@ function value = scalarText(value, label)
 end
 
 function value = newId()
-    value = string(char(java.util.UUID.randomUUID()));
+    value = labkit.app.internal.identity.newId();
 end
 
 function value = utcNow()

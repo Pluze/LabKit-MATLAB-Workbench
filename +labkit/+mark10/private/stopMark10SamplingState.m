@@ -4,7 +4,7 @@ if state("stopped")
     connection = state("connection");
     return;
 end
-state("stopped") = true;
+mark10StoreState(state, "stopped", true);
 deliveryTimer = state("timer");
 if isa(deliveryTimer, "timer") && isvalid(deliveryTimer)
     try
@@ -16,13 +16,13 @@ end
 connection = state("connection");
 service = state("service");
 try
-    [connection, ~] = mark10ServiceRequest(connection, "stop", struct());
+    mark10ServiceRequest(connection, "stop", struct());
     mark10ServiceDrain(service);
 catch cause
-    service("consumer") = [];
+    mark10StoreState(service, "consumer", []);
     rethrow(cause);
 end
-service("consumer") = [];
+mark10StoreState(service, "consumer", []);
 connection = mark10ServiceConnection(service);
-state("connection") = connection;
+mark10StoreState(state, "connection", connection);
 end

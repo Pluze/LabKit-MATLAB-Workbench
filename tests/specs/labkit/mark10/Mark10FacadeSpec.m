@@ -195,11 +195,11 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
     end
 
     methods (Static, Access = private)
-        function writeBytes(state, bytes)
+        function state = writeBytes(state, bytes)
             state("command") = string(native2unicode(uint8(bytes(:).'), "UTF-8"));
         end
 
-        function polarityWrite(state, bytes)
+        function state = polarityWrite(state, bytes)
             command = strip(string(native2unicode( ...
                 uint8(bytes(:).'), "UTF-8")));
             state("command") = erase(command, char(13));
@@ -208,7 +208,7 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             end
         end
 
-        function travelZeroWrite(state, bytes)
+        function state = travelZeroWrite(state, bytes)
             command = strip(string(native2unicode( ...
                 uint8(bytes(:).'), "UTF-8")));
             state("command") = erase(command, char(13));
@@ -242,7 +242,7 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
                 "AOFF0;FULL;" + token + ";OPOL0" + newline));
         end
 
-        function raw = readUntil(state, ~, ~)
+        function [raw, state] = readUntil(state, ~, ~)
             command = strip(erase(state("command"), char(13)));
             if isKey(state, "zeroMode") && command == "?C"
                 count = state("queryCount") + 1;
@@ -261,7 +261,7 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             end
         end
 
-        function close(state)
+        function state = close(state)
             state("closed") = true;
         end
 

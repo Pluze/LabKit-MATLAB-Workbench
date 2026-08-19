@@ -13,6 +13,7 @@ their own focused quality checks.
 report = runCodecheckReport(root)
 report = runCodecheckReport(root, "OpenReport", false)
 report = runCodecheckReport(root, "ProgressFcn", progressFcn)
+report = runCodecheckReport(root, "WriteArtifacts", false, "RequireClean", true)
 ```
 
 Add the tool folder first:
@@ -30,6 +31,8 @@ report = runCodecheckReport(repoRoot, "OpenReport", false);
 | `root` | LabKit checkout root to scan. It is converted to a text scalar before file discovery. |
 | `OpenReport` | Logical scalar. Default `true`; opens the generated HTML report in the system browser. |
 | `ProgressFcn` | Empty or a function handle called as `fcn(message, value)`, where `value` progresses from 0 to 1. |
+| `WriteArtifacts` | Logical scalar. Default `true`. Set false for a lightweight agent/checkpoint run with no JSON or HTML writes. |
+| `RequireClean` | Logical scalar. Default `false`. When true, any issue, suppression, compatibility recommendation, or unreviewed secondary-runtime call fails with `LabKit:Codecheck:Findings`. |
 
 The scan includes MATLAB files beneath `root`. It excludes `.git`, `.github`,
 `.vscode`, `.codes`, `artifacts`, `node_modules`, and `photos`. Additional
@@ -51,10 +54,36 @@ The returned struct contains:
 | `suppressedIssueCount` | Suppressed issue count reported by MATLAB. |
 | `compatibilityCheckCount` | Number of compatibility checks MATLAB performed. |
 | `compatibilityRecommendationCount` | Number of compatibility recommendations found in scanned source. |
+| `runtimeViolationCount` | Number of direct Java, Python, Conda, shell, MEX/native, .NET, or ActiveX entry points outside the exact public test-infrastructure allowance ledger. |
+| `runtimeViolations` | Compact file, line, category, and matched-entry descriptions for runtime-boundary findings. |
+| `summary` | One compact `CODECHECK_RESULT` line containing status and all gate counts. |
 
 Default reports are timestamped beneath `artifacts/code-check/`. A second run
 within the same second receives a numeric suffix instead of overwriting the
 first report.
+
+For ordinary agent and checkpoint validation, run:
+
+```bash
+buildtool codecheck
+```
+
+This mode writes no report artifacts. Its final line is intentionally small:
+
+```text
+CODECHECK_RESULT status=PASS files=1701 issues=0 suppressed=0 compatibility=0 runtime=0
+```
+
+The file count varies with the checkout; the status/count fields are the
+machine-readable contract. Ordinary commits are blocked unless all counts are
+zero and the status is `PASS`.
+
+The runtime boundary scans every public-repository MATLAB source file,
+including tests. Five marked and counted `system` calls are retained only for
+isolated MATLAB processes, synthetic Git state, and filesystem-link fixtures;
+adding another call fails the gate. Accepted private workspaces may be included
+in MATLAB analyzer and compatibility results, but their independent repository
+owns its runtime exceptions and submission gate.
 
 ## Behavior And Limitations
 

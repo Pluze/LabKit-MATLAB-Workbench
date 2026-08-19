@@ -80,12 +80,9 @@ function root = defaultRepositoryRoot()
 end
 
 function folder = absoluteFolder(folder)
-    [ok, attributes] = fileattrib(folder);
-    if ~ok || ~attributes.directory
-        error("LabKit:Docs:InvalidFolder", ...
-            "Repository folder does not exist: %s", folder);
-    end
-    folder = string(attributes.Name);
+    folder = resolveLabKitDocFolder(folder, ...
+        "LabKit:Docs:InvalidFolder", ...
+        "Repository folder does not exist: %s");
 end
 
 function files = markdownFiles(repoRoot)

@@ -764,8 +764,7 @@ if hadSequence, setappdata(groot, "fixtureWebreadResponseSequence", sequence); e
 end
 
 function value = normalizedPath(value)
-pathValue = java.nio.file.Paths.get(char(value), javaArray("java.lang.String", 0));
-value = string(pathValue.toAbsolutePath().normalize().toString());
+value = labkit.app.internal.filesystem.absolutePath(value);
 if ispc
     value = lower(value);
 end

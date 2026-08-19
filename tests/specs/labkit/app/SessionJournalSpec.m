@@ -221,8 +221,6 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             app = journalProbeDefinition();
             journal = labkit.app.internal.diagnostics.SessionJournal(app, ...
                 RootFolder=root, SessionId="session-state");
-            journalFolder = journal.folder();
-
             testCase.verifyEqual(string(journal.manifest().state), "active");
             manifest = journal.manifest();
             startedAtUtc = datetime(manifest.startedAtUtc, ...

@@ -101,18 +101,14 @@ if ispc
 else
     command = sprintf('ln -s "%s" "%s"', targetPath, linkPath);
 end
+% Secondary-runtime test boundary: construct a filesystem link fixture.
 [status, message] = system(command);
 assert(status == 0, message);
 cleanup = onCleanup(@() removeDirectoryLink(linkPath));
 end
 
 function removeDirectoryLink(linkPath)
-if ispc
-    removed = java.io.File(linkPath).delete();
-    assert(removed, "Could not remove temporary directory junction.");
-else
-    delete(linkPath);
-end
+delete(linkPath);
 end
 
 function writeFile(filepath, contents)

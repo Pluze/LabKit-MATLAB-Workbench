@@ -57,7 +57,7 @@ classdef Mark10ActionsSpec < matlab.unittest.TestCase
     end
 
     methods (Static, Access = private)
-        function captureAlert(alerts, message)
+        function alerts = captureAlert(alerts, message)
             alerts("message") = string(message);
         end
 
@@ -77,7 +77,7 @@ classdef Mark10ActionsSpec < matlab.unittest.TestCase
                 "LastFailure", struct("Status", "", "Message", ""));
         end
 
-        function write(command, bytes)
+        function command = write(command, bytes)
             command("value") = string(native2unicode(uint8(bytes(:).'), "UTF-8"));
         end
 

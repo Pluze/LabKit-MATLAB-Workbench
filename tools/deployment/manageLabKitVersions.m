@@ -355,7 +355,7 @@ function replacement = replaceInstallation(root, candidate, failAfterBackup)
     assertNoRunningLabKitApps();
     parent = fileparts(root);
     [~, name] = fileparts(root);
-    backup = fullfile(parent, name + ".version-backup-" + string(java.util.UUID.randomUUID()));
+    backup = fullfile(parent, name + ".version-backup-" + uniqueToken());
     original = pwd;
     relative = relativeWithin(root, original);
     inside = samePath(root, original) || descendant(original, root);
@@ -737,12 +737,15 @@ function value = normalizedPath(value)
         error("LabKit:Deployment:InvalidPath", ...
             "Filesystem paths must be nonempty scalar text.");
     end
-    emptyStrings = javaArray("java.lang.String", 0);
-    pathObject = java.nio.file.Paths.get(char(value), emptyStrings);
-    value = string(pathObject.toAbsolutePath().normalize().toString());
+    value = labkit.app.internal.filesystem.absolutePath(value);
     if ispc
         value = lower(value);
     end
+end
+
+function value = uniqueToken()
+[~, token] = fileparts(tempname);
+value = string(token);
 end
 
 function tf = samePath(left, right)

@@ -3,7 +3,11 @@ function tick(playback, context)
 index = playback("index");
 count = numel(playback("time_s"));
 index = min(count, index + mark10_monitor.playback.stepSize(count));
-playback("index") = index;
+setPlaybackIndex(playback, index);
 context.postEvent("mark10.playback.refresh", ...
     @mark10_monitor.playback.refreshState);
+end
+
+function playback = setPlaybackIndex(playback, index)
+playback("index") = index;
 end

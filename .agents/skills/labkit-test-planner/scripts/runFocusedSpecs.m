@@ -31,14 +31,15 @@ function results = runFocusedSpecs(specFiles)
             matlab.unittest.TestSuite.fromFile(char(filepath));
     end
     suite = [selected{:}];
-    sourcePathCleanup = configureSourcePaths(repoRoot, specsRoot, selectedPaths);
-    environmentCleanup = configureEnvironment(selectedPaths);
+    cleanups = [ ...
+        configureSourcePaths(repoRoot, specsRoot, selectedPaths), ...
+        configureEnvironment(selectedPaths)];
     fprintf("LabKit focused specifications: %d identities from %d file(s).\n", ...
         numel(suite), numel(specFiles));
     results = run(suite);
     disp(table(results));
     assertSuccess(results);
-    clear environmentCleanup sourcePathCleanup
+    delete(cleanups);
 end
 
 function cleanup = configureSourcePaths(repoRoot, specsRoot, paths)
@@ -46,7 +47,8 @@ function cleanup = configureSourcePaths(repoRoot, specsRoot, paths)
 % Add every represented App rather than assuming all selected specs share the
 % first App owner.
 appSpecsRoot = string(fullfile(specsRoot, "apps")) + filesep;
-sourceRoots = strings(0, 1);
+sourceRoots = strings(numel(paths), 1);
+sourceRootCount = 0;
 for filepath = paths.'
     if ~startsWith(filepath, appSpecsRoot)
         continue;
@@ -58,23 +60,32 @@ for filepath = paths.'
     end
     sourceRoot = string(fullfile(repoRoot, "apps", parts(1), parts(2)));
     if isfolder(sourceRoot)
-        sourceRoots(end + 1, 1) = sourceRoot;
+        sourceRootCount = sourceRootCount + 1;
+        sourceRoots(sourceRootCount) = sourceRoot;
     end
 end
+sourceRoots = sourceRoots(1:sourceRootCount);
 sourceRoots = unique(sourceRoots, "stable");
+sourceRoots = sourceRoots(:);
 existing = string(strsplit(path, pathsep));
-added = strings(0, 1);
-for sourceRoot = sourceRoots.'
+added = strings(numel(sourceRoots), 1);
+addedCount = 0;
+for sourceRootIndex = 1:numel(sourceRoots)
+    sourceRoot = sourceRoots(sourceRootIndex);
     if ~any(existing == sourceRoot)
         addpath(char(sourceRoot), "-begin");
-        added(end + 1, 1) = sourceRoot;
+        addedCount = addedCount + 1;
+        added(addedCount) = sourceRoot;
     end
 end
+added = added(1:addedCount);
 cleanup = onCleanup(@() removeSourcePaths(added));
 end
 
 function removeSourcePaths(paths)
-for sourceRoot = paths.'
+paths = string(paths(:));
+for sourceRootIndex = 1:numel(paths)
+    sourceRoot = paths(sourceRootIndex);
     if any(string(strsplit(path, pathsep)) == sourceRoot)
         rmpath(char(sourceRoot));
     end

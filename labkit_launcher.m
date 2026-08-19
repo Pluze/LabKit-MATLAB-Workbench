@@ -109,11 +109,69 @@ tf = strcmp(leftPath, rightPath);
 end
 
 function value = normalizedPath(filepath)
-pathValue = java.nio.file.Paths.get(char(filepath), javaArray("java.lang.String", 0));
-value = string(pathValue.toAbsolutePath().normalize().toString());
+value = lexicalAbsolutePath(filepath);
 if ispc
     value = lower(value);
 end
+end
+
+function values = lexicalAbsolutePath(values)
+values = string(values);
+for index = 1:numel(values)
+    values(index) = normalizeOnePath(values(index));
+end
+end
+
+function value = normalizeOnePath(value)
+value = replace(value, "\", "/");
+if ~(startsWith(value, "/") || ...
+        ~isempty(regexp(char(value), '^[A-Za-z]:/', 'once')))
+    value = replace(string(fullfile(pwd, value)), "\", "/");
+end
+[prefix, parts, protectedCount] = splitAbsolutePath(value);
+kept = strings(1, numel(parts));
+keptCount = 0;
+for part = parts(:).'
+    if strlength(part) == 0 || part == "."
+        continue
+    end
+    if part == ".."
+        if keptCount > protectedCount
+            keptCount = keptCount - 1;
+        end
+        continue
+    end
+    keptCount = keptCount + 1;
+    kept(keptCount) = part;
+end
+kept = kept(1:keptCount);
+if prefix == "//"
+    value = "//" + join(kept, "/");
+elseif endsWith(prefix, ":")
+    value = prefix + "/" + join(kept, "/");
+else
+    value = "/" + join(kept, "/");
+end
+value = replace(value, "/", filesep);
+end
+
+function [prefix, parts, protectedCount] = splitAbsolutePath(value)
+if startsWith(value, "//")
+    prefix = "//";
+    parts = split(extractAfter(value, 2), "/");
+    protectedCount = min(2, numel(parts));
+    return
+end
+drive = regexp(char(value), '^[A-Za-z]:', 'match', 'once');
+if ~isempty(drive)
+    prefix = string(drive);
+    parts = split(extractAfter(value, 3), "/");
+    protectedCount = 0;
+    return
+end
+prefix = "/";
+parts = split(extractAfter(value, 1), "/");
+protectedCount = 0;
 end
 
 function message = repairMessage(cause)
@@ -367,9 +425,12 @@ if ~isTextScalar(value) || strlength(strtrim(string(value))) == 0
     error("labkit_launcher:InvalidInstallTarget", ...
         "Choose a nonempty installation folder.");
 end
-pathValue = java.nio.file.Paths.get( ...
-    char(strtrim(string(value))), javaArray("java.lang.String", 0));
-target = string(pathValue.toAbsolutePath().normalize().toString());
+target = lexicalAbsolutePath(strtrim(string(value)));
+end
+
+function value = uniqueToken()
+[~, token] = fileparts(tempname);
+value = string(token);
 end
 
 function plan = inspectRepairTarget(target)
@@ -663,7 +724,7 @@ function replacement = replaceInstall(root, candidate, failAfterBackup)
 assertNoRunningLabKitApps();
 parent = fileparts(root);
 [~, name] = fileparts(root);
-backup = fullfile(parent, name + ".repair-backup-" + string(java.util.UUID.randomUUID()));
+backup = fullfile(parent, name + ".repair-backup-" + uniqueToken());
 workingDirectory = pwd;
 workingRelativePath = relativePathWithin(root, workingDirectory);
 wasInsideRepairRoot = sameNormalizedPath(root, workingDirectory) || ...

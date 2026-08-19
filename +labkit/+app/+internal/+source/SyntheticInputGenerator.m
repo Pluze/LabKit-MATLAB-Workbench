@@ -32,8 +32,8 @@ classdef (Hidden, Sealed) SyntheticInputGenerator
             if isempty(definition.ProjectSchema)
                 if ~isempty(fieldnames(pack.InitialProject))
                     error("labkit:app:contract:InvalidValue", ...
-                        ["BuildSyntheticSample must return an empty " + ...
-                        "InitialProject when the App has no ProjectSchema."]);
+                        "BuildSyntheticSample must return an empty " + ...
+                        "InitialProject when the App has no ProjectSchema.");
                 end
                 return;
             end

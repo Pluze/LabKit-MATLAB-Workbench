@@ -7,13 +7,16 @@ function recording = readNumericMatRecording(filepath, opts)
 
     data = load(filepath);
     names = fieldnames(data);
-    candidates = strings(0, 1);
+    candidates = strings(numel(names), 1);
+    candidateCount = 0;
     for k = 1:numel(names)
         value = data.(names{k});
         if (isnumeric(value) || islogical(value)) && ~isscalar(value) && ismatrix(value)
-            candidates(end + 1, 1) = string(names{k}); %#ok<AGROW>
+            candidateCount = candidateCount + 1;
+            candidates(candidateCount) = string(names{k});
         end
     end
+    candidates = candidates(1:candidateCount);
     if numel(candidates) ~= 1
         error('labkit:biosignal:AmbiguousNumericMat', ...
             'Numeric MAT fallback requires exactly one nonscalar numeric array.');

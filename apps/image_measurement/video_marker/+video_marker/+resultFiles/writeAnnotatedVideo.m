@@ -183,7 +183,7 @@ end
 end
 
 function frame = rgbUint8(frame)
-if ndims(frame) == 2
+if ismatrix(frame)
     frame = repmat(frame, 1, 1, 3);
 elseif size(frame, 3) > 3
     frame = frame(:, :, 1:3);

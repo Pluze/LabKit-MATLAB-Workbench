@@ -5,6 +5,8 @@ function report = runCodecheckReport(root, varargin)
 %   report = runCodecheckReport(root)
 %   report = runCodecheckReport(root, "OpenReport", false)
 %   report = runCodecheckReport(root, "ProgressFcn", progressFcn)
+%   report = runCodecheckReport(root, "WriteArtifacts", false, ...
+%       "RequireClean", true)
 %
 % Inputs:
 %   root - LabKit checkout folder as a character vector or string scalar.
@@ -15,12 +17,17 @@ function report = runCodecheckReport(root, varargin)
 %   ProgressFcn - Empty or a function handle called as fcn(message, value),
 %       where value is a scalar between zero and one. Default writes progress
 %       to the command window.
+%   WriteArtifacts - Logical scalar controlling JSON and HTML output. Default
+%       is true. Set false for the lightweight agent/checkpoint gate.
+%   RequireClean - Logical scalar. When true, any issue, suppression, or
+%       compatibility recommendation throws after printing CODECHECK_RESULT.
+%       Default is false.
 %
 % Outputs:
 %   report - Scalar struct describing the generated artifacts and counts.
 %       jsonFile and compatibilityJsonFile contain the native Code Analyzer
 %       and CodeCompatibilityAnalysis data. htmlFile combines both analyses.
-%       fileCount, issueCount, suppressedIssueCount,
+%       fileCount, issueCount, suppressedIssueCount, runtimeViolationCount,
 %       compatibilityCheckCount, and compatibilityRecommendationCount report
 %       the corresponding result sizes.
 %
@@ -37,6 +44,8 @@ function report = runCodecheckReport(root, varargin)
     p.addRequired("root", @isTextScalar);
     p.addParameter("ProgressFcn", [], @(value) isempty(value) || isa(value, "function_handle"));
     p.addParameter("OpenReport", true, @islogicalScalar);
+    p.addParameter("WriteArtifacts", true, @islogicalScalar);
+    p.addParameter("RequireClean", false, @islogicalScalar);
     p.parse(root, varargin{:});
 
     root = char(string(p.Results.root));
@@ -45,7 +54,7 @@ function report = runCodecheckReport(root, varargin)
         progressFcn = @writeConsoleProgress;
     end
     excludedFolders = [".git", ".github", ".vscode", ".codes", ...
-        "artifacts", "node_modules", "photos"];
+        "artifacts", "node_modules", "photos", "private_apps"];
     scanRoots = codecheckScanRoots(root);
 
     notifyProgress(progressFcn, "Finding MATLAB files...", 0.02);
@@ -63,38 +72,73 @@ function report = runCodecheckReport(root, varargin)
         sprintf("Running Code Compatibility Analyzer on %d MATLAB file(s)...", ...
         numel(files)), 0.48);
     compatibility = analyzeCodeCompatibility(files(:));
-
-    outputRoot = fullfile(root, "artifacts", "code-check");
-    reportBase = uniqueReportBase(outputRoot);
-    output = reportBase + ".json";
-    notifyProgress(progressFcn, "Writing native codeIssues report...", 0.92);
-    ensureFolder(fileparts(output));
-    sourceRoot = commonSourceRoot([string(root), files]);
-    exportCodeIssuesJson(issues, output, sourceRoot);
-
-    compatibilityOutput = reportBase + "_compatibility.json";
     notifyProgress(progressFcn, ...
-        "Writing CodeCompatibilityAnalysis report...", 0.95);
-    exportCodeCompatibilityJson(compatibility, compatibilityOutput);
-
-    notifyProgress(progressFcn, "Writing combined code analysis HTML report...", 0.98);
-    htmlOutput = reportBase + ".html";
-    writeCodecheckReport(output, compatibilityOutput, htmlOutput);
-    if p.Results.OpenReport
-        openHtmlReport(htmlOutput);
-    end
+        sprintf("Checking MATLAB runtime boundaries in %d file(s)...", ...
+        numel(files)), 0.88);
+    runtimeViolations = findSecondaryRuntimeCalls(root, filesByRoot{1});
 
     report = struct();
-    report.jsonFile = string(output);
-    report.compatibilityJsonFile = string(compatibilityOutput);
-    report.htmlFile = string(htmlOutput);
+    report.jsonFile = "";
+    report.compatibilityJsonFile = "";
+    report.htmlFile = "";
     report.fileCount = numel(files);
     report.issueCount = height(issues.Issues);
     report.suppressedIssueCount = height(issues.SuppressedIssues);
     report.compatibilityCheckCount = height(compatibility.ChecksPerformed);
     report.compatibilityRecommendationCount = ...
         height(compatibility.Recommendations);
+    report.runtimeViolationCount = numel(runtimeViolations);
+    report.runtimeViolations = runtimeViolations;
+    if p.Results.WriteArtifacts
+        outputRoot = fullfile(root, "artifacts", "code-check");
+        reportBase = uniqueReportBase(outputRoot);
+        output = reportBase + ".json";
+        notifyProgress(progressFcn, "Writing native codeIssues report...", 0.92);
+        ensureFolder(fileparts(output));
+        sourceRoot = commonSourceRoot([string(root), files]);
+        exportCodeIssuesJson(issues, output, sourceRoot);
+
+        compatibilityOutput = reportBase + "_compatibility.json";
+        notifyProgress(progressFcn, ...
+            "Writing CodeCompatibilityAnalysis report...", 0.95);
+        exportCodeCompatibilityJson(compatibility, compatibilityOutput);
+
+        notifyProgress(progressFcn, ...
+            "Writing combined code analysis HTML report...", 0.98);
+        htmlOutput = reportBase + ".html";
+        writeCodecheckReport(output, compatibilityOutput, htmlOutput);
+        report.jsonFile = string(output);
+        report.compatibilityJsonFile = string(compatibilityOutput);
+        report.htmlFile = string(htmlOutput);
+        if p.Results.OpenReport
+            openHtmlReport(htmlOutput);
+        end
+    else
+        notifyProgress(progressFcn, "Preparing lightweight result...", 0.98);
+    end
+    isClean = report.issueCount == 0 && ...
+        report.suppressedIssueCount == 0 && ...
+        report.compatibilityRecommendationCount == 0 && ...
+        report.runtimeViolationCount == 0;
+    status = "FAIL";
+    if isClean
+        status = "PASS";
+    end
+    report.summary = compose( ...
+        "CODECHECK_RESULT status=%s files=%d issues=%d suppressed=%d compatibility=%d runtime=%d", ...
+        status, report.fileCount, report.issueCount, ...
+        report.suppressedIssueCount, ...
+        report.compatibilityRecommendationCount, ...
+        report.runtimeViolationCount);
     notifyProgress(progressFcn, "Code analysis report complete.", 1.00);
+    for violation = report.runtimeViolations.'
+        fprintf("CODECHECK_RUNTIME %s\n", violation);
+    end
+    fprintf("%s\n", report.summary);
+    if p.Results.RequireClean && ~isClean
+        error("LabKit:Codecheck:Findings", ...
+            "Code analysis must have zero issues, suppressions, compatibility recommendations, and secondary-runtime calls.");
+    end
 end
 
 function exportCodeIssuesJson(issues, output, sourceRoot)

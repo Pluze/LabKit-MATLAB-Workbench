@@ -111,7 +111,7 @@ classdef Mark10PlaybackSpec < matlab.unittest.TestCase
             testCase.verifyEmpty(state.session.acquisition.plotTime_s);
             testCase.verifyEqual(timerEntry.Value.Period, 0.1);
 
-            playback("index") = 41;
+            setMapValue(playback, "index", 41);
             state = mark10_monitor.playback.pause(state, context);
             testCase.verifyFalse(state.session.playback.playing);
             testCase.verifyEqual(state.session.playback.cursor, 41);
@@ -139,17 +139,21 @@ classdef Mark10PlaybackSpec < matlab.unittest.TestCase
     end
 end
 
-function capturePost(observed, id, update)
+function observed = capturePost(observed, id, update)
 observed("id") = id;
 observed("update") = update;
 end
 
-function storeResource(resources, scope, id, value, cleanup)
+function resources = storeResource(resources, scope, id, value, cleanup)
 key = char(string(scope) + "|" + string(id));
 if isKey(resources, key)
     removeResource(resources, scope, id);
 end
 resources(key) = struct("Value", value, "Cleanup", cleanup);
+end
+
+function values = setMapValue(values, key, value)
+values(char(key)) = value;
 end
 
 function value = getResource(resources, scope, id)

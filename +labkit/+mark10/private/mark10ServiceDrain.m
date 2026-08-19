@@ -9,7 +9,7 @@ while true
     if isempty(value)
         break;
     end
-    service("metadata") = value.Metadata;
+    mark10StoreState(service, "metadata", value.Metadata);
     switch string(value.Type)
         case "samples"
             consumer = service("consumer");
@@ -22,7 +22,7 @@ while true
             end
         otherwise
             responses = service("responses");
-            responses(responseKey(value)) = value;
+            mark10StoreState(responses, responseKey(value), value);
     end
 end
 end

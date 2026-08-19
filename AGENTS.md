@@ -109,6 +109,12 @@ under `docs/`.
   downloaded weights, first-run installation, or third-party runtime. A need
   that Base MATLAB cannot satisfy is an architecture blocker requiring an
   explicit user decision; it is not temporary dependency debt.
+- MATLAB source also stays in the MATLAB language runtime: do not
+  call Java, Python, Conda, .NET, shell commands, MEX/native libraries, or
+  ActiveX/COM. Use public Base MATLAB functions or repository-owned MATLAB
+  implementations. Test infrastructure may use only the exact marked shell
+  boundaries owned by the codecheck allowance ledger for isolated MATLAB,
+  Git, or filesystem-link fixtures; every additional call is a violation.
 - Product ownership follows the documented MATLAB function contract, not a
   namespace prefix. Base MATLAB `backgroundPool`, explicit
   `parfeval(backgroundPool,...)`, and `parallel.pool.PollableDataQueue` are
@@ -232,6 +238,10 @@ tests, history, and details out of the public repository.
    closed; do not mix later work into its moving head.
 4. Before every requested commit or push, use `labkit-checkpoint-guard`. Keep
    only the requested outcome, its owned contract, and proportionate evidence.
+   Run `buildtool codecheck` against the exact worktree before staging the
+   checkpoint; any analyzer issue, suppression, compatibility recommendation,
+   or unreviewed secondary-runtime call blocks the commit. Re-run it when later
+   edits change MATLAB source.
    If the net diff is substantially larger or more conceptual than the user
    outcome, revisit the design boundary before committing.
 5. Keep branch work stable with purpose-based commits and focused validation.

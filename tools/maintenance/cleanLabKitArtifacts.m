@@ -57,6 +57,11 @@ function result = cleanLabKitArtifacts(root, varargin)
             rmdir(target, "s");
             removedTargets(end + 1, 1) = relativeTarget;
         catch cause
+            if string(cause.identifier) == "MATLAB:RMDIR:NotADirectory"
+                error("cleanLabKitArtifacts:UnsafeTarget", ...
+                    "Clean Artifacts refused a linked generated target: %s", ...
+                    target);
+            end
             errors(end + 1, 1) = string(cause.message);
         end
     elseif exist(target, "file") == 2
@@ -120,15 +125,12 @@ end
 end
 
 function resolvedPath = realExistingPath(filepath)
-file = java.io.File(char(filepath));
-linkOptions = javaArray("java.nio.file.LinkOption", 0);
-resolvedPath = char(file.toPath().toRealPath(linkOptions).toString());
+resolvedPath = char(labkit.app.internal.filesystem.absolutePath(filepath));
 end
 
 function tf = isFilesystemRoot(filepath)
-file = java.io.File(char(filepath));
-parent = file.getParentFile();
-tf = isempty(parent) || isSamePath(filepath, char(parent.getCanonicalPath()));
+parent = fileparts(filepath);
+tf = strlength(string(parent)) == 0 || isSamePath(filepath, parent);
 end
 
 function tf = isSamePath(left, right)

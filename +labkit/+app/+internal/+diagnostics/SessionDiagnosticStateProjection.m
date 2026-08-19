@@ -87,7 +87,8 @@ if istable(value)
     end
     return
 end
-originalBytes = valueBytes(value);
+details = whos("value");
+originalBytes = double(details.bytes);
 if originalBytes <= compactThresholdBytes()
     return
 end
@@ -134,11 +135,6 @@ elseif issparse(source)
 else
     value = zeros(size(source), "like", source);
 end
-end
-
-function bytes = valueBytes(value)
-details = whos('value');
-bytes = double(details.bytes);
 end
 
 function bytes = compactThresholdBytes()

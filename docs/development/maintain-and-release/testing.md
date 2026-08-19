@@ -106,6 +106,7 @@ buildtool headless
 buildtool gui
 buildtool isolated
 buildtool coverage
+buildtool codecheck
 buildtool docs
 buildtool docsCheck
 ```
@@ -117,6 +118,7 @@ buildtool docsCheck
 | `gui` | Every hidden-GUI catalog identity. |
 | `isolated` | Every path-isolated catalog identity. |
 | `coverage` | Headless catalog with Cobertura XML and HTML coverage artifacts. |
+| `codecheck` | Lightweight pre-commit gate over all public-repository MATLAB source. Prints one `CODECHECK_RESULT` line and fails unless analyzer issues, suppressions, compatibility recommendations, and unreviewed secondary-runtime calls are all zero. Accepted private workspaces retain their own runtime policy. |
 | `docs` / `docsCheck` | Render the ignored local site or verify deterministic source-derived output. |
 
 `changedFast` prints whether its plan is `focused-local` or `full-profile`,

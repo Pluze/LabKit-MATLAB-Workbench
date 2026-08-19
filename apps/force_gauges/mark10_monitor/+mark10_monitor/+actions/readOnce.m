@@ -6,7 +6,7 @@ end
 box = context.getResource("application", "mark10Connection");
 connection = box("connection");
 [connection, sample] = labkit.mark10.readSample(connection);
-box("connection") = connection;
+mark10_monitor.connection.retain(box, connection);
 if ~sample.Valid
     message = "No valid synchronized force/travel reading was received.";
     state.session.connection.lastFailure = message;

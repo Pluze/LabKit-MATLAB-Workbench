@@ -31,6 +31,6 @@ if ~(isnumeric(period) && isscalar(period) && isfinite(period) && period > 0)
 end
 [connection, ~] = mark10ServiceRequest(state("connection"), ...
     "setPeriod", struct("Period", double(period)));
-state("connection") = connection;
-state("period") = double(period);
+mark10StoreState(state, "connection", connection);
+mark10StoreState(state, "period", double(period));
 end
