@@ -139,9 +139,9 @@ Attach `labkit_launcher.m` to each GitHub release. The root README download
 link points at the latest release asset so browsers download the launcher
 instead of opening the raw source text.
 
-The launcher version manager lists recent releases, tags, and main-branch
-commits. Keep release titles and upgrade notes clear enough for users to select
-an older release when the newest build is unsuitable for their workflow.
+The launcher version manager lists published releases only. Keep release titles
+and upgrade notes clear enough for users to select an older release when the
+newest build is unsuitable for their workflow.
 
 ## Component History
 
