@@ -12,13 +12,12 @@
 
 Focused MATLAB GUI apps for lab workflows.
 
-LabKit gives lab users a launcher-first way to open small, purpose-built apps
-for electrochemistry, DIC, image measurement, wearable biosignals, and
-neurophysiology, and gait analysis. Each app owns its workflow, plots, result
-tables, and exports.
-The reusable `+labkit` foundation stays small: GUI shell helpers, Gamry DTA
-loading, thermal source parsing, Intan RHS loading, and biosignal processing
-facades.
+LabKit gives lab users a launcher-first way to open small, purpose-built Apps
+for electrochemistry, DIC, image measurement, wearable biosignals,
+neurophysiology, gait, force gauges, and statistics. Each App owns its
+workflow, plots, result tables, and exports. The reusable `+labkit` foundation
+provides the App SDK plus focused image, thermal, DTA, RHS, biosignal, Mark-10,
+and version-contract facades.
 
 ## Start Here
 
@@ -73,6 +72,8 @@ reviewing implementation details.
 | Gait | `labkit_GaitAnalysis_app` | Pose-coordinate gait metrics, step QC, visualization, and raw-pixel plus calibrated CSV exports. |
 | Wearable biosignal | `labkit_ECGPrint_app` | ECG import, filtering, peak/segment review, and exports. |
 | Neurophysiology | `labkit_RHSPreview_app`, `labkit_NerveResponseAnalysis_app`, `labkit_ResponseReviewStats_app` | Intan RHS inspection, channel protocol drafting, filter records, event-locked nerve response analysis, and aligned response statistics. |
+| Force gauges | `labkit_Mark10Monitor_app` | Live Mark-10 force/travel monitoring, replay, export, and modulus estimates. |
+| Statistics | `labkit_TTestWizard_app` | Guided paired and independent-sample t-tests with assumptions, plots, and exports. |
 
 See the [online app guide](https://pluze.github.io/LabKit-MATLAB-Workbench/apps/)
 for the full app catalog, detailed workflows, inputs, outputs, APIs, and
@@ -111,7 +112,7 @@ validation limits.
 
 ```text
 apps/      workflow-specific MATLAB GUI apps
-+labkit/   reusable UI, image, thermal, DTA, RHS, and biosignal facades
++labkit/   App SDK plus focused image, thermal, DTA, RHS, biosignal, Mark-10, and contract facades
 docs/      human-facing usage, API, architecture, and validation docs
 tests/     behavior tests, project contracts, GUI checks, and runner code
 ```

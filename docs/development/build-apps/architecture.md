@@ -11,7 +11,7 @@ is the small reusable foundation they share.
 
 ```text
 apps/      workflow-specific GUI apps and app-owned helpers
-+labkit/   reusable UI, image, thermal, DTA, RHS, and biosignal facades
++labkit/   App SDK plus focused image, thermal, DTA, RHS, biosignal, Mark-10, and contract facades
 tests/     behavior tests, project contracts, GUI checks, shared helpers, and runner code
 docs/      human-facing usage, API, architecture, and validation docs
 tools/     maintainer diagnostics, deployment packagers, and report generators
@@ -122,6 +122,8 @@ Direct syntax, options, outputs, and artifact behavior are documented in
 | `labkit.dta` | GUI-free Gamry DTA discovery, loading, parsed curves, and pulse helpers. |
 | `labkit.biosignal` | GUI-free recording import, channel extraction, filtering, events, segments, templates, and measurements. |
 | `labkit.rhs` | GUI-free Intan RHS discovery, header parsing, block indexing, and lazy waveform window reads. |
+| `labkit.mark10` | GUI-free Mark-10 discovery, connection, sampling, settings, and verified device-zero operations. |
+| `labkit.contract` | MATLAB-native semantic-version metadata, requirement parsing, compatibility checks, and assertions. |
 
 Apps own experiment-specific vocabulary, thresholds, protocol roles, plots,
 result schemas, export formats, alerts, and log wording. Reusable facades own

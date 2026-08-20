@@ -51,6 +51,12 @@ def owning_manual(root: pathlib.Path, component: str, owner: str) -> str | None:
         return "docs/framework/README.md"
     if component == "labkit_launcher":
         return "docs/apps/labkit-core/launcher/README.md"
+    if component.startswith("labkit."):
+        area = component.removeprefix("labkit.")
+        manual = root / "docs" / "libraries" / area / "README.md"
+        if manual.is_file():
+            return manual.relative_to(root).as_posix()
+        return None
     parts = pathlib.PurePosixPath(owner).parts
     if len(parts) < 3 or parts[0] != "apps":
         return None
