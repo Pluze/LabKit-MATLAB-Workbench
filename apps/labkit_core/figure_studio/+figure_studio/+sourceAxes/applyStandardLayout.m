@@ -33,6 +33,12 @@ if ~isstruct(plotData) || ~isscalar(plotData) || ...
         ~isfield(plotData.axes, "xTickLabel")
     return;
 end
+if isfield(plotData.axes, "xScale")
+    xScale = string(plotData.axes.xScale);
+    if isscalar(xScale) && lower(xScale) == "log"
+        return;
+    end
+end
 labels = strip(string(plotData.axes.xTickLabel));
 labels = labels(:);
 labels(labels == "") = [];

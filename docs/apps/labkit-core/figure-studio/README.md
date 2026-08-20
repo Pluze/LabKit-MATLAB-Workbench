@@ -46,7 +46,9 @@ line widths, annotations, legend, grid, and axes appearance. Selecting
 while retaining the source legend placement. When a new source or subplot is
 selected, Studio reapplies the calibrated reference frame and automatically
 wraps categorical labels that cannot fit horizontally, without importing
-source geometry, typography, or line styling.
+source geometry, typography, or line styling. Logarithmic X axes retain
+MATLAB's native exponent tick formatting and do not enter the categorical
+label-wrapping path.
 Hidden comparison brackets and other legend-excluded annotation lines use the
 standard reference-line width; visible line series keep the standard data-line
 width, including series containing only two points.
@@ -75,6 +77,8 @@ Legend samples use the reference's long line tokens. These editable baselines
 come from normalized pixel measurements across all nine panels of the maintained
 3-by-3 visual reference, not from a single imported FIG.
 The configured width and aspect always describe the inside of the axes frame.
+The interactive preview and every exported format use that same configured
+plot-box aspect; a source axes' stored aspect metadata does not override it.
 Figure Studio calculates the enclosing figure's outer margins from the current
 title, labels, ticks, legend, and visible annotations, so changing a long
 label cannot silently shrink the data region. Empty ruler text is ignored,

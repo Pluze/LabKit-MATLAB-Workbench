@@ -98,6 +98,36 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function nativeExportUsesThePreviewPlotBoxAspect(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            sourceFigure = figure(Visible="off");
+            source = axes(Parent=sourceFigure);
+            semilogx(source, logspace(-1, 5), linspace(700, 0, 50));
+            pbaspect(source, [1 1 1]);
+            plotData = figure_studio.resultFiles.extractAxesData(source);
+            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            previewFigure = figure(Visible="off");
+            preview = axes(Parent=previewFigure);
+            model = struct("plotData", plotData, "sourceAxes", source, ...
+                "style", style, "preview", true);
+
+            figure_studio.sourceAxes.drawPreview( ...
+                struct("main", preview), model);
+            [exportFigure, exported] = ...
+                figure_studio.resultFiles.createStyledFigure( ...
+                plotData, style, source);
+            exportCleanup = onCleanup(@() delete(exportFigure));
+
+            expected = style.canvasWidth / style.canvasHeight;
+            previewRatio = preview.PlotBoxAspectRatio(1) / ...
+                preview.PlotBoxAspectRatio(2);
+            exportRatio = exported.PlotBoxAspectRatio(1) / ...
+                exported.PlotBoxAspectRatio(2);
+            testCase.verifyEqual(previewRatio, expected, AbsTol=1e-12);
+            testCase.verifyEqual(exportRatio, previewRatio, AbsTol=1e-12);
+            clear exportCleanup cleanup
+        end
+
         function figImportPreservesCompositeScientificGraphicsAndLegend(testCase)
             cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
             sourceFigure = figure(Visible="off");
