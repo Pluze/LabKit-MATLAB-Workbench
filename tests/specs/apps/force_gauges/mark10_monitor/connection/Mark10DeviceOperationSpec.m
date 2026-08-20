@@ -1,18 +1,40 @@
-classdef Mark10ActionsSpec < matlab.unittest.TestCase
-    %MARK10ACTIONSSPEC Specify device-only zero and manual read behavior.
+classdef Mark10DeviceOperationSpec < matlab.unittest.TestCase
+    %MARK10DEVICEOPERATIONSPEC Specify verified device-zero behavior.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function successfulForceZeroUpdatesReadoutAndClearsFailure(testCase)
+            command = containers.Map("KeyType", "char", "ValueType", "any");
+            command("value") = "";
+            command("forceReads") = 0;
+            box = containers.Map("KeyType", "char", "ValueType", "any");
+            box("connection") = Mark10DeviceOperationSpec.connection(command);
+            context = labkittest.createCallbackContext(struct( ...
+                "getResource", @(~, ~) box, "alert", @(~, ~) []));
+            state = struct("session", struct( ...
+                "acquisition", struct("force_N", 5), ...
+                "connection", struct("status", "", ...
+                    "lastFailure", "Earlier failure")));
+
+            state = mark10_monitor.connection.zeroForce(state, context);
+
+            testCase.verifyEqual(state.session.acquisition.force_N, 0);
+            testCase.verifyEqual(state.session.connection.status, ...
+                "Force zero verified.");
+            testCase.verifyEqual(state.session.connection.lastFailure, "");
+        end
+
         function rejectsTravelZeroWhenDeviceCommandIsUnavailable(testCase)
             command = containers.Map("KeyType", "char", "ValueType", "any");
             command("value") = "";
+            command("forceReads") = 0;
             alerts = containers.Map("KeyType", "char", "ValueType", "any");
             alerts("message") = "";
-            connection = Mark10ActionsSpec.connection(command);
+            connection = Mark10DeviceOperationSpec.connection(command);
             box = containers.Map("KeyType", "char", "ValueType", "any");
             box("connection") = connection;
             backend = struct( ...
                 "getResource", @(~, ~) box, ...
-                "alert", @(message, ~) Mark10ActionsSpec.captureAlert( ...
+                "alert", @(message, ~) Mark10DeviceOperationSpec.captureAlert( ...
                     alerts, message));
             context = labkittest.createCallbackContext(backend);
             state = struct("session", struct( ...
@@ -20,7 +42,7 @@ classdef Mark10ActionsSpec < matlab.unittest.TestCase
                     "travel_mm", 2, "plotTravel_mm", [1; 2]), ...
                 "connection", struct("status", "", "lastFailure", "")));
 
-            state = mark10_monitor.actions.zeroTravel(state, context);
+            state = mark10_monitor.connection.zeroTravel(state, context);
 
             testCase.verifyEqual(state.session.acquisition.travel_mm, 2);
             testCase.verifyEqual( ...
@@ -31,29 +53,6 @@ classdef Mark10ActionsSpec < matlab.unittest.TestCase
             testCase.verifyEqual(alerts("message"), ...
                 state.session.connection.lastFailure);
         end
-
-        function readsOnceWithoutStartingOrRetainingMonitoring(testCase)
-            command = containers.Map("KeyType", "char", "ValueType", "any");
-            command("value") = "";
-            box = containers.Map("KeyType", "char", "ValueType", "any");
-            box("connection") = Mark10ActionsSpec.connection(command);
-            context = labkittest.createCallbackContext(struct( ...
-                "getResource", @(~, ~) box, "alert", @(~, ~) []));
-            state = struct("session", struct( ...
-                "acquisition", struct("monitoring", false, ...
-                    "sampleCount", 7, "force_N", NaN, "travel_mm", NaN), ...
-                "connection", struct("status", "", "lastFailure", "", ...
-                    "acquisitionMode", "Unknown")));
-
-            state = mark10_monitor.actions.readOnce(state, context);
-
-            testCase.verifyEqual(state.session.acquisition.force_N, 1);
-            testCase.verifyEqual(state.session.acquisition.travel_mm, 2);
-            testCase.verifyEqual(state.session.acquisition.sampleCount, 7, ...
-                "A manual read must not become monitoring data.");
-            testCase.verifyEqual(state.session.connection.status, ...
-                "Manual device reading updated.");
-        end
     end
 
     methods (Static, Access = private)
@@ -63,9 +62,9 @@ classdef Mark10ActionsSpec < matlab.unittest.TestCase
 
         function value = connection(command)
             transport = struct( ...
-                "Write", @(bytes) Mark10ActionsSpec.write(command, bytes), ...
+                "Write", @(bytes) Mark10DeviceOperationSpec.write(command, bytes), ...
                 "Flush", @() [], ...
-                "ReadUntil", @(~, ~) Mark10ActionsSpec.read(command), ...
+                "ReadUntil", @(~, ~) Mark10DeviceOperationSpec.read(command), ...
                 "ReadFor", @(~) uint8([]), "Pause", @(~) [], ...
                 "Close", @() [], "IsOpen", @() true);
             value = struct("Type", "labkit.mark10.connection", ...
@@ -78,14 +77,20 @@ classdef Mark10ActionsSpec < matlab.unittest.TestCase
         end
 
         function command = write(command, bytes)
-            command("value") = string(native2unicode(uint8(bytes(:).'), "UTF-8"));
+            command("value") = strip(erase(string(native2unicode( ...
+                uint8(bytes(:).'), "UTF-8")), char(13)));
         end
 
         function raw = read(command)
-            if command("value") == "n"
-                raw = uint8(sprintf('1.00 N\r\n2.00 mm\r\n'));
-            elseif command("value") == "x"
+            if command("value") == "x"
                 raw = uint8(sprintf('2.00 mm\r\n'));
+            elseif command("value") == "?C"
+                command("forceReads") = command("forceReads") + 1;
+                if command("forceReads") == 1
+                    raw = uint8(sprintf('5.00 N\r\n'));
+                else
+                    raw = uint8(sprintf('0.00 N\r\n'));
+                end
             else
                 raw = uint8([]);
             end

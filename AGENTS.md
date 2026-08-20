@@ -171,13 +171,11 @@ tests, history, and details out of the public repository.
 
 ## Validation
 
-- Run the smallest source-aligned test during branch iteration. Before a branch
-  is ready for PR review, do not run broad changed-file or full-suite gates;
-  use focused fast tests for the current small step. Run `changedFast` once
-  when preparing `develop` for PR review. There is no conservative local
-  changed task; required PR CI owns complete validation.
-  The protected main-push run repeats only policy and the aggregate gate for
-  the exact squash commit because its tree is the already-validated PR result.
+- Run the smallest source-aligned test during iteration. Use
+  `labkit-test-planner` for selectors, failure repair, CI scope, GUI checks,
+  fixtures, and the one final pre-PR `changedFast` run. Required PR CI owns the
+  complete platform claim; the protected main push records policy for the
+  already-validated squash tree.
 - After a local or hosted-CI failure, inspect only the failing identity and its
   log, fix the smallest responsible source boundary, and rerun the narrowest
   failed method, specification file, or owner/contract. Push the focused repair
@@ -216,17 +214,9 @@ tests, history, and details out of the public repository.
   `.labkit-accept-main-guardrails` is present and private changes are unpushed,
   also run the relevant public guardrail because the public changed-file
   planner cannot see the nested diff.
-- CI has two merge-validation modes: pull requests run complete validation,
-  while a protected `main` push records repository policy for the exact
-  accepted commit. A `develop` push may run one non-gating latest-Linux
-  development-feedback job over the complete pushed range; it is rapid author
-  feedback, not merge evidence, and never replaces the one local pre-PR
-  `changedFast` run or complete PR validation. New pushes cancel superseded
-  feedback runs. Inspect this non-gating result only when the user requests it,
-  a checkpoint needs its evidence, or a failure blocks the current work; do not
-  poll it during ordinary iteration. Manual recovery reuses complete
-  pull-request validation in an independent concurrency group; it is a trigger
-  fallback, not a third merge-validation scope.
+- Treat development feedback as non-gating author feedback, never merge
+  evidence. Inspect it only when requested, needed by a checkpoint, or blocking
+  current work; do not poll it during ordinary iteration.
 
 ## Git workflow
 
@@ -235,50 +225,25 @@ tests, history, and details out of the public repository.
    confirming that it was created from the current `origin/main`. Never edit
    or commit directly on `main`, including for documentation, CI, release
    preparation, emergency repairs, and bug fixes.
-2. When a multi-commit migration needs a roadmap, maintain it locally in
-   `.agents/migration_guide.md` while the work is active. The roadmap is
-   disposable working state: do not require a standalone roadmap commit, push,
-   or preservation in `develop` or `main` history. Do not add a future-state
-   migration page under `docs/`. Remove local active entries before preparing
-   the final PR diff. The PR `Why`, net behavior and ownership decisions,
-   compatibility boundaries, exact evidence, and remaining risks are the
-   durable review record; delivered behavior and rationale still belong in
-   the owning manual and component history.
+2. Keep an active multi-commit migration roadmap only in
+   `.agents/migration_guide.md`; never create a future-state migration page
+   under `docs/`. Remove completed entries before final PR preparation.
 3. Use `develop` as the sole ordinary integration branch, the only branch that
    may receive direct pushes, and the one active delivery stream. Commit and
    push logical checkpoints when the work benefits from them; do not delay a
    coherent checkpoint merely to accumulate a larger batch. Once a
    `develop -> main` PR opens, freeze `develop` until the PR is merged or
    closed; do not mix later work into its moving head.
-4. Before every requested commit or push, use `labkit-checkpoint-guard`. Keep
-   only the requested outcome, its owned contract, and proportionate evidence.
-   Run `buildtool codecheck` against the exact worktree before staging the
-   checkpoint; any analyzer issue, suppression, compatibility recommendation,
-   or unreviewed secondary-runtime call blocks the commit. Re-run it when later
-   edits change MATLAB source.
-   If the net diff is substantially larger or more conceptual than the user
-   outcome, revisit the design boundary before committing.
-5. Keep branch work stable with purpose-based commits and focused validation.
-   Intermediate commit count is not a merge criterion. Before opening or
-   merging the final PR, inspect the complete base-to-head diff, user docs,
-   component versions, structured history, validation evidence, and remaining
-   risks as one net change that `main` will squash into; do not derive release
-   semantics from intermediate branch commits. Versions and small history
-   records may remain provisional during ordinary iteration, but PR preparation
-   rewrites them from the `origin/main` baseline: remove intermediate version
-   transitions, merge related checkpoint records, and leave exactly one changed
-   structured history record for each versioned component.
-6. Main accepts PRs only from the repository-owned `develop` branch. Run
-   `changedFast` once before final review, inspect required PR CI, and read only
-   failing logs. Squash-merge with an explicit compliant subject.
-7. After the merge, inspect the exact lightweight main-push policy gate once
-   and complete any authorized release from that exact commit. Do not repeat
-   the MATLAB matrix already required on the up-to-date PR. Before deleting
-   `develop`, verify its PR is merged, it has no unmerged commits, and no open
-   PR depends on it. Delete local and remote `develop`, recreate both at the
-   exact new `origin/main` commit, restore branch protection, and verify
-   `develop == origin/main` before new work starts. Never create a sync commit.
-8. Never force-push without explicit approval. Stop and report permission,
+4. Use `labkit-checkpoint-guard` before every requested commit or push. A clean
+   `codecheck` is mandatory after the final MATLAB edit; stage only the owned
+   outcome and proportionate evidence.
+5. Use `labkit-pr-preparer` for the complete `origin/main..develop` squash
+   boundary, versions, structured history, final local gate, PR record, CI,
+   review, merge, and exact post-merge `develop` recreation. Main accepts PRs
+   only from repository-owned `develop`; never create a sync commit.
+6. After merge, release only the exact accepted main commit after its policy
+   gate succeeds. Do not repeat the complete PR MATLAB matrix.
+7. Never force-push without explicit approval. Stop and report permission,
    protection, review, CI, sync, or cleanup blockers rather than bypassing them.
    Branch protection must require `CI Gate`, PR review flow, linear main
    history, and conversation resolution for administrators as well as ordinary
@@ -332,17 +297,9 @@ explicit compliant squash subject; do not rely on GitHub defaults.
 - History records use stable Change ID and sequence metadata plus rationale,
   compatibility, user/data impact, validation, evidence, and follow-up. Do not
   restore a root changelog or separate history parser.
-- While work remains on `develop`, treat component history as the net pending
-  integration record rather than a commit diary. Merge compatible incremental
-  changes into an existing unpublished record when they share the same
-  component evolution, user outcome, and compatibility decision. Before the
-  squash PR is ready for review, compare the complete base-to-head change and
-  rewrite its history as the smallest coherent set of independently reviewable
-  product decisions: fold minor follow-on edits into their owning record,
-  remove records that describe no durable transition, and consolidate
-  development-only version steps so each affected component advances exactly
-  once for the net change. Update rationale, compatibility, user impact, and
-  evidence to describe the final PR diff rather than its commit sequence.
+- Treat unpublished history as the net squash decision, not a commit diary.
+  Fold follow-on edits into the smallest coherent records and describe the
+  final user outcome, compatibility, and evidence.
 - New release tags are `vX.Y.Z`; do not rename published legacy tags. Release
   titles contain only `VX.Y.Z` with an uppercase `V` and relevant `Highlights`,
   `Fixes`, `Upgrade Note`, and `Validation` sections.

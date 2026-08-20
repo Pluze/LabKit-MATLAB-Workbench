@@ -64,6 +64,27 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 string({descriptors.Owner}) == ""));
         end
 
+        function appPackagesUseWorkflowOrDomainCapabilityNames(testCase)
+            root = labkittest.setup();
+            listing = dir(fullfile(root, "apps", "**", "+*"));
+            listing = listing([listing.isdir]);
+            forbidden = ["+actions" "+ops" "+io" "+ui" ...
+                "+userInterface" "+view" "+export" "+helpers" ...
+                "+utils" "+manager" "+processor"];
+            names = string({listing.name});
+            listing = listing(ismember(names, forbidden));
+            violations = strings(1, numel(listing));
+            for index = 1:numel(listing)
+                folder = fullfile(listing(index).folder, listing(index).name);
+                violations(index) = replace(erase( ...
+                    string(folder), string(root) + filesep), "\", "/");
+            end
+
+            testCase.verifyEmpty(violations, ...
+                "App packages must name a workflow or domain capability: " + ...
+                strjoin(violations, ", "));
+        end
+
         function productionDynamicInvocationIsClosedAndOwned(testCase)
             root = labkittest.setup();
             files = replace(repositoryTextFiles(root), "\", "/");
