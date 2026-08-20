@@ -600,6 +600,17 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifySubstring(result.Classifications.Reason, "docsCheck");
         end
 
+        function rootReadmeUsesDocumentationValidationOwnership(testCase)
+            result = labkittest.plan("Profile", "changed", ...
+                "ChangedPaths", "README.md");
+
+            testCase.verifyEqual(result.Scope, "focused-local");
+            testCase.verifyEmpty(result.Descriptors);
+            testCase.verifyEqual(result.Classifications.Kind, "ignored");
+            testCase.verifyEqual(result.Classifications.Role, "documentation");
+            testCase.verifySubstring(result.Classifications.Reason, "docsCheck");
+        end
+
         function validationFrameworkChangeUsesBoundedSystemEvidence(testCase)
             result = labkittest.plan("Profile", "changed", ...
                 "ChangedPaths", "tests/+labkittest/plan.m");
