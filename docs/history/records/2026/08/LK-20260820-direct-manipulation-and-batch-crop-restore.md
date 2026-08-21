@@ -38,6 +38,7 @@ Keep direct manipulation transactional without presenting it as a long-running a
 - Reduced live source records to `id`, `role`, and `path`; moved path reading to the pure `labkit.app.source.paths` function and flattened transient resources to App-owned IDs with replacement, explicit removal, and close cleanup.
 - Removed unused file-list and section options, the unconsumed synthetic JSON manifest and retained-journal export duplicate, test-only runtime hooks, and public plotting, integrity, and biosignal comparison helpers without production consumers.
 - Added explicit Video Marker **Save MAT** and **Open MAT** controls backed by its App-owned archive; edits and navigation never autosave.
+- Converted the remaining in-use Video Marker framework archives to the current App-owned format, then removed framework-project, legacy-project, and older-payload readers.
 - Added Batch Crop **Restore manifest**, source relocation beside the selected manifest, dimension verification, successfully saved task reconstruction, and crop/scale/output-setting restoration.
 - Extended new manifests with task order, exact physical dimensions, max-upsample percentage, and output format while retaining the existing result columns.
 
@@ -47,7 +48,7 @@ Dragging sliders and plot interactions no longer flash action busy chrome or bla
 
 ## Compatibility and migration
 
-This removes the version-2 project/result authoring API and the remaining state/source/resource assumptions built on it, advancing `labkit.app` to 4.0.0. The unused public group-comparison removal advances `labkit.biosignal` to 3.0.0. Built-in Apps migrate together and declare only additional facades they actually call. No generic live-state or source-record compatibility adapter is provided. Batch Crop manifest restoration deliberately accepts only the current final-snapshot format; older state files and manifests are not migrated. Video Marker owns its MAT compatibility policy independently of the framework.
+This removes the version-2 project/result authoring API and the remaining state/source/resource assumptions built on it, advancing `labkit.app` to 4.0.0. The unused public group-comparison removal advances `labkit.biosignal` to 3.0.0. Built-in Apps migrate together and declare only additional facades they actually call. No generic live-state or source-record compatibility adapter is provided. Batch Crop manifest restoration deliberately accepts only the current final-snapshot format; older state files and manifests are not migrated. Video Marker accepts only its current App-owned archive after the remaining active framework archives are converted outside the repository.
 
 ## Validation
 

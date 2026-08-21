@@ -6,8 +6,8 @@ explicit App-owned MAT snapshot when requested.
 
 ## Requirements And Launch
 
-The app declares compatibility with `labkit.app` 3.x and `labkit.image` 2.x.
-Video decoding uses Base MATLAB's available video support. Predictive
+The app uses the current LabKit App SDK and declares compatibility with
+`labkit.image` 2.x. Video decoding uses Base MATLAB's available video support. Predictive
 navigation is implemented in repository-owned MATLAB code; no optional
 Toolbox, model weight, or third-party runtime package is required.
 
@@ -18,8 +18,8 @@ labkit_VideoMarker_app
 ## Start Or Open A Project
 
 The **Session** panel appears first in the Video tab. **Open MAT** is Video
-Marker's task-specific continuation action and accepts an explicit Video Marker
-MAT snapshot or a compatible older project. **Save MAT** asks for a destination
+Marker's task-specific continuation action and accepts the current explicit
+Video Marker MAT snapshot. **Save MAT** asks for a destination
 and writes the current video reference, skeleton, calibration, annotations, and
 frame position. Editing and navigation only update the live App; they never
 write an implicit autosave or record intermediate adjustments.
@@ -77,10 +77,9 @@ calibration, coordinates, settings, and current frame. It does not write an
 interaction log, intermediate edits, decoded frames, or the source video.
 
 When a project tree moves between folders, users, or operating systems, the
-saved original path, archive-relative reference, and a same-folder filename are
-tried. A compatible older Video Marker project or autosave opens through
-**Open MAT**; a missing required source is reported without partially replacing
-the live task.
+saved path, its archive-relative interpretation, and a same-folder filename are
+tried. A missing required source is reported without partially replacing the
+live task.
 
 ## What The Project Saves
 
@@ -89,8 +88,8 @@ annotations, calibration, export settings, and current frame number. It does
 not copy the video or a frame cache. When the project is reopened, Video Marker
 reads frames from the source video and preserves the saved annotations.
 
-Older compatible project and autosave formats are upgraded when opened. Save
-the upgraded project before moving it into another workflow.
+Only the current App-owned snapshot format is accepted. Video Marker does not
+maintain migration behavior for retired framework or autosave formats.
 
 ## Outputs
 
