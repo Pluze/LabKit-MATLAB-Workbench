@@ -568,19 +568,6 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "system");
         end
 
-        function developSyncScriptSelectsRepositoryEvidence(testCase)
-            source = "sync-develop.sh";
-            classification = labkittest.classifyPath(source);
-            location = labkittest.locate(source);
-
-            testCase.verifyEqual(classification.Kind, "mapped");
-            testCase.verifyEqual(classification.Role, "repository-policy");
-            testCase.verifyEqual(classification.Owner, "repository");
-            testCase.verifyEqual(location.Owner, "repository");
-            testCase.verifyEqual(location.Contract, "system");
-            testCase.verifyEqual(location.Environment, "headless");
-        end
-
         function unknownChangedPathFailsPlanningInsteadOfWidening(testCase)
             specsRoot = testCase.createEnvironmentFixture();
 

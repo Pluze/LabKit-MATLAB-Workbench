@@ -14,7 +14,7 @@ Read catalog implementation only when changing or diagnosing catalog behavior.
 2. Add evidence with `labkittest.createSpec`; use a Regression, Invariant, or
    Compatibility reason and resolve ambiguous contracts explicitly.
 3. Iterate by owner/contract or the catalog's bounded file closure.
-4. Run `changedFast` once only when develop is ready for final PR review.
+4. Run `changedFast` once only when the task branch is ready for final PR review.
 
 A missing contract or zero selection is not passing evidence. Every changed
 `projectSpec.m` requires nonempty App-owned persistence evidence. When a broad
@@ -42,14 +42,14 @@ Repository profiles are headless, hidden GUI, path-isolated, coverage, and
 `changedFast`. Documentation belongs to `docsCheck`; unknown changed paths fail
 planning until assigned an owner or explicit ignore reason.
 
-For hosted `develop` feedback, pass the complete push range's explicit changed
+For hosted task-branch feedback, pass the complete push range's explicit changed
 paths to the existing changed planner. Never infer a multi-commit push from a
 clean checkout's `HEAD^..HEAD`, and never report the single-platform feedback
 job as merge safety or as a replacement for local pre-PR and complete PR gates.
 Let a newer push cancel superseded feedback, and inspect hosted feedback only
 on user request, when checkpoint evidence needs it, or when a reported failure
-blocks the current task. When an open develop-to-main PR owns complete
-validation, let push-triggered feedback stop before MATLAB setup; use manual
+blocks the current task. When an open PR from that task branch to `main` owns
+complete validation, let push-triggered feedback stop before MATLAB setup; use manual
 dispatch only when independent focused evidence is explicitly needed. Do not
 continuously poll non-gating development runs.
 

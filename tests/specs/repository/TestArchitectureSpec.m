@@ -165,13 +165,13 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "Background work must explicitly name backgroundPool.");
         end
 
-        function developFeedbackUsesOneCancelableBaseMatlabLane(testCase)
+        function taskBranchFeedbackUsesOneCancelableBaseMatlabLane(testCase)
             root = labkittest.setup();
             workflow = text(root, ...
                 ".github/workflows/development-feedback.yml");
 
-            testCase.verifySubstring(workflow, "branches:");
-            testCase.verifySubstring(workflow, "- develop");
+            testCase.verifySubstring(workflow, "branches-ignore:");
+            testCase.verifySubstring(workflow, "- main");
             testCase.verifySubstring(workflow, "runs-on: ubuntu-latest");
             testCase.verifySubstring(workflow, "release: latest");
             testCase.verifyFalse(contains(workflow, "products:"));
@@ -180,7 +180,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, ...
                 "steps.scope.outputs.should_run == 'true'");
             testCase.verifySubstring(workflow, ...
-                "Open develop-to-main PR owns complete validation");
+                "Open task-branch PR owns complete validation");
             testCase.verifySubstring(workflow, "github.event.before");
             testCase.verifySubstring(workflow, ...
                 "artifacts/development-feedback/changed-paths.txt");

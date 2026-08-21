@@ -17,7 +17,7 @@
       "rationale": "Implementation is not a review request."
     },
     {
-      "prompt": "Prepare develop, consolidate versions, and open the final PR to main.",
+      "prompt": "Prepare the task branch, consolidate versions, and open the final PR to main.",
       "should_activate": false,
       "rationale": "Final integration is owned by the PR preparer."
     }

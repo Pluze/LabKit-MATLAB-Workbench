@@ -134,7 +134,7 @@ find the exact owner and contract; App authors never invent test paths.
   never copy one shared-behavior paragraph across every App page.
 - Source or user-visible behavior changes update `AppVersion` and `Updated` in
   the App's `definition.m`, owned documentation, and component history before
-  the `develop` PR is merge-ready.
+  its task-branch PR is merge-ready.
 - Test GUI wiring semantically: controls, choices, events, workflow outcomes,
   viewport behavior, and traces. Launch only the minimal App input needed by
   the owning behavior specification; test calculations and exports

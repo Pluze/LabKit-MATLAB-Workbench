@@ -17,10 +17,10 @@ compatibility, choose a major version. If the implementation changes a user
 workflow without intentionally breaking compatibility, describe it in the
 release notes so launcher users can choose or roll back versions deliberately.
 
-On the canonical `develop` branch created from `origin/main`, choose each
+On a short-lived task branch created from current `origin/main`, choose each
 component's final version directly from the PR base, not from intermediate
-branch commits. A branch may edit version metadata while work is evolving, but
-its merge-ready state must be exactly one semantic-version step from the
+branch commits. A task branch may edit version metadata while work is evolving,
+but its merge-ready state must be exactly one semantic-version step from the
 mainline baseline: the next patch, the next minor with patch zero, or the next
 major with minor and patch zero. The related component history record
 describes that direct `main baseline -> PR final` transition. CI verifies
@@ -58,12 +58,11 @@ confirmation, an existing tag or release, or the absence of a successful
 same-commit main CI run prevents tag creation. Ordinary push, pull-request,
 and documentation workflows never create release tags.
 
-After the PR merge and its exact main-push CI complete, verify that `develop`
-has no unmerged commits and no open PR depends on it. Delete local and remote
-`develop`, recreate both at the exact new `origin/main` commit, restore its
-branch protection, and verify that the two refs resolve to the same SHA before
-starting new work. Do not merge main back into develop and do not create a
-branch-sync commit.
+After the PR merge and its exact main-push CI complete, verify the accepted
+squash SHA and confirm GitHub's automatic head-branch deletion removed the
+merged remote branch; delete it explicitly if it remains, then remove the local
+branch. Start later work from a newly fetched `origin/main`; do not recycle a
+merged branch, merge main back into it, or create a branch-sync commit.
 
 ```bash
 gh workflow run release.yml --ref main \

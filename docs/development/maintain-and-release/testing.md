@@ -117,7 +117,7 @@ buildtool docsCheck
 
 | Task | Purpose |
 | --- | --- |
-| `changedFast` | Final local pre-PR review gate, run once after the complete `develop` diff is ready. Reads tracked and untracked working-tree paths; on a clean checkpoint it reads `HEAD^..HEAD`. |
+| `changedFast` | Final local pre-PR review gate, run once after the complete task-branch diff is ready. Reads tracked and untracked working-tree paths; on a clean checkpoint it reads `HEAD^..HEAD`. |
 | `headless` | Every headless catalog identity. |
 | `gui` | Every hidden-GUI catalog identity. |
 | `isolated` | Every path-isolated catalog identity. |
@@ -139,22 +139,23 @@ tests. It prints each changed path's classification, selected evidence, and any
 manual boundary. A focused-local result is rapid author feedback, not merge
 safety evidence; CI runs the full platform profiles.
 
-Run focused behavior during iteration. Run `changedFast` once when `develop`
-is ready for final PR review. CI owns broad platform validation; do not
+Run focused behavior during iteration. Run `changedFast` once when the task
+branch is ready for final PR review. CI owns broad platform validation; do not
 repeatedly run broad tasks after each small edit.
 
-Every push to `develop` also starts a non-gating `Development Feedback`
-workflow on latest Ubuntu and latest Base MATLAB. It passes the complete GitHub
-push range to the same changed-path planner, runs its focused evidence, and
-checks deterministic documentation. This job is rapid cross-environment author
-feedback only: a green result does not establish merge safety, replace the one
-local pre-PR `changedFast` checkpoint, or reduce the complete PR matrix. A new
-push cancels an older in-progress feedback run so rapid iteration does not build
-a stale queue. While an open `develop`-to-`main` PR owns complete validation,
-push-triggered feedback stops after a quick scope check instead of repeating
-MATLAB and documentation work; a manual dispatch still runs the complete
-feedback lane. Read the non-gating result when its evidence is needed rather
-than monitoring it throughout ordinary development.
+Every push to a non-`main` task branch also starts a non-gating `Development
+Feedback` workflow on latest Ubuntu and latest Base MATLAB. It passes the
+complete GitHub push range to the same changed-path planner, runs its focused
+evidence, and checks deterministic documentation. This job is rapid
+cross-environment author feedback only: a green result does not establish merge
+safety, replace the one local pre-PR `changedFast` checkpoint, or reduce the
+complete PR matrix. A new push cancels an older in-progress feedback run so
+rapid iteration does not build a stale queue. While an open PR from that exact
+task branch to `main` owns complete validation, push-triggered feedback stops
+after a quick scope check instead of repeating MATLAB and documentation work; a
+manual dispatch still runs the complete feedback lane. Read the non-gating
+result when its evidence is needed rather than monitoring it throughout
+ordinary development.
 
 ## Artifacts and Failures
 
@@ -235,12 +236,13 @@ and uncached. CI also runs `docsCheck` once and uploads catalog artifacts after
 failures. Coverage is an explicit report, not a duplicate merge gate.
 
 `CI Gate` is the required aggregate result. `main` accepts pull requests only
-from the repository-owned `develop` branch, and policy checks verify source
-ownership, direct semantic version steps, and matching component history.
-Strict branch protection rejects direct pushes and requires the pull request to
-be current with `main`. The accepted `main` push therefore records policy for
-the exact squash commit instead of repeating the MATLAB matrix. If those
-protection assumptions change, restore full validation on `main` pushes.
+from same-repository short-lived task branches; branch names carry no product,
+agent, or workflow semantics. Policy checks verify source ownership, direct
+semantic version steps, and matching component history. Strict branch
+protection rejects direct pushes and requires the pull request to be current
+with `main`. The accepted `main` push therefore records policy for the exact
+squash commit instead of repeating the MATLAB matrix. If those protection
+assumptions change, restore full validation on `main` pushes.
 
 Job summaries identify the profiles actually run, failed test identities,
 available diagnostics, artifacts, and manual boundaries. A cancelled or

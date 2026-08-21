@@ -2,7 +2,7 @@
   "schema_version": 1,
   "cases": [
     {
-      "prompt": "Audit the current focused fix, commit it, and push the ordinary develop checkpoint.",
+      "prompt": "Audit the current focused fix, commit it, and push the ordinary task-branch checkpoint.",
       "should_activate": true,
       "rationale": "An ordinary commit and push requires checkpoint scope and evidence checks."
     },
@@ -17,7 +17,7 @@
       "rationale": "A review-only request belongs to the code-review workflow."
     },
     {
-      "prompt": "Prepare develop for its final squash PR into main.",
+      "prompt": "Prepare this task branch for its final squash PR into main.",
       "should_activate": false,
       "rationale": "Final integration belongs to the PR-preparer workflow."
     }

@@ -26,7 +26,7 @@
       "rationale": "Measured performance and focused evidence do not imply rebuilding the App."
     },
     {
-      "prompt": "Prepare the finished develop branch for its squash PR into main.",
+      "prompt": "Prepare the finished task branch for its squash PR into main.",
       "activate": ["labkit-pr-preparer", "labkit-documentation-maintainer", "labkit-test-planner"],
       "do_not_activate": ["labkit-app-builder", "labkit-checkpoint-guard", "labkit-performance-profiler"],
       "rationale": "Final integration is distinct from an ordinary checkpoint."
@@ -50,7 +50,7 @@
       "rationale": "Evidence-backed removal is distinct from governance, review, and integration."
     },
     {
-      "prompt": "Inspect, commit, and push this focused ordinary develop checkpoint.",
+      "prompt": "Inspect, commit, and push this focused ordinary task-branch checkpoint.",
       "activate": ["labkit-checkpoint-guard", "labkit-test-planner"],
       "do_not_activate": ["labkit-code-review", "labkit-pr-preparer"],
       "rationale": "Ordinary checkpoint hygiene uses focused evidence without final PR preparation."
