@@ -3,8 +3,8 @@ function state = stopMonitoring(state, context)
 if ~state.session.acquisition.monitoring
     return;
 end
-buffer = context.getResource("application", "mark10Buffer");
-context.removeResource("application", "mark10Sampler");
+buffer = context.getResource("mark10Buffer");
+context.removeResource("mark10Sampler");
 state = mark10_monitor.acquisition.refreshState(state, context);
 state.session.acquisition.monitoring = false;
 state.session.acquisition.retainedValidCount = sum(buffer("valid"));

@@ -10,7 +10,7 @@ classdef VideoMarkerSourceSpec < matlab.unittest.TestCase
             project.results.coordinateOutputPath = "coordinates.csv";
             state = struct("project", project);
             context = labkittest.createCallbackContext(struct( ...
-                "removeResource", @(~, ~) [], "log", @(varargin) []));
+                "removeResource", @(~) [], "log", @(varargin) []));
 
             actual = video_marker.videoSource.selectionChanged(state, [], context);
 

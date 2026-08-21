@@ -11,17 +11,17 @@ if target == startFrame
     state.session.selection.currentFrame = target;
     return
 end
-paths = context.resolveSourcePaths(state.project.inputs.sources);
+paths = labkit.app.source.paths(state.project.inputs.sources);
 if isempty(paths) || ~isfile(paths(1))
     state.session.selection.currentFrame = startFrame;
     return
 end
 try
-    resource = context.getResource("document", "video");
+    resource = context.getResource("video");
     if ~isstruct(resource) || ~isscalar(resource) || ...
             ~isfield(resource, "path") || resource.path ~= paths(1)
         resource = video_marker.videoSource.openResource(paths(1));
-        context.setResource("document", "video", resource, []);
+        context.setResource("video", resource, []);
     end
     info = resource.info;
     [frames, imageData, report] = ...

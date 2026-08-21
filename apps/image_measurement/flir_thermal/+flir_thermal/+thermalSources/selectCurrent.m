@@ -30,7 +30,7 @@ end
 
 index = selectedIndex(selection, sources);
 try
-    item = loadItem(sources(index), annotations, callbackContext);
+    item = loadItem(sources(index), annotations);
 catch ME
     callbackContext.log("error", "flir_thermal.thermalsources.selectcurrent.exception", "Load selected FLIR image", ...
         Category="failure", Audience="developer", Exception=ME);
@@ -46,7 +46,7 @@ applicationState = ...
     flir_thermal.thermalSources.storeCurrentAnnotation( ...
         applicationState, item);
 if strlength(applicationState.project.parameters.outputFolder) == 0
-    paths = callbackContext.resolveSourcePaths(sources);
+    paths = labkit.app.source.paths(sources);
     if ~isempty(paths)
         applicationState.project.parameters.outputFolder = ...
             string(fullfile(fileparts(paths(1)), "flir_thermal"));
@@ -74,8 +74,8 @@ if ~isempty(selection.Indices)
 end
 end
 
-function item = loadItem(source, annotations, callbackContext)
-paths = callbackContext.resolveSourcePaths(source);
+function item = loadItem(source, annotations)
+paths = labkit.app.source.paths(source);
 items = flir_thermal.sourceFiles.readImages( ...
     paths, struct("SkipInvalid", false));
 if isempty(items)

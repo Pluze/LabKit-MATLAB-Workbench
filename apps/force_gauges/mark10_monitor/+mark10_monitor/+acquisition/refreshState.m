@@ -1,11 +1,11 @@
 function state = refreshState(state, context)
 %REFRESHSTATE Copy one bounded resource snapshot into visible session state.
-buffer = context.getResource("application", "mark10Buffer");
+buffer = context.getResource("mark10Buffer");
 buffer("refreshPending") = false;
 if ~state.session.connection.connected
     return;
 end
-connectionBox = context.getResource("application", "mark10Connection");
+connectionBox = context.getResource("mark10Connection");
 connection = connectionBox("connection");
 a = state.session.acquisition;
 a.sampleCount = buffer("sampleCount");

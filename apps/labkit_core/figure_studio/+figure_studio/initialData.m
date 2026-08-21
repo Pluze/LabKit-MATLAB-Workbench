@@ -25,7 +25,6 @@ function project = createProject()
     project.results = struct( ...
         "lastExport", [], ...
         "lastOutputPath", "");
-    project.extensions = struct();
 end
 
 

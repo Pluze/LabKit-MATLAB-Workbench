@@ -63,7 +63,6 @@ function app = definition()
         Entrypoint="labkit_Example_app", AppId="example", ...
         Title="Example", Family="Examples", ...
         AppVersion="1.0.0", Updated="2026-07-19", ...
-        Requirements=labkit.contract.requirements("app", ">=3 <4"), ...
         Workbench=workbench);
 end
 ```
@@ -75,7 +74,8 @@ building one private native platform plan.
 
 ## Paved Road
 
-- Bind ordinary state with `Bind="project..."` or `Bind="session..."`.
+- Bind controls to dotted paths in the App's own in-memory state. The SDK does
+  not reserve root field names or define a project/session schema.
 - Keep ordinary actions on the framework's consistent single-line native
   button rhythm. A readonly `field` automatically wraps its current text and
   adjusts to the available width; Apps do not declare line counts or a separate
@@ -106,8 +106,8 @@ building one private native platform plan.
 - Give every scientific or workflow action an App-owned `Tooltip`. The
   framework guarantees a nonempty label-based fallback, while repository
   guardrails require tracked Apps to explain the action instead of repeating
-  its visible label. File-list choose/folder/remove/clear controls expose
-  dedicated tooltip options and domain-neutral label defaults.
+  its visible label. Auxiliary file-list buttons derive hover text from their
+  visible labels.
 - Give a potentially long action a concise App-owned `BusyMessage`. Runtime
   rejects reentrant action input as soon as the action starts, but delays
   visible busy feedback briefly so quick actions do not flash the pointer,
@@ -118,8 +118,8 @@ building one private native platform plan.
   do not show action-style busy feedback. User-facing `info`, `warning`, or
   failure logs emitted during an action update the visible stage; Apps do not
   create progress windows.
-- Rebuild transient data in `RefreshState` and resolve source paths with
-  `context.resolveSourcePaths`.
+- Rebuild transient data in `RefreshState` and read source paths with
+  `labkit.app.source.paths`.
 - Use `context.postEvent(eventId,updateState)` when a timer, device driver,
   network stream, monitor, or dashboard needs to publish fresh App state.
   Runtime coalesces pending posts with the same semantic ID, runs the latest

@@ -15,8 +15,5 @@ function project = createProject()
         "lineWidth", 1.4, "markerSize", 6, ...
         "showMarkers", true, "logX", false, "logY", false, ...
         "showLegend", true, "showGrid", true);
-    project.annotations = struct();
     project.results = struct("lastExport", []);
-    project.extensions = struct();
 end
-

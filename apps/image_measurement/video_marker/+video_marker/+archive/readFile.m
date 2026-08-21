@@ -84,10 +84,10 @@ end
 project = video_marker.initialData();
 if isfield(legacy, "videoReference") && isstruct(legacy.videoReference)
     project.inputs.sources = labkit.app.source.record( ...
-        "video", "video", legacyReferencePath(legacy.videoReference), true);
+        "video", "video", legacyReferencePath(legacy.videoReference));
 elseif isfield(legacy, "videoPath") && strlength(string(legacy.videoPath)) > 0
     project.inputs.sources = labkit.app.source.record( ...
-        "video", "video", string(legacy.videoPath), true);
+        "video", "video", string(legacy.videoPath));
 end
 project.annotations.skeleton = legacy.skeleton;
 project.annotations.frames = ...
@@ -175,15 +175,12 @@ for k = 1:numel(sources)
     candidates = candidates(strlength(candidates) > 0);
     match = find(arrayfun(@isfile, candidates), 1, "first");
     if isempty(match)
-        if sources(k).required
-            error("video_marker:MissingArchiveSource", ...
-                "Video Marker source file is missing: %s", fileName);
-        end
-        continue
+        error("video_marker:MissingArchiveSource", ...
+            "Video Marker source file is missing: %s", fileName);
     end
     resolvedCount = resolvedCount + 1;
     resolved{resolvedCount} = labkit.app.source.record( ...
-        sources(k).id, sources(k).role, candidates(match), sources(k).required);
+        sources(k).id, sources(k).role, candidates(match));
 end
 if resolvedCount == 0
     sources = labkit.app.source.emptyRecords();

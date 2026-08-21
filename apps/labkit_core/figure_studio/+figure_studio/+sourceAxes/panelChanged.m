@@ -5,7 +5,7 @@ arguments
     ~
     callbackContext (1, 1) labkit.app.CallbackContext
 end
-resource = callbackContext.getResource("document", "sourceFigure");
+resource = callbackContext.getResource("sourceFigure");
 [~, labels] = figure_studio.sourceAxes.panelChoices(resource.axes);
 requested = string(state.session.selection.panel);
 panelIndex = find(labels == requested, 1);

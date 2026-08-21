@@ -1,12 +1,12 @@
 % Rebuild transient selection, draft controls, and the selected preview from
 % one validated Image Enhance project after App SDK runtime resolves sources.
-function session = createSession(project, context)
+function session = createSession(project, ~)
     index = double(~isempty(project.inputs.sources));
     kinds = image_enhance.imagePreview.presentationData.toolKinds();
     defaults = image_enhance.analysisRun.defaultStepValues(kinds{1});
     cache = emptyCache();
     if index > 0
-        cache = loadSelectedCache(project.inputs.sources(index), cache, context);
+        cache = loadSelectedCache(project.inputs.sources(index), cache);
         cache = rebuildSelectedResult(project, index, cache);
     end
     session = struct( ...
@@ -40,9 +40,9 @@ function cache = rebuildSelectedResult(project, index, cache)
     cache.previewResultKey = "restored";
 end
 
-function cache = loadSelectedCache(source, cache, context)
+function cache = loadSelectedCache(source, cache)
     loaded = image_enhance.sourceFiles.readImages( ...
-        context.resolveSourcePaths(source));
+        labkit.app.source.paths(source));
     if isempty(loaded)
         return;
     end

@@ -1,11 +1,11 @@
 function node = fileList(id, varargin)
-%FILELIST Add file selection and portable-source controls.
+%FILELIST Add file selection and live source-list controls.
 %
 % Usage:
 %   node = labkit.app.layout.fileList(id, Name=Value)
 %
 % Description:
-%   Declares framework-owned file choosing, removal, selection, and portable
+%   Declares framework-owned file choosing, removal, selection, and live
 %   source binding.
 %
 % Inputs:
@@ -20,20 +20,13 @@ function node = fileList(id, varargin)
 %       single semantic input normally combines "single" with MaxFiles=1.
 %       Default: "multiple".
 %   MaxFiles - Positive scalar or Inf. Default: Inf.
-%   FolderWarningThreshold - Positive scalar or Inf. Default: 500.
 %   ShowStatus - Logical status visibility. Default: true.
-%   StartPath - Initial folder text. Default: "".
 %   ChooseLabel - File button text. Default: "Choose".
 %   FolderLabel - Folder button text. Default: "Choose Folder".
 %   RecursiveFolderLabel - Recursive button text. Default: "Choose Folder Recursively".
 %   RemoveLabel - Remove button text. Default: "Remove".
 %   ClearLabel - Clear button text. Default: "Clear".
 %   ChooseTooltip - File button hover text. Default: ChooseLabel.
-%   FolderTooltip - Folder button hover text. Default: FolderLabel.
-%   RecursiveFolderTooltip - Recursive-folder button hover text. Default:
-%       RecursiveFolderLabel.
-%   RemoveTooltip - Remove button hover text. Default: RemoveLabel.
-%   ClearTooltip - Clear button hover text. Default: ClearLabel.
 %   EmptyText - Empty-list text. Default: "No files selected".
 %   AllowDuplicatePaths - Preserve separate source-list records that
 %       resolve to the same path. Use this when each list row is a distinct
@@ -46,7 +39,7 @@ function node = fileList(id, varargin)
 %   PathFilterDescription - Reader-facing description of files accepted by
 %       PathFilter, used in the aggregate filtering notice. Default:
 %       "supported".
-%   Bind - Required project or session source-record field path.
+%   Bind - App-owned source-record field path.
 %   SelectionBind - ListSelection field path. Default: "".
 %   OnSelectionChanged - Optional callback
 %       applicationState = callback(applicationState,selection,callbackContext)
@@ -55,7 +48,6 @@ function node = fileList(id, varargin)
 %       needs only SelectionBind. Default: empty.
 %   SourceRole - Runtime source role. Default: id.
 %   SourceIdPrefix - Runtime source ID prefix. Default: id.
-%   Required - Logical relinking requirement. Default: true.
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by layout containers.
@@ -68,7 +60,7 @@ function node = fileList(id, varargin)
 %
 % Typical Call:
 %   node = labkit.app.layout.fileList("files", ...
-%       Bind="project.inputs.sources", ...
+%       Bind="inputs.sources", ...
 %       ChooseTooltip="Choose calibrated source images for this analysis.");
 %
 % See also labkit.app.event.ListSelection,

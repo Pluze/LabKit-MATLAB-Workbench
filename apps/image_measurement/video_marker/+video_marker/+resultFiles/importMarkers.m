@@ -26,7 +26,7 @@ state.project.inputs.videoMetadata = ...
 videoPath = string(payload.videoInfo.path);
 if strlength(videoPath) > 0
     state.project.inputs.sources = labkit.app.source.record( ...
-        "video", "video", videoPath, isfile(videoPath));
+        "video", "video", videoPath);
 else
     state.project.inputs.sources = struct([]);
 end

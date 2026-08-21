@@ -18,6 +18,4 @@ function project = createProject()
         "lastExport", [], ...
         "lastExportFingerprint", "", ...
         "resultManifestPath", "");
-    project.extensions = struct();
 end
-

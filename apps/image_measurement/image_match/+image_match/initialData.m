@@ -17,10 +17,8 @@ function project = createProject()
         image_match.analysisRun.emptyStep(), 0, 1));
     project.results = struct("lastExport", [], ...
         "lastExportFingerprint", "", "resultManifestPath", "");
-    project.extensions = struct();
 end
 
 function sources = emptySources()
 sources = labkit.app.source.emptyRecords();
 end
-

@@ -10,7 +10,7 @@ try
     connection = labkit.mark10.connect(port);
     connectionBox = containers.Map("KeyType", "char", "ValueType", "any");
     connectionBox("connection") = connection;
-    context.setResource("application", "mark10Connection", connectionBox, ...
+    context.setResource("mark10Connection", connectionBox, ...
         @cleanupConnection);
     connectionInstalled = true;
     state.session.connection.connected = true;
@@ -23,7 +23,7 @@ try
         state, connection.Settings);
 catch cause
     if connectionInstalled
-        context.removeResource("application", "mark10Connection");
+        context.removeResource("mark10Connection");
     end
     state.session.connection.connected = false;
     state.session.connection.status = "Connection failed.";

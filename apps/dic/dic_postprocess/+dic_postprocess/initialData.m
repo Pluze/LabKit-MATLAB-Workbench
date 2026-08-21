@@ -20,8 +20,5 @@ function project = createProject()
         "redGain", 1, ...
         "greenGain", 1, ...
         "blueGain", 1);
-    project.annotations = struct();
     project.results = struct("summaryTable", table());
-    project.extensions = struct();
 end
-

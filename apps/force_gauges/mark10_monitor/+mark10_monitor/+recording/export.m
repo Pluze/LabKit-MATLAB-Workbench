@@ -1,6 +1,6 @@
 function state = export(state, context)
 %EXPORT Write the App-owned CSV, official-style LOG, and MAT outputs.
-buffer = context.getResource("application", "mark10Buffer");
+buffer = context.getResource("mark10Buffer");
 valid = buffer("valid");
 if ~any(valid)
     context.alert("No valid monitoring samples are available.", ...

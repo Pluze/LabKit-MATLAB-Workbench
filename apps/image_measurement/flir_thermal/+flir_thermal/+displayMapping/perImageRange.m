@@ -7,7 +7,7 @@ if isempty(sources)
     return
 end
 try
-    paths = callbackContext.resolveSourcePaths(sources);
+    paths = labkit.app.source.paths(sources);
     items = flir_thermal.sourceFiles.readImages( ...
         paths, struct("SkipInvalid", false));
 catch ME

@@ -184,17 +184,18 @@ App GUIs use the explicit `labkit.app` SDK:
 
 | Layer | App-facing API |
 | --- | --- |
-| Definition | `labkit.app.Definition` owns identity, requirements, opaque state callbacks, workbench, presentation, and launch. |
+| Definition | `labkit.app.Definition` owns identity, optional facade requirements, opaque state callbacks, workbench, presentation, and launch. |
 | Layout | `labkit.app.layout.*` owns semantic controls, containers, workspace pages, direct callbacks, bindings, and plot renderers. |
 | View | `labkit.app.view.Snapshot` owns complete derived visible state and prepared renderer models. |
 | Callback boundary | Typed `labkit.app.event.*` values and sealed, specifically named `labkit.app.CallbackContext` operations. |
 | Optional contracts | `labkit.app.source.*`, `interaction.*`, and `dialog.*`. |
 
 Reusable facades publish MATLAB-native contract versions through their
-`version()` APIs. Apps declare required facade ranges in the `Requirements`
-field of `definition.m`, and `labkit.contract` checks those ranges in tests and
-at launch. This is a same-repo maintenance guardrail; routine users still
-update LabKit as one repository.
+`version()` APIs. Apps declare ranges only for additional facades they call;
+the `labkit.app` foundation is implicit in `Definition` and needs no
+self-requirement. `labkit.contract` checks declared ranges in tests and at
+launch. This is a same-repo maintenance guardrail; routine users still update
+LabKit as one repository.
 
 Apps publish `AppVersion` and `Updated` metadata from the same definition for
 the launcher and window title. App versions are not dependency constraints and

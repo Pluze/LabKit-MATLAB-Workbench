@@ -48,7 +48,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
 
             runtime.invokeAction("run");
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
             started = records(string({records.eventName}) == "callback.pressed.started");
             logged = records(string({records.eventName}) == "analysis.completed");
             completed = records(string({records.eventName}) == "callback.pressed.completed");
@@ -63,7 +63,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(completed.stateDisposition), "committed");
             testCase.verifyFalse(any(startsWith(string({records.eventName}), "journal.")));
             runtime.close();
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
             testCase.verifyFalse(any(startsWith(string({records.eventName}), "journal.")));
             clear cleanup
         end
@@ -75,7 +75,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
 
             testCase.verifyError(@() runtime.invokeAction("fail"), ...
                 "labkit:app:runtime:ActionFailed");
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
             failed = records(string({records.eventName}) == "callback.pressed.failed");
             completed = records(string({records.eventName}) == "callback.pressed.completed");
 
@@ -152,7 +152,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
 
             runtime.invokeAction("run");
             runtime.close();
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
             manifest = journal.manifest();
 
             testCase.verifyTrue(any(string({records.eventName}) == ...
@@ -175,7 +175,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
                 definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
             degraded = records(string({records.eventName}) == "journal.degraded");
             dropped = records(string({records.eventName}) == "journal.records_dropped");
             health = journal.healthSnapshot();
@@ -202,7 +202,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
 
             runtime.invokeAction("run");
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
             started = records(string({records.eventName}) == "callback.pressed.started");
             completed = records(string({records.eventName}) == "callback.pressed.completed");
             degraded = records(string({records.eventName}) == "journal.degraded");
@@ -248,7 +248,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             stages = testfixtures.StateStore.get("runtimeJournalStages");
             testCase.verifyEmpty(stages(stages == "flush"));
             runtime.close();
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
             names = string({records.eventName});
             sessionClosedIndex = find(names == "session.closed", 1);
             degradedIndex = find(names == "journal.degraded", 1);
@@ -278,7 +278,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
 
             testCase.verifyError(@() runtime.close(), ...
                 "labkit:app:runtime:ResourceCleanupFailed");
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
             names = string({records.eventName});
             failed = records(names == "runtime.close.failed");
 
@@ -392,7 +392,7 @@ end
 
 function state = installFailingResource(state, callbackContext)
 callbackContext.setResource( ...
-    "application", "failingCleanup", struct(), @failResourceCleanup);
+    "failingCleanup", struct(), @failResourceCleanup);
 end
 
 function failResourceCleanup(~)

@@ -20,7 +20,6 @@ function project = createProject()
     project.results = struct( ...
         "currentImagesOutputPath", "", ...
         "maskOutputPath", "");
-    project.extensions = struct();
 end
 
 

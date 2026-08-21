@@ -22,16 +22,12 @@ function project = createProject()
         "scaleBarLength", 100, ...
         "scaleBarPosition", "Bottom right", ...
         "scaleBarColor", "Black");
-    project.annotations = struct();
     project.results = struct( ...
         "lastExport", [], ...
         "lastExportFingerprint", "", ...
         "resultManifestPath", "");
-    project.extensions = struct();
 end
 
 function sources = emptySources()
 sources = labkit.app.source.emptyRecords();
 end
-
-

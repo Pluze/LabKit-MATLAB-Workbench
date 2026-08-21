@@ -107,32 +107,24 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.Contract, binding));
         end
 
-        function setResource(obj, scope, id, value, cleanup)
+        function setResource(obj, id, value, cleanup)
             obj.recordOperation( ...
                 "runtime.resource", "resource.set", ...
                 "Setting runtime resource.", ...
                 "committed", "notApplicable", ...
-                @() obj.Resources.set(scope, id, value, cleanup));
+                @() obj.Resources.set(id, value, cleanup));
         end
 
-        function value = getResource(obj, scope, id)
-            value = obj.Resources.get(scope, id);
+        function value = getResource(obj, id)
+            value = obj.Resources.get(id);
         end
 
-        function removeResource(obj, scope, id)
+        function removeResource(obj, id)
             obj.recordOperation( ...
                 "runtime.resource", "resource.removed", ...
                 "Removing runtime resource.", ...
                 "committed", "notApplicable", ...
-                @() obj.Resources.remove(scope, id));
-        end
-
-        function clearResourceScope(obj, scope)
-            obj.recordOperation( ...
-                "runtime.resource", "resource.scope_cleared", ...
-                "Clearing runtime resource scope.", ...
-                "committed", "notApplicable", ...
-                @() obj.Resources.clearScope(scope));
+                @() obj.Resources.remove(id));
         end
 
         function postEvent(obj, eventId, updateState)
@@ -144,18 +136,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             else
                 obj.PostedEvents.post(eventId, updateState);
             end
-        end
-
-        function failNextCommit(obj)
-            obj.Adapter.failNextCommit();
-        end
-
-        function count = commitCount(obj)
-            count = obj.Adapter.CommitCount;
-        end
-
-        function events = diagnosticEvents(obj)
-            events = obj.Diagnostics.events();
         end
 
         function snapshot = diagnosticSnapshot(obj)
@@ -198,10 +178,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
             destination = obj.Diagnostics.exportTextFallback( ...
                 preferredDestination, cause, stateMode);
-        end
-
-        function alertDiagnosticTextFallback(obj, destination)
-            obj.Diagnostics.alertTextFallback(destination);
         end
 
         function supported = supportsSyntheticInputs(obj)
@@ -260,54 +236,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                 obj.Adapter.show(obj.formattedWindowTitle());
             end
-        end
-
-        function record = sourceRecord(obj, id, role, path, required)
-            record = obj.recordOperation( ...
-                "runtime.source", "source.record_created", ...
-                "Creating source-list record.", ...
-                "notApplicable", "notApplicable", ...
-                @() obj.Sources.create(id, role, path, required));
-        end
-
-        function paths = sourcePaths(obj, sources, ids)
-            paths = obj.recordOperation( ...
-                "runtime.source", "source.paths_resolved", ...
-                "Resolving source-list path paths.", ...
-                "notApplicable", "notApplicable", ...
-                @resolve);
-
-            function values = resolve()
-                if isempty(ids)
-                    values = obj.Sources.sourcePaths(sources);
-                else
-                    values = obj.Sources.sourcePaths(sources, ids);
-                end
-            end
-        end
-
-        function sources = upsertSource(obj, sources, record)
-            sources = obj.recordOperation( ...
-                "runtime.source", "source.record_upserted", ...
-                "Updating source-list records.", ...
-                "notApplicable", "notApplicable", ...
-                @() obj.Sources.upsert(sources, record));
-        end
-
-        function sources = reconcileSources(obj, current, incoming)
-            sources = obj.recordOperation( ...
-                "runtime.source", "source.records_reconciled", ...
-                "Reconciling source-list records.", ...
-                "notApplicable", "notApplicable", ...
-                @() obj.Sources.reconcile(current, incoming));
-        end
-
-        function applyBinding(obj, target, value)
-            obj.recordOperation( ...
-                "runtime.interaction", "interaction.binding_applied", ...
-                "Applying bound control value.", ...
-                "committed", "rolledBack", ...
-                @() obj.applyBoundControl(target, value, false));
         end
 
         function applyControlValue(obj, target, value)

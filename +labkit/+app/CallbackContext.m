@@ -10,12 +10,9 @@ classdef (Sealed) CallbackContext < handle
     %   result = context.chooseInputFolder(startPath)
     %   result = context.chooseOutputFile(filters, startPath)
     %   result = context.chooseOutputFolder(startPath)
-    %   paths = context.resolveSourcePaths(sources)
-    %   paths = context.resolveSourcePaths(sources, ids)
-    %   context.setResource(scope, id, value, cleanup)
-    %   value = context.getResource(scope, id)
-    %   context.removeResource(scope, id)
-    %   context.clearResourceScope(scope)
+    %   context.setResource(id, value, cleanup)
+    %   value = context.getResource(id)
+    %   context.removeResource(id)
     %   context.postEvent(eventId, updateState)
     %
     % Description:
@@ -55,9 +52,6 @@ classdef (Sealed) CallbackContext < handle
     %       Default: the first choice.
     %   filters - Runtime-supported file-dialog filter value.
     %   startPath - Scalar starting file or folder path.
-    %   sources - Runtime-owned source-list collection.
-    %   ids - Optional source identifiers to resolve.
-    %   scope - "event", "interaction", "document", or "application".
     %   value - App-neutral resource value.
     %   cleanup - Empty or fixed callback cleanup(value).
     %
@@ -65,7 +59,6 @@ classdef (Sealed) CallbackContext < handle
     %   state - Complete restored App state prepared for the current runtime
     %       transaction.
     %   result - labkit.app.dialog.Choice for dialogs.
-    %   paths - Column string array of resolved source paths.
     %   value - Stored resource value.
     %
     % Errors:
@@ -185,30 +178,7 @@ classdef (Sealed) CallbackContext < handle
             requireChoice(result, "chooseOutputFolder");
         end
 
-        function paths = resolveSourcePaths(obj, sources, ids)
-            if nargin < 3
-                ids = strings(0, 1);
-            elseif ~(ischar(ids) || isstring(ids) || iscellstr(ids))
-                error("labkit:app:contract:InvalidValue", ...
-                    "CallbackContext source ids must be text.");
-            elseif isempty(ids)
-                ids = strings(0, 1);
-            elseif ischar(ids)
-                ids = string(ids);
-            else
-                ids = string(ids(:));
-            end
-            paths = obj.invoke("sourcePaths", "project", ...
-                {sources, ids}, 1);
-            if ~isstring(paths) || ~iscolumn(paths)
-                error("labkit:app:runtime:InvariantFailure", ...
-                    "CallbackContext resolveSourcePaths backend must return " + ...
-                    "a column string array.");
-            end
-        end
-
-        function setResource(obj, scope, id, value, cleanup)
-            scope = resourceScope(scope);
+        function setResource(obj, id, value, cleanup)
             id = nonemptyText(id, "resource id");
             if ~isempty(cleanup) && ...
                     (~isa(cleanup, "function_handle") || ...
@@ -218,22 +188,17 @@ classdef (Sealed) CallbackContext < handle
                     "return no outputs.");
             end
             obj.invoke("setResource", "resources", ...
-                {scope, id, value, cleanup}, 0);
+                {id, value, cleanup}, 0);
         end
 
-        function value = getResource(obj, scope, id)
+        function value = getResource(obj, id)
             value = obj.invoke("getResource", "resources", ...
-                {resourceScope(scope), nonemptyText(id, "resource id")}, 1);
+                {nonemptyText(id, "resource id")}, 1);
         end
 
-        function removeResource(obj, scope, id)
+        function removeResource(obj, id)
             obj.invoke("removeResource", "resources", ...
-                {resourceScope(scope), nonemptyText(id, "resource id")}, 0);
-        end
-
-        function clearResourceScope(obj, scope)
-            obj.invoke("clearResourceScope", "resources", ...
-                {resourceScope(scope)}, 0);
+                {nonemptyText(id, "resource id")}, 0);
         end
 
         function postEvent(obj, eventId, updateState)
@@ -309,14 +274,6 @@ function values = textRow(values, label)
             "CallbackContext %s must be text.", label);
     end
     values = reshape(values, 1, []);
-end
-
-function value = resourceScope(value)
-    value = nonemptyText(value, "resource scope");
-    if ~any(value == ["event", "interaction", "document", "application"])
-        error("labkit:app:contract:InvalidValue", ...
-            "CallbackContext resource scope is unsupported: %s.", value);
-    end
 end
 
 function requireChoice(value, operation)

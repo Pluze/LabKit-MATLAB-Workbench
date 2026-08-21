@@ -34,8 +34,6 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             testCase.verifyClass(pack, "labkit.app.synthetic.Pack");
             testCase.verifyTrue(isgraphics(runtime.figureHandle(), "figure"));
             testCase.verifyEqual(runtime.State, stateBeforeGeneration);
-            testCase.verifyTrue(isfile(fullfile( ...
-                folder, "synthetic-input-pack.json")));
             clear cleanup
 
             syntheticJournal = labkittest.temporarySessionJournal( ...

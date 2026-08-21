@@ -44,8 +44,9 @@ folders, selector registries, wrappers, or stage tags by hand. Run focused
 evidence through `labkittest.run`, and use `buildtool changedFast` only at the
 final integration gate.
 
-Every App state creator selects owner-level source evidence for defaults and
-invariants. Persistence evidence exists only for an App-owned continuation
+Initial state is exercised through App conformance and the smallest owner-level
+behavior that consumes each meaningful default; do not require a dedicated
+state specification for implementation-only struct shape. Persistence evidence exists only for an App-owned continuation
 workflow and tests that App's explicit archive contract rather than a generic
 runtime save/load path. App conformance separately validates each synthetic
 sample pack, keeps Debug startup on clean default state, and launches the

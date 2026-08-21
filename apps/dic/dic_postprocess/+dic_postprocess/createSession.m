@@ -1,6 +1,6 @@
 %CREATESESSION Rebuild transient DIC inputs and prepared overlay caches.
-function session = createSession(project, context)
-    paths = resolvedPaths(project.inputs.sources, context);
+function session = createSession(project, ~)
+    paths = resolvedPaths(project.inputs.sources);
     cache = dic_postprocess.sourceFiles.loadProjectInputs( ...
         paths, ~isempty(project.results.summaryTable));
     [cache.overlayExx, cache.overlayEyy] = preparedOverlays( ...
@@ -13,14 +13,14 @@ function session = createSession(project, context)
         "cache", cache);
 end
 
-function paths = resolvedPaths(sources, context)
+function paths = resolvedPaths(sources)
     paths = struct( ...
-        "dicMat", pathForRole(sources, "strain", context), ...
-        "referenceImage", pathForRole(sources, "reference", context), ...
-        "maskImage", pathForRole(sources, "mask", context));
+        "dicMat", pathForRole(sources, "strain"), ...
+        "referenceImage", pathForRole(sources, "reference"), ...
+        "maskImage", pathForRole(sources, "mask"));
 end
 
-function filepath = pathForRole(sources, role, context)
+function filepath = pathForRole(sources, role)
     filepath = "";
     if isempty(sources)
         return;
@@ -29,7 +29,7 @@ function filepath = pathForRole(sources, role, context)
     if isempty(match)
         return;
     end
-    resolved = context.resolveSourcePaths(sources(match));
+    resolved = labkit.app.source.paths(sources(match));
     if ~isempty(resolved)
         filepath = resolved(1);
     end

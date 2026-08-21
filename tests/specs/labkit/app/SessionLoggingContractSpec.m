@@ -11,7 +11,7 @@ classdef SessionLoggingContractSpec < matlab.unittest.TestCase
                 definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
 
             testCase.verifyNotEmpty(records);
             testCase.verifyEqual(string(fieldnames(records)), [ ...

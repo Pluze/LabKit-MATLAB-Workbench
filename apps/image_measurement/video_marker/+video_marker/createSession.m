@@ -6,7 +6,7 @@ function session = createSession(project, context)
     imageData = [];
     paths = strings(0, 1);
     if ~isempty(project.inputs.sources)
-        paths = context.resolveSourcePaths(project.inputs.sources);
+        paths = labkit.app.source.paths(project.inputs.sources);
     end
     videoPath = "";
     if ~isempty(paths), videoPath = paths(1); end
@@ -14,7 +14,7 @@ function session = createSession(project, context)
         resource = video_marker.videoSource.openResource(videoPath);
         info = resource.info;
         imageData = resource.firstFrame;
-        context.setResource("document", "video", resource, []);
+        context.setResource("video", resource, []);
     end
     presets = video_marker.skeletonSetup.presets();
     session = struct( ...

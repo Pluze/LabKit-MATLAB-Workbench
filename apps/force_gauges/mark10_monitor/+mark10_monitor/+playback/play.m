@@ -1,6 +1,6 @@
 function state = play(state, context)
 %PLAY Restart fixed-speed recording playback from the first sample.
-playback = context.getResource("application", "mark10Playback");
+playback = context.getResource("mark10Playback");
 count = numel(playback("time_s"));
 playback("index") = 0;
 mark10_monitor.playback.startTimer(playback, context);

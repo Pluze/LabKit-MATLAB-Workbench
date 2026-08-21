@@ -32,7 +32,7 @@ classdef DicPreprocessWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyFalse(hasVisibleConnectingLine(referenceAxes));
             testCase.verifyFalse(hasVisibleConnectingLine(movingAxes));
             runtime.invokeAction("autoAlign");
-            events = runtime.diagnosticEvents();
+            events = runtime.diagnosticSnapshot().events;
             event = events(string({events.eventName}) == ...
                 "dic_preprocess.analysisrun.runautomaticregistration.status");
             testCase.verifyNumElements(event, 1);

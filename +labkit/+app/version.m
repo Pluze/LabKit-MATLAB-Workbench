@@ -23,13 +23,13 @@ function info = version()
 %
 % Example:
 %   info = labkit.app.version();
-%   assert(startsWith(info.current, "3."))
+%   assert(startsWith(info.current, "4."))
 %
 % See also labkit.contract.versionInfo,
 %   labkit.contract.requirements,
 %   labkit.app.Definition
 
     info = labkit.contract.versionInfo( ...
-        "app", "3.0.0", ">=3 <4", "stable", ...
-        "Explicit LabKit App SDK contract for tracked production Apps.");
+        "app", "4.0.0", ">=4 <5", "stable", ...
+        "Small transactional App SDK with App-owned state and archives.");
 end

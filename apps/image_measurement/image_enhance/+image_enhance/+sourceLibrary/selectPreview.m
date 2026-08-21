@@ -19,7 +19,7 @@ if index > numel(sources)
 end
 source = sources(index);
 try
-    paths = callbackContext.resolveSourcePaths(source);
+    paths = labkit.app.source.paths(source);
     items = image_enhance.sourceFiles.readImages(paths);
 catch ME
     callbackContext.log("error", "image_enhance.sourcelibrary.selectpreview.exception", "Load image preview", ...

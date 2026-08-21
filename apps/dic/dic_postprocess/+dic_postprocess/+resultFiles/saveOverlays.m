@@ -15,7 +15,7 @@ if choice.Cancelled
 end
 folder = string(choice.Value);
 matPath = pathForRole( ...
-    applicationState.project.inputs.sources, "strain", callbackContext);
+    applicationState.project.inputs.sources, "strain");
 tag = dic_postprocess.resultFiles.tagFromPath(matPath);
 exxName = "overlay_exx_" + tag + ".png";
 eyyName = "overlay_eyy_" + tag + ".png";
@@ -29,7 +29,7 @@ callbackContext.log("info", "dic_postprocess.resultfiles.saveoverlays.status",  
     "Saved clean overlay PNGs.");
 end
 
-function filepath = pathForRole(sources, role, context)
+function filepath = pathForRole(sources, role)
 filepath = "";
 if isempty(sources)
     return;
@@ -38,7 +38,7 @@ match = find(string({sources.role}) == role, 1);
 if isempty(match)
     return;
 end
-paths = context.resolveSourcePaths(sources(match));
+paths = labkit.app.source.paths(sources(match));
 if ~isempty(paths)
     filepath = paths(1);
 end

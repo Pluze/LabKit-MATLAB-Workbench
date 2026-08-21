@@ -17,7 +17,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
-            runtime.applyBinding("gain", 3);
+            runtime.applyControlValue("gain", 3);
 
             testCase.verifyEqual(runtime.State.project.parameters.gain, 3);
             testCase.verifyEqual(labkit.app.internal.contract.DefinitionInspector.signalIds(app), ...
@@ -275,15 +275,6 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function sourceResolutionTreatsCharacterIdAsOneIdentifier(testCase)
-            backend = struct("sourcePaths", @sourcePathsProbe);
-            context = labkit.app.internal.runtime.CallbackContextFactory.create(backend);
-
-            paths = context.resolveSourcePaths(struct(), 'source-1');
-
-            testCase.verifyEqual(paths, "resolved-source-1");
-        end
-
         function sourceSelectionNormalizesSupportedPathShapes(testCase)
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.fileList("files", ...
@@ -367,7 +358,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "Unsupported files filtered");
             testCase.verifyEqual(notices("message"), ...
                 "Kept 2 PNG image file(s) and filtered 1 unsupported file(s).");
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
             filtered = records(find(string({records.eventName}) == ...
                 "source.paths_filtered", 1, "last"));
             testCase.verifyEqual(filtered.attributes.acceptedCount, 2);
@@ -447,8 +438,6 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(runtime.State.session.gainAtCreation, 1);
             testCase.verifyEqual(runtime.State, stateBeforeGeneration);
             testCase.verifyEqual(pack.InitialInput.parameters.gain, 7);
-            testCase.verifyTrue(isfile(fullfile( ...
-                folder, "synthetic-input-pack.json")));
             clear cleanup
 
             projectFreeApp = AppSdkSpec.definition( ...
@@ -661,7 +650,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(state.editedValue, 2);
             testCase.verifyEqual(state.selectedCells, [1 1]);
             testCase.verifyEqual(string(figureValue.Tag), "labkitApp");
-            events = runtime.diagnosticEvents();
+            events = runtime.diagnosticSnapshot().events;
             aliases = callbackStartAliases(events);
             testCase.verifyTrue(all(ismember([ ...
                 "nativeField__valueChanged", ...
@@ -749,7 +738,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEmpty(findall(figureValue, ...
                 "Tag", "labkitAppUtilitySyntheticInputs"));
             testCase.verifyEqual(string(label.Enable), "on");
-            runtime.applyBinding("gain", 0);
+            runtime.applyControlValue("gain", 0);
             testCase.verifyEqual(string(field.Enable), "off");
             testCase.verifyEqual(string(label.Enable), "off");
             clear cleanup
@@ -822,7 +811,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             figureValue = runtime.figureHandle();
             list = oneTagged(figureValue, "files");
 
-            list.ValueChangedFcn(list, []);
+            invokeNativeCallback(list.ValueChangedFcn, list, []);
             drawnow;
 
             notice = getappdata(figureValue, "labkitAppLastAlert");
@@ -931,19 +920,6 @@ classdef AppSdkSpec < matlab.unittest.TestCase
         function privatePrimitivesUsePureMatlabContracts(testCase)
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            filepath = fullfile(root, "sha256.txt");
-            writeBytes(filepath, uint8('abc'));
-            testCase.verifyEqual( ...
-                labkit.app.internal.integrity.fileSha256(filepath), ...
-                "ba7816bf8f01cfea414140de5dae2223" + ...
-                "b00361a396177a9cb410ff61f20015ad");
-            longVector = ...
-                "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
-            writeBytes(filepath, uint8(char(longVector)));
-            testCase.verifyEqual( ...
-                labkit.app.internal.integrity.fileSha256(filepath), ...
-                "248d6a61d20638b8e5c026930c3e6039" + ...
-                "a33ce45964ff2167f6ecedd419db06c1");
             testCase.verifyEqual( ...
                 labkit.app.internal.filesystem.absolutePath( ...
                     fullfile(root, "one", "..", "two")), ...
@@ -1028,14 +1004,6 @@ function values = storeMapValue(values, key, value)
 values(char(key)) = value;
 end
 
-function writeBytes(filepath, bytes)
-file = fopen(filepath, "wb");
-assert(file >= 0, "Could not create primitive fixture.");
-cleanup = onCleanup(@() fclose(file));
-fwrite(file, bytes, "uint8");
-delete(cleanup);
-end
-
 function handle = oneTagged(parent, tag)
 handle = findall(parent, "Tag", tag);
 assert(isscalar(handle), "Expected one handle tagged " + tag + ".");
@@ -1115,7 +1083,7 @@ function state = postFromActiveTransaction(state, callbackContext)
 replayTimer = timer("ExecutionMode", "fixedSpacing", "Period", 0.01, ...
     "TasksToExecute", 100, "TimerFcn", @(~, ~) ...
     callbackContext.postEvent("stream.refresh", @latestStreamRefresh));
-callbackContext.setResource("application", "postedEventProbe", ...
+callbackContext.setResource("postedEventProbe", ...
     replayTimer, @deleteTimer);
 start(replayTimer);
 pause(0.03);
@@ -1162,10 +1130,6 @@ end
 function project = createSourceProject()
 project = struct("inputs", struct( ...
     "sources", labkit.app.source.emptyRecords()));
-end
-
-function paths = sourcePathsProbe(~, ids)
-paths = ("resolved-" + ids(:));
 end
 
 function accepted = acceptPngPaths(paths)
@@ -1379,7 +1343,7 @@ end
 function project = createUnreadableSourceProject()
 project = createSourceProject();
 project.inputs.sources = labkit.app.source.record( ...
-    "source1", "files", "unreadable.dat", true);
+    "source1", "files", "unreadable.dat");
 end
 
 function output = failSourceSelection(~, ~, ~)

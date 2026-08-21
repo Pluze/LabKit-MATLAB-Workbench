@@ -15,23 +15,7 @@ classdef (Hidden, Sealed) SessionJournalArchive
             end
             [events, corruptRecordCount] = readCanonicalEvents(folder);
             snapshot = struct("manifest", manifest, "events", events, ...
-                "timeline", timeline(events), "degradation", ...
-                degradation(manifest, corruptRecordCount), ...
-                "redaction", redactionMetadata());
-        end
-
-        function exportFolder = exportSnapshot(rootFolder, sessionId, exportFolder)
-            snapshot = labkit.app.internal.diagnostics.SessionJournalArchive.snapshot( ...
-                rootFolder, sessionId);
-            exportFolder = string(exportFolder);
-            if exist(char(exportFolder), "dir") ~= 7
-                mkdir(char(exportFolder));
-            end
-            atomicJson(fullfile(exportFolder, "manifest.json"), snapshot.manifest);
-            writeEvents(fullfile(exportFolder, "events.jsonl"), snapshot.events);
-            writeLines(fullfile(exportFolder, "timeline.txt"), snapshot.timeline);
-            atomicJson(fullfile(exportFolder, "degradation.json"), snapshot.degradation);
-            atomicJson(fullfile(exportFolder, "redaction.json"), snapshot.redaction);
+                "degradation", degradation(manifest, corruptRecordCount));
         end
     end
 end
@@ -80,56 +64,13 @@ template = struct("schemaVersion", [], "sequence", [], "timestampUtc", "", ...
     "durationSeconds", [], "exception", struct());
 end
 
-function value = timeline(events)
-value = strings(numel(events), 1);
-for index = 1:numel(events)
-    value(index) = string(events(index).timestampUtc) + " [" + ...
-        string(events(index).severity) + "] " + string(events(index).category) + ...
-        " - " + string(events(index).message);
-end
-end
-
 function value = degradation(manifest, corruptRecordCount)
 if isfield(manifest, "degradation")
     value = manifest.degradation;
 else
     value = struct();
 end
-if isfield(manifest, "recovery")
-    value.recovery = manifest.recovery;
-end
 value.snapshotCorruptRecordCount = corruptRecordCount;
-end
-
-function value = redactionMetadata()
-value = struct("semanticEventPrivacy", "complete-retained-details", ...
-    "exportProjection", "none", "excludedData", strings(0, 1));
-end
-
-function writeEvents(filepath, events)
-file = fopen(char(filepath), "w", "n", "UTF-8");
-if file < 0
-    error("labkit:app:runtime:JournalWriteFailure", ...
-        "Could not write export events.");
-end
-cleanup = onCleanup(@() fclose(file));
-for index = 1:numel(events)
-    fprintf(file, "%s\n", jsonencode(events(index)));
-end
-clear cleanup
-end
-
-function writeLines(filepath, lines)
-file = fopen(char(filepath), "w", "n", "UTF-8");
-if file < 0
-    error("labkit:app:runtime:JournalWriteFailure", ...
-        "Could not write export timeline.");
-end
-cleanup = onCleanup(@() fclose(file));
-for index = 1:numel(lines)
-    fprintf(file, "%s\n", lines(index));
-end
-clear cleanup
 end
 
 function segments = journalSegments(folder)
@@ -165,21 +106,5 @@ end
 try
     payload = jsondecode(fileread(char(filepath)));
 catch
-end
-end
-
-function atomicJson(filepath, payload)
-temporary = string(tempname(fileparts(filepath)));
-file = fopen(char(temporary), "w", "n", "UTF-8");
-if file < 0
-    error("labkit:app:runtime:JournalWriteFailure", ...
-        "Could not write journal metadata.");
-end
-cleanup = onCleanup(@() fclose(file));
-fprintf(file, "%s\n", jsonencode(payload, PrettyPrint=true));
-clear cleanup
-[moved, message] = movefile(char(temporary), char(filepath), "f");
-if ~moved
-    error("labkit:app:runtime:JournalWriteFailure", "%s", message);
 end
 end

@@ -10,18 +10,18 @@ classdef (Hidden, Sealed) ResourceStore < handle
                 "KeyType", "char", "ValueType", "any");
         end
 
-        function set(obj, scope, id, value, cleanup)
-            key = resourceKey(scope, id);
+        function set(obj, id, value, cleanup)
+            key = char(string(id));
             if isKey(obj.Entries, key)
                 obj.dispose(obj.Entries(key));
             end
             obj.Entries(key) = struct( ...
-                "Scope", string(scope), "Id", string(id), ...
+                "Id", string(id), ...
                 "Value", value, "Cleanup", cleanup);
         end
 
-        function value = get(obj, scope, id)
-            key = resourceKey(scope, id);
+        function value = get(obj, id)
+            key = char(string(id));
             if ~isKey(obj.Entries, key)
                 value = [];
                 return;
@@ -30,8 +30,8 @@ classdef (Hidden, Sealed) ResourceStore < handle
             value = entry.Value;
         end
 
-        function remove(obj, scope, id)
-            key = resourceKey(scope, id);
+        function remove(obj, id)
+            key = char(string(id));
             if ~isKey(obj.Entries, key)
                 return;
             end
@@ -40,41 +40,15 @@ classdef (Hidden, Sealed) ResourceStore < handle
             obj.dispose(entry);
         end
 
-        function clearScope(obj, scope)
+        function clearAll(obj)
             keys = string(obj.Entries.keys);
-            selected = startsWith(keys, string(scope) + "|");
-            selectedKeys = keys(selected);
-            failures = cell(1, numel(selectedKeys));
+            failures = cell(1, numel(keys));
             failureCount = 0;
-            for key = selectedKeys
+            for key = keys
                 entry = obj.Entries(char(key));
                 remove(obj.Entries, char(key));
                 try
                     obj.dispose(entry);
-                catch cause
-                    failureCount = failureCount + 1;
-                    failures{failureCount} = cause;
-                end
-            end
-            failures = failures(1:failureCount);
-            if ~isempty(failures)
-                failure = MException( ...
-                    "labkit:app:runtime:ResourceCleanupFailed", ...
-                    "One or more %s resources failed to clean up.", scope);
-                for k = 1:numel(failures)
-                    failure = addCause(failure, failures{k});
-                end
-                throwAsCaller(failure);
-            end
-        end
-
-        function clearAll(obj)
-            scopes = ["event", "interaction", "document", "application"];
-            failures = cell(1, numel(scopes));
-            failureCount = 0;
-            for scope = scopes
-                try
-                    obj.clearScope(scope);
                 catch cause
                     failureCount = failureCount + 1;
                     failures{failureCount} = cause;
@@ -91,6 +65,7 @@ classdef (Hidden, Sealed) ResourceStore < handle
                 throwAsCaller(failure);
             end
         end
+
     end
 
     methods (Static, Access = private)
@@ -101,8 +76,4 @@ classdef (Hidden, Sealed) ResourceStore < handle
             entry.Cleanup(entry.Value);
         end
     end
-end
-
-function key = resourceKey(scope, id)
-    key = char(string(scope) + "|" + string(id));
 end

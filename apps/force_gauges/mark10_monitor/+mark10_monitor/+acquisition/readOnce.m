@@ -3,7 +3,7 @@ function state = readOnce(state, context)
 if state.session.acquisition.monitoring
     return;
 end
-box = context.getResource("application", "mark10Connection");
+box = context.getResource("mark10Connection");
 connection = box("connection");
 [connection, sample] = labkit.mark10.readSample(connection);
 mark10_monitor.connection.retain(box, connection);

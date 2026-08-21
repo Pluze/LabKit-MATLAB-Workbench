@@ -1,6 +1,6 @@
 function state = apply(state, context)
 %APPLY Apply safe gauge settings individually with readback verification.
-box = context.getResource("application", "mark10Connection");
+box = context.getResource("mark10Connection");
 connection = box("connection");
 draft = state.session.settingsDraft;
 requests = { ...

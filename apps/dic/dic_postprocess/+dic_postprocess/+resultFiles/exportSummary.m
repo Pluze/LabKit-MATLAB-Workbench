@@ -9,7 +9,7 @@ if isempty(summary) || height(summary) == 0
     return;
 end
 matPath = pathForRole( ...
-    applicationState.project.inputs.sources, "strain", callbackContext);
+    applicationState.project.inputs.sources, "strain");
 [folder, name] = fileparts(matPath);
 defaultName = fullfile(folder, name + "_strain_summary.csv");
 choice = callbackContext.chooseOutputFile( ...
@@ -27,7 +27,7 @@ callbackContext.log("info", ...
     "Exported the DIC summary.");
 end
 
-function filepath = pathForRole(sources, role, context)
+function filepath = pathForRole(sources, role)
 filepath = "";
 if isempty(sources)
     return;
@@ -36,7 +36,7 @@ match = find(string({sources.role}) == role, 1);
 if isempty(match)
     return;
 end
-paths = context.resolveSourcePaths(sources(match));
+paths = labkit.app.source.paths(sources(match));
 if ~isempty(paths)
     filepath = paths(1);
 end

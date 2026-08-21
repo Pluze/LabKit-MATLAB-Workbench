@@ -28,7 +28,7 @@ function pack = writeSamplePack(sampleContext)
     for k = 1:numel(slicePaths)
         sourceId = "image" + k;
         project.inputs.sources(k) = sampleContext.sourceRecord( ...
-            sourceId, "focus-image", slicePaths(k), true);
+            sourceId, "focus-image", slicePaths(k));
         artifacts{k} = sampleContext.artifact( ...
             sourceId, "focus-image", slicePaths(k));
     end

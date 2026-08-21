@@ -20,7 +20,7 @@ requested = string(requested);
 if ~isscalar(requested) || ~any(requested == source.sheetNames)
     requested = source.sheetNames(1);
 end
-paths = context.resolveSourcePaths(state.project.inputs.sources);
+paths = labkit.app.source.paths(state.project.inputs.sources);
 try
     source = ttest_wizard.sourceTable.readSourceTable(paths(1), requested);
 catch ME

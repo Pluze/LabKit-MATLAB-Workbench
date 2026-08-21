@@ -5,7 +5,7 @@ classdef (Sealed) Definition
     %   app = labkit.app.Definition(Entrypoint=entrypoint, AppId=appId, ...
     %       Title=title, ...
     %       Family=family, AppVersion=version, Updated=date, ...
-    %       Requirements=requirements, Workbench=workbench, Name=Value)
+    %       Workbench=workbench, Name=Value)
     %   fig = app.launch()
     %   fig = app.launch(InitialInput=value)
     %   requirements = app.launch("requirements")
@@ -26,7 +26,6 @@ classdef (Sealed) Definition
     %   Family - Nonempty reader-facing scalar text.
     %   AppVersion - Semantic version in X.Y.Z form.
     %   Updated - Product date in YYYY-MM-DD form.
-    %   Requirements - Empty value or labkit.contract.requirements result.
     %   Workbench - Root value returned by labkit.app.layout.workbench.
     %
     % Optional Name-Value Arguments:
@@ -34,9 +33,8 @@ classdef (Sealed) Definition
     %   CreateState - Fixed callback state = callback(context,initialInput).
     %       initialInput is an opaque App-owned scalar struct supplied at
     %       launch; it has no framework persistence semantics. Default: empty.
-    %   ValidateState - Fixed callback accepted = callback(state). The
-    %       callback validates only the App's live in-memory transaction
-    %       state; it does not define a saved-project format. Default: empty.
+    %   Requirements - Empty value or labkit.contract.requirements result.
+    %       Default: empty.
     %   RefreshState - Fixed callback state = callback(state,context), used
     %       after framework-owned source-list edits. Default: empty.
     %   PresentWorkbench - Fixed callback view = callback(state). Default:
@@ -78,7 +76,7 @@ classdef (Sealed) Definition
     %   app = labkit.app.Definition( ...
     %       Entrypoint="labkit_Example_app", AppId="example.app", ...
     %       Title="Example", Family="Examples", AppVersion="1.0.0", ...
-    %       Updated="2026-07-19", Requirements=[], Workbench=workbench);
+    %       Updated="2026-07-19", Workbench=workbench);
     %
     % See also labkit.app.layout.workbench, labkit.app.view.Snapshot,
     %   labkit.contract.requirements
@@ -93,7 +91,6 @@ classdef (Sealed) Definition
         Updated (1, 1) string
         Requirements
         CreateState
-        ValidateState
         RefreshState
         PresentWorkbench
         OnStart
@@ -111,14 +108,14 @@ classdef (Sealed) Definition
             names = [ ...
                 "Entrypoint", "AppId", "Title", "DisplayName", "Family", ...
                 "AppVersion", "Updated", "Requirements", "Workbench", ...
-                "CreateState", "ValidateState", "RefreshState", ...
+                "CreateState", "RefreshState", ...
                 "PresentWorkbench", ...
                 "OnStart", "BuildSyntheticSample"];
             options = labkit.app.internal.contract.OptionParser.parse( ...
                 "labkit.app.Definition", names, varargin{:});
             required = [ ...
                 "Entrypoint", "AppId", "Title", "Family", "AppVersion", ...
-                "Updated", "Requirements", "Workbench"];
+                "Updated", "Workbench"];
             for name = required
                 if ~isfield(options, name)
                     error("labkit:app:contract:UnknownArgument", ...
@@ -138,11 +135,13 @@ classdef (Sealed) Definition
             obj.Family = nonemptyText(options.Family, "Family");
             obj.AppVersion = semanticVersion(options.AppVersion);
             obj.Updated = isoDate(options.Updated);
-            obj.Requirements = validateRequirements(options.Requirements);
+            requirements = [];
+            if isfield(options, "Requirements")
+                requirements = options.Requirements;
+            end
+            obj.Requirements = validateRequirements(requirements);
             obj.CreateState = optionalFixedCallback( ...
                 options, "CreateState", 2, 1);
-            obj.ValidateState = optionalFixedCallback( ...
-                options, "ValidateState", 1, 1);
             obj.RefreshState = optionalFixedCallback( ...
                 options, "RefreshState", 2, 1);
             obj.PresentWorkbench = optionalFixedCallback( ...

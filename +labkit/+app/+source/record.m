@@ -1,9 +1,8 @@
-function record = record(id, role, filepath, required)
+function record = record(id, role, filepath)
 %RECORD Create a file-list source value.
 %
 % Usage:
 %   record = labkit.app.source.record(id,role,filepath)
-%   record = labkit.app.source.record(id,role,filepath,required)
 %
 % Description:
 %   Creates the source value accepted by file-list bindings. It is live UI
@@ -13,13 +12,12 @@ function record = record(id, role, filepath, required)
 %   id - Nonempty scalar text stable within the current App state.
 %   role - Nonempty scalar semantic source role.
 %   filepath - Nonempty scalar source path.
-%   required - Optional logical scalar selection requirement. Default: true.
 %
 % Outputs:
 %   record - Scalar source-list struct.
 %
 % Errors:
-%   labkit:app:contract:InvalidValue - Text or required is malformed.
+%   labkit:app:contract:InvalidValue - Text is malformed.
 %
 % Example:
 %   source = labkit.app.source.record( ...
@@ -27,17 +25,10 @@ function record = record(id, role, filepath, required)
 %   assert(source.id == "image1")
 %
 % See also labkit.app.CallbackContext
-if nargin < 4
-    required = true;
-end
 id = nonemptyText(id, "id");
 role = nonemptyText(role, "role");
-if ~(islogical(required) && isscalar(required))
-    invalid("required must be a logical scalar.");
-end
 filepath = nonemptyText(filepath, "filepath");
-record = struct("id", id, "required", required, "role", role, ...
-    "path", filepath);
+record = struct("id", id, "role", role, "path", filepath);
 end
 
 function value = nonemptyText(value, name)

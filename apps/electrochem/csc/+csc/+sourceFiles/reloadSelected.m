@@ -7,7 +7,7 @@ if isempty(selection.Indices)
     return
 end
 index = selection.Indices(1);
-paths = callbackContext.resolveSourcePaths( ...
+paths = labkit.app.source.paths( ...
     applicationState.project.inputs.sources);
 if index > numel(paths)
     return

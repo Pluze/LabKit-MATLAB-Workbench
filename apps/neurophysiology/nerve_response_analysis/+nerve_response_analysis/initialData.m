@@ -10,9 +10,5 @@ function project = createProject()
     project.parameters = struct( ...
         "maxRecordings", 0, ...
         "maxDurationSec", 0);
-    project.annotations = struct();
     project.results = struct("lastExport", []);
-    project.extensions = struct();
 end
-
-

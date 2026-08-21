@@ -10,9 +10,5 @@ function project = createProject()
     project.parameters = struct( ...
         "baselineWindowSec", [0.007 0.009], ...
         "noiseWindowSec", [0.007 0.009]);
-    project.annotations = struct();
     project.results = struct("lastExport", []);
-    project.extensions = struct();
 end
-
-

@@ -17,6 +17,4 @@ function project = createProject()
     project.annotations = struct("items", repmat( ...
         flir_thermal.thermalAnnotations.empty(), 0, 1));
     project.results = struct("lastExport", [], "resultManifestPath", "");
-    project.extensions = struct();
 end
-

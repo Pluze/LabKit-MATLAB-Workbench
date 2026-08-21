@@ -34,12 +34,11 @@ end
 function applicationState = reprojectVisiblePlots( ...
         applicationState, callbackContext)
 if applicationState.session.playback.loaded
-    playback = callbackContext.getResource( ...
-        "application", "mark10Playback");
+    playback = callbackContext.getResource("mark10Playback");
     applicationState = mark10_monitor.playback.applyCursor( ...
         applicationState, playback, applicationState.session.playback.cursor);
 else
-    buffer = callbackContext.getResource("application", "mark10Buffer");
+    buffer = callbackContext.getResource("mark10Buffer");
     acquisition = applicationState.session.acquisition;
     acquisition.plotTime_s = buffer("plotTime_s");
     [acquisition.plotForce_N, acquisition.plotTravel_mm] = ...

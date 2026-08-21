@@ -22,6 +22,6 @@ function records = emptyRecords()
 % See also labkit.app.source.record
 
 prototype = labkit.app.source.record( ...
-    "placeholder", "placeholder", "placeholder", true);
+    "placeholder", "placeholder", "placeholder");
 records = repmat(prototype, 0, 1);
 end

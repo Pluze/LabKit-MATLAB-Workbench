@@ -5,25 +5,13 @@ classdef (Hidden, Sealed) SourceListStore < handle
         function obj = SourceListStore()
         end
 
-        function record = create(~, id, role, path, required)
-            if nargin < 5
-                required = true;
-            end
-            record = makeRecord(id, role, path, required);
+        function record = create(~, id, role, path)
+            record = makeRecord(id, role, path);
         end
 
-        function paths = sourcePaths(~, records, ids)
+        function paths = sourcePaths(~, records)
             validateRecords(records);
-            recordIds = recordIdsOf(records);
             indices = (1:numel(records)).';
-            if nargin >= 3
-                requested = normalizeIds(ids, "Requested source ids");
-                if isempty(requested)
-                    paths = strings(0, 1);
-                    return;
-                end
-                [~, indices] = ismember(requested, recordIds);
-            end
             paths = strings(numel(indices), 1);
             for k = 1:numel(indices)
                 if indices(k) ~= 0
@@ -32,37 +20,13 @@ classdef (Hidden, Sealed) SourceListStore < handle
             end
         end
 
-        function records = upsert(~, records, record)
-            validateRecords(records);
-            validateRecord(record);
-            if isempty(records)
-                records = reshape(record, 1, 1);
-                return;
-            end
-            match = find(recordIdsOf(records) == record.id, 1, "first");
-            if isempty(match)
-                records(end + 1, 1) = record;
-            else
-                records(match) = record;
-            end
-        end
-
-        function records = reconcile(~, current, incoming)
-            % Incoming records are the complete desired collection and order.
-            % Validate both sides before returning a canonical replacement so
-            % callers never partially publish malformed source state.
-            validateRecords(current);
-            validateRecords(incoming);
-            records = canonicalCollection(incoming);
-        end
-
         function records = reconcilePaths(obj, current, paths, role, prefix, ...
-                required, allowDuplicatePaths)
+                allowDuplicatePaths)
             validateRecords(current);
             paths = normalizePaths(paths);
             role = requiredText(role, "Source-list role");
             prefix = requiredText(prefix, "Source-list id prefix");
-            if nargin < 7
+            if nargin < 6
                 allowDuplicatePaths = false;
             end
             allowDuplicatePaths = logicalScalar( ...
@@ -81,7 +45,7 @@ classdef (Hidden, Sealed) SourceListStore < handle
                 match = find(candidates, 1);
                 if isempty(match)
                     id = nextId(current, records, prefix);
-                    record = obj.create(id, role, paths(k), required);
+                    record = obj.create(id, role, paths(k));
                 else
                     record = current(match);
                     retained(match) = true;
@@ -102,15 +66,15 @@ classdef (Hidden, Sealed) SourceListStore < handle
         end
 
         function records = reconcileRolePaths(obj, current, paths, ...
-                role, prefix, required, allowDuplicatePaths)
+                role, prefix, allowDuplicatePaths)
             validateRecords(current);
             role = requiredText(role, "Source-list role");
-            if nargin < 7
+            if nargin < 6
                 allowDuplicatePaths = false;
             end
             currentRole = obj.recordsForRole(current, role);
             replacement = obj.reconcilePaths( ...
-                currentRole, paths, role, prefix, required, ...
+                currentRole, paths, role, prefix, ...
                 allowDuplicatePaths);
             records = obj.replaceRole(current, role, replacement);
         end
@@ -153,14 +117,10 @@ classdef (Hidden, Sealed) SourceListStore < handle
 
 end
 
-function record = makeRecord(id, role, path, required)
+function record = makeRecord(id, role, path)
 id = requiredText(id, "Source-list id");
 role = requiredText(role, "Source-list role");
-if ~(islogical(required) || isnumeric(required)) || ~isscalar(required) || ...
-        ~isfinite(double(required)) || ~any(double(required) == [0 1])
-    invalid("Source-list required flag must be scalar logical.");
-end
-record = struct("id", id, "required", logical(required), "role", role, ...
+record = struct("id", id, "role", role, ...
     "path", requiredPath(path, "Source filepath"));
 end
 
@@ -173,7 +133,7 @@ output = emptyRecords();
 for k = 1:numel(records)
     record = records(k);
     output = appendRecord(output, makeRecord( ...
-        record.id, record.role, record.path, record.required));
+        record.id, record.role, record.path));
 end
 records = output;
 end
@@ -187,7 +147,7 @@ end
 end
 
 function records = emptyRecords()
-prototype = struct("id", "", "required", true, "role", "", ...
+prototype = struct("id", "", "role", "", ...
     "path", "");
 records = repmat(prototype, 0, 1);
 end
@@ -217,10 +177,10 @@ end
 function validateRecord(record)
 if ~isstruct(record) || ~isscalar(record) || ...
         ~isequal(string(fieldnames(record)), ...
-            ["id"; "required"; "role"; "path"])
+            ["id"; "role"; "path"])
     invalid("Source-list record must have the canonical fields.");
 end
-makeRecord(record.id, record.role, record.path, record.required);
+makeRecord(record.id, record.role, record.path);
 end
 
 function ids = recordIdsOf(records)
@@ -228,17 +188,6 @@ if isempty(records)
     ids = strings(0, 1);
 else
     ids = string({records.id}).';
-end
-end
-
-function ids = normalizeIds(value, label)
-if ~(ischar(value) || isstring(value) || iscellstr(value))
-    invalid("%s must be text.", label);
-end
-ids = string(value);
-ids = ids(:);
-if any(strlength(ids) == 0)
-    invalid("%s must be nonempty.", label);
 end
 end
 

@@ -56,8 +56,9 @@ Use `labkittest.explain` to find the exact owner and contract.
   startup readiness, busy state, queued events, atomic presentation, close
   guards, diagnostics, resources, and interactions.
 - Semantic ids are developer-owned and framework-validated. App ids are stable
-  compatibility identifiers; layout/action/axis/source/result namespaces must
-  remain legal and unique; references must resolve before UI mutation.
+  compatibility identifiers; layout/action/axis/source namespaces must remain
+  legal and unique; references must resolve before UI mutation. Bind paths are
+  opaque App-owned field paths, not framework-owned project/session schemas.
 - View snapshots must preserve unchanged graphics and viewports. Renderers own
   incremental overlay changes; interaction specs own user gestures.
 - Establish the legal domain of interdependent native properties before
@@ -104,8 +105,9 @@ Use `labkittest.explain` to find the exact owner and contract.
   together, express the breaking facade range, and remove aliases as one
   change. Defaults apply only to omitted options; an explicitly unknown
   scientific mode fails rather than selecting a plausible fallback.
-- Resource replacement for the same scope and id is intentional and
-  idempotent; use distinct ids for resources that coexist.
+- Resource replacement for the same id is intentional and idempotent; use
+  distinct ids for resources that coexist and remove them at the App-owned
+  workflow boundary when they should not survive until close.
 - Diagnostic output must stay app-neutral and sanitized.
 
 ## API and release contract

@@ -53,7 +53,7 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
             runtime = viewerRuntime(testCase);
             cleanup = onCleanup(@() runtime.close());
             runtime.invokeAction("run");
-            historyCount = numel(runtime.diagnosticEvents());
+            historyCount = numel(runtime.diagnosticSnapshot().events);
             appFigure = runtime.figureHandle();
             openMenu = oneHandle( ...
                 appFigure, "labkitAppUtilitySessionLog");
@@ -119,7 +119,7 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
             invoke(clearButton.ButtonPushedFcn, clearButton, []);
             testCase.verifyEqual(height(tableHandle.Data), 0);
             testCase.verifyEqual( ...
-                numel(runtime.diagnosticEvents()), historyCount);
+                numel(runtime.diagnosticSnapshot().events), historyCount);
             clear cleanup
         end
 
@@ -194,7 +194,7 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
             testCase.verifyEqual(notice.title, ...
                 "Diagnostic Bundle Exported");
             testCase.verifyEqual(notice.icon, "info");
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
             testCase.verifyGreaterThanOrEqual(sum( ...
                 string({records.eventName}) == ...
                     "diagnostics.bundle_exported.completed"), 2);

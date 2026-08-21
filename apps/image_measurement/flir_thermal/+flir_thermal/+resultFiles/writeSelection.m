@@ -13,7 +13,7 @@ if strlength(folder) == 0
     return
 end
 try
-    paths = callbackContext.resolveSourcePaths(sources);
+    paths = labkit.app.source.paths(sources);
     items = flir_thermal.sourceFiles.readImages( ...
         paths, struct("SkipInvalid", false));
     items = applyAnnotations(items, sources, annotations);

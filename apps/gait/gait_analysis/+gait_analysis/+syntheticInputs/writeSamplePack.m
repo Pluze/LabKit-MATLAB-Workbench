@@ -18,7 +18,7 @@ function pack = writeSamplePack(sampleContext)
 
     initialProject = gait_analysis.initialData();
     initialProject.inputs.sources = sampleContext.sourceRecord( ...
-        "pose1", "poseCoordinates", posePath, true);
+        "pose1", "poseCoordinates", posePath);
     pack = labkit.app.synthetic.Pack( ...
         Scenario="representative-pose-coordinates", ...
         InitialInput=initialProject, ...
@@ -45,7 +45,6 @@ function project = syntheticVideoMarkerPayload()
         "calibration", ...
         labkit.app.interaction.scaleCalibration([], [], "px"));
     project.results = struct();
-    project.extensions = struct();
 end
 
 function annotations = syntheticAnnotations()

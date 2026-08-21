@@ -19,7 +19,5 @@ function project = createProject()
     project.results = struct( ...
         "lastProtocolExport", [], ...
         "lastFilterExport", []);
-    project.extensions = struct();
 end
-
 

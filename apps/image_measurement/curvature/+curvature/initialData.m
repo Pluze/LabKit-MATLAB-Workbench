@@ -23,6 +23,4 @@ function project = createProject()
         "length", curvature.analysisRun.emptyLengthResult(), ...
         "lastCsvExport", [], ...
         "lastOverlayExport", []);
-    project.extensions = struct();
 end
-

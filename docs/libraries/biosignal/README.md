@@ -11,8 +11,8 @@ structures used by LabKit apps.
 information used by `labkit.contract` requirement checks.
 
 ECG peak detection is the only modality-specific detector in the current
-module. Import, filtering, segmentation, template construction, measurement,
-and group comparison use generic biosignal structures.
+module. Import, filtering, segmentation, template construction, and
+measurement use generic biosignal structures.
 
 ## Public Surface
 
@@ -29,7 +29,6 @@ events = labkit.biosignal.detectEcgPeaks(signal, ecgPeakOptions);
 segments = labkit.biosignal.segmentByEvents(signal, events, windowSec);
 template = labkit.biosignal.buildTemplate(segments, templateOptions);
 measurements = labkit.biosignal.measureSegments(segments, template, measureOptions);
-comparison = labkit.biosignal.compareGroups(values, groups);
 ```
 
 `readRecording` accepts MAT files containing timetable or table variables,

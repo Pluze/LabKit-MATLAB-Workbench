@@ -17,7 +17,7 @@ try
     for index = 1:numel(plan.paths)
         sources(index, 1) = labkit.app.source.record( ...
             plan.tasks(index).sourceId, "cropSource", ...
-            plan.paths(index), true);
+            plan.paths(index));
     end
     candidate.project.inputs.sources = sources;
     candidate.project.inputs.items = plan.tasks;

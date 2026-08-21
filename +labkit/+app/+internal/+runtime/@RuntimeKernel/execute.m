@@ -57,7 +57,6 @@ function execute(obj, binding, payload, prepareState, failureLabel)
     catch cause
         obj.State = previousState;
         obj.Presentation = previousPresentation;
-        obj.Resources.clearScope("event");
         if hasCallback
             obj.Recorder.finish(operation, "failed", "rolledBack", cause);
             obj.Recorder.log( ...
@@ -71,5 +70,4 @@ function execute(obj, binding, payload, prepareState, failureLabel)
         failure = addCause(failure, cause);
         throwAsCaller(failure);
     end
-    obj.Resources.clearScope("event");
 end

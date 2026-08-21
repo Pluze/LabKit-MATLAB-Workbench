@@ -7,7 +7,7 @@ if isempty(state.session.cache.currentImage)
     return
 end
 
-paths = context.resolveSourcePaths(state.project.inputs.sources);
+paths = labkit.app.source.paths(state.project.inputs.sources);
 startPath = video_marker.resultFiles.defaultOutputPath( ...
     paths(1), "video_marker_annotated.mp4");
 choice = context.chooseOutputFile( ...

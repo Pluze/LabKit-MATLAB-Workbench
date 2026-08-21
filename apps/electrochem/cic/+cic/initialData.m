@@ -27,8 +27,5 @@ function project = createProject()
         "bottomX", choices.xAxes(1), ...
         "bottomY", choices.yAxes(2), ...
         "bottomGrid", true);
-    project.annotations = struct();
     project.results = struct("lastExport", []);
-    project.extensions = struct();
 end
-

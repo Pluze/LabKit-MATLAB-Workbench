@@ -5,7 +5,7 @@ classdef (Sealed) Context
     %   context = labkit.app.synthetic.Context(rootFolder)
     %   filepath = context.samplePath(relativePath)
     %   filepath = context.outputPath(relativePath)
-    %   record = context.sourceRecord(id,role,filepath,required)
+    %   record = context.sourceRecord(id,role,filepath)
     %   artifact = context.artifact(id,role,filepath,Name=Value)
     %
     % Description:
@@ -18,10 +18,9 @@ classdef (Sealed) Context
     %   rootFolder - Nonempty scalar folder dedicated to one generated pack.
     %   relativePath - Nonempty child path without an absolute root, empty
     %       segment, current segment, or parent traversal.
-    %   id - Stable portable-source identifier.
-    %   role - Stable portable-source role.
+    %   id - Stable live-source identifier.
+    %   role - Stable live-source role.
     %   filepath - Path returned by samplePath.
-    %   required - Logical scalar source requirement.
     %
     % Outputs:
     %   context - Immutable synthetic-input context.
@@ -72,12 +71,8 @@ classdef (Sealed) Context
             filepath = boundedPath(obj.OutputFolder, relativePath);
         end
 
-        function record = sourceRecord(~, id, role, filepath, required)
-            if nargin < 5
-                required = true;
-            end
-            record = labkit.app.source.record( ...
-                id, role, filepath, required);
+        function record = sourceRecord(~, id, role, filepath)
+            record = labkit.app.source.record(id, role, filepath);
         end
 
         function artifact = artifact(obj, id, role, filepath, varargin)

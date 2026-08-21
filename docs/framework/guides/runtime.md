@@ -24,7 +24,6 @@ app = labkit.app.Definition( ...
     Family="Examples", ...
     AppVersion="1.0.0", ...
     Updated="2026-07-19", ...
-    Requirements=labkit.contract.requirements("app", ">=3 <4"), ...
     Workbench=example.workbench.buildLayout(), ...
     CreateState=@example.createState, ...
     RefreshState=@example.refreshState, ...
@@ -32,13 +31,13 @@ app = labkit.app.Definition( ...
 end
 ```
 
-Required Definition arguments are product metadata, requirements, and one
+Required Definition arguments are product metadata and one
 `labkit.app.layout.workbench` value. Optional callbacks are:
 
 | Argument | Signature | Purpose |
 | --- | --- | --- |
 | `CreateState` | `state = callback(callbackContext,initialInput)` | Create the App-owned scalar runtime state. |
-| `ValidateState` | `accepted = callback(state)` | Optionally check App-specific in-memory invariants. |
+| `Requirements` | `labkit.contract.requirements(...)` | Optionally declare additional facade ranges used by the App. |
 | `RefreshState` | `state = callback(state,callbackContext)` | Rebuild App data after a file-list edit. |
 | `PresentWorkbench` | `view = callback(applicationState)` | Return the App-owned fragment of the complete visible snapshot. |
 | `OnStart` | `applicationState = callback(applicationState,callbackContext)` | Perform a real post-first-commit request or resource initialization. |
@@ -99,13 +98,12 @@ previous complete state and returns a candidate complete state. The runtime:
 
 1. serializes the event;
 2. invokes the direct callback;
-3. verifies scalar state shape and any App-owned `ValidateState` callback;
+3. verifies that candidate state remains one scalar struct;
 4. builds and validates the complete view snapshot;
 5. reconciles native components;
 6. publishes state and view together.
 
-Failure rolls back both state and presentation and clears event-scoped
-resources. Apps do not implement busy flags, callback queues, readiness
+Failure rolls back both state and presentation. Apps do not implement busy flags, callback queues, readiness
 timers, or figure close guards.
 
 The runtime has no project schema, document identity, dirty flag, recovery
@@ -124,8 +122,8 @@ emitted while that feedback is visible replace the current stage text, so an
 App can report real named stages through its existing diagnostic timeline
 without owning a second progress window.
 
-Use direct `Bind="project...."` or `Bind="session...."` paths for ordinary
-fields, ranges, sliders, file sources, and selection. Bound controls need no
+Use direct dotted `Bind` paths for ordinary fields, ranges, sliders, file
+sources, and selection. The roots and nesting are App-owned. Bound controls need no
 callback or presenter operation unless the App has additional derived meaning.
 
 ## Source Lists And State Refresh
@@ -148,13 +146,13 @@ changes:
 
 ```matlab
 function state = refreshState(state, callbackContext)
-paths = callbackContext.resolveSourcePaths(state.project.inputs.sources);
+paths = labkit.app.source.paths(state.project.inputs.sources);
 state.session.measurements = example.sourceFiles.read(paths);
 end
 ```
 
-Source records are runtime UI values with IDs, roles, selection requirements,
-and direct paths. Resolve paths at IO boundaries. If an App writes an archive,
+Source records are runtime UI values with IDs, roles, and direct paths. Read
+paths at IO boundaries. If an App writes an archive,
 that App decides how paths are represented and relocated; the framework does
 not rebase or relink them.
 
@@ -208,7 +206,7 @@ callbackContext.postEvent("stream.live.refresh", @refreshLiveState);
 end
 
 function state = refreshLiveState(state, callbackContext)
-buffer = callbackContext.getResource("application", "sampleBuffer");
+buffer = callbackContext.getResource("sampleBuffer");
 state.session.live = buffer.visibleSnapshot();
 end
 ```
@@ -272,7 +270,7 @@ end
 
 Renderers own drawing and viewport policy, not workflow decisions or project
 mutation. Display-only graphics disable hit testing. Managed interaction
-specs own editable gestures and event-scoped resources.
+specs own editable gestures and their private native resources.
 
 For a multi-row plot dashboard, place multiple plot areas in one workspace
 page. Page content is arranged vertically, while each plot area independently
@@ -440,9 +438,10 @@ DEBUG boundary and durable journal state are the available evidence.
 ## Synthetic Inputs
 
 An App that declares `BuildSyntheticSample` exposes **Tools > Developer
-Tools > Generate Synthetic Inputs...**. The action writes an anonymous,
-validated `labkit.app.synthetic.Pack` and `synthetic-input-pack.json` into a
-new folder beneath the selected destination. Generation does not load the
+Tools > Generate Synthetic Inputs...**. The action creates an anonymous,
+validated `labkit.app.synthetic.Pack` and its declared artifacts in a new
+folder beneath the selected destination. The pack remains an in-memory return
+value; the framework does not publish a second manifest format. Generation does not load the
 pack, replace the open task, or suppress `OnStart`; every App launch follows
 the same startup path. Users deliberately import generated files through the
 App's ordinary controls.
@@ -458,9 +457,9 @@ An App with continuation owns its buttons, format, current-version validation,
 path policy, and resume meaning. The runtime supplies no envelope, migration
 loop, atomic-save policy, project menu, or generic result manifest.
 
-Resources have event, interaction, or application scope. Replacing
-the same scope and ID is idempotent; the runtime cleans every surviving
-resource on scope end or close.
+Resources use App-owned IDs. Replacing the same ID is idempotent; Apps remove
+resources when a workflow no longer needs them, and the runtime cleans every
+surviving resource on close.
 
 ## Validation
 

@@ -157,17 +157,10 @@ classdef (Sealed, Hidden) RuntimeContractBoundary
             end
         end
 
-        function validateState(application, state)
+        function validateState(~, state)
             if ~isstruct(state) || ~isscalar(state)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "Command must return scalar application state.");
-            end
-            if ~isempty(application.ValidateState)
-                accepted = application.ValidateState(state);
-                if ~(islogical(accepted) && isscalar(accepted) && accepted)
-                    error("labkit:app:runtime:InvariantFailure", ...
-                        "Application validation rejected command state.");
-                end
             end
         end
 

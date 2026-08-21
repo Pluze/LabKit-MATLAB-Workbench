@@ -678,7 +678,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         function chooseFiles(obj, target)
             config = obj.node(target).Configuration;
-            startPath = obj.dialogStartFolder(target, config.StartPath);
+            startPath = obj.dialogStartFolder(target, "");
             [names, folder] = uigetfile(labkit.app.internal.native.NativeAdapterValues.dialogFilters(config.Filters), ...
                 char(config.ChooseLabel), ...
                 startPath, MultiSelect=labkit.app.internal.native.NativeAdapterValues.multiSelectValue(config.SelectionMode));
@@ -701,7 +701,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         function chooseFolderFiles(obj, target, recursive)
             config = obj.node(target).Configuration;
-            startPath = obj.dialogStartFolder(target, config.StartPath);
+            startPath = obj.dialogStartFolder(target, "");
             folder = uigetdir(startPath, "Choose folder");
             if isequal(folder, 0)
                 return
@@ -711,7 +711,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 "input", folder);
             paths = labkit.app.internal.native.NativeAdapterValues.filesInFolder(folder, config.Filters, recursive);
             if recursive && ...
-                    numel(paths) > config.FolderWarningThreshold
+                    numel(paths) > 500
                 message = sprintf([ ...
                     "Recursive scan found %d matching file(s) under:\n%s\n\n" ...
                     "Loading a very large folder may take a while. Continue?"], ...

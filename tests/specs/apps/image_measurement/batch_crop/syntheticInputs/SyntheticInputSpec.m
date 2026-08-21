@@ -9,8 +9,6 @@ classdef SyntheticInputSpec < matlab.unittest.TestCase
             pack = labkittest.generateSyntheticInputs( ...
                 definition, folder);
 
-            testCase.verifyEqual(exist(fullfile( ...
-                folder, "synthetic-input-pack.json"), "file"), 2);
             centers = vertcat(pack.InitialInput.inputs.items.centerXY);
             testCase.verifyTrue(all(isfinite(centers), "all"));
         end

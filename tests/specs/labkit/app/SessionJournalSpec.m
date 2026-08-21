@@ -388,7 +388,7 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             clear streamCleanup cleanup
         end
 
-        function snapshotAndExportDoNotMutateRetainedSession(testCase)
+        function snapshotDoesNotMutateRetainedSession(testCase)
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             [folder, expectedEvents] = writeJournalSession( ...
@@ -396,25 +396,11 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
 
             snapshot = labkit.app.internal.diagnostics.SessionJournalArchive.snapshot( ...
                 root, "session-current");
-            exportFolder = fullfile(root, "safe-export");
-            labkit.app.internal.diagnostics.SessionJournalArchive.exportSnapshot( ...
-                root, "session-current", exportFolder);
-
             manifest = readJson(folder, "manifest.json");
             testCase.verifyEqual(string(manifest.state), "closed");
             testCase.verifyEqual(numel(snapshot.events), numel(expectedEvents));
             testCase.verifyEqual(string(snapshot.events(1).eventName), ...
                 string(jsondecode(expectedEvents(1)).eventName));
-            testCase.verifyTrue(isfile(fullfile(exportFolder, "events.jsonl")));
-            testCase.verifyTrue(isfile(fullfile(exportFolder, "manifest.json")));
-            testCase.verifyTrue(isfile(fullfile(exportFolder, "timeline.txt")));
-            testCase.verifyTrue(isfile(fullfile(exportFolder, "degradation.json")));
-            redaction = readJson(exportFolder, "redaction.json");
-            testCase.verifyEqual(string(redaction.exportProjection), "none");
-            bundleText = join([ ...
-                string(fileread(fullfile(exportFolder, "events.jsonl"))); ...
-                string(fileread(fullfile(exportFolder, "timeline.txt")))], newline);
-            testCase.verifyFalse(contains(bundleText, string(root)));
         end
     end
 end

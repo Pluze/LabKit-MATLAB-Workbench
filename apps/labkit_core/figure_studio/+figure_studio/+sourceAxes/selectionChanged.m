@@ -16,7 +16,7 @@ if isempty(selection.Indices) || isempty(state.project.inputs.sources)
     state.session.cache.sourcePanelChoices = "No panels";
     state.session.cache.limitState = figure_studio.sourceAxes.limitControls([]);
     state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
-    callbackContext.removeResource("document", "sourceFigure");
+    callbackContext.removeResource("sourceFigure");
     state.session.selection.currentIndex = 0;
     state.session.selection.panel = "No panels";
     state.session.workflow.status = "No FIG files loaded.";
@@ -25,11 +25,11 @@ if isempty(selection.Indices) || isempty(state.project.inputs.sources)
     return
 end
 
-paths = callbackContext.resolveSourcePaths(state.project.inputs.sources);
+paths = labkit.app.source.paths(state.project.inputs.sources);
 index = min(selection.Indices(1), numel(paths));
 sourcePath = paths(index);
 [~, ~, resource] = figure_studio.sourceAxes.readFigFile(sourcePath);
-callbackContext.setResource("document", "sourceFigure", resource, ...
+callbackContext.setResource("sourceFigure", resource, ...
     @figure_studio.sourceAxes.closeResource);
 [plotData, sourceStyle, sourceAxes, panelLabel, panelIndex] = ...
     figure_studio.sourceAxes.selectPanel(resource, 1);

@@ -15,6 +15,6 @@ classdef RhsPreviewSourceSpec < matlab.unittest.TestCase
 end
 
 function source = sourceRecord(id, role)
-source = struct("id", id, "required", true, "role", role, ...
+source = struct("id", id, "role", role, ...
     "path", "/tmp/" + id);
 end

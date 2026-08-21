@@ -16,19 +16,20 @@ find the exact owner and contract; App authors never invent test paths.
 - Keep `labkit_*_app.m` as a thin wrapper around
   `definition().launch(...)`.
 - `definition.m` is the single product contract. It declares stable identity,
-  version, requirements, layout, and references to optional state creation,
-  state refresh, presenter, synthetic-input, and Start capabilities.
+  version, layout, optional facade requirements, and references to state
+  creation, state refresh, presenter, synthetic-input, and Start capabilities.
   It performs no IO, computation, export, handle creation, or lifecycle
   mutation.
 - A static App needs only the entrypoint, definition, and
   `+workbench/buildLayout.m`. Layout controls reference concrete semantic
   callbacks directly; do not create `definitionActions.m`, `stateHandlers.m`,
   callback bags, or renderer registries.
-- Create only the structured in-memory state the App actually uses. State
-  creation and optional validation are runtime concerns, not a project schema
-  and not evidence that the state can be saved or reopened.
+- Create only the structured in-memory state the App actually uses. The
+  runtime validates only its scalar struct boundary; App field names and
+  nesting are not a framework schema and are not evidence that state can be
+  saved or reopened.
 - Reconstruct App-specific transient data only when source changes require it.
-  Resolve live source paths through `context.resolveSourcePaths`.
+  Read live source paths with `labkit.app.source.paths`.
 - `+workbench/buildLayout.m` returns the data-only product assembly. Add
   `+workbench/present.m` only for dynamic views; it composes feature-owned
   snapshot fragments without IO or heavy computation. Put each renderer in
@@ -55,8 +56,9 @@ find the exact owner and contract; App authors never invent test paths.
 - Do not add package-root lifecycle `run.m`, `+ui/runApp.m`, app-family
   `private/` workflow helpers, string dispatchers, or app-specific packages
   outside the owning app tree.
-- `BuildSyntheticSample` creates a validated, reproducible synthetic input pack and
-  artifacts; it never authorizes startup work or automatic project loading.
+- An App may provide `BuildSyntheticSample` when a reproducible sample is
+  useful. It returns a validated in-memory pack and creates its declared
+  artifacts; the framework does not publish a second manifest format.
   Runtime exposes generation as an ordinary Developer Tools action; every
   launch follows the same App startup path.
   Interactive sample values are finite, representative, and valid for the

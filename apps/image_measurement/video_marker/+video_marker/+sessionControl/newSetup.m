@@ -39,7 +39,7 @@ elseif answer ~= "Discard and start new"
         "New setup cancelled.");
     return
 end
-callbackContext.clearResourceScope("document");
+callbackContext.removeResource("video");
 project = video_marker.initialData();
 applicationState = struct("project", project, ...
     "session", video_marker.createSession(project, callbackContext));

@@ -35,9 +35,9 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
         function duplicatesFromRowShapedFileListStateWithoutLosingAlignment(testCase)
             project = batch_crop.initialData();
             first = labkit.app.source.record( ...
-                "image1", "cropSource", "first.png", true);
+                "image1", "cropSource", "first.png");
             second = labkit.app.source.record( ...
-                "image2", "cropSource", "second.png", true);
+                "image2", "cropSource", "second.png");
             project.inputs.sources = [first, second];
             project.inputs.items = batch_crop.cropTasks.forSourceIds( ...
                 ["image1", "image2"]).';
@@ -92,7 +92,6 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
             context = struct( ...
                 "chooseInputFile", @(varargin) struct( ...
                     "Cancelled", false, "Value", string(manifestPath)), ...
-                "resolveSourcePaths", @resolvedSourcePaths, ...
                 "log", @(varargin) [], ...
                 "alert", @unexpectedAlert);
             state = struct("project", project, ...
@@ -116,18 +115,6 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
             testCase.verifyEqual(actual.session.selection.currentIndex, 1);
         end
     end
-end
-
-function paths = resolvedSourcePaths(sources, varargin)
-paths = strings(numel(sources), 1);
-for index = 1:numel(sources)
-    paths(index) = string(sources(index).path);
-end
-if ~isempty(varargin)
-    ids = string(varargin{1});
-    keep = ismember(string({sources.id}), ids);
-    paths = paths(keep);
-end
 end
 
 function unexpectedAlert(varargin)

@@ -162,9 +162,9 @@ classdef (Sealed, Hidden) LayoutNodeValues
                 return;
             end
             if isempty(regexp(char(value), ...
-                    '^(project|session)(\.[A-Za-z]\w*)+$', "once"))
+                    '^[A-Za-z]\w*(\.[A-Za-z]\w*)+$', "once"))
                 error("labkit:app:contract:InvalidValue", ...
-                    "Layout Bind must be a project or session field path.");
+                    "Layout Bind must be a dotted MATLAB field path.");
             end
         end
 
