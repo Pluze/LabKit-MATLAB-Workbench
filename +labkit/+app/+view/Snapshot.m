@@ -92,7 +92,7 @@ classdef (Sealed) Snapshot
 
         function obj = limits(obj, target, limits)
             if ~(isnumeric(limits) && isequal(size(limits), [1 2]) && ...
-                    all(isfinite(limits)) && limits(1) <= limits(2))
+                    all(isfinite(limits)) && limits(1) < limits(2))
                 error("labkit:app:contract:InvalidValue", ...
                     "View snapshot limits must be an increasing finite 1-by-2 row.");
             end

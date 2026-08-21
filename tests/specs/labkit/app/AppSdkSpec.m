@@ -70,6 +70,14 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "labkit:app:contract:InvalidValue");
         end
 
+        function rejectsLimitsThatOlderNativeControlsCannotRepresent(testCase)
+            testCase.verifyError(@() labkit.app.view.Snapshot().limits( ...
+                "frame", [1 1]), "labkit:app:contract:InvalidValue");
+            view = labkit.app.view.Snapshot().limits("frame", [1 2]);
+
+            testCase.verifyClass(view, "labkit.app.view.Snapshot");
+        end
+
         function callbackContextHasOnlyNamedRuntimeCapabilities(testCase)
             context = labkit.app.internal.runtime.CallbackContextFactory.disconnected();
 
