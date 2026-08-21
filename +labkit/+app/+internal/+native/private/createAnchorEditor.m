@@ -224,7 +224,7 @@ function editor = createAnchorEditor(runtime, imageSize, opts)
         if ~isempty(state.anchorLine) && isvalid(state.anchorLine)
             delete(state.anchorLine);
         end
-        labkit.app.plot.enablePopout(state.ax);
+        labkit.app.internal.native.enableAxesPopout(state.ax);
     end
 
     function onAxesClicked(~, ~)
@@ -358,7 +358,7 @@ function editor = createAnchorEditor(runtime, imageSize, opts)
             created = true;
         end
         if created
-            labkit.app.plot.enablePopout(state.ax);
+            labkit.app.internal.native.enableAxesPopout(state.ax);
         end
     end
 

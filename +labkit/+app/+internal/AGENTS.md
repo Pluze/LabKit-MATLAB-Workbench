@@ -12,7 +12,6 @@ Definition / CallbackContext
     |-- discovery -> App descriptors, scanning, path activation, invocation
     |-- filesystem -> lexical absolute path identity
     |-- identity -> opaque process-unique identifiers
-    |-- integrity -> streaming SHA-256 file digests
     `-- runtime  -> transaction ordering and callback capabilities
                      |-- diagnostics
                      |-- source / resource
@@ -43,9 +42,9 @@ receives one callback from its caller rather than acquiring the caller.
   must not acquire a Launcher window, global Launcher callback, or app-specific
   Launcher dependency.
 - Put artifact naming and scratch-destination policy under `+artifact`.
-- Keep `+filesystem`, `+identity`, and `+integrity` as leaf private primitives.
-  They use MATLAB language and Base MATLAB only, expose no App-facing API, and
-  own lexical path identity, opaque identifiers, and file digests respectively.
+- Keep `+filesystem` and `+identity` as leaf private primitives. They use
+  MATLAB language and Base MATLAB only, expose no App-facing API, and own
+  lexical path identity and opaque identifiers respectively.
   Do not turn them into a generic utility bucket or add workflow policy there.
 - Put Runtime-level diagnostic viewing and export coordination under
   `+diagnostics`; keep event, journal, and bundle primitives focused and move

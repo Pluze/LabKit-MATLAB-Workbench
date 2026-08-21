@@ -31,14 +31,8 @@ classdef EisScientificSpec < matlab.unittest.TestCase
     methods (Static, Access = private)
         function item = canonicalItem(testCase)
             [item, status] = labkit.dta.loadFile( ...
-                testfixtures.dtaFixturePath("eis_potentiostatic_zcurve.DTA"), "eis");
+                testfixtures.dta.file("eis_potentiostatic_zcurve.DTA"), "eis");
             testCase.assertTrue(status.ok, status.message);
-            legacy = {"Pt", "Time", "Freq", "Zreal", "Zimag", "negZimag", ...
-                "Zmod", "Zphz", "Idc", "Vdc"};
-            present = legacy(isfield(item, legacy));
-            if ~isempty(present)
-                item = rmfield(item, present);
-            end
         end
     end
 end

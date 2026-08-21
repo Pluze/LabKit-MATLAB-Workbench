@@ -106,14 +106,10 @@ MP4 with H.264 encoding for ordinary-player compatibility. MATLAB supports
 MPEG-4 writing on macOS and Windows; the render button is unavailable on
 Linux.
 
-## Diagnostics And Synthetic Inputs
+## Diagnostics
 
 Use **Tools > Diagnostics** to inspect the live session log, enable trace
-capture, or export a diagnostic bundle after a problem occurs. Use **Tools >
-Developer Tools > Generate Synthetic Inputs...** to create a synthetic video,
-a valid marking project, and declared marker/coordinate output targets without
-including user filenames or laboratory data. Generation does not load those
-inputs into the running App.
+capture, or export a diagnostic bundle after a problem occurs.
 
 ## Use Without The GUI
 

@@ -1,22 +1,15 @@
 classdef (Hidden, Sealed) SessionDiagnosticBundle
     %SESSIONDIAGNOSTICBUNDLE Write one diagnostic ZIP snapshot.
     % SessionDiagnostics supplies full retained events, manifest metadata, and
-    % current App state. Every ZIP contains complete events plus either an
-    % exact or structurally compact diagnostic MAT projection.
+    % current App state. Every ZIP contains complete events plus a
+    % structurally compact diagnostic MAT projection.
 
     methods (Static)
-        function destination = write( ...
-                snapshot, destination, privateState, stateMode)
+        function destination = write(snapshot, destination, privateState)
             if nargin < 3
                 privateState = [];
             end
-            if nargin < 4
-                stateMode = "compact";
-            end
             snapshot = validateSnapshot(snapshot);
-            stateMode = ...
-                labkit.app.internal.diagnostics.SessionDiagnosticStateProjection.validateMode( ...
-                stateMode);
             if ~isstruct(privateState) || ~isscalar(privateState)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "Diagnostic App state must be one scalar struct.");
@@ -36,14 +29,14 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
             cleanup = onCleanup(@() removeStaging(staging));
             [diagnosticState, stateReview] = ...
                 labkit.app.internal.diagnostics.SessionDiagnosticStateProjection.project( ...
-                privateState, stateMode);
-            stateFilename = diagnosticStateFilename(stateMode);
+                privateState);
+            stateFilename = diagnosticStateFilename();
             stateFilepath = fullfile(staging, stateFilename);
             writePrivateState(stateFilepath, diagnosticState);
             details = dir(stateFilepath);
             stateReview.matFileBytes = double(details.bytes);
             writeText(fullfile(staging, "README.txt"), ...
-                readmeLines(snapshot, stateReview, stateFilename));
+                readmeLines(snapshot, stateFilename));
             writeJson(fullfile(staging, "manifest.json"), ...
                 snapshot.manifest);
             writeEvents(fullfile(staging, "events.jsonl"), ...
@@ -76,15 +69,8 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
             clear zipCleanup cleanup
         end
 
-        function destination = writeFallback( ...
-                snapshot, preferredDestination, stateMode)
-            if nargin < 3
-                stateMode = "compact";
-            end
+        function destination = writeFallback(snapshot, preferredDestination)
             snapshot = validateFallbackSnapshot(snapshot);
-            stateMode = ...
-                labkit.app.internal.diagnostics.SessionDiagnosticStateProjection.validateMode( ...
-                stateMode);
             destination = fallbackPath(preferredDestination);
             folder = string(fileparts(destination));
             if strlength(folder) == 0
@@ -95,8 +81,7 @@ classdef (Hidden, Sealed) SessionDiagnosticBundle
                 error("labkit:app:runtime:DiagnosticWriteFailed", ...
                     "The diagnostic text fallback folder is unavailable.");
             end
-            writeText(destination, fallbackLines( ...
-                snapshot, stateMode));
+            writeText(destination, fallbackLines(snapshot));
         end
     end
 end
@@ -191,13 +176,13 @@ elseif ~strcmpi(extension, ".zip")
 end
 end
 
-function value = readmeLines(snapshot, stateReview, stateFilename)
+function value = readmeLines(snapshot, stateFilename)
 capture = snapshot.capture;
 degradation = snapshot.degradation;
 value = [
     "LabKit Diagnostic Bundle"
     ""
-    detailDescription(stateReview, stateFilename)
+    detailDescription(stateFilename)
     ""
     "Capture notes:"
     "- TRACE enabled at export: " + yesNo(capture.traceEnabled)
@@ -216,28 +201,23 @@ value = [
     ];
 end
 
-function value = detailDescription(stateReview, stateFilename)
+function value = detailDescription(stateFilename)
 value = [ ...
     "This bundle contains complete sensitive diagnostic details."
     "Session events include full retained messages, attributes, exception messages, and stack locations and may include paths, filenames, and scientific values."
     string(stateFilename) + " contains current App project and session state. External source files and screenshots are not copied separately."
     ];
-if string(stateReview.mode) == "compact"
-    value(end + 1, 1) = ...
-        "Large supported state values were replaced with deterministic compressible placeholders. The compact MAT is diagnostic evidence, not scientifically valid input.";
-else
-    value(end + 1, 1) = ...
-        "The exact MAT retains all state values, including decoded caches when the App keeps them in memory.";
-end
+value(end + 1, 1) = ...
+    "Large supported state values were replaced with deterministic compressible placeholders. The compact MAT is diagnostic evidence, not scientifically valid input.";
 end
 
-function value = fallbackLines(snapshot, stateMode)
+function value = fallbackLines(snapshot)
 application = snapshot.application;
 capture = snapshot.capture;
 value = [
     "LabKit Diagnostic Text Fallback"
     ""
-    fallbackDetailLines(stateMode)
+    fallbackDetailLines()
     ""
     "Application:"
     "- Name: " + textField(application, "title")
@@ -266,8 +246,8 @@ value = [
     ];
 end
 
-function value = fallbackDetailLines(stateMode)
-stateFilename = diagnosticStateFilename(stateMode);
+function value = fallbackDetailLines()
+stateFilename = diagnosticStateFilename();
 value = [ ...
     "The normal diagnostic ZIP could not be written. This fallback preserves complete sensitive event details."
     "It contains full retained messages, attributes, exception messages, and stack locations and may contain sensitive paths, filenames, and scientific values."
@@ -380,12 +360,8 @@ value = struct( ...
     "degradation", snapshot.degradation);
 end
 
-function filename = diagnosticStateFilename(stateMode)
-if stateMode == "compact"
-    filename = "app-state-compact.mat";
-else
-    filename = "app-state.mat";
-end
+function filename = diagnosticStateFilename()
+filename = "app-state-compact.mat";
 end
 
 function writePrivateState(filepath, privateState)

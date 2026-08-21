@@ -193,10 +193,6 @@ Connections, samples, playback, and visible state are transient. Closing the
 App does not prompt to save every live refresh. Export is the explicit
 durable-data action.
 
-**Tools > Developer Tools > Generate Synthetic Inputs...** writes anonymous
-CSV, LOG, and MAT replay examples for training and visual inspection. It does
-not emulate a serial device or alter the current session.
-
 ## Programmatic Driver
 
 Use `labkit.mark10.connect`, `readSample`, `readSettings`, `writeSetting`,

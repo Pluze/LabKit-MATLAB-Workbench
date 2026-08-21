@@ -3,7 +3,7 @@
 % effects.
 
 function T = buildResultsTable(items, unitLabel)
-%BUILDRESULTSTABLE Build legacy CIC CSV result table.
+%BUILDRESULTSTABLE Build the CIC CSV result table.
 
     if nargin < 2
         unitLabel = 'mC/cm^2';

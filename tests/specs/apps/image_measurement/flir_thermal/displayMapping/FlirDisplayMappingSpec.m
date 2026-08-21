@@ -5,12 +5,11 @@ classdef FlirDisplayMappingSpec < matlab.unittest.TestCase
         function sharedRangeStoresOneAnnotationPerSource(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            pack = flir_thermal.syntheticInputs.writeSamplePack( ...
-                labkit.app.synthetic.Context(folder));
+            project = testfixtures.flir_thermal.project(string(folder));
             definition = flir_thermal.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkittest.createHeadlessRuntime( ...
-                definition, pack.InitialInput, struct(), journal);
+                definition, project, struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             runtime.invokeAction("groupRange");

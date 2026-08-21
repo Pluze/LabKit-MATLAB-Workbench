@@ -5,11 +5,10 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
         function analyzesExportsAndRestoresASyntheticRecording(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.synthetic.Context(folder);
-            pack = ecg_print.syntheticInputs.writeSamplePack(context);
-            segmentPath = context.outputPath("segments.csv");
-            waveformPath = context.outputPath("waveform.png");
-            regionPath = context.outputPath("analysis_region.mat");
+            project = ecgWorkflowProject(string(folder));
+            segmentPath = fullfile(folder, "segments.csv");
+            waveformPath = fullfile(folder, "waveform.png");
+            regionPath = fullfile(folder, "analysis_region.mat");
             backend = struct( ...
                 "chooseOutputFile", @(~, defaultPath) chooseOutput( ...
                     defaultPath, segmentPath, waveformPath, regionPath), ...
@@ -17,7 +16,7 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             definition = ecg_print.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkittest.createMatlabRuntime( ...
-                definition, pack.InitialInput, backend, ...
+                definition, project, backend, ...
                 journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();

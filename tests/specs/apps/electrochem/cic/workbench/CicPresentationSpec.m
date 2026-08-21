@@ -3,7 +3,7 @@ classdef CicPresentationSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function summarizesComputedAnalysisForTheWorkbench(testCase)
-            item = testfixtures.makeChronoFixtureItem('', 'sample.DTA');
+            item = testfixtures.dta.chronoItem('', 'sample.DTA');
             item.analysis = cic.analysisRun.computeCIC(item, defaultOptions());
             choices = cic.analysisRun.analysisChoices();
 
@@ -29,7 +29,7 @@ classdef CicPresentationSpec < matlab.unittest.TestCase
         end
 
         function reportsFailedCurrentAnalysisAndNoSafeBatchValue(testCase)
-            item = testfixtures.makeChronoFixtureItem('', "failed.DTA");
+            item = testfixtures.dta.chronoItem('', "failed.DTA");
             item.controlMode = "unknown";
             item.analysis = struct("ok", false, "message", "bad pulse window");
             choices = cic.analysisRun.analysisChoices();
@@ -44,7 +44,7 @@ classdef CicPresentationSpec < matlab.unittest.TestCase
         end
 
         function buildsAStableTimeVoltagePlotRequest(testCase)
-            item = testfixtures.makeChronoFixtureItem('', "sample.DTA");
+            item = testfixtures.dta.chronoItem('', "sample.DTA");
             item.analysis = cic.analysisRun.computeCIC(item, defaultOptions());
             choices = cic.analysisRun.analysisChoices();
 

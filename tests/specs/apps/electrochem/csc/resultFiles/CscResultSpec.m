@@ -4,7 +4,7 @@ classdef CscResultSpec < matlab.unittest.TestCase
     methods (Test, TestTags = {'Contract:result', 'Env:headless'})
         function exportsOneSchemaRowPerCycleAndEscapesCsv(testCase)
             [item, status] = labkit.dta.loadFile( ...
-                testfixtures.dtaFixturePath("cv_cyclic_voltammetry_pt_reference.DTA"), "cvct");
+                testfixtures.dta.file("cv_cyclic_voltammetry_pt_reference.DTA"), "cvct");
             testCase.assertTrue(status.ok, status.message);
             choices = csc.analysisRun.analysisChoices();
             options = struct("mode", choices.modes(2), "area_cm2", "2");
@@ -28,7 +28,7 @@ classdef CscResultSpec < matlab.unittest.TestCase
 
         function retainsOneFailureRowWhenNoCyclesAreAvailable(testCase)
             [item, status] = labkit.dta.loadFile( ...
-                testfixtures.dtaFixturePath("cv_cyclic_voltammetry_pt_reference.DTA"), "cvct");
+                testfixtures.dta.file("cv_cyclic_voltammetry_pt_reference.DTA"), "cvct");
             testCase.assertTrue(status.ok, status.message);
             failed = item;
             failed.name = "failed.DTA";
@@ -44,7 +44,7 @@ classdef CscResultSpec < matlab.unittest.TestCase
 
         function keepsOnlyMiddleCyclesAndExportsVoltageCurrentColumns(testCase)
             [item, status] = labkit.dta.loadFile( ...
-                testfixtures.dtaFixturePath("cv_cyclic_voltammetry_4cycle.DTA"), "cvct");
+                testfixtures.dta.file("cv_cyclic_voltammetry_4cycle.DTA"), "cvct");
             testCase.assertTrue(status.ok, status.message);
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;

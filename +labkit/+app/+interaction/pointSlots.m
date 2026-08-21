@@ -16,7 +16,6 @@ function spec = pointSlots(id, onChanged, varargin)
 %   Axis - Axis ID. Default: "main".
 %   Style - Scalar visual-option struct. Default: struct().
 %   Instruction - Scalar guidance text. Default: "".
-%   ViewportPolicy - "preserve" or "fit". Default: "preserve".
 %
 % Outputs:
 %   spec - Immutable interaction declaration.
@@ -30,6 +29,6 @@ function spec = pointSlots(id, onChanged, varargin)
 % See also labkit.app.layout.plotArea
 options = labkit.app.internal.contract.OptionParser.parse( ...
     "labkit.app.interaction.pointSlots", ...
-    ["Axis", "Style", "Instruction", "ViewportPolicy"], varargin{:});
+    ["Axis", "Style", "Instruction"], varargin{:});
 spec = labkit.app.internal.interaction.InteractionSpec("pointSlots",id,onChanged,options);
 end

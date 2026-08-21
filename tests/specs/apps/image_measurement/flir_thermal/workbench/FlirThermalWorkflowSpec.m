@@ -5,14 +5,13 @@ classdef FlirThermalWorkflowSpec < matlab.unittest.TestCase
         function displaysMeasuresExportsAndRestoresSyntheticRadiometricImages(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.synthetic.Context(folder);
-            pack = flir_thermal.syntheticInputs.writeSamplePack(context);
+            project = testfixtures.flir_thermal.project(string(folder));
             backend = struct("chooseOutputFolder", @(~) labkit.app.dialog.Choice(folder), ...
                 "alert", @(~, ~) []);
             definition = flir_thermal.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkittest.createMatlabRuntime( ...
-                definition, pack.InitialInput, backend, ...
+                definition, project, backend, ...
                 journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();

@@ -3,7 +3,7 @@ classdef GaitScientificSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
         function segmentsSwingsAndReportsStepMetrics(testCase)
-            pose = testfixtures.syntheticGaitPose();
+            pose = testfixtures.gait.pose();
             options = GaitScientificSpec.options();
 
             result = gait_analysis.analysisRun.computeGait(pose, options);
@@ -18,7 +18,7 @@ classdef GaitScientificSpec < matlab.unittest.TestCase
         end
 
         function derivesTimingScaleAndPointRolesFromPoseFacts(testCase)
-            pose = testfixtures.syntheticGaitPose();
+            pose = testfixtures.gait.pose();
             pose.frameRate = 120;
             pose.pointNames(1) = "iliac_crest";
             options = gait_analysis.analysisRun.defaultOptions();

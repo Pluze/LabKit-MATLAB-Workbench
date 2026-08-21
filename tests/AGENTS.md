@@ -9,9 +9,15 @@ production capability without logical aliases: `+labkit/+app/...` maps below
 describe behavior but never change physical ownership.
 `tests/+labkittest/` owns discovery, authoring,
 execution, artifacts, and conformance support. `tests/+testfixtures/` owns
-only synthetic inputs reused by more than one specification owner; a fixture
+only input construction reused by more than one specification owner; a fixture
 used by one owner stays beside that specification. Do not create a generic
 shared, support, or helper directory.
+
+Fixtures are private input construction, not a test product model. Pass an
+ordinary destination folder or exact input values and return the production
+value the specification consumes. Do not create Context, Pack, Artifact,
+scenario-manifest, launcher, or other test-only protocols. Delete fixtures
+whose only consumers were manual reproduction or tests of the fixture itself.
 
 Tests protect current observable contracts and costly regressions, not the
 history of how the repository reached its present design. Remove a test when
@@ -33,8 +39,8 @@ differences or require a parallel test-only product model.
 
 Production Apps and downstream App specifications, including accepted private
 repositories, never call `labkit.app.internal`. Use the focused
-`labkittest` test seams for runtime construction, callback contexts, compiled
-definition inspection, and synthetic input materialization. Only SDK-owned
+`labkittest` test seams for runtime construction, callback contexts, and
+compiled definition inspection. Only SDK-owned
 white-box specifications under `tests/specs/labkit/app/` and the concentrated
 `tests/+labkittest/` adapters may name SDK internals directly.
 
@@ -46,11 +52,12 @@ final integration gate.
 
 Initial state is exercised through App conformance and the smallest owner-level
 behavior that consumes each meaningful default; do not require a dedicated
-state specification for implementation-only struct shape. Persistence evidence exists only for an App-owned continuation
-workflow and tests that App's explicit archive contract rather than a generic
-runtime save/load path. App conformance separately validates each synthetic
-sample pack, keeps Debug startup on clean default state, and launches the
-synthetic input through the native adapter.
+state specification for implementation-only struct shape. Persistence evidence
+exists only for an App-owned continuation workflow and tests that App's
+explicit archive contract rather than a generic runtime save/load path. App
+conformance launches clean default state. App-specific input builders are
+ordinary owner-level fixtures, not a Definition or Runtime capability, and
+exist only while an automated behavior specification consumes them.
 
 A fixture constrains only the contract under test; do not add unrelated facade
 version ranges or compatibility assertions that can turn a focused fixture

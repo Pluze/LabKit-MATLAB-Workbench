@@ -16,7 +16,7 @@ function renderPlot(obj, operation)
         isequal(getappdata(ax, revisionKey), value.ViewRevision), axes));
     renderer(axesById, value.Model);
     for k = 1:numel(axes)
-        labkit.app.plot.enablePopout(axes(k));
+        labkit.app.internal.native.enableAxesPopout(axes(k));
         setappdata(axes(k), revisionKey, value.ViewRevision);
     end
     if preserveViewport

@@ -113,21 +113,21 @@ Register large file selections with the least data needed for the first useful
 preview. Decode the selected file on demand and defer full-batch work until the
 user runs or exports when the workflow permits it.
 
-Apps with preview, edit, run, or export stages should make dirty state and the
-last successful task explicit. Pure helpers build deterministic task snapshots
-and calculations; result writers receive explicit task data rather than
-reading UI handles.
+When stale or duplicate results are possible, the App owns the smallest
+explicit last-successful-task or fingerprint state needed by that workflow.
+Pure helpers build deterministic task snapshots and calculations; result
+writers receive explicit task data rather than reading UI handles. Do not add
+generic dirty state or document identity for Apps that do not continue a task.
 
 ## Cross-App Data Contracts
 
-Apps exchange saved, documented data contracts; production and debug code do
-not call a sibling App package. A consumer owns its parser and error language,
-so it can launch with only the framework and its own App root on the MATLAB
-path. A producer owns serialization and schema validation. Keep one
-producer-consumer integration test that invokes both Apps and proves the
-current saved format remains compatible; keep consumer unit and debug fixtures
-independent of the producer package so the shared test path cannot hide a
-runtime dependency.
+Apps exchange a saved data contract only when a real workflow consumes it;
+production and test setup do not call a sibling App package merely to create
+inputs. A consumer owns its parser and error language, so it can launch with
+only the framework and its own App root on the MATLAB path. A producer owns
+serialization and schema validation. Test the current producer-consumer
+contract directly when that connection exists; do not invent a common archive,
+fixture protocol, or compatibility matrix for unrelated Apps.
 
 ## Ownership Check
 
@@ -154,7 +154,7 @@ change.
 
 Use focused app tests while editing, then follow the stable gates in
 [Testing](../maintain-and-release/testing.md). Automated GUI tests cover launch, layout, callbacks,
-debug plumbing, and synthetic workflows; visual quality and manual interaction
+debug plumbing, and bounded workflows with minimal generated inputs; visual quality and manual interaction
 feel still require a human MATLAB check.
 
 ## Related Reference

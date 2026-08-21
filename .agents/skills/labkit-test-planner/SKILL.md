@@ -30,7 +30,12 @@ layers cannot prove the contract. Hidden GUI does not prove native dialog,
 visual quality, pointer feel, real-data suitability, or scientific validity.
 
 Use host permission for MATLAB, hidden figures for batch GUI work, and minimal
-synthetic fixtures. A long run must expose durable progress; a client timeout
+owner-local inputs. A fixture exists only for an automated behavior proof:
+keep a single-owner builder beside its specification, share it under an
+App-named `+testfixtures` package only across multiple specification owners,
+and pass ordinary folders/values rather than inventing a test-only context or
+pack protocol. Delete fixture-only specifications and retired manual-replay
+builders. A long run must expose durable progress; a client timeout
 is not test evidence or a MATLAB failure.
 
 Repository profiles are headless, hidden GUI, path-isolated, coverage, and

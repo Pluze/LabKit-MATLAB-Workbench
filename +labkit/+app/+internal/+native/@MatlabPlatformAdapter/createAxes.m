@@ -25,8 +25,7 @@ function createAxes(obj, node, parent)
                 config.ColumnWidths, axisCount);
         case "stack"
             layout = uigridlayout(root, [axisCount 1]);
-            layout.RowHeight = labkit.app.internal.native.NativeAdapterValues.repeatedOrConfigured( ...
-                config.RowHeights, axisCount);
+            layout.RowHeight = repmat({'1x'}, 1, axisCount);
             layout.ColumnWidth = {'1x'};
         otherwise
             layout = uigridlayout(root, [1 1]);

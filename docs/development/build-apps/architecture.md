@@ -38,8 +38,8 @@ offline packages, and restored lab systems reproducible.
 Public-repository `.m` source also remains inside the MATLAB language runtime. It does
 not call Java, Python, Conda, .NET, shell commands, MEX/native libraries, or
 ActiveX/COM. Repository-owned MATLAB implementations provide lexical path
-identity, opaque identifiers, and streaming SHA-256 where older Base MATLAB
-releases do not have a suitable public one-call API. The repository guard scans
+identity and opaque identifiers where older Base MATLAB releases do not have
+suitable public one-call APIs. The repository guard scans
 production, tools, and tests. Its only allowances are five exact, marked, and
 counted test-infrastructure shell calls for isolated MATLAB processes,
 synthetic Git state, and filesystem-link fixtures, so another entry point
@@ -168,7 +168,6 @@ Add workflow packages only when the App has that user-facing capability:
 +resultFiles/     choosing output folders, writing files, and summarizing exports
 +cropGeometry/    app-owned crop geometry operations
 +thermalFrames/   app-owned thermal frame queues and display choices
-+syntheticInputs/ app-owned clean-room synthetic input generation
 ```
 
 Create only the packages the app needs. Names should describe a workflow or
@@ -232,9 +231,10 @@ monolithic implementation of the App.
 
 ### The state funnel
 
-The runtime commits one canonical value containing `project` and `session`,
-but that value is an SDK transaction envelope, not the App's domain model.
-Keep it at the edge:
+The runtime commits one App-owned scalar struct. Common Apps may choose
+`project` and `session` fields, but the SDK reserves no field names or durable
+schema. The value is a transaction envelope, not the App's domain model. Keep
+it at the edge:
 
 ```text
 layout signal
@@ -305,5 +305,5 @@ buildtool headless
 
 This covers project contracts, reusable facade behavior, and non-GUI app
 helper behavior. GUI checks cover launch, layout, callback wiring, trace
-plumbing, reusable tool lifecycle, and hidden synthetic app workflows. Manual
+plumbing, reusable tool lifecycle, and bounded App workflows. Manual
 MATLAB review is still required for full interactive workflow feel.

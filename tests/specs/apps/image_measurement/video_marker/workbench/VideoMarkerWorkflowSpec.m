@@ -5,12 +5,11 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
         function marksPredictsExportsAndRestoresSyntheticVideo(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.synthetic.Context(folder);
-            pack = video_marker.syntheticInputs.writeSamplePack(context);
-            markerPath = context.outputPath("markers.csv");
-            coordinatePath = context.outputPath("coordinates.csv");
-            annotatedVideoPath = context.outputPath("annotated.mp4");
-            saved = context.outputPath("video-marker-project.mat");
+            project = testfixtures.video_marker.project(string(folder));
+            markerPath = fullfile(folder, "markers.csv");
+            coordinatePath = fullfile(folder, "coordinates.csv");
+            annotatedVideoPath = fullfile(folder, "annotated.mp4");
+            saved = fullfile(folder, "video-marker-project.mat");
             backend = struct( ...
                 "chooseOutputFile", @(~, defaultPath) chooseOutput( ...
                     defaultPath, markerPath, coordinatePath, ...
@@ -21,7 +20,7 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
             definition = video_marker.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkittest.createHeadlessRuntime( ...
-                definition, pack.InitialInput, backend, ...
+                definition, project, backend, ...
                 journal);
             cleanup = onCleanup(@() runtime.close());
 
@@ -58,13 +57,11 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
         function rendersAfterRestoringAppOwnedSnapshot(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.synthetic.Context(folder);
-            pack = video_marker.syntheticInputs.writeSamplePack(context);
-            project = pack.InitialInput;
+            project = testfixtures.video_marker.project(string(folder));
             project.inputs.sources(1).id = "video-1";
-            markerPath = fullfile(folder, "autosave-markers.csv");
-            coordinatePath = fullfile(folder, "autosave-coordinates.csv");
-            annotatedVideoPath = fullfile(folder, "autosave-annotated.mp4");
+            markerPath = fullfile(folder, "restored-markers.csv");
+            coordinatePath = fullfile(folder, "restored-coordinates.csv");
+            annotatedVideoPath = fullfile(folder, "restored-annotated.mp4");
             namedProjectPath = fullfile(folder, "named-project.mat");
             videoPath = project.inputs.sources(1).path;
             expectedOutputFolder = fullfile(fileparts(videoPath), ...

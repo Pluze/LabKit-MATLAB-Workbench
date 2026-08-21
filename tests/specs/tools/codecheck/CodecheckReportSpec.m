@@ -13,7 +13,7 @@ classdef CodecheckReportSpec < matlab.unittest.TestCase
                 "    value = 1;", ...
                 "    actx" + "control('Shell.Explorer');", ...
                 "end"]);
-            testfixtures.StateStore.set( ...
+            labkittest.StateStore.set( ...
                 "codecheckProgress", strings(0, 1));
             cleanup = onCleanup(@resetProgress);
 
@@ -49,7 +49,7 @@ classdef CodecheckReportSpec < matlab.unittest.TestCase
             html = string(fileread(report.htmlFile));
             testCase.verifySubstring(html, "LabKit Code Analysis Report");
             testCase.verifySubstring(html, "compatibility-json");
-            progress = testfixtures.StateStore.get("codecheckProgress");
+            progress = labkittest.StateStore.get("codecheckProgress");
             testCase.verifySubstring(progress(1), "Finding MATLAB files");
             testCase.verifyTrue(any(contains(progress, ...
                 "Running codeIssues on 1 MATLAB file")));
@@ -126,14 +126,14 @@ classdef CodecheckReportSpec < matlab.unittest.TestCase
 end
 
 function recordProgress(message, value)
-    progress = testfixtures.StateStore.get( ...
+    progress = labkittest.StateStore.get( ...
         "codecheckProgress", strings(0, 1));
-    testfixtures.StateStore.set("codecheckProgress", ...
+    labkittest.StateStore.set("codecheckProgress", ...
         [progress; string(message) + "|" + string(value)]);
 end
 
 function resetProgress()
-    testfixtures.StateStore.reset("codecheckProgress");
+    labkittest.StateStore.reset("codecheckProgress");
 end
 
 function writeText(file, lines)

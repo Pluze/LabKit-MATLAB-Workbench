@@ -5,16 +5,14 @@ classdef RhsPreviewWorkflowSpec < matlab.unittest.TestCase
         function indexesPreviewsExportsAndRestoresSyntheticRhs(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.synthetic.Context(folder);
-            pack = rhs_preview.syntheticInputs.writeSamplePack(context);
-            primary = context.samplePath("rhs_preview/acquisition/representative_primary.rhs");
-            repeat = context.samplePath("rhs_preview/acquisition/representative_repeat.rhs");
-            protocolPath = context.outputPath("rhs_protocol_draft.json");
-            filterPath = context.outputPath("rhs_filter_record.json");
-            project = pack.InitialInput;
+            project = rhsPreviewWorkflowProject(string(folder));
+            primary = fullfile(folder, "acquisition", "primary.rhs");
+            repeat = fullfile(folder, "acquisition", "repeat.rhs");
+            protocolPath = fullfile(folder, "rhs_protocol_draft.json");
+            filterPath = fullfile(folder, "rhs_filter_record.json");
             project.inputs.sources = [project.inputs.sources(:); ...
-                context.sourceRecord("filter-1", "filterRecording", primary); ...
-                context.sourceRecord("filter-2", "filterRecording", repeat)];
+                labkit.app.source.record("filter-1", "filterRecording", primary); ...
+                labkit.app.source.record("filter-2", "filterRecording", repeat)];
             backend = struct( ...
                 "chooseOutputFile", @(~, defaultPath) chooseOutput( ...
                     defaultPath, protocolPath, filterPath), ...

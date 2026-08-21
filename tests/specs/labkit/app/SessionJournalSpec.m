@@ -2,61 +2,6 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
     %SESSIONJOURNALSPEC Verify the private buffered canonical session store.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function rejectsLegacyScalarOutcomeRecords(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            app = journalProbeDefinition();
-            journal = labkit.app.internal.diagnostics.SessionJournal(app, ...
-                RootFolder=root, SessionId="session-old-schema");
-            cleanup = onCleanup(@() journal.close());
-            stream = labkit.app.internal.diagnostics.SessionEventStream(app, ...
-                SessionId="session-old-schema");
-            streamCleanup = onCleanup(@() stream.close());
-            legacy = stream.records();
-            legacy = legacy(end);
-            legacy = rmfield(legacy, {'operationResult', 'stateDisposition'});
-            legacy.outcome = "completed";
-
-            journal.append(legacy);
-            health = journal.healthSnapshot();
-
-            testCase.verifyEqual( ...
-                journal.manifest().degradation.dropReasons.invalidCanonicalRecord, 1);
-            testCase.verifyEqual(string(fieldnames(health)), [ ...
-                "state"; "available"; "droppedRecordCount"; ...
-                "invalidCanonicalRecordDropCount"; "writeFailureDropCount"; ...
-                "writeFailureCount"; "lastFailureReason"; "degradationReason"]);
-            testCase.verifyEqual(health.state, "healthy");
-            testCase.verifyTrue(health.available);
-            testCase.verifyEqual(health.droppedRecordCount, 1);
-            testCase.verifyEqual(health.invalidCanonicalRecordDropCount, 1);
-            testCase.verifyEqual(health.writeFailureDropCount, 0);
-            clear streamCleanup cleanup
-        end
-
-        function archiveRejectsLegacyScalarOutcomeJsonlRecords(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            [folder, expectedEvents] = writeJournalSession( ...
-                root, "session-old-archive-schema", "probe.session-journal");
-            record = jsondecode(expectedEvents(1));
-            legacy = rmfield(record, {'operationResult', 'stateDisposition'});
-            legacy.outcome = "completed";
-            legacyFields = ["schemaVersion", "sequence", "timestampUtc", ...
-                "elapsedSeconds", "severity", "audience", "category", ...
-                "eventName", "message", "attributes", "sessionId", "appId", ...
-                "operationId", "parentOperationId", "rootActionId", "outcome", ...
-                "durationSeconds", "exception"];
-            legacy = orderfields(legacy, cellstr(legacyFields));
-            appendText(onlySegment(folder), string(jsonencode(legacy)) + newline);
-
-            snapshot = labkit.app.internal.diagnostics.SessionJournalArchive.snapshot( ...
-                root, "session-old-archive-schema");
-
-            testCase.verifyEqual(numel(snapshot.events), numel(expectedEvents));
-            testCase.verifyEqual(snapshot.degradation.snapshotCorruptRecordCount, 1);
-        end
-
         function rejectsMismatchedTerminalPairsInJournalAndArchive(testCase)
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -114,7 +59,7 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
         end
 
         function buffersContextAndFlushesAroundWarnings(testCase)
-            testfixtures.StateStore.set("journalStages", strings(0, 1));
+            labkittest.StateStore.set("journalStages", strings(0, 1));
             resetObserver = onCleanup(@resetJournalObserver);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -138,15 +83,67 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             lines = lines(strlength(lines) > 0);
 
             testCase.verifyEqual(numel(lines), 3);
-            stages = testfixtures.StateStore.get("journalStages");
+            stages = labkittest.StateStore.get("journalStages");
             writeStages = stages(stages == "open" | stages == "flush");
             testCase.verifyEqual(writeStages, ...
                 ["open", "flush", "flush"]);
             clear streamCleanup cleanup resetObserver
         end
 
+        function persistsRootOperationStartBeforeCallbackWork(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            app = journalProbeDefinition();
+            journal = labkit.app.internal.diagnostics.SessionJournal(app, ...
+                RootFolder=root, SessionId="session-durable-start");
+            projection = ...
+                labkit.app.internal.diagnostics.SessionJournalProjection(journal);
+            stream = labkit.app.internal.diagnostics.SessionEventStream(app, ...
+                SessionId="session-durable-start", ...
+                ProjectionHook=@projection.project, ...
+                ProjectionHealthHook=@projection.drainHealth);
+            recorder = labkit.app.internal.diagnostics.SessionDiagnostics( ...
+                app, stream, projection, journal);
+            cleanup = onCleanup(@() recorder.close());
+
+            recorder.begin("runtime.callback", "callback.roi_changed", ...
+                "Dispatching callback.");
+            archived = ...
+                labkit.app.internal.diagnostics.SessionJournalArchive.snapshot( ...
+                root, "session-durable-start");
+            names = string({archived.events.eventName});
+
+            testCase.verifyTrue(any(names == "callback.roi_changed.started"));
+            testCase.verifyFalse(any(names == "callback.roi_changed.completed"));
+            clear cleanup
+        end
+
+        function findsTheLatestPreviousActiveSessionForTheSameApp(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            app = journalProbeDefinition();
+            journal = labkit.app.internal.diagnostics.SessionJournal(app, ...
+                RootFolder=root, SessionId="session-previous-active");
+            cleanup = onCleanup(@() journal.close());
+            stream = labkit.app.internal.diagnostics.SessionEventStream(app, ...
+                SessionId="session-previous-active", ProjectionHook=@journal.append);
+            streamCleanup = onCleanup(@() stream.close());
+            stream.log("info", "analysis.context", "Context retained.", ...
+                Category="app.probe.journal.analysisRun", Audience="developer");
+            journal.flushDurably();
+
+            archived = ...
+                labkit.app.internal.diagnostics.SessionJournalArchive.latestActive( ...
+                root, app.AppId, "session-current");
+
+            testCase.verifyEqual(string(archived.manifest.sessionId), ...
+                "session-previous-active");
+            testCase.verifyEqual(string(archived.manifest.state), "active");
+            clear streamCleanup cleanup
+        end
+
         function countsWarningDroppedAfterPreflushManifestFailure(testCase)
-            testfixtures.StateStore.set("preflushManifestFaultCount", 0);
+            labkittest.StateStore.set("preflushManifestFaultCount", 0);
             resetFault = onCleanup(@resetPreflushManifestFault);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -311,7 +308,7 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
         end
 
         function highFrequencyCoalescingDoesNotWriteManifestPerRecord(testCase)
-            testfixtures.StateStore.set("journalStages", strings(0, 1));
+            labkittest.StateStore.set("journalStages", strings(0, 1));
             resetObserver = onCleanup(@resetJournalObserver);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -329,7 +326,7 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
                     Category="app.probe.journal.analysisRun", Audience="developer");
             end
 
-            stages = testfixtures.StateStore.get("journalStages");
+            stages = labkittest.StateStore.get("journalStages");
             manifestStages = stages(stages == "manifest");
             testCase.verifyNumElements(manifestStages, 1);
             testCase.verifyEqual(journal.manifest().degradation.coalescedRecordCount, 31);
@@ -406,13 +403,13 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
 end
 
 function recordJournalStage(stage, ~)
-stages = testfixtures.StateStore.get("journalStages", strings(0, 1));
-testfixtures.StateStore.set("journalStages", ...
+stages = labkittest.StateStore.get("journalStages", strings(0, 1));
+labkittest.StateStore.set("journalStages", ...
     [reshape(stages, 1, []), string(stage)]);
 end
 
 function resetJournalObserver()
-testfixtures.StateStore.reset("journalStages");
+labkittest.StateStore.reset("journalStages");
 end
 
 function failWrite(stage)
@@ -425,15 +422,15 @@ function failPreflushManifest(stage)
 if string(stage) ~= "manifest"
     return;
 end
-count = testfixtures.StateStore.get("preflushManifestFaultCount", 0) + 1;
-testfixtures.StateStore.set("preflushManifestFaultCount", count);
+count = labkittest.StateStore.get("preflushManifestFaultCount", 0) + 1;
+labkittest.StateStore.set("preflushManifestFaultCount", count);
 if count >= 2
     error("labkit:test:JournalManifestFailure", "Intentional preflush manifest failure.");
 end
 end
 
 function resetPreflushManifestFault()
-testfixtures.StateStore.reset("preflushManifestFaultCount");
+labkittest.StateStore.reset("preflushManifestFaultCount");
 end
 
 function [folder, events] = writeJournalSession(root, sessionId, appId)

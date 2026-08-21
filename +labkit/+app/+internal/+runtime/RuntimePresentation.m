@@ -77,7 +77,6 @@ classdef (Sealed, Hidden) RuntimePresentation
                             view = view.listSelection(node.Id, selection);
                         end
                     case "plotArea"
-                        view = view.visible(node.Id, true);
                     case "dataTable"
                         view = view.tableData(node.Id, cell(0, 0), ...
                             Columns=config.Columns, ...
@@ -90,7 +89,6 @@ classdef (Sealed, Hidden) RuntimePresentation
                         end
                         view = view.text(node.Id, join(status, newline));
                     case "workspacePage"
-                        view = view.workspacePage(node.Id);
                     otherwise
                         error("labkit:app:runtime:InvariantFailure", ...
                             "No default presentation for Layout kind %s.", ...

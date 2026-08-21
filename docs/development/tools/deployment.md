@@ -54,16 +54,14 @@ folder entries, or unavailable source files raise an error before packaging.
 - `labkit_launcher.m`;
 - deployment and profiling tools used by the packaged Launcher;
 - one `run_<command>.m` standalone entry per selected App;
-- `README.txt` and `packaged_app_manifest.json`.
+- `README.txt` describing the selected Apps and entry files.
 
 The package does not include unrelated sibling Apps.
 
 ## Result Structure
 
 The result identifies `zipFile`, `packageRootName`, `entryFiles`,
-`appCommands`, app-relative folders, visibility values, and
-`fileCount`. Legacy scalar fields `entryFile`, `appCommand`,
-`appRelativeFolder`, and `visibility` describe the first selected app.
+`appCommands`, app-relative folders, visibility values, and `fileCount`.
 
 Packaging stages files in a temporary directory, replaces an existing target
 ZIP only after validation reaches archive creation, and removes the staging

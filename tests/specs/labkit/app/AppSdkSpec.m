@@ -29,8 +29,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
         function validatesDefinitionMetadataAndCallbackRoles(testCase)
             layout = labkit.app.layout.workbench({});
             app = AppSdkSpec.definition(layout, "OnStart", @startProbe, ...
-                "CreateState", @createSessionState, "PresentWorkbench", @presentProbe, ...
-                "BuildSyntheticSample", @syntheticSample);
+                "CreateState", @createSessionState, "PresentWorkbench", @presentProbe);
 
             testCase.verifyEqual(app.launch("version").version, "1.0.0");
             testCase.verifyEqual(string(func2str(app.OnStart)), "startProbe");
@@ -394,11 +393,6 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                     labkit.app.layout.workbench({node})), ...
                     "labkit:app:contract:InvalidValue");
             end
-            workspace = labkit.app.layout.workspace( ...
-                OnPageChanged=@recordWorkspacePage);
-            testCase.verifyError(@() AppSdkSpec.definition( ...
-                labkit.app.layout.workbench({}, Workspace=workspace)), ...
-                "labkit:app:contract:InvalidValue");
         end
 
         function rejectsDynamicallyEditableTableWithoutEditCallback(testCase)
@@ -415,48 +409,6 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
                 app, [], struct(), journal), ...
                 "labkit:app:contract:InvalidValue");
-        end
-
-        function syntheticInputsAreDeliberateAndDoNotChangeTheRuntime(testCase)
-            folder = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            layout = labkit.app.layout.workbench({ ...
-                labkit.app.layout.field("gain", Kind="numeric", ...
-                    Bind="project.parameters.gain")});
-            app = AppSdkSpec.definition(layout, ...
-                "CreateState", @createSampleState, ...
-                OnStart=@startChangesGain, BuildSyntheticSample=@validSyntheticSample);
-            journal = labkittest.temporarySessionJournal(app, folder);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
-                app, [], struct(), journal);
-            cleanup = onCleanup(@() runtime.close());
-            stateBeforeGeneration = runtime.State;
-
-            pack = runtime.generateSyntheticInputs(folder);
-
-            testCase.verifyEqual(runtime.State.project.parameters.gain, 99);
-            testCase.verifyEqual(runtime.State.session.gainAtCreation, 1);
-            testCase.verifyEqual(runtime.State, stateBeforeGeneration);
-            testCase.verifyEqual(pack.InitialInput.parameters.gain, 7);
-            clear cleanup
-
-            projectFreeApp = AppSdkSpec.definition( ...
-                labkit.app.layout.workbench({}), ...
-                BuildSyntheticSample=@projectFreeSyntheticSample);
-            projectFreeJournal = labkittest.temporarySessionJournal( ...
-                projectFreeApp, folder);
-            projectFreeRuntime = ...
-                labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
-                projectFreeApp, [], struct(), projectFreeJournal);
-            projectFreeCleanup = onCleanup(@() projectFreeRuntime.close());
-            stateBeforeGeneration = projectFreeRuntime.State;
-
-            projectFreePack = projectFreeRuntime.generateSyntheticInputs(folder);
-
-            testCase.verifyEqual(projectFreeRuntime.State, ...
-                stateBeforeGeneration);
-            testCase.verifyEmpty(fieldnames(projectFreePack.InitialInput));
-            clear projectFreeCleanup
         end
 
         function insertsOpenAnchorsByVisiblePathLocation(testCase)
@@ -518,7 +470,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             hold(sourceAxes, "on");
             plot(sourceAxes, 1:3, 2:4, HandleVisibility="off");
             hold(sourceAxes, "off");
-            labkit.app.plot.enablePopout(sourceAxes);
+            labkit.app.internal.native.enableAxesPopout(sourceAxes);
             menu = findall(sourceFigure, "Tag", "labkitAxesPopoutMenu");
 
             menu.MenuSelectedFcn(menu, []);
@@ -688,35 +640,6 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function workspacePageCallbackReceivesSelectedPageId(testCase)
-            workspace = labkit.app.layout.workspace( ...
-                OnPageChanged=@recordWorkspacePage);
-            workspace = workspace.page("firstPage", "First", ...
-                labkit.app.layout.statusPanel("firstStatus"));
-            workspace = workspace.page("secondPage", "Second", ...
-                labkit.app.layout.statusPanel("secondStatus"));
-            layout = labkit.app.layout.workbench({}, Workspace=workspace);
-            app = AppSdkSpec.definition(layout, ...
-                "CreateState", @createWorkspaceSessionState);
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
-                app, [], struct(), journal);
-            cleanup = onCleanup(@() runtime.close());
-            figureValue = runtime.figureHandle();
-            group = oneTagged(figureValue, "workspace");
-            secondPage = oneTagged(figureValue, "secondPage");
-
-            group.SelectedTab = secondPage;
-            group.SelectionChangedFcn(group, []);
-            drawnow;
-
-            testCase.verifyEqual( ...
-                runtime.State.session.selectedPage, "secondPage");
-            clear cleanup
-        end
-
         function updatesAFieldAndItsCachedLabelWithoutTreeDiscovery(testCase)
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.field("gain", Kind="numeric", ...
@@ -735,33 +658,10 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             label = findall(figureValue, "Tag", "gain.label");
 
             testCase.verifyEqual(string(field.Enable), "on");
-            testCase.verifyEmpty(findall(figureValue, ...
-                "Tag", "labkitAppUtilitySyntheticInputs"));
             testCase.verifyEqual(string(label.Enable), "on");
             runtime.applyControlValue("gain", 0);
             testCase.verifyEqual(string(field.Enable), "off");
             testCase.verifyEqual(string(label.Enable), "off");
-            clear cleanup
-        end
-
-        function exposesSyntheticInputGenerationAsAnOrdinaryTool(testCase)
-            layout = labkit.app.layout.workbench({});
-            app = AppSdkSpec.definition(layout, ...
-                "CreateState", @createRuntimeState, ...
-                "BuildSyntheticSample", @validSyntheticSample);
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
-                app, [], struct(), journal);
-            cleanup = onCleanup(@() runtime.close());
-
-            menu = findall(runtime.figureHandle(), ...
-                "Tag", "labkitAppUtilitySyntheticInputs");
-
-            testCase.verifyNumElements(menu, 1);
-            testCase.verifyEqual(string(menu.Text), ...
-                "Generate Synthetic Inputs...");
             clear cleanup
         end
 
@@ -1178,15 +1078,6 @@ function session = createSession(~, ~)
 session = struct();
 end
 
-function session = createWorkspaceSession(~, ~)
-session = struct("selectedPage", "");
-end
-
-function applicationState = recordWorkspacePage( ...
-        applicationState, pageId, ~)
-applicationState.session.selectedPage = pageId;
-end
-
 function view = presentProbe(~)
 view = labkit.app.view.Snapshot();
 end
@@ -1248,14 +1139,6 @@ end
 function drawNothing(~, ~)
 end
 
-function pack = syntheticSample(~)
-pack = struct();
-end
-
-function session = sampleSession(project, ~)
-session = struct("gainAtCreation", project.parameters.gain);
-end
-
 function state = createRuntimeState(context, initialInput)
 state = createTestState(context, initialInput, @createProject, @emptySession);
 end
@@ -1268,10 +1151,6 @@ end
 function state = createUnreadableSourceState(context, initialInput)
 state = createTestState( ...
     context, initialInput, @createUnreadableSourceProject, @emptySession);
-end
-
-function state = createSampleState(context, initialInput)
-state = createTestState(context, initialInput, @createProject, @sampleSession);
 end
 
 function state = createSessionState(context, initialInput)
@@ -1293,11 +1172,6 @@ state = createTestState( ...
     context, initialInput, @() struct(), @createNativeBridgeSession);
 end
 
-function state = createWorkspaceSessionState(context, initialInput)
-state = createTestState( ...
-    context, initialInput, @() struct(), @createWorkspaceSession);
-end
-
 function state = createTestState( ...
         context, initialInput, projectFactory, sessionFactory)
 if isempty(initialInput)
@@ -1311,24 +1185,6 @@ end
 
 function session = emptySession(~, ~)
 session = struct();
-end
-
-function state = startChangesGain(state, ~)
-state.project.parameters.gain = 99;
-end
-
-function pack = validSyntheticSample(~)
-pack = labkit.app.synthetic.Pack( ...
-    Scenario="sdk-probe", ...
-    InitialInput=struct("parameters", struct("gain", 7)), ...
-    Artifacts={});
-end
-
-function pack = projectFreeSyntheticSample(~)
-pack = labkit.app.synthetic.Pack( ...
-    Scenario="project-free-sdk-probe", ...
-    InitialInput=struct(), ...
-    Artifacts={});
 end
 
 function session = wrongSession(~)

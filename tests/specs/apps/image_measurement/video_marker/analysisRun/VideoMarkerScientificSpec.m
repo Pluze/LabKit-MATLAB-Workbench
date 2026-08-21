@@ -14,7 +14,7 @@ classdef VideoMarkerScientificSpec < matlab.unittest.TestCase
             testCase.verifyEqual(skeleton.edges, [1 2; 2 3]);
         end
 
-        function keepsTheLegacyPresetAndEditableConnectionLifecycle(testCase)
+        function keepsTheHindlimbPresetAndEditableConnectionLifecycle(testCase)
             preset = video_marker.skeletonSetup.presets();
             project = video_marker.initialData();
             skeleton = project.annotations.skeleton;
@@ -25,7 +25,7 @@ classdef VideoMarkerScientificSpec < matlab.unittest.TestCase
             skeleton = video_marker.skeletonDefinition.addEdge(skeleton, first, second);
             skeleton = video_marker.skeletonDefinition.removePoint(skeleton, first);
 
-            testCase.verifyEqual(preset(1).label, "Legacy leg (5 points)");
+            testCase.verifyEqual(preset(1).label, "Hindlimb (5 points)");
             testCase.verifyEqual(preset(1).pointNames, ...
                 ["iliac"; "hip"; "knee"; "ankle"; "foot"]);
             testCase.verifyEqual(skeleton.pointNames, "knee");

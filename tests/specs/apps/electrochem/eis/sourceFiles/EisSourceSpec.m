@@ -4,7 +4,7 @@ classdef EisSourceSpec < matlab.unittest.TestCase
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function loadsCanonicalZcurveItems(testCase)
             [item, status] = labkit.dta.loadFile( ...
-                testfixtures.dtaFixturePath("eis_potentiostatic_zcurve.DTA"), "eis");
+                testfixtures.dta.file("eis_potentiostatic_zcurve.DTA"), "eis");
             testCase.assertTrue(status.ok, status.message);
 
             testCase.verifyEqual(string(item.type), "eis");
@@ -14,9 +14,9 @@ classdef EisSourceSpec < matlab.unittest.TestCase
         end
 
         function acceptsOnlyEisDtaPaths(testCase)
-            eisPath = testfixtures.dtaFixturePath( ...
+            eisPath = testfixtures.dta.file( ...
                 "eis_potentiostatic_zcurve.DTA");
-            chrono = testfixtures.dtaFixturePath( ...
+            chrono = testfixtures.dta.file( ...
                 "chrono_chronopot_current_pulse_0p2ms.DTA");
 
             accepted = eis.sourceFiles.matchesDtaKind([eisPath, chrono]);

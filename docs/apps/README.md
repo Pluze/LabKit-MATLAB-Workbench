@@ -92,22 +92,21 @@ behavior is necessary to complete the App's workflow.
 
 ## Common App Behavior
 
-The App Framework owns lifecycle, busy state, file selection, state snapshots,
-screenshot actions, plot tools, and managed interactions. Apps own scientific
-choices, workflow-specific defaults, result schemas, and exports. See the
-[App Framework](../framework/README.md) for behavior shared across apps.
+The App Framework owns lifecycle, callback transactions and queueing, validated
+in-memory state, file selection, logging, screenshot actions, plot tools, and
+managed interactions. Apps own scientific choices, workflow-specific defaults,
+result schemas, archives, continuation meaning, and exports. See the [App
+Framework](../framework/README.md) for behavior shared across apps.
 
 Every App opens as a clean project. Use **Tools > Diagnostics** to inspect the
 current session history or export a diagnostic bundle after a problem. Manual
-TRACE capture is controlled inside the Session Log window. Apps with declared
-sample generation expose **Tools >
-Developer Tools > Generate Synthetic Inputs...**; generation writes anonymous
-inputs without loading them or changing the open project. The
-[runtime guide](../framework/guides/runtime.md) defines these shared contracts.
+TRACE capture is controlled inside the Session Log window. The [runtime
+guide](../framework/guides/runtime.md) defines these shared contracts.
 
 Action and input-selection buttons provide concise hover help. The shared
-**Tools** menu contains plot, screenshot, and project-state actions when the
-corresponding capability is available.
+**Tools** menu contains framework-owned plot, screenshot, and diagnostic
+actions when the corresponding capability is available. Task save/open actions
+belong in an App's own controls only when that product supports continuation.
 
 Input data and exported results should remain outside the replaceable LabKit
 runtime folder. Apps do not overwrite source files unless an app page states

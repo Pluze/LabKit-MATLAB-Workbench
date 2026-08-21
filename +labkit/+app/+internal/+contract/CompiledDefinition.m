@@ -52,7 +52,8 @@ classdef (Hidden, Sealed) CompiledDefinition
                     "labkit.app.view.Snapshot value.");
             end
             operations = view.operationsForCompiler();
-            covered = false(size(obj.TargetIds));
+            covered = cellfun(@(node) node.Kind == "plotArea", ...
+                obj.TargetNodes);
             for k = 1:numel(operations)
                 operation = operations{k};
                 index = find(obj.TargetIds == operation.Target, 1);
@@ -134,11 +135,6 @@ for k = 1:numel(nodes)
                 error("labkit:app:contract:InvalidValue", ...
                     "Editable dataTable %s must declare OnCellEdited.", ...
                     node.Id);
-            end
-        case "workspace"
-            if hasSignal(node, "pageChanged") && isempty(node.PageIds)
-                error("labkit:app:contract:InvalidValue", ...
-                    "Workspace OnPageChanged requires named pages.");
             end
     end
 end

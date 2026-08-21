@@ -37,7 +37,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             controller = text(root, ...
                 "+labkit/+app/+internal/+launcher/createLauncher.m");
             popout = text(root, ...
-                "+labkit/+app/+plot/private/createPopoutToolbar.m");
+                "+labkit/+app/+internal/+native/private/createPopoutToolbar.m");
             documentation = text(root, ...
                 "tools/docs/private/loadLabKitDocumentation.m");
 
@@ -93,15 +93,12 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 startsWith(files, ["+labkit/" "apps/" "tools/"]));
             allowedFiles = [ ...
                 "+labkit/+app/+internal/+discovery/invokeDiscoveredApp.m"
-                "+labkit/+app/+internal/+native/private/FigureInteractionHub.m"
                 "tools/profiling/profileLabKitTarget.m"];
             allowedCalls = { ...
                 ["feval(" "feval("]
-                "feval("
                 "feval("};
             markers = [ ...
                 "Dynamic extension boundary"
-                "Compatibility boundary"
                 "Dynamic maintainer-tool boundary"];
 
             for file = files.'

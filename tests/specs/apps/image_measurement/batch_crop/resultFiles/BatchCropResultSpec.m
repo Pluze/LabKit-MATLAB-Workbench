@@ -167,7 +167,7 @@ classdef BatchCropResultSpec < matlab.unittest.TestCase
             testCase.verifyEqual(plan.paths, string(item.path));
         end
 
-        function rejectsLegacyManifestFormats(testCase)
+        function rejectsManifestMissingARequiredColumn(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             crop = batch_crop.cropGeometry.cropImage(uint8(ones(5, 6)), struct( ...
@@ -175,13 +175,13 @@ classdef BatchCropResultSpec < matlab.unittest.TestCase
             crop.sourcePath = fullfile(folder, "source.png");
             crop.outputPath = fullfile(folder, "source_crop.png");
             crop.status = "saved";
-            legacy = removevars( ...
+            incomplete = removevars( ...
                 batch_crop.resultFiles.buildManifest(crop), "TaskIndex");
-            legacyPath = fullfile(folder, "legacy_manifest.csv");
-            writetable(legacy, legacyPath);
+            incompletePath = fullfile(folder, "incomplete_manifest.csv");
+            writetable(incomplete, incompletePath);
 
             testCase.verifyError( ...
-                @() batch_crop.resultFiles.readManifest(legacyPath), ...
+                @() batch_crop.resultFiles.readManifest(incompletePath), ...
                 "batch_crop:InvalidManifest");
         end
     end

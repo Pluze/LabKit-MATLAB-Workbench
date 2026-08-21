@@ -3,8 +3,8 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
         function loadsPlotsExportsAndRestoresAnEisFile(testCase)
-            source = testfixtures.dtaFixturePath("eis_potentiostatic_zcurve.DTA");
-            unsupported = testfixtures.dtaFixturePath( ...
+            source = testfixtures.dta.file("eis_potentiostatic_zcurve.DTA");
+            unsupported = testfixtures.dta.file( ...
                 "chrono_chronopot_current_pulse_0p2ms.DTA");
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;

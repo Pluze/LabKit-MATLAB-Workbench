@@ -189,15 +189,16 @@ utilities do not compete with the App's workflow controls:
 - **Diagnostics** opens the App-named Session Log or exports a uniquely named
   bundle beneath `artifacts/diagnostics/`. Every export contains complete
   sensitive messages, attributes, exception text, stack locations, and App
-  state. The exact option writes `app-state.mat`; the compact option writes
-  `app-state-compact.mat` after replacing supported state leaves larger than
+  state. It writes `app-state-compact.mat` after replacing supported state leaves larger than
   1 MiB with same-class, same-dimension, compressible synthetic placeholders.
   `bundle-report.json` records every replacement without storing its value.
-  Compact is the default; exact remains an explicit choice. After the first
-  ERROR or CRITICAL event, closing the App automatically writes a compact
+  After the first ERROR or CRITICAL event, closing the App automatically writes a
   diagnostic bundle. Selecting an event highlights its complete table row.
-  Text fallback retains complete events and reports that the selected MAT
+  Text fallback retains complete events and reports that the compact MAT
   state could not be represented as text.
+  **Export Previous Active Session** writes a read-only bundle for the newest
+  same-App journal that was left active, such as after a MATLAB hang or
+  abnormal termination.
 
 The SDK has no task archive, save/load callbacks, dirty tracking, recovery
 files, or generic continuation workflow. Apps that genuinely support pausing
@@ -211,6 +212,14 @@ archive, or remove generated artifacts with ordinary filesystem tools. Releases
 that previously wrote session journals beneath MATLAB's `prefdir/LabKit/logs/`
 leave those existing files unchanged. The journal subsystem does not inspect or
 prune other sessions in the background.
+
+Before Runtime enters an App callback it durably closes and reopens the active
+journal segment after writing the root operation start. State-update and
+validation stages stay in the buffered event stream; immediately before native
+presentation, Runtime writes those stages plus a durable presentation-entry
+checkpoint. If
+MATLAB hangs, the newest operation without a terminal event identifies the
+last entered stage on the next launch.
 
 These actions are framework-owned native behavior. Apps do not declare menu
 items or implement clipboard and diagnostic integration.

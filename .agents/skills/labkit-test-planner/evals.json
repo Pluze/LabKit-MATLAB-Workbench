@@ -12,6 +12,11 @@
       "rationale": "CI failure scoping and GUI evidence selection are in scope."
     },
     {
+      "prompt": "Reorganize these old manual-replay fixtures so only inputs consumed by automated behavior specs remain.",
+      "should_activate": true,
+      "rationale": "Fixture ownership and retirement are part of validation architecture."
+    },
+    {
       "prompt": "Improve the wording of one documentation paragraph without running MATLAB tests.",
       "should_activate": false,
       "rationale": "A documentation-only edit is owned by documentation checks."
@@ -20,6 +25,11 @@
       "prompt": "Run every local test even though no source-owned contract requires that scope.",
       "should_activate": false,
       "rationale": "The skill rejects unjustified validation widening."
+    },
+    {
+      "prompt": "Build a production sample launcher that users can run from every App.",
+      "should_activate": false,
+      "rationale": "A product launcher is an App and framework ownership decision, not test planning."
     }
   ]
 }

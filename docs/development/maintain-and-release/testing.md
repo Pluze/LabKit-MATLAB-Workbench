@@ -71,9 +71,13 @@ replace source paths with logical aliases such as `framework/<area>` or
 `system/<area>`; contract and environment tags describe behavior without
 changing physical ownership.
 
-`tests/+testfixtures/` contains only synthetic inputs reused by multiple
-specification owners. Keep an owner-specific fixture beside its specification;
-do not create a generic `shared`, `support`, or `helpers` test directory.
+`tests/+testfixtures/` contains only input construction reused by multiple
+specification owners, grouped by the App or data facade that owns the shape.
+Keep a single-owner fixture beside its specification; keep test-run machinery
+under `tests/+labkittest/`; do not create a generic `shared`, `support`, or
+`helpers` directory. Fixtures accept ordinary folders or values and return the
+production value under test rather than a test-only context, pack, artifact,
+scenario, or manifest model.
 
 Contracts describe evidence, not test cost:
 
@@ -266,8 +270,10 @@ local paths, subject/device identifiers, timestamps, or proprietary metadata.
 
 - Keep specs beside the capability that owns their behavior; tests never own a
   parallel product API.
-- Keep cross-owner synthetic inputs in `tests/+testfixtures/`; keep every
-  other test helper beside the specification that owns its behavior.
+- Keep cross-owner generated inputs in an owner-named package under
+  `tests/+testfixtures/`; keep every other input builder beside the
+  specification that consumes it. Delete manual-replay builders and tests
+  whose only outcome is proving the fixture itself.
 - Prefer direct behavioral calls over full App workflows. Add a structural GUI
   proof only when layout or wiring itself is the contract.
 - Do not add legacy suite folders, stage tags, selector registries, test

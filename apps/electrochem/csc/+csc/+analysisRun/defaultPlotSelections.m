@@ -3,7 +3,7 @@
 % struct. No file or UI side effects.
 
 function selections = defaultPlotSelections(columns)
-%DEFAULTPLOTSELECTIONS Choose legacy CSC top/bottom axis defaults.
+%DEFAULTPLOTSELECTIONS Choose CSC top/bottom axis defaults.
 
     columns = cellstr(columns);
     selections = struct();

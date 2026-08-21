@@ -16,7 +16,7 @@ classdef ThermalFacadeSpec < matlab.unittest.TestCase
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             sourcePath = fullfile(folder, "synthetic_flir.jpg");
-            fixture = testfixtures.writeSyntheticFlirRjpegFixture(sourcePath);
+            fixture = testfixtures.thermal.writeRjpeg(sourcePath);
             events = {};
 
             records = labkit.thermal.readFiles(sourcePath, ...
@@ -43,7 +43,7 @@ classdef ThermalFacadeSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             thermalPath = fullfile(folder, "synthetic_flir.jpg");
             ordinaryPath = fullfile(folder, "ordinary.jpg");
-            testfixtures.writeSyntheticFlirRjpegFixture(thermalPath);
+            testfixtures.thermal.writeRjpeg(thermalPath);
             imwrite(uint8(120 * ones(5, 6, 3)), ordinaryPath);
 
             ordinary = labkit.thermal.inspectFile(ordinaryPath);

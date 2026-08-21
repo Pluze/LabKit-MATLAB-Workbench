@@ -3,7 +3,7 @@
 % CSV file.
 
 function [ok, msg] = writeResultsCSV(items, filepath, unitLabel)
-%WRITERESULTSCSV Write CIC results in legacy CSV format.
+%WRITERESULTSCSV Write CIC results in the App-owned CSV format.
 
     if nargin < 3
         unitLabel = 'mC/cm^2';

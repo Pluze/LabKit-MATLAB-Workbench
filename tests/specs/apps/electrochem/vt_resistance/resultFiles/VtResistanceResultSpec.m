@@ -3,7 +3,7 @@ classdef VtResistanceResultSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:result', 'Env:headless'})
         function preservesResultColumnsFailureRowsAndCsvEscaping(testCase)
-            item = testfixtures.makeChronoFixtureItem('', 'chrono "vt".DTA');
+            item = testfixtures.dta.chronoItem('', 'chrono "vt".DTA');
             item.analysis = vt_resistance.analysisRun.computeResistance(item, struct());
             failed = struct("filepath", "failed.DTA", "name", 'failed "file".DTA', ...
                 "meta", [], "tables", [], ...

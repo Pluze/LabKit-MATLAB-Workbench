@@ -17,7 +17,7 @@ find the exact owner and contract; App authors never invent test paths.
   `definition().launch(...)`.
 - `definition.m` is the single product contract. It declares stable identity,
   version, layout, optional facade requirements, and references to state
-  creation, state refresh, presenter, synthetic-input, and Start capabilities.
+  creation, state refresh, presenter, and Start capabilities.
   It performs no IO, computation, export, handle creation, or lifecycle
   mutation.
 - A static App needs only the entrypoint, definition, and
@@ -56,13 +56,12 @@ find the exact owner and contract; App authors never invent test paths.
 - Do not add package-root lifecycle `run.m`, `+ui/runApp.m`, app-family
   `private/` workflow helpers, string dispatchers, or app-specific packages
   outside the owning app tree.
-- An App may provide `BuildSyntheticSample` when a reproducible sample is
-  useful. It returns a validated in-memory pack and creates its declared
-  artifacts; the framework does not publish a second manifest format.
-  Runtime exposes generation as an ordinary Developer Tools action; every
-  launch follows the same App startup path.
-  Interactive sample values are finite, representative, and valid for the
-  smallest native controls that will render them.
+- Production App definitions do not declare test-data builders. Synthetic
+  fixtures belong to the specification owner under `tests/` only when an
+  automated behavior specification consumes them. Do not preserve fixture
+  protocols, manifests, launchers, or fixture-only specifications for retired
+  manual reproduction workflows. A real
+  user-facing demo generator, when justified, is an explicit App workflow.
 
 ## Ownership and behavior
 
@@ -110,7 +109,7 @@ find the exact owner and contract; App authors never invent test paths.
   focus order. Movable rectangles expose an ordinary interior/center drag
   affordance, while display-only graphics disable hit testing.
 - Before narrowing a native control's dynamic limits, reconcile its bound value
-  into the new finite range. Defaults and synthetic projects must also remain
+  into the new finite range. Defaults and automated test inputs must also remain
   valid for the smallest supported source geometry.
 - Placing or editing overlays must preserve the user's viewport unless the
   user explicitly requests fit/reset.
@@ -137,9 +136,9 @@ find the exact owner and contract; App authors never invent test paths.
   the App's `definition.m`, owned documentation, and component history before
   the `develop` PR is merge-ready.
 - Test GUI wiring semantically: controls, choices, events, workflow outcomes,
-  viewport behavior, and traces. A synthetic project is validated headlessly
-  and launched through the native adapter; test calculations and exports
-  directly with minimal synthetic inputs.
+  viewport behavior, and traces. Launch only the minimal App input needed by
+  the owning behavior specification; test calculations and exports
+  directly with minimal generated inputs.
 - Use the owning app-family unit suite and the app's hidden-GUI suite. Add
   project guardrails for entrypoint, boundary, fixture, or validation-policy
   changes. Exact commands belong in

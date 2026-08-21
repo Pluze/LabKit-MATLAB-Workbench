@@ -158,59 +158,23 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.Diagnostics.setTraceCapture(enabled);
         end
 
-        function destination = exportDiagnosticBundle( ...
-                obj, destination, stateMode)
-            if nargin < 3
-                stateMode = "compact";
-            end
+        function destination = exportDiagnosticBundle(obj, destination)
             destination = obj.Diagnostics.exportBundle( ...
-                destination, obj.State, stateMode);
+                destination, obj.State);
         end
 
         function destination = exportDiagnosticBundleInteractive(obj)
             destination = obj.Diagnostics.exportInteractive(obj.State);
         end
 
+        function destination = exportPreviousActiveSession(obj)
+            destination = obj.Diagnostics.exportPreviousActive();
+        end
+
         function destination = exportDiagnosticTextFallback( ...
-                obj, preferredDestination, cause, stateMode)
-            if nargin < 4
-                stateMode = "compact";
-            end
+                obj, preferredDestination, cause)
             destination = obj.Diagnostics.exportTextFallback( ...
-                preferredDestination, cause, stateMode);
-        end
-
-        function supported = supportsSyntheticInputs(obj)
-            supported = ~isempty(obj.Application.BuildSyntheticSample);
-        end
-
-        function pack = generateSyntheticInputs(obj, folder)
-            operation = obj.Recorder.begin( ...
-                "runtime.source", "synthetic_inputs.generated", ...
-                "Generating synthetic inputs.");
-            try
-                pack = labkit.app.internal.source.SyntheticInputGenerator.generate( ...
-                    obj.Application, folder);
-                obj.Recorder.finish( ...
-                    operation, "completed", "notApplicable", []);
-            catch cause
-                obj.Recorder.finish( ...
-                    operation, "failed", "notApplicable", cause);
-                rethrow(cause);
-            end
-        end
-
-        function folder = generateSyntheticInputsInteractive(obj)
-            choice = obj.Context.chooseOutputFolder("");
-            folder = "";
-            if choice.Cancelled
-                return;
-            end
-            folder = obj.uniqueSyntheticInputFolder(choice.Value);
-            obj.generateSyntheticInputs(folder);
-            obj.Context.inform( ...
-                "Synthetic inputs were written to the selected folder.", ...
-                "Synthetic Inputs");
+                preferredDestination, cause);
         end
 
         function destination = automaticArtifactDestination( ...
@@ -456,16 +420,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
     end
 
     methods (Access = private)
-        function folder = uniqueSyntheticInputFolder(obj, parent)
-            timestamp = string(datetime("now", ...
-                "TimeZone", "UTC", "Format", "yyyyMMdd-HHmmss"));
-            nonce = extractBefore( ...
-                labkit.app.internal.identity.newId(), 9);
-            folder = string(fullfile(char(parent), ...
-                "labkit-synthetic-" + obj.Application.AppId + "-" + ...
-                timestamp + "-" + nonce));
-        end
-
         commitFilePanel(obj, target, config, sources, indices, rebuildSession)
 
         backend = completeBackend(obj, backend)

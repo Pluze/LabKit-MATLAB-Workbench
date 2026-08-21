@@ -1,5 +1,5 @@
 %EMPTYMETADATA Return serializable video facts stored in marker projects.
-% Expected caller: project factories and migrations. The source path remains
+% Expected caller: project creation. The source path remains
 % owned by the source-list record and is intentionally not duplicated.
 function metadata = emptyMetadata()
     metadata = struct( ...

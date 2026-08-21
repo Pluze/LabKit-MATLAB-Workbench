@@ -16,7 +16,6 @@ function spec = rectangle(id, onChanged, varargin)
 %   Axis - Axis ID. Default: "main".
 %   Style - Scalar visual-option struct. Default: struct().
 %   Instruction - Scalar guidance text. Default: "".
-%   ViewportPolicy - "preserve" or "fit". Default: "preserve".
 %   OnBackgroundPressed - Optional point callback
 %       state = callback(state,point,context). It receives clicks on blank
 %       plot space and clicks on the rectangle that do not move it.
@@ -34,7 +33,7 @@ function spec = rectangle(id, onChanged, varargin)
 % See also labkit.app.layout.plotArea
 options = labkit.app.internal.contract.OptionParser.parse( ...
     "labkit.app.interaction.rectangle", ...
-    ["Axis", "Style", "Instruction", "ViewportPolicy", ...
+    ["Axis", "Style", "Instruction", ...
      "OnBackgroundPressed"], varargin{:});
 spec = labkit.app.internal.interaction.InteractionSpec("rectangle",id,onChanged,options);
 end

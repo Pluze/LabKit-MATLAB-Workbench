@@ -24,8 +24,6 @@ function node = plotArea(id, renderer, varargin)
 %   YLabels - One y-axis label per axis. Default: blank.
 %   ColumnWidths - One positive pixel, "fit", or "1x" value per axis for
 %       pair layout. Default: equal flexible widths.
-%   RowHeights - One positive pixel, "fit", or "1x" value per axis for
-%       stack layout. Default: equal flexible heights.
 %   ScrollZoomAxes - One "xy", "x", or "y" value per axis. Default: "xy".
 %   ViewModes - App-owned mode labels. When nonempty, OnValueChanged is
 %       required. Default: strings(1,0).

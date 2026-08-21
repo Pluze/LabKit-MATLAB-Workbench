@@ -18,8 +18,6 @@ function node = workspace(varargin)
 %
 % Options:
 %   Title - Reader-facing workspace title. Default: "Workspace".
-%   OnPageChanged - Callback state = callback(state,pageId,context).
-%       Requires at least one named page. Default: [].
 %
 % Outputs:
 %   node - Immutable workspace node accepted by layout.workbench.

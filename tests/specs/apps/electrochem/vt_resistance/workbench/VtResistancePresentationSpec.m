@@ -3,7 +3,7 @@ classdef VtResistancePresentationSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function summarizesSuccessfulAndFailedAnalysesForTheWorkbench(testCase)
-            item = testfixtures.makeChronoFixtureItem();
+            item = testfixtures.dta.chronoItem();
             item.analysis = vt_resistance.analysisRun.computeResistance(item, struct());
             failed = item;
             failed.name = "failed.DTA";

@@ -41,7 +41,6 @@ Required Definition arguments are product metadata and one
 | `RefreshState` | `state = callback(state,callbackContext)` | Rebuild App data after a file-list edit. |
 | `PresentWorkbench` | `view = callback(applicationState)` | Return the App-owned fragment of the complete visible snapshot. |
 | `OnStart` | `applicationState = callback(applicationState,callbackContext)` | Perform a real post-first-commit request or resource initialization. |
-| `BuildSyntheticSample` | `sample = callback(callbackContext)` | Build clean-room debug input when the App supports it. |
 
 Ordinary default state needs no startup callback. Exact syntax and errors are
 in the generated [public API reference](../../reference/README.md).
@@ -277,7 +276,7 @@ page. Page content is arranged vertically, while each plot area independently
 chooses `single`, horizontal `pair`, or vertical `stack`. Two paired plot areas
 therefore form a 2-by-2 dashboard without App-owned native containers.
 `ColumnWidths={'1x', 90}` gives a pair a flexible main plot and a fixed-width
-scale or histogram; `RowHeights` provides the analogous control for a stack.
+scale or histogram. Stacked axes share the available height equally.
 
 ```matlab
 top = labkit.app.layout.plotArea("topPlots", @drawTop, ...
@@ -385,12 +384,14 @@ presentation records.
 Runtime initially captures DEBUG and higher records to bound ordinary-session
 cost. The first ERROR or CRITICAL event automatically enables TRACE for later
 activity. The viewer also provides an explicit **Enable TRACE** / **Disable
-TRACE** control when a user needs detailed capture before an error. TRACE adds
-callback state-update and validation stages, successful App/runtime
-presentation stages, native presentation commit, and post-failure rollback
-cleanup. DEBUG retains ordinary operation start and terminal boundaries plus
-all presentation failures, but does not journal successful high-frequency
-presentation boundaries. Enabling TRACE never reconstructs earlier detail.
+TRACE** control when a user needs detailed capture before an error. DEBUG
+retains operation start, state-update, validation, native-presentation start,
+terminal boundaries, and all presentation failures. The operation start and
+native-presentation start are durable checkpoints, so an abnormal process stop
+still distinguishes callback work from presentation commit without closing and
+reopening the journal after every intermediate stage. TRACE additionally keeps
+successful App/runtime presentation and native commit detail plus post-failure
+rollback cleanup. Enabling TRACE never reconstructs earlier detail.
 The live viewer appends incoming records to its bounded projection immediately
 but batches native table updates at up to 10 Hz. A TRACE burst therefore
 causes one table refresh per batch rather than one complete filter, dropdown,
@@ -401,18 +402,17 @@ bounded histories.
 **Export Diagnostic Bundle** writes directly to ignored
 `artifacts/diagnostics/` with a generated App-specific, timestamped, unique ZIP
 name. Every bundle contains complete sensitive events, attributes, exception
-messages, stack locations, and App state. **Complete bundle (exact MAT)**
-writes `app-state.mat` unchanged. **Complete bundle (compact synthetic MAT)**
-writes `app-state-compact.mat`: Runtime recursively reviews state containers
+messages, stack locations, and App state. Runtime writes
+`app-state-compact.mat`: it recursively reviews state containers
 and replaces supported numeric, logical, character, or string leaves larger
 than 1 MiB with deterministic compressible placeholders of the same class and
 dimensions. It preserves smaller parameters, annotations, results, and caches.
 `bundle-report.json` names structural state paths and sizes for every
 replacement without retaining the replaced values; it also lists oversized
-unsupported leaf types that had to remain exact. Compact state is diagnostic
-evidence, not scientifically valid input. Both modes may contain sensitive
-paths, filenames, scientific values, and decoded data; neither is a privacy
-filter. Compact is the default; exact remains an explicit choice. If the
+unsupported leaf types that could not be compacted. Compact state is diagnostic
+evidence, not scientifically valid input. The bundle may contain sensitive
+paths, filenames, scientific values, and decoded data; compaction is not a privacy
+filter. If the
 session records any ERROR or CRITICAL event, Runtime automatically writes a
 compact bundle after the App closes, including the completed close lifecycle
 event. A clean session does not create a bundle on close.
@@ -430,21 +430,12 @@ rollback disposition, safe exception identifier, and sanitized function stack.
 Runtime close is also an instrumented lifecycle operation. Resource and native
 adapter cleanup continue independently; a cleanup exception is retained and
 persisted before the journal closes, then returned to the caller. Diagnostics
-cannot manufacture evidence for a native event that never entered Runtime, an
-exception swallowed by App code without logging, or a MATLAB process that
-hangs or terminates before a terminal event. In those cases the last retained
-DEBUG boundary and durable journal state are the available evidence.
-
-## Synthetic Inputs
-
-An App that declares `BuildSyntheticSample` exposes **Tools > Developer
-Tools > Generate Synthetic Inputs...**. The action creates an anonymous,
-validated `labkit.app.synthetic.Pack` and its declared artifacts in a new
-folder beneath the selected destination. The pack remains an in-memory return
-value; the framework does not publish a second manifest format. Generation does not load the
-pack, replace the open task, or suppress `OnStart`; every App launch follows
-the same startup path. Users deliberately import generated files through the
-App's ordinary controls.
+cannot manufacture evidence for a native event that never entered Runtime or
+an exception swallowed by App code without logging. Root callback starts and
+major transaction-stage boundaries are persisted before work continues, so a
+MATLAB hang or abnormal termination leaves an unterminated operation
+identifying the last entered stage. **Export Previous Active Session**
+retrieves that journal from a later launch.
 
 ## App-Owned Results And Continuation
 

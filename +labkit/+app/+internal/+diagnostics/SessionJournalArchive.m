@@ -17,7 +17,62 @@ classdef (Hidden, Sealed) SessionJournalArchive
             snapshot = struct("manifest", manifest, "events", events, ...
                 "degradation", degradation(manifest, corruptRecordCount));
         end
+
+        function snapshot = latestActive(rootFolder, appId, excludeSessionId)
+            rootFolder = string(rootFolder);
+            appId = string(appId);
+            excludeSessionId = string(excludeSessionId);
+            folders = dir(fullfile(rootFolder, "sessions", "*"));
+            folders = folders([folders.isdir]);
+            folderNames = string({folders.name});
+            folders = folders(~ismember(folderNames, [".", ".."]));
+            selectedId = "";
+            selectedUpdated = "";
+            for index = 1:numel(folders)
+                manifest = readJson(fullfile(folders(index).folder, ...
+                    folders(index).name, "manifest.json"));
+                if isempty(manifest) || ~isfield(manifest, "state") || ...
+                        ~isfield(manifest, "appId") || ...
+                        ~isfield(manifest, "sessionId") || ...
+                        string(manifest.state) ~= "active" || ...
+                        string(manifest.appId) ~= appId || ...
+                        string(manifest.sessionId) == excludeSessionId
+                    continue;
+                end
+                updated = "";
+                if isfield(manifest, "updatedAtUtc")
+                    updated = string(manifest.updatedAtUtc);
+                end
+                if strlength(selectedId) == 0 || ...
+                        compareTimestamps(updated, selectedUpdated) > 0
+                    selectedId = string(manifest.sessionId);
+                    selectedUpdated = updated;
+                end
+            end
+            if strlength(selectedId) == 0
+                error("labkit:app:runtime:NoPreviousActiveSession", ...
+                    "No previous active session journal is available for this App.");
+            end
+            snapshot = ...
+                labkit.app.internal.diagnostics.SessionJournalArchive.snapshot( ...
+                rootFolder, selectedId);
+        end
     end
+end
+
+function order = compareTimestamps(left, right)
+left = char(left);
+right = char(right);
+order = 0;
+if strcmp(left, right)
+    return;
+end
+ordered = sort(string({left, right}));
+if ordered(2) == string(left)
+    order = 1;
+else
+    order = -1;
+end
 end
 
 function [events, corruptRecordCount] = readCanonicalEvents(folder)

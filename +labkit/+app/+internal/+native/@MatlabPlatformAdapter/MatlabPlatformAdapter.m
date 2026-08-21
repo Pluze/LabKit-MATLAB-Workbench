@@ -473,7 +473,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         function popoutAllPlots(obj)
             handles = obj.allAxes();
             for k = 1:numel(handles)
-                labkit.app.plot.enablePopout(handles(k));
+                labkit.app.internal.native.enableAxesPopout(handles(k));
                 menu = findall(handles(k).ContextMenu, ...
                     Type="uimenu", Tag="labkitAxesPopoutMenu");
                 if ~isempty(menu)

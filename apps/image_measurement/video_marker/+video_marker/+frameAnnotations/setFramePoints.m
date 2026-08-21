@@ -3,7 +3,6 @@
 % are ordered rows. Source defaults to manual; confidence defaults to one for
 % manual points and NaN otherwise.
 function annotations = setFramePoints(annotations, frameIndex, points, statusName, sourceName, confidence, anchorRevision)
-    annotations = video_marker.frameAnnotations.upgradeAnnotationSchema(annotations);
     if nargin < 5
         sourceName = "manual";
     end

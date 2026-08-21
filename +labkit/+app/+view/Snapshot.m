@@ -7,15 +7,12 @@ classdef (Sealed) Snapshot
     %   view = view.choices(target, choices)
     %   view = view.limits(target, limits)
     %   view = view.enabled(target, enabled)
-    %   view = view.visible(target, visible)
     %   view = view.text(target, text)
-    %   view = view.filePaths(target, paths)
     %   view = view.fileItemStatuses(target, statuses)
     %   view = view.listSelection(target, selection)
     %   view = view.tableCellSelection(target, selection)
     %   view = view.tableData(target, data, Name=Value)
     %   view = view.renderPlot(target, model, Name=Value)
-    %   view = view.workspacePage(target, Name=Value)
     %   view = view.anchorPath(interaction, points, Name=Value)
     %   view = view.pairedAnchors(interaction, pointSets, Name=Value)
     %   view = view.pointSlots(interaction, value, Name=Value)
@@ -38,9 +35,7 @@ classdef (Sealed) Snapshot
     %   choices - Text array or cellstr of legal choices.
     %   limits - Increasing finite two-element numeric row.
     %   enabled - Logical scalar availability.
-    %   visible - Logical scalar visibility.
     %   text - Scalar text.
-    %   paths - String or cell array of file paths.
     %   statuses - Empty or one reader-facing status per file-list row.
     %   selection - Selection value accepted by the target.
     %   data - App-owned table, numeric array, or cell array.
@@ -109,11 +104,6 @@ classdef (Sealed) Snapshot
                 logicalScalar(enabled, "enabled"));
         end
 
-        function obj = visible(obj, target, visible)
-            obj = append(obj, "visible", target, ...
-                logicalScalar(visible, "visible"));
-        end
-
         function obj = text(obj, target, text)
             if ~(ischar(text) || (isstring(text) && isscalar(text)))
                 error("labkit:app:contract:InvalidValue", ...
@@ -122,6 +112,9 @@ classdef (Sealed) Snapshot
             obj = append(obj, "text", target, string(text));
         end
 
+    end
+
+    methods (Access = {?labkit.app.internal.runtime.RuntimePresentation})
         function obj = filePaths(obj, target, paths)
             if ischar(paths)
                 paths = string(paths);
@@ -134,7 +127,9 @@ classdef (Sealed) Snapshot
             obj = append(obj, "filePaths", ...
                 target, reshape(paths, 1, []));
         end
+    end
 
+    methods
         function obj = fileItemStatuses(obj, target, statuses)
             statuses = textRow(statuses, "file item statuses");
             obj = append(obj, "fileItemStatuses", target, statuses);
@@ -195,28 +190,6 @@ classdef (Sealed) Snapshot
                 "Model", {model}, ...
                 "ViewRevision", double(revision));
             obj = append(obj, "renderPlot", target, value);
-        end
-
-        function obj = workspacePage(obj, target, varargin)
-            options = labkit.app.internal.contract.OptionParser.parse( ...
-                "labkit.app.view.Snapshot.workspacePage", ...
-                ["Enabled", "Status"], varargin{:});
-            enabled = true;
-            if isfield(options, "Enabled")
-                enabled = logicalScalar(options.Enabled, "Enabled");
-            end
-            status = "";
-            if isfield(options, "Status")
-                supplied = options.Status;
-                if ~(ischar(supplied) || ...
-                        (isstring(supplied) && isscalar(supplied)))
-                    error("labkit:app:contract:InvalidValue", ...
-                        "View snapshot workspace Status must be scalar text.");
-                end
-                status = string(supplied);
-            end
-            obj = append(obj, "workspacePage", target, ...
-                struct("Enabled", enabled, "Status", status));
         end
 
         function obj = anchorPath(obj, interaction, points, varargin)

@@ -58,25 +58,20 @@ classdef (Hidden, Sealed) RuntimeDiagnostics < handle
             obj.Recorder.setTraceEnabled(enabled);
         end
 
-        function destination = exportBundle( ...
-                obj, destination, state, stateMode)
-            if nargin < 4
-                stateMode = "compact";
-            end
-            stateMode = validateStateMode(stateMode);
+        function destination = exportBundle(obj, destination, state)
             operation = obj.Recorder.begin( ...
                 "runtime.lifecycle", "diagnostics.bundle_exported", ...
                 "Exporting diagnostic bundle.");
             try
                 destination = obj.Recorder.exportBundle( ...
-                    destination, operation.Id, state, stateMode);
+                    destination, operation.Id, state);
                 obj.Recorder.finish( ...
                     operation, "completed", "notApplicable", []);
             catch cause
                 obj.Recorder.finish( ...
                     operation, "failed", "notApplicable", cause);
                 destination = obj.exportTextFallback( ...
-                    destination, cause, stateMode);
+                    destination, cause);
             end
         end
 
@@ -87,36 +82,18 @@ classdef (Hidden, Sealed) RuntimeDiagnostics < handle
             end
             try
                 destination = obj.exportBundle( ...
-                    obj.automaticDestination("compact"), state, "compact");
+                    obj.automaticDestination(), state);
             catch
                 % Diagnostic persistence must not change Runtime close semantics.
             end
         end
 
         function destination = exportInteractive(obj, state)
-            selection = obj.Context.chooseOption( ...
-                "Every bundle contains complete sensitive logs and App " + ...
-                 "state. Compact MAT replaces supported state values over " + ...
-                 "1 MiB with structural synthetic placeholders.", ...
-                ["Complete bundle (compact synthetic MAT)", ...
-                 "Complete bundle (exact MAT)", ...
-                 "Cancel"], ...
-                Title="Export Diagnostic Bundle", ...
-                DefaultChoice="Complete bundle (compact synthetic MAT)", ...
-                CancelChoice="Cancel");
-            if selection.Cancelled || selection.Value == "Cancel"
-                destination = "";
-                return
-            end
-            stateMode = "compact";
-            if selection.Value == "Complete bundle (exact MAT)"
-                stateMode = "exact";
-            end
             destination = "";
             try
-                automaticDestination = obj.automaticDestination(stateMode);
+                automaticDestination = obj.automaticDestination();
                 destination = obj.exportBundle( ...
-                    automaticDestination, state, stateMode);
+                    automaticDestination, state);
                 if endsWith(destination, ".txt", IgnoreCase=true)
                     obj.alertTextFallback(destination);
                 else
@@ -128,7 +105,7 @@ classdef (Hidden, Sealed) RuntimeDiagnostics < handle
                 return
             catch automaticFailure
                 fallbackName = diagnosticFallbackName( ...
-                    obj.automaticFilename(stateMode));
+                    obj.automaticFilename());
             end
             choice = obj.Context.chooseOutputFile( ...
                 {"*.txt", "Diagnostic text fallback (*.txt)"}, ...
@@ -137,23 +114,40 @@ classdef (Hidden, Sealed) RuntimeDiagnostics < handle
                 return
             end
             destination = obj.exportTextFallback( ...
-                choice.Value, automaticFailure, stateMode);
+                choice.Value, automaticFailure);
             obj.alertTextFallback(destination);
         end
 
-        function destination = exportTextFallback( ...
-                obj, preferredDestination, cause, stateMode)
-            if nargin < 4
-                stateMode = "compact";
+        function destination = exportPreviousActive(obj)
+            destination = "";
+            try
+                destination = obj.Recorder.exportLatestActive( ...
+                    obj.Artifacts.destination( ...
+                    "diagnostics", "previous-active-session", ".zip"));
+                obj.NotifyUser( ...
+                    "Previous active session bundle written to:" + newline + ...
+                    destination, "Previous Session Exported");
+            catch cause
+                if string(cause.identifier) == ...
+                        "labkit:app:runtime:NoPreviousActiveSession"
+                    obj.Context.inform( ...
+                        "No previous active session journal is available for this App.", ...
+                        "Previous Session");
+                    return;
+                end
+                rethrow(cause);
             end
-            stateMode = validateStateMode(stateMode);
+        end
+
+        function destination = exportTextFallback( ...
+                obj, preferredDestination, cause)
             obj.Recorder.log( ...
                 "warning", "diagnostics.text_fallback.started", ...
                 "Diagnostic ZIP export failed; writing a plain-text fallback.", ...
                 Category="runtime.lifecycle", Audience="user", ...
                 Exception=cause);
             destination = obj.Recorder.exportTextFallback( ...
-                preferredDestination, cause, stateMode);
+                preferredDestination, cause);
         end
 
         function alertTextFallback(obj, destination)
@@ -166,30 +160,20 @@ classdef (Hidden, Sealed) RuntimeDiagnostics < handle
     end
 
     methods (Access = private)
-        function destination = automaticDestination(obj, stateMode)
+        function destination = automaticDestination(obj)
             destination = obj.Artifacts.destination( ...
-                "diagnostics", diagnosticArtifactStem(stateMode), ".zip");
+                "diagnostics", diagnosticArtifactStem(), ".zip");
         end
 
-        function filename = automaticFilename(obj, stateMode)
+        function filename = automaticFilename(obj)
             filename = obj.Artifacts.filename( ...
-                diagnosticArtifactStem(stateMode), ".zip");
+                diagnosticArtifactStem(), ".zip");
         end
     end
 end
 
-function stateMode = validateStateMode(stateMode)
-stateMode = ...
-    labkit.app.internal.diagnostics.SessionDiagnosticStateProjection.validateMode( ...
-    stateMode);
-end
-
-function stem = diagnosticArtifactStem(stateMode)
-if stateMode == "exact"
-    stem = "diagnostics-sensitive-state";
-else
-    stem = "diagnostics-sensitive-compact-state";
-end
+function stem = diagnosticArtifactStem()
+stem = "diagnostics-sensitive-compact-state";
 end
 
 function filename = diagnosticFallbackName(zipFilename)

@@ -72,7 +72,7 @@ function classification = classifyPath(file)
     end
     if startsWith(file, "tests/+testfixtures/")
         classification = mapped(file, "test-fixture", "tests/labkittest", ...
-            "cross-owner synthetic fixture behavior");
+            "cross-owner test input construction");
         return;
     end
     if file == "labkit_launcher.m"

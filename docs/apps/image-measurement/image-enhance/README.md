@@ -3,8 +3,8 @@
 Image Enhance builds an ordered, reversible processing history for one image
 or a batch and exports the resulting images with the exact step sequence.
 
-Preview details and synthetic-sample generation use the current processing
-history directly, keeping one authoritative sequence for display and export.
+Preview and export use the current processing history directly, keeping one
+authoritative sequence for both outcomes.
 
 ## Requirements And Launch
 
@@ -64,7 +64,7 @@ image fallback only when no usable background support is found.
 The history table records step kind and settings in execution order. **Undo
 history** removes the latest applied step; **Reset history** returns to the
 normalized original. Source images are not modified. Shared and per-image
-histories are stored separately in project state so switching batch mode does
+histories are stored separately in in-memory App state so switching batch mode does
 not ambiguously merge them.
 
 ## Outputs

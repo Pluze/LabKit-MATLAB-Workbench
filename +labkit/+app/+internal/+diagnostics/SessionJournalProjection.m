@@ -12,32 +12,19 @@ classdef (Hidden, Sealed) SessionJournalProjection < handle
         ProjectionDropCount (1, 1) double = 0
         LastReportedProjectionDropCount (1, 1) double = 0
         HealthUnavailableReported (1, 1) logical = false
-        ProjectionFaultInjector = []
     end
 
     methods
-        function obj = SessionJournalProjection(journal, projectionFaultInjector)
+        function obj = SessionJournalProjection(journal)
             if ~isa(journal, "labkit.app.internal.diagnostics.SessionJournal") || ~isscalar(journal)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "SessionJournalProjection requires one SessionJournal.");
             end
-            if nargin < 2
-                projectionFaultInjector = [];
-            end
-            if ~isempty(projectionFaultInjector) && ...
-                    ~isa(projectionFaultInjector, "function_handle")
-                error("labkit:app:runtime:InvariantFailure", ...
-                    "SessionJournalProjection fault injector must be a function handle.");
-            end
             obj.Journal = journal;
-            obj.ProjectionFaultInjector = projectionFaultInjector;
         end
 
         function project(obj, record)
             try
-                if ~isempty(obj.ProjectionFaultInjector)
-                    obj.ProjectionFaultInjector("project");
-                end
                 obj.Journal.append(record);
                 obj.ProjectionAvailable = true;
             catch
@@ -51,9 +38,6 @@ classdef (Hidden, Sealed) SessionJournalProjection < handle
 
         function close(obj)
             try
-                if ~isempty(obj.ProjectionFaultInjector)
-                    obj.ProjectionFaultInjector("close");
-                end
                 obj.Journal.close();
             catch
                 if obj.ProjectionAvailable

@@ -21,7 +21,7 @@ classdef FlirThermalSelectionSpec < matlab.unittest.TestCase
             thermalPath = fullfile(folder, "synthetic_flir.jpg");
             ordinaryPath = fullfile(folder, "ordinary.jpg");
             wrongTypePath = fullfile(folder, "notes.txt");
-            testfixtures.writeSyntheticFlirRjpegFixture(thermalPath);
+            testfixtures.thermal.writeRjpeg(thermalPath);
             imwrite(uint8(120 .* ones(5, 6, 3)), ordinaryPath);
             file = fopen(wrongTypePath, "w");
             cleanup = onCleanup(@() fclose(file));

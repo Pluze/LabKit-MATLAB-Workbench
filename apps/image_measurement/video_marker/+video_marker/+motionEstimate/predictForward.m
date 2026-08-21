@@ -4,7 +4,6 @@
 % multiscale patch predictions. Returns the target image and a compact report.
 function [annotations, targetImage, report] = predictForward( ...
         readFrameFcn, annotations, startFrame, targetFrame, startImage)
-    annotations = video_marker.frameAnnotations.upgradeAnnotationSchema(annotations);
     startFrame = round(double(startFrame));
     targetFrame = round(double(targetFrame));
     if targetFrame <= startFrame

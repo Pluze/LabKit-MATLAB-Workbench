@@ -3,7 +3,7 @@
 % No file side effects.
 
 function [C, columnNames] = buildBatchTableData(items, unitLabel)
-%BUILDBATCHTABLEDATA Build legacy CIC batch uitable data.
+%BUILDBATCHTABLEDATA Build CIC batch uitable data.
 
     if nargin < 2
         unitLabel = 'mC/cm^2';
