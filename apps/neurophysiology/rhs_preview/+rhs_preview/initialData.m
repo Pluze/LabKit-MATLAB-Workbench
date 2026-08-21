@@ -20,4 +20,3 @@ function project = createProject()
         "lastProtocolExport", [], ...
         "lastFilterExport", []);
 end
-
