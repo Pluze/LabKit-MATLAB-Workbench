@@ -33,7 +33,7 @@ LabKit-MATLAB-Workbench/
           +<app_slug>/
             definition.m
             +workbench/buildLayout.m
-            projectSpec.m                       optional
+            initialData.m                       optional
             createSession.m                     optional
             +workbench/present.m                optional
             +sourceFiles/...                    as needed
@@ -98,7 +98,7 @@ Private apps should follow the same app-owned package shape as public apps:
 - start with only the entrypoint, definition, and semantic workbench layout
 - bind callbacks and plot renderers directly on their owning layout controls;
   add `+workbench/present.m` only for dynamic visible state
-- add one `projectSpec.m` only for durable App-owned state; keep create,
+- add one `initialData.m` only for durable App-owned state; keep create,
   validate, and version-aware migrate functions local to that file
 - add root `createSession.m` only for App-specific transient reconstruction
 - group workflow code by concrete user capability, such as `+sourceFiles`,

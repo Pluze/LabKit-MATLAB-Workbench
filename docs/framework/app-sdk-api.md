@@ -21,8 +21,7 @@ page provides syntax, inputs, outputs, options, errors, and related APIs.
 | Layout and controls | [App SDK layout API](../reference/api/labkit/app/layout/workbench.html) |
 | View snapshots | [App SDK view API](../reference/api/labkit/app/view/Snapshot.html) |
 | Typed events | [App SDK event API](../reference/api/labkit/app/event/ListSelection.html) |
-| Projects and sources | [App SDK project API](../reference/api/labkit/app/project/Schema.html) |
-| Results | [App SDK result API](../reference/api/labkit/app/result/File.html) |
+| Runtime sources | [App SDK source API](../reference/api/labkit/app/source/record.html) |
 | Managed interactions | [App SDK interaction API](../reference/api/labkit/app/interaction/anchorPath.html) |
 | Plot mechanics | [App SDK plot API](../reference/api/labkit/app/plot/clearAxes.html) |
 | Runtime diagnostics | [Runtime diagnostics and session logging](guides/runtime.md#diagnostics-and-session-logging) |

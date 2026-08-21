@@ -70,7 +70,7 @@ function payload = writeOutputs(items, opts)
         results(k) = result;
     end
 
-    manifest = batch_crop.resultFiles.buildManifest(results);
+    manifest = batch_crop.resultFiles.buildManifest(results, opts);
     manifestPath = uniqueBatchCropOutputPath(outputFolder, ...
         "batch_crop_manifest.csv", ".csv", ...
         reservedPaths(1:reservedCount), "");

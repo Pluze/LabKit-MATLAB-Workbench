@@ -10,7 +10,7 @@ classdef FlirDisplayMappingSpec < matlab.unittest.TestCase
             definition = flir_thermal.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkittest.createHeadlessRuntime( ...
-                definition, pack.InitialProject, struct(), journal);
+                definition, pack.InitialInput, struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
             runtime.invokeAction("groupRange");

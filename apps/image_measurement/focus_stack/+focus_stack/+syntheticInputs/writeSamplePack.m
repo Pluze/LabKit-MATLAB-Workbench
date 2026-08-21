@@ -1,7 +1,7 @@
 % Expected caller: app synthetic-input generation and unit tests. Input
 % is a LabKit debug context. Output is a deterministic synthetic focus-stack
 % sample pack. Side effects: writes anonymous debug images and records a
-% session manifest when available.
+% synthetic-input manifest.
 function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write Focus Stack debug image files.
     arguments
@@ -23,7 +23,7 @@ function pack = writeSamplePack(sampleContext)
     malformedPath = sampleContext.samplePath("focus_stack/malformed.png");
     writeTextFile(malformedPath, "not an image payload" + newline);
 
-    project = focus_stack.projectSpec().Create();
+    project = focus_stack.initialData();
     artifacts = cell(1, numel(slicePaths) + 2);
     for k = 1:numel(slicePaths)
         sourceId = "image" + k;
@@ -39,7 +39,7 @@ function pack = writeSamplePack(sampleContext)
         Expectation="rejects");
     pack = labkit.app.synthetic.Pack( ...
         Scenario="representative-focus-stack", ...
-        InitialProject=project, Artifacts=artifacts);
+        InitialInput=project, Artifacts=artifacts);
 end
 
 function [image, detailMask] = baseScene()

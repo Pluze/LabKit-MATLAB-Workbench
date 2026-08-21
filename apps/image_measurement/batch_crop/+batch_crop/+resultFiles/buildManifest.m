@@ -1,19 +1,34 @@
 % App-owned export manifest helper. Expected caller: batch-crop app export
 % callback and package tests. Input is a result struct vector. Output is a
 % table suitable for CSV export and has no file side effects.
-function T = buildManifest(results)
+function T = buildManifest(results, opts)
 %BUILDMANIFEST Build a per-image crop/export manifest table.
-% Expected caller: labkit_BatchImageCrop_app and batch_crop package tests.
-% Input is a struct vector returned by cropImage or writeOutputs.
-% Output columns describe source/output files, crop geometry, and status.
+% Usage:
+%   T = batch_crop.resultFiles.buildManifest(results)
+%   T = batch_crop.resultFiles.buildManifest(results, opts)
+%
+% Inputs:
+%   results - Struct vector returned by cropImage or writeOutputs.
+%   opts - Optional export-option struct. PhysicalWidth, PhysicalHeight,
+%       MaxUpsamplePercent, and OutputFormat are retained when available so a
+%       later manifest restore can reproduce the export settings.
+%
+% Outputs:
+%   T - Table with one row per crop task and stable source, output, geometry,
+%       scale, format, status, and message columns.
+
+    if nargin < 2
+        opts = struct();
+    end
 
     if isempty(results)
         T = table(strings(0, 1), strings(0, 1), strings(0, 1), ...
-            zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), ...
+            zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), ...
             zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), ...
             strings(0, 1), strings(0, 1), zeros(0, 1), zeros(0, 1), ...
             zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), ...
-            zeros(0, 1), strings(0, 1), strings(0, 1), ...
+            zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), ...
+            strings(0, 1), strings(0, 1), strings(0, 1), ...
             'VariableNames', manifestColumns());
         return;
     end
@@ -22,6 +37,7 @@ function T = buildManifest(results)
     sourceImage = strings(n, 1);
     outputImage = strings(n, 1);
     status = strings(n, 1);
+    taskIndex = (1:n).';
     rotationDeg = zeros(n, 1);
     paddingPercent = zeros(n, 1);
     centerX = zeros(n, 1);
@@ -39,6 +55,13 @@ function T = buildManifest(results)
     nativeCropHeight = zeros(n, 1);
     outputWidth = zeros(n, 1);
     outputHeight = zeros(n, 1);
+    physicalWidth = repmat(double(optionValue(opts, ...
+        'physicalWidth', NaN)), n, 1);
+    physicalHeight = repmat(double(optionValue(opts, ...
+        'physicalHeight', NaN)), n, 1);
+    maxUpsamplePercent = repmat(double(optionValue(opts, ...
+        'maxUpsamplePercent', NaN)), n, 1);
+    outputFormat = repmat(string(optionValue(opts, 'format', "")), n, 1);
     scaleWarning = strings(n, 1);
     message = strings(n, 1);
 
@@ -67,21 +90,33 @@ function T = buildManifest(results)
         message(k) = string(fieldOr(results(k), 'message', ""));
     end
 
-    T = table(sourceImage, outputImage, status, rotationDeg, paddingPercent, ...
+    T = table(sourceImage, outputImage, status, taskIndex, ...
+        rotationDeg, paddingPercent, ...
         centerX, centerY, cropWidth, cropHeight, sourceWidth, sourceHeight, ...
         scaleMode, scaleUnit, sourcePixelsPerUnit, targetPixelsPerUnit, ...
         resampleFactor, nativeCropWidth, nativeCropHeight, outputWidth, ...
-        outputHeight, scaleWarning, message, ...
+        outputHeight, physicalWidth, physicalHeight, maxUpsamplePercent, ...
+        outputFormat, scaleWarning, message, ...
         'VariableNames', manifestColumns());
 end
 
 function names = manifestColumns()
-    names = {'SourceImage', 'OutputImage', 'Status', 'RotationDeg', ...
+    names = {'SourceImage', 'OutputImage', 'Status', 'TaskIndex', 'RotationDeg', ...
         'PaddingPercent', 'CenterX_px', 'CenterY_px', 'CropWidth_px', ...
         'CropHeight_px', 'SourceWidth_px', 'SourceHeight_px', 'ScaleMode', ...
         'ScaleUnit', 'SourcePixelsPerUnit', 'TargetPixelsPerUnit', ...
         'ResampleFactor', 'NativeCropWidth_px', 'NativeCropHeight_px', ...
-        'OutputWidth_px', 'OutputHeight_px', 'ScaleWarning', 'Message'};
+        'OutputWidth_px', 'OutputHeight_px', 'PhysicalWidth', ...
+        'PhysicalHeight', 'MaxUpsamplePercent', 'OutputFormat', ...
+        'ScaleWarning', 'Message'};
+end
+
+function value = optionValue(opts, name, defaultValue)
+value = defaultValue;
+if isstruct(opts) && isscalar(opts) && isfield(opts, name) && ...
+        ~isempty(opts.(name))
+    value = opts.(name);
+end
 end
 
 function value = fieldOr(s, name, defaultValue)

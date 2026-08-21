@@ -38,7 +38,7 @@ p.gridChoice = onOff(p.style.gridVisible);
 p.boundaryChoice = onOff(p.style.boundaryLines);
 state.project.parameters = p;
 state.project.results.lastExport = [];
-state.project.results.resultManifestPath = "";
+state.project.results.lastOutputPath = "";
 state.session.workflow.status = "Editing " + panelLabel + ".";
 callbackContext.log("info", "figure_studio.sourceaxes.panelchanged.status", ...
     "Selected a figure panel.");

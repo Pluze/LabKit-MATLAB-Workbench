@@ -10,10 +10,6 @@ classdef (Sealed) CallbackContext < handle
     %   result = context.chooseInputFolder(startPath)
     %   result = context.chooseOutputFile(filters, startPath)
     %   result = context.chooseOutputFolder(startPath)
-    %   result = context.saveProjectDocument(state, filepath)
-    %   state = context.restoreProjectDocument(filepath)
-    %   state = context.newProjectDocument()
-    %   context.saveRecoveryDocument(state, filepath)
     %   paths = context.resolveSourcePaths(sources)
     %   paths = context.resolveSourcePaths(sources, ids)
     %   context.setResource(scope, id, value, cleanup)
@@ -21,7 +17,6 @@ classdef (Sealed) CallbackContext < handle
     %   context.removeResource(scope, id)
     %   context.clearResourceScope(scope)
     %   context.postEvent(eventId, updateState)
-    %   result = context.writeResultPackage(folder, result)
     %
     % Description:
     %   CallbackContext is the sealed callback capability boundary. Each
@@ -60,20 +55,16 @@ classdef (Sealed) CallbackContext < handle
     %       Default: the first choice.
     %   filters - Runtime-supported file-dialog filter value.
     %   startPath - Scalar starting file or folder path.
-    %   filepath - Scalar project or recovery source or destination path.
-    %   sources - Runtime-owned portable source collection.
+    %   sources - Runtime-owned source-list collection.
     %   ids - Optional source identifiers to resolve.
     %   scope - "event", "interaction", "document", or "application".
     %   value - App-neutral resource value.
     %   cleanup - Empty or fixed callback cleanup(value).
-    %   folder - Scalar result-package folder.
-    %   result - labkit.app.result.Package value for writeResultPackage.
     %
     % Outputs:
     %   state - Complete restored App state prepared for the current runtime
     %       transaction.
-    %   result - labkit.app.dialog.Choice for dialogs, project saves, and result
-    %       writing.
+    %   result - labkit.app.dialog.Choice for dialogs.
     %   paths - Column string array of resolved source paths.
     %   value - Stored resource value.
     %
@@ -96,8 +87,7 @@ classdef (Sealed) CallbackContext < handle
     % Typical Call:
     %   callbackContext.postEvent("stream.refresh", @refreshStreamView);
     %
-    % See also labkit.app.Definition, labkit.app.dialog.Choice,
-    %   labkit.app.result.Package
+    % See also labkit.app.Definition, labkit.app.dialog.Choice
 
     properties (Access = private)
         Backend (1, 1) struct
@@ -195,28 +185,6 @@ classdef (Sealed) CallbackContext < handle
             requireChoice(result, "chooseOutputFolder");
         end
 
-        function result = saveProjectDocument(obj, state, filepath)
-            result = obj.invoke("saveProject", "project", ...
-                {state, scalarText(filepath, "filepath")}, 1);
-            requireChoice(result, "saveProjectDocument");
-        end
-
-        function state = restoreProjectDocument(obj, filepath)
-            state = obj.invoke("restoreProject", "project", ...
-                {scalarText(filepath, "filepath")}, 1);
-            requireApplicationState(state, "restoreProjectDocument");
-        end
-
-        function state = newProjectDocument(obj)
-            state = obj.invoke("newProject", "project", {}, 1);
-            requireApplicationState(state, "newProjectDocument");
-        end
-
-        function saveRecoveryDocument(obj, state, filepath)
-            obj.invoke("saveRecovery", "project", ...
-                {state, scalarText(filepath, "filepath")}, 0);
-        end
-
         function paths = resolveSourcePaths(obj, sources, ids)
             if nargin < 3
                 ids = strings(0, 1);
@@ -281,17 +249,6 @@ classdef (Sealed) CallbackContext < handle
                 {eventId, updateState}, 0);
         end
 
-        function written = writeResultPackage(obj, folder, result)
-            folder = scalarText(folder, "result folder");
-            if ~isa(result, "labkit.app.result.Package")
-                error("labkit:app:contract:InvalidValue", ...
-                    "CallbackContext writeResultPackage requires a " + ...
-                    "labkit.app.result.Package value.");
-            end
-            written = obj.invoke("writeResult", "results", ...
-                {folder, result}, 1);
-            requireChoice(written, "writeResultPackage");
-        end
     end
 
     methods (Access = private)
@@ -316,15 +273,6 @@ classdef (Sealed) CallbackContext < handle
             end
         end
     end
-end
-
-function requireApplicationState(state, operation)
-            if ~isstruct(state) || ~isscalar(state) || ...
-                    ~all(isfield(state, ["project", "session"]))
-                error("labkit:app:runtime:InvariantFailure", ...
-                    "CallbackContext %s backend must return scalar " + ...
-                    "project/session state.", operation);
-            end
 end
 
 function value = scalarText(value, label)

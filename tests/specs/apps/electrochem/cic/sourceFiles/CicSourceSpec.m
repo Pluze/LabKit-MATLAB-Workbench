@@ -3,7 +3,7 @@ classdef CicSourceSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function emptySourcesReturnTheDeclaredStructVector(testCase)
-            project = cic.projectSpec().Create();
+            project = cic.initialData();
 
             items = cic.sourceFiles.loadProjectItems( ...
                 strings(0, 1), project.parameters);

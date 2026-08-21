@@ -44,10 +44,12 @@ folders, selector registries, wrappers, or stage tags by hand. Run focused
 evidence through `labkittest.run`, and use `buildtool changedFast` only at the
 final integration gate.
 
-Every App `projectSpec.m` selects nonempty owner-level `persistence` evidence
-for defaults, validation, and migration semantics. App conformance separately
-validates each synthetic sample pack, keeps Debug startup on the clean default
-project, and launches the synthetic project through the native adapter.
+Every App state creator selects owner-level source evidence for defaults and
+invariants. Persistence evidence exists only for an App-owned continuation
+workflow and tests that App's explicit archive contract rather than a generic
+runtime save/load path. App conformance separately validates each synthetic
+sample pack, keeps Debug startup on clean default state, and launches the
+synthetic input through the native adapter.
 
 A fixture constrains only the contract under test; do not add unrelated facade
 version ranges or compatibility assertions that can turn a focused fixture

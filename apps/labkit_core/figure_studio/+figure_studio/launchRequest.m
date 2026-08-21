@@ -11,8 +11,7 @@ function [initialProject, dispatchArgs] = launchRequest(args)
                 'Figure Studio axes launch requires a valid axes handle.');
         end
         drawnow nocallbacks
-        schema = figure_studio.projectSpec();
-        initialProject = schema.Create();
+        initialProject = figure_studio.initialData();
         sourceStyle = figure_studio.sourceAxes.sourceStyle(ax);
         initialProject.inputs.sources = initialProject.inputs.sources([]);
         initialProject.annotations.embeddedPlot = ...

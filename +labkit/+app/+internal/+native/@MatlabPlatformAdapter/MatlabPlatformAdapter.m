@@ -55,9 +55,10 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 Position=policy.InitialFigurePosition);
             obj.BusyLifecycle = ...
                 labkit.app.internal.native.BusyLifecycle( ...
-                obj.Figure, title, ...
-                @(view, restoreValues) ...
-                obj.restoreBusyView(view, restoreValues));
+                    obj.Figure, title, ...
+                    @(view, restoreValues) ...
+                    obj.restoreBusyView(view, restoreValues), ...
+                    @() obj.busyInputHandles());
             obj.Starting = true;
             obj.StartupStarted = tic;
             obj.PriorPointer = string(obj.Figure.Pointer);
@@ -536,43 +537,6 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             copygraphics(obj.Figure, ContentType="image");
         end
 
-        function tf = hasProjectDocument(obj)
-            tf = true;
-            try
-                obj.Runtime.documentMetadata();
-            catch
-                tf = false;
-            end
-        end
-
-        function saveState(obj)
-            filename = obj.Runtime.automaticArtifactFilename( ...
-                "state", ".mat");
-            try
-                destination = obj.Runtime.automaticArtifactDestination( ...
-                    "states", "state", ".mat");
-                obj.Runtime.saveProject(obj.Runtime.State, destination);
-            catch
-                choice = obj.chooseOutputFile( ...
-                    {"*.mat", "LabKit project (*.mat)"}, filename);
-                if choice.Cancelled
-                    return;
-                end
-                destination = string(choice.Value);
-                obj.Runtime.saveProject(obj.Runtime.State, destination);
-            end
-            obj.alert("App state written to:" + newline + destination, ...
-                "State Saved", "info");
-        end
-
-        function loadState(obj)
-            choice = obj.chooseInputFile( ...
-                {"*.mat", "LabKit project (*.mat)"}, "");
-            if ~choice.Cancelled
-                obj.Runtime.restoreProject(choice.Value);
-            end
-        end
-
         function onKeyPress(obj, event)
             modifiers = strings(1, 0);
             if isprop(event, "Modifier")
@@ -595,11 +559,6 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             message = "Close this LabKit app?";
             if obj.BusyLifecycle.Active
                 message = "LabKit is still working. Close anyway?";
-            elseif obj.hasProjectDocument()
-                metadata = obj.Runtime.documentMetadata();
-                if metadata.dirty
-                    message = "This project has unsaved changes. Close anyway?";
-                end
             end
             obj.ClosePrompt = uipanel(obj.Figure, ...
                 Title="Close LabKit app?", ...
@@ -643,6 +602,55 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 linked.Value = value;
             end
             obj.Runtime.applyControlValue(target, value);
+        end
+
+        function handles = busyInputHandles(obj)
+            % Return mutable leaf inputs without disabling visual containers.
+            nodes = obj.Plan.Nodes;
+            handles = cell(1, max(1, 6 * numel(nodes)));
+            count = 0;
+            for index = 1:numel(nodes)
+                node = nodes(index);
+                if ~isKey(obj.Components, char(node.Id))
+                    continue
+                end
+                component = obj.Components(char(node.Id));
+                switch node.Kind
+                    case {"button", "field", "dataTable"}
+                        count = count + 1;
+                        handles{count} = component;
+                    case "rangeField"
+                        count = count + 1;
+                        handles{count} = component;
+                        linked = labkit.app.internal.native.NativeAdapterValues. ...
+                            linkedRangeEnd(component);
+                        if ~isempty(linked)
+                            count = count + 1;
+                            handles{count} = linked;
+                        end
+                    case "slider"
+                        count = count + 1;
+                        handles{count} = component;
+                        linked = labkit.app.internal.native.NativeAdapterValues. ...
+                            linkedPannerSlider(component);
+                        if ~isempty(linked)
+                            count = count + 1;
+                            handles{count} = linked;
+                        end
+                    case "fileList"
+                        inputs = filePanelInputs(component);
+                        handles(count + (1:numel(inputs))) = inputs;
+                        count = count + numel(inputs);
+                    case "plotArea"
+                        linked = labkit.app.internal.native.NativeAdapterValues. ...
+                        linkedPlotMode(component);
+                        if ~isempty(linked)
+                            count = count + 1;
+                            handles{count} = linked;
+                        end
+                end
+            end
+            handles = handles(1:count);
         end
 
         function rangeChanged(obj, target)
@@ -758,4 +766,22 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             node = obj.Plan.Nodes(index);
         end
     end
+end
+
+function handles = filePanelInputs(list)
+handles = cell(1, 6);
+handles{1} = list;
+count = 1;
+if ~isprop(list, "UserData") || ~isstruct(list.UserData)
+    return
+end
+names = ["Choose", "Folder", "RecursiveFolder", "Remove", "Clear"];
+for name = names
+    field = char(name);
+    if isfield(list.UserData, field) && ~isempty(list.UserData.(field))
+        count = count + 1;
+        handles{count} = list.UserData.(field);
+    end
+end
+handles = handles(1:count);
 end

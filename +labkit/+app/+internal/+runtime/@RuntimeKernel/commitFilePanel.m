@@ -31,9 +31,8 @@ function commitFilePanel(obj, target, config, sources, indices, rebuildSession)
     function candidate = prepareState(current)
         candidate = labkit.app.internal.runtime.RuntimeStatePath.write( ...
             current, config.Bind, sources);
-        if rebuildSession && ~isempty(obj.Application.CreateSession)
-            candidate.session = obj.Application.CreateSession( ...
-                candidate.project, obj.Context);
+        if rebuildSession && ~isempty(obj.Application.RefreshState)
+            candidate = obj.Application.RefreshState(candidate, obj.Context);
         end
         if strlength(config.SelectionBind) > 0
             candidate = ...

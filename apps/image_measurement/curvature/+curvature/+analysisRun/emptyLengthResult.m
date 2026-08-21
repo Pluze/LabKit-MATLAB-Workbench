@@ -1,5 +1,5 @@
 % App-owned Curvature length-result shape. Expected callers are analysis,
-% project/action defaults, result presentation, and package tests.
+% runtime defaults, result presentation, and capability tests.
 function lengthResult = emptyLengthResult()
 %EMPTYLENGTHRESULT Return default length result for labkit_CurvatureMeasurement_app.
 %

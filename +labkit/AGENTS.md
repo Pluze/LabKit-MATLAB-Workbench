@@ -54,7 +54,7 @@ Use `labkittest.explain` to find the exact owner and contract.
 - Apps return one `labkit.app.Definition` and launch it through
   `Definition.launch`. The runtime owns
   startup readiness, busy state, queued events, atomic presentation, close
-  guards, diagnostics, persistence, recovery, resources, and interactions.
+  guards, diagnostics, resources, and interactions.
 - Semantic ids are developer-owned and framework-validated. App ids are stable
   compatibility identifiers; layout/action/axis/source/result namespaces must
   remain legal and unique; references must resolve before UI mutation.
@@ -90,11 +90,16 @@ Use `labkittest.explain` to find the exact owner and contract.
 - Do not interpret framework ownership as requiring a public function.
   Lifecycle, reconciliation, layout, and native behavior normally remain
   internal unless App authors need a clear stable contract.
-- Persistence writes only the current project envelope. Ordered app migrations
-  and declared legacy importers are read-only compatibility hooks and must not
-  introduce app-id branches in the framework. Treat them as supported
-  persistence contracts while they have App-owned evidence, not as migration
-  ledger entries; removing one is an explicit saved-data compatibility change.
+- The framework does not own task archives, generic save/load callbacks,
+  document identities, dirty tracking, recovery files, migration loops, or
+  source relinking, project schemas, or generic result manifests. Definition
+  accepts only opaque in-memory App state; diagnostic bundles may capture that
+  state only for logging and debugging.
+- An App with a real continuation workflow owns its explicit save/open
+  controls and the complete JSON, CSV, or MAT archive contract, including
+  fields, compatibility, source lookup, and resume semantics. Save one current
+  final-state snapshot; do not encode interaction history or intermediate
+  adjustments unless history is itself an explicit product requirement.
 - Do not keep old and current fields on one live facade value. Migrate consumers
   together, express the breaking facade range, and remove aliases as one
   change. Defaults apply only to omitted options; an explicitly unknown

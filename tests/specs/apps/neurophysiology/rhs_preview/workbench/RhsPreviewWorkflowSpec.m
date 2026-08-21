@@ -11,7 +11,7 @@ classdef RhsPreviewWorkflowSpec < matlab.unittest.TestCase
             repeat = context.samplePath("rhs_preview/acquisition/representative_repeat.rhs");
             protocolPath = context.outputPath("rhs_protocol_draft.json");
             filterPath = context.outputPath("rhs_filter_record.json");
-            project = pack.InitialProject;
+            project = pack.InitialInput;
             project.inputs.sources = [project.inputs.sources(:); ...
                 context.sourceRecord("filter-1", "filterRecording", primary, true); ...
                 context.sourceRecord("filter-2", "filterRecording", repeat, true)];
@@ -41,14 +41,8 @@ classdef RhsPreviewWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview").Children);
             testCase.verifyTrue(isfile(protocolPath));
             testCase.verifyTrue(isfile(filterPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastProtocolExport.manifestPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastFilterExport.manifestPath));
-            saved = fullfile(folder, "rhs-preview-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.invokeAction("resetWorkflow");
-            testCase.verifyEmpty(runtime.State.session.cache.index);
-            runtime.restoreProject(saved);
-            testCase.verifyNotEmpty(runtime.State.session.cache.index);
+            testCase.verifyTrue(isfile(runtime.State.project.results.lastProtocolExport.outputPath));
+            testCase.verifyTrue(isfile(runtime.State.project.results.lastFilterExport.outputPath));
             clear cleanup
         end
     end

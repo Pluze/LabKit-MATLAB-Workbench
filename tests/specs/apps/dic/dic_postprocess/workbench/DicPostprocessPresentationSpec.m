@@ -3,8 +3,7 @@ classdef DicPostprocessPresentationSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function mapsSummaryAndOverlaysToOneValidatedSnapshot(testCase)
-            definition = dic_postprocess.definition();
-            project = definition.ProjectSchema.Create();
+            project = dic_postprocess.initialData();
             project.results.summaryTable = table(cellstr(['Mean'; 'Std ']), [1.25; 0.5], ...
                 [-2; 0.25], 'VariableNames', {'Metric', 'EXX', 'EYY'});
             state = struct("project", project, "session", struct("cache", ...

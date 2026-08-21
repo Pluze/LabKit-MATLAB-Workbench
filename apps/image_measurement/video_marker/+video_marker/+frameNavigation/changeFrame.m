@@ -17,7 +17,6 @@ if isempty(paths) || ~isfile(paths(1))
     return
 end
 try
-    previousFrames = state.project.annotations.frames;
     resource = context.getResource("document", "video");
     if ~isstruct(resource) || ~isscalar(resource) || ...
             ~isfield(resource, "path") || resource.path ~= paths(1)
@@ -51,9 +50,6 @@ state.session.cache.frameIndex = target;
 state.session.workflow.scaleReferenceEditing = false;
 state.session.view.scaleBar = [];
 state = video_marker.resultFiles.clearExportState(state);
-if ~isequaln(previousFrames, frames)
-    state = video_marker.sessionControl.saveAutosave(state, context);
-end
 if report.predictedFrames > 0
     context.log("info", "video_marker.framenavigation.changeframe.predicted", ...
         "Predicted " + string(report.predictedFrames) + ...

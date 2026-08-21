@@ -16,21 +16,19 @@ find the exact owner and contract; App authors never invent test paths.
 - Keep `labkit_*_app.m` as a thin wrapper around
   `definition().launch(...)`.
 - `definition.m` is the single product contract. It declares stable identity,
-  version, requirements, layout, and references to optional project, session,
-  presenter, synthetic-input, and Start capabilities.
+  version, requirements, layout, and references to optional state creation,
+  state refresh, presenter, synthetic-input, and Start capabilities.
   It performs no IO, computation, export, handle creation, or lifecycle
   mutation.
 - A static App needs only the entrypoint, definition, and
   `+workbench/buildLayout.m`. Layout controls reference concrete semantic
   callbacks directly; do not create `definitionActions.m`, `stateHandlers.m`,
   callback bags, or renderer registries.
-- Add one `projectSpec.m` only for durable App-owned state. It returns a
-  `labkit.app.project.Schema` owning local create, validate, version-aware
-  migrate, resume, relink, and declared read-only legacy-import functions as
-  needed; Runtime owns the migration loop.
-- Add root `createSession.m` only to reconstruct App-specific transient data
-  with the fixed `(project,context)` signature. Resolve opaque portable
-  sources through `context.resolveSourcePaths`.
+- Create only the structured in-memory state the App actually uses. State
+  creation and optional validation are runtime concerns, not a project schema
+  and not evidence that the state can be saved or reopened.
+- Reconstruct App-specific transient data only when source changes require it.
+  Resolve live source paths through `context.resolveSourcePaths`.
 - `+workbench/buildLayout.m` returns the data-only product assembly. Add
   `+workbench/present.m` only for dynamic views; it composes feature-owned
   snapshot fragments without IO or heavy computation. Put each renderer in
@@ -57,7 +55,7 @@ find the exact owner and contract; App authors never invent test paths.
 - Do not add package-root lifecycle `run.m`, `+ui/runApp.m`, app-family
   `private/` workflow helpers, string dispatchers, or app-specific packages
   outside the owning app tree.
-- `BuildSyntheticSample` creates a validated, reproducible synthetic project and
+- `BuildSyntheticSample` creates a validated, reproducible synthetic input pack and
   artifacts; it never authorizes startup work or automatic project loading.
   Runtime exposes generation as an ordinary Developer Tools action; every
   launch follows the same App startup path.
@@ -93,12 +91,12 @@ find the exact owner and contract; App authors never invent test paths.
 - Repeatable Run/Export workflows use immutable task snapshots and
   deterministic fingerprints when stale or duplicated work is possible.
 
-## Workbench and persistence
+## Workbench and task continuation
 
 - Use direct semantic callbacks, strict bindings, complete
   `labkit.app.view.Snapshot` values, and `labkit.app.CallbackContext`.
-  File lists own portable source and selection bindings; `createSession`
-  rebuilds transient data after source changes.
+  File lists own live source and selection bindings; `RefreshState`
+  rebuilds App data after source changes.
   Treat file-list values as shape-agnostic collections and normalize parallel
   source, task, path, and cache arrays at the callback boundary before aligned
   insertion.
@@ -118,9 +116,11 @@ find the exact owner and contract; App authors never invent test paths.
   `CallbackContext.inform` for successful or neutral information and
   `CallbackContext.alert` only for a blocking problem; never present an INFO
   outcome through the error-style alert capability.
-- External files in saved projects use portable references and field-specific
-  relinking. Current saves use the project envelope; compatibility importers
-  are read-only.
+- Only an App with a real continuation workflow adds save/open controls. That
+  App owns its archive format, fields, compatibility policy, source lookup,
+  and current-state resume semantics. Archives store one final/current
+  snapshot, not intermediate adjustments or an interaction log. Analysis Apps
+  without that product need do not expose or test task-state persistence.
 - Caught exceptions that allow the App to continue are reported through
   `CallbackContext` before alerting or logging recovery.
 

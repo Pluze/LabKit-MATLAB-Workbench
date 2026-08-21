@@ -58,19 +58,9 @@ Record**.
 The filter record identifies the selected files and their labels. It does not
 copy the RHS recordings or contain decoded waveforms.
 
-## Saved Project Sources
-
-The preview recording, optional protocol, and filter recordings are saved as
-distinct portable project sources. Older projects that stored these sources
-separately are combined automatically on load.
-
-## Saving And Reopening A Project
-
-The project stores references to the preview recording, optional protocol, and
-ordered filter recordings together with preview settings, channel assignments,
-labels, and comments. Waveform samples are not copied into the project. When a
-project is reopened, the App reads the required window from the source file;
-if a source has moved, it asks you to locate it.
+The preview recording, optional protocol, and filter recordings remain distinct
+live sources while the App is open. RHS Preview does not write a task archive;
+protocol and filter-record exports are its durable outputs.
 
 ## Review Recording Information
 

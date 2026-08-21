@@ -125,6 +125,9 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
                 exported.PlotBoxAspectRatio(2);
             testCase.verifyEqual(previewRatio, expected, AbsTol=1e-12);
             testCase.verifyEqual(exportRatio, previewRatio, AbsTol=1e-12);
+            testCase.verifyEqual(exported.XTick, preview.XTick);
+            testCase.verifyEqual(string(exported.XTickLabel), ...
+                string(preview.XTickLabel));
             clear exportCleanup cleanup
         end
 
@@ -171,8 +174,7 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             ylabel(source, "-Zimag (ohm)");
             output = labkittest.visualEvidencePath( ...
                 "figure-studio-axis-label-margins", ".png");
-            schema = figure_studio.projectSpec();
-            project = schema.Create();
+            project = figure_studio.initialData();
             project.parameters.style.exportScale = 0.25;
             session = struct("cache", struct( ...
                 "plotData", ...

@@ -77,7 +77,7 @@ Concrete app pages use a common MATLAB-style order:
 2. supported inputs and the shortest successful workflow;
 3. controls and interaction behavior;
 4. calculation or algorithm semantics, units, and assumptions;
-5. outputs, project files, autosave, and recovery behavior;
+5. outputs and any App-owned task snapshot behavior;
 6. GUI-free MATLAB examples and public app-owned APIs;
 7. errors, limitations, troubleshooting, related topics, and history.
 

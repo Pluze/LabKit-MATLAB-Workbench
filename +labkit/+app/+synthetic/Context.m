@@ -26,8 +26,8 @@ classdef (Sealed) Context
     % Outputs:
     %   context - Immutable synthetic-input context.
     %   filepath - Absolute path bounded by SampleFolder or OutputFolder.
-    %   record - Portable source value from
-    %       labkit.app.project.sourceRecord.
+    %   record - Live source-list value from
+    %       labkit.app.source.record.
     %   artifact - Typed synthetic artifact whose relative path is derived
     %       from a filepath beneath RootFolder.
     %
@@ -43,7 +43,7 @@ classdef (Sealed) Context
     %
     % See also labkit.app.synthetic.Artifact,
     %   labkit.app.synthetic.Pack,
-    %   labkit.app.project.sourceRecord
+    %   labkit.app.source.record
 
     properties (SetAccess = immutable)
         RootFolder (1, 1) string
@@ -76,7 +76,7 @@ classdef (Sealed) Context
             if nargin < 5
                 required = true;
             end
-            record = labkit.app.project.sourceRecord( ...
+            record = labkit.app.source.record( ...
                 id, role, filepath, required);
         end
 

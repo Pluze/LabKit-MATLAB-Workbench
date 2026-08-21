@@ -7,9 +7,9 @@ function info = version()
 % Description:
 %   Reports the semantic version and compatibility range of the public
 %   LabKit App SDK. The SDK owns App definitions, semantic layout,
-%   transactions, projects, portable sources, resources, results, dialogs,
-%   and native MATLAB presentation. It is independent of App product and
-%   saved-project schema versions.
+%   transactions, runtime source-list paths, lifecycle, diagnostics, dialogs,
+%   and native MATLAB presentation. Apps independently own result files and
+%   any task-specific saved-state formats.
 %
 % Inputs:
 %   None.
@@ -23,13 +23,13 @@ function info = version()
 %
 % Example:
 %   info = labkit.app.version();
-%   assert(startsWith(info.current, "2."))
+%   assert(startsWith(info.current, "3."))
 %
 % See also labkit.contract.versionInfo,
 %   labkit.contract.requirements,
 %   labkit.app.Definition
 
     info = labkit.contract.versionInfo( ...
-        "app", "2.4.1", ">=2 <3", "stable", ...
+        "app", "3.0.0", ">=3 <4", "stable", ...
         "Explicit LabKit App SDK contract for tracked production Apps.");
 end

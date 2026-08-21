@@ -3,8 +3,7 @@ classdef ChronoOverlayPresentationSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function presentsAClosedSnapshotFromApplicationState(testCase)
-            definition = chrono_overlay.definition();
-            project = definition.ProjectSchema.Create();
+            project = chrono_overlay.initialData();
             item = struct("name", "synthetic.DTA", "tAligned_s", [-1; 0; 1], ...
                 "Vf_V", [10; 20; 30], "Im_A", [1; 2; 3]);
             state = struct("project", project, "session", struct( ...

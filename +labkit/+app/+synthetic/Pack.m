@@ -3,16 +3,16 @@ classdef (Sealed) Pack
     %
     % Usage:
     %   pack = labkit.app.synthetic.Pack( ...
-    %       Scenario=scenario,InitialProject=project,Artifacts=artifacts)
+    %       Scenario=scenario,InitialInput=input,Artifacts=artifacts)
     %
     % Description:
-    %   Couples one App-authored synthetic project with its anonymous artifact
+    %   Couples one App-authored runtime input with its anonymous artifact
     %   declarations so users and tests can reproduce a named scenario through
     %   the App's ordinary import workflow.
     %
     % Required Name-Value Arguments:
     %   Scenario - Nonempty stable scenario identifier.
-    %   InitialProject - Scalar current App project struct.
+    %   InitialInput - Scalar App-owned input struct for tests and previews.
     %   Artifacts - Row cell array of labkit.app.synthetic.Artifact values.
     %       Empty is legal for an App whose scenario needs no files.
     %
@@ -22,7 +22,7 @@ classdef (Sealed) Pack
     % Errors:
     %   labkit:app:contract:UnknownArgument - An argument is missing, unknown,
     %       duplicated, or unpaired.
-    %   labkit:app:contract:InvalidValue - Scenario, project, or Artifacts is
+    %   labkit:app:contract:InvalidValue - Scenario, input, or Artifacts is
     %       malformed.
     %   labkit:app:contract:DuplicateId - Artifact IDs or relative paths are
     %       duplicated.
@@ -31,7 +31,7 @@ classdef (Sealed) Pack
     %   artifact = labkit.app.synthetic.Artifact( ...
     %       "input","source","samples/input.csv");
     %   pack = labkit.app.synthetic.Pack( ...
-    %       Scenario="representative",InitialProject=struct(), ...
+    %       Scenario="representative",InitialInput=struct(), ...
     %       Artifacts={artifact});
     %   assert(pack.Scenario == "representative")
     %
@@ -41,13 +41,13 @@ classdef (Sealed) Pack
 
     properties (SetAccess = immutable)
         Scenario (1, 1) string
-        InitialProject (1, 1) struct
+        InitialInput (1, 1) struct
         Artifacts (1, :) cell
     end
 
     methods
         function obj = Pack(varargin)
-            names = ["Scenario", "InitialProject", "Artifacts"];
+            names = ["Scenario", "InitialInput", "Artifacts"];
             options = labkit.app.internal.contract.OptionParser.parse( ...
                 "labkit.app.synthetic.Pack", names, varargin{:});
             for name = names
@@ -58,11 +58,11 @@ classdef (Sealed) Pack
                 end
             end
             obj.Scenario = nonemptyText(options.Scenario, "Scenario");
-            if ~isstruct(options.InitialProject) || ...
-                    ~isscalar(options.InitialProject)
-                invalid("InitialProject must be a scalar struct.");
+            if ~isstruct(options.InitialInput) || ...
+                    ~isscalar(options.InitialInput)
+                invalid("InitialInput must be a scalar struct.");
             end
-            obj.InitialProject = options.InitialProject;
+            obj.InitialInput = options.InitialInput;
             artifacts = options.Artifacts;
             if ~iscell(artifacts) || ...
                     (~isempty(artifacts) && ~isrow(artifacts)) || ...

@@ -12,7 +12,7 @@ classdef SignificanceBracketSemanticsSpec < matlab.unittest.TestCase
             options = struct("method", "welch", ...
                 "alternative", "two_sided", "alpha", 0.05);
             results = ttest_wizard.testRun.runGroupTTests(groups, options);
-            project = ttest_wizard.projectSpec().Create();
+            project = ttest_wizard.initialData();
             parameters = project.parameters.plot;
             parameters.showPValue = true;
             model = struct("ready", true, "groups", groups, ...

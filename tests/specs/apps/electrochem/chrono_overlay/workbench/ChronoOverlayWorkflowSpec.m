@@ -29,13 +29,7 @@ classdef ChronoOverlayWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(current.Children);
             runtime.invokeAction("exportCurves");
             testCase.verifyTrue(isfile(output));
-            testCase.verifyTrue(isfile(fullfile(folder, "labkit_result.json")));
 
-            saved = fullfile(folder, "overlay-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.applyFileSelection("files", strings(1, 0), zeros(1, 0));
-            runtime.restoreProject(saved);
-            testCase.verifyNumElements(runtime.State.session.cache.items, 1);
             clear cleanup
         end
     end

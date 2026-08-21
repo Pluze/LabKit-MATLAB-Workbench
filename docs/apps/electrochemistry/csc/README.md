@@ -19,8 +19,7 @@ The Files list accepts CV/CT `.DTA` sources and omits other Gamry experiment
 kinds. The selected file determines the current
 curve list, readout, and plots. Selecting another file resets the curve
 selection and default plot quantities to that file; it does not silently keep
-a cycle from the previous source. Saved projects preserve the accepted file
-order through removal, later additions, and reopen.
+a cycle from the previous source.
 
 The default curve selection is **All cycles**. Individual cycle selection
 updates the comparison readout for that cycle.
@@ -80,7 +79,6 @@ and status fields.
 columns for replotting and independent calculation. When all exported cycles
 share the same potential vector, they occupy one file. When vectors differ,
 the app writes one CSV per source item using the selected filename as a stem.
-Each export action has its own `.labkit.json` provenance manifest.
 
 ## Use Without The GUI
 

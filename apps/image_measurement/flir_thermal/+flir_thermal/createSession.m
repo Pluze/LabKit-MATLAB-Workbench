@@ -1,5 +1,5 @@
 % Rebuild the selected transient decoded image from one validated FLIR
-% project. App SDK runtime calls this after portable source relinking.
+% project. App SDK runtime calls this after source-list updates.
 function session = createSession(project, context)
     index = double(~isempty(project.inputs.sources));
     item = [];

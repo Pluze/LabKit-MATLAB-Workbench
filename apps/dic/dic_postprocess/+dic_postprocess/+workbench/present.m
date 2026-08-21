@@ -46,7 +46,7 @@ end
 function path = originalPath(sources, index)
 path = "";
 if ~isempty(index)
-    path = string(sources(index).reference.originalPath);
+    path = string(sources(index).path);
 end
 end
 

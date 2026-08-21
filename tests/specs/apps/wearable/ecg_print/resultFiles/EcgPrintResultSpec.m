@@ -1,5 +1,5 @@
 classdef EcgPrintResultSpec < matlab.unittest.TestCase
-    %ECGPRINTRESULTSPEC Specify ECG segment result schemas and manifests.
+    %ECGPRINTRESULTSPEC Specify ECG segment and analysis-region result schemas.
 
     methods (Test, TestTags = {'Contract:result', 'Env:headless'})
         function addsCenteredSmoothedMeasurementColumns(testCase)
@@ -15,18 +15,6 @@ classdef EcgPrintResultSpec < matlab.unittest.TestCase
             testCase.verifyEqual(actual.SignalP2P_smooth, [5.5; 3; 4; 3.5], AbsTol=1e-12);
             testCase.verifyEqual(actual.NoiseRMS_smooth, [5.5; 6; 8; 54], AbsTol=1e-12);
             testCase.verifyEqual(actual.SNRdB_smooth, [15; 20; 30; 35], AbsTol=1e-12);
-        end
-
-        function keepsManifestSummarySmallAndSerializable(testCase)
-            analysis = struct("channel", "ECG", "eventCount", 4, ...
-                "segmentCount", 3, "summary", struct("mean", 2), ...
-                "perSegment", table((1:3)', 'VariableNames', {'Index'}));
-
-            summary = ecg_print.resultFiles.manifestSummary(analysis);
-
-            testCase.verifyFalse(isfield(summary, "perSegment"));
-            testCase.verifyEqual(summary.channel, "ECG");
-            testCase.verifyEqual(summary.eventCount, 4);
         end
 
         function buildsAnalysisRegionTimetableWithSourceTimeAndPeaks(testCase)

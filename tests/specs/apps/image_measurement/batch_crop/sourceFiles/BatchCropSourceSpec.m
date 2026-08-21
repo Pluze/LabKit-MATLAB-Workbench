@@ -33,10 +33,10 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
         end
 
         function duplicatesFromRowShapedFileListStateWithoutLosingAlignment(testCase)
-            project = batch_crop.projectSpec().Create();
-            first = labkit.app.project.sourceRecord( ...
+            project = batch_crop.initialData();
+            first = labkit.app.source.record( ...
                 "image1", "cropSource", "first.png", true);
-            second = labkit.app.project.sourceRecord( ...
+            second = labkit.app.source.record( ...
                 "image2", "cropSource", "second.png", true);
             project.inputs.sources = [first, second];
             project.inputs.items = batch_crop.cropTasks.forSourceIds( ...
@@ -70,7 +70,69 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
             testCase.verifyFalse(actual.project.inputs.items(2).centerSet);
             testCase.verifyEqual(actual.project.inputs.items(3).sourceId, "image2");
         end
+
+        function restoresManifestIntoOneAlignedProjectTransaction(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            sourcePath = fullfile(folder, "source.png");
+            imageData = uint8(reshape(1:80, 8, 10));
+            imwrite(imageData, sourcePath);
+            crop = batch_crop.cropGeometry.cropImage(imageData, struct( ...
+                "cropWidth", 6, "cropHeight", 4, ...
+                "centerXY", [7 3], "angleDeg", 18, ...
+                "paddingPercent", 12));
+            crop.sourcePath = sourcePath;
+            crop.outputPath = fullfile(folder, "source_crop.png");
+            crop.status = "saved";
+            manifest = batch_crop.resultFiles.buildManifest(crop, struct( ...
+                "format", "PNG", "maxUpsamplePercent", 19));
+            manifestPath = fullfile(folder, "batch_crop_manifest.csv");
+            writetable(manifest, manifestPath);
+            project = batch_crop.initialData();
+            context = struct( ...
+                "chooseInputFile", @(varargin) struct( ...
+                    "Cancelled", false, "Value", string(manifestPath)), ...
+                "resolveSourcePaths", @resolvedSourcePaths, ...
+                "log", @(varargin) [], ...
+                "alert", @unexpectedAlert);
+            state = struct("project", project, ...
+                "session", batch_crop.createSession(project, context));
+
+            actual = batch_crop.sourceFiles.restoreManifest(state, context);
+
+            testCase.verifyEqual(numel(actual.project.inputs.sources), 1);
+            testCase.verifyEqual(actual.project.inputs.items.sourceId, ...
+                actual.project.inputs.sources.id);
+            testCase.verifyEqual(actual.project.inputs.items.angleDeg, 18);
+            testCase.verifyEqual(actual.project.inputs.items.paddingPercent, 12);
+            testCase.verifyEqual(actual.project.inputs.items.centerXY, ...
+                [manifest.CenterX_px, manifest.CenterY_px], AbsTol=1e-12);
+            testCase.verifyTrue(actual.project.inputs.items.centerSet);
+            testCase.verifyEqual(actual.project.parameters.cropWidth, 6);
+            testCase.verifyEqual(actual.project.parameters.cropHeight, 4);
+            testCase.verifyEqual(actual.project.parameters.format, "PNG");
+            testCase.verifyEqual(actual.project.parameters.maxUpsamplePercent, 19);
+            testCase.verifyEqual(actual.session.cache.images{1}, imageData);
+            testCase.verifyEqual(actual.session.selection.currentIndex, 1);
+        end
     end
+end
+
+function paths = resolvedSourcePaths(sources, varargin)
+paths = strings(numel(sources), 1);
+for index = 1:numel(sources)
+    paths(index) = string(sources(index).path);
+end
+if ~isempty(varargin)
+    ids = string(varargin{1});
+    keep = ismember(string({sources.id}), ids);
+    paths = paths(keep);
+end
+end
+
+function unexpectedAlert(varargin)
+error("batch_crop:test:UnexpectedAlert", ...
+    "Manifest restore unexpectedly raised an alert.");
 end
 
 function value = item(path, calibrated)

@@ -1,5 +1,5 @@
 % Expected caller: DIC preprocess App SDK actions and unit tests. Input/output is the
-% canonical durable project; loaded originals remain and derived work resets.
+% current runtime data; loaded originals remain and derived work resets.
 
 function project = resetForNewInput(project)
 %RESETFORNEWINPUT Reset derived DIC preprocess state for a newly loaded image.

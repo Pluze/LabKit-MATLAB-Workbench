@@ -29,7 +29,7 @@ if isempty(state.project.inputs.sources)
 end
 state.session.workflow.status = "Recalculated X/Y limits from visible graphics.";
 state.project.results.lastExport = [];
-state.project.results.resultManifestPath = "";
+state.project.results.lastOutputPath = "";
 callbackContext.log("info", "figure_studio.sourceaxes.recalculatelimits.status", state.session.workflow.status);
 end
 

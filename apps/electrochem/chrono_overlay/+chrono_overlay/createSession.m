@@ -1,6 +1,6 @@
 %CREATESESSION Rebuild transient Chrono Overlay DTA items and selection.
 % Expected caller: LabKit App runtime through chrono_overlay.definition.
-% Portable sources remain opaque; context resolves their current paths.
+% Runtime source records stay lightweight; context resolves their paths.
 function session = createSession(project, context)
     arguments
         project (1, 1) struct

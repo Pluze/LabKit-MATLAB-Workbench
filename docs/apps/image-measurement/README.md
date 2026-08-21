@@ -36,8 +36,8 @@ geometry needed for audit.
 Display palettes, axes zoom, overlay opacity, marker appearance, and preview
 downsampling do not change scientific arrays. Crop geometry, scale
 calibration, thermal conversion, fusion parameters, enhancement steps, and
-coordinate transforms do affect output and are stored in project state or
-result manifests.
+coordinate transforms do affect output and remain App-owned runtime or export
+meaning.
 
 ## Related Modules
 

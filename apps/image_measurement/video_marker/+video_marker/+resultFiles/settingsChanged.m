@@ -6,7 +6,7 @@ state.project.parameters.coordinateStartFrame = boundedFrame( ...
     state.project.parameters.coordinateStartFrame, 1, count);
 state.project.parameters.coordinateEndFrame = boundedFrame( ...
     state.project.parameters.coordinateEndFrame, count, count);
-state.project.results.coordinateManifestPath = "";
+state.project.results.coordinateOutputPath = "";
 end
 
 function value = boundedFrame(candidate, fallback, count)

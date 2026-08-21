@@ -21,7 +21,7 @@ if isempty(selection.Indices) || isempty(state.project.inputs.sources)
     state.session.selection.panel = "No panels";
     state.session.workflow.status = "No FIG files loaded.";
     state.project.results.lastExport = [];
-    state.project.results.resultManifestPath = "";
+    state.project.results.lastOutputPath = "";
     return
 end
 
@@ -53,7 +53,7 @@ end
 state.session.workflow.status = "Opened " + string(name) + ...
     string(extension) + " — " + panelLabel + ".";
 state.project.results.lastExport = [];
-state.project.results.resultManifestPath = "";
+state.project.results.lastOutputPath = "";
 callbackContext.log("info", ...
     "figure_studio.sourceaxes.selectionchanged.status", ...
     "Opened the selected FIG source.");

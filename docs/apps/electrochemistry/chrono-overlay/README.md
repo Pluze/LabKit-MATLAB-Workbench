@@ -15,8 +15,7 @@ labkit_ChronoOverlay_app
 ## Inputs
 
 Inputs are one or more `.DTA` files containing chrono data. Source order
-controls curve order and legend labels. Saved projects preserve that order and
-reopen sources through portable references.
+controls curve order and legend labels.
 
 ## Basic Workflow
 
@@ -54,8 +53,7 @@ recorded time range.
 
 **Export curves CSV** writes `TimeGapCenterAligned_s` followed by paired
 voltage and current columns for each source. Column names retain a sanitized
-source identity. The app also writes a result manifest containing source
-references, current parameters, and the CSV output role.
+source identity.
 
 ## Use Without The GUI
 

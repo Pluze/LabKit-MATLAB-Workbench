@@ -18,28 +18,21 @@ apps/<family>/<app_slug>/+<app_slug>/definition.m
 apps/<family>/<app_slug>/+<app_slug>/+workbench/buildLayout.m
 ```
 
-`labkit.app.Definition` supplies empty project/session and default presentation
+`labkit.app.Definition` supplies empty scalar state and default presentation
 behavior when optional components are omitted. Bind real business callbacks
 directly from the layout. Add `+workbench/present.m` for derived visible state,
-`createSession.m` for transient decoded/cache state, and `projectSpec.m` only
-when the App owns durable data. That single project file contains local create,
-validate, and migrate functions. Its migrate callback exists only after a
-saved project schema has actually changed and only for the older payload
-versions the App explicitly supports; Runtime owns the version loop. Current
-saves always write the current payload version. Use an exact declared
-`LegacyImports` variable adapter only for real pre-envelope user files, never
-as a shape-guessing fallback.
+`CreateState` when the App needs structured runtime data, and `RefreshState`
+when file-list edits require decoded or cached data to be rebuilt.
 
 Runtime and App architecture names remain versionless. Put facade/App
-compatibility in the existing version and requirement metadata, and put saved
-payload numbers only in `projectSpec` migration logic. Do not create
+compatibility in the existing version and requirement metadata. Put saved
+payload numbers only inside an App that explicitly owns a continuation file.
+Do not create
 version-named packages, files, functions, types, tests, or manual sections.
 
-The project validator owns only App-specific requirements: domain fields,
-legal choices and ranges, cross-field relationships, source roles, and
-scientific invariants. Runtime validates the five canonical project buckets
-and standard portable source records before the callback runs. Do not repeat
-those framework checks in each App.
+An optional state validator owns only App-specific in-memory invariants. The
+runtime requires a scalar struct and does not impose canonical buckets,
+durability, migration, or a saved-data schema.
 
 Create additional packages only for concrete workflows that need them, for
 example `+sourceFiles`, `+analysisRun`, `+resultFiles`, `+cropGeometry`, or
@@ -50,14 +43,14 @@ example `+sourceFiles`, `+analysisRun`, `+resultFiles`, `+cropGeometry`, or
 
 `definition.m` returns one immutable `labkit.app.Definition`. It is the App's
 single product contract and names the public command, stable ID, display
-metadata, App version, compatible LabKit facades, and workbench. Project
-schema, session factory, presenter, post-layout start callback, and debug
+metadata, App version, compatible LabKit facades, and workbench. State
+creation, state refresh, presenter, post-layout start callback, and debug
 sample are opt-in capabilities. Callbacks and renderers are owned directly by
 their layout nodes.
 
-The complete field tables, callback signatures, canonical project/session
-buckets, presenter shape, and renderer contract are documented in
-[Runtime and Lifecycle](../../framework/guides/runtime.md#definition-component-contract).
+The complete field tables, callback signatures, state boundary, presenter
+shape, and renderer contract are documented in
+[Runtime and Lifecycle](../../framework/guides/runtime.md#definition-and-launch).
 For a complete file-by-file implementation, follow
 [Build a Complete App](complete-app.md).
 
@@ -65,12 +58,12 @@ The framework owns:
 
 - startup, readiness, and busy state
 - queued callback dispatch and rollback
-- project save/load and recovery
 - managed interactions and resources
-- debug tracing and result manifests
+- unified logging and diagnostic state capture
 
-The app owns durable `state.project`, transient `state.session`, semantic
-callbacks, presentation models, and scientific behavior.
+The app owns all runtime-state meaning, semantic callbacks, presentation
+models, scientific behavior, final result files, and any explicit continuation
+archive.
 
 ## Build The Workbench
 

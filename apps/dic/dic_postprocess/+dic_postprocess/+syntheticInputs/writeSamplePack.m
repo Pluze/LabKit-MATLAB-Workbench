@@ -29,7 +29,7 @@ function pack = writeSamplePack(sampleContext)
     data_dic_save = struct("metadata", struct("note", "malformed synthetic boundary"));
     save(char(malformedMatPath), "data_dic_save");
 
-    project = dic_postprocess.projectSpec().Create();
+    project = dic_postprocess.initialData();
     project.inputs.sources = [ ...
         sampleContext.sourceRecord("dicMat", "strain", matPath, true), ...
         sampleContext.sourceRecord( ...
@@ -48,7 +48,7 @@ function pack = writeSamplePack(sampleContext)
             Expectation="rejects")};
     pack = labkit.app.synthetic.Pack( ...
         Scenario="representative-strain-overlay", ...
-        InitialProject=project, Artifacts=artifacts);
+        InitialInput=project, Artifacts=artifacts);
 end
 
 function [reference, mask, exx, eyy] = syntheticDicPostprocessData(h, w, sparseRoi)

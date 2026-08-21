@@ -1,5 +1,5 @@
 % Expected caller: DIC preprocess actions and unit tests. Input/output is the
-% canonical durable project; mask annotations invalidated by pair edits clear.
+% current runtime data; mask annotations invalidated by pair edits clear.
 
 function project = clearOperationDerivedState(project)
 %CLEAROPERATIONDERIVEDSTATE Clear DIC preprocess state derived from the pair.

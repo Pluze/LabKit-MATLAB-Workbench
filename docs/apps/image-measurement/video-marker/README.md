@@ -1,12 +1,12 @@
 # Video Marker
 
 Video Marker defines an ordered landmark skeleton, records coordinates across
-video frames, predicts forward positions between manual anchors, and saves a
-portable project with a source-adjacent autosave copy.
+video frames, predicts forward positions between manual anchors, and saves an
+explicit App-owned MAT snapshot when requested.
 
 ## Requirements And Launch
 
-The app declares compatibility with `labkit.app` 2.x and `labkit.image` 2.x.
+The app declares compatibility with `labkit.app` 3.x and `labkit.image` 2.x.
 Video decoding uses Base MATLAB's available video support. Predictive
 navigation is implemented in repository-owned MATLAB code; no optional
 Toolbox, model weight, or third-party runtime package is required.
@@ -17,13 +17,12 @@ labkit_VideoMarker_app
 
 ## Start Or Open A Project
 
-The **Session** panel appears first in the Video tab. **Open MAT** uses the same
-loader as the window's top-level Load State action and accepts an explicit
-project or compatible autosave. **Save autosave** immediately updates
-`Video Marker Autosaves/<video>.video_marker.autosave.mat` beside the source
-video without asking for a path and without turning that recovery copy into the
-named project file. Point placement, dragging, undo, clear, imported marker
-coordinates, and newly predicted frames update the same autosave automatically.
+The **Session** panel appears first in the Video tab. **Open MAT** is Video
+Marker's task-specific continuation action and accepts an explicit Video Marker
+MAT snapshot or a compatible older project. **Save MAT** asks for a destination
+and writes the current video reference, skeleton, calibration, annotations, and
+frame position. Editing and navigation only update the live App; they never
+write an implicit autosave or record intermediate adjustments.
 **New setup** offers Cancel, Save and start new, or Discard and start new; it
 never silently clears the current session.
 
@@ -40,8 +39,8 @@ stable.
 3. Click blank image locations to place the next missing keypoint in order.
 4. Drag an existing marker to refine it.
 5. Use Undo last point or Clear frame points when needed.
-6. Move to the next frame; the current frame is saved automatically.
-7. Correct predicted frames periodically and export or save the project.
+6. Move to the next frame and correct predicted frames periodically.
+7. Export results or use **Save MAT** to preserve the current task snapshot.
 
 Point marking remains active while a video is open. A complete edited frame is
 a manual anchor. Moving forward predicts every ordered point using cropped
@@ -68,25 +67,20 @@ The coordinate export options are:
 
 Marker CSV is the round-trip editing format. Coordinate CSV is the
 plotting-oriented table after optional calibration, origin shift, and Y-axis
-conversion. Raw pixel coordinates remain available in the project.
+conversion. Raw pixel coordinates remain available in the MAT snapshot.
 
-## Autosave, Recovery, And Portability
+## Snapshot And Portability
 
-Every committed point-information change writes atomically to
-`Video Marker Autosaves` beside the source video. This includes point placement
-and dragging, undo and clear, marker CSV import, and forward prediction. The
-**Save autosave** action remains available to force an immediate write without
-waiting for another point change. Autosave and named project MAT files contain
-the same project data: frame count, frame rate, duration, image dimensions,
-skeleton edges, annotation status/source, calibration, and durable coordinates.
-The video itself remains an external portable source and can be relinked
-without discarding annotations.
+**Save MAT** writes one current/final snapshot containing frame count, frame
+rate, duration, image dimensions, skeleton edges, annotation status/source,
+calibration, coordinates, settings, and current frame. It does not write an
+interaction log, intermediate edits, decoded frames, or the source video.
 
 When a project tree moves between folders, users, or operating systems, the
-relative reference is tried first. If no candidate exists, the app asks the
-user to locate the video without discarding skeleton or annotations. A
-compatible old Video Marker project or autosave opens through **Open MAT** or
-**Tools > Project State > Load State...**.
+saved original path, archive-relative reference, and a same-folder filename are
+tried. A compatible older Video Marker project or autosave opens through
+**Open MAT**; a missing required source is reported without partially replacing
+the live task.
 
 ## What The Project Saves
 
@@ -100,10 +94,9 @@ the upgraded project before moving it into another workflow.
 
 ## Outputs
 
-- explicit project MAT and visible autosave MAT;
+- explicit Video Marker MAT snapshot;
 - marker CSV for round-trip editing;
 - coordinate CSV for analysis and plotting;
-- output manifests recording coordinate options and file roles.
 
 CSV and annotated-video dialogs start in a source-adjacent `video_marker`
 output folder. **Render annotated video** writes every source frame at the
@@ -112,7 +105,7 @@ connections. Even source dimensions are retained; MATLAB pads an odd width or
 height by one pixel for MPEG-4. Frames without points remain unmarked. Output uses
 MP4 with H.264 encoding for ordinary-player compatibility. MATLAB supports
 MPEG-4 writing on macOS and Windows; the render button is unavailable on
-Linux. Result manifests are written beside the chosen output.
+Linux.
 
 ## Diagnostics And Synthetic Inputs
 

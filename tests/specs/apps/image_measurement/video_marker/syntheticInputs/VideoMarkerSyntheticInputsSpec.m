@@ -8,13 +8,13 @@ classdef VideoMarkerSyntheticInputsSpec < matlab.unittest.TestCase
 
             pack = video_marker.syntheticInputs.writeSamplePack( ...
                 labkit.app.synthetic.Context(folder));
-            source = pack.InitialProject.inputs.sources;
+            source = pack.InitialInput.inputs.sources;
 
             testCase.verifyNumElements(source, 1);
             testCase.verifyGreaterThan( ...
-                pack.InitialProject.inputs.videoMetadata.frameCount, 0);
+                pack.InitialInput.inputs.videoMetadata.frameCount, 0);
             testCase.verifyGreaterThan( ...
-                pack.InitialProject.parameters.coordinateEndFrame, 0);
+                pack.InitialInput.parameters.coordinateEndFrame, 0);
         end
     end
 end

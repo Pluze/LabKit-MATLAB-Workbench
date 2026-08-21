@@ -117,14 +117,8 @@ reference domain.
 
 **Save current images** writes two images to the selected folder using stable
 reference and moving result names. **Save ROI mask** writes a binary image to
-the selected file. LabKit result manifests record source references,
-parameters, output roles, and generated filenames; the manifest JSON is
-provenance metadata, not an additional scientific result.
-
-The saved project stores source references, preview choices, applied edits,
-crop and mask annotations, and result references. Source and intermediate
-images are read or recreated when the project opens rather than copied into
-the project file.
+the selected file. The App has no task archive; source selections, preview
+choices, edits, crop state, and mask state last only for the open session.
 
 ## Use Without The GUI
 

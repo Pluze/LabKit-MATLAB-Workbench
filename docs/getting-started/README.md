@@ -58,10 +58,6 @@ Every current LabKit app exposes one top-level **Tools** menu:
 - **Tools > Screenshot > Copy to Clipboard** copies the complete active App
   surface as an image.
 - **Tools > Screenshot > Save to File...** saves the complete App surface.
-- **Tools > Project State > Save State...** writes the current project
-  document.
-- **Tools > Project State > Load State...** opens a compatible project
-  document.
 - **Tools > Diagnostics > Open Session Log...** opens the current App's named
   live log with Full TRACE, DEBUG, and User views.
 - **Tools > Diagnostics > Export Diagnostic Bundle** asks for exact or compact
@@ -71,8 +67,12 @@ Every current LabKit app exposes one top-level **Tools** menu:
   ERROR or CRITICAL event, closing the App automatically writes a compact
   bundle there.
 
-State files preserve app projects. They are different from exported result
-files and from ignored diagnostic manifests under `artifacts/diagnostics/`.
+Task save/open controls appear only in Apps whose workflow genuinely supports
+continuation. The framework has no Project State menu or archive. Each
+qualifying App owns its snapshot file and restores one current/final task state.
+
+App-owned task snapshots are different from exported results and from ignored
+diagnostic state under `artifacts/diagnostics/`.
 
 ## Source Checkout
 

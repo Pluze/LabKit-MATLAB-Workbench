@@ -45,14 +45,8 @@ When no window is specified, the grid spans the intersection of the time
 ranges after each segment's alignment-time shift. Samples outside an aligned
 segment's original range remain `NaN`.
 
-The selected input is saved as a portable project source. Older projects are
-upgraded on load.
-
-## Saving And Reopening A Project
-
-The project saves the source, baseline/noise windows, and last export
-location. When the project is reopened, metric tables, aligned waveforms, and
-summaries are recalculated from that source.
+The selected input remains a live source while the App is open. Response Review
+does not write a task archive; the metrics CSV is its durable output.
 
 ## Measurements And Summary
 
@@ -66,9 +60,7 @@ visible.
 
 **Export Metrics** writes:
 
-- `response_review_metrics.csv`, one row per measurement;
-- `response_review_metrics.labkit.json`, recording the input, time windows,
-  output identity, row count, and group count.
+- `response_review_metrics.csv`, one row per measurement.
 
 ## Align Segments In MATLAB Code
 

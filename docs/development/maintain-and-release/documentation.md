@@ -102,7 +102,7 @@ Every public app owns one manual at
 6. parameters, defaults, legal values, and units;
 7. calculations, algorithms, and scientific assumptions;
 8. outputs and result schemas;
-9. project state, autosave, recovery, and overwrite behavior;
+9. App-owned task snapshot behavior, when the product supports continuation;
 10. use without the GUI;
 11. errors, limitations, troubleshooting, related topics, and history.
 

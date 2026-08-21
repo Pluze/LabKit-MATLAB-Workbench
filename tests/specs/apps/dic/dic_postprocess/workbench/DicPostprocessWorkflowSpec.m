@@ -35,16 +35,8 @@ classdef DicPostprocessWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "overlayAxes.eyy").Children);
             testCase.verifyTrue(isfile(fullfile(folder, "overlay_exx_unknown_mm.png")));
             testCase.verifyTrue(isfile(fullfile(folder, "overlay_eyy_unknown_mm.png")));
-            testCase.verifyTrue(isfile(fullfile(folder, "dic_overlays_unknown_mm.labkit.json")));
             testCase.verifyTrue(isfile(summaryPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.summaryManifestPath));
-            saved = fullfile(folder, "dic-postprocess-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.applyFileSelection("matFile", strings(1, 0), zeros(1, 0));
-            runtime.restoreProject(saved);
-            testCase.verifyGreaterThan(height(runtime.State.project.results.summaryTable), 0);
-            testCase.verifyNotEmpty(runtime.State.session.cache.overlayExx);
-            testCase.verifyNotEmpty(runtime.State.session.cache.overlayEyy);
+            testCase.verifyTrue(isfile(runtime.State.project.results.summaryOutputPath));
             clear cleanup
         end
     end

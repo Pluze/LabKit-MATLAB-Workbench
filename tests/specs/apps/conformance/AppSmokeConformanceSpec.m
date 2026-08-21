@@ -6,7 +6,7 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = {'Contract:product', 'Env:hidden-gui'})
-        function materializesDefinitionAndLaunchesSyntheticProject(testCase, App)
+        function materializesDefinitionAndLaunchesSyntheticInput(testCase, App)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = feval(char(App.Package + ".definition"));
@@ -41,7 +41,7 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
             syntheticJournal = labkittest.temporarySessionJournal( ...
                 definition, fullfile(folder, "synthetic-session"));
             syntheticRuntime = labkittest.createMatlabRuntime( ...
-                definition, pack.InitialProject, struct(), ...
+                definition, pack.InitialInput, struct(), ...
                 syntheticJournal);
             syntheticCleanup = onCleanup(@() syntheticRuntime.close());
 

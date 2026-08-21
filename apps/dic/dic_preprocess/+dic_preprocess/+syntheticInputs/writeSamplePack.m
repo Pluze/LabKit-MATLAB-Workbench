@@ -26,7 +26,7 @@ function pack = writeSamplePack(sampleContext)
     imwrite(lowTexture, char(lowTexturePath));
     writeTextFile(malformedPath, ["not a png payload"; "boundary=malformed image"]);
 
-    project = dic_preprocess.projectSpec().Create();
+    project = dic_preprocess.initialData();
     project.inputs.sources = [ ...
         sampleContext.sourceRecord( ...
             "referenceImage", "referenceImage", referencePath, true), ...
@@ -44,7 +44,7 @@ function pack = writeSamplePack(sampleContext)
             Expectation="rejects")};
     pack = labkit.app.synthetic.Pack( ...
         Scenario="representative-image-pair", ...
-        InitialProject=project, Artifacts=artifacts);
+        InitialInput=project, Artifacts=artifacts);
 end
 
 function img = syntheticSpeckleImage(h, w, shiftX, shiftY, gain)

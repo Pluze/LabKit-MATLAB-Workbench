@@ -1,7 +1,7 @@
 % Expected caller: app synthetic-input generation and unit tests. Input
 % is a LabKit debug context. Output is a deterministic synthetic crop sample
 % pack. Side effects: writes anonymous debug images and records a session
-% manifest when available.
+% synthetic-input manifest.
 function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write Batch Crop debug image files.
     arguments
@@ -17,7 +17,7 @@ function pack = writeSamplePack(sampleContext)
     imwrite(targetImage(2), char(edgePath));
     writeTextFile(malformedPath, "not an image payload" + newline);
 
-    project = batch_crop.projectSpec().Create();
+    project = batch_crop.initialData();
     project.inputs.sources = [ ...
         sampleContext.sourceRecord("image1", "cropSource", imageA, true), ...
         sampleContext.sourceRecord("image2", "cropSource", imageB, true)];
@@ -28,7 +28,7 @@ function pack = writeSamplePack(sampleContext)
     project.inputs.items(2).centerXY = [186 122];
     project.inputs.items(2).centerSet = true;
     pack = labkit.app.synthetic.Pack( ...
-        Scenario="representative-crop-targets", InitialProject=project, ...
+        Scenario="representative-crop-targets", InitialInput=project, ...
         Artifacts={ ...
             sampleContext.artifact("sourceA", "cropSource", imageA), ...
             sampleContext.artifact("sourceB", "cropSource", imageB), ...

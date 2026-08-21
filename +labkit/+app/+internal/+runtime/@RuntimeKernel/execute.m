@@ -8,7 +8,6 @@ function execute(obj, binding, payload, prepareState, failureLabel)
     end
     previousState = obj.State;
     previousPresentation = obj.Presentation;
-    obj.PendingDocumentMetadata = [];
     hasCallback = ~isempty(binding);
     operation = [];
     if hasCallback
@@ -52,22 +51,12 @@ function execute(obj, binding, payload, prepareState, failureLabel)
         end
         obj.State = candidate;
         obj.Presentation = view;
-        if isempty(obj.PendingDocumentMetadata)
-            if ~isempty(obj.Documents) && ...
-                    ~isequaln(previousState.project, candidate.project)
-                obj.markDocumentChanged();
-            end
-        else
-            obj.Documents.acceptRestore(obj.PendingDocumentMetadata);
-            obj.refreshWindowTitle();
-        end
         if hasCallback
             obj.Recorder.finish(operation, "completed", "committed", []);
         end
     catch cause
         obj.State = previousState;
         obj.Presentation = previousPresentation;
-        obj.PendingDocumentMetadata = [];
         obj.Resources.clearScope("event");
         if hasCallback
             obj.Recorder.finish(operation, "failed", "rolledBack", cause);
@@ -82,6 +71,5 @@ function execute(obj, binding, payload, prepareState, failureLabel)
         failure = addCause(failure, cause);
         throwAsCaller(failure);
     end
-    obj.PendingDocumentMetadata = [];
     obj.Resources.clearScope("event");
 end

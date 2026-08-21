@@ -14,6 +14,7 @@ end
         ax = copyobj(sourceAxes, fig);
         figure_studio.sourceAxes.copyLegend(sourceAxes, ax);
         applyStoredLimits(ax, plotData);
+        applyStoredTicks(ax, plotData);
         figure_studio.resultFiles.applyFigureStyle(ax, style);
         return;
     end
@@ -40,6 +41,32 @@ names = {'dataAspectRatio', 'dataAspectRatioMode', ...
 names = names(isfield(plotData.axes, names));
 if ~isempty(names)
     plotData.axes = rmfield(plotData.axes, names);
+end
+end
+
+function applyStoredTicks(ax, plotData)
+if ~isstruct(plotData) || ~isfield(plotData, "axes") || ...
+        ~isstruct(plotData.axes)
+    return;
+end
+metadata = plotData.axes;
+if isfield(metadata, "xTick")
+    ax.XTick = metadata.xTick;
+end
+if isfield(metadata, "yTick")
+    ax.YTick = metadata.yTick;
+end
+if isfield(metadata, "zTick")
+    ax.ZTick = metadata.zTick;
+end
+if isfield(metadata, "xTickLabel")
+    ax.XTickLabel = metadata.xTickLabel;
+end
+if isfield(metadata, "yTickLabel")
+    ax.YTickLabel = metadata.yTickLabel;
+end
+if isfield(metadata, "zTickLabel")
+    ax.ZTickLabel = metadata.zTickLabel;
 end
 end
 

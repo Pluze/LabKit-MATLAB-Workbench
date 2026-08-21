@@ -82,7 +82,7 @@ Contracts describe evidence, not test cost:
 | `scientific` | calculations, numerical policies, and scientifically meaningful branches |
 | `source` | source decoding, callbacks, and capability-local state transitions |
 | `state` | durable/transient state transitions and reconstruction |
-| `persistence` | project schema creation, validation, and migration |
+| `persistence` | an App-owned save/open archive or final-state restore contract |
 | `result` | exports, schemas, manifests, and task identity |
 | `presentation` | reader-facing snapshot data and declared layout semantics |
 | `definition` / `product` | parameterized public App conformance |

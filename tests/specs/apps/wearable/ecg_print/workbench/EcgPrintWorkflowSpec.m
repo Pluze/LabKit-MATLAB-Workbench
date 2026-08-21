@@ -17,7 +17,7 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             definition = ecg_print.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkittest.createMatlabRuntime( ...
-                definition, pack.InitialProject, backend, ...
+                definition, pack.InitialInput, backend, ...
                 journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -55,13 +55,9 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(height(workspaceRegion), ...
                 numel(runtime.State.session.cache.workingSignal.time));
             testCase.verifyTrue(isfile( ...
-                runtime.State.project.results.lastRegionExport.manifestPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastSegmentExport.manifestPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastWaveformExport.manifestPath));
-            saved = fullfile(folder, "ecg-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.restoreProject(saved);
-            testCase.verifyNotEmpty(runtime.State.session.cache.measurements);
+                runtime.State.project.results.lastRegionExport.outputPath));
+            testCase.verifyTrue(isfile(runtime.State.project.results.lastSegmentExport.outputPath));
+            testCase.verifyTrue(isfile(runtime.State.project.results.lastWaveformExport.outputPath));
             clear clearRegion cleanup
         end
     end

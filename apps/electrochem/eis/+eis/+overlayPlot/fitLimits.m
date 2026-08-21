@@ -9,7 +9,7 @@ function applicationState = fitLimits(applicationState, ~)
 %   applicationState - State whose next render uses normal axis aspect and a
 %       new viewport revision.
 %
-% Side effects: none. The durable project, loaded sources, and plot options
+% Side effects: none. The current runtime data, loaded sources, and plot options
 % are unchanged.
 
     applicationState.session.cache.plotViewAction = "fit";

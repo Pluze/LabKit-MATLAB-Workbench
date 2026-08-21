@@ -14,13 +14,14 @@ classdef BatchCropResultSpec < matlab.unittest.TestCase
 
             testCase.verifyEqual(height(manifest), 1);
             testCase.verifyEqual(string(manifest.Properties.VariableNames), ...
-                ["SourceImage" "OutputImage" "Status" "RotationDeg" ...
+                ["SourceImage" "OutputImage" "Status" "TaskIndex" "RotationDeg" ...
                  "PaddingPercent" "CenterX_px" "CenterY_px" "CropWidth_px" ...
                  "CropHeight_px" "SourceWidth_px" "SourceHeight_px" ...
                  "ScaleMode" "ScaleUnit" "SourcePixelsPerUnit" ...
                  "TargetPixelsPerUnit" "ResampleFactor" "NativeCropWidth_px" ...
                  "NativeCropHeight_px" "OutputWidth_px" "OutputHeight_px" ...
-                 "ScaleWarning" "Message"]);
+                 "PhysicalWidth" "PhysicalHeight" "MaxUpsamplePercent" ...
+                 "OutputFormat" "ScaleWarning" "Message"]);
         end
 
         function avoidsOverwritingAnExistingCropOutput(testCase)
@@ -84,6 +85,104 @@ classdef BatchCropResultSpec < matlab.unittest.TestCase
             testCase.verifyTrue(endsWith(outputs(1), "shared_source_crop.png"));
             testCase.verifyTrue(endsWith(outputs(2), "shared_source_crop_001.png"));
             testCase.verifyEqual(height(payload.manifest), 2);
+        end
+
+        function restoresExactPhysicalTasksFromCurrentManifest(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            items = [physicalItem(fullfile(folder, "source_a.png"), 4); ...
+                physicalItem(fullfile(folder, "source_b.png"), 8)];
+            imwrite(items(1).image, items(1).path);
+            imwrite(items(2).image, items(2).path);
+            options = struct( ...
+                "outputFolder", folder, "format", "TIFF", ...
+                "cropWidth", 10, "cropHeight", 10, "paddingPercent", 0, ...
+                "scaleMode", "Physical", "physicalWidth", 7.5, ...
+                "physicalHeight", 4.25, "scaleUnit", "um", ...
+                "targetPixelsPerUnit", 6, "maxUpsamplePercent", 22);
+            items(1).angleDeg = 12;
+            items(1).paddingPercent = 15;
+            payload = batch_crop.resultFiles.writeOutputs(items, options);
+
+            plan = batch_crop.resultFiles.readManifest(payload.manifestPath);
+
+            testCase.verifyEqual(plan.paths, string({items.path}).');
+            testCase.verifyEqual([plan.tasks.angleDeg], [12 0]);
+            testCase.verifyEqual([plan.tasks.paddingPercent], [15 0]);
+            testCase.verifyEqual([plan.tasks.centerSet], [true true]);
+            calibrations = [plan.tasks.scaleCalibration];
+            testCase.verifyEqual( ...
+                [calibrations.pixelsPerUnit], [4 8]);
+            testCase.verifyEqual(plan.parameters.scaleMode, "Physical");
+            testCase.verifyEqual(plan.parameters.physicalWidth, 7.5);
+            testCase.verifyEqual(plan.parameters.physicalHeight, 4.25);
+            testCase.verifyEqual(plan.parameters.targetPixelsPerUnit, 6);
+            testCase.verifyEqual(plan.parameters.maxUpsamplePercent, 22);
+            testCase.verifyEqual(plan.parameters.format, "TIFF");
+        end
+
+        function rejectsManifestWhenSourceDimensionsChanged(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            item = batch_crop.sourceFiles.emptyItem();
+            item.path = fullfile(folder, "source.png");
+            item.image = uint8(ones(8, 9));
+            item.centerXY = [5 4];
+            item.centerSet = true;
+            imwrite(item.image, item.path);
+            payload = batch_crop.resultFiles.writeOutputs(item, struct( ...
+                "outputFolder", folder, "format", "PNG", ...
+                "cropWidth", 4, "cropHeight", 4, "paddingPercent", 0));
+            imwrite(uint8(ones(7, 9)), item.path);
+
+            testCase.verifyError( ...
+                @() batch_crop.resultFiles.readManifest(payload.manifestPath), ...
+                "batch_crop:ManifestSourceChanged");
+        end
+
+        function restoresOnlySuccessfullySavedFinalRows(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            item = batch_crop.sourceFiles.emptyItem();
+            item.path = fullfile(folder, "saved_source.png");
+            item.image = uint8(ones(8, 9));
+            item.centerXY = [5 4];
+            item.centerSet = true;
+            imwrite(item.image, item.path);
+            payload = batch_crop.resultFiles.writeOutputs(item, struct( ...
+                "outputFolder", folder, "format", "PNG", ...
+                "cropWidth", 4, "cropHeight", 4, "paddingPercent", 0, ...
+                "maxUpsamplePercent", 15));
+            failed = payload.manifest;
+            failed.Status = "failed";
+            failed.TaskIndex = 2;
+            failed.SourceImage = fullfile(folder, "missing.png");
+            final = [payload.manifest; failed];
+            finalPath = fullfile(folder, "final_manifest.csv");
+            writetable(final, finalPath);
+
+            plan = batch_crop.resultFiles.readManifest(finalPath);
+
+            testCase.verifyEqual(numel(plan.tasks), 1);
+            testCase.verifyEqual(plan.paths, string(item.path));
+        end
+
+        function rejectsLegacyManifestFormats(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            crop = batch_crop.cropGeometry.cropImage(uint8(ones(5, 6)), struct( ...
+                "cropWidth", 3, "cropHeight", 4, "centerXY", [3 3]));
+            crop.sourcePath = fullfile(folder, "source.png");
+            crop.outputPath = fullfile(folder, "source_crop.png");
+            crop.status = "saved";
+            legacy = removevars( ...
+                batch_crop.resultFiles.buildManifest(crop), "TaskIndex");
+            legacyPath = fullfile(folder, "legacy_manifest.csv");
+            writetable(legacy, legacyPath);
+
+            testCase.verifyError( ...
+                @() batch_crop.resultFiles.readManifest(legacyPath), ...
+                "batch_crop:InvalidManifest");
         end
     end
 end

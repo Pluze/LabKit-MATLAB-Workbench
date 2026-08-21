@@ -7,7 +7,8 @@ classdef BatchCropPresentationSpec < matlab.unittest.TestCase
             ids = string({plan.Nodes.Id});
 
             testCase.verifyTrue(all(ismember( ...
-                ["images" "cropWidth" "exportCrops" "resultTable"], ids)));
+                ["images" "restoreManifest" "cropWidth" ...
+                 "exportCrops" "resultTable"], ids)));
         end
     end
 end

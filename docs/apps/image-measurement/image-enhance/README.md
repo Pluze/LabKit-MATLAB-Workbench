@@ -86,12 +86,12 @@ output = image_enhance.analysisRun.applyPipeline(imread("source.png"), steps);
 imwrite(output{1}, "enhanced.png");
 ```
 
-## Project And State
+## Runtime State
 
-Saved projects keep portable source references, shared and per-image step
-histories, white-reference ROIs, export settings, and compact result metadata.
-Full-size pixels and downsampled previews are loaded again from the selected
-source when a project opens rather than embedded in the project.
+The current task keeps source paths, shared and per-image step
+histories, white-reference ROIs, export settings, and compact result metadata
+while the App is open. Full-size pixels and downsampled previews remain
+reconstructible from the selected source files.
 
 An empty launch does not choose an output directory. Adding images establishes
 the source-adjacent default; **Choose folder** remains available before export.
@@ -99,8 +99,7 @@ the source-adjacent default; **Choose folder** remains available before export.
 ## Errors And Limitations
 
 - Unknown step labels are rejected.
-- Reopening a project with an existing unreadable image aborts restore and
-  preserves the current document instead of displaying an empty preview.
+- An unreadable selected image reports the source problem.
 - White ROI calibration fails when a required image has no valid ROI.
 - Enhancement changes pixel values and can invalidate quantitative intensity
   analysis; retain the source and manifest.

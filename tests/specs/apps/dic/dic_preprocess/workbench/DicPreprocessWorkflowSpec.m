@@ -60,14 +60,7 @@ classdef DicPreprocessWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.reference").Children);
             testCase.verifyTrue(isfile(fullfile(folder, "current_reference.png")));
             testCase.verifyTrue(isfile(fullfile(folder, "current_moving.png")));
-            testCase.verifyTrue(isfile(runtime.State.project.results.currentImagesManifestPath));
-            saved = fullfile(folder, "dic-preprocess-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.invokeAction("resetToOriginals");
-            runtime.restoreProject(saved);
-            testCase.verifyEqual(numel(runtime.State.project.annotations.editSteps), 2);
-            testCase.verifyEqual(runtime.State.session.cache.currentReferenceImage, ...
-                runtime.State.session.cache.currentMovingImage);
+            testCase.verifyTrue(isfile(runtime.State.project.results.currentImagesOutputPath));
             clear cleanup
         end
     end

@@ -27,11 +27,6 @@ classdef FocusStackWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.fused").Children);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.focusMap").Children);
             testCase.verifyTrue(isfile(output));
-            saved = fullfile(folder, "focus-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.applyFileSelection("sourceImages", strings(1, 0), zeros(1, 0));
-            runtime.restoreProject(saved);
-            testCase.verifyNumElements(runtime.State.session.cache.images, 2);
             clear cleanup
         end
     end

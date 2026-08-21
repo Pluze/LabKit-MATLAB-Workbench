@@ -22,6 +22,14 @@ another task for the same source so multiple ROIs can be exported without
 loading duplicate files. Duplicate tasks stay linked to the same source while
 each keeps its own crop and calibration settings.
 
+Use **Restore manifest** to reopen the source images and task state recorded by
+a Batch Crop CSV manifest. Current manifests restore crop centers, rotation,
+padding, pixel or physical geometry, per-image scale, target scale, upsample
+warning threshold, output format, and an output folder beside the selected
+manifest. Only successfully saved rows from the current manifest format are
+restored. Restoration stops without replacing the current task if a source
+is missing, its pixel dimensions changed, or shared manifest settings conflict.
+
 ## Basic Workflow
 
 1. Load images and select a task.
@@ -32,7 +40,8 @@ each keeps its own crop and calibration settings.
 4. Set rotation and padding.
 5. Calibrate physical scale when required.
 6. Duplicate tasks for additional ROIs.
-7. Choose format and output folder, then export.
+7. Choose format and output folder, then export. A later session can use
+   **Restore manifest** to continue from that exported task state.
 
 The preview rectangle remains draggable by either its center marker or its
 interior; a click without dragging sets its center at that preview location,
@@ -69,22 +78,11 @@ its placement does not change crop geometry or scale calculations.
 ## Outputs
 
 Exports support PNG, TIFF, and JPEG. Each task produces one image at the
-planned output dimensions. The crop manifest records source, task identity,
+planned output dimensions. The crop manifest records source, task order,
 center, rotation, padding, source/output scale, requested physical geometry,
-format, and output filename. A second LabKit result JSON records project-wide
-parameters and identifies each output file.
-
-## Project And Recovery
-
-Saved projects preserve one independent task per list row, so duplicated tasks
-can resolve to the same image while retaining separate crop geometry and
-calibration. Crop dimensions, physical-scale settings, output format, output
-folder, and scale-bar choices are also saved. Images remain external source
-files and are read again when the project opens.
-
-Older projects are upgraded on open while preserving each task's center,
-rotation, padding, and calibration. If a source moved, the standard relinking
-flow asks for its new location.
+upsample threshold, format, and output filename. These fields form the
+restorable operation snapshot. The manifest is one final snapshot;
+it does not retain intermediate adjustments or merge multiple export batches.
 
 ## Use Without The GUI
 
@@ -120,6 +118,8 @@ when reproducing a physical-scale export outside the GUI.
 - Large upsampling cannot restore information absent from the source.
 - Rotation and scale resampling can soften high-frequency detail.
 - JPEG is lossy; use PNG or TIFF for quantitative downstream image analysis.
+- Manifest restoration verifies source pixel dimensions but cannot prove that
+  unchanged-size source pixels are identical to those used for the export.
 
 ## Related Topics
 

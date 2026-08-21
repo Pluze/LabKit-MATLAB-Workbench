@@ -16,5 +16,5 @@ end
 
 function source = sourceRecord(id, role)
 source = struct("id", id, "required", true, "role", role, ...
-    "reference", struct("originalPath", "/tmp/" + id));
+    "path", "/tmp/" + id);
 end

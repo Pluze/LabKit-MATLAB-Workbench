@@ -1,7 +1,7 @@
 % App-owned implementation for image_match.resultFiles.exportImages within the image_match product workflow.
 function applicationState = exportImages( ...
         applicationState, callbackContext)
-%EXPORTIMAGES Apply committed matches and write CSV and LabKit manifests.
+%EXPORTIMAGES Apply committed matches and write the App-owned CSV manifest.
 sources = applicationState.project.inputs.sources;
 referenceSource = applicationState.project.inputs.reference;
 if isempty(referenceSource) || isempty(sources)
@@ -45,14 +45,6 @@ try
     payload = image_match.resultFiles.writeOutputs( ...
         items, referenceItem, ...
         applicationState.project.annotations.steps, options);
-    package = labkit.app.result.Package( ...
-        Outputs=packageOutputs(payload), ...
-        Inputs=struct( ...
-            "reference", referenceSource, "sources", sources), ...
-        Parameters=applicationState.project.parameters, ...
-        Summary=struct("imageCount", numel(items)), ...
-        ManifestName="image_match.labkit.json");
-    written = callbackContext.writeResultPackage(folder, package);
 catch ME
     callbackContext.log("error", "image_match.resultfiles.exportimages.exception", "Export matched images", ...
         Category="failure", Audience="developer", Exception=ME);
@@ -64,10 +56,10 @@ catch ME
 end
 payload.sourceIds = string({sources.id});
 payload.referenceId = string(referenceSource(1).id);
-payload.resultManifestPath = string(written.Value);
+payload.resultManifestPath = payload.manifestPath;
 applicationState.project.results.lastExport = payload;
 applicationState.project.results.lastExportFingerprint = task.fingerprint;
-applicationState.project.results.resultManifestPath = string(written.Value);
+applicationState.project.results.resultManifestPath = payload.manifestPath;
 statuses = string({payload.results.status});
 failedCount = sum(statuses == "failed");
 severity = "info";
@@ -78,35 +70,4 @@ callbackContext.log(severity, ...
     "image_match.resultfiles.exportimages.completed", ...
     sprintf("Exported %d matched image(s); %d failed.", ...
     sum(statuses == "saved"), failedCount));
-end
-
-function outputs = packageOutputs(payload)
-outputs = cell(1, numel(payload.results) + 1);
-for index = 1:numel(payload.results)
-    result = payload.results(index);
-    [~, name, extension] = fileparts(result.outputPath);
-    status = "failed";
-    if result.status == "saved"
-        status = "success";
-    end
-    outputs{index} = labkit.app.result.File( ...
-        "matched_" + compose("%03d", index), ...
-        "matched-image", string(name) + string(extension), ...
-        MediaType=mediaType(extension), Status=status, ...
-        Message=result.message);
-end
-[~, name, extension] = fileparts(payload.manifestPath);
-outputs{end} = labkit.app.result.File( ...
-    "batch_manifest", "batch-summary", ...
-    string(name) + string(extension), MediaType="text/csv");
-end
-
-function value = mediaType(extension)
-if any(lower(string(extension)) == [".jpg" ".jpeg"])
-    value = "image/jpeg";
-elseif any(lower(string(extension)) == [".tif" ".tiff"])
-    value = "image/tiff";
-else
-    value = "image/png";
-end
 end

@@ -189,9 +189,9 @@ renderer rebuilds from the current result on every presentation, so prior fits
 cannot accumulate. Fit endpoints and legend identities are ordinary plot
 objects and remain present when the axes is popped into a MATLAB figure.
 
-This App intentionally has no project schema: connections, samples, playback,
-and visible state are transient. Closing the App does not prompt to save every
-live refresh. Export is the explicit durable-data action.
+Connections, samples, playback, and visible state are transient. Closing the
+App does not prompt to save every live refresh. Export is the explicit
+durable-data action.
 
 **Tools > Developer Tools > Generate Synthetic Inputs...** writes anonymous
 CSV, LOG, and MAT replay examples for training and visual inspection. It does

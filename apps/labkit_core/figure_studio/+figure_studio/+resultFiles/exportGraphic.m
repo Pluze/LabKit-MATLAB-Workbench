@@ -1,6 +1,6 @@
 % App-owned implementation for figure_studio.resultFiles.exportGraphic within the figure_studio product workflow.
 function state = exportGraphic(state, callbackContext, format)
-%EXPORTGRAPHIC Write one styled graphic and its standard result manifest.
+%EXPORTGRAPHIC Write one App-owned styled graphic.
 arguments
     state (1, 1) struct
     callbackContext (1, 1) labkit.app.CallbackContext
@@ -32,20 +32,10 @@ else
         300 * state.project.parameters.style.exportScale));
     writeRaster(fig, filepath, format, resolution);
 end
-[folder, base, suffix] = fileparts(filepath);
-output = labkit.app.result.File( ...
-    "styledFigure", "primary", string(base) + string(suffix), ...
-    MediaType=mediaType(format));
-package = labkit.app.result.Package(Outputs={output}, ...
-    Inputs=struct("sources", state.project.inputs.sources), ...
-    Parameters=state.project.parameters, ...
-    Summary=struct("format", format), ...
-    ManifestName="figure_studio.labkit.json");
-written = callbackContext.writeResultPackage(folder, package);
 state.project.results.lastExport = struct( ...
     "kind", format, "path", filepath, ...
-    "manifestPath", string(written.Value));
-state.project.results.resultManifestPath = string(written.Value);
+    "outputPath", filepath);
+state.project.results.lastOutputPath = filepath;
 callbackContext.log("info", "figure_studio.resultfiles.exportgraphic.status",  ...
     "Exported the current graphic.");
 end
@@ -101,18 +91,5 @@ if strlength(startPath) == 0
     else
         startPath = pwd;
     end
-end
-end
-
-function value = mediaType(format)
-switch format
-    case "fig"
-        value = "application/x-matlab-figure";
-    case "png"
-        value = "image/png";
-    case "jpg"
-        value = "image/jpeg";
-    case "svg"
-        value = "image/svg+xml";
 end
 end

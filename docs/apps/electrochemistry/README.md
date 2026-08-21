@@ -29,9 +29,7 @@ or CSC is reported in the unit shown by the app. UI display conversions do not
 change stored base-unit calculations.
 
 Export tables include the source identity and analysis settings needed to
-interpret the result. Keep the accompanying `.labkit.json` file with its CSV;
-it records which inputs and settings produced the export but contains no
-additional numerical result.
+interpret the result.
 
 ## Use Without The GUI
 

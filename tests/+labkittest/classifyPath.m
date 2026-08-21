@@ -116,10 +116,10 @@ function classification = classifyPath(file)
             switch name
                 case "definition.m"
                     role = "app-definition";
-                case "projectspec.m"
-                    role = "app-project";
                 case "createsession.m"
                     role = "app-session";
+                case "initialdata.m"
+                    role = "app-state";
                 otherwise
                     role = "app-product-root";
             end

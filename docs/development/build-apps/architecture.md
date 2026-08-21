@@ -12,7 +12,7 @@ is the small reusable foundation they share.
 ```text
 apps/      workflow-specific GUI apps and app-owned helpers
 +labkit/   App SDK plus focused image, thermal, DTA, RHS, biosignal, Mark-10, and contract facades
-tests/     behavior tests, project contracts, GUI checks, shared helpers, and runner code
+tests/     behavior tests, App contracts, GUI checks, shared helpers, and runner code
 docs/      human-facing usage, API, architecture, and validation docs
 tools/     maintainer diagnostics, deployment packagers, and report generators
 .github/scripts/  GitHub Actions-only helper scripts
@@ -116,7 +116,7 @@ Direct syntax, options, outputs, and artifact behavior are documented in
 | --- | --- |
 | App entry point | Public launch name delegated to one runtime definition, including lightweight requirements/version/debug requests. |
 | App package | App definition, workflow state, command handlers, presenters, calculations, summaries, exports, and app-local helpers. |
-| `labkit.app` | App definition and launch, semantic layout and view snapshots, typed events, callback capabilities, projects, diagnostics, results, interactions, and private native runtime lifecycle. |
+| `labkit.app` | App definition and launch, semantic layout and view snapshots, typed events, callback capabilities, runtime source lists, diagnostics, interactions, and private native runtime lifecycle. |
 | `labkit.image` | GUI-free image file IO, display normalization, resizing, mean filtering, and basic enhancement primitives. |
 | `labkit.thermal` | GUI-free thermal source-file parsing, raw thermal matrices, embedded calibration metadata, raw-to-temperature conversion, and thermal colormap rendering. |
 | `labkit.dta` | GUI-free Gamry DTA discovery, loading, parsed curves, and pulse helpers. |
@@ -144,8 +144,8 @@ Those three files are a complete static App. Add only the capabilities the
 product needs:
 
 ```text
-projectSpec.m                               durable create/validate/migrate contract
-createSession.m                             transient App-specific reconstruction
+createState.m                                 optional App-specific runtime state creation
+refreshState.m                                optional reconstruction after source-list edits
 +workbench/present.m                        dynamic snapshot assembly
 +<workflowCapability>/layoutSection.m       feature-owned controls
 +<workflowCapability>/present.m             feature-owned snapshot fragment
@@ -154,9 +154,9 @@ createSession.m                             transient App-specific reconstructio
 
 `definition.m` is the single product contract. It owns identity, display
 metadata, App version, facade requirements, layout, and references to any
-optional capabilities. `projectSpec.m` is the one durable-schema entry and
-keeps its create, validate, and version-aware migrate functions local. Runtime
-owns the migration loop. Do not add separate `requirements.m`, `version.m`,
+optional capabilities. Runtime state is opaque to the framework. Do not add a
+project schema unless the App itself has an explicit continuation format, and
+even then keep that archive outside the framework contract. Do not add separate `requirements.m`, `version.m`,
 generic `+appLifecycle` or `+appState` packages, or per-version migration
 files.
 
@@ -184,11 +184,11 @@ App GUIs use the explicit `labkit.app` SDK:
 
 | Layer | App-facing API |
 | --- | --- |
-| Definition | `labkit.app.Definition` owns identity, requirements, optional project/session boundaries, workbench, presentation, and launch. |
+| Definition | `labkit.app.Definition` owns identity, requirements, opaque state callbacks, workbench, presentation, and launch. |
 | Layout | `labkit.app.layout.*` owns semantic controls, containers, workspace pages, direct callbacks, bindings, and plot renderers. |
 | View | `labkit.app.view.Snapshot` owns complete derived visible state and prepared renderer models. |
 | Callback boundary | Typed `labkit.app.event.*` values and sealed, specifically named `labkit.app.CallbackContext` operations. |
-| Optional contracts | `labkit.app.project.*`, `result.*`, and `dialog.*`. |
+| Optional contracts | `labkit.app.source.*`, `interaction.*`, and `dialog.*`. |
 
 Reusable facades publish MATLAB-native contract versions through their
 `version()` APIs. Apps declare required facade ranges in the `Requirements`
@@ -221,7 +221,7 @@ parsing and raw-to-temperature mechanics stay in `labkit.thermal`.
 `definition.m` returns the app runtime contract. Layout nodes own concrete
 callbacks and renderers, so Apps maintain no parallel registries. The
 framework compiles the static graph, builds the shell, owns the transactional
-event queue, persistence, resources, diagnostics, and private native adapter.
+event queue, resources, diagnostics, and private native adapter.
 
 `+workbench/buildLayout.m` should read as the product's user workflow.
 Capability packages own their controls, state transitions, prepared view

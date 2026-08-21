@@ -1,6 +1,6 @@
 % App-owned implementation for video_marker.resultFiles.exportCoordinates within the video_marker product workflow.
 function state = exportCoordinates(state, context)
-%EXPORTCOORDINATES Write coordinate CSV and an App result manifest.
+%EXPORTCOORDINATES Write the App-owned coordinate CSV.
 if isempty(state.session.cache.currentImage)
     context.alert("Open a video before exporting coordinates.", "No video");
     return
@@ -31,30 +31,14 @@ try
         state.session.cache.videoInfo, ...
         state.project.annotations.calibration, options);
     writetable(data, filepath);
-    written = writeManifest(state, context, filepath, ...
-        "coordinateCsv", "video_marker_coordinates.labkit.json");
 catch cause
     context.log("error", "video_marker.resultfiles.exportcoordinates.exception", "Could not export coordinate CSV", ...
         Category="failure", Audience="developer", Exception=cause);
     context.alert(cause.message, "Could not export coordinate CSV");
     return
 end
-state.project.results.coordinateManifestPath = string(written.Value);
+state.project.results.coordinateOutputPath = filepath;
 context.log("info", ...
     "video_marker.resultfiles.exportcoordinates.completed", ...
     "Exported the coordinate CSV.");
-end
-
-function written = writeManifest(state, context, filepath, id, manifestName)
-[folder, name, extension] = fileparts(filepath);
-output = labkit.app.result.File(id, "primary", ...
-    string(name) + string(extension), MediaType="text/csv");
-package = labkit.app.result.Package( ...
-    Outputs={output}, ...
-    Inputs=struct("sources", state.project.inputs.sources), ...
-    Parameters=state.project.parameters, ...
-    Summary=video_marker.frameAnnotations.summary( ...
-        state.project.annotations.frames), ...
-    ManifestName=manifestName);
-written = context.writeResultPackage(folder, package);
 end

@@ -3,12 +3,11 @@ classdef VideoMarkerSourceSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function clearingTheVideoRemovesFramesAndDerivedExports(testCase)
-            definition = video_marker.definition();
-            project = definition.ProjectSchema.Create();
+            project = video_marker.initialData();
             project.annotations.skeleton = video_marker.skeletonDefinition.fromText( ...
                 "hip", "");
             project.annotations.frames = video_marker.frameAnnotations.emptyAnnotations(2, 1);
-            project.results.coordinateManifestPath = "coordinates.labkit.json";
+            project.results.coordinateOutputPath = "coordinates.csv";
             state = struct("project", project);
             context = labkittest.createCallbackContext(struct( ...
                 "removeResource", @(~, ~) [], "log", @(varargin) []));
@@ -18,7 +17,7 @@ classdef VideoMarkerSourceSpec < matlab.unittest.TestCase
             testCase.verifyEmpty(actual.project.annotations.frames.coords);
             testCase.verifyEqual(actual.project.parameters.coordinateStartFrame, 1);
             testCase.verifyEqual(actual.project.parameters.coordinateEndFrame, 1);
-            testCase.verifyEqual(actual.project.results.coordinateManifestPath, "");
+            testCase.verifyEqual(actual.project.results.coordinateOutputPath, "");
         end
     end
 end

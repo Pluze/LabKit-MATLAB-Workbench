@@ -1,7 +1,7 @@
 % Expected caller: Figure Studio direct callbacks during synthetic-input generation and
 % unit guardrails. Input is a LabKit debug context. Output is a deterministic
 % synthetic FIG sample pack. Side effects: writes anonymous debug FIG files
-% and records a session manifest when available.
+% and writes the synthetic-input manifest.
 function pack = writeSamplePack(sampleContext)
 %WRITESAMPLEPACK Write Figure Studio debug FIG files.
     arguments
@@ -11,11 +11,11 @@ function pack = writeSamplePack(sampleContext)
     figPath = sampleContext.samplePath("figure_studio/source.fig");
     writeDebugFigure(figPath);
 
-    project = figure_studio.projectSpec().Create();
+    project = figure_studio.initialData();
     project.inputs.sources = sampleContext.sourceRecord( ...
         "figure1", "figure", figPath, true);
     pack = labkit.app.synthetic.Pack( ...
-        Scenario="representative-figure", InitialProject=project, ...
+        Scenario="representative-figure", InitialInput=project, ...
         Artifacts={sampleContext.artifact( ...
             "sourceFigure", "figure", figPath)});
 end

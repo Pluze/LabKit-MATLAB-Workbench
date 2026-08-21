@@ -404,17 +404,33 @@ function definition = runtimeProbeDefinition(id, callback, createSession)
 if nargin < 3
     createSession = [];
 end
+createState = @createEmptyRuntimeProbeState;
+if ~isempty(createSession)
+    createState = @createFailingRuntimeProbeState;
+end
 layout = labkit.app.layout.workbench({ ...
     labkit.app.layout.button(id, "Run", callback, Tooltip="Run the probe.")});
 arguments = { ...
     "Entrypoint", "labkit_SessionLoggingRuntimeProbe_app", ...
     "AppId", "probe.session-logging-runtime", "Title", "Runtime logging probe", ...
     "Family", "Tests", "AppVersion", "1.0.0", "Updated", "2026-07-25", ...
-    "Requirements", [], "Workbench", layout};
-if ~isempty(createSession)
-    arguments = [arguments, {"CreateSession", createSession}];
-end
+    "Requirements", [], "Workbench", layout, ...
+    "CreateState", createState};
 definition = labkit.app.Definition(arguments{:});
+end
+
+function state = createEmptyRuntimeProbeState(~, initialInput)
+if isempty(initialInput)
+    project = struct();
+else
+    project = initialInput;
+end
+state = struct("project", project, "session", struct());
+end
+
+function state = createFailingRuntimeProbeState(context, initialInput)
+state = createEmptyRuntimeProbeState(context, initialInput);
+state.session = failRuntimeSession(state.project, context);
 end
 
 function session = failRuntimeSession(~, ~)

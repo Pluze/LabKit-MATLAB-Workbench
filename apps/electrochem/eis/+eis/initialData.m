@@ -1,0 +1,22 @@
+function project = initialData()
+%INITIALDATA Create the App-owned initial in-memory data.
+project = createProject();
+end
+
+function project = createProject()
+    axes = eis.overlayPlot.axisItems();
+    units = eis.impedanceDisplay.catalog();
+    project = struct();
+    project.inputs = struct("sources", ...
+        struct([]));
+    project.parameters = struct( ...
+        "xName", axes(5), "yName", axes(7), ...
+        "impedanceUnit", units.choices(3), ...
+        "lineWidth", 1.4, "markerSize", 6, ...
+        "showMarkers", true, "logX", false, "logY", false, ...
+        "showLegend", true, "showGrid", true);
+    project.annotations = struct();
+    project.results = struct("lastExport", []);
+    project.extensions = struct();
+end
+

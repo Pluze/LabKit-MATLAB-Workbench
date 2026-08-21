@@ -3,7 +3,7 @@ classdef CurvatureWorkbenchSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function composesTheEmptyProjectSnapshot(testCase)
-            project = curvature.projectSpec().Create();
+            project = curvature.initialData();
             session = curvature.createSession(project, ...
                 labkittest.disconnectedCallbackContext());
 

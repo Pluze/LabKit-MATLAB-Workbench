@@ -12,7 +12,7 @@ classdef FlirThermalWorkflowSpec < matlab.unittest.TestCase
             definition = flir_thermal.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkittest.createMatlabRuntime( ...
-                definition, pack.InitialProject, backend, ...
+                definition, pack.InitialInput, backend, ...
                 journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -38,10 +38,6 @@ classdef FlirThermalWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.thermalImage").Children);
             testCase.verifyTrue(isfile(fullfile(folder, "flir_thermal_manifest.csv")));
             testCase.verifyTrue(isfile(runtime.State.project.results.resultManifestPath));
-            saved = fullfile(folder, "flir-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.restoreProject(saved);
-            testCase.verifyNotEmpty(runtime.State.session.cache.currentItem.temperatureC);
             clear cleanup
         end
     end

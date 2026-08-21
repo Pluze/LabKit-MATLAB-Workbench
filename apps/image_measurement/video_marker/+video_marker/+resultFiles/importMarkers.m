@@ -25,7 +25,7 @@ state.project.inputs.videoMetadata = ...
     video_marker.videoSource.metadataFromInfo(payload.videoInfo);
 videoPath = string(payload.videoInfo.path);
 if strlength(videoPath) > 0
-    state.project.inputs.sources = labkit.app.project.sourceRecord( ...
+    state.project.inputs.sources = labkit.app.source.record( ...
         "video", "video", videoPath, isfile(videoPath));
 else
     state.project.inputs.sources = struct([]);
@@ -47,7 +47,6 @@ state.project.parameters.coordinateStartFrame = 1;
 state.project.parameters.coordinateEndFrame = ...
     max(1, payload.videoInfo.frameCount);
 state = video_marker.resultFiles.clearExportState(state);
-state = video_marker.sessionControl.saveAutosave(state, context);
 context.log("info", "video_marker.resultfiles.importmarkers.completed", ...
     "Imported the marker CSV.");
 end

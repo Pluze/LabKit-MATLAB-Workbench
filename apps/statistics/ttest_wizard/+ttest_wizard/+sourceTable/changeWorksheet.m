@@ -3,7 +3,7 @@ function state = changeWorksheet(state, requested, context)
 %CHANGEWORKSHEET Load the requested worksheet and reset its cell selection.
 %
 % Expected caller: sourceSheet OnValueChanged. The callback depends only on
-% the current source cache, portable source record, and selected worksheet;
+% the current source cache, source-list record, and selected worksheet;
 % it preserves existing analysis groups.
 
 arguments

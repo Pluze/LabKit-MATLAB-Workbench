@@ -34,11 +34,6 @@ classdef VtResistanceWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "plotAxes.top").Children);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "plotAxes.bottom").Children);
             testCase.verifyTrue(isfile(output));
-            saved = fullfile(folder, "vt-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.applyFileSelection("files", strings(1, 0), zeros(1, 0));
-            runtime.restoreProject(saved);
-            testCase.verifyNumElements(runtime.State.session.cache.items, 1);
             clear cleanup
         end
     end

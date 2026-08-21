@@ -3,7 +3,7 @@ classdef VtResistanceSourceSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function emptySourcesReturnTheDeclaredStructVector(testCase)
-            project = vt_resistance.projectSpec().Create();
+            project = vt_resistance.initialData();
 
             items = vt_resistance.sourceFiles.loadProjectItems( ...
                 strings(0, 1), project.parameters);

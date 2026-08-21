@@ -40,8 +40,7 @@ step before a result exists and reports the current measurement afterward.
 **Tools > Diagnostics > Open Session Log...** records file, edit, fit,
 calibration, export, and runtime actions without consuming a workflow tab.
 
-The chosen image is saved as a portable project source. Older projects are
-upgraded on load without changing the curve, calibration, or result meaning.
+The chosen image remains a live source while the App is open.
 
 ## Curve Editing
 
@@ -84,8 +83,7 @@ moving the display bar does not modify the fit.
 The CSV records point count, fit settings, center, radius, curvature, traced
 length, calibration, units, and status. The overlay PNG contains the source
 image, ordered curve, optional dense samples, fit residuals, fitted circle,
-center, and configured scale bar when available. Each export writes its
-standard result manifest with source and parameter provenance.
+center, and configured scale bar when available.
 
 ## Use Without The GUI
 

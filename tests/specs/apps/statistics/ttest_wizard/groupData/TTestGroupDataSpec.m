@@ -3,7 +3,7 @@ classdef TTestGroupDataSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function tableRowsBuildOrderedGroupsAndSelection(testCase)
-            project = ttest_wizard.projectSpec().Create();
+            project = ttest_wizard.initialData();
             state = struct("project", project, ...
                 "session", struct("selection", struct( ...
                     "analysisCells", zeros(0, 2))));

@@ -121,7 +121,7 @@ classdef BatchCropGeometrySpec < matlab.unittest.TestCase
 end
 
 function state = stateWithImage(imageData)
-project = batch_crop.projectSpec().Create();
+project = batch_crop.initialData();
 project.inputs.items = batch_crop.cropTasks.forSourceIds("image1");
 state = struct("project", project, "session", struct( ...
     "selection", struct("currentIndex", 1), ...

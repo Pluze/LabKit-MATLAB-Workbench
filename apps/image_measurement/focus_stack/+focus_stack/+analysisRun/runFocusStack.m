@@ -40,7 +40,7 @@ state.project.results.lastRun = compact(result);
 state.project.results.lastRunFingerprint = task.fingerprint;
 state.project.results.registrationLines = lines;
 state.project.results.lastExport = [];
-state.project.results.resultManifestPath = "";
+state.project.results.lastOutputPath = "";
 context.log("info", "focus_stack.analysisrun.runfocusstack.completed", ...
     sprintf("Focus stack complete: %d images fused.", result.inputCount));
 if ~isempty(lines)

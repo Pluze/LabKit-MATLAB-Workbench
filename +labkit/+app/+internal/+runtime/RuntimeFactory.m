@@ -3,9 +3,9 @@ classdef (Hidden, Sealed) RuntimeFactory
 
     methods (Static)
         function runtime = createHeadless( ...
-                definition, initialProject, backend, journal, varargin)
+                definition, initialState, backend, journal, varargin)
             if nargin < 2
-                initialProject = [];
+                initialState = [];
             end
             if nargin < 3
                 backend = struct();
@@ -15,14 +15,14 @@ classdef (Hidden, Sealed) RuntimeFactory
             end
             journalRoot = parseJournalRoot(journal, varargin{:});
             runtime = labkit.app.internal.runtime.RuntimeFactory.create( ...
-                definition, initialProject, backend, ...
+                definition, initialState, backend, ...
                 "headless", journal, journalRoot);
         end
 
         function runtime = createMatlab( ...
-                definition, initialProject, backend, journal, varargin)
+                definition, initialState, backend, journal, varargin)
             if nargin < 2
-                initialProject = [];
+                initialState = [];
             end
             if nargin < 3
                 backend = struct();
@@ -32,14 +32,14 @@ classdef (Hidden, Sealed) RuntimeFactory
             end
             journalRoot = parseJournalRoot(journal, varargin{:});
             runtime = labkit.app.internal.runtime.RuntimeFactory.create( ...
-                definition, initialProject, backend, ...
+                definition, initialState, backend, ...
                 "matlab", journal, journalRoot);
         end
     end
 
     methods (Static, Access = private)
         function runtime = create( ...
-                definition, initialProject, backend, platform, journal, journalRoot)
+                definition, initialState, backend, platform, journal, journalRoot)
             if ~isa(definition, "labkit.app.Definition") || ...
                     ~isscalar(definition)
                 error("labkit:app:runtime:InvariantFailure", ...
@@ -63,7 +63,7 @@ classdef (Hidden, Sealed) RuntimeFactory
             end
             try
                 runtime = labkit.app.internal.runtime.RuntimeKernel( ...
-                    definition, definition.Compiled, initialProject, ...
+                    definition, definition.Compiled, initialState, ...
                     backend, platform, recorder);
             catch cause
                 recorder.close();

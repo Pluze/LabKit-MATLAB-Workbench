@@ -19,7 +19,7 @@ function paths = pathsForRole(sources, role, callbackContext)
     for k = 1:numel(selectedSources)
         if isfield(selectedSources, "reference")
             paths(k) = string( ...
-                selectedSources(k).reference.originalPath);
+                selectedSources(k).path);
         elseif isfield(selectedSources, "path")
             paths(k) = string(selectedSources(k).path);
         end

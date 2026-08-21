@@ -21,13 +21,12 @@ semantic strokes, colors, and frame treatment. Long categorical X-axis labels
 wrap automatically instead of widening or distorting the reference panel.
 The source presentation remains available through **FIG default**.
 
-## Project And Handoff
+## Handoff And Runtime State
 
-A plot-context-menu handoff creates the same editable project state as loading
-a FIG file. Saved projects retain portable FIG sources, embedded plot
-snapshots, the selected subplot panel, style settings, and canvas settings.
-Decoded source graphics are rebuilt after load, and the default output folder
-follows the restored source.
+A plot-context-menu handoff creates the same editable runtime state as loading
+a FIG file. FIG sources, embedded plot snapshots, the selected subplot panel,
+style settings, and canvas settings remain in memory while the App is open.
+The default output folder follows the selected source.
 
 ## Load And Select Figures
 
@@ -79,6 +78,9 @@ come from normalized pixel measurements across all nine panels of the maintained
 The configured width and aspect always describe the inside of the axes frame.
 The interactive preview and every exported format use that same configured
 plot-box aspect; a source axes' stored aspect metadata does not override it.
+Native FIG and graphic exports also retain the tick positions and labels shown
+in the preview instead of asking MATLAB to choose a sparser set for the
+full-size export typography.
 Figure Studio calculates the enclosing figure's outer margins from the current
 title, labels, ticks, legend, and visible annotations, so changing a long
 label cannot silently shrink the data region. Empty ruler text is ignored,
@@ -123,10 +125,6 @@ The **Figures** tab provides:
 - **Save FIG** for an editable MATLAB figure;
 - **PNG** and **JPG** for raster output;
 - **SVG** for vector output.
-
-Each quick export also writes a LabKit result manifest beside the selected
-file. The manifest records the source, style parameters, output identity, and
-summary metadata.
 
 ## Export A Data Package
 

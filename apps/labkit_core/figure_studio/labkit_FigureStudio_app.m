@@ -9,6 +9,6 @@ function varargout = labkit_FigureStudio_app(varargin)
     else
         [varargout{1:nargout}] = ...
             figure_studio.definition().launch( ...
-                InitialProject=initialProject);
+                InitialInput=initialProject);
     end
 end

@@ -17,8 +17,7 @@ labkit_EIS_app
 
 The Files list retains `.DTA` sources containing a readable EIS `ZCURVE`.
 Other Gamry experiment kinds and files without the required curve are omitted
-before plotting. Saved projects preserve the accepted source order and ask you
-to locate a source if it has moved.
+before plotting.
 
 ## Basic Workflow
 
@@ -71,9 +70,7 @@ that viewport.
 **Export current plot CSV** writes the selected X/Y values for each valid file
 on a shared row index. Each file retains its own X and Y pair, so unequal curve
 lengths do not imply interpolation. Impedance columns use the selected display
-unit and include an ASCII unit suffix such as `kohm` in the column name. A
-result manifest records the selected axes, impedance unit, plot parameters,
-source references, and output role.
+unit and include an ASCII unit suffix such as `kohm` in the column name.
 
 ## Use Without The GUI
 

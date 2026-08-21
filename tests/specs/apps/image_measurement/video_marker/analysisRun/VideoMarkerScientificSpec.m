@@ -16,7 +16,7 @@ classdef VideoMarkerScientificSpec < matlab.unittest.TestCase
 
         function keepsTheLegacyPresetAndEditableConnectionLifecycle(testCase)
             preset = video_marker.skeletonSetup.presets();
-            project = video_marker.projectSpec().Create();
+            project = video_marker.initialData();
             skeleton = project.annotations.skeleton;
             [skeleton, first] = video_marker.skeletonDefinition.addPoint(skeleton);
             [skeleton, second] = video_marker.skeletonDefinition.addPoint(skeleton);

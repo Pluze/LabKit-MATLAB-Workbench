@@ -28,7 +28,7 @@ p.boundaryChoice = onOff(p.style.boundaryLines);
 state.project.parameters = p;
 state.session.workflow.status = "Styled with " + preset + ".";
 state.project.results.lastExport = [];
-state.project.results.resultManifestPath = "";
+state.project.results.lastOutputPath = "";
 callbackContext.log("info", "figure_studio.stylelibrary.applypreset.status", "Selected style mode: " + preset);
 end
 

@@ -15,12 +15,12 @@ Definition / CallbackContext
     |-- integrity -> streaming SHA-256 file digests
     `-- runtime  -> transaction ordering and callback capabilities
                      |-- diagnostics
-                     |-- project / source / result / resource
+                     |-- source / resource
                      |-- artifact
                      `-- native -> interaction + MATLAB handles
 ```
 
-Contract, storage, artifact, source, result, resource, and journal owners do
+Contract, artifact, source, resource, and journal owners do
 not look up or invoke `RuntimeKernel`. The native adapter and Session Log
 viewer are the two explicit UI callback edges: they may receive the Runtime at
 construction and call its named boundary methods, but must not expose it,
@@ -50,8 +50,8 @@ receives one callback from its caller rather than acquiring the caller.
 - Put Runtime-level diagnostic viewing and export coordination under
   `+diagnostics`; keep event, journal, and bundle primitives focused and move
   them only when the move clarifies ownership independently of taxonomy.
-- Keep project documents, portable sources, results, resources, and
-  interactions with their existing focused owners; when one subsystem needs
+- Keep runtime sources, resources, and interactions with their focused owners;
+  when one subsystem needs
   multiple new types, create one semantically named internal subpackage
   instead of adding another root-level bucket.
 - `RuntimeKernel` owns transaction order and cross-subsystem commit/rollback.
@@ -59,7 +59,7 @@ receives one callback from its caller rather than acquiring the caller.
   lifecycle mechanics rather than implementing them inline.
 - Keep `RuntimeKernel` as a class-folder coordinator. Complete callback,
   presentation, bound-control, file-selection, backend-composition, dialog,
-  and project-restore workflows stay in their named class methods rather than
+  workflows stay in their named class methods rather than
   accumulating again in the class definition file.
 - `MatlabPlatformAdapter` owns translation between semantic Snapshot
   operations and native components. It delegates independent busy, startup,

@@ -1,5 +1,5 @@
 % Expected caller: DIC preprocess actions and unit tests. Inputs are the
-% canonical durable project and one mask snapshot; output restores annotations.
+% current runtime data and one mask snapshot; output restores annotations.
 
 function project = restoreMaskSnapshot(project, snapshot)
 %RESTOREMASKSNAPSHOT Restore a DIC preprocess mask-edit undo snapshot.

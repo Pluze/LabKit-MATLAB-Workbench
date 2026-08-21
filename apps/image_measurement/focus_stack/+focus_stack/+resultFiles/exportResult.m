@@ -1,14 +1,14 @@
 % App-owned implementation for focus_stack.resultFiles.exportResult within the focus_stack product workflow.
 function applicationState = exportResult( ...
         applicationState, kind, callbackContext)
-%EXPORTRESULT Write one Focus Stack output and its standard result manifest.
+%EXPORTRESULT Write one App-owned Focus Stack output.
 result = applicationState.session.cache.result;
 if ~result.ok
     callbackContext.alert( ...
         "Run focus stack before exporting results.", "No result");
     return;
 end
-[defaultName, filters, mediaType] = outputContract(kind);
+[defaultName, filters] = outputContract(kind);
 defaultPath = fullfile(defaultFolder(applicationState), defaultName);
 choice = callbackContext.chooseOutputFile(filters, defaultPath);
 if choice.Cancelled
@@ -21,19 +21,7 @@ filepath = string(choice.Value);
 try
     writeOutput(kind, result, ...
         applicationState.session.cache.sourcePaths, filepath);
-    [folder, name, extension] = fileparts(filepath);
-    relativePath = string(name) + string(extension);
-    output = labkit.app.result.File( ...
-        replace(kind, "-", "_"), kind, relativePath, ...
-        MediaType=mediaType);
-    package = labkit.app.result.Package( ...
-        Outputs={output}, ...
-        Inputs=struct( ...
-            "sources", applicationState.project.inputs.sources), ...
-        Parameters=applicationState.project.parameters, ...
-        Summary=applicationState.project.results.lastRun, ...
-        ManifestName="focus_stack.labkit.json");
-    written = callbackContext.writeResultPackage(folder, package);
+    folder = string(fileparts(filepath));
 catch ME
     callbackContext.log("error", "focus_stack.resultfiles.exportresult.exception", "Export Focus Stack result", ...
         Category="failure", Audience="developer", Exception=ME);
@@ -45,28 +33,24 @@ catch ME
 end
 applicationState.project.parameters.outputFolder = string(folder);
 applicationState.project.results.lastExport = struct( ...
-    "kind", kind, "outputPath", filepath, ...
-    "manifestPath", string(written.Value));
-applicationState.project.results.resultManifestPath = string(written.Value);
+    "kind", kind, "outputPath", filepath);
+applicationState.project.results.lastOutputPath = filepath;
 callbackContext.log("info", ...
     "focus_stack.resultfiles.exportresult.completed", ...
     "Exported the selected Focus Stack result.");
 end
 
-function [name, filters, mediaType] = outputContract(kind)
+function [name, filters] = outputContract(kind)
 switch string(kind)
     case "fused"
         name = "focus_stack_fused.png";
         filters = ["*.png", "PNG image (*.png)"];
-        mediaType = "image/png";
     case "focus-map"
         name = "focus_stack_map.png";
         filters = ["*.png", "PNG image (*.png)"];
-        mediaType = "image/png";
     case "summary"
         name = "focus_stack_summary.csv";
         filters = ["*.csv", "CSV files (*.csv)"];
-        mediaType = "text/csv";
     otherwise
         error("labkit_FocusStack_app:UnknownExport", ...
             "Unknown Focus Stack export kind: %s.", kind);

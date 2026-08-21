@@ -8,9 +8,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                     Tooltip="Run the probe."), ...
                 labkit.app.layout.field("gain", Kind="numeric", ...
                     Bind="project.parameters.gain")});
-            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
-                labkit.app.project.Schema( ...
-                Version=1, Create=@createProject, Validate=@validateProject));
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createRuntimeState);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
@@ -30,7 +29,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
         function validatesDefinitionMetadataAndCallbackRoles(testCase)
             layout = labkit.app.layout.workbench({});
             app = AppSdkSpec.definition(layout, "OnStart", @startProbe, ...
-                "CreateSession", @createSession, "PresentWorkbench", @presentProbe, ...
+                "CreateState", @createSessionState, "PresentWorkbench", @presentProbe, ...
                 "BuildSyntheticSample", @syntheticSample);
 
             testCase.verifyEqual(app.launch("version").version, "1.0.0");
@@ -38,7 +37,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyError(@() AppSdkSpec.invalidAppId(layout), ...
                 "labkit:app:contract:InvalidValue");
             testCase.verifyError(@() AppSdkSpec.definition(layout, ...
-                "CreateSession", @wrongSession), "labkit:app:contract:CallbackRoleMismatch");
+                "CreateState", @wrongSession), "labkit:app:contract:CallbackRoleMismatch");
         end
 
         function enforcesFacadeRequirementsBeforeNativeLaunch(testCase)
@@ -140,7 +139,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 labkit.app.layout.button("post", "Post", @postStreamRefresh, ...
                     Tooltip="Post synthetic stream refreshes.")});
             app = AppSdkSpec.definition(layout, ...
-                "CreateSession", @createPostedEventSession);
+                "CreateState", @createPostedEventSessionState);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
@@ -169,7 +168,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                     @postFromActiveTransaction, ...
                     Tooltip="Post while the synthetic action remains active.")});
             app = AppSdkSpec.definition(layout, ...
-                "CreateSession", @createPostedEventSession);
+                "CreateState", @createPostedEventSessionState);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
@@ -186,36 +185,6 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             pause(0.08);
             drawnow;
             testCase.verifyEqual(runtime.State.session.refreshValue, 2);
-            clear cleanup
-        end
-
-        function sessionOnlyTransactionsDoNotDirtyProjects(testCase)
-            layout = labkit.app.layout.workbench({ ...
-                labkit.app.layout.button("session", "Session", ...
-                    @changeSessionOnly, Tooltip="Change transient state."), ...
-                labkit.app.layout.button("project", "Project", ...
-                    @changeProject, Tooltip="Change durable state.")});
-            app = AppSdkSpec.definition(layout, ...
-                "ProjectSchema", labkit.app.project.Schema( ...
-                Version=1, Create=@createProject, Validate=@validateProject), ...
-                "CreateSession", @createDirtyTrackingSession);
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
-                app, [], struct(), journal);
-            cleanup = onCleanup(@() runtime.close());
-            projectFile = fullfile(root, "project.mat");
-            runtime.saveProject(runtime.State, projectFile);
-
-            runtime.invokeAction("session");
-
-            testCase.verifyEqual(runtime.State.session.refreshCount, 1);
-            testCase.verifyFalse(runtime.documentMetadata().dirty);
-
-            runtime.invokeAction("project");
-
-            testCase.verifyTrue(runtime.documentMetadata().dirty);
             clear cleanup
         end
 
@@ -320,10 +289,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 labkit.app.layout.fileList("files", ...
                     Bind="project.inputs.sources", ...
                     AllowDuplicatePaths=true)});
-            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
-                labkit.app.project.Schema( ...
-                    Version=1, Create=@createSourceProject, ...
-                    Validate=@validateSourceProject));
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createSourceState);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
@@ -336,7 +303,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyNumElements( ...
                 runtime.State.project.inputs.sources, 1);
             testCase.verifyEqual( ...
-                runtime.State.project.inputs.sources.reference.originalPath, ...
+                runtime.State.project.inputs.sources.path, ...
                 string(unicodePath));
 
             drivePath = char("C" + ":" + "\" + ...
@@ -349,7 +316,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifySize(sources, [2, 1]);
             testCase.verifyEqual( ...
                 string(arrayfun(@(source) ...
-                    source.reference.originalPath, sources)), ...
+                    source.path, sources)), ...
                 string(paths));
 
             stringPaths = ["first.png", "second.png"];
@@ -362,7 +329,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifySize(sources, [2, 1]);
             testCase.verifyEqual( ...
                 string(arrayfun(@(source) ...
-                    source.reference.originalPath, sources)), ...
+                    source.path, sources)), ...
                 repmat(string(unicodePath), 2, 1));
 
             runtime.applyFileSelection("files", '', zeros(1, 0));
@@ -376,10 +343,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                     Bind="project.inputs.sources", ...
                     PathFilter=@acceptPngPaths, ...
                     PathFilterDescription="PNG image")});
-            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
-                labkit.app.project.Schema( ...
-                    Version=1, Create=@createSourceProject, ...
-                    Validate=@validateSourceProject));
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createSourceState);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             notices = containers.Map("KeyType", "char", "ValueType", "any");
@@ -396,7 +361,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             sources = runtime.State.project.inputs.sources;
             testCase.verifyEqual(numel(sources), 2);
             testCase.verifyEqual(string(arrayfun(@(source) ...
-                source.reference.originalPath, sources)), ...
+                source.path, sources)), ...
                 ["first.png"; "second.PNG"]);
             testCase.verifyEqual(notices("title"), ...
                 "Unsupported files filtered");
@@ -467,9 +432,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.field("gain", Kind="numeric", ...
                     Bind="project.parameters.gain")});
-            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
-                labkit.app.project.Schema(Version=1, Create=@createProject, ...
-                Validate=@validateProject), CreateSession=@sampleSession, ...
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createSampleState, ...
                 OnStart=@startChangesGain, BuildSyntheticSample=@validSyntheticSample);
             journal = labkittest.temporarySessionJournal(app, folder);
             runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
@@ -482,7 +446,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(runtime.State.project.parameters.gain, 99);
             testCase.verifyEqual(runtime.State.session.gainAtCreation, 1);
             testCase.verifyEqual(runtime.State, stateBeforeGeneration);
-            testCase.verifyEqual(pack.InitialProject.parameters.gain, 7);
+            testCase.verifyEqual(pack.InitialInput.parameters.gain, 7);
             testCase.verifyTrue(isfile(fullfile( ...
                 folder, "synthetic-input-pack.json")));
             clear cleanup
@@ -502,99 +466,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
 
             testCase.verifyEqual(projectFreeRuntime.State, ...
                 stateBeforeGeneration);
-            testCase.verifyEmpty(fieldnames(projectFreePack.InitialProject));
+            testCase.verifyEmpty(fieldnames(projectFreePack.InitialInput));
             clear projectFreeCleanup
-        end
-
-        function restoresDeclaredMigrationsAndReadOnlyImports(testCase)
-            folder = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            layout = labkit.app.layout.workbench({});
-            schema = labkit.app.project.Schema( ...
-                Version=2, Create=@createCurrentProject, ...
-                Validate=@validateCurrentProject, ...
-                Migrate=@migrateProbeProject, ...
-                LegacyImports=struct("probeLegacy", @importProbeProject));
-            app = AppSdkSpec.definition(layout, "ProjectSchema", schema);
-            journal = labkittest.temporarySessionJournal(app, folder);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
-                app, [], struct(), journal);
-            cleanup = onCleanup(@() runtime.close());
-
-            oldProjectFile = fullfile(folder, "old-project.mat");
-            runtime.saveProject(runtime.State, oldProjectFile);
-            loaded = load(oldProjectFile, "labkitProject");
-            labkitProject = loaded.labkitProject;
-            labkitProject.app.payloadVersion = 1;
-            labkitProject.payload.parameters = ...
-                rmfield(labkitProject.payload.parameters, "unit");
-            save(oldProjectFile, "labkitProject");
-
-            runtime.restoreProject(oldProjectFile);
-            testCase.verifyEqual(runtime.State.project.parameters.unit, "base");
-
-            legacyFile = fullfile(folder, "legacy-project.mat");
-            probeLegacy = struct("gain", 7);
-            save(legacyFile, "probeLegacy");
-            runtime.restoreProject(legacyFile);
-            testCase.verifyEqual(runtime.State.project.parameters.gain, 7);
-            testCase.verifyEqual(runtime.State.project.parameters.unit, "base");
-
-            labkitProject.app.payloadVersion = 3;
-            newerFile = fullfile(folder, "newer-project.mat");
-            save(newerFile, "labkitProject");
-            testCase.verifyError(@() runtime.restoreProject(newerFile), ...
-                "labkit:app:runtime:NewerProjectPayload");
-            clear cleanup
-        end
-
-        function preventsExternalProjectOverwriteAndAllowsSaveAs(testCase)
-            folder = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            layout = labkit.app.layout.workbench({});
-            schema = labkit.app.project.Schema(Version=1, ...
-                Create=@createProject, Validate=@validateProject);
-            app = AppSdkSpec.definition(layout, "ProjectSchema", schema);
-            journal = labkittest.temporarySessionJournal(app, folder);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
-                app, [], struct(), journal);
-            cleanup = onCleanup(@() runtime.close());
-            original = fullfile(folder, "project.mat");
-            alternate = fullfile(folder, "alternate.mat");
-
-            runtime.saveProject(runtime.State, original);
-            external = load(original, "labkitProject");
-            labkitProject = external.labkitProject;
-            labkitProject.payload.parameters.gain = 7;
-            save(original, "labkitProject");
-
-            testCase.verifyError( ...
-                @() runtime.saveProject(runtime.State, original), ...
-                "labkit:app:runtime:ProjectWriteConflict");
-            runtime.saveProject(runtime.State, alternate);
-            testCase.verifyTrue(isfile(alternate));
-            clear cleanup
-        end
-
-        function explicitSourceBindingsOverrideDefaultInference(testCase)
-            inferred = labkit.app.project.Schema(Version=1, ...
-                Create=@createSourceProject, Validate=@validateSourceProject);
-            explicit = labkit.app.project.Schema(Version=1, ...
-                Create=@createSourceProject, Validate=@validateSourceProject, ...
-                SourceBindings="inputs.sources");
-            none = labkit.app.project.Schema(Version=1, ...
-                Create=@createProject, Validate=@validateProject, ...
-                SourceBindings=strings(1, 0));
-
-            testCase.verifyTrue(inferred.UsesInferredSourceBindings);
-            testCase.verifyFalse(explicit.UsesInferredSourceBindings);
-            testCase.verifyEqual(explicit.SourceBindings, "inputs.sources");
-            testCase.verifyFalse(none.UsesInferredSourceBindings);
-            testCase.verifyEmpty(none.SourceBindings);
-            testCase.verifyError(@() labkit.app.project.Schema( ...
-                Version=1, Create=@createProject, Validate=@validateProject, ...
-                SourceBindings="project.inputs.sources"), ...
-                "labkit:app:contract:InvalidValue");
         end
 
         function insertsOpenAnchorsByVisiblePathLocation(testCase)
@@ -628,7 +501,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 labkit.app.layout.statusPanel("refreshSummary"), ...
                 labkit.app.layout.plotArea("stablePlot", @countStablePlot)});
             app = AppSdkSpec.definition(layout, ...
-                "CreateSession", @createStablePlotSession, ...
+                "CreateState", @createStablePlotSessionState, ...
                 "PresentWorkbench", @presentStablePlot);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -731,7 +604,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
         function nativeInputBridgeDispatchesEverySemanticControl(testCase)
             layout = nativeBridgeLayout();
             app = AppSdkSpec.definition(layout, ...
-                "CreateSession", @createNativeBridgeSession);
+                "CreateState", @createNativeBridgeSessionState);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
@@ -835,7 +708,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 labkit.app.layout.statusPanel("secondStatus"));
             layout = labkit.app.layout.workbench({}, Workspace=workspace);
             app = AppSdkSpec.definition(layout, ...
-                "CreateSession", @createWorkspaceSession);
+                "CreateState", @createWorkspaceSessionState);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
@@ -859,9 +732,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.field("gain", Kind="numeric", ...
                     Bind="project.parameters.gain")});
-            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
-                labkit.app.project.Schema( ...
-                    Version=1, Create=@createProject, Validate=@validateProject), ...
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createRuntimeState, ...
                 "PresentWorkbench", @presentGainAvailability);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -885,9 +757,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
 
         function exposesSyntheticInputGenerationAsAnOrdinaryTool(testCase)
             layout = labkit.app.layout.workbench({});
-            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
-                labkit.app.project.Schema( ...
-                Version=1, Create=@createProject, Validate=@validateProject), ...
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createRuntimeState, ...
                 "BuildSyntheticSample", @validSyntheticSample);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -905,49 +776,33 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function namesScreenshotTargetsAndSavesProjectStateToArtifacts(testCase)
+        function keepsDiagnosticStateDestinationWithoutProjectMenus(testCase)
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.field("gain", Kind="numeric", ...
                     Bind="project.parameters.gain")});
-            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
-                labkit.app.project.Schema( ...
-                    Version=1, Create=@createProject, ...
-                    Validate=@validateProject));
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createRuntimeState);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
             runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
-            states = sdkArtifactFolder("states");
-            beforeStates = artifactFiles( ...
-                states, "labkit-state-probe-app-*.mat");
-            fileCleanup = onCleanup(@() deleteNewStateArtifacts( ...
-                states, beforeStates));
             figureValue = runtime.figureHandle();
             screenshotMenu = oneTagged( ...
                 figureValue, "labkitAppUtilityScreenshot");
-            stateMenu = oneTagged( ...
-                figureValue, "labkitAppUtilitySaveState");
-
             testCase.verifyEqual(string(screenshotMenu.Text), ...
                 "Save to Artifacts");
-            testCase.verifyEqual(string(stateMenu.Text), "Save State");
             screenshotTarget = runtime.automaticArtifactDestination( ...
                 "screenshots", "screenshot", ".png");
             testCase.verifyTrue(contains(screenshotTarget, ...
                 fullfile("artifacts", "screenshots")));
             testCase.verifyTrue(endsWith(screenshotTarget, ".png"));
-            invokeMenu(stateMenu);
-
-            afterStates = artifactFiles( ...
-                states, "labkit-state-probe-app-*.mat");
-            testCase.verifyNumElements( ...
-                setdiff(afterStates, beforeStates), 1);
-            notice = getappdata(figureValue, "labkitAppLastAlert");
-            testCase.verifyEqual(notice.title, "State Saved");
-            testCase.verifyEqual(notice.icon, "info");
-            clear fileCleanup cleanup
+            stateTarget = runtime.automaticArtifactDestination( ...
+                "states", "state", ".mat");
+            testCase.verifyTrue(contains(stateTarget, ...
+                fullfile("artifacts", "states")));
+            clear cleanup
         end
 
         function filePanelFailuresAlwaysShowAnAlert(testCase)
@@ -956,10 +811,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                     Bind="project.inputs.sources", ...
                     SelectionMode="single", MaxFiles=1, ...
                     OnSelectionChanged=@failSourceSelection)});
-            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
-                labkit.app.project.Schema( ...
-                    Version=1, Create=@createUnreadableSourceProject, ...
-                    Validate=@validateSourceProject));
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createUnreadableSourceState);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
@@ -999,10 +852,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 labkit.app.layout.button("secondary", "Secondary", ...
                     @AppSdkSpec.secondaryBusyProbe, ...
                     Tooltip="Record a secondary action invocation.")});
-            app = AppSdkSpec.definition(layout, "ProjectSchema", ...
-                labkit.app.project.Schema( ...
-                    Version=1, Create=@createProject, ...
-                    Validate=@validateProject));
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createRuntimeState);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
@@ -1041,6 +892,39 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyFalse(contains( ...
                 string(figureValue.Name), "[Working:"));
             testCase.verifyFalse(isappdata(figureValue, "labkitAppBusy"));
+            clear probeCleanup cleanup
+        end
+
+        function directManipulationDoesNotShowBusyFeedback(testCase)
+            observed = containers.Map("KeyType", "char", ...
+                "ValueType", "any");
+            observed("busyCount") = 0;
+            setappdata(groot, "labkitAppSdkDirectManipulationProbe", observed);
+            probeCleanup = onCleanup(@() removeDirectManipulationProbe());
+            roi = labkit.app.interaction.rectangle("probeRoi", ...
+                @AppSdkSpec.slowDirectManipulationProbe, Axis="main");
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.slider("directSlider", ...
+                    OnValueChanged=@AppSdkSpec.slowDirectManipulationProbe), ...
+                labkit.app.layout.plotArea("directPlot", @drawNothing, ...
+                    Interactions={roi})});
+            app = AppSdkSpec.definition(layout, ...
+                "PresentWorkbench", @presentDirectManipulationProbe);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            observed("figure") = runtime.figureHandle();
+
+            runtime.applyControlValue("directSlider", 0.5);
+            runtime.applyInteraction( ...
+                "probeRoi", "interactionChanged", [2 2 3 3]);
+
+            testCase.verifyEqual(observed("busyCount"), 0);
+            testCase.verifyEqual(observed("pointer"), "arrow");
+            testCase.verifyFalse(contains(observed("title"), "[Working:"));
             clear probeCleanup cleanup
         end
 
@@ -1088,7 +972,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
 
         function state = slowBusyProbe(state, callbackContext)
             observed = getappdata(groot, "labkitAppSdkBusyProbe");
-            pause(0.35);
+            pause(0.6);
             drawnow;
             figureValue = observed("figure");
             secondary = oneTagged(figureValue, "secondary");
@@ -1102,6 +986,19 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             callbackContext.log("info", ...
                 "probe.busy.stage", "Stage two");
             storeMapValue(observed, "progressTitle", string(figureValue.Name));
+        end
+
+        function state = slowDirectManipulationProbe(state, ~, ~)
+            pause(0.6);
+            drawnow;
+            observed = getappdata( ...
+                groot, "labkitAppSdkDirectManipulationProbe");
+            figureValue = observed("figure");
+            if isappdata(figureValue, "labkitAppBusy")
+                observed("busyCount") = observed("busyCount") + 1;
+            end
+            observed("pointer") = string(figureValue.Pointer);
+            storeMapValue(observed, "title", string(figureValue.Name));
         end
 
         function state = secondaryBusyProbe(state, ~)
@@ -1161,11 +1058,6 @@ end
 function countStablePlot(~, ~)
 count = getappdata(groot, "labkitAppSdkRenderCount");
 setappdata(groot, "labkitAppSdkRenderCount", count + 1);
-end
-
-function invokeMenu(menu)
-menu.MenuSelectedFcn(menu, []);
-drawnow;
 end
 
 function closeNewFigures(existingFigures)
@@ -1263,61 +1155,13 @@ if ~runtime.Closed
 end
 end
 
-function session = createDirtyTrackingSession(~, ~)
-session = struct("refreshCount", 0);
-end
-
-function state = changeSessionOnly(state, ~)
-state.session.refreshCount = state.session.refreshCount + 1;
-end
-
-function state = changeProject(state, ~)
-state.project.parameters.gain = state.project.parameters.gain + 1;
-end
-
-function folder = sdkArtifactFolder(category)
-versionPath = string(which("labkit.app.version"));
-root = string(fileparts(fileparts(fileparts(versionPath))));
-folder = fullfile(root, "artifacts", category);
-end
-
-function files = artifactFiles(folder, pattern)
-if ~isfolder(folder)
-    files = strings(1, 0);
-    return;
-end
-entries = dir(fullfile(folder, pattern));
-files = string({entries.name});
-end
-
-function deleteNewStateArtifacts(stateFolder, beforeStates)
-deleteArtifactSet(stateFolder, setdiff(artifactFiles( ...
-    stateFolder, "labkit-state-probe-app-*.mat"), beforeStates));
-end
-
-function deleteArtifactSet(folder, files)
-for filename = files
-    filepath = fullfile(folder, filename);
-    if isfile(filepath)
-        delete(filepath);
-    end
-end
-end
-
 function project = createProject()
 project = struct("parameters", struct("gain", 1));
 end
 
 function project = createSourceProject()
 project = struct("inputs", struct( ...
-    "sources", labkit.app.project.emptySourceRecords()));
-end
-
-function accepted = validateSourceProject(project)
-accepted = isstruct(project) && isscalar(project) && ...
-    isfield(project, "inputs") && isstruct(project.inputs) && ...
-    isfield(project.inputs, "sources") && ...
-    isstruct(project.inputs.sources) && iscolumn(project.inputs.sources);
+    "sources", labkit.app.source.emptyRecords()));
 end
 
 function paths = sourcePathsProbe(~, ids)
@@ -1342,12 +1186,6 @@ store("kind") = string(kind);
 captureAlert(store, message, title);
 end
 
-function accepted = validateProject(project)
-accepted = isstruct(project) && isscalar(project) && ...
-    isfield(project, "parameters") && isstruct(project.parameters) && ...
-    isfield(project.parameters, "gain") && isfinite(project.parameters.gain);
-end
-
 function state = runProbe(state, ~)
 end
 
@@ -1358,6 +1196,18 @@ function removeBusyProbe()
 if isappdata(groot, "labkitAppSdkBusyProbe")
     rmappdata(groot, "labkitAppSdkBusyProbe");
 end
+end
+
+function removeDirectManipulationProbe()
+if isappdata(groot, "labkitAppSdkDirectManipulationProbe")
+    rmappdata(groot, "labkitAppSdkDirectManipulationProbe");
+end
+end
+
+function view = presentDirectManipulationProbe(~)
+view = labkit.app.view.Snapshot() ...
+    .renderPlot("directPlot", struct()) ...
+    .rectangle("probeRoi", [1 1 2 2], ImageSize=[10 10]);
 end
 
 function session = createSession(~, ~)
@@ -1442,6 +1292,63 @@ function session = sampleSession(project, ~)
 session = struct("gainAtCreation", project.parameters.gain);
 end
 
+function state = createRuntimeState(context, initialInput)
+state = createTestState(context, initialInput, @createProject, @emptySession);
+end
+
+function state = createSourceState(context, initialInput)
+state = createTestState( ...
+    context, initialInput, @createSourceProject, @emptySession);
+end
+
+function state = createUnreadableSourceState(context, initialInput)
+state = createTestState( ...
+    context, initialInput, @createUnreadableSourceProject, @emptySession);
+end
+
+function state = createSampleState(context, initialInput)
+state = createTestState(context, initialInput, @createProject, @sampleSession);
+end
+
+function state = createSessionState(context, initialInput)
+state = createTestState(context, initialInput, @() struct(), @createSession);
+end
+
+function state = createPostedEventSessionState(context, initialInput)
+state = createTestState( ...
+    context, initialInput, @() struct(), @createPostedEventSession);
+end
+
+function state = createStablePlotSessionState(context, initialInput)
+state = createTestState( ...
+    context, initialInput, @() struct(), @createStablePlotSession);
+end
+
+function state = createNativeBridgeSessionState(context, initialInput)
+state = createTestState( ...
+    context, initialInput, @() struct(), @createNativeBridgeSession);
+end
+
+function state = createWorkspaceSessionState(context, initialInput)
+state = createTestState( ...
+    context, initialInput, @() struct(), @createWorkspaceSession);
+end
+
+function state = createTestState( ...
+        context, initialInput, projectFactory, sessionFactory)
+if isempty(initialInput)
+    project = projectFactory();
+else
+    project = initialInput;
+end
+state = struct("project", project, ...
+    "session", sessionFactory(project, context));
+end
+
+function session = emptySession(~, ~)
+session = struct();
+end
+
 function state = startChangesGain(state, ~)
 state.project.parameters.gain = 99;
 end
@@ -1449,14 +1356,14 @@ end
 function pack = validSyntheticSample(~)
 pack = labkit.app.synthetic.Pack( ...
     Scenario="sdk-probe", ...
-    InitialProject=struct("parameters", struct("gain", 7)), ...
+    InitialInput=struct("parameters", struct("gain", 7)), ...
     Artifacts={});
 end
 
 function pack = projectFreeSyntheticSample(~)
 pack = labkit.app.synthetic.Pack( ...
     Scenario="project-free-sdk-probe", ...
-    InitialProject=struct(), ...
+    InitialInput=struct(), ...
     Artifacts={});
 end
 
@@ -1469,13 +1376,9 @@ view = labkit.app.view.Snapshot().enabled( ...
     "gain", state.project.parameters.gain ~= 0);
 end
 
-function project = createCurrentProject()
-project = struct("parameters", struct("gain", 1, "unit", "base"));
-end
-
 function project = createUnreadableSourceProject()
 project = createSourceProject();
-project.inputs.sources = labkit.app.project.sourceRecord( ...
+project.inputs.sources = labkit.app.source.record( ...
     "source1", "files", "unreadable.dat", true);
 end
 
@@ -1483,25 +1386,6 @@ function output = failSourceSelection(~, ~, ~)
 output = MException( ...
     "probe:UnreadableSource", "Synthetic source parse failure.");
 throw(output);
-end
-
-function accepted = validateCurrentProject(project)
-accepted = isstruct(project) && isscalar(project) && ...
-    isfield(project, "parameters") && ...
-    all(isfield(project.parameters, ["gain", "unit"]));
-end
-
-function project = migrateProbeProject(project, fromVersion)
-if fromVersion ~= 1
-    error("probe:UnsupportedProjectMigration", ...
-        "Unsupported probe project version.");
-end
-project.parameters.unit = "base";
-end
-
-function project = importProbeProject(legacy)
-project = createCurrentProject();
-project.parameters.gain = legacy.gain;
 end
 
 function memory = capturePreference(name)

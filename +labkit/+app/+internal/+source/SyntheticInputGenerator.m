@@ -18,8 +18,6 @@ classdef (Hidden, Sealed) SyntheticInputGenerator
                     "BuildSyntheticSample must return one " + ...
                     "labkit.app.synthetic.Pack value.");
             end
-            labkit.app.internal.source.SyntheticInputGenerator.validateProject( ...
-                definition, pack);
             labkit.app.internal.source.SyntheticInputGenerator.verifyArtifacts( ...
                 context, pack);
             labkit.app.internal.source.SyntheticInputGenerator.writeManifest( ...
@@ -28,31 +26,6 @@ classdef (Hidden, Sealed) SyntheticInputGenerator
     end
 
     methods (Static, Access = private)
-        function validateProject(definition, pack)
-            if isempty(definition.ProjectSchema)
-                if ~isempty(fieldnames(pack.InitialProject))
-                    error("labkit:app:contract:InvalidValue", ...
-                        "BuildSyntheticSample must return an empty " + ...
-                        "InitialProject when the App has no ProjectSchema.");
-                end
-                return;
-            end
-            try
-                accepted = definition.ProjectSchema.Validate( ...
-                    pack.InitialProject);
-            catch cause
-                failure = MException( ...
-                    "labkit:app:contract:InvalidValue", ...
-                    "BuildSyntheticSample returned an invalid current project.");
-                failure = addCause(failure, cause);
-                throw(failure);
-            end
-            if ~isequal(accepted, true)
-                error("labkit:app:contract:InvalidValue", ...
-                    "BuildSyntheticSample returned an invalid current project.");
-            end
-        end
-
         function verifyArtifacts(context, pack)
             for index = 1:numel(pack.Artifacts)
                 artifact = pack.Artifacts{index};

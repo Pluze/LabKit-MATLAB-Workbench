@@ -9,7 +9,7 @@ function applicationState = restoreEqualAspect(applicationState, ~)
 %   applicationState - State whose next render uses equal axis aspect and a
 %       new viewport revision.
 %
-% Side effects: none. The durable project, loaded sources, and plot options
+% Side effects: none. The current runtime data, loaded sources, and plot options
 % are unchanged.
 
     applicationState.session.cache.plotViewAction = "equal";

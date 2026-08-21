@@ -23,12 +23,14 @@ if answer == "Save and start new"
             "New setup cancelled because project save was cancelled.");
         return
     end
-    saved = callbackContext.saveProjectDocument( ...
-        applicationState, destination.Value);
-    if saved.Cancelled
-        callbackContext.log("info", ...
-            "video_marker.sessioncontrol.newsetup.save_cancelled", ...
-            "New setup cancelled because project save was cancelled.");
+    try
+        video_marker.archive.writeFile(applicationState, destination.Value);
+    catch cause
+        callbackContext.log("error", ...
+            "video_marker.sessioncontrol.newsetup.save_failed", ...
+            "New setup cancelled because project save failed.", ...
+            Category="failure", Audience="developer", Exception=cause);
+        callbackContext.alert(cause.message, "Could not save project");
         return
     end
 elseif answer ~= "Discard and start new"
@@ -38,7 +40,9 @@ elseif answer ~= "Discard and start new"
     return
 end
 callbackContext.clearResourceScope("document");
-applicationState = callbackContext.newProjectDocument();
+project = video_marker.initialData();
+applicationState = struct("project", project, ...
+    "session", video_marker.createSession(project, callbackContext));
 callbackContext.log("info", ...
     "video_marker.sessioncontrol.newsetup.completed", ...
     "Started a new skeleton setup and cleared the annotation session.");
