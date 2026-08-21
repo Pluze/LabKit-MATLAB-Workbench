@@ -31,7 +31,7 @@ Logarithmic plots retain readable superscript exponent ticks instead of displayi
 
 ## Compatibility and migration
 
-The App entrypoint, project schema, saved projects, source FIG files, and export formats remain compatible. Existing style settings keep their meaning, and no data migration is required.
+The App entrypoint, in-memory style settings, source FIG files, and export formats remain compatible. Figure Studio does not own a task-continuation archive, so no saved-data migration is required.
 
 ## Validation
 

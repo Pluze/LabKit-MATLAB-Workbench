@@ -174,9 +174,8 @@ objects.
 ## Errors And Limitations
 
 - A FIG must contain a readable axes to enter the editing workflow.
-- Reopening a project with an existing but damaged or unsupported FIG stops
-  the restore and preserves the currently open document; it is not presented
-  as an empty figure source.
+- A damaged or unsupported FIG is rejected without replacing the current
+  in-memory source selection.
 - Invisible objects are not exported.
 - A selected single axes is copied natively when MATLAB supports that parent
   transition. The portable data package remains deliberately narrower and is
