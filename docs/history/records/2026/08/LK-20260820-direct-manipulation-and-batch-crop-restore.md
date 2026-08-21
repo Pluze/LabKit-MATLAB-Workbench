@@ -6,11 +6,29 @@ date: 2026-08-20
 sequence: 188
 type: refactor
 compatibility: breaking
-component: `labkit.app` | `2.4.1 -> 4.0.0`
+component: `labkit.app` | `2.4.1 -> 3.0.0`
 component: `labkit.biosignal` | `2.0.0 -> 3.0.0`
+component: `labkit_DICPostprocess_app` | `1.6.1 -> 1.7.0`
+component: `labkit_DICPreprocess_app` | `1.7.3 -> 1.8.0`
+component: `labkit_ChronoOverlay_app` | `1.6.2 -> 1.7.0`
+component: `labkit_CIC_app` | `1.6.3 -> 1.7.0`
+component: `labkit_CSC_app` | `1.6.2 -> 1.7.0`
+component: `labkit_EIS_app` | `1.6.3 -> 1.7.0`
+component: `labkit_VTResistance_app` | `1.6.3 -> 1.7.0`
+component: `labkit_Mark10Monitor_app` | `1.0.2 -> 1.1.0`
 component: `labkit_BatchImageCrop_app` | `1.9.4 -> 1.10.0`
+component: `labkit_CurvatureMeasurement_app` | `1.6.3 -> 1.7.0`
+component: `labkit_FLIRThermal_app` | `1.6.3 -> 1.7.0`
+component: `labkit_FocusStack_app` | `1.7.3 -> 1.8.0`
+component: `labkit_ImageEnhance_app` | `1.8.3 -> 1.9.0`
+component: `labkit_ImageMatch_app` | `1.8.3 -> 1.9.0`
 component: `labkit_VideoMarker_app` | `1.7.4 -> 1.8.0`
 component: `labkit_GaitAnalysis_app` | `2.2.3 -> 3.0.0`
+component: `labkit_NerveResponseAnalysis_app` | `1.6.2 -> 1.7.0`
+component: `labkit_ResponseReviewStats_app` | `1.6.2 -> 1.7.0`
+component: `labkit_RHSPreview_app` | `1.6.3 -> 1.7.0`
+component: `labkit_TTestWizard_app` | `1.3.2 -> 1.4.0`
+component: `labkit_ECGPrint_app` | `2.0.0 -> 2.1.0`
 scope: App SDK busy presentation
 scope: Slider and managed plot interactions
 scope: App-owned task continuation
@@ -55,7 +73,7 @@ Dragging sliders and plot interactions no longer flash action busy chrome or bla
 
 ## Compatibility and migration
 
-This removes the version-2 project/result authoring API, the public sample-generation contract, exact diagnostic-state export, and the remaining state/source/resource assumptions built on them, advancing `labkit.app` to 4.0.0. The unused public group-comparison removal advances `labkit.biosignal` to 3.0.0. Built-in Apps migrate together and declare only additional facades they actually call. No generic live-state, source-record, sample-pack, or diagnostic-mode compatibility adapter is provided. Batch Crop manifest restoration deliberately accepts only the current final-snapshot format; older state files and manifests are not migrated. Video Marker accepts only its current App-owned archive after the remaining active framework archives are converted outside the repository, and Gait Analysis 3.0.0 consumes that same format without an intermediate compatibility reader.
+This removes the version-2 project/result authoring API, the public sample-generation contract, exact diagnostic-state export, and the remaining state/source/resource assumptions built on them, advancing `labkit.app` to 3.0.0. The unused public group-comparison removal advances `labkit.biosignal` to 3.0.0. Built-in Apps migrate together and declare only additional facades they actually call; Apps whose ordinary scientific workflows remain compatible advance by one direct minor step. No generic live-state, source-record, sample-pack, or diagnostic-mode compatibility adapter is provided. Batch Crop manifest restoration deliberately accepts only the current final-snapshot format; older state files and manifests are not migrated. Video Marker accepts only its current App-owned archive after the remaining active framework archives are converted outside the repository, and Gait Analysis 3.0.0 consumes that same format without an intermediate compatibility reader.
 
 ## Validation
 
