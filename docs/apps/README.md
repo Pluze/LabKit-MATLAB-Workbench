@@ -36,7 +36,7 @@ interactive and programmatic surface.
 | Compare cyclic and time-domain CSC | [CSC](electrochemistry/csc/README.md) | CV/CT DTA | Per-cycle CSC and CV data |
 | Inspect impedance curves | [EIS](electrochemistry/eis/README.md) | EIS DTA | Nyquist/Bode plots and CSV |
 | Estimate voltage-transient resistance | [VT Resistance](electrochemistry/vt-resistance/README.md) | Chrono DTA | Resistance table and CSV |
-| Convert tracked points into gait metrics | [Gait Analysis](gait/gait-analysis/README.md) | Current Video Marker project MAT | Frame, step, coordinate, and summary tables |
+| Convert tracked points into gait metrics | [Gait Analysis](gait/gait-analysis/README.md) | Current Video Marker archive MAT | Frame, step, coordinate, and summary tables |
 | Monitor, record, replay, and fit Mark-10 force/travel data | [Mark-10 Monitor](force-gauges/mark10-monitor/README.md) | ESM303 + Series 5, CSV, LOG, or MAT | Live plots, recordings, branch stiffness, and modulus CSV |
 | Crop image batches at repeatable geometry | [Batch Image Crop](image-measurement/batch-crop/README.md) | Image files | Same-size crops and manifest |
 | Measure curve radius, curvature, and length | [Curvature Measurement](image-measurement/curvature/README.md) | Image | Overlay and measurement CSV |

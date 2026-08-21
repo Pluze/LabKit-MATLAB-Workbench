@@ -10,9 +10,11 @@ component: `labkit.app` | `2.4.1 -> 4.0.0`
 component: `labkit.biosignal` | `2.0.0 -> 3.0.0`
 component: `labkit_BatchImageCrop_app` | `1.9.4 -> 1.10.0`
 component: `labkit_VideoMarker_app` | `1.7.4 -> 1.8.0`
+component: `labkit_GaitAnalysis_app` | `2.2.3 -> 3.0.0`
 scope: App SDK busy presentation
 scope: Slider and managed plot interactions
 scope: App-owned task continuation
+scope: Video Marker to Gait archive contract
 scope: Batch Crop manifest restoration
 scope: Batch Crop manifest provenance
 scope: App-owned state and result boundaries
@@ -39,6 +41,7 @@ Keep direct manipulation transactional without presenting it as a long-running a
 - Removed unused file-list and section options, the unconsumed synthetic JSON manifest and retained-journal export duplicate, test-only runtime hooks, and public plotting, integrity, and biosignal comparison helpers without production consumers.
 - Added explicit Video Marker **Save MAT** and **Open MAT** controls backed by its App-owned archive; edits and navigation never autosave.
 - Converted the remaining in-use Video Marker framework archives to the current App-owned format, then removed framework-project, legacy-project, and older-payload readers.
+- Updated Gait Analysis to consume only the current Video Marker archive instead of preserving the retired framework envelope as its input contract.
 - Added Batch Crop **Restore manifest**, source relocation beside the selected manifest, dimension verification, successfully saved task reconstruction, and crop/scale/output-setting restoration.
 - Extended new manifests with task order, exact physical dimensions, max-upsample percentage, and output format while retaining the existing result columns.
 
@@ -48,11 +51,11 @@ Dragging sliders and plot interactions no longer flash action busy chrome or bla
 
 ## Compatibility and migration
 
-This removes the version-2 project/result authoring API and the remaining state/source/resource assumptions built on it, advancing `labkit.app` to 4.0.0. The unused public group-comparison removal advances `labkit.biosignal` to 3.0.0. Built-in Apps migrate together and declare only additional facades they actually call. No generic live-state or source-record compatibility adapter is provided. Batch Crop manifest restoration deliberately accepts only the current final-snapshot format; older state files and manifests are not migrated. Video Marker accepts only its current App-owned archive after the remaining active framework archives are converted outside the repository.
+This removes the version-2 project/result authoring API and the remaining state/source/resource assumptions built on it, advancing `labkit.app` to 4.0.0. The unused public group-comparison removal advances `labkit.biosignal` to 3.0.0. Built-in Apps migrate together and declare only additional facades they actually call. No generic live-state or source-record compatibility adapter is provided. Batch Crop manifest restoration deliberately accepts only the current final-snapshot format; older state files and manifests are not migrated. Video Marker accepts only its current App-owned archive after the remaining active framework archives are converted outside the repository, and Gait Analysis 3.0.0 consumes that same format without an intermediate compatibility reader.
 
 ## Validation
 
-Focused App SDK evidence covers delayed action feedback, leaf-only input freezing, reentrant action rejection, the absence of visible busy state for sliders and managed rectangles, retained diagnostic state destinations, source/resource contracts, and removal of the generic Project State menu. Definition and initial-session conformance cover every built-in App on the opaque state boundary. Batch Crop result and presentation evidence covers current-manifest round trips, saved-row restoration, changed-source rejection, stable columns, and the restore action declaration. Video Marker evidence covers explicit archive round trips, continued rendering, and the absence of implicit MAT writes. Biosignal, test-catalog, architecture, code-analysis, and documentation checks cover the retired consumers and public surface. Native pointer feel and renderer-specific paint timing remain manual GUI boundaries.
+Focused App SDK evidence covers delayed action feedback, leaf-only input freezing, reentrant action rejection, the absence of visible busy state for sliders and managed rectangles, retained diagnostic state destinations, source/resource contracts, and removal of the generic Project State menu. Definition and initial-session conformance cover every built-in App on the opaque state boundary. Batch Crop result and presentation evidence covers current-manifest round trips, saved-row restoration, changed-source rejection, stable columns, and the restore action declaration. Video Marker evidence covers explicit archive round trips, continued rendering, and the absence of implicit MAT writes. Gait source and workbench evidence covers current Video Marker archive parsing, source-derived scientific options, analysis, presentation, and export. Biosignal, test-catalog, architecture, code-analysis, and documentation checks cover the retired consumers and public surface. Native pointer feel and renderer-specific paint timing remain manual GUI boundaries.
 
 ## Evidence
 

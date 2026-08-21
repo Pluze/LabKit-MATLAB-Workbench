@@ -17,7 +17,7 @@ labkit_GaitAnalysis_app
 
 ## Supported Input
 
-The only file input is a current Video Marker project MAT file or autosave.
+The only file input is a current Video Marker archive MAT file.
 It must contain:
 
 - frames-by-points-by-2 pixel coordinates;
@@ -29,8 +29,8 @@ It must contain:
 The App uses the timing, skeleton, calibration, and annotation information in
 the Video Marker project; it does not reopen the video to infer missing
 metadata. Generic coordinate tables and unrelated MAT files are therefore not
-accepted. If an older Video Marker project lacks the required metadata, open
-and save it with the current Video Marker before analysis.
+accepted. Retired Video Marker project and autosave formats are not migrated
+by Gait Analysis.
 
 The selected Video Marker MAT remains a live source while Gait Analysis is
 open.

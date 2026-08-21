@@ -22,7 +22,7 @@ metrics, quality checks, and result export.
 4. The app smooths coordinates, calculates joint angles and segment lengths,
    detects steps, applies quality rules, and builds export tables.
 
-Gait Analysis reads current Video Marker project and autosave files directly.
+Gait Analysis reads current Video Marker archive files directly.
 It never rewrites the annotation project and does not accept generic MAT or
 coordinate-table substitutes that lack the required source metadata.
 
