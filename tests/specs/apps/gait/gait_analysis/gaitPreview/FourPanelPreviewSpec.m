@@ -3,7 +3,7 @@ classdef FourPanelPreviewSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function provesFourPanelPreview(testCase)
-            pose = testfixtures.syntheticGaitPose();
+            pose = testfixtures.gait.pose();
             options = gait_analysis.analysisRun.defaultOptions();
             options.smoothWindow = 1;
             options.detectionProminence = 2;

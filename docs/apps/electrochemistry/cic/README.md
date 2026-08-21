@@ -21,8 +21,6 @@ labkit_CIC_app
 The Files list accepts chrono `.DTA` transients and omits other Gamry
 experiment kinds. Selecting a row updates the preview. Export applies the
 current analysis settings to every accepted file in the displayed order.
-Saved projects preserve that order through removal, later additions, and
-reopen.
 
 Electrode area comes from a positive UI override when supplied, otherwise from
 the parsed DTA metadata. Without a valid positive area, charge in coulombs can
@@ -84,9 +82,6 @@ phase timing, measured/estimated current information, charge fields,
 area-normalized CIC fields, polarization and baseline values, water-window
 status, and a per-file result message. `Area_cm2` and `Delay_us` are exported
 so normalization and sample timing remain auditable.
-
-A `.labkit.json` result manifest accompanies the CSV and records source
-references, parameters, and the output role.
 
 ## Use Without The GUI
 

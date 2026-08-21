@@ -4,7 +4,7 @@ classdef CscPresentationSpec < matlab.unittest.TestCase
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function projectsSelectedCycleMetricsIntoTheWorkbenchTable(testCase)
             [item, status] = labkit.dta.loadFile( ...
-                testfixtures.dtaFixturePath("cv_cyclic_voltammetry_pt_reference.DTA"), "cvct");
+                testfixtures.dta.file("cv_cyclic_voltammetry_pt_reference.DTA"), "cvct");
             testCase.assertTrue(status.ok, status.message);
             choices = csc.analysisRun.analysisChoices();
             rows = csc.resultFiles.buildResultsTable(item, struct( ...

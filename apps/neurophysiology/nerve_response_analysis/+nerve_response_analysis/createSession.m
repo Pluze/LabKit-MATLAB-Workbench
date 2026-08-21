@@ -1,10 +1,10 @@
 % Rebuild parsed filter/protocol JSON, output-folder convenience, preview
 % state, and workflow messages from one validated project.
-function session = createSession(project, context)
+function session = createSession(project, ~)
     filterPath = pathForRole( ...
-        project.inputs.sources, "filterRecord", context);
+        project.inputs.sources, "filterRecord");
     protocolPath = pathForRole( ...
-        project.inputs.sources, "protocol", context);
+        project.inputs.sources, "protocol");
     filterRecord = loadRequiredJson(filterPath);
     protocol = loadOptionalJson(protocolPath);
     outputFolder = "";
@@ -37,7 +37,7 @@ function folder = defaultOutputFolder(filepath)
     end
 end
 
-function filepath = pathForRole(sources, role, context)
+function filepath = pathForRole(sources, role)
     filepath = "";
     if isempty(sources)
         return;
@@ -46,7 +46,7 @@ function filepath = pathForRole(sources, role, context)
     if isempty(match)
         return;
     end
-    paths = context.resolveSourcePaths(sources(match));
+    paths = labkit.app.source.paths(sources(match));
     if ~isempty(paths)
         filepath = paths(1);
     end

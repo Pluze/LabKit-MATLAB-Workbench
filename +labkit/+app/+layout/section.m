@@ -1,8 +1,8 @@
-function node = section(id, title, children, varargin)
+function node = section(id, title, children)
 %SECTION Arrange related child elements under a visible title.
 %
 % Usage:
-%   node = labkit.app.layout.section(id, title, children, Name=Value)
+%   node = labkit.app.layout.section(id, title, children)
 %
 % Description:
 %   Groups compatible controls under a reader-facing title.
@@ -11,10 +11,6 @@ function node = section(id, title, children, varargin)
 %   id - Unique MATLAB identifier for the layout target.
 %   title - Nonempty section title.
 %   children - Row cell array of layout nodes.
-%
-% Options:
-%   Collapsible - Logical collapse support. Default: false.
-%   Expanded - Initial logical expansion state. Default: true.
 %
 % Outputs:
 %   node - Immutable internal layout node accepted by containers.
@@ -26,5 +22,5 @@ function node = section(id, title, children, varargin)
 %   node = labkit.app.layout.section("inputs", "Inputs", {gainField});
 %
 % See also labkit.app.layout.group, labkit.app.layout.tab
-node = labkit.app.internal.contract.LayoutNode.section(id, title, children, varargin{:});
+node = labkit.app.internal.contract.LayoutNode.section(id, title, children);
 end

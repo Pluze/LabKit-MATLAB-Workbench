@@ -1,8 +1,8 @@
 % Rebuild transient task paths and the first selected image.
-function session = createSession(project, context)
+function session = createSession(project, ~)
     currentIndex = double(~isempty(project.inputs.items));
     images = cell(numel(project.inputs.items), 1);
-    paths = taskPaths(project.inputs.items, project.inputs.sources, context);
+    paths = taskPaths(project.inputs.items, project.inputs.sources);
     if currentIndex > 0
         path = paths(currentIndex);
         if strlength(path) > 0
@@ -24,7 +24,7 @@ function session = createSession(project, context)
             "canvas", batch_crop.cropGeometry.emptyCanvasCache()));
 end
 
-function paths = taskPaths(tasks, sources, context)
+function paths = taskPaths(tasks, sources)
 paths = strings(numel(tasks), 1);
 for k = 1:numel(tasks)
     sourceId = string(tasks(k).sourceId);
@@ -32,7 +32,7 @@ for k = 1:numel(tasks)
     if isempty(match)
         continue
     end
-    resolved = context.resolveSourcePaths(sources(match));
+    resolved = labkit.app.source.paths(sources(match));
     if ~isempty(resolved)
         paths(k) = resolved(1);
     end

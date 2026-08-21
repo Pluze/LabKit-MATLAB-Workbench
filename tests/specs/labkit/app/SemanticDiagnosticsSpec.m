@@ -18,7 +18,7 @@ classdef SemanticDiagnosticsSpec < matlab.unittest.TestCase
 
             testCase.verifyEqual(runtime.CurrentStatus, "Semantic status.");
             testCase.verifySize(runtime.CurrentStatus, [1 1]);
-            events = runtime.diagnosticEvents();
+            events = runtime.diagnosticSnapshot().events;
             status = events(string({events.eventName}) == "probe.status");
             checkpoint = events(string({events.eventName}) == "probe.checkpoint");
             count = events(string({events.eventName}) == "probe.count");
@@ -79,8 +79,8 @@ end
 
 function definition = probeDefinition(layout)
 definition = labkit.app.Definition( ...
-    "Entrypoint", "labkit_LegacyDiagnosticsProbe_app", ...
-    "AppId", "probe.legacy-diagnostics", "Title", "Legacy diagnostics probe", ...
+    "Entrypoint", "labkit_SemanticDiagnosticsProbe_app", ...
+    "AppId", "probe.semantic-diagnostics", "Title", "Semantic diagnostics probe", ...
     "Family", "Tests", "AppVersion", "1.0.0", "Updated", "2026-07-25", ...
     "Requirements", [], "Workbench", layout);
 end

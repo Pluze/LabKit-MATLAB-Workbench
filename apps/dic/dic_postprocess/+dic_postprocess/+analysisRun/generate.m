@@ -3,7 +3,7 @@ function applicationState = generate(applicationState, callbackContext)
 %GENERATE Load strain data and prepare overlays plus the ROI summary.
 cache = applicationState.session.cache;
 matPath = pathForRole( ...
-    applicationState.project.inputs.sources, "strain", callbackContext);
+    applicationState.project.inputs.sources, "strain");
 if strlength(matPath) == 0 || isempty(cache.referenceImage) || ...
         isempty(cache.maskImage)
     callbackContext.alert( ...
@@ -33,7 +33,7 @@ catch exception
 end
 end
 
-function filepath = pathForRole(sources, role, context)
+function filepath = pathForRole(sources, role)
 filepath = "";
 if isempty(sources)
     return;
@@ -42,7 +42,7 @@ match = find(string({sources.role}) == role, 1);
 if isempty(match)
     return;
 end
-paths = context.resolveSourcePaths(sources(match));
+paths = labkit.app.source.paths(sources(match));
 if ~isempty(paths)
     filepath = paths(1);
 end

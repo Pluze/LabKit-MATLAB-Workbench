@@ -1,7 +1,7 @@
 % App-owned implementation for image_enhance.resultFiles.exportImages within the image_enhance product workflow.
 function applicationState = exportImages( ...
         applicationState, callbackContext)
-%EXPORTIMAGES Render every source and write CSV and LabKit manifests.
+%EXPORTIMAGES Render every source and write the App-owned CSV manifest.
 sources = applicationState.project.inputs.sources;
 if isempty(sources)
     callbackContext.alert( ...
@@ -22,7 +22,7 @@ if strlength(folder) == 0
 end
 try
     items = image_enhance.sourceFiles.readImages( ...
-        callbackContext.resolveSourcePaths(sources));
+        labkit.app.source.paths(sources));
     [items, steps, itemSteps] = exportSteps( ...
         applicationState, items);
     options = struct( ...
@@ -41,16 +41,6 @@ try
     end
     payload = image_enhance.resultFiles.writeOutputs( ...
         items, steps, options);
-    package = labkit.app.result.Package( ...
-        Outputs=packageOutputs(payload), ...
-        Inputs=struct("sources", sources), ...
-        Parameters=applicationState.project.parameters, ...
-        Summary=struct( ...
-            "imageCount", numel(items), ...
-            "savedCount", sum( ...
-                string({payload.results.status}) == "saved")), ...
-        ManifestName="image_enhance.labkit.json");
-    written = callbackContext.writeResultPackage(folder, package);
 catch ME
     callbackContext.log("error", "image_enhance.resultfiles.exportimages.exception", "Export enhanced images", ...
         Category="failure", Audience="developer", Exception=ME);
@@ -61,10 +51,10 @@ catch ME
     return;
 end
 payload.sourceIds = string({sources.id});
-payload.resultManifestPath = string(written.Value);
+payload.resultManifestPath = payload.manifestPath;
 applicationState.project.results.lastExport = payload;
 applicationState.project.results.lastExportFingerprint = task.fingerprint;
-applicationState.project.results.resultManifestPath = string(written.Value);
+applicationState.project.results.resultManifestPath = payload.manifestPath;
 statuses = string({payload.results.status});
 failedCount = sum(statuses == "failed");
 severity = "info";
@@ -92,37 +82,5 @@ for index = 1:numel(items)
         applicationState.project.annotations.items, sourceId);
     itemSteps{index} = annotation.steps;
     items(index).whiteRoi = annotation.whiteRoi;
-end
-end
-
-function outputs = packageOutputs(payload)
-outputs = cell(1, numel(payload.results) + 1);
-for index = 1:numel(payload.results)
-    result = payload.results(index);
-    [~, name, extension] = fileparts(result.outputPath);
-    status = "failed";
-    if result.status == "saved"
-        status = "success";
-    end
-    outputs{index} = labkit.app.result.File( ...
-        "enhanced_" + compose("%03d", index), ...
-        "enhanced-image", string(name) + string(extension), ...
-        MediaType=mediaType(extension), Status=status, ...
-        Message=result.message);
-end
-[~, name, extension] = fileparts(payload.manifestPath);
-outputs{end} = labkit.app.result.File( ...
-    "batch_manifest", "batch-summary", ...
-    string(name) + string(extension), MediaType="text/csv");
-end
-
-function value = mediaType(extension)
-switch lower(string(extension))
-    case {".jpg", ".jpeg"}
-        value = "image/jpeg";
-    case {".tif", ".tiff"}
-        value = "image/tiff";
-    otherwise
-        value = "image/png";
 end
 end

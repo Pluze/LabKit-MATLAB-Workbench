@@ -31,17 +31,10 @@ labkit_NerveResponseAnalysis_app
 Changing the filter, protocol, or limits clears the previous analysis so that
 an export cannot silently use outdated settings.
 
-The filter record and optional protocol are saved as distinct portable project
-sources. Older projects with separate source fields are upgraded on load.
-
-## Saving And Reopening A Project
-
-The project stores references to the filter record and optional protocol, the
-two run limits, and the last export locations. It does not save a completed
-analysis. After reopening, choose **Analyze Filtered Files** to calculate the
-results again from the referenced recordings. If a required JSON file is
-malformed, the project remains unchanged so you can correct or replace that
-file. A missing optional protocol is allowed.
+The filter record and optional protocol remain distinct live sources while the
+App is open. Nerve Response Analysis does not write a task archive. If a
+required JSON file is malformed, the current task remains unchanged so you can
+correct or replace that file. A missing optional protocol is allowed.
 
 ## What The Analysis Does
 
@@ -65,9 +58,7 @@ latency.
 **Export Analysis** writes:
 
 - `nerve_response_analysis.json`, containing source information, the protocol,
-  events, trains, response measurements, and issues;
-- `nerve_response_analysis.labkit.json`, containing the selected inputs,
-  run limits, output identity, and result counts.
+  events, trains, response measurements, and issues.
 
 An unreadable recording or missing channel is recorded in the issues table so
 that other recordings can still complete.

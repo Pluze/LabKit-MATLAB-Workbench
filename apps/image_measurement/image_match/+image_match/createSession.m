@@ -1,13 +1,13 @@
 % Rebuild transient decoded images and preview caches from one validated
 % Image Match project. App SDK runtime calls this after source relinking.
-function session = createSession(project, context)
+function session = createSession(project, ~)
     index = double(~isempty(project.inputs.sources));
     cache = emptyCache();
     if ~isempty(project.inputs.reference)
-        cache.referenceItem = loadItem(project.inputs.reference, context);
+        cache.referenceItem = loadItem(project.inputs.reference);
     end
     if index > 0
-        cache.currentItem = loadItem(project.inputs.sources(1), context);
+        cache.currentItem = loadItem(project.inputs.sources(1));
     end
     cache = rebuildResult(project, cache);
     session = struct( ...
@@ -20,10 +20,10 @@ function session = createSession(project, context)
         "cache", cache);
 end
 
-function item = loadItem(source, context)
+function item = loadItem(source)
     item = [];
     loaded = image_match.sourceFiles.readImages( ...
-        context.resolveSourcePaths(source));
+        labkit.app.source.paths(source));
     if ~isempty(loaded)
         item = loaded(1);
     end

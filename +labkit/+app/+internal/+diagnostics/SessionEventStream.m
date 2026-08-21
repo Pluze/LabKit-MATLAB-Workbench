@@ -1,8 +1,8 @@
 classdef (Hidden, Sealed) SessionEventStream < handle
     %SESSIONEVENTSTREAM Private full-detail in-memory session event stream.
     % Expected callers are the private App Runtime and focused framework tests.
-    % Records are validated before entering the bounded ring; persistence and
-    % viewer projections intentionally belong to later migration checkpoints.
+    % Records are validated before entering the bounded ring. The owning
+    % diagnostics service projects them to the persistent journal and viewers.
 
     properties (Access = private)
         Application

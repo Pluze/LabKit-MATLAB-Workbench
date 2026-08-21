@@ -1,11 +1,11 @@
 %CREATESESSION Rebuild transient DIC images and editor workflow state.
 % Expected caller: App SDK through dic_preprocess.definition. Input is a
 % validated project; decoded and replayed images remain outside persistence.
-function session = createSession(project, context)
+function session = createSession(project, ~)
     referencePath = rolePath(project.inputs.sources, ...
-        "referenceImage", context);
+        "referenceImage");
     movingPath = rolePath(project.inputs.sources, ...
-        "movingImage", context);
+        "movingImage");
     [referenceImage, movingImage] = ...
         dic_preprocess.sourceFiles.loadProjectImages( ...
             referencePath, movingPath);
@@ -18,7 +18,7 @@ function session = createSession(project, context)
         "cache", cache);
 end
 
-function filepath = rolePath(sources, role, context)
+function filepath = rolePath(sources, role)
 filepath = "";
 if isempty(sources)
     return
@@ -27,7 +27,7 @@ match = find(string({sources.role}) == role, 1);
 if isempty(match)
     return
 end
-paths = context.resolveSourcePaths(sources(match));
+paths = labkit.app.source.paths(sources(match));
 if ~isempty(paths)
     filepath = paths(1);
 end

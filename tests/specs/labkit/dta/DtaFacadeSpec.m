@@ -3,10 +3,10 @@ classdef DtaFacadeSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function findsAndClassifiesSupportedDtaFiles(testCase)
-            fixtureFolder = testfixtures.dtaFixtureDir();
-            chrono = testfixtures.dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
-            eis = testfixtures.dtaFixturePath('eis_potentiostatic_zcurve.DTA');
-            cvct = testfixtures.dtaFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
+            fixtureFolder = testfixtures.dta.folder();
+            chrono = testfixtures.dta.file('chrono_chronopot_current_pulse_0p2ms.DTA');
+            eis = testfixtures.dta.file('eis_potentiostatic_zcurve.DTA');
+            cvct = testfixtures.dta.file('cv_cyclic_voltammetry_pt_reference.DTA');
 
             files = labkit.dta.findFiles(fixtureFolder);
 
@@ -19,9 +19,9 @@ classdef DtaFacadeSpec < matlab.unittest.TestCase
         end
 
         function loadsCanonicalItemsAndReportsRecoverableFailures(testCase)
-            chrono = testfixtures.dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
-            eis = testfixtures.dtaFixturePath('eis_potentiostatic_zcurve.DTA');
-            cvct = testfixtures.dtaFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
+            chrono = testfixtures.dta.file('chrono_chronopot_current_pulse_0p2ms.DTA');
+            eis = testfixtures.dta.file('eis_potentiostatic_zcurve.DTA');
+            cvct = testfixtures.dta.file('cv_cyclic_voltammetry_pt_reference.DTA');
 
             [chronoItem, chronoStatus] = labkit.dta.loadFile(chrono, " Chrono ");
             [eisItem, eisStatus] = labkit.dta.loadFile(eis);

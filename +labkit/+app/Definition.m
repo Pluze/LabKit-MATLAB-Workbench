@@ -5,9 +5,9 @@ classdef (Sealed) Definition
     %   app = labkit.app.Definition(Entrypoint=entrypoint, AppId=appId, ...
     %       Title=title, ...
     %       Family=family, AppVersion=version, Updated=date, ...
-    %       Requirements=requirements, Workbench=workbench, Name=Value)
+    %       Workbench=workbench, Name=Value)
     %   fig = app.launch()
-    %   fig = app.launch(InitialProject=project)
+    %   fig = app.launch(InitialInput=value)
     %   requirements = app.launch("requirements")
     %   version = app.launch("version")
     %
@@ -26,23 +26,21 @@ classdef (Sealed) Definition
     %   Family - Nonempty reader-facing scalar text.
     %   AppVersion - Semantic version in X.Y.Z form.
     %   Updated - Product date in YYYY-MM-DD form.
-    %   Requirements - Empty value or labkit.contract.requirements result.
     %   Workbench - Root value returned by labkit.app.layout.workbench.
     %
     % Optional Name-Value Arguments:
     %   DisplayName - Nonempty scalar text. Default: Title.
-    %   ProjectSchema - labkit.app.project.Schema or empty for a static App.
+    %   CreateState - Fixed callback state = callback(context,initialInput).
+    %       initialInput is an opaque App-owned scalar struct supplied at
+    %       launch; it has no framework persistence semantics. Default: empty.
+    %   Requirements - Empty value or labkit.contract.requirements result.
     %       Default: empty.
-    %   CreateSession - Fixed callback session = callback(project,context).
-    %       Portable project sources remain opaque; use
-    %       context.resolveSourcePaths
-    %       while rebuilding transient session data. Default: empty.
+    %   RefreshState - Fixed callback state = callback(state,context), used
+    %       after framework-owned source-list edits. Default: empty.
     %   PresentWorkbench - Fixed callback view = callback(state). Default:
     %       empty.
     %   OnStart - Fixed callback state = callback(state,context), invoked
     %       after the first view commit. Default: empty.
-    %   BuildSyntheticSample - Fixed callback pack = callback(context). Default:
-    %       empty.
     %
     % Outputs:
     %   app - Immutable compiled labkit.app.Definition value.
@@ -76,7 +74,7 @@ classdef (Sealed) Definition
     %   app = labkit.app.Definition( ...
     %       Entrypoint="labkit_Example_app", AppId="example.app", ...
     %       Title="Example", Family="Examples", AppVersion="1.0.0", ...
-    %       Updated="2026-07-19", Requirements=[], Workbench=workbench);
+    %       Updated="2026-07-19", Workbench=workbench);
     %
     % See also labkit.app.layout.workbench, labkit.app.view.Snapshot,
     %   labkit.contract.requirements
@@ -90,11 +88,10 @@ classdef (Sealed) Definition
         AppVersion (1, 1) string
         Updated (1, 1) string
         Requirements
-        ProjectSchema
-        CreateSession
+        CreateState
+        RefreshState
         PresentWorkbench
         OnStart
-        BuildSyntheticSample
     end
 
     properties (SetAccess = immutable, GetAccess = { ...
@@ -108,13 +105,13 @@ classdef (Sealed) Definition
             names = [ ...
                 "Entrypoint", "AppId", "Title", "DisplayName", "Family", ...
                 "AppVersion", "Updated", "Requirements", "Workbench", ...
-                "ProjectSchema", "CreateSession", "PresentWorkbench", ...
-                "OnStart", "BuildSyntheticSample"];
+                "CreateState", "RefreshState", ...
+                "PresentWorkbench", "OnStart"];
             options = labkit.app.internal.contract.OptionParser.parse( ...
                 "labkit.app.Definition", names, varargin{:});
             required = [ ...
                 "Entrypoint", "AppId", "Title", "Family", "AppVersion", ...
-                "Updated", "Requirements", "Workbench"];
+                "Updated", "Workbench"];
             for name = required
                 if ~isfield(options, name)
                     error("labkit:app:contract:UnknownArgument", ...
@@ -134,18 +131,20 @@ classdef (Sealed) Definition
             obj.Family = nonemptyText(options.Family, "Family");
             obj.AppVersion = semanticVersion(options.AppVersion);
             obj.Updated = isoDate(options.Updated);
-            obj.Requirements = validateRequirements(options.Requirements);
-            obj.ProjectSchema = validateProjectSchema( ...
-                optionValue(options, "ProjectSchema", []));
-            obj.CreateSession = optionalFixedCallback( ...
-                options, "CreateSession", 2, 1);
+            requirements = [];
+            if isfield(options, "Requirements")
+                requirements = options.Requirements;
+            end
+            obj.Requirements = validateRequirements(requirements);
+            obj.CreateState = optionalFixedCallback( ...
+                options, "CreateState", 2, 1);
+            obj.RefreshState = optionalFixedCallback( ...
+                options, "RefreshState", 2, 1);
             obj.PresentWorkbench = optionalFixedCallback( ...
                 options, "PresentWorkbench", 1, 1);
             startCallback = optionalFixedCallback( ...
                 options, "OnStart", 2, 1);
             obj.OnStart = startCallback;
-            obj.BuildSyntheticSample = optionalFixedCallback( ...
-                options, "BuildSyntheticSample", 1, 1);
             obj.Compiled = labkit.app.internal.contract.CompiledDefinition( ...
                 options.Workbench, startCallback);
         end
@@ -156,23 +155,23 @@ classdef (Sealed) Definition
 
         function varargout = launch(obj, varargin)
             %LAUNCH Answer metadata requests or show the native MATLAB App.
-            initialProject = [];
+            initialState = [];
             if ~isempty(varargin) && ...
                     ~(isscalar(varargin) && ...
                       (ischar(varargin{1}) || ...
                        (isstring(varargin{1}) && isscalar(varargin{1}))))
                 options = labkit.app.internal.contract.OptionParser.parse( ...
                     "labkit.app.Definition.launch", ...
-                    "InitialProject", ...
+                    "InitialInput", ...
                     varargin{:});
-                if isfield(options, "InitialProject")
-                    if ~isstruct(options.InitialProject) || ...
-                            ~isscalar(options.InitialProject)
+                if isfield(options, "InitialInput")
+                    if ~isstruct(options.InitialInput) || ...
+                            ~isscalar(options.InitialInput)
                         error("labkit:app:contract:InvalidValue", ...
-                            "Definition launch InitialProject must be a " + ...
-                            "scalar project struct.");
+                            "Definition launch InitialInput must be a " + ...
+                            "scalar App-owned struct.");
                     end
-                    initialProject = options.InitialProject;
+                    initialState = options.InitialInput;
                 end
                 varargin = {};
             end
@@ -214,7 +213,7 @@ classdef (Sealed) Definition
                     obj.Entrypoint, obj.Requirements);
             end
             runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
-                obj, initialProject, struct());
+                obj, initialState, struct());
             runtime.showFigure();
             figure = runtime.figureHandle();
             if nargout == 1
@@ -226,13 +225,6 @@ classdef (Sealed) Definition
     end
 
 end
-function value = optionValue(options, name, defaultValue)
-    value = defaultValue;
-    if isfield(options, name)
-        value = options.(name);
-    end
-end
-
 function value = matlabId(value, label)
     value = nonemptyText(value, label);
     if ~isvarname(char(value))
@@ -298,13 +290,6 @@ function value = validateRequirements(value)
             ~isfield(value, "facades")
         error("labkit:app:contract:InvalidValue", ...
             "Requirements must come from labkit.contract.requirements.");
-    end
-end
-
-function value = validateProjectSchema(value)
-    if ~isempty(value) && ~isa(value, "labkit.app.project.Schema")
-        error("labkit:app:contract:InvalidValue", ...
-            "Definition ProjectSchema must be a project.Schema or empty.");
     end
 end
 

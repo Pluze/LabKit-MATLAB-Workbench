@@ -31,6 +31,7 @@ function classification = classifyPath(file)
         return;
     end
     if startsWith(file, ".agents/") || file == "AGENTS.md" || ...
+            file == "sync-develop.sh" || ...
             endsWith(file, "/AGENTS.md") || file == ".gitignore"
         classification = mapped(file, "repository-policy", "repository", ...
             "repository policy behavior");
@@ -71,7 +72,7 @@ function classification = classifyPath(file)
     end
     if startsWith(file, "tests/+testfixtures/")
         classification = mapped(file, "test-fixture", "tests/labkittest", ...
-            "cross-owner synthetic fixture behavior");
+            "cross-owner test input construction");
         return;
     end
     if file == "labkit_launcher.m"
@@ -115,10 +116,10 @@ function classification = classifyPath(file)
             switch name
                 case "definition.m"
                     role = "app-definition";
-                case "projectspec.m"
-                    role = "app-project";
                 case "createsession.m"
                     role = "app-session";
+                case "initialdata.m"
+                    role = "app-state";
                 otherwise
                     role = "app-product-root";
             end

@@ -3,14 +3,14 @@ function state = startMonitoring(state, context)
 if ~state.session.connection.connected || state.session.acquisition.monitoring
     return;
 end
-connectionBox = context.getResource("application", "mark10Connection");
-buffer = context.getResource("application", "mark10Buffer");
+connectionBox = context.getResource("mark10Connection");
+buffer = context.getResource("mark10Buffer");
 resetMonitor(buffer);
 state = mark10_monitor.acquisition.refreshState(state, context);
 sampler = mark10_monitor.acquisition.createSampler( ...
     connectionBox, buffer, context, ...
     mark10_monitor.acquisition.ratePeriod(state.session.acquisition.rate));
-context.setResource("application", "mark10Sampler", sampler, ...
+context.setResource("mark10Sampler", sampler, ...
     @(value) cleanupSampler(value, connectionBox));
 state.session.acquisition.monitoring = true;
 state.session.acquisition.retainedValidCount = 0;

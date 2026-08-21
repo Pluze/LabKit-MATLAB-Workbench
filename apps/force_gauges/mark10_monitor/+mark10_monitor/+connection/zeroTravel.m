@@ -1,6 +1,6 @@
 function state = zeroTravel(state, context)
 %ZEROTRAVEL Request and verify ESM303 device travel zero.
-box = context.getResource("application", "mark10Connection");
+box = context.getResource("mark10Connection");
 connection = box("connection");
 [connection, result] = labkit.mark10.zeroTravel(connection);
 mark10_monitor.connection.retain(box, connection);

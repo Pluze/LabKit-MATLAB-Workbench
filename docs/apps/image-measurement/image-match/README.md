@@ -64,6 +64,13 @@ TIFF, and JPEG and writes an image manifest containing reference/source
 identity, method, strengths, history, format, and output filenames. Source and
 reference files are never overwritten.
 
+## Runtime State
+
+The reference, source paths, ordered match histories, preview selection, and
+export choices remain in memory while the app is open. Image Match does not
+create or reopen a task archive; its manifest records completed outputs and
+the processing decisions used to produce them.
+
 ## Use Without The GUI
 
 ```matlab
@@ -90,8 +97,6 @@ geometry, empty-input behavior, failures, examples, and related APIs.
 
 - An empty reference returns normalized source data in the calculation API,
   but the app requires a reference before enabling match actions.
-- Reopening a project with an existing unreadable reference or source image
-  aborts restore and preserves the current document.
 - Matching never corrects position, scale, rotation, perspective, or parallax.
 - Histogram and Lab matching can shift scientifically meaningful pixel values;
   retain original images for quantitative analysis.

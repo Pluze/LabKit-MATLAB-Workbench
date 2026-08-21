@@ -46,10 +46,7 @@ installation itself is incomplete.
 Every launch uses the same clean App path. Use the App's **Tools >
 Diagnostics** menu to inspect its live session log or export a diagnostic
 bundle after a problem occurs. The Session Log window owns manual TRACE
-capture when earlier detail is needed. Apps that declare a synthetic
-input pack expose **Tools > Developer Tools > Generate Synthetic Inputs...**.
-Generation writes anonymous example files and a manifest into a new folder but
-does not load them or mutate the running project.
+capture when earlier detail is needed.
 
 ## Programmatic Calls
 

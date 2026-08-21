@@ -3,8 +3,8 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
         function loadsPlotsExportsAndRestoresAnEisFile(testCase)
-            source = testfixtures.dtaFixturePath("eis_potentiostatic_zcurve.DTA");
-            unsupported = testfixtures.dtaFixturePath( ...
+            source = testfixtures.dta.file("eis_potentiostatic_zcurve.DTA");
+            unsupported = testfixtures.dta.file( ...
                 "chrono_chronopot_current_pulse_0p2ms.DTA");
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -32,12 +32,6 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             testCase.verifySubstring(string(axesValue.XLabel.String), ...
                 units.choices(4));
             testCase.verifyTrue(isfile(output));
-            testCase.verifyTrue(isfile(fullfile(folder, "labkit_result.json")));
-            saved = fullfile(folder, "eis-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.applyFileSelection("files", strings(1, 0), zeros(1, 0));
-            runtime.restoreProject(saved);
-            testCase.verifyNumElements(runtime.State.session.cache.items, 1);
             clear cleanup
         end
     end

@@ -16,7 +16,6 @@ function spec = interval(id, onChanged, varargin)
 %   Axis - Axis ID. Default: "main".
 %   Style - Scalar visual-option struct. Default: struct().
 %   Instruction - Scalar guidance text. Default: "".
-%   ViewportPolicy - "preserve" or "fit". Default: "preserve".
 %   OnScrolled - Optional callback state = callback(state,event,context),
 %       where event is labkit.app.event.IntervalScroll. Default: [].
 %
@@ -33,7 +32,7 @@ function spec = interval(id, onChanged, varargin)
 %   labkit.app.event.IntervalScroll
 options = labkit.app.internal.contract.OptionParser.parse( ...
     "labkit.app.interaction.interval", ...
-    ["Axis", "Style", "Instruction", "ViewportPolicy", "OnScrolled"], ...
+    ["Axis", "Style", "Instruction", "OnScrolled"], ...
     varargin{:});
 spec = labkit.app.internal.interaction.InteractionSpec("interval",id,onChanged,options);
 end

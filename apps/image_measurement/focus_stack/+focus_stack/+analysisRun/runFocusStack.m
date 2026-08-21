@@ -9,7 +9,7 @@ end
 p = state.project.parameters;
 options = struct("focusWindow", p.focusWindow, "smoothRadius", p.smoothRadius, ...
     "minConfidence", p.uncertainBlend / 100);
-paths = context.resolveSourcePaths(state.project.inputs.sources);
+paths = labkit.app.source.paths(state.project.inputs.sources);
 task = focus_stack.analysisRun.runTask(paths, images, options, p.autoRegister);
 if state.session.cache.result.ok && state.project.results.lastRunFingerprint == task.fingerprint
     context.log("info", "focus_stack.analysisrun.runfocusstack.skipped", ...
@@ -40,7 +40,7 @@ state.project.results.lastRun = compact(result);
 state.project.results.lastRunFingerprint = task.fingerprint;
 state.project.results.registrationLines = lines;
 state.project.results.lastExport = [];
-state.project.results.resultManifestPath = "";
+state.project.results.lastOutputPath = "";
 context.log("info", "focus_stack.analysisrun.runfocusstack.completed", ...
     sprintf("Focus stack complete: %d images fused.", result.inputCount));
 if ~isempty(lines)

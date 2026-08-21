@@ -2,8 +2,8 @@
 
 `labkit.app` is the MATLAB App SDK above LabKit's GUI-free domain libraries.
 Apps own scientific workflow, calculations, units, wording, plots, and exports.
-The SDK owns semantic layout, transactions, project documents, portable
-sources, dialogs, resources, results, and native component lifecycle.
+The SDK owns semantic layout, transactions, execution queues, lifecycle,
+runtime source lists, diagnostics, dialogs, resources, and native components.
 
 ## Start Here
 
@@ -29,8 +29,8 @@ The required path has three concepts:
 Read an App in this order: `definition.m` shows its complete contract,
 `+workbench/buildLayout.m` shows the user workflow, and its capability
 packages show the controls, state transitions, presentation, and rendering
-owned by each feature. Open `projectSpec.m` or `createSession.m` only when the
-definition names those optional capabilities.
+owned by each feature. App-specific state construction and reconstruction stay
+inside that App.
 
 Layout controls bind directly to named App callbacks, and plot areas bind
 directly to their renderer. Apps do not maintain handler, renderer, or
@@ -46,8 +46,7 @@ Optional capabilities are grouped by purpose:
 | `labkit.app.event.*` | Typed callback payloads |
 | `labkit.app.interaction.*` | Managed plot gestures with direct callbacks |
 | `labkit.app.plot.*` | Domain-neutral axes redraw, message, fit, and annotation mechanics |
-| `labkit.app.project.*` | Durable project schema and migration |
-| `labkit.app.result.*` | Exported files and result packages |
+| `labkit.app.source.*` | Live file-list source values |
 | `labkit.app.dialog.*` | Explicit dialog outcomes |
 | `labkit.app.CallbackContext` | Runtime operations available inside callbacks |
 
@@ -64,7 +63,6 @@ function app = definition()
         Entrypoint="labkit_Example_app", AppId="example", ...
         Title="Example", Family="Examples", ...
         AppVersion="1.0.0", Updated="2026-07-19", ...
-        Requirements=labkit.contract.requirements("app", ">=2 <3"), ...
         Workbench=workbench);
 end
 ```
@@ -76,7 +74,8 @@ building one private native platform plan.
 
 ## Paved Road
 
-- Bind ordinary state with `Bind="project..."` or `Bind="session..."`.
+- Bind controls to dotted paths in the App's own in-memory state. The SDK does
+  not reserve root field names or define a project/session schema.
 - Keep ordinary actions on the framework's consistent single-line native
   button rhythm. A readonly `field` automatically wraps its current text and
   adjusts to the available width; Apps do not declare line counts or a separate
@@ -88,7 +87,7 @@ building one private native platform plan.
   `OnValueChanged`; and editable table columns require `OnCellEdited`.
   Workspace page callbacks require named pages. Binding and callback changes
   use the same validation and rollback behavior.
-- Use `labkit.app.layout.fileList` for portable file records and selection.
+- Use `labkit.app.layout.fileList` for live file records and selection.
   Multi-file collections use native multi-selection; a semantic single-file
   slot declares `MaxFiles=1` and single selection. File buttons describe only
   files because folder and recursive-tree acquisition have separate controls.
@@ -102,23 +101,25 @@ building one private native platform plan.
   reports aggregate kept/filtered counts without exposing filenames.
   Unhandled validation or parsing failures from file-panel actions roll back
   transactionally and appear in an alert rather than only in callback output.
-  Source changes rebuild the transient session; Apps do not mirror choose,
-  remove, clear, or selection UI events.
+  Source changes invoke the App's optional state refresh; Apps do not mirror
+  choose, remove, clear, or selection UI events.
 - Give every scientific or workflow action an App-owned `Tooltip`. The
   framework guarantees a nonempty label-based fallback, while repository
   guardrails require tracked Apps to explain the action instead of repeating
-  its visible label. File-list choose/folder/remove/clear controls expose
-  dedicated tooltip options and domain-neutral label defaults.
+  its visible label. Auxiliary file-list buttons derive hover text from their
+  visible labels.
 - Give a potentially long action a concise App-owned `BusyMessage`. Runtime
-  rejects reentrant input as soon as the action starts, but delays visible
-  busy feedback briefly so quick actions do not flash the pointer, title, or
-  disabled controls. If work outlives that delay, Runtime freezes mutable
-  controls and shows the busy stage until the latest committed view is
-  restored. User-facing `info`, `warning`, or failure logs emitted during the
-  action update the visible stage; Apps do not create progress windows.
-- Rebuild transient data with
-  `session = createSession(project,context)` and resolve opaque source records
-  with `context.resolveSourcePaths`.
+  rejects reentrant action input as soon as the action starts, but delays
+  visible busy feedback briefly so quick actions do not flash the pointer,
+  title, or disabled controls. If work outlives that delay, Runtime freezes
+  mutable leaf inputs while leaving tabs, panels, plots, and the last committed
+  view visible until the next view is ready. Slider changes and managed plot
+  gestures are direct manipulation transactions: they remain serialized but
+  do not show action-style busy feedback. User-facing `info`, `warning`, or
+  failure logs emitted during an action update the visible stage; Apps do not
+  create progress windows.
+- Rebuild transient data in `RefreshState` and read source paths with
+  `labkit.app.source.paths`.
 - Use `context.postEvent(eventId,updateState)` when a timer, device driver,
   network stream, monitor, or dashboard needs to publish fresh App state.
   Runtime coalesces pending posts with the same semantic ID, runs the latest
@@ -161,11 +162,8 @@ building one private native platform plan.
   equal-scale view from the settled native axes allocation without dispatching
   pending UI callbacks, without changing the allocation or locking later zoom.
   Apps still decide message wording and viewport policy.
-- Use `labkit.app.project.Schema`, `labkit.app.result.File`, and
-  `labkit.app.result.Package` only when those optional capabilities exist.
-- Use `labkit.app.project.sourceRecord` only in pure project creation or
-  migration code that must turn a legacy path into a portable source value;
-  runtime callbacks still resolve paths through `CallbackContext`.
+- Write App result files directly through the App-owned export capability.
+  Any manifest or task archive is an App contract, not an SDK object.
 
 Runtime validates candidate state and the complete view snapshot before
 publishing either. The private MATLAB adapter maps semantic IDs to native
@@ -188,21 +186,24 @@ utilities do not compete with the App's workflow controls:
 - **Screenshot** copies the complete App surface to the system clipboard or
   writes a uniquely named PNG beneath `artifacts/screenshots/`. A save dialog
   is used only if automatic artifact output fails.
-- **Project State** writes a uniquely named project beneath
-  `artifacts/states/` or loads a selected project when the App declares a
-  project schema. A save dialog is used only if automatic output fails.
 - **Diagnostics** opens the App-named Session Log or exports a uniquely named
   bundle beneath `artifacts/diagnostics/`. Every export contains complete
   sensitive messages, attributes, exception text, stack locations, and App
-  state. The exact option writes `app-state.mat`; the compact option writes
-  `app-state-compact.mat` after replacing supported state leaves larger than
+  state. It writes `app-state-compact.mat` after replacing supported state leaves larger than
   1 MiB with same-class, same-dimension, compressible synthetic placeholders.
   `bundle-report.json` records every replacement without storing its value.
-  Compact is the default; exact remains an explicit choice. After the first
-  ERROR or CRITICAL event, closing the App automatically writes a compact
+  After the first ERROR or CRITICAL event, closing the App automatically writes a
   diagnostic bundle. Selecting an event highlights its complete table row.
-  Text fallback retains complete events and reports that the selected MAT
+  Text fallback retains complete events and reports that the compact MAT
   state could not be represented as text.
+  **Export Previous Active Session** writes a read-only bundle for the newest
+  same-App journal that was left active, such as after a MATLAB hang or
+  abnormal termination.
+
+The SDK has no task archive, save/load callbacks, dirty tracking, recovery
+files, or generic continuation workflow. Apps that genuinely support pausing
+and continuing work own explicit controls and their complete JSON, CSV, or MAT
+snapshot format.
 
 Each App session keeps its persistent structured journal beneath
 `artifacts/logs/sessions/` in the active LabKit installation. LabKit does not
@@ -212,23 +213,24 @@ that previously wrote session journals beneath MATLAB's `prefdir/LabKit/logs/`
 leave those existing files unchanged. The journal subsystem does not inspect or
 prune other sessions in the background.
 
+Before Runtime enters an App callback it durably closes and reopens the active
+journal segment after writing the root operation start. State-update and
+validation stages stay in the buffered event stream; immediately before native
+presentation, Runtime writes those stages plus a durable presentation-entry
+checkpoint. If
+MATLAB hangs, the newest operation without a terminal event identifies the
+last entered stage on the next launch.
+
 These actions are framework-owned native behavior. Apps do not declare menu
-items, implement clipboard integration, or duplicate project persistence
-callbacks.
+items or implement clipboard and diagnostic integration.
 
 App callbacks use `CallbackContext.inform` for successful or neutral
 information and reserve `CallbackContext.alert` for blocking problems. The two
 capabilities map explicitly to native information and error icons.
 
 Framework concepts and source names are versionless. Compatibility belongs to
-`labkit.app.version`; saved-data versions belong to
-`labkit.app.project.Schema`.
-
-Project persistence is optional. An App that declares no `ProjectSchema` can
-keep an entire live monitor or replay workflow in transient `session` state
-and managed resources. Runtime marks a document changed only when the
-validated `project` value actually changes; session-only refreshes do not
-create false unsaved-change state.
+`labkit.app.version`; any task-archive version belongs to the App that defines
+that archive. Runtime has no project document identity or dirty state.
 
 ## Related Topics
 

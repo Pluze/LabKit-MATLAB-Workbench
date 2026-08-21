@@ -5,16 +5,14 @@ classdef RhsPreviewWorkflowSpec < matlab.unittest.TestCase
         function indexesPreviewsExportsAndRestoresSyntheticRhs(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.synthetic.Context(folder);
-            pack = rhs_preview.syntheticInputs.writeSamplePack(context);
-            primary = context.samplePath("rhs_preview/acquisition/representative_primary.rhs");
-            repeat = context.samplePath("rhs_preview/acquisition/representative_repeat.rhs");
-            protocolPath = context.outputPath("rhs_protocol_draft.json");
-            filterPath = context.outputPath("rhs_filter_record.json");
-            project = pack.InitialProject;
+            project = rhsPreviewWorkflowProject(string(folder));
+            primary = fullfile(folder, "acquisition", "primary.rhs");
+            repeat = fullfile(folder, "acquisition", "repeat.rhs");
+            protocolPath = fullfile(folder, "rhs_protocol_draft.json");
+            filterPath = fullfile(folder, "rhs_filter_record.json");
             project.inputs.sources = [project.inputs.sources(:); ...
-                context.sourceRecord("filter-1", "filterRecording", primary, true); ...
-                context.sourceRecord("filter-2", "filterRecording", repeat, true)];
+                labkit.app.source.record("filter-1", "filterRecording", primary); ...
+                labkit.app.source.record("filter-2", "filterRecording", repeat)];
             backend = struct( ...
                 "chooseOutputFile", @(~, defaultPath) chooseOutput( ...
                     defaultPath, protocolPath, filterPath), ...
@@ -41,14 +39,8 @@ classdef RhsPreviewWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview").Children);
             testCase.verifyTrue(isfile(protocolPath));
             testCase.verifyTrue(isfile(filterPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastProtocolExport.manifestPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastFilterExport.manifestPath));
-            saved = fullfile(folder, "rhs-preview-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.invokeAction("resetWorkflow");
-            testCase.verifyEmpty(runtime.State.session.cache.index);
-            runtime.restoreProject(saved);
-            testCase.verifyNotEmpty(runtime.State.session.cache.index);
+            testCase.verifyTrue(isfile(runtime.State.project.results.lastProtocolExport.outputPath));
+            testCase.verifyTrue(isfile(runtime.State.project.results.lastFilterExport.outputPath));
             clear cleanup
         end
     end

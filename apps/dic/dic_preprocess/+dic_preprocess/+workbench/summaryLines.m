@@ -29,7 +29,7 @@ index = find(string({sources.role}) == role, 1);
 if isempty(index)
     return
 end
-candidate = string(sources(index).reference.originalPath);
+candidate = string(sources(index).path);
 if strlength(candidate) > 0
     value = candidate;
 end

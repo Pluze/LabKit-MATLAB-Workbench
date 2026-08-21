@@ -1,7 +1,7 @@
 % App-owned implementation for dic_postprocess.resultFiles.exportSummary within the dic_postprocess product workflow.
 function applicationState = exportSummary( ...
         applicationState, callbackContext)
-%EXPORTSUMMARY Write the ROI strain summary CSV and result manifest.
+%EXPORTSUMMARY Write the ROI strain summary CSV.
 summary = applicationState.project.results.summaryTable;
 if isempty(summary) || height(summary) == 0
     callbackContext.alert( ...
@@ -9,7 +9,7 @@ if isempty(summary) || height(summary) == 0
     return;
 end
 matPath = pathForRole( ...
-    applicationState.project.inputs.sources, "strain", callbackContext);
+    applicationState.project.inputs.sources, "strain");
 [folder, name] = fileparts(matPath);
 defaultName = fullfile(folder, name + "_strain_summary.csv");
 choice = callbackContext.chooseOutputFile( ...
@@ -20,25 +20,14 @@ if choice.Cancelled
 end
 filepath = string(choice.Value);
 writetable(summary, filepath);
-[folder, name, extension] = fileparts(filepath);
-outputName = string(name) + string(extension);
-output = labkit.app.result.File( ...
-    "strainSummary", "primary", outputName, MediaType="text/csv");
-package = labkit.app.result.Package( ...
-    Outputs={output}, ...
-    Inputs=struct("sources", applicationState.project.inputs.sources), ...
-    Parameters=applicationState.project.parameters, ...
-    Summary=struct("metricCount", height(summary)), ...
-    ManifestName=string(name) + ".labkit.json");
-written = callbackContext.writeResultPackage(folder, package);
-applicationState.project.results.summaryManifestPath = ...
-    string(written.Value);
+applicationState.project.results.summaryOutputPath = ...
+    filepath;
 callbackContext.log("info", ...
     "dic_postprocess.resultfiles.exportsummary.status", ...
     "Exported the DIC summary.");
 end
 
-function filepath = pathForRole(sources, role, context)
+function filepath = pathForRole(sources, role)
 filepath = "";
 if isempty(sources)
     return;
@@ -47,7 +36,7 @@ match = find(string({sources.role}) == role, 1);
 if isempty(match)
     return;
 end
-paths = context.resolveSourcePaths(sources(match));
+paths = labkit.app.source.paths(sources(match));
 if ~isempty(paths)
     filepath = paths(1);
 end

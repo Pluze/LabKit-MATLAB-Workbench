@@ -18,28 +18,21 @@ apps/<family>/<app_slug>/+<app_slug>/definition.m
 apps/<family>/<app_slug>/+<app_slug>/+workbench/buildLayout.m
 ```
 
-`labkit.app.Definition` supplies empty project/session and default presentation
+`labkit.app.Definition` supplies empty scalar state and default presentation
 behavior when optional components are omitted. Bind real business callbacks
 directly from the layout. Add `+workbench/present.m` for derived visible state,
-`createSession.m` for transient decoded/cache state, and `projectSpec.m` only
-when the App owns durable data. That single project file contains local create,
-validate, and migrate functions. Its migrate callback exists only after a
-saved project schema has actually changed and only for the older payload
-versions the App explicitly supports; Runtime owns the version loop. Current
-saves always write the current payload version. Use an exact declared
-`LegacyImports` variable adapter only for real pre-envelope user files, never
-as a shape-guessing fallback.
+`CreateState` when the App needs structured runtime data, and `RefreshState`
+when file-list edits require decoded or cached data to be rebuilt.
 
 Runtime and App architecture names remain versionless. Put facade/App
-compatibility in the existing version and requirement metadata, and put saved
-payload numbers only in `projectSpec` migration logic. Do not create
+compatibility in the existing version and requirement metadata. Put saved
+payload numbers only inside an App that explicitly owns a continuation file.
+Do not create
 version-named packages, files, functions, types, tests, or manual sections.
 
-The project validator owns only App-specific requirements: domain fields,
-legal choices and ranges, cross-field relationships, source roles, and
-scientific invariants. Runtime validates the five canonical project buckets
-and standard portable source records before the callback runs. Do not repeat
-those framework checks in each App.
+An optional state validator owns only App-specific in-memory invariants. The
+runtime requires a scalar struct and does not impose canonical buckets,
+durability, migration, or a saved-data schema.
 
 Create additional packages only for concrete workflows that need them, for
 example `+sourceFiles`, `+analysisRun`, `+resultFiles`, `+cropGeometry`, or
@@ -50,14 +43,14 @@ example `+sourceFiles`, `+analysisRun`, `+resultFiles`, `+cropGeometry`, or
 
 `definition.m` returns one immutable `labkit.app.Definition`. It is the App's
 single product contract and names the public command, stable ID, display
-metadata, App version, compatible LabKit facades, and workbench. Project
-schema, session factory, presenter, post-layout start callback, and debug
+metadata, App version, compatible LabKit facades, and workbench. State
+creation, state refresh, presenter, post-layout start callback, and debug
 sample are opt-in capabilities. Callbacks and renderers are owned directly by
 their layout nodes.
 
-The complete field tables, callback signatures, canonical project/session
-buckets, presenter shape, and renderer contract are documented in
-[Runtime and Lifecycle](../../framework/guides/runtime.md#definition-component-contract).
+The complete field tables, callback signatures, state boundary, presenter
+shape, and renderer contract are documented in
+[Runtime and Lifecycle](../../framework/guides/runtime.md#definition-and-launch).
 For a complete file-by-file implementation, follow
 [Build a Complete App](complete-app.md).
 
@@ -65,12 +58,12 @@ The framework owns:
 
 - startup, readiness, and busy state
 - queued callback dispatch and rollback
-- project save/load and recovery
 - managed interactions and resources
-- debug tracing and result manifests
+- unified logging and diagnostic state capture
 
-The app owns durable `state.project`, transient `state.session`, semantic
-callbacks, presentation models, and scientific behavior.
+The app owns all runtime-state meaning, semantic callbacks, presentation
+models, scientific behavior, final result files, and any explicit continuation
+archive.
 
 ## Build The Workbench
 
@@ -120,21 +113,21 @@ Register large file selections with the least data needed for the first useful
 preview. Decode the selected file on demand and defer full-batch work until the
 user runs or exports when the workflow permits it.
 
-Apps with preview, edit, run, or export stages should make dirty state and the
-last successful task explicit. Pure helpers build deterministic task snapshots
-and calculations; result writers receive explicit task data rather than
-reading UI handles.
+When stale or duplicate results are possible, the App owns the smallest
+explicit last-successful-task or fingerprint state needed by that workflow.
+Pure helpers build deterministic task snapshots and calculations; result
+writers receive explicit task data rather than reading UI handles. Do not add
+generic dirty state or document identity for Apps that do not continue a task.
 
 ## Cross-App Data Contracts
 
-Apps exchange saved, documented data contracts; production and debug code do
-not call a sibling App package. A consumer owns its parser and error language,
-so it can launch with only the framework and its own App root on the MATLAB
-path. A producer owns serialization and schema validation. Keep one
-producer-consumer integration test that invokes both Apps and proves the
-current saved format remains compatible; keep consumer unit and debug fixtures
-independent of the producer package so the shared test path cannot hide a
-runtime dependency.
+Apps exchange a saved data contract only when a real workflow consumes it;
+production and test setup do not call a sibling App package merely to create
+inputs. A consumer owns its parser and error language, so it can launch with
+only the framework and its own App root on the MATLAB path. A producer owns
+serialization and schema validation. Test the current producer-consumer
+contract directly when that connection exists; do not invent a common archive,
+fixture protocol, or compatibility matrix for unrelated Apps.
 
 ## Ownership Check
 
@@ -161,7 +154,7 @@ change.
 
 Use focused app tests while editing, then follow the stable gates in
 [Testing](../maintain-and-release/testing.md). Automated GUI tests cover launch, layout, callbacks,
-debug plumbing, and synthetic workflows; visual quality and manual interaction
+debug plumbing, and bounded workflows with minimal generated inputs; visual quality and manual interaction
 feel still require a human MATLAB check.
 
 ## Related Reference

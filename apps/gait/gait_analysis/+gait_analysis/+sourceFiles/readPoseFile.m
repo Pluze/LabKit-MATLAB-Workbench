@@ -6,7 +6,7 @@ function pose = readPoseFile(filepath)
 %
 % Inputs:
 %   filepath - Scalar path to a MAT file containing one current
-%       `labkitProject` envelope produced by Video Marker payload version 2.
+%       `videoMarkerArchive` produced by Video Marker payload version 3.
 %       The reader loads only that named variable and never reopens the video.
 %
 % Outputs:
@@ -45,40 +45,39 @@ function pose = readPoseFile(filepath)
     [~, ~, extension] = fileparts(filepath);
     if lower(string(extension)) ~= ".mat"
         error('labkit_GaitAnalysis_app:UnsupportedPoseFile', ...
-            'Gait Analysis accepts current Video Marker MAT projects only.');
+            'Gait Analysis accepts current Video Marker MAT archives only.');
     end
     inventory = string(who('-file', filepath));
-    if ~any(inventory == "labkitProject")
-        invalidMarker(['MAT file does not contain a current labkitProject. ' ...
-            'Open and save it with the current Video Marker first.']);
+    if numel(inventory) ~= 1 || inventory ~= "videoMarkerArchive"
+        invalidMarker('MAT file is not a current Video Marker archive.');
     end
-    loaded = load(filepath, 'labkitProject');
-    pose = poseFromEnvelope(loaded.labkitProject);
+    loaded = load(filepath, 'videoMarkerArchive');
+    pose = poseFromArchive(loaded.videoMarkerArchive);
     pose.sourcePath = filepath;
-    pose.sourceFormat = "mat.videoMarkerProjectV2";
+    pose.sourceFormat = "mat.videoMarkerArchiveV3";
     pose.ok = true;
 end
 
-function pose = poseFromEnvelope(envelope)
-    if ~isstruct(envelope) || ~isscalar(envelope) || ...
-            ~all(isfield(envelope, {'format', 'app', 'payload'})) || ...
-            string(envelope.format) ~= "labkit.project" || ...
-            ~isstruct(envelope.app) || ...
-            ~all(isfield(envelope.app, {'id', 'payloadVersion'})) || ...
-            string(envelope.app.id) ~= "video_marker" || ...
-            double(envelope.app.payloadVersion) ~= 2
-        invalidMarker(['Gait Analysis requires a current Video Marker payload ' ...
-            'version 2 project or autosave.']);
+function pose = poseFromArchive(archive)
+    fields = ["format", "formatVersion", "payloadVersion", ...
+        "project", "currentFrame"];
+    if ~isstruct(archive) || ~isscalar(archive) || ...
+            ~isequal(sort(string(fieldnames(archive))), sort(fields(:))) || ...
+            ~isTextScalar(archive.format) || ...
+            string(archive.format) ~= "video_marker.archive" || ...
+            ~isCurrentVersion(archive.formatVersion, 1) || ...
+            ~isCurrentVersion(archive.payloadVersion, 3) || ...
+            ~isstruct(archive.project) || ~isscalar(archive.project)
+        invalidMarker('Gait Analysis requires a current Video Marker archive.');
     end
-    payload = envelope.payload;
-    if ~isstruct(payload) || ~isscalar(payload) || ...
-            ~all(isfield(payload, {'inputs', 'annotations'})) || ...
-            ~isfield(payload.annotations, 'frames') || ...
-            ~isfield(payload.annotations, 'skeleton')
+    project = archive.project;
+    if ~all(isfield(project, {'inputs', 'annotations'})) || ...
+            ~isfield(project.annotations, 'frames') || ...
+            ~isfield(project.annotations, 'skeleton')
         invalidMarker('Video Marker payload annotations are incomplete.');
     end
-    frames = payload.annotations.frames;
-    rawSkeleton = payload.annotations.skeleton;
+    frames = project.annotations.frames;
+    rawSkeleton = project.annotations.skeleton;
     if ~isstruct(frames) || ~isscalar(frames) || ...
             ~isfield(frames, 'coords') || ~isnumeric(frames.coords)
         invalidMarker('Video Marker frame coordinates are malformed.');
@@ -88,7 +87,7 @@ function pose = poseFromEnvelope(envelope)
         invalidMarker('Video Marker coordinates must be nonempty F-by-P-by-2 data.');
     end
     skeleton = normalizedSkeleton(rawSkeleton, size(coords, 2));
-    metadata = videoMetadata(payload.inputs, size(coords, 1));
+    metadata = videoMetadata(project.inputs, size(coords, 1));
 
     pose = gait_analysis.sourceFiles.emptyPoseData();
     pose.coords = coords;
@@ -102,7 +101,7 @@ function pose = poseFromEnvelope(envelope)
         frames, 'frameStatus', size(coords, 1), 'uint8');
     pose.frameSource = optionalFrameVector( ...
         frames, 'frameSource', size(coords, 1), 'uint8');
-    pose.calibration = markerCalibration(payload.annotations);
+    pose.calibration = markerCalibration(project.annotations);
     if pose.calibration.isCalibrated
         pose.pixelsPerUnit = pose.calibration.pixelsPerUnit;
         pose.unitName = pose.calibration.unit;
@@ -153,7 +152,7 @@ function metadata = videoMetadata(inputs, frameCount)
     end
     if metadata.frameRate <= 0
         missingMetadata(['Embedded frame rate is missing. Reopen the source ' ...
-            'in the current Video Marker and press Save autosave.']);
+            'in the current Video Marker and press Save MAT.']);
     end
 end
 
@@ -198,4 +197,14 @@ end
 
 function missingMetadata(message)
     error('labkit_GaitAnalysis_app:MissingVideoMetadata', '%s', message);
+end
+
+function accepted = isTextScalar(value)
+    accepted = (ischar(value) && isrow(value)) || ...
+        (isstring(value) && isscalar(value));
+end
+
+function accepted = isCurrentVersion(value, expected)
+    accepted = isnumeric(value) && isscalar(value) && isfinite(value) && ...
+        double(value) == expected;
 end

@@ -22,7 +22,7 @@ if index > numel(sources)
     return;
 end
 try
-    paths = callbackContext.resolveSourcePaths(sources(index));
+    paths = labkit.app.source.paths(sources(index));
     items = image_match.sourceFiles.readImages(paths);
 catch ME
     callbackContext.log("error", "image_match.sourcefiles.selectpreview.exception", "Load image-match preview", ...

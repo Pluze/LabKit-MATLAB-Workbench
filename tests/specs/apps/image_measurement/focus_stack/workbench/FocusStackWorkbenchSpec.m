@@ -3,7 +3,7 @@ classdef FocusStackWorkbenchSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function composesTheEmptyProjectSnapshot(testCase)
-            project = focus_stack.projectSpec().Create();
+            project = focus_stack.initialData();
             session = focus_stack.createSession(project, ...
                 labkittest.disconnectedCallbackContext());
 

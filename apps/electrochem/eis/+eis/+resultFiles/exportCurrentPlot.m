@@ -1,6 +1,6 @@
 % App-owned implementation for eis.resultFiles.exportCurrentPlot within the eis product workflow.
 function state = exportCurrentPlot(state, context)
-%EXPORTCURRENTPLOT Write the selected EIS X/Y overlay data and result package.
+%EXPORTCURRENTPLOT Write the selected EIS X/Y overlay data.
 arguments
     state (1, 1) struct
     context (1, 1) labkit.app.CallbackContext
@@ -22,11 +22,7 @@ p = state.project.parameters;
 tableValue = eis.resultFiles.buildExportTable(items, p.xName, p.yName, ...
     p.impedanceUnit, p.logX, p.logY);
 writetable(tableValue, path);
-[folder, base, extension] = fileparts(path);
-output = labkit.app.result.File("eisPlotData", "primary", string(base) + string(extension), MediaType="text/csv");
-package = labkit.app.result.Package(Outputs={output}, Inputs=struct("sources", state.project.inputs.sources), Parameters=p, Summary=struct("fileCount", numel(items)));
-written = context.writeResultPackage(folder, package);
-state.project.results.lastExport = struct("csvPath", path, "manifestPath", string(written.Value));
+state.project.results.lastExport = struct("csvPath", path, "outputPath", path);
 context.log("info", "eis.resultfiles.exportcurrentplot.status", ...
     "Exported the current EIS plot data.");
 end

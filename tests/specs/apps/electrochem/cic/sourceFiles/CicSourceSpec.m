@@ -3,7 +3,7 @@ classdef CicSourceSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function emptySourcesReturnTheDeclaredStructVector(testCase)
-            project = cic.projectSpec().Create();
+            project = cic.initialData();
 
             items = cic.sourceFiles.loadProjectItems( ...
                 strings(0, 1), project.parameters);
@@ -13,9 +13,9 @@ classdef CicSourceSpec < matlab.unittest.TestCase
         end
 
         function acceptsOnlyChronoDtaPaths(testCase)
-            chrono = testfixtures.dtaFixturePath( ...
+            chrono = testfixtures.dta.file( ...
                 "chrono_chronopot_current_pulse_0p2ms.DTA");
-            eisPath = testfixtures.dtaFixturePath( ...
+            eisPath = testfixtures.dta.file( ...
                 "eis_potentiostatic_zcurve.DTA");
 
             accepted = cic.sourceFiles.matchesDtaKind([chrono, eisPath]);

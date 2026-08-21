@@ -15,7 +15,7 @@ if chosen.Cancelled
 end
 state.project.parameters.outputFolder = string(chosen.Value);
 state.project.results.lastExport = [];
-state.project.results.resultManifestPath = "";
+state.project.results.lastOutputPath = "";
 callbackContext.log("info", "figure_studio.resultfiles.chooseoutputfolder.status",  ...
     "Selected the Figure Studio output folder.");
 end

@@ -3,8 +3,7 @@ classdef CurvatureSourceSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function clearingAnImageSelectionClearsCurveState(testCase)
-            definition = curvature.definition();
-            project = definition.ProjectSchema.Create();
+            project = curvature.initialData();
             project.annotations.curvePoints = [1 2; 3 4];
             state = struct("project", project, "session", struct( ...
                 "workflow", struct("editMode", "curve"), ...

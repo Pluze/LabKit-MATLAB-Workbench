@@ -16,18 +16,16 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         Processing (1, 1) logical = false
         Resources
         Adapter
-        Documents
         Sources
         Recorder
         Artifacts
         Diagnostics
         PostedEvents
-        PendingDocumentMetadata = []
     end
 
     methods (Access = ?labkit.app.internal.runtime.RuntimeFactory)
         function obj = RuntimeKernel( ...
-                application, contract, initialProject, backend, platform, ...
+                application, contract, initialState, backend, platform, ...
                 recorder)
             obj.Application = application;
             obj.Contract = contract;
@@ -43,7 +41,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "runtime.lifecycle", "runtime.construct", ...
                 "Constructing application runtime.");
             obj.Resources = labkit.app.internal.resource.ResourceStore();
-            obj.Sources = labkit.app.internal.source.PortableSourceStore();
+            obj.Sources = labkit.app.internal.source.SourceListStore();
             obj.PostedEvents = ...
                 labkit.app.internal.runtime.PostedEventQueue( ...
                 @(eventId, updateState) ...
@@ -64,22 +62,9 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     obj.Application.DisplayName, ...
                     @(message, title) obj.notifyUser(message, title));
                 obj.updateStartup("Creating app state...");
-                if ~isempty(application.ProjectSchema)
-                    obj.Documents = labkit.app.internal.project.ProjectDocumentStore( ...
-                        application, obj.Context, contract);
-                end
-                project = ...
-                    labkit.app.internal.runtime.RuntimeContractBoundary.initialProject( ...
-                    obj.Application, initialProject);
-                session = struct();
-                if ~isempty(application.CreateSession)
-                    session = application.CreateSession(project, obj.Context);
-                end
-                if ~isstruct(session) || ~isscalar(session)
-                    error("labkit:app:runtime:InvariantFailure", ...
-                        "Application Session must return a scalar struct.");
-                end
-                obj.State = struct("project", project, "session", session);
+                obj.State = ...
+                    labkit.app.internal.runtime.RuntimeContractBoundary.initialState( ...
+                    obj.Application, initialState, obj.Context);
                 labkit.app.internal.runtime.RuntimeContractBoundary.validateState( ...
                     obj.Application, obj.State);
                 obj.updateStartup("Preparing first view...");
@@ -122,32 +107,24 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 obj.Contract, binding));
         end
 
-        function setResource(obj, scope, id, value, cleanup)
+        function setResource(obj, id, value, cleanup)
             obj.recordOperation( ...
                 "runtime.resource", "resource.set", ...
                 "Setting runtime resource.", ...
                 "committed", "notApplicable", ...
-                @() obj.Resources.set(scope, id, value, cleanup));
+                @() obj.Resources.set(id, value, cleanup));
         end
 
-        function value = getResource(obj, scope, id)
-            value = obj.Resources.get(scope, id);
+        function value = getResource(obj, id)
+            value = obj.Resources.get(id);
         end
 
-        function removeResource(obj, scope, id)
+        function removeResource(obj, id)
             obj.recordOperation( ...
                 "runtime.resource", "resource.removed", ...
                 "Removing runtime resource.", ...
                 "committed", "notApplicable", ...
-                @() obj.Resources.remove(scope, id));
-        end
-
-        function clearResourceScope(obj, scope)
-            obj.recordOperation( ...
-                "runtime.resource", "resource.scope_cleared", ...
-                "Clearing runtime resource scope.", ...
-                "committed", "notApplicable", ...
-                @() obj.Resources.clearScope(scope));
+                @() obj.Resources.remove(id));
         end
 
         function postEvent(obj, eventId, updateState)
@@ -159,18 +136,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             else
                 obj.PostedEvents.post(eventId, updateState);
             end
-        end
-
-        function failNextCommit(obj)
-            obj.Adapter.failNextCommit();
-        end
-
-        function count = commitCount(obj)
-            count = obj.Adapter.CommitCount;
-        end
-
-        function events = diagnosticEvents(obj)
-            events = obj.Diagnostics.events();
         end
 
         function snapshot = diagnosticSnapshot(obj)
@@ -193,63 +158,23 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.Diagnostics.setTraceCapture(enabled);
         end
 
-        function destination = exportDiagnosticBundle( ...
-                obj, destination, stateMode)
-            if nargin < 3
-                stateMode = "compact";
-            end
+        function destination = exportDiagnosticBundle(obj, destination)
             destination = obj.Diagnostics.exportBundle( ...
-                destination, obj.State, stateMode);
+                destination, obj.State);
         end
 
         function destination = exportDiagnosticBundleInteractive(obj)
             destination = obj.Diagnostics.exportInteractive(obj.State);
         end
 
+        function destination = exportPreviousActiveSession(obj)
+            destination = obj.Diagnostics.exportPreviousActive();
+        end
+
         function destination = exportDiagnosticTextFallback( ...
-                obj, preferredDestination, cause, stateMode)
-            if nargin < 4
-                stateMode = "compact";
-            end
+                obj, preferredDestination, cause)
             destination = obj.Diagnostics.exportTextFallback( ...
-                preferredDestination, cause, stateMode);
-        end
-
-        function alertDiagnosticTextFallback(obj, destination)
-            obj.Diagnostics.alertTextFallback(destination);
-        end
-
-        function supported = supportsSyntheticInputs(obj)
-            supported = ~isempty(obj.Application.BuildSyntheticSample);
-        end
-
-        function pack = generateSyntheticInputs(obj, folder)
-            operation = obj.Recorder.begin( ...
-                "runtime.source", "synthetic_inputs.generated", ...
-                "Generating synthetic inputs.");
-            try
-                pack = labkit.app.internal.source.SyntheticInputGenerator.generate( ...
-                    obj.Application, folder);
-                obj.Recorder.finish( ...
-                    operation, "completed", "notApplicable", []);
-            catch cause
-                obj.Recorder.finish( ...
-                    operation, "failed", "notApplicable", cause);
-                rethrow(cause);
-            end
-        end
-
-        function folder = generateSyntheticInputsInteractive(obj)
-            choice = obj.Context.chooseOutputFolder("");
-            folder = "";
-            if choice.Cancelled
-                return;
-            end
-            folder = obj.uniqueSyntheticInputFolder(choice.Value);
-            obj.generateSyntheticInputs(folder);
-            obj.Context.inform( ...
-                "Synthetic inputs were written to the selected folder.", ...
-                "Synthetic Inputs");
+                preferredDestination, cause);
         end
 
         function destination = automaticArtifactDestination( ...
@@ -277,143 +202,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
         end
 
-        function result = saveProject(obj, state, filepath)
-            obj.assertProjectStore();
-            operation = obj.Recorder.begin( ...
-                "runtime.project", "project.saved", ...
-                "Saving project document.");
-            try
-                result = obj.Documents.save(state, filepath);
-                obj.refreshWindowTitle();
-                obj.Recorder.finish( ...
-                    operation, "completed", "committed", []);
-            catch cause
-                obj.Recorder.finish( ...
-                    operation, "failed", "rolledBack", cause);
-                rethrow(cause);
-            end
-        end
-
-        function state = prepareProjectRestore(obj, filepath)
-            obj.assertOpen();
-            obj.assertProjectStore();
-            operation = obj.Recorder.begin( ...
-                "runtime.project", "project.restore_prepared", ...
-                "Preparing project restore.");
-            try
-                [state, obj.PendingDocumentMetadata] = ...
-                    obj.Documents.restore(filepath, false);
-                obj.Recorder.finish( ...
-                    operation, "completed", "notApplicable", []);
-            catch cause
-                obj.Recorder.finish( ...
-                    operation, "failed", "notApplicable", cause);
-                rethrow(cause);
-            end
-        end
-
-        function state = prepareNewProject(obj)
-            obj.assertOpen();
-            obj.assertProjectStore();
-            operation = obj.Recorder.begin( ...
-                "runtime.project", "project.new_prepared", ...
-                "Preparing a new project.");
-            try
-                [state, obj.PendingDocumentMetadata] = ...
-                    obj.Documents.createNew();
-                obj.Recorder.finish( ...
-                    operation, "completed", "notApplicable", []);
-            catch cause
-                obj.Recorder.finish( ...
-                    operation, "failed", "notApplicable", cause);
-                rethrow(cause);
-            end
-        end
-
-        function saveRecovery(obj, state, filepath)
-            obj.assertProjectStore();
-            operation = obj.Recorder.begin( ...
-                "runtime.project", "project.recovery_saved", ...
-                "Saving project recovery document.");
-            try
-                obj.Documents.saveRecovery(state, filepath);
-                obj.Recorder.finish( ...
-                    operation, "completed", "committed", []);
-            catch cause
-                obj.Recorder.finish( ...
-                    operation, "failed", "rolledBack", cause);
-                rethrow(cause);
-            end
-        end
-
-        restoreProject(obj, filepath, asRecovery)
-
-        function metadata = documentMetadata(obj)
-            obj.assertProjectStore();
-            metadata = obj.Documents.Metadata;
-        end
-
-        function written = writeResult(obj, folder, result)
-            metadata = [];
-            if ~isempty(obj.Documents)
-                metadata = obj.Documents.Metadata;
-            end
-            writer = labkit.app.internal.result.ResultWriter(obj.Application, metadata);
-            written = obj.recordOperation( ...
-                "runtime.result", "result.written", ...
-                "Writing result package.", ...
-                "committed", "rolledBack", ...
-                @() writer.write(folder, result));
-        end
-
-        function record = sourceRecord(obj, id, role, path, required)
-            record = obj.recordOperation( ...
-                "runtime.source", "source.record_created", ...
-                "Creating portable source record.", ...
-                "notApplicable", "notApplicable", ...
-                @() obj.Sources.create(id, role, path, required));
-        end
-
-        function paths = sourcePaths(obj, sources, ids)
-            paths = obj.recordOperation( ...
-                "runtime.source", "source.paths_resolved", ...
-                "Resolving portable source paths.", ...
-                "notApplicable", "notApplicable", ...
-                @resolve);
-
-            function values = resolve()
-                if isempty(ids)
-                    values = obj.Sources.sourcePaths(sources);
-                else
-                    values = obj.Sources.sourcePaths(sources, ids);
-                end
-            end
-        end
-
-        function sources = upsertSource(obj, sources, record)
-            sources = obj.recordOperation( ...
-                "runtime.source", "source.record_upserted", ...
-                "Updating portable source records.", ...
-                "notApplicable", "notApplicable", ...
-                @() obj.Sources.upsert(sources, record));
-        end
-
-        function sources = reconcileSources(obj, current, incoming)
-            sources = obj.recordOperation( ...
-                "runtime.source", "source.records_reconciled", ...
-                "Reconciling portable source records.", ...
-                "notApplicable", "notApplicable", ...
-                @() obj.Sources.reconcile(current, incoming));
-        end
-
-        function applyBinding(obj, target, value)
-            obj.recordOperation( ...
-                "runtime.interaction", "interaction.binding_applied", ...
-                "Applying bound control value.", ...
-                "committed", "rolledBack", ...
-                @() obj.applyBoundControl(target, value, false));
-        end
-
         function applyControlValue(obj, target, value)
             obj.recordOperation( ...
                 "runtime.interaction", "interaction.value_changed", ...
@@ -428,9 +216,11 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                         "Layout target is undeclared: %s.", target);
                 end
                 configuration = plan.Nodes(index).Configuration;
+                directManipulation = plan.Nodes(index).Kind == "slider";
                 if isfield(configuration, "Bind") && ...
                         strlength(configuration.Bind) > 0
-                    obj.applyBoundControl(target, value, true);
+                    obj.applyBoundControl( ...
+                        target, value, true, ~directManipulation);
                 else
                     binding = ...
                         labkit.app.internal.runtime.RuntimeContractBoundary.signalForTarget( ...
@@ -440,7 +230,14 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                             "Layout target has no value behavior: %s.", ...
                             target);
                     end
-                    obj.dispatch(binding, value);
+                    if directManipulation
+                        obj.enqueueTransition( ...
+                            binding, value, @(state) state, ...
+                            "Callback " + binding.Id, string(target), ...
+                            [], false);
+                    else
+                        obj.dispatch(binding, value);
+                    end
                 end
             end
         end
@@ -507,7 +304,10 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "runtime.interaction", "interaction.managed_committed", ...
                 "Applying managed interaction.", ...
                 "committed", "rolledBack", ...
-                @() obj.dispatch(binding, payload));
+                @() obj.enqueueTransition( ...
+                    binding, payload, @(state) state, ...
+                    "Callback " + binding.Id, string(interactionId), ...
+                    [], false));
         end
 
         function applyFilePanelSelection(obj, target, indices)
@@ -523,7 +323,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     target, config, current, indices, false));
         end
 
-        applyBoundControl(obj, target, value, dispatchChanged)
+        applyBoundControl(obj, target, value, dispatchChanged, showBusy)
 
         applyFileSelection(obj, target, paths, indices)
 
@@ -620,16 +420,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
     end
 
     methods (Access = private)
-        function folder = uniqueSyntheticInputFolder(obj, parent)
-            timestamp = string(datetime("now", ...
-                "TimeZone", "UTC", "Format", "yyyyMMdd-HHmmss"));
-            nonce = extractBefore( ...
-                labkit.app.internal.identity.newId(), 9);
-            folder = string(fullfile(char(parent), ...
-                "labkit-synthetic-" + obj.Application.AppId + "-" + ...
-                timestamp + "-" + nonce));
-        end
-
         commitFilePanel(obj, target, config, sources, indices, rebuildSession)
 
         backend = completeBackend(obj, backend)
@@ -742,14 +532,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
         end
 
-        function markDocumentChanged(obj)
-            if isempty(obj.Documents)
-                return
-            end
-            obj.Documents.markDirty();
-            obj.refreshWindowTitle();
-        end
-
         function notifyUser(obj, message, title)
             if isa(obj.Adapter, ...
                     "labkit.app.internal.native.MatlabPlatformAdapter")
@@ -769,9 +551,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             title = obj.Application.Title + " v" + ...
                 obj.Application.AppVersion + " (" + ...
                 obj.Application.Updated + ")";
-            if ~isempty(obj.Documents) && obj.Documents.Metadata.dirty
-                title = title + " *";
-            end
         end
 
         function assertOpen(obj)
@@ -785,12 +564,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
         end
 
-        function assertProjectStore(obj)
-            if isempty(obj.Documents)
-                error("labkit:app:runtime:InvariantFailure", ...
-                    "Application has no project contract.");
-            end
-        end
     end
 end
 

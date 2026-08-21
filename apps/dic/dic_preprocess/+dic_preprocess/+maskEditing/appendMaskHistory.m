@@ -1,5 +1,5 @@
 % Expected callers: DIC preprocess actions and unit tests. Input is the
-% canonical durable project, description, and optional undo limit. Output
+% current runtime data, description, and optional undo limit. Output
 % appends a project-owned mask snapshot.
 
 function project = appendMaskHistory(project, description, maxUndoSteps)

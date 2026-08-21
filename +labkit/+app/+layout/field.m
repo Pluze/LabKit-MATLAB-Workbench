@@ -21,7 +21,6 @@ function node = field(id, varargin)
 %   Step - Positive numeric scalar. Default: [].
 %   Bind - Project or session field path. Default: "".
 %   ValueDisplayFormat - MATLAB numeric display format. Default: "".
-%   ShowTicks - Logical slider-tick preference. Default: false.
 %   Enabled - Initial logical enabled state. Default: true.
 %   OnValueChanged - Scalar callback
 %       state = callback(state,value,context). Default: [].

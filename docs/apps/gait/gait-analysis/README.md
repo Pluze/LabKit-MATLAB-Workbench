@@ -17,7 +17,7 @@ labkit_GaitAnalysis_app
 
 ## Supported Input
 
-The only file input is a current Video Marker project MAT file or autosave.
+The only file input is a current Video Marker archive MAT file.
 It must contain:
 
 - frames-by-points-by-2 pixel coordinates;
@@ -29,23 +29,15 @@ It must contain:
 The App uses the timing, skeleton, calibration, and annotation information in
 the Video Marker project; it does not reopen the video to infer missing
 metadata. Generic coordinate tables and unrelated MAT files are therefore not
-accepted. If an older Video Marker project lacks the required metadata, open
-and save it with the current Video Marker before analysis.
+accepted. Retired Video Marker project and autosave formats are not migrated
+by Gait Analysis.
 
-The Video Marker document is stored as a portable project source. Older Gait
-Analysis projects are upgraded on load.
+The selected Video Marker MAT remains a live source while Gait Analysis is
+open.
 
 Coordinates use image convention: the origin is at the upper left and Y
 increases downward. The skeleton preview preserves that convention. Angle and
 length time series use conventional plot axes.
-
-## Saving And Reopening A Project
-
-The project saves the Video Marker source reference, analysis options,
-completed results, and export record. If an older project contains results
-from before the step-length correction, Gait Analysis asks you to rerun the
-analysis before export. If the Video Marker source has moved, the App asks you
-to locate it.
 
 ## Two-Stage Workflow
 
@@ -152,9 +144,7 @@ active swing rather than a complete stride.
 - `<source>_steps.csv`: event boundaries, timing, cadence/duty factor, step
   length, five point translations, joint extrema/ROM, validity and reason;
 - `<source>_summary.csv`: source geometry, counts, valid-step means, and global
-  joint extrema;
-- `<source>_gait.labkit.json`: provenance manifest for inputs, parameters,
-  outputs, and valid-step count.
+  joint extrema.
 
 ## Use Without The GUI
 

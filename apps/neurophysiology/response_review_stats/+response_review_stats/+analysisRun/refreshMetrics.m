@@ -6,7 +6,7 @@ if isempty(state.project.inputs.sources)
 end
 sources = state.project.inputs.sources;
 roleMatch = string({sources.role}) == "reviewInput";
-paths = context.resolveSourcePaths(sources(roleMatch));
+paths = labkit.app.source.paths(sources(roleMatch));
 if isempty(paths)
     state.session.workflow.statusMessage = "Select an analysis JSON or segment CSV first.";
     return;

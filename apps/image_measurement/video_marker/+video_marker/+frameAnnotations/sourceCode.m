@@ -1,5 +1,5 @@
 %SOURCECODE Map annotation provenance names to compact storage codes.
-% Expected callers are annotation storage and compatibility normalization.
+% Expected callers are current annotation editing and prediction.
 function code = sourceCode(name)
     names = ["empty", "manual", "predicted"];
     index = find(names == string(name), 1);

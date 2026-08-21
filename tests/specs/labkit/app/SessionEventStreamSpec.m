@@ -42,13 +42,13 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
         end
 
         function retainsRawPathsInRingAndProjection(testCase)
-            testfixtures.StateStore.set("eventConsumerRecords", strings(0, 1));
+            labkittest.StateStore.set("eventConsumerRecords", strings(0, 1));
             resetConsumer = onCleanup(@resetTestConsumer);
             sourcePath = "/synthetic/input.csv";
             stream = labkit.app.internal.diagnostics.SessionEventStream( ...
                 loggingProbeDefinition(), ProjectionHook=@recordTestConsumer);
             cleanup = onCleanup(@() stream.close());
-            testfixtures.StateStore.set("eventConsumerRecords", strings(0, 1));
+            labkittest.StateStore.set("eventConsumerRecords", strings(0, 1));
 
             stream.log("info", "source.loaded", ...
                 "Loaded " + sourcePath + ".", ...
@@ -61,7 +61,7 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
                 "Loaded /synthetic/input.csv.");
             testCase.verifyEqual(retained.attributes.sourcePath, sourcePath);
             testCase.verifyEqual( ...
-                testfixtures.StateStore.get("eventConsumerRecords"), ...
+                labkittest.StateStore.get("eventConsumerRecords"), ...
                 "source.loaded");
             clear cleanup resetConsumer
         end
@@ -85,12 +85,12 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
         end
 
         function retainsUnitRatiosAndOrdinaryPunctuation(testCase)
-            testfixtures.StateStore.set("eventConsumerRecords", strings(0, 1));
+            labkittest.StateStore.set("eventConsumerRecords", strings(0, 1));
             resetConsumer = onCleanup(@resetTestConsumer);
             stream = labkit.app.internal.diagnostics.SessionEventStream( ...
                 loggingProbeDefinition(), ProjectionHook=@recordTestConsumer);
             cleanup = onCleanup(@() stream.close());
-            testfixtures.StateStore.set("eventConsumerRecords", strings(0, 1));
+            labkittest.StateStore.set("eventConsumerRecords", strings(0, 1));
 
             stream.log("info", "analysis.unit_ratio", ...
                 "Rate settled at the expected mV/s ratio (A/B).", ...
@@ -102,7 +102,7 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(retained, 1);
             testCase.verifyEqual(retained.attributes.unit, "mV/s");
             testCase.verifyEqual(retained.attributes.enum, "nominal-ratio");
-            testCase.verifyEqual(testfixtures.StateStore.get("eventConsumerRecords"), ...
+            testCase.verifyEqual(labkittest.StateStore.get("eventConsumerRecords"), ...
                 "analysis.unit_ratio");
             clear cleanup resetConsumer
         end
@@ -165,15 +165,15 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             journal = labkit.app.internal.diagnostics.SessionJournal(loggingProbeDefinition(), ...
                 RootFolder=root, SessionId="session-attribute-privacy", ...
                 BufferRecordLimit=1);
-            testfixtures.StateStore.set("attributePrivacyJournal", journal);
-            testfixtures.StateStore.set("attributePrivacyHookCount", 0);
+            labkittest.StateStore.set("attributePrivacyJournal", journal);
+            labkittest.StateStore.set("attributePrivacyHookCount", 0);
             globalCleanup = onCleanup(@resetAttributePrivacyProjection);
             journalCleanup = onCleanup(@() journal.close());
             stream = labkit.app.internal.diagnostics.SessionEventStream(loggingProbeDefinition(), ...
                 SessionId="session-attribute-privacy", ...
                 ProjectionHook=@persistAttributePrivacyRecord);
             streamCleanup = onCleanup(@() stream.close());
-            testfixtures.StateStore.set("attributePrivacyHookCount", 0);
+            labkittest.StateStore.set("attributePrivacyHookCount", 0);
             stream.log("info", "analysis.recorded", ...
                 "Loaded /synthetic/input.csv.", Category="runtime.lifecycle", ...
                 Audience="developer", Attributes=struct( ...
@@ -182,7 +182,7 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
 
             retained = journalText(journal.folder());
             testCase.verifyEqual( ...
-                testfixtures.StateStore.get("attributePrivacyHookCount"), 1);
+                labkittest.StateStore.get("attributePrivacyHookCount"), 1);
             testCase.verifyTrue(contains(retained, "/synthetic/input.csv"));
             testCase.verifyTrue(contains(retained, "values"));
             testCase.verifyTrue(contains(retained, "[1,2,3]"));
@@ -196,7 +196,7 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
                 ProjectionHook=@countProjectionHook, ...
                 ProjectionHealthHook=@nextProjectionHealthNotification);
             streamCleanup = onCleanup(@() stream.close());
-            testfixtures.StateStore.set("projectionHealthNotifications", struct( ...
+            labkittest.StateStore.set("projectionHealthNotifications", struct( ...
                 "eventName", "journal.records_dropped", ...
                 "reason", "write-failure", "count", 2));
 
@@ -209,7 +209,7 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(dropped, 1);
             testCase.verifyEqual(dropped.attributes.reason, "write-failure");
             testCase.verifyEqual(dropped.attributes.count, 2);
-            testCase.verifyEqual(testfixtures.StateStore.get("projectionHookCount"), 2);
+            testCase.verifyEqual(labkittest.StateStore.get("projectionHookCount"), 2);
             clear streamCleanup cleanup
         end
 
@@ -225,7 +225,7 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
                 stream = labkit.app.internal.diagnostics.SessionEventStream(loggingProbeDefinition(), ...
                     ProjectionHealthHook=@nextProjectionHealthNotification);
                 streamCleanup = onCleanup(@() stream.close());
-                testfixtures.StateStore.set( ...
+                labkittest.StateStore.set( ...
                     "projectionHealthNotifications", invalid{index});
 
                 stream.refreshProjectionHealth();
@@ -240,96 +240,6 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
                 testCase.verifyFalse(any(string({records.eventName}) == "analysis.injected"));
                 clear streamCleanup cleanup
             end
-        end
-
-        function surfacesJournalProjectionFailureWithoutRecursing(testCase)
-            resetProjectionHealthFixture();
-            fixtureCleanup = onCleanup(@resetProjectionHealthFixture);
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            journal = labkit.app.internal.diagnostics.SessionJournal(loggingProbeDefinition(), ...
-                RootFolder=root, SessionId="session-projection-failure");
-            journalCleanup = onCleanup(@() journal.close());
-            projection = labkit.app.internal.diagnostics.SessionJournalProjection( ...
-                journal, @failProjectionDelivery);
-            stream = labkit.app.internal.diagnostics.SessionEventStream(loggingProbeDefinition(), ...
-                SessionId="session-projection-failure", ...
-                ProjectionHook=@projection.project, ...
-                ProjectionHealthHook=@projection.drainHealth);
-            streamCleanup = onCleanup(@() stream.close());
-            testfixtures.StateStore.set("projectionDeliveryFailures", [true, true]);
-            testfixtures.StateStore.set("projectionDeliveryIndex", 0);
-            operation = stream.begin("runtime.callback", "callback.delivery", ...
-                "Delivering callback.");
-
-            stream.log("info", "analysis.after_projection_failure", ...
-                "Caller remains isolated.", Category="runtime.lifecycle", ...
-                Audience="developer", Operation=operation);
-            records = stream.records();
-            trigger = records(string({records.eventName}) == "callback.delivery.started");
-            degraded = records(string({records.eventName}) == "journal.degraded");
-            dropped = records(string({records.eventName}) == "journal.records_dropped");
-
-            testCase.verifyNumElements(degraded, 1);
-            testCase.verifyEqual(degraded.attributes.reason, "projection-failure");
-            testCase.verifyEqual(degraded.operationId, trigger.operationId);
-            testCase.verifyEqual(degraded.parentOperationId, trigger.parentOperationId);
-            testCase.verifyEqual(degraded.rootActionId, trigger.rootActionId);
-            testCase.verifyNumElements(dropped, 2);
-            dropAttributes = [dropped.attributes];
-            testCase.verifyEqual([dropAttributes.count], [1, 1]);
-            testCase.verifyEqual(dropped(1).operationId, trigger.operationId);
-            testCase.verifyEqual(dropped(1).parentOperationId, trigger.parentOperationId);
-            testCase.verifyEqual(dropped(1).rootActionId, trigger.rootActionId);
-            testCase.verifyNotEmpty(degraded.message);
-            testCase.verifyNotEmpty(dropped(1).message);
-            testCase.verifyNotEqual(degraded.message, dropped(1).message);
-            testCase.verifyTrue(any(string({records.eventName}) == ...
-                "analysis.after_projection_failure"));
-            testCase.verifyEmpty(dir(fullfile(journal.folder(), "events-*.jsonl")));
-            stream.refreshProjectionHealth();
-            records = stream.records();
-            testCase.verifyNumElements(records( ...
-                string({records.eventName}) == "journal.records_dropped"), 2);
-            clear streamCleanup journalCleanup fixtureCleanup
-        end
-
-        function reportsProjectionRecoveryAndLaterFailureAsNewTransition(testCase)
-            resetProjectionHealthFixture();
-            fixtureCleanup = onCleanup(@resetProjectionHealthFixture);
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            journal = labkit.app.internal.diagnostics.SessionJournal(loggingProbeDefinition(), ...
-                RootFolder=root, SessionId="session-projection-recovery");
-            journalCleanup = onCleanup(@() journal.close());
-            projection = labkit.app.internal.diagnostics.SessionJournalProjection( ...
-                journal, @failProjectionDelivery);
-            stream = labkit.app.internal.diagnostics.SessionEventStream(loggingProbeDefinition(), ...
-                SessionId="session-projection-recovery", ...
-                ProjectionHook=@projection.project, ...
-                ProjectionHealthHook=@projection.drainHealth);
-            streamCleanup = onCleanup(@() stream.close());
-            testfixtures.StateStore.set( ...
-                "projectionDeliveryFailures", [true, false, true]);
-            testfixtures.StateStore.set("projectionDeliveryIndex", 0);
-
-            stream.log("info", "analysis.projection_first", "First delivery.", ...
-                Category="runtime.lifecycle", Audience="developer");
-            stream.log("info", "analysis.projection_recovery", "Recovered delivery.", ...
-                Category="runtime.lifecycle", Audience="developer");
-            stream.log("info", "analysis.projection_second", "Second delivery.", ...
-                Category="runtime.lifecycle", Audience="developer");
-            stream.refreshProjectionHealth();
-            records = stream.records();
-            degraded = records(string({records.eventName}) == "journal.degraded");
-            dropped = records(string({records.eventName}) == "journal.records_dropped");
-            dropAttributes = [dropped.attributes];
-
-            testCase.verifyNumElements(degraded, 2);
-            testCase.verifyNumElements(dropped, 2);
-            testCase.verifyEqual(sum([dropAttributes.count]), 2);
-            testCase.verifyTrue(all(string({dropAttributes.reason}) == "projection-failure"));
-            clear streamCleanup journalCleanup fixtureCleanup
         end
 
         function isolatesProjectionHealthHookThrows(testCase)
@@ -352,27 +262,6 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(records( ...
                 string({records.eventName}) == "journal.degraded"), 1);
             testCase.verifyEqual(projectionHealthThrowCounter("count"), 1);
-            clear cleanup
-        end
-
-        function reportsWrapperCloseFailureOnceWithoutARecordDrop(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            journal = labkit.app.internal.diagnostics.SessionJournal(loggingProbeDefinition(), ...
-                RootFolder=root, SessionId="session-projection-close-failure");
-            cleanup = onCleanup(@() journal.close());
-            projection = labkit.app.internal.diagnostics.SessionJournalProjection( ...
-                journal, @failProjectionCloseDelivery);
-
-            projection.close();
-            notifications = projection.drainHealth();
-            repeated = projection.drainHealth();
-
-            testCase.verifyNumElements(notifications, 1);
-            testCase.verifyEqual(notifications.eventName, "journal.degraded");
-            testCase.verifyEqual(notifications.reason, "projection-failure");
-            testCase.verifyEqual(notifications.count, 0);
-            testCase.verifyEmpty(repeated);
             clear cleanup
         end
 
@@ -411,43 +300,27 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
 end
 
 function recordTestConsumer(record)
-records = testfixtures.StateStore.get("eventConsumerRecords", strings(0, 1));
-testfixtures.StateStore.set("eventConsumerRecords", [records; string(record.eventName)]);
+records = labkittest.StateStore.get("eventConsumerRecords", strings(0, 1));
+labkittest.StateStore.set("eventConsumerRecords", [records; string(record.eventName)]);
 end
 
 function resetTestConsumer()
-testfixtures.StateStore.reset("eventConsumerRecords");
+labkittest.StateStore.reset("eventConsumerRecords");
 end
 
 function countProjectionHook(~)
-count = testfixtures.StateStore.get("projectionHookCount", 0);
-testfixtures.StateStore.set("projectionHookCount", count + 1);
+count = labkittest.StateStore.get("projectionHookCount", 0);
+labkittest.StateStore.set("projectionHookCount", count + 1);
 end
 
 function notifications = nextProjectionHealthNotification()
-notifications = testfixtures.StateStore.get("projectionHealthNotifications", []);
-testfixtures.StateStore.set("projectionHealthNotifications", []);
+notifications = labkittest.StateStore.get("projectionHealthNotifications", []);
+labkittest.StateStore.set("projectionHealthNotifications", []);
 end
 
 function resetProjectionHealthFixture()
-testfixtures.StateStore.set("projectionHookCount", 0);
-testfixtures.StateStore.set("projectionHealthNotifications", []);
-testfixtures.StateStore.set("projectionDeliveryFailures", false(1, 0));
-testfixtures.StateStore.set("projectionDeliveryIndex", 0);
-end
-
-function failProjectionDelivery(stage)
-if string(stage) ~= "project"
-    return;
-end
-index = testfixtures.StateStore.get("projectionDeliveryIndex", 0) + 1;
-failures = testfixtures.StateStore.get( ...
-    "projectionDeliveryFailures", false(1, 0));
-testfixtures.StateStore.set("projectionDeliveryIndex", index);
-if index > numel(failures) || ~failures(index)
-    return;
-end
-error("labkit:test:ProjectionDeliveryFailure", "Intentional projection delivery failure.");
+labkittest.StateStore.set("projectionHookCount", 0);
+labkittest.StateStore.set("projectionHealthNotifications", []);
 end
 
 function value = projectionHealthThrowCounter(action)
@@ -468,14 +341,8 @@ else
 end
 end
 
-function failProjectionCloseDelivery(stage)
-if string(stage) == "close"
-    error("labkit:test:ProjectionCloseFailure", "Intentional projection close failure.");
-end
-end
-
 function failClosingProjection()
-testfixtures.StateStore.set("projectionHealthNotifications", struct( ...
+labkittest.StateStore.set("projectionHealthNotifications", struct( ...
     "eventName", "journal.degraded", ...
     "reason", "projection-failure", "count", 0));
 error("labkit:test:ProjectionCloseFailure", "Intentional projection close failure.");
@@ -518,14 +385,14 @@ count = numel(unicode2native(jsonencode(orderfields(attributes)), "UTF-8"));
 end
 
 function persistAttributePrivacyRecord(record)
-count = testfixtures.StateStore.get("attributePrivacyHookCount", 0);
-testfixtures.StateStore.set("attributePrivacyHookCount", count + 1);
-journal = testfixtures.StateStore.get("attributePrivacyJournal");
+count = labkittest.StateStore.get("attributePrivacyHookCount", 0);
+labkittest.StateStore.set("attributePrivacyHookCount", count + 1);
+journal = labkittest.StateStore.get("attributePrivacyJournal");
 journal.append(record);
 end
 
 function resetAttributePrivacyProjection()
-testfixtures.StateStore.reset( ...
+labkittest.StateStore.reset( ...
     "attributePrivacyJournal", "attributePrivacyHookCount");
 end
 

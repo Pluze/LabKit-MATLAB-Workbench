@@ -13,20 +13,25 @@ classdef AppDefinitionConformanceSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(definition.Entrypoint), App.Entrypoint);
             testCase.verifyNotEmpty(regexp(string(definition.AppVersion), ...
                 '^\d+\.\d+\.\d+$', "once"));
-            testCase.verifyTrue(labkit.contract.checkRequirements( ...
-                definition.Requirements).ok);
+            if ~isempty(definition.Requirements)
+                testCase.verifyTrue(labkit.contract.checkRequirements( ...
+                    definition.Requirements).ok);
+            end
         end
 
         function declaresEveryCalledLabKitFacade(testCase, App)
             definition = feval(char(App.Package + ".definition"));
-            declared = string({definition.Requirements.facades.facade});
+            declared = strings(1, 0);
+            if ~isempty(definition.Requirements)
+                declared = string({definition.Requirements.facades.facade});
+            end
             files = dir(fullfile(App.Folder, "**", "*.m"));
             source = "";
             for index = 1:numel(files)
                 source = source + newline + string(fileread( ...
                     fullfile(files(index).folder, files(index).name)));
             end
-            facades = ["app", "image", "thermal", "dta", ...
+            facades = ["image", "thermal", "dta", ...
                 "rhs", "biosignal", "mark10"];
             called = facades(arrayfun(@(name) contains( ...
                 source, "labkit." + name + "."), facades));

@@ -1,8 +1,8 @@
 # Build A Complete App
 
 This guide builds a small trace viewer with the production `labkit.app`
-contract. The example keeps durable settings in a project, rebuilds transient
-file data in a session, draws a plot, and exports a result. Each file has one
+contract. The example keeps App-owned runtime settings and decoded file data,
+draws a plot, and exports a result. It does not define a task archive. Each file has one
 visible responsibility.
 
 ## File Shape
@@ -12,8 +12,8 @@ apps/examples/trace_viewer/
 |-- labkit_TraceViewer_app.m
 `-- +trace_viewer/
     |-- definition.m
-    |-- projectSpec.m
-    |-- createSession.m
+    |-- createState.m
+    |-- refreshState.m
     |-- +workbench/
     |   |-- buildLayout.m
     |   `-- present.m
@@ -53,64 +53,49 @@ app = labkit.app.Definition( ...
     Family="Examples", ...
     AppVersion="1.0.0", ...
     Updated="2026-07-19", ...
-    Requirements=labkit.contract.requirements("app", ">=2 <3"), ...
-    ProjectSchema=trace_viewer.projectSpec(), ...
-    CreateSession=@trace_viewer.createSession, ...
+    CreateState=@trace_viewer.createState, ...
+    RefreshState=@trace_viewer.refreshState, ...
     Workbench=trace_viewer.workbench.buildLayout(), ...
     PresentWorkbench=@trace_viewer.workbench.present);
 end
 ```
 
 Definition is a readable inventory, not an execution script. It validates the
-static layout, direct callback signatures, plot renderers, target IDs, project
-schema, and presentation contract before native UI mutation.
+static layout, direct callback signatures, plot renderers, target IDs, state
+callbacks, and presentation contract before native UI mutation.
 
-## 3. Durable Project
+## 3. App-Owned Runtime State
 
 ```matlab
-function schema = projectSpec()
-schema = labkit.app.project.Schema( ...
-    Version=1, ...
-    Create=@createProject, ...
-    Validate=@validateProject);
-end
-
-function project = createProject()
+function state = createState(callbackContext, ~)
 project = struct( ...
-    "inputs", struct("sources", struct([])), ...
+    "inputs", struct("sources", labkit.app.source.emptyRecords()), ...
     "parameters", struct("gain", 1), ...
     "results", struct("lastExport", []));
-end
-
-function accepted = validateProject(project)
-accepted = isstruct(project) && isscalar(project) && ...
-    isfield(project, "inputs") && isfield(project.inputs, "sources") && ...
-    isfield(project, "parameters") && ...
-    isnumeric(project.parameters.gain) && ...
-    isscalar(project.parameters.gain) && ...
-    isfinite(project.parameters.gain);
+state = struct("project", project, "session", struct("trace", struct("x", [], "y", [])));
+state = trace_viewer.refreshState(state, callbackContext);
 end
 ```
 
-The project contains only durable App meaning. External files are portable
-source records owned by the runtime, not raw paths.
+The bucket names are App conventions only. The framework treats the complete
+scalar struct as opaque runtime state and provides no save/open semantics.
 
-## 4. Transient Session
+## 4. Refresh After Source Changes
 
 ```matlab
-function session = createSession(project, callbackContext)
-paths = callbackContext.resolveSourcePaths(project.inputs.sources);
+function state = refreshState(state, callbackContext)
+paths = labkit.app.source.paths(state.project.inputs.sources);
 trace = struct("x", [], "y", []);
 if ~isempty(paths)
     trace = trace_viewer.sourceTrace.readTrace(paths(1));
 end
-session = struct("trace", trace);
+state.session.trace = trace;
 end
 ```
 
-`createSession(project,callbackContext)` is the one reconstruction boundary.
-The runtime calls it after project restore and file-list source changes.
-Session data is reconstructible and is not written into the project envelope.
+The runtime calls `RefreshState` after file-list source changes. If this App
+later needs continuation, it must design its own explicit final-state archive;
+the framework does not serialize either bucket.
 
 ## 5. Product Layout
 
@@ -203,7 +188,7 @@ end
 ```
 
 The plot area references the concrete renderer. The model carries prepared
-App meaning; drawing does not read project state or dispatch workflow actions.
+App meaning; drawing does not create runtime state or dispatch workflow actions.
 
 ## 8. Direct Business Callback
 
@@ -231,7 +216,7 @@ only the trace, gain, and destination they require.
 
 ## Validation
 
-Test readers, calculations, project validation, snapshot fragments, renderers,
+Test readers, calculations, state transitions, snapshot fragments, renderers,
 and exports directly with synthetic values. Construct `definition()` in a
 headless test to validate the whole static contract. Run the App's bounded
 hidden-GUI workflow after smaller tests are stable; native dialogs and visual

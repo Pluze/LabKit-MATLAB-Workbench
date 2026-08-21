@@ -1,10 +1,10 @@
 % Rebuild decoded recording, signal products, header preview, workflow log,
 % and plot caches from one validated ECG Print project.
-function session = createSession(project, context)
+function session = createSession(project, ~)
     cache = ecg_print.sourceFiles.emptyCache();
     workflow = struct("importStatus", ...
         "Open a recording to inspect import settings.");
-    paths = context.resolveSourcePaths(project.inputs.sources);
+    paths = labkit.app.source.paths(project.inputs.sources);
     filepath = "";
     if ~isempty(paths)
         filepath = paths(1);

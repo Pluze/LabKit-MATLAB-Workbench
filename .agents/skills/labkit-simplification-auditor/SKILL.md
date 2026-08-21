@@ -17,6 +17,18 @@ include unused surfaces, mirrored state, duplicate workflow policy, tests that
 alone preserve retired behavior, abstractions without a current owner, and
 unsupported compatibility paths.
 
+Classify maintenance consumers separately from product consumers. Tests,
+documentation, sample generators, developer menus, adapters, migrations, and
+compatibility branches do not prove a product need when they only exercise or
+explain one another. Trace the original user or runtime outcome; retire the
+whole self-maintaining cluster when no supported outcome remains.
+
+Treat uniformity as a cost that needs evidence. Do not keep a common schema,
+mode, option, persistence protocol, or fixture model merely because several
+owners can be made to implement it. Require the owners to share the same
+current semantics and lifecycle; otherwise preserve ordinary local values and
+different product-specific designs.
+
 Do not infer dead code from one textual search when MATLAB dispatch, callbacks,
 function handles, discovery, or saved-data migration can reach it. Similar App
 formulas are not automatically generic duplication.

@@ -12,6 +12,11 @@
       "rationale": "Consumer classification and bounded removal are in scope."
     },
     {
+      "prompt": "These developer menus, fixture protocols, docs, and tests only consume one another. Check whether a real product outcome remains and retire the cluster if not.",
+      "should_activate": true,
+      "rationale": "Self-maintaining maintenance consumers and uniformity without product demand are core simplification evidence."
+    },
+    {
       "prompt": "Split every MATLAB file over 300 lines into helpers.",
       "should_activate": false,
       "rationale": "File length alone is not evidence for an ownership change."
@@ -20,6 +25,11 @@
       "prompt": "Rename variables and reorder methods to match my preferred style.",
       "should_activate": false,
       "rationale": "Style-only cleanup is outside evidence-backed simplification."
+    },
+    {
+      "prompt": "Make every App use the same archive schema even though their continuation workflows differ.",
+      "should_activate": false,
+      "rationale": "Uniformity alone is not evidence for a shared product contract."
     }
   ]
 }

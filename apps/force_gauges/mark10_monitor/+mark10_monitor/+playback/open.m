@@ -12,7 +12,7 @@ playback("time_s") = recording.Time_s;
 playback("force_N") = recording.Force_N;
 playback("travel_mm") = recording.Travel_mm;
 playback("index") = numel(recording.Time_s);
-context.setResource("application", "mark10Playback", playback, []);
+context.setResource("mark10Playback", playback, []);
 state.session.playback.loaded = true;
 state.session.playback.playing = false;
 state.session.playback.source = filepath;

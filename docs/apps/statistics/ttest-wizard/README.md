@@ -222,12 +222,6 @@ returns one canonical
 [`runTTest`](../../../reference/api/ttest_wizard/testRun/runTTest.html)
 result per later group.
 
-## Opening Existing Projects
-
-Projects preserve the ordered groups, test and plot settings, completed
-comparisons, and source references. When an older two-group project is opened,
-group A remains the first or reference group and group B remains the second.
-
 ## Assumptions And Limitations
 
 - Observations must share a meaningful measurement unit.

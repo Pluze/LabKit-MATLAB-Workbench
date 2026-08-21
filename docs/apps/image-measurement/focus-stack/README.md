@@ -73,8 +73,7 @@ registration error.
 - integer focus-depth index map;
 - confidence map and per-plane focus coverage in the run result;
 - summary CSV with geometry, parameters, confidence, coverage, registration,
-  and resize information;
-- result provenance manifest.
+  and resize information.
 
 ## Use Without The GUI
 

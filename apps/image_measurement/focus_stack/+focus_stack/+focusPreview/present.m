@@ -16,9 +16,9 @@ if result.ok
         details{end + 1} = ...
             "Saved summary restored; rerun to rebuild image previews and exports.";
     end
-    if strlength(state.project.results.resultManifestPath) > 0
+    if strlength(state.project.results.lastOutputPath) > 0
         details{end + 1} = ...
-            "Last manifest: " + state.project.results.resultManifestPath;
+            "Last output: " + state.project.results.lastOutputPath;
     end
 else
     data = focus_stack.focusPreview.initialResultTable();

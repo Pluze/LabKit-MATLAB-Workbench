@@ -8,14 +8,14 @@ elseif state.session.playback.loaded
 end
 if source == "Loaded Recording" && ...
         state.session.playback.loaded
-    playback = context.getResource("application", "mark10Playback");
+    playback = context.getResource("mark10Playback");
     time_s = playback("time_s");
     force_N = playback("force_N");
     travel_mm = playback("travel_mm");
     description = "loaded recording";
     return;
 end
-buffer = context.getResource("application", "mark10Buffer");
+buffer = context.getResource("mark10Buffer");
 valid = buffer("valid");
 time_s = buffer("time_s");
 force_N = buffer("force_N");

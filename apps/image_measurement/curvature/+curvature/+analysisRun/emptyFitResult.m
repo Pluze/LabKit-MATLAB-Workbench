@@ -1,5 +1,5 @@
 % App-owned Curvature fit-result shape. Expected callers are analysis,
-% project/action defaults, result presentation, and package tests.
+% runtime defaults, result presentation, and capability tests.
 function fit = emptyFitResult()
 %EMPTYFITRESULT Return default fit result for labkit_CurvatureMeasurement_app.
 %

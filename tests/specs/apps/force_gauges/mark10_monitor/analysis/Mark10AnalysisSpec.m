@@ -153,10 +153,9 @@ classdef Mark10AnalysisSpec < matlab.unittest.TestCase
         function applyAndResetShiftBothReplayPlots(testCase)
             resources = containers.Map("KeyType", "char", "ValueType", "any");
             backend = struct( ...
-                "setResource", @(scope, id, value, cleanup) ...
-                    storeResource(resources, scope, id, value, cleanup), ...
-                "getResource", @(scope, id) ...
-                    getResource(resources, scope, id));
+                "setResource", @(id, value, cleanup) ...
+                    storeResource(resources, id, value, cleanup), ...
+                "getResource", @(id) getResource(resources, id));
             context = labkittest.createCallbackContext(backend);
             session = mark10_monitor.createSession(struct(), context);
             playback = containers.Map( ...
@@ -165,8 +164,7 @@ classdef Mark10AnalysisSpec < matlab.unittest.TestCase
             playback("force_N") = [2; 3];
             playback("travel_mm") = [30; 31];
             playback("index") = 2;
-            storeResource(resources, "application", ...
-                "mark10Playback", playback, []);
+            storeResource(resources, "mark10Playback", playback, []);
             session.playback.loaded = true;
             session.playback.cursor = 2;
             session.playback.count = 2;
@@ -251,13 +249,13 @@ classdef Mark10AnalysisSpec < matlab.unittest.TestCase
     end
 end
 
-function resources = storeResource(resources, scope, id, value, cleanup)
-key = char(string(scope) + "|" + string(id));
+function resources = storeResource(resources, id, value, cleanup)
+key = char(string(id));
 resources(key) = struct("Value", value, "Cleanup", cleanup);
 end
 
-function value = getResource(resources, scope, id)
-key = char(string(scope) + "|" + string(id));
+function value = getResource(resources, id)
+key = char(string(id));
 value = resources(key).Value;
 end
 

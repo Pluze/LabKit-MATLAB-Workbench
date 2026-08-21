@@ -16,7 +16,6 @@ function spec = regionSelection(id, onSelected, varargin)
 %   Axis - Axis ID. Default: "main".
 %   Style - Scalar visual-option struct. Default: struct().
 %   Instruction - Scalar guidance text. Default: "".
-%   ViewportPolicy - "preserve" or "fit". Default: "preserve".
 %   OnBackgroundPressed - Optional point callback. Default: [].
 %
 % Outputs:
@@ -33,7 +32,7 @@ function spec = regionSelection(id, onSelected, varargin)
 % See also labkit.app.layout.plotArea
 options = labkit.app.internal.contract.OptionParser.parse( ...
     "labkit.app.interaction.regionSelection", ...
-    ["Axis", "Style", "Instruction", "ViewportPolicy", ...
+    ["Axis", "Style", "Instruction", ...
      "OnBackgroundPressed"], varargin{:});
 spec = labkit.app.internal.interaction.InteractionSpec( ...
     "regionSelection",id,onSelected,options);

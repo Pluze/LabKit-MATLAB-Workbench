@@ -19,7 +19,7 @@ classdef GaitResultSpec < matlab.unittest.TestCase
 
     methods (Static, Access = private)
         function result = result()
-            pose = testfixtures.syntheticGaitPose();
+            pose = testfixtures.gait.pose();
             options = gait_analysis.analysisRun.defaultOptions();
             options.smoothWindow = 1;
             options.detectionProminence = 2;

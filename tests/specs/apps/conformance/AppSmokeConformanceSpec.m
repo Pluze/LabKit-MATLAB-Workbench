@@ -1,12 +1,12 @@
 classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
-    %APPSMOKECONFORMANCESPEC Verify each public App's native synthetic workflow.
+    %APPSMOKECONFORMANCESPEC Verify each public App's default native workflow.
 
     properties (TestParameter)
         App = labkittest.publicApps()
     end
 
     methods (Test, TestTags = {'Contract:product', 'Env:hidden-gui'})
-        function materializesDefinitionAndLaunchesSyntheticProject(testCase, App)
+        function materializesDefinitionAndLaunchesDefaultState(testCase, App)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = feval(char(App.Package + ".definition"));
@@ -27,28 +27,19 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
                 testCase.verifyNumElements(findall(figure, "Tag", target), 1, ...
                     "Declared semantic target was not materialized exactly once: " + target);
             end
-            stateBeforeGeneration = runtime.State;
-
-            pack = runtime.generateSyntheticInputs(folder);
-
-            testCase.verifyClass(pack, "labkit.app.synthetic.Pack");
             testCase.verifyTrue(isgraphics(runtime.figureHandle(), "figure"));
-            testCase.verifyEqual(runtime.State, stateBeforeGeneration);
-            testCase.verifyTrue(isfile(fullfile( ...
-                folder, "synthetic-input-pack.json")));
+            failure = getappdata(figure, "labkitAppStartupFailure");
+            diagnostic = "Runtime did not publish a startup failure diagnostic.";
+            if isstruct(failure) && isfield(failure, "message")
+                diagnostic = string(failure.message);
+                if isfield(failure, "identifier") && ...
+                        strlength(string(failure.identifier)) > 0
+                    diagnostic = diagnostic + " [" + ...
+                        string(failure.identifier) + "]";
+                end
+            end
+            testCase.verifyFalse(runtime.StartupFailed, diagnostic);
             clear cleanup
-
-            syntheticJournal = labkittest.temporarySessionJournal( ...
-                definition, fullfile(folder, "synthetic-session"));
-            syntheticRuntime = labkittest.createMatlabRuntime( ...
-                definition, pack.InitialProject, struct(), ...
-                syntheticJournal);
-            syntheticCleanup = onCleanup(@() syntheticRuntime.close());
-
-            testCase.verifyTrue(isgraphics( ...
-                syntheticRuntime.figureHandle(), "figure"));
-            testCase.verifyFalse(syntheticRuntime.StartupFailed);
-            clear syntheticCleanup
         end
     end
 end

@@ -4,8 +4,8 @@ classdef Mark10SessionSpec < matlab.unittest.TestCase
     methods (Test, TestTags = {'Contract:state', 'Env:headless'})
         function createsTransientStateAndManagedBuffer(testCase)
             observed = containers.Map("KeyType", "char", "ValueType", "any");
-            backend = struct("setResource", @(scope, id, value, cleanup) ...
-                captureResource(observed, scope, id, value, cleanup));
+            backend = struct("setResource", @(id, value, cleanup) ...
+                captureResource(observed, id, value, cleanup));
             context = labkittest.createCallbackContext(backend);
 
             session = mark10_monitor.createSession(struct(), context);
@@ -25,15 +25,13 @@ classdef Mark10SessionSpec < matlab.unittest.TestCase
             testCase.verifyEqual(session.analysis.forceZero_N, 0);
             testCase.verifyEqual(session.analysis.travelZero_mm, 0);
             testCase.verifySize(session.analysis.resultRows, [0, 11]);
-            testCase.verifyEqual(observed("scope"), "application");
             testCase.verifyEqual(observed("id"), "mark10Buffer");
             testCase.verifyClass(observed("value"), "containers.Map");
         end
     end
 end
 
-function observed = captureResource(observed, scope, id, value, cleanup)
-observed("scope") = scope;
+function observed = captureResource(observed, id, value, cleanup)
 observed("id") = id;
 observed("value") = value;
 observed("cleanup") = cleanup;

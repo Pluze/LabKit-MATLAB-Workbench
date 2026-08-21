@@ -29,12 +29,6 @@ classdef ImageMatchWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(numel(payload.results), 1);
             testCase.verifyTrue(isfile(payload.results(1).outputPath));
             testCase.verifyTrue(isfile(payload.resultManifestPath));
-            saved = fullfile(folder, "image-match-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.applyFileSelection("sourceImages", strings(1, 0), zeros(1, 0));
-            runtime.restoreProject(saved);
-            testCase.verifyNumElements(runtime.State.project.inputs.sources, 1);
-            testCase.verifyNumElements(runtime.State.project.inputs.reference, 1);
             clear cleanup
         end
     end

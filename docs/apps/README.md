@@ -36,7 +36,7 @@ interactive and programmatic surface.
 | Compare cyclic and time-domain CSC | [CSC](electrochemistry/csc/README.md) | CV/CT DTA | Per-cycle CSC and CV data |
 | Inspect impedance curves | [EIS](electrochemistry/eis/README.md) | EIS DTA | Nyquist/Bode plots and CSV |
 | Estimate voltage-transient resistance | [VT Resistance](electrochemistry/vt-resistance/README.md) | Chrono DTA | Resistance table and CSV |
-| Convert tracked points into gait metrics | [Gait Analysis](gait/gait-analysis/README.md) | Current Video Marker project MAT | Frame, step, coordinate, and summary tables |
+| Convert tracked points into gait metrics | [Gait Analysis](gait/gait-analysis/README.md) | Current Video Marker archive MAT | Frame, step, coordinate, and summary tables |
 | Monitor, record, replay, and fit Mark-10 force/travel data | [Mark-10 Monitor](force-gauges/mark10-monitor/README.md) | ESM303 + Series 5, CSV, LOG, or MAT | Live plots, recordings, branch stiffness, and modulus CSV |
 | Crop image batches at repeatable geometry | [Batch Image Crop](image-measurement/batch-crop/README.md) | Image files | Same-size crops and manifest |
 | Measure curve radius, curvature, and length | [Curvature Measurement](image-measurement/curvature/README.md) | Image | Overlay and measurement CSV |
@@ -77,7 +77,7 @@ Concrete app pages use a common MATLAB-style order:
 2. supported inputs and the shortest successful workflow;
 3. controls and interaction behavior;
 4. calculation or algorithm semantics, units, and assumptions;
-5. outputs, project files, autosave, and recovery behavior;
+5. outputs and any App-owned task snapshot behavior;
 6. GUI-free MATLAB examples and public app-owned APIs;
 7. errors, limitations, troubleshooting, related topics, and history.
 
@@ -92,22 +92,21 @@ behavior is necessary to complete the App's workflow.
 
 ## Common App Behavior
 
-The App Framework owns lifecycle, busy state, file selection, state snapshots,
-screenshot actions, plot tools, and managed interactions. Apps own scientific
-choices, workflow-specific defaults, result schemas, and exports. See the
-[App Framework](../framework/README.md) for behavior shared across apps.
+The App Framework owns lifecycle, callback transactions and queueing, validated
+in-memory state, file selection, logging, screenshot actions, plot tools, and
+managed interactions. Apps own scientific choices, workflow-specific defaults,
+result schemas, archives, continuation meaning, and exports. See the [App
+Framework](../framework/README.md) for behavior shared across apps.
 
 Every App opens as a clean project. Use **Tools > Diagnostics** to inspect the
 current session history or export a diagnostic bundle after a problem. Manual
-TRACE capture is controlled inside the Session Log window. Apps with declared
-sample generation expose **Tools >
-Developer Tools > Generate Synthetic Inputs...**; generation writes anonymous
-inputs without loading them or changing the open project. The
-[runtime guide](../framework/guides/runtime.md) defines these shared contracts.
+TRACE capture is controlled inside the Session Log window. The [runtime
+guide](../framework/guides/runtime.md) defines these shared contracts.
 
 Action and input-selection buttons provide concise hover help. The shared
-**Tools** menu contains plot, screenshot, and project-state actions when the
-corresponding capability is available.
+**Tools** menu contains framework-owned plot, screenshot, and diagnostic
+actions when the corresponding capability is available. Task save/open actions
+belong in an App's own controls only when that product supports continuation.
 
 Input data and exported results should remain outside the replaceable LabKit
 runtime folder. Apps do not overwrite source files unless an app page states

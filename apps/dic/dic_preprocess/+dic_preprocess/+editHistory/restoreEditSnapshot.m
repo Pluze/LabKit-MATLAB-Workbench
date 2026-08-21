@@ -1,5 +1,5 @@
 % Expected caller: DIC preprocess actions and unit tests. Inputs are the
-% canonical durable project and one edit snapshot; output restores its fields.
+% current runtime data and one edit snapshot; output restores its fields.
 
 function project = restoreEditSnapshot(project, snapshot)
 %RESTOREEDITSNAPSHOT Restore a DIC preprocess align/crop undo snapshot.

@@ -1,6 +1,6 @@
 % App-owned implementation for dic_preprocess.resultFiles.saveMask within the dic_preprocess product workflow.
 function applicationState = saveMask(applicationState, callbackContext)
-%SAVEMASK Write the current ROI mask and result manifest.
+%SAVEMASK Write the current ROI mask.
 mask = applicationState.project.annotations.maskImage;
 if isempty(mask)
     [mask, accepted] = ...
@@ -21,17 +21,7 @@ if choice.Cancelled
 end
 filepath = string(choice.Value);
 dic_preprocess.resultFiles.writeMask(mask, filepath);
-[folder, name, extension] = fileparts(filepath);
-output = labkit.app.result.File("roiMask", "primary", ...
-    string(name) + string(extension), MediaType="image/png");
-package = labkit.app.result.Package(Outputs={output}, ...
-    Inputs=struct("sources", applicationState.project.inputs.sources), ...
-    Parameters=applicationState.project.parameters, ...
-    Summary=struct("anchorCount", size( ...
-        applicationState.project.annotations.maskPoints, 1)), ...
-    ManifestName=string(name) + ".labkit.json");
-written = callbackContext.writeResultPackage(folder, package);
-applicationState.project.results.maskManifestPath = string(written.Value);
+applicationState.project.results.maskOutputPath = filepath;
 callbackContext.log("info", "dic_preprocess.resultfiles.savemask.status", ...
     "Saved the ROI mask.");
 end

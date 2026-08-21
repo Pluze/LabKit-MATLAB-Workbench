@@ -1,5 +1,5 @@
 % Expected caller: DIC preprocess App SDK actions and unit tests. Input/output is the
-% canonical durable project with current images restored from originals.
+% current runtime data with current images restored from originals.
 
 function project = resetToOriginals(project)
 %RESETTOORIGINALS Restore the DIC preprocess current pair to loaded originals.

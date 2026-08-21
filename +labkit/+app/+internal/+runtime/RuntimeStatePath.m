@@ -1,4 +1,4 @@
-% Read and update strict project/session field paths for RuntimeKernel.
+% Read and update strict App-owned state paths for RuntimeKernel.
 % Expected caller: RuntimeKernel transaction and file-list operations.
 % Inputs and outputs are scalar application-state structs. Updates rebuild
 % nested structs without mutating the supplied value and raise stable

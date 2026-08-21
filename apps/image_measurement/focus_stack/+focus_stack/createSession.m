@@ -1,7 +1,7 @@
 % Rebuild transient decoded images and full result caches from one validated
 % Focus Stack project. App SDK runtime calls this after source relinking.
-function session = createSession(project, context)
-    [images, sourcePaths] = loadImages(project.inputs.sources, context);
+function session = createSession(project, ~)
+    [images, sourcePaths] = loadImages(project.inputs.sources);
     currentFingerprint = fingerprint(project.parameters, sourcePaths, images);
     session = struct( ...
         "workflow", struct("registrationLines", strings(0, 1)), ...
@@ -13,13 +13,13 @@ function session = createSession(project, context)
             "alignedImages", {{}}, ...
             "result", focus_stack.analysisRun.emptyResult()));
 end
-function [images, paths] = loadImages(sources, context)
+function [images, paths] = loadImages(sources)
     images = {};
     paths = strings(0, 1);
     if isempty(sources)
         return;
     end
-    paths = context.resolveSourcePaths(sources);
+    paths = labkit.app.source.paths(sources);
     images = focus_stack.sourceFiles.readImages(paths);
 end
 

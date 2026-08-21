@@ -2,8 +2,7 @@
 function applicationState = resetWorkflow( ...
         applicationState, callbackContext)
 %RESETWORKFLOW Restore a new RHS Preview project and transient session.
-schema = rhs_preview.projectSpec();
-applicationState.project = schema.Create();
+applicationState.project = rhs_preview.initialData();
 applicationState.session = rhs_preview.createSession( ...
     applicationState.project, callbackContext);
 callbackContext.log("info", "rhs_preview.workbench.resetworkflow.completed", ...

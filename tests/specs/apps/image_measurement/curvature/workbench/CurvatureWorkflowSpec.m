@@ -44,14 +44,8 @@ classdef CurvatureWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.image").Children);
             testCase.verifyTrue(isfile(csvPath));
             testCase.verifyTrue(isfile(overlayPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastCsvExport.manifestPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastOverlayExport.manifestPath));
-            saved = fullfile(folder, "curvature-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.invokeAction("clearCurve");
-            runtime.restoreProject(saved);
-            testCase.verifyTrue(runtime.State.project.results.fit.ok);
-            testCase.verifySize(runtime.State.project.annotations.curvePoints, [6 2]);
+            testCase.verifyTrue(isfile(runtime.State.project.results.lastCsvExport.outputPath));
+            testCase.verifyTrue(isfile(runtime.State.project.results.lastOverlayExport.outputPath));
             clear cleanup
         end
     end

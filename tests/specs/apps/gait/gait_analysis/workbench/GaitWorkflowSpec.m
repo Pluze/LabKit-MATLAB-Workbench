@@ -5,9 +5,8 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
         function analyzesNavigatesExportsAndRestoresSyntheticPose(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.synthetic.Context(folder);
-            pack = gait_analysis.syntheticInputs.writeSamplePack(context);
-            posePath = pack.InitialProject.inputs.sources(1).reference.originalPath;
+            project = gaitWorkflowProject(string(folder));
+            posePath = project.inputs.sources(1).path;
             backend = struct( ...
                 "chooseOutputFolder", @(~) labkit.app.dialog.Choice(folder), ...
                 "alert", @(~, ~) []);
@@ -63,13 +62,6 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyFalse(any(startsWith(labels, "data")));
             [~, stem] = fileparts(posePath);
             testCase.verifyTrue(isfile(fullfile(folder, stem + "_summary.csv")));
-            testCase.verifyTrue(isfile(fullfile(folder, stem + "_gait.labkit.json")));
-            saved = fullfile(folder, "gait-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.applyFileSelection("poseFile", strings(1, 0), zeros(1, 0));
-            runtime.restoreProject(saved);
-            testCase.verifyTrue(runtime.State.session.cache.pose.ok);
-            testCase.verifyTrue(runtime.State.project.results.analysis.ok);
             clear cleanup
         end
     end

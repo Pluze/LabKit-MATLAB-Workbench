@@ -3,7 +3,7 @@ classdef (Sealed, Hidden) InteractionSpec
     %
     % Expected callers: public labkit.app.interaction constructors,
     % LayoutNode.plotArea, Definition, and the native adapter. It owns static
-    % identity, styling, viewport policy, and direct callback bindings. Dynamic
+    % identity, styling, and direct callback bindings. Dynamic
     % values remain in view Snapshot operations.
 
     properties (SetAccess = private)
@@ -15,7 +15,6 @@ classdef (Sealed, Hidden) InteractionSpec
         Signals (1, :) cell
         Options (1, 1) struct
         Instruction (1, 1) string
-        ViewportPolicy (1, 1) string
     end
 
     methods
@@ -46,10 +45,6 @@ classdef (Sealed, Hidden) InteractionSpec
             end
             obj.Instruction = scalarText(optionValue( ...
                 options, "Instruction", ""), "Instruction");
-            obj.ViewportPolicy = enumText(optionValue( ...
-                options, "ViewportPolicy", "preserve"), ...
-                ["preserve", "fit"], "ViewportPolicy");
-
             background = optionValue(options, "OnBackgroundPressed", []);
             if ~isempty(background)
                 obj.Signals{end + 1} = labkit.app.internal.contract.SignalBinding( ...

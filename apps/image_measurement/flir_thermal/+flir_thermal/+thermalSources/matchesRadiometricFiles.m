@@ -1,6 +1,6 @@
 % Expected caller: FLIR Thermal fileList PathFilter. Candidate paths are
 % inspected through the thermal facade; unreadable or non-radiometric files
-% are rejected before portable source records are created.
+% are rejected before source-list records are created.
 function accepted = matchesRadiometricFiles(paths)
 paths = reshape(string(paths), 1, []);
 accepted = false(size(paths));

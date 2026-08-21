@@ -8,5 +8,5 @@ state.project.results.lastRun = focus_stack.analysisRun.emptyResult();
 state.project.results.lastRunFingerprint = "";
 state.project.results.registrationLines = strings(0, 1);
 state.project.results.lastExport = [];
-state.project.results.resultManifestPath = "";
+state.project.results.lastOutputPath = "";
 end

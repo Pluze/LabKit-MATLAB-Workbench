@@ -20,8 +20,7 @@ labkit_VTResistance_app
 The Files list accepts chrono `.DTA` transients and omits other Gamry
 experiment kinds. Changing a shared analysis setting updates the whole batch.
 No electrode-area normalization is performed because the reported quantity is
-electrical resistance in ohms. Saved projects preserve source order and ask
-you to locate a source if it has moved.
+electrical resistance in ohms.
 
 ## Basic Workflow
 
@@ -67,8 +66,7 @@ the app does not invent a finite resistance.
 The CSV contains source identity, steady currents and voltages, baseline
 voltages and windows, raw and baseline-corrected resistance fields, selected
 resistance values, absolute cathodic/anodic resistance, average resistance,
-pulse-detection method, and status. A result manifest records the common batch
-parameters and output role.
+pulse-detection method, and status.
 
 ## Use Without The GUI
 

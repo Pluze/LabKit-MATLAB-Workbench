@@ -5,14 +5,13 @@ classdef FlirThermalWorkflowSpec < matlab.unittest.TestCase
         function displaysMeasuresExportsAndRestoresSyntheticRadiometricImages(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.synthetic.Context(folder);
-            pack = flir_thermal.syntheticInputs.writeSamplePack(context);
+            project = testfixtures.flir_thermal.project(string(folder));
             backend = struct("chooseOutputFolder", @(~) labkit.app.dialog.Choice(folder), ...
                 "alert", @(~, ~) []);
             definition = flir_thermal.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkittest.createMatlabRuntime( ...
-                definition, pack.InitialProject, backend, ...
+                definition, project, backend, ...
                 journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -38,10 +37,6 @@ classdef FlirThermalWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.thermalImage").Children);
             testCase.verifyTrue(isfile(fullfile(folder, "flir_thermal_manifest.csv")));
             testCase.verifyTrue(isfile(runtime.State.project.results.resultManifestPath));
-            saved = fullfile(folder, "flir-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.restoreProject(saved);
-            testCase.verifyNotEmpty(runtime.State.session.cache.currentItem.temperatureC);
             clear cleanup
         end
     end

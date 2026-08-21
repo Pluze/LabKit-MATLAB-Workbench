@@ -31,7 +31,7 @@ p.style = applyAspectPreset( ...
 state.project.parameters = p;
 state.session.workflow.status = "Styled with " + p.preset + ".";
 state.project.results.lastExport = [];
-state.project.results.resultManifestPath = "";
+state.project.results.lastOutputPath = "";
 end
 
 function style = sanitizeStyle(style)

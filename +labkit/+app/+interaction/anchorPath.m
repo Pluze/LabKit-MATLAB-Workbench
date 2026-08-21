@@ -20,7 +20,6 @@ function spec = anchorPath(id, onChanged, varargin)
 %   Axis - Axis ID within the owning plotArea. Default: "main".
 %   Style - Scalar struct of anchor editor visual options. Default: struct().
 %   Instruction - Scalar user guidance text. Default: "".
-%   ViewportPolicy - "preserve" or "fit". Default: "preserve".
 %
 % Outputs:
 %   spec - Immutable interaction declaration accepted by layout.plotArea.
@@ -34,7 +33,7 @@ function spec = anchorPath(id, onChanged, varargin)
 %
 % See also labkit.app.layout.plotArea, labkit.app.view.Snapshot
 spec = makeSpec("anchorPath", id, onChanged, ...
-    ["Axis", "Style", "Instruction", "ViewportPolicy"], varargin{:});
+    ["Axis", "Style", "Instruction"], varargin{:});
 end
 
 function spec = makeSpec(kind, id, callback, names, varargin)

@@ -21,13 +21,12 @@ semantic strokes, colors, and frame treatment. Long categorical X-axis labels
 wrap automatically instead of widening or distorting the reference panel.
 The source presentation remains available through **FIG default**.
 
-## Project And Handoff
+## Handoff And Runtime State
 
-A plot-context-menu handoff creates the same editable project state as loading
-a FIG file. Saved projects retain portable FIG sources, embedded plot
-snapshots, the selected subplot panel, style settings, and canvas settings.
-Decoded source graphics are rebuilt after load, and the default output folder
-follows the restored source.
+A plot-context-menu handoff creates the same editable runtime state as loading
+a FIG file. FIG sources, embedded plot snapshots, the selected subplot panel,
+style settings, and canvas settings remain in memory while the App is open.
+The default output folder follows the selected source.
 
 ## Load And Select Figures
 
@@ -46,7 +45,9 @@ line widths, annotations, legend, grid, and axes appearance. Selecting
 while retaining the source legend placement. When a new source or subplot is
 selected, Studio reapplies the calibrated reference frame and automatically
 wraps categorical labels that cannot fit horizontally, without importing
-source geometry, typography, or line styling.
+source geometry, typography, or line styling. Logarithmic X axes retain
+MATLAB's native exponent tick formatting and do not enter the categorical
+label-wrapping path.
 Hidden comparison brackets and other legend-excluded annotation lines use the
 standard reference-line width; visible line series keep the standard data-line
 width, including series containing only two points.
@@ -75,6 +76,11 @@ Legend samples use the reference's long line tokens. These editable baselines
 come from normalized pixel measurements across all nine panels of the maintained
 3-by-3 visual reference, not from a single imported FIG.
 The configured width and aspect always describe the inside of the axes frame.
+The interactive preview and every exported format use that same configured
+plot-box aspect; a source axes' stored aspect metadata does not override it.
+Native FIG and graphic exports also retain the tick positions and labels shown
+in the preview instead of asking MATLAB to choose a sparser set for the
+full-size export typography.
 Figure Studio calculates the enclosing figure's outer margins from the current
 title, labels, ticks, legend, and visible annotations, so changing a long
 label cannot silently shrink the data region. Empty ruler text is ignored,
@@ -119,10 +125,6 @@ The **Figures** tab provides:
 - **Save FIG** for an editable MATLAB figure;
 - **PNG** and **JPG** for raster output;
 - **SVG** for vector output.
-
-Each quick export also writes a LabKit result manifest beside the selected
-file. The manifest records the source, style parameters, output identity, and
-summary metadata.
 
 ## Export A Data Package
 
@@ -172,9 +174,8 @@ objects.
 ## Errors And Limitations
 
 - A FIG must contain a readable axes to enter the editing workflow.
-- Reopening a project with an existing but damaged or unsupported FIG stops
-  the restore and preserves the currently open document; it is not presented
-  as an empty figure source.
+- A damaged or unsupported FIG is rejected without replacing the current
+  in-memory source selection.
 - Invisible objects are not exported.
 - A selected single axes is copied natively when MATLAB supports that parent
   transition. The portable data package remains deliberately narrower and is

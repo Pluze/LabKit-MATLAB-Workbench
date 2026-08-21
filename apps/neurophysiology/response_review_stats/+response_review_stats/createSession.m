@@ -1,8 +1,8 @@
 % Rebuild transient metrics, aligned signals, preview selection, output-folder
 % convenience, and workflow messages from one validated project.
-function session = createSession(project, context)
+function session = createSession(project, ~)
     filepath = pathForRole( ...
-        project.inputs.sources, "reviewInput", context);
+        project.inputs.sources, "reviewInput");
     [metrics, summary, aligned] = emptyCache();
     outputFolder = "";
     status = "No input selected.";
@@ -36,7 +36,7 @@ function folder = defaultOutputFolder(filepath)
     end
 end
 
-function filepath = pathForRole(sources, role, context)
+function filepath = pathForRole(sources, role)
     filepath = "";
     if isempty(sources)
         return;
@@ -45,7 +45,7 @@ function filepath = pathForRole(sources, role, context)
     if isempty(match)
         return;
     end
-    paths = context.resolveSourcePaths(sources(match));
+    paths = labkit.app.source.paths(sources(match));
     if ~isempty(paths)
         filepath = paths(1);
     end

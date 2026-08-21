@@ -1,45 +1,32 @@
 classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
-    %VIDEOMARKERWORKFLOWSPEC Specify marking, prediction, exports, restoration.
+    %VIDEOMARKERWORKFLOWSPEC Specify marking, exports, and App-owned snapshots.
 
     methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
         function marksPredictsExportsAndRestoresSyntheticVideo(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.synthetic.Context(folder);
-            pack = video_marker.syntheticInputs.writeSamplePack(context);
-            markerPath = context.outputPath("markers.csv");
-            coordinatePath = context.outputPath("coordinates.csv");
-            annotatedVideoPath = context.outputPath("annotated.mp4");
+            project = testfixtures.video_marker.project(string(folder));
+            markerPath = fullfile(folder, "markers.csv");
+            coordinatePath = fullfile(folder, "coordinates.csv");
+            annotatedVideoPath = fullfile(folder, "annotated.mp4");
+            saved = fullfile(folder, "video-marker-project.mat");
             backend = struct( ...
                 "chooseOutputFile", @(~, defaultPath) chooseOutput( ...
                     defaultPath, markerPath, coordinatePath, ...
-                    annotatedVideoPath), ...
+                    annotatedVideoPath, saved), ...
+                "chooseInputFile", @(~, ~) labkit.app.dialog.Choice(saved), ...
                 "inform", @(~, ~) [], ...
                 "alert", @(~, ~) []);
             definition = video_marker.definition();
             journal = labkittest.temporarySessionJournal(definition, folder);
             runtime = labkittest.createHeadlessRuntime( ...
-                definition, pack.InitialProject, backend, ...
+                definition, project, backend, ...
                 journal);
             cleanup = onCleanup(@() runtime.close());
 
             points = [24 34; 32 38; 40 42; 48 46; 56 50];
-            videoPath = ...
-                pack.InitialProject.inputs.sources(1).reference.originalPath;
-            autosavePath = video_marker.autosave.filePath(videoPath);
-            testCase.verifyFalse(isfile(autosavePath));
             runtime.applyInteraction("framePoints", "interactionChanged", points);
-            testCase.verifyTrue(isfile(autosavePath));
-            autosave = load(autosavePath, "labkitProject");
-            testCase.verifyEqual( ...
-                video_marker.frameAnnotations.framePoints( ...
-                    autosave.labkitProject.payload.annotations.frames, 1), ...
-                points);
             runtime.invokeAction("nextFrame");
-            autosave = load(autosavePath, "labkitProject");
-            testCase.verifyEqual(video_marker.frameAnnotations.sourceName( ...
-                autosave.labkitProject.payload.annotations.frames.frameSource(2)), ...
-                "predicted");
             runtime.invokeAction("measureScaleReference");
             runtime.applyInteraction("scaleReference", "interactionChanged", [10 10; 30 10]);
             runtime.applyControlValue("scaleReferenceLength", 2);
@@ -57,35 +44,35 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(markerPath));
             testCase.verifyTrue(isfile(coordinatePath));
             testCase.verifyEqual(isfile(annotatedVideoPath), ismac || ispc);
-            testCase.verifyTrue(isfile(runtime.State.project.results.markerManifestPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.coordinateManifestPath));
-            saved = fullfile(folder, "video-marker-project.mat");
-            runtime.saveProject(runtime.State, saved);
-            runtime.restoreProject(saved);
+            testCase.verifyTrue(isfile(runtime.State.project.results.markerOutputPath));
+            testCase.verifyTrue(isfile(runtime.State.project.results.coordinateOutputPath));
+            runtime.invokeAction("saveProject");
+            testCase.verifyTrue(isfile(saved));
+            runtime.invokeAction("openProject");
             testCase.verifyEqual(video_marker.frameAnnotations.framePoints( ...
                 runtime.State.project.annotations.frames, 1), points);
             clear cleanup
         end
 
-        function rendersAfterRestoringRuntimeNamedAutosave(testCase)
+        function rendersAfterRestoringAppOwnedSnapshot(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            context = labkit.app.synthetic.Context(folder);
-            pack = video_marker.syntheticInputs.writeSamplePack(context);
-            project = pack.InitialProject;
+            project = testfixtures.video_marker.project(string(folder));
             project.inputs.sources(1).id = "video-1";
-            markerPath = fullfile(folder, "autosave-markers.csv");
-            coordinatePath = fullfile(folder, "autosave-coordinates.csv");
-            annotatedVideoPath = fullfile(folder, "autosave-annotated.mp4");
+            markerPath = fullfile(folder, "restored-markers.csv");
+            coordinatePath = fullfile(folder, "restored-coordinates.csv");
+            annotatedVideoPath = fullfile(folder, "restored-annotated.mp4");
             namedProjectPath = fullfile(folder, "named-project.mat");
-            videoPath = project.inputs.sources(1).reference.originalPath;
+            videoPath = project.inputs.sources(1).path;
             expectedOutputFolder = fullfile(fileparts(videoPath), ...
                 "video_marker");
             backend = struct( ...
                 "chooseOutputFile", @(~, defaultPath) ...
                     chooseRestoredOutput(defaultPath, ...
                     expectedOutputFolder, markerPath, coordinatePath, ...
-                    annotatedVideoPath), ...
+                    annotatedVideoPath, namedProjectPath), ...
+                "chooseInputFile", @(~, ~) ...
+                    labkit.app.dialog.Choice(namedProjectPath), ...
                 "inform", @(~, ~) [], ...
                 "alert", @(~, ~) []);
             definition = video_marker.definition();
@@ -97,8 +84,6 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
 
             runtime.applyInteraction( ...
                 "framePoints", "interactionChanged", points);
-            autosavePath = video_marker.autosave.filePath(videoPath);
-            runtime.restoreProject(autosavePath);
             runtime.invokeAction("nextFrame");
             runtime.invokeAction("exportMarkerCsv");
             runtime.applyControlValue("coordinateEndFrame", 1);
@@ -106,8 +91,8 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
             if ismac || ispc
                 runtime.invokeAction("exportAnnotatedVideo");
             end
-            runtime.saveProject(runtime.State, namedProjectPath);
-            runtime.restoreProject(namedProjectPath);
+            runtime.invokeAction("saveProject");
+            runtime.invokeAction("openProject");
 
             testCase.verifyTrue(isfile(markerPath));
             testCase.verifyTrue(isfile(coordinatePath));
@@ -130,8 +115,12 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
 end
 
 function choice = chooseRestoredOutput(defaultPath, expectedFolder, ...
-        markerPath, coordinatePath, annotatedVideoPath)
+        markerPath, coordinatePath, annotatedVideoPath, projectPath)
 defaultPath = string(defaultPath);
+if endsWith(defaultPath, ".mat")
+    choice = labkit.app.dialog.Choice(projectPath);
+    return
+end
 assert(startsWith(defaultPath, string(expectedFolder) + filesep), ...
     "Restored Video Marker outputs must default beside the source video.");
 if contains(defaultPath, "markers", IgnoreCase=true)
@@ -146,7 +135,11 @@ end
 end
 
 function choice = chooseOutput(defaultPath, markerPath, coordinatePath, ...
-        annotatedVideoPath)
+        annotatedVideoPath, projectPath)
+if endsWith(string(defaultPath), ".mat")
+    choice = labkit.app.dialog.Choice(projectPath);
+    return
+end
 if contains(string(defaultPath), "markers", IgnoreCase=true)
     choice = labkit.app.dialog.Choice(markerPath);
 elseif contains(string(defaultPath), "annotated", IgnoreCase=true)

@@ -530,15 +530,9 @@ function invokeCallback(callback, src, event)
     elseif iscell(callback)
         callbackFunction = callback{1};
         callbackFunction(src, event, callback{2:end});
-    elseif ischar(callback) || isstring(callback)
-        if isempty(regexp(char(callback), ...
-                '^[A-Za-z]\w*(\.[A-Za-z]\w*)*$', 'once'))
-            error('labkit:app:FigureInteractionHub:InvalidCallbackName', ...
-                'Legacy string callbacks must contain one callable function name.');
-        end
-        % Compatibility boundary for MATLAB figures that still expose a
-        % legacy named callback instead of a function handle.
-        feval(char(callback), src, event);
+    else
+        error('labkit:app:runtime:InvariantFailure', ...
+            'Native figure callbacks must be function handles or callback cells.');
     end
 end
 

@@ -1,57 +1,33 @@
 classdef (Hidden, Sealed) SessionDiagnosticStateProjection
-    %SESSIONDIAGNOSTICSTATEPROJECTION Prepare exact or compact diagnostic state.
-    % RuntimeKernel and SessionDiagnosticBundle validate modes; the Bundle is
-    % the sole project caller. Input and output are one scalar App state struct.
-    % Compact mode preserves containers, field names, leaf classes, and array
+    %SESSIONDIAGNOSTICSTATEPROJECTION Prepare compact diagnostic state.
+    % SessionDiagnosticBundle is the sole caller. Input and output are one
+    % scalar App state struct. The projection preserves containers, field
+    % names, leaf classes, and array
     % dimensions while replacing large supported leaf values with deterministic
     % compressible data. It has no external side effects. The returned report
     % records structural state paths only and never includes replaced values.
 
     methods (Static)
-        function [applicationState, report] = project(applicationState, mode)
+        function [applicationState, report] = project(applicationState)
             if ~isstruct(applicationState) || ~isscalar(applicationState)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "Diagnostic App state must be one scalar struct.");
             end
-            mode = ...
-                labkit.app.internal.diagnostics.SessionDiagnosticStateProjection.validateMode( ...
-                mode);
             replacements = emptyReplacements();
             retainedLargeValues = emptyRetainedLargeValues();
-            if mode == "compact"
-                [applicationState, replacements, retainedLargeValues] = ...
-                    projectValue(applicationState, "applicationState", ...
-                    replacements, retainedLargeValues);
-            end
+            [applicationState, replacements, retainedLargeValues] = ...
+                projectValue(applicationState, "applicationState", ...
+                replacements, retainedLargeValues);
             report = struct( ...
                 "schemaVersion", 1, ...
-                "mode", mode, ...
+                "mode", "compact", ...
                 "largeValueThresholdBytes", compactThresholdBytes(), ...
                 "replacementCount", numel(replacements), ...
                 "replacements", replacements, ...
                 "retainedLargeValueCount", numel(retainedLargeValues), ...
                 "retainedLargeValues", retainedLargeValues);
         end
-
-        function mode = validateMode(mode)
-            mode = stateMode(mode);
-        end
     end
-end
-
-function mode = stateMode(mode)
-if ~(ischar(mode) || (isstring(mode) && isscalar(mode)))
-    invalidMode();
-end
-mode = lower(string(mode));
-if ~any(mode == ["exact", "compact"])
-    invalidMode();
-end
-end
-
-function invalidMode()
-error("labkit:app:contract:InvalidValue", ...
-    "Diagnostic state mode must be exact or compact.");
 end
 
 function [value, replacements, retained] = projectValue( ...

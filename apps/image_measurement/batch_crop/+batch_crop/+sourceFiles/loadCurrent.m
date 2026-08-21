@@ -19,7 +19,7 @@ try
     if isempty(match)
         return
     end
-    paths = callbackContext.resolveSourcePaths(sources(match));
+    paths = labkit.app.source.paths(sources(match));
     if isempty(paths) || strlength(paths(1)) == 0
         return
     end

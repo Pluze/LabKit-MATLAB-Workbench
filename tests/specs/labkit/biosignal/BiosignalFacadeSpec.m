@@ -221,7 +221,7 @@ classdef BiosignalFacadeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(events.metadata.method, "local");
         end
 
-        function buildsBeatMeasurementsAndGroupComparisons(testCase)
+        function buildsBeatMeasurements(testCase)
             signal = labkit.biosignal.filterSignal(BiosignalFacadeSpec.syntheticEcgSignal(), ...
                 struct("type", "bandpass", "cutoffHz", [0.5, 40]));
             events = labkit.biosignal.detectEcgPeaks(signal, struct( ...
@@ -230,17 +230,9 @@ classdef BiosignalFacadeSpec < matlab.unittest.TestCase
             segments = labkit.biosignal.segmentByEvents(signal, events, [-0.7, 0.7]);
             template = labkit.biosignal.buildTemplate(segments, struct("topN", 5));
             measurements = labkit.biosignal.measureSegments(segments, template);
-            values = [measurements.perSegment.SNRdB; measurements.perSegment.SNRdB + 3];
-            groups = [repmat("A", height(measurements.perSegment), 1); ...
-                repmat("B", height(measurements.perSegment), 1)];
-            comparison = labkit.biosignal.compareGroups(values, groups);
-
             testCase.verifyGreaterThanOrEqual(size(segments.values, 2), 5);
             testCase.verifyEqual(height(measurements.perSegment), size(segments.values, 2));
             testCase.verifyTrue(isfinite(measurements.summary.SNRdBMean));
-            testCase.verifyEqual([height(comparison.summary), height(comparison.pairwise)], [2, 1]);
-            testCase.verifyGreaterThanOrEqual(comparison.pairwise.P, 0);
-            testCase.verifyLessThanOrEqual(comparison.pairwise.P, 1);
         end
     end
 

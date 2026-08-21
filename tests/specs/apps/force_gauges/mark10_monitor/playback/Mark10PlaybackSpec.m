@@ -76,12 +76,10 @@ classdef Mark10PlaybackSpec < matlab.unittest.TestCase
         function resetPlayAndPauseResumeOwnTheVisibleCursor(testCase)
             resources = containers.Map("KeyType", "char", "ValueType", "any");
             backend = struct( ...
-                "setResource", @(scope, id, value, cleanup) ...
-                    storeResource(resources, scope, id, value, cleanup), ...
-                "getResource", @(scope, id) ...
-                    getResource(resources, scope, id), ...
-                "removeResource", @(scope, id) ...
-                    removeResource(resources, scope, id), ...
+                "setResource", @(id, value, cleanup) ...
+                    storeResource(resources, id, value, cleanup), ...
+                "getResource", @(id) getResource(resources, id), ...
+                "removeResource", @(id) removeResource(resources, id), ...
                 "postEvent", @(~, ~) []);
             context = labkittest.createCallbackContext(backend);
             session = mark10_monitor.createSession(struct(), context);
@@ -91,14 +89,14 @@ classdef Mark10PlaybackSpec < matlab.unittest.TestCase
             playback("force_N") = linspace(-2, 2, count).';
             playback("travel_mm") = linspace(0, 5, count).';
             playback("index") = count;
-            storeResource(resources, "application", "mark10Playback", ...
+            storeResource(resources, "mark10Playback", ...
                 playback, []);
             session.playback.loaded = true;
             session.playback.cursor = count;
             session.playback.count = count;
             state = struct("project", struct(), "session", session);
             cleanup = onCleanup(@() removeResource( ...
-                resources, "application", "mark10PlaybackTimer"));
+                resources, "mark10PlaybackTimer"));
 
             state = mark10_monitor.playback.reset(state, context);
             testCase.verifyNumElements( ...
@@ -106,7 +104,7 @@ classdef Mark10PlaybackSpec < matlab.unittest.TestCase
             testCase.verifyEqual(state.session.cache.plotViewRevision, 2);
 
             state = mark10_monitor.playback.play(state, context);
-            timerEntry = resources("application|mark10PlaybackTimer");
+            timerEntry = resources("mark10PlaybackTimer");
             testCase.verifyEqual(playback("index"), 0);
             testCase.verifyEmpty(state.session.acquisition.plotTime_s);
             testCase.verifyEqual(timerEntry.Value.Period, 0.1);
@@ -144,10 +142,10 @@ observed("id") = id;
 observed("update") = update;
 end
 
-function resources = storeResource(resources, scope, id, value, cleanup)
-key = char(string(scope) + "|" + string(id));
+function resources = storeResource(resources, id, value, cleanup)
+key = char(string(id));
 if isKey(resources, key)
-    removeResource(resources, scope, id);
+    removeResource(resources, id);
 end
 resources(key) = struct("Value", value, "Cleanup", cleanup);
 end
@@ -156,13 +154,13 @@ function values = setMapValue(values, key, value)
 values(char(key)) = value;
 end
 
-function value = getResource(resources, scope, id)
-key = char(string(scope) + "|" + string(id));
+function value = getResource(resources, id)
+key = char(string(id));
 if ~isKey(resources, key), value = []; else, value = resources(key).Value; end
 end
 
-function removeResource(resources, scope, id)
-key = char(string(scope) + "|" + string(id));
+function removeResource(resources, id)
+key = char(string(id));
 if ~isKey(resources, key), return; end
 entry = resources(key);
 remove(resources, key);

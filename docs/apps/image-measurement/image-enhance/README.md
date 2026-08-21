@@ -3,8 +3,8 @@
 Image Enhance builds an ordered, reversible processing history for one image
 or a batch and exports the resulting images with the exact step sequence.
 
-Preview details and synthetic-sample generation use the current processing
-history directly, keeping one authoritative sequence for display and export.
+Preview and export use the current processing history directly, keeping one
+authoritative sequence for both outcomes.
 
 ## Requirements And Launch
 
@@ -64,7 +64,7 @@ image fallback only when no usable background support is found.
 The history table records step kind and settings in execution order. **Undo
 history** removes the latest applied step; **Reset history** returns to the
 normalized original. Source images are not modified. Shared and per-image
-histories are stored separately in project state so switching batch mode does
+histories are stored separately in in-memory App state so switching batch mode does
 not ambiguously merge them.
 
 ## Outputs
@@ -86,12 +86,12 @@ output = image_enhance.analysisRun.applyPipeline(imread("source.png"), steps);
 imwrite(output{1}, "enhanced.png");
 ```
 
-## Project And State
+## Runtime State
 
-Saved projects keep portable source references, shared and per-image step
-histories, white-reference ROIs, export settings, and compact result metadata.
-Full-size pixels and downsampled previews are loaded again from the selected
-source when a project opens rather than embedded in the project.
+The current task keeps source paths, shared and per-image step
+histories, white-reference ROIs, export settings, and compact result metadata
+while the App is open. Full-size pixels and downsampled previews remain
+reconstructible from the selected source files.
 
 An empty launch does not choose an output directory. Adding images establishes
 the source-adjacent default; **Choose folder** remains available before export.
@@ -99,8 +99,7 @@ the source-adjacent default; **Choose folder** remains available before export.
 ## Errors And Limitations
 
 - Unknown step labels are rejected.
-- Reopening a project with an existing unreadable image aborts restore and
-  preserves the current document instead of displaying an empty preview.
+- An unreadable selected image reports the source problem.
 - White ROI calibration fails when a required image has no valid ROI.
 - Enhancement changes pixel values and can invalidate quantitative intensity
   analysis; retain the source and manifest.

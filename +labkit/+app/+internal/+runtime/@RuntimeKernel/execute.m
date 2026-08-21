@@ -8,7 +8,6 @@ function execute(obj, binding, payload, prepareState, failureLabel)
     end
     previousState = obj.State;
     previousPresentation = obj.Presentation;
-    obj.PendingDocumentMetadata = [];
     hasCallback = ~isempty(binding);
     operation = [];
     if hasCallback
@@ -27,7 +26,8 @@ function execute(obj, binding, payload, prepareState, failureLabel)
                     candidate, payload, obj.Context);
             end
             obj.Recorder.log( ...
-                "trace", "callback.state_updated", ...
+                "debug", ...
+                "callback.state_updated", ...
                 "Callback state update completed.", ...
                 Category="runtime.callback", Audience="developer", ...
                 Attributes=struct("runtimeAlias", binding.Id));
@@ -36,12 +36,20 @@ function execute(obj, binding, payload, prepareState, failureLabel)
             obj.Application, candidate);
         if hasCallback
             obj.Recorder.log( ...
-                "trace", "callback.state_validated", ...
+                "debug", ...
+                "callback.state_validated", ...
                 "Callback state validation completed.", ...
                 Category="runtime.callback", Audience="developer", ...
                 Attributes=struct("runtimeAlias", binding.Id));
         end
         view = obj.present(candidate);
+        if hasCallback
+            obj.Recorder.checkpoint( ...
+                "callback.presentation_started", ...
+                "Native presentation commit started.", ...
+                Category="runtime.callback", Audience="developer", ...
+                Attributes=struct("runtimeAlias", binding.Id));
+        end
         obj.Adapter.reconcile(previousPresentation, view);
         if hasCallback
             obj.Recorder.log( ...
@@ -52,23 +60,12 @@ function execute(obj, binding, payload, prepareState, failureLabel)
         end
         obj.State = candidate;
         obj.Presentation = view;
-        if isempty(obj.PendingDocumentMetadata)
-            if ~isempty(obj.Documents) && ...
-                    ~isequaln(previousState.project, candidate.project)
-                obj.markDocumentChanged();
-            end
-        else
-            obj.Documents.acceptRestore(obj.PendingDocumentMetadata);
-            obj.refreshWindowTitle();
-        end
         if hasCallback
             obj.Recorder.finish(operation, "completed", "committed", []);
         end
     catch cause
         obj.State = previousState;
         obj.Presentation = previousPresentation;
-        obj.PendingDocumentMetadata = [];
-        obj.Resources.clearScope("event");
         if hasCallback
             obj.Recorder.finish(operation, "failed", "rolledBack", cause);
             obj.Recorder.log( ...
@@ -82,6 +79,4 @@ function execute(obj, binding, payload, prepareState, failureLabel)
         failure = addCause(failure, cause);
         throwAsCaller(failure);
     end
-    obj.PendingDocumentMetadata = [];
-    obj.Resources.clearScope("event");
 end

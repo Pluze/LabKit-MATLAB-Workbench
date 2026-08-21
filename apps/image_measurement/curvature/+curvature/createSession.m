@@ -1,9 +1,9 @@
 % Rebuild the decoded image and transient interaction state from one validated
 % Curvature project. App SDK runtime calls this after source relinking.
-function session = createSession(project, context)
+function session = createSession(project, ~)
     paths = strings(0, 1);
     if ~isempty(project.inputs.sources)
-        paths = context.resolveSourcePaths(project.inputs.sources);
+        paths = labkit.app.source.paths(project.inputs.sources);
     end
     imagePath = "";
     if ~isempty(paths), imagePath = paths(1); end

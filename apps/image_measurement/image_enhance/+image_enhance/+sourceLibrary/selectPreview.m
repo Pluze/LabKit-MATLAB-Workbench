@@ -1,7 +1,7 @@
 % App-owned implementation for image_enhance.sourceLibrary.selectPreview within the image_enhance product workflow.
 function applicationState = selectPreview( ...
         applicationState, listSelection, callbackContext)
-%SELECTPREVIEW Lazily decode and present the selected portable source.
+%SELECTPREVIEW Lazily decode and present the selected source-list path.
 applicationState.project.annotations.items = reconcileAnnotations( ...
     applicationState.project.annotations.items, ...
     applicationState.project.inputs.sources);
@@ -19,7 +19,7 @@ if index > numel(sources)
 end
 source = sources(index);
 try
-    paths = callbackContext.resolveSourcePaths(source);
+    paths = labkit.app.source.paths(source);
     items = image_enhance.sourceFiles.readImages(paths);
 catch ME
     callbackContext.log("error", "image_enhance.sourcelibrary.selectpreview.exception", "Load image preview", ...

@@ -1,5 +1,5 @@
 % App session factory; rebuilds transient table, selection, and workspace state.
-function session = createSession(project, context)
+function session = createSession(project, ~)
 %CREATESESSION Rebuild transient source-grid and selection state.
 %
 % Expected caller: Runtime through ttest_wizard.definition. The optional
@@ -8,14 +8,9 @@ function session = createSession(project, context)
 % Existing unreadable sources throw so project loading cannot silently erase
 % the table. Reading is the only side effect.
 
-    arguments
-        project (1, 1) struct
-        context (1, 1) labkit.app.CallbackContext
-    end
-
     source = ttest_wizard.sourceTable.emptySource();
     if ~isempty(project.inputs.sources)
-        paths = context.resolveSourcePaths(project.inputs.sources);
+        paths = labkit.app.source.paths(project.inputs.sources);
         filepath = paths(1);
         source = ttest_wizard.sourceTable.readSourceTable( ...
             filepath, project.inputs.sourceSheet);

@@ -2,7 +2,7 @@
 
 `labkit.app` is the App-facing runtime contract. Apps declare product meaning;
 the private runtime owns native MATLAB components, event serialization,
-transactions, project documents, portable sources, resources, and cleanup.
+transactions, runtime state publication, resources, diagnostics, and cleanup.
 
 ## Definition And Launch
 
@@ -24,23 +24,23 @@ app = labkit.app.Definition( ...
     Family="Examples", ...
     AppVersion="1.0.0", ...
     Updated="2026-07-19", ...
-    Requirements=labkit.contract.requirements("app", ">=2 <3"), ...
     Workbench=example.workbench.buildLayout(), ...
-    ProjectSchema=example.projectSpec(), ...
-    CreateSession=@example.createSession, ...
+    CreateState=@example.createState, ...
+    RefreshState=@example.refreshState, ...
     PresentWorkbench=@example.workbench.present);
 end
 ```
 
-Required Definition arguments are product metadata, requirements, and one
+Required Definition arguments are product metadata and one
 `labkit.app.layout.workbench` value. Optional callbacks are:
 
 | Argument | Signature | Purpose |
 | --- | --- | --- |
-| `CreateSession` | `session = callback(project,callbackContext)` | Rebuild transient App data from durable project state. |
+| `CreateState` | `state = callback(callbackContext,initialInput)` | Create the App-owned scalar runtime state. |
+| `Requirements` | `labkit.contract.requirements(...)` | Optionally declare additional facade ranges used by the App. |
+| `RefreshState` | `state = callback(state,callbackContext)` | Rebuild App data after a file-list edit. |
 | `PresentWorkbench` | `view = callback(applicationState)` | Return the App-owned fragment of the complete visible snapshot. |
 | `OnStart` | `applicationState = callback(applicationState,callbackContext)` | Perform a real post-first-commit request or resource initialization. |
-| `BuildSyntheticSample` | `sample = callback(callbackContext)` | Build clean-room debug input when the App supports it. |
 
 Ordinary default state needs no startup callback. Exact syntax and errors are
 in the generated [public API reference](../../reference/README.md).
@@ -84,35 +84,31 @@ functions in user order.
 
 ## State And Transactions
 
-Runtime state always has two App-owned buckets:
+Runtime treats App state as one opaque scalar struct. An App may organize that
+value into convenient buckets, for example:
 
 ```matlab
 applicationState.project
 applicationState.session
 ```
 
-`project` is durable, validated meaning. `session` is transient and
-reconstructible. A callback receives the previous complete state and returns a
-candidate complete state. The runtime:
+Those names have no framework durability semantics. A callback receives the
+previous complete state and returns a candidate complete state. The runtime:
 
 1. serializes the event;
 2. invokes the direct callback;
-3. validates project and session shape;
+3. verifies that candidate state remains one scalar struct;
 4. builds and validates the complete view snapshot;
 5. reconciles native components;
 6. publishes state and view together.
 
-Failure rolls back both state and presentation and clears event-scoped
-resources. Apps do not implement busy flags, callback queues, readiness
+Failure rolls back both state and presentation. Apps do not implement busy flags, callback queues, readiness
 timers, or figure close guards.
 
-A project schema is optional. Use one only when the App has durable,
-reconstructible setup that users need to save and reopen. Live samples,
-connection handles, timers, decoded caches, playback cursors, and bounded plot
-snapshots normally belong in `session` or a managed resource. Runtime compares
-the validated project before and after each transaction and marks a document
-dirty only when that project value changes; session-only monitoring refreshes
-do not create unsaved-project prompts.
+The runtime has no project schema, document identity, dirty flag, recovery
+file, save command, or restore command. Apps that need continuation own that
+workflow and archive format explicitly. Runtime diagnostics may capture state
+for debugging, but diagnostic capture is not a task-save contract.
 
 Runtime enters its non-reentrant busy state before invoking a callback. New
 button, field, table, file-list, workspace, and managed-interaction input is
@@ -125,14 +121,14 @@ emitted while that feedback is visible replace the current stage text, so an
 App can report real named stages through its existing diagnostic timeline
 without owning a second progress window.
 
-Use direct `Bind="project...."` or `Bind="session...."` paths for ordinary
-fields, ranges, sliders, file sources, and selection. Bound controls need no
+Use direct dotted `Bind` paths for ordinary fields, ranges, sliders, file
+sources, and selection. The roots and nesting are App-owned. Bound controls need no
 callback or presenter operation unless the App has additional derived meaning.
 
-## Portable Sources And Session Reconstruction
+## Source Lists And State Refresh
 
-`labkit.app.layout.fileList` owns file/folder selection, portable source
-records, removal, clearing, and optional selection binding:
+`labkit.app.layout.fileList` owns file/folder selection, live source records,
+removal, clearing, and optional selection binding:
 
 ```matlab
 labkit.app.layout.fileList("sources", ...
@@ -144,23 +140,20 @@ labkit.app.layout.fileList("sources", ...
 ```
 
 The App does not mirror those UI lifecycle actions with callbacks. Runtime
-updates the bound source records and invokes `CreateSession` after source
+updates the bound source records and invokes `RefreshState` after source
 changes:
 
 ```matlab
-function session = createSession(project, callbackContext)
-paths = callbackContext.resolveSourcePaths(project.inputs.sources);
-session = struct("measurements", example.sourceFiles.read(paths));
+function state = refreshState(state, callbackContext)
+paths = labkit.app.source.paths(state.project.inputs.sources);
+state.session.measurements = example.sourceFiles.read(paths);
 end
 ```
 
-Portable source records are opaque. Resolve their paths only at IO boundaries.
-Saved projects store portable references and use runtime relinking. A project
-Schema declares each durable source location with project-relative
-`SourceBindings`, such as `"inputs.sources"`; an explicit empty list means the
-project has no sources. Omitted bindings retain layout-derived inference for
-older external App definitions, while built-in Apps use explicit declarations
-so persistence does not depend on UI layout.
+Source records are runtime UI values with IDs, roles, and direct paths. Read
+paths at IO boundaries. If an App writes an archive,
+that App decides how paths are represented and relocated; the framework does
+not rebase or relink them.
 
 ## Typed Events
 
@@ -212,7 +205,7 @@ callbackContext.postEvent("stream.live.refresh", @refreshLiveState);
 end
 
 function state = refreshLiveState(state, callbackContext)
-buffer = callbackContext.getResource("application", "sampleBuffer");
+buffer = callbackContext.getResource("sampleBuffer");
 state.session.live = buffer.visibleSnapshot();
 end
 ```
@@ -276,14 +269,14 @@ end
 
 Renderers own drawing and viewport policy, not workflow decisions or project
 mutation. Display-only graphics disable hit testing. Managed interaction
-specs own editable gestures and event-scoped resources.
+specs own editable gestures and their private native resources.
 
 For a multi-row plot dashboard, place multiple plot areas in one workspace
 page. Page content is arranged vertically, while each plot area independently
 chooses `single`, horizontal `pair`, or vertical `stack`. Two paired plot areas
 therefore form a 2-by-2 dashboard without App-owned native containers.
 `ColumnWidths={'1x', 90}` gives a pair a flexible main plot and a fixed-width
-scale or histogram; `RowHeights` provides the analogous control for a stack.
+scale or histogram. Stacked axes share the available height equally.
 
 ```matlab
 top = labkit.app.layout.plotArea("topPlots", @drawTop, ...
@@ -323,8 +316,8 @@ whether a semantic change should preserve or fit the viewport.
 ## CallbackContext
 
 `labkit.app.CallbackContext` is sealed and exposes specifically named runtime
-operations for dialogs, status and diagnostics, portable sources, project
-documents, result packages, render surfaces, and managed resources. It does
+operations for dialogs, status and diagnostics, runtime sources, render
+surfaces, and managed resources. It does
 not expose figures, component registries, queues, lifecycle handles, or a
 nested service bag.
 
@@ -353,14 +346,13 @@ choices are remembered separately across App windows. A valid App-supplied
 start path takes precedence; cancellation or an invalid path does not replace
 the last successful folder.
 
-An App-specific project button may choose a MAT file and return
-`callbackContext.restoreProjectDocument(filepath)`. The context prepares the
-same migrated, relinked project/session candidate used by the framework Load
-State menu; the active callback transaction still owns validation, native
-presentation, rollback, document metadata, and title publication.
-`callbackContext.newProjectDocument()` similarly returns the schema's fresh
-project/session state and publishes a new unsaved document identity only when
-that callback transaction commits.
+The framework has no generic task-document writer or reader. An App that truly
+needs continuation owns the file chooser, archive format, source lookup,
+compatibility policy, and reconstruction callback. Returning the reconstructed
+application state from that ordinary callback still uses Runtime's normal
+validation, presentation, and rollback transaction. Archive files capture one
+current/final snapshot; diagnostic state exports remain a separate debugging
+facility.
 
 ## Diagnostics And Session Logging
 
@@ -392,12 +384,14 @@ presentation records.
 Runtime initially captures DEBUG and higher records to bound ordinary-session
 cost. The first ERROR or CRITICAL event automatically enables TRACE for later
 activity. The viewer also provides an explicit **Enable TRACE** / **Disable
-TRACE** control when a user needs detailed capture before an error. TRACE adds
-callback state-update and validation stages, successful App/runtime
-presentation stages, native presentation commit, and post-failure rollback
-cleanup. DEBUG retains ordinary operation start and terminal boundaries plus
-all presentation failures, but does not journal successful high-frequency
-presentation boundaries. Enabling TRACE never reconstructs earlier detail.
+TRACE** control when a user needs detailed capture before an error. DEBUG
+retains operation start, state-update, validation, native-presentation start,
+terminal boundaries, and all presentation failures. The operation start and
+native-presentation start are durable checkpoints, so an abnormal process stop
+still distinguishes callback work from presentation commit without closing and
+reopening the journal after every intermediate stage. TRACE additionally keeps
+successful App/runtime presentation and native commit detail plus post-failure
+rollback cleanup. Enabling TRACE never reconstructs earlier detail.
 The live viewer appends incoming records to its bounded projection immediately
 but batches native table updates at up to 10 Hz. A TRACE burst therefore
 causes one table refresh per batch rather than one complete filter, dropdown,
@@ -408,18 +402,17 @@ bounded histories.
 **Export Diagnostic Bundle** writes directly to ignored
 `artifacts/diagnostics/` with a generated App-specific, timestamped, unique ZIP
 name. Every bundle contains complete sensitive events, attributes, exception
-messages, stack locations, and App state. **Complete bundle (exact MAT)**
-writes `app-state.mat` unchanged. **Complete bundle (compact synthetic MAT)**
-writes `app-state-compact.mat`: Runtime recursively reviews state containers
+messages, stack locations, and App state. Runtime writes
+`app-state-compact.mat`: it recursively reviews state containers
 and replaces supported numeric, logical, character, or string leaves larger
 than 1 MiB with deterministic compressible placeholders of the same class and
 dimensions. It preserves smaller parameters, annotations, results, and caches.
 `bundle-report.json` names structural state paths and sizes for every
 replacement without retaining the replaced values; it also lists oversized
-unsupported leaf types that had to remain exact. Compact state is diagnostic
-evidence, not scientifically valid input. Both modes may contain sensitive
-paths, filenames, scientific values, and decoded data; neither is a privacy
-filter. Compact is the default; exact remains an explicit choice. If the
+unsupported leaf types that could not be compacted. Compact state is diagnostic
+evidence, not scientifically valid input. The bundle may contain sensitive
+paths, filenames, scientific values, and decoded data; compaction is not a privacy
+filter. If the
 session records any ERROR or CRITICAL event, Runtime automatically writes a
 compact bundle after the App closes, including the completed close lifecycle
 event. A clean session does not create a bundle on close.
@@ -437,68 +430,32 @@ rollback disposition, safe exception identifier, and sanitized function stack.
 Runtime close is also an instrumented lifecycle operation. Resource and native
 adapter cleanup continue independently; a cleanup exception is retained and
 persisted before the journal closes, then returned to the caller. Diagnostics
-cannot manufacture evidence for a native event that never entered Runtime, an
-exception swallowed by App code without logging, or a MATLAB process that
-hangs or terminates before a terminal event. In those cases the last retained
-DEBUG boundary and durable journal state are the available evidence.
+cannot manufacture evidence for a native event that never entered Runtime or
+an exception swallowed by App code without logging. Root callback starts and
+major transaction-stage boundaries are persisted before work continues, so a
+MATLAB hang or abnormal termination leaves an unterminated operation
+identifying the last entered stage. **Export Previous Active Session**
+retrieves that journal from a later launch.
 
-## Persistence, Results, And Cleanup
+## App-Owned Results And Continuation
 
-## Synthetic Inputs
+Apps write final result files directly. Crop-like workflows may read their
+final manifest to reconstruct a task; an editor such as Video Marker may work
+directly in an App-owned MAT archive. Other Apps do not gain save/open behavior
+merely because they have structured runtime state.
 
-An App that declares `BuildSyntheticSample` exposes **Tools > Developer
-Tools > Generate Synthetic Inputs...**. The action writes an anonymous,
-validated `labkit.app.synthetic.Pack` and `synthetic-input-pack.json` into a
-new folder beneath the selected destination. Generation does not load the
-pack, mutate the open project, or suppress `OnStart`; every App launch follows
-the same clean startup path. Users deliberately import the generated files
-through the App's ordinary controls. Apps without a `ProjectSchema` declare an
-empty `InitialProject`; their pack may still contain replay or import
-artifacts.
+An App with continuation owns its buttons, format, current-version validation,
+path policy, and resume meaning. The runtime supplies no envelope, migration
+loop, atomic-save policy, project menu, or generic result manifest.
 
-`labkit.app.project.Schema` owns current project creation, validation, and
-ordered version migration. Runtime owns the project envelope, atomic save,
-restore, recovery, and relinking loop.
-
-After a document is saved or accepted from restore, Runtime fingerprints the
-on-disk file. Saving again to the same path is rejected if another program has
-changed that file; **Save As** remains available. This prevents a stale App
-window from silently overwriting external edits without changing the project
-payload format.
-
-### Saved-project compatibility boundary
-
-Every save writes exactly one `labkitProject` variable using the current App
-payload version. A restore accepts an older payload only when the App's current
-schema declares one `Migrate(project, fromVersion)` callback; Runtime invokes
-it once for each missing version in order and then validates the current
-payload. A payload newer than the running App is rejected rather than guessed
-at.
-
-An App may declare an exact legacy MAT variable name in `LegacyImports` when
-real user files still require a one-way import. That callback converts the
-legacy value directly to the current project and optional resume state. It is
-read-only: current saves never write the legacy variable, and Runtime contains
-no App ID, field-shape, or filename heuristics.
-
-These readers are supported data contracts while their Apps declare and test
-them. They are not an excuse for duplicate live state fields or old runtime
-APIs. Removing a supported payload migration or importer is an explicit
-breaking saved-data decision; adding one requires App-owned persistence
-evidence plus a runtime restore test for the framework mechanism.
-
-`labkit.app.result.File` and `labkit.app.result.Package` describe App-owned
-outputs. `CallbackContext.writeResultPackage` writes through the runtime so
-source and project provenance remain consistent.
-
-Resources have event, interaction, document, or application scope. Replacing
-the same scope and ID is idempotent; the runtime cleans every surviving
-resource on scope end or close.
+Resources use App-owned IDs. Replacing the same ID is idempotent; Apps remove
+resources when a workflow no longer needs them, and the runtime cleans every
+surviving resource on close.
 
 ## Validation
 
 Use focused contract tests for Definition, layout, callbacks, snapshots,
-project schema, and runtime transactions. Add downstream App tests for changed
+state invariants, and runtime transactions. Add downstream App tests for changed
 behavior and a bounded hidden-GUI test for native wiring. Automated hidden GUI
 tests do not prove dialog quality, pointer feel, scientific validity, or a
 complete interactive workflow.

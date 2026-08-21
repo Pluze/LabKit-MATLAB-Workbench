@@ -1,5 +1,5 @@
 % App-owned Focus Stack result-shape owner. Expected callers are focus-stack
-% computation, project/session defaults, actions, and package tests.
+% computation, runtime defaults, actions, and capability tests.
 function result = emptyResult()
 %EMPTYRESULT Return default result for labkit_FocusStack_app.
 %

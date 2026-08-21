@@ -27,12 +27,15 @@ catch ME
         "Could not load the focus image folder.");
     return;
 end
-incoming = repmat(labkit.app.project.sourceRecord( ...
-    "placeholder", "focus-image", "", true), numel(paths), 1);
+incoming = labkit.app.source.emptyRecords();
+if ~isempty(paths)
+    incoming = repmat(labkit.app.source.record( ...
+        "placeholder", "focus-image", paths(1)), numel(paths), 1);
+end
 for index = 1:numel(paths)
-    record = labkit.app.project.sourceRecord( ...
+    record = labkit.app.source.record( ...
         "image_" + compose("%03d", index), ...
-        "focus-image", paths(index), true);
+        "focus-image", paths(index));
     incoming(index, 1) = record;
 end
 applicationState.project.inputs.sources = incoming;

@@ -43,6 +43,6 @@ end
 state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
 state.session.workflow.status = "Applied editable X/Y limits.";
 state.project.results.lastExport = [];
-state.project.results.resultManifestPath = "";
+state.project.results.lastOutputPath = "";
 callbackContext.log("info", "figure_studio.sourceaxes.limitchanged.status", state.session.workflow.status);
 end

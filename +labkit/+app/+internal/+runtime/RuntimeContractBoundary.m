@@ -117,9 +117,6 @@ classdef (Sealed, Hidden) RuntimeContractBoundary
                     title = application.Title + " v" + ...
                         application.AppVersion + " (" + ...
                         application.Updated + ")";
-                    if ~isempty(application.ProjectSchema)
-                        title = title + " *";
-                    end
                     adapter = labkit.app.internal.native.MatlabPlatformAdapter( ...
                         plan, title);
                 otherwise
@@ -128,17 +125,17 @@ classdef (Sealed, Hidden) RuntimeContractBoundary
             end
         end
 
-        function project = initialProject(application, supplied)
-            if ~isempty(supplied)
-                project = supplied;
-            elseif ~isempty(application.ProjectSchema)
-                project = application.ProjectSchema.Create();
+        function state = initialState(application, supplied, context)
+            if ~isempty(application.CreateState)
+                state = application.CreateState(context, supplied);
+            elseif ~isempty(supplied)
+                state = supplied;
             else
-                project = struct();
+                state = struct();
             end
-            if ~isstruct(project) || ~isscalar(project)
+            if ~isstruct(state) || ~isscalar(state)
                 error("labkit:app:runtime:InvariantFailure", ...
-                    "Application project must be a scalar struct.");
+                    "Application state must be a scalar struct.");
             end
         end
 
@@ -160,20 +157,10 @@ classdef (Sealed, Hidden) RuntimeContractBoundary
             end
         end
 
-        function validateState(application, state)
-            if ~isstruct(state) || ~isscalar(state) || ...
-                    ~all(isfield(state, ["project", "session"])) || ...
-                    ~isstruct(state.project) || ~isscalar(state.project) || ...
-                    ~isstruct(state.session) || ~isscalar(state.session)
+        function validateState(~, state)
+            if ~isstruct(state) || ~isscalar(state)
                 error("labkit:app:runtime:InvariantFailure", ...
-                    "Command must return scalar project/session state.");
-            end
-            if ~isempty(application.ProjectSchema)
-                accepted = application.ProjectSchema.Validate(state.project);
-                if ~(islogical(accepted) && isscalar(accepted) && accepted)
-                    error("labkit:app:runtime:InvariantFailure", ...
-                        "Project validation rejected command state.");
-                end
+                    "Command must return scalar application state.");
             end
         end
 

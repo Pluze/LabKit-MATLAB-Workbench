@@ -2,7 +2,7 @@
 % structs and output filepath. Side effect is writing the stable VT CSV file.
 
 function [ok, msg] = writeResultsCSV(items, filepath)
-%WRITERESULTSCSV Write VT resistance results in legacy CSV format.
+%WRITERESULTSCSV Write VT resistance results in the App-owned CSV format.
 
     ok = true;
     msg = '';

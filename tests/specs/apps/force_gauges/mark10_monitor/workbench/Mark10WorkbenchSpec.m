@@ -38,7 +38,7 @@ classdef Mark10WorkbenchSpec < matlab.unittest.TestCase
         end
 
         function presentsAnAlreadyRunningSessionFromBeforeSourceTracking(testCase)
-            backend = struct("setResource", @(~, ~, ~, ~) []);
+            backend = struct("setResource", @(~, ~, ~) []);
             context = labkittest.createCallbackContext(backend);
             session = mark10_monitor.createSession(struct(), context);
             session.analysis = rmfield(session.analysis, ...

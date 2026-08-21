@@ -16,7 +16,6 @@ function spec = pairedAnchors(id, onChanged, varargin)
 %   Axes - Two or more axis IDs within the owning plotArea. Required.
 %   Style - Scalar visual-option struct. Default: struct().
 %   Instruction - Scalar guidance text. Default: "".
-%   ViewportPolicy - "preserve" or "fit". Default: "preserve".
 %
 % Outputs:
 %   spec - Immutable interaction declaration.
@@ -30,7 +29,7 @@ function spec = pairedAnchors(id, onChanged, varargin)
 % See also labkit.app.layout.plotArea
 options = labkit.app.internal.contract.OptionParser.parse( ...
     "labkit.app.interaction.pairedAnchors", ...
-    ["Axes", "Style", "Instruction", "ViewportPolicy"], varargin{:});
+    ["Axes", "Style", "Instruction"], varargin{:});
 if ~isfield(options, "Axes")
     error("labkit:app:contract:UnknownArgument", ...
         "labkit.app.interaction.pairedAnchors requires Axes.");

@@ -10,9 +10,6 @@ function apply(obj, operation)
             obj.applyLimits(component, operation.Value);
         case "enabled"
             obj.applyEnabled(component, operation.Value);
-        case "visible"
-            labkit.app.internal.native.NativeAdapterValues.setIfProperty(labkit.app.internal.native.NativeAdapterValues.layoutHandle(component), ...
-                "Visible", labkit.app.internal.native.NativeAdapterValues.onOff(operation.Value));
         case "text"
             obj.applyText(component, operation.Value);
         case "filePaths"
@@ -27,9 +24,6 @@ function apply(obj, operation)
             obj.applyTableData(component, operation.Value);
         case "renderPlot"
             obj.renderPlot(operation);
-        case "workspacePage"
-            labkit.app.internal.native.NativeAdapterValues.setIfProperty(component, "Enable", labkit.app.internal.native.NativeAdapterValues.onOff(operation.Value.Enabled));
-            component.UserData = struct("Status", operation.Value.Status);
         otherwise
             error("labkit:app:runtime:InvariantFailure", ...
                 "No native presentation policy for operation %s.", ...

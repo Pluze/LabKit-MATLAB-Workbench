@@ -96,6 +96,19 @@ classdef FigureStudioSourceSpec < matlab.unittest.TestCase
             testCase.verifyEqual(sizeChoice, "900 px");
         end
 
+        function standardLayoutPreservesLogarithmicExponentTicks(testCase)
+            standard = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            plotData = struct("axes", struct( ...
+                "xScale", "log", ...
+                "xTickLabel", ["10^{-1}"; "10^{0}"; "10^{1}"; ...
+                    "10^{2}"; "10^{3}"; "10^{4}"; "10^{5}"]));
+
+            actual = figure_studio.sourceAxes.applyStandardLayout( ...
+                standard, plotData);
+
+            testCase.verifyFalse(actual.wrapXTickLabels);
+        end
+
         function axesHandoffBuildsAnEmbeddedProjectWithoutSourceFileState(testCase)
             cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
             sourceFigure = figure(Visible="off");

@@ -17,7 +17,6 @@ function node = slider(id, varargin)
 %   Step - Positive numeric scalar. Default: [].
 %   ValueDisplayFormat - Optional spinner numeric format such as "%.6g".
 %       Default: "".
-%   ShowTicks - Logical tick visibility. Default: false.
 %   Bind - Project or session field path. Default: "".
 %   Enabled - Initial logical enabled state. Default: true.
 %   OnValueChanged - Scalar callback

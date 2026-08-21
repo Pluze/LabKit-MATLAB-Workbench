@@ -75,20 +75,17 @@ does not change source data.
 ## Outputs
 
 Current or batch export writes PNG, TIFF, or JPEG rendered thermal images,
-matching color scale graphics, Celsius CSV matrices, measurement values, a
-batch CSV summary, and the standard `flir_thermal.labkit.json` result manifest.
+matching color scale graphics, Celsius CSV matrices, measurement values, and a
+batch CSV summary.
 The clean image export excludes interactive toolbar chrome. Numeric temperature
 outputs remain Celsius regardless of palette or mapping mode.
 
-## Project And State
+## Runtime State
 
-Saved projects keep source references, display parameters, export settings,
-and per-image ranges and readings. Thermal data remains in the source files
-and is read again when a project opens. If a source has moved, the App asks you
-to locate it.
-An existing source that is no longer a readable radiometric file aborts the
-restore and preserves the current document. Batch import may still report and
-skip rejected selections before they become project sources.
+Source references, display parameters, export settings, and per-image ranges
+and readings remain in memory while the App is open. Thermal data remains in
+the source files. Batch import reports and skips rejected selections before
+they enter the live source list.
 
 An empty launch does not choose an output directory. Adding files establishes
 the source-adjacent default; **Choose folder** remains available before export.

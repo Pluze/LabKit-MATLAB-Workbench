@@ -1,5 +1,5 @@
 % Expected callers: DIC preprocess actions and unit tests. Input is the
-% canonical durable project, an edit description, and optional undo limit.
+% current runtime data, an edit description, and optional undo limit.
 % Output appends a project-owned image/mask snapshot without flattening state.
 
 function [project, appended] = appendEditHistory(project, description, maxUndoSteps)

@@ -3,7 +3,7 @@ classdef CicScientificSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
         function calculatesChargeAndVoltageMetrics(testCase)
-            item = testfixtures.makeChronoFixtureItem();
+            item = testfixtures.dta.chronoItem();
             analysis = cic.analysisRun.computeCIC(item, defaultOptions());
 
             testCase.verifyTrue(analysis.ok, analysis.message);
@@ -24,7 +24,7 @@ classdef CicScientificSpec < matlab.unittest.TestCase
         end
 
         function preservesBaselineAndVoltageAccessPolicies(testCase)
-            item = testfixtures.makeChronoFixtureItem();
+            item = testfixtures.dta.chronoItem();
             analysis = cic.analysisRun.computeCIC(item, defaultOptions());
 
             testCase.verifyTrue(analysis.ok, analysis.message);
@@ -42,7 +42,7 @@ classdef CicScientificSpec < matlab.unittest.TestCase
         end
 
         function supportsNominalCurrentAndSharedBatchRecomputation(testCase)
-            item = testfixtures.makeChronoFixtureItem();
+            item = testfixtures.dta.chronoItem();
             options = defaultOptions();
             options.usedMeasuredCurrent = false;
             nominal = cic.analysisRun.computeCIC(item, options);
@@ -62,7 +62,7 @@ classdef CicScientificSpec < matlab.unittest.TestCase
         end
 
         function appliesAreaAndWaterWindowPolicy(testCase)
-            item = testfixtures.makeChronoFixtureItem();
+            item = testfixtures.dta.chronoItem();
             options = defaultOptions();
             options.areaOverride = '2';
             options.cathLimit = -2;
@@ -77,7 +77,7 @@ classdef CicScientificSpec < matlab.unittest.TestCase
         end
 
         function reportsInvalidDataWithoutExtrapolation(testCase)
-            item = testfixtures.makeChronoFixtureItem();
+            item = testfixtures.dta.chronoItem();
             options = defaultOptions();
             options.delay_s = 1e6;
             outside = cic.analysisRun.computeCIC(item, options);

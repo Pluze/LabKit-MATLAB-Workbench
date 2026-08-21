@@ -1,13 +1,9 @@
 % App-owned implementation for vt_resistance.createSession within the vt_resistance product workflow.
-function session = createSession(project, context)
+function session = createSession(project, ~)
 %CREATESESSION Rebuild VT Resistance's lazy selected preview.
-arguments
-    project (1, 1) struct
-    context (1, 1) labkit.app.CallbackContext
-end
 paths = strings(0, 1);
 if ~isempty(project.inputs.sources)
-    paths = context.resolveSourcePaths(project.inputs.sources);
+    paths = labkit.app.source.paths(project.inputs.sources);
 end
 items = vt_resistance.sourceFiles.loadProjectItems( ...
     paths, project.parameters);

@@ -11,7 +11,7 @@ function targets = locate(file, varargin)
 %   An App analysis-run source exposes its direct scientific target plus
 %   bounded result and presentation consumers. Result and workbench sources
 %   map directly to their semantic owners; buildLayout also selects the
-%   parameterized product smoke identity. Project/session roots and App
+%   parameterized product smoke identity. State/session roots and App
 %   definitions have their own structural roles. Targets with AuthorOwned=false
 %   are framework-owned parameterized conformance and need no App wrapper.
 %
@@ -77,14 +77,12 @@ function targets = locate(file, varargin)
             switch lower(parts(5))
                 case "definition.m"
                     targets = appDefinitionTargets(opts.SpecsRoot, packageName);
-                case "projectspec.m"
-                    targets = target(opts.SpecsRoot, appOwner + "/project", ...
-                        "persistence", "headless", "", true, ...
-                        "App project-schema persistence behavior");
                 case "createsession.m"
                     targets = target(opts.SpecsRoot, appOwner + "/session", ...
                         "state", "headless", "", true, ...
                         "App session reconstruction behavior");
+                case "initialdata.m"
+                    targets = appDefinitionTargets(opts.SpecsRoot, packageName);
                 otherwise
                     targets = target(opts.SpecsRoot, appOwner + "/product", ...
                         "product", "headless", "", true, ...

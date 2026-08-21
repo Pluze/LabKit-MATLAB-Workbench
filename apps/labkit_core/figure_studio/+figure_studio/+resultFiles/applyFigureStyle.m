@@ -510,20 +510,17 @@ end
 function scale = applyPreviewGeometry(ax, style)
     width = max(1, double(style.canvasWidth));
     height = max(1, double(style.canvasHeight));
+    applyCanvasAspect(ax, width, height);
     fig = ancestor(ax, 'figure');
     if isempty(fig) || ~isvalid(fig) || style.previewScale || ...
             isa(ax, 'matlab.ui.control.UIAxes')
-        applyPreviewCanvasAspect(ax, style, width, height);
         scale = previewScale(ax, style, width, height);
         return;
     end
     scale = 1;
 end
 
-function applyPreviewCanvasAspect(ax, style, width, height)
-if ~style.previewScale
-    return;
-end
+function applyCanvasAspect(ax, width, height)
 try
     ax.PlotBoxAspectRatio = [width height 1];
     ax.PlotBoxAspectRatioMode = 'manual';

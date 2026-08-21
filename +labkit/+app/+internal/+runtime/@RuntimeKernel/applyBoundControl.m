@@ -1,8 +1,11 @@
-function applyBoundControl(obj, target, value, dispatchChanged)
+function applyBoundControl(obj, target, value, dispatchChanged, showBusy)
 %APPLYBOUNDCONTROL Commit one declared bound-control state transition.
     obj.assertOpen();
     if nargin < 4
         dispatchChanged = false;
+    end
+    if nargin < 5
+        showBusy = true;
     end
     plan = obj.Contract.PlatformPlan;
     index = find(string({plan.Nodes.Id}) == string(target), 1);
@@ -25,5 +28,5 @@ function applyBoundControl(obj, target, value, dispatchChanged)
         labkit.app.internal.runtime.RuntimeStatePath.write( ...
         state, path, value);
     obj.enqueueTransition(binding, value, prepareState, ...
-        "Bound update for " + string(target), string(target));
+        "Bound update for " + string(target), string(target), [], showBusy);
 end

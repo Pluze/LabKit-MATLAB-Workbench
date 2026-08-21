@@ -10,6 +10,7 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
     properties (Access = private)
         Figure
         RestoreView
+        InputHandles
         BaseWindowTitle (1, 1) string
         Visible (1, 1) logical = false
         Message (1, 1) string = ""
@@ -21,16 +22,20 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
     end
 
     methods
-        function obj = BusyLifecycle(figureHandle, title, restoreView)
+        function obj = BusyLifecycle( ...
+                figureHandle, title, restoreView, inputHandles)
             if isempty(figureHandle) || ~isvalid(figureHandle) || ...
                     ~isa(restoreView, "function_handle") || ...
-                    ~isscalar(restoreView)
+                    ~isscalar(restoreView) || ...
+                    ~isa(inputHandles, "function_handle") || ...
+                    ~isscalar(inputHandles)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "Native busy lifecycle inputs are invalid.");
             end
             obj.Figure = figureHandle;
             obj.BaseWindowTitle = string(title);
             obj.RestoreView = restoreView;
+            obj.InputHandles = inputHandles;
         end
 
         function setWindowTitle(obj, title)
@@ -55,7 +60,7 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
             obj.PriorPointer = string(obj.Figure.Pointer);
             setappdata(obj.Figure, "labkitAppBusy", true);
             obj.Timer = timer( ...
-                ExecutionMode="singleShot", StartDelay=0.25, ...
+                ExecutionMode="singleShot", StartDelay=0.5, ...
                 BusyMode="drop", TimerFcn=@(~, ~) obj.show());
             start(obj.Timer);
         end
@@ -142,11 +147,19 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
         end
 
         function disableControls(obj)
-            handles = findall(obj.Figure, "-property", "Enable");
+            handles = obj.InputHandles();
+            if ~iscell(handles)
+                error("labkit:app:runtime:InvariantFailure", ...
+                    "Native busy input handles must be a cell array.");
+            end
             obj.EnableHandles = cell(1, numel(handles));
             obj.EnableValues = cell(1, numel(handles));
             for index = 1:numel(handles)
-                handle = handles(index);
+                handle = handles{index};
+                if isempty(handle) || ~isvalid(handle) || ...
+                        ~isprop(handle, "Enable")
+                    continue
+                end
                 obj.EnableHandles{index} = handle;
                 obj.EnableValues{index} = handle.Enable;
                 handle.Enable = "off";
@@ -156,7 +169,8 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
         function restoreControls(obj)
             for index = 1:numel(obj.EnableHandles)
                 handle = obj.EnableHandles{index};
-                if ~isempty(handle) && isvalid(handle)
+                if ~isempty(handle) && isvalid(handle) && ...
+                        ~isempty(obj.EnableValues{index})
                     handle.Enable = obj.EnableValues{index};
                 end
             end

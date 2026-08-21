@@ -17,8 +17,8 @@ applicationState.session.cache = ...
 applicationState.session.workflow.mode = "idle";
 applicationState.project.parameters.previewMode = ...
     dic_preprocess.analysisRun.defaultPreviewMode(applicationState);
-applicationState.project.results.currentImagesManifestPath = "";
-applicationState.project.results.maskManifestPath = "";
+applicationState.project.results.currentImagesOutputPath = "";
+applicationState.project.results.maskOutputPath = "";
 if ~isempty(selection.Indices)
     callbackContext.log("info", "dic_preprocess.sourcefiles.sourcechanged.status", "Updated DIC source image.");
 end

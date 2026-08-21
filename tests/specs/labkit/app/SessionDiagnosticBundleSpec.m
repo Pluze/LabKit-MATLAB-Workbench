@@ -1,5 +1,5 @@
 classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
-    % SESSIONDIAGNOSTICBUNDLESPEC Specify complete exact and compact bundles.
+    % SESSIONDIAGNOSTICBUNDLESPEC Specify complete compact bundles.
 
     properties (Access = private)
         DiagnosticFilesBefore (1, :) string = strings(1, 0)
@@ -23,7 +23,7 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function exportsCompleteEventsAndExactState(testCase)
+        function exportsCompleteEventsAndCompactState(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = bundleDefinition();
@@ -35,7 +35,7 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             runtime.invokeAction("run");
 
             destination = runtime.exportDiagnosticBundle( ...
-                fullfile(folder, "diagnostics"), "exact");
+                fullfile(folder, "diagnostics"));
             unpacked = fullfile(folder, "unpacked");
             unzip(destination, unpacked);
             files = dir(unpacked);
@@ -47,7 +47,7 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
                 "session.log.txt"
                 "errors.json"
                 "bundle-report.json"
-                "app-state.mat"
+                "app-state-compact.mat"
                 ]);
 
             testCase.verifyTrue(endsWith(destination, ".zip"));
@@ -72,12 +72,11 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
                 string(report.eventProjection), ...
                 "complete-retained-events");
             testCase.verifyTrue(report.containsSensitiveDetails);
-            testCase.verifyEqual(string(report.stateReview.mode), "exact");
+            testCase.verifyEqual(string(report.stateReview.mode), "compact");
             testCase.verifyEqual(report.stateReview.replacementCount, 0);
-            saved = load(fullfile(unpacked, "app-state.mat"));
-            testCase.verifyEqual( ...
-                string(fieldnames(saved.applicationState)), ...
-                ["project"; "session"]);
+            saved = load(fullfile(unpacked, "app-state-compact.mat"));
+            testCase.verifyTrue(isstruct(saved.applicationState));
+            testCase.verifyTrue(isscalar(saved.applicationState));
 
             bundleText = join(readAllBundleText( ...
                 unpacked, ["README.txt"; "events.jsonl"; ...
@@ -126,30 +125,25 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
             runtime.invokeAction("largeState");
 
-            exact = runtime.exportDiagnosticBundle( ...
-                fullfile(folder, "exact.zip"), "exact");
+            expectedCache = runtime.State.session.cache;
             compact = runtime.exportDiagnosticBundle( ...
-                fullfile(folder, "compact.zip"), "compact");
-            exactFolder = fullfile(folder, "exact");
+                fullfile(folder, "compact.zip"));
             compactFolder = fullfile(folder, "compact");
-            unzip(exact, exactFolder);
             unzip(compact, compactFolder);
-            exactState = load(fullfile(exactFolder, "app-state.mat"));
             compactState = load( ...
                 fullfile(compactFolder, "app-state-compact.mat"));
-            exactCache = exactState.applicationState.session.cache;
             compactCache = compactState.applicationState.session.cache;
 
             testCase.verifyEqual(class(compactCache.largePayload), ...
-                class(exactCache.largePayload));
+                class(expectedCache.largePayload));
             testCase.verifyEqual(size(compactCache.largePayload), ...
-                size(exactCache.largePayload));
+                size(expectedCache.largePayload));
             testCase.verifyNotEqual(compactCache.largePayload, ...
-                exactCache.largePayload);
+                expectedCache.largePayload);
             testCase.verifyEqual(compactCache.largePayload, ...
-                zeros(size(exactCache.largePayload), "uint8"));
+                zeros(size(expectedCache.largePayload), "uint8"));
             testCase.verifyEqual(compactCache.smallDiagnosticValues, ...
-                exactCache.smallDiagnosticValues);
+                expectedCache.smallDiagnosticValues);
 
             report = jsondecode(fileread( ...
                 fullfile(compactFolder, "bundle-report.json")));
@@ -162,12 +156,6 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
                 ".largePayload"));
             testCase.verifyGreaterThan( ...
                 report.stateReview.replacements.originalBytes, 1024 ^ 2);
-            exactBytes = dir(exact).bytes;
-            compactBytes = dir(compact).bytes;
-            testCase.verifyLessThan(compactBytes, exactBytes / 4);
-            testCase.verifyError(@() runtime.exportDiagnosticBundle( ...
-                fullfile(folder, "invalid.zip"), "unknown"), ...
-                "labkit:app:contract:InvalidValue");
             clear cleanup
         end
 
@@ -205,7 +193,7 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             clear fileCleanup cleanup
         end
 
-        function compactTextFallbackNamesTheMissingCompactState(testCase)
+        function textFallbackNamesTheMissingCompactState(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
@@ -216,7 +204,7 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             destination = runtime.exportDiagnosticTextFallback( ...
                 fullfile(folder, "diagnostics-sensitive.zip"), ...
                 MException("labkit:test:ZipFailure", ...
-                    "Synthetic ZIP failure."), "compact");
+                    "Synthetic ZIP failure."));
             fallback = string(fileread(destination));
 
             testCase.verifyTrue(contains(fallback, ...
@@ -234,12 +222,8 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = bundleDefinition();
-            selection = containers.Map("KeyType", "char", ...
-                "ValueType", "any");
             backend = struct( ...
                 "chooseOutputFile", @failOutputDialog, ...
-                "choose", @(varargin) captureDiagnosticChoice( ...
-                selection, varargin{:}), ...
                 "alert", @(~, ~) []);
             runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
                 definition, [], backend, [], JournalRoot=folder);
@@ -256,13 +240,6 @@ classdef SessionDiagnosticBundleSpec < matlab.unittest.TestCase
             testCase.verifyTrue(startsWith( ...
                 string(filename) + string(extension), ...
                 "labkit-diagnostics-sensitive-compact-state-probe-diagnostic-bundle-"));
-            testCase.verifyEqual(selection("choices"), ...
-                ["Complete bundle (compact synthetic MAT)", ...
-                 "Complete bundle (exact MAT)", ...
-                 "Cancel"]);
-            testCase.verifyEqual(selection("default"), ...
-                "Complete bundle (compact synthetic MAT)");
-            testCase.verifyEqual(selection("cancel"), "Cancel");
             unpacked = fullfile(folder, "compact-interactive");
             unzip(destination, unpacked);
             testCase.verifyTrue(isfile( ...
@@ -423,16 +400,4 @@ function choice = failOutputDialog(varargin)
 choice = MException("labkit:test:OutputDialogFailure", ...
     "Intentional output dialog failure.");
 throw(choice);
-end
-
-function choice = captureDiagnosticChoice( ...
-        store, ~, choices, ~, defaultChoice, cancelChoice)
-store("choices") = string(choices);
-store("default") = string(defaultChoice);
-store("cancel") = string(cancelChoice);
-value = string(defaultChoice);
-if isKey(store, "selection")
-    value = string(store("selection"));
-end
-choice = labkit.app.dialog.Choice(value);
 end

@@ -2,13 +2,13 @@
 function applicationState = selectionChanged( ...
         applicationState, listSelection, callbackContext)
 %SELECTIONCHANGED Reconcile source-derived result and output state.
-% Called after the framework updates the portable source list or its visible
+% Called after the framework updates the source list or its visible
 % selection. Source replacement rebuilds the decoded session before this
 % callback; a selection-only change leaves a current result intact.
 paths = applicationState.session.cache.sourcePaths;
 if isempty(paths)
     if ~isempty(applicationState.project.inputs.sources)
-        paths = callbackContext.resolveSourcePaths( ...
+        paths = labkit.app.source.paths( ...
             applicationState.project.inputs.sources);
     end
 else

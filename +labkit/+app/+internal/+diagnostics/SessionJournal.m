@@ -148,6 +148,24 @@ classdef (Hidden, Sealed) SessionJournal < handle
             end
         end
 
+        function written = flushDurably(obj)
+            % Close and reopen the active file so root-operation breadcrumbs
+            % survive a later MATLAB hang or abnormal process termination.
+            written = obj.flush();
+            if ~written || obj.SegmentHandle < 0
+                return;
+            end
+            try
+                obj.closeSegment();
+                obj.openCurrentSegment();
+                written = obj.writeManifest();
+            catch
+                obj.recordWriteFailure("durability-failure");
+                obj.writeManifest(Force=true);
+                written = false;
+            end
+        end
+
         function close(obj)
             if obj.Closed
                 return;
@@ -234,7 +252,12 @@ classdef (Hidden, Sealed) SessionJournal < handle
 
         function ensureSegmentForBufferedRecords(obj)
             if obj.SegmentHandle < 0
-                obj.openNextSegment();
+                if strlength(obj.SegmentFile) > 0 && ...
+                        exist(char(obj.SegmentFile), "file") == 2
+                    obj.openCurrentSegment();
+                else
+                    obj.openNextSegment();
+                end
             elseif obj.SegmentBytes + obj.BufferBytes > obj.SegmentByteLimit && ...
                     obj.SegmentBytes > 0
                 obj.closeSegment();
@@ -251,6 +274,17 @@ classdef (Hidden, Sealed) SessionJournal < handle
             if obj.SegmentHandle < 0
                 error("labkit:app:runtime:JournalWriteFailure", ...
                     "Could not open the active session segment.");
+            end
+            obj.SegmentBytes = fileBytes(obj.SegmentFile);
+            obj.notifyObserver("open", obj.SegmentIndex);
+        end
+
+        function openCurrentSegment(obj)
+            obj.invokeFault("open");
+            obj.SegmentHandle = fopen(char(obj.SegmentFile), "a", "n", "UTF-8");
+            if obj.SegmentHandle < 0
+                error("labkit:app:runtime:JournalWriteFailure", ...
+                    "Could not reopen the active session segment.");
             end
             obj.SegmentBytes = fileBytes(obj.SegmentFile);
             obj.notifyObserver("open", obj.SegmentIndex);

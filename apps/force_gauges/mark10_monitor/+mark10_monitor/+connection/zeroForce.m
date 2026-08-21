@@ -1,6 +1,6 @@
 function state = zeroForce(state, context)
 %ZEROFORCE Request gauge zero and report verified outcome.
-box = context.getResource("application", "mark10Connection");
+box = context.getResource("mark10Connection");
 connection = box("connection");
 [connection, result] = labkit.mark10.zeroForce(connection);
 mark10_monitor.connection.retain(box, connection);

@@ -45,6 +45,9 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
         function operation = begin(obj, category, eventName, message, varargin)
             operation = obj.Stream.begin( ...
                 category, eventName, message, varargin{:});
+            if strlength(operation.ParentId) == 0
+                obj.Journal.flushDurably();
+            end
         end
 
         function finish(obj, operation, operationResult, ...
@@ -58,6 +61,11 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
 
         function log(obj, severity, eventName, message, varargin)
             obj.Stream.log(severity, eventName, message, varargin{:});
+        end
+
+        function checkpoint(obj, eventName, message, varargin)
+            obj.Stream.log("debug", eventName, message, varargin{:});
+            obj.Journal.flushDurably();
         end
 
         function events = events(obj)
@@ -106,15 +114,12 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
 
         function destination = exportBundle( ...
                 obj, destination, excludeOperationId, ...
-                privateState, stateMode)
+                privateState)
             if nargin < 3
                 excludeOperationId = "";
             end
             if nargin < 4
                 privateState = [];
-            end
-            if nargin < 5
-                stateMode = "compact";
             end
             obj.Journal.flush();
             streamSnapshot = obj.Stream.captureSnapshot();
@@ -152,14 +157,11 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                 "degradation", degradation, "capture", capture);
             destination = ...
                 labkit.app.internal.diagnostics.SessionDiagnosticBundle.write( ...
-                snapshot, destination, privateState, stateMode);
+                snapshot, destination, privateState);
         end
 
         function destination = exportTextFallback( ...
-                obj, preferredDestination, failure, stateMode)
-            if nargin < 4
-                stateMode = "compact";
-            end
+                obj, preferredDestination, failure)
             % Keep this path independent of the journal and ZIP staging so a
             % failure in either subsystem cannot consume the last evidence.
             try
@@ -193,7 +195,27 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                 "failureIdentifier", failureIdentifier);
             destination = ...
                 labkit.app.internal.diagnostics.SessionDiagnosticBundle.writeFallback( ...
-                snapshot, preferredDestination, stateMode);
+                snapshot, preferredDestination);
+        end
+
+        function destination = exportLatestActive(obj, destination)
+            archived = ...
+                labkit.app.internal.diagnostics.SessionJournalArchive.latestActive( ...
+                obj.Journal.rootFolder(), obj.Application.AppId, ...
+                obj.Journal.sessionId());
+            capture = struct( ...
+                "traceEnabled", false, ...
+                "inMemoryTruncated", true, ...
+                "retainedRecordCount", numel(archived.events), ...
+                "totalRecordCount", numel(archived.events));
+            snapshot = struct( ...
+                "manifest", archived.manifest, ...
+                "events", archived.events, ...
+                "degradation", archived.degradation, ...
+                "capture", capture);
+            destination = ...
+                labkit.app.internal.diagnostics.SessionDiagnosticBundle.write( ...
+                snapshot, destination, struct());
         end
 
         function close(obj)

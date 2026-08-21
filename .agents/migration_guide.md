@@ -6,7 +6,7 @@ the nearest `AGENTS.md`; completed work belongs in component history.
 
 ## Active debt
 
-Last audited: 2026-08-19.
+Last audited: 2026-08-20.
 
 ```text
 architecture-migration-debt: none

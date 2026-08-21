@@ -1,10 +1,10 @@
 function state = pause(state, context)
 %PAUSE Toggle pause and resume at the current replay cursor.
-playback = context.getResource("application", "mark10Playback");
+playback = context.getResource("mark10Playback");
 index = playback("index");
 count = numel(playback("time_s"));
 if state.session.playback.playing
-    context.removeResource("application", "mark10PlaybackTimer");
+    context.removeResource("mark10PlaybackTimer");
     state = mark10_monitor.playback.applyCursor( ...
         state, playback, index);
     state.session.playback.playing = false;

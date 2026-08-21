@@ -6,7 +6,7 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
             runtime = projectionRuntime(testCase);
             cleanup = onCleanup(@() runtime.close());
             runtime.invokeAction("run");
-            before = runtime.diagnosticEvents();
+            before = runtime.diagnosticSnapshot().events;
             projection = labkit.app.internal.diagnostics.SessionLogProjection( ...
                 runtime.diagnosticSnapshot());
 
@@ -43,7 +43,7 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
 
             projection.clearView();
             testCase.verifyEmpty(projection.view().events);
-            testCase.verifyEqual(runtime.diagnosticEvents(), before);
+            testCase.verifyEqual(runtime.diagnosticSnapshot().events, before);
 
             projection.setFilters( ...
                 Level="trace", ...
@@ -71,7 +71,7 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
             testCase.verifyTrue(any(names == "analysis.trace_after_error"));
 
             runtime.invokeAction("run");
-            records = runtime.diagnosticEvents();
+            records = runtime.diagnosticSnapshot().events;
             names = string({records.eventName});
             testCase.verifyTrue(any(names == "callback.state_updated"));
             testCase.verifyTrue(any( ...

@@ -3,7 +3,7 @@ classdef DicPreprocessStateSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function boundsEditAndMaskHistoryWhilePreservingLatestSnapshots(testCase)
-            project = dic_preprocess.definition().ProjectSchema.Create();
+            project = dic_preprocess.initialData();
             for k = 1:3
                 project.annotations.editSteps = editStep(k);
                 [project, appended] = dic_preprocess.editHistory.appendEditHistory( ...
@@ -24,7 +24,7 @@ classdef DicPreprocessStateSpec < matlab.unittest.TestCase
         end
 
         function appliesAndRestoresMaskAnnotationsWithoutSessionPixels(testCase)
-            project = dic_preprocess.definition().ProjectSchema.Create();
+            project = dic_preprocess.initialData();
             boundary = uint8([0 255 0 0; 0 255 255 0; 0 0 0 0]);
             existing = uint8([255 0 0 0; 0 255 0 0; 0 0 0 0]);
             subtracted = dic_preprocess.maskEditing.applyBoundaryToMask( ...
