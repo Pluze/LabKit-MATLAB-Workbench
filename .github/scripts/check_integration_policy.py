@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the permanent develop branch and component version transitions."""
+"""Enforce trusted task-branch integration and component version transitions."""
 
 from __future__ import annotations
 
@@ -145,13 +145,13 @@ def validate_branch(
     if event_name != "pull_request" or base_ref != "main":
         return []
     errors = []
-    if head_ref != "develop":
+    if not head_ref or head_ref == base_ref:
         errors.append(
-            f'Pull requests to main must come from develop, not "{head_ref}".'
+            "Pull requests to main must come from a distinct task branch."
         )
     if head_repository != repository:
         errors.append(
-            "Pull requests to main must use the repository-owned develop branch."
+            "Pull requests to main must use a same-repository task branch."
         )
     return errors
 

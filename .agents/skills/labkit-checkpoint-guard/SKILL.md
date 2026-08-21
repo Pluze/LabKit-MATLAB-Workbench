@@ -1,6 +1,6 @@
 ---
 name: labkit-checkpoint-guard
-description: "Use when preparing an ordinary LabKit development commit, push, or logical checkpoint by auditing scope, focused evidence, staged content, commit identity, and upstream state. Do not use for final develop-to-main PR preparation, review-only requests, or a push the user did not authorize."
+description: "Use when preparing an ordinary LabKit task-branch commit, push, or logical checkpoint by auditing scope, focused evidence, staged content, commit identity, and upstream state. Do not use for final task-branch PR preparation, review-only requests, or a push the user did not authorize."
 ---
 
 # LabKit Checkpoint Guard
@@ -40,7 +40,7 @@ worktree afterward.
 
 Before an authorized push, fetch when needed, verify the exact outgoing
 commits, and stop on unexpected divergence, protection, permission, or frozen
-develop state. Never force-push without explicit approval. Report the remote
+task-branch state. Never force-push without explicit approval. Report the remote
 result without claiming incomplete hosted CI or review evidence.
 
 Report branch, commit and push state, included and preserved local changes,

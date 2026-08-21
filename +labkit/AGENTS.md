@@ -118,7 +118,7 @@ Use `labkittest.explain` to find the exact owner and contract.
   `Typical Call:`.
 - Private helpers document caller, shapes, side effects, and assumptions.
 - An app-facing facade change updates its `version.m`, owning manual, and one
-  component history record before the `develop` PR is merge-ready.
+  component history record before its task-branch PR is merge-ready.
 
 ## Validation
 

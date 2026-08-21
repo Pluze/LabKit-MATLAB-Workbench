@@ -70,7 +70,7 @@ def owning_manual(root: pathlib.Path, component: str, owner: str) -> str | None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", default="origin/main")
-    parser.add_argument("--head", default="develop")
+    parser.add_argument("--head", default="HEAD")
     args = parser.parse_args()
 
     root = pathlib.Path(command("git", "rev-parse", "--show-toplevel"))

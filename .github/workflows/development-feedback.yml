@@ -2,8 +2,8 @@ name: Development Feedback
 
 on:
   push:
-    branches:
-      - develop
+    branches-ignore:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -26,6 +26,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
+          HEAD_BRANCH: ${{ github.ref_name }}
         run: |
           if [ "${EVENT_NAME}" = "workflow_dispatch" ]; then
             echo "should_run=true" >> "${GITHUB_OUTPUT}"
@@ -36,11 +37,11 @@ jobs:
             "repos/${GITHUB_REPOSITORY}/pulls" \
             -f state=open \
             -f base=main \
-            -f head="${GITHUB_REPOSITORY_OWNER}:develop" \
+            -f head="${GITHUB_REPOSITORY_OWNER}:${HEAD_BRANCH}" \
             --jq 'length')"
           if [ "${open_prs}" -gt 0 ]; then
             echo "should_run=false" >> "${GITHUB_OUTPUT}"
-            echo "Open develop-to-main PR owns complete validation; skipping duplicate feedback."
+            echo "Open task-branch PR owns complete validation; skipping duplicate feedback."
           else
             echo "should_run=true" >> "${GITHUB_OUTPUT}"
           fi

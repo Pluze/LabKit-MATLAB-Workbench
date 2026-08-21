@@ -2,17 +2,22 @@
   "schema_version": 1,
   "cases": [
     {
-      "prompt": "Prepare develop for its squash PR into main and make the PR review-ready.",
+      "prompt": "Prepare this finished task branch for its squash PR into main and make the PR review-ready.",
       "should_activate": true,
-      "rationale": "This explicitly requests the develop-to-main preparation workflow."
+      "rationale": "This explicitly requests the task-branch integration workflow."
     },
     {
-      "prompt": "Audit the existing develop-to-main PR, consolidate versions and history, and update its review record.",
+      "prompt": "Audit the existing task-branch PR to main, consolidate versions and history, and update its review record.",
       "should_activate": true,
       "rationale": "Reviewing and making the integration PR coherent is in scope."
     },
     {
-      "prompt": "Commit this focused implementation checkpoint on develop.",
+      "prompt": "Merge the fully green task-branch PR, verify the exact main push, and delete the accepted branch.",
+      "should_activate": true,
+      "rationale": "Merge completion and safe task-branch cleanup are part of final integration."
+    },
+    {
+      "prompt": "Commit this focused implementation checkpoint on the current task branch.",
       "should_activate": false,
       "rationale": "Ordinary branch iteration is outside final PR preparation."
     },

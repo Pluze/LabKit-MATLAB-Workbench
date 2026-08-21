@@ -1,6 +1,6 @@
 ---
 name: labkit-code-review
-description: "Use when reviewing or auditing a LabKit change, commit, branch, or pull request for correctness, scientific meaning, ownership, compatibility, tests, documentation, and repository policy. Do not use to implement the requested change or to perform final develop-to-main PR preparation."
+description: "Use when reviewing or auditing a LabKit change, commit, branch, or pull request for correctness, scientific meaning, ownership, compatibility, tests, documentation, and repository policy. Do not use to implement the requested change or to perform final task-branch PR preparation."
 ---
 
 # LabKit Code Review

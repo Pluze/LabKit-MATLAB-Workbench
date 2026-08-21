@@ -28,7 +28,7 @@ under `docs/`.
   retiring `AGENTS.md`, repository Skills, their metadata/evals/scripts,
   `.agents/dos-and-donts.md`, or `.agents/migration_guide.md`.
 - Use `labkit-checkpoint-guard` before an ordinary requested commit or push;
-  use `labkit-pr-preparer` only for final `develop -> main` integration.
+  use `labkit-pr-preparer` only for final task-branch integration into `main`.
 - Treat repeated reasoning, command assembly, selector discovery, and
   trial-and-error as signals to improve the responsible skill or its scripts.
   Prefer one reusable improvement over carrying the same procedural burden
@@ -221,30 +221,34 @@ tests, history, and details out of the public repository.
 ## Git workflow
 
 1. Inspect status and alignment before editing. Preserve unrelated user work.
-   All work starts on the canonical `develop` branch after fetching and
-   confirming that it was created from the current `origin/main`. Never edit
-   or commit directly on `main`, including for documentation, CI, release
-   preparation, emergency repairs, and bug fixes.
+   Fetch `origin/main`, then create one short-lived task branch from its exact
+   current commit. Use a concise descriptive branch name; do not require an
+   agent, tool, user, or fixed category prefix. Never edit or commit directly
+   on `main`, including for documentation, CI, release preparation, emergency
+   repairs, and bug fixes.
 2. Keep an active multi-commit migration roadmap only in
    `.agents/migration_guide.md`; never create a future-state migration page
    under `docs/`. Remove completed entries before final PR preparation.
-3. Use `develop` as the sole ordinary integration branch, the only branch that
-   may receive direct pushes, and the one active delivery stream. Commit and
-   push logical checkpoints when the work benefits from them; do not delay a
-   coherent checkpoint merely to accumulate a larger batch. Once a
-   `develop -> main` PR opens, freeze `develop` until the PR is merged or
-   closed; do not mix later work into its moving head.
+3. One task branch owns one coherent delivery stream. Commit and push logical
+   checkpoints when the work benefits from them; do not delay a coherent
+   checkpoint merely to accumulate a larger batch. Once its PR to `main`
+   opens, freeze that branch until the PR is merged or closed; do not mix later
+   work or another task into its moving head.
 4. Use `labkit-checkpoint-guard` before every requested commit or push. A clean
    `codecheck` is mandatory after the final MATLAB edit; stage only the owned
    outcome and proportionate evidence.
-5. Use `labkit-pr-preparer` for the complete `origin/main..develop` squash
+5. Use `labkit-pr-preparer` for the complete `origin/main..HEAD` squash
    boundary, versions, structured history, final local gate, PR record, CI,
-   review, merge, and exact post-merge `develop` recreation. Main accepts PRs
-   only from repository-owned `develop`; never create a sync commit.
+   review, merge, and post-merge task-branch deletion. Main accepts PRs only
+   from same-repository short-lived task branches. Never merge `main` back into
+   a task branch merely for branch bookkeeping and never create a sync commit.
+   Keep GitHub's automatic head-branch deletion enabled; after merge verify the
+   accepted task branch is gone and delete it explicitly only if automation did
+   not complete.
 6. After merge, release only the exact accepted main commit after its policy
    gate succeeds. Do not repeat the complete PR MATLAB matrix.
 7. Never force-push without explicit approval. Stop and report permission,
-   protection, review, CI, sync, or cleanup blockers rather than bypassing them.
+   protection, review, CI, or cleanup blockers rather than bypassing them.
    Branch protection must require `CI Gate`, PR review flow, linear main
    history, and conversation resolution for administrators as well as ordinary
    contributors; it must reject direct pushes, force pushes, and deletion.
@@ -284,13 +288,13 @@ explicit compliant squash subject; do not rely on GitHub defaults.
   and release records. Do not encode versions in package, folder, file,
   function, class, type, protocol, test, or current-architecture names; use one
   stable semantic name and let the version contract express compatibility.
-- Before a `develop` PR is merge-ready, source changes to a
+- Before a task-branch PR is merge-ready, source changes to a
   versioned app/facade or launcher update its source version, owning manual,
   and one structured component history record. Compare the PR base and head:
   each existing component advances by exactly one direct patch, minor, or
   major step. Cross-component changes use one record listing all affected
   components.
-- For a history record introduced on `develop`, align its date and date-bearing
+- For a history record introduced on a task branch, align its date and date-bearing
   Change ID with the final component `Updated` date used by the squash
   candidate. Do not preserve an intermediate checkpoint date after versions
   and history have been consolidated.

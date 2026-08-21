@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the permanent integration-branch policy."""
+"""Regression tests for the short-lived task-branch integration policy."""
 
 import importlib.util
 import pathlib
@@ -14,32 +14,32 @@ SPEC.loader.exec_module(MODULE)
 
 
 class IntegrationPolicyTest(unittest.TestCase):
-    def test_main_pull_request_requires_repository_develop_branch(self):
+    def test_main_pull_request_accepts_any_same_repository_task_branch(self):
         self.assertEqual(
             MODULE.validate_branch(
                 "pull_request", "main", "feature", "owner/repo", "owner/repo"
-            ),
-            ['Pull requests to main must come from develop, not "feature".'],
-        )
-        self.assertEqual(
-            MODULE.validate_branch(
-                "pull_request", "main", "develop", "fork/repo", "owner/repo"
-            ),
-            [
-                "Pull requests to main must use the repository-owned develop branch."
-            ],
-        )
-        self.assertEqual(
-            MODULE.validate_branch(
-                "pull_request", "main", "develop", "owner/repo", "owner/repo"
             ),
             [],
         )
         self.assertEqual(
             MODULE.validate_branch(
+                "pull_request", "main", "fix-export", "fork/repo", "owner/repo"
+            ),
+            [
+                "Pull requests to main must use a same-repository task branch."
+            ],
+        )
+        self.assertEqual(
+            MODULE.validate_branch(
                 "pull_request", "main", "hotfix/export", "owner/repo", "owner/repo"
             ),
-            ['Pull requests to main must come from develop, not "hotfix/export".'],
+            [],
+        )
+        self.assertEqual(
+            MODULE.validate_branch(
+                "pull_request", "main", "main", "owner/repo", "owner/repo"
+            ),
+            ["Pull requests to main must come from a distinct task branch."],
         )
 
     def test_direct_semantic_steps_accept_only_one_public_transition(self):
