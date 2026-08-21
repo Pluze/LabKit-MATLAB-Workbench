@@ -599,6 +599,23 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifySubstring(result.Classifications.Reason, "docsCheck");
         end
 
+        function executorWritesPassingArtifactsForAnIgnoredOnlyPlan(testCase)
+            fixture = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
+
+            result = labkittest.run("Profile", "changed", ...
+                "ChangedPaths", "docs/development/maintain-and-release/testing.md", ...
+                "ArtifactsRoot", fixture.Folder, "RunName", "ignored-only");
+
+            testCase.verifyEmpty(result.Results);
+            summary = jsondecode(fileread(fullfile( ...
+                result.Artifacts.Folder, "summary.json")));
+            testCase.verifyEqual(summary.tests, 0);
+            testCase.verifyEqual(summary.failed, 0);
+            testCase.verifyEqual(summary.incomplete, 0);
+            testCase.verifyTrue(summary.passed);
+        end
+
         function rootReadmeUsesDocumentationValidationOwnership(testCase)
             result = labkittest.plan("Profile", "changed", ...
                 "ChangedPaths", "README.md");

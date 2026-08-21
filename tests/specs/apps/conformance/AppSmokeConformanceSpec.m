@@ -28,7 +28,17 @@ classdef AppSmokeConformanceSpec < matlab.unittest.TestCase
                     "Declared semantic target was not materialized exactly once: " + target);
             end
             testCase.verifyTrue(isgraphics(runtime.figureHandle(), "figure"));
-            testCase.verifyFalse(runtime.StartupFailed);
+            failure = getappdata(figure, "labkitAppStartupFailure");
+            diagnostic = "Runtime did not publish a startup failure diagnostic.";
+            if isstruct(failure) && isfield(failure, "message")
+                diagnostic = string(failure.message);
+                if isfield(failure, "identifier") && ...
+                        strlength(string(failure.identifier)) > 0
+                    diagnostic = diagnostic + " [" + ...
+                        string(failure.identifier) + "]";
+                end
+            end
+            testCase.verifyFalse(runtime.StartupFailed, diagnostic);
             clear cleanup
         end
     end
