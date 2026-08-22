@@ -7,9 +7,9 @@
       "rationale": "Agent instruction architecture and activation are the Skill's direct scope."
     },
     {
-      "prompt": "We discarded two approaches at the same ownership boundary; decide whether dos-and-donts needs a durable lesson.",
+      "prompt": "The same ownership decision has recurred across two current tasks; decide whether one existing AGENTS.md, Skill, or test should own it.",
       "should_activate": true,
-      "rationale": "Repeated boundary cost is an explicit experience-reservoir checkpoint."
+      "rationale": "Repeated current evidence may justify a durable rule in one authoritative owner."
     },
     {
       "prompt": "Fix a calculation bug in one App without changing agent files or workflow.",

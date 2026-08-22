@@ -1,6 +1,6 @@
 ---
 name: labkit-boundary-guard
-description: "Use for changes to +labkit, public APIs, package ownership, helper promotion, App-versus-library boundaries, or production runtime dependency decisions. Do not use for an App-local implementation that cannot affect a shared boundary or dependency."
+description: "Use for changes to +labkit, public APIs, package ownership, helper promotion, App-versus-library boundaries, or production runtime dependencies. App-local implementation remains with the owning App when no shared boundary can change."
 ---
 
 # LabKit Boundary Guard
@@ -89,5 +89,6 @@ paved road becomes simpler.
 
 Run owner evidence, project boundary guardrails, and downstream App or GUI
 evidence when the App-facing contract changes. Use `labkit-test-planner` to
-select it. Report the ownership decision, rejected alternatives, deliberately
-local/private behavior, validation, and manual checks.
+select it. Report the accepted ownership, material rationale not recoverable
+from the final diff, intentionally local/private behavior, validation, and
+manual checks.

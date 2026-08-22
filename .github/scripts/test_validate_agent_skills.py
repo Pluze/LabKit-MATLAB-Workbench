@@ -22,7 +22,7 @@ class ValidateAgentSkillsTest(unittest.TestCase):
         (folder / "SKILL.md").write_text(
             "---\n"
             f"name: {name}\n"
-            'description: "Use for a probe. Do not use outside the probe."\n'
+            'description: "Use for a focused probe. Ordinary product work remains with its owning workflow."\n'
             "---\n\n# Probe\n",
             encoding="utf-8",
         )
@@ -71,7 +71,7 @@ class ValidateAgentSkillsTest(unittest.TestCase):
             self.make_skill(root)
             self.assertEqual(MODULE.validate(root), 1)
 
-    def test_rejects_name_drift_and_missing_negative_boundary(self):
+    def test_rejects_name_drift(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
             folder = self.make_skill(root)
@@ -80,17 +80,12 @@ class ValidateAgentSkillsTest(unittest.TestCase):
                 text.replace("name: probe", "name: other"), encoding="utf-8")
             with self.assertRaises(MODULE.SkillContractError):
                 MODULE.validate(root)
+
+    def test_accepts_scope_boundary_without_fixed_prohibition_phrase(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
-            folder = self.make_skill(root)
-            skill = folder / "SKILL.md"
-            skill.write_text(
-                skill.read_text(encoding="utf-8").replace(
-                    " Do not use outside the probe.", ""),
-                encoding="utf-8",
-            )
-            with self.assertRaises(MODULE.SkillContractError):
-                MODULE.validate(root)
+            self.make_skill(root)
+            self.assertEqual(MODULE.validate(root), 1)
 
     def test_rejects_unportable_content(self):
         with tempfile.TemporaryDirectory() as raw:

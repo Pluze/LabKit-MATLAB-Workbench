@@ -17,16 +17,16 @@ affected source/tests/docs. Read component manuals only for changed contracts:
 - libraries: `docs/libraries/<area>/README.md`
 - apps: `docs/apps/README.md`
 
-Read `.agents/migration_guide.md` only for active migration or compatibility
-retirement. A zero-debt ledger is not an everyday checklist. Active migration
-roadmaps live only in that ledger; do not create future-state migration pages
-under `docs/`.
+Use `.agents/migration_guide.md` only while a concrete architecture migration
+or compatibility retirement is active. Create it with the first owned entry
+and delete it when the last entry closes. Active migration roadmaps live only
+there; current supported behavior belongs under `docs/`.
 
 ## Agent skills and automation
 
 - Use `labkit-agent-governance` whenever adding, changing, reviewing, or
   retiring `AGENTS.md`, repository Skills, their metadata/evals/scripts,
-  `.agents/dos-and-donts.md`, or `.agents/migration_guide.md`.
+  or an active `.agents/migration_guide.md`.
 - Use `labkit-checkpoint-guard` before an ordinary requested commit or push;
   use `labkit-pr-preparer` only for final task-branch integration into `main`.
 - Treat repeated reasoning, command assembly, selector discovery, and
@@ -48,19 +48,26 @@ under `docs/`.
 - Validate an edited skill and exercise the changed script path. Record
   durable policy here or in the nearest scoped `AGENTS.md`; keep step-by-step
   agent procedure in skills rather than duplicating it in human manuals.
-- Treat `.agents/dos-and-donts.md` as an experience reservoir. Run its review
-  through `labkit-agent-governance` after choosing a non-obvious boundary,
-  replacing a failed approach, completing focused validation, receiving a user
-  correction, and before commit or handoff. Repeated inspection, discarded
-  approaches, rollback, time lost on the same boundary, or user correction are
-  explicit activation signals even when no agent file was otherwise changed.
-  Record only the unresolved agent decision trap whose rediscovery would be
-  costly, including the signal that should trigger a different approach.
-  Never use the reservoir as a work log or duplicate behavior already enforced
-  by an `AGENTS.md`, skill, test, source contract, or manual. Let useful
-  lessons survive repeated use before promotion; once another owner prevents
-  the mistake, actively compress or remove the reservoir copy plus stale,
-  duplicated, disproven, and low-value detail.
+- Promote a correction into durable agent guidance only when repeated current
+  evidence establishes a repository-wide or scoped decision rule. Put it
+  directly in the smallest authoritative owner; keep one-off attempts and
+  conversation-specific corrections out of the repository.
+
+## Final artifact hygiene
+
+- Derive titles, comments, identifiers, tests, documentation, commit and PR
+  text, release notes, and handoffs from the authoritative starting baseline,
+  the accepted final result, and verified evidence.
+- Treat unaccepted drafts, reverted local edits, discarded proposals, and
+  conversation corrections as control data rather than project history.
+- Mention an exclusion or earlier behavior only when a reader without the
+  working session needs it and it records a real baseline change or protects
+  safety, accuracy, compatibility, migration, compliance, or an explicitly
+  requested comparison or audit.
+- Place each retained fact at its owning surface: current invariants in source
+  or tests, user behavior in help or manuals, durable decisions in structured
+  history, and delivery evidence in the PR record. Regenerate high-salience
+  wrappers from the accepted result, then inspect the complete final surfaces.
 
 ## Architecture and implementation
 
@@ -226,9 +233,9 @@ tests, history, and details out of the public repository.
    agent, tool, user, or fixed category prefix. Never edit or commit directly
    on `main`, including for documentation, CI, release preparation, emergency
    repairs, and bug fixes.
-2. Keep an active multi-commit migration roadmap only in
-   `.agents/migration_guide.md`; never create a future-state migration page
-   under `docs/`. Remove completed entries before final PR preparation.
+2. When a multi-commit migration is active, keep its roadmap only in
+   `.agents/migration_guide.md`; remove completed entries and delete the empty
+   ledger before final PR preparation.
 3. One task branch owns one coherent delivery stream. Commit and push logical
    checkpoints when the work benefits from them; do not delay a coherent
    checkpoint merely to accumulate a larger batch. Once its PR to `main`

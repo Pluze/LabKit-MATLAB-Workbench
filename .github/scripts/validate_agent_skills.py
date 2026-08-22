@@ -56,9 +56,8 @@ def validate(root: Path) -> int:
         description = (match.group(2) or match.group(3)).strip()
         if name != folder.name:
             raise SkillContractError(f"{folder}: folder and Skill name differ")
-        if "Do not use" not in description:
-            raise SkillContractError(
-                f"{folder}: description needs a negative boundary")
+        if not description:
+            raise SkillContractError(f"{folder}: description is required")
         skills.add(name)
         validate_links(folder, text)
         validate_portability(folder)

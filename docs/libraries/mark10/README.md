@@ -60,6 +60,12 @@ synchronized ESM303 `n` response, quiesces and retries after contamination,
 then falls back to ESM303 `x` plus Series 5 `?C`. A failed sample is reported
 without discarding the connection or earlier caller-owned records.
 
+When acquisition succeeds but a status or control request is silent, diagnose
+the command path independently: confirm OS enumeration, exclusive port access,
+data-channel support, active device mode, licensed capability, and command
+authorization against the device protocol before changing transport timing or
+response parsing.
+
 ## Functions
 
 | Task | Function |

@@ -1,6 +1,6 @@
 ---
 name: labkit-checkpoint-guard
-description: "Use when preparing an ordinary LabKit task-branch commit, push, or logical checkpoint by auditing scope, focused evidence, staged content, commit identity, and upstream state. Do not use for final task-branch PR preparation, review-only requests, or a push the user did not authorize."
+description: "Use to prepare an ordinary LabKit task-branch commit, authorized push, or logical checkpoint by auditing scope, focused evidence, staged content, commit identity, and upstream state. Final integration routes to labkit-pr-preparer."
 ---
 
 # LabKit Checkpoint Guard
