@@ -20,7 +20,7 @@ Agent guidance now distinguishes current invariants and required facts from sess
 
 ## Changes
 
-The root constitution owns final-artifact provenance and reader relevance. Repository Skill descriptions use positive task scope and route adjacent work to its owner, while balanced activation evals retain deterministic boundary coverage. The general experience reservoir and empty migration ledger were retired; an active migration ledger is created only while owned retirement work exists. Current diagnostic comments and Mark-10 troubleshooting guidance now state their enduring contracts directly.
+The root constitution owns final-artifact provenance and reader relevance. Repository Skill descriptions use positive task scope and route adjacent work to its owner, while balanced activation evals retain deterministic boundary coverage. The general experience reservoir and empty migration ledger were retired; an active migration ledger is created only while owned retirement work exists. Device troubleshooting knowledge that still serves maintainers now lives in the Mark-10 manual.
 
 ## User and data impact
 
@@ -32,11 +32,11 @@ The change is compatible and requires no product or data migration. Active archi
 
 ## Validation
 
-Repository Skill contracts, their validator unit tests, MATLAB code analysis, deterministic documentation generation, and the App SDK diagnostic event-stream evidence closure validate the changed owners and preserved runtime behavior.
+Repository Skill contracts, their validator unit tests, MATLAB code analysis, and deterministic documentation generation validate the changed owners and documentation.
 
 ## Evidence
 
-The Skill validator accepted all 11 repository Skills; its six unit tests passed. Code analysis reported zero issues, suppressions, compatibility recommendations, or unreviewed runtime calls. Documentation produced identical 411-file trees, and all 88 selected App SDK diagnostic specifications passed.
+The Skill validator accepted all 11 repository Skills; its six unit tests passed. Code analysis reported zero issues, suppressions, compatibility recommendations, or unreviewed runtime calls. Documentation produced identical 412-file trees.
 
 ## Known limitations and follow-up
 
