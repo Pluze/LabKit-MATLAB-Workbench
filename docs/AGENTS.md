@@ -19,8 +19,8 @@ or deployment change.
   them out of documentation discovery and fail the documentation check if a
   corresponding generated HTML page appears.
 - Add a page only for currently supported architecture or delivered behavior.
-  Keep active migration plans, checkpoints, legacy-removal lists, and
-  future-state acceptance gates in `.agents/migration_guide.md`.
+  While migration work is active, keep its plan and acceptance gates in the
+  temporary `.agents/migration_guide.md` rather than published documentation.
 
 ## Reader contract
 

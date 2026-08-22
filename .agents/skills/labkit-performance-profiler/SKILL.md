@@ -1,6 +1,6 @@
 ---
 name: labkit-performance-profiler
-description: "Use for measured LabKit startup, callback, file-loading, or launcher performance work and profileLabKitTarget reports. Do not use to claim performance from code inspection or a single unmeasured run."
+description: "Use for measured LabKit startup, callback, file-loading, or launcher performance work and profileLabKitTarget reports. Performance conclusions require representative measurements rather than inspection alone."
 ---
 
 # LabKit Performance Profiler

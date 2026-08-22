@@ -143,5 +143,5 @@ find the exact owner and contract; App authors never invent test paths.
   project guardrails for entrypoint, boundary, fixture, or validation-policy
   changes. Exact commands belong in
   `docs/development/maintain-and-release/testing.md`.
-- Record only concrete compatibility or transitional retirement work in
-  `.agents/migration_guide.md`; ordinary refactoring and file size are not debt.
+- Create `.agents/migration_guide.md` only for concrete active compatibility or
+  transitional retirement work, and delete it when that work closes.

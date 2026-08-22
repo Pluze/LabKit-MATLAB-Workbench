@@ -1,6 +1,6 @@
 ---
 name: labkit-app-builder
-description: "Use to create or substantially refactor a LabKit MATLAB app from scripts, functions, protocols, existing GUIs, workflow notes, or prose requirements. Do not use for a narrow bug fix that preserves the existing App shape."
+description: "Use to create or substantially refactor a LabKit MATLAB App from scripts, functions, protocols, existing GUIs, workflow notes, or prose requirements. Narrow fixes that preserve the App shape remain ordinary App maintenance."
 ---
 
 # LabKit App Builder
@@ -15,7 +15,7 @@ preserve science and observable contracts while discarding workspace plumbing,
 hard-coded paths, globals, pauses, and exploratory branches.
 
 Keep a narrow correction inside the current App shape unless the defect proves
-a boundary change. Do not use a bug fix to justify unrelated rebuilding.
+a boundary change.
 
 ## Design and build
 

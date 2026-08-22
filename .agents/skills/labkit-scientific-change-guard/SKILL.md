@@ -1,6 +1,6 @@
 ---
 name: labkit-scientific-change-guard
-description: "Use for changes to scientific formulas, units, ranges, defaults, selectors, tolerances, parity, or provenance in LabKit Apps and facades. Do not use for presentation-only work, documentation-only work, or a private rename that cannot change scientific outputs."
+description: "Use for changes to scientific formulas, units, ranges, defaults, selectors, tolerances, parity, or provenance in LabKit Apps and facades. Presentation, documentation, and private-name changes stay with their owners when scientific outputs cannot change."
 ---
 
 # LabKit Scientific Change Guard

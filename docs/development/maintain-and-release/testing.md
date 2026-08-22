@@ -282,5 +282,5 @@ local paths, subject/device identifiers, timestamps, or proprietary metadata.
   wrappers, runner options, or Code Analyzer suppression pragmas.
 - Add a new public framework test API only when it is a stable product
   boundary. Test infrastructure stays private under `tests/+labkittest/`.
-- Follow `.agents/migration_guide.md` only while retiring compatibility debt;
-  it is not an everyday authoring checklist.
+- Follow `.agents/migration_guide.md` only while that active compatibility
+  retirement exists; the file is absent when no migration is open.

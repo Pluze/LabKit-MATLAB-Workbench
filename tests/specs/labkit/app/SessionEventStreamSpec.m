@@ -66,7 +66,7 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             clear cleanup resetConsumer
         end
 
-        function boundsTheProvisionalInMemoryRing(testCase)
+        function boundsTheInMemoryRing(testCase)
             stream = labkit.app.internal.diagnostics.SessionEventStream( ...
                 loggingProbeDefinition());
             cleanup = onCleanup(@() stream.close());

@@ -9,7 +9,7 @@ function imageOut = resizeImageToSize(imageIn, targetSize)
 %
 % Inputs/outputs:
 %   Numeric image data and target size vector. Returns resized image data,
-%   preserving singleton channel shape where the previous implementation did.
+%   preserving a singleton third dimension when one is present in the input.
 %
 % Side effects:
 %   None.

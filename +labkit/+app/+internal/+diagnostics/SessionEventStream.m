@@ -26,8 +26,8 @@ classdef (Hidden, Sealed) SessionEventStream < handle
     end
 
     properties (Constant, Access = private)
-        % A temporary immediate-view bound until Phase 3 profiles durable policy.
-        ProvisionalInMemoryRecordLimit = 512
+        % Bound live diagnostic memory to the maximum retained viewer rows.
+        InMemoryRecordLimit = 512
     end
 
     methods
@@ -313,7 +313,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
 
         function rememberFinishedOperation(obj, id)
             obj.FinishedOperationIds(end + 1) = string(id);
-            if numel(obj.FinishedOperationIds) > obj.ProvisionalInMemoryRecordLimit
+            if numel(obj.FinishedOperationIds) > obj.InMemoryRecordLimit
                 obj.FinishedOperationIds(1) = [];
             end
         end
@@ -323,7 +323,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 notifyProjection = true;
             end
             obj.Records(end + 1, 1) = record;
-            if numel(obj.Records) > obj.ProvisionalInMemoryRecordLimit
+            if numel(obj.Records) > obj.InMemoryRecordLimit
                 obj.Records(1) = [];
             end
             if notifyProjection

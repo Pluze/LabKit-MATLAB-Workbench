@@ -420,8 +420,8 @@ classdef (Hidden, Sealed) SessionJournal < handle
 end
 
 function options = parseOptions(varargin)
-% Provisional private bounds: rotation avoids one unbounded file; five
-% segments cap ordinary context; 64 records/64 KiB bound buffered writes.
+% Private resource bounds keep each file, retained session, and buffered write
+% finite while preserving the newest diagnostic context.
 options = struct( ...
     "RootFolder", "", ...
     "SessionId", labkit.app.internal.diagnostics.SessionIdentity.create(), ...

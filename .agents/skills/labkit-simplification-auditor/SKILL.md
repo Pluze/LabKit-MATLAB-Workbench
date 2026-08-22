@@ -1,6 +1,6 @@
 ---
 name: labkit-simplification-auditor
-description: "Use when finding, reviewing, or implementing evidence-backed LabKit simplifications involving dead, duplicated, speculative, over-built, compatibility-only, or unnecessarily hand-rolled code, tests, APIs, state, or documentation. Do not use for broad cleanup based only on style, file length, or a desire to reorganize working code."
+description: "Use to find, review, or implement evidence-backed LabKit simplifications involving dead, duplicated, speculative, over-built, compatibility-only, or unnecessarily hand-rolled code, tests, APIs, state, or documentation. Candidates require current contract and consumer evidence."
 ---
 
 # LabKit Simplification Auditor

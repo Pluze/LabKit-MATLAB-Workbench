@@ -1,6 +1,6 @@
 ---
 name: labkit-test-planner
-description: "Use for validation planning, MATLAB test execution, CI scope, GUI checks, fixtures, or test-catalog changes. Do not use to widen validation without a source-owned contract or to perform general commit hygiene."
+description: "Use for validation planning, MATLAB test execution, CI scope, GUI checks, fixtures, or test-catalog changes. Evidence scope follows source-owned contracts; general commit hygiene belongs to labkit-checkpoint-guard."
 ---
 
 # LabKit Test Planner

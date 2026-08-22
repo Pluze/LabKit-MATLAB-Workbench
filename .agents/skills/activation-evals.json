@@ -32,7 +32,7 @@
       "rationale": "Final integration is distinct from an ordinary checkpoint."
     },
     {
-      "prompt": "Audit AGENTS.md, Skills, and dos-and-donts for duplication and stale guidance.",
+      "prompt": "Audit AGENTS.md and repository Skills for duplicated, stale, or session-derived guidance.",
       "activate": ["labkit-agent-governance"],
       "do_not_activate": ["labkit-code-review", "labkit-simplification-auditor"],
       "rationale": "Agent governance is not product-code review or cleanup."

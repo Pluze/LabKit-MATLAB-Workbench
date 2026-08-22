@@ -1,6 +1,6 @@
 ---
 name: labkit-pr-preparer
-description: "Prepare a LabKit task branch for a squash PR into main by auditing its complete base-to-head diff, consolidating component versions and structured history, running the one final local gate, and assembling the repository PR record. Use only when the user asks to prepare, open, update, review, merge, or make a task-branch PR merge-ready. Do not use during ordinary branch iteration."
+description: "Use for final LabKit task-branch integration into main: audit the complete squash diff, consolidate versions and history, run the final local gate, and prepare the PR record. Ordinary branch iteration routes to labkit-checkpoint-guard."
 ---
 
 # LabKit PR Preparer
