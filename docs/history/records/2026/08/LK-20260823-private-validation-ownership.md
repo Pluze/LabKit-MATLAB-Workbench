@@ -36,7 +36,7 @@ Focused Code Analyzer specifications verify ordinary reports, failure behavior, 
 
 ## Evidence
 
-The owner-mapped Code Analyzer specification passed four exact tests, including an external-root isolation regression. The complete remaining private App suite passed 37 local identities after repository-governance specifications were retired.
+The owner-mapped Code Analyzer specification passed four exact tests, including an external-root isolation regression. Deterministic documentation generation and the public Code Analyzer gate also passed.
 
 ## Known limitations and follow-up
 
