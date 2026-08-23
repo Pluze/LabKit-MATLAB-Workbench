@@ -35,10 +35,9 @@ report = runCodecheckReport(repoRoot, "OpenReport", false);
 | `RequireClean` | Logical scalar. Default `false`. When true, any issue, suppression, compatibility recommendation, or unreviewed secondary-runtime call fails with `LabKit:Codecheck:Findings`. |
 
 The scan includes MATLAB files beneath `root`. It excludes `.git`, `.github`,
-`.vscode`, `.codes`, `artifacts`, `node_modules`, and `photos`. Additional
-private app roots configured outside `root` are included when their workspace
-contains `.labkit-accept-main-guardrails`, or when
-`LABKIT_GUARD_PRIVATE_APPS` explicitly enables local inspection.
+`.vscode`, `.codes`, `artifacts`, `node_modules`, `photos`, and nested
+`private_apps`. Analyze a private repository by calling `runCodecheckReport`
+with that repository as `root`; public reports never add ambient private roots.
 
 ## Output
 

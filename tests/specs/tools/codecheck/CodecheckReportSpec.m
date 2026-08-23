@@ -122,6 +122,32 @@ classdef CodecheckReportSpec < matlab.unittest.TestCase
                     report.runtimeViolations, "[" + category + "]")));
             end
         end
+
+        function scanScopeIgnoresAmbientPrivateAppRoots(testCase)
+            repositoryRoot = labkittest.setup();
+            testCase.applyFixture(matlab.unittest.fixtures.PathFixture( ...
+                fullfile(repositoryRoot, "tools", "codecheck")));
+            fixtureRoot = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            scanRoot = fullfile(fixtureRoot, "public");
+            privateRoot = fullfile(fixtureRoot, "external-private");
+            mkdir(scanRoot);
+            mkdir(fullfile(privateRoot, "apps"));
+            writeText(fullfile(scanRoot, "publicProbe.m"), ...
+                ["function value = publicProbe()", "value = 1;", "end"]);
+            writeText(fullfile(privateRoot, "apps", "privateProbe.m"), ...
+                ["function value = privateProbe()", "value = 2;", "end"]);
+            previousRoots = getenv("LABKIT_PRIVATE_APP_ROOTS");
+            cleanup = onCleanup(@() setenv( ...
+                "LABKIT_PRIVATE_APP_ROOTS", previousRoots));
+            setenv("LABKIT_PRIVATE_APP_ROOTS", privateRoot);
+
+            report = runCodecheckReport(scanRoot, ...
+                "OpenReport", false, "WriteArtifacts", false);
+
+            testCase.verifyEqual(report.fileCount, 1);
+            clear cleanup
+        end
     end
 end
 

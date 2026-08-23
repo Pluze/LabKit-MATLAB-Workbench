@@ -37,12 +37,11 @@ meaning, fixtures, workflow state, output schema, or failure semantics are
 genuinely App-owned; do not force abstraction when it would hide those
 differences or require a parallel test-only product model.
 
-Production Apps and downstream App specifications, including accepted private
-repositories, never call `labkit.app.internal`. Use the focused
-`labkittest` test seams for runtime construction, callback contexts, and
-compiled definition inspection. Only SDK-owned
-white-box specifications under `tests/specs/labkit/app/` and the concentrated
-`tests/+labkittest/` adapters may name SDK internals directly.
+Production Apps and downstream App specifications never call
+`labkit.app.internal`. Use the focused `labkittest` test seams for runtime
+construction, callback contexts, and compiled definition inspection. Only
+SDK-owned white-box specifications under `tests/specs/labkit/app/` and the
+concentrated `tests/+labkittest/` adapters may name SDK internals directly.
 
 Start from production with `labkittest.explain`. Create a missing App-owned
 specification with `labkittest.createSpec`; never create test paths, suite

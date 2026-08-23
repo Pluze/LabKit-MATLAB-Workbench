@@ -10,9 +10,9 @@ in the private app repository itself.
 
 ## Repository And Mounting Model
 
-A private app workspace is its own Git repository. It owns its app source,
-tests, manuals, histories, and repository rules regardless of where it is
-stored. The public repository never owns or migrates those files.
+A private app workspace is its own Git repository. It stores its App source
+and history and may keep local tests and manuals beside them. The public
+repository never owns, migrates, or validates those files.
 
 For convenient local development, the independent repository may be checked
 out at the public checkout's ignored `private_apps/` mount point:
@@ -128,24 +128,14 @@ Private app repositories own their own tests and validation runners. They do
 not need to add app-specific suites, fixtures, build tasks, or sample assets to
 the public LabKit repository. Private app internals may be looser than public
 apps when a local workflow needs it, but the launcher-facing surface should
-remain compatible with LabKit discovery and guardrails: keep launch commands,
-definition-backed `requirements` and `version` lightweight requests, path
-setup, and private sample hygiene valid when the private workspace is present
-next to a public checkout.
+remain compatible with LabKit discovery and callable framework contracts:
+keep launch commands, definition-backed requirements, path setup, and private
+sample hygiene valid when the private workspace is present next to a public
+checkout.
 
-The public launcher's Code Analyzer tool includes configured private app
-workspaces in local reports only after the private workspace opts in. Put an
-empty `.labkit-accept-main-guardrails` file at the private workspace root to
-accept the public repository's style and code-quality guardrails for that
-workspace. When `private_apps/apps/` exists or `LABKIT_PRIVATE_APP_ROOTS`
-points at an accepted private workspace, the generated
-`artifacts/code-check/matlab_code_issues_*.json` and `.html` files include
-those private app findings without adding private source to the public repo.
-For one-off local checks, `LABKIT_GUARD_PRIVATE_APPS=1` temporarily includes
-configured private roots even without the sentinel file.
-
-Because private workspaces are separate Git repositories, public changed-file
-tasks do not discover private diffs. For an accepted private workspace, run the
-private repository's own tests and the public `buildtool changedFast` guardrail
-before push when private source, tests, docs, component history, or version
-metadata changed; CI remains the complete validation gate.
+Private repositories select and run their own focused local validation. They
+may reuse public `labkittest` helpers and App runtime test seams, but public
+changed-file planning, Code Analyzer gates, and CI scan only the public
+repository. The public repository does not discover private diffs, recognize
+an opt-in marker, or treat a mounted private workspace as part of its merge
+evidence.

@@ -2,8 +2,8 @@ function runtime = createMatlabRuntime( ...
         definition, initialProject, backend, journal, varargin)
 %CREATEMATLABRUNTIME Construct a native App runtime for test assertions.
 %   RUNTIME = labkittest.createMatlabRuntime(DEFINITION, INITIALPROJECT,
-%   BACKEND, JOURNAL) is the stable test-only construction seam for public and
-%   accepted private hidden-GUI specifications. Callers own runtime.close
+%   BACKEND, JOURNAL) is the stable test-only construction seam for App
+%   hidden-GUI specifications. Callers own runtime.close
 %   cleanup and must supply a caller-owned temporary SessionJournal.
 %   Production Apps launch through DEFINITION.launch and must not call SDK
 %   runtime internals.
