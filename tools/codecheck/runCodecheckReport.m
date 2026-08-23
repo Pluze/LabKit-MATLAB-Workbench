@@ -55,15 +55,8 @@ function report = runCodecheckReport(root, varargin)
     end
     excludedFolders = [".git", ".github", ".vscode", ".codes", ...
         "artifacts", "node_modules", "photos", "private_apps"];
-    scanRoots = codecheckScanRoots(root);
-
     notifyProgress(progressFcn, "Finding MATLAB files...", 0.02);
-    filesByRoot = cell(numel(scanRoots), 1);
-    for k = 1:numel(scanRoots)
-        filesByRoot{k} = collectFiles(scanRoots(k), "*.m", excludedFolders);
-    end
-    files = [filesByRoot{:}];
-    files = sort(unique(files, "stable"));
+    files = collectFiles(root, "*.m", excludedFolders);
     notifyProgress(progressFcn, ...
         sprintf("Running codeIssues on %d MATLAB file(s)...", numel(files)), ...
         0.08);
@@ -75,7 +68,7 @@ function report = runCodecheckReport(root, varargin)
     notifyProgress(progressFcn, ...
         sprintf("Checking MATLAB runtime boundaries in %d file(s)...", ...
         numel(files)), 0.88);
-    runtimeViolations = findSecondaryRuntimeCalls(root, filesByRoot{1});
+    runtimeViolations = findSecondaryRuntimeCalls(root, files);
 
     report = struct();
     report.jsonFile = "";
@@ -257,84 +250,6 @@ function prefix = commonPrefix(left, right)
         prefix = left(1:n);
     else
         prefix = left(1:firstMismatch-1);
-    end
-end
-
-function roots = codecheckScanRoots(root)
-    roots = string(root);
-    privateRoots = acceptedPrivateAppRoots(root);
-    roots = unique([roots; privateRoots], "stable");
-end
-
-function roots = acceptedPrivateAppRoots(root)
-    candidates = configuredPrivateAppRoots(root);
-    if forcePrivateAppGuardsEnabled()
-        roots = candidates;
-        return;
-    end
-
-    roots = strings(numel(candidates), 1);
-    rootCount = 0;
-    for k = 1:numel(candidates)
-        if privateRootAcceptsMainGuardrails(candidates(k))
-            rootCount = rootCount + 1;
-            roots(rootCount, 1) = candidates(k);
-        end
-    end
-    roots = roots(1:rootCount);
-end
-
-function tf = forcePrivateAppGuardsEnabled()
-    value = lower(strtrim(string(getenv("LABKIT_GUARD_PRIVATE_APPS"))));
-    tf = any(value == ["1", "true", "yes", "on"]);
-end
-
-function roots = configuredPrivateAppRoots(root)
-    candidateRoots = strings(numel(strsplit(char(string(getenv( ...
-        "LABKIT_PRIVATE_APP_ROOTS"))), pathsep)) + 1, 1);
-    candidateCount = 0;
-    localPrivateRoot = string(fullfile(root, "private_apps", "apps"));
-    if exist(localPrivateRoot, "dir") == 7
-        candidateCount = candidateCount + 1;
-        candidateRoots(candidateCount) = localPrivateRoot;
-    end
-
-    envValue = string(getenv("LABKIT_PRIVATE_APP_ROOTS"));
-    if strlength(strtrim(envValue)) > 0
-        parts = string(strsplit(char(envValue), pathsep));
-        parts = strip(parts);
-        parts = parts(strlength(parts) > 0);
-        for k = 1:numel(parts)
-            candidate = privateAppRootAppsFolder(parts(k));
-            if exist(candidate, "dir") == 7
-                candidateCount = candidateCount + 1;
-                candidateRoots(candidateCount) = candidate;
-            end
-        end
-    end
-    roots = unique(candidateRoots(1:candidateCount), "stable");
-end
-
-function appRoot = privateAppRootAppsFolder(root)
-    root = string(root);
-    if endsWith(strrep(root, "\", "/"), "/apps")
-        appRoot = root;
-    else
-        appRoot = string(fullfile(root, "apps"));
-    end
-end
-
-function tf = privateRootAcceptsMainGuardrails(appRoot)
-    workspaceRoot = privateWorkspaceRoot(appRoot);
-    tf = isfile(fullfile(workspaceRoot, ".labkit-accept-main-guardrails"));
-end
-
-function root = privateWorkspaceRoot(appRoot)
-    appRoot = string(appRoot);
-    if endsWith(strrep(appRoot, "\", "/"), "/apps")
-        root = string(fileparts(char(appRoot)));
-    else
-        root = appRoot;
     end
 end
 

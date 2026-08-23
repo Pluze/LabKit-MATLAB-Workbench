@@ -217,10 +217,6 @@ tests, history, and details out of the public repository.
   current stage and completed/total work, and emits a heartbeat at least every
   30 seconds while one unit remains active. Reuse the owning progress plugin
   or callback instead of making callers infer progress from process liveness.
-- For an accepted private workspace, run its own tests first. If
-  `.labkit-accept-main-guardrails` is present and private changes are unpushed,
-  also run the relevant public guardrail because the public changed-file
-  planner cannot see the nested diff.
 - Treat development feedback as non-gating author feedback, never merge
   evidence. Inspect it only when requested, needed by a checkpoint, or blocking
   current work; do not poll it during ordinary iteration.

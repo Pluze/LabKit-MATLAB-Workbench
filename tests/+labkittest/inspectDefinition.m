@@ -1,7 +1,7 @@
 function plan = inspectDefinition(definition)
 %INSPECTDEFINITION Return the compiled layout plan for test assertions.
 %   PLAN = labkittest.inspectDefinition(DEFINITION) is the stable test-only
-%   seam for public and accepted private App specifications that must inspect
+%   seam for App specifications that must inspect
 %   declared layout nodes. Production Apps must not call labkit.app.internal.
 %
 %   DEFINITION must be one labkit.app.Definition. PLAN is the framework's
