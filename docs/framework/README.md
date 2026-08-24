@@ -186,19 +186,10 @@ utilities do not compete with the App's workflow controls:
 - **Screenshot** copies the complete App surface to the system clipboard or
   writes a uniquely named PNG beneath `artifacts/screenshots/`. A save dialog
   is used only if automatic artifact output fails.
-- **Diagnostics** opens the App-named Session Log or exports a uniquely named
-  bundle beneath `artifacts/diagnostics/`. Every export contains complete
-  sensitive messages, attributes, exception text, stack locations, and App
-  state. It writes `app-state-compact.mat` after replacing supported state leaves larger than
-  1 MiB with same-class, same-dimension, compressible synthetic placeholders.
-  `bundle-report.json` records every replacement without storing its value.
-  After the first ERROR or CRITICAL event, closing the App automatically writes a
-  diagnostic bundle. Selecting an event highlights its complete table row.
-  Text fallback retains complete events and reports that the compact MAT
-  state could not be represented as text.
-  **Export Previous Active Session** writes a read-only bundle for the newest
-  same-App journal that was left active, such as after a MATLAB hang or
-  abnormal termination.
+- **Diagnostics** opens the App-named Session Log for the current launch.
+  Its only filter selects the minimum visible severity. Manual TRACE capture
+  adds detailed presentation stages from that point forward; it never starts
+  automatically after an error.
 
 The SDK has no task archive, save/load callbacks, dirty tracking, recovery
 files, or generic continuation workflow. Apps that genuinely support pausing
@@ -206,7 +197,13 @@ and continuing work own explicit controls and their complete JSON, CSV, or MAT
 snapshot format.
 
 Each App session keeps its persistent structured journal beneath
-`artifacts/logs/sessions/` in the active LabKit installation. LabKit does not
+`artifacts/logs/sessions/` in the active LabKit installation. New folder names
+include the App ID, UTC start time, and a unique suffix. `manifest.json`
+identifies the App and framework versions, MATLAB release, lifecycle state,
+timestamps, retained segments, and degradation counters; `events-*.jsonl`
+contains the canonical correlated event records. These files are the direct
+diagnostic and usage-history interface for maintainers and analysis agents;
+there is no separate diagnostic ZIP or App-state snapshot. LabKit does not
 automatically migrate or delete journals from this folder; users can inspect,
 archive, or remove generated artifacts with ordinary filesystem tools. Releases
 that previously wrote session journals beneath MATLAB's `prefdir/LabKit/logs/`
@@ -222,7 +219,7 @@ MATLAB hangs, the newest operation without a terminal event identifies the
 last entered stage on the next launch.
 
 These actions are framework-owned native behavior. Apps do not declare menu
-items or implement clipboard and diagnostic integration.
+items or implement clipboard or session-log integration.
 
 App callbacks use `CallbackContext.inform` for successful or neutral
 information and reserve `CallbackContext.alert` for blocking problems. The two

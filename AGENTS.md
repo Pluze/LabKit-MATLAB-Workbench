@@ -223,12 +223,18 @@ tests, history, and details out of the public repository.
 
 ## Git workflow
 
-1. Inspect status and alignment before editing. Preserve unrelated user work.
-   Fetch `origin/main`, then create one short-lived task branch from its exact
-   current commit. Use a concise descriptive branch name; do not require an
-   agent, tool, user, or fixed category prefix. Never edit or commit directly
-   on `main`, including for documentation, CI, release preparation, emergency
-   repairs, and bug fixes.
+1. Keep the repository's primary checkout on a clean, complete `main` aligned
+   with `origin/main`; it is an integration reference, not a task workspace.
+   Every new change uses its own linked worktree beneath
+   `artifacts/worktrees/<task-name>/` and one short-lived task branch, even when
+   no other task is active. This ignored common parent keeps active task trees
+   visible and makes their later cleanup explicit. Inspect status and alignment
+   before editing, preserve unrelated user work, fetch `origin/main`, and create
+   the worktree branch from that exact commit. Use a concise descriptive branch
+   name without an agent, tool, user, or fixed category prefix. Never
+   edit or commit directly on `main`, including for documentation, CI, release
+   preparation, emergency repairs, and bug fixes. Never switch, clean, or reuse
+   another task's worktree to start new work.
 2. When a multi-commit migration is active, keep its roadmap only in
    `.agents/migration_guide.md`; remove completed entries and delete the empty
    ledger before final PR preparation.

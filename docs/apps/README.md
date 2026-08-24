@@ -99,9 +99,10 @@ result schemas, archives, continuation meaning, and exports. See the [App
 Framework](../framework/README.md) for behavior shared across apps.
 
 Every App opens as a clean project. Use **Tools > Diagnostics** to inspect the
-current session history or export a diagnostic bundle after a problem. Manual
-TRACE capture is controlled inside the Session Log window. The [runtime
-guide](../framework/guides/runtime.md) defines these shared contracts.
+current session log. Manual TRACE capture is controlled inside that window;
+retained session folders under `artifacts/logs/sessions/` provide the durable
+history after a problem. The [runtime guide](../framework/guides/runtime.md)
+defines these shared contracts.
 
 Action and input-selection buttons provide concise hover help. The shared
 **Tools** menu contains framework-owned plot, screenshot, and diagnostic

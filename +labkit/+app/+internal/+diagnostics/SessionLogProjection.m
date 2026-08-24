@@ -1,25 +1,19 @@
 classdef (Hidden, Sealed) SessionLogProjection < handle
-    %SESSIONLOGPROJECTION Filter one canonical Runtime session for display.
-    % SessionLogViewer is the production caller. This class owns only
-    % projection state: it never mutates or deletes the canonical event stream.
+    %SESSIONLOGPROJECTION Filter one canonical Runtime session by severity.
+    % SessionLogViewer is the production caller. This class owns only display
+    % projection state and never mutates the canonical event stream.
 
     properties (Access = private)
         Events
         TraceEnabled (1, 1) logical = false
         InMemoryTruncated (1, 1) logical = false
-        RetainedRecordCount (1, 1) double = 0
-        TotalRecordCount (1, 1) double = 0
         JournalAvailable (1, 1) logical = false
         JournalState (1, 1) string = "unavailable"
         DroppedRecordCount (1, 1) double = 0
         CoalescedRecordCount (1, 1) double = 0
         ExpiredSegmentCount (1, 1) double = 0
         DegradationReason (1, 1) string = ""
-        ClearedThroughSequence (1, 1) double = 0
         LevelFilter (1, 1) string = "trace"
-        CategoryFilter (1, 1) string = ""
-        RootActionFilter (1, 1) string = ""
-        SearchText (1, 1) string = ""
     end
 
     properties (Constant, Access = private)
@@ -39,8 +33,6 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
             obj.Events = snapshot.events(:);
             obj.TraceEnabled = snapshot.traceEnabled;
             obj.InMemoryTruncated = snapshot.inMemoryTruncated;
-            obj.RetainedRecordCount = snapshot.retainedRecordCount;
-            obj.TotalRecordCount = snapshot.totalRecordCount;
             obj.JournalAvailable = snapshot.journalAvailable;
             obj.JournalState = snapshot.journalState;
             obj.DroppedRecordCount = snapshot.droppedRecordCount;
@@ -52,66 +44,35 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
         function append(obj, record)
             record = validateRecord(record);
             obj.Events(end + 1, 1) = record;
-            obj.TotalRecordCount = max( ...
-                obj.TotalRecordCount + 1, double(record.sequence));
             if numel(obj.Events) > obj.RetainedViewLimit
                 obj.Events(1) = [];
                 obj.InMemoryTruncated = true;
             end
-            obj.RetainedRecordCount = numel(obj.Events);
         end
 
         function setFilters(obj, varargin)
             options = labkit.app.internal.contract.OptionParser.parse( ...
-                "SessionLogProjection.setFilters", ...
-                ["Level", "Category", "RootAction", "Search"], ...
-                varargin{:});
+                "SessionLogProjection.setFilters", "Level", varargin{:});
             if isfield(options, "Level")
                 obj.LevelFilter = oneOf(options.Level, ...
-                    ["trace", "debug", "user"], "Level");
+                    ["trace", "debug", "info", "warning", ...
+                    "error", "critical"], "Level");
             end
-            if isfield(options, "Category")
-                obj.CategoryFilter = optionalText( ...
-                    options.Category, "Category");
-            end
-            if isfield(options, "RootAction")
-                obj.RootActionFilter = optionalText( ...
-                    options.RootAction, "RootAction");
-            end
-            if isfield(options, "Search")
-                obj.SearchText = lower(optionalText( ...
-                    options.Search, "Search"));
-            end
-        end
-
-        function clearView(obj)
-            if isempty(obj.Events)
-                return;
-            end
-            obj.ClearedThroughSequence = max( ...
-                double([obj.Events.sequence]));
         end
 
         function projection = view(obj)
             selected = obj.filteredEvents();
-            [rootActionIds, rootActionLabels] = ...
-                actionChoices(obj.Events);
             projection = struct( ...
                 "rows", rowsFor(selected), ...
                 "events", selected, ...
                 "severityCounts", severityCounts(selected), ...
-                "categories", choices(string({obj.Events.category})), ...
-                "rootActions", rootActionIds, ...
-                "rootActionLabels", rootActionLabels, ...
                 "traceEnabled", obj.TraceEnabled, ...
-                "notices", obj.notices(), ...
-                "clearedThroughSequence", obj.ClearedThroughSequence);
+                "notices", obj.notices());
         end
 
         function record = detail(obj, sequence)
             sequence = finiteInteger(sequence, "sequence");
-            match = obj.Events( ...
-                double([obj.Events.sequence]) == sequence);
+            match = obj.Events(double([obj.Events.sequence]) == sequence);
             if isempty(match)
                 record = [];
             else
@@ -126,60 +87,31 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
             if isempty(selected)
                 return;
             end
-            sequence = double([selected.sequence]);
-            keep = sequence > obj.ClearedThroughSequence;
             levels = lower(string({selected.severity}));
-            audiences = lower(string({selected.audience}));
-            if obj.LevelFilter == "user"
-                keep = keep & audiences == "user" & ...
-                    severityRank(levels) >= severityRank("info");
-            else
-                keep = keep & severityRank(levels) >= ...
-                    severityRank(obj.LevelFilter);
-            end
-            if strlength(obj.CategoryFilter) > 0
-                keep = keep & ...
-                    string({selected.category}) == obj.CategoryFilter;
-            end
-            if strlength(obj.RootActionFilter) > 0
-                keep = keep & ...
-                    string({selected.rootActionId}) == ...
-                    obj.RootActionFilter;
-            end
-            if strlength(obj.SearchText) > 0
-                searchable = lower( ...
-                    string({selected.eventName}) + " " + ...
-                    string({selected.category}) + " " + ...
-                    string({selected.message}));
-                keep = keep & contains(searchable, obj.SearchText);
-            end
-            selected = selected(keep);
+            selected = selected(severityRank(levels) >= ...
+                severityRank(obj.LevelFilter));
         end
 
         function value = notices(obj)
             value = strings(0, 1);
             if ~obj.TraceEnabled
                 value(end + 1, 1) = ...
-                    "TRACE capture starts automatically after the first ERROR; " + ...
-                    "DEBUG and higher detail is complete so far.";
+                    "TRACE capture is disabled; DEBUG and higher detail is retained.";
             end
             if obj.InMemoryTruncated
                 value(end + 1, 1) = ...
                     "Older in-memory records expired from the live view.";
             end
             if obj.CoalescedRecordCount > 0
-                value(end + 1, 1) = ...
-                    string(obj.CoalescedRecordCount) + ...
+                value(end + 1, 1) = string(obj.CoalescedRecordCount) + ...
                     " repeated low-level record(s) were coalesced.";
             end
             if obj.ExpiredSegmentCount > 0
-                value(end + 1, 1) = ...
-                    string(obj.ExpiredSegmentCount) + ...
+                value(end + 1, 1) = string(obj.ExpiredSegmentCount) + ...
                     " older journal segment(s) expired.";
             end
             if obj.DroppedRecordCount > 0
-                value(end + 1, 1) = ...
-                    string(obj.DroppedRecordCount) + ...
+                value(end + 1, 1) = string(obj.DroppedRecordCount) + ...
                     " journal record(s) were dropped.";
             end
             if ~obj.JournalAvailable
@@ -204,8 +136,7 @@ if ~isstruct(snapshot) || ~isscalar(snapshot) || ...
     error("labkit:app:runtime:InvariantFailure", ...
         "Session log snapshot is invalid.");
 end
-if ~(islogical(snapshot.traceEnabled) && ...
-        isscalar(snapshot.traceEnabled)) || ...
+if ~(islogical(snapshot.traceEnabled) && isscalar(snapshot.traceEnabled)) || ...
         ~(islogical(snapshot.inMemoryTruncated) && ...
         isscalar(snapshot.inMemoryTruncated)) || ...
         ~(islogical(snapshot.journalAvailable) && ...
@@ -248,18 +179,14 @@ end
 
 function value = rowsFor(events)
 if isempty(events)
-    value = table( ...
-        strings(0, 1), strings(0, 1), strings(0, 1), ...
+    value = table(strings(0, 1), strings(0, 1), strings(0, 1), ...
         strings(0, 1), zeros(0, 1), ...
         VariableNames=["Time", "Level", "Area", "Message", "Sequence"]);
     return;
 end
-value = table( ...
-    string({events.timestampUtc}).', ...
-    string({events.severity}).', ...
-    string({events.category}).', ...
-    string({events.message}).', ...
-    double([events.sequence]).', ...
+value = table(string({events.timestampUtc}).', ...
+    string({events.severity}).', string({events.category}).', ...
+    string({events.message}).', double([events.sequence]).', ...
     VariableNames=["Time", "Level", "Area", "Message", "Sequence"]);
 end
 
@@ -269,71 +196,6 @@ value = struct();
 for level = levels
     value.(lower(level)) = sum(string({events.severity}) == level);
 end
-end
-
-function value = choices(values)
-values = values(strlength(values) > 0);
-value = unique(values, "stable");
-end
-
-function [ids, labels] = actionChoices(events)
-ids = choices(string({events.rootActionId}));
-labels = strings(size(ids));
-for index = 1:numel(ids)
-    actionEvents = events( ...
-        string({events.rootActionId}) == ids(index));
-    labels(index) = actionLabel(actionEvents, ids(index));
-end
-end
-
-function label = actionLabel(events, id)
-first = events(1);
-preferred = find( ...
-    string({events.audience}) == "user" & ...
-    strlength(string({events.message})) > 0, 1);
-if isempty(preferred)
-    severity = string({events.severity});
-    preferred = find(any(severity.' == ...
-        ["WARNING", "ERROR", "CRITICAL"], 2), 1);
-end
-if isempty(preferred)
-    preferred = 1;
-end
-record = events(preferred);
-summary = actionSummary(record, first);
-if strlength(summary) > 72
-    summary = extractBefore(summary, 70) + "...";
-end
-time = regexp(string(first.timestampUtc), ...
-    '\d{2}:\d{2}:\d{2}', "match", "once");
-if strlength(time) > 0
-    label = time + "  " + summary + "  [" + id + "]";
-else
-    label = summary + "  [" + id + "]";
-end
-end
-
-function summary = actionSummary(record, first)
-summary = string(record.message);
-generic = [
-    "Dispatching callback."
-    "Operation completed."
-    "Operation failed."
-    "Operation cancelled."
-    "Operation abandoned."
-    ];
-if ~any(summary == generic)
-    return;
-end
-if isfield(first.attributes, "runtimeAlias") && ...
-        (ischar(first.attributes.runtimeAlias) || ...
-        (isstring(first.attributes.runtimeAlias) && ...
-        isscalar(first.attributes.runtimeAlias)))
-    summary = "Callback: " + string(first.attributes.runtimeAlias);
-    return;
-end
-eventName = erase(string(first.eventName), ".started");
-summary = replace(eventName, [".", "_"], " ");
 end
 
 function value = severityRank(values)

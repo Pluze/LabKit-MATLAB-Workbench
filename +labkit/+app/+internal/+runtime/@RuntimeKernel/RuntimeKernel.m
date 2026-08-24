@@ -58,9 +58,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     labkit.app.internal.runtime.CallbackContextFactory.create(backend);
                 obj.Diagnostics = ...
                     labkit.app.internal.diagnostics.RuntimeDiagnostics( ...
-                    obj.Recorder, obj.Context, obj.Artifacts, ...
-                    obj.Application.DisplayName, ...
-                    @(message, title) obj.notifyUser(message, title));
+                    obj.Recorder, obj.Application.DisplayName);
                 obj.updateStartup("Creating app state...");
                 obj.State = ...
                     labkit.app.internal.runtime.RuntimeContractBoundary.initialState( ...
@@ -156,25 +154,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function setTraceCapture(obj, enabled)
             obj.Diagnostics.setTraceCapture(enabled);
-        end
-
-        function destination = exportDiagnosticBundle(obj, destination)
-            destination = obj.Diagnostics.exportBundle( ...
-                destination, obj.State);
-        end
-
-        function destination = exportDiagnosticBundleInteractive(obj)
-            destination = obj.Diagnostics.exportInteractive(obj.State);
-        end
-
-        function destination = exportPreviousActiveSession(obj)
-            destination = obj.Diagnostics.exportPreviousActive();
-        end
-
-        function destination = exportDiagnosticTextFallback( ...
-                obj, preferredDestination, cause)
-            destination = obj.Diagnostics.exportTextFallback( ...
-                preferredDestination, cause);
         end
 
         function destination = automaticArtifactDestination( ...
@@ -402,9 +381,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             else
                 obj.Recorder.finish( ...
                     operation, "failed", "notApplicable", failure);
-            end
-            if ~isempty(obj.Diagnostics)
-                obj.Diagnostics.exportAfterErrorOnClose(obj.State);
             end
             if ~isempty(obj.Recorder)
                 obj.Recorder.close();

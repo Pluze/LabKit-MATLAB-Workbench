@@ -1,8 +1,8 @@
 classdef SessionLogProjectionSpec < matlab.unittest.TestCase
-    % SESSIONLOGPROJECTIONSPEC Invariant: standard viewer filtering and clear-view semantics preserve canonical session history.
+    % SESSIONLOGPROJECTIONSPEC Invariant: the viewer projects canonical history by minimum severity only.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function filtersThreeLevelsWithoutChangingCanonicalHistory(testCase)
+        function filtersMinimumSeverityWithoutChangingCanonicalHistory(testCase)
             runtime = projectionRuntime(testCase);
             cleanup = onCleanup(@() runtime.close());
             runtime.invokeAction("run");
@@ -19,45 +19,18 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
             testCase.verifyTrue(any( ...
                 defaultView.rows.Message == ...
                 "Synthetic fallback remained usable."));
-            testCase.verifyEqual( ...
-                numel(defaultView.rootActionLabels), ...
-                numel(defaultView.rootActions));
-            testCase.verifyFalse(any( ...
-                defaultView.rootActionLabels == defaultView.rootActions));
-            testCase.verifyTrue(any(contains( ...
-                defaultView.rootActionLabels, ...
-                "Synthetic analysis completed.")));
-
-            projection.setFilters( ...
-                Level="debug", ...
-                Category="app.probe.log-projection.analysis", ...
-                Search="branch");
+            projection.setFilters(Level="warning");
             filtered = projection.view();
-            testCase.verifyEqual(height(filtered.rows), 1);
+            testCase.verifyEqual(string(filtered.rows.Level), ...
+                ["WARNING"; "ERROR"]);
+            detail = projection.detail(filtered.rows.Sequence(end));
             testCase.verifyEqual( ...
-                filtered.rows.Message, ...
-                "Synthetic branch selected.");
-            detail = projection.detail(filtered.rows.Sequence);
-            testCase.verifyEqual( ...
-                detail.eventName, "analysis.branch_selected");
-
-            projection.clearView();
-            testCase.verifyEmpty(projection.view().events);
+                detail.eventName, "analysis.failed");
             testCase.verifyEqual(runtime.diagnosticSnapshot().events, before);
-
-            projection.setFilters( ...
-                Level="trace", ...
-                Category="", RootAction="", Search="");
-            runtime.invokeAction("run");
-            projection.update(runtime.diagnosticSnapshot());
-            afterClear = projection.view();
-            testCase.verifyGreaterThan(height(afterClear.rows), 2);
-            testCase.verifyGreaterThan( ...
-                min(afterClear.rows.Sequence), max([before.sequence]));
             clear cleanup
         end
 
-        function enablesTraceAfterErrorAndIsolatesAFailingConsumer(testCase)
+        function traceRemainsManualAndIsolatesAFailingConsumer(testCase)
             runtime = projectionRuntime(testCase);
             cleanup = onCleanup(@() runtime.close());
             token = runtime.subscribeDiagnostics(@failConsumer);
@@ -65,14 +38,17 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
             runtime.invokeAction("run");
             snapshot = runtime.diagnosticSnapshot();
             names = string({snapshot.events.eventName});
-            testCase.verifyTrue(snapshot.traceEnabled);
-            testCase.verifyTrue(any(names == "trace.capture_enabled"));
+            testCase.verifyFalse(snapshot.traceEnabled);
+            testCase.verifyFalse(any(names == "trace.capture_enabled"));
             testCase.verifyFalse(any(names == "analysis.trace_before_error"));
-            testCase.verifyTrue(any(names == "analysis.trace_after_error"));
+            testCase.verifyFalse(any(names == "analysis.trace_after_error"));
 
+            runtime.setTraceCapture(true);
             runtime.invokeAction("run");
             records = runtime.diagnosticSnapshot().events;
             names = string({records.eventName});
+            testCase.verifyTrue(any(names == "analysis.trace_before_error"));
+            testCase.verifyTrue(any(names == "analysis.trace_after_error"));
             testCase.verifyTrue(any(names == "callback.state_updated"));
             testCase.verifyTrue(any( ...
                 names == "presentation.runtime_prepared"));
@@ -102,7 +78,7 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
 
             notices = projection.view().notices;
             testCase.verifyTrue(any(contains(notices, "TRACE")));
-            testCase.verifyTrue(any(contains(notices, "first ERROR")));
+            testCase.verifyFalse(any(contains(notices, "first ERROR")));
             testCase.verifyTrue(any(contains(notices, "in-memory")));
             testCase.verifyTrue(any(contains(notices, "coalesced")));
             testCase.verifyTrue(any(contains(notices, "expired")));

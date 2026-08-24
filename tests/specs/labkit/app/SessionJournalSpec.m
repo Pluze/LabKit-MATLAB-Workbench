@@ -44,6 +44,11 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() journal.close());
 
             testCase.verifyEqual(rng, before);
+            testCase.verifyNotEmpty(regexp(char(journal.sessionId()), ...
+                "^session-probe\.session-journal-\d{8}-\d{6}-", "once"));
+            [~, folderName, extension] = fileparts(journal.folder());
+            testCase.verifyEqual(string(folderName) + string(extension), ...
+                journal.sessionId());
             clear cleanup
         end
 
@@ -103,7 +108,7 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
                 ProjectionHook=@projection.project, ...
                 ProjectionHealthHook=@projection.drainHealth);
             recorder = labkit.app.internal.diagnostics.SessionDiagnostics( ...
-                app, stream, projection, journal);
+                stream, projection, journal);
             cleanup = onCleanup(@() recorder.close());
 
             recorder.begin("runtime.callback", "callback.roi_changed", ...
@@ -116,30 +121,6 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             testCase.verifyTrue(any(names == "callback.roi_changed.started"));
             testCase.verifyFalse(any(names == "callback.roi_changed.completed"));
             clear cleanup
-        end
-
-        function findsTheLatestPreviousActiveSessionForTheSameApp(testCase)
-            root = testCase.applyFixture( ...
-                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            app = journalProbeDefinition();
-            journal = labkit.app.internal.diagnostics.SessionJournal(app, ...
-                RootFolder=root, SessionId="session-previous-active");
-            cleanup = onCleanup(@() journal.close());
-            stream = labkit.app.internal.diagnostics.SessionEventStream(app, ...
-                SessionId="session-previous-active", ProjectionHook=@journal.append);
-            streamCleanup = onCleanup(@() stream.close());
-            stream.log("info", "analysis.context", "Context retained.", ...
-                Category="app.probe.journal.analysisRun", Audience="developer");
-            journal.flushDurably();
-
-            archived = ...
-                labkit.app.internal.diagnostics.SessionJournalArchive.latestActive( ...
-                root, app.AppId, "session-current");
-
-            testCase.verifyEqual(string(archived.manifest.sessionId), ...
-                "session-previous-active");
-            testCase.verifyEqual(string(archived.manifest.state), "active");
-            clear streamCleanup cleanup
         end
 
         function countsWarningDroppedAfterPreflushManifestFailure(testCase)
@@ -220,6 +201,12 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
                 RootFolder=root, SessionId="session-state");
             testCase.verifyEqual(string(journal.manifest().state), "active");
             manifest = journal.manifest();
+            sdk = labkit.app.version();
+            testCase.verifyEqual(string(manifest.appVersion), app.AppVersion);
+            testCase.verifyEqual(string(manifest.labkitAppVersion), ...
+                string(sdk.current));
+            testCase.verifyEqual(string(manifest.matlabRelease), ...
+                string(version("-release")));
             startedAtUtc = datetime(manifest.startedAtUtc, ...
                 InputFormat="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", TimeZone="UTC");
             testCase.verifyFalse(isnat(startedAtUtc));

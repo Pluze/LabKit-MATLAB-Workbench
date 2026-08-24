@@ -371,20 +371,18 @@ and safe for display. Pass caught exceptions through the dedicated
 `Exception` option instead of copying stack, path, identifier, or scientific
 data into free text.
 
-The App's **Tools > Diagnostics** menu opens the live session viewer and exports
-a diagnostic bundle from the same session history. Each viewer title names the
-App that owns the session. Its single **Level** selector has three modes:
-**Full TRACE** displays every retained record, **DEBUG** hides trace-only
-stages, and **User** shows user-audience INFO and higher events. Full TRACE is
-the default view; it does not manufacture detail that was not captured. The
-**Action** filter groups a top-level user or lifecycle action with its nested
-callback, dialog, resource, transaction, and—when TRACE capture is active—
-presentation records.
+The App's **Tools > Diagnostics** menu opens the live viewer for the current
+session. Each viewer title names the App that owns the session. Its only filter
+selects the minimum visible severity from TRACE, DEBUG, INFO, WARNING, ERROR,
+or CRITICAL. TRACE is the default view threshold, but it does not manufacture
+detail that was not captured. Selecting a row shows the complete structured
+record, including correlation IDs, attributes, terminal disposition, and any
+retained exception details.
 
 Runtime initially captures DEBUG and higher records to bound ordinary-session
-cost. The first ERROR or CRITICAL event automatically enables TRACE for later
-activity. The viewer also provides an explicit **Enable TRACE** / **Disable
-TRACE** control when a user needs detailed capture before an error. DEBUG
+cost. The viewer provides an explicit **Enable TRACE** / **Disable TRACE**
+control when detailed capture is needed; errors do not change that setting.
+DEBUG
 retains operation start, state-update, validation, native-presentation start,
 terminal boundaries, and all presentation failures. The operation start and
 native-presentation start are durable checkpoints, so an abnormal process stop
@@ -394,34 +392,23 @@ successful App/runtime presentation and native commit detail plus post-failure
 rollback cleanup. Enabling TRACE never reconstructs earlier detail.
 The live viewer appends incoming records to its bounded projection immediately
 but batches native table updates at up to 10 Hz. A TRACE burst therefore
-causes one table refresh per batch rather than one complete filter, dropdown,
-style, and scroll pass per record; manual filters and **Refresh** still apply
-immediately. The durable journal and exported bundle retain their independent
-bounded histories.
+causes one table refresh per batch rather than one complete filter, style, and
+scroll pass per record; the severity selector and **Refresh** still apply
+immediately.
 
-**Export Diagnostic Bundle** writes directly to ignored
-`artifacts/diagnostics/` with a generated App-specific, timestamped, unique ZIP
-name. Every bundle contains complete sensitive events, attributes, exception
-messages, stack locations, and App state. Runtime writes
-`app-state-compact.mat`: it recursively reviews state containers
-and replaces supported numeric, logical, character, or string leaves larger
-than 1 MiB with deterministic compressible placeholders of the same class and
-dimensions. It preserves smaller parameters, annotations, results, and caches.
-`bundle-report.json` names structural state paths and sizes for every
-replacement without retaining the replaced values; it also lists oversized
-unsupported leaf types that could not be compacted. Compact state is diagnostic
-evidence, not scientifically valid input. The bundle may contain sensitive
-paths, filenames, scientific values, and decoded data; compaction is not a privacy
-filter. If the
-session records any ERROR or CRITICAL event, Runtime automatically writes a
-compact bundle after the App closes, including the completed close lifecycle
-event. A clean session does not create a bundle on close.
+The durable journal is the sole retained diagnostic and usage-history
+artifact. New sessions live at
+`artifacts/logs/sessions/session-<app-id>-<UTC-start>-<unique-suffix>/`.
+`manifest.json` records the App ID and version, LabKit App SDK version, MATLAB
+release, session lifecycle timestamps and state, retained segment counts, and
+degradation counters. Ordered canonical events remain in `events-*.jsonl`.
+Maintainers and analysis agents can read the folder directly to determine when
+an App launched, which callbacks, dialogs, source selections, exports, and
+other instrumented operations occurred, where a failure happened, and which
+operation was left incomplete by an abnormal stop. The runtime does not create
+a diagnostic ZIP, text fallback, or App-state snapshot, and the viewer does not
+browse other sessions.
 
-If ZIP staging or publication fails, Runtime writes a generated complete-event
-text fallback beside that ZIP. Only when automatic output cannot be written
-does it ask for another location, with the generated fallback filename already
-filled in. Text cannot represent either MAT state and says so explicitly. The
-success or fallback alert reports the complete destination path.
 Journal degradation remains visible in the surviving in-memory stream; logging
 failures never alter callback transaction semantics or scientific results.
 A callback exception is recorded as an ERROR with `failed` operation result,
@@ -434,8 +421,9 @@ cannot manufacture evidence for a native event that never entered Runtime or
 an exception swallowed by App code without logging. Root callback starts and
 major transaction-stage boundaries are persisted before work continues, so a
 MATLAB hang or abnormal termination leaves an unterminated operation
-identifying the last entered stage. **Export Previous Active Session**
-retrieves that journal from a later launch.
+identifying the last entered stage. Retained folders are not migrated, grouped,
+pruned, or presented as same-App history by the runtime; users manage them with
+ordinary filesystem tools.
 
 ## App-Owned Results And Continuation
 

@@ -59,20 +59,15 @@ Every current LabKit app exposes one top-level **Tools** menu:
   surface as an image.
 - **Tools > Screenshot > Save to File...** saves the complete App surface.
 - **Tools > Diagnostics > Open Session Log...** opens the current App's named
-  live log with Full TRACE, DEBUG, and User views.
-- **Tools > Diagnostics > Export Diagnostic Bundle** asks for exact or compact
-  App state, defaults to compact, and writes the logs plus selected state to an
-  automatically named ZIP beneath `artifacts/diagnostics/`. Diagnostic bundles
-  may contain sensitive paths and data; review them before sharing. After an
-  ERROR or CRITICAL event, closing the App automatically writes a compact
-  bundle there.
+  live log. Its minimum-severity selector ranges from TRACE through CRITICAL;
+  TRACE capture is enabled manually when extra detail is needed.
 
 Task save/open controls appear only in Apps whose workflow genuinely supports
 continuation. The framework has no Project State menu or archive. Each
 qualifying App owns its snapshot file and restores one current/final task state.
 
-App-owned task snapshots are different from exported results and from ignored
-diagnostic state under `artifacts/diagnostics/`.
+App-owned task snapshots are different from exported results and from the
+structured session journals under `artifacts/logs/sessions/`.
 
 ## Source Checkout
 

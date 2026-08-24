@@ -94,8 +94,8 @@ Use `labkittest.explain` to find the exact owner and contract.
 - The framework does not own task archives, generic save/load callbacks,
   document identities, dirty tracking, recovery files, migration loops, or
   source relinking, project schemas, or generic result manifests. Definition
-  accepts only opaque in-memory App state; diagnostic bundles may capture that
-  state only for logging and debugging.
+  accepts only opaque in-memory App state; session journals record operations
+  and failures but do not serialize App state.
 - An App with a real continuation workflow owns its explicit save/open
   controls and the complete JSON, CSV, or MAT archive contract, including
   fields, compatibility, source lookup, and resume semantics. Save one current
