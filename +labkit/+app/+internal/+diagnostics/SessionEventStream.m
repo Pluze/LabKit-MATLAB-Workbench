@@ -18,7 +18,6 @@ classdef (Hidden, Sealed) SessionEventStream < handle
         ProjectionHealthHook = []
         ProjectionHealthUnavailableReported (1, 1) logical = false
         TraceEnabled (1, 1) logical = false
-        ErrorOrCriticalObserved (1, 1) logical = false
         ConsumerSequence (1, 1) double = 0
         Consumers (1, :) struct = struct( ...
             "Id", strings(1, 0), "Callback", cell(1, 0))
@@ -37,7 +36,8 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                     "SessionEventStream requires one Definition.");
             end
             sessionId = optionValue(varargin, "SessionId", ...
-                labkit.app.internal.diagnostics.SessionIdentity.create());
+                labkit.app.internal.diagnostics.SessionIdentity.create( ...
+                application.AppId));
             projectionHook = optionValue(varargin, "ProjectionHook", []);
             projectionHealthHook = optionValue(varargin, "ProjectionHealthHook", []);
             traceEnabled = optionValue(varargin, "TraceEnabled", false);
@@ -186,16 +186,6 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             end
             record.exception = exception;
             obj.retain(record);
-            if any(severity == ["error", "critical"])
-                obj.ErrorOrCriticalObserved = true;
-                if ~obj.TraceEnabled
-                    obj.setTraceEnabled(true);
-                end
-            end
-        end
-
-        function observed = hasErrorOrCriticalEvent(obj)
-            observed = obj.ErrorOrCriticalObserved;
         end
 
         function records = records(obj)

@@ -52,7 +52,7 @@ classdef (Hidden, Sealed) RuntimeFactory
                     SessionId=journal.sessionId(), ProjectionHook=@projection.project, ...
                     ProjectionHealthHook=@projection.drainHealth);
                 recorder = labkit.app.internal.diagnostics.SessionDiagnostics( ...
-                    definition, stream, projection, journal);
+                    stream, projection, journal);
             catch cause
                 try
                     journal.close();

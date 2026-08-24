@@ -109,7 +109,7 @@ Linux.
 ## Diagnostics
 
 Use **Tools > Diagnostics** to inspect the live session log, enable trace
-capture, or export a diagnostic bundle after a problem occurs.
+capture; retained session journals remain available after a problem occurs.
 
 ## Use Without The GUI
 

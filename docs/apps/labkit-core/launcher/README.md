@@ -44,9 +44,9 @@ failure reports the identifier and message and offers repair guidance when the
 installation itself is incomplete.
 
 Every launch uses the same clean App path. Use the App's **Tools >
-Diagnostics** menu to inspect its live session log or export a diagnostic
-bundle after a problem occurs. The Session Log window owns manual TRACE
-capture when earlier detail is needed.
+Diagnostics** menu to inspect its live session log. The Session Log window owns
+manual TRACE capture when additional detail is needed; the structured journal
+remains under `artifacts/logs/sessions/` after the App closes.
 
 ## Programmatic Calls
 
