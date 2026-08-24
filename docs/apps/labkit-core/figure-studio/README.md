@@ -15,11 +15,11 @@ labkit_FigureStudio_app
 
 A LabKit plot can also send its current axes to Figure Studio through the plot
 context menu. That handoff embeds a serializable plot snapshot in the project
-and immediately applies the **LabKit figure** preset. Studio restores the
-calibrated reference plot frame together with its standard LabKit typography,
-semantic strokes, colors, and frame treatment. Long categorical X-axis labels
-wrap automatically instead of widening or distorting the reference panel.
-The source presentation remains available through **FIG default**.
+and immediately applies the **Published figure** preset. Studio restores a
+publication-oriented plot frame, typography hierarchy, and semantic stroke
+weights. It preserves authored data colors, line styles, markers, bar fills,
+annotation positions, and axis ranges. The complete source presentation
+remains available through **FIG default**.
 
 ## Handoff And Runtime State
 
@@ -30,7 +30,7 @@ The default output folder follows the selected source.
 
 ## Load And Select Figures
 
-On **Figures**, use **Add FIG files**, **Add folder**, or **Add folder tree**.
+On **Figure**, use **Add FIG files**, **Add folder**, or **Add folder tree**.
 The source list accepts MATLAB `.fig` files and keeps one current selection. Selecting another source
 opens its native graphics without rerunning the analysis. A mixed FIG is
 listed as ordered **Subplot panel** choices (top-left to bottom-right, with a
@@ -41,40 +41,40 @@ panel. **Clear figures** removes all sources from the project.
 
 For a source using **FIG default**, Figure Studio adopts its font, semantic
 line widths, annotations, legend, grid, and axes appearance. Selecting
-**LabKit figure** applies the calibrated single-panel publication hierarchy
-while retaining the source legend placement. When a new source or subplot is
-selected, Studio reapplies the calibrated reference frame and automatically
-wraps categorical labels that cannot fit horizontally, without importing
-source geometry, typography, or line styling. Logarithmic X axes retain
-MATLAB's native exponent tick formatting and do not enter the categorical
-label-wrapping path.
-Hidden comparison brackets and other legend-excluded annotation lines use the
-standard reference-line width; visible line series keep the standard data-line
-width, including series containing only two points.
-Standard bars use an unfilled white-ground treatment with the calibrated color
-sequence on their boundaries, matching the maintained reference panels rather
-than retaining large source-color fills.
+**Published figure** applies the maintained single-panel publication
+hierarchy while retaining the source legend placement and authored object
+appearance. When a new source or subplot is selected, Studio reapplies the
+standard frame and typography without inferring scientific meaning from line
+length, handle visibility, color, or object position. Logarithmic axes retain
+MATLAB's native exponent formatting.
 Switching a text preset never changes the selected plot-frame width, aspect,
-or export scale.
+outside-whitespace choice, or export scale.
 
-## Style And Canvas Controls
+## Editing And Output Controls
+
+The control panel follows the workflow in four tabs: **Figure** loads one
+panel and edits its axes; **Appearance** controls calibrated text, strokes,
+frame, grid, and legend; **Geometry** controls the inner plot frame and outside
+whitespace; **Export** writes the styled figure or a portable data package.
 
 | Group | Controls |
 | --- | --- |
-| Text Style | preset, all/title/axis-label/tick/annotation font size, X tick-label angle, grid alpha, grid visibility |
-| Lines + Boundaries | data, uncertainty, main-graphic boundary, reference-line, and axes line widths |
+| Axes | title, X/Y labels, unrestricted finite X/Y limits, linear/log scale, and normal/reverse direction |
+| Text Style | preset, title/axis-label/tick/annotation font size, X tick-label angle, and grid visibility |
+| Lines + Boundaries | data, uncertainty, main-graphic boundary, reference-line, and axes line widths; tick direction; top/right frame visibility |
 | Legend | source/on/off display, location, font size, columns, and border |
-| Plot frame | reference, 6:5, 4:3, 16:9, 1:1, 3:2, or source aspect; a fixed plot width or source size; export supersampling; top/right frame visibility |
+| Output Geometry | published, source, 4:3, 3:2, 16:9, 1:1, or custom ratio; numeric frame width and height; tight, balanced, or generous outside whitespace |
 
-Changing **All font** updates title, axis-label, tick, annotation, and legend
-sizes together. Individual controls then provide category-level refinement.
-**LabKit figure** uses a calibrated 900-by-725 px reference **plot frame**:
-45 pt title, axis-label, tick, annotation, and legend text; 6.5 pt data strokes;
+**Published figure** retains the measured nine-panel reference **plot frame**
+and visual calibration: a 900-by-725 px inner frame; 45 pt title, axis-label,
+tick, annotation, and legend text; a 100 px legend token; 6.5 pt data strokes;
 2 pt uncertainty strokes; and 1.5 pt boundary, reference, and axes strokes.
+The calibration was derived by normalizing each reference panel to its detected
+axes frame and comparing registered typography and strokes in pixels.
 The default uses a complete top/right frame with no grid and no legend box.
-Legend samples use the reference's long line tokens. These editable baselines
-come from normalized pixel measurements across all nine panels of the maintained
-3-by-3 visual reference, not from a single imported FIG.
+Legend samples use long line tokens. These values are an editable visual
+baseline, not a transformation of the source data or a journal-specific
+template.
 The configured width and aspect always describe the inside of the axes frame.
 The interactive preview and every exported format use that same configured
 plot-box aspect; a source axes' stored aspect metadata does not override it.
@@ -83,22 +83,26 @@ in the preview instead of asking MATLAB to choose a sparser set for the
 full-size export typography.
 Figure Studio calculates the enclosing figure's outer margins from the current
 title, labels, ticks, legend, and visible annotations, so changing a long
-label cannot silently shrink the data region. Empty ruler text is ignored,
+label cannot silently shrink the data region. **Outside whitespace** adds a
+tight, balanced, or generous typography-relative margin beyond those measured
+extents without changing the inner plot frame. Empty ruler text is ignored,
 including the zero-area placeholders MATLAB exposes on logarithmic axes. If a
 Windows desktop refuses the requested hidden figure size, Studio recomputes
 the plot frame from the accepted canvas after reserving measured label and tick
 insets plus a typography-derived minimum outer margin. Older Windows `print`
 releases reserve one additional text line because their pre-print screen extent
 can omit that line from the hardcopy bounds.
-Choose **Source size** or one of
-640, 720, 900, 960, 1200, 1237, 1364, 1600, or 2400 px; an aspect choice sets the
-paired plot-frame height. The workbench preview is a real interactive axes,
+Enter the required frame width directly. While a named ratio is active, width
+changes calculate the paired height; editing height selects **Custom** and
+leaves both dimensions under explicit control. **Published** restores the
+measured 900-by-725 ratio, while **Source** uses the imported axes ratio. The
+workbench preview is a real interactive axes,
 not a raster image. When its allotted screen area changes, Studio reflows only
 the display text and strokes; project settings and export proportions remain
 unchanged. This calibration is validated on both 72-PPI Linux renderers and
 96-PPI desktop MATLAB so display-density differences do not restyle exports.
-**Export x** is raster supersampling only. **Top/right frame** only
-shows or hides those two axes edges; it never changes the plot-frame size.
+**Top/right frame** only shows or hides those two axes edges; it never changes
+the plot-frame size.
 
 Font controls use 0.5 pt steps and line controls use 0.1 pt steps. The preset
 styles every existing category but does not create or move a legend by default, because
@@ -106,33 +110,34 @@ either action can cover data. Use the Legend panel for those explicit layout
 changes. **X tick labels** retains the source angle, makes labels horizontal,
 or rotates them 45 degrees.
 
-PNG and JPG resolution is `300 * Export x`, with a minimum of 72 dpi. SVG uses
-vector content. On MATLAB releases before R2025a, Figure Studio uses MATLAB's
+PNG and JPG use the calibrated 600 dpi default; SVG uses vector content. On
+MATLAB releases before R2025a, Figure Studio uses MATLAB's
 native `print` exporter to retain the complete styled figure because
 `exportgraphics` does not yet support figure padding or SVG. **FIG default**
 records the source plot-frame ratio as its
-reference, so reopening a source does not rescale its original typography. If
-limits are stale after copying or editing, use **Recalculate X/Y limits** to
-fit the visible graphics, update the interactive viewport, and refresh the
-four limit inputs. The X/Y minimum and maximum controls accept values within
-the finite visible-data extent expanded by exactly 50% on both sides; they do
-not change the source calculation.
+reference, so reopening a source does not rescale its original typography.
+Edit the four limit inputs to show any finite ascending range, including a
+range outside the currently visible data. Figure Studio does not clamp an
+explicit viewport to a data-derived envelope. If limits are stale after
+copying or editing, use **Recalculate X/Y limits** to fit the visible graphics,
+update the interactive viewport, and refresh the inputs. Axis and text changes
+refresh the same deterministic renderer used for export.
 
-## Quick Exports
+## Figure Exports
 
-The **Figures** tab provides:
+The **Export** tab provides:
 
-- **Save FIG** for an editable MATLAB figure;
+- **Editable FIG** for an editable MATLAB figure;
 - **PNG** and **JPG** for raster output;
 - **SVG** for vector output.
 
 ## Export A Data Package
 
-On **Export**, select an output folder and choose **Export data + script**.
+On **Export**, select a package folder and choose **Export data + script**.
 Figure Studio creates a package containing supported visible data, style and
 axes metadata, and a MATLAB recreation script. For preview, editable FIG
-export, and image export, Studio first copies the selected native axes
-hierarchy when MATLAB permits the parent transition. This preserves MATLAB
+export, and image export, Studio uses one renderer and first copies the
+selected native axes hierarchy when MATLAB permits the parent transition. This preserves MATLAB
 graphics that can be copied into the target axes, including ordinary grouped
 charts such as `boxplot`. Native child stacking is retained, so lines, markers,
 and text drawn over an image remain above that image in both the interactive
@@ -142,7 +147,8 @@ exponents as well as visible data. The portable data package separately recogniz
 visible line, bar, error-bar, area, scatter, image, surface, patch, rectangle,
 text, and constant-line objects. Existing legend text, visibility, placement,
 orientation, column count, font, interpreter, and border are retained.
-Explicit axis ticks, tick labels, label rotations, axis locations, and tick
+Explicit titles, labels and their text interpreters, ranges, scales,
+directions, ticks, tick labels, label rotations, axis locations, and tick
 geometry are retained as visible presentation metadata. Visible graphics with
 hidden handles, such as error bars or significance brackets intentionally
 excluded from legends, are also retained without adding legend entries.
@@ -184,6 +190,8 @@ objects.
   the source figure are not treated as portable scientific data.
 - Some object-specific rendering semantics cannot be reproduced from a plain
   graphics snapshot.
+- Figure Studio edits one selected axes at a time. It does not yet provide a
+  general property inspector for every MATLAB graphics class.
 
 ## Related Functions And Documentation
 

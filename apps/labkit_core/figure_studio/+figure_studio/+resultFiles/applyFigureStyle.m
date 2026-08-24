@@ -15,8 +15,9 @@ function applyFigureStyle(ax, preset)
 %       gridAlpha, gridVisible, boxVisible,
 %       boundaryLines, legendTokenWidth, canvasWidth, canvasHeight,
 %       referenceCanvasWidth,
-%       referenceCanvasHeight, previewScale, legend controls, and colorOrder
-%       fields.
+%       referenceCanvasHeight, previewScale, outerMargin, legend controls,
+%       and colorOrder fields. outerMargin accepts "Tight", "Balanced", or
+%       "Generous".
 %
 % Output:
 %   None. The copied graphics state is changed in place.
@@ -58,7 +59,6 @@ function applyStyleStruct(ax, style)
     ax.LineWidth = style.axesLineWidth;
     ax.Box = onOff(style.boundaryLines);
     ax.TickDir = char(style.tickDirection);
-    ax.ColorOrder = style.colorOrder;
     if style.gridVisible
         grid(ax, 'on');
         ax.GridAlpha = style.gridAlpha;
@@ -69,7 +69,6 @@ function applyStyleStruct(ax, style)
     styleLabelsFromStyle(ax, style);
     styleDataChildren(ax, style);
     unifyAnnotationFont(ax, style);
-    reflowComparisonAnnotations(ax, style);
     applyTickLabelLayout(ax, style);
     styleLegend(ax, style);
     layoutExportCanvas(ax, style);
@@ -105,6 +104,7 @@ function style = defaultNatureStyle()
         "referenceCanvasWidth", 900, ...
         "referenceCanvasHeight", 725, ...
         "previewScale", false, ...
+        "outerMargin", "Balanced", ...
         "tickDirection", "out", ...
         "axesPosition", [], ...
         "colorOrder", natureColorOrder());
@@ -160,6 +160,12 @@ function style = fillStyle(style)
     style.referenceCanvasHeight = finiteScalar( ...
         style.referenceCanvasHeight, style.canvasHeight);
     style.previewScale = logical(style.previewScale);
+    marginChoices = ["Tight", "Balanced", "Generous"];
+    style.outerMargin = string(style.outerMargin);
+    if ~isscalar(style.outerMargin) || ...
+            ~any(style.outerMargin == marginChoices)
+        style.outerMargin = defaults.outerMargin;
+    end
 end
 
 function scale = canvasStyleScale(style)
@@ -250,29 +256,11 @@ function styleDataChildren(ax, style)
                 child.LineWidth = style.dataLineWidth;
             case "boundary"
                 child.LineWidth = style.boundaryLineWidth;
-                if lower(string(child.Type)) == "bar"
-                    standardizeBarAppearance(child, style);
-                end
             case "reference"
                 child.LineWidth = style.referenceLineWidth;
             case "uncertainty"
                 child.LineWidth = style.uncertaintyLineWidth;
         end
-    end
-end
-
-function standardizeBarAppearance(barHandle, style)
-    count = numel(barHandle.YData);
-    if count < 1 || isempty(style.colorOrder)
-        return;
-    end
-    indices = mod((0:(count - 1)), size(style.colorOrder, 1)) + 1;
-    try
-        barHandle.CData = style.colorOrder(indices, :);
-        barHandle.FaceColor = "none";
-        barHandle.EdgeColor = "flat";
-        barHandle.FaceAlpha = 1;
-    catch
     end
 end
 
@@ -291,8 +279,11 @@ function kind = graphicStrokeKind(handle)
     catch
         return;
     end
-    if type == "line" && hiddenFromLegend(handle)
-        kind = "reference";
+    if type == "line" && isHiddenFromLegend(handle)
+        % Hidden lines often encode annotations or intentional legend
+        % exclusions. Preserve their authored stroke instead of guessing a
+        % scientific role from HandleVisibility.
+        kind = "";
     elseif any(type == ["line", "scatter", "surface"])
         kind = "data";
     elseif type == "errorbar"
@@ -304,12 +295,12 @@ function kind = graphicStrokeKind(handle)
     end
 end
 
-function tf = hiddenFromLegend(handle)
-    tf = false;
-    try
-        tf = string(handle.HandleVisibility) == "off";
-    catch
-    end
+function tf = isHiddenFromLegend(handle)
+tf = false;
+try
+    tf = string(handle.HandleVisibility) == "off";
+catch
+end
 end
 
 function unifyAnnotationFont(ax, style)
@@ -330,74 +321,6 @@ function unifyAnnotationFont(ax, style)
         if isprop(references(k), 'FontSize')
             references(k).FontSize = style.annotationFontSize;
         end
-    end
-end
-
-function reflowComparisonAnnotations(ax, style)
-    brackets = findall(ax, "Type", "line", "HandleVisibility", "off");
-    if isempty(brackets)
-        return;
-    end
-    axisLabels = [ax.Title, ax.XLabel, ax.YLabel, ax.ZLabel];
-    texts = findall(ax, "Type", "text");
-    texts = texts(~arrayfun(@(value) any(value == axisLabels), texts));
-    if isempty(texts)
-        return;
-    end
-    xLimits = double(ax.XLim);
-    yLimits = double(ax.YLim);
-    xRange = max(diff(xLimits), eps);
-    yRange = max(diff(yLimits), eps);
-    dpi = 96;
-    try
-        dpi = double(get(groot, "ScreenPixelsPerInch"));
-    catch
-    end
-    if ~isscalar(dpi) || ~isfinite(dpi) || dpi <= 0
-        dpi = 96;
-    end
-    fontHeight = yRange * style.annotationFontSize * dpi / ...
-        (72 * max(style.canvasHeight, 1));
-    textGap = 0.82 * fontHeight;
-    requiredTop = yLimits(2);
-    used = false(size(texts));
-    for bracket = reshape(brackets, 1, [])
-        x = double(bracket.XData(:).');
-        y = double(bracket.YData(:).');
-        if numel(x) ~= 4 || numel(y) ~= 4 || ...
-                abs(x(1) - x(2)) > eps(xRange) || ...
-                abs(x(3) - x(4)) > eps(xRange) || ...
-                abs(y(1) - y(4)) > eps(yRange) || ...
-                abs(y(2) - y(3)) > eps(yRange) || y(2) <= y(1)
-            continue;
-        end
-        center = 0.5 * (x(1) + x(3));
-        top = y(2);
-        scores = inf(size(texts));
-        for k = 1:numel(texts)
-            if used(k)
-                continue;
-            end
-            position = double(texts(k).Position);
-            if numel(position) < 2 || any(~isfinite(position(1:2)))
-                continue;
-            end
-            scores(k) = abs(position(1) - center) / xRange + ...
-                abs(position(2) - top) / yRange;
-        end
-        [score, index] = min(scores);
-        if isempty(index) || ~isfinite(score) || score > 0.25
-            continue;
-        end
-        position = texts(index).Position;
-        position(2) = top + textGap;
-        texts(index).Position = position;
-        texts(index).VerticalAlignment = "bottom";
-        used(index) = true;
-        requiredTop = max(requiredTop, position(2) + 1.1 * fontHeight);
-    end
-    if requiredTop > yLimits(2)
-        ax.YLim = [yLimits(1), requiredTop + 0.06 * yRange];
     end
 end
 
@@ -603,9 +526,16 @@ if ~isscalar(dpi) || ~isfinite(dpi) || dpi <= 0
     dpi = 96;
 end
 labelEmPixels = max([style.labelFontSize style.tickFontSize]) * dpi / 72;
-marginInEms = 0.5;
+switch string(style.outerMargin)
+    case "Tight"
+        marginInEms = 0.25;
+    case "Generous"
+        marginInEms = 1.0;
+    otherwise
+        marginInEms = 0.5;
+end
 if ispc && isMATLABReleaseOlderThan("R2025a")
-    marginInEms = 1.5;
+    marginInEms = max(marginInEms, 1.5);
 end
 padding = max(padding, ceil(marginInEms * labelEmPixels));
 end

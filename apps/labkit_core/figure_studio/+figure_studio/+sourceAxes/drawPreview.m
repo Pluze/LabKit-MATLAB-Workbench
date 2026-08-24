@@ -24,22 +24,12 @@ function drawPreview(axesById, model)
         if isappdata(ax, 'labkitFigureStudioExportPreview')
             rmappdata(ax, 'labkitFigureStudioExportPreview');
         end
-        applyStoredLimits(ax, model.plotData.axes);
+        figure_studio.sourceAxes.applyAxesPresentation( ...
+            ax, model.plotData.axes);
         style = model.style;
         style.previewScale = logical(model.preview);
         figure_studio.resultFiles.applyFigureStyle(ax, style);
         configureInteractivePreview(ax, style);
-        return;
-    end
-    samePlot = isappdata(ax, 'labkitFigureStudioPlotData') && ...
-        isequaln(getappdata(ax, 'labkitFigureStudioPlotData'), model.plotData);
-    if samePlot
-        style = model.style;
-        style.previewScale = logical(model.preview);
-        figure_studio.resultFiles.applyFigureStyle(ax, style);
-        if model.preview
-            setappdata(ax, 'labkitFigureStudioPreviewStyle', style);
-        end
         return;
     end
     labkit.app.plot.clearAxes(ax);
@@ -93,20 +83,6 @@ function tf = hasNativeSource(model)
 tf = isstruct(model) && isfield(model, "sourceAxes") && ...
     ~isempty(model.sourceAxes) && ...
     isscalar(model.sourceAxes) && isgraphics(model.sourceAxes, "axes");
-end
-
-function applyStoredLimits(ax, axesData)
-for field = ["xLim", "yLim"]
-    if ~isfield(axesData, field)
-        continue;
-    end
-    value = double(axesData.(field));
-    if numel(value) ~= 2 || any(~isfinite(value)) || value(1) >= value(2)
-        continue;
-    end
-    property = upper(extractBefore(field, 2)) + "Lim";
-    ax.(char(property)) = reshape(value, 1, 2);
-end
 end
 
 function applyLegendMetadata(ax, plotData)
@@ -259,10 +235,14 @@ function applyStyle(h, style)
 end
 
 function applyAxesMetadata(ax, meta)
-    title(ax, meta.title, 'Interpreter', 'none');
-    xlabel(ax, meta.xLabel, 'Interpreter', 'none');
-    ylabel(ax, meta.yLabel, 'Interpreter', 'none');
-    zlabel(ax, meta.zLabel, 'Interpreter', 'none');
+    title(ax, meta.title, 'Interpreter', ...
+        labelInterpreter(meta, 'titleInterpreter'));
+    xlabel(ax, meta.xLabel, 'Interpreter', ...
+        labelInterpreter(meta, 'xLabelInterpreter'));
+    ylabel(ax, meta.yLabel, 'Interpreter', ...
+        labelInterpreter(meta, 'yLabelInterpreter'));
+    zlabel(ax, meta.zLabel, 'Interpreter', ...
+        labelInterpreter(meta, 'zLabelInterpreter'));
     mapping = { ...
         'XScale', 'xScale'; 'YScale', 'yScale'; 'ZScale', 'zScale'; ...
         'XDir', 'xDir'; 'YDir', 'yDir'; 'ZDir', 'zDir'; ...
@@ -278,6 +258,8 @@ function applyAxesMetadata(ax, meta)
         'YAxisLocation', 'yAxisLocation'; 'TickLength', 'tickLength'; ...
         'CLim', 'cLim'; 'Color', 'color'; 'Box', 'box'; ...
         'Layer', 'layer'; 'TickDir', 'tickDir'; ...
+        'XMinorTick', 'xMinorTick'; 'YMinorTick', 'yMinorTick'; ...
+        'ZMinorTick', 'zMinorTick'; ...
         'XGrid', 'xGrid'; 'YGrid', 'yGrid'; 'ZGrid', 'zGrid'; ...
         'XMinorGrid', 'xMinorGrid'; 'YMinorGrid', 'yMinorGrid'; ...
         'ZMinorGrid', 'zMinorGrid'; 'GridAlpha', 'gridAlpha'; ...
@@ -305,6 +287,13 @@ function applyAxesMetadata(ax, meta)
     if applyRulerExponent(ax, 'ZAxis', fieldValue(meta, 'zExponent', []))
         safeSet(ax, 'ZTickLabelMode', 'auto');
     end
+end
+
+function value = labelInterpreter(meta, name)
+value = string(fieldValue(meta, name, "none"));
+if ~isscalar(value) || ~any(value == ["tex", "latex", "none"])
+    value = "none";
+end
 end
 
 function applied = applyRulerExponent(ax, rulerName, value)

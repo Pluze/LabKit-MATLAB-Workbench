@@ -18,19 +18,18 @@ function [initialProject, dispatchArgs] = launchRequest(args)
             figure_studio.resultFiles.extractAxesData(ax);
         initialProject.annotations.sourceDefaultStyle = sourceStyle;
         initialProject.annotations.transientSourceAxes = ax;
-        labkitStyle = figure_studio.styleLibrary.styleForPreset( ...
-            "LabKit figure");
-        [labkitStyle, aspectPreset, canvasSize] = ...
+        publishedStyle = figure_studio.styleLibrary.styleForPreset( ...
+            "Published figure");
+        [publishedStyle, aspectPreset] = ...
             figure_studio.sourceAxes.applyStandardLayout( ...
-            labkitStyle, initialProject.annotations.embeddedPlot);
-        initialProject.parameters.preset = "LabKit figure";
-        initialProject.parameters.style = labkitStyle;
+            publishedStyle, initialProject.annotations.embeddedPlot);
+        initialProject.parameters.preset = "Published figure";
+        initialProject.parameters.style = publishedStyle;
         initialProject.parameters.gridChoice = onOff( ...
-            labkitStyle.gridVisible);
+            publishedStyle.gridVisible);
         initialProject.parameters.boundaryChoice = onOff( ...
-            labkitStyle.boundaryLines);
+            publishedStyle.boundaryLines);
         initialProject.parameters.aspectPreset = aspectPreset;
-        initialProject.parameters.canvasSize = canvasSize;
         dispatchArgs = {};
     end
 end

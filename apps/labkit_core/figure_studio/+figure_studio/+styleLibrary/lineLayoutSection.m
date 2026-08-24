@@ -14,13 +14,27 @@ section = labkit.app.layout.section( ...
     stylePanner("referenceLineWidth", "Reference line:", ...
         @referenceLineChanged), ...
     stylePanner("axesLineWidth", "Axes line:", ...
-        @axesLineChanged)});
+        @axesLineChanged), ...
+    choice("tickDir", "Tick direction:", ...
+        ["in", "out", "both", "none"], @tickDirChanged), ...
+    choice("boundaryLines", "Top/right frame:", ...
+        ["Off", "On"], @boundaryChanged)});
 end
 
 function node = stylePanner(id, label, callback)
 node = labkit.app.layout.slider(id, Label=label, ...
     Limits=[0.2 20], Step=0.1, ValueDisplayFormat="%.6g", ...
     Bind="project.parameters.style." + id, OnValueChanged=callback);
+end
+
+function node = choice(id, label, choices, callback)
+if id == "tickDir"
+    bind = "session.cache.limitState.tickDir";
+else
+    bind = "project.parameters.boundaryChoice";
+end
+node = labkit.app.layout.field(id, Label=label, Kind="choice", ...
+    Choices=choices, Bind=bind, OnValueChanged=callback);
 end
 
 function state = dataLineChanged(state, ~, ~)
@@ -44,4 +58,12 @@ end
 
 function state = axesLineChanged(state, ~, ~)
 state = figure_studio.styleLibrary.refreshStyle(state, "axesLineWidth");
+end
+
+function state = tickDirChanged(state, ~, callbackContext)
+state = figure_studio.sourceAxes.axisChanged(state, "tickDir", callbackContext);
+end
+
+function state = boundaryChanged(state, ~, ~)
+state = figure_studio.styleLibrary.refreshStyle(state, "boundaryLines");
 end

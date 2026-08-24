@@ -46,6 +46,8 @@ state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
 state.project.annotations.sourceDefaultStyle = sourceStyle;
 state.project.annotations.panelIndex = panelIndex;
 state = adoptSourceStyle(state, sourceStyle);
+state.session.cache.limitState.tickDir = ...
+    string(state.project.parameters.style.tickDirection);
 if strlength(state.project.parameters.outputFolder) == 0
     state.project.parameters.outputFolder = string(fileparts(sourcePath));
 end
@@ -64,9 +66,8 @@ p = state.project.parameters;
 if p.preset == "FIG default"
     p.style = sourceStyle;
     p.aspectPreset = "Source";
-    p.canvasSize = "Source size";
 else
-    [p.style, p.aspectPreset, p.canvasSize] = ...
+    [p.style, p.aspectPreset] = ...
         figure_studio.sourceAxes.applyStandardLayout( ...
         p.style, state.session.cache.plotData);
 end

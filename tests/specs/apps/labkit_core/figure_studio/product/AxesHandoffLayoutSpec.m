@@ -1,5 +1,5 @@
 classdef AxesHandoffLayoutSpec < matlab.unittest.TestCase
-    % AXESHANDOFFLAYOUTSPEC Regression: axes handoff must restore calibrated reference geometry and adapt long labels.
+    % AXESHANDOFFLAYOUTSPEC Regression: axes handoff must restore the publication frame without rewriting labels.
 
     methods (Test, TestTags = {'Contract:product', 'Env:headless'})
         function provesAxesHandoffLayout(testCase)
@@ -17,13 +17,12 @@ classdef AxesHandoffLayoutSpec < matlab.unittest.TestCase
             pbaspect(source, [1.7 1 1]);
 
             [project, dispatch] = figure_studio.launchRequest({"axes", source});
-            standard = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            standard = figure_studio.styleLibrary.styleForPreset("Published figure");
             active = project.parameters.style;
 
             testCase.verifyEmpty(dispatch);
-            testCase.verifyEqual(project.parameters.preset, "LabKit figure");
-            testCase.verifyEqual(project.parameters.aspectPreset, "Reference");
-            testCase.verifyEqual(project.parameters.canvasSize, "900 px");
+            testCase.verifyEqual(project.parameters.preset, "Published figure");
+            testCase.verifyEqual(project.parameters.aspectPreset, "Published");
             testCase.verifyEqual(active.canvasWidth, standard.canvasWidth);
             testCase.verifyEqual(active.canvasHeight, standard.canvasHeight);
             testCase.verifyEqual([active.referenceCanvasWidth ...
@@ -34,8 +33,8 @@ classdef AxesHandoffLayoutSpec < matlab.unittest.TestCase
                 [standard.titleFontSize standard.labelFontSize ...
                 standard.tickFontSize standard.annotationFontSize]);
             testCase.verifyEqual(active.colorOrder, standard.colorOrder);
-            testCase.verifyEqual(active.xTickLabelAngle, "Horizontal");
-            testCase.verifyTrue(active.wrapXTickLabels);
+            testCase.verifyEqual(active.xTickLabelAngle, "Source");
+            testCase.verifyFalse(active.wrapXTickLabels);
             clear cleanup
         end
     end

@@ -2,17 +2,52 @@ classdef FigureStudioSourceSpec < matlab.unittest.TestCase
     %FIGURESTUDIOSOURCESPEC Specify imported axes limits and graphics stacking.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function derivesFiftyPercentLimitControlEnvelopesFromPlotData(testCase)
+        function keepsStoredLimitsWithoutADataDerivedEditingEnvelope(testCase)
             plotData = struct("objects", struct("type", "line", ...
                 "x", [2; 6], "y", [-1; 3]), ...
                 "axes", struct("xLim", [2 6], "yLim", [-1 3]));
 
             limits = figure_studio.sourceAxes.limitControls(plotData);
 
-            testCase.verifyEqual(limits.xRange, [0 8]);
-            testCase.verifyEqual(limits.yRange, [-3 5]);
+            expectedBounds = [-1e100 1e100];
+            testCase.verifyEqual(limits.xRange, expectedBounds);
+            testCase.verifyEqual(limits.yRange, expectedBounds);
             testCase.verifyEqual([limits.xMin limits.xMax], [2 6]);
             testCase.verifyEqual([limits.yMin limits.yMax], [-1 3]);
+        end
+
+        function appliesExplicitLimitsAndAxisPresentation(testCase)
+            plotData = struct("objects", struct("type", "line", ...
+                "x", [2; 6], "y", [-1; 3]), ...
+                "axes", struct("xLim", [2 6], "yLim", [-1 3], ...
+                "xScale", "linear", "yScale", "linear", ...
+                "xDir", "normal", "yDir", "normal", ...
+                "xAxisLocation", "bottom", "yAxisLocation", "left", ...
+                "tickDir", "out", "xMinorTick", "off", ...
+                "yMinorTick", "off", "title", "Original", ...
+                "xLabel", "X", "yLabel", "Y"));
+            controls = figure_studio.sourceAxes.limitControls(plotData);
+            controls.xMin = -100;
+            controls.xDir = "reverse";
+            controls.title = "Edited title";
+            state = editableState(plotData, controls);
+            context = labkittest.createCallbackContext( ...
+                struct("log", @ignoreLog));
+
+            state = figure_studio.sourceAxes.limitChanged( ...
+                state, "xMin", context);
+            state = figure_studio.sourceAxes.axisChanged( ...
+                state, "xDir", context);
+            state = figure_studio.sourceAxes.axisChanged( ...
+                state, "title", context);
+
+            testCase.verifyEqual( ...
+                state.session.cache.plotData.axes.xLim, [-100 6]);
+            testCase.verifyEqual( ...
+                state.session.cache.plotData.axes.xDir, "reverse");
+            testCase.verifyEqual( ...
+                state.session.cache.plotData.axes.title, "Edited title");
+            testCase.verifyEqual(state.session.cache.viewRevision, 4);
         end
 
         function copiesAnImageOverlayStackWithoutChangingTheOrder(testCase)
@@ -71,12 +106,12 @@ classdef FigureStudioSourceSpec < matlab.unittest.TestCase
         end
 
         function standardLayoutRestoresReferenceGeometry(testCase)
-            standard = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            standard = figure_studio.styleLibrary.styleForPreset("Published figure");
             plotData = struct("axes", struct("xTickLabel", ...
                 ["Reference group"; "Treatment group A"; ...
                 "Treatment group B"]));
 
-            [actual, aspect, sizeChoice] = ...
+            [actual, aspect] = ...
                 figure_studio.sourceAxes.applyStandardLayout( ...
                 standard, plotData);
 
@@ -90,14 +125,13 @@ classdef FigureStudioSourceSpec < matlab.unittest.TestCase
                 actual.tickFontSize actual.annotationFontSize], ...
                 [standard.titleFontSize standard.labelFontSize ...
                 standard.tickFontSize standard.annotationFontSize]);
-            testCase.verifyEqual(actual.xTickLabelAngle, "Horizontal");
-            testCase.verifyTrue(actual.wrapXTickLabels);
-            testCase.verifyEqual(aspect, "Reference");
-            testCase.verifyEqual(sizeChoice, "900 px");
+            testCase.verifyEqual(actual.xTickLabelAngle, "Source");
+            testCase.verifyFalse(actual.wrapXTickLabels);
+            testCase.verifyEqual(aspect, "Published");
         end
 
         function standardLayoutPreservesLogarithmicExponentTicks(testCase)
-            standard = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            standard = figure_studio.styleLibrary.styleForPreset("Published figure");
             plotData = struct("axes", struct( ...
                 "xScale", "log", ...
                 "xTickLabel", ["10^{-1}"; "10^{0}"; "10^{1}"; ...
@@ -121,13 +155,25 @@ classdef FigureStudioSourceSpec < matlab.unittest.TestCase
             testCase.verifyEmpty(dispatch);
             testCase.verifyEmpty(project.inputs.sources);
             testCase.verifyNotEmpty(project.annotations.embeddedPlot.objects);
-            testCase.verifyEqual(project.parameters.preset, "LabKit figure");
+            testCase.verifyEqual(project.parameters.preset, "Published figure");
             testCase.verifyTrue(isgraphics(project.annotations.transientSourceAxes, "axes"));
             testCase.verifyError(@() figure_studio.launchRequest({"axes", []}), ...
                 "labkit_FigureStudio_app:InvalidAxes");
             clear cleanup
         end
     end
+end
+
+function state = editableState(plotData, controls)
+project = figure_studio.initialData();
+project.annotations.embeddedPlot = plotData;
+state = struct("project", project, "session", struct( ...
+    "cache", struct("plotData", plotData, "limitState", controls, ...
+        "viewRevision", 1), ...
+    "workflow", struct("status", "")));
+end
+
+function ignoreLog(varargin)
 end
 
 function types = childTypes(axesValue)

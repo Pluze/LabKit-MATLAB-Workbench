@@ -1,8 +1,8 @@
 %GOLDSTANDARD Return the measured visual baseline for one scientific panel.
-% Expected callers: Figure Studio's LabKit preset and its regression tests.
-% The profile is calibrated across nine normalized reference panels. It stores
-% only derived geometry, typography, and stroke measurements; no source image,
-% laboratory data, or external filename is retained.
+% Expected callers: Figure Studio's published-figure preset and its tests.
+% The profile retains the established nine-panel calibration: every reference
+% panel was normalized by its detected axes frame, then typography and strokes
+% were registered in pixels. Only derived measurements are stored here.
 function profile = goldStandard()
 profile = struct( ...
     "canvasWidth", 900, ...

@@ -2,26 +2,13 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
     %FIGURESTUDIORESULTSPEC Specify semantic figure style output.
 
     methods (Test, TestTags = {'Contract:result', 'Env:headless'})
-        function labKitPresetDefinesThePublicationStyleContract(testCase)
-            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
-
-            testCase.verifyEqual([style.canvasWidth style.canvasHeight style.exportScale], ...
-                [900 725 2]);
-            testCase.verifyEqual([style.titleFontSize style.labelFontSize ...
-                style.tickFontSize style.annotationFontSize style.legendFontSize], ...
-                [45 45 45 45 45]);
-            testCase.verifyEqual(style.legendTokenWidth, 100);
-            testCase.verifyFalse(style.gridVisible);
-            testCase.verifyTrue(style.boundaryLines);
-        end
-
         function styleApplicationScalesAxesAndDataLinesWithTheCanvas(testCase)
             cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
             figureValue = figure(Visible="off");
             axesValue = axes(Parent=figureValue);
             lineValue = plot(axesValue, 1:3, [2 4 3]);
             title(axesValue, "Scale probe");
-            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            style = figure_studio.styleLibrary.styleForPreset("Published figure");
             style.canvasWidth = 1800;
             style.canvasHeight = 1450;
 
@@ -33,7 +20,7 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function standardizesSemanticStrokeCategories(testCase)
+        function stylesExplicitStrokeClassesWithoutChangingAuthoredAppearance(testCase)
             cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
             figureValue = figure(Visible="off");
             axesValue = axes(Parent=figureValue);
@@ -43,27 +30,83 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
                 HandleVisibility="off", LineWidth=9);
             comparisonLabel = text(axesValue, 1.5, 3.21, "**", ...
                 HorizontalAlignment="center", VerticalAlignment="bottom");
-            boundary = bar(axesValue, 3, 2.5, LineWidth=9);
+            boundary = bar(axesValue, 3, 2.5, LineWidth=9, ...
+                FaceColor=[.2 .4 .6], EdgeColor=[.1 .2 .3]);
             uncertainty = errorbar(axesValue, 3, 2.5, 0.4, LineWidth=9);
             hold(axesValue, "off");
-            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            originalComparisonPosition = comparisonLabel.Position;
+            axesValue.YLim = [0 3.5];
+            originalLimits = axesValue.YLim;
+            style = figure_studio.styleLibrary.styleForPreset("Published figure");
 
             figure_studio.resultFiles.applyFigureStyle(axesValue, style);
 
             testCase.verifyEqual(data.LineWidth, style.dataLineWidth);
-            testCase.verifyEqual(comparison.LineWidth, ...
-                style.referenceLineWidth);
+            testCase.verifyEqual(comparison.LineWidth, 9);
             testCase.verifyEqual(boundary.LineWidth, ...
                 style.boundaryLineWidth);
-            testCase.verifyEqual(string(boundary.FaceColor), "none");
-            testCase.verifyEqual(string(boundary.EdgeColor), "flat");
-            testCase.verifyEqual(boundary.CData, style.colorOrder(1, :));
+            testCase.verifyEqual(boundary.FaceColor, [.2 .4 .6]);
+            testCase.verifyEqual(boundary.EdgeColor, [.1 .2 .3]);
             testCase.verifyEqual(uncertainty.LineWidth, ...
                 style.uncertaintyLineWidth);
             testCase.verifyEqual(axesValue.LineWidth, style.axesLineWidth);
-            testCase.verifyGreaterThan(comparisonLabel.Position(2), 3.2);
-            testCase.verifyGreaterThan(axesValue.YLim(2), ...
-                comparisonLabel.Position(2));
+            testCase.verifyEqual(comparisonLabel.Position, ...
+                originalComparisonPosition);
+            testCase.verifyEqual(axesValue.YLim, originalLimits);
+            clear cleanup
+        end
+
+        function repeatedStyleApplicationIsIdempotent(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            figureValue = figure(Visible="off");
+            axesValue = axes(Parent=figureValue);
+            axesValue.Units = "pixels";
+            hold(axesValue, "on");
+            data = plot(axesValue, 1:3, [2 4 3], ...
+                Color=[.17 .43 .71], LineStyle="--", Marker="o");
+            boundary = bar(axesValue, 4, 2.5, ...
+                FaceColor=[.63 .77 .82], EdgeColor=[.12 .21 .31]);
+            note = text(axesValue, 2, 4.2, "n = 6");
+            hold(axesValue, "off");
+            title(axesValue, "Repeatable result");
+            xlabel(axesValue, "Condition");
+            ylabel(axesValue, "Response");
+            axesValue.XLim = [-2 8];
+            axesValue.YLim = [-1 7];
+            style = figure_studio.styleLibrary.styleForPreset("Published figure");
+
+            figure_studio.resultFiles.applyFigureStyle(axesValue, style);
+            first = styledSnapshot(figureValue, axesValue, data, boundary, note);
+            figure_studio.resultFiles.applyFigureStyle(axesValue, style);
+            second = styledSnapshot(figureValue, axesValue, data, boundary, note);
+
+            testCase.verifyEqual(second, first);
+            clear cleanup
+        end
+
+        function whitespaceChoiceChangesMarginsWithoutChangingThePlotFrame(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            figureValue = figure(Visible="off");
+            axesValue = axes(Parent=figureValue);
+            axesValue.Units = "pixels";
+            plot(axesValue, 1:4, [1 3 2 4]);
+            xlabel(axesValue, "Horizontal measurement");
+            ylabel(axesValue, "Vertical measurement");
+            style = figure_studio.styleLibrary.styleForPreset( ...
+                "Published figure");
+            style.outerMargin = "Tight";
+
+            figure_studio.resultFiles.applyFigureStyle(axesValue, style);
+            tightFigure = figureValue.InnerPosition(3:4);
+            tightAxes = axesValue.Position(3:4);
+            style.outerMargin = "Generous";
+            figure_studio.resultFiles.applyFigureStyle(axesValue, style);
+            generousFigure = figureValue.InnerPosition(3:4);
+
+            testCase.verifyEqual(axesValue.Position(3:4), tightAxes);
+            testCase.verifyEqual(tightAxes, [900 725], AbsTol=1);
+            testCase.verifyGreaterThan(generousFigure(1), tightFigure(1));
+            testCase.verifyGreaterThan(generousFigure(2), tightFigure(2));
             clear cleanup
         end
 
@@ -75,7 +118,7 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             axesValue.XTick = 1:3;
             axesValue.XTickLabel = {"Reference group", ...
                 "Treatment group A", "Treatment group B"};
-            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            style = figure_studio.styleLibrary.styleForPreset("Published figure");
             style.wrapXTickLabels = true;
 
             figure_studio.resultFiles.applyFigureStyle(axesValue, style);
@@ -105,7 +148,7 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             semilogx(source, logspace(-1, 5), linspace(700, 0, 50));
             pbaspect(source, [1 1 1]);
             plotData = figure_studio.resultFiles.extractAxesData(source);
-            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            style = figure_studio.styleLibrary.styleForPreset("Published figure");
             previewFigure = figure(Visible="off");
             preview = axes(Parent=previewFigure);
             model = struct("plotData", plotData, "sourceAxes", source, ...
@@ -141,6 +184,9 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             rectangle(source, Position=[1.2 1.5 1.5 2]);
             xline(source, 2, "-", "Scientific threshold");
             text(source, 2, 4.8, "annotation");
+            title(source, "$Z_{real}$", Interpreter="latex");
+            xlabel(source, "Z_{imag}", Interpreter="tex");
+            ylabel(source, "Literal_value", Interpreter="none");
             legend(source, "show", Location="northwest", Orientation="horizontal", Box="on");
             path = string(tempname) + ".fig";
             savefig(sourceFigure, path);
@@ -158,6 +204,9 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(rebuilt.Legend);
             testCase.verifyEqual(string(rebuilt.Legend.Location), "northwest");
             testCase.verifyEqual(string(rebuilt.Legend.Orientation), "horizontal");
+            testCase.verifyEqual(string(rebuilt.Title.Interpreter), "latex");
+            testCase.verifyEqual(string(rebuilt.XLabel.Interpreter), "tex");
+            testCase.verifyEqual(string(rebuilt.YLabel.Interpreter), "none");
             rebuilt.Units = "pixels";
             testCase.verifyEqual(rebuilt.Position(3:4), ...
                 round([style.canvasWidth style.canvasHeight]), AbsTol=1);
@@ -209,7 +258,7 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             ylabel(axesValue, "Impedance (ohm)");
 
             figure_studio.resultFiles.applyFigureStyle(axesValue, ...
-                figure_studio.styleLibrary.styleForPreset("LabKit figure"));
+                figure_studio.styleLibrary.styleForPreset("Published figure"));
             axesValue.Units = "pixels";
 
             testCase.verifyEqual(axesValue.Position(3:4), [900 725], AbsTol=1);
@@ -243,4 +292,24 @@ end
 message = sprintf( ...
     "Rendered ink reaches the %s image boundary (%d channel values, span %s).", ...
     name, numel(dark), span);
+end
+
+function snapshot = styledSnapshot(fig, ax, data, boundary, note)
+snapshot = struct( ...
+    "figurePosition", fig.InnerPosition, ...
+    "axesPosition", ax.Position, ...
+    "xLimits", ax.XLim, ...
+    "yLimits", ax.YLim, ...
+    "tickFontSize", ax.FontSize, ...
+    "titleFontSize", ax.Title.FontSize, ...
+    "labelFontSize", ax.XLabel.FontSize, ...
+    "dataLineWidth", data.LineWidth, ...
+    "dataColor", data.Color, ...
+    "dataLineStyle", string(data.LineStyle), ...
+    "dataMarker", string(data.Marker), ...
+    "barLineWidth", boundary.LineWidth, ...
+    "barFaceColor", boundary.FaceColor, ...
+    "barEdgeColor", boundary.EdgeColor, ...
+    "annotationPosition", note.Position, ...
+    "annotationFontSize", note.FontSize);
 end

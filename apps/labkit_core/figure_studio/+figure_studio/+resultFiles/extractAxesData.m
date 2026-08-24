@@ -67,6 +67,10 @@ function meta = axesMetadata(ax)
     meta.xLabel = labelText(ax.XLabel);
     meta.yLabel = labelText(ax.YLabel);
     meta.zLabel = labelText(ax.ZLabel);
+    meta.titleInterpreter = labelInterpreter(ax.Title);
+    meta.xLabelInterpreter = labelInterpreter(ax.XLabel);
+    meta.yLabelInterpreter = labelInterpreter(ax.YLabel);
+    meta.zLabelInterpreter = labelInterpreter(ax.ZLabel);
     meta.xScale = string(ax.XScale);
     meta.yScale = string(ax.YScale);
     meta.zScale = string(ax.ZScale);
@@ -98,6 +102,9 @@ function meta = axesMetadata(ax)
     meta.box = string(ax.Box);
     meta.layer = string(ax.Layer);
     meta.tickDir = string(ax.TickDir);
+    meta.xMinorTick = string(ax.XMinorTick);
+    meta.yMinorTick = string(ax.YMinorTick);
+    meta.zMinorTick = string(ax.ZMinorTick);
     meta.xGrid = string(ax.XGrid);
     meta.yGrid = string(ax.YGrid);
     meta.zGrid = string(ax.ZGrid);
@@ -120,6 +127,13 @@ function meta = axesMetadata(ax)
     catch
         meta.colormap = [];
     end
+end
+
+function value = labelInterpreter(label)
+value = string(optionalValue(label, 'Interpreter'));
+if ~isscalar(value) || ~any(value == ["tex", "latex", "none"])
+    value = "none";
+end
 end
 
 function value = rulerExponent(ax, rulerName)

@@ -1,23 +1,49 @@
-%LIMITCONTROLS Derive editable X/Y limit values and legal data envelopes.
+%LIMITCONTROLS Derive editable X/Y limit values and numeric control bounds.
 % Expected callers are Figure Studio source selection, limit actions, and
-% presentation. The control envelope extends finite visible data by 50%.
+% presentation. Axis limits are presentation choices and are not constrained
+% to the visible data extent.
 function limits = limitControls(plotData)
 %LIMITCONTROLS Build four scalar controls from one portable axes snapshot.
 defaults = struct( ...
     "xMin", -1, "xMax", 1, "yMin", -1, "yMax", 1, ...
-    "xRange", [-2 2], "yRange", [-2 2]);
+    "xRange", numericBounds(), "yRange", numericBounds(), ...
+    "xScale", "linear", "yScale", "linear", ...
+    "xDir", "normal", "yDir", "normal", ...
+    "xAxisLocation", "bottom", "yAxisLocation", "left", ...
+    "tickDir", "out", "xGrid", "off", "yGrid", "off", ...
+    "xMinorTick", "off", "yMinorTick", "off", ...
+    "title", "", "xLabel", "", "yLabel", "");
 if isempty(plotData) || ~isstruct(plotData) || ...
         ~isfield(plotData, "objects")
     limits = defaults;
     return;
 end
 [xData, yData] = visibleCoordinates(plotData.objects);
-[xRange, xValues] = axisLimits(xData, axesValue(plotData, "xLim"));
-[yRange, yValues] = axisLimits(yData, axesValue(plotData, "yLim"));
+xValues = axisLimits(xData, axesValue(plotData, "xLim"));
+yValues = axisLimits(yData, axesValue(plotData, "yLim"));
 limits = struct( ...
     "xMin", xValues(1), "xMax", xValues(2), ...
     "yMin", yValues(1), "yMax", yValues(2), ...
-    "xRange", xRange, "yRange", yRange);
+    "xRange", numericBounds(), "yRange", numericBounds(), ...
+    "xScale", axesChoice(plotData, "xScale", ["linear", "log"], "linear"), ...
+    "yScale", axesChoice(plotData, "yScale", ["linear", "log"], "linear"), ...
+    "xDir", axesChoice(plotData, "xDir", ["normal", "reverse"], "normal"), ...
+    "yDir", axesChoice(plotData, "yDir", ["normal", "reverse"], "normal"), ...
+    "xAxisLocation", axesChoice(plotData, "xAxisLocation", ...
+        ["bottom", "top", "origin"], "bottom"), ...
+    "yAxisLocation", axesChoice(plotData, "yAxisLocation", ...
+        ["left", "right", "origin"], "left"), ...
+    "tickDir", axesChoice(plotData, "tickDir", ...
+        ["in", "out", "both", "none"], "out"), ...
+    "xGrid", axesChoice(plotData, "xGrid", ["off", "on"], "off"), ...
+    "yGrid", axesChoice(plotData, "yGrid", ["off", "on"], "off"), ...
+    "xMinorTick", axesChoice(plotData, "xMinorTick", ...
+        ["off", "on"], "off"), ...
+    "yMinorTick", axesChoice(plotData, "yMinorTick", ...
+        ["off", "on"], "off"), ...
+    "title", axesText(plotData, "title"), ...
+    "xLabel", axesText(plotData, "xLabel"), ...
+    "yLabel", axesText(plotData, "yLabel"));
 end
 
 function [xData, yData] = visibleCoordinates(objects)
@@ -36,13 +62,13 @@ xData = vertcat(xParts{:});
 yData = vertcat(yParts{:});
 end
 
-function [envelope, values] = axisLimits(data, stored)
+function values = axisLimits(data, stored)
 data = finiteReal(data);
-if isempty(data)
-    data = finiteReal(stored);
+values = finitePair(stored);
+if ~isempty(values)
+    return;
 end
 if isempty(data)
-    envelope = [-2 2];
     values = [-1 1];
     return;
 end
@@ -51,16 +77,17 @@ maximum = max(data);
 span = maximum - minimum;
 if span <= eps(max(1, max(abs([minimum maximum]))))
     span = max(1, abs(minimum));
-end
-padding = 0.5 * span;
-envelope = [minimum - padding maximum + padding];
-values = finitePair(stored);
-if isempty(values) || values(1) < envelope(1) || values(2) > envelope(2)
+    values = [minimum - 0.05 * span maximum + 0.05 * span];
+else
     values = [minimum maximum];
-    if values(1) == values(2)
-        values = [minimum - 0.05 * span maximum + 0.05 * span];
-    end
 end
+end
+
+function bounds = numericBounds()
+% Keep the native numeric control finite without imposing a data-derived
+% editing policy. Native spinner arithmetic rejects values near realmax.
+extent = 1e100;
+bounds = [-extent extent];
 end
 
 function value = axesValue(plotData, name)
@@ -68,6 +95,22 @@ value = [];
 if isfield(plotData, "axes") && isstruct(plotData.axes) && ...
         isfield(plotData.axes, name)
     value = plotData.axes.(name);
+end
+end
+
+function value = axesChoice(plotData, name, choices, fallback)
+value = string(axesValue(plotData, name));
+if ~isscalar(value) || ~any(value == choices)
+    value = fallback;
+end
+end
+
+function value = axesText(plotData, name)
+value = string(axesValue(plotData, name));
+if isempty(value)
+    value = "";
+elseif ~isscalar(value)
+    value = join(value, newline);
 end
 end
 

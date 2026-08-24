@@ -28,15 +28,15 @@ p = state.project.parameters;
 if p.preset == "FIG default"
     p.style = sourceStyle;
     p.aspectPreset = "Source";
-    p.canvasSize = "Source size";
 else
-    [p.style, p.aspectPreset, p.canvasSize] = ...
+    [p.style, p.aspectPreset] = ...
         figure_studio.sourceAxes.applyStandardLayout( ...
         p.style, plotData);
 end
 p.gridChoice = onOff(p.style.gridVisible);
 p.boundaryChoice = onOff(p.style.boundaryLines);
 state.project.parameters = p;
+state.session.cache.limitState.tickDir = string(p.style.tickDirection);
 state.project.results.lastExport = [];
 state.project.results.lastOutputPath = "";
 state.session.workflow.status = "Editing " + panelLabel + ".";

@@ -4,7 +4,7 @@
 % none.
 function style = styleForPreset(name)
     if nargin < 1
-        name = "LabKit figure";
+        name = "Published figure";
     end
     style = baseStyle(string(name), [ ...
         0.00 0.00 0.00
@@ -50,6 +50,7 @@ function style = baseStyle(name, colorOrder)
     style.legendTokenWidth = gold.legendTokenWidth;
     style.legendNumColumns = 0;
     style.legendBox = "Off";
+    style.outerMargin = "Balanced";
     style.canvasWidth = gold.canvasWidth;
     style.canvasHeight = gold.canvasHeight;
     style.referenceCanvasWidth = gold.canvasWidth;
