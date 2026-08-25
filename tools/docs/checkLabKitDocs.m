@@ -1,5 +1,5 @@
 function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
-%CHECKLABKITDOCS Verify deterministic HTML generation from structured sources.
+%CHECKLABKITDOCS Verify generated links and deterministic structured output.
 % Expected caller: buildtool docsCheck and project documentation tests.
 % Inputs:
 %   sourceRoot        - documentation source folder containing Markdown pages.
@@ -20,16 +20,18 @@ function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
         existingSiteRoot = tempname;
         referenceCleanup = onCleanup( ...
             @() removeDocFolder(existingSiteRoot));
-        fprintf("DOCS CHECK [1/3] render reference\n");
+        fprintf("DOCS CHECK [1/4] render reference\n");
         renderLabKitDocs(sourceRoot, existingSiteRoot);
     end
 
     generatedRoot = tempname;
     cleanup = onCleanup(@() removeDocFolder(generatedRoot));
-    fprintf("DOCS CHECK [2/3] render candidate\n");
+    fprintf("DOCS CHECK [2/4] render candidate\n");
     result = renderLabKitDocs(sourceRoot, generatedRoot);
     assertAgentInstructionsExcluded(sourceRoot, generatedRoot);
-    fprintf("DOCS CHECK [3/3] compare generated trees\n");
+    fprintf("DOCS CHECK [3/4] validate generated links\n");
+    validateLabKitGeneratedLinks(generatedRoot);
+    fprintf("DOCS CHECK [4/4] compare generated trees\n");
     [matches, diagnostic, count] = compareLabKitDocTrees( ...
         generatedRoot, existingSiteRoot);
     if ~matches

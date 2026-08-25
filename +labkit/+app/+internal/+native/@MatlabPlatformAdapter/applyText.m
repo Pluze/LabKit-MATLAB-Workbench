@@ -6,7 +6,12 @@ function applyText(obj, component, value)
             ~isempty(component.UserData.Status) && ...
             isvalid(component.UserData.Status)
         if component.UserData.Compact
-            component.UserData.Status.Value = char(string(value));
+            status = component.UserData.Status;
+            status.Value = char( ...
+                labkit.app.internal.native.NativeAdapterValues.compactFileLabel(value));
+            if isprop(status, "Tooltip")
+                status.Tooltip = char(string(value));
+            end
         else
             component.UserData.Status.Value = cellstr(string(value));
         end

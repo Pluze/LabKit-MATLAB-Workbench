@@ -27,9 +27,11 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
             htmlEscape(model.title) + "</a>"
         "<div class=""search""><label class=""sr-only"" for=""doc-search-section"">Search section</label>" + ...
             "<select id=""doc-search-section""><option value=""all"">All</option>" + ...
-            "<option value=""apps"">Apps</option><option value=""reference"">API</option>" + ...
-            "<option value=""history"">History</option><option value=""libraries"">Libraries</option>" + ...
-            "<option value=""framework"">Framework</option><option value=""development"">Development</option></select>" + ...
+            "<option value=""start"">Start</option><option value=""apps"">Apps</option>" + ...
+            "<option value=""develop"">Develop</option><option value=""maintain"">Maintain</option>" + ...
+            "<option value=""reference"">Reference</option><option value=""upgrade"">Upgrade</option>" + ...
+            "<option value=""changes"">Changes</option>" + ...
+            "</select>" + ...
             "<label class=""sr-only"" for=""doc-search"">Search documentation</label>" + ...
             "<input id=""doc-search"" type=""search"" placeholder=""Search documentation"" autocomplete=""off"">" + ...
             "<div id=""search-results"" class=""search-results"" hidden></div></div>"
@@ -53,13 +55,14 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
 end
 
 function html = renderTopNavigation(model, outputPath)
-    labels = ["Get Started", "Apps", "Functions", "Framework", ...
-        "Development", "History"];
-    targets = ["getting-started/index.html", "apps/index.html", ...
-        "reference/index.html", "framework/index.html", ...
-        "development/index.html", "history/index.html"];
-    sections = ["getting-started", "apps", "functions", "framework", ...
-        "development", "history"];
+    labels = ["Start", "Apps", "Develop", "Maintain", ...
+        "Reference", "Upgrade", "Changes"];
+    targets = ["start/index.html", "apps/index.html", ...
+        "develop/index.html", "maintain/index.html", ...
+        "reference/index.html", "upgrade/index.html", ...
+        "changes/index.html"];
+    sections = ["start", "apps", "develop", "maintain", ...
+        "reference", "upgrade", "changes"];
     current = navigationSection(model, outputPath);
     links = strings(numel(labels), 1);
     for k = 1:numel(labels)
@@ -151,25 +154,26 @@ function html = renderSectionLinks(model, outputPath, section, apiItem)
     switch section
         case "apps"
             html = renderAppNavigation(pages, currentIndex, outputPath);
-        case "functions"
+        case "reference"
             matches = arrayfun(@(p) ~isempty(p.nav) && ...
-                p.nav(1) == "Libraries", pages);
+                p.nav(1) == "API Reference", pages);
             html = renderPageGroups(pages(matches), outputPath, ...
-                "Libraries", false);
-        case "framework"
+                "Reference", false);
+        case "develop"
             matches = arrayfun(@(p) ~isempty(p.nav) && ...
-                p.nav(1) == "App Framework", pages);
+                p.nav(1) == "Develop", pages);
             html = renderPageGroups(pages(matches), outputPath, ...
-                "Framework Guides", true);
-        case "development"
+                "Develop", true);
+        case "maintain"
             matches = arrayfun(@(p) ~isempty(p.nav) && ...
-                p.nav(1) == "Development", pages);
+                p.nav(1) == "Maintain", pages);
             html = renderPageGroups(pages(matches), outputPath, ...
-                "General", true);
-        case "history"
-            historyIndex = pages(string({pages.id}) == "history");
-            html = renderPageGroups(historyIndex, outputPath, ...
-                "Timeline", false);
+                "Maintain", true);
+        case {"start", "upgrade", "changes"}
+            [title, ~] = sectionLanding(section);
+            matches = arrayfun(@(p) ~isempty(p.nav) && ...
+                p.nav(1) == title, pages);
+            html = renderPageGroups(pages(matches), outputPath, title, true);
         otherwise
             html = "";
     end
@@ -348,7 +352,7 @@ function [title, target, item] = apiOwner(model, outputPath)
         symbol = string(item.symbol);
         if startsWith(symbol, "labkit.app")
             pageIndex = find(string({pages.output}) == ...
-                "framework/app-sdk-api.html", 1);
+                "develop/framework/app-sdk-api.html", 1);
             if ~isempty(pageIndex)
                 title = string(pages(pageIndex).title);
                 target = string(pages(pageIndex).output);
@@ -358,9 +362,6 @@ function [title, target, item] = apiOwner(model, outputPath)
         pageIndex = [];
         best = -1;
         for k = 1:numel(pages)
-            if string(pages(k).kind) == "history"
-                continue;
-            end
             components = string(pages(k).components);
             for iComponent = 1:numel(components)
                 component = components(iComponent);
@@ -401,24 +402,27 @@ end
 
 function [title, target] = sectionLanding(section)
     switch section
-        case "getting-started"
-            title = "Get Started";
-            target = "getting-started/index.html";
+        case "start"
+            title = "Start";
+            target = "start/index.html";
         case "apps"
             title = "Apps";
             target = "apps/index.html";
-        case "functions"
-            title = "Functions";
+        case "reference"
+            title = "Reference";
             target = "reference/index.html";
-        case "framework"
-            title = "Framework";
-            target = "framework/index.html";
-        case "development"
-            title = "Development";
-            target = "development/index.html";
-        case "history"
-            title = "History";
-            target = "history/index.html";
+        case "develop"
+            title = "Develop";
+            target = "develop/index.html";
+        case "maintain"
+            title = "Maintain";
+            target = "maintain/index.html";
+        case "upgrade"
+            title = "Upgrade";
+            target = "upgrade/index.html";
+        case "changes"
+            title = "Changes";
+            target = "changes/index.html";
         otherwise
             title = "";
             target = "";
@@ -428,7 +432,7 @@ end
 function section = navigationSection(model, outputPath)
     [~, ~, apiItem] = apiOwner(model, outputPath);
     if ~isempty(apiItem) && startsWith(string(apiItem.symbol), "labkit.app")
-        section = "framework";
+        section = "develop";
         return;
     end
     section = documentationSection(outputPath);
@@ -436,18 +440,20 @@ end
 
 function section = documentationSection(outputPath)
     outputPath = string(outputPath);
-    if startsWith(outputPath, "getting-started/")
-        section = "getting-started";
+    if startsWith(outputPath, "start/")
+        section = "start";
     elseif startsWith(outputPath, "apps/")
         section = "apps";
-    elseif any(startsWith(outputPath, ["reference/", "libraries/"]))
-        section = "functions";
-    elseif startsWith(outputPath, "framework/")
-        section = "framework";
-    elseif startsWith(outputPath, "development/")
-        section = "development";
-    elseif startsWith(outputPath, "history/")
-        section = "history";
+    elseif startsWith(outputPath, "develop/")
+        section = "develop";
+    elseif startsWith(outputPath, "maintain/")
+        section = "maintain";
+    elseif startsWith(outputPath, "reference/")
+        section = "reference";
+    elseif startsWith(outputPath, "upgrade/")
+        section = "upgrade";
+    elseif startsWith(outputPath, "changes/")
+        section = "changes";
     else
         section = "home";
     end

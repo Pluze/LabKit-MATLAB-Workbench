@@ -2,14 +2,24 @@
   "schema_version": 1,
   "cases": [
     {
-      "prompt": "Move a framework guide, repair inbound history links, and verify the generated documentation site.",
+      "prompt": "Review a long App manual, keep its complete workflow together unless a child topic has an independent reader goal, and verify the generated site after any justified split.",
       "should_activate": true,
-      "rationale": "Documentation topology, history links, and renderer output are in scope."
+      "rationale": "Reader architecture, page types, movement, and renderer output are in scope."
     },
     {
       "prompt": "Add complete public MATLAB help for a new facade function and update its reference page.",
       "should_activate": true,
       "rationale": "Public API reference is an authored documentation contract."
+    },
+    {
+      "prompt": "Prepare user-facing notes for a published LabKit release and keep PR validation evidence out of the public page.",
+      "should_activate": true,
+      "rationale": "Release documentation and fact-lifecycle ownership are in scope."
+    },
+    {
+      "prompt": "Migrate an accepted component change into the new structured change schema, keep its durable rationale with the change, and link the superseding Change chain.",
+      "should_activate": true,
+      "rationale": "Structured changes, supersession relationships, and history migration are documentation architecture work."
     },
     {
       "prompt": "Rename a private MATLAB local variable without changing help or user behavior.",

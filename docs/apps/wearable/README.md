@@ -1,7 +1,13 @@
 # Wearable Apps
 
-Wearable apps read physiological recordings, preserve their time and channel
-information, and provide focused analysis and reporting workflows.
+```labkit-page
+id: apps-wearable
+type: landing
+audience: app-user
+summary: Wearable apps read physiological recordings, preserve their time and channel information, and provide focused analysis and reporting workflows.
+```
+
+Wearable apps read physiological recordings, preserve their time and channel information, and provide focused analysis and reporting workflows.
 
 ## Choose An App
 
@@ -11,14 +17,10 @@ information, and provide focused analysis and reporting workflows.
 
 ## Use Biosignal Functions Directly
 
-The [Biosignal library](../../libraries/biosignal/README.md) provides the same
-building blocks used by ECG Print: recording import, channel selection,
-filtering, peak detection, event-centered segments, template construction, and
-segment measurements. Use those functions when you need a script or batch
-workflow rather than the app.
+The [Biosignal library](../../develop/libraries/biosignal/README.md) provides the same building blocks used by ECG Print: recording import, channel selection, filtering, peak detection, event-centered segments, template construction, and segment measurements. Use those functions when you need a script or batch workflow rather than the app.
 
 ## Related Documentation
 
 - [ECG Print manual](ecg-print/README.md)
-- [Biosignal library](../../libraries/biosignal/README.md)
+- [Biosignal library](../../develop/libraries/biosignal/README.md)
 - [App catalog](../README.md)

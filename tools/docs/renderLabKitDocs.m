@@ -29,9 +29,9 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
     apiPages = renderPublicApiPages(model, stagingRoot);
     reportDocProgress("write assets", 0, 0);
     writeDocText(fullfile(stagingRoot, "assets", "style.css"), ...
-        labKitDocumentationStyle());
+        readDocumentationAsset(repoRoot, "style.css"));
     writeDocText(fullfile(stagingRoot, "assets", "app.js"), ...
-        labKitDocumentationScript());
+        readDocumentationAsset(repoRoot, "app.js"));
     searchEntries = [renderedPages.searchEntries; apiPages.searchEntries];
     searchJson = string(jsonencode(searchEntries));
     writeDocText(fullfile(stagingRoot, "assets", "search-index.json"), searchJson);
@@ -51,6 +51,15 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
         "sourceRoot", string(sourceRoot), ...
         "outputRoot", string(outputRoot));
     reportDocProgress("complete", result.fileCount, result.fileCount);
+end
+
+function content = readDocumentationAsset(repoRoot, name)
+    source = fullfile(repoRoot, "tools", "docs", "assets", name);
+    if ~isfile(source)
+        error("LabKit:Docs:MissingAsset", ...
+            "Documentation asset does not exist: %s", source);
+    end
+    content = string(fileread(source));
 end
 
 function folder = absoluteDocFolder(folder, createIfMissing)
@@ -79,14 +88,14 @@ function output = renderNarrativePages(model, stagingRoot)
             body = body + apiLinksBody;
             plainText = plainText + " " + apiLinksText;
         end
-        [historyBody, ~] = renderLabKitHistoryLinks(model, page);
-        body = body + historyBody;
-        body = body + renderLabKitHistorySequenceNavigation(model, page);
+        [changeBody, ~] = renderLabKitChangeLinks(model, page);
+        body = body + changeBody;
         html = renderLabKitPage(model, page.title, page.output, ...
-            page.kind, body);
+            page.type, body);
         writeDocText(fullfile(stagingRoot, page.output), html);
         entries(k, 1) = searchEntry(page.title, page.output, ...
-            page.kind, page.keywords, plainText);
+            page.type, page.keywords, page.summary + " " + plainText, ...
+            page.audience, page.authority, page.components);
         if mod(k, 25) == 0 || k == total
             reportDocProgress("narrative pages", k, total);
         end
@@ -114,16 +123,25 @@ function output = renderPublicApiPages(model, stagingRoot)
     output = struct("searchEntries", entries);
 end
 
-function entry = searchEntry(title, url, kind, keywords, text)
+function entry = searchEntry(title, url, kind, keywords, text, ...
+        audience, authority, components)
+    if nargin < 6
+        audience = "";
+        authority = "current";
+        components = strings(0, 1);
+    end
     entry = struct("title", char(title), "url", char(url), ...
         "kind", char(kind), "section", char(searchSection(url, kind)), ...
+        "audience", char(audience), "authority", char(authority), ...
+        "components", char(normalizeSearchText(components)), ...
         "keywords", char(normalizeSearchText(keywords)), ...
         "text", char(normalizeSearchText(text)));
 end
 
 function entry = emptySearchEntry()
     entry = struct("title", "", "url", "", "kind", "", ...
-        "section", "", "keywords", "", "text", "");
+        "section", "", "audience", "", "authority", "", ...
+        "components", "", "keywords", "", "text", "");
 end
 
 function text = normalizeSearchText(text)
@@ -140,20 +158,20 @@ end
 function section = searchSection(url, kind)
     url = string(url);
     kind = string(kind);
-    if kind == "history" || startsWith(url, "history/")
-        section = "history";
-    elseif kind == "reference" || startsWith(url, "reference/")
+    if kind == "reference" || startsWith(url, "reference/")
         section = "reference";
     elseif startsWith(url, "apps/")
         section = "apps";
-    elseif startsWith(url, "framework/")
-        section = "framework";
-    elseif startsWith(url, "libraries/")
-        section = "libraries";
-    elseif startsWith(url, "development/")
-        section = "development";
-    elseif startsWith(url, "getting-started/")
-        section = "getting-started";
+    elseif startsWith(url, "develop/")
+        section = "develop";
+    elseif startsWith(url, "maintain/")
+        section = "maintain";
+    elseif startsWith(url, "start/")
+        section = "start";
+    elseif startsWith(url, "upgrade/")
+        section = "upgrade";
+    elseif startsWith(url, "changes/")
+        section = "changes";
     else
         section = "general";
     end

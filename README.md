@@ -84,16 +84,16 @@ component history.
 | I want to | Go to |
 | --- | --- |
 | Browse the complete documentation | [LabKit documentation site](https://pluze.github.io/LabKit-MATLAB-Workbench/) |
-| Install or update LabKit | [Getting Started](https://pluze.github.io/LabKit-MATLAB-Workbench/getting-started/) |
+| Install or update LabKit | [Start](https://pluze.github.io/LabKit-MATLAB-Workbench/start/) |
 | Open LabKit or pick an app | [App catalog](https://pluze.github.io/LabKit-MATLAB-Workbench/apps/) |
 | Understand launcher buttons, commands, and history | [LabKit Launcher](https://pluze.github.io/LabKit-MATLAB-Workbench/apps/labkit-core/launcher/) |
 | Report a problem or ask for workflow support | [.github/SUPPORT.md](.github/SUPPORT.md) |
 | Call a public LabKit function | [docs/reference/README.md](docs/reference/README.md) |
-| Change source code or run checks | [docs/development/maintain-and-release/testing.md](docs/development/maintain-and-release/testing.md) |
-| Call packaging, profiling, codecheck, or documentation tools | [docs/development/tools/README.md](docs/development/tools/README.md) |
-| Understand package and app boundaries | [docs/development/build-apps/architecture.md](docs/development/build-apps/architecture.md) |
-| Build local private apps outside the public repo | [docs/development/maintain-and-release/private-apps.md](docs/development/maintain-and-release/private-apps.md) |
-| Prepare a public release | [docs/development/maintain-and-release/release.md](docs/development/maintain-and-release/release.md) |
+| Change source code or run checks | [Testing](docs/maintain/testing.md) |
+| Call packaging, profiling, codecheck, or documentation tools | [Maintainer tools](docs/maintain/tools/README.md) |
+| Understand package and App boundaries | [Architecture](docs/develop/app-authoring/architecture.md) |
+| Build local private Apps outside the public repo | [Private Apps](docs/maintain/private-apps.md) |
+| Prepare a public release | [Release](docs/maintain/release.md) |
 
 ## Development
 
@@ -105,7 +105,7 @@ cd LabKit-MATLAB-Workbench
 buildtool headless
 ```
 
-See [Testing](docs/development/maintain-and-release/testing.md) for the supported build tasks and GUI
+See [Testing](docs/maintain/testing.md) for the supported build tasks and GUI
 validation limits.
 
 ## Project Shape
@@ -121,7 +121,7 @@ Apps are the deliverables. Shared code moves into `+labkit` only when it is
 domain-neutral, app-facing, tested, and useful beyond one workflow.
 
 Source checkouts may also use an ignored `private_apps/` workspace for local
-private app development. See [Private apps](docs/development/maintain-and-release/private-apps.md) for
+private app development. See [Private apps](docs/maintain/private-apps.md) for
 the generic structure; private app details belong in the private app repository.
 
 ## Citation

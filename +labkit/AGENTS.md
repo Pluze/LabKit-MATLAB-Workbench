@@ -5,16 +5,16 @@ than the apps that consume it.
 
 ## Read before editing
 
-Read `docs/development/build-apps/architecture.md`, the affected source and
+Read `docs/develop/app-authoring/architecture.md`, the affected source and
 tests, and the one owning manual:
 
-- UI: `docs/framework/README.md`
-- image: `docs/libraries/image/README.md`
-- thermal: `docs/libraries/thermal/README.md`
-- DTA: `docs/libraries/dta/README.md`
-- RHS: `docs/libraries/rhs/README.md`
-- biosignal: `docs/libraries/biosignal/README.md`
-- Mark-10: `docs/libraries/mark10/README.md`
+- UI: `docs/develop/framework/README.md`
+- image: `docs/develop/libraries/image/README.md`
+- thermal: `docs/develop/libraries/thermal/README.md`
+- DTA: `docs/develop/libraries/dta/README.md`
+- RHS: `docs/develop/libraries/rhs/README.md`
+- biosignal: `docs/develop/libraries/biosignal/README.md`
+- Mark-10: `docs/develop/libraries/mark10/README.md`
 
 Library behavior specifications mirror the package below
 `tests/specs/labkit/<area>/`.
@@ -117,8 +117,9 @@ Use `labkittest.explain` to find the exact owner and contract.
   declaration. `Example:` blocks are executable; file-dependent sketches use
   `Typical Call:`.
 - Private helpers document caller, shapes, side effects, and assumptions.
-- An app-facing facade change updates its `version.m`, owning manual, and one
-  component history record before its task-branch PR is merge-ready.
+- An app-facing facade change updates its `version.m`, current owning manual,
+  and one lightweight structured change record before its task-branch PR is
+  merge-ready.
 
 ## Validation
 
@@ -126,4 +127,4 @@ Use `labkittest.run(File=...)` to select the affected `labkit/<area>` owner and
 add downstream app-family or hidden-GUI coverage when the app-facing contract
 can change. Package boundary and public-surface changes also run project
 guardrails. Exact commands belong in
-`docs/development/maintain-and-release/testing.md`.
+`docs/maintain/testing.md`.

@@ -18,13 +18,15 @@ class AuditPrTest(unittest.TestCase):
     def test_resolves_existing_facade_manual(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
-            manual = root / "docs" / "libraries" / "mark10" / "README.md"
+            manual = (
+                root / "docs" / "develop" / "libraries" / "mark10" / "README.md"
+            )
             manual.parent.mkdir(parents=True)
             manual.write_text("# Mark-10\n", encoding="utf-8")
 
             self.assertEqual(
                 MODULE.owning_manual(root, "labkit.mark10", "+labkit/+mark10"),
-                "docs/libraries/mark10/README.md",
+                "docs/develop/libraries/mark10/README.md",
             )
 
     def test_does_not_invent_missing_facade_manual(self):

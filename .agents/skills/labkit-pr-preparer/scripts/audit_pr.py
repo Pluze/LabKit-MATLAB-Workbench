@@ -48,12 +48,12 @@ def metadata(source: str | None, name: str) -> str:
 
 def owning_manual(root: pathlib.Path, component: str, owner: str) -> str | None:
     if component == "labkit.app":
-        return "docs/framework/README.md"
+        return "docs/develop/framework/README.md"
     if component == "labkit_launcher":
         return "docs/apps/labkit-core/launcher/README.md"
     if component.startswith("labkit."):
         area = component.removeprefix("labkit.")
-        manual = root / "docs" / "libraries" / area / "README.md"
+        manual = root / "docs" / "develop" / "libraries" / area / "README.md"
         if manual.is_file():
             return manual.relative_to(root).as_posix()
         return None
@@ -96,28 +96,28 @@ def main() -> int:
         if before and after and before != after:
             transitions.append((after[0], owner, before[1], after[1]))
 
-    histories = []
+    changes = []
     for path in paths:
-        if not path.startswith("docs/history/records/") or not path.endswith(".md"):
+        if not policy.is_change_record_path(path):
             continue
         base_source = git_text(base_sha, path)
         source = git_text(head_sha, path)
         if (
             base_source is not None
             and source is not None
-            and policy.parse_history_components(base_source)
-            == policy.parse_history_components(source)
+            and policy.parse_change_components(base_source)
+            == policy.parse_change_components(source)
         ):
             continue
-        histories.append(
+        changes.append(
             (
-                metadata(source, "sequence"),
+                metadata(source, "date"),
                 metadata(source, "id"),
                 path,
-                policy.parse_history_components(source),
+                policy.parse_change_components(source),
             )
         )
-    histories.sort(key=lambda item: int(item[0]) if item[0].isdigit() else 10**9)
+    changes.sort(key=lambda item: (item[0], item[1], item[2]))
 
     print("# PR boundary")
     print(f"- Base: `{base_sha}` ({args.base})")
@@ -130,7 +130,7 @@ def main() -> int:
     for component, owner, before, after in transitions:
         records = sorted(
             path
-            for _, _, path, entries in histories
+            for _, _, path, entries in changes
             if any(
                 entry == (component, before, after)
                 for entry in entries
@@ -144,20 +144,20 @@ def main() -> int:
         )
         print(
             f"- `{component}`: `{before} -> {after}` via `{owner}`; "
-            f"history: {record}; manual: {manual_status}"
+            f"Change: {record}; manual: {manual_status}"
         )
 
-    print("\n# Changed history records")
-    if not histories:
+    print("\n# Changed Change records")
+    if not changes:
         print("- None")
-    for sequence, change_id, path, entries in histories:
+    for date, change_id, path, entries in changes:
         components = ", ".join(
             f"{component} ({before} -> {after})"
             if before else component
             for component, before, after in entries
         ) or "no components"
         print(
-            f"- sequence {sequence or '?'} `{change_id or '?'}`: `{path}`; "
+            f"- {date or '?'} `{change_id or '?'}`: `{path}`; "
             f"{components}"
         )
 

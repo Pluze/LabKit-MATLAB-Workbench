@@ -1,10 +1,13 @@
 # Image Measurement Apps
 
-The Image Measurement family turns image and video data into repeatable crops,
-calibrated measurements, thermal readings, fused images, appearance pipelines,
-and landmark coordinates. Scientific and workflow-specific choices remain
-app-owned; generic image IO and primitives come from `labkit.image` and
-`labkit.thermal`.
+```labkit-page
+id: apps-image-measurement
+type: landing
+audience: app-user
+summary: Choose an image or video workflow for cropping, calibrated measurement, thermal analysis, fusion, enhancement, matching, or landmark annotation.
+```
+
+The Image Measurement family turns image and video data into repeatable crops, calibrated measurements, thermal readings, fused images, appearance pipelines, and landmark coordinates. Scientific and workflow-specific choices remain app-owned; generic image IO and primitives come from `labkit.image` and `labkit.thermal`.
 
 ## Choose An App
 
@@ -20,28 +23,17 @@ app-owned; generic image IO and primitives come from `labkit.image` and
 
 ## Shared Interaction Conventions
 
-Managed points, rectangles, scale references, and overlays remain editable
-without resetting the current zoom. A new source or project may start at a home
-view; ordinary marker placement, dragging, ROI resizing, and annotation refresh
-preserve the user's viewport. Canvas subtitles and action labels describe the
-active interaction mode.
+Managed points, rectangles, scale references, and overlays remain editable without resetting the current zoom. A new source or project may start at a home view; ordinary marker placement, dragging, ROI resizing, and annotation refresh preserve the user's viewport. Canvas subtitles and action labels describe the active interaction mode.
 
-Image coordinates use `[x y]` with `x` as column and `y` as row. Rectangle
-geometry uses `[x y width height]` unless a linked API states that it accepts
-two corners. Calibrated measurements always retain the pixel-domain source
-geometry needed for audit.
+Image coordinates use `[x y]` with `x` as column and `y` as row. Rectangle geometry uses `[x y width height]` unless a linked API states that it accepts two corners. Calibrated measurements always retain the pixel-domain source geometry needed for audit.
 
 ## Numeric And Display Boundaries
 
-Display palettes, axes zoom, overlay opacity, marker appearance, and preview
-downsampling do not change scientific arrays. Crop geometry, scale
-calibration, thermal conversion, fusion parameters, enhancement steps, and
-coordinate transforms do affect output and remain App-owned runtime or export
-meaning.
+Display palettes, axes zoom, overlay opacity, marker appearance, and preview downsampling do not change scientific arrays. Crop geometry, scale calibration, thermal conversion, fusion parameters, enhancement steps, and coordinate transforms do affect output and remain App-owned runtime or export meaning.
 
 ## Related Modules
 
-- [Image Library](../../libraries/image/README.md)
-- [Thermal Library](../../libraries/thermal/README.md)
-- [App Framework interactions](../../framework/README.md)
+- [Image Library](../../develop/libraries/image/README.md)
+- [Thermal Library](../../develop/libraries/thermal/README.md)
+- [App Framework interactions](../../develop/framework/README.md)
 - [All Apps](../README.md)

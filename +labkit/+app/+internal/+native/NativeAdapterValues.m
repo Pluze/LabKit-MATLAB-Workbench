@@ -617,6 +617,16 @@ classdef (Sealed, Hidden) NativeAdapterValues
         labels = reshape(labels, 1, []);
         end
 
+        function label = compactFileLabel(path)
+        path = string(path);
+        if ~isscalar(path) || strlength(path) == 0
+            label = path;
+            return
+        end
+        [~, base, extension] = fileparts(char(path));
+        label = string(base) + string(extension);
+        end
+
         function height = estimatedControlHeight(text, charsPerLine, maxLines, minimum)
         text = string(text);
         if isempty(text)

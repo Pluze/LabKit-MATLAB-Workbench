@@ -3,13 +3,14 @@ function model = loadLabKitDocumentation(repoRoot, sourceRoot)
 
     apps = discoverPublicApps(repoRoot, sourceRoot);
     pages = discoverNarrativePages(sourceRoot, apps);
-    historyPages = discoverHistoryPages(sourceRoot);
-    pages = [pages; historyPages];
     assertUnique(string({pages.id}), "page id");
     assertUnique(string({pages.source}), "page source");
     assertUnique(string({pages.output}), "page output");
     [~, order] = sortrows([[pages.order].', string({pages.title}).']);
     pages = pages(order);
+    changes = discoverLabKitChanges(pages);
+    pages = applyChangePageContracts(pages, changes);
+    assertUnique(string({pages.id}), "page id");
 
     libraryApi = discoverLabKitPublicApi(repoRoot);
     appApi = discoverAppPublicApi(repoRoot, apps);
@@ -25,7 +26,7 @@ function model = loadLabKitDocumentation(repoRoot, sourceRoot)
         "repositoryUrl", repositoryUrl, ...
         "pages", pages, ...
         "apps", apps, ...
-        "history", historyPages, ...
+        "changes", changes, ...
         "api", api);
 end
 
@@ -63,9 +64,6 @@ function pages = discoverNarrativePages(sourceRoot, apps)
         filepath = string(fullfile(entries(k).folder, entries(k).name));
         source = replace(extractAfter(filepath, string(sourceRoot) + filesep), ...
             filesep, "/");
-        if startsWith(source, "history/records/")
-            continue;
-        end
         sourceCount = sourceCount + 1;
         sources(sourceCount, 1) = source;
     end
@@ -75,20 +73,89 @@ function pages = discoverNarrativePages(sourceRoot, apps)
         source = sources(k);
         filepath = string(fullfile(sourceRoot, source));
         text = string(fileread(filepath));
+        validateMarkdownLineStyle(text, source);
         title = markdownTitle(text, source);
         [id, output, kind, nav, components] = ...
             narrativeIdentity(source, apps);
+        pageType = kind;
+        metadata = parseLabKitPageMetadata(text, source);
+        if kind == "change"
+            if metadata.present
+                error("LabKit:Docs:RedundantPageMetadata", ...
+                    "Typed Change page must not contain labkit-page metadata: %s", source);
+            end
+        elseif ~metadata.present
+            error("LabKit:Docs:MissingPageMetadata", ...
+                "Current narrative page must contain one immediate labkit-page block: %s", source);
+        end
+        if metadata.present
+            id = metadata.id;
+            pageType = metadata.type;
+        end
         raw = struct( ...
             "id", id, ...
             "source", source, ...
             "output", output, ...
             "title", title, ...
             "kind", kind, ...
+            "type", pageType, ...
             "nav", nav, ...
             "order", double(k), ...
-            "keywords", [pathWords(source); title], ...
-            "components", components);
+            "keywords", [pathWords(source); title; metadata.audience; ...
+                metadata.authority], ...
+            "components", components, ...
+            "audience", metadata.audience, ...
+            "authority", metadata.authority, ...
+            "summary", metadata.summary);
         pages(k) = validatePage(raw, sourceRoot);
+    end
+end
+
+function validateMarkdownLineStyle(text, source)
+    lines = splitlines(text);
+    fenceMarker = "";
+    previous = "blank";
+    for k = 1:numel(lines)
+        line = lines(k);
+        stripped = strip(line);
+        if strlength(fenceMarker) > 0
+            if stripped == fenceMarker
+                fenceMarker = "";
+            end
+            continue;
+        end
+        marker = string(regexp(char(stripped), ...
+            '^(`{3,}|~{3,})', 'match', 'once'));
+        if strlength(marker) > 0
+            fenceMarker = marker;
+            previous = "literal";
+            continue;
+        end
+        if strlength(stripped) == 0
+            previous = "blank";
+            continue;
+        end
+        listItem = ~isempty(regexp(char(line), ...
+            '^\s*(?:[-+*]|\d+[.)])\s', 'once'));
+        literal = ~isempty(regexp(char(line), ...
+            ['^\s*(?:#{1,6}\s|[-+*]\s|\d+[.)]\s|\||>|' ...
+             '<!--|-->|<[/]?(?:details|summary)|\[[^]]+\]:\s|' ...
+             '[-*_](?:\s*[-*_]){2,}\s*$)'], 'once')) || ...
+            startsWith(line, "    ") || startsWith(line, sprintf('\t'));
+        if literal
+            if listItem
+                previous = "list";
+            else
+                previous = "literal";
+            end
+            continue;
+        end
+        if previous == "prose" || previous == "list"
+            error("LabKit:Docs:WrappedMarkdownProse", ...
+                ["Markdown prose uses a physical line wrap at line %d; " ...
+                 "write one physical line per paragraph: %s"], k, source);
+        end
+        previous = "prose";
     end
 end
 
@@ -136,10 +203,11 @@ function [id, output, kind, nav, components] = ...
 
     appIndex = find(string({apps.source}) == source, 1);
     familyIndex = find(string({apps.familySource}) == source, 1);
+    appFolderIndex = find(arrayfun(@(app) ...
+        startsWith(source, erase(string(app.source), "README.md")), apps), 1);
     if ~isempty(appIndex)
         app = apps(appIndex);
         id = "app-" + string(app.id);
-        output = string(app.output);
         kind = "app";
         nav = ["Apps"; string(app.familyTitle)];
         components = string(app.command);
@@ -148,13 +216,17 @@ function [id, output, kind, nav, components] = ...
         id = "app-family-" + string(app.family);
         kind = "app family";
         nav = ["Apps"; string(app.familyTitle)];
+    elseif ~isempty(appFolderIndex)
+        app = apps(appFolderIndex);
+        nav = ["Apps"; string(app.familyTitle); string(app.id)];
+        components = string(app.command);
     elseif source == "README.md"
         id = "home";
         kind = "overview";
-    elseif source == "getting-started/README.md"
-        id = "getting-started";
+    elseif source == "start/README.md"
+        id = "start";
         kind = "tutorial";
-        nav = "Getting Started";
+        nav = "Start";
         components = "labkit_launcher";
     elseif source == "apps/README.md"
         id = "apps";
@@ -165,43 +237,92 @@ function [id, output, kind, nav, components] = ...
         output = "reference/index.html";
         kind = "reference";
         nav = "API Reference";
-    elseif source == "framework/README.md"
+    elseif source == "develop/framework/README.md"
         id = "framework";
         kind = "explanation";
-        nav = "App Framework";
+        nav = ["Develop"; "Framework"];
         components = "labkit.app";
-    elseif startsWith(source, "framework/")
-        group = pathGroup(source, "framework");
+    elseif startsWith(source, "develop/framework/")
+        group = pathGroup(source, "develop/framework");
         if group == "Guides"
             group = "Framework Guides";
         elseif group == "Compatibility"
             group = "Framework Compatibility";
         end
-        nav = ["App Framework"; group];
+        nav = ["Develop"; "Framework"; group];
         components = frameworkComponents(source);
-    elseif source == "history/README.md"
-        id = "history";
-        kind = "history index";
-        nav = "History";
-    elseif source == "development/README.md"
-        id = "development";
+    elseif source == "changes/README.md"
+        nav = "Changes";
+    elseif startsWith(source, "changes/")
+        nav = "Changes";
+        kind = "change";
+    elseif source == "develop/README.md"
+        id = "develop";
         kind = "overview";
-        nav = "Development";
-    elseif startsWith(source, "development/")
-        nav = ["Development"; pathGroup(source, "development")];
-    elseif startsWith(source, "libraries/")
-        nav = "Libraries";
+        nav = "Develop";
+    elseif startsWith(source, "develop/libraries/")
+        nav = ["Develop"; "Libraries"];
         kind = "reference";
         parts = split(source, "/");
-        if numel(parts) > 1
-            components = "labkit." + replace(parts(2), "-", ".");
+        if numel(parts) > 2
+            components = "labkit." + replace(parts(3), "-", ".");
         end
+    elseif startsWith(source, "develop/")
+        nav = ["Develop"; pathGroup(source, "develop")];
+    elseif source == "maintain/README.md"
+        nav = "Maintain";
+    elseif startsWith(source, "maintain/")
+        nav = ["Maintain"; pathGroup(source, "maintain")];
+    elseif source == "upgrade/README.md"
+        nav = "Upgrade";
+    elseif startsWith(source, "upgrade/")
+        nav = "Upgrade";
     elseif source == "apps/labkit-core/launcher/README.md"
         id = "launcher";
         kind = "app manual";
         nav = ["Apps"; "LabKit Core"];
         components = "labkit_launcher";
     end
+end
+
+function pages = applyChangePageContracts(pages, changes)
+    for record = changes.'
+        index = find(string({pages.source}) == record.source, 1);
+        if isempty(index)
+            error("LabKit:Docs:MissingChangePage", ...
+                "Change record has no narrative page: %s", record.source);
+        end
+        pages(index).id = "change-" + extractAfter(record.id, "CHG-");
+        pages(index).authority = "change";
+        pages(index).type = "change";
+        pages(index).audience = changeAudience(record);
+        pages(index).components = changeComponentIds(record.components);
+        pages(index).summary = pages(index).title;
+        pages(index).keywords = [pages(index).keywords; record.id; ...
+            record.date; record.changeType; record.compatibility; ...
+            record.components; record.supersedes];
+    end
+end
+
+function audience = changeAudience(record)
+    if any(record.changeType == ["ci", "test", "chore"])
+        audience = "maintainer";
+        return;
+    end
+    components = changeComponentIds(record.components);
+    if any(endsWith(components, "_app"))
+        audience = "app-user";
+    else
+        audience = "app-developer";
+    end
+end
+
+function ids = changeComponentIds(values)
+    ids = strings(numel(values), 1);
+    for k = 1:numel(values)
+        ids(k) = strip(extractBefore(values(k) + " |", " |"));
+    end
+    ids = unique(ids, "stable");
 end
 
 function group = pathGroup(source, root)
@@ -242,18 +363,28 @@ end
 
 function page = validatePage(raw, sourceRoot)
     requireFields(raw, ["id", "source", "output", "title", ...
-        "kind", "nav", "order", "keywords"], "page");
+        "kind", "type", "nav", "order", "keywords"], "page");
     page = emptyPage();
     page.id = scalarText(raw.id, "id");
     page.source = normalizedRelativePath(scalarText(raw.source, "source"));
     page.output = normalizedRelativePath(scalarText(raw.output, "output"));
     page.title = scalarText(raw.title, "title");
     page.kind = scalarText(raw.kind, "kind");
+    page.type = scalarText(raw.type, "type");
     page.nav = stringList(raw.nav);
     page.order = double(raw.order);
     page.keywords = stringList(raw.keywords);
     if isfield(raw, "components")
         page.components = stringList(raw.components);
+    end
+    if isfield(raw, "audience")
+        page.audience = string(raw.audience);
+    end
+    if isfield(raw, "authority")
+        page.authority = string(raw.authority);
+    end
+    if isfield(raw, "summary")
+        page.summary = string(raw.summary);
     end
     page.sourcePath = string(fullfile(sourceRoot, page.source));
     if ~isfile(page.sourcePath)
@@ -272,77 +403,10 @@ end
 
 function page = emptyPage()
     page = struct("id", "", "source", "", "sourcePath", "", ...
-        "output", "", "title", "", "kind", "", ...
+        "output", "", "title", "", "kind", "", "type", "", ...
         "nav", strings(0, 1), "order", 0, ...
         "keywords", strings(0, 1), "components", strings(0, 1), ...
-        "historyId", "", "historyDate", "", "historySequence", NaN, ...
-        "changeType", "", ...
-        "compatibility", "");
-end
-
-function pages = discoverHistoryPages(sourceRoot)
-    entries = dir(fullfile(sourceRoot, "history", "records", "**", "*.md"));
-    pages = repmat(emptyPage(), numel(entries), 1);
-    for k = 1:numel(entries)
-        filepath = string(fullfile(entries(k).folder, entries(k).name));
-        source = replace(extractAfter(filepath, string(sourceRoot) + filesep), ...
-            filesep, "/");
-        record = parseLabKitHistoryRecord(fileread(filepath), source);
-        historyId = record.id;
-        historyDate = record.date;
-        historySequence = record.sequence;
-        changeType = record.type;
-        compatibility = record.compatibility;
-        componentLines = record.components;
-        components = strings(numel(componentLines), 1);
-        for iLine = 1:numel(componentLines)
-            token = regexp(componentLines(iLine), ...
-                '^`([^`]+)`', "tokens", "once");
-            if isempty(token)
-                error("LabKit:Docs:InvalidHistory", ...
-                    "History page has malformed component metadata: %s", source);
-            end
-            components(iLine, 1) = string(token{1});
-        end
-        raw = struct( ...
-            "id", "history-" + historyId, ...
-            "source", source, ...
-            "output", erase(source, ".md") + ".html", ...
-            "title", record.title, ...
-            "kind", "history", ...
-            "nav", strings(0, 1), ...
-            "order", 1000, ...
-            "keywords", [historyId; historyDate; string(historySequence); ...
-                changeType; compatibility; components; record.scopes], ...
-            "components", unique(components, "stable"));
-        page = validatePage(raw, sourceRoot);
-        page.historyId = historyId;
-        page.historyDate = historyDate;
-        page.historySequence = historySequence;
-        page.changeType = changeType;
-        page.compatibility = compatibility;
-        pages(k) = page;
-    end
-    if isempty(pages)
-        return;
-    end
-    assertUnique(string({pages.historyId}), "history Change ID");
-    sequences = [pages.historySequence].';
-    assertUnique(string(sequences), "history sequence");
-    expected = (1:numel(pages)).';
-    if ~isequal(sort(sequences), expected)
-        error("LabKit:Docs:InvalidHistorySequence", ...
-            "History sequence values must contain every integer from 1 to %d.", ...
-            numel(pages));
-    end
-    [~, chronologicalOrder] = sort(sequences);
-    chronologicalDates = string({pages(chronologicalOrder).historyDate}).';
-    if ~isequal(chronologicalDates, sort(chronologicalDates))
-        error("LabKit:Docs:InvalidHistorySequence", ...
-            "History sequence must not move backward across record dates.");
-    end
-    [~, order] = sort(sequences, "descend");
-    pages = pages(order);
+        "audience", "", "authority", "", "summary", "");
 end
 
 function apps = discoverPublicApps(repoRoot, sourceRoot)
@@ -402,7 +466,7 @@ function apps = discoverPublicApps(repoRoot, sourceRoot)
             "familyTitle", char(familyTitle), ...
             "folder", char(relativeFolder), ...
             "source", char(source), ...
-            "output", char("apps/" + family + "/" + id + ".html"), ...
+            "output", char("apps/" + family + "/" + id + "/index.html"), ...
             "familySource", char(familySource), ...
             "description", char(string(catalog.Description(k))));
     end

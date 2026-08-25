@@ -1,13 +1,13 @@
 ---
 name: labkit-pr-preparer
-description: "Use for final LabKit task-branch integration into main: audit the complete squash diff, consolidate versions and history, run the final local gate, and prepare the PR record. Ordinary branch iteration routes to labkit-checkpoint-guard."
+description: "Use for final LabKit task-branch integration into main: audit the complete squash diff, consolidate versions and Change records, run the final local gate, and prepare the PR record. Ordinary branch iteration routes to labkit-checkpoint-guard."
 ---
 
 # LabKit PR Preparer
 
 Treat `origin/main..HEAD` as one proposed squash result. Read repository and
-changed-component rules, release/testing/history contracts, and the PR template.
-Use `labkit-documentation-maintainer` for history and
+changed-component rules, release/testing/Change contracts, and the PR template.
+Use `labkit-documentation-maintainer` for Change records and
 `labkit-test-planner` for the final local gate.
 
 ## Establish the boundary
@@ -20,7 +20,7 @@ reused merged branch, a misaligned delivery stream, an already frozen different
 head, or inseparable local work. Never merge main into the task branch, create
 a sync commit, force-push, or rewrite commits without explicit approval.
 
-Run the bundled inventory before changing versions or history:
+Run the bundled inventory before changing versions or Change records:
 
 ```bash
 python3 .agents/skills/labkit-pr-preparer/scripts/audit_pr.py \
@@ -36,12 +36,13 @@ python3 .agents/skills/labkit-pr-preparer/scripts/audit_pr.py \
   migration branches, and release metadata. Distinguish unrelated components
   that happen to use the same numeric version; do not perform a blind global
   replacement.
-- Leave one coherent changed history record per versioned component; combine a
+- Leave one coherent changed Change record per versioned component; combine a
   cross-component decision and remove intermediate checkpoint narration.
 - Align final version, updated date, Change ID date, manual, rationale,
   compatibility, evidence, and follow-up with the net diff.
-- Preserve published mainline history identity and decision content while
-  repairing stale links to moved or retired current documentation.
+- Preserve accepted mainline Change identity and decision content. Current
+  documentation uses only current destinations; do not create route aliases or
+  repair retired URLs.
 
 Inspect this judgment manually even when inventory automation passes.
 
@@ -49,7 +50,7 @@ Inspect this judgment manually even when inventory automation passes.
 
 Run integration policy for the actual refs, repair authored links, then run
 `changedFast` exactly once for the final tree. Inspect the complete diff,
-sensitive data, versions, history, manuals, evidence, and native/manual gaps.
+sensitive data, versions, Change records, manuals, evidence, and native/manual gaps.
 Fill the repository PR template, normalize it with
 `.github/scripts/normalize_github_markdown.py`, push the final checkpoint, open
 or update the PR, and freeze its task branch. Keep one physical line per prose
@@ -81,6 +82,6 @@ this order:
 Do not recycle a merged branch or leave a completed task's worktree, local
 branch, or remote branch as normal residue.
 
-Report base/head, final transitions and history, evidence, PR/CI/review state,
+Report base/head, final transitions and Change records, evidence, PR/CI/review state,
 manual checks, data hygiene, worktree/local-branch/remote-branch cleanup,
 primary-main alignment, and blockers.

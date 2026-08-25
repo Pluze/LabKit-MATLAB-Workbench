@@ -7,7 +7,7 @@ function html = renderLabKitApiBody(model, item, outputPath)
     [ownerTitle, ownerTarget] = ownerPage(model, item);
     if startsWith(string(item.symbol), "labkit.app")
         contextTitle = "Framework";
-        contextTarget = "framework/index.html";
+        contextTarget = "develop/framework/index.html";
     else
         contextTitle = "API Reference";
         contextTarget = "reference/index.html";
@@ -319,7 +319,7 @@ function [title, target] = ownerPage(model, item)
         symbol = string(item.symbol);
         if startsWith(symbol, "labkit.app")
             index = find(string({pages.output}) == ...
-                "framework/app-sdk-api.html", 1);
+                "develop/framework/app-sdk-api.html", 1);
             if ~isempty(index)
                 title = string(pages(index).title);
                 target = string(pages(index).output);
@@ -329,9 +329,6 @@ function [title, target] = ownerPage(model, item)
         candidates = false(numel(pages), 1);
         specificity = zeros(numel(pages), 1);
         for k = 1:numel(pages)
-            if string(pages(k).kind) == "history"
-                continue;
-            end
             components = string(pages(k).components);
             for iComponent = 1:numel(components)
                 component = components(iComponent);

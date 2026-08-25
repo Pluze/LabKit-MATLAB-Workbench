@@ -18,6 +18,8 @@ function node = fileList(id, varargin)
 %   SelectionMode - "single" or "multiple" for both the native file chooser
 %       and list-row selection. Multi-file collections use "multiple"; a
 %       single semantic input normally combines "single" with MaxFiles=1.
+%       Its compact path surface wraps the complete filename and retains the
+%       absolute path in hover text.
 %       Default: "multiple".
 %   MaxFiles - Positive scalar or Inf. Default: Inf.
 %   ShowStatus - Logical status visibility. Default: true.

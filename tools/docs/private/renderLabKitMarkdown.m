@@ -17,13 +17,15 @@ function [html, plainText] = renderLabKitMarkdown(model, page)
         trimmed = strtrim(line);
         if inCode
             if startsWith(trimmed, "```")
-                outputCount = outputCount + 1;
-                output(outputCount, 1) = "<pre><code class=""language-" + ...
-                    htmlEscape(codeLanguage) + """>" + ...
-                    htmlEscape(strjoin(codeLines(1:codeLineCount), newline)) + "</code></pre>";
-                destination = plainCount + (1:codeLineCount);
-                plain(destination, 1) = codeLines(1:codeLineCount);
-                plainCount = plainCount + codeLineCount;
+                if ~startsWith(codeLanguage, "labkit-")
+                    outputCount = outputCount + 1;
+                    output(outputCount, 1) = "<pre><code class=""language-" + ...
+                        htmlEscape(codeLanguage) + """>" + ...
+                        htmlEscape(strjoin(codeLines(1:codeLineCount), newline)) + "</code></pre>";
+                    destination = plainCount + (1:codeLineCount);
+                    plain(destination, 1) = codeLines(1:codeLineCount);
+                    plainCount = plainCount + codeLineCount;
+                end
                 inCode = false;
                 codeLineCount = 0;
             else

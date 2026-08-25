@@ -6,9 +6,9 @@ function [html, plainText] = renderLabKitPageApiLinks(model, page)
 
     api = model.api;
     matches = false(numel(api), 1);
-    if page.output == "framework/app-sdk-api.html"
+    if page.output == "develop/framework/app-sdk-api.html"
         matches = startsWith(string({api.symbol}).', "labkit.app");
-    elseif startsWith(page.id, "app-") && ~startsWith(page.id, "app-family-")
+    elseif page.kind == "app"
         owner = replace(extractAfter(page.id, "app-"), "-", "_");
         matches = string({api.origin}).' == "app" & ...
             string({api.owner}).' == owner;
@@ -27,7 +27,7 @@ function [html, plainText] = renderLabKitPageApiLinks(model, page)
     end
     [~, order] = sort(string({items.symbol}));
     items = items(order);
-    if page.output == "framework/app-sdk-api.html"
+    if page.output == "develop/framework/app-sdk-api.html"
         [html, plainText] = renderAppSdkGroups(items, page.output);
         return;
     end
@@ -42,14 +42,15 @@ function [html, plainText] = renderLabKitPageApiLinks(model, page)
         words(k) = string(items(k).symbol) + " " + summary;
     end
     heading = "Functions And API";
-    if page.output == "framework/app-sdk-api.html"
+    if page.output == "develop/framework/app-sdk-api.html"
         heading = "Complete App SDK API";
     end
     html = "<section class=""page-api-links""><h2 id=""functions-and-api"">" + ...
         heading + "</h2><p>Open a function for exact MATLAB syntax, " + ...
-        "arguments, outputs, behavior, and source.</p><table class=""api-table"">" + ...
+        "arguments, outputs, behavior, and source.</p><div class=""table-wrap"">" + ...
+        "<table class=""api-table"">" + ...
         "<thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody>" + ...
-        strjoin(rows, "") + "</tbody></table></section>";
+        strjoin(rows, "") + "</tbody></table></div></section>";
     plainText = strjoin(words, " ");
 end
 
@@ -97,8 +98,9 @@ function [html, words] = apiTable(items, outputPath)
             htmlEscape(summary) + "</td></tr>";
         words(k) = string(items(k).symbol) + " " + summary;
     end
-    html = "<table class=""api-table""><thead><tr><th>Function</th><th>Purpose</th>" + ...
-        "</tr></thead><tbody>" + strjoin(rows, "") + "</tbody></table>";
+    html = "<div class=""table-wrap""><table class=""api-table"">" + ...
+        "<thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody>" + ...
+        strjoin(rows, "") + "</tbody></table></div>";
 end
 
 function label = displayGroup(group)

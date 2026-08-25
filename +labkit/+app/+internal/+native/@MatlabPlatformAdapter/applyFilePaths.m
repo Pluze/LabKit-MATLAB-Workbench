@@ -28,7 +28,12 @@ function applyFilePaths(~, component, paths)
         end
     end
     if component.UserData.Compact
-        component.UserData.Status.Value = char(string(text));
+        status = component.UserData.Status;
+        status.Value = char( ...
+            labkit.app.internal.native.NativeAdapterValues.compactFileLabel(text));
+        if isprop(status, "Tooltip")
+            status.Tooltip = char(string(text));
+        end
     else
         component.UserData.Status.Value = cellstr(string(text));
     end

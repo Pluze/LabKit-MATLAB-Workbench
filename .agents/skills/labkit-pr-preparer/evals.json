@@ -7,7 +7,7 @@
       "rationale": "This explicitly requests the task-branch integration workflow."
     },
     {
-      "prompt": "Audit the existing task-branch PR to main, consolidate versions and history, and update its review record.",
+      "prompt": "Audit the existing task-branch PR to main, consolidate versions and Change records, and update its review record.",
       "should_activate": true,
       "rationale": "Reviewing and making the integration PR coherent is in scope."
     },
