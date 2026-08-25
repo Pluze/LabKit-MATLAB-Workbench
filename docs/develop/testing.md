@@ -74,6 +74,12 @@ Contracts describe evidence, not test cost:
 
 Environments are `headless`, `hidden-gui`, and `path-isolated`. Headless tests do not prove GUI behavior. Hidden-GUI conformance proves that an App can build its declared layout; it does not prove native dialogs, pointer feel, visual quality, real lab data, or scientific review. The path-isolated conformance probes every public App from a reset path boundary in the already running catalog executor. It retains the deployable path boundary and batches all App results without requiring a second concurrent MATLAB license.
 
+## Assertion Boundaries
+
+Assert the smallest producer-owned value: a returned field, record, event, identifier, artifact, or observable state transition. Diagnostic presentation is not a substitute for that contract. If a console record matters, identify it by a stable semantic marker, assert its multiplicity and fields, and attach the complete captured output as the assertion diagnostic. Do not count every newline or nonblank line in an `evalc` transcript; ambient warnings and runner diagnostics are not part of the record unless its supported interface says otherwise. Require an exact complete transcript only when that text is itself a supported user or developer interface.
+
+When an unexpected console line causes a failure, retain its content before assigning a cause. A platform or MATLAB-version correlation is evidence about where the symptom appeared, not proof that the runtime produced it.
+
 ## Build Tasks
 
 Use stable Build tasks for branch and CI gates:

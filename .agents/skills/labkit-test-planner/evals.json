@@ -17,6 +17,11 @@
       "rationale": "Fixture ownership and retirement are part of validation architecture."
     },
     {
+      "prompt": "This CI test counts every nonblank evalc line and failed after one additional line appeared. Diagnose the owned contract and make the assertion stable without hiding duplicate product records.",
+      "should_activate": true,
+      "rationale": "Distinguishing semantic output contracts from ambient diagnostics is test-planning work."
+    },
+    {
       "prompt": "Improve the wording of one documentation paragraph without running MATLAB tests.",
       "should_activate": false,
       "rationale": "A documentation-only edit is owned by documentation checks."
