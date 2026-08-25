@@ -29,6 +29,15 @@ current output rather than the migration project or intermediate shape that
 introduced it. Before adding a narrow regression, first extend an existing
 owner-level behavior proof when that preserves a clear failure identity.
 
+Assert producer-owned values, records, events, identifiers, and artifacts
+before diagnostic presentation. When console output is itself relevant,
+select the owned record by a stable semantic marker and assert that record's
+count and fields. Do not infer behavior from the total newline count, nonblank
+line count, or complete `evalc` transcript unless the exact transcript is the
+supported interface. Attach captured output as a failure diagnostic so CI
+preserves the unexpected content; do not attribute an unknown extra line to a
+runtime, platform, or framework without that evidence.
+
 Place a rule that applies uniformly to every App in `apps/conformance/`, or at
 the narrowest family root when it truly applies to that whole family. Do not
 copy the same guard into individual Apps, because that both duplicates upkeep

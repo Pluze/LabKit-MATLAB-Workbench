@@ -1,5 +1,5 @@
 function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
-%CHECKLABKITDOCS Verify generated links and deterministic structured output.
+%CHECKLABKITDOCS Verify deterministic documentation compiler output.
 % Expected caller: buildtool docsCheck and project documentation tests.
 % Inputs:
 %   sourceRoot        - documentation source folder containing Markdown pages.
@@ -20,19 +20,22 @@ function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
         existingSiteRoot = tempname;
         referenceCleanup = onCleanup( ...
             @() removeDocFolder(existingSiteRoot));
-        fprintf("DOCS CHECK [1/4] render reference\n");
+        fprintf("DOCS CHECK [1/3] render reference\n");
         renderLabKitDocs(sourceRoot, existingSiteRoot);
+        candidateStage = "[2/3]";
+        compareStage = "[3/3]";
+    else
+        candidateStage = "[1/2]";
+        compareStage = "[2/2]";
     end
 
     generatedRoot = tempname;
     cleanup = onCleanup(@() removeDocFolder(generatedRoot));
-    fprintf("DOCS CHECK [2/4] render candidate\n");
+    fprintf("DOCS CHECK %s render candidate\n", candidateStage);
     result = renderLabKitDocs(sourceRoot, generatedRoot);
     assertAgentInstructionsExcluded(sourceRoot, generatedRoot);
-    fprintf("DOCS CHECK [3/4] validate generated links\n");
-    validateLabKitGeneratedLinks(generatedRoot);
-    fprintf("DOCS CHECK [4/4] compare generated trees\n");
-    [matches, diagnostic, count] = compareLabKitDocTrees( ...
+    fprintf("DOCS CHECK %s compare validated generated trees\n", compareStage);
+    [matches, diagnostic, count] = compareGeneratedTrees( ...
         generatedRoot, existingSiteRoot);
     if ~matches
         if compareIndependentRenders
@@ -47,6 +50,40 @@ function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
     if compareIndependentRenders
         clear referenceCleanup
     end
+end
+
+function [matches, diagnostic, comparedCount] = ...
+        compareGeneratedTrees(leftRoot, rightRoot)
+    left = listLabKitDocTreeFiles(leftRoot);
+    right = listLabKitDocTreeFiles(rightRoot);
+    comparedCount = numel(left);
+    if ~isequal(left, right)
+        matches = false;
+        diagnostic = "generated file lists differ";
+        return;
+    end
+    for k = 1:numel(left)
+        leftBytes = readBytes(fullfile(leftRoot, left(k)));
+        rightBytes = readBytes(fullfile(rightRoot, right(k)));
+        if ~isequal(leftBytes, rightBytes)
+            matches = false;
+            diagnostic = "content differs for " + left(k);
+            return;
+        end
+    end
+    matches = true;
+    diagnostic = "";
+end
+
+function bytes = readBytes(filepath)
+    fid = fopen(filepath, "r");
+    if fid < 0
+        bytes = uint8.empty(0, 1);
+        return;
+    end
+    cleanup = onCleanup(@() fclose(fid));
+    bytes = fread(fid, Inf, "*uint8");
+    clear cleanup
 end
 
 function assertAgentInstructionsExcluded(sourceRoot, generatedRoot)

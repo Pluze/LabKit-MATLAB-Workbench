@@ -42,6 +42,8 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
         "window.LABKIT_SEARCH_INDEX = " + searchJson + ";");
     writeDocText(fullfile(stagingRoot, ".nojekyll"), "");
 
+    reportDocProgress("validate output", 0, 0);
+    validateLabKitGeneratedSite(stagingRoot, model);
     reportDocProgress("synchronize output", 0, 0);
     syncLabKitDocTree(stagingRoot, outputRoot);
     clear cleanup
@@ -83,24 +85,13 @@ function output = renderNarrativePages(model, stagingRoot)
     for k = 1:numel(model.pages)
         page = model.pages(k);
         [body, plainText] = renderLabKitMarkdown(model, page);
-        if page.id == "api"
-            [apiIndexBody, apiIndexText] = renderLabKitApiIndex(model, page.output);
-            body = body + apiIndexBody;
-            plainText = plainText + " " + apiIndexText;
-        else
-            [apiLinksBody, apiLinksText] = renderLabKitPageApiLinks(model, page);
-            body = body + apiLinksBody;
-            plainText = plainText + " " + apiLinksText;
-        end
-        if page.id == "changes"
-            [overviewBody, overviewText] = ...
-                renderLabKitChangesOverview(model, page.output);
-            body = body + overviewBody;
-            plainText = plainText + " " + overviewText;
-        end
-        [changeBefore, changeAfter, ~] = ...
-            renderLabKitChangeLinks(model, page);
+        [apiBody, apiText] = renderLabKitApiCatalog(model, page);
+        body = body + apiBody;
+        plainText = plainText + " " + apiText;
+        [changeBefore, changeAfter, changeText] = ...
+            renderLabKitChangeContent(model, page);
         body = insertAfterTitle(body, changeBefore) + changeAfter;
+        plainText = plainText + " " + changeText;
         html = renderLabKitPage(model, page.title, page.output, ...
             page.type, body);
         writeDocText(fullfile(stagingRoot, page.output), html);
@@ -124,7 +115,7 @@ function output = renderPublicApiPages(model, stagingRoot)
         body = renderLabKitApiBody(model, item, outputPath);
         page = struct("source", "", "output", outputPath, ...
             "components", apiComponents(model, item));
-        [~, changeAfter, ~] = renderLabKitChangeLinks(model, page);
+        [~, changeAfter, ~] = renderLabKitChangeContent(model, page);
         body = body + changeAfter;
         html = renderLabKitPage(model, item.symbol, outputPath, ...
             "reference", body);

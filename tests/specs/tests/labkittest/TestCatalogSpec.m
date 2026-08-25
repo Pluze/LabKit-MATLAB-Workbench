@@ -538,8 +538,8 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string({result.Descriptors.Contracts}), ...
                 ["scientific", "result", "presentation", "system"]);
             testCase.verifyEqual(numel(unique(string({result.Descriptors.Id}))), 4);
-            outputLines = splitlines(string(output));
-            testCase.verifyEqual(nnz(strlength(strip(outputLines)) > 0), 1);
+            testCase.verifyEqual(count(string(output), ...
+                "LabKit changed plan:"), 1, output);
             testCase.verifySubstring(output, "paths=2");
             testCase.verifySubstring(output, "evidence-owners=4");
             testCase.verifySubstring(output, "contract-queries=4");

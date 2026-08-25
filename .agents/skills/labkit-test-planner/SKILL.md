@@ -29,6 +29,12 @@ then hidden-GUI structure, and finally one bounded App workflow when lower
 layers cannot prove the contract. Hidden GUI does not prove native dialog,
 visual quality, pointer feel, real-data suitability, or scientific validity.
 
+Apply the output-assertion boundary in `tests/AGENTS.md`. During failure
+diagnosis, preserve the captured transcript, identify the producer-owned value
+or record, and rerun the smallest evidence after moving the assertion to that
+semantic boundary. Do not assign an extra line to a runtime, platform, or
+framework until the retained diagnostic supports that cause.
+
 Use host permission for MATLAB, hidden figures for batch GUI work, and minimal
 owner-local inputs. A fixture exists only for an automated behavior proof:
 keep a single-owner builder beside its specification, share it under an

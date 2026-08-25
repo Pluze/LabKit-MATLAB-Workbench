@@ -7,7 +7,7 @@ audience: maintainer
 summary: Build, verify, and maintain LabKit documentation through its three public MATLAB documentation tools.
 ```
 
-LabKit uses three public MATLAB entry points for its documentation sources and generated site. `renderLabKitDocs` builds and synchronizes the site; `checkLabKitDocs` verifies generated internal links and deterministic output across independent builds; `maintainLabKitDocLinks` checks or repairs standard relative Markdown links. Path-organized Markdown and MATLAB help blocks are the authored sources.
+LabKit uses three public MATLAB entry points for its documentation sources and generated site. `renderLabKitDocs` compiles and validates a complete temporary site before synchronizing it; `checkLabKitDocs` compares independently validated renders for determinism; `maintainLabKitDocLinks` checks or repairs standard relative Markdown links. Path-organized Markdown and MATLAB help blocks are the authored sources.
 
 ## Maintain Links
 
@@ -38,7 +38,9 @@ Empty or omitted roots default to `docs/` and `site/` beneath the current LabKit
 
 The default `site/` folder is ignored by Git. Generate it when local offline reading or presentation inspection is useful; GitHub Actions independently generates the deployed site from `main`.
 
-Rendering discovers every Markdown page, public App, typed Change record, and complete public help contract. It also generates the structural documentation map and Change indexes by component and year from that validated model. It first creates a complete temporary tree, then creates `outputRoot` when absent, copies new or changed files, deletes obsolete generated files and empty directories, and preserves the output root itself. Every eligible Markdown page is included automatically, and no duplicated navigation catalog exists in this model.
+Rendering discovers every Markdown page, public App, typed Change record, and complete public help contract. It generates API catalogs, current-to-Change relationships, the structural documentation map, and Change indexes by component and year from that validated model. It then validates the entire temporary output before creating or changing `outputRoot`; only a valid tree is synchronized, obsolete generated files and empty directories are removed, and the output root itself is preserved. Every eligible Markdown page and public API is included automatically, so handwritten global catalogs do not own coverage.
+
+The output gate rejects missing pages, duplicate HTML IDs, missing landmarks, invalid heading order, empty semantic tables, broken links or fragments, pages unreachable from Home, incomplete search or map coverage, and public APIs without a current narrative entry point. This gate runs for both `docs` and `docsCheck`, so an incomplete site cannot be published merely because two builds reproduce the same mistake.
 
 ## Verify The Generated Site
 
@@ -48,7 +50,7 @@ result = checkLabKitDocs(sourceRoot)
 result = checkLabKitDocs(sourceRoot, existingSiteRoot)
 ```
 
-Without an existing site argument, the check renders to two independent temporary folders, rejects generated internal links that leave the site or name missing output, and compares generated file paths and bytes. Supplying an existing site compares one independently validated render with that folder. A broken link raises `LabKit:Docs:GeneratedLinkEscapesSite` or `LabKit:Docs:BrokenGeneratedLink`; a difference raises `LabKit:Docs:StaleGeneratedSite`. The result otherwise includes `comparedFileCount` in addition to the renderer result fields.
+Without an existing site argument, the check renders two independently validated temporary folders and compares generated file paths and bytes. Supplying an existing site compares one independently validated render with that folder. Semantic failures use focused `LabKit:Docs:*` identifiers such as `DuplicateGeneratedId`, `BrokenGeneratedAnchor`, `UnreachableGeneratedPage`, `IncompleteApiCatalog`, and `InvalidSearchCoverage`; a byte or file-list difference raises `LabKit:Docs:StaleGeneratedSite`. The result otherwise includes `comparedFileCount` in addition to the renderer result fields.
 
 ## Build Tasks
 
@@ -59,7 +61,7 @@ buildtool docs
 buildtool docsCheck
 ```
 
-Use `docs` when sources changed and `docsCheck` when validation must prove generated links resolve and the renderer is deterministic. Never track or edit files under `site/` manually.
+Use `docs` for a validated local site and `docsCheck` when delivery evidence must additionally prove deterministic output. Never track or edit files under `site/` manually.
 
 ## Related Documentation
 

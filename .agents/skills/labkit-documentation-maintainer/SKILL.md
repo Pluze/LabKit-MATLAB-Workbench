@@ -5,70 +5,73 @@ description: "Use for LabKit documentation architecture, reader content, public 
 
 # LabKit Documentation Maintainer
 
-Read the root and docs rules, affected manual or help, renderer source, and
-focused tests. Read the documentation tooling manual for page contracts and
-renderer behavior, and the release manual when release output changes. Read an
-active `.agents/migration_guide.md` when the affected area is listed there.
+Read the root and docs rules, the affected current manual and MATLAB help,
+relevant source and tests, and the documentation tooling manual. Read the
+release manual only when published release output changes and an active
+`.agents/migration_guide.md` only when it owns the affected migration.
 
-Apply `docs/AGENTS.md` as the reader, fact-owner, page-type, API, scientific,
-movement, style, and generated-site contract. Documentation pressure does not
-justify a public API; use `labkit-boundary-guard` when discoverability exposes
-an ownership question.
+Apply `docs/AGENTS.md` as the reader, fact-owner, page, movement, style, and
+generated-site contract. Documentation pressure does not justify a public API;
+use `labkit-boundary-guard` when discoverability exposes a package boundary.
 
-## Workflow
+## Classify source impact
 
-1. Name the reader, supported outcome, page type, fact authority, component,
-   and version before adding or moving content.
-2. Inspect current code, tests, source help, and authoritative external
-   evidence for every behavioral or scientific claim. Treat old prose as a
-   question source, not proof.
-3. Place each fact once: current behavior in a manual or help, an accepted
-   logical change in a change record, a published version summary in GitHub
-   Releases, and delivery evidence in the pull request or CI record. Keep the
-   accepted rationale with the change it explains.
-4. Start from the owning page contract. Keep one stable topic per page and one
-   complete manual per App by default. Split only when the child has an
-   independent reader goal, enough content to stand alone, and a stable
-   destination.
-5. Design the reader path separately from source ownership and use one axis at
-   the top level. Preserve Use for running LabKit and App manuals, Develop for
-   the complete source lifecycle, Reference for exact lookup, and Changes for
-   accepted rationale. Keep bounded local context and semantic cross-links;
-   generate maps and Change browse views from the model.
-6. Keep each prose paragraph on one physical source line. Never reflow prose
-   to a column width or split it sentence by sentence; preserve semantic
-   Markdown lines for list items, table rows, quotes, and literal blocks.
-7. Change authored sources, metadata, renderer code, or source assets; never
-   edit generated `site/` output.
-8. When moving or deleting a page, update live internal links and launcher
-   destinations, then remove the old source and route. Do not add redirects,
-   aliases, archived site copies, or legacy navigation.
-9. When a route or component relationship changes, verify the complete reader
-   loop: Launcher or section landing to current guide, current guide to API or
-   Change, and Change back to current documentation. Keep hand-authored related
-   links only for relationships the renderer cannot derive.
-10. Run the smallest page-contract and renderer regression, then deterministic
-   `docsCheck`. Render the ignored local site when reading or visual inspection
-   can expose presentation errors.
-11. Inspect representative HTML at desktop and mobile widths when layout,
-   navigation, tables, long symbols, search, or interaction changes.
+Compare the accepted base and result, then classify every changed user workflow,
+App, public symbol, schema, error, default, output, and compatibility contract:
 
-Write one lightweight change record for an accepted logical change that a
-user or developer may need to understand without Git. Keep it to why, what
-changed, impact, and compatibility or limits; summarize net behavior rather
-than commit order. Do not create a local release page; link the authoritative
-GitHub Release when a reader needs a published version summary. Put the problem, constraints, accepted choice, and
-relevant rejected alternatives in the Change record's Why section. When a
-later Change replaces an earlier choice, link it with `supersedes`. Remove
-obsolete current guidance instead of keeping route-compatible archives.
+- **Create** when the result adds a supported reader goal, App, public API, or
+  schema. Add the current manual or help owner and verify generated discovery.
+- **Update** when an existing supported fact changes. Edit its current owner;
+  do not create a parallel page for an implementation move.
+- **Retire** when a supported surface disappears. Remove obsolete current prose,
+  routes, links, and catalog ownership; link a current replacement when one
+  exists and keep only durable rationale in a Change.
+- **No current-doc change** only after verifying that behavior, public contracts,
+  discovery, compatibility, and every documented fact remain unchanged. Record
+  the conclusion in the PR, not in a manual.
 
-Use repository GitHub templates for public artifacts. Express release notes as
-user-visible behavior, compatibility, and required action. Keep exact commands,
-hashes, test inventories, CI details, and internal movement in the PR or
-workflow record.
+Inspect an App definition, version, current manual, public App APIs, affected UI
+labels and tests together. Inspect a facade's complete public help, consumers,
+module guide, version, and generated catalog together. Renames and moves use the
+accepted public result: update live destinations and delete the former route;
+never add redirects, aliases, archives, or retired navigation.
 
-Use `labkit-agent-governance` when documentation rules, this Skill, its evals,
-or the migration ledger change. Use `labkit-test-planner` only when validation
-extends beyond documentation ownership. Report authoritative fact homes,
-authored sources, removed content and routes, contract and renderer evidence,
-visual checks, deployment state when applicable, and remaining manual review.
+## Maintain the reader system
+
+1. Name the primary reader, outcome, page type, fact authority, component, and
+   compatibility before writing.
+2. Establish behavioral and scientific claims from current source, tests, and
+   authoritative external evidence. Old prose is a question source, not proof.
+3. Place each fact once: supported behavior in current manuals or help, accepted
+   rationale in one Change, a published version summary in GitHub Releases, and
+   delivery evidence in the PR or workflow record.
+4. Keep one complete App manual by default. Split only for an independent reader
+   goal with enough substance and a stable destination.
+5. Preserve the Use, Develop, Reference, and Changes intent routes. Verify the
+   full reader loop from landing or Launcher to current guidance, exact API or
+   Change, and back to affected current guidance.
+6. Edit authored Markdown, MATLAB help, metadata, renderer components, or source
+   assets only. Never edit generated `site/` output.
+7. Keep prose paragraphs on one physical source line and preserve Markdown
+   structure for headings, list items, table rows, quotes, and literal blocks.
+
+Create one Change only when an accepted logical change has rationale, impact,
+compatibility, or limits a reader should understand without Git. Use its four
+canonical sections and `supersedes` only when the new choice replaces an older
+choice. Do not create local release summaries or copy validation inventories,
+hashes, commands, CI mechanics, or implementation chronology into reader docs.
+
+## Verify
+
+Run the smallest source/help/page contract first, then `buildtool docsCheck`.
+The renderer must reject missing outputs, duplicate IDs, malformed landmarks or
+tables, broken links or anchors, unreachable pages, incomplete search/map/API
+coverage, and nondeterministic output. Render the ignored site and inspect
+representative desktop and mobile pages when layout, navigation, tables, long
+symbols, search, or interaction changes.
+
+Use `labkit-agent-governance` when rules, this Skill, its metadata/evals, or the
+migration ledger changes. Use `labkit-test-planner` only when evidence extends
+beyond documentation ownership. Report created, updated, and retired owners and
+routes; verified no-doc conclusions; renderer and visual evidence; deployment
+state; and remaining manual review.

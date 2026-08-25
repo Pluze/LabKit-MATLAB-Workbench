@@ -1,6 +1,6 @@
 function summary = writeAnnotatedVideo(videoPath, outputPath, annotations, skeleton, progressFcn)
 %WRITEANNOTATEDVIDEO Render a complete video with landmark overlays.
-% Syntax:
+% Usage:
 %   summary = video_marker.resultFiles.writeAnnotatedVideo( ...
 %       videoPath, outputPath, annotations, skeleton)
 %   summary = video_marker.resultFiles.writeAnnotatedVideo( ...

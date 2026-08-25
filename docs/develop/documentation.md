@@ -192,18 +192,26 @@ Markdown + MATLAB help + launcher metadata
                               |
                         source adapters
                               |
-                    normalized struct model
+                 validated normalized model
                               |
-                         validators
+              semantic page-content components
                               |
-                    page-type components
+                  complete temporary site
                               |
-             HTML + assets + search + site manifest
+                whole-site semantic validator
+                              |
+                synchronized generated output
 ```
 
 Source adapters parse one source contract each. The normalized model contains pages, sections, components, API symbols, Changes, versions, and search documents. Keep it as validated MATLAB structs; do not introduce a class hierarchy.
 
-Rendering components own the shared shell, intent navigation, breadcrumbs, bounded local navigation, page outlines, Markdown nodes, API definitions, callouts, responsive tables, generated maps and Change indexes, relationship links, and footer. CSS and JavaScript are authored source assets under `tools/docs/assets/`, not large MATLAB string literals.
+`renderLabKitDocs` is only the compiler coordinator: load the model, render narrative and API pages, generate derived indexes, write assets and search, validate the complete temporary site, and synchronize a valid result. Semantic components decide whether they apply from the normalized page contract. The coordinator does not contain page-specific route strings or stale feature switches.
+
+The renderer keeps a small set of cohesive owners instead of one monolith or a directory of one-off fragments. `renderLabKitMarkdown` owns authored Markdown nodes; `renderLabKitApiBody` owns one exact function page; `renderLabKitApiCatalog` owns every generated current-page API table; `renderLabKitChangeContent` owns Change facts, browse views, and current/history relationships; `renderLabKitGeneratedIndexes` owns the structural map and bounded Change indexes; and `renderLabKitPage` owns the common shell. Shared filesystem, route, and text helpers remain separate only when several compiler stages consume the same contract.
+
+The complete-site validator is part of rendering, not an optional later lint. It checks output coverage, one main landmark and level-one title, unique IDs, heading order, nonempty semantic tables, links and fragments, reachability from Home, search coverage, the documentation map, and public API discovery before any destination is synchronized. `checkLabKitDocs` adds an independent second render and byte comparison to prove determinism.
+
+Add a renderer component only for a distinct reader-visible output contract. Extend an existing component when it already owns the semantic surface; keep local helpers local, merge proven single-consumer fragments with their owner, and do not create packages or layers that merely relocate the same branching. Every generated promise must have a model-derived assertion in the complete-site validator so a stable but incomplete build cannot be published.
 
 Search records include title, summary, headings, audience, page type, authority, component, version, keywords, and MATLAB symbol. Search filters follow Use, Develop, Reference, and Changes. Default results prioritize current behavior; Change results remain an explicit reading mode rather than overwhelming task results. Search works on Pages and when the generated index is opened directly without a server.
 
@@ -222,6 +230,8 @@ Search records include title, summary, headings, audience, page type, authority,
 
 Begin with current source and tests. For an App, inspect its entrypoint, definition, user controls, state/options owner, input loader, output writer, public App APIs, scientific calculations, and focused tests. For a library, inspect its complete public surface and consumers.
 
+Every source change receives one documentation-impact result before integration: create a current owner for a new supported surface; update the existing owner for a changed fact; retire obsolete current guidance and discovery for a removed surface; or verify that an internal change leaves behavior, public contracts, discovery, compatibility, and documented claims unchanged. This is a completeness decision, not a reason to edit prose for every refactor.
+
 Choose the fact owner before writing. Start from the page contract. Use the reader's vocabulary and exact UI labels. Lead with the outcome, keep one goal per task or section, and split explanation or exact reference only when the child page is independently useful.
 
 Examples under `Example:` and Markdown blocks preceded by `<!-- labkit-runnable-example -->` execute in a clean session. Use only synthetic inputs and avoid dialogs, user files, or lasting UI and filesystem side effects. Use `Typical Call:` for sketches that cannot satisfy this contract.
@@ -233,13 +243,14 @@ Documentation validation rejects:
 - missing or illegal page metadata;
 - duplicate semantic IDs or output routes;
 - malformed current-page or Change metadata and Change section structure;
-- unresolved current local links;
+- missing rendered outputs, duplicate HTML IDs, invalid landmarks or heading order, and empty generated tables;
+- unresolved current local links or fragments and pages unreachable from documentation Home;
 - missing App, family, or public-package reader destinations;
-- missing generated documentation-map, component-index, year-index, or current-to-Change relationship targets;
+- incomplete search coverage, API catalogs, documentation-map sections, component/year indexes, or current-to-Change relationship targets;
 - Launcher App-guide routes that differ from renderer output routes;
 - local release-summary pages that duplicate GitHub Releases;
 - Change records with missing required sections or unresolved predecessors;
-- malformed HTML structure or prohibited agent/migration pages;
+- prohibited agent/migration pages;
 - non-deterministic generated files.
 
 Run the smallest focused contract first and then `buildtool docsCheck`. Render the ignored local site when presentation changed and inspect representative HTML at the required viewport widths. Repeated rendering proves determinism; focused semantic and visual evidence proves correctness.
