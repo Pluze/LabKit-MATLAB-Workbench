@@ -20,15 +20,17 @@ most users open. It can also install LabKit or repair a damaged installation.
 
 Figure Studio can open tracked `.fig` files or receive a plot sent from a
 LabKit plot context menu. The lightweight framework popout is intended for
-inspection; Figure Studio provides the complete workflow for controlled canvas
-and style settings, raster/vector export, and a data-plus-recreation-script
+inspection; Figure Studio provides semantic category and object editing,
+complete axes and tick control, scientific annotations, exact multi-panel
+layout, publication preflight, raster/vector export, and an editable project
 package.
 
-Figure Studio processes one selected axes at a time. A mixed FIG exposes its
-subplots as separate panels; Studio does not turn the composite layout into a
-single plot. It does not rerun the calculation that produced the original
-figure and does not claim that displayed graphics are a lossless replacement
-for the original scientific dataset.
+A mixed FIG exposes its subplots as editable panels in one document. Studio
+preserves plotted values while allowing panel, axis, tick, text, style, layer,
+and annotation edits from whole categories down to one graphic element. It
+does not rerun the calculation that produced the original figure and does not
+claim that displayed graphics are a lossless replacement for the original
+scientific dataset.
 
 ## Related Documentation
 

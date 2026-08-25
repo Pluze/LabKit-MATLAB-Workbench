@@ -129,6 +129,50 @@ classdef FigureStudioSourceSpec < matlab.unittest.TestCase
                 "labkit_FigureStudio_app:InvalidAxes");
             clear cleanup
         end
+
+        function mixedFigLoadsOnePersistentMultiPanelDocument(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            sourceFigure = figure(Visible="off");
+            tiled = tiledlayout(sourceFigure, 1, 2);
+            first = nexttile(tiled);
+            plot(first, 0:2, 1:3, DisplayName="First");
+            title(first, "Panel A");
+            second = nexttile(tiled);
+            plot(second, 0:2, 3:-1:1, DisplayName="Second");
+            title(second, "Panel B");
+            resource = struct("figure", sourceFigure, ...
+                "axes", [first; second]);
+            [snapshots, axesHandles, labels] = ...
+                figure_studio.sourceAxes.extractPanelSnapshots(resource);
+            editor = figure_studio.figureDocument.editorState(snapshots);
+            editor.document.panels(1).text.title = "Edited A";
+            project = figure_studio.initialData();
+            state = struct("project", project, "session", struct( ...
+                "selection", struct("panel", labels(2)), ...
+                "workflow", struct("status", ""), "editor", editor, ...
+                "cache", struct("plotData", snapshots{1}, ...
+                    "sourceAxes", axesHandles(1), ...
+                    "sourceDefaultStyle", ...
+                        figure_studio.sourceAxes.sourceStyle(axesHandles(1)), ...
+                    "sourcePanelChoices", labels, ...
+                    "limitState", ...
+                        figure_studio.sourceAxes.limitControls(snapshots{1}), ...
+                    "viewRevision", 1)));
+            backend = struct("getResource", @(~) resource, ...
+                "log", @ignoreLog);
+            context = labkittest.createCallbackContext(backend);
+
+            state = figure_studio.sourceAxes.panelChanged(state, [], context);
+
+            testCase.verifyNumElements(state.session.editor.document.panels, 2);
+            testCase.verifyEqual( ...
+                state.session.editor.document.panels(1).text.title, "Edited A");
+            testCase.verifyEqual(state.session.editor.activePanelId, "panel-2");
+            testCase.verifyEqual(state.session.cache.sourceAxes, axesHandles(2));
+            testCase.verifyEqual(state.session.cache.plotData.axes.title, ...
+                "Panel B");
+            clear cleanup
+        end
     end
 end
 
@@ -138,4 +182,7 @@ types = strings(numel(children), 1);
 for k = 1:numel(children)
     types(k) = string(children(k).Type);
 end
+end
+
+function ignoreLog(varargin)
 end

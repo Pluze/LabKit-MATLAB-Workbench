@@ -34,7 +34,8 @@ callbackContext.setResource("sourceFigure", resource, ...
     @figure_studio.sourceAxes.closeResource);
 [plotData, sourceStyle, sourceAxes, panelLabel, panelIndex] = ...
     figure_studio.sourceAxes.selectPanel(resource, 1);
-[~, panelChoices] = figure_studio.sourceAxes.panelChoices(resource.axes);
+[panelSnapshots, ~, panelChoices] = ...
+    figure_studio.sourceAxes.extractPanelSnapshots(resource);
 state.session.selection.currentIndex = index;
 state.session.selection.panel = panelLabel;
 state.session.cache.plotData = plotData;
@@ -43,7 +44,10 @@ state.session.cache.sourcePanelChoices = panelChoices;
 state.session.cache.sourceDefaultStyle = sourceStyle;
 state.session.cache.currentSource = sourcePath;
 state.session.cache.limitState = figure_studio.sourceAxes.limitControls(plotData);
-state.session.editor = figure_studio.figureDocument.editorState(plotData);
+state.session.editor = figure_studio.figureDocument.editorState(panelSnapshots);
+state.session.editor.activePanelId = ...
+    state.session.editor.document.panels(panelIndex).id;
+state.session.editor.selectedPanelIds = state.session.editor.activePanelId;
 state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
 state.project.annotations.sourceDefaultStyle = sourceStyle;
 state.project.annotations.panelIndex = panelIndex;
