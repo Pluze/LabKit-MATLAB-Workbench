@@ -59,10 +59,15 @@ same-commit main CI run prevents tag creation. Ordinary push, pull-request,
 and documentation workflows never create release tags.
 
 After the PR merge and its exact main-push CI complete, verify the accepted
-squash SHA and confirm GitHub's automatic head-branch deletion removed the
-merged remote branch; delete it explicitly if it remains, then remove the local
-branch. Start later work from a newly fetched `origin/main`; do not recycle a
-merged branch, merge main back into it, or create a branch-sync commit.
+squash SHA, dependent PRs, and unmerged commits. Inspect and remove every linked
+worktree owned only by the accepted task, then delete its local branch. Confirm
+GitHub's automatic head-branch deletion removed the exact accepted remote head
+and delete that head explicitly if it remains. Fast-forward the clean primary
+checkout to the accepted `origin/main` commit and verify clean alignment.
+Preserve unrelated worktrees and branches, and stop rather than discard dirty
+or unaccepted work. Start later work from a new linked worktree based on a
+freshly fetched `origin/main`; do not recycle a merged branch, merge main back
+into it, or create a branch-sync commit.
 
 ```bash
 gh workflow run release.yml --ref main \
