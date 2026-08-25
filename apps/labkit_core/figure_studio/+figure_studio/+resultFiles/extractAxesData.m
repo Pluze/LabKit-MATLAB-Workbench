@@ -376,7 +376,7 @@ function [object, warningText] = graphicsObjectData(handle, ax)
         object = areaData(handle);
     elseif isgraphics(handle, 'scatter')
         object = scatterData(handle);
-    elseif isgraphics(handle, 'boxchart')
+    elseif isBoxChart(handle)
         object = boxChartData(handle);
     elseif isgraphics(handle, 'image')
         object = imageData(handle, ax);
@@ -394,6 +394,10 @@ function [object, warningText] = graphicsObjectData(handle, ax)
         warningText = "Skipped unsupported graphics object: " + ...
             string(class(handle));
     end
+end
+
+function tf = isBoxChart(handle)
+    tf = contains(lower(string(class(handle))), "boxchart");
 end
 
 function object = boxChartData(handle)
