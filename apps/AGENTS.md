@@ -123,6 +123,13 @@ find the exact owner and contract; App authors never invent test paths.
   valid for the smallest supported source geometry.
 - Placing or editing overlays must preserve the user's viewport unless the
   user explicitly requests fit/reset.
+- Classify viewport invalidation independently from state refresh. Supply a
+  semantic `ViewRevision` for plots whose data domain can change: refit for a
+  new source/result, selected coordinates, units/scale, changed image canvas,
+  or explicit fit/reset; preserve zoom for style, palette, grid, legend,
+  annotation visibility, same-size frame navigation, and overlay editing.
+  Live streams use an App-owned rolling/out-of-view rule and do not refit on
+  every sample. Revisions use App-owned IDs and bounded choices, never paths.
 - File and folder dialogs outside `fileList` use `CallbackContext`. Use
   `CallbackContext.inform` for successful or neutral information and
   `CallbackContext.alert` only for a blocking problem; never present an INFO

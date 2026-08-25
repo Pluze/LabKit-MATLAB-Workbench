@@ -35,7 +35,7 @@ The default curve selection is **All cycles**. Individual cycle selection update
 
 ## Plot Behavior
 
-All-cycle plots use a distinct color for each cycle; cathodic and anodic current branches use related dark/light variants. Time is shifted so each cycle begins at zero. Selecting new X/Y quantities refits the axes. Toggling trim overlays preserves the user's current view because it changes an overlay, not the underlying coordinate selection.
+All-cycle plots use a distinct color for each cycle; cathodic and anodic current branches use related dark/light variants. Time is shifted so each cycle begins at zero. Selecting a source or cycle, selecting new X/Y quantities, changing which edge cycles are included, or enabling a held comparison changes the plotted data domain and refits the axes. Grid and trim-overlay changes preserve the user's current view. Comparison mode and electrode area change calculations and readouts but not plotted coordinates, so they also preserve the viewport.
 
 **Ignore first/last cycle** applies consistently to the all-cycle plot, result table, CSC export, and CV-data export. It is intended for known incomplete edge cycles and must not be used to hide arbitrary outliers.
 

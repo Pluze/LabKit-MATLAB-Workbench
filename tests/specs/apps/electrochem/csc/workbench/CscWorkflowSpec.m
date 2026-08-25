@@ -22,6 +22,16 @@ classdef CscWorkflowSpec < matlab.unittest.TestCase
             tableValue = findall(figureValue, "Tag", "cycleResults");
             top = findall(figureValue, "Tag", "plotAxes.top");
             bottom = findall(figureValue, "Tag", "plotAxes.bottom");
+            [~, inspected] = inspectViewport(top);
+            runtime.applyControlValue("topGrid", false);
+            verifyViewport(testCase, top, inspected);
+            topX = findall(figureValue, "Tag", "topX");
+            alternatives = string(topX.Items);
+            alternatives = alternatives(alternatives ~= string(topX.Value));
+            testCase.assertNotEmpty(alternatives);
+            runtime.applyControlValue("topX", alternatives(1));
+            testCase.verifyNotEqual([top.XLim, top.YLim], inspected, ...
+                "Changing the plotted coordinate must accept fitted limits.");
             runtime.applyControlValue("mode", ...
                 csc.analysisRun.analysisChoices().modes(2));
 
@@ -36,4 +46,21 @@ classdef CscWorkflowSpec < matlab.unittest.TestCase
             clear cleanup
         end
     end
+end
+
+function [fitted, inspected] = inspectViewport(ax)
+fitted = [ax.XLim, ax.YLim];
+inspected = [innerLimits(fitted(1:2)), innerLimits(fitted(3:4))];
+ax.XLim = inspected(1:2);
+ax.YLim = inspected(3:4);
+end
+
+function limits = innerLimits(limits)
+limits = limits + [0.2, -0.2] .* diff(limits);
+end
+
+function verifyViewport(testCase, ax, expected)
+actual = [ax.XLim, ax.YLim];
+tolerance = max(1, max(abs(expected))) * 1e-10;
+testCase.verifyEqual(actual, expected, AbsTol=tolerance);
 end

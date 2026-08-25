@@ -62,6 +62,8 @@ Water-window status compares the calculated polarization potentials with the sel
 
 Plot markers, limit lines, shading, axes, and grid choices affect presentation only. Analysis controls apply to the entire exported batch after each committed edit.
 
+Selecting another source, changing either plotted X/Y quantity, or accepting pulse-analysis settings starts a new plot context and refits both panes. Marker, limit-line, shading, and grid visibility preserve the current zoom. Electrode area and CIC display mode/unit change numeric summaries without resetting the plot because they do not change plotted coordinates.
+
 ## Output Schema
 
 The batch CSV contains source identity, area, delay, pulse-detection method, phase timing, measured/estimated current information, charge fields, area-normalized CIC fields, polarization and baseline values, water-window status, and a per-file result message. `Area_cm2` and `Delay_us` are exported so normalization and sample timing remain auditable.

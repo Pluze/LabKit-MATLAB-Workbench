@@ -68,6 +68,19 @@ Classify every input before choosing its callback behavior:
 
 Direct manipulation deliberately has no busy display because pointer/title/control flashing is worse than a short synchronous commit. That is a performance contract: slider/spinner callbacks do not perform unbounded or potentially long IO/calculation, export, waiting, polling, pausing, or per-adjustment logging. They may perform one bounded current preview or automatic refresh after the value commits; a navigation control may read one bounded current record or window when that preview is the interaction's core purpose. If the work cannot meet an interactive response budget, move it to an explicit action rather than adding busy chrome to the gesture.
 
+Classify viewport refresh separately from state refresh. Every renderer may redraw after a committed state change, but `Snapshot.renderPlot(..., ViewRevision=token)` determines whether that redraw replaces the user's current zoom. Build the token only from semantic data-domain inputs:
+
+| Plot change | Viewport outcome |
+| --- | --- |
+| New source/current record, accepted result, plotted X/Y quantity, units, scale transform, or analysis output that changes plotted coordinates/range | Change `ViewRevision`; accept newly fitted X/Y limits |
+| Line/marker style, palette, grid, legend, labels, annotation visibility, or unrelated presentation refresh | Keep `ViewRevision`; preserve zoom/pan |
+| New image identity, dimensions, orientation, or crop geometry | Change `ViewRevision`; fit the new spatial canvas |
+| Same-size video frame, contrast/range mapping, overlay edit, calibration mark, or selection gesture | Keep `ViewRevision`; preserve the inspected image region |
+| Explicit Fit/Reset view action | Change `ViewRevision`; accept the renderer's requested limits |
+| Live stream sample/window update | Follow an App-owned rolling or out-of-view policy; never refit on every sample by default |
+
+A scientific parameter does not automatically imply a viewport reset: include it only when the App deliberately treats the accepted analysis as a new plot context or when it changes plotted coordinates or range. Conversely, a source or result replacement must not inherit an unrelated old viewport merely because its renderer uses the same axes. Use semantic IDs and bounded choices in text revisions; never use source paths or filenames.
+
 Treat logs as an operational timeline, not a mirror of callback execution. DEBUG is bounded maintainer progress or branch context, INFO is a meaningful user milestone, WARNING is an unexpected recoverable condition requiring attention, ERROR is a failed requested operation, and CRITICAL means the session cannot safely continue. Do not log ordinary value assignments, selection motion, preview repaints, validation success, loop iterations, or every item. Messages and attributes are retained diagnostics: use semantic aliases, counts, dimensions, units, and reasons only; never include paths, original filenames, identities, scientific arrays, or free-form data.
 
 ## Name Workflow Code

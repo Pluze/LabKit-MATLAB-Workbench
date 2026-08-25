@@ -8,6 +8,9 @@ compatibility: compatible
 component: labkit.app | 3.1.1 -> 3.2.0
 component: labkit_CIC_app | 1.7.0 -> 1.7.1
 component: labkit_VTResistance_app | 1.7.0 -> 1.7.1
+component: labkit_ChronoOverlay_app | 1.7.0 -> 1.7.1
+component: labkit_CSC_app | 1.7.0 -> 1.7.1
+component: labkit_EIS_app | 1.7.0 -> 1.7.1
 component: labkit_DICPreprocess_app | 1.8.0 -> 1.8.1
 component: labkit_DICPostprocess_app | 1.7.0 -> 1.7.1
 component: labkit_BatchImageCrop_app | 1.10.0 -> 1.10.1
@@ -39,11 +42,12 @@ Replace complete-sensitive diagnostic payload retention with one enforced bounde
 - Warning preflush and durable breadcrumbs no longer duplicate manifest writes. A manifest still updates on ordinary buffered flush, retention/degradation changes, and orderly close.
 - DIC, Batch Crop, Curvature Measurement, and Video Marker stopped logging ordinary parameter assignment or navigation as INFO. Video-render heartbeats are DEBUG developer progress, and retained App attributes no longer contain alignment metrics or output paths.
 - CIC and VT Resistance keep their automatic batch refresh, but it now runs once for the SDK-committed final value instead of once per native spinner repeat; ordinary successful setting changes no longer emit INFO records.
+- Plot viewport invalidation is now semantic rather than repaint-driven. CIC, VT Resistance, Chrono Overlay, CSC, and EIS refit when source data, plotted coordinates, scale, or accepted analysis context changes, while display-only changes preserve the user's zoom and pan.
 - Public help, framework and App-authoring guides, scoped AGENTS rules, the App Builder Skill, and focused tests now state the same commit, refresh, busy, severity, payload, and retention constraints.
 
 ## Impact
 
-Dragging a slider no longer changes scientific or workflow state until release and produces one transaction for the accepted final value. Rapid spinner repeats remain visually responsive but produce one transaction after the user pauses. Direct manipulation continues without busy flicker. Session logs remain useful for reconstructing semantic actions, phases, failures, correlation, and persistence health without retaining sensitive source identity or scientific content.
+Dragging a slider no longer changes scientific or workflow state until release and produces one transaction for the accepted final value. Rapid spinner repeats remain visually responsive but produce one transaction after the user pauses. Direct manipulation continues without busy flicker. Quantitative plots accept fresh fitted limits when their data domain changes and retain manual inspection views during style-only refreshes. Session logs remain useful for reconstructing semantic actions, phases, failures, correlation, and persistence health without retaining sensitive source identity or scientific content.
 
 ## Compatibility and limits
 

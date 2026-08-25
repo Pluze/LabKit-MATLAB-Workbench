@@ -10,7 +10,28 @@ function view = present(state)
         "items", items, ...
         "options", state.project.parameters);
     view = labkit.app.view.Snapshot() ...
-        .renderPlot("overlayPlots", model);
+        .renderPlot("overlayPlots", model, ...
+        ViewRevision=viewportRevision(state));
+end
+
+function revision = viewportRevision(state)
+selection = state.session.selection.files;
+revision = string(jsonencode(struct( ...
+    "sourceIds", {selectedSourceIds( ...
+        state.project.inputs.sources, selection)}, ...
+    "xAxis", string(state.project.parameters.xAxis))));
+end
+
+function ids = selectedSourceIds(sources, selection)
+ids = strings(1, 0);
+if isempty(sources) || ~isfield(sources, "id")
+    return
+end
+indices = selection.Indices;
+indices = indices(indices >= 1 & indices <= numel(sources));
+if ~isempty(indices)
+    ids = reshape(string({sources(indices).id}), 1, []);
+end
 end
 
 function items = selectedItems(state)

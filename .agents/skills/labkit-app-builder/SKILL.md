@@ -36,6 +36,14 @@ justify the severity and retain only semantic aliases, bounded counts,
 dimensions, units, and reasons; never retain paths, filenames, identities, or
 scientific content.
 
+For every plot, classify viewport invalidation separately from presentation
+refresh. Use a semantic `ViewRevision` that changes for a new source/result,
+plotted coordinate or unit/scale transform, changed image canvas, or explicit
+fit/reset. Keep it stable for style, palette, grid, legend, annotation
+visibility, same-size frame navigation, and overlay editing. Give live streams
+an explicit rolling/out-of-view policy rather than refitting per sample. Use
+App-owned IDs and bounded choices in revisions, never paths or filenames.
+
 Make layout read in workflow order. Keep each capability's layout, direct
 actions, presentation, and renderer together when they change together. Use
 SDK bindings and defaults before callback glue; pass narrow domain values below

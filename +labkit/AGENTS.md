@@ -59,7 +59,9 @@ Use `labkittest.explain` to find the exact owner and contract.
   compatibility identifiers; layout/action/axis/source namespaces must remain
   legal and unique; references must resolve before UI mutation. Bind paths are
   opaque App-owned field paths, not framework-owned project/session schemas.
-- View snapshots must preserve unchanged graphics and viewports. Renderers own
+- View snapshots preserve user viewports while a plot's semantic
+  `ViewRevision` is unchanged and accept renderer-fitted limits once when it
+  changes. Apps own the revision policy; renderers own fitting mechanics and
   incremental overlay changes; interaction specs own user gestures.
 - Establish the legal domain of interdependent native properties before
   assigning dependent values; constructor name-value order is not a contract

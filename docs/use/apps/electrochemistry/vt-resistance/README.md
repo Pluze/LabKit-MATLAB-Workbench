@@ -55,6 +55,8 @@ Raw mode replaces each voltage difference with its steady absolute voltage. Divi
 
 The center-60% policy uses the interval from 20% to 80% of each detected phase to reduce onset and offset transients. Plot marker and shading choices affect display only.
 
+Selecting another source, changing either plotted X/Y quantity, or accepting pulse, steady-window, or voltage-analysis settings starts a new plot context and refits both panes. Marker, shading, and grid visibility preserve the current zoom.
+
 ## Output Schema
 
 The CSV contains source identity, steady currents and voltages, baseline voltages and windows, raw and baseline-corrected resistance fields, selected resistance values, absolute cathodic/anodic resistance, average resistance, pulse-detection method, and status.

@@ -31,6 +31,8 @@ Inputs are one or more `.DTA` files containing chrono data. Source order control
 
 Plot styling does not alter exported values. Removing a file removes its curves from both plots and the next export.
 
+Adding, removing, or selecting source curves, or changing the X-axis coordinate, fits both plot panes to the new data domain. Line width, legend, and grid changes preserve the current zoom and pan.
+
 ## Alignment Algorithm
 
 For each valid transient, the app uses the detected cathodic/anodic blank interval and defines time zero at its center. If pulse detection or the gap center is unavailable, it explicitly falls back to the first recorded sample and reports that fallback in the app log.
