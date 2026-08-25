@@ -1,0 +1,36 @@
+classdef AnnotationControlStateSpec < matlab.unittest.TestCase
+    % ANNOTATIONCONTROLSTATESPEC Regression: annotation controls must reflect the draft and editable selection state.
+
+    methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function provesAnnotationControlState(testCase)
+            editor = figure_studio.figureDocument.editorState(snapshot());
+            editor.annotation = struct("kind", "Arrow", "text", "Peak", ...
+                "x1", 1, "y1", 2, "x2", 3, "y2", 4);
+            [editor.document, ids] = ...
+                figure_studio.figureDocument.addAnnotation( ...
+                    editor.document, "panel-1", editor.annotation);
+            editor.document.selection = ids(end);
+
+            view = figure_studio.annotationEditing.present(editor, true);
+            definition = fragmentDefinition( ...
+                figure_studio.annotationEditing.layoutSection());
+
+            testCase.verifyTrue(definition.validateViewSnapshot(view));
+        end
+    end
+end
+
+function definition = fragmentDefinition(section)
+definition = labkit.app.Definition(Entrypoint="labkit_FragmentProbe_app", ...
+    AppId="fragment_probe", Title="Fragment probe", Family="Tests", ...
+    AppVersion="1.0.0", Updated="2026-08-24", ...
+    Workbench=labkit.app.layout.workbench({section}));
+end
+
+function data = snapshot()
+data = struct("axes", struct("xLim", [0 5], "yLim", [0 5], ...
+    "zLim", [0 1], "xTick", 0:5, "yTick", 0:5, "zTick", [], ...
+    "xTickLabel", string(0:5), "yTickLabel", string(0:5), ...
+    "zTickLabel", strings(0, 1)), "objects", struct([]), ...
+    "warnings", strings(0, 1));
+end
