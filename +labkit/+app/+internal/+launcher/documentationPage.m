@@ -8,18 +8,20 @@ if isempty(match) || apps(match).visibility ~= "public"
 end
 [~, appId] = fileparts(apps(match).folder);
 appId = replace(string(appId), "_", "-");
-manuals = dir(fullfile(root, "docs", "apps", "*", appId, "README.md"));
+manuals = dir(fullfile(root, "docs", "use", "apps", "*", appId, "README.md"));
 if numel(manuals) ~= 1
     error("labkit:app:internal:launcher:DocumentationUnavailable", ...
         "No documentation source is available for %s.", command);
 end
 [~, family] = fileparts(fileparts(manuals(1).folder));
+route = labkit.app.internal.launcher.documentationRoute(family, appId);
 if source == "online"
-    page = "https://pluze.github.io/LabKit-MATLAB-Workbench/apps/" + ...
-        family + "/" + appId + ".html";
+    page = "https://pluze.github.io/LabKit-MATLAB-Workbench/" + ...
+        erase(route, "index.html");
     return;
 end
-page = string(fullfile(root, "site", "apps", family, appId + ".html"));
+page = string(fullfile(root, "site", ...
+    replace(route, "/", string(filesep))));
 if exist(page, "file") ~= 2
     error("labkit:app:internal:launcher:LocalDocumentationMissing", ...
         "Local documentation has not been generated for %s.", command);

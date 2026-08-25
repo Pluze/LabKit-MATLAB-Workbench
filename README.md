@@ -75,25 +75,23 @@ reviewing implementation details.
 | Force gauges | `labkit_Mark10Monitor_app` | Live Mark-10 force/travel monitoring, replay, export, and modulus estimates. |
 | Statistics | `labkit_TTestWizard_app` | Guided paired and independent-sample t-tests with assumptions, plots, and exports. |
 
-See the [online app guide](https://pluze.github.io/LabKit-MATLAB-Workbench/apps/)
-for the full app catalog, detailed workflows, inputs, outputs, APIs, and
-component history.
+See the [online App catalog](https://pluze.github.io/LabKit-MATLAB-Workbench/use/apps/) for the full set of workflows, inputs, outputs, APIs, and related accepted Changes.
 
 ## Find The Right Page
 
 | I want to | Go to |
 | --- | --- |
 | Browse the complete documentation | [LabKit documentation site](https://pluze.github.io/LabKit-MATLAB-Workbench/) |
-| Install or update LabKit | [Start](https://pluze.github.io/LabKit-MATLAB-Workbench/start/) |
-| Open LabKit or pick an app | [App catalog](https://pluze.github.io/LabKit-MATLAB-Workbench/apps/) |
-| Understand launcher buttons, commands, and history | [LabKit Launcher](https://pluze.github.io/LabKit-MATLAB-Workbench/apps/labkit-core/launcher/) |
+| Install or update LabKit, open the Launcher, or pick an App | [Use LabKit](https://pluze.github.io/LabKit-MATLAB-Workbench/use/) |
+| Browse App workflows | [App catalog](https://pluze.github.io/LabKit-MATLAB-Workbench/use/apps/) |
+| Understand Launcher buttons, commands, and App-guide access | [LabKit Launcher](https://pluze.github.io/LabKit-MATLAB-Workbench/use/apps/labkit-core/launcher/) |
 | Report a problem or ask for workflow support | [.github/SUPPORT.md](.github/SUPPORT.md) |
 | Call a public LabKit function | [docs/reference/README.md](docs/reference/README.md) |
-| Change source code or run checks | [Testing](docs/maintain/testing.md) |
-| Call packaging, profiling, codecheck, or documentation tools | [Maintainer tools](docs/maintain/tools/README.md) |
+| Change source code or run checks | [Testing](docs/develop/testing.md) |
+| Call packaging, profiling, codecheck, or documentation tools | [Developer tools](docs/develop/tools/README.md) |
 | Understand package and App boundaries | [Architecture](docs/develop/app-authoring/architecture.md) |
-| Build local private Apps outside the public repo | [Private Apps](docs/maintain/private-apps.md) |
-| Prepare a public release | [Release](docs/maintain/release.md) |
+| Build local private Apps outside the public repo | [Private Apps](docs/develop/private-apps.md) |
+| Prepare a public release | [Release](docs/develop/release.md) |
 
 ## Development
 
@@ -105,7 +103,7 @@ cd LabKit-MATLAB-Workbench
 buildtool headless
 ```
 
-See [Testing](docs/maintain/testing.md) for the supported build tasks and GUI
+See [Testing](docs/develop/testing.md) for the supported build tasks and GUI
 validation limits.
 
 ## Project Shape
@@ -121,7 +119,7 @@ Apps are the deliverables. Shared code moves into `+labkit` only when it is
 domain-neutral, app-facing, tested, and useful beyond one workflow.
 
 Source checkouts may also use an ignored `private_apps/` workspace for local
-private app development. See [Private apps](docs/maintain/private-apps.md) for
+private app development. See [Private apps](docs/develop/private-apps.md) for
 the generic structure; private app details belong in the private app repository.
 
 ## Citation

@@ -22,7 +22,7 @@ Use this reference to look up supported MATLAB functions. Every function name in
 | Intan RHS inspection and waveform windows | [RHS](../develop/libraries/rhs/README.md) |
 | Generic biosignal import and processing | [Biosignal](../develop/libraries/biosignal/README.md) |
 | Mark-10 device communication, settings, samples, and units | [Mark-10](../develop/libraries/mark10/README.md) |
-| Scientific operations owned by one app | [Apps](../apps/README.md) |
+| Scientific operations owned by one App | [App guides](../use/apps/README.md) |
 
 Module guides explain scope, data models, normal call sequences, algorithms, and representative examples. Function pages are the source for exact callable contracts. Files in `private/` directories and App helpers without a complete public help contract are not supported entry points.
 

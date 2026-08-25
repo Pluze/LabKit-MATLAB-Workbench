@@ -127,4 +127,4 @@ Use `labkittest.run(File=...)` to select the affected `labkit/<area>` owner and
 add downstream app-family or hidden-GUI coverage when the app-facing contract
 can change. Package boundary and public-surface changes also run project
 guardrails. Exact commands belong in
-`docs/maintain/testing.md`.
+`docs/develop/testing.md`.

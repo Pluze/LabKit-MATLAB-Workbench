@@ -1,7 +1,7 @@
 # Scientific CSV File Contract
 
 ```labkit-page
-id: develop-scientific-csv-file-contract
+id: reference-scientific-csv-file-contract
 type: reference
 audience: app-developer
 summary: Define the exact text encoding, header, cell, quoting, missing-value, and table-shape rules for LabKit scientific CSV exchange.

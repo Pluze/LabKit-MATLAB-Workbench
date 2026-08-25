@@ -30,18 +30,27 @@ an ownership question.
    complete manual per App by default. Split only when the child has an
    independent reader goal, enough content to stand alone, and a stable
    destination.
-5. Keep each prose paragraph on one physical source line. Never reflow prose
+5. Design the reader path separately from source ownership and use one axis at
+   the top level. Preserve Use for running LabKit and App manuals, Develop for
+   the complete source lifecycle, Reference for exact lookup, and Changes for
+   accepted rationale. Keep bounded local context and semantic cross-links;
+   generate maps and Change browse views from the model.
+6. Keep each prose paragraph on one physical source line. Never reflow prose
    to a column width or split it sentence by sentence; preserve semantic
    Markdown lines for list items, table rows, quotes, and literal blocks.
-6. Change authored sources, metadata, renderer code, or source assets; never
+7. Change authored sources, metadata, renderer code, or source assets; never
    edit generated `site/` output.
-7. When moving or deleting a page, update live internal links and launcher
+8. When moving or deleting a page, update live internal links and launcher
    destinations, then remove the old source and route. Do not add redirects,
    aliases, archived site copies, or legacy navigation.
-8. Run the smallest page-contract and renderer regression, then deterministic
+9. When a route or component relationship changes, verify the complete reader
+   loop: Launcher or section landing to current guide, current guide to API or
+   Change, and Change back to current documentation. Keep hand-authored related
+   links only for relationships the renderer cannot derive.
+10. Run the smallest page-contract and renderer regression, then deterministic
    `docsCheck`. Render the ignored local site when reading or visual inspection
    can expose presentation errors.
-9. Inspect representative HTML at desktop and mobile widths when layout,
+11. Inspect representative HTML at desktop and mobile widths when layout,
    navigation, tables, long symbols, search, or interaction changes.
 
 Write one lightweight change record for an accepted logical change that a

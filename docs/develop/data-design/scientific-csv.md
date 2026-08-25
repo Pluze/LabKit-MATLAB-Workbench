@@ -152,8 +152,8 @@ Manual checks use representative private laboratory files without copying their 
 
 ## Related Guidance
 
-- [T-Test Wizard](../../apps/statistics/ttest-wizard/README.md)
+- [T-Test Wizard](../../use/apps/statistics/ttest-wizard/README.md)
 - [App Development](../app-authoring/app-development.md)
 - [Architecture](../app-authoring/architecture.md)
-- [Testing](../../maintain/testing.md)
-- [Documentation System](../../maintain/documentation.md)
+- [Testing](../testing.md)
+- [Documentation System](../documentation.md)

@@ -7,7 +7,7 @@ audience: app-developer
 summary: Use GUI-free image file IO, conversion, preview sizing, and common enhancement operations from MATLAB code.
 ```
 
-[Public API index](../../../reference/README.md) | [App guide](../../../apps/README.md)
+[Public API index](../../../reference/README.md) | [App guide](../../../use/apps/README.md)
 
 `labkit.image.*` provides GUI-free image file IO, conversion, preview sizing, and common enhancement operations. App-specific registration, measurement, ROI, matching, and export workflows build on these functions.
 

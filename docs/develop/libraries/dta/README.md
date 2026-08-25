@@ -7,7 +7,7 @@ audience: app-developer
 summary: Find and read supported chrono, EIS, and CV/CT data from Gamry DTA files without opening an app.
 ```
 
-[API reference](../../../reference/README.md) | [Electrochemistry apps](../../../apps/electrochemistry/README.md)
+[API reference](../../../reference/README.md) | [Electrochemistry apps](../../../use/apps/electrochemistry/README.md)
 
 The `labkit.dta` functions find and read Gamry DTA files without opening an app. They recognize chrono, electrochemical impedance spectroscopy (EIS), and cyclic-voltammetry/charge-time (CV/CT) data, and return ordinary MATLAB structures and numeric arrays for further analysis.
 
@@ -171,6 +171,6 @@ Open an individual DTA function page for exact accepted kinds, path forms, statu
 
 ## Related Topics
 
-- [CIC](../../../apps/electrochemistry/cic/README.md), [CSC](../../../apps/electrochemistry/csc/README.md), and [EIS](../../../apps/electrochemistry/eis/README.md) use DTA records in interactive workflows.
+- [CIC](../../../use/apps/electrochemistry/cic/README.md), [CSC](../../../use/apps/electrochemistry/csc/README.md), and [EIS](../../../use/apps/electrochemistry/eis/README.md) use DTA records in interactive workflows.
 - [Contract functions](../../framework/compatibility/contracts.md) explain how apps declare a compatible `labkit.dta` API version.
 - [Changes](../../../changes/README.md) lists parser, schema, and compatibility changes.

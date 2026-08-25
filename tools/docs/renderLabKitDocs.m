@@ -5,7 +5,8 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
 %   sourceRoot - documentation source folder containing Markdown pages.
 %   outputRoot - destination for generated HTML and static assets.
 % Output:
-%   result - struct with pageCount, apiCount, fileCount, and paths.
+%   result - struct with pageCount, apiCount, generatedPageCount, fileCount,
+%       and paths.
 % Side effects: synchronizes outputRoot with deterministic generated output
 %   and reports stage plus completed/total progress to the console.
 
@@ -27,6 +28,8 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
 
     renderedPages = renderNarrativePages(model, stagingRoot);
     apiPages = renderPublicApiPages(model, stagingRoot);
+    reportDocProgress("generated indexes", 0, 0);
+    generatedPageCount = renderLabKitGeneratedIndexes(model, stagingRoot);
     reportDocProgress("write assets", 0, 0);
     writeDocText(fullfile(stagingRoot, "assets", "style.css"), ...
         readDocumentationAsset(repoRoot, "style.css"));
@@ -47,6 +50,7 @@ function result = renderLabKitDocs(sourceRoot, outputRoot)
     result = struct( ...
         "pageCount", numel(model.pages), ...
         "apiCount", numel(model.api), ...
+        "generatedPageCount", generatedPageCount, ...
         "fileCount", sum(~[files.isdir]), ...
         "sourceRoot", string(sourceRoot), ...
         "outputRoot", string(outputRoot));
@@ -88,8 +92,15 @@ function output = renderNarrativePages(model, stagingRoot)
             body = body + apiLinksBody;
             plainText = plainText + " " + apiLinksText;
         end
-        [changeBody, ~] = renderLabKitChangeLinks(model, page);
-        body = body + changeBody;
+        if page.id == "changes"
+            [overviewBody, overviewText] = ...
+                renderLabKitChangesOverview(model, page.output);
+            body = body + overviewBody;
+            plainText = plainText + " " + overviewText;
+        end
+        [changeBefore, changeAfter, ~] = ...
+            renderLabKitChangeLinks(model, page);
+        body = insertAfterTitle(body, changeBefore) + changeAfter;
         html = renderLabKitPage(model, page.title, page.output, ...
             page.type, body);
         writeDocText(fullfile(stagingRoot, page.output), html);
@@ -111,6 +122,10 @@ function output = renderPublicApiPages(model, stagingRoot)
         item = model.api(k);
         outputPath = "reference/api/" + replace(item.symbol, ".", "/") + ".html";
         body = renderLabKitApiBody(model, item, outputPath);
+        page = struct("source", "", "output", outputPath, ...
+            "components", apiComponents(model, item));
+        [~, changeAfter, ~] = renderLabKitChangeLinks(model, page);
+        body = body + changeAfter;
         html = renderLabKitPage(model, item.symbol, outputPath, ...
             "reference", body);
         writeDocText(fullfile(stagingRoot, outputPath), html);
@@ -121,6 +136,30 @@ function output = renderPublicApiPages(model, stagingRoot)
         end
     end
     output = struct("searchEntries", entries);
+end
+
+function body = insertAfterTitle(body, addition)
+    if strlength(addition) == 0
+        return;
+    end
+    parts = split(string(body), "</h1>");
+    if numel(parts) < 2
+        error("LabKit:Docs:MissingRenderedTitle", ...
+            "Rendered narrative page has no level-one title.");
+    end
+    body = parts(1) + "</h1>" + addition + ...
+        strjoin(parts(2:end), "</h1>");
+end
+
+function components = apiComponents(model, item)
+    if string(item.origin) == "app"
+        id = replace(string(item.owner), "_", "-");
+        app = model.apps(string({model.apps.id}) == id);
+        components = string(app(1).command);
+        return;
+    end
+    parts = split(string(item.symbol), ".");
+    components = strjoin(parts(1:min(2, numel(parts))), ".");
 end
 
 function entry = searchEntry(title, url, kind, keywords, text, ...
@@ -160,16 +199,10 @@ function section = searchSection(url, kind)
     kind = string(kind);
     if kind == "reference" || startsWith(url, "reference/")
         section = "reference";
-    elseif startsWith(url, "apps/")
-        section = "apps";
+    elseif startsWith(url, "use/")
+        section = "use";
     elseif startsWith(url, "develop/")
         section = "develop";
-    elseif startsWith(url, "maintain/")
-        section = "maintain";
-    elseif startsWith(url, "start/")
-        section = "start";
-    elseif startsWith(url, "upgrade/")
-        section = "upgrade";
     elseif startsWith(url, "changes/")
         section = "changes";
     else

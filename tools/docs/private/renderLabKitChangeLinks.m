@@ -1,40 +1,62 @@
-function [html, plainText] = renderLabKitChangeLinks(model, page)
-%RENDERLABKITCHANGELINKS Render Change facts and reason relationships.
+function [beforeBody, afterBody, plainText] = renderLabKitChangeLinks(model, page)
+%RENDERLABKITCHANGELINKS Connect current documentation and accepted Changes.
 
     records = model.changes;
     source = string(page.source);
     recordIndex = find(string({records.source}) == source, 1);
-    links = strings(0, 1);
-    facts = "";
+    beforeBody = "";
+    afterBody = "";
+    plainText = "";
     if ~isempty(recordIndex)
         record = records(recordIndex);
-        facts = recordFacts(record);
-        links = recordLinks(model, record, page.output);
-    elseif ~isempty(page.components)
-        links = componentChangeLinks(model, page.components, page.output);
-    end
-    if isempty(links) && strlength(facts) == 0
-        html = "";
-        plainText = "";
+        beforeBody = recordFacts(record, page.output);
+        afterBody = recordRelationships(model, record, page.output);
         return;
     end
-    relations = "";
-    if ~isempty(links)
-        relations = "<section class=""change-links""><h2 id=""related-changes"">" + ...
-            "Related changes</h2><ul>" + strjoin(links, "") + "</ul></section>";
+    if isempty(page.components)
+        return;
     end
-    html = facts + relations;
-    plainText = "";
+    links = componentChangeLinks(model, page.components, page.output);
+    archives = componentArchiveLinks(model, page.components, page.output);
+    if isempty(links) && isempty(archives)
+        return;
+    end
+    afterBody = "<section class=""change-links""><h2 id=""related-changes"">" + ...
+        "Related changes</h2><p>Use the current page for supported behavior; open a Change when you need the reason, impact, or compatibility of an accepted change.</p><ul>" + ...
+        strjoin([links; archives], "") + "</ul></section>";
 end
 
-function html = recordFacts(record)
+function html = recordFacts(record, currentOutput)
     rows = strings(0, 1);
-    rows(end + 1, 1) = fact("Change ID", "<code>" + escape(record.id) + "</code>");
-    rows(end + 1, 1) = fact("Accepted", escape(record.date));
+    rows(end + 1, 1) = fact("Change ID", ...
+        "<code>" + escape(record.id) + "</code>");
+    rows(end + 1, 1) = fact("Accepted", ...
+        "<time datetime=""" + escape(record.date) + """>" + ...
+        escape(record.date) + "</time>");
     rows(end + 1, 1) = fact("Type", escape(record.changeType));
-    rows(end + 1, 1) = fact("Compatibility", escape(record.compatibility));
+    rows(end + 1, 1) = fact("Compatibility", ...
+        "<span class=""compatibility " + escape(record.compatibility) + ...
+        """>" + escape(replace(record.compatibility, "-", " ")) + "</span>");
+    values = strings(numel(record.components), 1);
+    for k = 1:numel(record.components)
+        id = labKitChangeComponentId(record.components(k));
+        archive = "changes/components/" + ...
+            labKitChangeComponentSlug(id) + "/index.html";
+        transition = "";
+        if contains(record.components(k), " | ")
+            transition = strip(extractAfter(record.components(k), " | "));
+        end
+        values(k) = "<span class=""component-fact""><a href=""" + ...
+            relativeWebPath(currentOutput, archive) + """><code>" + ...
+            escape(id) + "</code></a>";
+        if strlength(transition) > 0
+            values(k) = values(k) + " <span class=""component-transition"">" + ...
+                escape(transition) + "</span>";
+        end
+        values(k) = values(k) + "</span>";
+    end
     rows(end + 1, 1) = fact("Components", ...
-        strjoin("<code>" + escape(record.components) + "</code>", "<br>"));
+        "<span class=""component-facts"">" + strjoin(values, "") + "</span>");
     html = "<dl class=""record-facts"">" + strjoin(rows, "") + "</dl>";
 end
 
@@ -42,68 +64,124 @@ function html = fact(label, value)
     html = "<div><dt>" + escape(label) + "</dt><dd>" + value + "</dd></div>";
 end
 
-function links = recordLinks(model, record, currentOutput)
+function html = recordRelationships(model, record, currentOutput)
+    current = currentDocumentationLinks(model, record, currentOutput);
+    decisions = decisionLinks(model, record, currentOutput);
+    sections = strings(0, 1);
+    if ~isempty(current)
+        sections(end + 1, 1) = "<section class=""change-links"">" + ...
+            "<h2 id=""affected-current-documentation"">Affected current documentation</h2>" + ...
+            "<p>These pages describe the behavior supported now. This Change preserves why the accepted result differs from its earlier baseline.</p><ul>" + ...
+            strjoin(current, "") + "</ul></section>";
+    end
+    if ~isempty(decisions)
+        sections(end + 1, 1) = "<section class=""change-links"">" + ...
+            "<h2 id=""decision-chain"">Decision chain</h2><ul>" + ...
+            strjoin(decisions, "") + "</ul></section>";
+    end
+    html = strjoin(sections, "");
+end
+
+function links = currentDocumentationLinks(model, record, currentOutput)
+    components = labKitChangeComponentId(record.components);
+    pages = model.pages;
+    matched = false(numel(pages), 1);
+    for k = 1:numel(pages)
+        matched(k) = string(pages(k).kind) ~= "change" && ...
+            any(ismember(string(pages(k).components), components));
+    end
+    pages = pages(matched);
+    if isempty(pages)
+        links = strings(0, 1);
+        return;
+    end
+    [~, order] = sort([pages.order]);
+    pages = pages(order);
+    links = strings(min(8, numel(pages)), 1);
+    for k = 1:numel(links)
+        links(k) = "<li><a href=""" + relativeWebPath(currentOutput, ...
+            pages(k).output) + """>" + escape(pages(k).title) + ...
+            "</a><span>Current " + escape(pages(k).type) + "</span></li>";
+    end
+end
+
+function links = decisionLinks(model, record, currentOutput)
     links = strings(0, 1);
     links = appendTargets(links, model, record.supersedes, currentOutput, ...
-        "Supersedes change");
-    changes = model.changes;
-    for change = changes.'
+        "Supersedes");
+    for change = model.changes.'
         if any(change.supersedes == record.id)
             links = appendTarget(links, model, change.id, currentOutput, ...
-                "Superseded by change");
+                "Superseded by");
         end
     end
 end
 
 function links = componentChangeLinks(model, components, currentOutput)
-    links = strings(0, 1);
+    ids = string(components);
     changes = model.changes;
     matched = false(numel(changes), 1);
     for k = 1:numel(changes)
-        ids = componentIds(changes(k).components);
-        matched(k) = any(ismember(ids, components));
+        matched(k) = any(ismember( ...
+            labKitChangeComponentId(changes(k).components), ids));
     end
     changes = changes(matched);
     if isempty(changes)
+        links = strings(0, 1);
         return;
     end
-    [~, order] = sort(string({changes.date}), "descend");
+    keys = string({changes.date}) + " " + string({changes.id});
+    [~, order] = sort(keys, "descend");
     changes = changes(order);
-    for k = 1:min(5, numel(changes))
-        links = appendTarget(links, model, changes(k).id, currentOutput, "Change");
+    links = strings(min(5, numel(changes)), 1);
+    for k = 1:numel(links)
+        links(k) = changeTarget(model, changes(k).id, currentOutput, "Change");
     end
 end
 
-function ids = componentIds(values)
-    ids = strings(numel(values), 1);
-    for k = 1:numel(values)
-        ids(k) = strip(extractBefore(values(k) + " |", " |"));
+function links = componentArchiveLinks(model, components, currentOutput)
+    counts = arrayfun(@(change) numel(change.components), model.changes);
+    recorded = strings(sum(counts), 1);
+    offset = 0;
+    for k = 1:numel(model.changes)
+        ids = labKitChangeComponentId(model.changes(k).components);
+        recorded(offset + (1:numel(ids))) = ids;
+        offset = offset + numel(ids);
+    end
+    components = intersect(unique(string(components), "stable"), ...
+        unique(recorded, "stable"), "stable");
+    links = strings(numel(components), 1);
+    for k = 1:numel(components)
+        target = "changes/components/" + ...
+            labKitChangeComponentSlug(components(k)) + "/index.html";
+        links(k) = "<li><a href=""" + ...
+            relativeWebPath(currentOutput, target) + """>All changes for <code>" + ...
+            escape(components(k)) + "</code></a></li>";
     end
 end
 
 function links = appendTargets(links, model, ids, currentOutput, label)
-    for id = ids.'
-        links = appendTarget(links, model, id, currentOutput, label);
+    additions = strings(numel(ids), 1);
+    for k = 1:numel(ids)
+        additions(k) = changeTarget( ...
+            model, ids(k), currentOutput, label);
     end
+    links = [links; additions];
 end
 
 function links = appendTarget(links, model, id, currentOutput, label)
+    links(end + 1, 1) = changeTarget(model, id, currentOutput, label);
+end
+
+function html = changeTarget(model, id, currentOutput, label)
     records = model.changes;
     recordIndex = find(string({records.id}) == id, 1);
-    if isempty(recordIndex)
-        return;
-    end
     pages = model.pages;
     pageIndex = find(string({pages.source}) == records(recordIndex).source, 1);
-    if isempty(pageIndex)
-        return;
-    end
     target = relativeWebPath(currentOutput, string(pages(pageIndex).output));
-    title = string(records(recordIndex).title);
-    links(end + 1, 1) = "<li><span>" + escape(label) + ...
-        ":</span> <a href=""" + escape(target) + """>" + ...
-        "<code>" + escape(id) + "</code> " + escape(title) + ...
-        "</a></li>";
+    html = "<li><span>" + escape(label) + ":</span> <a href=""" + ...
+        escape(target) + """><code>" + escape(id) + "</code> " + ...
+        escape(records(recordIndex).title) + "</a></li>";
 end
 
 function value = escape(value)

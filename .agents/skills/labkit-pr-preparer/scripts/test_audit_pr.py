@@ -37,6 +37,22 @@ class AuditPrTest(unittest.TestCase):
                 MODULE.owning_manual(root, "labkit.unknown", "+labkit/+unknown")
             )
 
+    def test_resolves_app_manual_under_use_path(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            manual = root / "docs" / "use" / "apps" / "force-gauges" / "mark10-monitor" / "README.md"
+            manual.parent.mkdir(parents=True)
+            manual.write_text("# Mark-10 Monitor\n", encoding="utf-8")
+
+            self.assertEqual(
+                MODULE.owning_manual(
+                    root,
+                    "labkit_Mark10Monitor_app",
+                    "apps/force_gauges/mark10_monitor",
+                ),
+                "docs/use/apps/force-gauges/mark10-monitor/README.md",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

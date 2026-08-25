@@ -79,7 +79,7 @@ Complex Apps keep the top-level workbench readable by composing capability-owned
 
 Use focused contract tests for Definition, layout, callbacks, snapshots, state invariants, and runtime transactions. Add downstream App tests for changed behavior and a bounded hidden-GUI test for native wiring. Automated hidden GUI tests do not prove dialog quality, pointer feel, scientific validity, or a complete interactive workflow.
 
-See [Testing](../../maintain/testing.md) and [Build A Complete App](../app-authoring/complete-app.md).
+See [Testing](../testing.md) and [Build A Complete App](../app-authoring/complete-app.md).
 
 ## State And Transactions
 
