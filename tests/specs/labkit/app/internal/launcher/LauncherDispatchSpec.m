@@ -55,21 +55,22 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
         function documentationMapsManualToOnlinePageByDefault(testCase)
             root = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             writeEntry(root, fullfile("apps", "image_tools", "marker"), "labkit_Marker_app");
-            manual = fullfile(root, "docs", "apps", "image_tools", "marker", "README.md");
+            manual = fullfile(root, "docs", "use", "apps", "image_tools", "marker", "README.md");
             writeText(manual, "# Marker");
 
             page = labkit.app.internal.launcher.dispatch(root, "documentation", "labkit_Marker_app");
 
             testCase.verifyEqual(string(page), ...
                 "https://pluze.github.io/LabKit-MATLAB-Workbench/" + ...
-                "apps/image_tools/marker.html");
+                "use/apps/image_tools/marker/");
         end
 
         function documentationReturnsGeneratedPageWhenLocalIsRequested(testCase)
             root = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             writeEntry(root, fullfile("apps", "image_tools", "marker"), "labkit_Marker_app");
-            manual = fullfile(root, "docs", "apps", "image_tools", "marker", "README.md");
-            generated = fullfile(root, "site", "apps", "image_tools", "marker.html");
+            manual = fullfile(root, "docs", "use", "apps", "image_tools", "marker", "README.md");
+            generated = fullfile(root, "site", "use", "apps", "image_tools", ...
+                "marker", "index.html");
             writeText(manual, "# Marker");
             writeText(generated, "<html></html>");
 
@@ -83,7 +84,7 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             root = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             writeEntry(root, fullfile("apps", "image_tools", "marker"), "labkit_Marker_app");
             writeEntry(root, fullfile("private_apps", "apps", "private", "secret"), "labkit_Secret_app");
-            writeText(fullfile(root, "docs", "apps", "image_tools", "marker", "README.md"), "# Marker");
+            writeText(fullfile(root, "docs", "use", "apps", "image_tools", "marker", "README.md"), "# Marker");
 
             testCase.verifyError(@() labkit.app.internal.launcher.dispatch(root, "documentation", "labkit_Secret_app"), ...
                 "labkit:app:internal:launcher:DocumentationUnavailable");
@@ -102,13 +103,13 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             writeEntry(root, fullfile("apps", "image_tools", "marker"), ...
                 "labkit_Marker_app");
-            writeText(fullfile(root, "docs", "apps", "image_tools", ...
+            writeText(fullfile(root, "docs", "use", "apps", "image_tools", ...
                 "marker", "README.md"), "# Marker");
             cleanup = launcherGuiFixture(strings(0, 1));
 
             fig = labkit.app.internal.launcher.dispatch(root);
             button = findall(fig, "Type", "uibutton", ...
-                "Text", "Documentation and History");
+                "Text", "Open App Guide");
             button.ButtonPushedFcn(button, []);
 
             testCase.verifyTrue(any(contains(launcherText(fig), ...
@@ -123,7 +124,7 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             command = "labkit_Marker_app";
             writeEntry(root, fullfile("apps", "image_tools", "marker"), ...
                 command);
-            writeText(fullfile(root, "docs", "apps", "image_tools", ...
+            writeText(fullfile(root, "docs", "use", "apps", "image_tools", ...
                 "marker", "README.md"), "# Marker");
             writeToolStub(root, "docs", "renderLabKitDocs");
             cleanup = launcherGuiFixture("renderLabKitDocs");
@@ -204,7 +205,7 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 [62 120 180 70 72 90]);
             testCase.verifyTrue(all(ismember([ ...
                 "Open Selected App", "Refresh App List", ...
-                "Documentation and History", "Latest", "Versions", ...
+                "Open App Guide", "Latest", "Versions", ...
                 "Doc Generation", "Run Code Analyzer", ...
                 "Profile Selected App", "Clean Artifacts", ...
                 "Package Checked"], buttons)));
@@ -312,7 +313,7 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             root = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             command = "labkit_ToolProbe_app";
             writeEntry(root, fullfile("apps", "tools", "probe"), command);
-            writeText(fullfile(root, "docs", "apps", "tools", ...
+            writeText(fullfile(root, "docs", "use", "apps", "tools", ...
                 "probe", "README.md"), "# Tool Probe");
             tools = {
                 "maintenance", "cleanLabKitArtifacts"

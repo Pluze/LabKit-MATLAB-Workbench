@@ -50,7 +50,7 @@ def owning_manual(root: pathlib.Path, component: str, owner: str) -> str | None:
     if component == "labkit.app":
         return "docs/develop/framework/README.md"
     if component == "labkit_launcher":
-        return "docs/apps/labkit-core/launcher/README.md"
+        return "docs/use/apps/labkit-core/launcher/README.md"
     if component.startswith("labkit."):
         area = component.removeprefix("labkit.")
         manual = root / "docs" / "develop" / "libraries" / area / "README.md"
@@ -61,7 +61,9 @@ def owning_manual(root: pathlib.Path, component: str, owner: str) -> str | None:
     if len(parts) < 3 or parts[0] != "apps":
         return None
     slug = parts[2].replace("_", "-")
-    matches = sorted((root / "docs" / "apps").glob(f"*/{slug}/README.md"))
+    matches = sorted(
+        (root / "docs" / "use" / "apps").glob(f"*/{slug}/README.md")
+    )
     if len(matches) != 1:
         return None
     return matches[0].relative_to(root).as_posix()

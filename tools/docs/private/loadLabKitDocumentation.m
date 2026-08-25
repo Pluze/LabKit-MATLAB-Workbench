@@ -209,34 +209,37 @@ function [id, output, kind, nav, components] = ...
         app = apps(appIndex);
         id = "app-" + string(app.id);
         kind = "app";
-        nav = ["Apps"; string(app.familyTitle)];
+        nav = ["Use"; "Apps"; string(app.familyTitle)];
         components = string(app.command);
     elseif ~isempty(familyIndex)
         app = apps(familyIndex);
         id = "app-family-" + string(app.family);
         kind = "app family";
-        nav = ["Apps"; string(app.familyTitle)];
+        nav = ["Use"; "Apps"; string(app.familyTitle)];
     elseif ~isempty(appFolderIndex)
         app = apps(appFolderIndex);
-        nav = ["Apps"; string(app.familyTitle); string(app.id)];
+        nav = ["Use"; "Apps"; string(app.familyTitle); string(app.id)];
         components = string(app.command);
     elseif source == "README.md"
         id = "home";
         kind = "overview";
-    elseif source == "start/README.md"
-        id = "start";
+    elseif source == "use/README.md"
+        id = "use";
         kind = "tutorial";
-        nav = "Start";
+        nav = "Use";
         components = "labkit_launcher";
-    elseif source == "apps/README.md"
+    elseif source == "use/apps/README.md"
         id = "apps";
         kind = "overview";
-        nav = "Apps";
+        nav = ["Use"; "Apps"];
+    elseif startsWith(source, "use/")
+        nav = "Use";
+        components = "labkit_launcher";
     elseif source == "reference/README.md"
         id = "api";
         output = "reference/index.html";
         kind = "reference";
-        nav = "API Reference";
+        nav = "Reference";
     elseif source == "develop/framework/README.md"
         id = "framework";
         kind = "explanation";
@@ -268,19 +271,23 @@ function [id, output, kind, nav, components] = ...
             components = "labkit." + replace(parts(3), "-", ".");
         end
     elseif startsWith(source, "develop/")
-        nav = ["Develop"; pathGroup(source, "develop")];
-    elseif source == "maintain/README.md"
-        nav = "Maintain";
-    elseif startsWith(source, "maintain/")
-        nav = ["Maintain"; pathGroup(source, "maintain")];
-    elseif source == "upgrade/README.md"
-        nav = "Upgrade";
-    elseif startsWith(source, "upgrade/")
-        nav = "Upgrade";
-    elseif source == "apps/labkit-core/launcher/README.md"
+        group = pathGroup(source, "develop");
+        if any(source == ["develop/private-apps.md", ...
+                "develop/testing.md", "develop/documentation.md", ...
+                "develop/release.md"])
+            group = "Project Work";
+        elseif startsWith(source, "develop/tools/")
+            group = "Developer Tools";
+        end
+        nav = ["Develop"; group];
+        if source == "develop/documentation.md" || ...
+                source == "develop/tools/documentation.md"
+            components = "documentation";
+        end
+    elseif source == "use/apps/labkit-core/launcher/README.md"
         id = "launcher";
         kind = "app manual";
-        nav = ["Apps"; "LabKit Core"];
+        nav = ["Use"; "Apps"; "LabKit Core"];
         components = "labkit_launcher";
     end
 end
@@ -437,18 +444,19 @@ function apps = discoverPublicApps(repoRoot, sourceRoot)
                 "Public App folder must be apps/<family>/<app>: %s", folder);
         end
         id = replace(parts(2), "_", "-");
-        manuals = dir(fullfile(sourceRoot, "apps", "*", id, "README.md"));
+        manuals = dir(fullfile(sourceRoot, "use", "apps", "*", id, "README.md"));
         if numel(manuals) ~= 1
             error("LabKit:Docs:MissingAppManual", ...
                 ["Discovered App must have exactly one manual at " ...
-                "docs/apps/<family>/%s/README.md."], id);
+                "docs/use/apps/<family>/%s/README.md."], id);
         end
         family = string(manuals(1).folder);
         family = replace(extractBefore(extractAfter(family, ...
-            string(sourceRoot) + filesep + "apps" + filesep), filesep), ...
+            string(sourceRoot) + filesep + "use" + filesep + ...
+            "apps" + filesep), filesep), ...
             filesep, "/");
-        source = "apps/" + family + "/" + id + "/README.md";
-        familySource = "apps/" + family + "/README.md";
+        source = "use/apps/" + family + "/" + id + "/README.md";
+        familySource = "use/apps/" + family + "/README.md";
         if ~isfile(fullfile(sourceRoot, familySource))
             error("LabKit:Docs:MissingAppFamilyManual", ...
                 "Discovered App family has no manual: %s", familySource);
@@ -466,7 +474,8 @@ function apps = discoverPublicApps(repoRoot, sourceRoot)
             "familyTitle", char(familyTitle), ...
             "folder", char(relativeFolder), ...
             "source", char(source), ...
-            "output", char("apps/" + family + "/" + id + "/index.html"), ...
+            "output", char(labkit.app.internal.launcher.documentationRoute( ...
+                family, id)), ...
             "familySource", char(familySource), ...
             "description", char(string(catalog.Description(k))));
     end

@@ -4,24 +4,6 @@ function html = renderLabKitApiBody(model, item, outputPath)
 % Inputs: documentation model, API record, and generated output path.
 % Output: structured HTML reference body.
 
-    [ownerTitle, ownerTarget] = ownerPage(model, item);
-    if startsWith(string(item.symbol), "labkit.app")
-        contextTitle = "Framework";
-        contextTarget = "develop/framework/index.html";
-    else
-        contextTitle = "API Reference";
-        contextTarget = "reference/index.html";
-    end
-    context = "<p class=""api-context""><a href=""" + ...
-        relativeWebPath(outputPath, contextTarget) + """>" + ...
-        contextTitle + "</a>";
-    if strlength(ownerTarget) > 0
-        context = context + " &rsaquo; <a href=""" + ...
-            relativeWebPath(outputPath, ownerTarget) + """>" + ...
-            htmlEscape(ownerTitle) + "</a>";
-    end
-    context = context + "</p>";
-
     sourceUrl = model.repositoryUrl + "/blob/main/" + item.source;
     summary = cleanSummary(item.summary);
     syntax = publicCallSyntax(item.helpText, item.signature);
@@ -29,7 +11,6 @@ function html = renderLabKitApiBody(model, item, outputPath)
         item.helpText, item.summary, model.api, item, outputPath);
     relatedHtml = renderRelatedApis(model.api, item, outputPath);
     html = strjoin([ ...
-        context
         "<h1><code>" + htmlEscape(item.symbol) + "</code></h1>"
         "<p class=""lead"">" + htmlEscape(summary) + "</p>"
         "<h2 id=""syntax"">Syntax</h2>"
@@ -225,7 +206,7 @@ function html = renderDefinitions(lines, api, item, outputPath)
         rows = strings(numel(entries), 1);
         for k = 1:numel(entries)
             rows(k) = "<div class=""argument""><dt><code>" + ...
-                htmlEscape(entries(k).term) + "</code></dt><dd>" + ...
+                breakableTerm(entries(k).term) + "</code></dt><dd>" + ...
                 renderApiText(entries(k).description, ...
                     api, item, outputPath) + "</dd></div>";
         end
@@ -234,6 +215,12 @@ function html = renderDefinitions(lines, api, item, outputPath)
             strjoin(rows, "") + "</dl>";
     end
     html = strjoin(parts(1:partCount), newline);
+end
+
+function html = breakableTerm(value)
+    html = htmlEscape(value);
+    html = replace(html, ":", ":<wbr>");
+    html = replace(html, ".", ".<wbr>");
 end
 
 function html = renderParagraphs(lines, api, item, outputPath)
@@ -306,51 +293,6 @@ function html = renderRelatedApis(api, item, outputPath)
     end
     html = "<h2 id=""related-apis"">Related APIs</h2><ul>" + ...
         strjoin(rows, "") + "</ul>";
-end
-
-function [title, target] = ownerPage(model, item)
-    title = "";
-    target = "";
-    pages = model.pages;
-    if string(item.origin) == "app"
-        id = "app-" + replace(string(item.owner), "_", "-");
-        index = find(string({pages.id}) == id, 1);
-    else
-        symbol = string(item.symbol);
-        if startsWith(symbol, "labkit.app")
-            index = find(string({pages.output}) == ...
-                "develop/framework/app-sdk-api.html", 1);
-            if ~isempty(index)
-                title = string(pages(index).title);
-                target = string(pages(index).output);
-                return;
-            end
-        end
-        candidates = false(numel(pages), 1);
-        specificity = zeros(numel(pages), 1);
-        for k = 1:numel(pages)
-            components = string(pages(k).components);
-            for iComponent = 1:numel(components)
-                component = components(iComponent);
-                if startsWith(component, "labkit.") && ...
-                        (symbol == component || startsWith(symbol, component + "."))
-                    candidates(k) = true;
-                    specificity(k) = max(specificity(k), strlength(component));
-                end
-            end
-        end
-        indices = find(candidates);
-        if isempty(indices)
-            index = [];
-        else
-            [~, local] = max(specificity(indices));
-            index = indices(local);
-        end
-    end
-    if ~isempty(index)
-        title = string(pages(index).title);
-        target = string(pages(index).output);
-    end
 end
 
 function related = relatedApiItems(api, item)

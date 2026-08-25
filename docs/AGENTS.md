@@ -4,9 +4,12 @@ These rules govern authored Markdown under `docs/`, public MATLAB help, and the 
 
 ## Reader and intent ownership
 
-- Organize documentation first by reader destination and then by intent. The stable destinations are start, Apps, develop, maintain, reference, upgrade, and changes. Keep one stable topic per page; an App defaults to one complete manual, and a child page exists only for an independent reader goal with enough content to stand alone.
+- Use one classification axis at the top level: reading intent. **Use** owns installation, versions, the Launcher, the App catalog, and App manuals; **Develop** owns the complete source lifecycle from App authoring through testing, documentation, tooling, and release; **Reference** owns exact callable and schema lookup; **Changes** owns accepted historical rationale. Audience and page type shape content inside those paths and never create competing global sections. Keep one stable topic per page; an App defaults to one complete manual, and a child page exists only for an independent reader goal with enough content to stand alone.
 - Give every published narrative page one machine-readable page contract with a stable semantic ID, page type, audience, and summary. Current authority is implied by this block. App and package discovery own component relationships; paths choose routes, and moving a page intentionally changes its URL.
 - Treat the documentation home and section indexes as routing pages. They explain what LabKit is, who the section serves, when to choose each path, and the shortest useful next action. They do not duplicate manuals or APIs.
+- Generate global navigation, breadcrumbs, bounded local navigation, page outlines, the structural documentation map, and Change indexes from one validated page model. A local sidebar shows only its section, family, package, or Change browse views; it never lists the complete site or every Change record.
+- Treat links as reader transitions. Launcher routes lead to current App guides; current guides lead to exact APIs and recent Changes; Changes lead back to affected current documentation and any supersession chain; upgrade tasks lead to current guides and GitHub Releases. Use one semantic route resolver for Launcher and rendered App output rather than independent string construction.
+- Keep manually authored next-topic lists to the smallest useful set, normally no more than five links. Do not duplicate breadcrumbs, generated catalogs, map entries, component archives, or package siblings in page prose.
 - Keep one supported task together. State the goal, prerequisites, steps, expected result, verification, recovery, and next relevant topic. Split rationale or exact reference only when the resulting page is independently useful and stable.
 
 ## Four fact owners
@@ -32,6 +35,7 @@ These rules govern authored Markdown under `docs/`, public MATLAB help, and the 
 
 - Complete public MATLAB help immediately after the declaration is the sole authoring source for a public function page. Document every syntax, input, output, option, default, legal value, unit, shape, error, side effect, and related supported API that applies.
 - Generate App and library catalogs from launcher and package metadata. A public App, family, or app-facing package must not depend on a handwritten routing list for discoverability; coverage validation rejects omissions.
+- Generate structural map pages and Change component/year archives without authored Markdown mirrors. Search indexes detail pages; the map and browse indexes expose their structure without turning every record or API into global navigation.
 - Private helpers have no public reference page. Private helper comments state callers, shapes, side effects, and assumptions in source only.
 - `Example:` help and marked runnable Markdown examples execute in a clean MATLAB session with synthetic data. Use `Typical Call:` for interactive, device-, or user-file-dependent sketches.
 
@@ -48,4 +52,5 @@ These rules govern authored Markdown under `docs/`, public MATLAB help, and the 
 - Lead with the reader's outcome. Use familiar product and laboratory terms; introduce an internal contract term only when the reader must act on it.
 - Prefer short sections, concrete verbs, exact labels, and tables only for real field comparisons. Avoid diff narration, policy voice, implementation inventories, and repeated ownership slogans in user pages.
 - Keep long symbols, error identifiers, paths, and table cells readable at desktop and mobile widths. Code may wrap or scroll; it must not overlap an adjacent description.
+- Prefer semantic break opportunities in identifiers and independently scrollable terms over arbitrary mid-token wrapping. Stack term/description layouts before they become too narrow to read.
 - Validate page contracts, required sections, source authority, App/package coverage, routes, local links, search classification, HTML structure, responsive representatives, and deterministic output before delivery.

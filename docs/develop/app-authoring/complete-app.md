@@ -215,4 +215,4 @@ Before merge, update the App version, owning manual, structured component histor
 - [App Development](app-development.md)
 - [Architecture](architecture.md)
 - [LabKit App SDK](../framework/README.md)
-- [Testing](../../maintain/testing.md)
+- [Testing](../testing.md)

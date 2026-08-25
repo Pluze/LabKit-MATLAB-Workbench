@@ -59,11 +59,11 @@ refreshButton = uibutton(runGrid, "Text", "Refresh App List");
 refreshButton.Layout.Row = 2;
 refreshButton.Layout.Column = 1;
 appDocsButton = uibutton(runGrid, ...
-    "Text", "Documentation and History");
+    "Text", "Open App Guide");
 appDocsButton.Layout.Row = 2;
 appDocsButton.Layout.Column = 2;
 appDocsButton.Tooltip = ...
-    "Open the online documentation page for the selected app.";
+    "Open the current online guide for the selected App.";
 
 versionPanel = uipanel(controls, "Title", "Versions and Install");
 versionPanel.Layout.Row = 2;

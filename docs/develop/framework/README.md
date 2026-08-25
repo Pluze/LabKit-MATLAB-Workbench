@@ -18,7 +18,7 @@ summary: Understand the labkit.app lifecycle, layout, transactions, execution, s
 | Declare compatible LabKit modules | [Compatibility contracts](compatibility/contracts.md) |
 | Look up exact MATLAB syntax | [Public API reference](../../reference/README.md) |
 | Browse the App SDK API by capability | [App SDK API](app-sdk-api.md) |
-| Validate framework or GUI changes | [Testing](../../maintain/testing.md) |
+| Validate framework or GUI changes | [Testing](../testing.md) |
 
 ## SDK Map
 
@@ -114,6 +114,6 @@ Framework concepts and source names are versionless. Compatibility belongs to `l
 
 ## Related Topics
 
-- [App catalog](../../apps/README.md)
+- [App catalog](../../use/apps/README.md)
 - [App development](../app-authoring/app-development.md)
 - [Changes](../../changes/README.md)

@@ -7,7 +7,7 @@ audience: app-developer
 summary: Read FLIR radiometric JPEG data and metadata, convert sensor values to degrees Celsius, and create display-ready RGB images.
 ```
 
-[API reference](../../../reference/README.md) | [FLIR Thermal app](../../../apps/image-measurement/flir-thermal/README.md)
+[API reference](../../../reference/README.md) | [FLIR Thermal app](../../../use/apps/image-measurement/flir-thermal/README.md)
 
 The `labkit.thermal` functions read FLIR radiometric JPEG files, expose their raw sensor data and calibration metadata, convert sensor values to degrees Celsius, and create display-ready RGB images. They can be called from MATLAB without opening a LabKit app.
 
@@ -116,5 +116,5 @@ Each generated Thermal API page distinguishes returned status from thrown errors
 ## Related Topics
 
 - [Image functions](../image/README.md) cover ordinary image IO and image processing that does not use radiometric calibration.
-- [FLIR Thermal app](../../../apps/image-measurement/flir-thermal/README.md) provides interactive file review, measurements, display controls, and exports.
+- [FLIR Thermal app](../../../use/apps/image-measurement/flir-thermal/README.md) provides interactive file review, measurements, display controls, and exports.
 - [Changes](../../../changes/README.md) lists changes to thermal file support and calibration behavior.

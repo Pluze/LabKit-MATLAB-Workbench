@@ -7,7 +7,7 @@ audience: app-developer
 summary: Use GUI-free import and processing functions for physiological and wearable time-series data.
 ```
 
-[Public API index](../../../reference/README.md) | [App guide](../../../apps/README.md)
+[Public API index](../../../reference/README.md) | [App guide](../../../use/apps/README.md)
 
 `labkit.biosignal.*` provides GUI-free import and processing functions for physiological and wearable time-series data. Use it to build a MATLAB script from the same recording, channel, event, segment, template, and measurement structures used by LabKit apps.
 

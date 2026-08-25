@@ -22,6 +22,16 @@
       "rationale": "Structured changes, supersession relationships, and history migration are documentation architecture work."
     },
     {
+      "prompt": "Add a new App guide and make it discoverable from the Launcher, App family, API ownership, Changes, breadcrumbs, search, and the generated documentation map without adding a hand-written global catalog.",
+      "should_activate": true,
+      "rationale": "Reader paths, semantic routes, generated navigation, component relationships, and renderer validation are documentation maintenance."
+    },
+    {
+      "prompt": "The development landing sends readers into a separate maintenance tree for testing and release. Rework the whole information architecture so top-level sections use one reader-intent axis and core journeys stay inside one section.",
+      "should_activate": true,
+      "rationale": "Competing top-level classifications, page movement, navigation, and reader-journey continuity are documentation architecture work."
+    },
+    {
       "prompt": "Rename a private MATLAB local variable without changing help or user behavior.",
       "should_activate": false,
       "rationale": "A source-only private rename has no authored documentation contract."

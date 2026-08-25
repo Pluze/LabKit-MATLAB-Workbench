@@ -7,7 +7,7 @@ audience: app-developer
 summary: Communicate with an ESM303 test stand and attached Series 5 gauge through a GUI-free serial driver with explicit protocol and decoding contracts.
 ```
 
-[API reference](../../../reference/README.md) | [Mark-10 Monitor](../../../apps/force-gauges/mark10-monitor/README.md)
+[API reference](../../../reference/README.md) | [Mark-10 Monitor](../../../use/apps/force-gauges/mark10-monitor/README.md)
 
 `labkit.mark10` is a GUI-free serial driver for an ESM303 test stand with an attached Series 5 force gauge. It owns documented ESM303 and GCL2 framing, capability probing, force/travel decoding, synchronized acquisition with a safe fallback, settings readback, and zero verification. It never sends stand motion, limit, cycle, or automatic `SAVE` commands.
 

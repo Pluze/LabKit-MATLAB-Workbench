@@ -1,25 +1,27 @@
-# Development
+# Develop LabKit
 
 ```labkit-page
 id: develop
 type: landing
 audience: app-developer
-summary: Use these pages for source changes and maintenance. App users normally need only Getting started and the app guide.
+summary: Build or extend Apps, work on shared code, test changes, maintain documentation, use source tools, and prepare releases.
 ```
 
-Use these pages for source changes and maintenance. App users normally need only [Getting started](../start/README.md) and the [app guide](../apps/README.md).
+Use this section for the complete source-development path, from understanding ownership and building an App through testing, documentation, packaging, and release. If you only want to run LabKit, start with [Use LabKit](../use/README.md).
 
-## Read By Task
+## Choose A Development Task
 
 | Task | Page |
 | --- | --- |
 | Understand repository and package ownership | [Architecture](app-authoring/architecture.md) |
-| Create or refactor an app | [App development](app-authoring/app-development.md) and [complete app tutorial](app-authoring/complete-app.md) |
+| Create or refactor an App | [App development](app-authoring/app-development.md) and [complete App tutorial](app-authoring/complete-app.md) |
+| Use or extend the App SDK | [App Framework](framework/README.md) |
+| Work with reusable image, thermal, DTA, RHS, biosignal, or Mark-10 code | [Public API reference](../reference/README.md) and its linked module guides |
 | Exchange simple scientific tables or gradually improve an App CSV export | [Scientific CSV exchange](data-design/scientific-csv.md) |
-| Work with an ignored private app repository | [Private apps](../maintain/private-apps.md) |
-| Select tests, GUI checks, or profiling | [Testing](../maintain/testing.md) |
-| Call source-checkout packaging, profiling, codecheck, or documentation tools | [Maintainer tools](../maintain/tools/README.md) |
-| Maintain the documentation sources and generated site | [Documentation system](../maintain/documentation.md) |
-| Choose versions, tags, and release evidence | [Release process](../maintain/release.md) |
+| Work with an ignored private App repository | [Private Apps](private-apps.md) |
+| Select tests, GUI checks, or CI scope | [Testing](testing.md) |
+| Call source-checkout packaging, profiling, codecheck, or documentation tools | [Developer tools](tools/README.md) |
+| Maintain documentation sources and the generated site | [Documentation system](documentation.md) |
+| Choose versions, tags, release notes, and assets | [Release process](release.md) |
 
-Reusable facade calls are documented separately in the [public API reference](../reference/README.md). Launcher behavior belongs with the [LabKit Core apps](../apps/labkit-core/README.md), not in maintainer-only development pages.
+Concepts, tutorials, and tasks stay here so a development workflow does not jump between competing top-level trees. Exact callable contracts stay in [Reference](../reference/README.md), accepted rationale stays in [Changes](../changes/README.md), and current Launcher behavior stays with the [LabKit Core App guides](../use/apps/labkit-core/README.md).

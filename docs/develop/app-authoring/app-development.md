@@ -94,11 +94,11 @@ Move code into `+labkit` only when it is domain-neutral, independent of app stat
 
 ## Validation
 
-Use focused app tests while editing, then follow the stable gates in [Testing](../../maintain/testing.md). Automated GUI tests cover launch, layout, callbacks, debug plumbing, and bounded workflows with minimal generated inputs; visual quality and manual interaction feel still require a human MATLAB check.
+Use focused app tests while editing, then follow the stable gates in [Testing](../testing.md). Automated GUI tests cover launch, layout, callbacks, debug plumbing, and bounded workflows with minimal generated inputs; visual quality and manual interaction feel still require a human MATLAB check.
 
 ## Related Reference
 
-- [App catalog and workflows](../../apps/README.md)
+- [App catalog and workflows](../../use/apps/README.md)
 - [App Framework](../framework/README.md)
 - [Architecture](architecture.md)
-- [Testing](../../maintain/testing.md)
+- [Testing](../testing.md)

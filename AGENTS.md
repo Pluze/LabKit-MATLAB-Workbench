@@ -12,10 +12,10 @@ affected source/tests/docs. Read component manuals only for changed contracts:
 - architecture: `docs/develop/app-authoring/architecture.md`
 - framework: `docs/develop/framework/README.md`
 - app development: `docs/develop/app-authoring/app-development.md`
-- testing: `docs/maintain/testing.md`
-- release: `docs/maintain/release.md`
+- testing: `docs/develop/testing.md`
+- release: `docs/develop/release.md`
 - libraries: `docs/develop/libraries/<area>/README.md`
-- apps: `docs/apps/README.md`
+- apps: `docs/use/apps/README.md`
 
 Use `.agents/migration_guide.md` only while a concrete architecture migration
 or compatibility retirement is active. Create it with the first owned entry
@@ -196,7 +196,7 @@ tests, history, and details out of the public repository.
   `changedFast` or a local full profile after every CI repair. Re-plan only when
   the repair intentionally widens the changed behavior or ownership boundary.
   Exact commands and scope live in
-  `docs/maintain/testing.md`.
+  `docs/develop/testing.md`.
 - MATLAB and GitHub inspection require host runtime/network permissions. Run
   every `gh` command with host permissions on its first attempt, including
   `gh auth status`; sandboxed `gh` cannot access the macOS Keychain and can

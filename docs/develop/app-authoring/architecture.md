@@ -7,7 +7,7 @@ audience: app-developer
 summary: Understand the repository boundaries, runtime dependencies, versions, entry points, and ownership rules that keep LabKit apps independent and maintainable.
 ```
 
-[Development index](../README.md) | [Public API index](../../reference/README.md) | [LabKit Launcher](../../apps/labkit-core/launcher/README.md) | [Maintainer Tools](../../maintain/tools/README.md)
+[Development index](../README.md) | [Public API index](../../reference/README.md) | [LabKit Launcher](../../use/apps/labkit-core/launcher/README.md) | [Developer Tools](../tools/README.md)
 
 LabKit is an app-first MATLAB workbench. Apps are the deliverables; `+labkit` is the small reusable foundation they share.
 
@@ -52,11 +52,11 @@ labkit_launcher
 
 The launcher discovers public `apps/**/labkit_*_app.m` entry points. Public app command names are stable user entry points, for example `labkit_CIC_app`, `labkit_DICPreprocess_app`, `labkit_ECGPrint_app`, and `labkit_RHSPreview_app`.
 
-Source checkouts may also keep local private apps under an ignored `private_apps/apps/` workspace or roots named by `LABKIT_PRIVATE_APP_ROOTS`. Any developer can create that local workspace for their own private apps. The launcher can list and launch those apps with `Visibility` set to `private`, but public releases and CI checks cover only the public `apps/` tree. Keep each private workspace as a separate private Git repository rather than mixing private app files into the public repo history. The public structure guide is [private-apps.md](../../maintain/private-apps.md); private app documentation belongs in the private workspace.
+Source checkouts may also keep local private apps under an ignored `private_apps/apps/` workspace or roots named by `LABKIT_PRIVATE_APP_ROOTS`. Any developer can create that local workspace for their own private apps. The launcher can list and launch those apps with `Visibility` set to `private`, but public releases and CI checks cover only the public `apps/` tree. Keep each private workspace as a separate private Git repository rather than mixing private app files into the public repo history. The public structure guide is [private-apps.md](../private-apps.md); private app documentation belongs in the private workspace.
 
 A GUI-free private discovery boundary scans App entry points, activates their paths, and invokes a selected entry only after revalidating its owning folder. The Launcher, documentation catalog, and plot-to-App handoffs share that boundary without acquiring a Launcher window. The standalone launcher keeps installation and repair self-contained so users can recover a damaged zip install even if packages, apps, docs, or scripts have been deleted. MATLAB desktop project metadata belongs to each developer's local workspace.
 
-Tools under `tools/` are source-checkout support utilities rather than app runtime APIs. The launcher may call a small, explicit subset for maintenance and deployment actions, such as profiling a selected app or packaging a single app for offline deployment. Single-app deployment packages include the launcher and only those launcher-needed tool folders, not the whole source checkout. Direct syntax, options, outputs, and artifact behavior are documented in [Maintainer Tools](../../maintain/tools/README.md).
+Tools under `tools/` are source-checkout support utilities rather than app runtime APIs. The launcher may call a small, explicit subset for maintenance and deployment actions, such as profiling a selected app or packaging a single app for offline deployment. Single-app deployment packages include the launcher and only those launcher-needed tool folders, not the whole source checkout. Direct syntax, options, outputs, and artifact behavior are documented in [Developer Tools](../tools/README.md).
 
 ## Ownership Boundaries
 
@@ -124,7 +124,7 @@ App GUIs use the explicit `labkit.app` SDK:
 
 Reusable facades publish MATLAB-native contract versions through their `version()` APIs. Apps declare ranges only for additional facades they call; the `labkit.app` foundation is implicit in `Definition` and needs no self-requirement. `labkit.contract` checks declared ranges in tests and at launch. This is a same-repo maintenance guardrail; routine users still update LabKit as one repository.
 
-Apps publish `AppVersion` and `Updated` metadata from the same definition for the launcher and window title. App versions are not dependency constraints and do not belong in `labkit.contract`. Project guardrails check `X.Y.Z` format and require versioned code changes to increase the corresponding definition, launcher, or facade version. The [release guide](../../maintain/release.md) explains how to select and publish the next version.
+Apps publish `AppVersion` and `Updated` metadata from the same definition for the launcher and window title. App versions are not dependency constraints and do not belong in `labkit.contract`. Project guardrails check `X.Y.Z` format and require versioned code changes to increase the corresponding definition, launcher, or facade version. The [release guide](../release.md) explains how to select and publish the next version.
 
 Image workflows may use `labkit.image` for generic image file filters, source image reads, display-name normalization, RGB double conversion, preview-size fitting, mean filtering, basic enhancement primitives, and image writes. Apps still own processing step semantics, ROI/background policy, matching formulas, crop geometry, focus-stack algorithms, DIC behavior, export schemas, and user workflow text.
 

@@ -7,7 +7,7 @@ audience: app-developer
 summary: Inspect Intan RHS metadata and read selected waveform windows without loading an entire recording into memory.
 ```
 
-[API reference](../../../reference/README.md) | [Neurophysiology apps](../../../apps/neurophysiology/README.md)
+[API reference](../../../reference/README.md) | [Neurophysiology apps](../../../use/apps/neurophysiology/README.md)
 
 The `labkit.rhs` functions inspect Intan RHS recordings and read selected waveform windows without loading an entire file into memory. They expose file metadata, channel names, data-block layout, timestamps, and samples in physical units. The functions can be called directly from MATLAB without opening a LabKit app.
 
@@ -145,7 +145,7 @@ The generated pages for `findFiles`, `inspectFile`, `indexFile`, `readWindow`, a
 
 ## Related Topics
 
-- [RHS Preview](../../../apps/neurophysiology/rhs-preview/README.md) provides interactive waveform review and channel-role drafting.
-- [Nerve Response Analysis](../../../apps/neurophysiology/nerve-response-analysis/README.md) reads selected RHS channels for event and response calculations.
+- [RHS Preview](../../../use/apps/neurophysiology/rhs-preview/README.md) provides interactive waveform review and channel-role drafting.
+- [Nerve Response Analysis](../../../use/apps/neurophysiology/nerve-response-analysis/README.md) reads selected RHS channels for event and response calculations.
 - [Biosignal functions](../biosignal/README.md) operate on imported recordings and generic waveforms after file IO.
 - [Changes](../../../changes/README.md) lists RHS parser and App changes.
