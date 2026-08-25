@@ -13,9 +13,6 @@ applicationState.project.inputs.items(index).angleDeg = ...
 applicationState = batch_crop.cropGeometry.ensureCurrentCenter(applicationState);
 applicationState = batch_crop.cropGeometry.clearDerived(applicationState, true);
 applicationState.session.view.scaleBar = [];
-callbackContext.log("info", "batch_crop.cropgeometry.rotationchanged.status", sprintf( ...
-    "Updated rotation for crop task %d: %.3g deg.", index, ...
-    applicationState.project.inputs.items(index).angleDeg));
 end
 
 function value = finiteScalar(candidate, fallback)

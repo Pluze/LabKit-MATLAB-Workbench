@@ -52,14 +52,15 @@ classdef (Hidden, Sealed) SessionJournalProjection < handle
             if obj.ProjectionDegradationPending
                 notifications(end + 1, 1) = notification( ...
                     "journal.degraded", "projection-failure", 0);
-                obj.ProjectionDegradationPending = false;
-            end
-            projectionDropDelta = obj.ProjectionDropCount - ...
-                obj.LastReportedProjectionDropCount;
-            if projectionDropDelta > 0
-                notifications(end + 1, 1) = notification( ...
-                    "journal.records_dropped", "projection-failure", projectionDropDelta);
+                projectionDropDelta = obj.ProjectionDropCount - ...
+                    obj.LastReportedProjectionDropCount;
+                if projectionDropDelta > 0
+                    notifications(end + 1, 1) = notification( ...
+                        "journal.records_dropped", "projection-failure", ...
+                        projectionDropDelta);
+                end
                 obj.LastReportedProjectionDropCount = obj.ProjectionDropCount;
+                obj.ProjectionDegradationPending = false;
             end
             try
                 snapshot = obj.Journal.healthSnapshot();
@@ -79,18 +80,15 @@ classdef (Hidden, Sealed) SessionJournalProjection < handle
                 end
                 notifications(end + 1, 1) = notification( ...
                     "journal.degraded", reason, 0);
-            end
-            invalidDelta = snapshot.invalidCanonicalRecordDropCount - ...
-                obj.LastInvalidCanonicalRecordDropCount;
-            if invalidDelta > 0
-                notifications(end + 1, 1) = notification( ...
-                    "journal.records_dropped", "invalid-canonical-record", invalidDelta);
-            end
-            writeFailureDelta = snapshot.writeFailureDropCount - ...
-                obj.LastWriteFailureDropCount;
-            if writeFailureDelta > 0
-                notifications(end + 1, 1) = notification( ...
-                    "journal.records_dropped", "write-failure", writeFailureDelta);
+                invalidDelta = snapshot.invalidCanonicalRecordDropCount - ...
+                    obj.LastInvalidCanonicalRecordDropCount;
+                writeFailureDelta = snapshot.writeFailureDropCount - ...
+                    obj.LastWriteFailureDropCount;
+                dropDelta = invalidDelta + writeFailureDelta;
+                if dropDelta > 0
+                    notifications(end + 1, 1) = notification( ...
+                        "journal.records_dropped", reason, dropDelta);
+                end
             end
             obj.LastAvailable = snapshot.available;
             obj.LastInvalidCanonicalRecordDropCount = ...

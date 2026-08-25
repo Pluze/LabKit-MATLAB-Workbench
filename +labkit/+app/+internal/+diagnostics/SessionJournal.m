@@ -22,6 +22,8 @@ classdef (Hidden, Sealed) SessionJournal < handle
         SegmentByteLimit (1, 1) double
         SegmentLimit (1, 1) double
         SessionByteLimit (1, 1) double
+        RootSessionLimit (1, 1) double
+        RootByteLimit (1, 1) double
         BufferRecordLimit (1, 1) double
         BufferByteLimit (1, 1) double
         DroppedRecordCount (1, 1) double = 0
@@ -67,6 +69,8 @@ classdef (Hidden, Sealed) SessionJournal < handle
             obj.SegmentByteLimit = options.SegmentByteLimit;
             obj.SegmentLimit = options.SegmentLimit;
             obj.SessionByteLimit = options.SessionByteLimit;
+            obj.RootSessionLimit = options.RootSessionLimit;
+            obj.RootByteLimit = options.RootByteLimit;
             obj.BufferRecordLimit = options.BufferRecordLimit;
             obj.BufferByteLimit = options.BufferByteLimit;
             obj.FaultInjector = options.FaultInjector;
@@ -91,7 +95,7 @@ classdef (Hidden, Sealed) SessionJournal < handle
             end
             try
                 if isFlushSeverity(record.severity) && ~obj.flush( ...
-                        DeferFailureManifest=true)
+                        DeferFailureManifest=true, UpdateManifest=false)
                     obj.recordUnavailableDrop();
                     obj.writeManifest(Force=true);
                     return;
@@ -119,11 +123,14 @@ classdef (Hidden, Sealed) SessionJournal < handle
 
         function written = flush(obj, varargin)
             deferFailureManifest = false;
+            updateManifest = true;
             if ~isempty(varargin)
                 options = labkit.app.internal.contract.OptionParser.parse( ...
-                    "SessionJournal.flush", "DeferFailureManifest", varargin{:});
+                    "SessionJournal.flush", ...
+                    ["DeferFailureManifest", "UpdateManifest"], varargin{:});
                 deferFailureManifest = optionValue(options, ...
                     "DeferFailureManifest", false);
+                updateManifest = optionValue(options, "UpdateManifest", true);
             end
             written = false;
             if obj.Closed || ~obj.Available || isempty(obj.BufferLines)
@@ -144,7 +151,11 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 obj.BufferBytes = 0;
                 failureReason = "flush-failure";
                 obj.enforceSessionRetention();
-                written = obj.writeManifest();
+                if updateManifest
+                    written = obj.writeManifest();
+                else
+                    written = true;
+                end
             catch
                 obj.recordWriteFailure(failureReason);
                 if ~deferFailureManifest
@@ -156,14 +167,14 @@ classdef (Hidden, Sealed) SessionJournal < handle
         function written = flushDurably(obj)
             % Close and reopen the active file so root-operation breadcrumbs
             % survive a later MATLAB hang or abnormal process termination.
-            written = obj.flush();
+            written = obj.flush(UpdateManifest=false);
             if ~written || obj.SegmentHandle < 0
                 return;
             end
             try
                 obj.closeSegment();
                 obj.openCurrentSegment();
-                written = obj.writeManifest();
+                written = true;
             catch
                 obj.recordWriteFailure("durability-failure");
                 obj.writeManifest(Force=true);
@@ -250,6 +261,7 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 if ~obj.writeManifest()
                     return;
                 end
+                obj.enforceRootRetention();
             catch
                 obj.recordPersistenceFailure("initialize-failure");
             end
@@ -316,6 +328,44 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 obj.ExpiredSegmentCount = obj.ExpiredSegmentCount + 1;
                 segments = sessionSegments(obj.Folder);
                 totalBytes = sum([segments.bytes]);
+            end
+        end
+
+        function enforceRootRetention(obj)
+            sessionsFolder = fullfile(obj.RootFolder, "sessions");
+            entries = dir(sessionsFolder);
+            entries = entries([entries.isdir]);
+            entries = entries(~ismember(string({entries.name}), [".", ".."]));
+            if isempty(entries)
+                return;
+            end
+            bytes = zeros(1, numel(entries));
+            for index = 1:numel(entries)
+                bytes(index) = folderBytes( ...
+                    fullfile(entries(index).folder, entries(index).name));
+            end
+            while numel(entries) > obj.RootSessionLimit || ...
+                    sum(bytes) > obj.RootByteLimit
+                folders = string(fullfile({entries.folder}, {entries.name}));
+                closed = false(1, numel(entries));
+                for index = 1:numel(entries)
+                    closed(index) = journalState(folders(index)) == "closed";
+                end
+                candidates = find(closed & folders ~= obj.Folder);
+                if isempty(candidates)
+                    return;
+                end
+                [~, oldest] = min([entries(candidates).datenum]);
+                removeIndex = candidates(oldest);
+                try
+                    rmdir(char(folders(removeIndex)), "s");
+                catch
+                    % Retention is best-effort and must not disable the
+                    % current journal when an old closed session is locked.
+                    return;
+                end
+                entries(removeIndex) = [];
+                bytes(removeIndex) = [];
             end
         end
 
@@ -433,6 +483,8 @@ options = struct( ...
     "SegmentByteLimit", 10 * 1024 * 1024, ...
     "SegmentLimit", 5, ...
     "SessionByteLimit", 50 * 1024 * 1024, ...
+    "RootSessionLimit", 100, ...
+    "RootByteLimit", 500 * 1024 * 1024, ...
     "BufferRecordLimit", 64, ...
     "BufferByteLimit", 64 * 1024, ...
     "FaultInjector", [], "TestObserver", []);
@@ -456,6 +508,7 @@ if strlength(options.SessionId) > 0
         options.SessionId, "SessionId");
 end
 for name = ["SegmentByteLimit", "SegmentLimit", "SessionByteLimit", ...
+        "RootSessionLimit", "RootByteLimit", ...
         "BufferRecordLimit", "BufferByteLimit"]
     value = options.(name);
     if ~(isnumeric(value) && isscalar(value) && isfinite(value) && value > 0 && ...
@@ -531,6 +584,31 @@ if isempty(info)
     value = 0;
 else
     value = info.bytes;
+end
+end
+
+function value = folderBytes(folder)
+entries = dir(fullfile(folder, "**", "*"));
+entries = entries(~[entries.isdir]);
+if isempty(entries)
+    value = 0;
+else
+    value = sum([entries.bytes]);
+end
+end
+
+function state = journalState(folder)
+state = "";
+manifestFile = fullfile(folder, "manifest.json");
+if exist(char(manifestFile), "file") ~= 2
+    return;
+end
+try
+    manifest = jsondecode(fileread(char(manifestFile)));
+    if isstruct(manifest) && isscalar(manifest) && isfield(manifest, "state")
+        state = string(manifest.state);
+    end
+catch
 end
 end
 

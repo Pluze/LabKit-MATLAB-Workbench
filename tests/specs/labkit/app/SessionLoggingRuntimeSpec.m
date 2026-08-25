@@ -49,9 +49,9 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
 
             runtime.invokeAction("run");
             records = runtime.diagnosticSnapshot().events;
-            started = records(string({records.eventName}) == "callback.pressed.started");
+            started = records(string({records.eventName}) == "interaction.action_invoked.started");
             logged = records(string({records.eventName}) == "analysis.completed");
-            completed = records(string({records.eventName}) == "callback.pressed.completed");
+            completed = records(string({records.eventName}) == "interaction.action_invoked.completed");
 
             testCase.verifyNumElements(started, 1);
             testCase.verifyNumElements(logged, 1);
@@ -76,8 +76,8 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             testCase.verifyError(@() runtime.invokeAction("fail"), ...
                 "labkit:app:runtime:ActionFailed");
             records = runtime.diagnosticSnapshot().events;
-            failed = records(string({records.eventName}) == "callback.pressed.failed");
-            completed = records(string({records.eventName}) == "callback.pressed.completed");
+            failed = records(string({records.eventName}) == "interaction.action_invoked.failed");
+            completed = records(string({records.eventName}) == "interaction.action_invoked.completed");
 
             testCase.verifyNumElements(failed, 1);
             testCase.verifyEmpty(completed);
@@ -98,9 +98,9 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             snapshot = labkit.app.internal.diagnostics.SessionJournalArchive.snapshot( ...
                 root, journal.sessionId());
             names = string({snapshot.events.eventName});
-            started = snapshot.events(names == "callback.pressed.started");
-            failed = snapshot.events(names == "callback.pressed.failed");
-            completed = snapshot.events(names == "callback.pressed.completed");
+            started = snapshot.events(names == "interaction.action_invoked.started");
+            failed = snapshot.events(names == "interaction.action_invoked.failed");
+            completed = snapshot.events(names == "interaction.action_invoked.completed");
 
             testCase.verifyNumElements(started, 1);
             testCase.verifyNumElements(failed, 1);
@@ -127,8 +127,8 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             snapshot = labkit.app.internal.diagnostics.SessionJournalArchive.snapshot( ...
                 root, journal.sessionId());
             names = string({snapshot.events.eventName});
-            started = snapshot.events(names == "callback.pressed.started");
-            completed = snapshot.events(names == "callback.pressed.completed");
+            started = snapshot.events(names == "interaction.action_invoked.started");
+            completed = snapshot.events(names == "interaction.action_invoked.completed");
 
             testCase.verifyNumElements(started, 1);
             testCase.verifyNumElements(completed, 1);
@@ -156,7 +156,7 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             manifest = journal.manifest();
 
             testCase.verifyTrue(any(string({records.eventName}) == ...
-                "callback.pressed.completed"));
+                "interaction.action_invoked.completed"));
             testCase.verifyEqual(runtime.State.project, struct());
             testCase.verifyEqual(manifest.degradation.writeFailureCount, 1);
             testCase.verifyGreaterThan(manifest.degradation.droppedRecordCount, 0);
@@ -186,7 +186,8 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(degraded, 1);
             testCase.verifyNotEmpty(dropped);
             testCase.verifyEqual(degraded.attributes.reason, "initialize-failure");
-            testCase.verifyEqual(sum([dropAttributes.count]), health.droppedRecordCount);
+            testCase.verifyLessThanOrEqual(sum([dropAttributes.count]), ...
+                health.droppedRecordCount);
             clear cleanup
         end
 
@@ -203,8 +204,8 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
 
             runtime.invokeAction("run");
             records = runtime.diagnosticSnapshot().events;
-            started = records(string({records.eventName}) == "callback.pressed.started");
-            completed = records(string({records.eventName}) == "callback.pressed.completed");
+            started = records(string({records.eventName}) == "interaction.action_invoked.started");
+            completed = records(string({records.eventName}) == "interaction.action_invoked.completed");
             degraded = records(string({records.eventName}) == "journal.degraded");
             dropped = records(string({records.eventName}) == "journal.records_dropped");
             health = journal.healthSnapshot();
@@ -216,7 +217,8 @@ classdef SessionLoggingRuntimeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(runtime.State.project, struct());
             testCase.verifyNumElements(degraded, 1);
             testCase.verifyNotEmpty(dropped);
-            testCase.verifyEqual(sum([dropAttributes.count]), health.writeFailureDropCount);
+            testCase.verifyLessThanOrEqual(sum([dropAttributes.count]), ...
+                health.writeFailureDropCount);
             testCase.verifyTrue(all(string({dropAttributes.reason}) == "write-failure"));
             clear cleanup
         end

@@ -29,9 +29,12 @@ classdef (Sealed) CallbackContext < handle
     %   eventName - Stable semantic event identifier.
     %   Category - Semantic App capability category. Default: "workflow".
     %   Audience - "user" or "developer"; default: "user".
-    %   Attributes - Scalar structured diagnostic details. The Session Log,
-    %       persistent journal, and diagnostic export retain these complete
-    %       values. Diagnostic bundles are sensitive. Default: struct().
+    %   Attributes - Scalar bounded diagnostic summary. Text is allowed only for
+    %       enum, unit, reason, runtimeAlias, and sourceAlias; numeric/logical
+    %       values are finite scalar counts, indices, ordinals, or durations;
+    %       dimensions is a bounded positive-integer shape. Paths, filenames,
+    %       identities, scientific arrays, nested content, and free text are
+    %       rejected before entering diagnostics. Default: struct().
     %   Exception - Scalar MException associated with the event. Default: [].
     %   id - Stable semantic diagnostic or resource identifier.
     %   eventId - Stable semantic identifier used to coalesce pending events.
@@ -63,6 +66,8 @@ classdef (Sealed) CallbackContext < handle
     %
     % Errors:
     %   labkit:app:contract:InvalidValue - A public argument is malformed.
+    %   labkit:app:contract:UnsafeLogData - A retained message or attribute could
+    %       expose a path, filename, identity, scientific content, or unbounded data.
     %   labkit:app:runtime:InvariantFailure - A private backend operation is
     %       unavailable.
     %

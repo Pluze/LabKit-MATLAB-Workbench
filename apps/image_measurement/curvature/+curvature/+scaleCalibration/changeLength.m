@@ -1,6 +1,6 @@
 % App-owned implementation for curvature.scaleCalibration.changeLength within the curvature product workflow.
 function applicationState = changeLength( ...
-        applicationState, referenceLength, callbackContext)
+        applicationState, referenceLength, ~)
 %CHANGELENGTH Update the known physical reference length.
 calibration = applicationState.project.annotations.calibration;
 referenceLength = double(referenceLength);
@@ -14,7 +14,4 @@ applicationState.project.annotations.calibration = ...
         struct("referenceLine", calibration.referenceLine));
 applicationState.session.view.scaleBar = [];
 applicationState = curvature.curveEdit.clearMeasurements(applicationState);
-callbackContext.log("info", ...
-    "curvature.scalecalibration.changelength.status", ...
-    "Scale reference length set to " + string(referenceLength) + ".");
 end

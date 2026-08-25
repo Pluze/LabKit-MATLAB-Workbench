@@ -181,43 +181,52 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
         end
 
-        function applyControlValue(obj, target, value)
+        function changed = applyControlValue(obj, target, value)
+            plan = obj.Contract.PlatformPlan;
+            index = find(string({plan.Nodes.Id}) == string(target), 1);
+            if isempty(index)
+                error("labkit:app:contract:UnknownReference", ...
+                    "Layout target is undeclared: %s.", target);
+            end
+            configuration = plan.Nodes(index).Configuration;
+            directManipulation = plan.Nodes(index).Kind == "slider";
+            if isfield(configuration, "Bind") && strlength(configuration.Bind) > 0
+                current = labkit.app.internal.runtime.RuntimeStatePath.read( ...
+                    obj.State, configuration.Bind);
+                if isequaln(current, value)
+                    changed = false;
+                    return;
+                end
+            end
+            binding = ...
+                labkit.app.internal.runtime.RuntimeContractBoundary.signalForTarget( ...
+                obj.Contract, target, "valueChanged", false);
+            runtimeAlias = string(target);
+            if ~isempty(binding)
+                runtimeAlias = binding.Id;
+            end
+            changed = true;
             obj.recordOperation( ...
                 "runtime.interaction", "interaction.value_changed", ...
                 "Applying control value.", ...
-                "committed", "rolledBack", @apply);
+                "committed", "rolledBack", @apply, ...
+                Attributes=struct("runtimeAlias", runtimeAlias));
 
             function apply()
-                plan = obj.Contract.PlatformPlan;
-                index = find(string({plan.Nodes.Id}) == string(target), 1);
-                if isempty(index)
-                    error("labkit:app:contract:UnknownReference", ...
-                        "Layout target is undeclared: %s.", target);
-                end
-                configuration = plan.Nodes(index).Configuration;
-                directManipulation = plan.Nodes(index).Kind == "slider";
                 if isfield(configuration, "Bind") && ...
                         strlength(configuration.Bind) > 0
                     obj.applyBoundControl( ...
                         target, value, true, ~directManipulation);
-                else
-                    binding = ...
-                        labkit.app.internal.runtime.RuntimeContractBoundary.signalForTarget( ...
-                        obj.Contract, target, "valueChanged", false);
-                    if isempty(binding)
-                        error("labkit:app:contract:UnknownReference", ...
-                            "Layout target has no value behavior: %s.", ...
-                            target);
-                    end
-                    if directManipulation
-                        obj.enqueueTransition( ...
-                            binding, value, @(state) state, ...
-                            "Callback " + binding.Id, string(target), ...
-                            [], false);
-                    else
-                        obj.dispatch(binding, value);
-                    end
+                    return;
                 end
+                if isempty(binding)
+                    error("labkit:app:contract:UnknownReference", ...
+                        "Layout target has no value behavior: %s.", target);
+                end
+                obj.enqueueTransition( ...
+                    binding, value, @(state) state, ...
+                    "Callback " + binding.Id, string(target), ...
+                    [], ~directManipulation);
             end
         end
 
@@ -230,7 +239,8 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "runtime.interaction", "interaction.action_invoked", ...
                 "Invoking application action.", ...
                 "committed", "rolledBack", ...
-                @() obj.dispatch(binding, []));
+                @() obj.dispatch(binding, []), ...
+                Attributes=struct("runtimeAlias", binding.Id));
         end
 
         function applyTableEdit(obj, target, edit)
@@ -246,7 +256,8 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "runtime.interaction", "interaction.table_edited", ...
                 "Applying table edit.", ...
                 "committed", "rolledBack", ...
-                @() obj.dispatch(binding, edit));
+                @() obj.dispatch(binding, edit), ...
+                Attributes=struct("runtimeAlias", binding.Id));
         end
 
         function applyTableSelection(obj, target, cells)
@@ -259,7 +270,8 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "runtime.interaction", "interaction.table_selected", ...
                 "Applying table selection.", ...
                 "committed", "rolledBack", ...
-                @() obj.dispatch(binding, selection));
+                @() obj.dispatch(binding, selection), ...
+                Attributes=struct("runtimeAlias", binding.Id));
         end
 
         function applyWorkspacePage(obj, target, pageId)
@@ -271,7 +283,8 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "runtime.interaction", "interaction.page_changed", ...
                 "Applying workspace page selection.", ...
                 "committed", "rolledBack", ...
-                @() obj.dispatch(binding, string(pageId)));
+                @() obj.dispatch(binding, string(pageId)), ...
+                Attributes=struct("runtimeAlias", binding.Id));
         end
 
         function applyInteraction(obj, interactionId, signal, payload)
@@ -286,7 +299,8 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 @() obj.enqueueTransition( ...
                     binding, payload, @(state) state, ...
                     "Callback " + binding.Id, string(interactionId), ...
-                    [], false));
+                    [], false), ...
+                Attributes=struct("runtimeAlias", binding.Id));
         end
 
         function applyFilePanelSelection(obj, target, indices)
@@ -299,7 +313,8 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "Applying source selection.", ...
                 "committed", "rolledBack", ...
                 @() obj.commitFilePanel( ...
-                    target, config, current, indices, false));
+                    target, config, current, indices, false), ...
+                Attributes=struct("runtimeAlias", string(target)));
         end
 
         applyBoundControl(obj, target, value, dispatchChanged, showBusy)
@@ -476,8 +491,9 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function varargout = recordOperation( ...
                 obj, category, eventName, message, ...
-                successDisposition, failureDisposition, operation)
-            scope = obj.Recorder.begin(category, eventName, message);
+                successDisposition, failureDisposition, operation, varargin)
+            scope = obj.Recorder.begin( ...
+                category, eventName, message, varargin{:});
             try
                 if nargout == 0
                     operation();
@@ -488,7 +504,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     scope, "completed", successDisposition, []);
             catch cause
                 obj.Recorder.finish( ...
-                    scope, "failed", failureDisposition, cause);
+                    scope, "failed", failureDisposition, diagnosticCause(cause));
                 rethrow(cause);
             end
         end
@@ -541,6 +557,14 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
     end
+end
+
+function value = diagnosticCause(value)
+% Preserve the App-owned failure behind Runtime's transactional wrapper.
+if string(value.identifier) == "labkit:app:runtime:ActionFailed" && ...
+        ~isempty(value.cause)
+    value = value.cause{1};
+end
 end
 
 function failure = combinedCloseFailure(failures)

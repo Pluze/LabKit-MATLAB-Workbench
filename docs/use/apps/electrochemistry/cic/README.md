@@ -60,7 +60,7 @@ Water-window status compares the calculated polarization potentials with the sel
 | CIC unit | mC/cm^2 | mC/cm^2 or uC/cm^2 |
 | Use measured current | on | integrate measured `Im`; otherwise use detected pulse estimates |
 
-Plot markers, limit lines, shading, axes, and grid choices affect presentation only. Analysis controls apply to the entire exported batch.
+Plot markers, limit lines, shading, axes, and grid choices affect presentation only. Analysis controls apply to the entire exported batch after each committed edit.
 
 ## Output Schema
 

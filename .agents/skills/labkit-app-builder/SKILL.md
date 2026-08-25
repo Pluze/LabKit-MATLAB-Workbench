@@ -20,8 +20,21 @@ a boundary change.
 ## Design and build
 
 Write a short brief covering product state, capabilities, preserved behavior,
-changed flow, evidence, and manual GUI checks. Apply `apps/AGENTS.md` as the App
-shape authority. Add only capabilities with a named product or lifecycle owner.
+changed flow, input/commit/refresh classification, logging policy, evidence,
+and manual GUI checks. Apply `apps/AGENTS.md` as the App shape authority. Add
+only capabilities with a named product or lifecycle owner.
+
+For every value-bearing control, state whether it is binding-only, bounded
+preview, result-invalidating, or an explicit-work trigger. Slider drag and
+rapid spinner edits use the SDK's commit boundary; their callback remains
+light and does not own unbounded or potentially long IO/calculation, export,
+waiting, or per-adjustment logs. It may perform one bounded current preview or
+automatic refresh; a navigation control may read one bounded current record or
+window for its core preview. Put work that cannot meet an interactive response
+budget behind a named action. For every log,
+justify the severity and retain only semantic aliases, bounded counts,
+dimensions, units, and reasons; never retain paths, filenames, identities, or
+scientific content.
 
 Make layout read in workflow order. Keep each capability's layout, direct
 actions, presentation, and renderer together when they change together. Use

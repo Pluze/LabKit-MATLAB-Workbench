@@ -21,7 +21,7 @@ labkit_VTResistance_app
 
 ## Inputs And Batch Behavior
 
-The Files list accepts chrono `.DTA` transients and omits other Gamry experiment kinds. Changing a shared analysis setting updates the whole batch. No electrode-area normalization is performed because the reported quantity is electrical resistance in ohms.
+The Files list accepts chrono `.DTA` transients and omits other Gamry experiment kinds. Changing a shared analysis setting updates the whole batch after the edit commits. No electrode-area normalization is performed because the reported quantity is electrical resistance in ohms.
 
 ## Basic Workflow
 

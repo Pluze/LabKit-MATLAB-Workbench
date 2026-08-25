@@ -617,11 +617,43 @@ classdef AppSdkSpec < matlab.unittest.TestCase
 
             spinner = oneTagged(figureValue, "nativeSlider");
             slider = oneTagged(figureValue, "nativeSlider.slider");
-            spinner.Value = 0.4;
-            invokeNativeCallback( ...
-                spinner.ValueChangedFcn, spinner, struct());
-            invokeNativeCallback( ...
-                slider.ValueChangingFcn, slider, struct("Value", 0.6));
+            beforeSpinner = runtime.diagnosticSnapshot();
+            for value = [0.1 0.2 0.3 0.4]
+                spinner.Value = value;
+                invokeNativeCallback( ...
+                    spinner.ValueChangedFcn, spinner, struct());
+                pause(0.2);
+            end
+            duringSpinner = runtime.diagnosticSnapshot();
+            testCase.verifyEqual(runtime.State.session.sliderValue, 0);
+            testCase.verifyEqual(duringSpinner.totalRecordCount, ...
+                beforeSpinner.totalRecordCount);
+            pause(1.1);
+            drawnow;
+            testCase.verifyEqual(runtime.State.session.sliderValue, 0.4);
+            afterSpinner = runtime.diagnosticSnapshot();
+            spinnerAliases = actionStartAliases(afterSpinner.events);
+            testCase.verifyEqual(sum( ...
+                spinnerAliases == "nativeSlider__valueChanged"), 1);
+            beforeDrag = runtime.diagnosticSnapshot();
+            for value = linspace(0.41, 0.6, 20)
+                invokeNativeCallback( ...
+                    slider.ValueChangingFcn, slider, struct("Value", value));
+            end
+            duringDrag = runtime.diagnosticSnapshot();
+            testCase.verifyEqual(runtime.State.session.sliderValue, 0.4);
+            testCase.verifyEqual(duringDrag.totalRecordCount, ...
+                beforeDrag.totalRecordCount);
+            testCase.verifyEqual(spinner.Value, 0.6, AbsTol=1e-12);
+            slider.Value = 0.6;
+            invokeNativeCallback(slider.ValueChangedFcn, slider, struct());
+            afterCommit = runtime.diagnosticSnapshot();
+            testCase.verifyGreaterThan(afterCommit.totalRecordCount, ...
+                duringDrag.totalRecordCount);
+            invokeNativeCallback(slider.ValueChangedFcn, slider, struct());
+            afterNoOp = runtime.diagnosticSnapshot();
+            testCase.verifyEqual(afterNoOp.totalRecordCount, ...
+                afterCommit.totalRecordCount);
 
             mode = oneTagged(figureValue, "nativePlot.viewMode");
             mode.Value = "Second";
@@ -653,7 +685,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(state.selectedCells, [1 1]);
             testCase.verifyEqual(string(figureValue.Tag), "labkitApp");
             events = runtime.diagnosticSnapshot().events;
-            aliases = callbackStartAliases(events);
+            aliases = actionStartAliases(events);
             testCase.verifyTrue(all(ismember([ ...
                 "nativeField__valueChanged", ...
                 "nativeRange__valueChanged", ...
@@ -993,12 +1025,12 @@ end
 drawnow;
 end
 
-function aliases = callbackStartAliases(events)
+function aliases = actionStartAliases(events)
 aliases = strings(1, numel(events));
 aliasCount = 0;
 for index = 1:numel(events)
     event = events(index);
-    if event.category == "runtime.callback" && ...
+    if event.category == "runtime.interaction" && ...
             endsWith(event.eventName, ".started") && ...
             isfield(event.attributes, "runtimeAlias")
         aliasCount = aliasCount + 1;

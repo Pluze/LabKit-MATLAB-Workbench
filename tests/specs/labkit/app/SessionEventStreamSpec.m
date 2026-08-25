@@ -41,7 +41,7 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function retainsRawPathsInRingAndProjection(testCase)
+        function rejectsPathsBeforeRingAndProjection(testCase)
             labkittest.StateStore.set("eventConsumerRecords", strings(0, 1));
             resetConsumer = onCleanup(@resetTestConsumer);
             sourcePath = "/synthetic/input.csv";
@@ -50,19 +50,15 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() stream.close());
             labkittest.StateStore.set("eventConsumerRecords", strings(0, 1));
 
-            stream.log("info", "source.loaded", ...
+            testCase.verifyError(@() stream.log("info", "source.loaded", ...
                 "Loaded " + sourcePath + ".", ...
                 Category="runtime.source", Audience="developer", ...
-                Attributes=struct("sourcePath", sourcePath));
+                Attributes=struct("sourcePath", sourcePath)), ...
+                "labkit:app:contract:UnsafeLogData");
 
             records = stream.records();
-            retained = records(end);
-            testCase.verifyEqual(retained.message, ...
-                "Loaded /synthetic/input.csv.");
-            testCase.verifyEqual(retained.attributes.sourcePath, sourcePath);
-            testCase.verifyEqual( ...
-                labkittest.StateStore.get("eventConsumerRecords"), ...
-                "source.loaded");
+            testCase.verifyFalse(any(string({records.eventName}) == "source.loaded"));
+            testCase.verifyEmpty(labkittest.StateStore.get("eventConsumerRecords"));
             clear cleanup resetConsumer
         end
 
@@ -81,6 +77,26 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(records, 512);
             testCase.verifyEqual(records(1).sequence, 2);
             testCase.verifyEqual(records(end).sequence, 513);
+            clear cleanup
+        end
+
+        function boundsTheInMemoryRingBySerializedBytes(testCase)
+            stream = labkit.app.internal.diagnostics.SessionEventStream( ...
+                loggingProbeDefinition());
+            cleanup = onCleanup(@() stream.close());
+            attributes = attributesAtCanonicalByteCount(1024);
+
+            for index = 1:512
+                stream.log("debug", "runtime.large_tick", ...
+                    repmat('x', 1, 512), ...
+                    Category="runtime.lifecycle", Audience="developer", ...
+                    Attributes=attributes);
+            end
+            snapshot = stream.captureSnapshot();
+
+            testCase.verifyTrue(snapshot.inMemoryTruncated);
+            testCase.verifyLessThan(snapshot.retainedRecordCount, 512);
+            testCase.verifyEqual(snapshot.totalRecordCount, 513);
             clear cleanup
         end
 
@@ -141,7 +157,7 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function acceptsSerializableDiagnosticAttributeShapes(testCase)
+        function rejectsSerializableButUnboundedDiagnosticShapes(testCase)
             stream = labkit.app.internal.diagnostics.SessionEventStream( ...
                 loggingProbeDefinition());
             cleanup = onCleanup(@() stream.close());
@@ -149,17 +165,18 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
                 "nested", struct("sourcePath", "/synthetic/input.csv"), ...
                 "labels", ["alpha", "beta"]);
 
-            stream.log("info", "analysis.recorded", ...
+            testCase.verifyError(@() stream.log("info", "analysis.recorded", ...
                 "Recorded complete diagnostic attributes.", ...
                 Category="runtime.lifecycle", Audience="developer", ...
-                Attributes=attributes);
+                Attributes=attributes), ...
+                "labkit:app:contract:UnsafeLogData");
 
             records = stream.records();
-            testCase.verifyEqual(records(end).attributes, attributes);
+            testCase.verifyFalse(any(string({records.eventName}) == "analysis.recorded"));
             clear cleanup
         end
 
-        function persistsCompleteAttributesToTheJournal(testCase)
+        function persistsOnlyBoundedSemanticAttributesToTheJournal(testCase)
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkit.app.internal.diagnostics.SessionJournal(loggingProbeDefinition(), ...
@@ -175,17 +192,17 @@ classdef SessionEventStreamSpec < matlab.unittest.TestCase
             streamCleanup = onCleanup(@() stream.close());
             labkittest.StateStore.set("attributePrivacyHookCount", 0);
             stream.log("info", "analysis.recorded", ...
-                "Loaded /synthetic/input.csv.", Category="runtime.lifecycle", ...
+                "Loaded selected sources.", Category="runtime.lifecycle", ...
                 Audience="developer", Attributes=struct( ...
-                "sourcePath", "/synthetic/input.csv", "values", [1 2 3]));
+                "acceptedCount", 3, "sourceAlias", "source-1"));
             journal.flush();
 
             retained = journalText(journal.folder());
             testCase.verifyEqual( ...
                 labkittest.StateStore.get("attributePrivacyHookCount"), 1);
-            testCase.verifyTrue(contains(retained, "/synthetic/input.csv"));
-            testCase.verifyTrue(contains(retained, "values"));
-            testCase.verifyTrue(contains(retained, "[1,2,3]"));
+            testCase.verifyFalse(contains(retained, "/synthetic/input.csv"));
+            testCase.verifyTrue(contains(retained, "acceptedCount"));
+            testCase.verifyTrue(contains(retained, "source-1"));
             clear streamCleanup journalCleanup globalCleanup
         end
 

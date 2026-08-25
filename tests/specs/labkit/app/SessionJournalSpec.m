@@ -63,6 +63,30 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
                 fullfile(installationRoot, "artifacts", "logs"));
         end
 
+        function prunesClosedSessionsAcrossTheJournalRoot(testCase)
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            app = journalProbeDefinition();
+            for index = 1:2
+                journal = labkit.app.internal.diagnostics.SessionJournal(app, ...
+                    RootFolder=root, ...
+                    SessionId="session-root-" + string(index));
+                journal.close();
+            end
+
+            current = labkit.app.internal.diagnostics.SessionJournal(app, ...
+                RootFolder=root, SessionId="session-root-current", ...
+                RootSessionLimit=2, RootByteLimit=1024 * 1024);
+            cleanup = onCleanup(@() current.close());
+            sessions = dir(fullfile(root, "sessions", "session-*"));
+            sessions = sessions([sessions.isdir]);
+
+            testCase.verifyNumElements(sessions, 2);
+            testCase.verifyTrue(any(string({sessions.name}) == ...
+                "session-root-current"));
+            clear cleanup
+        end
+
         function buffersContextAndFlushesAroundWarnings(testCase)
             labkittest.StateStore.set("journalStages", strings(0, 1));
             resetObserver = onCleanup(@resetJournalObserver);
@@ -123,7 +147,7 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function countsWarningDroppedAfterPreflushManifestFailure(testCase)
+        function persistsWarningBeforeItsSingleManifestUpdateFails(testCase)
             labkittest.StateStore.set("preflushManifestFaultCount", 0);
             resetFault = onCleanup(@resetPreflushManifestFault);
             root = testCase.applyFixture( ...
@@ -152,15 +176,14 @@ classdef SessionJournalSpec < matlab.unittest.TestCase
             refreshed = stream.records();
             persisted = readCanonicalEvents(journal.folder());
 
-            testCase.verifyEqual(snapshot.droppedRecordCount, 1);
-            testCase.verifyEqual(snapshot.writeFailureDropCount, 1);
-            testCase.verifyEqual(numel(dropped), 1);
-            testCase.verifyEqual(dropped.attributes.reason, "write-failure");
-            testCase.verifyEqual(dropped.attributes.count, 1);
-            testCase.verifyNumElements(refreshed( ...
-                string({refreshed.eventName}) == "journal.records_dropped"), 1);
+            testCase.verifyEqual(snapshot.droppedRecordCount, 0);
+            testCase.verifyEqual(snapshot.writeFailureDropCount, 0);
+            testCase.verifyEqual(snapshot.writeFailureCount, 1);
+            testCase.verifyEmpty(dropped);
+            testCase.verifyEmpty(refreshed( ...
+                string({refreshed.eventName}) == "journal.records_dropped"));
             testCase.verifyTrue(any(contains(persisted, '"eventName":"analysis.context"')));
-            testCase.verifyFalse(any(contains(persisted, '"eventName":"analysis.warning"')));
+            testCase.verifyTrue(any(contains(persisted, '"eventName":"analysis.warning"')));
             clear streamCleanup cleanup resetFault
         end
 

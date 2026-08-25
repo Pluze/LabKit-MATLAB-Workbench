@@ -1,6 +1,6 @@
 % App-owned implementation for flir_thermal.displayMapping.changeMinimum within the flir_thermal product workflow.
 function applicationState = changeMinimum( ...
-        applicationState, minimumC, callbackContext)
+        applicationState, minimumC, ~)
 %CHANGEMINIMUM Update the current image's display minimum.
 item = applicationState.session.cache.currentItem;
 minimumC = double(minimumC);
@@ -19,9 +19,6 @@ applicationState = flir_thermal.thermalSources.storeCurrentAnnotation( ...
     applicationState, item);
 applicationState.project.results.lastExport = [];
 applicationState.project.results.resultManifestPath = "";
-callbackContext.log("info", ...
-    "flir_thermal.displaymapping.changeminimum.status", ...
-    "Updated current thermal display range.");
 end
 
 function range = normalizedRange(value)

@@ -1,17 +1,13 @@
 % App-owned implementation for vt_resistance.analysisRun.settingsChanged within the vt_resistance product workflow.
 function applicationState = settingsChanged( ...
-        applicationState, ~, callbackContext)
-%SETTINGSCHANGED Recompute every loaded item with shared VT parameters.
+        applicationState, ~, ~)
+%SETTINGSCHANGED Recompute loaded analysis after one committed parameter edit.
 items = applicationState.session.cache.items;
-if isempty(items)
-    applicationState.project.results.lastExport = [];
-    return
+if ~isempty(items)
+    options = vt_resistance.analysisRun.optionsFromParameters( ...
+        applicationState.project.parameters);
+    applicationState.session.cache.items = ...
+        vt_resistance.analysisRun.recomputeItems(items, options);
 end
-options = vt_resistance.analysisRun.optionsFromParameters( ...
-    applicationState.project.parameters);
-applicationState.session.cache.items = ...
-    vt_resistance.analysisRun.recomputeItems(items, options);
 applicationState.project.results.lastExport = [];
-callbackContext.log("info", "vt_resistance.analysisrun.settingschanged.status", sprintf( ...
-    "Reanalyzed %d loaded VT file(s).", numel(items)));
 end
