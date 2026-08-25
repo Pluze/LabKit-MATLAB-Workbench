@@ -63,11 +63,24 @@ Never declare readiness before policy, local gate, CI, review, and conversation
 resolution complete.
 
 After merge, verify resolved SHAs, the exact main-push policy run, dependent
-PRs, and unmerged commits before deleting the merged task branch locally and
-remotely. GitHub's repository setting normally deletes the remote head on
-merge; verify that outcome and delete only a confirmed accepted head if it
-remains. Never infer cleanup safety from a branch name and never recycle the
-merged branch for later work.
+PRs, unmerged commits, and the task's registered worktrees. Close the task in
+this order:
+
+1. Inspect each task-owned linked worktree. Remove it only when its contents
+   are accepted, or when any remaining dirt is verified disposable validation
+   output with no unaccepted work. Never remove another task's worktree.
+2. Delete the local task branch only after no linked worktree uses it and the
+   accepted squash commit is verified.
+3. Verify GitHub's automatic remote-head deletion. Delete a remaining remote
+   branch only when it is the exact accepted head; never infer cleanup safety
+   from a branch name.
+4. When the primary checkout is clean, fast-forward it to the accepted
+   `origin/main` commit and verify clean alignment. Stop and report unrelated
+   local work instead of switching, cleaning, or overwriting it.
+
+Do not recycle a merged branch or leave a completed task's worktree, local
+branch, or remote branch as normal residue.
 
 Report base/head, final transitions and history, evidence, PR/CI/review state,
-manual checks, data hygiene, task-branch freeze/deletion, and blockers.
+manual checks, data hygiene, worktree/local-branch/remote-branch cleanup,
+primary-main alignment, and blockers.

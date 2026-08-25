@@ -12,9 +12,9 @@
       "rationale": "Reviewing and making the integration PR coherent is in scope."
     },
     {
-      "prompt": "Merge the fully green task-branch PR, verify the exact main push, and delete the accepted branch.",
+      "prompt": "Merge the fully green task-branch PR, verify the exact main push, remove its linked worktree, delete the accepted branch locally and remotely, and align the primary main checkout.",
       "should_activate": true,
-      "rationale": "Merge completion and safe task-branch cleanup are part of final integration."
+      "rationale": "Merge completion and verified worktree, branch, and primary-checkout cleanup are part of final integration."
     },
     {
       "prompt": "Commit this focused implementation checkpoint on the current task branch.",
