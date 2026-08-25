@@ -28,6 +28,7 @@ for graphicsIndex = 1:numel(graphics)
     applyNode(document, node, handle);
     nodeIndex = nodeIndex + 1;
 end
+figure_studio.figureDocument.applyStyledTicks(document, panel.id, ax);
 end
 
 function applyPanel(panel, ax)
@@ -37,6 +38,9 @@ if isprop(ax, "Subtitle")
     ax.Subtitle.Interpreter = "none";
 end
 xlabel(ax, panel.text.xLabel, Interpreter="none");
+if isfield(panel.axes, "yRight")
+    yyaxis(ax, "left");
+end
 ylabel(ax, panel.text.yLabel, Interpreter="none");
 zlabel(ax, panel.text.zLabel, Interpreter="none");
 for axisName = ["x", "y", "z"]
@@ -56,9 +60,56 @@ for axisName = ["x", "y", "z"]
         safeSet(ax, prefix + "AxisLocation", axisValue.location);
     end
 end
+if isfield(panel.axes, "yRight")
+    yyaxis(ax, "right");
+    applyYAxis(panel.axes.yRight, ax);
+    if isfield(panel.text, "yRightLabel")
+        ylabel(ax, panel.text.yRightLabel, Interpreter="none");
+    end
+    yyaxis(ax, "left");
+    applyYAxis(panel.axes.y, ax);
+end
 safeSet(ax, "CLim", panel.color.limits);
 if ~isempty(panel.color.colormap)
     colormap(ax, panel.color.colormap);
+end
+applyColorbar(panel.color.bar, ax);
+end
+
+function applyColorbar(meta, ax)
+if ~logical(meta.enabled)
+    try
+        if ~isempty(ax.Colorbar), delete(ax.Colorbar); end
+    catch
+    end
+    return;
+end
+bar = colorbar(ax, char(meta.location));
+bar.Label.String = meta.label;
+bar.Label.Interpreter = "none";
+safeSet(bar, "Limits", meta.limits);
+safeSet(bar, "Ticks", meta.ticks);
+safeSet(bar, "TickLabels", meta.tickLabels);
+safeSet(bar, "FontName", meta.fontName);
+safeSet(bar, "FontSize", meta.fontSize);
+end
+
+function applyYAxis(axisValue, ax)
+safeSet(ax, "YScale", axisValue.scale);
+safeSet(ax, "YDir", axisValue.direction);
+safeSet(ax, "YLim", axisValue.limits);
+visible = [axisValue.ticks.visible];
+rows = axisValue.ticks(visible);
+safeSet(ax, "YTick", [rows.value]);
+safeSet(ax, "YTickLabel", string({rows.label}));
+if ~isempty(rows)
+    safeSet(ax, "YTickLabelRotation", rows(1).rotation);
+end
+if isfield(axisValue, "color") && ~isempty(axisValue.color)
+    try
+        ax.YAxis(end).Color = axisValue.color;
+    catch
+    end
 end
 end
 

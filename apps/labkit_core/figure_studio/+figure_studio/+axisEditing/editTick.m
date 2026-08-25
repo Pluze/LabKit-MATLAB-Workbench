@@ -57,7 +57,7 @@ end
 function [panelIndex, axisName, axisValue] = activeAxis(editor)
 panelIndex = find(string({editor.document.panels.id}) == editor.activePanelId, 1);
 if isempty(panelIndex), panelIndex = 1; end
-axisName = lower(char(editor.axisTarget));
+axisName = char(figure_studio.axisEditing.axisField(editor.axisTarget));
 axisValue = editor.document.panels(panelIndex).axes.(axisName);
 end
 

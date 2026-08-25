@@ -16,6 +16,7 @@ end
 panel = document.panels(panelIndex);
 plotData = struct( ...
     "schema", "figure_studio.resultFiles.axesData.v1", ...
+    "createdAt", datetime("now", "TimeZone", "local"), ...
     "axes", axesMetadata(panel), ...
     "objects", emptyObjects(), ...
     "warnings", document.warnings);
@@ -68,10 +69,41 @@ for axisName = ["x", "y", "z"]
         meta.(char(axisName + "AxisLocation")) = axisValue.location;
     end
 end
+if isfield(panel.axes, "yRight")
+    meta.yAxes = [rulerMetadata(panel.axes.y, panel.text.yLabel, "left"); ...
+        rulerMetadata(panel.axes.yRight, rightYLabel(panel), "right")];
+end
 meta.tickLabelInterpreter = "none";
 meta.cLim = panel.color.limits;
 meta.colormap = panel.color.colormap;
+meta.colorbar = panel.color.bar;
 meta.legend = panel.legend;
+end
+
+function value = rulerMetadata(axisValue, label, side)
+visible = [axisValue.ticks.visible];
+ticks = axisValue.ticks(visible);
+value = struct("side", side, "scale", axisValue.scale, ...
+    "direction", axisValue.direction, "limits", axisValue.limits, ...
+    "tickValues", [ticks.value], "tickLabels", string({ticks.label}), ...
+    "exponent", axisValue.exponent, "label", label, ...
+    "color", fieldValue(axisValue, "color", []));
+end
+
+function value = rightYLabel(panel)
+value = "";
+if isfield(panel.text, "yRightLabel")
+    value = panel.text.yRightLabel;
+end
+end
+
+function value = fieldValue(owner, name, fallback)
+name = char(name);
+if isstruct(owner) && isfield(owner, name)
+    value = owner.(name);
+else
+    value = fallback;
+end
 end
 
 function objects = emptyObjects()

@@ -4,6 +4,7 @@
 % presentation data only; scientific source arrays are copied and data-locked.
 function document = create(plotData)
 if nargin < 1 || isempty(plotData)
+    plotData = [];
     panels = emptyPanels();
     nodes = emptyNodes();
 else
@@ -15,7 +16,8 @@ else
     for panelIndex = 1:numel(snapshots)
         snapshot = snapshots{panelIndex};
         panelId = "panel-" + string(panelIndex);
-        panels(panelIndex) = panelFromSnapshot(snapshot, panelId, panelIndex);
+        panels(panelIndex) = panelFromSnapshot( ...
+            snapshot, panelId, panelIndex, numel(snapshots));
         objects = snapshot.objects;
         for objectIndex = 1:numel(objects)
             nodes(nextNode, 1) = nodeFromObject( ...
@@ -32,7 +34,24 @@ document = struct( ...
     "nodes", nodes, ...
     "styleRules", defaultRules(), ...
     "selection", strings(0, 1), ...
-    "warnings", strings(0, 1));
+    "warnings", collectWarnings(plotData));
+document = figure_studio.figureDocument.inferCompoundGroups(document);
+end
+
+function warnings = collectWarnings(plotData)
+warnings = strings(0, 1);
+if nargin == 0 || isempty(plotData), return; end
+snapshots = normalizeSnapshots(plotData);
+chunks = cell(numel(snapshots), 1);
+for k = 1:numel(snapshots)
+    if isfield(snapshots{k}, "warnings")
+        chunks{k} = string(snapshots{k}.warnings(:));
+    else
+        chunks{k} = strings(0, 1);
+    end
+end
+warnings = vertcat(chunks{:});
+warnings = unique(warnings(warnings ~= ""), 'stable');
 end
 
 function snapshots = normalizeSnapshots(value)
@@ -53,25 +72,40 @@ for k = 1:numel(snapshots)
 end
 end
 
-function panel = panelFromSnapshot(snapshot, panelId, panelIndex)
+function panel = panelFromSnapshot(snapshot, panelId, panelIndex, panelCount)
 panel = panelTemplate();
 panel.id = panelId;
 panel.name = panelName(snapshot.axes, panelIndex);
-panel.geometry = automaticPanelGeometry(panelIndex);
+panel.geometry = automaticPanelGeometry(panelIndex, panelCount);
 panel.axes = struct( ...
     "x", axisFromMetadata(snapshot.axes, "x"), ...
     "y", axisFromMetadata(snapshot.axes, "y"), ...
     "z", axisFromMetadata(snapshot.axes, "z"));
+if isfield(snapshot.axes, "yAxes") && numel(snapshot.axes.yAxes) > 1
+    panel.axes.y = axisFromRuler(snapshot.axes.yAxes(1));
+    panel.axes.yRight = axisFromRuler(snapshot.axes.yAxes(2));
+end
 panel.text = struct( ...
     "title", textValue(snapshot.axes, "title"), ...
     "subtitle", textValue(snapshot.axes, "subtitle"), ...
     "xLabel", textValue(snapshot.axes, "xLabel"), ...
     "yLabel", textValue(snapshot.axes, "yLabel"), ...
     "zLabel", textValue(snapshot.axes, "zLabel"));
+if isfield(snapshot.axes, "yAxes") && numel(snapshot.axes.yAxes) > 1
+    panel.text.yRightLabel = string(fieldValue( ...
+        snapshot.axes.yAxes(2), "label", ""));
+end
 panel.legend = fieldValue(snapshot.axes, "legend", struct());
 panel.color = struct( ...
     "limits", fieldValue(snapshot.axes, "cLim", [0 1]), ...
-    "colormap", fieldValue(snapshot.axes, "colormap", []));
+    "colormap", fieldValue(snapshot.axes, "colormap", []), ...
+    "bar", fieldValue(snapshot.axes, "colorbar", defaultColorbar()));
+end
+
+function value = defaultColorbar()
+value = struct("enabled", false, "label", "", ...
+    "location", "eastoutside", "limits", [0 1], "ticks", [], ...
+    "tickLabels", strings(0, 1), "fontName", "", "fontSize", []);
 end
 
 function panel = panelTemplate()
@@ -169,6 +203,23 @@ axisValue = struct( ...
 axisValue.ticks = figure_studio.figureDocument.planTicks(axisValue);
 end
 
+function axisValue = axisFromRuler(ruler)
+axisValue = struct( ...
+    "scale", string(fieldValue(ruler, "scale", "linear")), ...
+    "direction", string(fieldValue(ruler, "direction", "normal")), ...
+    "limits", rowValue(fieldValue(ruler, "limits", [0 1])), ...
+    "location", string(fieldValue(ruler, "side", "left")), ...
+    "exponent", fieldValue(ruler, "exponent", []), ...
+    "color", fieldValue(ruler, "color", []), ...
+    "locator", struct("mode", "source", "count", 5, "step", [], ...
+        "values", rowValue(fieldValue(ruler, "tickValues", []))), ...
+    "formatter", struct("mode", "source", "precision", [], ...
+        "prefix", "", "suffix", "", "labels", ...
+        string(fieldValue(ruler, "tickLabels", strings(0, 1)))), ...
+    "ticks", emptyTicks());
+axisValue.ticks = figure_studio.figureDocument.planTicks(axisValue);
+end
+
 function ticks = emptyTicks()
 ticks = struct("value", {}, "label", {}, "visible", {}, ...
     "level", {}, "rotation", {}, "fontOverride", {});
@@ -189,8 +240,16 @@ if strlength(name) == 0
 end
 end
 
-function geometry = automaticPanelGeometry(index)
-geometry = [0 1-index 1 1];
+function geometry = automaticPanelGeometry(index, count)
+columns = ceil(sqrt(count));
+rows = ceil(count / columns);
+gap = 0.04;
+width = (1 - gap * (columns - 1)) / columns;
+height = (1 - gap * (rows - 1)) / rows;
+column = mod(index - 1, columns);
+row = floor((index - 1) / columns);
+geometry = [column * (width + gap), ...
+    1 - (row + 1) * height - row * gap, width, height];
 end
 
 function canvas = defaultCanvas(panelCount)

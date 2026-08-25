@@ -24,6 +24,21 @@ try
         case 7
             node.groupId = string(edit.NewValue);
             node.parentId = node.groupId;
+        case 8
+            side = lower(strtrim(string(edit.NewValue)));
+            if ~any(side == ["left", "right"])
+                error("figure_studio:objectEditing:InvalidAxisSide", ...
+                    "Axis must be left or right.");
+            end
+            panelIndex = find(string({document.panels.id}) == node.panelId, 1);
+            if side == "right" && (isempty(panelIndex) || ...
+                    ~isfield(document.panels(panelIndex).axes, "yRight"))
+                error("figure_studio:objectEditing:MissingRightAxis", ...
+                    "This panel does not have a right Y axis.");
+            end
+            node.metadata.yAxisSide = side;
+            node.metadata.yAxisSideConfidence = "user";
+            state.session.editor.nativePassThrough = false;
     end
 catch exception
     state.session.workflow.status = string(exception.message);

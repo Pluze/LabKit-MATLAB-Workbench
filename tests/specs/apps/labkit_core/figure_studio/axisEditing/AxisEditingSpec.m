@@ -60,6 +60,30 @@ classdef AxisEditingSpec < matlab.unittest.TestCase
             testCase.verifyEqual( ...
                 state.session.editor.document.panels(1).text.title, "Source");
         end
+
+        function rendersOneTickWithIndependentTypography(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            [state, context] = stateFixture();
+            state = figure_studio.axisEditing.editTick(state, ...
+                labkit.app.event.TableCellEdit(RowIndex=2, ColumnIndex=2, ...
+                    PreviousValue="0.5", NewValue="Control"), context);
+            state = figure_studio.axisEditing.editTick(state, ...
+                labkit.app.event.TableCellEdit(RowIndex=2, ColumnIndex=7, ...
+                    PreviousValue="", NewValue="bold"), context);
+            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+
+            [fig, ax] = figure_studio.resultFiles.createStyledFigure( ...
+                state.session.cache.plotData, style, [], ...
+                state.session.editor.document);
+            labels = findall(ax, "Type", "text", ...
+                "Tag", "figureStudioStyledTick");
+
+            testCase.verifyNumElements(labels, 1);
+            testCase.verifyEqual(string(labels.String), "Control");
+            testCase.verifyEqual(string(labels.FontWeight), "bold");
+            delete(fig);
+            clear cleanup
+        end
     end
 end
 

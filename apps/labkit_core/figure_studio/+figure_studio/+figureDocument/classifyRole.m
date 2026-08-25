@@ -3,8 +3,15 @@
 % presentation category. App-owned source data and calculations are untouched.
 function role = classifyRole(object)
 kind = lower(string(fieldValue(object, "type", "unknown")));
-name = lower(string(fieldValue(object, "displayName", "")));
 meta = fieldValue(object, "metadata", struct());
+hint = lower(string(fieldValue(meta, "semanticHint", "")));
+if strlength(hint) > 0
+    role = hint;
+    return;
+end
+name = lower(join([string(fieldValue(object, "displayName", "")), ...
+    string(fieldValue(meta, "tag", "")), ...
+    string(fieldValue(meta, "text", ""))], " "));
 handleVisibility = lower(string(fieldValue(meta, "handleVisibility", "on")));
 style = fieldValue(object, "style", struct());
 
@@ -25,7 +32,13 @@ switch kind
         role = "scalar-field";
     case {"area", "patch"}
         role = fillRole(style, name);
-    case {"line", "scatter"}
+    case "scatter"
+        if containsAny(name, ["point", "peak", "stationary", "hot", "cold"])
+            role = "measurement-point";
+        else
+            role = lineRole(style, name, handleVisibility);
+        end
+    case "line"
         role = lineRole(style, name, handleVisibility);
     otherwise
         role = "unclassified";
@@ -33,7 +46,13 @@ end
 end
 
 function role = lineRole(style, name, handleVisibility)
-if containsAny(name, ["fit", "model", "regression"])
+if containsAny(name, ["skeleton", "limb", "bone", "segment"])
+    role = "skeleton-segment";
+elseif containsAny(name, ["trajectory", "path", "track"])
+    role = "trajectory";
+elseif containsAny(name, ["scale bar", "scalebar"])
+    role = "scale-bar";
+elseif containsAny(name, ["fit", "model", "regression"])
     role = "fit";
 elseif containsAny(name, ["mean", "median", "template", "summary"])
     role = "summary";
@@ -61,7 +80,9 @@ end
 end
 
 function role = textRole(name)
-if containsAny(name, ["scale", "µm", "mm", "cm"])
+if containsAny(name, ["°c", "°f", "temperature", "peak", "point"])
+    role = "measurement-label";
+elseif containsAny(name, ["scale", "µm", "μm"])
     role = "scale-label";
 elseif containsAny(name, ["*", "ns", "p =", "p="])
     role = "significance-label";

@@ -164,6 +164,153 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             clear rebuiltCleanup resourceCleanup fileCleanup cleanup
         end
 
+        function portablePackagePreservesLabKitBoxCharts(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            sourceFigure = figure(Visible="off");
+            source = axes(Parent=sourceFigure);
+            sourceBox = boxchart(source, [1 1 1 2 2 2], ...
+                [1 2 3 2 4 6], BoxFaceAlpha=.4, ...
+                DisplayName="Distribution");
+
+            plotData = figure_studio.resultFiles.extractAxesData(source);
+            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            [rebuiltFigure, rebuilt] = ...
+                figure_studio.resultFiles.createStyledFigure(plotData, style);
+            rebuiltCleanup = onCleanup(@() delete(rebuiltFigure));
+            rebuiltBox = findall(rebuilt, "Type", "boxchart");
+
+            testCase.verifyEqual(string({plotData.objects.type}), "boxchart");
+            testCase.verifyEqual(plotData.objects.y, sourceBox.YData);
+            testCase.verifyNumElements(rebuiltBox, 1);
+            testCase.verifyEqual(rebuiltBox.YData, sourceBox.YData);
+            clear rebuiltCleanup cleanup
+        end
+
+        function portablePackagePreservesDualYAxisMeaning(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            sourceFigure = figure(Visible="off");
+            source = axes(Parent=sourceFigure);
+            yyaxis(source, "left");
+            left = plot(source, 1:3, [1 2 3], DisplayName="Force", ...
+                Color=[0 .447 .741]);
+            ylabel(source, "Force (N)");
+            ylim(source, [0 4]);
+            yyaxis(source, "right");
+            right = plot(source, 1:3, [100 200 300], ...
+                DisplayName="Displacement", Color=[.85 .325 .098]);
+            ylabel(source, "Displacement (mm)");
+            ylim(source, [0 400]);
+
+            plotData = figure_studio.resultFiles.extractAxesData(source);
+            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            [rebuiltFigure, rebuilt] = ...
+                figure_studio.resultFiles.createStyledFigure(plotData, style);
+            rebuiltCleanup = onCleanup(@() delete(rebuiltFigure));
+            sides = string(arrayfun(@(value) ...
+                value.metadata.yAxisSide, plotData.objects));
+
+            testCase.verifyNumElements(plotData.axes.yAxes, 2);
+            testCase.verifyEqual(sort(sides), ["left"; "right"]);
+            testCase.verifyEqual(plotData.objects(1).y, left.YData(:));
+            testCase.verifyEqual(plotData.objects(2).y, right.YData(:));
+            testCase.verifyNumElements(rebuilt.YAxis, 2);
+            testCase.verifyEqual(rebuilt.YAxis(1).Limits, [0 4]);
+            testCase.verifyEqual(rebuilt.YAxis(2).Limits, [0 400]);
+            testCase.verifyEqual(string(rebuilt.YAxis(1).Label.String), ...
+                "Force (N)");
+            testCase.verifyEqual(string(rebuilt.YAxis(2).Label.String), ...
+                "Displacement (mm)");
+            clear rebuiltCleanup cleanup
+        end
+
+        function recoversLabKitCompoundScientificRoles(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            sourceFigure = figure(Visible="off");
+            source = axes(Parent=sourceFigure);
+            hold(source, "on");
+            x = 0:0.5:4;
+            fill(source, [x fliplr(x)], ...
+                [2+.2*sin(x) fliplr(2-.2*sin(x))], [0 0 0], ...
+                FaceAlpha=.15, EdgeColor="none", DisplayName="Confidence band");
+            patch(source, [1 2 2 1], [0 0 5 5], [.8 .8 .8], ...
+                FaceAlpha=.2, EdgeColor="none", HandleVisibility="off");
+            line(source, [1 1 3 3], [3.5 4 4 3.5], ...
+                HandleVisibility="off");
+            text(source, 2, 4.1, "**", HorizontalAlignment="center");
+            ylim(source, [0 5]);
+
+            plotData = figure_studio.resultFiles.extractAxesData(source);
+            document = figure_studio.figureDocument.create(plotData);
+            roles = string({document.nodes.role});
+
+            testCase.verifyTrue(all(ismember(["uncertainty-band", ...
+                "analysis-window", "significance-bracket", ...
+                "significance-label", "compound-annotation"], roles)));
+            bracket = document.nodes(roles == "significance-bracket");
+            label = document.nodes(roles == "significance-label");
+            testCase.verifyEqual(bracket.groupId, label.groupId);
+            clear cleanup
+        end
+
+        function portablePackagePreservesEditableColorbar(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            sourceFigure = figure(Visible="off");
+            source = axes(Parent=sourceFigure);
+            imagesc(source, reshape(1:16, 4, 4));
+            bar = colorbar(source, "eastoutside");
+            bar.Label.String = "Temperature (°C)";
+            bar.Ticks = [1 8 16];
+            bar.TickLabels = ["cold" "mid" "hot"];
+
+            plotData = figure_studio.resultFiles.extractAxesData(source);
+            document = figure_studio.figureDocument.create(plotData);
+            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            [rebuiltFigure, rebuilt] = ...
+                figure_studio.resultFiles.createStyledFigure( ...
+                    plotData, style, [], document);
+            rebuiltCleanup = onCleanup(@() delete(rebuiltFigure));
+
+            testCase.verifyTrue(document.panels.color.bar.enabled);
+            testCase.verifyEqual(document.panels.color.bar.label, ...
+                "Temperature (°C)");
+            testCase.verifyNotEmpty(rebuilt.Colorbar);
+            testCase.verifyEqual(string(rebuilt.Colorbar.TickLabels), ...
+                ["cold"; "mid"; "hot"]);
+            clear rebuiltCleanup cleanup
+        end
+
+        function editablePackageContainsDocumentFigureAndStandalonePanels(testCase)
+            cleanup = onCleanup(@() close(findall(0, "Type", "figure")));
+            folder = string(tempname);
+            folderCleanup = onCleanup(@() removeFolder(folder));
+            sourceFigure = figure(Visible="off");
+            source = axes(Parent=sourceFigure);
+            plot(source, 0:2, 1:3, DisplayName="Signal");
+            xlabel(source, "Time (s)");
+            ylabel(source, "Response");
+            snapshot = figure_studio.resultFiles.extractAxesData(source);
+            document = figure_studio.figureDocument.create({snapshot, snapshot});
+            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+
+            manifest = figure_studio.resultFiles.writeDocumentPackage( ...
+                document, style, folder);
+
+            testCase.verifyTrue(isfile(manifest.project));
+            testCase.verifyTrue(isfile(manifest.documentJson));
+            testCase.verifyTrue(isfile(manifest.preflight));
+            testCase.verifyTrue(isfile(manifest.figure));
+            testCase.verifyNumElements(manifest.panels, 2);
+            testCase.verifyTrue(all(arrayfun(@(item) isfile(item.script), ...
+                manifest.panels)));
+            previous = get(0, "DefaultFigureVisible");
+            visibilityCleanup = onCleanup(@() set(0, ...
+                "DefaultFigureVisible", previous));
+            set(0, "DefaultFigureVisible", "off");
+            run(manifest.panels(1).script);
+            testCase.verifyNotEmpty(findall(0, "Type", "figure"));
+            clear visibilityCleanup folderCleanup cleanup
+        end
+
         function exportedAxisLabelsRetainOuterWhitespace(testCase)
             cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
             sourceFigure = figure(Visible="off");
@@ -224,6 +371,10 @@ function deleteIfFile(path)
 if isfile(path)
     delete(path);
 end
+end
+
+function removeFolder(path)
+if isfolder(path), rmdir(path, 's'); end
 end
 
 function written = writeResultProbe(folder, ~)
