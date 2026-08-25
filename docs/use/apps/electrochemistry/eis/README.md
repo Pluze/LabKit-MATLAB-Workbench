@@ -48,7 +48,7 @@ Use `Zreal` versus `-Zimag` for the conventional Nyquist orientation. Use freque
 | Log X / Log Y | off / off |
 | Legend / Grid | on / on |
 
-The app never infers an equal aspect ratio from the selected quantities: a Nyquist plot starts with independently fitted limits. Use **Use equal X/Y scale** only when equal data units are useful for the current comparison. Use **Fit X/Y limits** to return to independent limits after equal scaling or a manual zoom. Equal scaling expands a fitted limit when necessary so X and Y data units have the same on-screen length; it is a one-time reset and does not constrain later wheel zooming. Axis and styling changes preserve the current source set and the current viewport; the two view buttons explicitly replace that viewport.
+The app never infers an equal aspect ratio from the selected quantities: a Nyquist plot starts with independently fitted limits. Use **Use equal X/Y scale** only when equal data units are useful for the current comparison. Use **Fit X/Y limits** to return to independent limits after equal scaling or a manual zoom. Equal scaling expands a fitted limit when necessary so X and Y data units have the same on-screen length; it is a one-time reset and does not constrain later wheel zooming. Adding or removing source curves, selecting X/Y quantities, changing impedance units, or changing linear/log scale refits the new coordinate domain. Marker size, line width, marker visibility, legend, and grid changes preserve the current viewport. The two view buttons explicitly replace that viewport.
 
 ## Output
 

@@ -49,11 +49,11 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
             names = string({records.eventName});
             testCase.verifyTrue(any(names == "analysis.trace_before_error"));
             testCase.verifyTrue(any(names == "analysis.trace_after_error"));
-            testCase.verifyTrue(any(names == "callback.state_updated"));
+            testCase.verifyTrue(any(names == "callback.presentation_started"));
             testCase.verifyTrue(any( ...
                 names == "presentation.runtime_prepared"));
-            testCase.verifyTrue(any( ...
-                names == "callback.presentation_committed"));
+            testCase.verifyFalse(any(startsWith(names, "callback.state_")));
+            testCase.verifyFalse(any(names == "callback.presentation_committed"));
 
             runtime.unsubscribeDiagnostics(token);
             runtime.setTraceCapture(false);

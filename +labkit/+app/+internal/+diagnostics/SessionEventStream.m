@@ -12,6 +12,8 @@ classdef (Hidden, Sealed) SessionEventStream < handle
         Sequence (1, 1) double = 0
         OperationSequence (1, 1) double = 0
         Records
+        RecordBytes (1, :) double = zeros(1, 0)
+        RetainedBytes (1, 1) double = 0
         OperationStack (1, :) cell = {}
         FinishedOperationIds (1, :) string = strings(1, 0)
         ProjectionHook = []
@@ -27,6 +29,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
     properties (Constant, Access = private)
         % A temporary immediate-view bound until Phase 3 profiles durable policy.
         ProvisionalInMemoryRecordLimit = 512
+        InMemoryByteLimit = 512 * 1024
     end
 
     methods
@@ -313,8 +316,14 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 notifyProjection = true;
             end
             obj.Records(end + 1, 1) = record;
-            if numel(obj.Records) > obj.ProvisionalInMemoryRecordLimit
+            recordBytes = utf8ByteCount(jsonencode(record));
+            obj.RecordBytes(end + 1) = recordBytes;
+            obj.RetainedBytes = obj.RetainedBytes + recordBytes;
+            while numel(obj.Records) > obj.ProvisionalInMemoryRecordLimit || ...
+                    obj.RetainedBytes > obj.InMemoryByteLimit
+                obj.RetainedBytes = obj.RetainedBytes - obj.RecordBytes(1);
                 obj.Records(1) = [];
+                obj.RecordBytes(1) = [];
             end
             if notifyProjection
                 obj.notifyProjectionHook(record);
@@ -531,12 +540,34 @@ if ~isa(value, "MException") || ~isscalar(value)
     error("labkit:app:contract:InvalidValue", ...
         "Session event Exception must be a scalar MException.");
 end
-exception.identifier = string(value.identifier);
-exception.message = string(value.message);
-stack = value.stack;
-exception.stack = strings(numel(stack), 1);
-for index = 1:numel(stack)
-    exception.stack(index) = string(stack(index).name) + " (" + ...
-        string(stack(index).file) + ":" + string(stack(index).line) + ")";
+identifier = string(value.identifier);
+if strlength(identifier) <= 256 && ...
+        ~isempty(regexp(char(identifier), ...
+        '^[A-Za-z][A-Za-z0-9_.:-]*$', "once"))
+    exception.identifier = identifier;
+else
+    exception.identifier = "diagnostic:unspecified";
 end
+try
+    exception.message = ...
+        labkit.app.internal.diagnostics.SessionEventValidator.privacySafeText( ...
+        value.message, "exception message");
+catch
+    exception.message = "Exception details omitted by diagnostic policy.";
+end
+stack = value.stack;
+stackLimit = min(numel(stack), 16);
+exception.stack = strings(stackLimit, 1);
+for index = 1:stackLimit
+    functionName = string(stack(index).name);
+    if strlength(functionName) > 128
+        functionName = extractBefore(functionName, 129);
+    end
+    exception.stack(index) = functionName + ...
+        " (line " + string(stack(index).line) + ")";
+end
+end
+
+function count = utf8ByteCount(value)
+count = numel(unicode2native(char(string(value)), "UTF-8"));
 end

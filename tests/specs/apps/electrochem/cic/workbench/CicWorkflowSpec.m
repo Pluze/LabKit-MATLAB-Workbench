@@ -28,11 +28,18 @@ classdef CicWorkflowSpec < matlab.unittest.TestCase
                 findall(figure, "Tag", "files").Multiselect), "on");
             runtime.applyFileSelection("files", string(first), 1);
             results = findall(figure, "Tag", "results");
+            top = findall(figure, "Tag", "plotAxes.top");
             testCase.verifyEqual(size(results.Data), [1, 8]);
-            testCase.verifyNotEmpty(findall(figure, "Tag", "plotAxes.top").Children);
+            testCase.verifyNotEmpty(top.Children);
             testCase.verifyNotEmpty(findall(figure, "Tag", "plotAxes.bottom").Children);
             testCase.verifyTrue(contains(string( ...
                 findall(figure, "Tag", "detect").Value), "metadata-current"));
+
+            [fitted, inspected] = inspectViewport(top);
+            runtime.applyControlValue("topGrid", false);
+            verifyViewport(testCase, top, inspected);
+            runtime.applyControlValue("delayUs", 11);
+            verifyViewport(testCase, top, fitted);
 
             runtime.applyFileSelection("files", ...
                 [string(first), string(second), string(unsupported)], 1:3);
@@ -53,6 +60,24 @@ classdef CicWorkflowSpec < matlab.unittest.TestCase
             clear cleanupRuntime cleanupFolder
         end
     end
+end
+
+function [fitted, inspected] = inspectViewport(ax)
+fitted = [ax.XLim, ax.YLim];
+inspected = [innerLimits(fitted(1:2)), innerLimits(fitted(3:4))];
+ax.XLim = inspected(1:2);
+ax.YLim = inspected(3:4);
+end
+
+function limits = innerLimits(limits)
+span = diff(limits);
+limits = limits + [0.2, -0.2] .* span;
+end
+
+function verifyViewport(testCase, ax, expected)
+actual = [ax.XLim, ax.YLim];
+tolerance = max(1, max(abs(expected))) * 1e-10;
+testCase.verifyEqual(actual, expected, AbsTol=tolerance);
 end
 
 function verifySemanticLayout(testCase, figure)

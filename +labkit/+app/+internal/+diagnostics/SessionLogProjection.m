@@ -5,6 +5,8 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
 
     properties (Access = private)
         Events
+        EventBytes (1, :) double = zeros(1, 0)
+        RetainedBytes (1, 1) double = 0
         TraceEnabled (1, 1) logical = false
         InMemoryTruncated (1, 1) logical = false
         JournalAvailable (1, 1) logical = false
@@ -18,6 +20,7 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
 
     properties (Constant, Access = private)
         RetainedViewLimit = 512
+        RetainedViewByteLimit = 512 * 1024
     end
 
     methods
@@ -31,8 +34,10 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
         function update(obj, snapshot)
             snapshot = validateSnapshot(snapshot);
             obj.Events = snapshot.events(:);
-            obj.TraceEnabled = snapshot.traceEnabled;
             obj.InMemoryTruncated = snapshot.inMemoryTruncated;
+            obj.rebuildByteAccounting();
+            obj.enforceViewLimit();
+            obj.TraceEnabled = snapshot.traceEnabled;
             obj.JournalAvailable = snapshot.journalAvailable;
             obj.JournalState = snapshot.journalState;
             obj.DroppedRecordCount = snapshot.droppedRecordCount;
@@ -44,10 +49,10 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
         function append(obj, record)
             record = validateRecord(record);
             obj.Events(end + 1, 1) = record;
-            if numel(obj.Events) > obj.RetainedViewLimit
-                obj.Events(1) = [];
-                obj.InMemoryTruncated = true;
-            end
+            recordBytes = utf8ByteCount(jsonencode(record));
+            obj.EventBytes(end + 1) = recordBytes;
+            obj.RetainedBytes = obj.RetainedBytes + recordBytes;
+            obj.enforceViewLimit();
         end
 
         function setFilters(obj, varargin)
@@ -82,6 +87,24 @@ classdef (Hidden, Sealed) SessionLogProjection < handle
     end
 
     methods (Access = private)
+        function rebuildByteAccounting(obj)
+            obj.EventBytes = zeros(1, numel(obj.Events));
+            for index = 1:numel(obj.Events)
+                obj.EventBytes(index) = utf8ByteCount(jsonencode(obj.Events(index)));
+            end
+            obj.RetainedBytes = sum(obj.EventBytes);
+        end
+
+        function enforceViewLimit(obj)
+            while numel(obj.Events) > obj.RetainedViewLimit || ...
+                    obj.RetainedBytes > obj.RetainedViewByteLimit
+                obj.RetainedBytes = obj.RetainedBytes - obj.EventBytes(1);
+                obj.Events(1) = [];
+                obj.EventBytes(1) = [];
+                obj.InMemoryTruncated = true;
+            end
+        end
+
         function selected = filteredEvents(obj)
             selected = obj.Events;
             if isempty(selected)
@@ -245,4 +268,8 @@ value = repmat(struct( ...
     "operationId", "", "parentOperationId", "", "rootActionId", "", ...
     "operationResult", "", "stateDisposition", "", ...
     "durationSeconds", [], "exception", struct()), 0, 1);
+end
+
+function count = utf8ByteCount(value)
+count = numel(unicode2native(char(string(value)), "UTF-8"));
 end

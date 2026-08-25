@@ -5,7 +5,16 @@ function node = slider(id, varargin)
 %   node = labkit.app.layout.slider(id, Name=Value)
 %
 % Description:
-%   Declares one bounded scalar slider.
+%   Declares one bounded scalar slider with a paired numeric spinner. Dragging
+%   updates only the native value display. Runtime commits the final slider
+%   value once when the pointer is released. Rapid spinner changes are
+%   latest-wins coalesced and commit after a short quiet interval. A value
+%   equal to the committed value is a no-op. Direct-manipulation commits do
+%   not show busy feedback, so OnValueChanged must remain short and must not
+%   perform unbounded or potentially long IO/calculation, export, waiting, or
+%   per-adjustment logging. One bounded current preview or automatic refresh
+%   may run after commit; use an explicit Run, Generate, Import, or Export
+%   action when the work cannot meet an interactive response budget.
 %
 % Inputs:
 %   id - Unique MATLAB identifier for the layout target.
@@ -20,7 +29,8 @@ function node = slider(id, varargin)
 %   Bind - Project or session field path. Default: "".
 %   Enabled - Initial logical enabled state. Default: true.
 %   OnValueChanged - Scalar callback
-%       state = callback(state,value,context). Default: [].
+%       state = callback(state,value,context), invoked once for the committed
+%       value rather than for intermediate drag or spinner values. Default: [].
 %   Every slider must declare Bind or OnValueChanged.
 %
 % Outputs:

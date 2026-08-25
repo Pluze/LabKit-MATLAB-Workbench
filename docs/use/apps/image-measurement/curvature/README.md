@@ -31,7 +31,7 @@ The **Files + Analysis** tab contains the complete workflow:
 
 The edit buttons change to **Finish curve edit** or **Finish reference edit** while their managed interaction is active. Curve and reference edits are mutually exclusive. Anchor edits and result overlays preserve the current axes zoom.
 
-The **Summary + Results** tab reports curve length, radius, curvature, RMSE, fit center, and pixels per selected unit. **Details** explains the next valid step before a result exists and reports the current measurement afterward. **Tools > Diagnostics > Open Session Log...** records file, edit, fit, calibration, export, and runtime actions without consuming a workflow tab.
+The **Summary + Results** tab reports curve length, radius, curvature, RMSE, fit center, and pixels per selected unit. **Details** explains the next valid step before a result exists and reports the current measurement afterward. **Tools > Diagnostics > Open Session Log...** records file, edit, fit, calibration, export, and runtime actions without consuming a workflow tab. Numeric fit-density and scale-bar adjustments do not add a routine INFO record for every committed value.
 
 The chosen image remains a live source while the App is open.
 

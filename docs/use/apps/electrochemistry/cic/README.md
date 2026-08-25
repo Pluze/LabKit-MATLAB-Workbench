@@ -60,7 +60,9 @@ Water-window status compares the calculated polarization potentials with the sel
 | CIC unit | mC/cm^2 | mC/cm^2 or uC/cm^2 |
 | Use measured current | on | integrate measured `Im`; otherwise use detected pulse estimates |
 
-Plot markers, limit lines, shading, axes, and grid choices affect presentation only. Analysis controls apply to the entire exported batch.
+Plot markers, limit lines, shading, axes, and grid choices affect presentation only. Analysis controls apply to the entire exported batch after each committed edit.
+
+Selecting another source, changing either plotted X/Y quantity, or accepting pulse-analysis settings starts a new plot context and refits both panes. Marker, limit-line, shading, and grid visibility preserve the current zoom. Electrode area and CIC display mode/unit change numeric summaries without resetting the plot because they do not change plotted coordinates.
 
 ## Output Schema
 

@@ -24,8 +24,13 @@ classdef VtResistanceWorkflowSpec < matlab.unittest.TestCase
                 findall(figureValue, "Tag", "files").Multiselect), "on");
             runtime.applyFileSelection("files", [source, unsupported], 1:2);
             results = findall(figureValue, "Tag", "results");
+            top = findall(figureValue, "Tag", "plotAxes.top");
+            [fitted, inspected] = inspectViewport(top);
+            runtime.applyControlValue("topGrid", false);
+            verifyViewport(testCase, top, inspected);
             runtime.applyControlValue("steadyWindow", ...
                 vt_resistance.analysisRun.analysisChoices().steadyWindows(2));
+            verifyViewport(testCase, top, fitted);
             runtime.invokeAction("exportResults");
 
             testCase.verifyNumElements(runtime.State.session.cache.items, 1);
@@ -37,4 +42,21 @@ classdef VtResistanceWorkflowSpec < matlab.unittest.TestCase
             clear cleanup
         end
     end
+end
+
+function [fitted, inspected] = inspectViewport(ax)
+fitted = [ax.XLim, ax.YLim];
+inspected = [innerLimits(fitted(1:2)), innerLimits(fitted(3:4))];
+ax.XLim = inspected(1:2);
+ax.YLim = inspected(3:4);
+end
+
+function limits = innerLimits(limits)
+limits = limits + [0.2, -0.2] .* diff(limits);
+end
+
+function verifyViewport(testCase, ax, expected)
+actual = [ax.XLim, ax.YLim];
+tolerance = max(1, max(abs(expected))) * 1e-10;
+testCase.verifyEqual(actual, expected, AbsTol=tolerance);
 end

@@ -72,6 +72,8 @@ Start ROI editing and choose **Curve** or **Straight lines**. Place boundary anc
 
 **Auto align current pair** estimates a rigid rotation and translation without changing scale or shear. It can search large rotations and displacements, but the result is only a starting estimate, not a guarantee of DIC-quality correspondence. Always inspect the false-color overlay. Prefer manual points when the images have repeated texture, very little overlap, scale change, deformation, large occlusion, or weak contrast.
 
+The session log records automatic alignment as one workflow result. Image-dependent method and quality details are not copied into durable diagnostic payloads.
+
 ## Outputs
 
 **Save current images** writes two images to the selected folder using stable reference and moving result names. **Save ROI mask** writes a binary image to the selected file. The App has no task archive; source selections, preview choices, edits, crop state, and mask state last only for the open session.

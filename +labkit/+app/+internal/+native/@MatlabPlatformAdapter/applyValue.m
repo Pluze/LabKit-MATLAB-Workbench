@@ -20,7 +20,10 @@ function applyValue(obj, component, value)
     labkit.app.internal.native.NativeAdapterValues.setIfProperty(component, "Value", value);
     linked = labkit.app.internal.native.NativeAdapterValues.linkedPannerSlider(component);
     if ~isempty(linked)
-        linked.Value = min(linked.Limits(2), ...
-            max(linked.Limits(1), double(value)));
+        value = min(linked.Limits(2), max(linked.Limits(1), double(value)));
+        linked.Value = value;
+        data = component.UserData;
+        data.CommittedValue = value;
+        component.UserData = data;
     end
 end

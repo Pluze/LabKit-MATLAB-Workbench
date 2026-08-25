@@ -78,6 +78,19 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyClass(view, "labkit.app.view.Snapshot");
         end
 
+        function acceptsBoundedSemanticPlotRevisionTokens(testCase)
+            view = labkit.app.view.Snapshot().renderPlot( ...
+                "plot", struct(), ViewRevision="source:trace-a|x:time");
+
+            testCase.verifyClass(view, "labkit.app.view.Snapshot");
+            testCase.verifyError(@() labkit.app.view.Snapshot().renderPlot( ...
+                "plot", struct(), ViewRevision=["one", "two"]), ...
+                "labkit:app:contract:InvalidValue");
+            testCase.verifyError(@() labkit.app.view.Snapshot().renderPlot( ...
+                "plot", struct(), ViewRevision=repmat('x', 1, 4097)), ...
+                "labkit:app:contract:InvalidValue");
+        end
+
         function callbackContextHasOnlyNamedRuntimeCapabilities(testCase)
             context = labkit.app.internal.runtime.CallbackContextFactory.disconnected();
 
@@ -469,6 +482,36 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             clear cleanup renderCleanup
         end
 
+        function semanticPlotRevisionPreservesStyleRefreshAndRefitsDomain(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.button("changeStyle", "Change style", ...
+                    @changeViewportStyle, Tooltip="Change plot styling."), ...
+                labkit.app.layout.button("changeDomain", "Change domain", ...
+                    @changeViewportDomain, Tooltip="Change plotted data domain."), ...
+                labkit.app.layout.plotArea("revisionPlot", @drawRevisionPlot)});
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createViewportSessionState, ...
+                "PresentWorkbench", @presentViewportRevision);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            ax = oneTagged(runtime.figureHandle(), "revisionPlot.main");
+            ax.XLim = [0.2 0.8];
+            ax.YLim = [0.2 0.8];
+
+            runtime.invokeAction("changeStyle");
+            testCase.verifyEqual(ax.XLim, [0.2 0.8], AbsTol=1e-12);
+            testCase.verifyEqual(ax.YLim, [0.2 0.8], AbsTol=1e-12);
+
+            runtime.invokeAction("changeDomain");
+            testCase.verifyEqual(ax.XLim, [0 2], AbsTol=1e-12);
+            testCase.verifyEqual(ax.YLim, [0 2], AbsTol=1e-12);
+            clear cleanup
+        end
+
         function popoutPreservesVisibleGraphicsWithHiddenHandles(testCase)
             existingFigures = findall(groot, "Type", "figure");
             sourceFigure = figure("Visible", "off");
@@ -617,11 +660,58 @@ classdef AppSdkSpec < matlab.unittest.TestCase
 
             spinner = oneTagged(figureValue, "nativeSlider");
             slider = oneTagged(figureValue, "nativeSlider.slider");
-            spinner.Value = 0.4;
             invokeNativeCallback( ...
-                spinner.ValueChangedFcn, spinner, struct());
-            invokeNativeCallback( ...
-                slider.ValueChangingFcn, slider, struct("Value", 0.6));
+                spinner.ValueChangingFcn, spinner, ...
+                struct("Value", 0.05));
+            testCase.verifyEqual(spinner.Value, 0);
+            testCase.verifyEqual(slider.Value, 0.05);
+            spinnerValues = [0.1 0.2 0.3 0.4];
+            for index = 1:numel(spinnerValues)
+                value = spinnerValues(index);
+                spinner.Value = value;
+                invokeNativeCallback( ...
+                    spinner.ValueChangingFcn, spinner, ...
+                    struct("Value", value));
+                invokeNativeCallback( ...
+                    spinner.ValueChangedFcn, spinner, struct());
+                if index == 1
+                    testCase.verifyEqual( ...
+                        runtime.State.session.sliderValue, value);
+                end
+                pause(0.05);
+            end
+            duringSpinner = runtime.diagnosticSnapshot();
+            testCase.verifyEqual(runtime.State.session.sliderValue, 0.1);
+            duringAliases = actionStartAliases(duringSpinner.events);
+            testCase.verifyEqual(sum( ...
+                duringAliases == "nativeSlider__valueChanged"), 1);
+            pause(0.25);
+            drawnow;
+            testCase.verifyEqual(runtime.State.session.sliderValue, 0.4);
+            afterSpinner = runtime.diagnosticSnapshot();
+            spinnerAliases = actionStartAliases(afterSpinner.events);
+            testCase.verifyEqual(sum( ...
+                spinnerAliases == "nativeSlider__valueChanged"), 2);
+            beforeDrag = runtime.diagnosticSnapshot();
+            for value = linspace(0.41, 0.6, 20)
+                invokeNativeCallback( ...
+                    slider.ValueChangingFcn, slider, struct("Value", value));
+            end
+            duringDrag = runtime.diagnosticSnapshot();
+            testCase.verifyEqual(runtime.State.session.sliderValue, 0.4);
+            testCase.verifyEqual(duringDrag.totalRecordCount, ...
+                beforeDrag.totalRecordCount);
+            testCase.verifyEqual(spinner.Value, 0.6, AbsTol=1e-12);
+            testCase.verifyEqual(slider.Value, 0.4, AbsTol=1e-12);
+            slider.Value = 0.6;
+            invokeNativeCallback(slider.ValueChangedFcn, slider, struct());
+            afterCommit = runtime.diagnosticSnapshot();
+            testCase.verifyGreaterThan(afterCommit.totalRecordCount, ...
+                duringDrag.totalRecordCount);
+            invokeNativeCallback(slider.ValueChangedFcn, slider, struct());
+            afterNoOp = runtime.diagnosticSnapshot();
+            testCase.verifyEqual(afterNoOp.totalRecordCount, ...
+                afterCommit.totalRecordCount);
 
             mode = oneTagged(figureValue, "nativePlot.viewMode");
             mode.Value = "Second";
@@ -653,7 +743,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(state.selectedCells, [1 1]);
             testCase.verifyEqual(string(figureValue.Tag), "labkitApp");
             events = runtime.diagnosticSnapshot().events;
-            aliases = callbackStartAliases(events);
+            aliases = actionStartAliases(events);
             testCase.verifyTrue(all(ismember([ ...
                 "nativeField__valueChanged", ...
                 "nativeRange__valueChanged", ...
@@ -978,6 +1068,38 @@ count = getappdata(groot, "labkitAppSdkRenderCount");
 setappdata(groot, "labkitAppSdkRenderCount", count + 1);
 end
 
+function session = createViewportSession(~, ~)
+session = struct("domain", 1, "warmColor", false);
+end
+
+function state = changeViewportStyle(state, ~)
+state.session.warmColor = ~state.session.warmColor;
+end
+
+function state = changeViewportDomain(state, ~)
+state.session.domain = 2;
+end
+
+function view = presentViewportRevision(state)
+model = struct("domain", state.session.domain, ...
+    "warmColor", state.session.warmColor);
+view = labkit.app.view.Snapshot().renderPlot( ...
+    "revisionPlot", model, ...
+    ViewRevision="domain:" + string(state.session.domain));
+end
+
+function drawRevisionPlot(axesById, model)
+ax = axesById.main;
+labkit.app.plot.clearAxes(ax, ResetScale=true);
+color = [0 0.4470 0.7410];
+if model.warmColor
+    color = [0.8500 0.3250 0.0980];
+end
+plot(ax, [0 model.domain], [0 model.domain], Color=color);
+ax.XLim = [0 model.domain];
+ax.YLim = [0 model.domain];
+end
+
 function closeNewFigures(existingFigures)
 figures = setdiff(findall(groot, "Type", "figure"), existingFigures);
 close(figures(isvalid(figures)));
@@ -993,12 +1115,12 @@ end
 drawnow;
 end
 
-function aliases = callbackStartAliases(events)
+function aliases = actionStartAliases(events)
 aliases = strings(1, numel(events));
 aliasCount = 0;
 for index = 1:numel(events)
     event = events(index);
-    if event.category == "runtime.callback" && ...
+    if event.category == "runtime.interaction" && ...
             endsWith(event.eventName, ".started") && ...
             isfield(event.attributes, "runtimeAlias")
         aliasCount = aliasCount + 1;
@@ -1215,6 +1337,11 @@ end
 function state = createStablePlotSessionState(context, initialInput)
 state = createTestState( ...
     context, initialInput, @() struct(), @createStablePlotSession);
+end
+
+function state = createViewportSessionState(context, initialInput)
+state = createTestState( ...
+    context, initialInput, @() struct(), @createViewportSession);
 end
 
 function state = createNativeBridgeSessionState(context, initialInput)

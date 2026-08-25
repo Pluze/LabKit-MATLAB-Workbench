@@ -20,6 +20,16 @@
       "prompt": "Correct the valid humidity range in an existing thermal calculation without changing the App structure.",
       "should_activate": false,
       "rationale": "This is a scientific contract correction, not an App construction task."
+    },
+    {
+      "prompt": "Build a new image-analysis App with live parameter sliders, a Run action, progress reporting, and exports.",
+      "should_activate": true,
+      "rationale": "A new App requires explicit input commit, refresh, progress, and logging design as part of the complete build workflow."
+    },
+    {
+      "prompt": "Debounce one existing slider callback without changing the App architecture.",
+      "should_activate": false,
+      "rationale": "A narrow interaction correction remains ordinary App maintenance unless it proves a larger App redesign."
     }
   ]
 }

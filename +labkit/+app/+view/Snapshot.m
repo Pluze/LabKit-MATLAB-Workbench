@@ -42,10 +42,11 @@ classdef (Sealed) Snapshot
     %   model - App-owned model passed to the renderer declared by plotArea.
     %
     % Options:
-    %   ViewRevision - Nonnegative integer identifying the requested initial
-    %       viewport. The adapter preserves user zoom while the value is
-    %       unchanged and accepts renderer limits once when it changes.
-    %       Default: 0.
+    %   ViewRevision - Nonnegative integer or scalar text token identifying
+    %       the plotted data domain. The adapter preserves user zoom while the
+    %       token is unchanged and accepts renderer limits once when it changes.
+    %       Use App-owned semantic IDs and plot choices, never source paths.
+    %       Text tokens are limited to 4096 characters. Default: 0.
     %
     % Outputs:
     %   view - New immutable labkit.app.view.Snapshot snapshot.
@@ -179,16 +180,23 @@ classdef (Sealed) Snapshot
                 "labkit.app.view.Snapshot.renderPlot", ...
                 "ViewRevision", varargin{:});
             revision = optionValue(options, "ViewRevision", 0);
-            if ~isnumeric(revision) || ~isscalar(revision) || ...
-                    ~isfinite(revision) || revision < 0 || ...
-                    revision ~= fix(revision)
+            if isnumeric(revision) && isscalar(revision) && ...
+                    isfinite(revision) && revision >= 0 && ...
+                    revision == fix(revision)
+                revision = double(revision);
+            elseif ((ischar(revision) && isrow(revision)) || ...
+                    (isstring(revision) && isscalar(revision))) && ...
+                    ~ismissing(string(revision)) && ...
+                    strlength(string(revision)) <= 4096
+                revision = string(revision);
+            else
                 error("labkit:app:contract:InvalidValue", ...
-                    "View snapshot ViewRevision must be a " + ...
-                    "nonnegative integer.");
+                    "View snapshot ViewRevision must be a nonnegative " + ...
+                    "integer or scalar text token of at most 4096 characters.");
             end
             value = struct( ...
                 "Model", {model}, ...
-                "ViewRevision", double(revision));
+                "ViewRevision", revision);
             obj = append(obj, "renderPlot", target, value);
         end
 

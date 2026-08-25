@@ -21,7 +21,7 @@ labkit_VTResistance_app
 
 ## Inputs And Batch Behavior
 
-The Files list accepts chrono `.DTA` transients and omits other Gamry experiment kinds. Changing a shared analysis setting updates the whole batch. No electrode-area normalization is performed because the reported quantity is electrical resistance in ohms.
+The Files list accepts chrono `.DTA` transients and omits other Gamry experiment kinds. Changing a shared analysis setting updates the whole batch after the edit commits. No electrode-area normalization is performed because the reported quantity is electrical resistance in ohms.
 
 ## Basic Workflow
 
@@ -54,6 +54,8 @@ Raw mode replaces each voltage difference with its steady absolute voltage. Divi
 | Resistance voltage | Baseline-corrected dV/I | Raw Vf/I |
 
 The center-60% policy uses the interval from 20% to 80% of each detected phase to reduce onset and offset transients. Plot marker and shading choices affect display only.
+
+Selecting another source, changing either plotted X/Y quantity, or accepting pulse, steady-window, or voltage-analysis settings starts a new plot context and refits both panes. Marker, shading, and grid visibility preserve the current zoom.
 
 ## Output Schema
 

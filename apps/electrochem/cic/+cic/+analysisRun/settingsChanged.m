@@ -1,16 +1,12 @@
 % App-owned implementation for cic.analysisRun.settingsChanged within the cic product workflow.
 function applicationState = settingsChanged( ...
-        applicationState, ~, callbackContext)
-%SETTINGSCHANGED Recompute every loaded CIC item with current parameters.
+        applicationState, ~, ~)
+%SETTINGSCHANGED Recompute loaded analysis after one committed parameter edit.
 items = applicationState.session.cache.items;
-if isempty(items)
-    applicationState.project.results.lastExport = [];
-    return
+if ~isempty(items)
+    applicationState.session.cache.items = ...
+        cic.analysisRun.recomputeLoaded( ...
+            items, applicationState.project.parameters);
 end
-applicationState.session.cache.items = ...
-    cic.analysisRun.recomputeLoaded( ...
-        items, applicationState.project.parameters);
 applicationState.project.results.lastExport = [];
-callbackContext.log("info", "cic.analysisrun.settingschanged.status", sprintf( ...
-    "Reanalyzed %d loaded CIC file(s).", numel(items)));
 end

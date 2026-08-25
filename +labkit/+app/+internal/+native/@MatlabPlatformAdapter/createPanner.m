@@ -29,5 +29,6 @@ function spinner = createPanner(~, node, parent)
     slider.MajorTicks = [];
     slider.MinorTicks = [];
     spinner.UserData = struct( ...
-        "LayoutContainer", outer, "Slider", slider);
+        "LayoutContainer", outer, "Slider", slider, ...
+        "CommittedValue", value);
 end

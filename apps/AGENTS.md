@@ -42,6 +42,16 @@ find the exact owner and contract; App authors never invent test paths.
 - Direct callbacks expose `applicationState`, then the typed event value when
   present, then `callbackContext`. Keep short transactional mutation there;
   do not forward the complete state or context into a generic action layer.
+- Classify value callbacks before implementing them. Slider drag is SDK-local
+  preview; release commits once, and rapid paired-spinner edits commit once
+  after a quiet interval. A direct-manipulation commit may bind/normalize
+  state, invalidate results, and prepare one bounded preview or automatic
+  refresh. It must not perform unbounded or potentially long IO/calculation,
+  export, wait, poll, pause, or per-adjustment logging. A navigation control
+  may read one bounded current record or window when that preview is the
+  interaction's core purpose. Put work that cannot meet an interactive response
+  budget behind Run, Generate, Import, or Export. Preserve the SDK's no-busy
+  direct-manipulation behavior to avoid flicker.
 - Do not add separate `requirements.m`, `version.m`, generic `+appLifecycle`
   or `+appState` packages, per-version migration files, or a Start callback
   that only constructs default state.
@@ -113,6 +123,13 @@ find the exact owner and contract; App authors never invent test paths.
   valid for the smallest supported source geometry.
 - Placing or editing overlays must preserve the user's viewport unless the
   user explicitly requests fit/reset.
+- Classify viewport invalidation independently from state refresh. Supply a
+  semantic `ViewRevision` for plots whose data domain can change: refit for a
+  new source/result, selected coordinates, units/scale, changed image canvas,
+  or explicit fit/reset; preserve zoom for style, palette, grid, legend,
+  annotation visibility, same-size frame navigation, and overlay editing.
+  Live streams use an App-owned rolling/out-of-view rule and do not refit on
+  every sample. Revisions use App-owned IDs and bounded choices, never paths.
 - File and folder dialogs outside `fileList` use `CallbackContext`. Use
   `CallbackContext.inform` for successful or neutral information and
   `CallbackContext.alert` only for a blocking problem; never present an INFO
@@ -124,6 +141,15 @@ find the exact owner and contract; App authors never invent test paths.
   without that product need do not expose or test task-state persistence.
 - Caught exceptions that allow the App to continue are reported through
   `CallbackContext` before alerting or logging recovery.
+- Log operational meaning, not callback traffic: DEBUG for bounded maintainer
+  progress/branch context, INFO for a meaningful user milestone, WARNING for
+  an unexpected recoverable condition needing attention, ERROR for a failed
+  requested operation, and CRITICAL only when the session cannot continue.
+  Never log ordinary parameter assignments, selection motion, preview
+  repaints, successful validation, loop iterations, or every item/sample.
+  Retained messages and attributes contain no paths, original filenames,
+  identities, scientific values/arrays, or free-form nested content; use only
+  semantic aliases, counts, indices, durations, dimensions, units, and reasons.
 
 ## Version, docs, and tests
 

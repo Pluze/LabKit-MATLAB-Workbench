@@ -6,9 +6,7 @@ function logPreviewRead(callbackContext, ok, message, eventName)
 if strlength(string(message)) == 0
     return;
 end
-if ok
-    callbackContext.log("info", eventName, "Updated the RHS preview.");
-else
+if ~ok
     callbackContext.log("error", eventName, "RHS preview read failed.");
 end
 end

@@ -51,6 +51,8 @@ Palettes are Turbo, Iron, Hot, Parula, and Gray. Mapping modes are Linear, Log, 
 
 Palette, mapping, gamma, and color limits affect only mapping into display colors. They do not transform the Celsius matrix or exported temperature values.
 
+Gamma and color-limit edits redraw the current thermal preview without adding routine INFO records for each committed value. Load, measurement, export, and actionable failure events remain the diagnostic milestones.
+
 ## Outputs
 
 Current or batch export writes PNG, TIFF, or JPEG rendered thermal images, matching color scale graphics, Celsius CSV matrices, measurement values, and a batch CSV summary. The clean image export excludes interactive toolbar chrome. Numeric temperature outputs remain Celsius regardless of palette or mapping mode.

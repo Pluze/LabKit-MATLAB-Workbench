@@ -59,7 +59,9 @@ Use `labkittest.explain` to find the exact owner and contract.
   compatibility identifiers; layout/action/axis/source namespaces must remain
   legal and unique; references must resolve before UI mutation. Bind paths are
   opaque App-owned field paths, not framework-owned project/session schemas.
-- View snapshots must preserve unchanged graphics and viewports. Renderers own
+- View snapshots preserve user viewports while a plot's semantic
+  `ViewRevision` is unchanged and accept renderer-fitted limits once when it
+  changes. Apps own the revision policy; renderers own fitting mechanics and
   incremental overlay changes; interaction specs own user gestures.
 - Establish the legal domain of interdependent native properties before
   assigning dependent values; constructor name-value order is not a contract
@@ -68,6 +70,11 @@ Use `labkittest.explain` to find the exact owner and contract.
 - Show determinate progress only when work has a measurable denominator.
   Otherwise report real named stages, and paint the stage before synchronous
   expensive work.
+- Direct-manipulation preview is native-local. Slider drag values do not enter
+  Runtime; pointer release commits once. Rapid paired-spinner changes are
+  trailing-edge latest-wins coalesced, and an unchanged final value is a
+  no-op. These commits never show busy feedback; keep the path light instead
+  of adding flashing lifecycle chrome.
 - One interaction target has one active gesture owner. A managed movable
   rectangle accepts movement from its visible box or interior, not only a thin
   edge; display-only affordances remain non-pickable.
@@ -108,7 +115,16 @@ Use `labkittest.explain` to find the exact owner and contract.
 - Resource replacement for the same id is intentional and idempotent; use
   distinct ids for resources that coexist and remove them at the App-owned
   workflow boundary when they should not survive until close.
-- Diagnostic output must stay app-neutral and sanitized.
+- Diagnostic output must stay app-neutral, sanitized, and bounded by count,
+  bytes, segment, session, and journal-root retention. A semantic action owns
+  one root operation plus only useful phase/failure boundaries; do not restore
+  per-callback state-update, validation, native-commit, or rollback-cleanup
+  breadcrumbs. Durable breadcrumbs do not rewrite the manifest individually.
+- Reject paths, filenames, identities, scientific values/arrays, arbitrary
+  nesting, and free text in retained attributes. Keep only controlled semantic
+  aliases/reasons/units, finite scalar counts/indices/ordinals/durations, and
+  bounded dimensions. Journal degradation is transition-based and summarized,
+  never one recursive warning for every lost record.
 
 ## API and release contract
 

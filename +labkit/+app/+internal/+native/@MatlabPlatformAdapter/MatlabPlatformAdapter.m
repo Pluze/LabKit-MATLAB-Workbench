@@ -28,6 +28,12 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         StartupPanel
         StartupLabel
         LogViewer
+        PannerCommitTimers
+    end
+
+    properties (Constant, Access = private)
+        % Ends a spinner burst soon enough to keep the final state responsive.
+        PannerCommitQuietSeconds = 0.2
     end
 
     methods (Access = { ...
@@ -48,6 +54,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 "ValueType", "char");
             obj.ReadonlyHeights = containers.Map("KeyType", "char", ...
                 "ValueType", "double");
+            obj.PannerCommitTimers = containers.Map("KeyType", "char", ...
+                "ValueType", "any");
             policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
             obj.Figure = uifigure(Visible="off", ...
                 Name=char(string(title)), ...
@@ -117,6 +125,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function close(obj)
+            obj.cancelAllPannerCommits();
             if ~isempty(obj.LogViewer) && isvalid(obj.LogViewer)
                 obj.LogViewer.close();
                 obj.LogViewer = [];
@@ -592,7 +601,22 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         installCallbacks(obj)
 
-        function pannerChanged(obj, target, value)
+        function previewPanner(obj, target, value, source)
+            % Update only the paired control; never rewrite the event source.
+            component = obj.component(target);
+            value = min(component.Limits(2), ...
+                max(component.Limits(1), double(value)));
+            linked = labkit.app.internal.native.NativeAdapterValues. ...
+                linkedPannerSlider(component);
+            if source == component && ~isempty(linked)
+                linked.Value = value;
+            elseif ~isempty(linked) && source == linked
+                component.Value = value;
+            end
+        end
+
+        function queuePannerCommit(obj, target, value)
+            % Commit the leading edit now and only the latest repeated edit.
             component = obj.component(target);
             value = min(component.Limits(2), ...
                 max(component.Limits(1), double(value)));
@@ -601,7 +625,97 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if ~isempty(linked)
                 linked.Value = value;
             end
-            obj.Runtime.applyControlValue(target, value);
+            key = char(string(target));
+            startsBurst = ~isKey(obj.PannerCommitTimers, key);
+            obj.cancelPannerCommit(target);
+            if startsBurst
+                obj.pannerChanged(target, value);
+            end
+            commitTimer = timer( ...
+                ExecutionMode="singleShot", ...
+                StartDelay=obj.PannerCommitQuietSeconds, ...
+                BusyMode="drop", ...
+                TimerFcn=@(~, ~) obj.commitQueuedPanner(target));
+            obj.PannerCommitTimers(key) = commitTimer;
+            start(commitTimer);
+        end
+
+        function pannerChanged(obj, target, value)
+            obj.cancelPannerCommit(target);
+            component = obj.component(target);
+            value = min(component.Limits(2), ...
+                max(component.Limits(1), double(value)));
+            data = component.UserData;
+            committed = data.CommittedValue;
+            if isequaln(value, committed)
+                component.Value = committed;
+                linked = labkit.app.internal.native.NativeAdapterValues.linkedPannerSlider(component);
+                if ~isempty(linked)
+                    linked.Value = committed;
+                end
+                return;
+            end
+            component.Value = value;
+            linked = labkit.app.internal.native.NativeAdapterValues.linkedPannerSlider(component);
+            if ~isempty(linked)
+                linked.Value = value;
+            end
+            try
+                changed = obj.Runtime.applyControlValue(target, value);
+                if changed
+                    data = component.UserData;
+                    data.CommittedValue = component.Value;
+                    component.UserData = data;
+                else
+                    component.Value = committed;
+                    if ~isempty(linked)
+                        linked.Value = committed;
+                    end
+                end
+            catch cause
+                component.Value = committed;
+                if ~isempty(linked)
+                    linked.Value = committed;
+                end
+                rethrow(cause);
+            end
+        end
+
+        function commitQueuedPanner(obj, target)
+            key = char(string(target));
+            if ~isKey(obj.PannerCommitTimers, key)
+                return;
+            end
+            commitTimer = obj.PannerCommitTimers(key);
+            remove(obj.PannerCommitTimers, key);
+            cleanup = onCleanup(@() deleteTimer(commitTimer));
+            if isempty(obj.Figure) || ~isvalid(obj.Figure)
+                return;
+            end
+            component = obj.component(target);
+            obj.runUserInput(@() obj.pannerChanged(target, component.Value));
+            clear cleanup
+        end
+
+        function cancelPannerCommit(obj, target)
+            key = char(string(target));
+            if ~isKey(obj.PannerCommitTimers, key)
+                return;
+            end
+            commitTimer = obj.PannerCommitTimers(key);
+            remove(obj.PannerCommitTimers, key);
+            deleteTimer(commitTimer);
+        end
+
+        function cancelAllPannerCommits(obj)
+            if isempty(obj.PannerCommitTimers)
+                return;
+            end
+            timers = values(obj.PannerCommitTimers);
+            remove(obj.PannerCommitTimers, keys(obj.PannerCommitTimers));
+            for index = 1:numel(timers)
+                deleteTimer(timers{index});
+            end
         end
 
         function handles = busyInputHandles(obj)
@@ -766,6 +880,17 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             node = obj.Plan.Nodes(index);
         end
     end
+end
+
+function deleteTimer(value)
+if isempty(value) || ~isvalid(value)
+    return;
+end
+try
+    stop(value);
+catch
+end
+delete(value);
 end
 
 function handles = filePanelInputs(list)

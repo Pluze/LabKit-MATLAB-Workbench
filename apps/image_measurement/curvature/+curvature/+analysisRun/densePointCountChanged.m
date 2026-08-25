@@ -1,6 +1,6 @@
 % App-owned implementation for curvature.analysisRun.densePointCountChanged within the curvature product workflow.
 function applicationState = densePointCountChanged( ...
-        applicationState, pointCount, callbackContext)
+        applicationState, pointCount, ~)
 %DENSEPOINTCOUNTCHANGED Normalize fit sampling density and invalidate results.
 pointCount = double(pointCount);
 if ~isscalar(pointCount) || ~isfinite(pointCount)
@@ -9,7 +9,4 @@ end
 applicationState.project.parameters.densePointCount = ...
     max(3, round(pointCount));
 applicationState = curvature.curveEdit.clearMeasurements(applicationState);
-callbackContext.log("info", ...
-    "curvature.analysisrun.densepointcountchanged.status", ...
-    "Curvature fit settings changed.");
 end
