@@ -32,8 +32,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
     end
 
     properties (Constant, Access = private)
-        % Covers ordinary held/rapid spinner repeats without delaying display.
-        PannerCommitQuietSeconds = 1.0
+        % Ends a spinner burst soon enough to keep the final state responsive.
+        PannerCommitQuietSeconds = 0.2
     end
 
     methods (Access = { ...
@@ -601,16 +601,22 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         installCallbacks(obj)
 
-        function previewPanner(obj, target, value)
-            % Keep native value feedback local until the gesture commits.
+        function previewPanner(obj, target, value, source)
+            % Update only the paired control; never rewrite the event source.
             component = obj.component(target);
             value = min(component.Limits(2), ...
                 max(component.Limits(1), double(value)));
-            component.Value = value;
+            linked = labkit.app.internal.native.NativeAdapterValues. ...
+                linkedPannerSlider(component);
+            if source == component && ~isempty(linked)
+                linked.Value = value;
+            elseif ~isempty(linked) && source == linked
+                component.Value = value;
+            end
         end
 
         function queuePannerCommit(obj, target, value)
-            % Coalesce spinner repeats and typed edits at the gesture boundary.
+            % Commit the leading edit now and only the latest repeated edit.
             component = obj.component(target);
             value = min(component.Limits(2), ...
                 max(component.Limits(1), double(value)));
@@ -619,13 +625,18 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if ~isempty(linked)
                 linked.Value = value;
             end
+            key = char(string(target));
+            startsBurst = ~isKey(obj.PannerCommitTimers, key);
             obj.cancelPannerCommit(target);
+            if startsBurst
+                obj.pannerChanged(target, value);
+            end
             commitTimer = timer( ...
                 ExecutionMode="singleShot", ...
                 StartDelay=obj.PannerCommitQuietSeconds, ...
                 BusyMode="drop", ...
                 TimerFcn=@(~, ~) obj.commitQueuedPanner(target));
-            obj.PannerCommitTimers(char(string(target))) = commitTimer;
+            obj.PannerCommitTimers(key) = commitTimer;
             start(commitTimer);
         end
 

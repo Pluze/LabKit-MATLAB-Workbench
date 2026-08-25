@@ -660,24 +660,38 @@ classdef AppSdkSpec < matlab.unittest.TestCase
 
             spinner = oneTagged(figureValue, "nativeSlider");
             slider = oneTagged(figureValue, "nativeSlider.slider");
-            beforeSpinner = runtime.diagnosticSnapshot();
-            for value = [0.1 0.2 0.3 0.4]
+            invokeNativeCallback( ...
+                spinner.ValueChangingFcn, spinner, ...
+                struct("Value", 0.05));
+            testCase.verifyEqual(spinner.Value, 0);
+            testCase.verifyEqual(slider.Value, 0.05);
+            spinnerValues = [0.1 0.2 0.3 0.4];
+            for index = 1:numel(spinnerValues)
+                value = spinnerValues(index);
                 spinner.Value = value;
                 invokeNativeCallback( ...
+                    spinner.ValueChangingFcn, spinner, ...
+                    struct("Value", value));
+                invokeNativeCallback( ...
                     spinner.ValueChangedFcn, spinner, struct());
-                pause(0.2);
+                if index == 1
+                    testCase.verifyEqual( ...
+                        runtime.State.session.sliderValue, value);
+                end
+                pause(0.05);
             end
             duringSpinner = runtime.diagnosticSnapshot();
-            testCase.verifyEqual(runtime.State.session.sliderValue, 0);
-            testCase.verifyEqual(duringSpinner.totalRecordCount, ...
-                beforeSpinner.totalRecordCount);
-            pause(1.1);
+            testCase.verifyEqual(runtime.State.session.sliderValue, 0.1);
+            duringAliases = actionStartAliases(duringSpinner.events);
+            testCase.verifyEqual(sum( ...
+                duringAliases == "nativeSlider__valueChanged"), 1);
+            pause(0.25);
             drawnow;
             testCase.verifyEqual(runtime.State.session.sliderValue, 0.4);
             afterSpinner = runtime.diagnosticSnapshot();
             spinnerAliases = actionStartAliases(afterSpinner.events);
             testCase.verifyEqual(sum( ...
-                spinnerAliases == "nativeSlider__valueChanged"), 1);
+                spinnerAliases == "nativeSlider__valueChanged"), 2);
             beforeDrag = runtime.diagnosticSnapshot();
             for value = linspace(0.41, 0.6, 20)
                 invokeNativeCallback( ...
@@ -688,6 +702,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(duringDrag.totalRecordCount, ...
                 beforeDrag.totalRecordCount);
             testCase.verifyEqual(spinner.Value, 0.6, AbsTol=1e-12);
+            testCase.verifyEqual(slider.Value, 0.4, AbsTol=1e-12);
             slider.Value = 0.6;
             invokeNativeCallback(slider.ValueChangedFcn, slider, struct());
             afterCommit = runtime.diagnosticSnapshot();

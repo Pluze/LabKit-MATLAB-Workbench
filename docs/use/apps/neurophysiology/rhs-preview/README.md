@@ -29,6 +29,8 @@ labkit_RHSPreview_app
 
 Only the displayed window is decoded. This keeps navigation practical for long recordings and does not change the source file.
 
+Successful window reads update the preview without adding a routine INFO milestone for every navigation step. Read failures still produce an actionable warning, and explicit refresh remains available when the source may have changed.
+
 ## Choose Channels And Roles
 
 On **Protocol**, the channel table contains four columns:

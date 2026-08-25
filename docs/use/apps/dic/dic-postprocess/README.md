@@ -38,6 +38,8 @@ All three are required before **Generate overlays + summary** can produce a resu
 
 Changing an option updates the reproducible project parameters. Generate again before export when inputs or processing parameters change.
 
+An invalid color range or a failed bounded option refresh produces one actionable warning. Successful option edits do not add a separate INFO entry for every adjustment.
+
 ## Processing And Scientific Semantics
 
 The app constructs a valid-strain mask from finite Ncorr values, intersects it with the requested ROI, trims invalid edges, and maps the result to the optical image domain. Linear resizing is used for continuous image/strain data and nearest-neighbor resizing for masks. Invalid strain samples remain excluded rather than being converted to zero.

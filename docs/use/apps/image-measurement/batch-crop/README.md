@@ -35,6 +35,8 @@ Use **Restore manifest** to reopen the source images and task state recorded by 
 
 The preview rectangle remains draggable by either its center marker or its interior; a click without dragging sets its center at that preview location, including inside the rectangle. Change crop width and height with their controls. Editing the ROI updates the selected task immediately; switching tasks restores that task's geometry. ROI refreshes preserve axes zoom.
 
+Center, rotation, and padding adjustments update the selected task and preview without recording a routine INFO message for each intermediate setting. Export milestones and actionable failures remain available in diagnostics.
+
 ## Pixel Mode
 
 Default crop dimensions are 1024 by 1024 pixels. Rotation defaults to 0 degrees and padding to 0%. Center controls use source-image coordinates. When crop geometry crosses the rotated image boundary, edge-continuous padding supplies pixels so every exported crop retains the requested dimensions.

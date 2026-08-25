@@ -105,7 +105,7 @@ Use the generated [`buildTable`](../../../../reference/api/video_marker/coordina
 
 ## Diagnostics
 
-Use **Tools > Diagnostics** to inspect the live session log, enable trace capture; retained session journals remain available after a problem occurs.
+Use **Tools > Diagnostics** to inspect the live session log and enable trace capture; retained session journals remain available after a problem occurs. Rapid frame navigation records the committed navigation action instead of an INFO message for every predicted or visited frame. Long annotated-video exports expose bounded developer progress while preserving user-facing completion and failure milestones.
 
 ## Errors And Limitations
 
