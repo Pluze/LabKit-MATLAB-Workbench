@@ -157,11 +157,17 @@ there; current supported behavior belongs under `docs/`.
 - Update human docs for user behavior or public contracts, scoped AGENTS for
   execution/ownership rules, and both only when both changed. Do not duplicate
   agent workflow in human manuals.
+- Before final integration, classify every changed user workflow, public API,
+  App, schema, error, default, output, and compatibility contract as requiring
+  documentation creation, update, retirement, or no current-documentation
+  change. A no-documentation result is valid only when verified behavior and
+  reader entry points are unchanged; record that conclusion in the PR rather
+  than silently omitting the review.
 - Keep current behavior, accepted logical changes with their rationale,
-  published release summaries, and delivery evidence in separate owners defined by
-  `docs/AGENTS.md`. Move or
-  delete documentation as a hard change: update live internal links, but do
-  not preserve old URLs, redirects, aliases, or archived site pages.
+  published release summaries, and delivery evidence in separate owners
+  defined by `docs/AGENTS.md`. Move or delete documentation as a hard change:
+  update live internal links, but do not preserve old URLs, redirects, aliases,
+  or archived site pages.
 - Every public library function documents syntax, inputs, outputs, options,
   defaults, legal values, errors, and related APIs immediately after its
   declaration. Cataloged scientific app APIs also document units, assumptions,

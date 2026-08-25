@@ -32,6 +32,26 @@
       "rationale": "Competing top-level classifications, page movement, navigation, and reader-journey continuity are documentation architecture work."
     },
     {
+      "prompt": "Add a public labkit.image function, write its complete MATLAB help, and verify that the package guide, Reference catalog, search, and generated function page expose it without a handwritten route.",
+      "should_activate": true,
+      "rationale": "A new public source contract requires current help and generated documentation discovery."
+    },
+    {
+      "prompt": "Change an App's button label, default export name, recovery error, and output fields; update or create every current reader owner and preserve the accepted rationale once.",
+      "should_activate": true,
+      "rationale": "Changed user-visible behavior, defaults, errors, outputs, current manuals, and Change ownership are documentation maintenance."
+    },
+    {
+      "prompt": "Retire a public App API and its workflow. Remove obsolete help, current guidance, links, generated discovery, and the former route while linking the supported replacement and recording compatibility impact.",
+      "should_activate": true,
+      "rationale": "Retiring a public reader surface requires coordinated deletion and current replacement discovery without legacy routes."
+    },
+    {
+      "prompt": "Audit a source refactor and prove whether it requires documentation creation, update, retirement, or no current-documentation change before the PR is prepared.",
+      "should_activate": true,
+      "rationale": "The request explicitly asks for documentation-impact classification across source and reader contracts."
+    },
+    {
       "prompt": "Rename a private MATLAB local variable without changing help or user behavior.",
       "should_activate": false,
       "rationale": "A source-only private rename has no authored documentation contract."
@@ -40,6 +60,11 @@
       "prompt": "Fix a numerical formula while leaving its documented scientific contract unchanged.",
       "should_activate": false,
       "rationale": "The source correction alone does not require documentation architecture work."
+    },
+    {
+      "prompt": "Move a private helper into another private folder without changing callers, behavior, help, or reader discovery.",
+      "should_activate": false,
+      "rationale": "A verified internal move has no current reader contract to maintain."
     }
   ]
 }

@@ -1,4 +1,4 @@
 interface:
   display_name: "LabKit Documentation Maintainer"
   short_description: "Maintain reader-focused LabKit docs and rendering"
-  default_prompt: "Use $labkit-documentation-maintainer to place, update, and verify LabKit documentation in its authoritative reader surface."
+  default_prompt: "Use $labkit-documentation-maintainer to create, update, retire, and verify LabKit documentation in its authoritative reader surface."

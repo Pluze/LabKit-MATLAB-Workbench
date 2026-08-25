@@ -20,6 +20,14 @@ These rules govern authored Markdown under `docs/`, public MATLAB help, and the 
 - Pull requests, tests, CI, and workflow records own implementation sequence, validation inventories, hashes, review state, and other delivery evidence. Do not copy that evidence into current manuals, change records, or release notes.
 - Do not preserve a statement because an earlier document contained it. Re-establish current claims from source, tests, or an authoritative external reference before moving them into the new system.
 
+## Documentation lifecycle
+
+- Create current documentation when a source change introduces a reader-visible workflow, App, supported public symbol, schema, or independently useful reader goal. The new destination must be discoverable from its owning landing, generated catalog or map, search, and relevant current/Change relationships.
+- Update the existing owner when supported behavior, labels, defaults, inputs, outputs, units, errors, recovery, limitations, compatibility, or public help changes. Do not add a parallel page merely because the implementation changed files or owners.
+- Retire current documentation when its supported App, API, workflow, or schema is removed. Delete the obsolete source and generated route, remove live links and catalog ownership, point readers to the current replacement when one exists, and preserve only meaningful accepted rationale in a Change record.
+- Leave current documentation unchanged only for a verified internal change with no effect on reader behavior, public contracts, discovery, compatibility, or documented facts. Delivery evidence records that conclusion; current manuals do not narrate the internal edit.
+- A public source addition, rename, move, or retirement is incomplete until its help contract and generated discoverability agree with the accepted public surface. A user-visible App change is incomplete until its App manual and component Change/version obligations agree with the accepted behavior.
+
 ## Page contracts
 
 - A tutorial produces one complete result and includes prerequisites, supplied or synthetic inputs, ordered actions, expected observations, and next steps.

@@ -77,7 +77,6 @@ classdef (Sealed) CallbackContext < handle
     %           "Analysis started.");
     %   end
     %
-    % Typical Call:
     %   callbackContext.postEvent("stream.refresh", @refreshStreamView);
     %
     % See also labkit.app.Definition, labkit.app.dialog.Choice
