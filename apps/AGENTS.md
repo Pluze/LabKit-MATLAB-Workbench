@@ -6,7 +6,7 @@ framework owns common lifecycle and interaction mechanics.
 ## Read before editing
 
 Read the app source and nearby tests, `docs/apps/README.md`, and
-`docs/development/build-apps/app-development.md`. Read only the relevant
+`docs/develop/app-authoring/app-development.md`. Read only the relevant
 framework or library manual for APIs the app actually uses. App tests live under
 `tests/specs/apps/<family>/<app>/<capability>/`. Use `labkittest.explain` to
 find the exact owner and contract; App authors never invent test paths.
@@ -142,6 +142,6 @@ find the exact owner and contract; App authors never invent test paths.
 - Use the owning app-family unit suite and the app's hidden-GUI suite. Add
   project guardrails for entrypoint, boundary, fixture, or validation-policy
   changes. Exact commands belong in
-  `docs/development/maintain-and-release/testing.md`.
+  `docs/maintain/testing.md`.
 - Create `.agents/migration_guide.md` only for concrete active compatibility or
   transitional retirement work, and delete it when that work closes.

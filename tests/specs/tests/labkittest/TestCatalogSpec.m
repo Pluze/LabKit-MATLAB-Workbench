@@ -578,7 +578,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
 
         function ignoredDocumentationPathDoesNotInventAutomatedEvidence(testCase)
             result = labkittest.plan("Profile", "changed", ...
-                "ChangedPaths", "docs/development/maintain-and-release/testing.md");
+                "ChangedPaths", "docs/maintain/testing.md");
 
             testCase.verifyEqual(result.Scope, "focused-local");
             testCase.verifyEmpty(result.Descriptors);
@@ -591,7 +591,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 matlab.unittest.fixtures.TemporaryFolderFixture);
 
             result = labkittest.run("Profile", "changed", ...
-                "ChangedPaths", "docs/development/maintain-and-release/testing.md", ...
+                "ChangedPaths", "docs/maintain/testing.md", ...
                 "ArtifactsRoot", fixture.Folder, "RunName", "ignored-only");
 
             testCase.verifyEmpty(result.Results);

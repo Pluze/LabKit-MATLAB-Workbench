@@ -1,12 +1,17 @@
 # Chrono Overlay
 
-Chrono Overlay compares voltage and current transients from multiple Gamry DTA
-files on a common pulse-centered time axis and exports the aligned curves.
+```labkit-page
+id: app-chrono-overlay
+type: landing
+audience: app-user
+summary: Chrono Overlay compares voltage and current transients from multiple Gamry DTA files on a common pulse-centered time axis and exports the aligned curves.
+```
+
+Chrono Overlay compares voltage and current transients from multiple Gamry DTA files on a common pulse-centered time axis and exports the aligned curves.
 
 ## Requirements And Launch
 
-Each source must contain a readable chrono curve with time, voltage, and
-current data.
+Each source must contain a readable chrono curve with time, voltage, and current data.
 
 ```matlab
 labkit_ChronoOverlay_app
@@ -14,8 +19,7 @@ labkit_ChronoOverlay_app
 
 ## Inputs
 
-Inputs are one or more `.DTA` files containing chrono data. Source order
-controls curve order and legend labels.
+Inputs are one or more `.DTA` files containing chrono data. Source order controls curve order and legend labels.
 
 ## Basic Workflow
 
@@ -25,20 +29,13 @@ controls curve order and legend labels.
 4. Set line width, legend visibility, and grid visibility.
 5. Export the aligned curves CSV.
 
-Plot styling does not alter exported values. Removing a file removes its
-curves from both plots and the next export.
+Plot styling does not alter exported values. Removing a file removes its curves from both plots and the next export.
 
 ## Alignment Algorithm
 
-For each valid transient, the app uses the detected cathodic/anodic blank
-interval and defines time zero at its center. If pulse detection or the gap
-center is unavailable, it explicitly falls back to the first recorded sample
-and reports that fallback in the app log.
+For each valid transient, the app uses the detected cathodic/anodic blank interval and defines time zero at its center. If pulse detection or the gap center is unavailable, it explicitly falls back to the first recorded sample and reports that fallback in the app log.
 
-If files use different sample times, export constructs a merged aligned-time
-axis and interpolates each voltage/current series onto that axis. Missing
-coverage remains missing; the app does not extrapolate a transient beyond its
-recorded time range.
+If files use different sample times, export constructs a merged aligned-time axis and interpolates each voltage/current series onto that axis. Missing coverage remains missing; the app does not extrapolate a transient beyond its recorded time range.
 
 ## Parameters
 
@@ -51,9 +48,7 @@ recorded time range.
 
 ## Output
 
-**Export curves CSV** writes `TimeGapCenterAligned_s` followed by paired
-voltage and current columns for each source. Column names retain a sanitized
-source identity.
+**Export curves CSV** writes `TimeGapCenterAligned_s` followed by paired voltage and current columns for each source. Column names retain a sanitized source identity.
 
 ## Use Without The GUI
 
@@ -67,21 +62,17 @@ aligned = arrayfun(@(item) ...
 tableOut = chrono_overlay.resultFiles.buildOverlayExportTable(aligned);
 ```
 
-These app-owned helpers expose the workflow to scripts but are not currently
-listed as stable public APIs; reusable DTA reading is supported through
-`labkit.dta`.
+These app-owned helpers expose the workflow to scripts but are not currently listed as stable public APIs; reusable DTA reading is supported through `labkit.dta`.
 
 ## Errors And Limitations
 
-- A source without a detectable biphasic gap is aligned to its first sample;
-  review the log before comparing it with gap-centered files.
-- Interpolation enables a common export table but does not make differently
-  sampled instruments scientifically identical.
+- A source without a detectable biphasic gap is aligned to its first sample; review the log before comparing it with gap-centered files.
+- Interpolation enables a common export table but does not make differently sampled instruments scientifically identical.
 - Compare only experiments whose control mode, scale, and units are compatible.
 
 ## Related Topics
 
 - [Electrochemistry family](../README.md)
-- [DTA Library](../../../libraries/dta/README.md)
+- [DTA Library](../../../develop/libraries/dta/README.md)
 - [CIC](../cic/README.md)
 - [VT Resistance](../vt-resistance/README.md)

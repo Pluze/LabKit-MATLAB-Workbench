@@ -10,11 +10,13 @@ function updateReadonlyHeight(obj, component, value)
     width = policy.ReadonlyDefaultWidth;
     figureHandle = ancestor(component, "figure");
     if ~isempty(figureHandle) && isvalid(figureHandle) && ...
-            figureHandle.Visible == "on" && component.Position(3) > 0
-        width = component.Position(3);
+            figureHandle.Visible == "on" && component.Parent.Position(3) > 0
+        width = component.Parent.Position(3);
     end
+    inset = policy.ReadonlyInset;
+    contentWidth = max(1, width - inset(1) - inset(3));
     height = labkit.app.internal.native.NativeAdapterValues.readonlyHeight( ...
-        value, width, component.FontSize);
+        value, contentWidth, component.FontSize);
     key = char(id);
     node = obj.node(id);
     chain = readonlyChain(obj, node);
@@ -24,7 +26,6 @@ function updateReadonlyHeight(obj, component, value)
     end
     if isKey(obj.ReadonlyHeights, key) && ...
             abs(obj.ReadonlyHeights(key) - height) < 0.5
-        component.Position = [0 0 width height];
         return
     end
     obj.ReadonlyHeights(key) = height;
@@ -45,7 +46,6 @@ function updateReadonlyHeight(obj, component, value)
         end
         adjustOwningRow(handle, delta);
     end
-    component.Position = [0 0 width height];
 end
 
 function chain = readonlyChain(obj, node)

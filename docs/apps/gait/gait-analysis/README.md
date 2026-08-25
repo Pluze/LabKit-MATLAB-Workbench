@@ -1,15 +1,17 @@
 # Gait Analysis
 
-Gait Analysis converts a current Video Marker project into independently
-segmented treadmill swing steps, per-frame kinematics, per-step gait
-parameters, visual step reports, and reproducible CSV outputs. Loading and
-analysis are deliberately separate: loading first shows the complete tracked
-skeleton trajectory; analysis then enables one-step-at-a-time review.
+```labkit-page
+id: app-gait-analysis
+type: landing
+audience: app-user
+summary: Convert a Video Marker project into segmented treadmill swing steps, kinematics, gait parameters, visual reports, and reproducible CSV outputs.
+```
+
+Gait Analysis converts a current Video Marker project into independently segmented treadmill swing steps, per-frame kinematics, per-step gait parameters, visual step reports, and reproducible CSV outputs. Loading and analysis are deliberately separate: loading first shows the complete tracked skeleton trajectory; analysis then enables one-step-at-a-time review.
 
 ## Open Gait Analysis
 
-From the LabKit launcher, select **Gait Analysis** and choose **Open**. From a
-source checkout, run:
+From the LabKit launcher, select **Gait Analysis** and choose **Open**. From a source checkout, run:
 
 ```matlab
 labkit_GaitAnalysis_app
@@ -17,8 +19,7 @@ labkit_GaitAnalysis_app
 
 ## Supported Input
 
-The only file input is a current Video Marker archive MAT file.
-It must contain:
+The only file input is a current Video Marker archive MAT file. It must contain:
 
 - frames-by-points-by-2 pixel coordinates;
 - point IDs, point names, and skeleton edges;
@@ -26,71 +27,55 @@ It must contain:
 - video frame count, frame rate, duration, width, and height;
 - scale calibration and physical unit when calibrated.
 
-The App uses the timing, skeleton, calibration, and annotation information in
-the Video Marker project; it does not reopen the video to infer missing
-metadata. Generic coordinate tables and unrelated MAT files are therefore not
-accepted. Retired Video Marker project and autosave formats are not migrated
-by Gait Analysis.
+The App uses the timing, skeleton, calibration, and annotation information in the Video Marker project; it does not reopen the video to infer missing metadata. Generic coordinate tables and unrelated MAT files are therefore not accepted. Retired Video Marker project and autosave formats are not migrated by Gait Analysis.
 
-The selected Video Marker MAT remains a live source while Gait Analysis is
-open.
+The selected Video Marker MAT remains a live source while Gait Analysis is open.
 
-Coordinates use image convention: the origin is at the upper left and Y
-increases downward. The skeleton preview preserves that convention. Angle and
-length time series use conventional plot axes.
+Coordinates use image convention: the origin is at the upper left and Y increases downward. The skeleton preview preserves that convention. Angle and length time series use conventional plot axes.
 
 ## Two-Stage Workflow
 
 ### 1. Load And Inspect All Trajectories
 
-Choose **Open Video Marker MAT**. Before any analysis runs, the workspace overlays
-every recorded skeleton and each named point trajectory. This view is intended
-to expose gross tracking failures, missing landmarks, unexpected skeleton
-order, and coordinate orientation before derived numbers are produced.
+Choose **Open Video Marker MAT**. Before any analysis runs, the workspace overlays every recorded skeleton and each named point trajectory. This view is intended to expose gross tracking failures, missing landmarks, unexpected skeleton order, and coordinate orientation before derived numbers are produced.
 
-The source summary reports frame count, point count, embedded frame rate,
-source format, and unit. Role fields are populated from matching source point
-names; `iliac_crest` is accepted for the iliac role.
+The source summary reports frame count, point count, embedded frame rate, source format, and unit. Role fields are populated from matching source point names; `iliac_crest` is accepted for the iliac role.
 
 ### 2. Analyze And Review One Step
 
-Choose **Run analysis**. In **Source + Step Review**, select a row in the step
-table or use **Previous step** and **Next step**. The 2-by-2 workspace shows:
+Choose **Run analysis**. In **Source + Step Review**, select a row in the step table or use **Previous step** and **Next step**. The 2-by-2 workspace shows:
 
 1. all skeleton poses from lift-off through landing, with point trajectories;
 2. hip, knee, and ankle angle traces;
 3. iliac-hip, hip-knee, knee-ankle, and ankle-foot length traces;
-4. the complete recording's overlaid skeletons and all named point
-   trajectories as persistent context.
+4. the complete recording's overlaid skeletons and all named point trajectories as persistent context.
 
-Both spatial plots preserve equal X/Y data units so gait shape is not stretched
-by the available panel geometry. Loading a new source, running analysis, or
-changing the selected step fits the new data once; later redraws preserve the
-user's zoom.
+Both spatial plots preserve equal X/Y data units so gait shape is not stretched by the available panel geometry. Loading a new source, running analysis, or changing the selected step fits the new data once; later redraws preserve the user's zoom.
 
-The **Selected Step Details** box in the control panel reports swing duration,
-step length, iliac/hip/knee/ankle/foot translations, and each joint's minimum,
-maximum, and range of motion. The plots remain free of metric text so tracked
-poses are not covered. You can inspect each step directly without first
-exporting intermediate figures.
+The **Selected Step Details** box in the control panel reports swing duration, step length, iliac/hip/knee/ankle/foot translations, and each joint's minimum, maximum, and range of motion. The plots remain free of metric text so tracked poses are not covered. You can inspect each step directly without first exporting intermediate figures.
 
 ## Step Segmentation
 
-The default treadmill detector operates on the smoothed foot X coordinate.
-A lift-off candidate is a local maximum whose prominence is at least the
-configured threshold and whose height is at least the configured
-mean-minus-sigma standard-deviation floor. Candidates closer than the minimum
-interval retain the higher peak. Every accepted lift-off is independently paired with the lowest
-subsequent foot X value before the next lift-off, or before the recording ends.
-That following minimum is the landing event.
+The default treadmill detector operates on the smoothed foot X coordinate. A lift-off candidate is a local maximum whose prominence is at least the configured threshold and whose height is at least the configured mean-minus-sigma standard-deviation floor. Candidates closer than the minimum interval retain the higher peak. Every accepted lift-off is independently paired with the lowest subsequent foot X value before the next lift-off, or before the recording ends. That following minimum is the landing event.
 
-This pairing keeps a completed last swing valid even when the recording ends
-before another lift-off. These are image-kinematic treadmill events, not
-force-plate contact measurements.
+This pairing keeps a completed last swing valid even when the recording ends before another lift-off. These are image-kinematic treadmill events, not force-plate contact measurements.
 
-When a later lift-off exists, the app additionally derives cycle time, stance
-time, cadence, and duty factor. Those values are legitimately unavailable for
-the final independently complete swing if no next lift-off was recorded.
+When a later lift-off exists, the app additionally derives cycle time, stance time, cadence, and duty factor. Those values are legitimately unavailable for the final independently complete swing if no next lift-off was recorded.
+
+## Calculations
+
+For each frame the app calculates unsigned 0-180 degree hip, knee, and ankle angles from adjacent segment vectors and four Euclidean segment lengths. A nonfinite or zero-length vector produces `NaN`; the app does not invent an angle.
+
+For each lift-off-to-landing step it calculates:
+
+- swing duration;
+- two-dimensional foot endpoint displacement, reported as step length;
+- two-dimensional endpoint translation for iliac, hip, knee, ankle, and foot;
+- minimum, maximum, and range of motion for hip, knee, and ankle;
+- cycle time, stance time, cadence per minute, and duty factor when the next lift-off exists;
+- validity and a concrete rejection reason for duration, step length, or hip translation rules.
+
+Foot displacement is exported as `step_length` because each row describes one active swing rather than a complete stride.
 
 ## Parameters
 
@@ -110,41 +95,16 @@ the final independently complete swing if no next lift-off was recorded.
 | Minimum step length | 1 output unit | Minimum two-dimensional foot endpoint displacement. |
 | Maximum hip translation | 1,000,000 output units | Upper endpoint-displacement QC rule; the default normally leaves it inactive. |
 
-Changing any parameter makes the previous result out of date. Running analysis
-again with unchanged source and parameters reuses the completed result.
-
-## Calculations
-
-For each frame the app calculates unsigned 0-180 degree hip, knee, and ankle
-angles from adjacent segment vectors and four Euclidean segment lengths. A
-nonfinite or zero-length vector produces `NaN`; the app does not invent an
-angle.
-
-For each lift-off-to-landing step it calculates:
-
-- swing duration;
-- two-dimensional foot endpoint displacement, reported as step length;
-- two-dimensional endpoint translation for iliac, hip, knee, ankle, and foot;
-- minimum, maximum, and range of motion for hip, knee, and ankle;
-- cycle time, stance time, cadence per minute, and duty factor when the next
-  lift-off exists;
-- validity and a concrete rejection reason for duration, step length, or hip
-  translation rules.
-
-Foot displacement is exported as `step_length` because each row describes one
-active swing rather than a complete stride.
+Changing any parameter makes the previous result out of date. Running analysis again with unchanged source and parameters reuses the completed result.
 
 ## Outputs
 
 **Export CSV set** writes:
 
-- `<source>_frames.csv`: frame/time, step membership, event flags, three joint
-  angles, four segment lengths, and scaled point coordinates;
+- `<source>_frames.csv`: frame/time, step membership, event flags, three joint angles, four segment lengths, and scaled point coordinates;
 - `<source>_coordinates.csv`: raw pixel and scaled/origin-shifted coordinates;
-- `<source>_steps.csv`: event boundaries, timing, cadence/duty factor, step
-  length, five point translations, joint extrema/ROM, validity and reason;
-- `<source>_summary.csv`: source geometry, counts, valid-step means, and global
-  joint extrema.
+- `<source>_steps.csv`: event boundaries, timing, cadence/duty factor, step length, five point translations, joint extrema/ROM, validity and reason;
+- `<source>_summary.csv`: source geometry, counts, valid-step means, and global joint extrema.
 
 ## Use Without The GUI
 
@@ -156,22 +116,7 @@ result = gait_analysis.analysisRun.computeGait(pose, opts);
 writetable(result.stepTable, "steps.csv");
 ```
 
-`computeGait` performs no UI or file writes. Its result contains `frameTable`,
-`coordinateTable`, `stepTable`, `summaryTable`, paired `events`, normalized
-`options`, `ok`, and `message`.
-
-## Limitations
-
-- Kinematic lift-off and landing are not substitutes for force or pressure
-  measurements.
-- The default detector reflects lateral treadmill motion and assumes the foot
-  travels toward increasing X before returning toward decreasing X.
-- Smoothing and prominence affect event boundaries and must be reported with
-  scientific results.
-- Tracking confidence and manual/predicted frame status are preserved from
-  Video Marker but are not yet automatic step-exclusion rules.
-- Group statistics and between-animal inference are outside this single-
-  recording app; exported step tables are the boundary for that workflow.
+`computeGait` performs no UI or file writes. Its result contains `frameTable`, `coordinateTable`, `stepTable`, `summaryTable`, paired `events`, normalized `options`, `ok`, and `message`.
 
 ## Related Functions And Apps
 
@@ -181,3 +126,11 @@ writetable(result.stepTable, "steps.csv");
 - `gait_analysis.analysisRun.computeGait`
 - [Video Marker](../../image-measurement/video-marker/README.md)
 - [Gait apps](../README.md)
+
+## Limitations
+
+- Kinematic lift-off and landing are not substitutes for force or pressure measurements.
+- The default detector reflects lateral treadmill motion and assumes the foot travels toward increasing X before returning toward decreasing X.
+- Smoothing and prominence affect event boundaries and must be reported with scientific results.
+- Tracking confidence and manual/predicted frame status are preserved from Video Marker but are not yet automatic step-exclusion rules.
+- Group statistics and between-animal inference are outside this single- recording app; exported step tables are the boundary for that workflow.

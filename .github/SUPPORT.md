@@ -4,7 +4,7 @@ Use the launcher and app docs first:
 
 - Normal use starts from the single-file launcher in the root [README](../README.md).
 - App commands, inputs, and expected outputs are listed in the [app guide](../docs/apps/README.md).
-- Development and validation commands are listed in [Testing](../docs/development/maintain-and-release/testing.md).
+- Development and validation commands are listed in [Testing](../docs/maintain/testing.md).
 
 ## Report A Problem
 
@@ -28,4 +28,4 @@ Open an app workflow request when you need a new import path, export, table, plo
 
 ## Contributing
 
-For source changes, start with [Testing](../docs/development/maintain-and-release/testing.md) and use the pull request template. Keep app-specific behavior in the owning app unless the shared `+labkit` foundation clearly owns a domain-neutral contract.
+For source changes, start with [Testing](../docs/maintain/testing.md) and use the pull request template. Keep app-specific behavior in the owning app unless the shared `+labkit` foundation clearly owns a domain-neutral contract.

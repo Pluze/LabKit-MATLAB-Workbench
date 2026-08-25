@@ -9,12 +9,12 @@ code.
 For a narrow change read this file, the nearest scoped `AGENTS.md`, and the
 affected source/tests/docs. Read component manuals only for changed contracts:
 
-- architecture: `docs/development/build-apps/architecture.md`
-- framework: `docs/framework/README.md`
-- app development: `docs/development/build-apps/app-development.md`
-- testing: `docs/development/maintain-and-release/testing.md`
-- release: `docs/development/maintain-and-release/release.md`
-- libraries: `docs/libraries/<area>/README.md`
+- architecture: `docs/develop/app-authoring/architecture.md`
+- framework: `docs/develop/framework/README.md`
+- app development: `docs/develop/app-authoring/app-development.md`
+- testing: `docs/maintain/testing.md`
+- release: `docs/maintain/release.md`
+- libraries: `docs/develop/libraries/<area>/README.md`
 - apps: `docs/apps/README.md`
 
 Use `.agents/migration_guide.md` only while a concrete architecture migration
@@ -65,8 +65,8 @@ there; current supported behavior belongs under `docs/`.
   safety, accuracy, compatibility, migration, compliance, or an explicitly
   requested comparison or audit.
 - Place each retained fact at its owning surface: current invariants in source
-  or tests, user behavior in help or manuals, durable decisions in structured
-  history, and delivery evidence in the PR record. Regenerate high-salience
+  or tests, user behavior in help or manuals, durable change rationale in
+  structured Change records, and delivery evidence in the PR record. Regenerate high-salience
   wrappers from the accepted result, then inspect the complete final surfaces.
 
 ## Architecture and implementation
@@ -151,11 +151,17 @@ there; current supported behavior belongs under `docs/`.
 
 - Human sources are path-organized Markdown under `docs/` and public MATLAB
   help. Follow `docs/AGENTS.md` for authored page ownership and
-  `labkit-documentation-maintainer` for renderer, history, link, or deployment
-  workflows. `site/` is ignored generated output; never track or edit it.
+  `labkit-documentation-maintainer` for content, renderer, change, release,
+  link, or deployment workflows. `site/` is ignored generated output; never
+  track or edit it.
 - Update human docs for user behavior or public contracts, scoped AGENTS for
   execution/ownership rules, and both only when both changed. Do not duplicate
   agent workflow in human manuals.
+- Keep current behavior, accepted logical changes with their rationale,
+  published release summaries, and delivery evidence in separate owners defined by
+  `docs/AGENTS.md`. Move or
+  delete documentation as a hard change: update live internal links, but do
+  not preserve old URLs, redirects, aliases, or archived site pages.
 - Every public library function documents syntax, inputs, outputs, options,
   defaults, legal values, errors, and related APIs immediately after its
   declaration. Cataloged scientific app APIs also document units, assumptions,
@@ -190,7 +196,7 @@ tests, history, and details out of the public repository.
   `changedFast` or a local full profile after every CI repair. Re-plan only when
   the repair intentionally widens the changed behavior or ownership boundary.
   Exact commands and scope live in
-  `docs/development/maintain-and-release/testing.md`.
+  `docs/maintain/testing.md`.
 - MATLAB and GitHub inspection require host runtime/network permissions. Run
   every `gh` command with host permissions on its first attempt, including
   `gh auth status`; sandboxed `gh` cannot access the macOS Keychain and can
@@ -247,7 +253,7 @@ tests, history, and details out of the public repository.
    `codecheck` is mandatory after the final MATLAB edit; stage only the owned
    outcome and proportionate evidence.
 5. Use `labkit-pr-preparer` for the complete `origin/main..HEAD` squash
-   boundary, versions, structured history, final local gate, PR record, CI,
+   boundary, versions, reader documentation, final local gate, PR record, CI,
    review, merge, and post-merge task cleanup. Main accepts PRs only
    from same-repository short-lived task branches. Never merge `main` back into
    a task branch merely for branch bookkeeping and never create a sync commit.
@@ -295,29 +301,30 @@ Commit and squash subjects use exactly one lowercase Conventional Commit type:
 `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `ci`, or `chore`. Pass an
 explicit compliant squash subject; do not rely on GitHub defaults.
 
-## Versions, history, and releases
+## Versions, changes, and releases
 
 - Version semantics belong only in dedicated facade/App version metadata,
-  dependency requirements, saved-data migration branches, structured history,
-  and release records. Do not encode versions in package, folder, file,
+  dependency requirements, saved-data migration branches, current
+  compatibility documentation, and release records. Do not encode versions in
+  package, folder, file,
   function, class, type, protocol, test, or current-architecture names; use one
   stable semantic name and let the version contract express compatibility.
 - Before a task-branch PR is merge-ready, source changes to a
-  versioned app/facade or launcher update its source version, owning manual,
-  and one structured component history record. Compare the PR base and head:
-  each existing component advances by exactly one direct patch, minor, or
-  major step. Cross-component changes use one record listing all affected
-  components.
-- For a history record introduced on a task branch, align its date and date-bearing
-  Change ID with the final component `Updated` date used by the squash
-  candidate. Do not preserve an intermediate checkpoint date after versions
-  and history have been consolidated.
-- History records use stable Change ID and sequence metadata plus rationale,
-  compatibility, user/data impact, validation, evidence, and follow-up. Do not
-  restore a root changelog or separate history parser.
-- Treat unpublished history as the net squash decision, not a commit diary.
-  Fold follow-on edits into the smallest coherent records and describe the
-  final user outcome, compatibility, and evidence.
+  versioned app/facade or launcher update its source version and current owning
+  manual. Compare the PR base and head: each existing component advances by
+  exactly one direct patch, minor, or major step. Record the direct transition
+  in one structured change record for the accepted logical change; a
+  cross-component change uses one record and lists every affected component.
+- Change records preserve the human explanation of why a change happened, its
+  accepted choice, relevant rejected alternatives, net behavior, user and
+  developer impact, compatibility, and remaining limits. When a later change
+  replaces an earlier choice, link it with `supersedes`; do not create a
+  separate decision record. Change records do not preserve commit order, raw
+  test inventories, hashes, or CI mechanics.
+- Each published LabKit version owns one GitHub Release matching its `vX.Y.Z`
+  tag. GitHub is the single source for that published version summary; do not
+  create a parallel page under `docs/`, maintain an unreleased changelog, or
+  duplicate Change narratives.
 - New release tags are `vX.Y.Z`; do not rename published legacy tags. Release
   titles contain only `VX.Y.Z` with an uppercase `V` and relevant `Highlights`,
   `Fixes`, `Upgrade Note`, and `Validation` sections.
@@ -326,7 +333,7 @@ explicit compliant squash subject; do not rely on GitHub defaults.
   a user may need to take. Do not publish commit or run identifiers, commands,
   test inventories, CI architecture, internal package movement, hashes, byte
   counts, or maintainer-only evidence; keep those in the PR, workflow record,
-  structured history, or release asset verification.
+  or release asset verification.
 - Start the manual `Release` workflow only after developer-led interactive App
   validation, successful required PR validation, and a successful lightweight
   `Continuous Integration` main-push run for the exact squash commit. It then

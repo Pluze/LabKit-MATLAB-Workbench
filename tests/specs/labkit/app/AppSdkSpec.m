@@ -539,14 +539,56 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             compact = oneTagged(figureValue, "compactSummary");
             testCase.verifyClass(summary, "matlab.ui.control.TextArea");
             testCase.verifyClass(compact, "matlab.ui.control.TextArea");
+            testCase.verifyEqual(string(summary.WordWrap), "on");
+            testCase.verifyEqual(string(summary.Editable), "off");
             testCase.verifyEqual(string(compact.Tooltip), "Ready");
-            testCase.verifyGreaterThan(summary.Position(4), ...
-                compact.Position(4));
+            testCase.verifyClass(compact.Parent, ...
+                "matlab.ui.container.GridLayout");
+            policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
+            testCase.verifyEqual(compact.Parent.Padding, ...
+                policy.ReadonlyInset);
+            summaryHeight = labkit.app.internal.native.NativeAdapterValues.readonlyHeight( ...
+                summary.Value, policy.ReadonlyDefaultWidth, summary.FontSize);
+            compactHeight = labkit.app.internal.native.NativeAdapterValues.readonlyHeight( ...
+                compact.Value, policy.ReadonlyDefaultWidth, compact.FontSize);
+            testCase.verifyGreaterThan(summaryHeight, compactHeight);
             charHeight = labkit.app.internal.native.NativeAdapterValues.readonlyHeight( ...
                 'Ready', 210, 12);
             stringHeight = labkit.app.internal.native.NativeAdapterValues.readonlyHeight( ...
                 "Ready", 210, 12);
             testCase.verifyEqual(charHeight, stringHeight);
+            clear cleanup
+        end
+
+        function compactFilePanelShowsFilenameAndRetainsFullPath(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.fileList("files", ...
+                    Bind="project.inputs.sources", ...
+                    SelectionMode="single", MaxFiles=1)});
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createSourceState, ...
+                "PresentWorkbench", @presentCompactSource);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            figureValue = runtime.figureHandle();
+            filepath = fullfile(root, "nested", ...
+                "descriptive-source-recording.mat");
+
+            runtime.applyFileSelection("files", filepath, 1);
+
+            status = oneTagged(figureValue, "files.status");
+            choose = oneTagged(figureValue, "files.choose");
+            testCase.verifyClass(status, "matlab.ui.control.TextArea");
+            testCase.verifyEqual(string(status.Editable), "off");
+            testCase.verifyEqual(string(status.WordWrap), "on");
+            testCase.verifyEqual(string(status.Value), ...
+                "descriptive-source-recording.mat");
+            testCase.verifyEqual(string(status.Tooltip), string(filepath));
+            testCase.verifyGreaterThan(status.Position(4), choose.Position(4));
             clear cleanup
         end
 
@@ -1202,6 +1244,15 @@ end
 function view = presentGainAvailability(state)
 view = labkit.app.view.Snapshot().enabled( ...
     "gain", state.project.parameters.gain ~= 0);
+end
+
+function view = presentCompactSource(applicationState)
+paths = labkit.app.source.paths(applicationState.project.inputs.sources);
+text = "No files selected";
+if ~isempty(paths)
+    text = paths(1);
+end
+view = labkit.app.view.Snapshot().text("files", text);
 end
 
 function project = createUnreadableSourceProject()

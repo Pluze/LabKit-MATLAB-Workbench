@@ -1,18 +1,19 @@
 # RHS Preview
 
-RHS Preview lets you inspect an Intan RHS recording without loading the entire
-waveform into memory. Use it to check channels, move through short waveform
-windows, choose the channels to plot, and prepare protocol or file-filter JSON
-for later analysis.
+```labkit-page
+id: app-rhs-preview
+type: landing
+audience: app-user
+summary: Inspect channels and short waveform windows in an Intan RHS recording and prepare configuration for later analysis without loading the entire waveform.
+```
 
-The displayed file is decoded and presented by the source workflow that owns
-the current window, preventing a separate display-file path from drifting from
-the selected recording.
+RHS Preview lets you inspect an Intan RHS recording without loading the entire waveform into memory. Use it to check channels, move through short waveform windows, choose the channels to plot, and prepare protocol or file-filter JSON for later analysis.
+
+The displayed file is decoded and presented by the source workflow that owns the current window, preventing a separate display-file path from drifting from the selected recording.
 
 ## Open RHS Preview
 
-From the LabKit launcher, select **RHS Preview** and choose **Open**. From a
-source checkout, run:
+From the LabKit launcher, select **RHS Preview** and choose **Open**. From a source checkout, run:
 
 ```matlab
 labkit_RHSPreview_app
@@ -21,16 +22,12 @@ labkit_RHSPreview_app
 ## Preview A Recording
 
 1. On **Setup**, choose one `.rhs` file.
-2. The app reads the header, lists the amplifier channels, selects up to eight
-   channels, and displays a short waveform window.
-3. Drag **Pan** to move the window through the recording. Scroll over the plot
-   to change the displayed duration around the pointer.
-4. Edit the plotted interval on the graph when you need to mark a smaller
-   region. Choose **Zoom to ROI** to make that interval the current window.
+2. The app reads the header, lists the amplifier channels, selects up to eight channels, and displays a short waveform window.
+3. Drag **Pan** to move the window through the recording. Scroll over the plot to change the displayed duration around the pointer.
+4. Edit the plotted interval on the graph when you need to mark a smaller region. Choose **Zoom to ROI** to make that interval the current window.
 5. Choose **Refresh Preview** to reread the current window from disk.
 
-Only the displayed window is decoded. This keeps navigation practical for long
-recordings and does not change the source file.
+Only the displayed window is decoded. This keeps navigation practical for long recordings and does not change the source file.
 
 ## Choose Channels And Roles
 
@@ -43,30 +40,15 @@ On **Protocol**, the channel table contains four columns:
 | Label | Enter a readable name for plots and later analysis |
 | Channel | Intan channel name read from the recording |
 
-You may open an existing protocol JSON before editing the table. Choose
-**Save Protocol Draft** to save the current assignments. A protocol is
-recommended for response analysis because it makes the stimulation,
-reference, and response channels explicit.
+You may open an existing protocol JSON before editing the table. Choose **Save Protocol Draft** to save the current assignments. A protocol is recommended for response analysis because it makes the stimulation, reference, and response channels explicit.
 
 ## Prepare A File Filter
 
-Use **Add RHS files**, **Add folder**, or **Add folder tree** to collect the
-recordings for later analysis. The file table lets you assign a label and comment to each recording. Remove
-individual entries or clear the list as needed, then choose **Save Filter
-Record**.
+Use **Add RHS files**, **Add folder**, or **Add folder tree** to collect the recordings for later analysis. The file table lets you assign a label and comment to each recording. Remove individual entries or clear the list as needed, then choose **Save Filter Record**.
 
-The filter record identifies the selected files and their labels. It does not
-copy the RHS recordings or contain decoded waveforms.
+The filter record identifies the selected files and their labels. It does not copy the RHS recordings or contain decoded waveforms.
 
-The preview recording, optional protocol, and filter recordings remain distinct
-live sources while the App is open. RHS Preview does not write a task archive;
-protocol and filter-record exports are its durable outputs.
-
-## Review Recording Information
-
-The **Review** tab shows the indexed duration, channel counts, current window,
-selected channels, and recent action. The preview plot uses a separate vertical
-band for each selected channel so traces do not obscure one another.
+The preview recording, optional protocol, and filter recordings remain distinct live sources while the App is open. RHS Preview does not write a task archive; protocol and filter-record exports are its durable outputs.
 
 ## Read An RHS Window Without The App
 
@@ -82,20 +64,11 @@ options = struct( ...
 assert(status.ok, status.message)
 ```
 
-`indexFile` reads recording metadata. `readWindow` returns the selected time
-range together with the sample rate and channel information needed to
-interpret the waveform matrix.
+`indexFile` reads recording metadata. `readWindow` returns the selected time range together with the sample rate and channel information needed to interpret the waveform matrix.
 
-## Errors And Limitations
+## Review Recording Information
 
-- RHS Preview currently displays amplifier channels.
-- A channel listed in a protocol must exist in the selected recording.
-- A window is limited to the indexed recording duration; requests outside that
-  range are clamped.
-- Short reads reduce memory and waiting time, but repeated navigation still
-  requires disk access.
-- The app is for inspection and preparation. Use Nerve Response Analysis for
-  stimulus detection and CAP measurements.
+The **Review** tab shows the indexed duration, channel counts, current window, selected channels, and recent action. The preview plot uses a separate vertical band for each selected channel so traces do not obscure one another.
 
 ## Related Functions And Apps
 
@@ -103,4 +76,12 @@ interpret the waveform matrix.
 - `labkit.rhs.readWindow`
 - `rhs_preview.analysisRun.readPreviewWindow`
 - [Nerve Response Analysis](../nerve-response-analysis/README.md)
-- [RHS library](../../../libraries/rhs/README.md)
+- [RHS library](../../../develop/libraries/rhs/README.md)
+
+## Errors And Limitations
+
+- RHS Preview currently displays amplifier channels.
+- A channel listed in a protocol must exist in the selected recording.
+- A window is limited to the indexed recording duration; requests outside that range are clamped.
+- Short reads reduce memory and waiting time, but repeated navigation still requires disk access.
+- The app is for inspection and preparation. Use Nerve Response Analysis for stimulus detection and CAP measurements.

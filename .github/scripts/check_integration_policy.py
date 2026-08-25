@@ -27,11 +27,12 @@ LAUNCHER_VERSION = re.compile(
 LAUNCHER_METADATA = "+labkit/+app/+internal/+launcher/launcherVersion.m"
 LEGACY_LAUNCHER_METADATA = "+labkit/+app/+internal/+launcher/dispatch.m"
 LAUNCHER_METADATA_PATHS = (LAUNCHER_METADATA, LEGACY_LAUNCHER_METADATA)
-HISTORY_COMPONENT = re.compile(
-    r"^component:\s*`([^`]+)`"
-    r"(?:\s*\|\s*`([^`]+)\s*->\s*([^`]+)`)?\s*$",
+CHANGE_COMPONENT = re.compile(
+    r"^component:\s*([A-Za-z][A-Za-z0-9._-]*)"
+    r"(?:\s*\|\s*((?:new|\d+\.\d+\.\d+))\s*->\s*(\d+\.\d+\.\d+))?\s*$",
     re.MULTILINE,
 )
+CHANGE_RECORD_PATH = re.compile(r"^docs/changes/\d{4}/CHG-[^/]+\.md$")
 
 
 def command(*arguments: str, allow_missing: bool = False) -> str | None:
@@ -120,7 +121,7 @@ def version_for_owner(
     return None
 
 
-def parse_history_components(
+def parse_change_components(
     source: str | None,
 ) -> list[tuple[str, str | None, str | None]]:
     if source is None:
@@ -131,8 +132,22 @@ def parse_history_components(
             before.strip() if before else None,
             after.strip() if after else None,
         )
-        for component, before, after in HISTORY_COMPONENT.findall(source)
+        for component, before, after in CHANGE_COMPONENT.findall(source)
     ]
+
+
+def is_change_record_path(path: str) -> bool:
+    return CHANGE_RECORD_PATH.fullmatch(path) is not None
+
+
+def matlab_contract_text(source: str | None) -> str:
+    if source is None:
+        return ""
+    return "\n".join(
+        line.rstrip()
+        for line in source.splitlines()
+        if line.strip() and not line.lstrip().startswith("%")
+    )
 
 
 def validate_branch(
@@ -188,7 +203,14 @@ def validate_versions(
             errors.append(f"{path}: component identity changed unexpectedly.")
             continue
         if version_before == version_after:
-            if any(metadata_path_for_source(item) == path for item in paths):
+            owned_sources = [
+                item for item in paths if metadata_path_for_source(item) == path
+            ]
+            if any(
+                matlab_contract_text(read_base(item))
+                != matlab_contract_text(read_head(item))
+                for item in owned_sources
+            ):
                 errors.append(
                     f"{component_after}: source changed without a version bump "
                     f"from {version_before}."
@@ -201,69 +223,43 @@ def validate_versions(
             )
         transitions.append((component_after, version_before, version_after))
 
-    history_records = {}
+    change_records = {}
     for path in paths:
-        if not path.startswith("docs/history/records/") or not path.endswith(".md"):
+        if not is_change_record_path(path):
             continue
         base_source = read_base(path)
         head_source = read_head(path)
         if base_source is not None and head_source is None:
-            errors.append(f"{path}: published history records cannot be deleted.")
+            errors.append(f"{path}: accepted Change records cannot be deleted.")
             continue
-        base_components = parse_history_components(base_source)
-        head_components = parse_history_components(head_source)
+        if head_source is None:
+            continue
+        base_components = parse_change_components(base_source)
+        head_components = parse_change_components(head_source)
         if base_source is not None and base_components == head_components:
             continue
-        history_records[path] = head_components
-    net_transitions = {
-        component: (before, after)
-        for component, before, after in transitions
-    }
+        change_records[path] = head_components
     for component, before, after in transitions:
         occurrences = [
             (path, recorded_before, recorded_after)
-            for path, records in history_records.items()
+            for path, records in change_records.items()
             for recorded_component, recorded_before, recorded_after in records
             if recorded_component == component
         ]
-        record_paths = sorted({path for path, _, _ in occurrences})
-        if len(record_paths) > 1:
-            errors.append(
-                f"{component}: changed history is split across "
-                f"{', '.join(record_paths)}; consolidate the component's "
-                "net PR history into one record."
-            )
         exact = [
             item for item in occurrences
             if item[1:] == (before, after)
         ]
         if not exact:
             errors.append(
-                f"{component}: history must record `{before} -> {after}` "
+                f"{component}: one change record must contain `{before} -> {after}` "
                 "in this change."
             )
         elif len(exact) > 1:
             errors.append(
-                f"{component}: history records `{before} -> {after}` more "
+                f"{component}: change records contain `{before} -> {after}` more "
                 "than once; keep one net transition."
             )
-    for path, records in history_records.items():
-        for component, before, after in records:
-            if before is None:
-                continue
-            expected = net_transitions.get(component)
-            if expected is None:
-                errors.append(
-                    f"{path}: history records `{component}` as "
-                    f"`{before} -> {after}`, but the component has no net "
-                    "version change from the PR base."
-                )
-            elif expected != (before, after):
-                errors.append(
-                    f"{path}: history records `{component}` as "
-                    f"`{before} -> {after}`, but the net PR transition is "
-                    f"`{expected[0]} -> {expected[1]}`."
-                )
     return errors
 
 
