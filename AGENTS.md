@@ -248,12 +248,17 @@ tests, history, and details out of the public repository.
    outcome and proportionate evidence.
 5. Use `labkit-pr-preparer` for the complete `origin/main..HEAD` squash
    boundary, versions, structured history, final local gate, PR record, CI,
-   review, merge, and post-merge task-branch deletion. Main accepts PRs only
+   review, merge, and post-merge task cleanup. Main accepts PRs only
    from same-repository short-lived task branches. Never merge `main` back into
    a task branch merely for branch bookkeeping and never create a sync commit.
-   Keep GitHub's automatic head-branch deletion enabled; after merge verify the
-   accepted task branch is gone and delete it explicitly only if automation did
-   not complete.
+   After the merge and exact main-push policy run succeed, remove every linked
+   worktree owned only by the accepted task, delete its local branch, verify
+   GitHub's automatic head-branch deletion, and delete that verified accepted
+   remote head explicitly only if automation did not complete. Fast-forward
+   the clean primary checkout to the accepted `origin/main` commit and verify
+   it is clean and aligned. Resolve every cleanup target from verified Git
+   state, preserve unrelated worktrees and branches, and stop rather than
+   discard dirty or unaccepted work.
 6. After merge, release only the exact accepted main commit after its policy
    gate succeeds. Do not repeat the complete PR MATLAB matrix.
 7. Never force-push without explicit approval. Stop and report permission,
