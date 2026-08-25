@@ -15,6 +15,7 @@ if isempty(selection.Indices) || isempty(state.project.inputs.sources)
     state.session.cache.sourceAxes = [];
     state.session.cache.sourcePanelChoices = "No panels";
     state.session.cache.limitState = figure_studio.sourceAxes.limitControls([]);
+    state.session.editor = figure_studio.figureDocument.editorState([]);
     state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
     callbackContext.removeResource("sourceFigure");
     state.session.selection.currentIndex = 0;
@@ -42,6 +43,7 @@ state.session.cache.sourcePanelChoices = panelChoices;
 state.session.cache.sourceDefaultStyle = sourceStyle;
 state.session.cache.currentSource = sourcePath;
 state.session.cache.limitState = figure_studio.sourceAxes.limitControls(plotData);
+state.session.editor = figure_studio.figureDocument.editorState(plotData);
 state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
 state.project.annotations.sourceDefaultStyle = sourceStyle;
 state.project.annotations.panelIndex = panelIndex;

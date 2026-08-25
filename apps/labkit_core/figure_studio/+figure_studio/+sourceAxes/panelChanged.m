@@ -20,6 +20,7 @@ state.session.cache.sourceAxes = sourceAxes;
 state.session.cache.sourceDefaultStyle = sourceStyle;
 state.session.cache.sourcePanelChoices = labels;
 state.session.cache.limitState = figure_studio.sourceAxes.limitControls(plotData);
+state.session.editor = figure_studio.figureDocument.editorState(plotData);
 state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
 state.project.annotations.sourceDefaultStyle = sourceStyle;
 state.project.annotations.panelIndex = panelIndex;

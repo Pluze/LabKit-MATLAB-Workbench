@@ -1,9 +1,12 @@
 % Expected caller: Figure Studio export actions. Inputs are a serializable
 % plot model and style. Outputs are an invisible temporary figure and axes.
-function [fig, ax] = createStyledFigure(plotData, style, sourceAxes)
+function [fig, ax] = createStyledFigure(plotData, style, sourceAxes, document)
 %CREATESTYLEDFIGURE Build a styled export from native or portable graphics.
 if nargin < 3
     sourceAxes = [];
+end
+if nargin < 4
+    document = [];
 end
     fig = figure('Visible', 'off', 'Color', 'w', ...
         'MenuBar', 'none', 'ToolBar', 'none');
@@ -16,6 +19,9 @@ end
         applyStoredLimits(ax, plotData);
         applyStoredTicks(ax, plotData);
         figure_studio.resultFiles.applyFigureStyle(ax, style);
+        if ~isempty(document)
+            figure_studio.figureDocument.applyToAxes(document, "", ax);
+        end
         return;
     end
     if isa(sourceAxes, 'matlab.ui.control.UIAxes')
@@ -23,6 +29,7 @@ end
     end
     ax = axes('Parent', fig);
     model = struct("plotData", plotData, "sourceAxes", [], ...
+        "document", document, "panelId", "", ...
         "style", style, "preview", false);
     figure_studio.sourceAxes.drawPreview(struct("main", ax), model);
 end

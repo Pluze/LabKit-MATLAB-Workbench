@@ -28,6 +28,7 @@ function drawPreview(axesById, model)
         style = model.style;
         style.previewScale = logical(model.preview);
         figure_studio.resultFiles.applyFigureStyle(ax, style);
+        applyDocument(model, ax);
         configureInteractivePreview(ax, style);
         return;
     end
@@ -37,6 +38,7 @@ function drawPreview(axesById, model)
         style = model.style;
         style.previewScale = logical(model.preview);
         figure_studio.resultFiles.applyFigureStyle(ax, style);
+        applyDocument(model, ax);
         if model.preview
             setappdata(ax, 'labkitFigureStudioPreviewStyle', style);
         end
@@ -56,12 +58,24 @@ function drawPreview(axesById, model)
     style = model.style;
     style.previewScale = logical(model.preview);
     figure_studio.resultFiles.applyFigureStyle(ax, style);
+    applyDocument(model, ax);
     if model.preview
         setappdata(ax, 'labkitFigureStudioPlotData', model.plotData);
         setappdata(ax, 'labkitFigureStudioPreviewStyle', style);
         configureInteractivePreview(ax, style);
         figure_studio.sourceAxes.resizePreview(ax, style);
     end
+end
+
+function applyDocument(model, ax)
+if ~isfield(model, "document") || isempty(model.document)
+    return;
+end
+panelId = "";
+if isfield(model, "panelId")
+    panelId = string(model.panelId);
+end
+figure_studio.figureDocument.applyToAxes(model.document, panelId, ax);
 end
 
 function configureInteractivePreview(ax, style)

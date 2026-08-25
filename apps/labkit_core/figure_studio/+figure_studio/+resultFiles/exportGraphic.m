@@ -20,7 +20,7 @@ if chosen.Cancelled
 end
 [fig, ~] = figure_studio.resultFiles.createStyledFigure( ...
     state.session.cache.plotData, state.project.parameters.style, ...
-    state.session.cache.sourceAxes);
+    currentSourceAxes(state), currentDocument(state));
 cleanup = onCleanup(@() delete(fig));
 filepath = string(chosen.Value);
 if format == "fig"
@@ -31,6 +31,22 @@ else
     resolution = max(72, round( ...
         300 * state.project.parameters.style.exportScale));
     writeRaster(fig, filepath, format, resolution);
+end
+
+function source = currentSourceAxes(state)
+source = [];
+if ~isfield(state.session, "editor") || ...
+        state.session.editor.nativePassThrough
+    source = state.session.cache.sourceAxes;
+end
+end
+
+function document = currentDocument(state)
+document = [];
+if isfield(state.session, "editor") && ...
+        isfield(state.session.editor, "document")
+    document = state.session.editor.document;
+end
 end
 state.project.results.lastExport = struct( ...
     "kind", format, "path", filepath, ...

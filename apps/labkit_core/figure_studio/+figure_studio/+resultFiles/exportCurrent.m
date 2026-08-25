@@ -20,7 +20,8 @@ if strlength(root) == 0
 end
 folder = string(fullfile(root, exportFolderName(state)));
 [fig, ax] = figure_studio.resultFiles.createStyledFigure( ...
-    state.session.cache.plotData, state.project.parameters.style);
+    state.session.cache.plotData, state.project.parameters.style, ...
+    currentSourceAxes(state), state.session.editor.document);
 cleanup = onCleanup(@() delete(fig));
 payload = figure_studio.resultFiles.exportAxesPackage(ax, folder);
 state.project.parameters.outputFolder = root;
@@ -30,6 +31,13 @@ state.project.results.lastExport = struct( ...
 state.project.results.lastOutputPath = payload.readme;
 callbackContext.log("info", "figure_studio.resultfiles.exportcurrent.status", ...
     "Exported the Figure Studio package.");
+end
+
+function source = currentSourceAxes(state)
+source = [];
+if state.session.editor.nativePassThrough
+    source = state.session.cache.sourceAxes;
+end
 end
 
 function name = exportFolderName(state)

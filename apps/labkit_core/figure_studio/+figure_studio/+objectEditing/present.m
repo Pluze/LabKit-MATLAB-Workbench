@@ -1,0 +1,63 @@
+%PRESENT Build the flat layer projection and cascade editor state.
+function view = present(editor, hasFigure)
+[data, rowNames, nodeIds] = layerData(editor.document);
+selectedRows = find(ismember(nodeIds, editor.document.selection));
+selection = [selectedRows(:), ones(numel(selectedRows), 1)];
+summary = selectionSummary(editor.document, editor.document.selection);
+view = labkit.app.view.Snapshot() ...
+    .text("objectSelectionSummary", summary) ...
+    .tableData("objectTable", data, ...
+        Columns=["Show", "Lock", "Legend", "Type", "Role", "Name", "Group"], ...
+        RowNames=rowNames) ...
+    .tableCellSelection("objectTable", ...
+        labkit.app.event.TableCellSelection(selection)) ...
+    .value("objectStyleScope", editor.activeScope) ...
+    .value("objectStyleProperty", editor.activeProperty) ...
+    .value("objectStyleValue", editor.propertyDraft);
+ids = ["objectTable", "objectStyleScope", "objectStyleProperty", ...
+    "objectStyleValue", "applyObjectStyle", "resetObjectStyle"];
+for id = ids
+    view = view.enabled(id, hasFigure);
+end
+hasSelection = hasFigure && ~isempty(editor.document.selection);
+for id = ["groupObjects", "ungroupObjects", "duplicateObjects", ...
+        "objectsToFront", "objectsForward", "objectsBackward", "objectsToBack"]
+    view = view.enabled(id, hasSelection);
+end
+end
+
+function [data, rowNames, ids] = layerData(document)
+nodes = document.nodes;
+data = cell(numel(nodes), 7);
+rowNames = strings(1, numel(nodes));
+ids = strings(numel(nodes), 1);
+for k = 1:numel(nodes)
+    node = nodes(k);
+    prefix = "";
+    if node.kind ~= "group" && strlength(node.groupId) > 0
+        prefix = "  ↳ ";
+    end
+    data{k, 1} = logical(node.visible);
+    data{k, 2} = logical(node.locked);
+    data{k, 3} = logical(node.legendVisible);
+    data{k, 4} = char(node.kind);
+    data{k, 5} = char(node.role);
+    data{k, 6} = char(prefix + node.name);
+    data{k, 7} = char(node.groupId);
+    rowNames(k) = string(k);
+    ids(k) = node.id;
+end
+end
+
+function value = selectionSummary(document, selected)
+selected = string(selected(:));
+if isempty(selected)
+    value = "No objects selected";
+    return;
+end
+nodes = document.nodes(ismember(string({document.nodes.id}), selected));
+kinds = unique(string({nodes.kind}));
+roles = unique(string({nodes.role}));
+value = string(numel(nodes)) + " selected | type " + join(kinds, ", ") + ...
+    " | role " + join(roles, ", ");
+end
