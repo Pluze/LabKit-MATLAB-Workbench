@@ -1,4 +1,4 @@
-% App-owned implementation for Figure Studio's active single-panel selector.
+% Switch Figure Studio's active panel without rebuilding the loaded document.
 function state = panelChanged(state, ~, callbackContext)
 arguments
     state (1, 1) struct
@@ -12,13 +12,22 @@ panelIndex = find(labels == requested, 1);
 if isempty(panelIndex)
     panelIndex = 1;
 end
-[plotData, sourceStyle, sourceAxes, panelLabel, panelIndex] = ...
+[~, sourceStyle, sourceAxes, panelLabel, panelIndex] = ...
     figure_studio.sourceAxes.selectPanel(resource, panelIndex);
 state.session.selection.panel = panelLabel;
-state.session.cache.plotData = plotData;
 state.session.cache.sourceAxes = sourceAxes;
 state.session.cache.sourceDefaultStyle = sourceStyle;
 state.session.cache.sourcePanelChoices = labels;
+if numel(state.session.editor.document.panels) ~= numel(labels)
+    snapshots = figure_studio.sourceAxes.extractPanelSnapshots(resource);
+    state.session.editor = figure_studio.figureDocument.editorState(snapshots);
+end
+activePanelId = state.session.editor.document.panels(panelIndex).id;
+state.session.editor.activePanelId = activePanelId;
+state.session.editor.selectedPanelIds = activePanelId;
+plotData = figure_studio.figureDocument.toPlotData( ...
+    state.session.editor.document, activePanelId);
+state.session.cache.plotData = plotData;
 state.session.cache.limitState = figure_studio.sourceAxes.limitControls(plotData);
 state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
 state.project.annotations.sourceDefaultStyle = sourceStyle;

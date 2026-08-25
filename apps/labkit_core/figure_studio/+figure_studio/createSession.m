@@ -10,6 +10,8 @@ function session = createSession(project, context)
     sourceAxes = [];
     sourcePanelChoices = "No panels";
     sourcePanel = "No panels";
+    panelSnapshots = {};
+    activePanelIndex = 1;
     if isfield(project.annotations, "transientSourceAxes") && ...
             ~isempty(project.annotations.transientSourceAxes) && ...
             isgraphics(project.annotations.transientSourceAxes, "axes")
@@ -23,6 +25,8 @@ function session = createSession(project, context)
             requestedPanelIndex(project));
         [~, sourcePanelChoices] = figure_studio.sourceAxes.panelChoices( ...
             resource.axes);
+        panelSnapshots = figure_studio.sourceAxes.extractPanelSnapshots(resource);
+        activePanelIndex = panelIndex;
         project.annotations.panelIndex = panelIndex;
     elseif isempty(plotData) && ~isempty(project.inputs.sources)
         currentIndex = 1;
@@ -36,6 +40,8 @@ function session = createSession(project, context)
             requestedPanelIndex(project));
         [~, sourcePanelChoices] = figure_studio.sourceAxes.panelChoices( ...
             resource.axes);
+        panelSnapshots = figure_studio.sourceAxes.extractPanelSnapshots(resource);
+        activePanelIndex = panelIndex;
         project.annotations.panelIndex = panelIndex;
     elseif ~isempty(plotData)
         currentSource = "Popout axes";
@@ -44,12 +50,21 @@ function session = createSession(project, context)
     end
     plotData = applyLimitOverrides(plotData, project.annotations.limitOverrides);
     limitState = figure_studio.sourceAxes.limitControls(plotData);
+    if isempty(panelSnapshots)
+        editor = figure_studio.figureDocument.editorState(plotData);
+    else
+        panelSnapshots{activePanelIndex} = plotData;
+        editor = figure_studio.figureDocument.editorState(panelSnapshots);
+        editor.activePanelId = editor.document.panels(activePanelIndex).id;
+        editor.selectedPanelIds = editor.activePanelId;
+    end
     session = struct( ...
         "selection", struct( ...
             "files", labkit.app.event.ListSelection(), ...
             "currentIndex", currentIndex, ...
             "panel", sourcePanel), ...
         "workflow", struct("status", initialStatus(plotData, currentSource)), ...
+        "editor", editor, ...
         "cache", struct( ...
             "plotData", plotData, ...
             "sourceAxes", sourceAxes, ...

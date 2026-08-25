@@ -14,14 +14,11 @@ controls = state.session.cache.limitState;
 if any(changedId == ["xMin", "xMax"])
     pair = [controls.xMin controls.xMax];
     axisName = "xLim";
-    range = controls.xRange;
 else
     pair = [controls.yMin controls.yMax];
     axisName = "yLim";
-    range = controls.yRange;
 end
-if any(~isfinite(pair)) || pair(1) >= pair(2) || ...
-        pair(1) < range(1) || pair(2) > range(2)
+if any(~isfinite(pair)) || pair(1) >= pair(2)
     previous = state.session.cache.plotData.axes.(char(axisName));
     if axisName == "xLim"
         controls.xMin = previous(1);
@@ -31,11 +28,16 @@ if any(~isfinite(pair)) || pair(1) >= pair(2) || ...
         controls.yMax = previous(2);
     end
     state.session.cache.limitState = controls;
-    state.session.workflow.status = "Keep each axis minimum below its maximum within the displayed data envelope.";
+    state.session.workflow.status = ...
+        "Axis limits must be finite with the minimum below the maximum.";
     callbackContext.log("info", "figure_studio.sourceaxes.limitchanged.status", state.session.workflow.status);
     return;
 end
 state.session.cache.plotData.axes.(char(axisName)) = pair;
+documentAxis = extractBefore(axisName, "Lim");
+state.session.editor.document = figure_studio.figureDocument.setAxisLimits( ...
+    state.session.editor.document, state.session.editor.activePanelId, ...
+    documentAxis, pair);
 state.project.annotations.limitOverrides.(char(axisName)) = pair;
 if isempty(state.project.inputs.sources)
     state.project.annotations.embeddedPlot = state.session.cache.plotData;

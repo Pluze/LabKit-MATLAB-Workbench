@@ -28,6 +28,7 @@ function drawPreview(axesById, model)
         style = model.style;
         style.previewScale = logical(model.preview);
         figure_studio.resultFiles.applyFigureStyle(ax, style);
+        applyDocument(model, ax);
         configureInteractivePreview(ax, style);
         return;
     end
@@ -37,6 +38,7 @@ function drawPreview(axesById, model)
         style = model.style;
         style.previewScale = logical(model.preview);
         figure_studio.resultFiles.applyFigureStyle(ax, style);
+        applyDocument(model, ax);
         if model.preview
             setappdata(ax, 'labkitFigureStudioPreviewStyle', style);
         end
@@ -53,15 +55,48 @@ function drawPreview(axesById, model)
     hold(ax, 'off');
     applyAxesMetadata(ax, model.plotData.axes);
     applyLegendMetadata(ax, model.plotData);
+    applyColorbarMetadata(ax, model.plotData.axes);
     style = model.style;
     style.previewScale = logical(model.preview);
     figure_studio.resultFiles.applyFigureStyle(ax, style);
+    applyDocument(model, ax);
     if model.preview
         setappdata(ax, 'labkitFigureStudioPlotData', model.plotData);
         setappdata(ax, 'labkitFigureStudioPreviewStyle', style);
         configureInteractivePreview(ax, style);
         figure_studio.sourceAxes.resizePreview(ax, style);
     end
+end
+
+function applyColorbarMetadata(ax, axesData)
+if ~isfield(axesData, 'colorbar'), return; end
+meta = axesData.colorbar;
+if ~logical(fieldValue(meta, 'enabled', false))
+    try
+        if ~isempty(ax.Colorbar), delete(ax.Colorbar); end
+    catch
+    end
+    return;
+end
+bar = colorbar(ax, char(fieldValue(meta, 'location', 'eastoutside')));
+bar.Label.String = string(fieldValue(meta, 'label', ""));
+bar.Label.Interpreter = 'none';
+safeSet(bar, 'Limits', fieldValue(meta, 'limits', ax.CLim));
+safeSet(bar, 'Ticks', fieldValue(meta, 'ticks', []));
+safeSet(bar, 'TickLabels', fieldValue(meta, 'tickLabels', strings(0, 1)));
+safeSet(bar, 'FontName', fieldValue(meta, 'fontName', ax.FontName));
+safeSet(bar, 'FontSize', fieldValue(meta, 'fontSize', ax.FontSize));
+end
+
+function applyDocument(model, ax)
+if ~isfield(model, "document") || isempty(model.document)
+    return;
+end
+panelId = "";
+if isfield(model, "panelId")
+    panelId = string(model.panelId);
+end
+figure_studio.figureDocument.applyToAxes(model.document, panelId, ax);
 end
 
 function configureInteractivePreview(ax, style)
@@ -140,6 +175,7 @@ function applyLegendMetadata(ax, plotData)
 end
 
 function renderObject(ax, object)
+    selectYAxis(ax, object);
     switch string(object.type)
         case "line"
             h = plot(ax, object.x, object.y, ...
@@ -157,6 +193,10 @@ function renderObject(ax, object)
             applyCoordinates(h, object);
         case "scatter"
             h = scatter(ax, object.x, object.y, ...
+                'DisplayName', char(object.displayName));
+            applyCoordinates(h, object);
+        case "boxchart"
+            h = boxchart(ax, object.x, object.y, ...
                 'DisplayName', char(object.displayName));
             applyCoordinates(h, object);
         case "image"
@@ -182,6 +222,16 @@ function renderObject(ax, object)
     applyStyle(h, object.style);
     safeSet(h, 'HandleVisibility', ...
         fieldValue(object.metadata, 'handleVisibility', 'on'));
+end
+
+function selectYAxis(ax, object)
+side = string(fieldValue(object.metadata, 'yAxisSide', "left"));
+try
+    if numel(ax.YAxis) > 1 || side == "right"
+        yyaxis(ax, char(side));
+    end
+catch
+end
 end
 
 function h = renderErrorBar(ax, object)
@@ -260,7 +310,14 @@ end
 
 function applyAxesMetadata(ax, meta)
     title(ax, meta.title, 'Interpreter', 'none');
+    if isprop(ax, 'Subtitle') && isfield(meta, 'subtitle')
+        ax.Subtitle.String = meta.subtitle;
+        ax.Subtitle.Interpreter = 'none';
+    end
     xlabel(ax, meta.xLabel, 'Interpreter', 'none');
+    if isfield(meta, 'yAxes') && numel(meta.yAxes) > 1
+        yyaxis(ax, 'left');
+    end
     ylabel(ax, meta.yLabel, 'Interpreter', 'none');
     zlabel(ax, meta.zLabel, 'Interpreter', 'none');
     mapping = { ...
@@ -305,6 +362,29 @@ function applyAxesMetadata(ax, meta)
     if applyRulerExponent(ax, 'ZAxis', fieldValue(meta, 'zExponent', []))
         safeSet(ax, 'ZTickLabelMode', 'auto');
     end
+    if isfield(meta, 'yAxes') && numel(meta.yAxes) > 1
+        applyDualYAxes(ax, meta.yAxes);
+    end
+end
+
+function applyDualYAxes(ax, rulers)
+sides = ["left", "right"];
+for k = 1:min(numel(rulers), 2)
+    yyaxis(ax, char(sides(k)));
+    ruler = rulers(k);
+    safeSet(ax, 'YScale', fieldValue(ruler, 'scale', 'linear'));
+    safeSet(ax, 'YDir', fieldValue(ruler, 'direction', 'normal'));
+    safeSet(ax, 'YLim', fieldValue(ruler, 'limits', [0 1]));
+    safeSet(ax, 'YTick', fieldValue(ruler, 'tickValues', []));
+    safeSet(ax, 'YTickLabel', fieldValue(ruler, 'tickLabels', strings(0, 1)));
+    ylabel(ax, string(fieldValue(ruler, 'label', "")), 'Interpreter', 'none');
+    color = fieldValue(ruler, 'color', []);
+    if ~isempty(color)
+        ax.YAxis(end).Color = color;
+    end
+    applyRulerExponent(ax, 'YAxis', fieldValue(ruler, 'exponent', []));
+end
+yyaxis(ax, 'left');
 end
 
 function applied = applyRulerExponent(ax, rulerName, value)

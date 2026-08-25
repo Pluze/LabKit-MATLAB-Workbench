@@ -1,0 +1,69 @@
+%WRITEDOCUMENTPACKAGE Write an editable, reproducible Figure Studio package.
+function manifest = writeDocumentPackage(document, style, folder)
+folder = string(folder);
+if ~isfolder(folder), mkdir(folder); end
+report = figure_studio.preflight.check(document, style);
+if report.errors > 0
+    error("figure_studio:resultFiles:PreflightBlocked", ...
+        "Publication preflight found %d blocking errors.", report.errors);
+end
+projectPath = fullfile(folder, "figure_studio_project.mat");
+save(projectPath, "document", "style", "report");
+writeJson(fullfile(folder, "figure_document.json"), document);
+writeJson(fullfile(folder, "preflight.json"), report);
+[fig, axesValues] = figure_studio.resultFiles.createStyledFigure( ...
+    figure_studio.figureDocument.toPlotData(document, document.panels(1).id), ...
+    style, [], document);
+cleanup = onCleanup(@() delete(fig));
+figPath = fullfile(folder, "editable_figure.fig");
+savefig(fig, figPath);
+panelManifests = repmat(struct("panelId", "", "folder", "", ...
+    "mat", "", "csv", "", "script", "", "readme", "", ...
+    "warnings", strings(0, 1)), numel(axesValues), 1);
+for k = 1:numel(axesValues)
+    panelFolder = fullfile(folder, "panels", ...
+        matlab.lang.makeValidName(char(document.panels(k).id)));
+    payload = figure_studio.resultFiles.writeAxesDataExport( ...
+        axesValues(k), panelFolder);
+    payload.panelId = document.panels(k).id;
+    panelManifests(k) = orderfields(payload, panelManifests(k));
+end
+readmePath = writeReadme(folder, document, report);
+manifest = struct("folder", folder, "project", string(projectPath), ...
+    "documentJson", string(fullfile(folder, "figure_document.json")), ...
+    "preflight", string(fullfile(folder, "preflight.json")), ...
+    "figure", string(figPath), "panels", panelManifests, ...
+    "readme", string(readmePath), "warnings", string({report.issues.message}).');
+writeJson(fullfile(folder, "manifest.json"), manifest);
+clear cleanup
+end
+
+function path = writeReadme(folder, document, report)
+lines = [ ...
+    "LabKit Figure Studio editable package"; ""; ...
+    "figure_studio_project.mat preserves the semantic document, style cascade, source presentation data, panel geometry, and preflight report."; ...
+    "figure_document.json is a language-neutral inspection copy of the semantic document."; ...
+    "editable_figure.fig is the complete MATLAB figure with element-level editability."; ...
+    "Each panels/<panel-id> folder contains visible plot data and a standalone reconstruction script."; ...
+    ""; ...
+    "Panels: " + string(numel(document.panels)); ...
+    "Preflight: " + upper(report.status) + " (" + string(report.warnings) + " warnings)"];
+path = fullfile(folder, "README.txt");
+fid = fopen(path, 'w');
+if fid < 0
+    error("figure_studio:resultFiles:ExportWriteFailed", ...
+        "Could not write package README.");
+end
+cleanup = onCleanup(@() fclose(fid));
+fprintf(fid, '%s\n', lines);
+end
+
+function writeJson(path, value)
+fid = fopen(path, 'w');
+if fid < 0
+    error("figure_studio:resultFiles:ExportWriteFailed", ...
+        "Could not write %s.", string(path));
+end
+cleanup = onCleanup(@() fclose(fid));
+fprintf(fid, '%s\n', jsonencode(value, PrettyPrint=true));
+end

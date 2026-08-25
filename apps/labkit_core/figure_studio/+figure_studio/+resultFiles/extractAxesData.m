@@ -21,9 +21,64 @@ function plotData = extractAxesData(ax)
             plotData.warnings(end + 1, 1) = warningText;
         end
         if isSupportedObject(object)
+            hint = semanticHint(children(k), ax);
+            if strlength(hint) > 0
+                object.metadata.semanticHint = hint;
+            end
+            [side, confidence] = inferYAxisSide(children(k), ax);
+            object.metadata.yAxisSide = side;
+            object.metadata.yAxisSideConfidence = confidence;
             plotData.objects(end + 1, 1) = object;
         end
     end
+end
+
+function hint = semanticHint(handle, ax)
+hint = "";
+if isgraphics(handle, "line")
+    x = optionalValue(handle, "XData");
+    y = optionalValue(handle, "YData");
+    if isBracket(x, y)
+        hint = "significance-bracket";
+    end
+elseif isgraphics(handle, "patch")
+    x = optionalValue(handle, "XData");
+    y = optionalValue(handle, "YData");
+    if isAxisWindow(x, y, ax)
+        hint = "analysis-window";
+    end
+elseif isgraphics(handle, "scatter")
+    tag = lower(string(optionalValue(handle, "Tag")));
+    if contains(tag, "point") || contains(tag, "peak")
+        hint = "measurement-point";
+    end
+end
+end
+
+function tf = isBracket(x, y)
+x = double(x(:).');
+y = double(y(:).');
+tf = numel(x) == 4 && numel(y) == 4 && ...
+    approximately(x(1), x(2)) && approximately(x(3), x(4)) && ...
+    approximately(y(1), y(4)) && approximately(y(2), y(3)) && ...
+    y(2) > y(1);
+end
+
+function tf = isAxisWindow(x, y, ax)
+x = double(x(:));
+y = double(y(:));
+if numel(x) ~= 4 || numel(y) ~= 4 || numel(unique(x)) ~= 2
+    tf = false;
+    return;
+end
+limits = double(ax.YLim);
+tolerance = max(diff(limits), 1) * 1e-8;
+tf = abs(min(y) - limits(1)) <= tolerance && ...
+    abs(max(y) - limits(2)) <= tolerance;
+end
+
+function tf = approximately(left, right)
+tf = abs(left - right) <= max([abs(left), abs(right), 1]) * 1e-10;
 end
 
 function children = visiblePlotChildren(ax)
@@ -114,12 +169,138 @@ function meta = axesMetadata(ax)
     meta.fontName = string(ax.FontName);
     meta.fontSize = ax.FontSize;
     meta.lineWidth = ax.LineWidth;
+    meta.yAxes = yAxesMetadata(ax);
+    if numel(meta.yAxes) > 1
+        primary = meta.yAxes(1);
+        meta.yLabel = primary.label;
+        meta.yScale = primary.scale;
+        meta.yDir = primary.direction;
+        meta.yLim = primary.limits;
+        meta.yTick = primary.tickValues;
+        meta.yTickLabel = primary.tickLabels;
+        meta.yExponent = primary.exponent;
+    end
     meta.legend = legendMetadata(ax);
+    meta.colorbar = colorbarMetadata(ax);
     try
         meta.colormap = colormap(ax);
     catch
         meta.colormap = [];
     end
+end
+
+function meta = colorbarMetadata(ax)
+meta = struct("enabled", false, "label", "", "location", "eastoutside", ...
+    "limits", ax.CLim, "ticks", [], "tickLabels", strings(0, 1), ...
+    "fontName", "", "fontSize", []);
+try
+    bar = ax.Colorbar;
+    if isempty(bar) || ~isvalid(bar), return; end
+    meta.enabled = string(bar.Visible) == "on";
+    meta.label = labelText(bar.Label);
+    meta.location = string(bar.Location);
+    meta.limits = bar.Limits;
+    meta.ticks = bar.Ticks;
+    meta.tickLabels = string(bar.TickLabels);
+    meta.fontName = string(bar.FontName);
+    meta.fontSize = bar.FontSize;
+catch
+end
+end
+
+function values = yAxesMetadata(ax)
+template = struct("side", "left", "scale", "linear", ...
+    "direction", "normal", "limits", [0 1], "tickValues", [], ...
+    "tickLabels", strings(0, 1), "exponent", [], "label", "", ...
+    "color", []);
+try
+    rulers = ax.YAxis;
+catch
+    values = template([]);
+    return;
+end
+values = repmat(template, numel(rulers), 1);
+sides = ["left", "right"];
+for k = 1:numel(rulers)
+    ruler = rulers(k);
+    value = template;
+    value.side = sides(min(k, numel(sides)));
+    value.scale = string(ruler.Scale);
+    value.direction = string(ruler.Direction);
+    value.limits = ruler.Limits;
+    value.tickValues = ruler.TickValues;
+    value.tickLabels = string(ruler.TickLabels);
+    if isprop(ruler, "Exponent")
+        value.exponent = ruler.Exponent;
+    end
+    value.label = labelText(ruler.Label);
+    value.color = ruler.Color;
+    values(k, 1) = value;
+end
+end
+
+function [side, confidence] = inferYAxisSide(handle, ax)
+side = "left";
+confidence = "single-axis";
+try
+    rulers = ax.YAxis;
+catch
+    return;
+end
+if numel(rulers) < 2
+    return;
+end
+values = optionalValue(handle, "YData");
+scores = [rangeOverflow(values, rulers(1).Limits), ...
+    rangeOverflow(values, rulers(2).Limits)];
+if abs(scores(1) - scores(2)) > 1e-12
+    [~, index] = min(scores);
+    confidence = "range";
+else
+    objectColor = numericColor(optionalValue(handle, "Color"));
+    distances = [colorDistance(objectColor, rulers(1).Color), ...
+        colorDistance(objectColor, rulers(2).Color)];
+    if all(isfinite(distances)) && abs(distances(1) - distances(2)) > 1e-12
+        [~, index] = min(distances);
+        confidence = "color";
+    else
+        index = 1;
+        confidence = "fallback";
+    end
+end
+sides = ["left", "right"];
+side = sides(index);
+end
+
+function score = rangeOverflow(values, limits)
+values = double(values(:));
+values = values(isfinite(values));
+limits = double(limits(:));
+if isempty(values) || numel(limits) ~= 2 || diff(limits) <= 0
+    score = inf;
+    return;
+end
+span = diff(limits);
+score = sum(max(limits(1) - values, 0) + max(values - limits(2), 0)) / ...
+    (span * numel(values));
+end
+
+function value = numericColor(value)
+if isnumeric(value) && numel(value) == 3 && all(isfinite(value))
+    value = double(reshape(value, 1, 3));
+else
+    value = [];
+end
+end
+
+function value = colorDistance(left, right)
+left = numericColor(left);
+right = numericColor(right);
+if isempty(left) || isempty(right)
+    value = inf;
+else
+    value = norm(left - right);
+end
 end
 
 function value = rulerExponent(ax, rulerName)
@@ -195,6 +376,8 @@ function [object, warningText] = graphicsObjectData(handle, ax)
         object = areaData(handle);
     elseif isgraphics(handle, 'scatter')
         object = scatterData(handle);
+    elseif isBoxChart(handle)
+        object = boxChartData(handle);
     elseif isgraphics(handle, 'image')
         object = imageData(handle, ax);
     elseif isgraphics(handle, 'surface')
@@ -211,6 +394,21 @@ function [object, warningText] = graphicsObjectData(handle, ax)
         warningText = "Skipped unsupported graphics object: " + ...
             string(class(handle));
     end
+end
+
+function tf = isBoxChart(handle)
+    tf = contains(lower(string(class(handle))), "boxchart");
+end
+
+function object = boxChartData(handle)
+    object = baseObject("boxchart", handle);
+    object.x = optionalValue(handle, 'XData');
+    object.y = optionalValue(handle, 'YData');
+    object.style = styleProps(handle, ...
+        ["BoxWidth", "BoxFaceColor", "BoxFaceAlpha", "BoxEdgeColor", ...
+        "BoxMedianLineColor", "WhiskerLineColor", "WhiskerLineStyle", ...
+        "MarkerStyle", "MarkerColor", "MarkerSize", "LineWidth", ...
+        "ColorGroupLayout", "ColorGroupWidth"]);
 end
 
 function object = barData(handle)
@@ -339,6 +537,12 @@ function object = baseObject(type, handle)
     object.metadata.class = string(class(handle));
     object.metadata.handleVisibility = string(optionalValue( ...
         handle, 'HandleVisibility'));
+    object.metadata.tag = string(optionalValue(handle, 'Tag'));
+    parent = handle.Parent;
+    if isgraphics(parent, "hggroup")
+        object.metadata.sourceGroupTag = string(optionalValue(parent, "Tag"));
+        object.metadata.sourceGroupName = displayName(parent);
+    end
 end
 
 function value = displayName(handle)

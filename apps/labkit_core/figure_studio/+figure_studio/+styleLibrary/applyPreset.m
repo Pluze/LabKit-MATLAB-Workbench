@@ -9,7 +9,9 @@ end
 p = state.project.parameters;
 previous = p.style;
 p.preset = preset;
-if preset == "FIG default"
+if preset == "Custom imported"
+    p.style = previous;
+elseif preset == "FIG default"
     p.style = state.session.cache.sourceDefaultStyle;
     if isempty(p.style)
         p.style = figure_studio.styleLibrary.styleForPreset(preset);

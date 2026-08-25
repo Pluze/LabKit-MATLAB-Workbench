@@ -1,0 +1,16 @@
+function state = redo(state, callbackContext)
+[state.session.editor.history, document] = ...
+    figure_studio.figureDocument.history("redo", ...
+    state.session.editor.history, state.session.editor.document);
+state.session.editor.document = document;
+state.session.cache.plotData = figure_studio.figureDocument.toPlotData( ...
+    document, state.session.editor.activePanelId);
+state.session.cache.limitState = figure_studio.sourceAxes.limitControls( ...
+    state.session.cache.plotData);
+state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
+state.session.workflow.status = "Redo figure edit.";
+state.project.results.lastExport = [];
+state.project.results.lastOutputPath = "";
+callbackContext.log("info", "figure_studio.axisediting.redo.status", ...
+    state.session.workflow.status);
+end

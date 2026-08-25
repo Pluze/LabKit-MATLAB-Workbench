@@ -2,15 +2,17 @@ classdef FigureStudioSourceSpec < matlab.unittest.TestCase
     %FIGURESTUDIOSOURCESPEC Specify imported axes limits and graphics stacking.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function derivesFiftyPercentLimitControlEnvelopesFromPlotData(testCase)
+        function keepsAxisLimitsEditableBeyondTheVisibleData(testCase)
             plotData = struct("objects", struct("type", "line", ...
                 "x", [2; 6], "y", [-1; 3]), ...
                 "axes", struct("xLim", [2 6], "yLim", [-1 3]));
 
             limits = figure_studio.sourceAxes.limitControls(plotData);
 
-            testCase.verifyEqual(limits.xRange, [0 8]);
-            testCase.verifyEqual(limits.yRange, [-3 5]);
+            testCase.verifyLessThan(limits.xRange(1), -1e50);
+            testCase.verifyGreaterThan(limits.xRange(2), 1e50);
+            testCase.verifyLessThan(limits.yRange(1), -1e50);
+            testCase.verifyGreaterThan(limits.yRange(2), 1e50);
             testCase.verifyEqual([limits.xMin limits.xMax], [2 6]);
             testCase.verifyEqual([limits.yMin limits.yMax], [-1 3]);
         end
@@ -127,6 +129,50 @@ classdef FigureStudioSourceSpec < matlab.unittest.TestCase
                 "labkit_FigureStudio_app:InvalidAxes");
             clear cleanup
         end
+
+        function mixedFigLoadsOnePersistentMultiPanelDocument(testCase)
+            cleanup = onCleanup(@() close(findall(groot, "Type", "figure")));
+            sourceFigure = figure(Visible="off");
+            tiled = tiledlayout(sourceFigure, 1, 2);
+            first = nexttile(tiled);
+            plot(first, 0:2, 1:3, DisplayName="First");
+            title(first, "Panel A");
+            second = nexttile(tiled);
+            plot(second, 0:2, 3:-1:1, DisplayName="Second");
+            title(second, "Panel B");
+            resource = struct("figure", sourceFigure, ...
+                "axes", [first; second]);
+            [snapshots, axesHandles, labels] = ...
+                figure_studio.sourceAxes.extractPanelSnapshots(resource);
+            editor = figure_studio.figureDocument.editorState(snapshots);
+            editor.document.panels(1).text.title = "Edited A";
+            project = figure_studio.initialData();
+            state = struct("project", project, "session", struct( ...
+                "selection", struct("panel", labels(2)), ...
+                "workflow", struct("status", ""), "editor", editor, ...
+                "cache", struct("plotData", snapshots{1}, ...
+                    "sourceAxes", axesHandles(1), ...
+                    "sourceDefaultStyle", ...
+                        figure_studio.sourceAxes.sourceStyle(axesHandles(1)), ...
+                    "sourcePanelChoices", labels, ...
+                    "limitState", ...
+                        figure_studio.sourceAxes.limitControls(snapshots{1}), ...
+                    "viewRevision", 1)));
+            backend = struct("getResource", @(~) resource, ...
+                "log", @ignoreLog);
+            context = labkittest.createCallbackContext(backend);
+
+            state = figure_studio.sourceAxes.panelChanged(state, [], context);
+
+            testCase.verifyNumElements(state.session.editor.document.panels, 2);
+            testCase.verifyEqual( ...
+                state.session.editor.document.panels(1).text.title, "Edited A");
+            testCase.verifyEqual(state.session.editor.activePanelId, "panel-2");
+            testCase.verifyEqual(state.session.cache.sourceAxes, axesHandles(2));
+            testCase.verifyEqual(state.session.cache.plotData.axes.title, ...
+                "Panel B");
+            clear cleanup
+        end
     end
 end
 
@@ -136,4 +182,7 @@ types = strings(numel(children), 1);
 for k = 1:numel(children)
     types(k) = string(children(k).Type);
 end
+end
+
+function ignoreLog(varargin)
 end

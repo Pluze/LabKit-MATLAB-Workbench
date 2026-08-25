@@ -25,6 +25,7 @@ function scriptPath = generateAxesScript(folder, plotData)
     fprintf(fid, 'applyAxesMetadata(ax, plotData.axes);\n');
     fprintf(fid, 'for k = 1:numel(plotData.objects)\n');
     fprintf(fid, '    object = plotData.objects(k);\n');
+    fprintf(fid, '    selectYAxis(ax, object);\n');
     fprintf(fid, '    h = gobjects(0);\n');
     fprintf(fid, '    switch string(object.type)\n');
     fprintf(fid, '        case "line"\n');
@@ -44,6 +45,10 @@ function scriptPath = generateAxesScript(folder, plotData)
     fprintf(fid, '            applyStyle(h, object.style);\n');
     fprintf(fid, '        case "scatter"\n');
     fprintf(fid, '            h = scatter(ax, object.x, object.y, "DisplayName", char(object.displayName));\n');
+    fprintf(fid, '            applyObjectCoordinates(h, object);\n');
+    fprintf(fid, '            applyStyle(h, object.style);\n');
+    fprintf(fid, '        case "boxchart"\n');
+    fprintf(fid, '            h = boxchart(ax, object.x, object.y, "DisplayName", char(object.displayName));\n');
     fprintf(fid, '            applyObjectCoordinates(h, object);\n');
     fprintf(fid, '            applyStyle(h, object.style);\n');
     fprintf(fid, '        case "image"\n');
@@ -142,6 +147,51 @@ function writeLocalFunctions(fid)
     fprintf(fid, 'if isfield(meta, "colormap") && ~isempty(meta.colormap)\n');
     fprintf(fid, '    colormap(ax, meta.colormap);\n');
     fprintf(fid, 'end\n');
+    fprintf(fid, 'if isfield(meta, "yAxes") && numel(meta.yAxes) > 1\n');
+    fprintf(fid, '    applyDualYAxes(ax, meta.yAxes);\n');
+    fprintf(fid, 'end\n');
+    fprintf(fid, 'if isfield(meta, "colorbar")\n');
+    fprintf(fid, '    applyColorbar(ax, meta.colorbar);\n');
+    fprintf(fid, 'end\n');
+    fprintf(fid, 'end\n');
+
+    fprintf(fid, '\nfunction selectYAxis(ax, object)\n');
+    fprintf(fid, 'side = string(metadataValue(object, "yAxisSide", "left"));\n');
+    fprintf(fid, 'try\n');
+    fprintf(fid, '    if numel(ax.YAxis) > 1 || side == "right"\n');
+    fprintf(fid, '        yyaxis(ax, char(side));\n');
+    fprintf(fid, '    end\n');
+    fprintf(fid, 'catch\n');
+    fprintf(fid, 'end\n');
+    fprintf(fid, 'end\n');
+
+    fprintf(fid, '\nfunction applyColorbar(ax, meta)\n');
+    fprintf(fid, 'if ~logical(structValue(meta, "enabled", false)), return; end\n');
+    fprintf(fid, 'bar = colorbar(ax, char(structValue(meta, "location", "eastoutside")));\n');
+    fprintf(fid, 'bar.Label.String = string(structValue(meta, "label", ""));\n');
+    fprintf(fid, 'bar.Label.Interpreter = "none";\n');
+    fprintf(fid, 'safeSetIfField(bar, meta, "Limits", "limits");\n');
+    fprintf(fid, 'safeSetIfField(bar, meta, "Ticks", "ticks");\n');
+    fprintf(fid, 'safeSetIfField(bar, meta, "TickLabels", "tickLabels");\n');
+    fprintf(fid, 'safeSetIfField(bar, meta, "FontName", "fontName");\n');
+    fprintf(fid, 'safeSetIfField(bar, meta, "FontSize", "fontSize");\n');
+    fprintf(fid, 'end\n');
+
+    fprintf(fid, '\nfunction applyDualYAxes(ax, rulers)\n');
+    fprintf(fid, 'sides = ["left", "right"];\n');
+    fprintf(fid, 'for k = 1:min(numel(rulers), 2)\n');
+    fprintf(fid, '    yyaxis(ax, char(sides(k)));\n');
+    fprintf(fid, '    ruler = rulers(k);\n');
+    fprintf(fid, '    safeSetIfField(ax, ruler, "YScale", "scale");\n');
+    fprintf(fid, '    safeSetIfField(ax, ruler, "YDir", "direction");\n');
+    fprintf(fid, '    safeSetIfField(ax, ruler, "YLim", "limits");\n');
+    fprintf(fid, '    safeSetIfField(ax, ruler, "YTick", "tickValues");\n');
+    fprintf(fid, '    safeSetIfField(ax, ruler, "YTickLabel", "tickLabels");\n');
+    fprintf(fid, '    ylabel(ax, string(structValue(ruler, "label", "")), "Interpreter", "none");\n');
+    fprintf(fid, '    color = structValue(ruler, "color", []);\n');
+    fprintf(fid, '    if ~isempty(color), ax.YAxis(end).Color = color; end\n');
+    fprintf(fid, 'end\n');
+    fprintf(fid, 'yyaxis(ax, "left");\n');
     fprintf(fid, 'end\n');
 
     fprintf(fid, '\nfunction applyLegendMetadata(ax, plotData)\n');

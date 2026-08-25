@@ -12,13 +12,18 @@ if isempty(state.session.cache.plotData)
 end
 [fig, ax] = figure_studio.resultFiles.createStyledFigure( ...
     state.session.cache.plotData, state.project.parameters.style, ...
-    state.session.cache.sourceAxes);
+    currentSourceAxes(state), state.session.editor.document);
 cleanup = onCleanup(@() deleteIfValid(fig));
 ax.XLimMode = "auto";
 ax.YLimMode = "auto";
 drawnow nocallbacks
 state.session.cache.plotData.axes.xLim = ax.XLim;
 state.session.cache.plotData.axes.yLim = ax.YLim;
+panelId = state.session.editor.activePanelId;
+state.session.editor.document = figure_studio.figureDocument.setAxisLimits( ...
+    state.session.editor.document, panelId, "x", ax.XLim);
+state.session.editor.document = figure_studio.figureDocument.setAxisLimits( ...
+    state.session.editor.document, panelId, "y", ax.YLim);
 state.project.annotations.limitOverrides = struct( ...
     "xLim", ax.XLim, "yLim", ax.YLim);
 state.session.cache.limitState = ...
@@ -26,6 +31,13 @@ state.session.cache.limitState = ...
 state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
 if isempty(state.project.inputs.sources)
     state.project.annotations.embeddedPlot = state.session.cache.plotData;
+end
+
+function source = currentSourceAxes(state)
+source = [];
+if state.session.editor.nativePassThrough
+    source = state.session.cache.sourceAxes;
+end
 end
 state.session.workflow.status = "Recalculated X/Y limits from visible graphics.";
 state.project.results.lastExport = [];

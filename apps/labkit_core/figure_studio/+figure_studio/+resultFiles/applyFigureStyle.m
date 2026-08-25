@@ -51,7 +51,11 @@ end
 function applyStyleStruct(ax, style)
     style = fillStyle(style);
     style = scaledStyle(style, canvasStyleScale(style));
-    viewScale = applyPreviewGeometry(ax, style);
+    if style.manageCanvas
+        viewScale = applyPreviewGeometry(ax, style);
+    else
+        viewScale = 1;
+    end
     style = scaledStyle(style, viewScale);
     ax.FontName = char(style.fontName);
     ax.FontSize = style.tickFontSize;
@@ -72,7 +76,9 @@ function applyStyleStruct(ax, style)
     reflowComparisonAnnotations(ax, style);
     applyTickLabelLayout(ax, style);
     styleLegend(ax, style);
-    layoutExportCanvas(ax, style);
+    if style.manageCanvas
+        layoutExportCanvas(ax, style);
+    end
 end
 
 function style = defaultNatureStyle()
@@ -105,6 +111,7 @@ function style = defaultNatureStyle()
         "referenceCanvasWidth", 900, ...
         "referenceCanvasHeight", 725, ...
         "previewScale", false, ...
+        "manageCanvas", true, ...
         "tickDirection", "out", ...
         "axesPosition", [], ...
         "colorOrder", natureColorOrder());
@@ -160,6 +167,7 @@ function style = fillStyle(style)
     style.referenceCanvasHeight = finiteScalar( ...
         style.referenceCanvasHeight, style.canvasHeight);
     style.previewScale = logical(style.previewScale);
+    style.manageCanvas = logical(style.manageCanvas);
 end
 
 function scale = canvasStyleScale(style)

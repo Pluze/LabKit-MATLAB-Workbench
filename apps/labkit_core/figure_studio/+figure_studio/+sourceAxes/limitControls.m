@@ -1,23 +1,23 @@
-%LIMITCONTROLS Derive editable X/Y limit values and legal data envelopes.
+%LIMITCONTROLS Derive editable X/Y limit values and finite control bounds.
 % Expected callers are Figure Studio source selection, limit actions, and
-% presentation. The control envelope extends finite visible data by 50%.
+% presentation. Axis limits are presentation choices, not data-derived policy.
 function limits = limitControls(plotData)
 %LIMITCONTROLS Build four scalar controls from one portable axes snapshot.
 defaults = struct( ...
     "xMin", -1, "xMax", 1, "yMin", -1, "yMax", 1, ...
-    "xRange", [-2 2], "yRange", [-2 2]);
+    "xRange", numericBounds(), "yRange", numericBounds());
 if isempty(plotData) || ~isstruct(plotData) || ...
         ~isfield(plotData, "objects")
     limits = defaults;
     return;
 end
 [xData, yData] = visibleCoordinates(plotData.objects);
-[xRange, xValues] = axisLimits(xData, axesValue(plotData, "xLim"));
-[yRange, yValues] = axisLimits(yData, axesValue(plotData, "yLim"));
+xValues = axisLimits(xData, axesValue(plotData, "xLim"));
+yValues = axisLimits(yData, axesValue(plotData, "yLim"));
 limits = struct( ...
     "xMin", xValues(1), "xMax", xValues(2), ...
     "yMin", yValues(1), "yMax", yValues(2), ...
-    "xRange", xRange, "yRange", yRange);
+    "xRange", numericBounds(), "yRange", numericBounds());
 end
 
 function [xData, yData] = visibleCoordinates(objects)
@@ -36,13 +36,11 @@ xData = vertcat(xParts{:});
 yData = vertcat(yParts{:});
 end
 
-function [envelope, values] = axisLimits(data, stored)
+function values = axisLimits(data, stored)
 data = finiteReal(data);
+values = finitePair(stored);
+if ~isempty(values), return; end
 if isempty(data)
-    data = finiteReal(stored);
-end
-if isempty(data)
-    envelope = [-2 2];
     values = [-1 1];
     return;
 end
@@ -52,15 +50,15 @@ span = maximum - minimum;
 if span <= eps(max(1, max(abs([minimum maximum]))))
     span = max(1, abs(minimum));
 end
-padding = 0.5 * span;
-envelope = [minimum - padding maximum + padding];
-values = finitePair(stored);
-if isempty(values) || values(1) < envelope(1) || values(2) > envelope(2)
-    values = [minimum maximum];
-    if values(1) == values(2)
-        values = [minimum - 0.05 * span maximum + 0.05 * span];
-    end
+values = [minimum maximum];
+if values(1) == values(2)
+    values = [minimum - 0.05 * span maximum + 0.05 * span];
 end
+end
+
+function bounds = numericBounds()
+extent = 1e100;
+bounds = [-extent extent];
 end
 
 function value = axesValue(plotData, name)
