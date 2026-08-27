@@ -1,7 +1,7 @@
 classdef VtResistanceWorkflowSpec < matlab.unittest.TestCase
     %VTRESISTANCEWORKFLOWSPEC Specify the bounded transient analysis workflow.
 
-    methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
+    methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
         function loadsRecomputesExportsAndRestoresAChronoFile(testCase)
             source = testfixtures.dta.file( ...
                 "chrono_chronopot_current_pulse_0p2ms.DTA");
@@ -23,6 +23,13 @@ classdef VtResistanceWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string( ...
                 findall(figureValue, "Tag", "files").Multiselect), "on");
             runtime.applyFileSelection("files", [source, unsupported], 1:2);
+            choices = vt_resistance.analysisRun.analysisChoices();
+            runtime.applyControlValue("pulseMode", choices.pulseModes(3));
+            runtime.applyControlValue("voltageMode", choices.voltageModes(2));
+            testCase.verifyEqual(runtime.State.project.parameters.pulseMode, ...
+                choices.pulseModes(3));
+            testCase.verifyEqual(runtime.State.project.parameters.voltageMode, ...
+                choices.voltageModes(2));
             results = findall(figureValue, "Tag", "results");
             top = findall(figureValue, "Tag", "plotAxes.top");
             [fitted, inspected] = inspectViewport(top);

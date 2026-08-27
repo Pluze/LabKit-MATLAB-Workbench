@@ -165,6 +165,8 @@ classdef BatchCropResultSpec < matlab.unittest.TestCase
 
             testCase.verifyEqual(numel(plan.tasks), 1);
             testCase.verifyEqual(plan.paths, string(item.path));
+            testCase.verifyEqual(plan.parameters.physicalWidth, 4);
+            testCase.verifyEqual(plan.parameters.physicalHeight, 4);
         end
 
         function rejectsManifestMissingARequiredColumn(testCase)

@@ -23,6 +23,8 @@ Use **Add images** for selected files, **Add folder** for one directory, or **Ad
 
 Use **Restore manifest** to reopen the source images and task state recorded by a Batch Crop CSV manifest. Current manifests restore crop centers, rotation, padding, pixel or physical geometry, per-image scale, target scale, upsample warning threshold, output format, and an output folder beside the selected manifest. Only successfully saved rows from the current manifest format are restored. Restoration stops without replacing the current task if a source is missing, its pixel dimensions changed, or shared manifest settings conflict.
 
+Pixel-mode manifests retain finite physical width and height values for a later switch to physical mode. A compatible pixel manifest without those dormant values derives them from its positive pixel crop dimensions, so restoration never publishes invalid numeric controls. If any task lacks a crop center or physical calibration, Export reports the affected source names and leaves the current task intact instead of failing while formatting the message.
+
 ## Basic Workflow
 
 1. Load images and select a task.

@@ -20,7 +20,17 @@ function applyView(obj, view, previous)
     end
     changed = changedOperations(operations, previousOperations);
     for k = 1:numel(changed)
-        obj.apply(changed{k});
+        operation = changed{k};
+        try
+            obj.apply(operation);
+        catch cause
+            failure = MException( ...
+                "labkit:app:native:OperationFailed", ...
+                "Could not apply native %s operation to semantic target %s.", ...
+                operation.Kind, operation.Target);
+            failure = addCause(failure, cause);
+            throw(failure)
+        end
     end
     if ~isempty(obj.InteractionController) && ...
             ~isempty(changedOperations(interactionOperations, previousInteractions))

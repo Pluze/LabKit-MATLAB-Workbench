@@ -46,9 +46,15 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
     state = struct();
     state.ax = runtime.axes();
     state.imageSize = normalizeImageSize(imageSize);
-    state.bounds = boundsFromImageSize(state.imageSize);
+    state.bounds = interactionBounds(state.ax, state.imageSize);
     state.fixedAspectRatio = logical(optionValue(opts, 'fixedAspectRatio', false));
-    state.minimumSize = normalizeMinimumSize(optionValue(opts, 'minimumSize', [1 1]));
+    defaultMinimum = [1 1];
+    if isempty(state.imageSize)
+        span = state.bounds([2 4]) - state.bounds([1 3]);
+        defaultMinimum = max(span .* 1e-6, eps);
+    end
+    state.minimumSize = normalizeMinimumSize( ...
+        optionValue(opts, 'minimumSize', defaultMinimum));
     state.position = constrainPosition(position, state.bounds, [], false, ...
         state.minimumSize);
     state.aspectRatio = state.position(3) ./ state.position(4);
@@ -100,7 +106,7 @@ function editor = createRectangleEditor(runtime, imageSize, position, opts)
 
     function setImageSize(value)
         state.imageSize = normalizeImageSize(value);
-        state.bounds = boundsFromImageSize(state.imageSize);
+        state.bounds = interactionBounds(state.ax, state.imageSize);
         setPosition(state.position);
     end
 
@@ -256,11 +262,29 @@ function tf = positionContainsPoint(position, point)
 end
 
 function imageSize = normalizeImageSize(value)
+    if isempty(value)
+        imageSize = [];
+        return;
+    end
     value = double(value(:).');
     assert(numel(value) >= 2 && all(isfinite(value(1:2))) && ...
         all(value(1:2) >= 1), ...
         'imageSize must provide finite positive height and width values.');
     imageSize = value(1:2);
+end
+
+function bounds = interactionBounds(ax, imageSize)
+    if ~isempty(imageSize)
+        bounds = boundsFromImageSize(imageSize);
+        return;
+    end
+    xLimits = sort(double(ax.XLim));
+    yLimits = sort(double(ax.YLim));
+    assert(numel(xLimits) == 2 && numel(yLimits) == 2 && ...
+        all(isfinite([xLimits yLimits])) && diff(xLimits) > 0 && ...
+        diff(yLimits) > 0, ...
+        'Axes limits must provide finite increasing interaction bounds.');
+    bounds = [xLimits yLimits];
 end
 
 function bounds = boundsFromImageSize(imageSize)

@@ -1,7 +1,7 @@
 classdef ChronoOverlayWorkflowSpec < matlab.unittest.TestCase
     %CHRONOOVERLAYWORKFLOWSPEC Specify loading, plot materialization, and export.
 
-    methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
+    methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
         function loadsAlignsExportsAndRestoresAChronoTrace(testCase)
             source = testfixtures.dta.file( ...
                 "chrono_chronopot_current_pulse_0p2ms.DTA");

@@ -9,7 +9,7 @@ summary: Select focused evidence, run stable local and CI gates, and diagnose fa
 
 [Development index](README.md) | [Architecture](app-authoring/architecture.md) | [Developer Tools](tools/README.md) | [Documentation](documentation.md)
 
-LabKit tests specify observable contracts. They are not organized by an implementation-stage label, suite selector, tag query, or hand-maintained test catalog. Start from the production file whose behavior changed; the test catalog determines its required evidence and executes exact test identities.
+LabKit tests specify observable contracts. They are not organized by an implementation-stage label, suite selector, tag query, or hand-maintained test catalog. Start from the production file whose behavior changed; the test catalog determines its required evidence and executes exact test identities. A test is necessary only when its stated failure would identify a supported behavior, regression, compatibility promise, or risk decision. Executing code is not evidence by itself: an assertion must fail when the protected behavior is plausibly broken.
 
 ## Everyday Workflow
 
@@ -69,10 +69,23 @@ Contracts describe evidence, not test cost:
 | `persistence` | an App-owned save/open archive or final-state restore contract |
 | `result` | exports, schemas, manifests, and task identity |
 | `presentation` | reader-facing snapshot data and declared layout semantics |
+| `workflow` | an App-owned source-to-result user journey through the native runtime |
 | `definition` / `product` | parameterized public App conformance |
 | `system` | build, repository, CI, documentation, packaging, and release guardrails |
 
-Environments are `headless`, `hidden-gui`, and `path-isolated`. Headless tests do not prove GUI behavior. Hidden-GUI conformance proves that an App can build its declared layout; it does not prove native dialogs, pointer feel, visual quality, real lab data, or scientific review. The path-isolated conformance probes every public App from a reset path boundary in the already running catalog executor. It retains the deployable path boundary and batches all App results without requiring a second concurrent MATLAB license.
+Environments are `headless`, `hidden-gui`, and `path-isolated`. Headless tests do not prove GUI behavior. Hidden-GUI product conformance proves that an App can build its declared layout; a hidden-GUI `workflow` additionally drives the native runtime through an App-owned user goal and verifies state, presentation, result, and failure semantics at the points the journey crosses. Neither proves operating-system dialogs, pointer feel, visual quality, real lab data, or scientific review. The path-isolated conformance probes every public App from a reset path boundary in the already running catalog executor. It retains the deployable path boundary and batches all App results without requiring a second concurrent MATLAB license.
+
+## Evidence Design
+
+Each App owns one or more core journeys beginning at the same source boundary a user enters and ending at a useful result, saved continuation, or explicit failure. The journey uses the production decoder and native runtime; it must not inject a post-import state that bypasses the defect-prone boundary it claims to protect. Synthetic files are valid only when they obey the production format and are consumed by the production reader. A fixture and its consumer cannot define each other's expected answer: scientific or schema assertions come from an independent formula, preserved reference evidence, a hand-audited small case, an invariant, or a separately owned compatibility contract.
+
+GUI evidence has three distinct responsibilities. Framework conformance proves generic controls and signals are created and dispatched correctly. App interaction evidence proves every declared signal is driven through its exact native runtime operation. Core journeys prove meaningful action order, enablement, recovery, and user-visible outcomes. Merely locating a control, matching a callback name, invoking every callback from default state, or asserting that no exception occurred is not sufficient App evidence. Disabled or state-dependent actions are exercised only in a reachable state; equivalent combinations use risk-based partitions or pairwise cases, while every scientifically distinct branch remains explicit.
+
+Every new or materially changed test states its oracle and should survive a counterfactual review: identify a small plausible production mutation, such as a reversed condition, stale view revision, changed unit conversion, omitted result field, or disconnected callback, that makes the test fail for the intended reason. Use mutation tooling where it is reliable, but do not optimize a mutation score or keep low-value tests solely to raise it. Negative, cancellation, invalid-input, retry, and restore paths are included when they are supported user behavior, not generated as a mechanical Cartesian product.
+
+Code coverage is an execution metric and omission detector. LabKit records headless logic coverage separately from hidden-GUI core-journey coverage so one population cannot conceal the other. Review per-App files, uncovered branches, and change-set coverage; require an explanation or new evidence for newly uncovered supported behavior. A high percentage cannot compensate for weak or self-referential assertions, and a low-risk unreachable defensive branch is not made public merely to increase coverage. The repository does not claim that line coverage measures scientific correctness, GUI usability, or workflow completeness.
+
+This model follows mature project guidance to test user-visible behavior and resilient interaction boundaries ([Playwright](https://playwright.dev/docs/best-practices), [Testing Library](https://testing-library.com/docs/guiding-principles)), separate unit, integration, and functional GUI evidence ([napari](https://napari.org/stable/developers/contributing/testing.html), [Qt Test](https://doc.qt.io/qt-6/qtest-overview.html)), and reserve deterministic image comparison for an actual visual contract ([Matplotlib](https://matplotlib.org/stable/devel/testing.html#image-comparison-tests)). LabKit adapts those ideas to deterministic scientific oracles and Base MATLAB runtime constraints rather than copying another project's suite structure.
 
 ## Assertion Boundaries
 
@@ -88,6 +101,7 @@ Use stable Build tasks for branch and CI gates:
 buildtool changedFast
 buildtool headless
 buildtool gui
+buildtool journeys
 buildtool isolated
 buildtool coverage
 buildtool codecheck
@@ -100,8 +114,9 @@ buildtool docsCheck
 | `changedFast` | Final local pre-PR review gate, run once after the complete task-branch diff is ready. Reads tracked and untracked working-tree paths; on a clean checkpoint it reads `HEAD^..HEAD`. |
 | `headless` | Every headless catalog identity. |
 | `gui` | Every hidden-GUI catalog identity. |
+| `journeys` | Every App-owned native source-to-result workflow. |
 | `isolated` | Every path-isolated catalog identity. |
-| `coverage` | Headless catalog with Cobertura XML and HTML coverage artifacts. |
+| `coverage` | Headless catalog and native App journeys with separate Cobertura XML and HTML coverage artifacts. |
 | `codecheck` | Lightweight pre-commit gate over all public-repository MATLAB source. Prints one `CODECHECK_RESULT` line and fails unless analyzer issues, suppressions, compatibility recommendations, and unreviewed secondary-runtime calls are all zero. Accepted private workspaces retain their own runtime policy. |
 | `docs` / `docsCheck` | Render the ignored local site or verify deterministic source-derived output. |
 
@@ -138,8 +153,10 @@ events.jsonl        progress and heartbeat stream
 active-test.json    latest machine-readable progress state
 junit.xml           CI result exchange
 summary.json        pass/fail summary
-coverage.xml        coverage runs only
-coverage-html/      coverage runs only
+coverage/headless/coverage.xml          headless coverage
+coverage/headless/html/                 headless HTML report
+coverage/hidden-gui/coverage.xml        native journey coverage
+coverage/hidden-gui/html/               native journey HTML report
 ```
 
 After a failure, copy its exact class/method identity from the output and run the smallest method, specification file, owner/contract, or exact source that proves the repair. Do not invoke the planner again when the failing identity is already known. A zero selection or missing-contract error is a test-authoring defect, never passing evidence.
@@ -166,7 +183,9 @@ For deterministic rendering regressions, use `labkittest.visualEvidencePath(name
 
 - Keep specs beside the capability that owns their behavior; tests never own a parallel product API.
 - Keep cross-owner generated inputs in an owner-named package under `tests/+testfixtures/`; keep every other input builder beside the specification that consumes it. Delete manual-replay builders and tests whose only outcome is proving the fixture itself.
-- Prefer direct behavioral calls over full App workflows. Add a structural GUI proof only when layout or wiring itself is the contract.
+- Prefer direct behavioral calls for narrow formulas and state transitions, and require at least one native core workflow for every App. Add more workflows only for a distinct user goal, state-dependent chain, or failure boundary.
+- Audit every declared App signal with `labkittest.appEvidence`. Every signal needs an exact native-runtime operation. This remains an omission check: the owning workflow must assert the domain or user-visible outcome, and the callback's internal decisions remain owned by its direct contract tests.
+- Review changed-line, per-App headless, and per-App journey coverage as separate diagnostics. Never add an assertion-free callback loop, fixture tautology, or implementation-shaped expectation to improve a percentage.
 - Do not add legacy suite folders, stage tags, selector registries, test wrappers, runner options, or Code Analyzer suppression pragmas.
 - Add a new public framework test API only when it is a stable product boundary. Test infrastructure stays private under `tests/+labkittest/`.
 - Follow `.agents/migration_guide.md` only while that active compatibility retirement exists; the file is absent when no migration is open.

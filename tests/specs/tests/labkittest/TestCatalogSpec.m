@@ -214,10 +214,11 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
 
             testCase.verifyFalse(result.Fallback);
             testCase.verifyEqual(string({result.Descriptors.Contracts}), ...
-                ["scientific", "result", "presentation"]);
+                ["scientific", "result", "presentation", "workflow"]);
             testCase.verifyEqual(string({result.Descriptors.Owner}), ...
                 ["apps/electrochem/cic/analysisrun", ...
                 "apps/electrochem/cic/resultfiles", ...
+                "apps/electrochem/cic/workbench", ...
                 "apps/electrochem/cic/workbench"]);
         end
 
@@ -233,8 +234,9 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             plan = jsondecode(fileread(fullfile(result.Artifacts.Folder, "plan.json")));
 
             testCase.verifyEqual(numel(result.Results{1}), 3);
-            testCase.verifyEqual(numel(plan.reasons), 3);
-            testCase.verifyEqual(numel(plan.tests), 3);
+            testCase.verifyEqual(numel(result.Results{2}), 1);
+            testCase.verifyEqual(numel(plan.reasons), 4);
+            testCase.verifyEqual(numel(plan.tests), 4);
         end
 
         function locateGivesAuthorsTheExactCapabilityInsertionFolders(testCase)
@@ -245,11 +247,13 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string({locations.Owner}), [ ...
                 "apps/electrochem/cic/analysisRun", ...
                 "apps/electrochem/cic/resultFiles", ...
+                "apps/electrochem/cic/workbench", ...
                 "apps/electrochem/cic/workbench"]);
             testCase.verifyTrue(all([locations.AuthorOwned]));
             testCase.verifyEqual(string({locations.Folder}), [ ...
                 string(fullfile(root, "tests", "specs", "apps", "electrochem", "cic", "analysisRun")), ...
                 string(fullfile(root, "tests", "specs", "apps", "electrochem", "cic", "resultFiles")), ...
+                string(fullfile(root, "tests", "specs", "apps", "electrochem", "cic", "workbench")), ...
                 string(fullfile(root, "tests", "specs", "apps", "electrochem", "cic", "workbench"))]);
         end
 
@@ -341,7 +345,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "apps\electrochem\cic\+cic\+analysisRun\computeCIC.m");
 
             testCase.verifyEqual(string({location.Contract}), ...
-                ["scientific", "result", "presentation"]);
+                ["scientific", "result", "presentation", "workflow"]);
         end
 
         function locateMapsStructuralAppRolesWithoutFileNameHeuristics(testCase)
@@ -359,13 +363,17 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "apps/electrochem/vt_resistance/+vt_resistance/createSession.m");
 
             testCase.verifyEqual(string({analysis.Contract}), ...
-                ["scientific", "result", "presentation"]);
+                ["scientific", "result", "presentation", "workflow"]);
             testCase.verifyEqual([result.Owner, result.Contract], ...
                 ["apps/electrochem/vt_resistance/resultFiles", "result"]);
-            testCase.verifyEqual([presentation.Owner, presentation.Contract], ...
-                ["apps/electrochem/vt_resistance/workbench", "presentation"]);
-            testCase.verifyEqual(string({layout.Contract}), ["presentation", "product"]);
-            testCase.verifyEqual(string({layout.Environment}), ["", "hidden-gui"]);
+            testCase.verifyEqual(string({presentation.Owner}), ...
+                repmat("apps/electrochem/vt_resistance/workbench", 1, 2));
+            testCase.verifyEqual(string({presentation.Contract}), ...
+                ["presentation", "workflow"]);
+            testCase.verifyEqual(string({layout.Contract}), ...
+                ["presentation", "workflow", "product"]);
+            testCase.verifyEqual(string({layout.Environment}), ...
+                ["", "hidden-gui", "hidden-gui"]);
             testCase.verifyEqual(string({initialState.Contract}), ...
                 ["definition", "product", "product"]);
             testCase.verifyEqual([session.Owner, session.Contract], ...
@@ -536,14 +544,14 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
 
             testCase.verifyFalse(result.Fallback);
             testCase.verifyEqual(string({result.Descriptors.Contracts}), ...
-                ["scientific", "result", "presentation", "system"]);
-            testCase.verifyEqual(numel(unique(string({result.Descriptors.Id}))), 4);
+                ["scientific", "result", "presentation", "workflow", "system"]);
+            testCase.verifyEqual(numel(unique(string({result.Descriptors.Id}))), 5);
             testCase.verifyEqual(count(string(output), ...
                 "LabKit changed plan:"), 1, output);
             testCase.verifySubstring(output, "paths=2");
             testCase.verifySubstring(output, "evidence-owners=4");
-            testCase.verifySubstring(output, "contract-queries=4");
-            testCase.verifySubstring(output, "unique-tests=4");
+            testCase.verifySubstring(output, "contract-queries=5");
+            testCase.verifySubstring(output, "unique-tests=5");
             testCase.verifyFalse(contains(output, "0/"));
         end
 
@@ -670,6 +678,26 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "AppIsolationConformanceSpec/");
         end
 
+        function journeysProfileSelectsOnlyNativeAppWorkflows(testCase)
+            result = labkittest.plan("Profile", "journeys");
+
+            testCase.verifyGreaterThanOrEqual(numel(result.Descriptors), ...
+                numel(fieldnames(labkittest.publicApps())));
+            testCase.verifyTrue(all(string({result.Descriptors.Contracts}) == ...
+                "workflow"));
+            testCase.verifyTrue(all(string({result.Descriptors.Environment}) == ...
+                "hidden-gui"));
+        end
+
+        function coverageKeepsLogicAndJourneyPopulationsSeparate(testCase)
+            result = labkittest.plan("Profile", "coverage");
+
+            testCase.verifyEqual(string({result.Groups.Environment}), ...
+                ["headless", "hidden-gui"]);
+            gui = result.Groups(2).Descriptors;
+            testCase.verifyTrue(all(string({gui.Contracts}) == "workflow"));
+        end
+
         function changedProfileIncludesTrackedAndUntrackedPreCommitPaths(testCase)
             [repository, specsRoot] = testCase.createGitRepository();
             testCase.writeTextFile(fullfile(repository, "docs", "tracked-source.md"), "changed");
@@ -724,7 +752,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
 
             appCount = numel(fieldnames(apps));
             ids = string({descriptors.Id});
-            testCase.verifyEqual(numel(descriptors), 4 * appCount);
+            testCase.verifyEqual(numel(descriptors), 6 * appCount);
             testCase.verifyEqual(numel(unique(ids)), ...
                 numel(descriptors));
             testCase.verifyEqual(sum(contains(ids, ...
@@ -739,6 +767,13 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             testCase.verifyEqual(sum(contains(ids, ...
                 "AppDefinitionConformanceSpec/" + ...
                 "createsAndPresentsTheInitialSessionHeadlessly")), appCount);
+            testCase.verifyEqual(sum(contains(ids, ...
+                "AppDefinitionConformanceSpec/" + ...
+                "ownsAtLeastOneNativeCoreJourney")), appCount);
+            testCase.verifyEqual(sum(contains(ids, ...
+                "AppDefinitionConformanceSpec/" + ...
+                "drivesEveryDeclaredInteractionThroughTheNativeRuntime")), ...
+                appCount);
         end
 
         function definitionFileSelectsItsCompleteConformanceEvidence(testCase)
@@ -746,16 +781,18 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "File", "apps/electrochem/cic/+cic/definition.m");
 
             testCase.verifyFalse(result.Fallback);
-            testCase.verifyEqual(numel(result.Descriptors), 6);
+            testCase.verifyEqual(numel(result.Descriptors), 8);
             testCase.verifyEqual(string({result.Descriptors.Id}), [ ...
                 "AppDefinitionConformanceSpec/declaresThePublicAppContract(App=cic)", ...
                 "AppDefinitionConformanceSpec/declaresEveryCalledLabKitFacade(App=cic)", ...
                 "AppDefinitionConformanceSpec/declaresUnambiguousFileCollectionControls(App=cic)", ...
                 "AppDefinitionConformanceSpec/createsAndPresentsTheInitialSessionHeadlessly(App=cic)", ...
+                "AppDefinitionConformanceSpec/ownsAtLeastOneNativeCoreJourney(App=cic)", ...
+                "AppDefinitionConformanceSpec/drivesEveryDeclaredInteractionThroughTheNativeRuntime(App=cic)", ...
                 "AppSmokeConformanceSpec/materializesDefinitionAndLaunchesDefaultState(App=cic)", ...
                 "AppIsolationConformanceSpec/verifiesEveryPublicAppFromAResetPathBoundary"]);
             testCase.verifyEqual(string({result.Descriptors.Environment}), ...
-                ["headless", "headless", "headless", "headless", ...
+                ["headless", "headless", "headless", "headless", "headless", "headless", ...
                 "hidden-gui", "path-isolated"]);
         end
 
@@ -878,6 +915,8 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                     "cic", "workbench");
                 mkdir(presentationOwner);
                 testCase.writeSpec(presentationOwner, "PresentationSpec", "presentation");
+                testCase.writeSpec(presentationOwner, "WorkflowSpec", "workflow", ...
+                    "hidden-gui");
             end
         end
 

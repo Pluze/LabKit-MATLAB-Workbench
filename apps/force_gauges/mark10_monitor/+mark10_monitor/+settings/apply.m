@@ -23,8 +23,12 @@ end
 mark10_monitor.connection.retain(box, connection);
 state = mark10_monitor.settings.copyReadback(state, settings);
 state.session.connection.status = "Settings applied without SAVE.";
-state.session.connection.lastFailure = join( ...
-    statuses(~contains(statuses, ["SUPPORTED", "CONFIRMED"])), newline);
+failures = statuses(~contains(statuses, ["SUPPORTED", "CONFIRMED"]));
+if isempty(failures)
+    state.session.connection.lastFailure = "";
+else
+    state.session.connection.lastFailure = join(failures, newline);
+end
 end
 
 function value = settingValue(name, displayed)

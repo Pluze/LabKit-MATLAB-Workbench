@@ -77,6 +77,12 @@ find the exact owner and contract; App authors never invent test paths.
 
 - Keep formulas, units, thresholds, defaults, result fields, plot labels,
   exports, failure policy, alert text, and workflow order app-local.
+- Every App owns at least one native hidden-GUI core journey from its real
+  source-entry boundary to a useful result, saved continuation, or supported
+  failure. Every custom signal declared by the App has App-owned evidence for
+  its reachable state transition and user-visible or domain outcome; generic
+  framework wiring and an assertion-free callback smoke do not satisfy this
+  requirement.
 - Solve new behavior inside its owning capability first. If framework support
   is necessary, prefer a natural extension to an existing focused SDK
   contract or private runtime behavior. Request a new public API only for a

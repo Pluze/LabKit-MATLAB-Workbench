@@ -3,8 +3,9 @@ function plan = buildfile
 %   buildtool changedFast  final local pre-PR review evidence
 %   buildtool headless     every headless specification
 %   buildtool gui          every hidden-GUI specification
+%   buildtool journeys     every App-owned native user workflow
 %   buildtool isolated     every path-isolated specification
-%   buildtool coverage     headless specifications with coverage artifacts
+%   buildtool coverage     headless and App-journey coverage artifacts
 %   buildtool codecheck    require zero analysis and runtime-boundary findings
 %   buildtool docs         render documentation
 %   buildtool docsCheck    verify generated documentation
@@ -14,8 +15,9 @@ plan.DefaultTasks = "headless";
 plan("changedFast").Description = "Run focused final pre-PR specifications selected from the local diff";
 plan("headless").Description = "Run all non-GUI product, SDK, persistence, and export specifications";
 plan("gui").Description = "Run hidden native-App, callback, graphics, and export workflows";
+plan("journeys").Description = "Run every App-owned native user workflow";
 plan("isolated").Description = "Start every public App from a reset path to detect undeclared dependencies";
-plan("coverage").Description = "Run headless specifications and publish source coverage artifacts";
+plan("coverage").Description = "Measure headless logic and native App-journey source coverage separately";
 plan("codecheck").Description = "Require zero code, compatibility, suppression, and runtime findings";
 plan("docs").Description = "Regenerate the path-owned documentation site";
 plan("docsCheck").Description = "Verify generated documentation matches its source contracts";
@@ -32,6 +34,10 @@ end
 
 function guiTask(~)
 runTests("gui");
+end
+
+function journeysTask(~)
+runTests("journeys");
 end
 
 function isolatedTask(~)
@@ -65,8 +71,9 @@ fprintf("LabKit build tasks:\n");
 fprintf("  changedFast  final local pre-PR review evidence\n");
 fprintf("  headless     every headless specification\n");
 fprintf("  gui          every hidden-GUI specification\n");
+fprintf("  journeys     every App-owned native user workflow\n");
 fprintf("  isolated     every path-isolated specification\n");
-fprintf("  coverage     headless specifications with coverage artifacts\n");
+fprintf("  coverage     separate headless and native App-journey coverage artifacts\n");
 fprintf("  codecheck    require zero analysis and runtime-boundary findings\n");
 fprintf("  docs         render documentation\n");
 fprintf("  docsCheck    verify generated documentation\n");

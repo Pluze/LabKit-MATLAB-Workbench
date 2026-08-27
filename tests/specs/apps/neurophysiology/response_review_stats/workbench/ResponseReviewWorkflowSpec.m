@@ -1,7 +1,7 @@
 classdef ResponseReviewWorkflowSpec < matlab.unittest.TestCase
     %RESPONSEREVIEWWORKFLOWSPEC Specify metrics review, export, and restore.
 
-    methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
+    methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
         function loadsPreviewsExportsResetsAndRestoresMetrics(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -18,19 +18,27 @@ classdef ResponseReviewWorkflowSpec < matlab.unittest.TestCase
             figureValue = runtime.figureHandle();
 
             runtime.applyFileSelection("inputFile", string(segmentPath), 1);
+            runtime.applyControlValue("baselineWindowSec", [0 .003]);
+            runtime.applyControlValue("noiseWindowSec", [0 .003]);
             runtime.invokeAction("loadMetrics");
             runtime.applyControlValue("preview", "Aligned");
+            runtime.invokeAction("chooseOutputFolder");
             runtime.invokeAction("exportMetrics");
 
-            defaultFolder = fullfile(folder, "response_review_stats");
             testCase.verifyEqual(height(runtime.State.session.cache.metrics), 2);
             testCase.verifyEqual(height(runtime.State.session.cache.summary), 2);
             testCase.verifyGreaterThan( ...
                 runtime.State.session.cache.plotViewRevision, 0);
             testCase.verifyEqual(runtime.State.session.view.previewMode, "Aligned");
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview").Children);
-            testCase.verifyTrue(isfile(fullfile(defaultFolder, "response_review_metrics.csv")));
             testCase.verifyTrue(isfile(runtime.State.project.results.lastExport.outputPath));
+            exportedPath = runtime.State.project.results.lastExport.outputPath;
+            testCase.verifyEqual(string(fileparts(exportedPath)), string(folder));
+            runtime.invokeAction("clearOutputFolder");
+            testCase.verifyEqual(runtime.State.session.workflow.outputFolder, "");
+            runtime.invokeAction("resetWorkflow");
+            testCase.verifyEmpty(runtime.State.session.cache.metrics);
+            testCase.verifyTrue(isfile(exportedPath));
             clear cleanup
         end
     end

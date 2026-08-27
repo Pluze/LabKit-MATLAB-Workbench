@@ -22,6 +22,11 @@
       "rationale": "Distinguishing semantic output contracts from ambient diagnostics is test-planning work."
     },
     {
+      "prompt": "Audit every App's real GUI journey, interaction evidence, and separate headless versus workflow coverage before the PR.",
+      "should_activate": true,
+      "rationale": "Core user journeys, App signal omissions, and coverage interpretation are validation architecture."
+    },
+    {
       "prompt": "Improve the wording of one documentation paragraph without running MATLAB tests.",
       "should_activate": false,
       "rationale": "A documentation-only edit is owned by documentation checks."

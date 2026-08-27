@@ -27,7 +27,7 @@ The ESM303 `n` response does not include a device timestamp. Recorded `Time_s` i
 
 **Zero Force** verifies the Series 5 device zero against its displayed resolution and immediately updates the live force readout from the verified device value. **Zero Travel** sends the ESM303 hardware `z` command only when stand status proves that command path is available, then verifies the device travel reading. If hardware zero cannot be verified, the action fails and the App does not alter live values, retained samples, plots, or exports with a software offset. The App never sends UP, DOWN, motion speed, limit, cycle, or automatic `SAVE` commands.
 
-The Diagnostics panel reports the current unresolved device failure. A later successful read or verified zero clears it so recovered operations do not leave a stale failure visible.
+The Diagnostics panel reports the current unresolved device failure. A later successful read, verified zero, or complete settings apply clears it so recovered operations do not leave a stale failure visible.
 
 ## Exported Data
 

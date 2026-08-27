@@ -249,6 +249,48 @@ jobs:
         with:
           tasks: docsCheck
 
+  coverage:
+    name: Headless and App-journey coverage
+    needs: policy
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up current MATLAB runtime
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: latest
+          cache: true
+
+      - name: Start virtual display for native App journeys
+        shell: bash
+        run: |
+          Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp > "${RUNNER_TEMP}/xvfb.log" 2>&1 &
+          xvfb_pid=$!
+          echo "DISPLAY=:99" >> "${GITHUB_ENV}"
+          sleep 1
+          if ! kill -0 "${xvfb_pid}"; then
+            cat "${RUNNER_TEMP}/xvfb.log"
+            exit 1
+          fi
+
+      - name: Measure source execution by evidence population
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: coverage
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: matlab-coverage
+          if-no-files-found: error
+          retention-days: 14
+          path: artifacts/test-results/coverage/coverage/**
+
   ci-gate:
     name: CI Gate
     if: always()
@@ -256,6 +298,7 @@ jobs:
       - policy
       - platform-matrix
       - docs-check
+      - coverage
     runs-on: ubuntu-latest
     steps:
       - name: Require all validation profiles
@@ -265,4 +308,5 @@ jobs:
           if [ '${{ github.event_name }}' != 'push' ]; then
             test '${{ needs.platform-matrix.result }}' = 'success'
             test '${{ needs.docs-check.result }}' = 'success'
+            test '${{ needs.coverage.result }}' = 'success'
           fi

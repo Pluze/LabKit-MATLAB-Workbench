@@ -1,7 +1,7 @@
 classdef DicPostprocessWorkflowSpec < matlab.unittest.TestCase
     %DICPOSTPROCESSWORKFLOWSPEC Specify DIC overlay generation and exports.
 
-    methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
+    methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
         function generatesExportsAndRestoresSyntheticDicOutputs(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -25,12 +25,31 @@ classdef DicPostprocessWorkflowSpec < matlab.unittest.TestCase
             runtime.applyFileSelection("referenceFile", string(referencePath), 1);
             runtime.applyFileSelection("maskFile", string(maskPath), 1);
             runtime.invokeAction("generate");
+            runtime.applyControlValue("colorMin", -.10);
+            runtime.applyControlValue("colorMax", .20);
+            runtime.applyControlValue("oversample", 3);
+            runtime.applyControlValue("smoothSigma", .5);
+            runtime.applyControlValue("edgeTrim", 0);
             runtime.applyControlValue("alpha", .45);
             runtime.applyControlValue("brightness", .10);
+            runtime.applyControlValue("contrast", 1.2);
+            runtime.applyControlValue("gamma", .9);
+            runtime.applyControlValue("saturation", .8);
+            runtime.applyControlValue("redGain", 1.1);
+            runtime.applyControlValue("greenGain", .9);
+            runtime.applyControlValue("blueGain", 1.05);
             runtime.invokeAction("saveOverlays");
             runtime.invokeAction("exportSummary");
 
             testCase.verifyGreaterThan(height(runtime.State.project.results.summaryTable), 0);
+            parameters = runtime.State.project.parameters;
+            testCase.verifyEqual([parameters.colorMin, parameters.colorMax, ...
+                parameters.oversample, parameters.smoothSigma, ...
+                parameters.edgeTrim], [-.10, .20, 3, .5, 0]);
+            testCase.verifyEqual([parameters.contrast, parameters.gamma, ...
+                parameters.saturation, parameters.redGain, ...
+                parameters.greenGain, parameters.blueGain], ...
+                [1.2, .9, .8, 1.1, .9, 1.05]);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "overlayAxes.exx").Children);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "overlayAxes.eyy").Children);
             testCase.verifyTrue(isfile(fullfile(folder, "overlay_exx_unknown_mm.png")));
