@@ -180,7 +180,11 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, ...
                 "steps.scope.outputs.should_run == 'true'");
             testCase.verifySubstring(workflow, ...
+                "steps.handoff.outputs.should_run == 'true'");
+            testCase.verifySubstring(workflow, ...
                 "Open task-branch PR owns complete validation");
+            testCase.verifySubstring(workflow, ...
+                "Pull request took ownership before MATLAB setup");
             testCase.verifySubstring(workflow, "github.event.before");
             testCase.verifySubstring(workflow, ...
                 "artifacts/development-feedback/changed-paths.txt");
@@ -188,19 +192,24 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, "tasks: docsCheck");
         end
 
-        function ciGatesPlatformDocsAndCoverageIndependently(testCase)
+        function defaultBuildRunsOneCompleteLocalGate(testCase)
+            plan = buildfile;
+
+            testCase.verifyEqual(plan.DefaultTasks, "changedFast");
+            testCase.verifyEqual(sort(string(plan("changedFast").Dependencies)), ...
+                ["codecheck", "docsCheck"]);
+        end
+
+        function ciGatesPlatformAndDocsWithoutDuplicateCoverage(testCase)
             root = labkittest.setup();
             workflow = text(root, ".github/workflows/ci.yml");
             platformJob = workflowJob(workflow, "platform-matrix");
             docsJob = workflowJob(workflow, "docs-check");
-            coverageJob = workflowJob(workflow, "coverage");
             gateJob = workflowJob(workflow, "ci-gate");
 
             testCase.verifySubstring(workflow, "policy:");
             testCase.verifySubstring(workflow, "name: Repository policy");
-            testCase.verifySubstring(workflow, "workflow_dispatch:");
-            testCase.verifySubstring(workflow, ...
-                "github.event_name == 'workflow_dispatch' && github.run_id");
+            testCase.verifyFalse(contains(workflow, "workflow_dispatch:"));
             testCase.verifyFalse(contains(workflow, ...
                 "group: ci-${{ github.event.pull_request.head.sha || github.sha }}"));
             testCase.verifySubstring(workflow, ...
@@ -223,7 +232,6 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyFalse(contains(workflow, "classify_ci_scope"));
             testCase.verifySubstring(platformJob, "needs: policy");
             testCase.verifySubstring(docsJob, "needs: policy");
-            testCase.verifySubstring(coverageJob, "needs: policy");
             testCase.verifySubstring(workflow, "docs-check:");
             testCase.verifySubstring(workflow, "tasks: docsCheck");
             testCase.verifySubstring(workflow, "release: R2022b");
@@ -240,12 +248,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyEqual(count(workflow, "run_isolated: true"), 5);
             testCase.verifySubstring(platformJob, "cache: true");
             testCase.verifySubstring(docsJob, "cache: true");
-            testCase.verifySubstring(coverageJob, "cache: true");
-            testCase.verifySubstring(coverageJob, "tasks: coverage");
-            testCase.verifySubstring(coverageJob, ...
-                "name: Start virtual display for native App journeys");
-            testCase.verifySubstring(coverageJob, ...
-                "path: artifacts/test-results/coverage/coverage/**");
+            testCase.verifyFalse(contains(workflow, "tasks: coverage"));
             testCase.verifySubstring(workflow, ...
                 "name: Start Linux virtual display");
             testCase.verifySubstring(workflow, ...
@@ -278,11 +281,10 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(gateJob, "name: CI Gate");
             testCase.verifySubstring(gateJob, "- platform-matrix");
             testCase.verifySubstring(gateJob, "- docs-check");
-            testCase.verifySubstring(gateJob, "- coverage");
             testCase.verifySubstring(gateJob, "needs.policy.result");
             testCase.verifySubstring(gateJob, "needs.platform-matrix.result");
             testCase.verifySubstring(gateJob, "needs.docs-check.result");
-            testCase.verifySubstring(gateJob, "needs.coverage.result");
+            testCase.verifyFalse(contains(gateJob, "coverage"));
         end
 
         function pullRequestChecklistContainsOnlyAuthorOwnedMergeObligations(testCase)
