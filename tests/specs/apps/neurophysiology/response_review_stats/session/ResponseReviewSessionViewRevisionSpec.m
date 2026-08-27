@@ -1,8 +1,8 @@
-classdef PlotViewRevisionSpec < matlab.unittest.TestCase
-    % PLOTVIEWREVISIONSPEC Invariant: each Response Review Stats session starts with an independent zero plot generation.
+classdef ResponseReviewSessionViewRevisionSpec < matlab.unittest.TestCase
+    % RESPONSEREVIEWSESSIONVIEWREVISIONSPEC Specify plot-generation isolation.
 
     methods (Test, TestTags = {'Contract:state', 'Env:headless'})
-        function provesPlotViewRevision(testCase)
+        function startsEachSessionWithIndependentPlotGeneration(testCase)
             project = response_review_stats.initialData();
             first = response_review_stats.createSession(project, struct());
             first.cache.plotViewRevision = 7;

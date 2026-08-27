@@ -1,8 +1,8 @@
-classdef ViewportRevisionSpec < matlab.unittest.TestCase
-    % VIEWPORTREVISIONSPEC Regression: new statistical results and plot coordinate grammar refit while display-only styling preserves the inspected viewport.
+classdef TTestViewportRevisionSpec < matlab.unittest.TestCase
+    % TTESTVIEWPORTREVISIONSPEC Specify result-plot view fitting.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function provesViewportRevision(testCase)
+        function refitsForResultGenerationOrCoordinateGrammar(testCase)
             choices = ttest_wizard.resultPlot.choices();
             original = ttest_wizard.resultPlot.viewportRevision( ...
                 choices.types(1), 2, true);

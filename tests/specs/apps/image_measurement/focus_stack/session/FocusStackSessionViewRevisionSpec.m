@@ -1,8 +1,8 @@
-classdef PlotViewRevisionSpec < matlab.unittest.TestCase
-    % PLOTVIEWREVISIONSPEC Invariant: each Focus Stack session starts with an independent zero plot generation.
+classdef FocusStackSessionViewRevisionSpec < matlab.unittest.TestCase
+    % FOCUSSTACKSESSIONVIEWREVISIONSPEC Specify plot-generation isolation.
 
     methods (Test, TestTags = {'Contract:state', 'Env:headless'})
-        function provesPlotViewRevision(testCase)
+        function startsEachSessionWithIndependentPlotGeneration(testCase)
             project = focus_stack.initialData();
             first = focus_stack.createSession(project, struct());
             first.cache.plotViewRevision = 7;

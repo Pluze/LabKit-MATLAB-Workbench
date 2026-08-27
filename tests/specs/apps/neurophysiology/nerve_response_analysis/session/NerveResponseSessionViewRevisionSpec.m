@@ -1,8 +1,8 @@
-classdef PlotViewRevisionSpec < matlab.unittest.TestCase
-    % PLOTVIEWREVISIONSPEC Invariant: each Nerve Response Analysis session starts with an independent zero plot generation.
+classdef NerveResponseSessionViewRevisionSpec < matlab.unittest.TestCase
+    % NERVERESPONSESESSIONVIEWREVISIONSPEC Specify plot-generation isolation.
 
     methods (Test, TestTags = {'Contract:state', 'Env:headless'})
-        function provesPlotViewRevision(testCase)
+        function startsEachSessionWithIndependentPlotGeneration(testCase)
             project = nerve_response_analysis.initialData();
             first = nerve_response_analysis.createSession(project, struct());
             first.cache.plotViewRevision = 7;

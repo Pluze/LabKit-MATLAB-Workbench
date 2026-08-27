@@ -1,8 +1,8 @@
-classdef ViewportRevisionSpec < matlab.unittest.TestCase
-    % VIEWPORTREVISIONSPEC Regression: DIC overlay canvases refit only when their source identity or geometry changes.
+classdef DicPostprocessViewportRevisionSpec < matlab.unittest.TestCase
+    % DICPOSTPROCESSVIEWPORTREVISIONSPEC Specify DIC overlay view fitting.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function provesViewportRevision(testCase)
+        function refitsForSourceIdentityOrCanvasGeometry(testCase)
             sources = labkit.app.source.record( ...
                 "strain-a", "strain", "synthetic-a.mat");
             base = dic_postprocess.overlayPreview.viewportRevision( ...
