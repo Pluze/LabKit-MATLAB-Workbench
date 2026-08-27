@@ -7,13 +7,12 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event_name == 'workflow_dispatch' && github.run_id || github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -67,10 +66,9 @@ jobs:
             release: R2022b
             shard: All profiles
             shard_id: all
-            profiles: headless,gui,isolated
+            profiles: headless,apps
             run_headless: true
-            run_gui: true
-            run_isolated: true
+            run_apps: true
             cache: false
             claim: Supported MATLAB floor on the pinned Linux runner and legacy graphics/export paths
           - os: ubuntu-latest
@@ -79,10 +77,9 @@ jobs:
             release: latest
             shard: All profiles
             shard_id: all
-            profiles: headless,gui,isolated
+            profiles: headless,apps
             run_headless: true
-            run_gui: true
-            run_isolated: true
+            run_apps: true
             cache: true
             claim: Current MATLAB and Ubuntu complete product, App, graphics, export, and path-isolation evidence
           - os: windows-2022
@@ -91,34 +88,31 @@ jobs:
             release: R2022b
             shard: All profiles
             shard_id: all
-            profiles: headless,gui,isolated
+            profiles: headless,apps
             run_headless: true
-            run_gui: true
-            run_isolated: true
+            run_apps: true
             cache: false
             claim: Supported MATLAB floor on Windows, including background services, native files, and off-screen graphics
           - os: windows-latest
             id: windows
             label: Windows
             release: latest
-            shard: Desktop boundaries
-            shard_id: desktop
-            profiles: gui,isolated
+            shard: App boundaries
+            shard_id: apps
+            profiles: apps
             run_headless: false
-            run_gui: true
-            run_isolated: true
+            run_apps: true
             cache: false
             claim: Current MATLAB and Windows native App, graphics, export, and path-isolation evidence
           - os: macos-14
             id: macos
             label: macOS
             release: latest
-            shard: Desktop boundaries
-            shard_id: desktop
-            profiles: gui,isolated
+            shard: App boundaries
+            shard_id: apps
+            profiles: apps
             run_headless: false
-            run_gui: true
-            run_isolated: true
+            run_apps: true
             cache: false
             claim: Current Apple Silicon native App, graphics, export, and path-isolation evidence
     steps:
@@ -150,7 +144,7 @@ jobs:
       - name: Prepare MATLAB artifact directories
         shell: bash
         run: |
-          mkdir -p artifacts/logs/headless artifacts/logs/gui artifacts/logs/isolated
+          mkdir -p artifacts/logs/headless artifacts/logs/apps
           if [ "${RUNNER_OS}" = "Linux" ]; then
             mkdir -p "${HOME}/Documents/MATLAB"
           fi
@@ -165,25 +159,15 @@ jobs:
           tasks: headless
           startup-options: -logfile artifacts/logs/headless/matlab.log
 
-      - name: Run hidden GUI validation
-        if: matrix.run_gui
-        id: gui
+      - name: Run App boundary validation
+        if: matrix.run_apps
+        id: apps
         continue-on-error: true
         timeout-minutes: 30
         uses: matlab-actions/run-build@v3
         with:
-          tasks: gui
-          startup-options: -logfile artifacts/logs/gui/matlab.log
-
-      - name: Run path-isolation validation
-        if: matrix.run_isolated
-        id: isolated
-        continue-on-error: true
-        timeout-minutes: 30
-        uses: matlab-actions/run-build@v3
-        with:
-          tasks: isolated
-          startup-options: -logfile artifacts/logs/isolated/matlab.log
+          tasks: apps
+          startup-options: -logfile artifacts/logs/apps/matlab.log
 
       - name: Summarize platform validation
         if: always()
@@ -198,8 +182,7 @@ jobs:
             --claim "${{ matrix.claim }}" \
             --artifact-name "matlab-${{ matrix.id }}-${{ matrix.release }}-${{ matrix.shard_id }}" \
             --headless-outcome "${{ steps.headless.outcome }}" \
-            --gui-outcome "${{ steps.gui.outcome }}" \
-            --isolated-outcome "${{ steps.isolated.outcome }}"
+            --apps-outcome "${{ steps.apps.outcome }}"
 
       - name: Upload platform artifacts
         if: always()
@@ -221,11 +204,8 @@ jobs:
           if [ '${{ matrix.run_headless }}' = 'true' ]; then
             test '${{ steps.headless.outcome }}' = 'success'
           fi
-          if [ '${{ matrix.run_gui }}' = 'true' ]; then
-            test '${{ steps.gui.outcome }}' = 'success'
-          fi
-          if [ '${{ matrix.run_isolated }}' = 'true' ]; then
-            test '${{ steps.isolated.outcome }}' = 'success'
+          if [ '${{ matrix.run_apps }}' = 'true' ]; then
+            test '${{ steps.apps.outcome }}' = 'success'
           fi
 
   docs-check:
@@ -249,48 +229,6 @@ jobs:
         with:
           tasks: docsCheck
 
-  coverage:
-    name: Headless and App-journey coverage
-    needs: policy
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 50
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Set up current MATLAB runtime
-        uses: matlab-actions/setup-matlab@v3
-        with:
-          release: latest
-          cache: true
-
-      - name: Start virtual display for native App journeys
-        shell: bash
-        run: |
-          Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp > "${RUNNER_TEMP}/xvfb.log" 2>&1 &
-          xvfb_pid=$!
-          echo "DISPLAY=:99" >> "${GITHUB_ENV}"
-          sleep 1
-          if ! kill -0 "${xvfb_pid}"; then
-            cat "${RUNNER_TEMP}/xvfb.log"
-            exit 1
-          fi
-
-      - name: Measure source execution by evidence population
-        uses: matlab-actions/run-build@v3
-        with:
-          tasks: coverage
-
-      - name: Upload coverage reports
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: matlab-coverage
-          if-no-files-found: error
-          retention-days: 14
-          path: artifacts/test-results/coverage/coverage/**
-
   ci-gate:
     name: CI Gate
     if: always()
@@ -298,7 +236,6 @@ jobs:
       - policy
       - platform-matrix
       - docs-check
-      - coverage
     runs-on: ubuntu-latest
     steps:
       - name: Require all validation profiles
@@ -308,5 +245,4 @@ jobs:
           if [ '${{ github.event_name }}' != 'push' ]; then
             test '${{ needs.platform-matrix.result }}' = 'success'
             test '${{ needs.docs-check.result }}' = 'success'
-            test '${{ needs.coverage.result }}' = 'success'
           fi

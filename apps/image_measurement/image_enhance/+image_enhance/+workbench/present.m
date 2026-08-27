@@ -19,8 +19,10 @@ view = view.value("batchModeStatus", modeStatus(project.parameters.batchMode));
 view = view.value("toolKind", session.view.toolKind);
 view = view.value("toolAmount", session.view.toolAmount);
 view = view.limits("toolAmount", defaults.amountLimits);
+view = view.text("toolAmount", defaults.amountLabel);
 view = view.value("toolSecondary", session.view.toolSecondary);
 view = view.limits("toolSecondary", defaults.secondaryLimits);
+view = view.text("toolSecondary", defaults.secondaryLabel);
 view = view.value("toolStatus", toolStatus( ...
     applicationState, availability));
 view = view.enabled("setWhiteRoi", availability.canSetWhiteRoi);

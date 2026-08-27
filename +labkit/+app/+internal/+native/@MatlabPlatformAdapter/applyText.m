@@ -17,6 +17,18 @@ function applyText(obj, component, value)
         end
         labkit.app.internal.native.NativeAdapterValues.fitText(component.UserData.Status);
         return
+    elseif ~isempty( ...
+            labkit.app.internal.native.NativeAdapterValues. ...
+            linkedPannerSlider(component))
+        label = labkit.app.internal.native.NativeAdapterValues. ...
+            linkedLabel(component);
+        if isempty(label)
+            error("labkit:app:runtime:InvariantFailure", ...
+                "A slider text operation requires its cached label.");
+        end
+        label.Text = char(string(value));
+        labkit.app.internal.native.NativeAdapterValues.fitText(label);
+        return
     elseif isprop(component, "Text")
         component.Text = value;
     elseif isprop(component, "Value")

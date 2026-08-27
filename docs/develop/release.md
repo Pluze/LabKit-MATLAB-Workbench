@@ -40,8 +40,6 @@ gh workflow run release.yml --ref main \
 gh run watch
 ```
 
-Use `buildtool coverage` locally when you need a coverage report without preparing a release.
-
 ## GitHub Releases
 
 Use the release title format:

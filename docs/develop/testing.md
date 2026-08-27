@@ -83,8 +83,6 @@ GUI evidence has three distinct responsibilities. Framework conformance proves g
 
 Every new or materially changed test states its oracle and should survive a counterfactual review: identify a small plausible production mutation, such as a reversed condition, stale view revision, changed unit conversion, omitted result field, or disconnected callback, that makes the test fail for the intended reason. Use mutation tooling where it is reliable, but do not optimize a mutation score or keep low-value tests solely to raise it. Negative, cancellation, invalid-input, retry, and restore paths are included when they are supported user behavior, not generated as a mechanical Cartesian product.
 
-Code coverage is an execution metric and omission detector. LabKit records headless logic coverage separately from hidden-GUI core-journey coverage so one population cannot conceal the other. Review per-App files, uncovered branches, and change-set coverage; require an explanation or new evidence for newly uncovered supported behavior. A high percentage cannot compensate for weak or self-referential assertions, and a low-risk unreachable defensive branch is not made public merely to increase coverage. The repository does not claim that line coverage measures scientific correctness, GUI usability, or workflow completeness.
-
 This model follows mature project guidance to test user-visible behavior and resilient interaction boundaries ([Playwright](https://playwright.dev/docs/best-practices), [Testing Library](https://testing-library.com/docs/guiding-principles)), separate unit, integration, and functional GUI evidence ([napari](https://napari.org/stable/developers/contributing/testing.html), [Qt Test](https://doc.qt.io/qt-6/qtest-overview.html)), and reserve deterministic image comparison for an actual visual contract ([Matplotlib](https://matplotlib.org/stable/devel/testing.html#image-comparison-tests)). LabKit adapts those ideas to deterministic scientific oracles and Base MATLAB runtime constraints rather than copying another project's suite structure.
 
 ## Assertion Boundaries
@@ -98,12 +96,9 @@ When an unexpected console line causes a failure, retain its content before assi
 Use stable Build tasks for branch and CI gates:
 
 ```bash
-buildtool changedFast
+buildtool
 buildtool headless
-buildtool gui
-buildtool journeys
-buildtool isolated
-buildtool coverage
+buildtool apps
 buildtool codecheck
 buildtool docs
 buildtool docsCheck
@@ -111,34 +106,29 @@ buildtool docsCheck
 
 | Task | Purpose |
 | --- | --- |
-| `changedFast` | Final local pre-PR review gate, run once after the complete task-branch diff is ready. Reads tracked and untracked working-tree paths; on a clean checkpoint it reads `HEAD^..HEAD`. |
+| `changedFast` | Default final local pre-PR review gate, also selected by bare `buildtool`. Runs `codecheck` and `docsCheck`, then reads tracked and untracked working-tree paths for focused tests; on a clean checkpoint it reads `HEAD^..HEAD`. |
 | `headless` | Every headless catalog identity. |
-| `gui` | Every hidden-GUI catalog identity. |
-| `journeys` | Every App-owned native source-to-result workflow. |
-| `isolated` | Every path-isolated catalog identity. |
-| `coverage` | Headless catalog and native App journeys with separate Cobertura XML and HTML coverage artifacts. |
+| `apps` | Every hidden-GUI identity followed by the reset-path isolation probe for every public App in the same MATLAB build. |
 | `codecheck` | Lightweight pre-commit gate over all public-repository MATLAB source. Prints one `CODECHECK_RESULT` line and fails unless analyzer issues, suppressions, compatibility recommendations, and unreviewed secondary-runtime calls are all zero. Accepted private workspaces retain their own runtime policy. |
 | `docs` / `docsCheck` | Render the ignored local site or verify deterministic source-derived output. |
 
-`changedFast` prints whether its plan is `focused-local` or `full-profile`, semantic reasons, exact identities, and any explicitly ignored paths. For ordinary App and facade source it runs only the required contract closure. Framework, Build, catalog, and repository-policy paths select explicit bounded system evidence. Documentation paths are explicitly ignored because `docsCheck` owns deterministic generation; local `site/` output is ignored by Git. An unknown path is a planning error: declare its production role or an explicit no-test reason; do not hide missing ownership by widening the run.
+The default `buildtool` command runs `changedFast`; name a specialist task only for broad headless or App-boundary investigation, code analysis, or documentation generation. `changedFast` first requires clean code analysis and deterministic documentation, then prints whether its test plan is `focused-local` or `full-profile`, semantic reasons, exact identities, and any explicitly ignored paths. For ordinary App and facade source it runs only the required contract closure. Framework, Build, catalog, and repository-policy paths select explicit bounded system evidence. Documentation paths are explicitly ignored by the test planner because the same gate's `docsCheck` dependency owns deterministic generation; local `site/` output is ignored by Git. An unknown path is a planning error: declare its production role or an explicit no-test classification rather than widening the run.
 
 Use `labkittest.explainChanged` to inspect that decision without executing tests. It prints each changed path's classification, selected evidence, and any manual boundary. A focused-local result is rapid author feedback, not merge safety evidence; CI runs the full platform profiles.
 
 Run focused behavior during iteration. Run `changedFast` once when the task branch is ready for final PR review. CI owns broad platform validation; do not repeatedly run broad tasks after each small edit.
 
-Every push to a non-`main` task branch also starts a non-gating `Development Feedback` workflow on latest Ubuntu and latest Base MATLAB. It passes the complete GitHub push range to the same changed-path planner, runs its focused evidence, and checks deterministic documentation. This job is rapid cross-environment author feedback only: a green result does not establish merge safety, replace the one local pre-PR `changedFast` checkpoint, or reduce the complete PR matrix. A new push cancels an older in-progress feedback run so rapid iteration does not build a stale queue. While an open PR from that exact task branch to `main` owns complete validation, push-triggered feedback stops after a quick scope check instead of repeating MATLAB and documentation work; a manual dispatch still runs the complete feedback lane. Read the non-gating result when its evidence is needed rather than monitoring it throughout ordinary development.
+Every push to a non-`main` task branch also starts a non-gating `Development Feedback` workflow on latest Ubuntu and latest Base MATLAB. It passes the complete GitHub push range to the same changed-path planner, runs its focused evidence, and checks deterministic documentation. This job is rapid cross-environment author feedback only: a green result does not establish merge safety, replace the one local pre-PR `changedFast` checkpoint, or reduce the complete PR matrix. A new push cancels an older in-progress feedback run so rapid iteration does not build a stale queue. The workflow checks for an open PR both before checkout and again before MATLAB setup, so a PR created while lightweight feedback is starting can take ownership before expensive duplicate work begins. A manual dispatch still runs the complete independent feedback lane. Read the non-gating result when its evidence is needed rather than monitoring it throughout ordinary development.
 
 ## CI and Manual Evidence
 
-Continuous Integration separates MATLAB-version compatibility from desktop platform compatibility instead of repeating their Cartesian product. Clean Linux and Windows R2022b runtimes run `headless`, `gui`, and `isolated` at the minimum supported MATLAB boundary. Current Linux runs the complete profiles in one clean runtime so setup cost and installation tail latency are paid once. Current Windows and Apple Silicon macOS run the platform-sensitive `gui` and `isolated` profiles; the full headless catalog is not repeated on those current-version jobs. No job installs optional Toolboxes. Linux GUI jobs use a real virtual display service. The current Linux runtime is cached between runs; floor and desktop-platform installations remain clean and uncached. CI also runs `docsCheck` once and uploads catalog artifacts after failures. Coverage is an explicit report, not a duplicate merge gate.
+Continuous Integration separates MATLAB-version compatibility from desktop platform compatibility instead of repeating their Cartesian product. Clean Linux and Windows R2022b runtimes run `headless` and `apps` at the minimum supported MATLAB boundary. Current Linux runs both profiles in one clean runtime so setup cost and installation tail latency are paid once. Current Windows and Apple Silicon macOS run the platform-sensitive `apps` profile; the full headless catalog is not repeated on those current-version jobs. The `apps` runner groups hidden-GUI identities and the path-isolated conformance by environment, continues to the isolation group after ordinary GUI test failures, and writes one combined JUnit result. No job installs optional Toolboxes. Linux App jobs use a real virtual display service. The current Linux runtime is cached between runs; floor and desktop-platform installations remain clean and uncached. CI also runs `docsCheck` once and uploads catalog artifacts after failures.
 
 `CI Gate` is the required aggregate result. `main` accepts pull requests only from same-repository short-lived task branches; branch names carry no product, agent, or workflow semantics. Policy checks verify source ownership, direct semantic version steps, and matching structured Change records. Strict branch protection rejects direct pushes and requires the pull request to be current with `main`. The accepted `main` push therefore records policy for the exact squash commit instead of repeating the MATLAB matrix. If those protection assumptions change, restore full validation on `main` pushes.
 
 Job summaries identify the profiles actually run, failed test identities, available diagnostics, artifacts, and manual boundaries. A cancelled or skipped required profile is incomplete rather than passing. Read the summary first, then inspect only the named failing artifact or log.
 
 Pull requests always run repository policy, the complete MATLAB platform matrix, and `docsCheck`. This single claim is intentionally independent of the changed paths. Every accepted `main` push starts Documentation Pages, which generates ignored `site/` output from that exact source; generated HTML is never committed.
-
-`Continuous Integration` also has a manual recovery trigger. Dispatch a named ref only when GitHub did not create a usable required check, rerun is unavailable, or an existing check record is stuck. It resolves the ref against `main`, then reuses the same policy, complete platform matrix, documentation check, and aggregate gate as a pull request. Each dispatch has independent concurrency state. Manual recovery changes how full validation starts, not what it proves.
 
 Manual App validation remains required for native file dialogs, visual design, pointer interaction, real-data suitability, and scientific interpretation. Use synthetic, minimal fixtures in automated tests. Never add real lab files, local paths, subject/device identifiers, timestamps, or proprietary metadata.
 
@@ -153,10 +143,6 @@ events.jsonl        progress and heartbeat stream
 active-test.json    latest machine-readable progress state
 junit.xml           CI result exchange
 summary.json        pass/fail summary
-coverage/headless/coverage.xml          headless coverage
-coverage/headless/html/                 headless HTML report
-coverage/hidden-gui/coverage.xml        native journey coverage
-coverage/hidden-gui/html/               native journey HTML report
 ```
 
 After a failure, copy its exact class/method identity from the output and run the smallest method, specification file, owner/contract, or exact source that proves the repair. Do not invoke the planner again when the failing identity is already known. A zero selection or missing-contract error is a test-authoring defect, never passing evidence.
@@ -173,7 +159,7 @@ Once the pull request exists, required CI owns the broad platform claim. For a f
 
 An early repair push is appropriate only when a prerequisite failure, such as branch policy, checkout, dependency setup, or test discovery, prevents the remaining jobs from producing useful evidence. A first completed test failure is not evidence that the matrix has no other failures. Do not invalidate a mostly complete run merely because the first failure is simple to repair.
 
-Do not run `changedFast`, `headless`, `gui`, `isolated`, or the complete local matrix after every CI repair. The one pre-PR `changedFast` run remains the local integration checkpoint; CI re-establishes the complete claim after later focused fixes. Re-run a wider local closure only when the repair itself expands the intended behavior, component ownership, or compatibility boundary beyond the original failure.
+Do not run `changedFast`, `headless`, `apps`, or the complete local matrix after every CI repair. The one pre-PR `changedFast` run remains the local integration checkpoint; CI re-establishes the complete claim after later focused fixes. Re-run a wider local closure only when the repair itself expands the intended behavior, component ownership, or compatibility boundary beyond the original failure.
 
 When a mapped layout change leaves a non-automatable boundary, its plan can name a manual check. It is printed and recorded in `plan.json`, but it never makes an automated run pass. Manual checks are limited to native dialogs, pointer behavior, visual design, real-data suitability, and scientific interpretation; they cannot replace an automated calculation, state, export, migration, structural-GUI, or workflow proof.
 
@@ -185,7 +171,6 @@ For deterministic rendering regressions, use `labkittest.visualEvidencePath(name
 - Keep cross-owner generated inputs in an owner-named package under `tests/+testfixtures/`; keep every other input builder beside the specification that consumes it. Delete manual-replay builders and tests whose only outcome is proving the fixture itself.
 - Prefer direct behavioral calls for narrow formulas and state transitions, and require at least one native core workflow for every App. Add more workflows only for a distinct user goal, state-dependent chain, or failure boundary.
 - Audit every declared App signal with `labkittest.appEvidence`. Every signal needs an exact native-runtime operation. This remains an omission check: the owning workflow must assert the domain or user-visible outcome, and the callback's internal decisions remain owned by its direct contract tests.
-- Review changed-line, per-App headless, and per-App journey coverage as separate diagnostics. Never add an assertion-free callback loop, fixture tautology, or implementation-shaped expectation to improve a percentage.
 - Do not add legacy suite folders, stage tags, selector registries, test wrappers, runner options, or Code Analyzer suppression pragmas.
 - Add a new public framework test API only when it is a stable product boundary. Test infrastructure stays private under `tests/+labkittest/`.
 - Follow `.agents/migration_guide.md` only while that active compatibility retirement exists; the file is absent when no migration is open.

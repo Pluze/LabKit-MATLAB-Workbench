@@ -805,6 +805,33 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function updatesSliderTextAsItsLabelWithoutChangingItsValue(testCase)
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.slider("dynamicSlider", ...
+                    Label="Strength (%)", Limits=[0 100], ...
+                    Bind="session.sliderValue", ...
+                    OnValueChanged=@changeDynamicSlider)});
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createDynamicSliderState, ...
+                "PresentWorkbench", @presentDynamicSlider);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            figureValue = runtime.figureHandle();
+            spinner = oneTagged(figureValue, "dynamicSlider");
+            label = oneTagged(figureValue, "dynamicSlider.label");
+
+            testCase.verifyEqual(string(label.Text), "Strength (%)");
+            runtime.applyControlValue("dynamicSlider", 1);
+
+            testCase.verifyEqual(spinner.Value, 1);
+            testCase.verifyEqual(string(label.Text), "Radius (px)");
+            clear cleanup
+        end
+
         function keepsDiagnosticStateDestinationWithoutProjectMenus(testCase)
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.field("gain", Kind="numeric", ...
@@ -1283,6 +1310,24 @@ session = struct( ...
     "fieldValue", 0, "rangeValue", [0 1], ...
     "sliderValue", 0, "plotMode", "First", ...
     "editedValue", 0, "selectedCells", zeros(0, 2));
+end
+
+function state = createDynamicSliderState(~, ~)
+state = struct("project", struct(), ...
+    "session", struct("sliderValue", 0));
+end
+
+function state = changeDynamicSlider(state, value, ~)
+state.session.sliderValue = value;
+end
+
+function view = presentDynamicSlider(state)
+label = "Strength (%)";
+if state.session.sliderValue > 0
+    label = "Radius (px)";
+end
+view = labkit.app.view.Snapshot() ...
+    .text("dynamicSlider", label);
 end
 
 function state = recordNativeField(state, value, ~)
