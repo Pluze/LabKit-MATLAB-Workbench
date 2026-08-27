@@ -198,9 +198,12 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyEqual(plan.DefaultTasks, "changedFast");
             testCase.verifyEqual(sort(string(plan("changedFast").Dependencies)), ...
                 ["codecheck", "docsCheck"]);
+            testCase.verifyEqual(sort(string({plan.Tasks.Name})), ...
+                sort(["apps", "changedFast", "codecheck", "docs", ...
+                "docsCheck", "headless"]));
         end
 
-        function ciGatesPlatformAndDocsWithoutDuplicateCoverage(testCase)
+        function ciGatesPlatformAndDocsWithOneAppProfile(testCase)
             root = labkittest.setup();
             workflow = text(root, ".github/workflows/ci.yml");
             platformJob = workflowJob(workflow, "platform-matrix");
@@ -237,18 +240,20 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, "release: R2022b");
             testCase.verifySubstring(workflow, "release: latest");
             testCase.verifySubstring(workflow, "shard: All profiles");
-            testCase.verifySubstring(workflow, "shard: Desktop boundaries");
+            testCase.verifySubstring(workflow, "shard: App boundaries");
             testCase.verifySubstring(workflow, "os: ubuntu-22.04");
             testCase.verifySubstring(workflow, "os: windows-2022");
             testCase.verifySubstring(workflow, "os: windows-latest");
             testCase.verifySubstring(workflow, "os: macos-14");
             testCase.verifyEqual(count(workflow, "- os: "), 5);
             testCase.verifyEqual(count(workflow, "run_headless: true"), 3);
-            testCase.verifyEqual(count(workflow, "run_gui: true"), 5);
-            testCase.verifyEqual(count(workflow, "run_isolated: true"), 5);
+            testCase.verifyEqual(count(workflow, "run_apps: true"), 5);
             testCase.verifySubstring(platformJob, "cache: true");
             testCase.verifySubstring(docsJob, "cache: true");
             testCase.verifyFalse(contains(workflow, "tasks: coverage"));
+            testCase.verifyFalse(any(contains(workflow, ...
+                ["tasks: gui" "tasks: isolated"])));
+            testCase.verifySubstring(workflow, "tasks: apps");
             testCase.verifySubstring(workflow, ...
                 "name: Start Linux virtual display");
             testCase.verifySubstring(workflow, ...
@@ -269,11 +274,11 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, ...
                 "--headless-outcome ""${{ steps.headless.outcome }}""");
             testCase.verifySubstring(workflow, ...
+                "--apps-outcome ""${{ steps.apps.outcome }}""");
+            testCase.verifySubstring(workflow, ...
                 "if: matrix.run_headless");
             testCase.verifySubstring(workflow, ...
-                "if: matrix.run_gui");
-            testCase.verifySubstring(workflow, ...
-                "if: matrix.run_isolated");
+                "if: matrix.run_apps");
             testCase.verifyEqual(count(workflow, ...
                 "if: github.event_name != 'push'"), 2);
             testCase.verifySubstring(workflow, ...

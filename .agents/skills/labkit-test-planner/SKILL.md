@@ -64,11 +64,11 @@ pack protocol. Delete fixture-only specifications and retired manual-replay
 builders. A long run must expose durable progress; a client timeout
 is not test evidence or a MATLAB failure.
 
-Repository profiles are headless, hidden GUI, App journeys, path-isolated,
-coverage, and `changedFast`. Coverage records headless logic and native journey
-execution separately; report per-App and changed-line gaps without blending
-them into a completeness claim. Documentation belongs to `docsCheck`; unknown
-changed paths fail planning until assigned an owner or explicit ignore reason.
+Repository profiles are `headless`, combined App-boundary evidence through
+`apps`, and `changedFast`. The `apps` profile runs hidden-GUI identities and
+reset-path isolation as distinct environment groups in one build. Documentation
+belongs to `docsCheck`; unknown changed paths fail planning until assigned an
+owner or explicit ignore reason.
 
 For hosted task-branch feedback, pass the complete push range's explicit changed
 paths to the existing changed planner. Never infer a multi-commit push from a

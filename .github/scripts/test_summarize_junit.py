@@ -24,21 +24,21 @@ class SummarizeJunitTest(unittest.TestCase):
     def test_success_explains_claim_profiles_and_limitations(self):
         with tempfile.TemporaryDirectory() as folder:
             root = pathlib.Path(folder)
-            for profile in ("headless", "gui", "isolated"):
+            for profile in ("headless", "apps"):
                 self.write_report(root, profile, failed=False)
             summary = root / "summary.md"
 
-            result = self.run_summary(root, summary, ["success"] * 3)
+            result = self.run_summary(root, summary, ["success"] * 2)
 
             self.assertEqual(result, 0)
             content = summary.read_text(encoding="utf-8")
             self.assertIn("# ✅ LabKit MATLAB compatibility passed", content)
             self.assertIn("Compatibility claim: supported release floor", content)
             self.assertIn("Product, SDK, persistence", content)
-            self.assertIn("Every public App starts from a reset path", content)
+            self.assertIn("reset-path startup for every public App", content)
             self.assertIn("do **not** prove native dialog interaction", content)
             self.assertIn(
-                "3/3 scheduled independent MATLAB sessions passed", content
+                "2/2 scheduled independent MATLAB sessions passed", content
             )
             self.assertIn(
                 "test-results/<profile>/visual-evidence/", content
@@ -48,12 +48,11 @@ class SummarizeJunitTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = pathlib.Path(folder)
             self.write_report(root, "headless", failed=True)
-            self.write_report(root, "gui", failed=False)
-            self.write_report(root, "isolated", failed=False)
+            self.write_report(root, "apps", failed=False)
             summary = root / "summary.md"
 
             result = self.run_summary(
-                root, summary, ["failure", "success", "success"]
+                root, summary, ["failure", "success"]
             )
 
             self.assertEqual(result, 0)
@@ -62,17 +61,16 @@ class SummarizeJunitTest(unittest.TestCase):
             self.assertIn("FigureStudioResultSpec", content)
             self.assertIn("axis label reached export boundary", content)
             self.assertIn("Still proven by this run", content)
-            self.assertIn("Hidden GUI, Path isolation passed", content)
+            self.assertIn("App boundaries passed", content)
 
     def test_failed_step_without_junit_is_reported_as_runner_failure(self):
         with tempfile.TemporaryDirectory() as folder:
             root = pathlib.Path(folder)
-            self.write_report(root, "gui", failed=False)
-            self.write_report(root, "isolated", failed=False)
+            self.write_report(root, "apps", failed=False)
             summary = root / "summary.md"
 
             result = self.run_summary(
-                root, summary, ["failure", "success", "success"]
+                root, summary, ["failure", "success"]
             )
 
             self.assertEqual(result, 0)
@@ -87,7 +85,7 @@ class SummarizeJunitTest(unittest.TestCase):
             summary = root / "summary.md"
 
             result = self.run_summary(
-                root, summary, ["success", "cancelled", "skipped"]
+                root, summary, ["success", "cancelled"]
             )
 
             self.assertEqual(result, 0)
@@ -102,33 +100,32 @@ class SummarizeJunitTest(unittest.TestCase):
     def test_partial_shard_reports_only_scheduled_profiles(self):
         with tempfile.TemporaryDirectory() as folder:
             root = pathlib.Path(folder)
-            self.write_report(root, "gui", failed=False)
+            self.write_report(root, "apps", failed=False)
             summary = root / "summary.md"
 
             result = self.run_summary(
                 root,
                 summary,
-                ["skipped", "success", "skipped"],
-                shard="Hidden GUI",
-                profiles="gui",
+                ["skipped", "success"],
+                shard="App boundaries",
+                profiles="apps",
             )
 
             self.assertEqual(result, 0)
             content = summary.read_text(encoding="utf-8")
             self.assertIn(
-                "# ✅ LabKit MATLAB Hidden GUI validation passed", content
+                "# ✅ LabKit MATLAB App boundaries validation passed", content
             )
             self.assertIn("1/1 scheduled independent MATLAB sessions passed", content)
-            self.assertIn("Windows · R2022b · Hidden GUI", content)
-            self.assertIn("`buildtool gui` in separate MATLAB sessions", content)
+            self.assertIn("Windows · R2022b · App boundaries", content)
+            self.assertIn("`buildtool apps` in separate MATLAB sessions", content)
             self.assertNotIn("Non-GUI", content)
-            self.assertNotIn("Path isolation", content)
 
     def test_profile_list_rejects_unknown_or_duplicate_values(self):
         with self.assertRaisesRegex(ValueError, "Unknown validation profile"):
             MODULE.parse_profiles("headless,visual")
         with self.assertRaisesRegex(ValueError, "must be unique"):
-            MODULE.parse_profiles("gui,gui")
+            MODULE.parse_profiles("apps,apps")
 
     def run_summary(
         self,
@@ -136,7 +133,7 @@ class SummarizeJunitTest(unittest.TestCase):
         summary,
         outcomes,
         shard="All profiles",
-        profiles="headless,gui,isolated",
+        profiles="headless,apps",
     ):
         arguments = [
             "summarize_junit.py",
@@ -158,10 +155,8 @@ class SummarizeJunitTest(unittest.TestCase):
             str(root),
             "--headless-outcome",
             outcomes[0],
-            "--gui-outcome",
+            "--apps-outcome",
             outcomes[1],
-            "--isolated-outcome",
-            outcomes[2],
         ]
         with mock.patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary)}):
             with mock.patch.object(MODULE.sys, "argv", arguments):

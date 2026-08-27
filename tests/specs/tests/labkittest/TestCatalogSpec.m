@@ -669,33 +669,36 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "tests/labkittest / system / headless");
         end
 
-        function isolatedProfileSelectsEveryPathIsolatedSpecification(testCase)
-            result = labkittest.plan("Profile", "isolated");
+        function appsProfileIncludesGuiAndResetPathEvidence(testCase)
+            result = labkittest.plan("Profile", "apps");
 
-            testCase.verifyEqual(numel(result.Descriptors), 1);
-            testCase.verifyEqual(result.Descriptors.Environment, "path-isolated");
-            testCase.verifySubstring(result.Descriptors.Id, ...
+            testCase.verifyEqual(string({result.Groups.Environment}), ...
+                ["hidden-gui", "path-isolated"]);
+            environments = string({result.Descriptors.Environment});
+            testCase.verifyGreaterThanOrEqual(sum(environments == "hidden-gui"), ...
+                numel(fieldnames(labkittest.publicApps())));
+            isolated = result.Descriptors(environments == "path-isolated");
+            testCase.verifyNumElements(isolated, 1);
+            testCase.verifySubstring(isolated.Id, ...
                 "AppIsolationConformanceSpec/");
         end
 
-        function journeysProfileSelectsOnlyNativeAppWorkflows(testCase)
-            result = labkittest.plan("Profile", "journeys");
+        function appsProfileRunsBothEnvironmentGroupsInOneArtifact(testCase)
+            specsRoot = testCase.createEnvironmentFixture();
+            fixture = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture);
 
-            testCase.verifyGreaterThanOrEqual(numel(result.Descriptors), ...
-                numel(fieldnames(labkittest.publicApps())));
-            testCase.verifyTrue(all(string({result.Descriptors.Contracts}) == ...
-                "workflow"));
-            testCase.verifyTrue(all(string({result.Descriptors.Environment}) == ...
-                "hidden-gui"));
-        end
+            result = labkittest.run("Profile", "apps", ...
+                "SpecsRoot", specsRoot, "ArtifactsRoot", fixture.Folder, ...
+                "RunName", "apps");
 
-        function coverageKeepsLogicAndJourneyPopulationsSeparate(testCase)
-            result = labkittest.plan("Profile", "coverage");
-
-            testCase.verifyEqual(string({result.Groups.Environment}), ...
-                ["headless", "hidden-gui"]);
-            gui = result.Groups(2).Descriptors;
-            testCase.verifyTrue(all(string({gui.Contracts}) == "workflow"));
+            testCase.verifyEqual(string({result.Plan.Groups.Environment}), ...
+                ["hidden-gui", "path-isolated"]);
+            testCase.verifyNumElements(result.Results, 2);
+            testCase.verifyTrue(all(cellfun(@(group) ...
+                all([group.Passed]), result.Results)));
+            testCase.verifyEqual(exist(fullfile( ...
+                result.Artifacts.Folder, "junit.xml"), "file"), 2);
         end
 
         function changedProfileIncludesTrackedAndUntrackedPreCommitPaths(testCase)

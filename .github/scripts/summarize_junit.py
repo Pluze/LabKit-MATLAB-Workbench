@@ -26,13 +26,9 @@ PROFILE_METADATA = {
         "Non-GUI",
         "Product, SDK, persistence, calculation, policy, and export specifications",
     ),
-    "gui": (
-        "Hidden GUI",
-        "Native App construction, callback wiring, graphics, and export workflows",
-    ),
-    "isolated": (
-        "Path isolation",
-        "Every public App starts from a reset path without undeclared sibling dependencies",
+    "apps": (
+        "App boundaries",
+        "Hidden native workflows plus reset-path startup for every public App",
     ),
 }
 
@@ -84,8 +80,7 @@ def main() -> int:
     profile_keys = parse_profiles(args.profiles)
     outcomes = {
         "headless": args.headless_outcome,
-        "gui": args.gui_outcome,
-        "isolated": args.isolated_outcome,
+        "apps": args.apps_outcome,
     }
     profiles = [
         load_profile(key, outcomes[key], args.artifacts_root)
@@ -119,15 +114,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--shard", default="All profiles")
     parser.add_argument(
         "--profiles",
-        default="headless,gui,isolated",
+        default="headless,apps",
         help="Comma-separated profiles scheduled in this job",
     )
     parser.add_argument("--claim", required=True)
     parser.add_argument("--artifact-name", required=True)
     parser.add_argument("--artifacts-root", default="artifacts")
     parser.add_argument("--headless-outcome", required=True)
-    parser.add_argument("--gui-outcome", required=True)
-    parser.add_argument("--isolated-outcome", required=True)
+    parser.add_argument("--apps-outcome", required=True)
     parser.add_argument("--max-failures", type=int, default=20)
     parser.add_argument("--max-annotations", type=int, default=20)
     parser.add_argument("--max-failure-details", type=int, default=5)

@@ -1,8 +1,8 @@
 function result = plan(varargin)
 %PLAN Compile a bounded LabKit test plan from semantic selectors.
 %   RESULT = labkittest.plan(Profile="headless") selects every validated
-%   headless specification. Profile="gui" selects hidden-GUI specifications;
-%   Profile="journeys" selects every App-owned user workflow;
+%   headless specification. Profile="apps" selects every hidden-GUI
+%   specification plus reset-path App isolation evidence;
 %   Profile="changed" derives the local pre-commit change set from Git and
 %   compiles its bounded owner/contract evidence closure. It includes tracked
 %   edits and untracked files; after a clean commit it reports that checkpoint.
@@ -80,9 +80,9 @@ function opts = parseOptions(varargin)
             "File cannot be combined with Owner, Contract, or Environment.");
     end
     if strlength(opts.Profile) > 0 && ~ismember(opts.Profile, ...
-            ["changed", "headless", "gui", "isolated", "journeys", "coverage"])
+            ["changed", "headless", "apps"])
         error("LabKit:TestPlan:UnknownProfile", ...
-            "Profile must be changed, headless, gui, isolated, journeys, or coverage.");
+            "Profile must be changed, headless, or apps.");
     end
 end
 
@@ -96,22 +96,13 @@ function [queries, reasons, manualChecks, classifications] = planQueries(opts)
             case "headless"
                 queries = query("", "", "headless");
                 reasons = "profile selects every headless specification";
-            case "coverage"
+            case "apps"
                 queries = [ ...
-                    query("", "", "headless"), ...
-                    query("", "workflow", "hidden-gui")];
+                    query("", "", "hidden-gui"), ...
+                    query("", "", "path-isolated")];
                 reasons = [ ...
-                    "coverage profile selects every headless specification", ...
-                    "coverage profile includes every native App user journey"];
-            case "gui"
-                queries = query("", "", "hidden-gui");
-                reasons = "profile selects every hidden-GUI specification";
-            case "journeys"
-                queries = query("", "workflow", "hidden-gui");
-                reasons = "profile selects every App-owned user workflow";
-            case "isolated"
-                queries = query("", "", "path-isolated");
-                reasons = "profile selects every path-isolated specification";
+                    "apps profile selects every hidden-GUI specification", ...
+                    "apps profile includes reset-path App isolation evidence"];
             case "changed"
                 paths = opts.ChangedPaths;
                 if isempty(paths)

@@ -28,10 +28,6 @@ function result = run(varargin)
         cleanup = onCleanup(@() delete(progress));
         runner.addPlugin(matlab.unittest.plugins.DiagnosticsRecordingPlugin);
         runner.addPlugin(progress);
-        if opts.Coverage
-            runner.addPlugin(coveragePlugin( ...
-                artifacts.Folder, group.Environment, opts.CoverageRoots));
-        end
         environmentCleanup = applyEnvironment(group.Environment);
         results{k} = runner.run(suite);
         delete(environmentCleanup);
@@ -41,9 +37,6 @@ function result = run(varargin)
     writeJUnit(fullfile(artifacts.Folder, "junit.xml"), results);
     writeJson(fullfile(artifacts.Folder, "summary.json"), ...
         summaryPayload(compiledPlan, results, failed));
-    if opts.Coverage
-        writeCoverageSummary(artifacts.Folder, compiledPlan.Groups);
-    end
     if any(failed)
         error("LabKit:TestRun:Failure", "One or more LabKit specifications failed.");
     end
@@ -83,8 +76,6 @@ function [compiledPlan, opts] = parseOptions(varargin)
     p.addParameter("Plan", struct(), @isPlanOrEmpty);
     p.addParameter("RunName", "labkittest", @isTextScalar);
     p.addParameter("ArtifactsRoot", defaultArtifactsRoot(), @isTextScalar);
-    p.addParameter("Coverage", false, @isLogicalScalar);
-    p.addParameter("CoverageRoots", defaultCoverageRoots(), @isFolderList);
     p.KeepUnmatched = true;
     p.parse(varargin{:});
     opts = p.Results;
@@ -100,7 +91,6 @@ function [compiledPlan, opts] = parseOptions(varargin)
     end
     opts.RunName = string(opts.RunName);
     opts.ArtifactsRoot = absolutePath(opts.ArtifactsRoot);
-    opts.CoverageRoots = string(opts.CoverageRoots);
 end
 
 function pairs = unmatchedPairs(values)
@@ -123,21 +113,6 @@ function tf = isTextScalar(value)
     tf = ischar(value) || (isstring(value) && isscalar(value));
 end
 
-function tf = isLogicalScalar(value)
-    tf = islogical(value) && isscalar(value);
-end
-
-function tf = isFolderList(value)
-tf = (ischar(value) || isstring(value) || iscellstr(value)) && ...
-    ~isempty(value);
-if ~tf
-    return
-end
-values = string(value);
-tf = all(strlength(values) > 0 & arrayfun(@(path) ...
-    exist(char(path), "dir") == 7, values));
-end
-
 function value = absolutePath(value)
     value = string(value);
     if ispc
@@ -153,58 +128,6 @@ end
 function root = defaultArtifactsRoot()
     packageFolder = fileparts(mfilename("fullpath"));
     root = fullfile(fileparts(fileparts(packageFolder)), "artifacts", "runs");
-end
-
-function root = repositoryRoot()
-    packageFolder = fileparts(mfilename("fullpath"));
-    root = fileparts(fileparts(packageFolder));
-end
-
-function roots = defaultCoverageRoots()
-root = repositoryRoot();
-roots = [string(fullfile(root, "+labkit")), string(fullfile(root, "apps"))];
-end
-
-function plugin = coveragePlugin(folder, environment, coverageRoots)
-    coverageFolder = fullfile(folder, "coverage", char(environment));
-    html = fullfile(coverageFolder, "html");
-    if exist(html, "dir") ~= 7
-        mkdir(html);
-    end
-    formats = [ ...
-        matlab.unittest.plugins.codecoverage.CoverageReport( ...
-            html, "MainFile", "index.html"), ...
-        matlab.unittest.plugins.codecoverage.CoberturaFormat( ...
-            fullfile(coverageFolder, "coverage.xml"))];
-    plugin = matlab.unittest.plugins.CodeCoveragePlugin.forFolder( ...
-        cellstr(coverageRoots), ...
-        "IncludingSubfolders", true, "Producing", formats);
-end
-
-function writeCoverageSummary(folder, groups)
-entries = repmat(struct("environment", "", "lineRate", 0, ...
-    "linesCovered", 0, "linesValid", 0), 1, numel(groups));
-for index = 1:numel(groups)
-    environment = string(groups(index).Environment);
-    file = fullfile(folder, "coverage", char(environment), "coverage.xml");
-    source = string(fileread(file));
-    entries(index) = struct( ...
-        "environment", char(environment), ...
-        "lineRate", coverageAttribute(source, "line-rate"), ...
-        "linesCovered", coverageAttribute(source, "lines-covered"), ...
-        "linesValid", coverageAttribute(source, "lines-valid"));
-end
-writeJson(fullfile(folder, "coverage", "summary.json"), ...
-    struct("populations", entries));
-end
-
-function value = coverageAttribute(source, name)
-token = regexp(source, name + "=""([^""]+)""", "tokens", "once");
-if isempty(token)
-    error("LabKit:TestRun:InvalidCoverageReport", ...
-        "Coverage report is missing the %s attribute.", name);
-end
-value = str2double(token{1});
 end
 
 function tf = hasFailures(results)
