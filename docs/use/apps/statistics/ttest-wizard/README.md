@@ -97,7 +97,7 @@ The bar visual contract is:
 
 The first four colors are soft green, orange, blue, and yellow; the palette cycles for additional groups. The box style uses the same group colors with subtler fill, dark outlines, whiskers, and medians. When individual values are shown, the box chart's own outlier markers are suppressed so observations are not drawn twice. Optional controls overlay individual values, hide SD bars on bar plots, hide brackets, and edit the title or y-axis label.
 
-Initial limits include bars or boxes, visible individual values, error bars, and significance brackets. **Reset plot view** recomputes that fitted viewport without rerunning the tests or changing project data. Switching between bar and box styles also accepts the new style's fitted limits; ordinary redraws otherwise preserve the user's current zoom.
+Initial limits include bars or boxes, visible individual values, error bars, and significance brackets. Each completed **Run / refresh comparisons** fits the new result family. **Reset plot view** recomputes that fitted viewport without rerunning the tests or changing project data. Switching between bar and box coordinate grammars also accepts the new style's fitted limits; point, summary, p-value, title, label, and other presentation redraws preserve the user's current zoom.
 
 Use **Plot > Pop out all plots** for a standalone MATLAB figure. The popout can be passed to [Figure Studio](../../labkit-core/figure-studio/README.md) for further visual styling without recalculating the tests.
 

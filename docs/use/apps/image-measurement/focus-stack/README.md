@@ -35,6 +35,8 @@ Project restore validates the selected fusion preset, odd focus-window range, sm
 6. Run the stack and inspect both fused image and focus map.
 7. Export fused PNG, focus-map PNG, and summary CSV.
 
+Selecting new focal-plane sources or completing a new fusion fits the result canvas. Status, table, and presentation-only redraws of the same result preserve the current zoom.
+
 ## Algorithm
 
 Images are normalized to grayscale or RGB double data on common geometry. A Gaussian/Laplacian pyramid is built for each plane. Local squared Laplacian detail energy chooses the strongest plane at each level. Confidence is the relative separation between the best and second-best evidence.

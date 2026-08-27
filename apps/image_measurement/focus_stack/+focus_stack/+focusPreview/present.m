@@ -1,8 +1,8 @@
 % App-owned implementation for focus_stack.focusPreview.present within the focus_stack product workflow.
-function view = present(state)
+function view = present(cache, projectResults, sourceCount, viewRevision)
 %PRESENT Build the Focus Stack result summary and paired preview model.
-cacheResult = state.session.cache.result;
-result = visibleResult(state, cacheResult);
+cacheResult = cache.result;
+result = visibleResult(cache, projectResults, cacheResult);
 view = labkit.app.view.Snapshot();
 view = view.enabled("exportFused", cacheResult.ok);
 view = view.enabled("exportFocusMap", cacheResult.ok);
@@ -10,36 +10,35 @@ view = view.enabled("exportSummary", cacheResult.ok);
 if result.ok
     data = focus_stack.focusPreview.resultTableData(result);
     details = focus_stack.focusPreview.details( ...
-        result, state.session.cache.sourcePaths, ...
-        cellstr(state.project.results.registrationLines));
+        result, cache.sourcePaths, ...
+        cellstr(projectResults.registrationLines));
     if ~cacheResult.ok
         details{end + 1} = ...
             "Saved summary restored; rerun to rebuild image previews and exports.";
     end
-    if strlength(state.project.results.lastOutputPath) > 0
+    if strlength(projectResults.lastOutputPath) > 0
         details{end + 1} = ...
-            "Last output: " + state.project.results.lastOutputPath;
+            "Last output: " + projectResults.lastOutputPath;
     end
 else
     data = focus_stack.focusPreview.initialResultTable();
-    details = pendingDetails(numel(state.session.cache.images), ...
-        numel(state.project.inputs.sources));
+    details = pendingDetails(numel(cache.images), sourceCount);
 end
 view = view.tableData("resultTable", data, Columns=["Metric" "Value"]);
 view = view.text("details", strjoin(string(details), newline));
 view = view.renderPlot("preview", struct( ...
-    "images", {state.session.cache.images}, "result", cacheResult));
+    "images", {cache.images}, "result", cacheResult), ...
+    ViewRevision=viewRevision);
 end
 
-function result = visibleResult(state, cacheResult)
+function result = visibleResult(cache, projectResults, cacheResult)
 result = cacheResult;
 if result.ok
     return;
 end
-durable = state.project.results.lastRun;
-if durable.ok && strlength(state.session.cache.currentFingerprint) > 0 && ...
-        state.session.cache.currentFingerprint == ...
-        state.project.results.lastRunFingerprint
+durable = projectResults.lastRun;
+if durable.ok && strlength(cache.currentFingerprint) > 0 && ...
+        cache.currentFingerprint == projectResults.lastRunFingerprint
     result = durable;
 end
 end

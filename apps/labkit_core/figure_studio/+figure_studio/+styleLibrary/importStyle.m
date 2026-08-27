@@ -17,7 +17,6 @@ state.project.parameters.gridChoice = onOff( ...
     state.project.parameters.style.gridVisible);
 state.project.parameters.boundaryChoice = onOff( ...
     state.project.parameters.style.boundaryLines);
-state.session.cache.viewRevision = state.session.cache.viewRevision + 1;
 state.session.workflow.status = "Imported reusable figure style.";
 state.project.results.lastExport = [];
 state.project.results.lastOutputPath = "";

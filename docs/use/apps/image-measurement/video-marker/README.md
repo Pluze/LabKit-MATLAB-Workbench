@@ -35,7 +35,7 @@ For a new project, choose a preset or add keypoints, edit their names, reorder t
 
 Point marking remains active while a video is open. A complete edited frame is a manual anchor. Moving forward predicts every ordered point using cropped multiscale patch matching. The tracker compares mean-centered local patches by normalized correlation, refines accepted matches to subpixel coordinates, and reports confidence for each point. A rejected point retains its bounded motion- prior estimate. Predicted frames remain editable drafts. Editing a complete frame makes it a new manual anchor for later prediction. Jumping forward propagates through intermediate frames and does not overwrite existing manual anchors.
 
-Frame navigation and marker refresh preserve the current zoom. Opening a new video or project starts at its own home view.
+Same-size frame navigation and marker refresh preserve the current zoom. Opening a new video or project, or encountering a different frame canvas, starts at that canvas's home view.
 
 ## Snapshot And Portability
 

@@ -10,6 +10,8 @@ applicationState.session.cache.events = [];
 applicationState.session.cache.segments = [];
 applicationState.session.cache.template = [];
 applicationState.session.cache.measurements = [];
+applicationState.session.cache.plotViewRevision = ...
+    applicationState.session.cache.plotViewRevision + 1;
 if ~isempty(applicationState.session.cache.signal)
     applicationState.session.cache.workingSignal = ...
         applicationState.session.cache.signal;

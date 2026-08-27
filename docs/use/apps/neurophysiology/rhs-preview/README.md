@@ -29,6 +29,8 @@ labkit_RHSPreview_app
 
 Only the displayed window is decoded. This keeps navigation practical for long recordings and does not change the source file.
 
+Changing the recording, channel family, plotted channel set, or displayed time window fits the stacked traces to the requested domain. Editing the ROI overlay and other presentation-only redraws preserve the current zoom.
+
 Successful window reads update the preview without adding a routine INFO milestone for every navigation step. Read failures still produce an actionable warning, and explicit refresh remains available when the source may have changed.
 
 ## Choose Channels And Roles

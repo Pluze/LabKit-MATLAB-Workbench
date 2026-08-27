@@ -23,6 +23,17 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
 
             runtime.applyControlValue("peakMethod", "Local peaks");
             runtime.invokeAction("analyze");
+            for id = ["wave" "noise" "snr" "template"]
+                ax = findall(figureValue, "Tag", "previewAxes." + id);
+                ax.XLim = [-100 -50];
+                ax.YLim = [-100 -50];
+            end
+            runtime.invokeAction("analyze");
+            for id = ["wave" "noise" "snr" "template"]
+                ax = findall(figureValue, "Tag", "previewAxes." + id);
+                testCase.verifyEqual(string(ax.XLimMode), "auto");
+                testCase.verifyEqual(string(ax.YLimMode), "auto");
+            end
             summaryTab = findall(figureValue, "Tag", "summaryResults");
             summaryTab.Parent.SelectedTab = summaryTab;
             drawnow;

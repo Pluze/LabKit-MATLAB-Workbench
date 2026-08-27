@@ -42,6 +42,8 @@ Changing a range refreshes all non-explicit ticks, so values newly inside the ra
 
 Color-mapped panels expose colormap, color limits, colorbar visibility, location, label, tick values, and tick labels. Legends retain source content by default and expose display, placement, font size, columns, and border.
 
+Choosing a different source or panel, editing an axis range/scale/direction, or explicitly recalculating limits fits the preview to that coordinate domain. Typography, colors, ticks, labels, layers, legends, colorbars, and annotation edits preserve the region being inspected, including on dual-Y figures.
+
 ## Publication Style And Geometry
 
 The high-value global controls remain intentionally small:

@@ -12,5 +12,21 @@ classdef GaitPresentationSpec < matlab.unittest.TestCase
 
             testCase.verifyClass(snapshot, "labkit.app.view.Snapshot");
         end
+
+
+        function sourceResultAndSelectedStepOwnViewportRevision(testCase)
+            sources = struct("id", "pose-a");
+            original = gait_analysis.gaitPreview.viewportRevision(sources, 2);
+
+            testCase.verifyEqual( ...
+                gait_analysis.gaitPreview.viewportRevision(sources, 2), ...
+                original);
+            testCase.verifyNotEqual( ...
+                gait_analysis.gaitPreview.viewportRevision( ...
+                    struct("id", "pose-b"), 2), original);
+            testCase.verifyNotEqual( ...
+                gait_analysis.gaitPreview.viewportRevision(sources, 3), ...
+                original);
+        end
     end
 end

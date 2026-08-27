@@ -10,6 +10,8 @@ if isempty(paths) || strlength(paths(1)) == 0
 end
 filepath = paths(1);
 preview = ecg_print.sourceFiles.previewFileHeader(filepath, 18);
+plotViewRevision = ...
+    applicationState.session.cache.plotViewRevision + 1;
 try
     [cache, status] = ecg_print.sourceFiles.loadRecording( ...
         filepath, applicationState.project.parameters, ...
@@ -18,6 +20,7 @@ catch cause
     callbackContext.log("error", "ecg_print.sourcefiles.refreshimport.exception", "Recording parse failed", ...
         Category="failure", Audience="developer", Exception=cause);
     cache = ecg_print.sourceFiles.emptyCache();
+    cache.plotViewRevision = plotViewRevision;
     cache.filepath = filepath;
     cache.filePreview = preview;
     applicationState.session.cache = cache;
@@ -34,6 +37,7 @@ catch cause
     return;
 end
 cache.filePreview = preview;
+cache.plotViewRevision = plotViewRevision;
 applicationState.session.cache = cache;
 applicationState.session.workflow.importStatus = status;
 applicationState.project.parameters.channel = string( ...

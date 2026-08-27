@@ -33,7 +33,7 @@ Use **Add FLIR files** to select one or more radiometric images. Use the separat
 6. Review the numeric results and markers.
 7. Export the current image or the full batch.
 
-Placing or dragging a reading ROI and refreshing its marker preserves the current zoom. The reading is recalculated from the thermal matrix, not from screen colors.
+Placing or dragging a reading ROI and refreshing its marker preserves the current zoom. Palette, mapping, and gamma changes also preserve the inspected region. Selecting a different source or changing the temperature range fits the paired image and temperature-scale axes to their new domains. The reading is recalculated from the thermal matrix, not from screen colors.
 
 ## ROI Readings
 

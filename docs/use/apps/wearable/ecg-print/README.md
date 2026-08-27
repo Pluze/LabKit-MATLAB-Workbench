@@ -46,6 +46,8 @@ The filter is applied to the full selected channel before the time region is cro
 
 The **Files + Analysis** tab keeps the workflow in five ordered sections: **Recording**, **Import Parsing**, **Channel + ROI**, **Signal Processing + SNR**, and **Exports**. Bounded numeric settings use paired spinner-and-slider controls. **Summary + Results** contains the analysis summary and file-header preview. **Tools > Diagnostics > Open Session Log...** records the current workflow and earlier runtime context. The **ECG Preview** workspace keeps four vertically stacked time-series axes available on every tab.
 
+Manual zoom and pan are retained while the current result is redrawn. Opening or reparsing a recording, selecting another channel, or completing a new analysis refits all four preview axes to the new plotted data.
+
 ## Analyze A Signal In MATLAB Code
 
 ```matlab

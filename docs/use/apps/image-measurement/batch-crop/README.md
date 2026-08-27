@@ -33,7 +33,7 @@ Use **Restore manifest** to reopen the source images and task state recorded by 
 6. Duplicate tasks for additional ROIs.
 7. Choose format and output folder, then export. A later session can use **Restore manifest** to continue from that exported task state.
 
-The preview rectangle remains draggable by either its center marker or its interior; a click without dragging sets its center at that preview location, including inside the rectangle. Change crop width and height with their controls. Editing the ROI updates the selected task immediately; switching tasks restores that task's geometry. ROI refreshes preserve axes zoom.
+The preview rectangle remains draggable by either its center marker or its interior; a click without dragging sets its center at that preview location, including inside the rectangle. Change crop width and height with their controls. Editing the ROI updates the selected task immediately; switching tasks restores that task's geometry. ROI, crop-size, scale, and center refreshes preserve axes zoom. Selecting a different source or changing rotation, padding, or displayed canvas dimensions fits the transformed image domain.
 
 Center, rotation, and padding adjustments update the selected task and preview without recording a routine INFO message for each intermediate setting. Export milestones and actionable failures remain available in diagnostics.
 

@@ -38,6 +38,8 @@ All three are required before **Generate overlays + summary** can produce a resu
 
 Changing an option updates the reproducible project parameters. Generate again before export when inputs or processing parameters change.
 
+Loading a different DIC/reference/mask set or generating overlays on a different pixel canvas fits both overlay axes to that image domain. Optical-image styling and regenerated pixels on the same canvas preserve the region currently being inspected.
+
 An invalid color range or a failed bounded option refresh produces one actionable warning. Successful option edits do not add a separate INFO entry for every adjustment.
 
 ## Processing And Scientific Semantics

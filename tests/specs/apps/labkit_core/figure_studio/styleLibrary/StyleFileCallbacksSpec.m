@@ -27,7 +27,7 @@ classdef StyleFileCallbacksSpec < matlab.unittest.TestCase
                 "Custom imported");
             testCase.verifyEqual( ...
                 state.project.parameters.style.tickFontSize, 18.5);
-            testCase.verifyEqual(state.session.cache.viewRevision, 2);
+            testCase.verifyEqual(state.session.cache.viewRevision, 1);
             clear cleanup
         end
     end

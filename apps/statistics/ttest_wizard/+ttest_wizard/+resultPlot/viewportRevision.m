@@ -1,0 +1,9 @@
+% Expected caller: T-Test Wizard result presentation and direct tests. New
+% result generations, plot coordinate grammars, and explicit resets refit;
+% points, summaries, p-value annotations, titles, and labels preserve zoom.
+function revision = viewportRevision(plotType, resultRevision, hasResult)
+revision = string(jsonencode(struct( ...
+    "plotType", string(plotType), ...
+    "resultRevision", resultRevision, ...
+    "hasResult", logical(hasResult))));
+end
