@@ -35,7 +35,9 @@ classdef (Sealed) Snapshot
     %   choices - Text array or cellstr of legal choices.
     %   limits - Increasing finite two-element numeric row.
     %   enabled - Logical scalar availability.
-    %   text - Scalar text.
+    %   text - Scalar text. For a slider target, this replaces the visible
+    %       slider label; for other text-capable targets, it replaces the
+    %       target's displayed text.
     %   statuses - Empty or one reader-facing status per file-list row.
     %   selection - Selection value accepted by the target.
     %   data - App-owned table, numeric array, or cell array.

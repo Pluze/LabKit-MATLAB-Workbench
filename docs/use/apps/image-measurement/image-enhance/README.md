@@ -27,7 +27,7 @@ The batch accepts selected image files; directory actions can collect a flat or 
 
 1. Load images and select a representative source.
 2. Decide whether steps are shared across the batch.
-3. Choose a tool and set its controls.
+3. Choose a tool and set its controls; the two adjustment labels update to show that tool's parameter names and units.
 4. For White ROI calibration, draw the white-background ROI first.
 5. Apply the tool to history and inspect Enhanced, Original, or Before | After.
 6. Undo or reset history as needed.
