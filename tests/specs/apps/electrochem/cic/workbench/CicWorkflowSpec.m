@@ -1,7 +1,7 @@
 classdef CicWorkflowSpec < matlab.unittest.TestCase
     %CICWORKFLOWSPEC Verify the CIC layout wiring that headless specs cannot prove.
 
-    methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
+    methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
         function loadsRecomputesExportsAndRestoresAChronoSession(testCase)
             first = testfixtures.dta.file( ...
                 'chrono_chronopot_current_pulse_0p2ms.DTA');
@@ -27,13 +27,24 @@ classdef CicWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string( ...
                 findall(figure, "Tag", "files").Multiselect), "on");
             runtime.applyFileSelection("files", string(first), 1);
+            choices = cic.analysisRun.analysisChoices();
+            runtime.applyControlValue("preset", choices.presets(3));
+            runtime.applyControlValue("cathLimit", -0.5);
+            runtime.applyControlValue("anodLimit", 0.7);
+            runtime.applyControlValue("pulseMode", choices.pulseModes(3));
+            runtime.applyControlValue("useMeasuredCurrent", false);
+            testCase.verifyEqual(runtime.State.project.parameters.cathLimit, -0.5);
+            testCase.verifyEqual(runtime.State.project.parameters.anodLimit, 0.7);
+            testCase.verifyEqual(runtime.State.project.parameters.pulseMode, ...
+                choices.pulseModes(3));
+            testCase.verifyFalse(runtime.State.project.parameters.useMeasuredCurrent);
             results = findall(figure, "Tag", "results");
             top = findall(figure, "Tag", "plotAxes.top");
             testCase.verifyEqual(size(results.Data), [1, 8]);
             testCase.verifyNotEmpty(top.Children);
             testCase.verifyNotEmpty(findall(figure, "Tag", "plotAxes.bottom").Children);
             testCase.verifyTrue(contains(string( ...
-                findall(figure, "Tag", "detect").Value), "metadata-current"));
+                findall(figure, "Tag", "detect").Value), "auto-from-Im"));
 
             [fitted, inspected] = inspectViewport(top);
             runtime.applyControlValue("topGrid", false);

@@ -29,27 +29,26 @@ classdef CropRoiPresentationSpec < matlab.unittest.TestCase
         end
 
         function refitsOnlyForSourceOrCanvasTransformChanges(testCase)
-            item = batch_crop.cropTasks.emptyTask();
-            item.sourceId = "image-a";
+            item = batch_crop.sourceFiles.emptyItem();
+            sourceId = "image-a";
             geometry = struct("canvas", zeros(80, 120));
-            base = batch_crop.cropPreview.viewportRevision(item, geometry);
+            base = batch_crop.cropPreview.viewportRevision( ...
+                sourceId, item, geometry);
 
             transformed = item;
             transformed.angleDeg = 15;
-            replacement = item;
-            replacement.sourceId = "image-b";
-
             testCase.verifyEqual( ...
-                batch_crop.cropPreview.viewportRevision(item, geometry), base);
+                batch_crop.cropPreview.viewportRevision( ...
+                    sourceId, item, geometry), base);
             testCase.verifyNotEqual( ...
                 batch_crop.cropPreview.viewportRevision( ...
-                    transformed, geometry), base);
+                    sourceId, transformed, geometry), base);
             testCase.verifyNotEqual( ...
                 batch_crop.cropPreview.viewportRevision( ...
-                    replacement, geometry), base);
+                    "image-b", item, geometry), base);
             testCase.verifyNotEqual( ...
                 batch_crop.cropPreview.viewportRevision( ...
-                    item, struct("canvas", zeros(90, 120))), base);
+                    sourceId, item, struct("canvas", zeros(90, 120))), base);
         end
     end
 end

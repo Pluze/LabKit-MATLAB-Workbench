@@ -28,6 +28,12 @@ enforce taste. When compatibility remains supported, test the saved input and
 current output rather than the migration project or intermediate shape that
 introduced it. Before adding a narrow regression, first extend an existing
 owner-level behavior proof when that preserves a clear failure identity.
+Every new or materially changed test names an independent oracle and a
+plausible production counterfactual that would make it fail. Code execution,
+absence of an exception, a fixture reproduced by the same algorithm, and an
+implementation-shaped field count are not sufficient assertions. Use
+coverage to find omissions, never as a reason to retain tautological or
+unsupported tests.
 
 Assert producer-owned values, records, events, identifiers, and artifacts
 before diagnostic presentation. When console output is itself relevant,
@@ -74,7 +80,17 @@ owns and restores its hidden-visibility fixture even when its catalog tag is
 GUI. Callback tests use a contract-complete context or a narrow fake covering
 every operation the callback invokes.
 
-`headless`, `gui`, `isolated`, and `coverage` are full catalog profiles.
+Every App owns at least one `Contract:workflow`, `Env:hidden-gui` core journey
+that enters through its production source boundary and reaches a useful
+result, continuation, or explicit supported failure. Framework conformance
+owns generic widget mechanics; App evidence owns the outcome of every custom
+declared signal. `labkittest.appEvidence` is an omission detector only: every
+declared GUI signal requires an exact native-runtime operation; source or
+callback name matching is never accepted as behavior evidence. Each matched
+operation still requires a meaningful assertion in
+the owning specification.
+
+`headless`, `gui`, `journeys`, `isolated`, and `coverage` are full catalog profiles.
 `changedFast` is focused local evidence: an App or facade path maps to its
 bounded closure, while framework, build, and repository-policy paths map to
 explicit system evidence. Documentation paths are explicitly ignored because
@@ -87,6 +103,14 @@ native interaction or scientific review, never passing test evidence. A
 state-only geometry assertion does not prove pointer ownership or native
 control creation; add hidden-GUI structure evidence when either is the
 regression boundary.
+
+Coverage records headless logic and hidden-GUI workflow execution separately.
+Review changed lines and per-App gaps in both populations; do not publish a
+single blended percentage that hides an unexercised user journey. GUI action
+combinations follow reachable workflow states and risk partitions rather than
+a mechanical Cartesian product. Native dialogs, pointer feel, visual design,
+real-data suitability, and scientific interpretation remain explicit manual
+evidence and cannot be replaced by hidden figures.
 
 All durable suite runners use `labkittest.ProgressPlugin` so the console and
 event artifact identify suite size, the active test, completed/total work, and

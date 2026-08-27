@@ -1,7 +1,7 @@
 classdef CurvatureWorkflowSpec < matlab.unittest.TestCase
     %CURVATUREWORKFLOWSPEC Specify traced-fit export through the workbench.
 
-    methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
+    methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
         function tracesFitsExportsAndRestoresASyntheticCurve(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -23,13 +23,32 @@ classdef CurvatureWorkflowSpec < matlab.unittest.TestCase
             runtime.applyFileSelection("imageFile", string(imagePath), 1);
             runtime.invokeAction("startCurveEdit");
             runtime.applyInteraction("curve", "interactionChanged", arcPoints());
+            runtime.invokeAction("undoCurvePoint");
+            testCase.verifyNumElements( ...
+                runtime.State.project.annotations.curvePoints(:, 1), 5);
+            runtime.invokeAction("clearCurve");
+            testCase.verifyEmpty(runtime.State.project.annotations.curvePoints);
+            runtime.applyInteraction("curve", "interactionChanged", arcPoints());
             testCase.verifyEmpty(findobj( ...
                 figureValue, DisplayName="curve"));
             runtime.invokeAction("startCurveEdit");
+            runtime.invokeAction("measureScaleReference");
+            runtime.applyInteraction("scaleReference", ...
+                "interactionChanged", [10 10; 50 10]);
+            runtime.invokeAction("measureScaleReference");
             runtime.applyControlValue("scaleReferencePixels", 40);
             runtime.applyControlValue("scaleReferenceLength", 10);
             runtime.applyControlValue("scaleCalibrationUnit", "mm");
+            runtime.applyControlValue("scaleBarLength", 5);
+            runtime.applyControlValue("scaleBarPosition", "Top left");
+            runtime.applyControlValue("scaleBarColor", "White");
+            runtime.invokeAction("placeScaleBar");
+            testCase.verifyEqual( ...
+                runtime.State.session.view.scaleBar.color, [1 1 1]);
+            runtime.applyControlValue("densify", true);
+            runtime.applyControlValue("densePointCount", 120);
             runtime.invokeAction("fitCurvature");
+            runtime.applyControlValue("showDensePoints", false);
             runtime.invokeAction("exportCsv");
             runtime.invokeAction("exportOverlay");
 
@@ -41,6 +60,9 @@ classdef CurvatureWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEmpty(findall(figureValue, ...
                 "Tag", "measureCurveLength"));
             testCase.verifyGreaterThan(runtime.State.project.results.fit.R_show, 0);
+            testCase.verifyEqual( ...
+                runtime.State.project.parameters.densePointCount, 120);
+            testCase.verifyFalse(runtime.State.project.parameters.showDensePoints);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.image").Children);
             testCase.verifyTrue(isfile(csvPath));
             testCase.verifyTrue(isfile(overlayPath));

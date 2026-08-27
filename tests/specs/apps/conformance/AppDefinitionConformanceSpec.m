@@ -76,5 +76,29 @@ classdef AppDefinitionConformanceSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
+        function ownsAtLeastOneNativeCoreJourney(testCase, App)
+            evidence = labkittest.appEvidence(App);
+
+            testCase.verifyGreaterThanOrEqual(evidence.WorkflowCount, 1, ...
+                "Every public App requires a native source-to-result workflow: " + ...
+                App.Package);
+        end
+
+        function drivesEveryDeclaredInteractionThroughTheNativeRuntime( ...
+                testCase, App)
+            evidence = labkittest.appEvidence(App);
+            missing = evidence.MissingRuntimeInteractions;
+            labels = strings(1, numel(missing));
+            for index = 1:numel(missing)
+                labels(index) = missing(index).Target + " (" + ...
+                    missing(index).Signal + ")";
+            end
+
+            testCase.verifyEmpty(missing, ...
+                "Every declared App interaction requires a native runtime " + ...
+                "workflow operation: " + App.Package + " — " + ...
+                join(labels, ", "));
+        end
+
     end
 end

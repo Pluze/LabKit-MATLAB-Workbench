@@ -188,9 +188,13 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifySubstring(workflow, "tasks: docsCheck");
         end
 
-        function ciUsesTwoModesWithoutWeakeningManualRecovery(testCase)
+        function ciGatesPlatformDocsAndCoverageIndependently(testCase)
             root = labkittest.setup();
             workflow = text(root, ".github/workflows/ci.yml");
+            platformJob = workflowJob(workflow, "platform-matrix");
+            docsJob = workflowJob(workflow, "docs-check");
+            coverageJob = workflowJob(workflow, "coverage");
+            gateJob = workflowJob(workflow, "ci-gate");
 
             testCase.verifySubstring(workflow, "policy:");
             testCase.verifySubstring(workflow, "name: Repository policy");
@@ -217,7 +221,9 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "git merge-base origin/main ""${HEAD_SHA}""");
             testCase.verifySubstring(workflow, "fetch-depth: 0");
             testCase.verifyFalse(contains(workflow, "classify_ci_scope"));
-            testCase.verifyEqual(count(workflow, "needs: policy"), 2);
+            testCase.verifySubstring(platformJob, "needs: policy");
+            testCase.verifySubstring(docsJob, "needs: policy");
+            testCase.verifySubstring(coverageJob, "needs: policy");
             testCase.verifySubstring(workflow, "docs-check:");
             testCase.verifySubstring(workflow, "tasks: docsCheck");
             testCase.verifySubstring(workflow, "release: R2022b");
@@ -232,7 +238,14 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
             testCase.verifyEqual(count(workflow, "run_headless: true"), 3);
             testCase.verifyEqual(count(workflow, "run_gui: true"), 5);
             testCase.verifyEqual(count(workflow, "run_isolated: true"), 5);
-            testCase.verifyEqual(count(workflow, "cache: true"), 2);
+            testCase.verifySubstring(platformJob, "cache: true");
+            testCase.verifySubstring(docsJob, "cache: true");
+            testCase.verifySubstring(coverageJob, "cache: true");
+            testCase.verifySubstring(coverageJob, "tasks: coverage");
+            testCase.verifySubstring(coverageJob, ...
+                "name: Start virtual display for native App journeys");
+            testCase.verifySubstring(coverageJob, ...
+                "path: artifacts/test-results/coverage/coverage/**");
             testCase.verifySubstring(workflow, ...
                 "name: Start Linux virtual display");
             testCase.verifySubstring(workflow, ...
@@ -262,10 +275,14 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "if: github.event_name != 'push'"), 2);
             testCase.verifySubstring(workflow, ...
                 "needs.platform-matrix.result");
-            testCase.verifySubstring(workflow, "ci-gate:");
-            testCase.verifySubstring(workflow, "name: CI Gate");
-            testCase.verifySubstring(workflow, "needs.policy.result");
-            testCase.verifySubstring(workflow, "docs-check.result");
+            testCase.verifySubstring(gateJob, "name: CI Gate");
+            testCase.verifySubstring(gateJob, "- platform-matrix");
+            testCase.verifySubstring(gateJob, "- docs-check");
+            testCase.verifySubstring(gateJob, "- coverage");
+            testCase.verifySubstring(gateJob, "needs.policy.result");
+            testCase.verifySubstring(gateJob, "needs.platform-matrix.result");
+            testCase.verifySubstring(gateJob, "needs.docs-check.result");
+            testCase.verifySubstring(gateJob, "needs.coverage.result");
         end
 
         function pullRequestChecklistContainsOnlyAuthorOwnedMergeObligations(testCase)
@@ -508,6 +525,18 @@ end
 
 function value = text(root, relative)
 value = string(fileread(fullfile(root, relative)));
+end
+
+function section = workflowJob(workflow, name)
+lines = splitlines(workflow);
+startLine = find(lines == "  " + name + ":", 1);
+jobLines = find(~cellfun("isempty", regexp(cellstr(lines), ...
+    "^  [A-Za-z0-9_-]+:$", "once")));
+nextLine = jobLines(find(jobLines > startLine, 1));
+if isempty(nextLine)
+    nextLine = numel(lines) + 1;
+end
+section = join(lines(startLine:nextLine - 1), newline);
 end
 
 function files = productionMatlabFiles(root)

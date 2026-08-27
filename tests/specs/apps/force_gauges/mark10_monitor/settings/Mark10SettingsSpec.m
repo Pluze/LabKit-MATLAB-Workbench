@@ -38,6 +38,45 @@ classdef Mark10SettingsSpec < matlab.unittest.TestCase
                 mark10_monitor.settings.settingValue("mode", "Unknown"), ...
                 "mark10_monitor:settings:InvalidChoice");
         end
+
+        function refreshesAndAppliesEditableSettingsThroughVerifiedReadback(testCase)
+            transportState = containers.Map("KeyType", "char", "ValueType", "any");
+            transportState("command") = "";
+            settingsText = "V1.00;N;CUR;FLTC0;FLTP0;AOUT0;" + ...
+                "AOFF0;FULL;IPOL0;OPOL0";
+            transport = struct( ...
+                "Write", @(bytes) captureCommand(transportState, bytes), ...
+                "Flush", @() [], ...
+                "ReadUntil", @(~, ~) readSettings(transportState, settingsText), ...
+                "ReadFor", @(~) uint8([]), "Pause", @(~) [], ...
+                "Close", @() [], "IsOpen", @() true);
+            connection = struct( ...
+                "Type", "labkit.mark10.connection", "Port", "SYNTHETIC", ...
+                "Timeout", 0.01, "Transport", transport, ...
+                "Identity", struct(), "Capabilities", struct(), ...
+                "Settings", labkit.mark10.decodeSettings(settingsText), ...
+                "RestoreAutoOutput", "AOUT0", ...
+                "AcquisitionMode", "Unknown", "SampleCount", uint64(0), ...
+                "LastFailure", struct("Status", "", "Message", ""));
+            box = containers.Map("KeyType", "char", "ValueType", "any");
+            box("connection") = connection;
+            context = labkittest.createCallbackContext(struct( ...
+                "getResource", @(~) box));
+            state = struct("session", mark10Session());
+            state.session.connection = struct("status", "", ...
+                "lastFailure", "");
+
+            state = mark10_monitor.settings.refresh(state, context);
+            testCase.verifyEqual(state.session.settingsDraft.unit, "N");
+            state = mark10_monitor.settings.apply(state, context);
+
+            testCase.verifyEqual(state.session.connection.status, ...
+                "Settings applied without SAVE.");
+            testCase.verifyEqual(state.session.connection.lastFailure, "");
+            testCase.verifyEqual(state.session.settingsDraft.mode, "CUR");
+            retained = box("connection");
+            testCase.verifyEqual(retained.Settings.OutputFormat, "FULL");
+        end
     end
 end
 
@@ -45,4 +84,20 @@ function session = mark10Session()
 session = struct("settings", struct(), "settingsDraft", struct( ...
     "unit", "N", "mode", "CUR", "currentFilter", "1", ...
     "displayFilter", "1", "outputFormat", "FULL", "autoOutput", "0"));
+end
+
+function state = captureCommand(state, bytes)
+command = strip(erase(string(native2unicode( ...
+    uint8(bytes(:).'), "UTF-8")), char(13)));
+if command ~= "/" && command ~= "\"
+    state("command") = command;
+end
+end
+
+function raw = readSettings(state, settingsText)
+if state("command") == "LIST"
+    raw = uint8(char(settingsText + newline));
+else
+    raw = uint8([]);
+end
 end

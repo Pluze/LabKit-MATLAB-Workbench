@@ -1,7 +1,7 @@
 classdef EisWorkflowSpec < matlab.unittest.TestCase
     %EISWORKFLOWSPEC Specify EIS file loading, plot materialization, and export.
 
-    methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
+    methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
         function loadsPlotsExportsAndRestoresAnEisFile(testCase)
             source = testfixtures.dta.file("eis_potentiostatic_zcurve.DTA");
             unsupported = testfixtures.dta.file( ...
@@ -25,6 +25,11 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             [fitted, inspected] = inspectViewport(axesValue);
             runtime.applyControlValue("showMarkers", false);
             verifyViewport(testCase, axesValue, inspected);
+            runtime.invokeAction("fitAxes");
+            verifyViewport(testCase, axesValue, fitted);
+            runtime.invokeAction("equalAxes");
+            testCase.verifyEqual(axesValue.DataAspectRatio(1), ...
+                axesValue.DataAspectRatio(2), AbsTol=1e-12);
             runtime.applyControlValue("impedanceUnit", units.choices(4));
             expected = fitted ./ 1000;
             verifyViewport(testCase, axesValue, expected);

@@ -946,10 +946,11 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             observed("figure") = runtime.figureHandle();
+            testCase.verifyFalse(runtime.StartupFailed);
 
             runtime.applyControlValue("directSlider", 0.5);
             runtime.applyInteraction( ...
-                "probeRoi", "interactionChanged", [2 2 3 3]);
+                "probeRoi", "interactionChanged", [0.2 0.2 0.3 0.3]);
 
             testCase.verifyEqual(observed("busyCount"), 0);
             testCase.verifyEqual(observed("pointer"), "arrow");
@@ -1243,7 +1244,7 @@ end
 function view = presentDirectManipulationProbe(~)
 view = labkit.app.view.Snapshot() ...
     .renderPlot("directPlot", struct()) ...
-    .rectangle("probeRoi", [1 1 2 2], ImageSize=[10 10]);
+    .rectangle("probeRoi", [0.1 0.1 0.2 0.2]);
 end
 
 function session = createSession(~, ~)

@@ -1,7 +1,7 @@
 classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
     %ECGPRINTWORKFLOWSPEC Specify ECG load, analysis, plot, export, restore.
 
-    methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
+    methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
         function analyzesExportsAndRestoresASyntheticRecording(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -20,6 +20,35 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
                 journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
+
+            runtime.invokeAction("previewHeader");
+            testCase.verifySubstring(string( ...
+                runtime.State.session.cache.filePreview{1}), "time_s");
+            originalRevision = runtime.State.session.cache.plotViewRevision;
+            runtime.applyControlValue("headerLine", 1);
+            runtime.applyControlValue("hasHeader", "Yes");
+            runtime.applyControlValue("timeColumn", "time_s");
+            runtime.applyControlValue("timeUnit", "seconds");
+            runtime.applyControlValue("signalColumns", ...
+                "ECG, Motion, ContactQuality");
+            runtime.applyControlValue("fallbackFs", 500);
+            testCase.verifyGreaterThan( ...
+                runtime.State.session.cache.plotViewRevision, originalRevision);
+            testCase.verifySubstring( ...
+                runtime.State.session.workflow.importStatus, ...
+                "Import settings changed");
+            runtime.invokeAction("refreshImport");
+            testCase.verifyNotEmpty( ...
+                runtime.State.session.cache.recording);
+            testCase.verifyEqual(string( ...
+                runtime.State.session.cache.channelItems), ...
+                ["ECG", "Motion", "ContactQuality"]);
+            runtime.applyControlValue("channel", "Motion");
+            testCase.verifyEqual( ...
+                runtime.State.session.cache.signal.displayName, "Motion");
+            runtime.applyControlValue("channel", "ECG");
+            testCase.verifyEqual( ...
+                runtime.State.session.cache.signal.displayName, "ECG");
 
             runtime.applyControlValue("peakMethod", "Local peaks");
             runtime.invokeAction("analyze");

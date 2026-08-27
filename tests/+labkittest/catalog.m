@@ -14,7 +14,7 @@ function descriptors = catalog(varargin)
 %   labkittest.catalog(Environment=ENVIRONMENT) filters validated descriptors
 %   by their Contract:<name> or Env:<name> test tag. Legal contracts are
 %   product, definition, source, scientific, state, persistence,
-%   presentation, rendering, result, and system. Legal environments are
+%   presentation, rendering, result, workflow, and system. Legal environments are
 %   headless, hidden-gui, and path-isolated.
 %
 %   DESCRIPTORS = labkittest.catalog(SpecsRoot=FOLDER) discovers a separate
@@ -203,7 +203,8 @@ end
 
 function values = legalContracts()
     values = ["product", "definition", "source", "scientific", "state", ...
-        "persistence", "presentation", "rendering", "result", "system"];
+        "persistence", "presentation", "rendering", "result", "workflow", ...
+        "system"];
 end
 
 function values = legalEnvironments()

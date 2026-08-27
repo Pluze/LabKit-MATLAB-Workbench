@@ -1,7 +1,7 @@
 classdef GaitWorkflowSpec < matlab.unittest.TestCase
     %GAITWORKFLOWSPEC Specify Video Marker input, analysis, export, restore.
 
-    methods (Test, TestTags = {'Contract:presentation', 'Env:hidden-gui'})
+    methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
         function analyzesNavigatesExportsAndRestoresSyntheticPose(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -24,9 +24,34 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
                 figureValue, "gaitContextAxes.overview");
             verifyVisibleLineData(testCase, skeletonAxes);
             verifyVisibleLineData(testCase, overviewAxes);
+            runtime.applyControlValue("iliacPoint", "Iliac");
+            runtime.applyControlValue("hipPoint", "Hip");
+            runtime.applyControlValue("kneePoint", "Knee");
+            runtime.applyControlValue("anklePoint", "Ankle");
+            runtime.applyControlValue("footPoint", "Foot");
+            runtime.applyControlValue("frameRate", 60);
+            runtime.applyControlValue("pixelsPerUnit", 2);
+            runtime.applyControlValue("unitName", "mm");
+            runtime.applyControlValue("smoothWindow", 3);
+            runtime.applyControlValue("detectionProminence", 1);
+            runtime.applyControlValue("detectionMinHeightSigma", .5);
+            runtime.applyControlValue("minLiftOffIntervalSeconds", .1);
+            runtime.applyControlValue("minSwingFrames", 2);
+            runtime.applyControlValue("maxSwingFrames", 200);
+            runtime.applyControlValue("minStepLength", .5);
+            runtime.applyControlValue("maxHipTranslation", 1e6);
             runtime.applyControlValue("originAtFirstFrameFirstPoint", true);
             runtime.invokeAction("runAnalysis");
             result = runtime.State.project.results.analysis;
+            options = runtime.State.project.parameters;
+            testCase.verifyEqual([options.frameRate, options.pixelsPerUnit, ...
+                options.smoothWindow, options.detectionProminence, ...
+                options.detectionMinHeightSigma, ...
+                options.minLiftOffIntervalSeconds, options.minSwingFrames, ...
+                options.maxSwingFrames, options.minStepLength, ...
+                options.maxHipTranslation], ...
+                [60, 2, 3, 1, .5, .1, 2, 200, .5, 1e6]);
+            testCase.verifyEqual(options.unitName, "mm");
             sourceTab = oneHandle(figureValue, "source");
             stepDetails = oneHandle(figureValue, "stepDetails");
             testCase.verifyEqual(string(sourceTab.Title), ...

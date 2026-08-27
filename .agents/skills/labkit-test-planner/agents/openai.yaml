@@ -1,4 +1,4 @@
 interface:
   display_name: "LabKit Test Planner"
-  short_description: "Select focused LabKit validation evidence"
-  default_prompt: "Use $labkit-test-planner to select and run the smallest source-owned evidence for this change."
+  short_description: "Design effective LabKit validation evidence"
+  default_prompt: "Use $labkit-test-planner to design source-owned contracts, real App journeys, interaction evidence, and proportionate coverage for this change."

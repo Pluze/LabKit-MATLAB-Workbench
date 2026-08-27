@@ -24,10 +24,30 @@ run already identified specification files through the bundled
 
 ## Choose evidence
 
-Prefer calculation/parser/migration, then presenter/renderer/callback/state,
-then hidden-GUI structure, and finally one bounded App workflow when lower
-layers cannot prove the contract. Hidden GUI does not prove native dialog,
-visual quality, pointer feel, real-data suitability, or scientific validity.
+Use calculation/parser/migration, presenter/renderer/callback/state, generic
+hidden-GUI structure, and App workflow as distinct evidence semantics rather
+than substitutes ordered only by cost. Every App requires at least one bounded
+native core journey from its production source boundary to a useful result,
+continuation, or supported failure. Add further journeys only for distinct
+user goals, reachable state-dependent chains, or failure/recovery boundaries.
+Hidden GUI does not prove native dialog, visual quality, pointer feel,
+real-data suitability, or scientific validity.
+
+Audit a changed App with `labkittest.appEvidence`. Every custom declared signal
+requires an exact native-runtime operation; callback-name matching cannot
+satisfy the GUI inventory. Require an owning
+assertion over domain state, presentation, artifact, or supported failure.
+Treat the report as an omission detector: a matched call or absence of an
+exception is not passing evidence. Do not generate a control
+Cartesian product; partition equivalent values and combinations by scientific
+meaning, reachable workflow state, failure risk, and platform sensitivity.
+
+For every new or materially changed test, identify the independent oracle and
+one plausible production counterfactual that should make it fail for the
+intended reason. Reject fixture/consumer tautologies, implementation-shaped
+counts, and assertions added only to increase coverage. Use mutation testing
+or a deliberate temporary mutation when proportionate, but evaluate assertion
+sensitivity rather than optimizing a mutation score.
 
 Apply the output-assertion boundary in `tests/AGENTS.md`. During failure
 diagnosis, preserve the captured transcript, identify the producer-owned value
@@ -44,9 +64,11 @@ pack protocol. Delete fixture-only specifications and retired manual-replay
 builders. A long run must expose durable progress; a client timeout
 is not test evidence or a MATLAB failure.
 
-Repository profiles are headless, hidden GUI, path-isolated, coverage, and
-`changedFast`. Documentation belongs to `docsCheck`; unknown changed paths fail
-planning until assigned an owner or explicit ignore reason.
+Repository profiles are headless, hidden GUI, App journeys, path-isolated,
+coverage, and `changedFast`. Coverage records headless logic and native journey
+execution separately; report per-App and changed-line gaps without blending
+them into a completeness claim. Documentation belongs to `docsCheck`; unknown
+changed paths fail planning until assigned an owner or explicit ignore reason.
 
 For hosted task-branch feedback, pass the complete push range's explicit changed
 paths to the existing changed planner. Never infer a multi-commit push from a
