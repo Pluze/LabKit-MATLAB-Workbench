@@ -18,10 +18,14 @@ catch ME
     context.log("error", "nerve_response_analysis.analysisrun.runsession.exception", "Analyze nerve response", ...
         Category="failure", Audience="developer", Exception=ME);
     state.session.cache.analysis = [];
+    state.session.cache.plotViewRevision = ...
+        state.session.cache.plotViewRevision + 1;
     state.session.workflow.statusMessage = string(ME.message);
     state.session.workflow.lastAction = "Analysis failed";
     return;
 end
+state.session.cache.plotViewRevision = ...
+    state.session.cache.plotViewRevision + 1;
 state.project.results.lastExport = [];
 state.session.workflow.statusMessage = sprintf("Analyzed %d recording(s).", ...
     state.session.cache.analysis.analyzedCount);

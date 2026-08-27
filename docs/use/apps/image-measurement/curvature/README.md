@@ -29,7 +29,7 @@ The **Files + Analysis** tab contains the complete workflow:
 6. Choose the densification settings and use **Measure length + curvature** to produce both results together.
 7. Export the result CSV and overlay PNG.
 
-The edit buttons change to **Finish curve edit** or **Finish reference edit** while their managed interaction is active. Curve and reference edits are mutually exclusive. Anchor edits and result overlays preserve the current axes zoom.
+The edit buttons change to **Finish curve edit** or **Finish reference edit** while their managed interaction is active. Curve and reference edits are mutually exclusive. Anchor edits, scale-bar changes, and result overlays preserve the current axes zoom. Loading a different image or a canvas with different pixel dimensions fits that image once.
 
 The **Summary + Results** tab reports curve length, radius, curvature, RMSE, fit center, and pixels per selected unit. **Details** explains the next valid step before a result exists and reports the current measurement afterward. **Tools > Diagnostics > Open Session Log...** records file, edit, fit, calibration, export, and runtime actions without consuming a workflow tab. Numeric fit-density and scale-bar adjustments do not add a routine INFO record for every committed value.
 

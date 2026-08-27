@@ -35,6 +35,8 @@ end
 state.session.cache.alignedImages = aligned;
 state.session.cache.result = result;
 state.session.cache.currentFingerprint = task.fingerprint;
+state.session.cache.plotViewRevision = ...
+    state.session.cache.plotViewRevision + 1;
 state.session.workflow.registrationLines = lines;
 state.project.results.lastRun = compact(result);
 state.project.results.lastRunFingerprint = task.fingerprint;

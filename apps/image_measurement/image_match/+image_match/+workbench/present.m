@@ -28,10 +28,15 @@ view = view.enabled("exportImages", ready);
 view = view.text("exportDetails", strjoin(string( ...
     detailLines(applicationState)), newline));
 view = view.value("preview", session.view.previewMode);
+sourceId = "";
+index = session.selection.currentIndex;
+if index >= 1 && index <= numel(project.inputs.sources)
+    sourceId = string(project.inputs.sources(index).id);
+end
 view = view.include(image_match.imagePreview.present( ...
     steps, session.cache.currentItem, ...
     session.cache.previewSource, session.cache.previewResult, ...
-    session.view.previewMode));
+    session.view.previewMode, sourceId));
 end
 
 function lines = detailLines(applicationState)

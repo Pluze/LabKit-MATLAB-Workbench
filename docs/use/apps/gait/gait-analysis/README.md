@@ -50,7 +50,7 @@ Choose **Run analysis**. In **Source + Step Review**, select a row in the step t
 3. iliac-hip, hip-knee, knee-ankle, and ankle-foot length traces;
 4. the complete recording's overlaid skeletons and all named point trajectories as persistent context.
 
-Both spatial plots preserve equal X/Y data units so gait shape is not stretched by the available panel geometry. Loading a new source, running analysis, or changing the selected step fits the new data once; later redraws preserve the user's zoom.
+Both spatial plots preserve equal X/Y data units so gait shape is not stretched by the available panel geometry. Loading a different Video Marker source, running analysis, or changing the selected step fits the new data once; status and presentation redraws preserve the user's zoom.
 
 The **Selected Step Details** box in the control panel reports swing duration, step length, iliac/hip/knee/ankle/foot translations, and each joint's minimum, maximum, and range of motion. The plots remain free of metric text so tracked poses are not covered. You can inspect each step directly without first exporting intermediate figures.
 

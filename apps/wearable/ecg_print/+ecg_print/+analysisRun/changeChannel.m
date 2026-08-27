@@ -26,6 +26,8 @@ applicationState.session.cache.events = [];
 applicationState.session.cache.segments = [];
 applicationState.session.cache.template = [];
 applicationState.session.cache.measurements = [];
+applicationState.session.cache.plotViewRevision = ...
+    applicationState.session.cache.plotViewRevision + 1;
 applicationState.project.results.lastAnalysis = struct();
 applicationState.project.results.lastSegmentExport = [];
 applicationState.project.results.lastWaveformExport = [];

@@ -18,12 +18,15 @@ classdef ResponseReviewWorkflowSpec < matlab.unittest.TestCase
             figureValue = runtime.figureHandle();
 
             runtime.applyFileSelection("inputFile", string(segmentPath), 1);
+            runtime.invokeAction("loadMetrics");
             runtime.applyControlValue("preview", "Aligned");
             runtime.invokeAction("exportMetrics");
 
             defaultFolder = fullfile(folder, "response_review_stats");
             testCase.verifyEqual(height(runtime.State.session.cache.metrics), 2);
             testCase.verifyEqual(height(runtime.State.session.cache.summary), 2);
+            testCase.verifyGreaterThan( ...
+                runtime.State.session.cache.plotViewRevision, 0);
             testCase.verifyEqual(runtime.State.session.view.previewMode, "Aligned");
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview").Children);
             testCase.verifyTrue(isfile(fullfile(defaultFolder, "response_review_metrics.csv")));

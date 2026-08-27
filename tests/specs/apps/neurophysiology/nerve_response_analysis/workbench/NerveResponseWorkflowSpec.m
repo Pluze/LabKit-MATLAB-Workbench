@@ -22,6 +22,8 @@ classdef NerveResponseWorkflowSpec < matlab.unittest.TestCase
             analysis = runtime.State.session.cache.analysis;
             testCase.verifyEqual(analysis.recordingCount, 2);
             testCase.verifyGreaterThan(analysis.analyzedCount, 0);
+            testCase.verifyEqual( ...
+                runtime.State.session.cache.plotViewRevision, 1);
             testCase.verifyEqual(runtime.State.session.view.previewMode, "Issues");
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview").Children);
             testCase.verifyTrue(isfile(fullfile(outputFolder, "nerve_response_analysis.json")));

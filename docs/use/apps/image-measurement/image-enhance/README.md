@@ -33,7 +33,7 @@ The batch accepts selected image files; directory actions can collect a flat or 
 6. Undo or reset history as needed.
 7. Choose output format/folder and export.
 
-Each **Apply tool** action saves one processing step. Panner changes preview the pending tool without changing the saved history until **Apply tool** is chosen. ROI creation and overlay refresh preserve the current zoom.
+Each **Apply tool** action saves one processing step. Panner changes preview the pending tool without changing the saved history until **Apply tool** is chosen. ROI creation, enhancement updates, and overlay refresh preserve the current zoom on the same canvas. Selecting another source, changing the displayed canvas size, or entering/leaving the side-by-side comparison fits the new preview composition.
 
 ## Tools And Defaults
 

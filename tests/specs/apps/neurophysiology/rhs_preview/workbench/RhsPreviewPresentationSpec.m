@@ -16,5 +16,38 @@ classdef RhsPreviewPresentationSpec < matlab.unittest.TestCase
             testCase.verifySubstring(joined, "C-001");
             testCase.verifyFalse(contains(joined, "synthetic/primary.rhs"));
         end
+
+        function windowAndChannelsRefitWhileRoiOverlayPreservesView(testCase)
+            applicationState = struct("project", struct("inputs", struct( ...
+                "sources", labkit.app.source.record( ...
+                    "recording-a", "recording", "synthetic.rhs"))));
+            context = struct("family", "amplifier", ...
+                "preview", struct("channels", ["A-001" "A-002"], ...
+                    "timeSec", [0; 0.01; 0.02]), ...
+                "roiSec", [0.005 0.015]);
+            sources = applicationState.project.inputs.sources;
+            base = rhs_preview.analysisRun.viewportRevision( ...
+                sources, context.family, context.preview);
+
+            context.roiSec = [0.01 0.02];
+            testCase.verifyEqual( ...
+                revisionFor(sources, context), base);
+            context.preview.timeSec = [0.02; 0.03; 0.04];
+            testCase.verifyNotEqual( ...
+                revisionFor(sources, context), base);
+            context.preview.timeSec = [0; 0.01; 0.02];
+            context.preview.channels = "A-003";
+            testCase.verifyNotEqual( ...
+                revisionFor(sources, context), base);
+            context.preview.channels = ["A-001" "A-002"];
+            context.family = "boardAdc";
+            testCase.verifyNotEqual( ...
+                revisionFor(sources, context), base);
+        end
     end
+end
+
+function revision = revisionFor(sources, context)
+revision = rhs_preview.analysisRun.viewportRevision( ...
+    sources, context.family, context.preview);
 end

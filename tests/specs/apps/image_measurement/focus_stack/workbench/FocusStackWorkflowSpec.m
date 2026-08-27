@@ -24,6 +24,8 @@ classdef FocusStackWorkflowSpec < matlab.unittest.TestCase
             runtime.invokeAction("exportFused");
 
             testCase.verifyTrue(runtime.State.session.cache.result.ok);
+            testCase.verifyEqual( ...
+                runtime.State.session.cache.plotViewRevision, 1);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.fused").Children);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.focusMap").Children);
             testCase.verifyTrue(isfile(output));

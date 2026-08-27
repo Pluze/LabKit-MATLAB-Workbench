@@ -30,6 +30,8 @@ labkit_NerveResponseAnalysis_app
 
 Changing the filter, protocol, or limits clears the previous analysis so that an export cannot silently use outdated settings.
 
+Each completed analysis attempt fits the selected **Counts** or **Issues** result view. Switching between those two coordinate views also fits once; status, export, and other presentation redraws preserve the current zoom.
+
 The filter record and optional protocol remain distinct live sources while the App is open. Nerve Response Analysis does not write a task archive. If a required JSON file is malformed, the current task remains unchanged so you can correct or replace that file. A missing optional protocol is allowed.
 
 ## What The Analysis Does

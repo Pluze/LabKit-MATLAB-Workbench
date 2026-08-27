@@ -46,7 +46,7 @@ Alignment and crop actions form an ordered edit history. **Undo align/crop** rem
 | Original pair | source images before applied edits |
 | ROI mask | current binary mask over the image domain |
 
-Changing preview mode does not change project data. Point placement, point dragging, crop editing, mask editing, and alignment preserve the current axes zoom. Applying a crop fits both axes to the new pixel domain so the removed image area does not remain as white plot margins. Use the plot **Fit** action when a full-image view is otherwise wanted.
+Changing preview mode does not change project data. Loading a different image pair or displaying a preview with different pixel dimensions fits the new canvas. Point placement, point dragging, crop editing, mask editing, alignment, and same-size preview changes preserve the current axes zoom. Applying a crop fits both axes to the new pixel domain so the removed image area does not remain as white plot margins. Use the plot **Fit** action when a full-image view is otherwise wanted.
 
 ## Manual Point Matching
 

@@ -20,6 +20,8 @@ catch ME
     state.session.cache.metrics = table();
     state.session.cache.summary = table();
     state.session.cache.aligned = [];
+    state.session.cache.plotViewRevision = ...
+        state.session.cache.plotViewRevision + 1;
     state.session.workflow.statusMessage = string(ME.message);
     state.session.workflow.lastAction = "Metric load failed";
     return;
@@ -29,6 +31,8 @@ state.session.cache.filepath = paths(1);
 state.session.cache.metrics = metrics;
 state.session.cache.summary = summary;
 state.session.cache.aligned = aligned;
+state.session.cache.plotViewRevision = ...
+    state.session.cache.plotViewRevision + 1;
 state.session.workflow.statusMessage = sprintf("Loaded %d metric row(s).", height(metrics));
 state.session.workflow.lastAction = "Loaded metrics";
 context.log("info", "response_review_stats.analysisrun.refreshmetrics.completed", ...

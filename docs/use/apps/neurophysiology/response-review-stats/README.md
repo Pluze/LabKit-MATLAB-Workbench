@@ -30,6 +30,8 @@ labkit_ResponseReviewStats_app
 
 Changing either time window recalculates a loaded segment input automatically. For an analysis JSON that already contains measurements, the app reads those measurements rather than recreating unavailable waveform data.
 
+Loading or refreshing metrics fits the selected **Summary** or **Aligned** result view. Switching between those coordinate views also fits once; table, status, and export redraws preserve the current zoom.
+
 ## Accepted Inputs
 
 - JSON exported by Nerve Response Analysis. The app reads its `metrics` records.

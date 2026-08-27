@@ -35,6 +35,8 @@ Choose one reference image. Sources may be selected individually or discovered f
 
 Changing method or strength previews the pending match; **Apply match** saves the settings as the next step in the image's processing history.
 
+Pending and applied matching updates preserve the current zoom while the selected source and preview composition stay the same. Selecting another source, changing the displayed canvas size, or entering/leaving the side-by-side comparison fits the new preview composition.
+
 ## Matching Methods
 
 | Method | Behavior |

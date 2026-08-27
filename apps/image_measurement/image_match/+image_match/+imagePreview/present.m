@@ -1,6 +1,6 @@
 % App-owned implementation for image_match.imagePreview.present within the image_match product workflow.
 function view = present( ...
-        steps, currentItem, previewSource, previewResult, previewMode)
+        steps, currentItem, previewSource, previewResult, previewMode, sourceId)
 %PRESENT Build the image-preview snapshot from explicit display inputs.
 view = labkit.app.view.Snapshot();
 view = view.tableData("historyTable", ...
@@ -24,5 +24,7 @@ switch previewMode
         titleText = "Matched Preview";
 end
 view = view.renderPlot("preview", struct( ...
-    "imageData", imageData, "title", titleText));
+    "imageData", imageData, "title", titleText), ...
+    ViewRevision=image_match.imagePreview.viewportRevision( ...
+        sourceId, previewMode, imageData));
 end

@@ -1,12 +1,17 @@
 % App-owned implementation for focus_stack.workbench.present within the focus_stack product workflow.
 function view = present(state)
 %PRESENT Map Focus Stack state to a complete semantic workbench snapshot.
-hasStack = numel(state.session.cache.images) >= 2;
+cache = state.session.cache;
+project = state.project;
+hasStack = numel(cache.images) >= 2;
+viewRevision = focus_stack.focusPreview.viewportRevision( ...
+    project.inputs.sources, cache.result.ok, cache.plotViewRevision);
 view = labkit.app.view.Snapshot();
 view = view.enabled("runFocusStack", hasStack);
 view = view.value("sourceLocation", sourceDescription( ...
-    state.session.cache.sourcePaths));
-view = view.include(focus_stack.focusPreview.present(state));
+    cache.sourcePaths));
+view = view.include(focus_stack.focusPreview.present( ...
+    cache, project.results, numel(project.inputs.sources), viewRevision));
 end
 
 function text = sourceDescription(paths)

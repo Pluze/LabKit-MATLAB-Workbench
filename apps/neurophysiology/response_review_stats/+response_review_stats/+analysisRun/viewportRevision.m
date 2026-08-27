@@ -1,0 +1,9 @@
+% Expected caller: Response Review Stats presentation and direct tests. Source
+% identity, loaded result generation, and Summary/Aligned view choice own the
+% chart domain. Status and export-only refreshes preserve zoom.
+function revision = viewportRevision(model)
+revision = string(jsonencode(struct( ...
+    "sourceIds", {reshape(string(model.sourceIds), 1, [])}, ...
+    "previewMode", string(model.previewMode), ...
+    "resultRevision", double(model.plotViewRevision))));
+end

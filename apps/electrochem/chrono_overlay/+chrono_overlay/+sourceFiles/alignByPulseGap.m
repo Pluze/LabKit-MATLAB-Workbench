@@ -1,4 +1,4 @@
-% Expected caller: chrono_overlay.stateHandlers and unit tests. Inputs are
+% Expected callers: Chrono source loading and direct tests. Inputs are
 % one chrono item struct with time/current/voltage and pulse fields. Outputs
 % return the aligned item and status message. No file or UI side effects.
 
