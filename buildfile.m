@@ -11,8 +11,9 @@ function plan = buildfile
 %   buildtool docsCheck    verify generated documentation
 
 plan = buildplan(localfunctions);
-plan.DefaultTasks = "headless";
-plan("changedFast").Description = "Run focused final pre-PR specifications selected from the local diff";
+plan.DefaultTasks = "changedFast";
+plan("changedFast").Dependencies = ["codecheck", "docsCheck"];
+plan("changedFast").Description = "Run the complete local pre-PR gate with focused tests, codecheck, and docsCheck";
 plan("headless").Description = "Run all non-GUI product, SDK, persistence, and export specifications";
 plan("gui").Description = "Run hidden native-App, callback, graphics, and export workflows";
 plan("journeys").Description = "Run every App-owned native user workflow";
@@ -68,7 +69,7 @@ end
 
 function listTasksTask(~)
 fprintf("LabKit build tasks:\n");
-fprintf("  changedFast  final local pre-PR review evidence\n");
+fprintf("  changedFast  complete local pre-PR gate (default)\n");
 fprintf("  headless     every headless specification\n");
 fprintf("  gui          every hidden-GUI specification\n");
 fprintf("  journeys     every App-owned native user workflow\n");

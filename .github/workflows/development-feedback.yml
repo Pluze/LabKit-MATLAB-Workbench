@@ -83,15 +83,42 @@ jobs:
           python -m unittest discover -s .github/scripts -p 'test_*.py'
           python .github/scripts/validate_agent_skills.py
 
-      - name: Set up clean latest MATLAB runtime
+      - name: Confirm focused feedback still owns validation
         if: steps.scope.outputs.should_run == 'true'
+        id: handoff
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_BRANCH: ${{ github.ref_name }}
+        run: |
+          if [ "${EVENT_NAME}" = "workflow_dispatch" ]; then
+            echo "should_run=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          open_prs="$(gh api --method GET \
+            "repos/${GITHUB_REPOSITORY}/pulls" \
+            -f state=open \
+            -f base=main \
+            -f head="${GITHUB_REPOSITORY_OWNER}:${HEAD_BRANCH}" \
+            --jq 'length')"
+          if [ "${open_prs}" -gt 0 ]; then
+            echo "should_run=false" >> "${GITHUB_OUTPUT}"
+            echo "Pull request took ownership before MATLAB setup; skipping duplicate feedback."
+          else
+            echo "should_run=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Set up clean latest MATLAB runtime
+        if: steps.handoff.outputs.should_run == 'true'
         uses: matlab-actions/setup-matlab@v3
         with:
           release: latest
           cache: true
 
       - name: Start Linux virtual display
-        if: steps.scope.outputs.should_run == 'true'
+        if: steps.handoff.outputs.should_run == 'true'
         shell: bash
         run: |
           Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp \
@@ -105,20 +132,20 @@ jobs:
           fi
 
       - name: Run focused changed-path feedback
-        if: steps.scope.outputs.should_run == 'true'
+        if: steps.handoff.outputs.should_run == 'true'
         uses: matlab-actions/run-command@v3
         with:
           command: addpath(fullfile(pwd,'.github','scripts')); runDevelopmentFeedback(fullfile(pwd,'artifacts','development-feedback','changed-paths.txt'))
           startup-options: -logfile artifacts/logs/development-feedback/matlab.log
 
       - name: Verify generated documentation
-        if: steps.scope.outputs.should_run == 'true'
+        if: steps.handoff.outputs.should_run == 'true'
         uses: matlab-actions/run-build@v3
         with:
           tasks: docsCheck
 
       - name: Upload feedback artifacts
-        if: always() && steps.scope.outputs.should_run == 'true'
+        if: always() && steps.handoff.outputs.should_run == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: development-feedback-${{ github.run_id }}
