@@ -26,7 +26,7 @@ classdef SessionRebuildSpec < matlab.unittest.TestCase
             testCase.verifyEqual(session.cache.sourceId, "image-1");
             testCase.verifyEqual(session.view, struct("shiftX", 0, "shiftY", 0));
             testCase.verifyEmpty(session.clipboard.rois);
-            testCase.verifyFalse(session.clipboard.pastePending);
+            testCase.verifyEqual(session.clipboard.sourceId, "");
         end
     end
 end

@@ -10,7 +10,7 @@ for index = 1:numel(rois)
         return
     end
     geometry = templates(match);
-    sizeXY = min(double(geometry.size), [imageSize(2), imageSize(1)]);
+    sizeXY = double(geometry.size);
     if geometry.shape == "Square" || geometry.shape == "Circle"
         sizeXY = repmat(min(sizeXY), 1, 2);
     end

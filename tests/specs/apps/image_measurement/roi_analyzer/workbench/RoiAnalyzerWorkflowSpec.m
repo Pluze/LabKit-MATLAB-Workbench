@@ -83,6 +83,15 @@ classdef RoiAnalyzerWorkflowSpec < matlab.unittest.TestCase
             runtime.applyControlValue("roiWidth", 10);
             runtime.applyControlValue("roiHeight", 8);
             runtime.invokeAction("copyRois");
+            runtime.applyFilePanelSelection("sourceImages", 2);
+            runtime.invokeAction("pasteRois");
+            firstPaste = runtime.State.project.annotations.items(2).rois;
+            testCase.verifyEqual(numel(firstPaste), 2);
+            testCase.verifyEqual(vertcat(firstPaste.centerXY), ...
+                [10.5 10.5; 24.5 12.5]);
+            runtime.applyFilePanelSelection("sourceImages", 1);
+            runtime.applyInteraction("roiCenters", ...
+                "selectionChanged", [1 2]);
             runtime.applyControlValue("shiftX", 2);
             runtime.applyControlValue("shiftY", 1);
             runtime.invokeAction("shiftCurrent");
@@ -110,8 +119,6 @@ classdef RoiAnalyzerWorkflowSpec < matlab.unittest.TestCase
                 beforeShift + [1 0]);
             runtime.applyFilePanelSelection("sourceImages", 2);
             runtime.invokeAction("pasteRois");
-            runtime.applyInteraction("roiCenters", ...
-                "backgroundPressed", [30 20]);
             secondRois = runtime.State.project.annotations.items(2).rois;
             testCase.verifyEqual(numel(secondRois), 4);
             testCase.verifyEqual( ...

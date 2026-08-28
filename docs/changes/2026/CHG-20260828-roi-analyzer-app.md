@@ -29,7 +29,7 @@ Embedding the capability in a specialized image product was rejected because a g
 
 ## Impact
 
-Users can define a repeatable intensity-measurement layout, drag ROI bodies or reliable numbered centers independently from shared geometry, marquee-select a group, and paste that group at a chosen point on the same or another image without losing its relative arrangement. Pasted names receive deterministic conflict-free suffixes. Parameter and result exports remain separate so an old table is not mistaken for a recalculation.
+Users can define a repeatable intensity-measurement layout, drag ROI bodies or reliable numbered centers independently from shared geometry, and marquee-select a group. Paste offsets the group slightly on the source image, preserves source coordinates on compatible destination images, or centers the unchanged relative layout when those coordinates do not fit; an impossible placement is rejected explicitly. Pasted names receive deterministic conflict-free suffixes. Parameter and result exports remain separate so an old table is not mistaken for a recalculation.
 
 ## Compatibility and limits
 

@@ -9,5 +9,5 @@ end
 rois = annotation.rois(indices);
 applicationState.session.clipboard.rois = rois;
 applicationState.session.clipboard.anchor = mean(vertcat(rois.centerXY), 1);
-applicationState.session.clipboard.pastePending = false;
+applicationState.session.clipboard.sourceId = annotation.sourceId;
 end
