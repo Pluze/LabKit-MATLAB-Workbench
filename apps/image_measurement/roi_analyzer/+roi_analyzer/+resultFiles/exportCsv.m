@@ -1,0 +1,33 @@
+function applicationState = exportCsv(applicationState, callbackContext)
+%EXPORTCSV Write the current complete ROI-by-channel measurement table.
+[annotation, sourceIndex] = ...
+    roi_analyzer.roiLibrary.currentAnnotation(applicationState);
+result = roi_analyzer.analysisRun.resultForSource( ...
+    applicationState.project.results.items, annotation.sourceId);
+if sourceIndex < 1 || isempty(result.summary)
+    callbackContext.alert("Measure the current ROI set before exporting.", ...
+        "No current measurements");
+    return
+end
+choice = callbackContext.chooseOutputFile( ...
+    ["*.csv", "CSV files (*.csv)"], ...
+    fullfile(pwd, "roi_measurements.csv"));
+if choice.Cancelled
+    return
+end
+try
+    output = roi_analyzer.resultFiles.buildExportTable( ...
+        result.summary, applicationState.session.cache.name);
+    writetable(output, string(choice.Value));
+catch ME
+    callbackContext.log("error", ...
+        "roi_analyzer.resultfiles.exportcsv.exception", "Export ROI result CSV", ...
+        Category="failure", Audience="developer", Exception=ME);
+    callbackContext.alert(ME.message, "Could not export ROI CSV");
+    return
+end
+applicationState.project.results.lastExportPath = string(choice.Value);
+callbackContext.log("info", ...
+    "roi_analyzer.resultfiles.exportcsv.completed", ...
+    "Exported the current ROI result CSV.");
+end

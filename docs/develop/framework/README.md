@@ -85,6 +85,7 @@ The entrypoint calls `definition().launch(...)`. Definition compiles the immutab
 - Declare editable overlays with `labkit.app.interaction.*` on the plot area; supply their current values with same-named Snapshot methods.
 - Open `anchorPath` editors order a new point by the nearest location on the visible path: points beyond the start prepend, points beyond the end append, and interior points insert into the owning curve segment. Zoom does not change that ordering decision.
 - For a managed rectangle with `OnBackgroundPressed`, an un-dragged click anywhere on its plot—including inside the rectangle—uses that point callback; dragging the rectangle still uses its change callback.
+- A `pointSlots` editor distinguishes gestures by their starting location: drag a point or its supplied hit region to move it, drag empty plot space to marquee-select several points, and drag any selected point to move the selected group. Use `OnSelectionChanged` to store selected indices and `OnBackgroundPressed` for a plain empty-space click such as placing copied items.
 - Use `labkit.app.plot.clearAxes`, `showMessage`, and `fitAxesToGraphics` for renderer mechanics; `EqualDataUnits=true` makes a one-time fitted equal-scale view from the settled native axes allocation without dispatching pending UI callbacks, without changing the allocation or locking later zoom. Apps still decide message wording and viewport policy.
 - Write App result files directly through the App-owned export capability. Any manifest or task archive is an App contract, not an SDK object.
 

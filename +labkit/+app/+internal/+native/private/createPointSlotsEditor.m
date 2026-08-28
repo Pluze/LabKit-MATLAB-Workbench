@@ -1,7 +1,8 @@
 % Private App runtime controlled interaction. Expected caller:
-% reconcileInteractions. It owns fixed point-slot placement, single/set
-% dragging, graphics, figure callbacks, and cleanup outside app state.
-function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
+% reconcileInteractions. It owns fixed point-slot placement, point/group
+% dragging, empty-space marquee selection, graphics, and callback cleanup.
+function editor = createPointSlotsEditor( ...
+        runtime, imageSize, opts, onChanged, onSelectionChanged, onBackgroundPressed)
     ax = runtime.axes();
     imageSize = normalizeImageSize(imageSize);
     color = optionValue(opts, 'color', [0.05 0.45 0.95]);
@@ -9,13 +10,15 @@ function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
     placeSelectedOnBackground = logical(optionValue( ...
         opts, 'placeSelectedOnBackground', false));
     value = normalizeValue(struct("points", NaN(1, 2), ...
-        "selectedIndex", 1, "locked", false));
+        "selectedIndex", 1, "selectedIndices", 1, "locked", false));
     anchorLine = gobjects(1, 0);
     selectedLine = gobjects(1, 0);
+    marquee = gobjects(1, 0);
     dragIndex = [];
     dragMode = "single";
     dragStartPoint = [NaN NaN];
     dragStartPoints = NaN(0, 2);
+    selectionChanged = false;
     session = runtime.createSession(struct( ...
         "name", "pointSlots", "onPointerDown", @pointerDown, ...
         "installScrollWheel", false));
@@ -43,22 +46,40 @@ function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
         end
         value.points(targetIndex, :) = clampPoint(point);
         value.selectedIndex = nextUnplacedIndex(targetIndex);
+        value.selectedIndices = value.selectedIndex;
         refresh();
         notify("place", targetIndex);
     end
 
     function pointerDown(~, ~)
         point = currentPoint();
+        if value.backgroundClickOnly
+            onBackgroundPressed(point);
+            return;
+        end
         nearest = nearestIndex(point);
         if isempty(nearest)
-            insertPoint(point);
+            if any(~all(isfinite(value.points), 2))
+                insertPoint(point);
+                return;
+            end
+            dragMode = "marquee";
+            dragStartPoint = point;
+            dragStartPoints = value.points;
+            session.captureDrag(@drag, @release);
             return;
+        end
+        selectionChanged = ~ismember(nearest, value.selectedIndices);
+        if selectionChanged
+            value.selectedIndices = nearest;
         end
         value.selectedIndex = nearest;
         dragIndex = nearest;
         dragMode = "single";
         if value.locked
             dragMode = "set";
+        elseif numel(value.selectedIndices) > 1
+            dragMode = "selection";
         end
         dragStartPoint = point;
         dragStartPoints = value.points;
@@ -67,19 +88,31 @@ function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
     end
 
     function drag(~, ~)
-        updateDraggedPoint();
+        if dragMode == "marquee"
+            updateMarquee();
+        else
+            updateDraggedPoint();
+        end
     end
 
     function release(~, ~)
+        if dragMode == "marquee"
+            finishMarquee();
+            return;
+        end
         updateDraggedPoint();
         changedIndex = dragIndex;
         reason = "move";
-        if dragMode == "set"
+        if dragMode == "set" || dragMode == "selection"
             reason = "moveSet";
         end
         dragIndex = [];
         dragMode = "single";
         notify(reason, changedIndex);
+        if selectionChanged
+            notifySelection();
+        end
+        selectionChanged = false;
     end
 
     function updateDraggedPoint()
@@ -87,17 +120,56 @@ function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
             return;
         end
         point = currentPoint();
-        if dragMode == "set"
-            valid = all(isfinite(dragStartPoints), 2);
-            shifted = dragStartPoints;
-            shifted(valid, :) = shifted(valid, :) + point - dragStartPoint;
-            shifted(valid, 1) = min(max(shifted(valid, 1), 1), imageSize(2));
-            shifted(valid, 2) = min(max(shifted(valid, 2), 1), imageSize(1));
-            value.points(valid, :) = shifted(valid, :);
-        else
+        if dragMode == "single"
             value.points(dragIndex, :) = point;
+            refresh();
+            return;
+        end
+        valid = all(isfinite(dragStartPoints), 2);
+        if dragMode == "selection"
+            valid(:) = false;
+            valid(value.selectedIndices) = true;
+        end
+        shifted = dragStartPoints;
+        shifted(valid, :) = shifted(valid, :) + point - dragStartPoint;
+        delta = boundedGroupDelta(shifted(valid, :), imageSize);
+        shifted(valid, :) = shifted(valid, :) + delta;
+        value.points(valid, :) = shifted(valid, :);
+        refresh();
+    end
+
+    function updateMarquee()
+        position = rectangleFromPoints(dragStartPoint, currentPoint());
+        if isempty(marquee) || ~isgraphics(marquee)
+            marquee = rectangle(ax, "Position", position, ...
+                "EdgeColor", selectedColor, "LineWidth", 1.4, ...
+                "LineStyle", "--", "HitTest", "off", ...
+                "PickableParts", "none");
+        else
+            marquee.Position = position;
+        end
+        refreshGraphicsOwnership();
+    end
+
+    function finishMarquee()
+        point = currentPoint();
+        position = rectangleFromPoints(dragStartPoint, point);
+        deleteIfValid(marquee);
+        marquee = gobjects(1, 0);
+        dragMode = "single";
+        if max(position(3:4)) <= 2
+            onBackgroundPressed(point);
+            refresh();
+            return;
+        end
+        indices = labkit.app.internal.interaction.selectPointsInRectangle( ...
+            value.points, position);
+        value.selectedIndices = indices;
+        if ~isempty(indices)
+            value.selectedIndex = indices(1);
         end
         refresh();
+        notifySelection();
     end
 
     function point = currentPoint()
@@ -117,6 +189,27 @@ function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
         index = [];
         valid = all(isfinite(value.points), 2);
         if ~any(valid)
+            return;
+        end
+        inside = point(1) >= value.hitBounds(:, 1) & ...
+            point(1) <= value.hitBounds(:, 1) + value.hitBounds(:, 3) & ...
+            point(2) >= value.hitBounds(:, 2) & ...
+            point(2) <= value.hitBounds(:, 2) + value.hitBounds(:, 4);
+        ellipse = inside & value.hitEllipse;
+        if any(ellipse)
+            bounds = value.hitBounds(ellipse, :);
+            centers = bounds(:, 1:2) + bounds(:, 3:4) ./ 2;
+            radii = max(bounds(:, 3:4) ./ 2, eps);
+            inEllipse = sum(((point - centers) ./ radii).^2, 2) <= 1;
+            ellipseIndices = find(ellipse);
+            inside(ellipseIndices(~inEllipse)) = false;
+        end
+        hitCandidates = find(inside & valid);
+        if ~isempty(hitCandidates)
+            [~, position] = min(hypot( ...
+                value.points(hitCandidates, 1) - point(1), ...
+                value.points(hitCandidates, 2) - point(2)));
+            index = hitCandidates(position);
             return;
         end
         candidates = find(valid);
@@ -155,16 +248,25 @@ function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
         ensureGraphics();
         anchorLine.XData = value.points(:, 1);
         anchorLine.YData = value.points(:, 2);
-        point = value.points(value.selectedIndex, :);
-        if all(isfinite(point))
-            selectedLine.XData = point(1);
-            selectedLine.YData = point(2);
-        else
+        points = value.points(value.selectedIndices, :);
+        points = points(all(isfinite(points), 2), :);
+        if isempty(points)
             selectedLine.XData = NaN;
             selectedLine.YData = NaN;
+        else
+            selectedLine.XData = points(:, 1);
+            selectedLine.YData = points(:, 2);
         end
-        session.setGraphics([anchorLine; selectedLine]);
+        refreshGraphicsOwnership();
         session.refresh();
+    end
+
+    function refreshGraphicsOwnership()
+        graphics = [anchorLine; selectedLine];
+        if ~isempty(marquee) && isgraphics(marquee)
+            graphics(end + 1, 1) = marquee;
+        end
+        session.setGraphics(graphics);
     end
 
     function ensureGraphics()
@@ -189,10 +291,15 @@ function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
         onChanged(emitted);
     end
 
+    function notifySelection()
+        onSelectionChanged(value.selectedIndices);
+    end
+
     function deleteEditor()
         session.delete();
         deleteIfValid(anchorLine);
         deleteIfValid(selectedLine);
+        deleteIfValid(marquee);
     end
 
     function normalized = normalizeValue(input)
@@ -205,15 +312,64 @@ function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
             error('labkit:app:runtime:InvalidPointSlotsValue', ...
                 'pointSlots points must be a nonempty Nx2 array.');
         end
-        selectedIndex = optionValue(input, 'selectedIndex', 1);
-        selectedIndex = round(double(selectedIndex));
+        selectedIndex = round(double(optionValue(input, 'selectedIndex', 1)));
         if ~isscalar(selectedIndex) || ~isfinite(selectedIndex)
             selectedIndex = 1;
         end
+        selectedIndex = min(max(1, selectedIndex), size(points, 1));
         normalized = struct("points", points, ...
-            "selectedIndex", min(max(1, selectedIndex), size(points, 1)), ...
+            "selectedIndex", selectedIndex, ...
+            "selectedIndices", normalizeSelectedIndices( ...
+                input, size(points, 1), selectedIndex), ...
+            "hitBounds", normalizeHitBounds(input, size(points, 1)), ...
+            "hitEllipse", normalizeHitEllipse(input, size(points, 1)), ...
+            "backgroundClickOnly", logical(optionValue( ...
+                input, 'backgroundClickOnly', false)), ...
             "locked", logical(optionValue(input, 'locked', false)));
     end
+end
+
+function bounds = normalizeHitBounds(value, count)
+    bounds = double(optionValue(value, 'hitBounds', NaN(count, 4)));
+    if ~isequal(size(bounds), [count 4]) || ...
+            any(~isfinite(bounds(~isnan(bounds)))) || ...
+            any(bounds(isfinite(bounds(:, 3)), 3) < 0) || ...
+            any(bounds(isfinite(bounds(:, 4)), 4) < 0)
+        bounds = NaN(count, 4);
+    end
+end
+
+function ellipse = normalizeHitEllipse(value, count)
+    ellipse = logical(optionValue(value, 'hitEllipse', false(count, 1)));
+    ellipse = ellipse(:);
+    if numel(ellipse) ~= count
+        ellipse = false(count, 1);
+    end
+end
+
+function indices = normalizeSelectedIndices(value, count, selectedIndex)
+    indices = optionValue(value, 'selectedIndices', selectedIndex);
+    indices = unique(round(double(indices(:).')), 'stable');
+    indices = indices(isfinite(indices) & indices >= 1 & indices <= count);
+end
+
+function delta = boundedGroupDelta(points, imageSize)
+    delta = [0 0];
+    if isempty(points)
+        return;
+    end
+    for axis = 1:2
+        limit = imageSize(3 - axis);
+        low = 1 - min(points(:, axis));
+        high = limit - max(points(:, axis));
+        delta(axis) = min(max(0, low), high);
+    end
+end
+
+function position = rectangleFromPoints(first, second)
+    low = min(first, second);
+    high = max(first, second);
+    position = [low, high - low];
 end
 
 function imageSize = normalizeImageSize(value)

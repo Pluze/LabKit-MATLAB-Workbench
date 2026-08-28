@@ -1,0 +1,6 @@
+function applicationState = previous(applicationState, callbackContext)
+%PREVIOUS Show the preceding source image and its ROI layout.
+applicationState = roi_analyzer.sourceImages.selectIndex( ...
+    applicationState, applicationState.session.selection.sourceIndex - 1, ...
+    callbackContext);
+end

@@ -91,6 +91,33 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "labkit:app:contract:InvalidValue");
         end
 
+        function pointSlotsDeclareSelectionAndBackgroundGestures(testCase)
+            points = labkit.app.interaction.pointSlots("probePoints", ...
+                @changeInteractionProbe, ...
+                OnSelectionChanged=@changeInteractionProbe, ...
+                OnBackgroundPressed=@changeInteractionProbe);
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.plotArea("probePlot", @drawNothing, ...
+                    Interactions={points})});
+            app = AppSdkSpec.definition(layout);
+
+            signals = ...
+                labkit.app.internal.contract.DefinitionInspector.signalIds(app);
+            testCase.verifyTrue(all(ismember([ ...
+                "probePoints__interactionChanged" ...
+                "probePoints__selectionChanged" ...
+                "probePoints__backgroundPressed"], signals)));
+        end
+
+        function pointSlotMarqueeSelectsOnlyEnclosedFinitePoints(testCase)
+            points = [4 4; 8 7; 12 9; NaN 6];
+
+            indices = labkit.app.internal.interaction. ...
+                selectPointsInRectangle(points, [3 3 5 4]);
+
+            testCase.verifyEqual(indices, [1 2]);
+        end
+
         function callbackContextHasOnlyNamedRuntimeCapabilities(testCase)
             context = labkit.app.internal.runtime.CallbackContextFactory.disconnected();
 
@@ -1251,6 +1278,9 @@ captureAlert(store, message, title);
 end
 
 function state = runProbe(state, ~)
+end
+
+function state = changeInteractionProbe(state, ~, ~)
 end
 
 function state = startProbe(state, ~)

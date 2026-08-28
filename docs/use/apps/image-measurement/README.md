@@ -4,15 +4,16 @@
 id: apps-image-measurement
 type: landing
 audience: app-user
-summary: Choose an image or video workflow for cropping, calibrated measurement, thermal analysis, fusion, enhancement, matching, or landmark annotation.
+summary: Choose an image or video workflow for ROI intensity analysis, cropping, calibrated measurement, thermal analysis, fusion, enhancement, matching, or landmark annotation.
 ```
 
-The Image Measurement family turns image and video data into repeatable crops, calibrated measurements, thermal readings, fused images, appearance pipelines, and landmark coordinates. Scientific and workflow-specific choices remain app-owned; generic image IO and primitives come from `labkit.image` and `labkit.thermal`.
+The Image Measurement family turns image and video data into ROI intensity statistics, repeatable crops, calibrated measurements, thermal readings, fused images, appearance pipelines, and landmark coordinates. Scientific and workflow-specific choices remain app-owned; generic image IO and primitives come from `labkit.image` and `labkit.thermal`.
 
 ## Choose An App
 
 | Goal | App | Main result |
 | --- | --- | --- |
+| Compare original pixel values inside reusable regions | [ROI Analyzer](roi-analyzer/README.md) | ROI-by-channel statistics, project, parameter JSON |
 | Apply repeatable crop geometry to many images | [Batch Image Crop](batch-crop/README.md) | same-size crop images and manifest |
 | Measure a fitted circular arc and traced length | [Curvature Measurement](curvature/README.md) | radius, curvature, length, overlay |
 | Decode and measure radiometric FLIR images | [FLIR Thermal](flir-thermal/README.md) | Celsius matrix, readings, rendered image |
