@@ -93,7 +93,7 @@ function controlled = createControlledInteraction(hub, id, spec)
         case "pointslots"
             editor = createPointSlotsEditor( ...
                 hub.adapter(spec.Targets(1), group), spec.ImageSize, ...
-                spec.Options, @emitValue);
+                spec.Options, @emitValue, @emitSelection, @emitBackground);
             editors = {editor};
             update = @updatePointSlots;
         otherwise
@@ -181,6 +181,13 @@ function controlled = createControlledInteraction(hub, id, spec)
         end
         hub.dispatch(spec.BackgroundEvent, id, ...
             hub.point(spec.Targets(1)), "commit");
+    end
+
+    function emitSelection(indices)
+        if suppressed || strlength(spec.SelectionEvent) == 0
+            return;
+        end
+        hub.dispatch(spec.SelectionEvent, id, double(indices(:).'), "commit");
     end
 
     function emitScroll(value)
@@ -351,6 +358,8 @@ function spec = normalizeSpec(id, value, actionIds, targetIds)
     spec.Event = string(requiredValue(value, 'Event', id));
     spec.BackgroundEvent = string(optionValue( ...
         value, 'BackgroundEvent', ""));
+    spec.SelectionEvent = string(optionValue( ...
+        value, 'SelectionEvent', ""));
     spec.ScrollEvent = string(optionValue(value, 'ScrollEvent', ""));
     spec.ChangePolicy = string(optionValue( ...
         value, 'ChangePolicy', 'commit'));
@@ -371,11 +380,13 @@ function spec = normalizeSpec(id, value, actionIds, targetIds)
         error('labkit:app:runtime:InvalidInteractionSpec', ...
             'Interaction "%s" requires one semantic Event.', id);
     end
-    if ~isscalar(spec.BackgroundEvent) || ~isscalar(spec.ScrollEvent)
+    if ~isscalar(spec.BackgroundEvent) || ~isscalar(spec.SelectionEvent) || ...
+            ~isscalar(spec.ScrollEvent)
         error('labkit:app:runtime:InvalidInteractionSpec', ...
             'Interaction "%s" optional events must be scalar text.', id);
     end
-    referencedEvents = [spec.Event, spec.BackgroundEvent, spec.ScrollEvent];
+    referencedEvents = [spec.Event, spec.BackgroundEvent, ...
+        spec.SelectionEvent, spec.ScrollEvent];
     referencedEvents = referencedEvents(strlength(referencedEvents) > 0);
     if any(~ismember(referencedEvents, actionIds))
         unknown = referencedEvents(~ismember(referencedEvents, actionIds));
@@ -405,6 +416,7 @@ function tf = sameIdentity(left, right)
         isequaln(left.Options, right.Options) && ...
         left.Event == right.Event && ...
         left.BackgroundEvent == right.BackgroundEvent && ...
+        left.SelectionEvent == right.SelectionEvent && ...
         left.ScrollEvent == right.ScrollEvent && ...
         left.Instruction == right.Instruction && ...
         left.ChangePolicy == right.ChangePolicy;

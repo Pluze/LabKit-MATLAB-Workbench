@@ -45,7 +45,7 @@ switch signal
     case {"pressed", "started"}
         inputCount = 2;
     case {"valueChanged", "pageChanged", "interactionChanged", ...
-            "backgroundPressed", "scrolled"}
+            "backgroundPressed", "selectionChanged", "scrolled"}
         inputCount = 3;
     case "cellEdited"
         inputCount = 3;

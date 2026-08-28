@@ -37,6 +37,7 @@ See [Use LabKit](../README.md) for installation, updating, version selection, an
 | Estimate voltage-transient resistance | [VT Resistance](electrochemistry/vt-resistance/README.md) | Chrono DTA | Resistance table and CSV |
 | Convert tracked points into gait metrics | [Gait Analysis](gait/gait-analysis/README.md) | Current Video Marker archive MAT | Frame, step, coordinate, and summary tables |
 | Monitor, record, replay, and fit Mark-10 force/travel data | [Mark-10 Monitor](force-gauges/mark10-monitor/README.md) | ESM303 + Series 5, CSV, LOG, or MAT | Live plots, recordings, branch stiffness, and modulus CSV |
+| Compare image intensity inside reusable regions | [ROI Analyzer](image-measurement/roi-analyzer/README.md) | Scalar or RGB images | ROI statistics, project MAT, parameter JSON, and CSV |
 | Crop image batches at repeatable geometry | [Batch Image Crop](image-measurement/batch-crop/README.md) | Image files | Same-size crops and manifest |
 | Measure curve radius, curvature, and length | [Curvature Measurement](image-measurement/curvature/README.md) | Image | Overlay and measurement CSV |
 | Decode and measure radiometric images | [FLIR Thermal](image-measurement/flir-thermal/README.md) | FLIR radiometric image | Temperature data, measurements, rendered image |

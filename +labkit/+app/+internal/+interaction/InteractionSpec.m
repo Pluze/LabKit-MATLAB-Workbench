@@ -50,6 +50,11 @@ classdef (Sealed, Hidden) InteractionSpec
                 obj.Signals{end + 1} = labkit.app.internal.contract.SignalBinding( ...
                     obj.Id, "backgroundPressed", background);
             end
+            selection = optionValue(options, "OnSelectionChanged", []);
+            if ~isempty(selection)
+                obj.Signals{end + 1} = labkit.app.internal.contract.SignalBinding( ...
+                    obj.Id, "selectionChanged", selection);
+            end
             scrolled = optionValue(options, "OnScrolled", []);
             if ~isempty(scrolled)
                 obj.Signals{end + 1} = labkit.app.internal.contract.SignalBinding( ...
