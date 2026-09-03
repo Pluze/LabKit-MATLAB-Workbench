@@ -12,6 +12,7 @@ applicationState.session.cache.segments = [];
 applicationState.session.cache.template = [];
 applicationState.session.cache.measurements = [];
 applicationState.session.cache.filterDetails = [];
+applicationState.session.cache.powerSpectra = [];
 if ~isempty(applicationState.session.cache.signal)
     applicationState.session.cache.workingSignal = ...
         applicationState.session.cache.signal;

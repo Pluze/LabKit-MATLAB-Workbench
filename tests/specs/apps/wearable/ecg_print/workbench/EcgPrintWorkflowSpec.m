@@ -94,6 +94,14 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             runtime.invokeAction("analyze");
             testCase.verifyEqual(runtime.State.session.cache. ...
                 peakDetectionSignal.metadata.filter.cutoffHz, [5 30]);
+            testCase.verifyTrue(all([runtime.State.session.cache. ...
+                powerSpectra.ok]));
+            for id = ["rawSpectrum" "analysisSpectrum" "peakSpectrum"]
+                spectrumAxes = findall(figureValue, "Tag", ...
+                    id + "Axes." + id);
+                testCase.verifyEqual(numel(findall( ...
+                    spectrumAxes, "Type", "line")), 1);
+            end
             for id = ["wave" "noise" "peak" "snr"]
                 ax = findall(figureValue, "Tag", id + "Axes." + id);
                 ax.XLim = [-100 -50];

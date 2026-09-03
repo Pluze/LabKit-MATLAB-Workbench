@@ -52,6 +52,9 @@ classdef EcgPrintScientificSpec < matlab.unittest.TestCase
             testCase.verifyEqual(actual.segments.metadata.windowSec, [-0.7 0.7]);
             testCase.verifyLessThanOrEqual(numel(actual.template.keptSegmentIndex), 5);
             testCase.verifyTrue(isfield(actual.measurements, 'perSegment'));
+            testCase.verifyTrue(all([actual.powerSpectra.ok]));
+            testCase.verifyEqual(actual.powerSpectra(3).title, ...
+                "Peak-detection input · primary band reused");
 
             bypassParameters = parameters;
             bypassParameters.lowCut = 0;
@@ -75,6 +78,48 @@ classdef EcgPrintScientificSpec < matlab.unittest.TestCase
                 detectedSeparately.events, [-0.7 0.7]);
             testCase.verifyEqual(detectedSeparately.segments.values, ...
                 expectedSegments.values, AbsTol=1e-12);
+            testCase.verifyEqual(detectedSeparately.powerSpectra(3).title, ...
+                "Peak-detection band output");
+            testCase.verifyNotEqual( ...
+                detectedSeparately.powerSpectra(2).powerDensity, ...
+                detectedSeparately.powerSpectra(3).powerDensity);
+        end
+
+        function estimatesBoundedOneSidedWelchPowerDensity(testCase)
+            sampleRate = 256;
+            sampleCount = 16384;
+            time = (0:sampleCount-1).' ./ sampleRate;
+            amplitude = 2.5;
+            frequencyHz = 16;
+            values = amplitude .* sin(2 .* pi .* frequencyHz .* time);
+            signal = struct("time", time, "values", values, ...
+                "fs", sampleRate, "displayName", "Synthetic", ...
+                "unit", "mV", "metadata", struct());
+            cache = struct("workingSignal", signal, ...
+                "filteredSignal", signal, "peakDetectionSignal", signal);
+
+            models = ecg_print.analysisRun.powerSpectraModels(cache);
+
+            raw = models(1);
+            [~, dominantIndex] = max(raw.powerDensity);
+            binWidth = raw.frequency(2) - raw.frequency(1);
+            integratedPower = sum(raw.powerDensity) .* binWidth;
+            testCase.verifyTrue(all([models.ok]));
+            testCase.verifyEqual(raw.frequency(dominantIndex), ...
+                frequencyHz, AbsTol=binWidth);
+            testCase.verifyEqual(integratedPower, amplitude ^ 2 / 2, ...
+                RelTol=0.01);
+            testCase.verifyEqual(raw.segmentLength, 8192);
+            testCase.verifyEqual(raw.segmentCount, 3);
+            testCase.verifyEqual(raw.yLabel, ...
+                "PSD (dB re 1 mV^2/Hz)");
+            testCase.verifyEqual(models(3).title, ...
+                "Peak-detection input · primary band reused");
+            testCase.verifyEqual(models(3).powerDensity, ...
+                models(2).powerDensity);
+            testCase.verifyError(@() ...
+                ecg_print.analysisRun.powerSpectraModels(cache, 1), ...
+                "ecg_print:InvalidSpectrumStage");
         end
 
         function designsStableLinearPhaseFirAndCompensatesDelay(testCase)

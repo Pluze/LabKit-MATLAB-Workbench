@@ -14,7 +14,7 @@ function cache = analyzeSignal(cache, parameters)
 %   boundary handling outside the requested interval edges. The symmetric
 %   FIR uses reflection padding and compensates its linear-phase delay.
 %
-%   The input structure is returned with six rebuildable analysis fields
+%   The input structure is returned with its rebuildable analysis fields
 %   replaced. Other cache fields are preserved, so callers can keep source and
 %   import metadata beside the derived results. The function creates no
 %   graphics and reads or writes no files.
@@ -77,6 +77,9 @@ function cache = analyzeSignal(cache, parameters)
 %   measurements - Per-segment and summary signal-quality tables from
 %       measureSegments. Empty detections lead to empty downstream results
 %       instead of invented measurements.
+%   powerSpectra - Welch PSD models for the raw ROI, primary filter output,
+%       and peak-detection input. See powerSpectraModels for the estimator,
+%       units, and bounded segment-length policy.
 %
 % Errors:
 %   Missing cache or parameter fields raise normal MATLAB field-reference
@@ -152,6 +155,8 @@ function cache = analyzeSignal(cache, parameters)
         cache.segments, cache.template);
     cache.filterDetails = ecg_print.analysisRun.filterDetailsModel( ...
         cache, parameters);
+    cache.powerSpectra = ecg_print.analysisRun.powerSpectraModels( ...
+        cache, useAnalysisBand);
 end
 
 function value = parameterValue(parameters, name, fallback)
