@@ -6,10 +6,21 @@ function parameters = sanitizeParameters(parameters, sampleRate)
 % and legal. Side effects: none.
 parameters.roiStart = finiteNonnegative(parameters.roiStart, 0);
 parameters.roiEnd = finiteNonnegative(parameters.roiEnd, 0);
-parameters.lowCut = finiteNonnegative(parameters.lowCut, 0.5);
-parameters.highCut = finiteNonnegative(parameters.highCut, 40);
-parameters.highCut = min(parameters.highCut, ...
-    max(parameters.lowCut + eps, 0.45 * sampleRate));
+parameters.lowCut = finiteNonnegative(parameters.lowCut, 0);
+parameters.highCut = finiteNonnegative(parameters.highCut, 0.5 * sampleRate);
+maximumCutoff = max(eps, 0.5 * double(sampleRate));
+[parameters.lowCut, parameters.highCut] = legalBand( ...
+    parameters.lowCut, parameters.highCut, maximumCutoff);
+parameters.useAnalysisBandForPeaks = logicalValue( ...
+    fieldValue(parameters, "useAnalysisBandForPeaks", true), true);
+peakLowCut = finiteNonnegative( ...
+    fieldValue(parameters, "peakLowCut", parameters.lowCut), ...
+    parameters.lowCut);
+peakHighCut = finiteNonnegative( ...
+    fieldValue(parameters, "peakHighCut", parameters.highCut), ...
+    parameters.highCut);
+[parameters.peakLowCut, parameters.peakHighCut] = legalBand( ...
+    peakLowCut, peakHighCut, maximumCutoff);
 parameters.peakDistance = max(eps, ...
     finiteNonnegative(parameters.peakDistance, 0.28));
 parameters.segmentWindow = max(eps, ...
@@ -18,6 +29,26 @@ parameters.templateTopN = max(1, round( ...
     finiteNonnegative(parameters.templateTopN, 30)));
 parameters.smoothBeats = max(1, round( ...
     finiteNonnegative(parameters.smoothBeats, 15)));
+end
+
+function [low, high] = legalBand(low, high, maximum)
+margin = max(eps(maximum), eps);
+low = min(low, max(0, maximum - margin));
+high = min(max(high, low + margin), maximum);
+end
+
+function value = fieldValue(parameters, name, fallback)
+if isfield(parameters, name)
+    value = parameters.(name);
+else
+    value = fallback;
+end
+end
+
+function value = logicalValue(value, fallback)
+if ~(islogical(value) && isscalar(value))
+    value = fallback;
+end
 end
 
 function value = finiteNonnegative(value, fallback)

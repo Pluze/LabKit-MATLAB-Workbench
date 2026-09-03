@@ -42,6 +42,12 @@ applicationState.session.cache = cache;
 applicationState.session.workflow.importStatus = status;
 applicationState.project.parameters.channel = string( ...
     cache.signal.displayName);
+if isfield(applicationState.project.parameters, ...
+        "analysisBandAutomatic") && ...
+        applicationState.project.parameters.analysisBandAutomatic
+    applicationState.project.parameters.lowCut = 0;
+    applicationState.project.parameters.highCut = 0.5 * cache.signal.fs;
+end
 applicationState.project.parameters.roiStart = 0;
 applicationState.project.parameters.roiEnd = max(cache.signal.time);
 applicationState.project.results.lastAnalysis = struct();
