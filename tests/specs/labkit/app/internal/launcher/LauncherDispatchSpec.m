@@ -189,6 +189,7 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(appTable.Data{1, 3}), "Alpha");
             testCase.verifyEqual(appTable.ColumnEditable, ...
                 [true false false false false false]);
+            testCase.verifyTrue(all(appTable.ColumnSortable));
             testCase.verifyEqual(appTable.FontSize, 12);
             testCase.verifyTrue(all(cellfun( ...
                 @(value) isnumeric(value) && isscalar(value), ...
@@ -205,7 +206,7 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 [62 120 180 70 72 90]);
             testCase.verifyTrue(all(ismember([ ...
                 "Open Selected App", "Refresh App List", ...
-                "Open App Guide", "Latest", "Versions", ...
+                "Open App Guide", "View Launch Log", "Latest", "Versions", ...
                 "Doc Generation", "Run Code Analyzer", ...
                 "Profile Selected App", "Clean Artifacts", ...
                 "Package Checked"], buttons)));
@@ -226,6 +227,24 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 "Starting App...");
             testCase.verifyTrue(any(contains(launcherText(fig), ...
                 "Opened " + commands(2))));
+            launchLog = getappdata(fig, "labkitLauncherLog");
+            testCase.verifyTrue(isfile(launchLog.file));
+            events = readLauncherEvents(launchLog.file);
+            eventNames = string(cellfun(@(event) event.eventName, ...
+                events, "UniformOutput", false));
+            testCase.verifyTrue(any(eventNames == ...
+                "launcher.catalog.refresh.completed"));
+            testCase.verifyTrue(all(ismember([ ...
+                "launcher.app.status_presented", ...
+                "launcher.app.path_prepared", ...
+                "launcher.app.invocation_completed"], eventNames)));
+            completedIndex = find(eventNames == ...
+                "launcher.app.completed", 1, "last");
+            testCase.verifyNotEmpty(completedIndex);
+            testCase.verifyEqual(string( ...
+                events{completedIndex}.appCommand), commands(2));
+            testCase.verifyGreaterThanOrEqual( ...
+                events{completedIndex}.durationSeconds, 0);
             testCase.verifyEqual(string(appTable.Enable), "on");
             testCase.verifyEqual(string(fig.Pointer), "arrow");
             openButton = findall(fig, "Type", "uibutton", ...
@@ -233,6 +252,15 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(openButton, 1);
             view = getappdata(fig, "labkitLauncherView");
             testCase.verifyEqual(view.controls.appTable.table, appTable);
+            logButton = findall(fig, "Type", "uibutton", ...
+                "Text", "View Launch Log");
+            logButton.ButtonPushedFcn(logButton, []);
+            logFigure = findall(groot, "Type", "figure", ...
+                "Tag", "labkitLauncherLog");
+            testCase.verifyNumElements(logFigure, 1);
+            testCase.verifyTrue(any(contains( ...
+                launcherText(logFigure), "launcher.app.completed")));
+            delete(logFigure);
             delete(fig); delete(cleanup)
         end
 
@@ -532,6 +560,15 @@ if isempty(chunks)
     values = strings(0, 1);
 else
     values = vertcat(chunks{:});
+end
+end
+
+function events = readLauncherEvents(filepath)
+lines = readlines(filepath);
+lines = lines(strlength(strip(lines)) > 0);
+events = cell(numel(lines), 1);
+for index = 1:numel(lines)
+    events{index} = jsondecode(lines(index));
 end
 end
 
