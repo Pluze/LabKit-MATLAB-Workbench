@@ -335,6 +335,18 @@ explicit compliant squash subject; do not rely on GitHub defaults.
   tag. GitHub is the single source for that published version summary; do not
   create a parallel page under `docs/`, maintain an unreleased changelog, or
   duplicate Change narratives.
+- Before drafting or publishing release notes, identify the immediately
+  preceding published release tag and audit the complete
+  `<previous-published-tag>..<release-tag>` boundary. Reconcile its commits,
+  changed paths, structured Change records, and component version transitions
+  so every added, changed, or retired user-visible App, workflow, public
+  contract, compatibility condition, and required user action is represented
+  in Highlights, Fixes, or Upgrade Note. Explicitly classify remaining changes
+  as non-user-visible in the release work record. Never infer release scope
+  from only the latest PR, merge commit, branch, or remembered delivery.
+- After writing or editing a GitHub Release, read back the published title,
+  tag, body, and assets and compare the body once more with that complete tag
+  boundary before considering the release complete.
 - New release tags are `vX.Y.Z`; do not rename published legacy tags. Release
   titles contain only `VX.Y.Z` with an uppercase `V` and relevant `Highlights`,
   `Fixes`, `Upgrade Note`, and `Validation` sections.
