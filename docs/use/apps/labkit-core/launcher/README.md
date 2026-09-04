@@ -24,6 +24,7 @@ The window paints before app discovery completes. Its status area first reports 
 | Run Apps | **Open Selected App** | Checks the selected App's requirements and opens it. |
 | Run Apps | **Refresh App List** | Repeats public and configured private-app discovery without restarting the launcher. |
 | Run Apps | **Open App Guide** | Opens the current online guide for the selected App. |
+| Run Apps | **View Launch Log** | Opens the current Launcher's timed discovery and App-startup events. |
 | Versions and Install | **Latest** | Installs the latest published stable GitHub Release. |
 | Versions and Install | **Versions** | Lists published stable GitHub Releases with their publication date and release information for deliberate upgrade or rollback. |
 | Development and Maintenance | **Doc Generation** | Rebuilds the complete ignored `site/` folder from the current Markdown and public MATLAB help. It does not open a page or choose between online and local help. |
@@ -32,9 +33,11 @@ The window paints before app discovery completes. Its status area first reports 
 | Development and Maintenance | **Clean Artifacts** | Removes ignored generated reports under `artifacts/`; it does not delete app projects or exported laboratory results. |
 | Package and Publish | **Package Checked** | Creates one source ZIP containing all checked apps and their runtime support. |
 
-Double-clicking an app row is equivalent to selecting it and opening it normally. The checkbox column controls package membership; ordinary launch selection does not change the checked set. The application table places **Family** immediately before **App** so related tools remain visually grouped while their individual names stay easy to scan.
+Double-clicking an app row is equivalent to selecting it and opening it normally. The checkbox column controls package membership; ordinary launch selection does not change the checked set. Click any column heading to sort it and click again to reverse the order. Selection and double-click actions continue to address the underlying App after sorting. The application table places **Family** immediately before **App** so related tools remain visually grouped while their individual names stay easy to scan.
 
-When startup begins, the launcher disables its App table and actions, changes the open button to **Starting App...**, and reports whether it is preparing the App or opening its window. Duplicate clicks are ignored until startup finishes. Success restores the controls and reports the opened command; failure reports the identifier and message and offers repair guidance when the installation itself is incomplete.
+When startup begins, the launcher disables its App table and actions, changes the open button to **Starting App...**, and reports whether it is preparing the App or invoking its window. Duplicate clicks are ignored until invocation finishes. Success restores the controls and reports elapsed launch time without forcing an additional synchronous full-window paint; MATLAB can finish painting the new App after the Launcher callback returns. Failure reports the identifier and message and offers repair guidance when the installation itself is incomplete.
+
+The full Launcher writes one bounded JSON Lines log per Launcher session under `artifacts/logs/launcher/` and retains the 20 most recent logs. Events time Launcher view construction, catalog discovery, tool probing, App-path preparation, and App invocation. **View Launch Log** renders the current file in a readable window. Durable records contain controlled event names, App commands, durations, outcomes, and error identifiers; they do not retain source paths, data filenames, exception messages, or scientific values. App runtime construction and presentation remain in that App's separate session log.
 
 Every launch uses the same clean App path. Use the App's **Tools > Diagnostics** menu to inspect its live session log. The Session Log window owns manual TRACE capture when additional detail is needed; the structured journal remains under `artifacts/logs/sessions/` after the App closes.
 

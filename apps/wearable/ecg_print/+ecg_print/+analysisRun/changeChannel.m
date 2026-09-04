@@ -17,15 +17,24 @@ catch ME
     return;
 end
 applicationState.project.parameters.channel = channel;
+if isfield(applicationState.project.parameters, ...
+        "analysisBandAutomatic") && ...
+        applicationState.project.parameters.analysisBandAutomatic
+    applicationState.project.parameters.lowCut = 0;
+    applicationState.project.parameters.highCut = 0.5 * signal.fs;
+end
 applicationState.project.parameters.roiStart = 0;
 applicationState.project.parameters.roiEnd = max(signal.time);
 applicationState.session.cache.signal = signal;
 applicationState.session.cache.workingSignal = signal;
 applicationState.session.cache.filteredSignal = [];
+applicationState.session.cache.peakDetectionSignal = [];
 applicationState.session.cache.events = [];
 applicationState.session.cache.segments = [];
 applicationState.session.cache.template = [];
 applicationState.session.cache.measurements = [];
+applicationState.session.cache.filterDetails = [];
+applicationState.session.cache.powerSpectra = [];
 applicationState.session.cache.plotViewRevision = ...
     applicationState.session.cache.plotViewRevision + 1;
 applicationState.project.results.lastAnalysis = struct();

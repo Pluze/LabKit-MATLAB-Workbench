@@ -1,0 +1,36 @@
+function appendLaunchLog(log, eventName, durationSeconds, ...
+        appCommand, outcome, errorIdentifier)
+%APPENDLAUNCHLOG Append one fixed-schema diagnostic event if logging is available.
+% Expected caller: createLauncher. Events retain only controlled semantic names,
+% durations, App commands, outcomes, and error identifiers; no paths or messages.
+
+if nargin < 3 || isempty(durationSeconds), durationSeconds = []; end
+if nargin < 4, appCommand = ""; end
+if nargin < 5, outcome = ""; end
+if nargin < 6, errorIdentifier = ""; end
+if ~isstruct(log) || ~isfield(log, "file") || ...
+        strlength(string(log.file)) == 0
+    return;
+end
+payload = struct( ...
+    "schemaVersion", 1, ...
+    "timestampUtc", char(datetime("now", "TimeZone", "UTC", ...
+        "Format", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")), ...
+    "elapsedSeconds", toc(log.clock), ...
+    "eventName", char(string(eventName)), ...
+    "durationSeconds", durationSeconds, ...
+    "appCommand", char(string(appCommand)), ...
+    "outcome", char(string(outcome)), ...
+    "errorIdentifier", char(string(errorIdentifier)));
+try
+    fid = fopen(log.file, "a", "n", "UTF-8");
+    if fid < 0
+        return;
+    end
+    cleanup = onCleanup(@() fclose(fid));
+    fprintf(fid, "%s\n", jsonencode(payload));
+    delete(cleanup);
+catch
+    % Diagnostics must never replace the Launcher action or failure.
+end
+end

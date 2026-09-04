@@ -25,7 +25,12 @@ function rows = summaryRows(signal, events, segments, measurements)
     end
     if ~isempty(measurements) && ~isempty(measurements.summary)
         M = measurements.summary;
+        unit = ecg_print.analysisRun.signalUnit(signal);
         rows = [rows; {
+            char("Mean peak-to-peak (" + unit + ")"), sprintf('%.3g', M.SignalP2PMean);
+            char("Peak-to-peak std (" + unit + ")"), sprintf('%.3g', M.SignalP2PStd);
+            char("Mean noise RMS (" + unit + ")"), sprintf('%.3g', M.NoiseRMSMean);
+            char("Noise RMS std (" + unit + ")"), sprintf('%.3g', M.NoiseRMSStd);
             'Mean SNR (dB)', sprintf('%.3g', M.SNRdBMean);
             'SNR std (dB)', sprintf('%.3g', M.SNRdBStd);
             'Mean template corr.', sprintf('%.3g', M.TemplateCorrelationMean)}];

@@ -6,13 +6,15 @@ function cache = analyzeSignal(cache, parameters)
 %
 % Description:
 %   Runs the numerical pipeline used by ECG Print without opening the app. It
-%   filters the complete decoded channel, optionally crops the raw and filtered
+%   filters the complete decoded channel with a stable App-owned FIR,
+%   optionally crops the raw and filtered
 %   signals to a time interval, detects ECG peaks, extracts event-centered
 %   segments, builds a representative template, and measures each segment
-%   against that template. Filtering before cropping reduces FFT boundary
-%   artifacts at the requested interval edges.
+%   against that template. Filtering before cropping keeps convolution
+%   boundary handling outside the requested interval edges. The symmetric
+%   FIR uses reflection padding and compensates its linear-phase delay.
 %
-%   The input structure is returned with six rebuildable analysis fields
+%   The input structure is returned with its rebuildable analysis fields
 %   replaced. Other cache fields are preserved, so callers can keep source and
 %   import metadata beside the derived results. The function creates no
 %   graphics and reads or writes no files.
@@ -28,12 +30,16 @@ function cache = analyzeSignal(cache, parameters)
 %
 % Parameter Fields:
 %   lowCut - Lower band-pass cutoff in hertz. Supply a finite nonnegative
-%       scalar below highCut and below 45% of the sample rate.
-%   highCut - Requested upper band-pass cutoff in hertz. For a conventional
-%       lowCut, the effective value is min(highCut, 0.45*fs). If lowCut is at
-%       or above that limit, the cap becomes lowCut+eps so the two cutoffs can
-%       remain ordered. Callers should avoid that case because it leaves no
-%       useful safety margin below Nyquist.
+%       scalar below highCut and no greater than the Nyquist frequency.
+%   highCut - Requested upper band-pass cutoff in hertz, capped at the
+%       Nyquist frequency. The complete [0 fs/2] interval is a true bypass.
+%   useAnalysisBandForPeaks - Optional logical scalar. True or absent uses
+%       the main filtered signal for detection. False applies a second
+%       band-pass to the main filtered signal for peak detection only.
+%   peakLowCut, peakHighCut - Secondary detector-band cutoffs in hertz when
+%       useAnalysisBandForPeaks is false. Detected indices anchor segments
+%       cut from the main filtered signal, so this band cannot change the
+%       samples used for templates or quality measurements.
 %   roiStart - Start time in seconds on cache.signal.time.
 %   roiEnd - End time in seconds on cache.signal.time. When roiEnd is greater
 %       than roiStart, samples at both endpoints are retained and the cropped
@@ -63,12 +69,17 @@ function cache = analyzeSignal(cache, parameters)
 %   signal - Original decoded signal, unchanged.
 %   workingSignal - Raw full signal or selected time crop.
 %   filteredSignal - Corresponding band-pass filtered signal.
+%   peakDetectionSignal - Signal used only to locate peak indices. This is
+%       filteredSignal unless the optional detector band is enabled.
 %   events - Peak anchors from labkit.biosignal.detectEcgPeaks.
 %   segments - Retained event-centered columns from segmentByEvents.
 %   template - Representative waveform and segment ranking from buildTemplate.
 %   measurements - Per-segment and summary signal-quality tables from
 %       measureSegments. Empty detections lead to empty downstream results
 %       instead of invented measurements.
+%   powerSpectra - Welch PSD models for the raw ROI, primary filter output,
+%       and peak-detection input. See powerSpectraModels for the estimator,
+%       units, and bounded segment-length policy.
 %
 % Errors:
 %   Missing cache or parameter fields raise normal MATLAB field-reference
@@ -90,7 +101,8 @@ function cache = analyzeSignal(cache, parameters)
 %   cache = ecg_print.analysisRun.analyzeSignal(cache, parameters);
 %   assert(isfield(cache, 'measurements'))
 %
-% See also labkit.biosignal.filterSignal,
+% See also ecg_print.analysisRun.firDesign,
+%   ecg_print.analysisRun.applyFir,
 %   labkit.biosignal.cropSignal,
 %   labkit.biosignal.detectEcgPeaks,
 %   labkit.biosignal.segmentByEvents,
@@ -98,13 +110,14 @@ function cache = analyzeSignal(cache, parameters)
 %   labkit.biosignal.measureSegments
 
     signal = cache.signal;
-    nyquistSafetyFraction = 0.45;
-    % Constant: keep the upper cutoff at 90% of Nyquist when lowCut permits.
+    nyquist = 0.5 * signal.fs;
     highCut = min(parameters.highCut, ...
-        max(parameters.lowCut + eps, nyquistSafetyFraction * signal.fs));
-    filterSpec = struct("type", "bandpass", ...
-        "cutoffHz", [parameters.lowCut highCut]);
-    fullFiltered = labkit.biosignal.filterSignal(signal, filterSpec);
+        max(parameters.lowCut + eps, nyquist));
+    analysisBand = [parameters.lowCut highCut];
+    analysisFilter = ecg_print.analysisRun.firDesign( ...
+        signal.fs, analysisBand);
+    fullFiltered = ecg_print.analysisRun.applyFir( ...
+        signal, analysisFilter);
     timeRange = [parameters.roiStart parameters.roiEnd];
     if timeRange(2) > timeRange(1)
         cache.workingSignal = labkit.biosignal.cropSignal(signal, timeRange);
@@ -120,8 +133,19 @@ function cache = analyzeSignal(cache, parameters)
         "method", ecg_print.analysisRun.peakMethodValue(parameters.peakMethod), ...
         "minDistanceSec", parameters.peakDistance, ...
         "thresholdStd", appThresholdStd);
+    useAnalysisBand = ~isfield(parameters, "useAnalysisBandForPeaks") || ...
+        parameters.useAnalysisBandForPeaks;
+    cache.peakDetectionSignal = cache.filteredSignal;
+    if ~useAnalysisBand
+        peakLowCut = parameterValue(parameters, "peakLowCut", parameters.lowCut);
+        peakHighCut = parameterValue(parameters, "peakHighCut", highCut);
+        peakFilter = ecg_print.analysisRun.firDesign( ...
+            signal.fs, [peakLowCut peakHighCut]);
+        cache.peakDetectionSignal = ecg_print.analysisRun.applyFir( ...
+            cache.filteredSignal, peakFilter);
+    end
     cache.events = labkit.biosignal.detectEcgPeaks( ...
-        cache.filteredSignal, peakOptions);
+        cache.peakDetectionSignal, peakOptions);
     cache.segments = labkit.biosignal.segmentByEvents( ...
         cache.filteredSignal, cache.events, ...
         [-parameters.segmentWindow parameters.segmentWindow]);
@@ -129,4 +153,16 @@ function cache = analyzeSignal(cache, parameters)
         cache.segments, struct("topN", parameters.templateTopN));
     cache.measurements = labkit.biosignal.measureSegments( ...
         cache.segments, cache.template);
+    cache.filterDetails = ecg_print.analysisRun.filterDetailsModel( ...
+        cache, parameters);
+    cache.powerSpectra = ecg_print.analysisRun.powerSpectraModels( ...
+        cache, useAnalysisBand);
+end
+
+function value = parameterValue(parameters, name, fallback)
+if isfield(parameters, name)
+    value = parameters.(name);
+else
+    value = fallback;
+end
 end

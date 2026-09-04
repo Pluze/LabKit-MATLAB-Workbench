@@ -6,12 +6,13 @@ applicationState.project.results.lastAnalysis = struct();
 applicationState.project.results.lastSegmentExport = [];
 applicationState.project.results.lastWaveformExport = [];
 applicationState.session.cache.filteredSignal = [];
+applicationState.session.cache.peakDetectionSignal = [];
 applicationState.session.cache.events = [];
 applicationState.session.cache.segments = [];
 applicationState.session.cache.template = [];
 applicationState.session.cache.measurements = [];
-applicationState.session.cache.plotViewRevision = ...
-    applicationState.session.cache.plotViewRevision + 1;
+applicationState.session.cache.filterDetails = [];
+applicationState.session.cache.powerSpectra = [];
 if ~isempty(applicationState.session.cache.signal)
     applicationState.session.cache.workingSignal = ...
         applicationState.session.cache.signal;

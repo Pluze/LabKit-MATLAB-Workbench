@@ -237,9 +237,9 @@ tests, history, and details out of the public repository.
 
 1. Keep the repository's primary checkout on a clean, complete `main` aligned
    with `origin/main`; it is an integration reference, not a task workspace.
-   Every new change uses its own linked worktree beneath
-   `artifacts/worktrees/<task-name>/` and one short-lived task branch, even when
-   no other task is active. This ignored common parent keeps active task trees
+   Every active delivery branch uses its own linked worktree beneath
+   `artifacts/worktrees/<task-name>/`, even when no other task is active. This
+   ignored common parent keeps active task trees
    visible and makes their later cleanup explicit. Inspect status and alignment
    before editing, preserve unrelated user work, fetch `origin/main`, and create
    the worktree branch from that exact commit. Use a concise descriptive branch
@@ -250,11 +250,15 @@ tests, history, and details out of the public repository.
 2. When a multi-commit migration is active, keep its roadmap only in
    `.agents/migration_guide.md`; remove completed entries and delete the empty
    ledger before final PR preparation.
-3. One task branch owns one coherent delivery stream. Commit and push logical
-   checkpoints when the work benefits from them; do not delay a coherent
-   checkpoint merely to accumulate a larger batch. Once its PR to `main`
-   opens, freeze that branch until the PR is merged or closed; do not mix later
-   work or another task into its moving head.
+3. A short-lived task branch may own one focused feature or an intentional,
+   reviewable bundle of improvements across multiple features. Use separate
+   branches when isolation is needed for risk, ownership, dependency, review,
+   or delivery timing; branch separation is a judgment, not a one-feature
+   invariant. State the complete bundled scope in its PR. Commit and push
+   logical checkpoints when the work benefits from them; do not delay a
+   coherent checkpoint merely to accumulate a larger batch. Once its PR to
+   `main` opens, freeze that branch until the PR is merged or closed; do not add
+   later work or another task to its moving head.
 4. Use `labkit-checkpoint-guard` before every requested commit or push. A clean
    `codecheck` is mandatory after the final MATLAB edit; stage only the owned
    outcome and proportionate evidence.

@@ -6,6 +6,8 @@ function writeWaveformPng(request, outputPath)
     cleanup = onCleanup(@() close(figureHandle));
     ax = axes(figureHandle);
     ecg_print.analysisRun.drawPreview( ...
-        ax, struct("kind", "wave", "request", request));
+        ax, struct("axisId", "wave", "kind", "wave", ...
+        "request", request, "analysis", table(), ...
+        "smoothBeats", 1, "unit", ""));
     exportgraphics(ax, outputPath, "Resolution", 300);
 end

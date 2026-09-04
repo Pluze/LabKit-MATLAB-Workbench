@@ -7,11 +7,23 @@ function drawPreview(axesById, model)
         drawOne(axesById, model);
         return;
     end
-    axisIds = ["wave", "noise", "snr", "template"];
-    for k = 1:numel(axisIds)
-        ax = axesById.(axisIds(k));
+    currentIds = string(fieldnames(axesById));
+    if isscalar(currentIds) && currentIds == "wave"
+        timeAxes = findTimeAxes(axesById.(currentIds(1)));
+        if hasAllTimeAxes(timeAxes)
+            ecg_print.analysisRun.linkTimeAxes(timeAxes, "remove");
+        end
+    end
+    for k = 1:numel(model)
+        ax = axesById.(model(k).axisId);
         labkit.app.plot.clearAxes(ax, ResetScale=true);
         drawOne(ax, model(k));
+    end
+    if isscalar(currentIds) && currentIds == "snr"
+        timeAxes = findTimeAxes(axesById.(currentIds(1)));
+        if hasAllTimeAxes(timeAxes)
+            ecg_print.analysisRun.linkTimeAxes(timeAxes, "install");
+        end
     end
 end
 
@@ -20,18 +32,23 @@ function drawOne(ax, model)
         case "wave"
             drawWave(ax, model.request);
         case "noise"
-            drawMetric(ax, model.analysis, model.smoothBeats, "noise");
+            drawMetric(ax, model.analysis, model.smoothBeats, ...
+                "noise", model.unit);
+        case "peak"
+            drawMetric(ax, model.analysis, model.smoothBeats, ...
+                "peak", model.unit);
         case "snr"
-            drawMetric(ax, model.analysis, model.smoothBeats, "snr");
+            drawMetric(ax, model.analysis, model.smoothBeats, ...
+                "snr", model.unit);
         case "template"
             drawTemplate(ax, model.request);
     end
+    styleAxis(ax, model);
     makeDisplayGraphicsNonPickable(ax);
 end
 
 function drawWave(ax, request)
-    title(ax, request.title);
-    xlabel(ax, request.xLabel);
+    title(ax, request.title, 'Interpreter', 'none');
     ylabel(ax, request.yLabel);
     if ~request.ok
         return;
@@ -47,17 +64,17 @@ function drawWave(ax, request)
     grid(ax, "on");
 end
 
-function drawMetric(ax, analysis, smoothBeats, kind)
+function drawMetric(ax, analysis, smoothBeats, kind, unit)
     if kind == "noise"
-        title(ax, sprintf("Template Noise RMS Over Time | Smooth=%d beats", ...
-            smoothBeats));
-        ylabel(ax, "Noise RMS");
+        title(ax, sprintf("Noise RMS · %d-beat median", smoothBeats));
+        ylabel(ax, "RMS (" + unit + ")");
+    elseif kind == "peak"
+        title(ax, sprintf("Peak-to-peak · %d-beat median", smoothBeats));
+        ylabel(ax, "P-P (" + unit + ")");
     else
-        title(ax, sprintf("Template SNR Over Time | Smooth=%d beats", ...
-            smoothBeats));
+        title(ax, sprintf("SNR · %d-beat median", smoothBeats));
         ylabel(ax, "SNR (dB)");
     end
-    xlabel(ax, "Time (s)");
     if height(analysis) == 0
         return;
     end
@@ -65,6 +82,10 @@ function drawMetric(ax, analysis, smoothBeats, kind)
         raw = analysis.NoiseRMS;
         smooth = analysis.NoiseRMS_smooth;
         colors = [0.20 0.45 0.72; 0.05 0.20 0.45];
+    elseif kind == "peak"
+        raw = analysis.SignalP2P;
+        smooth = analysis.SignalP2P_smooth;
+        colors = [0.72 0.42 0.16; 0.45 0.20 0.05];
     else
         raw = analysis.SNRdB;
         smooth = analysis.SNRdB_smooth;
@@ -77,6 +98,43 @@ function drawMetric(ax, analysis, smoothBeats, kind)
         "Color", colors(2, :));
     hold(ax, "off");
     grid(ax, "on");
+end
+
+function styleAxis(ax, model)
+    ax.FontSize = 10;
+    ax.Title.FontSize = 11;
+    ax.Title.FontWeight = "normal";
+    showXLabel = true;
+    if isfield(model, "showXLabel")
+        showXLabel = model.showXLabel;
+    end
+    if showXLabel
+        if string(model.kind) == "template"
+            xlabel(ax, model.request.xLabel);
+        else
+            xlabel(ax, "Time (s)");
+        end
+    else
+        xlabel(ax, "");
+        ax.XTickLabel = [];
+    end
+end
+
+function axesById = findTimeAxes(seed)
+    figureHandle = ancestor(seed, "figure");
+    areaIds = ["waveAxes", "noiseAxes", "peakAxes", "snrAxes"];
+    axisIds = ["wave", "noise", "peak", "snr"];
+    axesById = struct();
+    for k = 1:numel(axisIds)
+        match = findall(figureHandle, "Tag", areaIds(k) + "." + axisIds(k));
+        if isscalar(match) && isgraphics(match, "axes")
+            axesById.(axisIds(k)) = match;
+        end
+    end
+end
+
+function tf = hasAllTimeAxes(axesById)
+    tf = all(isfield(axesById, {'wave', 'noise', 'peak', 'snr'}));
 end
 
 function drawTemplate(ax, request)

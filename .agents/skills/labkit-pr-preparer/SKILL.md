@@ -16,9 +16,12 @@ Fetch origin, require a same-repository short-lived task branch created from
 current `origin/main` and an understood clean worktree, and record
 base/head/upstream, complete diff, and intermediate commits. Branch names are
 descriptive labels, not capability or agent contracts. Stop for `main`, a
-reused merged branch, a misaligned delivery stream, an already frozen different
-head, or inseparable local work. Never merge main into the task branch, create
-a sync commit, force-push, or rewrite commits without explicit approval.
+reused merged branch, an unreviewable or accidental bundle, an already frozen
+different head, or inseparable local work. A branch may intentionally bundle
+multiple features when its PR states the complete scope and the combined review,
+risk, dependency, and delivery boundary remains clear. Never merge main into
+the task branch, create a sync commit, force-push, or rewrite commits without
+explicit approval.
 
 Run the bundled inventory before changing versions or Change records:
 
@@ -51,6 +54,10 @@ Inspect this judgment manually even when inventory automation passes.
 Run integration policy for the actual refs, repair authored links, then run
 `changedFast` exactly once for the final tree. Inspect the complete diff,
 sensitive data, versions, Change records, manuals, evidence, and native/manual gaps.
+When a completed task-branch Development Feedback run is already available for
+the exact head, inspect its status and summary as supplemental branch evidence.
+Do not wait for or repeatedly poll that run, and do not treat it as a substitute
+for the local gate or required pull-request CI.
 Fill the repository PR template, normalize it with
 `.github/scripts/normalize_github_markdown.py`, push the final checkpoint, open
 or update the PR, and freeze its task branch. Keep one physical line per prose
