@@ -17,6 +17,11 @@
       "rationale": "Release documentation and fact-lifecycle ownership are in scope."
     },
     {
+      "prompt": "Before publishing the next LabKit release, compare it with the immediately preceding published tag and ensure every App and workflow added across several merged PRs appears in the release notes.",
+      "should_activate": true,
+      "rationale": "Complete tag-to-tag release coverage and reconciliation of user-visible changes are release documentation work."
+    },
+    {
       "prompt": "Migrate an accepted component change into the new structured change schema, keep its durable rationale with the change, and link the superseding Change chain.",
       "should_activate": true,
       "rationale": "Structured changes, supersession relationships, and history migration are documentation architecture work."

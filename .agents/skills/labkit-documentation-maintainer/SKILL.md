@@ -61,6 +61,25 @@ canonical sections and `supersedes` only when the new choice replaces an older
 choice. Do not create local release summaries or copy validation inventories,
 hashes, commands, CI mechanics, or implementation chronology into reader docs.
 
+## Audit published release coverage
+
+Treat release notes as a complete tag-to-tag reader summary. Identify the
+immediately preceding published GitHub Release rather than assuming the nearest
+tag or latest merged PR is the baseline, verify both tag targets and ancestry,
+and inspect the complete `<previous-published-tag>..<release-tag>` log and
+changed paths. Inventory every structured Change record and every App, facade,
+or launcher version transition in that range, then classify each user-visible
+addition, change, retirement, compatibility condition, and user action under
+Highlights, Fixes, or Upgrade Note. Record non-user-visible classifications in
+the release work record, not the public notes.
+
+Draft from that inventory and reconcile each item against the tagged source,
+current manuals, and Change records; do not reconstruct release scope from one
+PR body, merge subject, or memory. Normalize GitHub Markdown before writing.
+After creating or editing the Release, read back its title, tag, body, state,
+and assets and repeat the inventory-to-body comparison. A valid tag and asset
+do not compensate for an incomplete user-facing summary.
+
 ## Verify
 
 Run the smallest source/help/page contract first, then `buildtool docsCheck`.
@@ -69,6 +88,12 @@ tables, broken links or anchors, unreachable pages, incomplete search/map/API
 coverage, and nondeterministic output. Render the ignored site and inspect
 representative desktop and mobile pages when layout, navigation, tables, long
 symbols, search, or interaction changes.
+
+For a release-only correction that changes no authored repository
+documentation, validate the normalized GitHub Markdown and the read-back
+release coverage audit; `docsCheck` is not required solely for the external
+Release body. Run it when repository documentation instructions, authored
+pages, discovery, or rendering also change.
 
 Use `labkit-agent-governance` when rules, this Skill, its metadata/evals, or the
 migration ledger changes. Use `labkit-test-planner` only when evidence extends
