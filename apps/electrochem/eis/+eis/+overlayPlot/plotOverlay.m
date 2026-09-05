@@ -97,18 +97,12 @@ function [x, y] = filteredXY( ...
     x = eis.analysisRun.valuesForAxis(item, xName, impedanceUnit);
     y = eis.analysisRun.valuesForAxis(item, yName, impedanceUnit);
     valid = isfinite(x) & isfinite(y);
-    x = x(valid);
-    y = y(valid);
-    if useLogX
-        validX = x > 0;
-        x = x(validX);
-        y = y(validX);
-    end
-    if useLogY
-        validY = y > 0;
-        x = x(validY);
-        y = y(validY);
-    end
+    if useLogX, valid = valid & x > 0; end
+    if useLogY, valid = valid & y > 0; end
+    % Retain positions so invalid samples break a curve instead of joining
+    % unrelated neighboring samples across missing or nonpositive values.
+    x(~valid) = NaN;
+    y(~valid) = NaN;
 end
 
 function txt = pluralS(n)

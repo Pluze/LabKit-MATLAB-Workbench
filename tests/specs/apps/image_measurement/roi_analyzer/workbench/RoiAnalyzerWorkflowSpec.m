@@ -158,6 +158,30 @@ classdef RoiAnalyzerWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(runtime.State.session.selection.sourceIndex, 2);
             testCase.verifyNotEmpty(findall( ...
                 runtime.figureHandle(), "Tag", "preview.main").Children);
+            currentSelection = runtime.State.session.selection;
+            currentCache = runtime.State.session.cache;
+            runtime.invokeAction("measureAll");
+            testCase.verifyEqual(runtime.State.session.selection, currentSelection);
+            testCase.verifyEqual(runtime.State.session.cache, currentCache);
+            runtime.invokeAction("exportAllCsv");
+            batch = readtable(outputPath, TextType="string");
+            testCase.verifyEqual(height(batch), 18);
+            testCase.verifyEqual(unique(batch.ImageIndex), [1; 2]);
+            testCase.verifyTrue(all(batch.Status == "Measured"));
+            % Replace the batch after a source disappears; stale successful
+            % rows must be removed and the failure must remain exportable.
+            delete(secondPath);
+            runtime.invokeAction("measureAll");
+            testCase.verifyEmpty(runtime.State.project.results.items(2).summary);
+            runtime.invokeAction("exportAllCsv");
+            failedBatch = readtable(outputPath, TextType="string");
+            testCase.verifyEqual(failedBatch.Status(end), "Read failed");
+            testCase.verifyTrue(isnan(failedBatch.Mean(end)));
+            imwrite(second, secondPath);
+            runtime.invokeAction("measureAll");
+            tab = findall(runtime.figureHandle(), "Type", "uitab", "Title", "Results + Export");
+            tab.Parent.SelectedTab = tab;
+            exportapp(runtime.figureHandle(), labkittest.visualEvidencePath("roi-batch", ".png"));
             runtime.invokeAction("openProject");
             testCase.verifyEqual( ...
                 numel(runtime.State.project.annotations.items(1).rois), 2);

@@ -47,7 +47,7 @@ if nargin < 3
 end
 validateImage(imageData);
 rois = rois(:);
-rowTemplate = emptyRow();
+rowTemplate = roi_analyzer.analysisRun.emptyRow();
 [channels, channelNames] = channelMatrices(imageData);
 rows = repmat(rowTemplate, numel(rois) * numel(channels), 1);
 rowIndex = 0;
@@ -207,13 +207,4 @@ for k = 1:numel(rois)
 end
 token = "ratioDenominator=" + ratioDenominatorRoiId + ";" + ...
     join(parts, ";");
-end
-
-function row = emptyRow()
-row = struct("RoiId", "", "RoiName", "", "Shape", "", ...
-    "Channel", "", "PixelCount", 0, "Integrated", NaN, ...
-    "Mean", NaN, "StdDev", NaN, "Median", NaN, "MAD", NaN, ...
-    "Minimum", NaN, "Maximum", NaN, "Quartile25", NaN, ...
-    "Quartile75", NaN, "CentroidX", NaN, "CentroidY", NaN, ...
-    "X", NaN, "Y", NaN, "Width", NaN, "Height", NaN);
 end

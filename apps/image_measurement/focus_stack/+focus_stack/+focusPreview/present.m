@@ -1,6 +1,6 @@
 % App-owned implementation for focus_stack.focusPreview.present within the focus_stack product workflow.
 function view = present(cache, projectResults, sourceCount, viewRevision)
-%PRESENT Build the Focus Stack result summary and paired preview model.
+%PRESENT Build the Focus Stack result summary and quality previews model.
 cacheResult = cache.result;
 result = visibleResult(cache, projectResults, cacheResult);
 view = labkit.app.view.Snapshot();
@@ -12,6 +12,8 @@ if result.ok
     details = focus_stack.focusPreview.details( ...
         result, cache.sourcePaths, ...
         cellstr(projectResults.registrationLines));
+    details{end + 1} = ...
+        "Confidence compares the two strongest detail scores; it is not a probability or a physical depth measurement.";
     if ~cacheResult.ok
         details{end + 1} = ...
             "Saved summary restored; rerun to rebuild image previews and exports.";

@@ -1,9 +1,10 @@
-function state = invalidateAll(state)
+function results = invalidateAll(results)
 %INVALIDATEALL Clear measurements after shared analysis meaning changes.
-for k = 1:numel(state.project.results.items)
-    state.project.results.items(k).roiFingerprint = "";
-    state.project.results.items(k).summary = table();
-    state.project.results.items(k).metrics = table();
+for k = 1:numel(results.items)
+    results.items(k).roiFingerprint = "";
+    results.items(k).summary = table();
+    results.items(k).metrics = table();
 end
-state.project.results.lastExportPath = "";
+results.lastExportPath = "";
+results.batchStatus = table();
 end

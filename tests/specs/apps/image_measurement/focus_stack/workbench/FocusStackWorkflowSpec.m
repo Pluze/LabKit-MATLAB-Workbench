@@ -47,6 +47,19 @@ classdef FocusStackWorkflowSpec < matlab.unittest.TestCase
                 runtime.State.session.cache.plotViewRevision, 1);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.fused").Children);
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.focusMap").Children);
+            fusedAxes = findall(figureValue, "Tag", "preview.fused");
+            fusedPixels = findall(fusedAxes, "Type", "image");
+            testCase.verifyEqual(fusedPixels.CData, repmat(result.fused, 1, 1, 3));
+            quality = findall(figureValue, "Tag", "preview.confidence");
+            pixels = findall(quality, "Type", "image");
+            % Oracle: display the computed quality matrix on its fixed scale;
+            % a normalized-per-image or stale map would change these values.
+            testCase.verifyEqual(pixels.CData, result.confidence);
+            testCase.verifyEqual(quality.CLim, [0 1]);
+            exportapp(figureValue, labkittest.visualEvidencePath("focus-quality", ".png"));
+            runtime.applyControlValue("focusWindow", 7);
+            testCase.verifyEmpty(findall(quality, "Type", "image"));
+            testCase.verifyFalse(runtime.State.session.cache.result.ok);
             testCase.verifyTrue(isfile(output));
             testCase.verifyTrue(isfile(focusMap));
             testCase.verifyTrue(isfile(summary));

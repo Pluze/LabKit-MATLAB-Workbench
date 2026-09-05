@@ -12,5 +12,5 @@ else
     applicationState.project.parameters.ratioDenominatorRoiId = ...
         annotation.rois(match).id;
 end
-applicationState = roi_analyzer.analysisRun.invalidateAll(applicationState);
+applicationState.project.results = roi_analyzer.analysisRun.invalidateAll(applicationState.project.results);
 end
