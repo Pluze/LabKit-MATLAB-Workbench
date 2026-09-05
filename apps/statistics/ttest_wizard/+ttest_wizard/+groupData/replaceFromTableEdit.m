@@ -84,6 +84,22 @@ for row = 1:numel(values)
     priorLabel = groups(groupIndex).label;
 end
 groups = groups(1:groupCount);
+% Category editing owns category order; blank destinations have no table rows.
+ordered = priorGroups(:);
+count = 0;
+for k = 1:numel(priorGroups)
+    index = find(strcmpi(priorGroups(k).label, string({groups.label})), 1);
+    if ~isempty(index)
+        count = count + 1;
+        ordered(count) = groups(index);
+    elseif isempty(priorGroups(k).values)
+        count = count + 1;
+        ordered(count) = priorGroups(k);
+    end
+end
+ordered = ordered(1:count);
+new = ~ismember(lower(string({groups.label})), lower(string({priorGroups.label})));
+groups = [ordered(:); groups(new)];
 end
 
 function tf = isBlankValue(value)

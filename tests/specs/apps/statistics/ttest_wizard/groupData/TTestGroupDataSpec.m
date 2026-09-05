@@ -2,6 +2,29 @@ classdef TTestGroupDataSpec < matlab.unittest.TestCase
     %TTESTGROUPDATASPEC Guard editable group-table transitions.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function batchRenamePreservesPairOrderAndReferenceIdentity(testCase)
+            % Oracle: category labels change while exact samples/provenance stay put.
+            groups = repmat(ttest_wizard.groupData.emptyGroup("A"), 3, 1);
+            for k = 1:3
+                groups(k).label = string(char('A' + k - 1));
+                groups(k).values = [k; k + 3];
+                groups(k).cellAddresses = ["R1"; "R2"];
+            end
+            parameters = ttest_wizard.initialData().parameters;
+            parameters.referenceGroup = "B";
+            parameters.excludedComparisonGroups = "C";
+            [renamed, selected] = ttest_wizard.groupData.renameGroups( ...
+                groups, parameters, ["B", "A", "Other"]);
+            testCase.verifyEqual(string({renamed.label}), ["B", "A", "Other"]);
+            testCase.verifyEqual(renamed(2).values, [2; 5]);
+            testCase.verifyEqual(renamed(2).cellAddresses, ["R1"; "R2"]);
+            testCase.verifyEqual(selected.referenceGroup, "A");
+            testCase.verifyEqual(selected.excludedComparisonGroups, "Other");
+            testCase.verifyError(@() ttest_wizard.groupData.renameGroups( ...
+                groups, parameters, ["A", "a", "C"]), ...
+                "ttest_wizard:groupData:InvalidNames");
+        end
+
         function tableRowsBuildOrderedGroupsAndSelection(testCase)
             project = ttest_wizard.initialData();
             state = struct("project", project, ...

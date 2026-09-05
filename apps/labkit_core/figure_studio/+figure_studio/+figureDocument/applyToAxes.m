@@ -12,21 +12,9 @@ if isempty(panelIndex)
 end
 panel = document.panels(panelIndex);
 applyPanel(panel, ax);
-nodes = document.nodes(string({document.nodes.panelId}) == panel.id & ...
-    string({document.nodes.kind}) ~= "group");
-graphics = supportedGraphics(ax);
-nodeIndex = 1;
-for graphicsIndex = 1:numel(graphics)
-    handle = graphics(graphicsIndex);
-    if nodeIndex > numel(nodes)
-        break;
-    end
-    node = nodes(nodeIndex);
-    if ~matchesNode(handle, node)
-        continue;
-    end
-    applyNode(document, node, handle);
-    nodeIndex = nodeIndex + 1;
+[nodes, graphics] = figure_studio.figureDocument.nodeGraphics(document, panel.id, ax);
+for k = 1:numel(nodes)
+    if isgraphics(graphics(k)), applyNode(document, nodes(k), graphics(k)); end
 end
 figure_studio.figureDocument.applyStyledTicks(document, panel.id, ax);
 end
@@ -110,54 +98,6 @@ if isfield(axisValue, "color") && ~isempty(axisValue.color)
         ax.YAxis(end).Color = axisValue.color;
     catch
     end
-end
-end
-
-function graphics = supportedGraphics(ax)
-children = flipud(allchild(ax));
-for property = ["Title", "Subtitle", "XLabel", "YLabel", "ZLabel"]
-    if isprop(ax, property)
-        children(children == ax.(char(property))) = [];
-    end
-end
-children = expandGroups(children);
-supported = false(size(children));
-for k = 1:numel(children)
-    supported(k) = any(graphicsKind(children(k)) == [ ...
-        "line", "bar", "errorbar", "area", "scatter", "image", ...
-        "surface", "patch", "text", "constantline", "rectangle", ...
-        "boxchart"]);
-end
-graphics = children(supported);
-end
-
-function children = expandGroups(children)
-chunks = cell(numel(children), 1);
-for k = 1:numel(children)
-    if isgraphics(children(k), "hggroup")
-        chunks{k} = expandGroups(flipud(allchild(children(k))));
-    else
-        chunks{k} = children(k);
-    end
-end
-if isempty(chunks)
-    children = gobjects(0, 1);
-else
-    children = vertcat(chunks{:});
-end
-end
-
-function tf = matchesNode(handle, node)
-tf = graphicsKind(handle) == node.kind;
-end
-
-function kind = graphicsKind(handle)
-kind = lower(string(handle.Type));
-className = lower(string(class(handle)));
-if contains(className, "boxchart")
-    kind = "boxchart";
-elseif contains(className, "constantline")
-    kind = "constantline";
 end
 end
 

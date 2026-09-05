@@ -12,6 +12,10 @@ end
 state.project.inputs.groups = repmat( ...
     ttest_wizard.groupData.emptyGroup("Group 1"), 0, 1);
 state.project.parameters.captureTarget = "(new group)";
+state.project.parameters.referenceGroup = "";
+state.project.parameters.excludedComparisonGroups = strings(0, 1);
+state.project.parameters.categoryNames = "";
+state.project.parameters.newGroupName = "";
 state.session.selection.analysisCells = zeros(0, 2);
 state.session.selection.batchGroupTarget = "(select group)";
 state.project.results.lastDataExport = "";

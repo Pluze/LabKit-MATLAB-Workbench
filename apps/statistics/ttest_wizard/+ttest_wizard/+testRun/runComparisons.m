@@ -11,7 +11,8 @@ arguments
     context (1, 1) labkit.app.CallbackContext
 end
 
-groups = state.project.inputs.groups;
+groups = ttest_wizard.testRun.selectedGroups( ...
+    state.project.inputs.groups, state.project.parameters);
 if numel(groups) < 2
     context.alert( ...
         "Enter at least two groups before running comparisons.", ...

@@ -10,6 +10,53 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
+        function opensCurrentLegendEditsAsIndependentCompleteFigures(testCase)
+            % Oracle: popouts retain reordered labels and source values, and the
+            % first output remains unchanged when a later Studio edit is opened.
+            folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            previous = get(groot, 'DefaultFigureVisible');
+            testCase.addTeardown(@() set(groot, 'DefaultFigureVisible', previous));
+            set(groot, 'DefaultFigureVisible', 'off');
+            source = figure(Visible="off");
+            ax = axes(source);
+            plot(ax, 1:3, [1 3 2], DisplayName="First");
+            hold(ax, 'on');
+            plot(ax, 1:3, [2 4 3], DisplayName="Second");
+            legend(ax, 'show');
+            sourcePath = fullfile(folder, "legend.fig");
+            savefig(source, sourcePath);
+            delete(source);
+            definition = figure_studio.definition();
+            runtime = labkittest.createMatlabRuntime(definition, [], ...
+                struct("alert", @(message,title) error("test:UnexpectedAlert", "%s: %s", title, message)), ...
+                labkittest.temporarySessionJournal(definition, folder));
+            cleanup = onCleanup(@() runtime.close());
+            runtime.applyFileSelection("figFiles", string(sourcePath), 1);
+            runtime.applyTableEdit("legendTable", labkit.app.event.TableCellEdit( ...
+                RowIndex=2, ColumnIndex=3, PreviousValue=2, NewValue=1));
+            runtime.applyTableEdit("legendTable", labkit.app.event.TableCellEdit( ...
+                RowIndex=1, ColumnIndex=2, PreviousValue="Second", NewValue="_Treatment"));
+            runtime.invokeAction("openFigure");
+            first = findall(groot, Type="figure", Tag="figureStudioOutput");
+            firstCleanup = onCleanup(@() delete(first));
+            firstLegend = findall(first, Type="legend");
+            testCase.verifyEqual(string(firstLegend.String), ["_Treatment", "First"]);
+            firstLine = findall(first, Type="line", DisplayName="_Treatment");
+            testCase.verifyEqual(firstLine.YData, [2 4 3]);
+            runtime.applyTableEdit("legendTable", labkit.app.event.TableCellEdit( ...
+                RowIndex=1, ColumnIndex=2, PreviousValue="_Treatment", NewValue="Updated"));
+            runtime.applyControlValue("baseFontSize", 20);
+            runtime.invokeAction("openFigure");
+            second = setdiff(findall(groot, Type="figure", Tag="figureStudioOutput"), first);
+            secondCleanup = onCleanup(@() delete(second));
+            secondLegend = findall(second, Type="legend");
+            testCase.verifyEqual(string(secondLegend.String), ["Updated", "First"]);
+            testCase.verifyEqual(string(firstLegend.String), ["_Treatment", "First"]);
+            runtime.close();
+            testCase.verifyTrue(isgraphics(first) && isgraphics(second));
+            clear secondCleanup firstCleanup cleanup
+        end
+
         function loadsAFigureIntoTheInteractivePreviewAndExportsPng(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -140,6 +187,23 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(style.baseFontSize, 11);
             testCase.verifyEqual(style.dataLineWidth, 2);
             testCase.verifyEqual(style.legendLocation, "northeast");
+            runtime.applyTableEdit("legendTable", ...
+                labkit.app.event.TableCellEdit(RowIndex=1, ColumnIndex=2, ...
+                    PreviousValue="probe", NewValue="Edited series"));
+            runtime.applyControlValue("dataLineWidth", 2.5);
+            testCase.verifyEqual(string(preview.Legend.String), "Edited series");
+            legendEditor = findall(runtime.figureHandle(), Tag="legendTable");
+            testCase.verifyEqual(string(legendEditor.Data{1, 1}), "probe");
+            testCase.verifyEqual(string(legendEditor.Data{1, 2}), "Edited series");
+            runtime.applyTableEdit("legendTable", ...
+                labkit.app.event.TableCellEdit(RowIndex=1, ColumnIndex=4, PreviousValue=[], NewValue=false));
+            runtime.applyControlValue("legendVisible", "On");
+            testCase.verifyEmpty(preview.Legend);
+            runtime.applyTableEdit("legendTable", ...
+                labkit.app.event.TableCellEdit(RowIndex=1, ColumnIndex=4, PreviousValue=[], NewValue=true));
+            runtime.applyTableEdit("legendTable", ...
+                labkit.app.event.TableCellEdit(RowIndex=1, ColumnIndex=3, PreviousValue=[], NewValue=1));
+            testCase.verifyEqual(string(preview.Legend.String), "Edited series");
             runtime.invokeAction("exportFigureStyle");
             stylePath = fullfile(folder, "styled.mat");
             testCase.verifyTrue(isfile(stylePath));
@@ -180,6 +244,11 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(jpgPath));
             runtime.invokeAction("saveFig");
             testCase.verifyTrue(isfile(figPath));
+            savedFigure = openfig(figPath, 'invisible');
+            savedCleanup = onCleanup(@() delete(savedFigure));
+            savedLegend = findall(savedFigure, Type="legend");
+            testCase.verifyEqual(string(savedLegend.String), "Edited series");
+            clear savedCleanup
             runtime.invokeAction("chooseOutputFolder");
             testCase.verifyEqual(runtime.State.project.parameters.outputFolder, ...
                 string(folder));

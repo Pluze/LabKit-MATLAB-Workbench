@@ -23,6 +23,7 @@ function scriptPath = generateAxesScript(folder, plotData)
     fprintf(fid, 'ax = axes("Parent", fig);\n');
     fprintf(fid, 'hold(ax, "on");\n');
     fprintf(fid, 'applyAxesMetadata(ax, plotData.axes);\n');
+    fprintf(fid, 'rendered = gobjects(numel(plotData.objects), 1);\n');
     fprintf(fid, 'for k = 1:numel(plotData.objects)\n');
     fprintf(fid, '    object = plotData.objects(k);\n');
     fprintf(fid, '    selectYAxis(ax, object);\n');
@@ -82,13 +83,20 @@ function scriptPath = generateAxesScript(folder, plotData)
     fprintf(fid, '        otherwise\n');
     fprintf(fid, '            warning("LabKit:UnsupportedObject", "Skipped unsupported object type %%s.", object.type);\n');
     fprintf(fid, '    end\n');
-    fprintf(fid, '    if ~isempty(h) && isgraphics(h)\n');
+    fprintf(fid, '    if isscalar(h) && isgraphics(h)\n');
+    fprintf(fid, '        rendered(k) = h;\n');
+    fprintf(fid, '        if isfield(object.metadata, "legendPosition")\n');
+    fprintf(fid, '            setappdata(h, "figureStudioLegendPosition", object.metadata.legendPosition);\n');
+    fprintf(fid, '        end\n');
+    fprintf(fid, '        if isfield(object.metadata, "sourceLegendName")\n');
+    fprintf(fid, '            setappdata(h, "figureStudioLegendSourceName", object.metadata.sourceLegendName);\n');
+    fprintf(fid, '        end\n');
     fprintf(fid, '        safeSet(h, "HandleVisibility", metadataValue(object, "handleVisibility", "on"));\n');
     fprintf(fid, '    end\n');
     fprintf(fid, 'end\n');
     fprintf(fid, 'hold(ax, "off");\n');
     fprintf(fid, 'applyAxesMetadata(ax, plotData.axes);\n');
-    fprintf(fid, 'applyLegendMetadata(ax, plotData);\n');
+    fprintf(fid, 'applyLegendMetadata(ax, plotData, rendered);\n');
     writeLocalFunctions(fid);
 end
 
@@ -194,7 +202,7 @@ function writeLocalFunctions(fid)
     fprintf(fid, 'yyaxis(ax, "left");\n');
     fprintf(fid, 'end\n');
 
-    fprintf(fid, '\nfunction applyLegendMetadata(ax, plotData)\n');
+    fprintf(fid, '\nfunction applyLegendMetadata(ax, plotData, rendered)\n');
     fprintf(fid, 'hasNames = any(strlength(string({plotData.objects.displayName})) > 0);\n');
     fprintf(fid, 'if isfield(plotData.axes, "legend")\n');
     fprintf(fid, '    meta = plotData.axes.legend;\n');
@@ -206,7 +214,16 @@ function writeLocalFunctions(fid)
     fprintf(fid, 'else\n');
     fprintf(fid, '    return;\n');
     fprintf(fid, 'end\n');
-    fprintf(fid, 'lgd = legend(ax, "show", "Interpreter", "none");\n');
+    fprintf(fid, 'if isfield(meta, "objectIndices")\n');
+    fprintf(fid, '    selected = rendered(meta.objectIndices);\n');
+    fprintf(fid, '    valid = isgraphics(selected);\n');
+    fprintf(fid, '    labels = string(meta.strings);\n');
+    fprintf(fid, '    if ~any(valid), return; end\n');
+    fprintf(fid, '    lgd = legend(ax, selected(valid), labels(valid), Interpreter="none", AutoUpdate="off");\n');
+    fprintf(fid, '    if isprop(lgd, "Direction"), lgd.Direction = "normal"; end\n');
+    fprintf(fid, 'else\n');
+    fprintf(fid, '    lgd = legend(ax, "show", "Interpreter", "none");\n');
+    fprintf(fid, 'end\n');
     fprintf(fid, 'mapping = {"String", "strings"; "Location", "location"; ...\n');
     fprintf(fid, '    "Orientation", "orientation"; "NumColumns", "numColumns"; ...\n');
     fprintf(fid, '    "FontName", "fontName"; "FontSize", "fontSize"; ...\n');

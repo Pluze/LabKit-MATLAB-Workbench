@@ -1,5 +1,5 @@
 % App-owned implementation for ttest_wizard.resultPlot.present within the ttest_wizard product workflow.
-function view = present(results, parameters, resultsCurrent, viewRevision)
+function view = present(results, parameters, resultsCurrent, viewRevision, groupOrder)
 %PRESENT Describe plot freshness, renderer model, and style availability.
 %
 % Inputs:
@@ -11,10 +11,11 @@ function view = present(results, parameters, resultsCurrent, viewRevision)
 % Outputs:
 %   view - Snapshot fragment for plot controls and resultPlot.
 
+if nargin < 5, groupOrder = strings(0, 1); end
 hasResult = ~isempty(results) && any([results.ok]);
 view = labkit.app.view.Snapshot() ...
     .text("plotFreshness", freshnessText(results, resultsCurrent)) ...
-    .renderPlot("resultPlot", plotModel(results, parameters), ...
+    .renderPlot("resultPlot", plotModel(results, parameters, groupOrder), ...
         ViewRevision=ttest_wizard.resultPlot.viewportRevision( ...
             parameters.type, viewRevision, hasResult));
 controlIds = ["plotType", "showPoints", "showSummary", ...
@@ -35,7 +36,7 @@ else
 end
 end
 
-function model = plotModel(results, parameters)
+function model = plotModel(results, parameters, groupOrder)
 ready = ~isempty(results) && any([results.ok]);
 model = struct( ...
     "ready", ready, ...
@@ -50,6 +51,10 @@ if ~ready
     return;
 end
 model.groups = snapshotsFromResults(results);
+[found, indices] = ismember(groupOrder, string({model.groups.label}));
+indices = indices(found);
+remaining = setdiff(1:numel(model.groups), indices, "stable");
+model.groups = model.groups([indices(:).' remaining]);
 model.means = arrayfun(@(group) mean(group.values), model.groups);
 model.standardDeviations = arrayfun( ...
     @(group) std(group.values, 0), model.groups);
