@@ -21,6 +21,12 @@ function newFig = popoutAxes(srcAx, varargin)
         error('labkit:app:plot:InvalidAxes', 'Source axes is not valid.');
     end
 
+    if numel(srcAx.YAxis) > 1
+        error('labkit:app:plot:DualYAxisPopout', ...
+            ['Editable standalone copying cannot preserve both Y axes. ' ...
+             'Use Copy this plot or Send this plot to Studio instead.']);
+    end
+
     titleText = string(opts.Title);
     if strlength(titleText) == 0
         titleText = axisLabelText(srcAx.Title);
@@ -52,7 +58,7 @@ function newFig = popoutAxes(srcAx, varargin)
     end
     applyAxesState(srcAx, dstAx);
     if opts.Toolbar
-        createPopoutToolbar(newFig, dstAx);
+        createPopoutToolbar(newFig, dstAx, opts.Execute);
     end
 end
 
@@ -61,12 +67,14 @@ function opts = parseOptions(args)
         error('labkit:app:plot:InvalidPopoutOptions', ...
             'popout options must be name-value pairs.');
     end
-    opts = struct('Toolbar', true, 'Title', "");
+    opts = struct('Toolbar', true, 'Title', "", 'Execute', @(~,work) work());
     for k = 1:2:numel(args)
         name = string(args{k});
         switch lower(name)
             case "toolbar"
                 opts.Toolbar = logicalScalar(args{k + 1}, "Toolbar");
+            case "execute"
+                opts.Execute = args{k + 1};
             case "title"
                 opts.Title = string(args{k + 1});
                 if ~isscalar(opts.Title)

@@ -148,6 +148,30 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual( ...
                 runtime.State.project.parameters.style.tickFontSize, 10);
 
+            previousExport = runtime.State.project.results;
+            capability = labkittest.nativeGraphicsCapability("clipboard");
+            figuresBeforeCopy = findall(groot, Type="figure");
+            if capability.Available
+                runtime.invokeAction("copyFigure");
+            else
+                caught = [];
+                try
+                    runtime.invokeAction("copyFigure");
+                catch cause
+                    caught = cause;
+                end
+                testCase.assertNotEmpty(caught);
+                testCase.verifyEqual(string(caught.identifier), ...
+                    "labkit:app:runtime:ActionFailed");
+                testCase.assertNotEmpty(caught.cause);
+                testCase.verifyEqual(string(caught.cause{1}.identifier), ...
+                    capability.ErrorIdentifier);
+            end
+            testCase.verifyEqual(runtime.State.project.results, previousExport);
+            testCase.verifyEqual(findall(groot, Type="figure"), figuresBeforeCopy);
+            copiedEvents = runtime.diagnosticSnapshot().events;
+            testCase.verifyEqual(any(string({copiedEvents.eventName}) == ...
+                "figure_studio.figure_copied"), capability.Available);
             runtime.invokeAction("exportPng");
             testCase.verifyTrue(isfile(outputPath));
             runtime.invokeAction("exportSvg");

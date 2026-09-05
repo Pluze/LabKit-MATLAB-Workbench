@@ -99,7 +99,7 @@ The first four colors are soft green, orange, blue, and yellow; the palette cycl
 
 Initial limits include bars or boxes, visible individual values, error bars, and significance brackets. Each completed **Run / refresh comparisons** fits the new result family. **Reset plot view** recomputes that fitted viewport without rerunning the tests or changing project data. Switching between bar and box coordinate grammars also accepts the new style's fitted limits; point, summary, p-value, title, label, and other presentation redraws preserve the user's current zoom.
 
-Use **Plot > Pop out all plots** for a standalone MATLAB figure. The popout can be passed to [Figure Studio](../../labkit-core/figure-studio/README.md) for further visual styling without recalculating the tests.
+Right-click a plot and choose **Open axes in new figure** for a standalone MATLAB figure, or use **Tools > Copy Main Plots** to copy the current plot page. The popout can be passed to [Figure Studio](../../labkit-core/figure-studio/README.md) for further visual styling without recalculating the tests.
 
 ## Results
 

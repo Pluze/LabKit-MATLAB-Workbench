@@ -1,10 +1,7 @@
 function owner = owningNode(obj, id)
-% Class-folder implementation of MatlabPlatformAdapter.owningNode.
+% Resolve the native parent from the immutable compiled layout index.
     owner = [];
-    for k = 1:numel(obj.Plan.Nodes)
-        if any(obj.Plan.Nodes(k).ChildIds == id)
-            owner = obj.Plan.Nodes(k);
-            return
-        end
+    if isfield(obj.ParentIndices, char(id))
+        owner = obj.Plan.Nodes(obj.ParentIndices.(char(id)));
     end
 end

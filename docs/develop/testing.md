@@ -174,3 +174,7 @@ For deterministic rendering regressions, use `labkittest.visualEvidencePath(name
 - Do not add legacy suite folders, stage tags, selector registries, test wrappers, runner options, or Code Analyzer suppression pragmas.
 - Add a new public framework test API only when it is a stable product boundary. Test infrastructure stays private under `tests/+labkittest/`.
 - Follow `.agents/migration_guide.md` only while that active compatibility retirement exists; the file is absent when no migration is open.
+
+## Native graphics capabilities
+
+Clipboard and complete-interface capture depend on MATLAB's native display capabilities as well as its ability to construct hidden controls. `labkittest.nativeGraphicsCapability` independently probes the relevant Base MATLAB operation. When it succeeds, owning tests assert actual pixels, copied-document outcomes, and cleanup. When batch startup rejects the probe with a recognized native display error, the same tests assert the product's matching failure, unchanged data, no false success record, and temporary-figure cleanup. This is explicit failure-path evidence rather than a skipped test; unrelated errors still fail. Batch results do not establish interactive clipboard support for an engine whose native probe was unavailable.

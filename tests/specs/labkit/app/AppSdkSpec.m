@@ -536,6 +536,146 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             runtime.invokeAction("changeDomain");
             testCase.verifyEqual(ax.XLim, [0 2], AbsTol=1e-12);
             testCase.verifyEqual(ax.YLim, [0 2], AbsTol=1e-12);
+            % A compact workbench without a workspace container still has a
+            % main plot; the clipboard action must not report an empty page.
+            fig = runtime.figureHandle();
+            menu = oneTagged(fig, "labkitAppUtilityCopyPlot");
+            capability = labkittest.nativeGraphicsCapability("interface-capture");
+            if capability.Available
+                capability = labkittest.nativeGraphicsCapability("clipboard");
+            end
+            menu.MenuSelectedFcn(menu, []);
+            if capability.Available
+                testCase.verifyFalse(isappdata(fig, "labkitAppLastAlert"));
+            else
+                records = runtime.diagnosticSnapshot().events;
+                failed = records(string({records.eventName}) == "plots.copy_main.failed");
+                testCase.assertNumElements(failed, 1);
+                testCase.verifyEqual(string(failed.exception.identifier), ...
+                    capability.ErrorIdentifier);
+                testCase.verifyEqual(ax.XLim, [0 2], AbsTol=1e-12);
+            end
+            clear cleanup
+        end
+
+        function clipboardSelectionFollowsNestedWorkspaceTabs(testCase)
+            % Oracle: only selected tab descendants belong to the main image.
+            % Copying all registered axes would include the hidden blue panel.
+            source = uifigure(Visible="off");
+            cleanup = onCleanup(@() delete(source));
+            tabs = uitabgroup(source);
+            first = uitab(tabs); second = uitab(tabs);
+            nested = uitabgroup(first);
+            nestedFirst = uitab(nested); nestedSecond = uitab(nested);
+            top = uiaxes(nestedFirst); plot(top, 1:3, "r");
+            hidden = uiaxes(nestedSecond); plot(hidden, 1:3, "g");
+            nested.SelectedTab = nestedFirst;
+            bottom = uiaxes(second); plot(bottom, 1:3, "b");
+            tabs.SelectedTab = first;
+            testCase.verifyEqual( ...
+                labkit.app.internal.native.visiblePlotAxes(tabs), top);
+            tabs.SelectedTab = second;
+            testCase.verifyEqual( ...
+                labkit.app.internal.native.visiblePlotAxes(tabs), bottom);
+            clear cleanup
+        end
+
+        function interfaceClipboardIncludesNonPlotControls(testCase)
+            % An ordinary graphics-only export would omit the green UI panel.
+            source = uifigure(Visible="off", Position=[100 100 600 400]);
+            cleanup = onCleanup(@() delete(source));
+            uipanel(source, Position=[300 20 250 350], ...
+                BackgroundColor=[0 1 0], Title="Controls");
+            ax = uiaxes(source, Position=[10 40 260 300]); plot(ax, 1:3);
+            capability = labkittest.nativeGraphicsCapability("interface-capture");
+            if ~capability.Available
+                testCase.verifyError(@() ...
+                    labkit.app.internal.native.createScreenshotFigure(source), ...
+                    capability.ErrorIdentifier);
+                testCase.verifyEmpty(findall(groot, Tag="labkitScreenshotCanvas"));
+                return;
+            end
+            canvas = labkit.app.internal.native.createScreenshotFigure(source);
+            canvasCleanup = onCleanup(@() delete(canvas));
+            pixels = findall(canvas, Type="image").CData;
+            testCase.verifyGreaterThan(size(pixels, 2), size(pixels, 1));
+            testCase.verifyTrue(any(pixels(:, :, 2) > 200 & ...
+                pixels(:, :, 1) < 80 & pixels(:, :, 3) < 80, "all"));
+            clear canvasCleanup cleanup
+        end
+
+        function imageCanvasPreservesMultiplePlotsAndTheirViewports(testCase)
+            % Oracle: distinct plot pixels occupy nonoverlapping vertical rows;
+            % source data and selected X/Y limits survive clipboard preparation.
+            source = uifigure(Visible="off", Position=[100 100 700 500]);
+            cleanup = onCleanup(@() delete(source));
+            grid = uigridlayout(source, [2 1]);
+            top = uiaxes(grid, Tag="upper");
+            plot(top, 1:5, 2:6, Color=[1 0 0], LineWidth=3);
+            top.XLim = [2 4]; top.YLim = [2 7]; top.Tag = "upper";
+            bottom = uiaxes(grid, Tag="lower");
+            imagesc(bottom, repmat(reshape([0 0 1], 1, 1, 3), 8, 8));
+            axis(bottom, "image"); bottom.Tag = "lower";
+            capability = labkittest.nativeGraphicsCapability("interface-capture");
+            if ~capability.Available
+                testCase.verifyError(@() ...
+                    labkit.app.internal.native.createPlotImageFigure([top; bottom]), ...
+                    capability.ErrorIdentifier);
+                testCase.verifyEmpty(findall(groot, Tag="labkitPlotImageCanvas"));
+                testCase.verifyEqual(top.XLim, [2 4]);
+                testCase.verifyEqual(findall(top, Type="line").YData, 2:6);
+                return;
+            end
+            canvas = labkit.app.internal.native.createPlotImageFigure([top; bottom]);
+            canvasCleanup = onCleanup(@() delete(canvas));
+            upper = oneTagged(canvas, "upper"); lower = oneTagged(canvas, "lower");
+            testCase.verifyGreaterThanOrEqual(upper.Position(2), ...
+                lower.Position(2) + lower.Position(4) - 1e-8);
+            red = findall(upper, Type="image").CData;
+            blue = findall(lower, Type="image").CData;
+            testCase.verifyTrue(any(red(:, :, 1) > 200 & red(:, :, 2) < 80, "all"));
+            testCase.verifyTrue(any(blue(:, :, 3) > 200 & blue(:, :, 1) < 80, "all"));
+            testCase.verifyEqual(top.XLim, [2 4]);
+            testCase.verifyEqual(top.YLim, [2 7]);
+            testCase.verifyEqual(findall(top, Type="line").YData, 2:6);
+            clear canvasCleanup cleanup
+        end
+
+        function dualYAxisPopoutCannotSilentlyDropARuler(testCase)
+            fig = figure(Visible="off");
+            cleanup = onCleanup(@() delete(fig));
+            ax = axes(fig);
+            yyaxis(ax, "left"); plot(ax, 1:3, 1:3);
+            yyaxis(ax, "right"); plot(ax, 1:3, 100:100:300);
+            labkit.app.internal.native.enableAxesPopout(ax);
+            menu = findall(fig, Tag="labkitAxesPopoutMenu");
+            testCase.verifyError(@() menu.MenuSelectedFcn(menu, []), ...
+                "labkit:app:plot:DualYAxisPopout");
+            testCase.verifyNumElements(ax.YAxis, 2);
+            testCase.verifyNumElements(findall(fig, Tag="labkitAxesStudioMenu"), 1);
+            clear cleanup
+        end
+
+        function additionalPlotMenusPreserveSourceDiagnostics(testCase)
+            fig = figure(Visible="off");
+            cleanup = onCleanup(@() delete(fig));
+            first = axes(fig); plot(first, 1:3);
+            second = axes(fig); plot(second, 3:-1:1);
+            labkit.app.internal.native.enableAxesPopout(first, ...
+                @(name, work) recordPlotOperation(fig, name, work));
+            labkit.app.internal.native.enableAxesPopout(second);
+            menu = findall(first.ContextMenu, Tag="labkitAxesCopyMenu");
+
+            capability = labkittest.nativeGraphicsCapability("clipboard");
+            if capability.Available
+                menu.MenuSelectedFcn(menu, []);
+            else
+                testCase.verifyError(@() menu.MenuSelectedFcn(menu, []), ...
+                    capability.ErrorIdentifier);
+            end
+
+            testCase.verifyEqual(getappdata(fig, "recordedPlotOperation"), ...
+                "plots.copy_axis");
             clear cleanup
         end
 
@@ -696,25 +836,25 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             for index = 1:numel(spinnerValues)
                 value = spinnerValues(index);
                 spinner.Value = value;
-                invokeNativeCallback( ...
-                    spinner.ValueChangingFcn, spinner, ...
-                    struct("Value", value));
-                invokeNativeCallback( ...
-                    spinner.ValueChangedFcn, spinner, struct());
+                % Deliver one uninterrupted burst; native painting can itself
+                % exceed the quiet interval on a busy graphics runtime.
+                spinner.ValueChangingFcn(spinner, struct("Value", value));
+                spinner.ValueChangedFcn(spinner, struct());
                 if index == 1
                     testCase.verifyEqual( ...
                         runtime.State.session.sliderValue, value);
                 end
-                pause(0.05);
             end
             duringSpinner = runtime.diagnosticSnapshot();
             testCase.verifyEqual(runtime.State.session.sliderValue, 0.1);
             duringAliases = actionStartAliases(duringSpinner.events);
             testCase.verifyEqual(sum( ...
                 duringAliases == "nativeSlider__valueChanged"), 1);
-            pause(0.25);
-            drawnow;
-            testCase.verifyEqual(runtime.State.session.sliderValue, 0.4);
+            % A timer's quiet interval is not a callback-delivery deadline.
+            testCase.verifyThat(@() runtime.State.session.sliderValue, ...
+                matlab.unittest.constraints.Eventually( ...
+                matlab.unittest.constraints.IsEqualTo(0.4), ...
+                WithTimeoutOf=5));
             afterSpinner = runtime.diagnosticSnapshot();
             spinnerAliases = actionStartAliases(afterSpinner.events);
             testCase.verifyEqual(sum( ...
@@ -859,7 +999,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function keepsDiagnosticStateDestinationWithoutProjectMenus(testCase)
+        function providesDirectPlotAndInterfaceClipboardActions(testCase)
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.field("gain", Kind="numeric", ...
                     Bind="project.parameters.gain")});
@@ -872,19 +1012,13 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
-            screenshotMenu = oneTagged( ...
-                figureValue, "labkitAppUtilityScreenshot");
-            testCase.verifyEqual(string(screenshotMenu.Text), ...
-                "Save to Artifacts");
-            screenshotTarget = runtime.automaticArtifactDestination( ...
-                "screenshots", "screenshot", ".png");
-            testCase.verifyTrue(contains(screenshotTarget, ...
-                fullfile("artifacts", "screenshots")));
-            testCase.verifyTrue(endsWith(screenshotTarget, ".png"));
-            stateTarget = runtime.automaticArtifactDestination( ...
-                "states", "state", ".mat");
-            testCase.verifyTrue(contains(stateTarget, ...
-                fullfile("artifacts", "states")));
+            plotMenu = oneTagged(figureValue, "labkitAppUtilityCopyPlot");
+            screenshotMenu = oneTagged(figureValue, "labkitAppUtilityCopyScreenshot");
+            testCase.verifyEqual(string(plotMenu.Text), "Copy Main Plots");
+            testCase.verifyEqual(string(screenshotMenu.Text), "Copy Current Interface");
+            plotMenu.MenuSelectedFcn(plotMenu, []);
+            notice = getappdata(figureValue, "labkitAppLastAlert");
+            testCase.verifyTrue(contains(string(notice.message), "no plots"));
             clear cleanup
         end
 
@@ -1488,4 +1622,9 @@ if memory.existed
 elseif ispref("LabKit", memory.name)
     rmpref("LabKit", memory.name);
 end
+end
+
+function varargout = recordPlotOperation(fig, name, work)
+setappdata(fig, "recordedPlotOperation", name);
+[varargout{1:nargout}] = work();
 end

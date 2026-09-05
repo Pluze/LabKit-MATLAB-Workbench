@@ -97,9 +97,15 @@ Normal App launches show the completed native window. Official GUI validation us
 
 The native runtime installs one top-level **Tools** menu so framework-owned utilities do not compete with the App's workflow controls:
 
-- **Plots** opens, copies, or saves the App's plot surfaces.
-- **Screenshot** copies the complete App surface to the system clipboard or writes a uniquely named PNG beneath `artifacts/screenshots/`. A save dialog is used only if automatic artifact output fails.
+- **Copy Main Plots** copies the active workspace page as one image, retaining its plot arrangement, current viewports, legends, colorbars, and both Y axes. Nested tabs contribute only their selected page. An empty workspace reports that no plots are available.
+- **Copy Current Interface** copies the current App window, including controls and the selected tabs, as one image. It captures the interface through MATLAB `exportapp`; it does not attempt to treat UI containers as plotting axes.
 - **Diagnostics** opens the App-named Session Log for the current launch. Its only filter selects the minimum visible severity. Manual TRACE capture adds detailed presentation stages from that point forward; it never starts automatically after an error.
+
+Right-click a plot for **Copy this plot**, **Send this plot to Studio**, or **Open axes in new figure**. **Copy selected plots...** offers an explicit selection across workspace pages and assembles those plots in a grid without changing the selected tabs. Editable standalone popouts support one Y axis; dual-Y plots direct users to image copying or Studio so the right ruler is not silently lost. These clipboard actions produce raster images; use the owning App's result exports for numeric data and Figure Studio for editable figures. Hidden tabs may contain plots that the App has not computed yet, so inspect the selected plots before reporting them.
+
+**Plot diagnostics > Profile Studio handoff** repeats the selected plot transfer with the MATLAB profiler and writes the existing profiling tool's report. Ordinary transfers already record discovery, launch, native construction, initial state, and first presentation durations in the source and destination session journals; select Debug in the Session Log to inspect timing records. The source action shows a busy pointer and rejects duplicate transfer clicks until it finishes. Profiling adds overhead and should be used to locate costs, while ordinary repeated transfers measure user latency. MATLAB still performs UI construction on its client event loop.
+
+Clipboard access and complete-interface capture require a graphics-enabled local MATLAB session. Some batch configurations, including R2022b, reject these native operations even when hidden App controls can be constructed. The operation failure remains in the Session Log; use a display-enabled MATLAB session for copying. This does not change App-owned numeric or figure file exports.
 
 The SDK has no task archive, save/load callbacks, dirty tracking, recovery files, or generic continuation workflow. Apps that genuinely support pausing and continuing work own explicit controls and their complete JSON, CSV, or MAT snapshot format.
 

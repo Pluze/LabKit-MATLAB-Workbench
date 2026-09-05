@@ -18,7 +18,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         Adapter
         Sources
         Recorder
-        Artifacts
         Diagnostics
         PostedEvents
     end
@@ -35,8 +34,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     "RuntimeKernel requires one SessionDiagnostics service.");
             end
             obj.Recorder = recorder;
-            obj.Artifacts = ...
-                labkit.app.internal.artifact.Store(application.AppId);
             startupOperation = obj.Recorder.begin( ...
                 "runtime.lifecycle", "runtime.construct", ...
                 "Constructing application runtime.");
@@ -49,10 +46,13 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             if nargin < 4
                 platform = "headless";
             end
-            obj.Adapter = ...
-                labkit.app.internal.runtime.RuntimeContractBoundary.createAdapter( ...
-                obj.Application, obj.Contract, platform);
             try
+                obj.Adapter = obj.recordOperation( ...
+                    "runtime.lifecycle", "runtime.native_construct", ...
+                    "Building native interface.", "notApplicable", ...
+                    "notApplicable", @() ...
+                    labkit.app.internal.runtime.RuntimeContractBoundary.createAdapter( ...
+                    obj.Application, obj.Contract, platform));
                 backend = obj.completeBackend(backend);
                 obj.Context = ...
                     labkit.app.internal.runtime.CallbackContextFactory.create(backend);
@@ -60,9 +60,12 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     labkit.app.internal.diagnostics.RuntimeDiagnostics( ...
                     obj.Recorder, obj.Application.DisplayName);
                 obj.updateStartup("Creating app state...");
-                obj.State = ...
+                obj.State = obj.recordOperation( ...
+                    "runtime.lifecycle", "runtime.initial_state", ...
+                    "Preparing initial App state.", "notApplicable", ...
+                    "notApplicable", @() ...
                     labkit.app.internal.runtime.RuntimeContractBoundary.initialState( ...
-                    obj.Application, initialState, obj.Context);
+                    obj.Application, initialState, obj.Context));
                 labkit.app.internal.runtime.RuntimeContractBoundary.validateState( ...
                     obj.Application, obj.State);
                 obj.updateStartup("Preparing first view...");
@@ -70,7 +73,9 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     obj.Adapter.attachRuntime(obj);
                 end
                 obj.Presentation = obj.present(obj.State);
-                obj.Adapter.reconcile([], obj.Presentation);
+                obj.recordOperation("runtime.lifecycle", "runtime.first_view", ...
+                    "Rendering first App view.", "notApplicable", ...
+                    "notApplicable", @() obj.Adapter.reconcile([], obj.Presentation));
                 if ~isempty(application.OnStart)
                     obj.updateStartup("Running startup actions...");
                     obj.dispatch( ...
@@ -140,6 +145,18 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             snapshot = obj.Diagnostics.snapshot();
         end
 
+        function varargout = performPlotOperation(obj, eventName, operation)
+            % Native plot callbacks receive only this narrow execution boundary.
+            % A detached plot remains usable after its source App closes.
+            if obj.Closed
+                [varargout{1:nargout}] = operation();
+                return;
+            end
+            [varargout{1:nargout}] = obj.recordOperation( ...
+                "runtime.plots", eventName, "Plot operation.", ...
+                "notApplicable", "notApplicable", operation);
+        end
+
         function title = sessionLogTitle(obj)
             title = obj.Diagnostics.title();
         end
@@ -154,17 +171,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
 
         function setTraceCapture(obj, enabled)
             obj.Diagnostics.setTraceCapture(enabled);
-        end
-
-        function destination = automaticArtifactDestination( ...
-                obj, category, stem, extension)
-            destination = obj.Artifacts.destination( ...
-                category, stem, extension);
-        end
-
-        function filename = automaticArtifactFilename( ...
-                obj, stem, extension)
-            filename = obj.Artifacts.filename(stem, extension);
         end
 
         function figure = figureHandle(obj)
