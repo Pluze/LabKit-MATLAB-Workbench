@@ -85,6 +85,12 @@ function scriptPath = generateAxesScript(folder, plotData)
     fprintf(fid, '    end\n');
     fprintf(fid, '    if isscalar(h) && isgraphics(h)\n');
     fprintf(fid, '        rendered(k) = h;\n');
+    fprintf(fid, '        if isfield(object.metadata, "legendPosition")\n');
+    fprintf(fid, '            setappdata(h, "figureStudioLegendPosition", object.metadata.legendPosition);\n');
+    fprintf(fid, '        end\n');
+    fprintf(fid, '        if isfield(object.metadata, "sourceLegendName")\n');
+    fprintf(fid, '            setappdata(h, "figureStudioLegendSourceName", object.metadata.sourceLegendName);\n');
+    fprintf(fid, '        end\n');
     fprintf(fid, '        safeSet(h, "HandleVisibility", metadataValue(object, "handleVisibility", "on"));\n');
     fprintf(fid, '    end\n');
     fprintf(fid, 'end\n');

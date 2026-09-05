@@ -32,6 +32,8 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             run(manifest.script);
             testCase.addTeardown(@() delete(fig));
             testCase.verifyEqual(string(ax.Legend.String), ["Treatment", "Control"]);
+            recaptured = figure_studio.resultFiles.extractAxesData(ax);
+            testCase.verifyTrue(isfield(recaptured.axes.legend, "objectIndices"));
             testCase.verifyEqual(findobj(ax, DisplayName="Treatment").Color, [1 0 0]);
             testCase.verifyEqual(findobj(ax, DisplayName="Control").YData, [1 3 2]);
         end

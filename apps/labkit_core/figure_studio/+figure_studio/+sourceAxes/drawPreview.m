@@ -243,6 +243,12 @@ function h = renderObject(ax, object)
             return;
     end
     applyStyle(h, object.style);
+    if isfield(object.metadata, 'legendPosition')
+        setappdata(h, 'figureStudioLegendPosition', object.metadata.legendPosition);
+    end
+    if isfield(object.metadata, 'sourceLegendName')
+        setappdata(h, 'figureStudioLegendSourceName', object.metadata.sourceLegendName);
+    end
     safeSet(h, 'HandleVisibility', ...
         fieldValue(object.metadata, 'handleVisibility', 'on'));
 end

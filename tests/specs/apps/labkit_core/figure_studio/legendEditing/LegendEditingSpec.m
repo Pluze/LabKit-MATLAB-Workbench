@@ -14,7 +14,7 @@ classdef LegendEditingSpec < matlab.unittest.TestCase
             data = figure_studio.resultFiles.extractAxesData(ax);
             document = figure_studio.figureDocument.create(data);
             rows = figure_studio.legendEditing.rows(document, "panel-1");
-            rows(1).label = "Control";
+            rows(1).label = "_Control";
             rows(2).enabled = false;
             rows(3).label = "Treatment";
             rows = rows([3 1 2]);
@@ -27,18 +27,18 @@ classdef LegendEditingSpec < matlab.unittest.TestCase
                 [output, target] = figure_studio.resultFiles.createStyledFigure( ...
                     figure_studio.figureDocument.toPlotData(document), style, nativeAxes, document);
                 outputCleanup = onCleanup(@() delete(output));
-                testCase.verifyEqual(string(target.Legend.String), ["Treatment", "Control"]);
+                testCase.verifyEqual(string(target.Legend.String), ["Treatment", "_Control"]);
                 testCase.verifyEqual(string(target.Legend.AutoUpdate), "off");
                 reopened = figure_studio.figureDocument.create( ...
                     figure_studio.resultFiles.extractAxesData(target));
                 reopenedRows = figure_studio.legendEditing.rows(reopened, "panel-1");
-                testCase.verifyEqual(string({reopenedRows.label}), ["Treatment", "Control", "Second"]);
+                testCase.verifyEqual(string({reopenedRows.label}), ["Treatment", "_Control", "Second"]);
                 testCase.verifyEqual([reopenedRows.enabled], [true true false]);
-                testCase.verifyEqual(findobj(target, DisplayName="Control").YData, [1 4 2]);
+                testCase.verifyEqual(findobj(target, DisplayName="_Control").YData, [1 4 2]);
                 testCase.verifyEqual(string(ax.Legend.String), ["First", "Second", "Third"]);
                 style.legendFontSize = 16;
                 figure_studio.resultFiles.applyFigureStyle(target, style);
-                testCase.verifyEqual(string(target.Legend.String), ["Treatment", "Control"]);
+                testCase.verifyEqual(string(target.Legend.String), ["Treatment", "_Control"]);
                 testCase.verifyEqual(target.Legend.FontSize, 16);
                 clear outputCleanup
             end

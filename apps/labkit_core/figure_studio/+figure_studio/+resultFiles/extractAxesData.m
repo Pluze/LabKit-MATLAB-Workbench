@@ -30,6 +30,8 @@ function plotData = extractAxesData(ax)
                 position = getappdata(children(k), 'figureStudioLegendPosition');
                 if isnumeric(position) && isscalar(position) && isfinite(position) && position >= 1
                     object.metadata.legendPosition = position;
+                    % An explicitly edited name is user text, including a leading underscore.
+                    object.displayName = string(children(k).DisplayName);
                 end
             end
             if isappdata(children(k), 'figureStudioLegendSourceName')
