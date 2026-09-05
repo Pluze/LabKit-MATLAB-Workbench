@@ -161,7 +161,8 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
                     caught = cause;
                 end
                 testCase.assertNotEmpty(caught);
-                testCase.verifyEqual(caught.identifier, "labkit:app:runtime:ActionFailed");
+                testCase.verifyEqual(string(caught.identifier), ...
+                    "labkit:app:runtime:ActionFailed");
                 testCase.assertNotEmpty(caught.cause);
                 testCase.verifyEqual(string(caught.cause{1}.identifier), ...
                     capability.ErrorIdentifier);
