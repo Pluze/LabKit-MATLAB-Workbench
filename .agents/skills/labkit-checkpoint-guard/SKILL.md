@@ -34,14 +34,19 @@ Do not run `changedFast`; it belongs to final PR preparation.
 
 Stage explicit intended paths, then inspect the complete cached diff and name
 status. Require one logical outcome and a lowercase Conventional Commit subject
-using an allowed type. Commit only when requested; do not amend or rewrite
-existing commits without explicit approval. Verify the new commit and remaining
-worktree afterward.
+using an allowed type. Commit within the authorized task. Ordinary checkpoint
+history rewrites require explicit authorization; integration replay and
+exact-lease updates follow AGENTS.md and labkit-pr-preparer. Verify the new
+commit and remaining worktree afterward.
 
 Before an authorized push, fetch when needed, verify the exact outgoing
-commits, and stop on unexpected divergence, protection, permission, or frozen
-task-branch state. Never force-push without explicit approval. Report the remote
-result without claiming incomplete hosted CI or review evidence.
+commits, and inspect unexpected divergence or scope changes before proceeding.
+Preserve other work and stop for unresolved ownership or external permission
+and protection barriers. For an authorized integration update, require the
+reviewed candidate and exact old-SHA task-branch lease from labkit-pr-preparer;
+do not ask again for routine mechanics already authorized by the merge request.
+Never use unguarded force or force-push main. Report the remote result without
+claiming incomplete hosted CI or review evidence.
 
 Report branch, commit and push state, included and preserved local changes,
 focused validation, deferred final gates, and blockers.

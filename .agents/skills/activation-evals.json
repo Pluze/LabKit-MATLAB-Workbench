@@ -54,6 +54,12 @@
       "activate": ["labkit-checkpoint-guard", "labkit-test-planner"],
       "do_not_activate": ["labkit-code-review", "labkit-pr-preparer"],
       "rationale": "Ordinary checkpoint hygiene uses focused evidence without final PR preparation."
+    },
+    {
+      "prompt": "Integrate the existing parallel PRs, replay the next branch after main advances, resolve shared-file behavior, validate, and merge.",
+      "activate": ["labkit-pr-preparer", "labkit-code-review", "labkit-test-planner"],
+      "do_not_activate": ["labkit-checkpoint-guard", "labkit-agent-governance"],
+      "rationale": "Routine authorized integration owns branch mechanics and semantic review; it does not itself require editing agent policy or invoking an ordinary checkpoint workflow."
     }
   ]
 }

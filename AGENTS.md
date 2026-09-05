@@ -257,11 +257,15 @@ tests, history, and details out of the public repository.
    invariant. State the complete bundled scope in its PR. Commit and push
    logical checkpoints when the work benefits from them; do not delay a
    coherent checkpoint merely to accumulate a larger batch. Once its PR to
-   `main` opens, freeze that branch until the PR is merged or closed; do not add
-   later work or another task to its moving head.
-4. Use `labkit-checkpoint-guard` before every requested commit or push. A clean
-   `codecheck` is mandatory after the final MATLAB edit; stage only the owned
-   outcome and proportionate evidence.
+   `main` opens, freeze its scope until the PR is merged or closed. Baseline
+   updates, reviewed conflict resolution, validation repairs, and explicit
+   user scope changes remain part of integration; unrelated later work uses
+   another task branch.
+4. Use `labkit-checkpoint-guard` for ordinary branch commits and pushes and
+   `labkit-pr-preparer` for final integration updates. Both require scope and
+   evidence review before publishing. A clean `codecheck` is mandatory after
+   the final MATLAB edit; stage only the owned outcome and proportionate
+   evidence.
 5. Use `labkit-pr-preparer` for the complete `origin/main..HEAD` squash
    boundary, versions, reader documentation, final local gate, PR record, CI,
    review, merge, and post-merge task cleanup. Main accepts PRs only
@@ -277,8 +281,25 @@ tests, history, and details out of the public repository.
    discard dirty or unaccepted work.
 6. After merge, release only the exact accepted main commit after its policy
    gate succeeds. Do not repeat the complete PR MATLAB matrix.
-7. Never force-push without explicit approval. Stop and report permission,
-   protection, review, CI, or cleanup blockers rather than bypassing them.
+7. Respect the requested delivery state: preparing or opening a PR alone does
+   not authorize merging it. A request to integrate or merge PRs authorizes
+   the necessary task-branch
+   rebase or replay, conflict repairs, and exact-lease updates within those
+   PRs' understood scope. The agent owns dependency order and reconciles the
+   intended behavior of parallel changes; routine Git mechanics do not
+   require another user decision. Inspect all requested PRs, their evidence,
+   relevant worktrees, and overlapping contracts before choosing the order.
+   Preserve accepted behavior and recoverable old tips, review rewritten
+   files, and revalidate the resulting diff. For a non-fast-forward update,
+   use only `--force-with-lease=refs/heads/<task>:<verified-old-sha>` against
+   the authorized task branch. If the remote head changes, inspect the new
+   work before preparing another candidate; never just refresh the lease.
+   Other history rewrites require explicit authorization. Never force-push
+   `main`, use an unguarded force push, or weaken repository protection.
+   Ask only when an unresolved product/scientific decision, uncertain work
+   ownership, or an external permission/protection requirement prevents a
+   justified result. Stop and report real review, CI, or cleanup blockers
+   rather than bypassing them.
    Branch protection must require `CI Gate`, PR review flow, linear main
    history, and conversation resolution for administrators as well as ordinary
    contributors; it must reject direct pushes, force pushes, and deletion.

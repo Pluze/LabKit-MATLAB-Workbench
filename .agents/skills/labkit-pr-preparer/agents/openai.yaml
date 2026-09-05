@@ -1,4 +1,4 @@
 interface:
   display_name: "LabKit PR Preparer"
-  short_description: "Audit and consolidate a LabKit task-branch PR"
-  default_prompt: "Use $labkit-pr-preparer to prepare this task branch for a squash PR into main."
+  short_description: "Review and integrate LabKit task-branch PRs"
+  default_prompt: "Use $labkit-pr-preparer to review and integrate these task-branch PRs into main, reconcile parallel changes, validate, and clean up accepted work."
