@@ -4,130 +4,36 @@
 [![Continuous Integration](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-0969da)](https://pluze.github.io/LabKit-MATLAB-Workbench/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=Pluze/LabKit-MATLAB-Workbench&file=labkit_launcher.m)
-[![GitHub contributors](https://img.shields.io/github/contributors/Pluze/LabKit-MATLAB-Workbench)](https://github.com/Pluze/LabKit-MATLAB-Workbench/graphs/contributors)
-[![Last commit](https://img.shields.io/github/last-commit/Pluze/LabKit-MATLAB-Workbench?style=plastic)](https://github.com/Pluze/LabKit-MATLAB-Workbench/commits/main)
-[![Commit activity](https://img.shields.io/github/commit-activity/m/Pluze/LabKit-MATLAB-Workbench)](https://github.com/Pluze/LabKit-MATLAB-Workbench/commits/main)
-[![GitHub stars](https://img.shields.io/github/stars/Pluze/LabKit-MATLAB-Workbench)](https://github.com/Pluze/LabKit-MATLAB-Workbench/stargazers)
 
-Focused MATLAB GUI apps for lab workflows.
+LabKit is a collection of focused MATLAB Apps for laboratory analysis, measurement, and visualization. Open an App from one launcher to review data, inspect plots, and export results. Workflows include electrochemistry, DIC, image measurement, biosignals, gait, force gauges, and statistics.
 
-LabKit gives lab users a launcher-first way to open small, purpose-built Apps
-for electrochemistry, DIC, image measurement, wearable biosignals,
-neurophysiology, gait, force gauges, and statistics. Each App owns its
-workflow, plots, result tables, and exports. The reusable `+labkit` foundation
-provides the App SDK plus focused image, thermal, DTA, RHS, biosignal, Mark-10,
-and version-contract facades.
+Run Apps with Base MATLAB, or use documented MATLAB functions in your own scripts. Optional MathWorks Toolboxes are not required. The [complete documentation](https://pluze.github.io/LabKit-MATLAB-Workbench/) covers supported workflows, requirements, and development.
 
-## Start Here
+## Quick Start
 
-**[Download `labkit_launcher.m`](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest/download/labkit_launcher.m)**
+1. **[Download `labkit_launcher.m`](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest/download/labkit_launcher.m)** into a standalone folder such as `LabKit/`.
+2. Open MATLAB in that folder and run:
 
-**[Open the complete LabKit documentation](https://pluze.github.io/LabKit-MATLAB-Workbench/)**
+   ```matlab
+   labkit_launcher
+   ```
 
-You can also open the launcher directly in
-[MATLAB Online](https://matlab.mathworks.com/open/github/v1?repo=Pluze/LabKit-MATLAB-Workbench&file=labkit_launcher.m)
-when you want to inspect or try the current repository without a local clone.
+3. Follow the launcher's installation prompts, then select and open an App.
 
-For portable or offline use, download the latest release source zip from the
-[GitHub releases page](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest)
-and run LabKit from the extracted folder.
+Keep experimental data and exported results outside the LabKit installation folder. See [Use LabKit](https://pluze.github.io/LabKit-MATLAB-Workbench/use/) for installation and version guidance, or [open the current repository in MATLAB Online](https://matlab.mathworks.com/open/github/v1?repo=Pluze/LabKit-MATLAB-Workbench&file=labkit_launcher.m).
 
-1. Create a standalone folder for LabKit, for example `LabKit/`.
-2. Save `labkit_launcher.m` in that folder.
-3. Open MATLAB in that folder and run:
+## Choose Your Goal
 
-```matlab
-labkit_launcher
-```
-
-Use `Latest` in the launcher to install the latest published stable GitHub
-Release, or `Versions` to inspect release information and choose another
-published stable Release for a deliberate upgrade or rollback. Keep lab data
-and exported results in your own project folders; the
-LabKit folder is an application runtime folder. During an update, the launcher
-moves the current runtime contents into a dated `LabKit-previous-*` subfolder
-before copying the selected LabKit zip into place.
-
-## What You Get
-
-- A single launcher that can start from a folder containing only
-  `labkit_launcher.m`.
-- Checkbox-based multi-app source packaging from one launcher action.
-- Independent apps with stable public commands and app-owned workflow logic.
-- A small shared foundation for GUI shells, DTA loading, RHS loading, and
-  biosignal processing.
-- Generated artifacts kept separate from source data and exported results.
-
-A git checkout is only needed for source development, testing, CI work, or
-reviewing implementation details.
-
-## App Families
-
-| Family | Examples | Purpose |
-| --- | --- | --- |
-| Electrochemistry | `labkit_CSC_app`, `labkit_CIC_app`, `labkit_EIS_app`, `labkit_VTResistance_app` | Gamry DTA review, CSC/CIC/resistance metrics, plots, and exports. |
-| DIC | `labkit_DICPreprocess_app`, `labkit_DICPostprocess_app` | Image preparation, ROI masks, strain overlays, and summaries. |
-| Image measurement | `labkit_FLIRThermal_app`, `labkit_CurvatureMeasurement_app`, `labkit_VideoMarker_app`, `labkit_FocusStack_app`, `labkit_ImageEnhance_app`, `labkit_BatchImageCrop_app` | Thermal rendering, image/video measurement, microscopy utilities, and figure preparation. |
-| Gait | `labkit_GaitAnalysis_app` | Pose-coordinate gait metrics, step QC, visualization, and raw-pixel plus calibrated CSV exports. |
-| Wearable biosignal | `labkit_ECGPrint_app` | ECG import, filtering, peak/segment review, and exports. |
-| Neurophysiology | `labkit_RHSPreview_app`, `labkit_NerveResponseAnalysis_app`, `labkit_ResponseReviewStats_app` | Intan RHS inspection, channel protocol drafting, filter records, event-locked nerve response analysis, and aligned response statistics. |
-| Force gauges | `labkit_Mark10Monitor_app` | Live Mark-10 force/travel monitoring, replay, export, and modulus estimates. |
-| Statistics | `labkit_TTestWizard_app` | Guided paired and independent-sample t-tests with assumptions, plots, and exports. |
-
-See the [online App catalog](https://pluze.github.io/LabKit-MATLAB-Workbench/use/apps/) for the full set of workflows, inputs, outputs, APIs, and related accepted Changes.
-
-## Find The Right Page
-
-| I want to | Go to |
+| I want to | Start here |
 | --- | --- |
-| Browse the complete documentation | [LabKit documentation site](https://pluze.github.io/LabKit-MATLAB-Workbench/) |
-| Install or update LabKit, open the Launcher, or pick an App | [Use LabKit](https://pluze.github.io/LabKit-MATLAB-Workbench/use/) |
-| Browse App workflows | [App catalog](https://pluze.github.io/LabKit-MATLAB-Workbench/use/apps/) |
-| Understand Launcher buttons, commands, and App-guide access | [LabKit Launcher](https://pluze.github.io/LabKit-MATLAB-Workbench/use/apps/labkit-core/launcher/) |
-| Report a problem or ask for workflow support | [.github/SUPPORT.md](.github/SUPPORT.md) |
-| Call a public LabKit function | [docs/reference/README.md](docs/reference/README.md) |
-| Change source code or run checks | [Testing](docs/develop/testing.md) |
-| Call packaging, profiling, codecheck, or documentation tools | [Developer tools](docs/develop/tools/README.md) |
-| Understand package and App boundaries | [Architecture](docs/develop/app-authoring/architecture.md) |
-| Build local private Apps outside the public repo | [Private Apps](docs/develop/private-apps.md) |
-| Prepare a public release | [Release](docs/develop/release.md) |
+| Find an App for my data, understand its calculations and limits, or follow a workflow | [App catalog and guides](https://pluze.github.io/LabKit-MATLAB-Workbench/use/apps/) |
+| Call analysis functions from MATLAB scripts or look up inputs and outputs | [API reference](https://pluze.github.io/LabKit-MATLAB-Workbench/reference/) |
+| Build or extend an App, contribute code, test, or maintain a release | [Develop LabKit](https://pluze.github.io/LabKit-MATLAB-Workbench/develop/) |
+| Understand why behavior changed | [Changes](https://pluze.github.io/LabKit-MATLAB-Workbench/changes/) |
+| Report a problem or request a workflow | [Support and contributing](.github/SUPPORT.md) |
 
-## Development
+App guides own workflow details; the API reference owns exact function contracts. [GitHub Releases](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases) describe published versions and upgrade actions.
 
-Clone the repository when you need to change source code or run tests:
+## Citation and License
 
-```bash
-git clone https://github.com/Pluze/LabKit-MATLAB-Workbench.git
-cd LabKit-MATLAB-Workbench
-buildtool headless
-```
-
-See [Testing](docs/develop/testing.md) for the supported build tasks and GUI
-validation limits.
-
-## Project Shape
-
-```text
-apps/      workflow-specific MATLAB GUI apps
-+labkit/   App SDK plus focused image, thermal, DTA, RHS, biosignal, Mark-10, and contract facades
-docs/      human-facing usage, API, architecture, and validation docs
-tests/     behavior tests, project contracts, GUI checks, and runner code
-```
-
-Apps are the deliverables. Shared code moves into `+labkit` only when it is
-domain-neutral, app-facing, tested, and useful beyond one workflow.
-
-Source checkouts may also use an ignored `private_apps/` workspace for local
-private app development. See [Private apps](docs/develop/private-apps.md) for
-the generic structure; private app details belong in the private app repository.
-
-## Citation
-
-For citation metadata, see the
-[Zenodo archive](https://zenodo.org/records/21250089) and
-[DOI: 10.5281/zenodo.21250088](https://doi.org/10.5281/zenodo.21250088).
-
-## License
-
-This project is open source under the MIT License. See [LICENSE](LICENSE).
+For citation metadata, see the [Zenodo archive](https://zenodo.org/records/21250089) and [DOI: 10.5281/zenodo.21250088](https://doi.org/10.5281/zenodo.21250088). LabKit is open source under the [MIT License](LICENSE).
