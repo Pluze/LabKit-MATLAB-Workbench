@@ -140,6 +140,23 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(style.baseFontSize, 11);
             testCase.verifyEqual(style.dataLineWidth, 2);
             testCase.verifyEqual(style.legendLocation, "northeast");
+            runtime.applyTableEdit("legendTable", ...
+                labkit.app.event.TableCellEdit(RowIndex=1, ColumnIndex=2, ...
+                    PreviousValue="probe", NewValue="Edited series"));
+            runtime.applyControlValue("dataLineWidth", 2.5);
+            testCase.verifyEqual(string(preview.Legend.String), "Edited series");
+            legendEditor = findall(runtime.figureHandle(), Tag="legendTable");
+            testCase.verifyEqual(string(legendEditor.Data{1, 1}), "probe");
+            testCase.verifyEqual(string(legendEditor.Data{1, 2}), "Edited series");
+            runtime.applyTableEdit("legendTable", ...
+                labkit.app.event.TableCellEdit(RowIndex=1, ColumnIndex=4, PreviousValue=[], NewValue=false));
+            runtime.applyControlValue("legendVisible", "On");
+            testCase.verifyEmpty(preview.Legend);
+            runtime.applyTableEdit("legendTable", ...
+                labkit.app.event.TableCellEdit(RowIndex=1, ColumnIndex=4, PreviousValue=[], NewValue=true));
+            runtime.applyTableEdit("legendTable", ...
+                labkit.app.event.TableCellEdit(RowIndex=1, ColumnIndex=3, PreviousValue=[], NewValue=1));
+            testCase.verifyEqual(string(preview.Legend.String), "Edited series");
             runtime.invokeAction("exportFigureStyle");
             stylePath = fullfile(folder, "styled.mat");
             testCase.verifyTrue(isfile(stylePath));
@@ -180,6 +197,11 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(jpgPath));
             runtime.invokeAction("saveFig");
             testCase.verifyTrue(isfile(figPath));
+            savedFigure = openfig(figPath, 'invisible');
+            savedCleanup = onCleanup(@() delete(savedFigure));
+            savedLegend = findall(savedFigure, Type="legend");
+            testCase.verifyEqual(string(savedLegend.String), "Edited series");
+            clear savedCleanup
             runtime.invokeAction("chooseOutputFolder");
             testCase.verifyEqual(runtime.State.project.parameters.outputFolder, ...
                 string(folder));

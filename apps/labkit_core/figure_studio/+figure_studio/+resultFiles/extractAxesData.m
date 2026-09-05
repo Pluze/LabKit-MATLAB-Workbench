@@ -26,10 +26,35 @@ function plotData = extractAxesData(ax)
                 object.metadata.semanticHint = hint;
             end
             [side, confidence] = inferYAxisSide(children(k), ax);
+            if isappdata(children(k), 'figureStudioLegendPosition')
+                position = getappdata(children(k), 'figureStudioLegendPosition');
+                if isnumeric(position) && isscalar(position) && isfinite(position) && position >= 1
+                    object.metadata.legendPosition = position;
+                end
+            end
+            if isappdata(children(k), 'figureStudioLegendSourceName')
+                object.metadata.sourceLegendName = string(getappdata(children(k), 'figureStudioLegendSourceName'));
+            end
             object.metadata.yAxisSide = side;
             object.metadata.yAxisSideConfidence = confidence;
             plotData.objects(end + 1, 1) = object;
         end
+    end
+    positions = inf(numel(plotData.objects), 1);
+    editedLegend = false;
+    for k = 1:numel(plotData.objects)
+        metadata = plotData.objects(k).metadata;
+        if isfield(metadata, 'legendPosition')
+            editedLegend = true;
+            if metadata.handleVisibility ~= "off", positions(k) = metadata.legendPosition; end
+        end
+    end
+    if editedLegend
+        plotData.axes.legend.edited = true;
+        [~, order] = sort(positions);
+        order = order(isfinite(positions(order)));
+        plotData.axes.legend.objectIndices = order(:).';
+        plotData.axes.legend.strings = string({plotData.objects(order).displayName});
     end
 end
 

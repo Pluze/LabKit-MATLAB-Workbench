@@ -30,6 +30,7 @@ context.log("info", "ttest_wizard.groupdata.deleteselectedrows.status", sprintf(
 end
 
 function groups = deleteRows(groups, selectedRows)
+wasEmpty = arrayfun(@(group) isempty(group.values), groups);
 rowOffset = 0;
 for groupIndex = 1:numel(groups)
     count = numel(groups(groupIndex).values);
@@ -44,7 +45,7 @@ for groupIndex = 1:numel(groups)
         groups(groupIndex).cellAddresses = strings(0, 1);
     end
 end
-groups = groups(arrayfun(@(group) ~isempty(group.values), groups));
+groups = groups(wasEmpty | arrayfun(@(group) ~isempty(group.values), groups));
 end
 
 function rows = selectedObservationRows(state)

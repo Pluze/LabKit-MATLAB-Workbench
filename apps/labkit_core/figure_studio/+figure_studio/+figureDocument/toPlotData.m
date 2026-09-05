@@ -39,6 +39,14 @@ for index = reshape(indices, 1, [])
     object.metadata.visible = onOff(node.visible);
     plotData.objects(end + 1, 1) = object;
 end
+if isfield(panel.legend, "edited") && panel.legend.edited
+    rows = figure_studio.legendEditing.rows(document, panel.id);
+    rows = rows([rows.enabled]);
+    [found, order] = ismember(string({rows.nodeId}), string({document.nodes(indices).id}));
+    plotData.axes.legend.objectIndices = order(found);
+    plotData.axes.legend.strings = string({rows(found).label});
+    plotData.axes.legend.enabled = any(found);
+end
 end
 
 function meta = axesMetadata(panel)

@@ -2,6 +2,51 @@ classdef TTestWorkflowSpec < matlab.unittest.TestCase
     %TTESTWORKFLOWSPEC Specify the table-to-comparison-export journey.
 
     methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
+        function editsCategoriesAndChoosesReferenceIndependentlyOfOrder(testCase)
+            % Oracle: Beta minus Alpha is +3; Beta minus Gamma is -4.
+            % Changing display order must not silently select a different reference.
+            folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            runtime = labkittest.createMatlabRuntime(ttest_wizard.definition(), [], ...
+                struct("alert", @unexpectedAlert), ...
+                labkittest.temporarySessionJournal(ttest_wizard.definition(), folder));
+            cleanup = onCleanup(@() runtime.close());
+            runtime.applyTableEdit("dataTable", labkit.app.event.TableCellEdit( ...
+                RowIndex=1, ColumnIndex=2, PreviousValue=[], NewValue=1, ...
+                Data={"A",1; "A",3; "B",4; "B",6; "C",7; "C",11}));
+            runtime.applyControlValue("categoryNames", "Alpha | Beta | Gamma");
+            runtime.invokeAction("renameCategories");
+            runtime.applyControlValue("categoryNames", "Pending | Spare");
+            runtime.invokeAction("addCategories");
+            testCase.verifyEqual(string({runtime.State.project.inputs.groups.label}), ...
+                ["Alpha", "Beta", "Gamma", "Pending", "Spare"]);
+            runtime.applyControlValue("referenceGroup", "Beta");
+            runtime.applyTableEdit("categoryTable", labkit.app.event.TableCellEdit( ...
+                RowIndex=4, ColumnIndex=3, PreviousValue=[], NewValue=false));
+            runtime.applyTableEdit("categoryTable", labkit.app.event.TableCellEdit( ...
+                RowIndex=5, ColumnIndex=3, PreviousValue=[], NewValue=false));
+            runtime.invokeAction("runComparisons");
+            results = runtime.State.project.results.current;
+            testCase.verifyEqual([results.meanDifference], [3 -4], AbsTol=1e-12);
+            runtime.applyTableEdit("categoryTable", labkit.app.event.TableCellEdit( ...
+                RowIndex=3, ColumnIndex=2, PreviousValue=[], NewValue=1));
+            testCase.verifyEqual(runtime.State.project.parameters.referenceGroup, "Beta");
+            testCase.verifyEqual(runtime.State.project.results.current, results);
+            axesValue = findall(runtime.figureHandle(), Tag="resultPlot.main");
+            testCase.verifyEqual(string(axesValue.XTickLabel(:)), ["Gamma"; "Alpha"; "Beta"]);
+            runtime.applyTableEdit("categoryTable", labkit.app.event.TableCellEdit( ...
+                RowIndex=1, ColumnIndex=1, PreviousValue=[], NewValue="Treatment"));
+            testCase.verifyEqual(runtime.State.project.inputs.groups(1).values, [7; 11]);
+            runtime.applyTableSelection("dataTable", [1 1; 2 1]);
+            runtime.applyControlValue("batchGroupTarget", "(new group)");
+            runtime.applyControlValue("newGroupName", "Moved");
+            runtime.invokeAction("assignRowsToGroup");
+            groups = runtime.State.project.inputs.groups;
+            testCase.verifyEqual(groups(end).label, "Moved");
+            testCase.verifyEqual(groups(end).values, [7; 11]);
+            testCase.verifyTrue(any(string({groups.label}) == "Pending"));
+            clear cleanup
+        end
+
         function importsGroupsComparesPlotsAndExports(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;

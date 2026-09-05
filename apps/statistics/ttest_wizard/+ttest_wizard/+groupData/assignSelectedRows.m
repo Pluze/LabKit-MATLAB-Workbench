@@ -15,6 +15,14 @@ selectedRows = selectedObservationRows(state);
 if target == "(select group)" || isempty(selectedRows)
     return;
 end
+if target == "(new group)"
+    target = strip(string(state.project.parameters.newGroupName));
+    if strlength(target) == 0 || any(strcmpi(target, [state.project.inputs.groups.label]))
+        context.alert("Enter a nonempty, unused category name.", "Change selected rows");
+        return;
+    end
+    state.project.inputs.groups(end + 1, 1) = ttest_wizard.groupData.emptyGroup(target);
+end
 state.project.inputs.groups = reassignRows( ...
     state.project.inputs.groups, selectedRows, target);
 state.session.selection.analysisCells = zeros(0, 2);
@@ -24,6 +32,7 @@ context.log("info", "ttest_wizard.groupdata.assignselectedrows.status", sprintf(
 end
 
 function groups = reassignRows(groups, selectedRows, target)
+wasEmpty = arrayfun(@(group) isempty(group.values), groups);
 visibleRows = cell(numel(groups), 1);
 movedValueParts = repmat({zeros(0, 1)}, numel(groups), 1);
 movedAddressParts = repmat({strings(0, 1)}, numel(groups), 1);
@@ -49,7 +58,7 @@ targetIndex = find([groups.label] == target, 1);
 groups(targetIndex).values = [groups(targetIndex).values(:); movedValues];
 groups(targetIndex).cellAddresses = [ ...
     string(groups(targetIndex).cellAddresses(:)); movedAddresses];
-groups = groups(arrayfun(@(group) ~isempty(group.values), groups));
+groups = groups(wasEmpty | arrayfun(@(group) ~isempty(group.values), groups));
 end
 
 function rows = selectedObservationRows(state)

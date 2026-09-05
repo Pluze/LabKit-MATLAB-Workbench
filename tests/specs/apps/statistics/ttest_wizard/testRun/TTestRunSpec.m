@@ -2,6 +2,25 @@ classdef TTestRunSpec < matlab.unittest.TestCase
     %TTESTRUNSPEC Specify independent, pooled, paired, and grouped t tests.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function resolvesSelectionAndFreshnessWithoutChangingScientificDirection(testCase)
+            % Oracle: reference B must remain vector A even when category C is first.
+            groups = struct("label", {"C", "A", "B"}, ...
+                "values", {[7;11], [1;3], [4;6]});
+            parameters = ttest_wizard.initialData().parameters;
+            parameters.referenceGroup = "B";
+            parameters.excludedComparisonGroups = "C";
+            selected = ttest_wizard.testRun.selectedGroups(groups, parameters);
+            testCase.verifyEqual(string({selected.label}), ["B", "A"]);
+            options = struct("method", "welch", "alternative", "greater", "alpha", 0.05);
+            results = ttest_wizard.testRun.runGroupTTests(selected, options);
+            testCase.verifyEqual(results.meanDifference, 3, AbsTol=1e-12);
+            testCase.verifyTrue(ttest_wizard.testRun.resultsMatchGroups(results, selected, options));
+            selected(2).values(1) = 2;
+            testCase.verifyFalse(ttest_wizard.testRun.resultsMatchGroups(results, selected, options));
+            parameters.referenceGroup = "Removed";
+            testCase.verifyEmpty(ttest_wizard.testRun.selectedGroups(groups, parameters));
+        end
+
         function matchesWelchReferenceStatistics(testCase)
             result = ttest_wizard.testRun.runTTest( ...
                 [1.2, 1.4, 1.3, 1.5], [1.8, 1.7, 2.0, 1.9, 1.6], ...

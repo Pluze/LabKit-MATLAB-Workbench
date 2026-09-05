@@ -27,6 +27,7 @@ function drawPreview(axesById, model)
         applyStoredLimits(ax, model.plotData.axes);
         style = model.style;
         style.previewScale = logical(model.preview);
+        prepareLegend(model, ax);
         figure_studio.resultFiles.applyFigureStyle(ax, style);
         applyDocument(model, ax);
         configureInteractivePreview(ax, style);
@@ -37,6 +38,7 @@ function drawPreview(axesById, model)
     if samePlot
         style = model.style;
         style.previewScale = logical(model.preview);
+        prepareLegend(model, ax);
         figure_studio.resultFiles.applyFigureStyle(ax, style);
         applyDocument(model, ax);
         if model.preview
@@ -49,15 +51,18 @@ function drawPreview(axesById, model)
     disableDefaultAxesToolbar(ax);
     applyAxesMetadata(ax, model.plotData.axes);
     hold(ax, 'on');
+    rendered = gobjects(numel(model.plotData.objects), 1);
     for k = 1:numel(model.plotData.objects)
-        renderObject(ax, model.plotData.objects(k));
+        handle = renderObject(ax, model.plotData.objects(k));
+        if isscalar(handle) && isgraphics(handle), rendered(k) = handle; end
     end
     hold(ax, 'off');
     applyAxesMetadata(ax, model.plotData.axes);
-    applyLegendMetadata(ax, model.plotData);
+    applyLegendMetadata(ax, model.plotData, rendered);
     applyColorbarMetadata(ax, model.plotData.axes);
     style = model.style;
     style.previewScale = logical(model.preview);
+    prepareLegend(model, ax);
     figure_studio.resultFiles.applyFigureStyle(ax, style);
     applyDocument(model, ax);
     if model.preview
@@ -86,6 +91,14 @@ safeSet(bar, 'Ticks', fieldValue(meta, 'ticks', []));
 safeSet(bar, 'TickLabels', fieldValue(meta, 'tickLabels', strings(0, 1)));
 safeSet(bar, 'FontName', fieldValue(meta, 'fontName', ax.FontName));
 safeSet(bar, 'FontSize', fieldValue(meta, 'fontSize', ax.FontSize));
+end
+
+function prepareLegend(model, ax)
+if isfield(model, "document")
+    panelId = "";
+    if isfield(model, "panelId"), panelId = model.panelId; end
+    figure_studio.legendEditing.draw(model.document, panelId, ax);
+end
 end
 
 function applyDocument(model, ax)
@@ -144,7 +157,7 @@ for field = ["xLim", "yLim"]
 end
 end
 
-function applyLegendMetadata(ax, plotData)
+function applyLegendMetadata(ax, plotData, rendered)
     hasNames = any(strlength(string({plotData.objects.displayName})) > 0);
     if isfield(plotData.axes, 'legend')
         meta = plotData.axes.legend;
@@ -156,7 +169,16 @@ function applyLegendMetadata(ax, plotData)
     else
         return;
     end
-    lgd = legend(ax, 'show', 'Interpreter', 'none');
+    if isfield(meta, 'objectIndices')
+        selected = rendered(meta.objectIndices);
+        valid = isgraphics(selected);
+        labels = string(meta.strings);
+        if ~any(valid), return; end
+        lgd = legend(ax, selected(valid), labels(valid), Interpreter="none", AutoUpdate="off");
+        if isprop(lgd, 'Direction'), lgd.Direction = 'normal'; end
+    else
+        lgd = legend(ax, 'show', 'Interpreter', 'none');
+    end
     mapping = { ...
         'String', 'strings'; ...
         'Location', 'location'; ...
@@ -174,7 +196,8 @@ function applyLegendMetadata(ax, plotData)
     end
 end
 
-function renderObject(ax, object)
+function h = renderObject(ax, object)
+    h = gobjects(0);
     selectYAxis(ax, object);
     switch string(object.type)
         case "line"

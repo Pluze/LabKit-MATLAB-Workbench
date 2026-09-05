@@ -40,7 +40,9 @@ Formatting can be automatic, fixed decimal, scientific, engineering, percent, or
 
 Changing a range refreshes all non-explicit ticks, so values newly inside the range receive labels and values outside it disappear. Adding an annotation beyond the current limits expands the affected range and replans its ticks. Log axes reject invalid nonpositive ranges and data rather than producing a misleading display. Dual-Y imports retain independent limits, labels, ticks, and object-side assignments; a low-confidence assignment appears in preflight for review.
 
-Color-mapped panels expose colormap, color limits, colorbar visibility, location, label, tick values, and tick labels. Legends retain source content by default and expose display, placement, font size, columns, and border.
+Color-mapped panels expose colormap, color limits, colorbar visibility, location, label, tick values, and tick labels. Legends retain source content by default and expose display, placement, font size, columns, and border. The full-width **Legend** workspace page maps each original series name to its editable legend name, position, and **Show** checkbox. Enter a position to move a row without changing graphic stacking; uncheck Show to omit only its legend entry. Duplicate legend labels are allowed because rows remain attached to their plotted objects. Empty names are rejected; use Show to omit a row.
+
+Legend edits join the document Undo/Redo history. Changing fonts, lines, presets, or other parameters preserves edited names, order, and row selection. The table, subsequent popouts, clipboard copies, and file exports use the current legend. Turning global legend display Off keeps row edits for later On; unchecking every row leaves the legend empty even when global display is On. Each panel owns its own legend. The table edits supported data-series objects; annotations and images do not become artificial legend series.
 
 Choosing a different source or panel, editing an axis range/scale/direction, or explicitly recalculating limits fits the preview to that coordinate domain. Typography, colors, ticks, labels, layers, legends, colorbars, and annotation edits preserve the region being inspected, including on dual-Y figures.
 
@@ -52,7 +54,7 @@ The high-value global controls remain intentionally small:
 | --- | --- |
 | Text | preset; all, title, label, tick, annotation, and legend sizes; X-label angle |
 | Scientific strokes | data, uncertainty, main-boundary, reference, and axes widths |
-| Legend | source/on/off, location, size, columns, and border |
+| Legend | original-to-new names, row position and inclusion; source/on/off, location, size, columns, and border |
 | Plot frame | reference or common aspect; declared width; top/right frame; raster scale |
 | Exact document | canvas width and height; four paddings; panel rectangles |
 

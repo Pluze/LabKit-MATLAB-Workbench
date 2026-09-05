@@ -22,6 +22,7 @@ end
         figure_studio.sourceAxes.copyLegend(sourceAxes, ax);
         applyStoredLimits(ax, plotData);
         applyStoredTicks(ax, plotData);
+        figure_studio.legendEditing.draw(document, "", ax);
         figure_studio.resultFiles.applyFigureStyle(ax, style);
         if ~isempty(document)
             figure_studio.figureDocument.applyToAxes(document, "", ax);

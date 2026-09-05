@@ -12,6 +12,8 @@ classdef SignificanceBracketSemanticsSpec < matlab.unittest.TestCase
             options = struct("method", "welch", ...
                 "alternative", "two_sided", "alpha", 0.05);
             results = ttest_wizard.testRun.runGroupTTests(groups, options);
+            % Reference moves to the last display position without changing tests.
+            groups = groups([2 3 1]);
             project = ttest_wizard.initialData();
             parameters = project.parameters.plot;
             parameters.showPValue = true;
@@ -26,6 +28,8 @@ classdef SignificanceBracketSemanticsSpec < matlab.unittest.TestCase
 
             brackets = findall(axesValue, "Type", "line");
             testCase.verifyNumElements(brackets, 2);
+            testCase.verifyEqual(sortrows(vertcat(brackets.XData)), ...
+                [1 1 3 3; 2 2 3 3]);
             testCase.verifyTrue(all( ...
                 string({brackets.HandleVisibility}) == "off"));
             testCase.verifyTrue(all(arrayfun( ...

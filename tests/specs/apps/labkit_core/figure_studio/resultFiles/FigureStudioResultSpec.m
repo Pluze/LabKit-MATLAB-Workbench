@@ -2,6 +2,40 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
     %FIGURESTUDIORESULTSPEC Specify semantic figure style output.
 
     methods (Test, TestTags = {'Contract:result', 'Env:headless'})
+        function reconstructionKeepsLegendOrderAttachedToSeries(testCase)
+            % Oracle: the first legend row names the red series, not the first layer.
+            folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            previousVisibility = get(groot, 'DefaultFigureVisible');
+            testCase.addTeardown(@() set(groot, 'DefaultFigureVisible', previousVisibility));
+            set(groot, 'DefaultFigureVisible', 'off');
+            source = figure(Visible="off");
+            testCase.addTeardown(@() delete(source));
+            ax = axes(source);
+            plot(ax, 1:3, [1 3 2], DisplayName="First", Color=[0 0 0]);
+            hold(ax, 'on');
+            plot(ax, 1:3, [2 4 3], DisplayName="Second", Color=[1 0 0]);
+            legend(ax, 'show');
+            document = figure_studio.figureDocument.create(figure_studio.resultFiles.extractAxesData(ax));
+            rows = figure_studio.legendEditing.rows(document, "panel-1");
+            rows(1).label = "Control";
+            rows(2).label = "Treatment";
+            document = figure_studio.legendEditing.replaceRows(document, "panel-1", rows([2 1]));
+            plotData = figure_studio.figureDocument.toPlotData(document);
+            testCase.verifyEqual(plotData.axes.legend.objectIndices, [2 1]);
+            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            style.colorOrder = [0 0 0; 1 0 0];
+            [styled, target] = figure_studio.resultFiles.createStyledFigure(plotData, style, [], document);
+            testCase.addTeardown(@() delete(styled));
+            manifest = figure_studio.resultFiles.writeAxesDataExport(target, folder);
+            exported = load(manifest.mat, 'plotData');
+            testCase.verifyEqual(exported.plotData.axes.legend.objectIndices, [2 1]);
+            run(manifest.script);
+            testCase.addTeardown(@() delete(fig));
+            testCase.verifyEqual(string(ax.Legend.String), ["Treatment", "Control"]);
+            testCase.verifyEqual(findobj(ax, DisplayName="Treatment").Color, [1 0 0]);
+            testCase.verifyEqual(findobj(ax, DisplayName="Control").YData, [1 3 2]);
+        end
+
         function labKitPresetDefinesThePublicationStyleContract(testCase)
             style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
 

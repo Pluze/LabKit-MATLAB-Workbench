@@ -113,7 +113,10 @@ ax = axesById.main;
                 continue;
             end
             y = annotationBase + basePad + (resultIndex - 1) * levelStep;
-            drawSignificanceBracket(ax, 1, resultIndex + 1, y, ...
+            labels = string({groups.label});
+            first = find(labels == results(resultIndex).labelA, 1);
+            second = find(labels == results(resultIndex).labelB, 1);
+            drawSignificanceBracket(ax, min(first, second), max(first, second), y, ...
                 capHeight, textPad, significanceText(results(resultIndex)));
         end
     end

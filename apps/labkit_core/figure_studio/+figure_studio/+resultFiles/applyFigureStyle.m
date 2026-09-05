@@ -480,6 +480,10 @@ function value = onOff(tf)
 end
 
 function styleLegend(ax, style)
+    if isappdata(ax, 'figureStudioEmptyLegend') && getappdata(ax, 'figureStudioEmptyLegend')
+        legend(ax, 'off');
+        return;
+    end
     lgd = [];
     if isprop(ax, 'Legend')
         lgd = ax.Legend;
