@@ -69,16 +69,50 @@ def owning_manual(root: pathlib.Path, component: str, owner: str) -> str | None:
     return matches[0].relative_to(root).as_posix()
 
 
+def report_integration_update(policy, base: str, head: str, previous: str) -> None:
+    """Compare task deltas across accepted main changes; never approve a push."""
+    previous_base = command("git", "merge-base", base, previous)
+    old_paths = set(policy.changed_paths(previous_base, previous))
+    new_paths = set(policy.changed_paths(base, head))
+    upstream_paths = set(policy.changed_paths(previous_base, base))
+
+    def patch(start, end):
+        return subprocess.run(
+            ["git", "diff", "--binary", "--no-ext-diff", "--no-textconv", start, end],
+            check=True, stdout=subprocess.PIPE,
+        ).stdout
+
+    unchanged = patch(previous_base, previous) == patch(base, head)
+    print("\n# Integration update")
+    print(f"- Previous head: `{previous}`; previous base: `{previous_base}`")
+    print(f"- Task patch: {'unchanged' if unchanged else 'changed (review required)'}")
+    for label, paths in (
+        ("Shared changed paths", (old_paths | new_paths) & upstream_paths),
+        ("Prior paths absent from task delta", old_paths - new_paths),
+        ("New task paths", new_paths - old_paths),
+    ):
+        listing = ", ".join(f"`{path}`" for path in sorted(paths)) or "none"
+        print(f"- {label}: {listing}")
+    print("- Review contract interactions and range-diff before publishing; "
+          "this inventory does not authorize an update.")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", default="origin/main")
     parser.add_argument("--head", default="HEAD")
+    parser.add_argument("--previous-head", help="Prior PR head for a replay comparison")
     args = parser.parse_args()
 
     root = pathlib.Path(command("git", "rev-parse", "--show-toplevel"))
     policy = load_policy(root)
     base_sha = command("git", "rev-parse", args.base)
     head_sha = command("git", "rev-parse", args.head)
+    previous_sha = None
+    if args.previous_head:
+        previous_sha = command("git", "rev-parse", args.previous_head)
+        if command("git", "merge-base", base_sha, head_sha) != base_sha:
+            parser.error("--head must descend from --base for an integration update")
     paths = policy.changed_paths(base_sha, head_sha)
     commits = command("git", "rev-list", "--count", f"{base_sha}..{head_sha}")
 
@@ -95,8 +129,10 @@ def main() -> int:
         after = policy.version_for_owner(
             owner, lambda path: git_text(head_sha, path)
         )
-        if before and after and before != after:
-            transitions.append((after[0], owner, before[1], after[1]))
+        if after and before != after:
+            transitions.append((
+                after[0], owner, before[1] if before else "new", after[1]
+            ))
 
     changes = []
     for path in paths:
@@ -126,6 +162,8 @@ def main() -> int:
     print(f"- Head: `{head_sha}` ({args.head})")
     print(f"- Commits: {commits}")
     print(f"- Changed paths: {len(paths)}")
+    if previous_sha:
+        report_integration_update(policy, base_sha, head_sha, previous_sha)
     print("\n# Version transitions")
     if not transitions:
         print("- None")

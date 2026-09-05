@@ -20,6 +20,11 @@
       "prompt": "Prepare this task branch for its final squash PR into main.",
       "should_activate": false,
       "rationale": "Final integration belongs to the PR-preparer workflow."
+    },
+    {
+      "prompt": "Merge several already-open PRs, reconcile their parallel edits, and update their task-branch baselines.",
+      "should_activate": false,
+      "rationale": "PR integration authority and dependency decisions belong to the PR preparer; ordinary checkpoint rules must not add a second permission gate."
     }
   ]
 }

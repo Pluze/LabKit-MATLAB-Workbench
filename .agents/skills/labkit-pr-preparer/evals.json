@@ -25,6 +25,21 @@
       "prompt": "Run the smallest test for the source file I just changed.",
       "should_activate": false,
       "rationale": "Focused iteration evidence belongs to the test planner."
+    },
+    {
+      "prompt": "Merge the existing parallel PRs, reconcile overlapping source and component versions, update their task branches, and finish cleanup.",
+      "should_activate": true,
+      "rationale": "An integration request includes dependency ordering, semantic conflict repair, exact-lease task updates, and validation without another Git-mechanics permission question."
+    },
+    {
+      "prompt": "During an authorized PR replay, the remote task head advanced and another worktree contains uncommitted changes. Inspect ownership before proceeding.",
+      "should_activate": true,
+      "rationale": "Concurrent work requires fresh evidence and preservation; integration authorization never permits blindly refreshing a lease or discarding another change."
+    },
+    {
+      "prompt": "Prepare a draft PR and leave it open for review; do not merge it.",
+      "should_activate": true,
+      "rationale": "The PR preparer respects the requested delivery state; preparing a PR does not itself authorize merging it."
     }
   ]
 }

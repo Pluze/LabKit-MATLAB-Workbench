@@ -4,6 +4,7 @@
 import importlib.util
 import json
 import pathlib
+import py_compile
 import tempfile
 import unittest
 
@@ -97,6 +98,18 @@ class ValidateAgentSkillsTest(unittest.TestCase):
                 encoding="utf-8")
             with self.assertRaises(MODULE.SkillContractError):
                 MODULE.validate(root)
+
+    def test_ignores_generated_python_cache_after_skill_script_execution(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            folder = self.make_skill(root)
+            script = folder / "probe.py"
+            script.write_text("value = 1\n", encoding="utf-8")
+            py_compile.compile(
+                str(script), dfile="/".join(["", "Users", "Example", "probe.py"]),
+                doraise=True,
+            )
+            self.assertEqual(MODULE.validate(root), 1)
 
     def test_rejects_missing_ui_metadata_and_unbalanced_evals(self):
         with tempfile.TemporaryDirectory() as raw:

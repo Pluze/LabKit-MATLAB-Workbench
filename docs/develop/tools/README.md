@@ -34,7 +34,7 @@ Each public tool file owns its private implementation folder. Adding the public 
 
 The launcher provides the common interactive defaults: it supplies the current checkout root, selected app commands, progress UI, and sensible report locations. Direct calls are preferable for automation, custom output paths, batch MATLAB, reusable profile targets, or packaging several named apps.
 
-Tool reports and ZIPs are generated artifacts, not source documentation or app project data. **Clean Artifacts** may remove them. Copy any evidence that must be retained outside `artifacts/` or attach it to the relevant release or issue.
+Tool reports and ZIPs are generated artifacts, not source documentation or app project data. **Clean Artifacts** removes generated content under `artifacts/` while preserving the reserved `artifacts/worktrees/` directory and every task inside it. When that directory is present, the tool removes its siblings and retains the parent directory; it does not inspect whether tasks are committed or merged. Task cleanup remains an explicit Git operation after integration. Copy any generated evidence that must be retained outside `artifacts/` or attach it to the relevant release or issue.
 
 ## Related Documentation
 

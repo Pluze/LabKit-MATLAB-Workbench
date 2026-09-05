@@ -30,7 +30,7 @@ The window paints before app discovery completes. Its status area first reports 
 | Development and Maintenance | **Doc Generation** | Rebuilds the complete ignored `site/` folder from the current Markdown and public MATLAB help. It does not open a page or choose between online and local help. |
 | Development and Maintenance | **Run Code Analyzer** | Scans the checkout and writes JSON and HTML Code Analyzer reports. |
 | Development and Maintenance | **Profile Selected App** | Starts the selected app under the MATLAB profiler and saves its report when the app closes. |
-| Development and Maintenance | **Clean Artifacts** | Removes ignored generated reports under `artifacts/`; it does not delete app projects or exported laboratory results. |
+| Development and Maintenance | **Clean Artifacts** | Removes ignored generated content under `artifacts/` while preserving task worktrees. See [cleanup boundaries](../../../../develop/tools/README.md#launcher-and-command-line-use) before retaining reports there. |
 | Package and Publish | **Package Checked** | Creates one source ZIP containing all checked apps and their runtime support. |
 
 Double-clicking an app row is equivalent to selecting it and opening it normally. The checkbox column controls package membership; ordinary launch selection does not change the checked set. Click any column heading to sort it and click again to reverse the order. Selection and double-click actions continue to address the underlying App after sorting. The application table places **Family** immediately before **App** so related tools remain visually grouped while their individual names stay easy to scan.

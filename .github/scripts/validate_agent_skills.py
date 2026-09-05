@@ -79,7 +79,8 @@ def validate_links(folder: Path, text: str) -> None:
 
 def validate_portability(folder: Path) -> None:
     for path in folder.rglob("*"):
-        if not path.is_file():
+        # Python caches embed execution paths and are not authored Skill content.
+        if "__pycache__" in path.relative_to(folder).parts or not path.is_file():
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         if re.search(r"(?:[A-Za-z]:\\Users\\|/Users/|/home/[^/\s]+/)", text):
