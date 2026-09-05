@@ -14,4 +14,3 @@ if isfield(results, "batchStatus") && ~isempty(results.batchStatus)
     end
 end
 end
-
