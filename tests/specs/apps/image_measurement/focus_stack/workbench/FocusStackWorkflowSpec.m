@@ -56,7 +56,15 @@ classdef FocusStackWorkflowSpec < matlab.unittest.TestCase
             % a normalized-per-image or stale map would change these values.
             testCase.verifyEqual(pixels.CData, result.confidence);
             testCase.verifyEqual(quality.CLim, [0 1]);
-            exportapp(figureValue, labkittest.visualEvidencePath("focus-quality", ".png"));
+            capture = labkittest.nativeGraphicsCapability("interface-capture");
+            evidencePath = labkittest.visualEvidencePath("focus-quality", ".png");
+            if capture.Available
+                exportapp(figureValue, evidencePath);
+                testCase.verifyTrue(isfile(evidencePath));
+            else
+                testCase.verifyError(@() exportapp(figureValue, evidencePath), capture.ErrorIdentifier);
+                testCase.verifyFalse(isfile(evidencePath));
+            end
             runtime.applyControlValue("focusWindow", 7);
             testCase.verifyEmpty(findall(quality, "Type", "image"));
             testCase.verifyFalse(runtime.State.session.cache.result.ok);

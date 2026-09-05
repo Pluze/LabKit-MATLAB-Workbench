@@ -34,7 +34,15 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(runtime.State.project.annotations.frames, original);
             tab = findall(runtime.figureHandle(), "Type", "uitab", "Title", "Video");
             tab.Parent.SelectedTab = tab;
-            exportapp(runtime.figureHandle(), labkittest.visualEvidencePath("video-review", ".png"));
+            capture = labkittest.nativeGraphicsCapability("interface-capture");
+            evidencePath = labkittest.visualEvidencePath("video-review", ".png");
+            if capture.Available
+                exportapp(runtime.figureHandle(), evidencePath);
+                testCase.verifyTrue(isfile(evidencePath));
+            else
+                testCase.verifyError(@() exportapp(runtime.figureHandle(), evidencePath), capture.ErrorIdentifier);
+                testCase.verifyFalse(isfile(evidencePath));
+            end
             clear cleanup
         end
 

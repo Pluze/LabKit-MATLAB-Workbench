@@ -44,7 +44,15 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
                 overviewAxes = findall(figureValue, "Tag", tag);
                 testCase.verifyNotEmpty(findall(overviewAxes, "Type", "line"));
             end
-            exportapp(figureValue, labkittest.visualEvidencePath("eis-overview", ".png"));
+            capture = labkittest.nativeGraphicsCapability("interface-capture");
+            evidencePath = labkittest.visualEvidencePath("eis-overview", ".png");
+            if capture.Available
+                exportapp(figureValue, evidencePath);
+                testCase.verifyTrue(isfile(evidencePath));
+            else
+                testCase.verifyError(@() exportapp(figureValue, evidencePath), capture.ErrorIdentifier);
+                testCase.verifyFalse(isfile(evidencePath));
+            end
             testCase.verifyTrue(isfile(output));
             clear cleanup
         end
