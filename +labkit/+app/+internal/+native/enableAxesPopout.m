@@ -34,17 +34,22 @@ function enableAxesPopout(ax, execute, choosePlots)
     if isempty(ax) || ~isvalid(ax)
         return;
     end
+    fig = ancestor(ax, 'figure');
+    if isempty(fig)
+        return;
+    end
+    % Detached figures retain only this graphics handle. The source window
+    % owns the diagnostic executor, so closing it releases the App runtime.
+    if nargin >= 2 || ~isappdata(fig, "labkitPlotOperationExecutor")
+        setappdata(fig, "labkitPlotOperationExecutor", execute);
+    end
+    execute = @(name, work) executeFromSource(fig, name, work);
     menu = ax.ContextMenu;
     if isappdata(ax, 'labkitAxesPopoutEnabled') && ...
             getappdata(ax, 'labkitAxesPopoutEnabled') && ...
             ~isempty(menu) && isvalid(menu) && ...
             ~isempty(findall(menu, 'Type', 'uimenu', 'Tag', 'labkitAxesPopoutMenu'))
         attachMenuToAxesChildren(ax, menu);
-        return;
-    end
-
-    fig = ancestor(ax, 'figure');
-    if isempty(fig)
         return;
     end
 
@@ -112,4 +117,13 @@ function attachMenuToAxesChildren(ax, menu)
             end
         end
     end
+end
+
+function varargout = executeFromSource(fig, name, work)
+if isgraphics(fig) && isappdata(fig, "labkitPlotOperationExecutor")
+    execute = getappdata(fig, "labkitPlotOperationExecutor");
+    [varargout{1:nargout}] = execute(name, work);
+else
+    [varargout{1:nargout}] = work();
+end
 end

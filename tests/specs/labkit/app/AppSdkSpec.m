@@ -540,8 +540,21 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             % main plot; the clipboard action must not report an empty page.
             fig = runtime.figureHandle();
             menu = oneTagged(fig, "labkitAppUtilityCopyPlot");
+            capability = labkittest.nativeGraphicsCapability("interface-capture");
+            if capability.Available
+                capability = labkittest.nativeGraphicsCapability("clipboard");
+            end
             menu.MenuSelectedFcn(menu, []);
-            testCase.verifyFalse(isappdata(fig, "labkitAppLastAlert"));
+            if capability.Available
+                testCase.verifyFalse(isappdata(fig, "labkitAppLastAlert"));
+            else
+                records = runtime.diagnosticSnapshot().events;
+                failed = records(string({records.eventName}) == "plots.copy_main.failed");
+                testCase.assertNumElements(failed, 1);
+                testCase.verifyEqual(string(failed.exception.identifier), ...
+                    capability.ErrorIdentifier);
+                testCase.verifyEqual(ax.XLim, [0 2], AbsTol=1e-12);
+            end
             clear cleanup
         end
 
@@ -574,6 +587,14 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             uipanel(source, Position=[300 20 250 350], ...
                 BackgroundColor=[0 1 0], Title="Controls");
             ax = uiaxes(source, Position=[10 40 260 300]); plot(ax, 1:3);
+            capability = labkittest.nativeGraphicsCapability("interface-capture");
+            if ~capability.Available
+                testCase.verifyError(@() ...
+                    labkit.app.internal.native.createScreenshotFigure(source), ...
+                    capability.ErrorIdentifier);
+                testCase.verifyEmpty(findall(groot, Tag="labkitScreenshotCanvas"));
+                return;
+            end
             canvas = labkit.app.internal.native.createScreenshotFigure(source);
             canvasCleanup = onCleanup(@() delete(canvas));
             pixels = findall(canvas, Type="image").CData;
@@ -595,6 +616,16 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             bottom = uiaxes(grid, Tag="lower");
             imagesc(bottom, repmat(reshape([0 0 1], 1, 1, 3), 8, 8));
             axis(bottom, "image"); bottom.Tag = "lower";
+            capability = labkittest.nativeGraphicsCapability("interface-capture");
+            if ~capability.Available
+                testCase.verifyError(@() ...
+                    labkit.app.internal.native.createPlotImageFigure([top; bottom]), ...
+                    capability.ErrorIdentifier);
+                testCase.verifyEmpty(findall(groot, Tag="labkitPlotImageCanvas"));
+                testCase.verifyEqual(top.XLim, [2 4]);
+                testCase.verifyEqual(findall(top, Type="line").YData, 2:6);
+                return;
+            end
             canvas = labkit.app.internal.native.createPlotImageFigure([top; bottom]);
             canvasCleanup = onCleanup(@() delete(canvas));
             upper = oneTagged(canvas, "upper"); lower = oneTagged(canvas, "lower");
@@ -622,6 +653,29 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "labkit:app:plot:DualYAxisPopout");
             testCase.verifyNumElements(ax.YAxis, 2);
             testCase.verifyNumElements(findall(fig, Tag="labkitAxesStudioMenu"), 1);
+            clear cleanup
+        end
+
+        function additionalPlotMenusPreserveSourceDiagnostics(testCase)
+            fig = figure(Visible="off");
+            cleanup = onCleanup(@() delete(fig));
+            first = axes(fig); plot(first, 1:3);
+            second = axes(fig); plot(second, 3:-1:1);
+            labkit.app.internal.native.enableAxesPopout(first, ...
+                @(name, work) recordPlotOperation(fig, name, work));
+            labkit.app.internal.native.enableAxesPopout(second);
+            menu = findall(first.ContextMenu, Tag="labkitAxesCopyMenu");
+
+            capability = labkittest.nativeGraphicsCapability("clipboard");
+            if capability.Available
+                menu.MenuSelectedFcn(menu, []);
+            else
+                testCase.verifyError(@() menu.MenuSelectedFcn(menu, []), ...
+                    capability.ErrorIdentifier);
+            end
+
+            testCase.verifyEqual(getappdata(fig, "recordedPlotOperation"), ...
+                "plots.copy_axis");
             clear cleanup
         end
 
@@ -1566,4 +1620,9 @@ if memory.existed
 elseif ispref("LabKit", memory.name)
     rmpref("LabKit", memory.name);
 end
+end
+
+function varargout = recordPlotOperation(fig, name, work)
+setappdata(fig, "recordedPlotOperation", name);
+[varargout{1:nargout}] = work();
 end
