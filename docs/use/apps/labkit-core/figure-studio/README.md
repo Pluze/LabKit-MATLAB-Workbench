@@ -17,7 +17,7 @@ From the launcher, select **Figure Studio** and choose **Open**. From a source c
 labkit_FigureStudio_app
 ```
 
-A LabKit plot can also send its current axes through the plot context menu. That handoff embeds a serializable snapshot and starts with the calibrated **LabKit figure** preset. Loading a `.fig` file retains **FIG default** as an alternative source-presentation baseline.
+A LabKit plot can also send its current axes directly through **Send this plot to Studio** in the plot context menu, or through the Studio button on a standalone popout. That handoff embeds a serializable snapshot and starts with the calibrated **LabKit figure** preset. Loading a `.fig` file retains **FIG default** as an alternative source-presentation baseline.
 
 ## Load Figures And Build A Multi-Panel Layout
 
@@ -68,7 +68,9 @@ Preflight reports **ready**, **review**, or **blocked** and supplies a suggested
 
 ## Exports And Editable Package
 
-The **Figures** tab provides editable FIG, PNG, JPG, and SVG output. **Export editable package** writes:
+The **Figures** tab provides **Copy figure**, which copies the complete styled document, including every panel, to the clipboard as one raster image at the configured export scale. It uses the same publication preflight and layout as file export; blocking issues must be resolved first. Copying does not change file-export destinations or result records.
+
+The **Figures** tab also provides editable FIG, PNG, JPG, and SVG output. **Export editable package** writes:
 
 - `figure_studio_project.mat`, containing the semantic document, style, and preflight report;
 - `figure_document.json` and `preflight.json` for language-neutral inspection;
@@ -76,7 +78,7 @@ The **Figures** tab provides editable FIG, PNG, JPG, and SVG output. **Export ed
 - one folder per panel with visible plot data and a standalone MATLAB reconstruction script;
 - `manifest.json` and a package README.
 
-The supported portable graphics include line, scatter, bar, error bar, box-chart, area, patch, image, surface, rectangle, text, and constant-line objects. Native copying remains the fidelity path for copyable MATLAB grouped graphics, while the semantic portable path drives deterministic editing, multi-panel assembly, scripts, and audit data. Visible child stacking, legend participation, logarithmic notation, dual Y axes, explicit ticks, and colorbars are retained. Unsupported objects stay native when possible and generate an explicit warning; they are never silently presented as portable data.
+The supported portable graphics include line, scatter, bar, error bar, box-chart, area, patch, image, surface, rectangle, text, and constant-line objects. Direct App UI-axes and dual-Y handoffs use the portable snapshot because MATLAB cannot natively clone all such axes. Native copying remains the fidelity path for copyable ordinary MATLAB grouped graphics, while the semantic portable path drives deterministic editing, multi-panel assembly, scripts, and audit data. Visible child stacking, legend participation, logarithmic notation, dual Y axes, explicit ticks, and colorbars are retained. Unsupported objects stay native when possible and generate an explicit warning; they are never silently presented as portable data.
 
 The package records displayed graphics in layer order. It supports audit, handoff, and plot recreation, but it does not reconstruct hidden measurements, callbacks, application data, custom chart internals, or analysis provenance.
 

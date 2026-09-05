@@ -2,6 +2,23 @@ classdef AutomaticInstrumentationSpec < matlab.unittest.TestCase
     %AUTOMATICINSTRUMENTATIONSPEC Prove Runtime-owned semantic event chains.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function plotOperationsRetainTheirFailureAndElapsedBoundary(testCase)
+            % Oracle: a named failed copy has one terminal failure, and detached
+            % plots still execute after close without touching a closed journal.
+            runtime = instrumentationRuntime(testCase, @incrementProject, @presentProject);
+            cleanup = onCleanup(@() runtime.close());
+            testCase.verifyError(@() runtime.performPlotOperation( ...
+                "plots.copy_main", @failPlotCopy), "probe:CopyFailed");
+            records = runtime.diagnosticSnapshot().events;
+            failed = oneRecord(records, "plots.copy_main.failed");
+            testCase.verifyEqual(failed.operationResult, "failed");
+            testCase.verifyGreaterThanOrEqual(failed.durationSeconds, 0);
+            runtime.close();
+            result = runtime.performPlotOperation("plots.studio_launch", @() 42);
+            testCase.verifyEqual(result, 42);
+            clear cleanup
+        end
+
         function capturesSuccessfulPresentationOnlyAtTraceLevel(testCase)
             runtime = instrumentationRuntime( ...
                 testCase, @incrementProject, @presentProject);
@@ -243,4 +260,8 @@ end
 function record = oneRecord(records, eventName)
 record = records(string({records.eventName}) == eventName);
 assert(isscalar(record), "Expected one " + eventName + " record.");
+end
+
+function failPlotCopy()
+error("probe:CopyFailed", "Synthetic clipboard failure.");
 end

@@ -1,9 +1,12 @@
-function enableAxesPopout(ax)
-%ENABLEAXESPOPOUT Install the runtime-owned standalone-figure axes action.
+function enableAxesPopout(ax, execute, choosePlots)
+%ENABLEAXESPOPOUT Install runtime-owned plot clipboard and Studio actions.
 %
 % Inputs:
 %   ax - MATLAB axes or uiaxes handle that receives an "Open axes in new
 %       figure" context-menu item. Empty or invalid handles are ignored.
+%
+%   execute - optional runtime timing/error executor (name, callback).
+%   choosePlots - optional callback for workspace-wide plot selection.
 %
 % Outputs:
 %   None.
@@ -22,6 +25,12 @@ function enableAxesPopout(ax)
 %   the context menu, copies graphics, or opens the standalone figure are not
 %   caught and propagate from the originating graphics operation.
 %
+    if nargin < 3
+        choosePlots = [];
+    end
+    if nargin < 2
+        execute = @(~, work) work();
+    end
     if isempty(ax) || ~isvalid(ax)
         return;
     end
@@ -49,7 +58,22 @@ function enableAxesPopout(ax)
         uimenu(menu, ...
             'Text', 'Open axes in new figure', ...
             'Tag', 'labkitAxesPopoutMenu', ...
-            'MenuSelectedFcn', @(~,~) popoutAxes(ax));
+             'MenuSelectedFcn', @(~,~) popoutAxes(ax, "Execute", execute));
+        uimenu(menu, Text="Copy this plot", Tag="labkitAxesCopyMenu", ...
+            MenuSelectedFcn=@(~,~) execute("plots.copy_axis", ...
+                @() copygraphics(ax, ContentType="image", Resolution=300)));
+        uimenu(menu, Text="Send this plot to Studio", Tag="labkitAxesStudioMenu", ...
+            MenuSelectedFcn=@(tool,~) sendPlotsToStudio(ax, tool, execute));
+        if ~isempty(choosePlots)
+            uimenu(menu, Text="Copy selected plots...", ...
+                Tag="labkitAxesCopySelectedMenu", ...
+                MenuSelectedFcn=@(~,~) choosePlots());
+        end
+        diagnostics = uimenu(menu, Text="Plot diagnostics", ...
+            Tag="labkitAxesDiagnosticsMenu");
+        uimenu(diagnostics, Text="Profile Studio handoff", ...
+            Tag="labkitAxesProfileStudioMenu", ...
+            MenuSelectedFcn=@(tool,~) sendPlotsToStudio(ax, tool, execute, true));
     end
     attachMenuToAxesChildren(ax, menu);
     installChildrenListener(ax, menu);

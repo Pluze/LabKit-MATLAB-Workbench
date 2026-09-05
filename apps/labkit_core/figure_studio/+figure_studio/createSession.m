@@ -15,19 +15,21 @@ function session = createSession(project, context)
     if isfield(project.annotations, "transientSourceAxes") && ...
             ~isempty(project.annotations.transientSourceAxes) && ...
             isgraphics(project.annotations.transientSourceAxes, "axes")
-        currentSource = "Popout axes";
-        resource = figure_studio.sourceAxes.cloneResource( ...
-            project.annotations.transientSourceAxes);
-        context.setResource("sourceFigure", resource, ...
-            @figure_studio.sourceAxes.closeResource);
-        [plotData, sourceDefaultStyle, sourceAxes, sourcePanel, panelIndex] = ...
-            figure_studio.sourceAxes.selectPanel(resource, ...
-            requestedPanelIndex(project));
-        [~, sourcePanelChoices] = figure_studio.sourceAxes.panelChoices( ...
-            resource.axes);
-        panelSnapshots = figure_studio.sourceAxes.extractPanelSnapshots(resource);
-        activePanelIndex = panelIndex;
-        project.annotations.panelIndex = panelIndex;
+        currentSource = "Imported plot";
+        incomingAxes = project.annotations.transientSourceAxes;
+        % One immutable portable snapshot is prepared at the handoff boundary.
+        % Native copies retain grouped graphics when MATLAB can copy the axes;
+        % dual-ruler and UI axes use that same complete portable snapshot.
+        if ~isa(incomingAxes, "matlab.ui.control.UIAxes") && ...
+                isscalar(incomingAxes.YAxis)
+            resource = figure_studio.sourceAxes.cloneResource(incomingAxes);
+            context.setResource("sourceFigure", resource, ...
+                @figure_studio.sourceAxes.closeResource);
+            sourceAxes = resource.axes;
+        end
+        sourcePanelChoices = "Imported plot";
+        sourcePanel = sourcePanelChoices;
+        panelSnapshots = {plotData};
     elseif isempty(plotData) && ~isempty(project.inputs.sources)
         currentIndex = 1;
         paths = labkit.app.source.paths(project.inputs.sources);
@@ -44,7 +46,7 @@ function session = createSession(project, context)
         activePanelIndex = panelIndex;
         project.annotations.panelIndex = panelIndex;
     elseif ~isempty(plotData)
-        currentSource = "Popout axes";
+        currentSource = "Imported plot";
         sourcePanelChoices = "Saved panel";
         sourcePanel = "Saved panel";
     end
@@ -108,9 +110,9 @@ end
 
 function value = initialStatus(plotData, currentSource)
 if isempty(plotData)
-    value = "Load a MATLAB .fig file or send a popout plot to Studio.";
-elseif currentSource == "Popout axes"
-    value = "Opened popout axes in Studio.";
+    value = "Load a MATLAB .fig file or send a plot to Studio.";
+elseif currentSource == "Imported plot"
+    value = "Opened imported plot in Studio.";
 else
     value = "Restored figure source.";
 end

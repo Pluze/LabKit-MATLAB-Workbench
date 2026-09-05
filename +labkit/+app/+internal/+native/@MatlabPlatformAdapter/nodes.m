@@ -1,14 +1,14 @@
 function selected = nodes(obj, ids)
-% Class-folder implementation of MatlabPlatformAdapter.nodes.
+% Resolve ordered compiled children without rebuilding the layout ID list.
     ids = string(ids);
-    selected = repmat(obj.Plan.Nodes(1), numel(ids), 1);
+    indices = zeros(numel(ids), 1);
     for selectedIndex = 1:numel(ids)
-        id = ids(selectedIndex);
-        index = find(string({obj.Plan.Nodes.Id}) == id, 1);
-        if isempty(index)
+        id = char(ids(selectedIndex));
+        if ~isfield(obj.NodeIndices, id)
             error("labkit:app:runtime:InvariantFailure", ...
                 "Compiled Layout child is missing: %s.", id);
         end
-        selected(selectedIndex, 1) = obj.Plan.Nodes(index);
+        indices(selectedIndex) = obj.NodeIndices.(id);
     end
+    selected = reshape(obj.Plan.Nodes(indices), [], 1);
 end

@@ -1,5 +1,5 @@
 % Private App plot helper that installs copied-figure editing controls.
-function toolbar = createPopoutToolbar(fig, ax)
+function toolbar = createPopoutToolbar(fig, ax, execute)
 toolbar = uipanel(fig, 'Tag', 'labkitAxesPopoutToolbar', ...
     'BorderType', 'none', 'Units', 'normalized', ...
     'Position', [0.00 0.93 1.00 0.07], ...
@@ -27,7 +27,7 @@ callbacks = {
     @(~,~) applyStyleAndLayout(fig, toolbar, ax, "gridIncrease")
     @(~,~) applyStyleAndLayout(fig, toolbar, ax, "gridDecrease")
     @(tool,~) toggleXLabelRotation(tool, fig, toolbar, ax)
-    @(~,~) sendToStudio(ax)};
+    @(tool,~) sendPlotsToStudio(ax, tool, execute)};
 for k = 1:numel(labels)
     addTool(toolbar, labels(k), tags(k), ...
         k, numel(labels), callbacks{k});
@@ -35,6 +35,10 @@ end
 rotationTool = findobj( ...
     toolbar, 'Tag', 'labkitAxesPopoutXLabelRotationTool');
 updateXLabelRotationTool(rotationTool, ax);
+diagnostics = uimenu(fig, Text="Diagnostics");
+uimenu(diagnostics, Text="Profile Studio handoff", ...
+    Tag="labkitPopoutProfileStudio", ...
+    MenuSelectedFcn=@(tool,~) sendPlotsToStudio(ax, tool, execute, true));
 layoutPopoutAxes(fig, toolbar, ax);
 fig.SizeChangedFcn = @(~,~) layoutPopoutAxes(fig, toolbar, ax);
 end
@@ -86,20 +90,4 @@ ax.Units = 'normalized';
 ax.OuterPosition = [0.02 0.02 0.96 0.89];
 ax.ActivePositionProperty = 'outerposition';
 drawnow limitrate nocallbacks;
-end
-
-function sendToStudio(ax)
-root = fileparts(mfilename("fullpath"));
-for level = 1:5
-    root = fileparts(root);
-end
-apps = labkit.app.internal.discovery.discoverApps(root);
-match = find(string({apps.command}) == "labkit_FigureStudio_app", 1);
-if isempty(match)
-    warning('labkit:app:plot:FigureStudioUnavailable', ...
-        'Figure Studio is not available in this LabKit installation.');
-    return;
-end
-labkit.app.internal.discovery.invokeDiscoveredApp( ...
-    apps(match), "axes", ax);
 end

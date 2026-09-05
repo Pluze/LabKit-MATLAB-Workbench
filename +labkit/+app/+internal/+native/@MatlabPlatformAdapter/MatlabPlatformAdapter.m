@@ -9,6 +9,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
     properties (Access = private)
         Plan (1, 1) struct
+        NodeIndices (1, 1) struct
+        ParentIndices (1, 1) struct
         Figure
         Components
         Axes
@@ -41,6 +43,17 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             ?labkit.app.internal.runtime.RuntimeContractBoundary})
         function obj = MatlabPlatformAdapter(plan, title)
             obj.Plan = labkit.app.internal.native.NativeAdapterValues.validatePlan(plan);
+            nodeIndices = struct();
+            parentIndices = struct();
+            for nodeIndex = 1:numel(plan.Nodes)
+                node = plan.Nodes(nodeIndex);
+                nodeIndices.(char(node.Id)) = nodeIndex;
+                for childId = node.ChildIds
+                    parentIndices.(char(childId)) = nodeIndex;
+                end
+            end
+            obj.NodeIndices = nodeIndices;
+            obj.ParentIndices = parentIndices;
             if nargin < 2
                 title = "LabKit application";
             end
@@ -469,81 +482,27 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             obj.LogViewer.show();
         end
 
-        function handles = allAxes(obj)
-            values = obj.Axes.values;
-            if isempty(values)
-                handles = gobjects(0, 1);
-            else
-                handles = vertcat(values{:});
-                handles = handles(isvalid(handles));
-            end
-        end
+        handles = currentPlotAxes(obj)
 
-        function popoutAllPlots(obj)
-            handles = obj.allAxes();
-            for k = 1:numel(handles)
-                labkit.app.internal.native.enableAxesPopout(handles(k));
-                menu = findall(handles(k).ContextMenu, ...
-                    Type="uimenu", Tag="labkitAxesPopoutMenu");
-                if ~isempty(menu)
-                    menu(1).MenuSelectedFcn(menu(1), []);
-                end
-            end
-        end
+        copySelectedPlots(obj)
 
-        function copyAllPlots(obj)
-            handles = obj.allAxes();
-            if isscalar(handles)
-                copygraphics(handles(1), ContentType="image");
-            elseif ~isempty(handles)
-                copygraphics(obj.Figure, ContentType="image");
-            end
-        end
-
-        function saveAllPlots(obj)
-            handles = obj.allAxes();
+        function copyMainPlots(obj)
+            handles = obj.currentPlotAxes();
             if isempty(handles)
-                return
+                obj.alert("The current workspace page has no plots.", ...
+                    "Copy Main Plots", "info");
+                return;
             end
-            choice = obj.chooseOutputFile( ...
-                {"*.png", "PNG image (*.png)"; ...
-                 "*.pdf", "PDF file (*.pdf)"}, "plots.png");
-            if choice.Cancelled
-                return
-            end
-            filepath = string(choice.Value);
-            for k = 1:numel(handles)
-                output = filepath;
-                if numel(handles) > 1
-                    output = labkit.app.internal.native.NativeAdapterValues.plotFilepath(filepath, handles(k), k);
-                end
-                exportgraphics(handles(k), output, ContentType="image");
-            end
-        end
-
-        function saveScreenshot(obj)
-            filename = obj.Runtime.automaticArtifactFilename( ...
-                "screenshot", ".png");
-            try
-                destination = obj.Runtime.automaticArtifactDestination( ...
-                    "screenshots", "screenshot", ".png");
-                exportapp(obj.Figure, destination);
-            catch
-                choice = obj.chooseOutputFile( ...
-                    {"*.png", "PNG image (*.png)"; ...
-                     "*.pdf", "PDF file (*.pdf)"}, filename);
-                if choice.Cancelled
-                    return;
-                end
-                destination = string(choice.Value);
-                exportapp(obj.Figure, destination);
-            end
-            obj.alert("Screenshot written to:" + newline + destination, ...
-                "Screenshot Saved", "info");
+            canvas = labkit.app.internal.native.createPlotImageFigure(handles);
+            cleanup = onCleanup(@() delete(canvas));
+            copygraphics(canvas, ContentType="image", Resolution=150);
         end
 
         function copyScreenshot(obj)
-            copygraphics(obj.Figure, ContentType="image");
+            canvas = labkit.app.internal.native.createScreenshotFigure(obj.Figure);
+            cleanup = onCleanup(@() delete(canvas));
+            copygraphics(canvas, ContentType="image", ...
+                Resolution=get(groot, "ScreenPixelsPerInch"));
         end
 
         function onKeyPress(obj, event)

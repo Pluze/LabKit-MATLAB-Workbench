@@ -148,6 +148,12 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual( ...
                 runtime.State.project.parameters.style.tickFontSize, 10);
 
+            previousExport = runtime.State.project.results;
+            runtime.invokeAction("copyFigure");
+            testCase.verifyEqual(runtime.State.project.results, previousExport);
+            copiedEvents = runtime.diagnosticSnapshot().events;
+            testCase.verifyTrue(any(string({copiedEvents.eventName}) == ...
+                "figure_studio.figure_copied"));
             runtime.invokeAction("exportPng");
             testCase.verifyTrue(isfile(outputPath));
             runtime.invokeAction("exportSvg");

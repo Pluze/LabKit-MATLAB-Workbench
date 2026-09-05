@@ -665,16 +665,6 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
         end
 
-        function filepath = plotFilepath(basePath, axesHandle, index)
-        [folder, name, extension] = fileparts(basePath);
-        label = join(string(axesHandle.Title.String), " ");
-        label = string(matlab.lang.makeValidName(char(label)));
-        if strlength(label) == 0
-            label = "plot" + string(index);
-        end
-        filepath = string(fullfile(folder, sprintf( ...
-            "%s_%02d_%s%s", name, index, label, extension)));
-        end
 
     end
 end
