@@ -17,7 +17,7 @@ Editing observation labels individually made category renaming slow and coupled 
 
 [T-Test Wizard](../../use/apps/statistics/ttest-wizard/README.md) provides category-level renaming, batch names, empty destinations, selected-row assignment to a newly named category, category positions, an explicit reference, and comparison inclusion. Moving categories preserves the reference and within-category observation order. Plot brackets resolve the actual reference and comparison positions. Freshness checks compare snapshot inputs without running statistics during presentation.
 
-[Figure Studio](../../use/apps/labkit-core/figure-studio/README.md) provides original-to-new legend names, independent row order, and inclusion checkboxes. Names and membership use the existing semantic objects; position is presentation metadata. Preview and export construct the edited legend from explicit graphics handles before applying appearance settings. Clearing every row suppresses automatic legend reconstruction. Edits participate in document history and remain separate from reusable global styles.
+[Figure Studio](../../use/apps/labkit-core/figure-studio/README.md) provides original-to-new legend names, independent row order, and inclusion checkboxes. Names and membership use the existing semantic objects; position is presentation metadata. Preview and export construct the edited legend from explicit graphics handles before applying appearance settings. Clearing every row suppresses automatic legend reconstruction. Edits participate in document history and remain separate from reusable global styles. Open figure creates an independent editable window from the complete current document, including every panel and its legend.
 
 ## Impact
 

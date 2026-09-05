@@ -42,7 +42,7 @@ Changing a range refreshes all non-explicit ticks, so values newly inside the ra
 
 Color-mapped panels expose colormap, color limits, colorbar visibility, location, label, tick values, and tick labels. Legends retain source content by default and expose display, placement, font size, columns, and border. The full-width **Legend** workspace page maps each original series name to its editable legend name, position, and **Show** checkbox. Enter a position to move a row without changing graphic stacking; uncheck Show to omit only its legend entry. Duplicate legend labels are allowed because rows remain attached to their plotted objects. Empty names are rejected; use Show to omit a row.
 
-Legend edits join the document Undo/Redo history. Changing fonts, lines, presets, or other parameters preserves edited names, order, and row selection. The table, subsequent popouts, clipboard copies, and file exports use the current legend. Turning global legend display Off keeps row edits for later On; unchecking every row leaves the legend empty even when global display is On. Each panel owns its own legend. The table edits supported data-series objects; annotations and images do not become artificial legend series.
+Legend edits join the document Undo/Redo history. Changing fonts, lines, presets, or other parameters preserves edited names, order, and row selection. The table, **Open figure** windows, clipboard copies, and file exports use the current legend. Turning global legend display Off keeps row edits for later On; unchecking every row leaves the legend empty even when global display is On. Each panel owns its own legend. The table edits supported data-series objects; annotations and images do not become artificial legend series.
 
 Choosing a different source or panel, editing an axis range/scale/direction, or explicitly recalculating limits fits the preview to that coordinate domain. Typography, colors, ticks, labels, layers, legends, colorbars, and annotation edits preserve the region being inspected, including on dual-Y figures.
 
@@ -70,9 +70,11 @@ Preflight reports **ready**, **review**, or **blocked** and supplies a suggested
 
 ## Exports And Editable Package
 
-The **Figures** tab provides **Copy figure**, which copies the complete styled document, including every panel, to the clipboard as one raster image at the configured export scale. It uses the same publication preflight and layout as file export; blocking issues must be resolved first. Copying does not change file-export destinations or result records.
+The **Figure** tab provides **Open figure**, which opens a detached editable MATLAB figure containing every panel and the current legend names, order and inclusion. Open it again after further edits to obtain a new current copy; existing output windows remain independent and survive closing Studio. Use this command for a complete Studio figure; the framework axes context-menu popout is a single-axis copy and does not retain custom legend order.
 
-The **Figures** tab also provides editable FIG, PNG, JPG, and SVG output. **Export editable package** writes:
+The **Figure** tab provides **Copy figure**, which copies the complete styled document, including every panel, to the clipboard as one raster image at the configured export scale. It uses the same publication preflight and layout as file export; blocking issues must be resolved first. Copying does not change file-export destinations or result records.
+
+The **Figure** tab also provides editable FIG, PNG, JPG, and SVG output. **Export editable package** writes:
 
 - `figure_studio_project.mat`, containing the semantic document, style, and preflight report;
 - `figure_document.json` and `preflight.json` for language-neutral inspection;
