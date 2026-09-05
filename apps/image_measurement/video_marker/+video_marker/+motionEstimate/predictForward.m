@@ -1,9 +1,10 @@
 %PREDICTFORWARD Propagate points through later frames until the target frame.
-% Expected caller: Video Marker forward navigation. Manual frames are immutable
+% Expected caller: Video Marker explicit range prediction. Manual frames are immutable
 % anchors; empty or previously predicted frames are replaced by fresh
 % multiscale patch predictions. Returns the target image and a compact report.
 function [annotations, targetImage, report] = predictForward( ...
-        readFrameFcn, annotations, startFrame, targetFrame, startImage)
+        readFrameFcn, annotations, startFrame, targetFrame, startImage, progressFcn)
+    if nargin < 6, progressFcn = []; end
     startFrame = round(double(startFrame));
     targetFrame = round(double(targetFrame));
     if targetFrame <= startFrame
@@ -26,7 +27,13 @@ function [annotations, targetImage, report] = predictForward( ...
     manualCode = video_marker.frameAnnotations.sourceCode("manual");
     predictedCode = video_marker.frameAnnotations.sourceCode("predicted");
     anchorRevision = annotations.anchorRevision(startFrame);
+    lastProgress = tic;
+    reportProgress(progressFcn, "started", 0, targetFrame - startFrame);
     for frameIndex = startFrame + 1:targetFrame
+        if toc(lastProgress) >= 5
+            reportProgress(progressFcn, "predicting", frameIndex - startFrame - 1, targetFrame - startFrame);
+            lastProgress = tic;
+        end
         existing = video_marker.frameAnnotations.framePoints(annotations, frameIndex);
         isManualAnchor = annotations.frameSource(frameIndex) == manualCode && ...
             size(existing, 1) == pointCount;
@@ -68,6 +75,7 @@ function [annotations, targetImage, report] = predictForward( ...
             targetImage = currentImage;
         end
     end
+    reportProgress(progressFcn, "completed", targetFrame - startFrame, targetFrame - startFrame);
 end
 
 function displacement = previousDisplacement(annotations, frameIndex, points)
@@ -79,4 +87,8 @@ function displacement = previousDisplacement(annotations, frameIndex, points)
     if isequal(size(previous), size(points))
         displacement = points - previous;
     end
+end
+
+function reportProgress(progressFcn, stage, completed, total)
+    if ~isempty(progressFcn), progressFcn(stage, completed, total); end
 end

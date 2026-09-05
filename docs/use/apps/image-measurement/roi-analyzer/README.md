@@ -84,6 +84,14 @@ For every ROI and channel, finite included pixels produce:
 
 Rectangle and square masks include pixel centers inside their bounds. Circle masks include pixel centers inside the circle inscribed in the equal-sided bounding box. Nonfinite pixels are excluded independently by channel.
 
+## Batch Measurement
+
+Use **Measure all images** after placing or copying ROIs across the image list. The App reads each full-resolution source once and applies the same original-pixel calculation used by **Measure ROIs**. The current image, selection, and ROI placements remain unchanged. The batch table reports one source per row with measurement status and the number of ROI/channel rows.
+
+**Export batch CSV** writes a long table: one row per image, ROI, and channel. `ImageIndex` disambiguates repeated basenames; `Image`, ROI identity, geometry, and channel accompany the raw statistics. `GeometryAdjusted` is 1 when the measured bounding geometry was clamped or resized to fit that image, 0 when unchanged, and `NaN` when no measurement exists. Compare this flag and the exported dimensions before treating ROIs as equivalent across differently sized images.
+
+A source without ROIs or a readable image retains an explicit status row with missing numeric values. A measured channel with no finite pixels is marked **No finite pixels**. A repeated batch replaces previous results, including failures, so an old success cannot silently stand in for a failed read. CSV export uses the saved measurements and does not recalculate. Geometry or ratio changes invalidate affected measurements; rerun after externally changing source pixels. Batch processing logs start, bounded progress between images, per-source failures, and completion in Diagnostics. A large individual image read or calculation is synchronous.
+
 ## Project, Parameters, And Results
 
 The three output types have deliberately different purposes:
@@ -92,11 +100,12 @@ The three output types have deliberately different purposes:
 | --- | --- | --- |
 | **Save project** | source references, shared geometry, ROI definitions and placements for every image, ratio choice, current results, and selected ROI group | Continue the same analysis project later |
 | **Export parameter JSON** | shared geometry, current layout, and optional ratio-denominator choice | Review or reuse the analysis setup without paths, pixels, or old results |
+| **Export batch CSV** | all sources, ROI/channel measurements, geometry adjustments, and explicit missing/failure rows | Batch comparison and completeness review |
 | **Export current CSV** | current image label and complete ROI-by-channel measurement table | Statistical analysis, plotting, and reporting |
 
 The MAT project stores source references, not copied image pixels. When opened, the recorded path, an archive-relative path, and a same-folder filename are tried. A missing image stops the restore without partially replacing the live task. The current format is explicit and versioned; retired or unrelated MAT payloads are rejected.
 
-Parameter JSON is provenance, not a result cache. It intentionally omits source paths, pixel arrays, preview state, calculated tables, and export destinations. CSV values should be regenerated with **Measure ROIs** after geometry, ratio denominator, or source pixels change.
+Parameter JSON is provenance, not a result cache. It intentionally omits source paths, pixel arrays, preview state, calculated tables, and export destinations. CSV values should be regenerated after geometry or ratio-denominator changes. Use **Measure all images** to reread externally changed source pixels; **Measure ROIs** uses the currently loaded full-resolution image.
 
 ## Use Without The GUI
 

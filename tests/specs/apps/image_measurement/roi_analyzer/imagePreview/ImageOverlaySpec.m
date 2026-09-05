@@ -13,7 +13,8 @@ classdef ImageOverlaySpec < matlab.unittest.TestCase
                 "size", [9 7], "position", [16 11 9 7]);
             original = roi;
 
-            model = roi_analyzer.imagePreview.model(state, roi, struct());
+            model = roi_analyzer.imagePreview.model( ...
+                state.session.cache, state.session.selection, roi);
 
             testCase.verifyEqual(model.rois.position, [8.25 5.75 4.5 3.5]);
             testCase.verifyEqual(roi, original);

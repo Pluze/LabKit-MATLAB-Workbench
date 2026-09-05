@@ -1,12 +1,15 @@
-function state = invalidate(state, sourceId)
+function results = invalidate(results, sourceId)
 %INVALIDATE Mark measurements stale after ROI geometry or identity changes.
-items = state.project.results.items;
+items = results.items;
 match = find(string({items.sourceId}) == string(sourceId), 1);
 if ~isempty(match)
     items(match).roiFingerprint = "";
     items(match).summary = table();
     items(match).metrics = table();
 end
-state.project.results.items = items;
-state.project.results.lastExportPath = "";
+results.items = items;
+results.lastExportPath = "";
+if isfield(results, "batchStatus") && ~isempty(results.batchStatus)
+    results.batchStatus(results.batchStatus.SourceId == string(sourceId), :) = [];
+end
 end

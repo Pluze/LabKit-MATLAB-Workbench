@@ -13,5 +13,5 @@ for itemIndex = 1:numel(items)
     end
 end
 applicationState.project.annotations.items = items;
-applicationState = roi_analyzer.analysisRun.invalidateAll(applicationState);
+applicationState.project.results = roi_analyzer.analysisRun.invalidateAll(applicationState.project.results);
 end

@@ -40,6 +40,19 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(axesValue.Children);
             testCase.verifySubstring(string(axesValue.XLabel.String), ...
                 units.choices(4));
+            for tag = ["nyquistOverview.nyquist" "bodeOverview.magnitude" "bodeOverview.phase"]
+                overviewAxes = findall(figureValue, "Tag", tag);
+                testCase.verifyNotEmpty(findall(overviewAxes, "Type", "line"));
+            end
+            capture = labkittest.nativeGraphicsCapability("interface-capture");
+            evidencePath = labkittest.visualEvidencePath("eis-overview", ".png");
+            if capture.Available
+                exportapp(figureValue, evidencePath);
+                testCase.verifyTrue(isfile(evidencePath));
+            else
+                testCase.verifyError(@() exportapp(figureValue, evidencePath), capture.ErrorIdentifier);
+                testCase.verifyFalse(isfile(evidencePath));
+            end
             testCase.verifyTrue(isfile(output));
             clear cleanup
         end

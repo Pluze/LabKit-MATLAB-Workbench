@@ -15,5 +15,5 @@ if shape == "Square" || shape == "Circle"
     templates(match).size = [side side];
 end
 applicationState.project.annotations.templates = templates;
-applicationState = roi_analyzer.analysisRun.invalidateAll(applicationState);
+applicationState.project.results = roi_analyzer.analysisRun.invalidateAll(applicationState.project.results);
 end

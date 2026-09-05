@@ -43,6 +43,20 @@ classdef ProjectArchiveSpec < matlab.unittest.TestCase
                 vertcat(restored.project.annotations.items.rois.centerXY), ...
                 [6 5; 8 6]);
             testCase.verifyEqual(restored.project.results.items.summary.Mean, 17);
+            testCase.verifyFalse(isfield(restored.project.results, "batchStatus"));
+            state.project.results.batchStatus = table("image-1", "Measured", ...
+                VariableNames=["SourceId" "Status"]);
+            roi_analyzer.archive.writeFile(state, archivePath);
+            restored = roi_analyzer.archive.readFile(archivePath, []);
+            testCase.verifyEqual(restored.project.results, state.project.results);
+            invalidated = roi_analyzer.analysisRun.invalidate(restored.project.results, "image-1");
+            testCase.verifyEmpty(invalidated.items.summary);
+            testCase.verifyEmpty(invalidated.items.metrics);
+            testCase.verifyEmpty(invalidated.batchStatus);
+            invalidProject = state.project;
+            invalidProject.results.batchStatus = struct("Status", "Measured");
+            testCase.verifyError(@() roi_analyzer.archive.validateProject(invalidProject), ...
+                "roi_analyzer:InvalidProject");
         end
     end
 end

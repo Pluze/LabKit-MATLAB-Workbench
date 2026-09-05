@@ -32,7 +32,7 @@ Project restore validates the selected fusion preset, odd focus-window range, sm
 3. Start with the Balanced preset.
 4. Enable auto-registration when the stack has small rigid camera motion.
 5. Tune detail scale, blend radius, and uncertain blend only when artifacts are visible.
-6. Run the stack and inspect both fused image and focus map.
+6. Run the stack and inspect the fused image, focus map, and confidence map side by side.
 7. Export fused PNG, focus-map PNG, and summary CSV.
 
 Selecting new focal-plane sources or completing a new fusion fits the result canvas. Status, table, and presentation-only redraws of the same result preserve the current zoom.
@@ -42,6 +42,8 @@ Selecting new focal-plane sources or completing a new fusion fits the result can
 Images are normalized to grayscale or RGB double data on common geometry. A Gaussian/Laplacian pyramid is built for each plane. Local squared Laplacian detail energy chooses the strongest plane at each level. Confidence is the relative separation between the best and second-best evidence.
 
 High-confidence regions use the winning plane. Low-confidence regions blend normalized evidence weights; zero-evidence regions use equal weights. The weights are spatially smoothed by the level-scaled blend radius and the fused pyramid is reconstructed and clamped to `[0,1]`.
+
+The confidence view displays the existing full-resolution score on a fixed 0–1 color scale. It measures relative separation between the best and second-best detail scores; it is not a calibrated probability, valid-registration mask, or physical depth measurement. Changing fusion parameters clears old quality views until the next run. Grayscale fused data is displayed as true grayscale independently of the quality color maps.
 
 The focus index is the winning input plane at full resolution. Focus coverage is the fraction of pixels assigned to each plane. The algorithm does not correct parallax, deformation, moving objects, illumination changes, or severe registration error.
 

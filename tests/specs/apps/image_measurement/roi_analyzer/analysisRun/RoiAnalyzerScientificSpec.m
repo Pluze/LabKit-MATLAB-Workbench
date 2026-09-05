@@ -2,6 +2,41 @@ classdef RoiAnalyzerScientificSpec < matlab.unittest.TestCase
     %ROIANALYZERSCIENTIFICSPEC Specify original-pixel ROI statistics.
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
+        function measuresBatchWithExplicitMissingAndAdjustedRows(testCase)
+            folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            first = string(fullfile(folder, "first.png"));
+            small = string(fullfile(folder, "small.png"));
+            missing = string(fullfile(folder, "missing.png"));
+            imwrite(uint8(10 .* ones(8)), first);
+            imwrite(uint8(20 .* ones(2)), small);
+            sources = [labkit.app.source.record("a", "source-image", first); ...
+                labkit.app.source.record("b", "source-image", small); ...
+                labkit.app.source.record("c", "source-image", missing); ...
+                labkit.app.source.record("d", "source-image", first)];
+            templates = roi_analyzer.roiTemplates.defaultTemplates();
+            templates(1).size = [3 3];
+            roi = roi_analyzer.roiLibrary.emptyRoi();
+            roi.id = "roi"; roi.name = "Sample";
+            roi.templateId = templates(1).id; roi.centerXY = [4 4];
+            annotations = repmat(struct("sourceId", "", "rois", roi), 3, 1);
+            for k = 1:3, annotations(k).sourceId = sources(k).id; end
+            [items, status, failures] = roi_analyzer.analysisRun.measureSources( ...
+                sources, annotations, templates, "");
+            results = struct("items", items, "batchStatus", status);
+            output = roi_analyzer.resultFiles.buildBatchTable(sources, annotations, templates, results);
+            % Constant images give independent means; missing input must not
+            % become a zero or reuse another source's previous result.
+            testCase.verifyEqual(output.Mean(1:2), [10;20]);
+            testCase.verifyEqual(output.GeometryAdjusted(1:2), [0;1]);
+            testCase.verifyEqual(output.Status, ["Measured";"Measured";"Read failed";"No ROIs"]);
+            testCase.verifyTrue(all(isnan(output.Mean(3:4))));
+            testCase.verifyTrue(all(isnan(output.PixelCount(3:4))));
+            testCase.verifyClass(failures{3}, "MException");
+            [again, repeatedStatus] = roi_analyzer.analysisRun.measureSources(sources, annotations, templates, "");
+            testCase.verifyEqual(again, items);
+            testCase.verifyEqual(repeatedStatus, status);
+        end
+
         function measuresRectangleWithIndependentOrderStatisticOracles(testCase)
             roi = makeRoi("sample", "Rectangle", [1 1 1 1]);
 

@@ -1,6 +1,6 @@
 % App-owned implementation for video_marker.frameNavigation.changeFrame within the video_marker product workflow.
 function state = changeFrame(state, value, context)
-%CHANGEFRAME Decode the requested frame from the portable video source.
+%CHANGEFRAME Read one requested frame without prediction or annotation mutation.
 info = state.session.cache.videoInfo;
 if info.frameCount <= 0 || isempty(state.session.cache.currentImage)
     return
@@ -24,12 +24,7 @@ try
         context.setResource("video", resource, []);
     end
     info = resource.info;
-    [frames, imageData, ~] = ...
-        video_marker.frameNavigation.loadTargetFrame( ...
-        resource.cache.readFrame, state.project.annotations.frames, ...
-        startFrame, target, ...
-        state.session.cache.currentImage, ...
-        numel(state.project.annotations.skeleton.pointIds));
+    imageData = resource.cache.readFrame(target);
 catch cause
     context.log("error", "video_marker.framenavigation.changeframe.exception", "Could not read video frame", ...
         Category="failure", Audience="developer", Exception=cause);
@@ -37,11 +32,6 @@ catch cause
     state.session.selection.currentFrame = startFrame;
     return
 end
-if frames.frameStatus(target) == ...
-        video_marker.frameAnnotations.statusCode("empty")
-    frames = video_marker.frameAnnotations.inheritDraft(frames, target);
-end
-state.project.annotations.frames = frames;
 state.session.selection.currentFrame = target;
 state.session.cache.currentImage = imageData;
 state.session.cache.videoInfo = info;
@@ -49,5 +39,4 @@ state.session.cache.videoPath = paths(1);
 state.session.cache.frameIndex = target;
 state.session.workflow.scaleReferenceEditing = false;
 state.session.view.scaleBar = [];
-state = video_marker.resultFiles.clearExportState(state);
 end

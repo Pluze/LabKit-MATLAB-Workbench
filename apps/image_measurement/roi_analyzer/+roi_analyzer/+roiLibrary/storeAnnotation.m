@@ -8,5 +8,5 @@ else
     items(match) = annotation;
 end
 state.project.annotations.items = items;
-state = roi_analyzer.analysisRun.invalidate(state, annotation.sourceId);
+state.project.results = roi_analyzer.analysisRun.invalidate(state.project.results, annotation.sourceId);
 end

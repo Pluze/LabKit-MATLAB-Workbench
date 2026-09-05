@@ -2,6 +2,50 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
     %VIDEOMARKERWORKFLOWSPEC Specify marking, exports, and App-owned snapshots.
 
     methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
+        function reviewsPredictionsWithoutMutatingAnnotations(testCase)
+            folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            fixture = testfixtures.video_marker.project(string(folder));
+            definition = video_marker.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
+            runtime = labkittest.createMatlabRuntime(definition, [], struct("alert", @(~,~) []), journal);
+            cleanup = onCleanup(@() runtime.close());
+            runtime.applyControlValue("skeletonPreset", "Three-point chain");
+            runtime.invokeAction("useSkeletonPreset");
+            runtime.applyFileSelection("videoFile", fixture.inputs.sources(1).path, 1);
+            runtime.applyInteraction("framePoints", "interactionChanged", [24 34;32 38;40 42]);
+            runtime.applyControlValue("predictionEndFrame", 3);
+            runtime.invokeAction("predictToFrame");
+            original = runtime.State.project.annotations.frames;
+            testCase.verifyEqual(original.frameSource(2:3), ...
+                repmat(video_marker.frameAnnotations.sourceCode("predicted"), 2, 1));
+            runtime.applyControlValue("reviewMode", "Predicted");
+            runtime.invokeAction("reviewPrevious");
+            testCase.verifyEqual(runtime.State.session.cache.frameIndex, 2);
+            runtime.invokeAction("reviewNext");
+            testCase.verifyEqual(runtime.State.session.cache.frameIndex, 3);
+            runtime.applyControlValue("reviewMode", "Unmarked");
+            runtime.invokeAction("reviewNext");
+            testCase.verifyEqual(runtime.State.session.cache.frameIndex, 4);
+            runtime.applyControlValue("reviewMode", "Low/unknown confidence");
+            runtime.applyControlValue("reviewThreshold", 1);
+            runtime.invokeAction("reviewPrevious");
+            testCase.verifyLessThan(runtime.State.session.cache.frameIndex, 4);
+            runtime.applyControlValue("reviewMode", "Unreviewed");
+            testCase.verifyEqual(runtime.State.project.annotations.frames, original);
+            tab = findall(runtime.figureHandle(), "Type", "uitab", "Title", "Video");
+            tab.Parent.SelectedTab = tab;
+            capture = labkittest.nativeGraphicsCapability("interface-capture");
+            evidencePath = labkittest.visualEvidencePath("video-review", ".png");
+            if capture.Available
+                exportapp(runtime.figureHandle(), evidencePath);
+                testCase.verifyTrue(isfile(evidencePath));
+            else
+                testCase.verifyError(@() exportapp(runtime.figureHandle(), evidencePath), capture.ErrorIdentifier);
+                testCase.verifyFalse(isfile(evidencePath));
+            end
+            clear cleanup
+        end
+
         function designsAnEditableSkeletonBeforeOpeningVideo(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
@@ -78,7 +122,7 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
             runtime.applyFileSelection("videoFile", videoPath, 1);
             points = [24 34; 32 38; 40 42; 48 46; 56 50];
             runtime.applyInteraction("framePoints", "interactionChanged", points);
-            runtime.invokeAction("nextFrame");
+            runtime.invokeAction("predictToFrame");
             runtime.applyControlValue("currentFrame", 1);
             testCase.verifyEqual( ...
                 runtime.State.session.selection.currentFrame, 1);
@@ -91,7 +135,7 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEmpty(video_marker.frameAnnotations.framePoints( ...
                 runtime.State.project.annotations.frames, 1));
             runtime.applyInteraction("framePoints", "interactionChanged", points);
-            runtime.invokeAction("nextFrame");
+            runtime.invokeAction("predictToFrame");
             runtime.applyControlValue("scaleReferencePixels", 24);
             runtime.invokeAction("measureScaleReference");
             runtime.applyInteraction("scaleReference", "interactionChanged", [10 10; 30 10]);
@@ -167,7 +211,7 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
 
             runtime.applyInteraction( ...
                 "framePoints", "interactionChanged", points);
-            runtime.invokeAction("nextFrame");
+            runtime.invokeAction("predictToFrame");
             runtime.invokeAction("exportMarkerCsv");
             runtime.applyControlValue("coordinateEndFrame", 1);
             runtime.invokeAction("exportCoordinateCsv");

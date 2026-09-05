@@ -11,7 +11,7 @@ Video Marker defines an ordered landmark skeleton, records coordinates across vi
 
 ## Requirements And Launch
 
-The app uses the current LabKit App SDK and declares compatibility with `labkit.image` 2.x. Video decoding uses Base MATLAB's available video support. Predictive navigation is implemented in repository-owned MATLAB code; no optional Toolbox, model weight, or third-party runtime package is required.
+The app uses the current LabKit App SDK and declares compatibility with `labkit.image` 2.x. Video decoding uses Base MATLAB's available video support. Range prediction is implemented in repository-owned MATLAB code; no optional Toolbox, model weight, or third-party runtime package is required.
 
 ```matlab
 labkit_VideoMarker_app
@@ -30,10 +30,18 @@ For a new project, choose a preset or add keypoints, edit their names, reorder t
 3. Click blank image locations to place the next missing keypoint in order.
 4. Drag an existing marker to refine it.
 5. Use Undo last point or Clear frame points when needed.
-6. Move to the next frame and correct predicted frames periodically.
+6. Set **Through frame** and choose **Predict to frame** to generate a forward range, then inspect and correct drafts.
 7. Export results or use **Save MAT** to preserve the current task snapshot.
 
-Point marking remains active while a video is open. A complete edited frame is a manual anchor. Moving forward predicts every ordered point using cropped multiscale patch matching. The tracker compares mean-centered local patches by normalized correlation, refines accepted matches to subpixel coordinates, and reports confidence for each point. A rejected point retains its bounded motion- prior estimate. Predicted frames remain editable drafts. Editing a complete frame makes it a new manual anchor for later prediction. Jumping forward propagates through intermediate frames and does not overwrite existing manual anchors.
+Point marking remains active while a video is open. A complete edited frame is a manual anchor. **Predict to frame** predicts every ordered point using cropped multiscale patch matching. The tracker compares mean-centered local patches by normalized correlation, refines accepted matches to subpixel coordinates, and reports confidence for each point. A rejected point retains its bounded motion- prior estimate. Predicted frames remain editable drafts. Editing a complete frame makes it a new manual anchor for later prediction. The explicit prediction action propagates through intermediate frames and preserves existing manual anchors. Prediction failures leave annotations and the committed frame unchanged.
+
+The frame slider and **Previous frame** / **Next frame** only read the destination frame; they neither predict intermediate frames nor copy points into empty frames. Navigating preserves existing export references because annotations have not changed.
+
+### Review And Completion
+
+Choose **Unreviewed**, **Unmarked**, **Predicted**, or **Low/unknown confidence**, then use **Previous match** or **Next match**. Navigation stops at the first matching frame in that direction without wrapping; when no match exists it stays on the current frame. Unreviewed means every frame not explicitly confirmed. Low/unknown confidence means a predicted frame has at least one point below the chosen 0–1 threshold or a nonfinite confidence value. Unknown scores remain reviewable even at threshold zero. Confidence is a tracker score, not a calibrated probability of correctness.
+
+The review summary reports confirmed frames out of total frames and the count matching the selected filter. Browsing or filtering never confirms, excludes, or rewrites annotations. Filter and prediction-end choices are transient controls; reopening a snapshot restores annotations and current frame with default review controls. Use manual corrections to establish trusted anchors before extending a prediction range. Long range prediction is synchronous and records stage, completed/total counts, and bounded progress between frames in Diagnostics.
 
 Same-size frame navigation and marker refresh preserve the current zoom. Opening a new video or project, or encountering a different frame canvas, starts at that canvas's home view.
 
