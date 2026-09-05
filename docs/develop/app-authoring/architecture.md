@@ -177,10 +177,10 @@ There is no minimum useful helper length. Small public facades, factories, filte
 
 ## Validation Boundary
 
-The default automated validation boundary is:
+The default local pre-PR validation entry point is:
 
 ```bash
-buildtool headless
+buildtool
 ```
 
-This covers project contracts, reusable facade behavior, and non-GUI app helper behavior. GUI checks cover launch, layout, callback wiring, trace plumbing, reusable tool lifecycle, and bounded App workflows. Manual MATLAB review is still required for full interactive workflow feel.
+This selects `changedFast`, combining code analysis, deterministic documentation checks, and source-aligned tests for the task diff. The [testing guide](../testing.md) owns focused selection, the complete `headless` and `apps` profiles, required platform CI, and manual validation boundaries.

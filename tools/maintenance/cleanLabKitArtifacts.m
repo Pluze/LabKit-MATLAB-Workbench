@@ -17,14 +17,17 @@ function result = cleanLabKitArtifacts(root, varargin)
 %
 % Outputs:
 %   result - Scalar struct with root, removedCount, removedTargets, and errors.
-%       removedTargets contains only successfully removed generated targets.
+%       removedTargets contains root-relative successfully removed targets.
 %       errors contains removal failures; invalid roots or unsafe targets throw
 %       a stable error instead of performing any deletion.
 %
 % Deletion range:
-%   This tool removes only root/artifacts. It never removes projects, source,
-%   application folders, exported laboratory data, or a target that resolves
-%   outside root. The operation is idempotent when artifacts is absent.
+%   This tool removes generated content under root/artifacts. It preserves
+%   artifacts/worktrees and its contents, including unfinished task code.
+%   When worktrees is present, only its siblings are removed and artifacts
+%   itself remains. Otherwise the entire artifacts target is removed.
+%   It never removes application folders or a target that resolves outside
+%   root. The operation is idempotent when no generated targets remain.
 %
 % Errors:
 %   cleanLabKitArtifacts:InvalidRoot rejects non-scalar, empty, filesystem-root,
@@ -42,42 +45,68 @@ function result = cleanLabKitArtifacts(root, varargin)
     end
     progressFcn = parseOptions(varargin{:});
     root = validateRoot(root);
-    relativeTarget = "artifacts";
-    target = fullfile(root, char(relativeTarget));
-    removedTargets = strings(0, 1);
-    errors = strings(0, 1);
-
     notifyProgress(progressFcn, "Checking cleanup root...", 0.05);
     notifyProgress(progressFcn, "Finding generated artifact targets...", 0.20);
-    notifyProgress(progressFcn, "Checking " + relativeTarget + "...", 0.25);
-    validateCleanLabKitArtifactsTarget(root, target, relativeTarget);
-    if exist(target, "dir") == 7
-        notifyProgress(progressFcn, "Removing " + relativeTarget + "...", 0.55);
-        try
-            rmdir(target, "s");
-            removedTargets(end + 1, 1) = relativeTarget;
-        catch cause
-            if string(cause.identifier) == "MATLAB:RMDIR:NotADirectory"
-                error("cleanLabKitArtifacts:UnsafeTarget", ...
-                    "Clean Artifacts refused a linked generated target: %s", ...
-                    target);
+    relativeTargets = generatedTargets(root);
+    removed = false(numel(relativeTargets), 1);
+    errors = strings(numel(relativeTargets), 1);
+    errorCount = 0;
+    % Validate the complete removal set before deleting any generated content.
+    for k = 1:numel(relativeTargets)
+        relativeTarget = relativeTargets(k);
+        validateCleanLabKitArtifactsTarget(root, ...
+            fullfile(root, relativeTarget), relativeTarget);
+    end
+    notifyProgress(progressFcn, "Generated artifact targets checked.", 0.25);
+    for k = 1:numel(relativeTargets)
+        relativeTarget = relativeTargets(k);
+        target = fullfile(root, char(relativeTarget));
+        notifyProgress(progressFcn, "Removing " + relativeTarget + "...", ...
+            0.25 + 0.60 * k / numel(relativeTargets));
+        if exist(target, "dir") == 7
+            try
+                rmdir(target, "s");
+                removed(k) = true;
+            catch cause
+                if string(cause.identifier) == "MATLAB:RMDIR:NotADirectory"
+                    error("cleanLabKitArtifacts:UnsafeTarget", ...
+                        "Clean Artifacts refused a linked generated target: %s", ...
+                        target);
+                end
+                errorCount = errorCount + 1;
+                errors(errorCount) = string(cause.message);
             end
-            errors(end + 1, 1) = string(cause.message);
+        elseif exist(target, "file") == 2
+            try
+                delete(target);
+                removed(k) = true;
+            catch cause
+                errorCount = errorCount + 1;
+                errors(errorCount) = string(cause.message);
+            end
         end
-    elseif exist(target, "file") == 2
-        notifyProgress(progressFcn, "Removing " + relativeTarget + "...", 0.55);
-        try
-            delete(target);
-            removedTargets(end + 1, 1) = relativeTarget;
-        catch cause
-            errors(end + 1, 1) = string(cause.message);
-        end
-    else
-        notifyProgress(progressFcn, relativeTarget + " is already clean.", 0.85);
     end
     notifyProgress(progressFcn, "Clean Artifacts complete.", 1.00);
+    removedTargets = relativeTargets(removed);
     result = struct("root", string(root), "removedCount", numel(removedTargets), ...
-        "removedTargets", removedTargets, "errors", errors);
+        "removedTargets", removedTargets, "errors", errors(1:errorCount));
+end
+
+function targets = generatedTargets(root)
+% The cleanup owner reserves worktrees without inspecting task or Git state.
+artifactRoot = fullfile(root, "artifacts");
+validateCleanLabKitArtifactsTarget(root, artifactRoot, "artifacts");
+targets = "artifacts";
+if ~isfolder(artifactRoot)
+    return;
+end
+entries = dir(artifactRoot);
+names = string({entries.name}).';
+if ~any(strcmpi(names, "worktrees"))
+    return;
+end
+names = names(~ismember(names, ["."; ".."]) & ~strcmpi(names, "worktrees"));
+targets = fullfile("artifacts", names);
 end
 
 function root = defaultRoot()

@@ -95,8 +95,10 @@ def main() -> int:
         after = policy.version_for_owner(
             owner, lambda path: git_text(head_sha, path)
         )
-        if before and after and before != after:
-            transitions.append((after[0], owner, before[1], after[1]))
+        if after and before != after:
+            transitions.append((
+                after[0], owner, before[1] if before else "new", after[1]
+            ))
 
     changes = []
     for path in paths:

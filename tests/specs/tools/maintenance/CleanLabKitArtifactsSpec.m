@@ -51,6 +51,58 @@ classdef CleanLabKitArtifactsSpec < matlab.unittest.TestCase
                 "cleanLabKitArtifacts:InvalidRoot");
         end
 
+        function preservesTaskWorktreesWhileRemovingGeneratedSiblings(testCase)
+            [root, cleanup] = temporaryLabKitRoot(testCase);
+            testCase.addTeardown(@() delete(cleanup));
+            taskRoot = fullfile(root, "artifacts", "worktrees", "sample-task");
+            source = fullfile(taskRoot, "pending.m");
+            marker = fullfile(taskRoot, ".git");
+            writeFile(source, "pending = true;");
+            writeFile(marker, "synthetic worktree marker");
+            report = fullfile(root, "artifacts", "reports", "report.txt");
+            log = fullfile(root, "artifacts", "run.log");
+            writeFile(report, "generated");
+            writeFile(log, "generated");
+
+            result = cleanLabKitArtifacts(root);
+
+            % Oracle: user-owned bytes survive while generated siblings vanish.
+            % Deleting the artifacts parent would destroy both sentinels.
+            testCase.assertTrue(isfile(source));
+            testCase.verifyEqual(string(fileread(source)), "pending = true;");
+            testCase.verifyEqual(string(fileread(marker)), "synthetic worktree marker");
+            testCase.verifyFalse(isfile(report));
+            testCase.verifyFalse(isfile(log));
+            testCase.verifyEqual(sort(result.removedTargets), sort([ ...
+                string(fullfile("artifacts", "reports")); ...
+                string(fullfile("artifacts", "run.log"))]));
+            testCase.verifyEqual(result.removedCount, 2);
+            testCase.verifyEmpty(result.errors);
+            repeated = cleanLabKitArtifacts(root);
+            testCase.verifyEqual(repeated.removedCount, 0);
+            testCase.verifyEmpty(repeated.errors);
+            testCase.verifyTrue(isfile(source));
+        end
+
+        function preflightsGeneratedSiblingsBeforeAnyDeletion(testCase)
+            [root, cleanup] = temporaryLabKitRoot(testCase);
+            testCase.addTeardown(@() delete(cleanup));
+            writeFile(fullfile(root, "artifacts", "worktrees", "pending.txt"), "pending");
+            report = fullfile(root, "artifacts", "a-report.txt");
+            writeFile(report, "generated");
+            preserved = fullfile(root, "apps", "preserved");
+            sentinel = fullfile(preserved, "sentinel.txt");
+            writeFile(sentinel, "preserved");
+            linkCleanup = createDirectoryLink( ...
+                fullfile(root, "artifacts", "z-linked"), preserved);
+            testCase.addTeardown(@() delete(linkCleanup));
+
+            testCase.verifyError(@() cleanLabKitArtifacts(root), ...
+                "cleanLabKitArtifacts:UnsafeTarget");
+            testCase.verifyTrue(isfile(report));
+            testCase.verifyTrue(isfile(sentinel));
+        end
+
         function rejectsAnExistingTargetOutsideTheValidatedRoot(testCase)
             [root, cleanup] = temporaryLabKitRoot(testCase);
             testCase.addTeardown(@() delete(cleanup));
