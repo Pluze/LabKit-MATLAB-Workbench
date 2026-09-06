@@ -41,13 +41,16 @@ def validate(root: Path) -> int:
     skills_root = root / ".agents" / "skills"
     skill_dirs = sorted(
         path for path in skills_root.iterdir()
-        if path.is_dir() and (path / "SKILL.md").is_file()
+        if path.is_dir() and not path.name.startswith(".")
+        and path.name != "__pycache__"
     )
     if not skill_dirs:
         raise SkillContractError("No repository Skills were found.")
-    skills: set[str] = set()
+    skills = {folder.name for folder in skill_dirs}
     for folder in skill_dirs:
         skill_path = folder / "SKILL.md"
+        if not skill_path.is_file():
+            raise SkillContractError(f"{skill_path}: missing Skill entry point")
         text = skill_path.read_text(encoding="utf-8")
         match = FRONTMATTER.match(text)
         if not match:
@@ -58,13 +61,34 @@ def validate(root: Path) -> int:
             raise SkillContractError(f"{folder}: folder and Skill name differ")
         if not description:
             raise SkillContractError(f"{folder}: description is required")
-        skills.add(name)
+        validate_skill_routes(skill_path, text, skills)
+        validate_documentation_routes(root, skill_path, text)
         validate_links(folder, text)
         validate_portability(folder)
         validate_openai_metadata(folder, name)
         validate_evals(folder / "evals.json")
     validate_activation_evals(skills_root / "activation-evals.json", skills)
     return len(skill_dirs)
+
+
+def validate_skill_routes(path: Path, text: str, skills: set[str]) -> None:
+    # Backticked repository Skill names are executable workflow routes.
+    references = set(re.findall(r"`(labkit-[a-z0-9-]+)`", text))
+    unknown = references - skills
+    if unknown:
+        raise SkillContractError(
+            f"{path}: unknown Skill route {sorted(unknown)[0]}")
+
+
+def validate_documentation_routes(root: Path, path: Path, text: str) -> None:
+    # Literal current-manual routes are repo-relative even inside a Skill.
+    references = re.findall(r"`(docs/[^`\s]+\.md(?:#[^`\s]*)?)`", text)
+    for reference in references:
+        target = reference.split("#", 1)[0]
+        if any(character in target for character in "<>*"):
+            continue  # Parameterized documentation families are not literal routes.
+        if not (root / target).is_file():
+            raise SkillContractError(f"{path}: missing documentation route {target}")
 
 
 def validate_links(folder: Path, text: str) -> None:

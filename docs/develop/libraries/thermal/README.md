@@ -79,7 +79,7 @@ end
 
 `diagnostics.parameterSources` records `"calibration"` or `"default"` for each environmental input. A conversion that used defaults may be useful for previewing data, but the result is not evidence that the assumed emissivity, distance, humidity, or temperatures match the experiment. Check those values before using the temperatures in quantitative analysis.
 
-When supplied, emissivity and infrared-window transmission must be finite scalars in `(0, 1]`, object distance must be nonnegative, and relative humidity accepts either a fraction in `[0, 1]` or a percentage in `[0, 100]`. Invalid supplied calibration is rejected rather than replaced by a default.
+When supplied, emissivity and infrared-window transmission must be finite scalars in `(0, 1]`, object distance must be nonnegative, and relative humidity accepts either a fraction in `[0, 1]` or a percentage in `(1, 100]` (values up to 1 are always interpreted as fractions). Invalid supplied calibration is rejected rather than replaced by a default.
 
 Choose `"planck-basic"` only when you intentionally want the conversion based on the five Planck constants alone:
 
@@ -112,6 +112,8 @@ Do not infer measurement accuracy from successful parsing alone. Quantitative te
 ## Reference Contract
 
 Each generated Thermal API page distinguishes returned status from thrown errors and documents every implemented option, default, legal value, output field, and related function. Executable examples and package-wide public-help discovery prevent the manual and callable surface from silently diverging.
+
+Self-contained public-help `Example:` blocks run in `docsCheck`. File- or device-dependent `Typical Call:` sketches require the indicated external input and are not executed by that check.
 
 ## Related Topics
 

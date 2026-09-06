@@ -18,9 +18,16 @@ if ~validColorRange(applicationState.project.parameters)
     return;
 end
 try
-    applicationState.session.cache.strain = ...
+    candidate = applicationState;
+    candidate.session.cache.strain = ...
         dic_postprocess.sourceFiles.loadNcorrStrain(matPath);
-    applicationState = prepare(applicationState);
+    [summary, overlayExx, overlayEyy] = ...
+        dic_postprocess.analysisRun.prepareOutputs( ...
+            candidate.session.cache, candidate.project.parameters);
+    candidate.project.results.summaryTable = summary;
+    candidate.session.cache.overlayExx = overlayExx;
+    candidate.session.cache.overlayEyy = overlayEyy;
+    applicationState = candidate;
     callbackContext.log("info", "dic_postprocess.analysisrun.generate.status",  ...
         "Generated EXX/EYY overlays and ROI summary.");
 catch exception
@@ -46,15 +53,6 @@ paths = labkit.app.source.paths(sources(match));
 if ~isempty(paths)
     filepath = paths(1);
 end
-end
-
-function state = prepare(state)
-[summary, overlayExx, overlayEyy] = ...
-    dic_postprocess.analysisRun.prepareOutputs( ...
-        state.session.cache, state.project.parameters);
-state.project.results.summaryTable = summary;
-state.session.cache.overlayExx = overlayExx;
-state.session.cache.overlayEyy = overlayEyy;
 end
 
 function accepted = validColorRange(parameters)

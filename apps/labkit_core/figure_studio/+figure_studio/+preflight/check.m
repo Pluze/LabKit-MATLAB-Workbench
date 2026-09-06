@@ -45,7 +45,7 @@ end
 function issues = panelIssues(document)
 panelCount = numel(document.panels);
 issues = repmat(issue("", "", "", "", "", ""), ...
-    5 * panelCount + panelCount * max(panelCount - 1, 0) / 2, 1);
+    6 * panelCount + panelCount * max(panelCount - 1, 0) / 2, 1);
 count = 0;
 for k = 1:numel(document.panels)
     panel = document.panels(k);
@@ -59,9 +59,14 @@ for k = 1:numel(document.panels)
     end
     nodes = document.nodes(string({document.nodes.panelId}) == panel.id & ...
         string({document.nodes.kind}) ~= "group");
-    for axisName = ["x", "y"]
+    axisNames = ["x", "y"];
+    if isfield(panel.axes, "yRight"), axisNames = ["x", "y", "yRight"]; end
+    for axisName = axisNames
         axisValue = panel.axes.(char(axisName));
-        if axisValue.scale == "log" && hasNonpositive(nodes, axisName)
+        selectedNodes = nodesForAxis(nodes, panel, axisName);
+        dataAxis = axisName;
+        if axisName == "yRight", dataAxis = "y"; end
+        if axisValue.scale == "log" && hasNonpositive(selectedNodes, dataAxis)
             count = count + 1;
             issues(count) = issue("error", "nonpositive-log-data", ...
                 panel.id, "", "A logarithmic axis contains nonpositive data.", ...
@@ -111,8 +116,12 @@ for k = 1:numel(document.nodes)
     panelIndex = find(string({document.panels.id}) == node.panelId, 1);
     if isempty(panelIndex), continue; end
     panel = document.panels(panelIndex);
+    yAxis = panel.axes.y;
+    if isfield(panel.axes, "yRight") && isRightYAxis(node)
+        yAxis = panel.axes.yRight;
+    end
     if outside(node.data.x, panel.axes.x.limits) || ...
-            outside(node.data.y, panel.axes.y.limits)
+            outside(node.data.y, yAxis.limits)
         count = count + 1;
         issues(count) = issue("warning", "object-outside-limits", ...
             node.panelId, node.id, ...
@@ -143,6 +152,19 @@ for name = ["dataLineWidth", "axesLineWidth", "referenceLineWidth"]
     end
 end
 issues = issues(1:count);
+end
+
+function nodes = nodesForAxis(nodes, panel, axisName)
+if axisName == "x" || ~isfield(panel.axes, "yRight"), return; end
+right = arrayfun(@isRightYAxis, nodes);
+if axisName == "yRight", nodes = nodes(right);
+else, nodes = nodes(~right);
+end
+end
+
+function tf = isRightYAxis(node)
+tf = isfield(node.metadata, "yAxisSide") && ...
+    string(node.metadata.yAxisSide) == "right";
 end
 
 function tf = hasNonpositive(nodes, axisName)

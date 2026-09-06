@@ -50,15 +50,15 @@ Pending and applied matching updates preserve the current zoom while the selecte
 
 Overall strength blends the matched result with the original. Tone and color strength separately blend lightness and chroma behavior where the selected method supports them. All three default to 100%.
 
-Robust statistics and covariance regularization handle flat or nearly single-color images, but a visually dissimilar reference can still produce an unhelpful result. Matching reproduces distributions, not semantic lighting or camera calibration.
+Robust statistics and covariance regularization handle single-pixel, flat, or nearly single-color images, but a visually dissimilar reference can still produce an unhelpful result. Matching reproduces distributions, not semantic lighting or camera calibration.
 
 ## History And Outputs
 
-Each source is recomputed from its original plus the ordered match history. Undo removes the latest step and reset removes all steps. Export supports PNG, TIFF, and JPEG and writes an image manifest containing reference/source identity, method, strengths, history, format, and output filenames. Source and reference files are never overwritten.
+Each source is recomputed from its original plus the ordered match history. Undo removes the latest step and reset removes all steps. Export supports PNG, TIFF, and JPEG and writes a CSV manifest containing source and output paths, status, dimensions, step count, and a message. Each explicit export rereads source and reference pixels and writes a new output set with unique filenames. Source and reference files are never overwritten.
 
 ## Runtime State
 
-The reference, source paths, ordered match histories, preview selection, and export choices remain in memory while the app is open. Image Match does not create or reopen a task archive; its manifest records completed outputs and the processing decisions used to produce them.
+The reference, source paths, ordered match histories, preview selection, and export choices remain in memory while the app is open. Image Match does not create or reopen a task archive; its manifest records completed outputs but does not retain reference identity, methods, or strength settings. Keep the reference and record the ordered settings separately when reproducibility is required.
 
 ## Use Without The GUI
 

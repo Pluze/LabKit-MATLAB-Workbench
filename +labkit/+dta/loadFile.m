@@ -60,7 +60,7 @@ function [item, status] = loadFile(filepath, expectedKind, opts)
 %   unsupported content, parse failures, and type mismatches are returned as
 %   status.ok=false rather than thrown.
 %
-% Example:
+% Typical Call:
 %   [item, status] = labkit.dta.loadFile("measurement.DTA", "eis");
 %   if status.ok
 %       semilogx(item.freq_Hz, item.Zmod_ohm)

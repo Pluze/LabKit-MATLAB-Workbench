@@ -716,7 +716,7 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
                 "untracked-source.md")));
         end
 
-        function changedProfileIgnoresDeletedSourcePaths(testCase)
+        function changedProfileClassifiesDeletedSourcePaths(testCase)
             [repository, specsRoot] = testCase.createGitRepository();
             deleted = fullfile(repository, "docs", "deleted-source.md");
             retained = fullfile(repository, "docs", "retained-source.md");
@@ -730,9 +730,58 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             result = labkittest.plan("Profile", "changed", ...
                 "RepositoryRoot", repository, "SpecsRoot", specsRoot);
 
-            testCase.verifyEqual(numel(result.Classifications), 1);
-            testCase.verifySubstring(result.Classifications.Path, ...
-                "retained-source.md");
+            testCase.verifyEqual(sort(string({result.Classifications.Path})), ...
+                ["docs/deleted-source.md", "docs/retained-source.md"]);
+        end
+
+        function changedProfileIncludesCompleteTaskBranchAndWorkingTree(testCase)
+            % Oracle: the known task delta, independent of planner selection.
+            % Counterfactual: HEAD-only or last-commit selection loses first.md.
+            [repository, specsRoot] = testCase.createGitRepository();
+            testCase.runGit(repository, "update-ref refs/remotes/origin/main HEAD");
+            testCase.writeTextFile(fullfile(repository, "docs", "first.md"), "first");
+            testCase.runGit(repository, "add docs");
+            testCase.runGit(repository, "commit -m first");
+            testCase.writeTextFile(fullfile(repository, "docs", "second.md"), "second");
+            testCase.runGit(repository, "add docs");
+            testCase.runGit(repository, "commit -m second");
+
+            clean = labkittest.plan("Profile", "changed", ...
+                "RepositoryRoot", repository, "SpecsRoot", specsRoot);
+            testCase.verifyEqual(sort(string({clean.Classifications.Path})), ...
+                ["docs/first.md", "docs/second.md"]);
+
+            testCase.writeTextFile(fullfile(repository, "docs", "second.md"), "edited");
+            testCase.writeTextFile(fullfile(repository, "docs", "third.md"), "untracked");
+            dirty = labkittest.plan("Profile", "changed", ...
+                "RepositoryRoot", repository, "SpecsRoot", specsRoot);
+            testCase.verifyEqual(sort(string({dirty.Classifications.Path})), ...
+                ["docs/first.md", "docs/second.md", "docs/third.md"]);
+        end
+
+        function changedProfileClassifiesBothSidesOfRename(testCase)
+            % A moved source has both an old ownership boundary and a new one.
+            [repository, specsRoot] = testCase.createGitRepository();
+            testCase.writeTextFile(fullfile(repository, "docs", "before.md"), "same");
+            testCase.runGit(repository, "add docs");
+            testCase.runGit(repository, "commit -m source");
+            testCase.runGit(repository, "mv docs/before.md docs/after.md");
+
+            result = labkittest.plan("Profile", "changed", ...
+                "RepositoryRoot", repository, "SpecsRoot", specsRoot);
+            testCase.verifyEqual(sort(string({result.Classifications.Path})), ...
+                ["docs/after.md", "docs/before.md"]);
+        end
+
+        function changedProfileRejectsUnownedDeletion(testCase)
+            % Deletion cannot silently turn unclassified source into passing docs evidence.
+            [repository, specsRoot] = testCase.createGitRepository();
+            delete(fullfile(repository, "baseline.m"));
+            testCase.writeTextFile(fullfile(repository, "docs", "changed.md"), "changed");
+
+            testCase.verifyError(@() labkittest.plan("Profile", "changed", ...
+                "RepositoryRoot", repository, "SpecsRoot", specsRoot), ...
+                "LabKit:TestPlan:UnknownOwnership");
         end
 
         function changedProfileUsesJustCommittedPathsAfterCleanCheckpoint(testCase)

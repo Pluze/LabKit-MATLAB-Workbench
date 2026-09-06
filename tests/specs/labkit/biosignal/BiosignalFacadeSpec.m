@@ -2,6 +2,14 @@ classdef BiosignalFacadeSpec < matlab.unittest.TestCase
     %BIOSIGNALFACADESPEC Specify public recording and ECG-analysis behavior.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function extendsASoleFiniteSampleWithoutInventingASlope(testCase)
+            signal = struct("time", (0:4).', "values", [NaN; Inf; 3; NaN; -Inf], ...
+                "fs", 1, "metadata", struct());
+            filtered = labkit.biosignal.filterSignal(signal, struct("type", "none"));
+            testCase.verifyEqual(filtered.values, 3 * ones(5, 1));
+            testCase.verifyEqual(filtered.time, signal.time);
+        end
+
         function rejectsUnknownOrNonstructPublicOptions(testCase)
             signal = BiosignalFacadeSpec.syntheticEcgSignal();
             testCase.verifyError(@() labkit.biosignal.detectEcgPeaks( ...

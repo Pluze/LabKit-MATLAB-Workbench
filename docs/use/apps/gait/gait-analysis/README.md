@@ -64,7 +64,7 @@ When a later lift-off exists, the app additionally derives cycle time, stance ti
 
 ## Calculations
 
-For each frame the app calculates unsigned 0-180 degree hip, knee, and ankle angles from adjacent segment vectors and four Euclidean segment lengths. A nonfinite or zero-length vector produces `NaN`; the app does not invent an angle.
+For each frame the app calculates unsigned 0-180 degree hip, knee, and ankle angles from adjacent segment vectors and four Euclidean segment lengths. A single-frame source retains these per-frame measurements and produces no swing rows. A nonfinite or zero-length vector produces `NaN`; the app does not invent an angle.
 
 For each lift-off-to-landing step it calculates:
 
@@ -105,6 +105,8 @@ Changing any parameter makes the previous result out of date. Running analysis a
 - `<source>_coordinates.csv`: raw pixel and scaled/origin-shifted coordinates;
 - `<source>_steps.csv`: event boundaries, timing, cadence/duty factor, step length, five point translations, joint extrema/ROM, validity and reason;
 - `<source>_summary.csv`: source geometry, counts, valid-step means, and global joint extrema.
+
+Coordinate column names are sanitized and shortened to MATLAB's supported length. Numeric suffixes distinguish collisions in point order, preserving every point even when different names become the same table identifier.
 
 ## Use Without The GUI
 

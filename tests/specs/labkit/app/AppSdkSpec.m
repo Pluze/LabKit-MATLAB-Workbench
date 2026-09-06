@@ -480,6 +480,43 @@ classdef AppSdkSpec < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = {'Contract:source', 'Env:hidden-gui'})
+        function restoresNativeViewAfterPartialRenderFailure(testCase)
+            % Oracle: the last committed gain remains in state, control, and plot.
+            % Removing native rollback must leave the failed gain visible.
+            previousVisibility = get(groot, "DefaultFigureVisible");
+            set(groot, "DefaultFigureVisible", "off");
+            visibilityCleanup = onCleanup(@() set( ...
+                groot, "DefaultFigureVisible", previousVisibility));
+            layout = labkit.app.layout.workbench({ ...
+                labkit.app.layout.field("gain", Kind="numeric", ...
+                    Bind="project.parameters.gain"), ...
+                labkit.app.layout.plotArea("result", @drawRollbackProbe)});
+            app = AppSdkSpec.definition(layout, ...
+                "CreateState", @createRuntimeState, ...
+                "PresentWorkbench", @presentRollbackProbe);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+                app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            figureValue = runtime.figureHandle();
+            field = oneTagged(figureValue, "gain");
+            ax = oneTagged(figureValue, "result.main");
+
+            testCase.verifyError(@() runtime.applyControlValue("gain", 2), ...
+                "labkit:app:runtime:ActionFailed");
+            testCase.verifyEqual(runtime.State.project.parameters.gain, 1);
+            testCase.verifyEqual(field.Value, 1);
+            testCase.verifyEqual(oneTagged(ax, "rollbackProbe").YData, [1, 1]);
+
+            runtime.applyControlValue("gain", 3);
+            testCase.verifyEqual(runtime.State.project.parameters.gain, 3);
+            testCase.verifyEqual(field.Value, 3);
+            testCase.verifyEqual(oneTagged(ax, "rollbackProbe").YData, [3, 3]);
+            clear cleanup visibilityCleanup
+        end
+
         function nativeReconciliationSkipsUnchangedPlotModels(testCase)
             setappdata(groot, "labkitAppSdkRenderCount", 0);
             renderCleanup = onCleanup(@() ...
@@ -1627,4 +1664,16 @@ end
 function varargout = recordPlotOperation(fig, name, work)
 setappdata(fig, "recordedPlotOperation", name);
 [varargout{1:nargout}] = work();
+end
+
+function view = presentRollbackProbe(state)
+view = labkit.app.view.Snapshot().renderPlot( ...
+    "result", struct("gain", state.project.parameters.gain));
+end
+
+function drawRollbackProbe(axesById, model)
+plot(axesById.main, [0, 1], [model.gain, model.gain], Tag="rollbackProbe");
+if model.gain == 2
+    error("probe:RenderFailed", "Synthetic failure after native plot mutation.");
+end
 end

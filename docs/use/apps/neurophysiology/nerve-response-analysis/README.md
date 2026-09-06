@@ -28,6 +28,8 @@ labkit_NerveResponseAnalysis_app
 5. On **Review**, inspect the counts and switch the plot between **Counts** and **Issues**.
 6. On **Export**, choose an output folder and then **Export Analysis**.
 
+Recording inclusion uses `keep` when present, otherwise `label`, otherwise `qcFlag`. A QC-only filter therefore excludes rejected rows even without a label column.
+
 Changing the filter, protocol, or limits clears the previous analysis so that an export cannot silently use outdated settings.
 
 Each completed analysis attempt fits the selected **Counts** or **Issues** result view. Switching between those two coordinate views also fits once; status, export, and other presentation redraws preserve the current zoom.
@@ -69,7 +71,7 @@ metrics = nerve_response_analysis.analysisRun.measureCapMetrics( ...
     timeSec, responseSignal, events.timeSec, metricOptions);
 ```
 
-`metricOptions` can set `baselineWindowSec`, `blankingAfterPulseSec`, and `searchEndAfterPulseSec`. The output contains one row per event. If the search window contains no samples, that row is kept with status `noSamples`.
+`metricOptions` can set `baselineWindowSec`, `blankingAfterPulseSec`, and `searchEndAfterPulseSec`. The output contains one row per event. Baseline and response calculations omit nonfinite samples. A baseline without finite samples falls back to the recording-wide finite median and leaves noise unavailable. If the search window contains no finite samples, that row is kept with status `noSamples`.
 
 To process an RHS file or an entire filter record, use `nerve_response_analysis.analysisRun.analyzeRecording` or `nerve_response_analysis.analysisRun.analyzeSession`.
 

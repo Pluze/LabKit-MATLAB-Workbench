@@ -35,7 +35,7 @@ function info = inspectFile(path, opts)
 %   Unknown option fields or a non-struct opts value throw
 %   labkit:thermal:InvalidOptions.
 %
-% Example:
+% Typical Call:
 %   info = labkit.thermal.inspectFile("candidate.jpg");
 %   if info.isThermal
 %       fprintf("Readable thermal format: %s\n", info.format)

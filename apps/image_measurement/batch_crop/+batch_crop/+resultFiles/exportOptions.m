@@ -1,6 +1,6 @@
 % App-owned export option factory. Expected caller: batch-crop runner. Inputs
 % are sanitized UI values and current state. Output is the export options
-% struct consumed by batch_crop.resultFiles.exportPlan and writeOutputs.
+% struct consumed by batch_crop.resultFiles.writeOutputs.
 function opts = exportOptions(outputFolder, formatValue, cropSize, paddingPercent, scaleMode, scaleUnit, physicalSize, targetPixelsPerUnit, maxUpsamplePercent)
 %EXPORTOPTIONS Build a batch-crop export options snapshot.
 

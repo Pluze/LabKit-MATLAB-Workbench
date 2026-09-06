@@ -1,12 +1,12 @@
 function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
-%CHECKLABKITDOCS Verify deterministic documentation compiler output.
+%CHECKLABKITDOCS Execute documented examples and verify deterministic compiler output.
 % Expected caller: buildtool docsCheck and project documentation tests.
 % Inputs:
 %   sourceRoot        - documentation source folder containing Markdown pages.
 %   existingSiteRoot - optional existing generated site to compare. When
 %                      omitted, the function renders an independent reference.
 % Output:
-%   result - renderer result plus comparedFileCount.
+%   result - renderer result plus comparedFileCount and exampleCount.
 % Side effects: creates and removes one or two temporary generated sites and
 %   reports render/compare stages to the console.
 
@@ -14,6 +14,8 @@ function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
     if nargin < 1 || strlength(string(sourceRoot)) == 0
         sourceRoot = fullfile(repoRoot, "docs");
     end
+    model = loadLabKitDocumentation(repoRoot, sourceRoot);
+    exampleCount = runLabKitDocExamples(model);
     compareIndependentRenders = ...
         nargin < 2 || strlength(string(existingSiteRoot)) == 0;
     if compareIndependentRenders
@@ -46,6 +48,7 @@ function result = checkLabKitDocs(sourceRoot, existingSiteRoot)
         error("LabKit:Docs:StaleGeneratedSite", message, diagnostic);
     end
     result.comparedFileCount = count;
+    result.exampleCount = exampleCount;
     clear cleanup
     if compareIndependentRenders
         clear referenceCleanup

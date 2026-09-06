@@ -15,24 +15,23 @@ This is part of the documented App Framework surface. The MATLAB namespace remai
 
 ## Typical Use
 
-An app normally defines its requirements in a small function:
+A `labkit.app.Definition` owns the App's requirements. Native startup checks that declaration before creating the interface; the thin entry point does not repeat the check.
 
 ```matlab
-function req = requirements()
-    req = labkit.contract.requirements( ...
-        "ui", ">=7 <8", ...
-        "image", ">=4 <5");
-end
+requirements = labkit.contract.requirements( ...
+    "app", ">=3 <4", "image", ">=2 <3");
+% Pass requirements as Requirements when constructing the App Definition.
 ```
 
-The app entry point checks them before creating the interface:
+For a standalone computation, check the consumed facade before calling it:
 
+<!-- labkit-runnable-example -->
 ```matlab
-labkit.contract.assertRequirements( ...
-    "labkit_Example_app", requirements())
+requirements = labkit.contract.requirements("image", ">=2 <3");
+labkit.contract.assertRequirements("example_analysis", requirements);
 ```
 
-If all requirements are compatible, `assertRequirements` returns without a value. Otherwise it throws `labkit_Example_app:IncompatibleLabKit` with one message for each incompatible module.
+If all requirements are compatible, `assertRequirements` returns without a value. Otherwise it throws `example_analysis:IncompatibleLabKit` with one message for each incompatible module.
 
 ## Choose a Function
 
@@ -106,7 +105,7 @@ Each failure records the normalized `facade`, the `required` range, the module's
 
 ## Supplying Version Information Explicitly
 
-`checkRequirements` normally queries the installed UI, DTA, RHS, biosignal, image, and thermal modules. Diagnostic code can pass an explicit version structure instead:
+`checkRequirements` normally queries the installed App SDK, DTA, RHS, biosignal, image, thermal, and Mark-10 modules. Diagnostic code can pass an explicit version structure instead:
 
 ```matlab
 available = labkit.contract.versionInfo( ...

@@ -2,6 +2,20 @@ classdef CscScientificSpec < matlab.unittest.TestCase
     %CSCSCIENTIFICSPEC Specify CV/CT charge and CSC calculations.
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
+        function integratesTheRemainingFiniteRowsConsistently(testCase)
+            for column = 1:3
+                curve = struct("headers", {{'T', 'Vf', 'Im'}}, ...
+                    "data", [0 0 -1; 1 1 1; 2 2 1]);
+                curve.data(2, column) = Inf;
+                analysis = csc.analysisRun.computeCSC(curve, struct("scanRate", 2));
+                testCase.verifyTrue(analysis.ok, analysis.message);
+                % Two equal triangles across the remaining two-second interval.
+                testCase.verifyEqual(analysis.Qct, 1, AbsTol=1e-12);
+                testCase.verifyEqual(analysis.Qcv, .5, AbsTol=1e-12);
+                testCase.verifyTrue(all(isfinite([analysis.t; analysis.Vf; analysis.Im])));
+            end
+        end
+
         function calculatesFullCycleChargeAndAreaNormalizedCsc(testCase)
             [item, curve] = CscScientificSpec.referenceCurve(testCase);
             choices = csc.analysisRun.analysisChoices();

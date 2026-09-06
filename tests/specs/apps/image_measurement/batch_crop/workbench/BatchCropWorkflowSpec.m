@@ -86,6 +86,13 @@ classdef BatchCropWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual( ...
                 runtime.State.project.results.resultManifestPath, ...
                 string(manifestPath));
+            deletedOutput = runtime.State.project.results.lastExport.results(1).outputPath;
+            delete(deletedOutput);
+            delete(manifestPath);
+            runtime.invokeAction("exportCrops");
+            testCase.verifyTrue(isfile( ...
+                runtime.State.project.results.lastExport.results(1).outputPath));
+            testCase.verifyTrue(isfile(runtime.State.project.results.resultManifestPath));
             runtime.invokeAction("restoreManifest");
             testCase.verifyNumElements(runtime.State.project.inputs.items, 3);
             testCase.verifyNotEmpty(preview.Children);

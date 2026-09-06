@@ -36,7 +36,7 @@ Electrode area comes from a positive UI override when supplied, otherwise from t
 
 ## Calculation Semantics
 
-The app removes samples where time, voltage, or current is not finite and requires at least five valid points. `labkit.dta.detectPulses` identifies the cathodic phase, interpulse gap, anodic phase, and surrounding baseline windows.
+The app removes samples where time, voltage, or current is not finite and requires at least five valid points. This includes both NaN and infinite values; the retained samples define the interpolation and integration intervals. `labkit.dta.detectPulses` identifies the cathodic phase, interpulse gap, anodic phase, and surrounding baseline windows.
 
 Measured-current mode integrates each detected current phase over time. The phase charges `Qc_C` and `Qa_C` are positive magnitudes; total charge is their sum. With area `A` in cm^2:
 

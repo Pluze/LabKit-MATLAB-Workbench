@@ -11,7 +11,8 @@ function x = fillVectorMissing(x)
 % Output:
 %   x - double column vector. Finite samples are preserved, missing or
 %       non-finite samples are linearly interpolated/extrapolated, and an
-%       all-missing vector becomes zeros.
+%       all-missing vector becomes zeros. One finite sample extends as a
+%       constant because no slope can be inferred.
 %
 % Notes:
 %   Uses interp1 only, so the biosignal facade does not depend on toolbox
@@ -25,6 +26,10 @@ function x = fillVectorMissing(x)
     good = isfinite(x);
     if ~any(good)
         x(:) = 0;
+        return;
+    end
+    if nnz(good) == 1
+        x(:) = x(good);
         return;
     end
 

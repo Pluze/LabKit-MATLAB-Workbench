@@ -67,3 +67,5 @@ Travel zero uses the stand status command to gate hardware `z` and succeeds only
 ## Hardware Configuration
 
 Use 115200 baud, 8 data bits, no parity, and one stop bit for the stand and gauge link. The driver sends CR-terminated GCL2 commands only while in gauge pass-through and sends fixed ESM303 commands without adding a terminator. Do not run another serial console or MESUR session on the same port.
+
+Self-contained public-help `Example:` blocks run in `docsCheck`. File- or device-dependent `Typical Call:` sketches require the indicated external input and are not executed by that check.

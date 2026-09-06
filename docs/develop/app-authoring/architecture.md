@@ -19,7 +19,8 @@ apps/      workflow-specific GUI apps and app-owned helpers
 tests/     behavior tests, App contracts, GUI checks, shared helpers, and runner code
 docs/      human-facing usage, API, architecture, and validation docs
 tools/     maintainer diagnostics, deployment packagers, and report generators
-.github/scripts/  GitHub Actions-only helper scripts
+.github/scripts/  repository policy and GitHub workflow helpers
+.agents/skills/   repository-specific agent procedures and their automation
 ```
 
 The repository root has no generic `scripts/` bucket. Keep automation beside its single consumer; promote it to a shared owner only when several stable consumers genuinely need the same operation.
@@ -28,7 +29,7 @@ Apps should remain independently launchable. The reusable library should grow on
 
 ## Runtime Dependency Boundary
 
-LabKit Apps, facades, launchers, and shipped maintainer tools run from Base MATLAB and repository-owned code. Production must not call or conditionally accelerate with an optional MathWorks Toolbox, create Python or Conda environments, install third-party runtime packages, download model weights, or require a network connection on first use. This keeps source checkouts, offline packages, and restored lab systems reproducible.
+LabKit Apps, facades, launchers, and shipped maintainer tools run from Base MATLAB and repository-owned code. Production must not call or conditionally accelerate with an optional MathWorks Toolbox, create Python or Conda environments, install third-party runtime packages, or download model weights at runtime. Installed local analysis workflows do not require first-use dependency downloads. Launcher installation and version downloads use the network, and device or network-source workflows retain their documented connection requirements. This keeps source checkouts, offline packages, and restored lab systems reproducible.
 
 Public-repository `.m` source also remains inside the MATLAB language runtime. It does not call Java, Python, Conda, .NET, shell commands, MEX/native libraries, or ActiveX/COM. Repository-owned MATLAB implementations provide lexical path identity and opaque identifiers where older Base MATLAB releases do not have suitable public one-call APIs. The repository guard scans production, tools, and tests. Its only allowances are five exact, marked, and counted test-infrastructure shell calls for isolated MATLAB processes, synthetic Git state, and filesystem-link fixtures, so another entry point cannot silently return.
 
@@ -150,7 +151,7 @@ runtime presentation
             -> renderer(axes, prepared model)
 ```
 
-Only `createSession`, `workbench.present`, `OnStart`, and a function bound directly to a layout signal accept the complete envelope. Those functions name it `applicationState`, expose the typed event and `callbackContext` in their signatures, and unpack it immediately. Feature presenters, renderers, calculations, writers, and local helpers receive named narrow inputs.
+Runtime callbacks, `workbench.present`, and App-local workflow continuations coordinate the complete state envelope when a transition needs both project and session updates. This includes callbacks posted through `CallbackContext.postEvent`. `CreateState` creates the envelope; lower-level state builders, feature presenters, renderers, calculations, and writers receive their named inputs. Complete state is named `applicationState` at an orchestration boundary so its role is explicit. Layout callbacks expose their typed event and `callbackContext` when their declared signature requires them; presenters receive state only.
 
 Do not introduce a second App object, service bag, callback registry, or feature-wide context type to hide these inputs. If a calculation needs five scientific values, list those five values. If several always travel together and form a stable app-owned concept, give that concept a semantic struct and validate it at its owner.
 

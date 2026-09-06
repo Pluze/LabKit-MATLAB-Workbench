@@ -7,7 +7,7 @@
       "rationale": "Creating a complete App from scripts and workflow evidence is the core workflow."
     },
     {
-      "prompt": "Reshape this legacy GUIDE GUI into the current Definition, layout, project, and session App architecture.",
+      "prompt": "Reshape this legacy GUIDE GUI into the current Definition, layout, and App-owned state architecture.",
       "should_activate": true,
       "rationale": "A substantial App architecture migration belongs to the App builder."
     },
@@ -30,6 +30,11 @@
       "prompt": "Debounce one existing slider callback without changing the App architecture.",
       "should_activate": false,
       "rationale": "A narrow interaction correction remains ordinary App maintenance unless it proves a larger App redesign."
+    },
+    {
+      "prompt": "Build a static LabKit App showing a protocol reference, with no saved task or runtime data.",
+      "should_activate": true,
+      "rationale": "App construction applies even when state, presentation callbacks, and persistence are unnecessary."
     }
   ]
 }

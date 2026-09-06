@@ -36,9 +36,13 @@ function classification = classifyPath(file)
             "repository policy behavior");
         return;
     end
+    if startsWith(file, "tools/docs/")
+        classification = mapped(file, "documentation-tool", "tools/docs", ...
+            "documentation compiler and executable-example validation behavior");
+        return;
+    end
     if file == "README.md" || startsWith(file, "docs/") || ...
-            startsWith(file, "site/") || ...
-            startsWith(file, "tools/docs/")
+            startsWith(file, "site/")
         classification = ignored(file, "documentation", ...
             "documentation source or generated output; docsCheck owns consistency");
         return;

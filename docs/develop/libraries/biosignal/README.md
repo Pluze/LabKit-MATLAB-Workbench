@@ -124,6 +124,8 @@ events = labkit.biosignal.detectEcgPeaks(signal, opts);
 | `medianPolarityCorrection` | logical | `true` | Streaming post-pass for `auto`/`positive` polarity: reviews recent anchors against the signal median and re-snaps inverted anchors. |
 | `medianReviewPeakCount` | positive integer | `3` | Number of latest streaming peaks considered by the median polarity review. |
 
+Filtering fills missing or nonfinite values by linear interpolation and extrapolation. If only one finite sample remains, it extends that value as a constant; an entirely missing signal becomes zeros. This is numerical missing-sample handling, not evidence of a valid acquisition.
+
 ### Other Processing Options
 
 | Function | Options / parameters |

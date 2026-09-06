@@ -86,6 +86,16 @@ classdef ImageEnhanceWorkflowSpec < matlab.unittest.TestCase
                 "image_enhance_manifest.csv")));
             testCase.verifyNotEmpty( ...
                 runtime.State.project.results.resultManifestPath);
+            firstExport = runtime.State.project.results.lastExport.results(1).outputPath;
+            firstPixels = imread(firstExport);
+            imwrite(zeros(size(sourceImage), "uint8"), sourcePath);
+            runtime.invokeAction("exportImages");
+            secondExport = runtime.State.project.results.lastExport.results(1).outputPath;
+            testCase.verifyNotEqual(imread(secondExport), firstPixels);
+            delete(secondExport);
+            runtime.invokeAction("exportImages");
+            testCase.verifyTrue(isfile( ...
+                runtime.State.project.results.lastExport.results(1).outputPath));
             runtime.invokeAction("resetHistory");
             testCase.verifyEmpty( ...
                 runtime.State.project.annotations.items(1).steps);

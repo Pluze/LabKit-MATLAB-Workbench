@@ -25,7 +25,7 @@ function assertRequirements(appName, req, versions)
 %   and range validation errors from checkRequirements are passed through.
 %
 % Example:
-%   req = labkit.contract.requirements("app", ">=1 <2");
+%   req = labkit.contract.requirements("app", ">=3 <4");
 %   labkit.contract.assertRequirements("labkit_Example_app", req)
 %
 % See also labkit.contract.checkRequirements,

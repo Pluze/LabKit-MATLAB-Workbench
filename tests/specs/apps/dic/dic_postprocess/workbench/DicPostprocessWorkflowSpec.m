@@ -56,6 +56,24 @@ classdef DicPostprocessWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile(folder, "overlay_eyy_unknown_mm.png")));
             testCase.verifyTrue(isfile(summaryPath));
             testCase.verifyTrue(isfile(runtime.State.project.results.summaryOutputPath));
+            acceptedStrain = runtime.State.session.cache.strain;
+            acceptedSummary = runtime.State.project.results.summaryTable;
+            acceptedOverlay = runtime.State.session.cache.overlayExx;
+            data_dic_save = struct("strains", struct( ...
+                "plot_exx_ref_formatted", {{"invalid"}}, ...
+                "plot_eyy_ref_formatted", zeros(2)));
+            save(matPath, "data_dic_save");
+            runtime.invokeAction("generate");
+            testCase.verifyEqual(runtime.State.session.cache.strain, acceptedStrain);
+            testCase.verifyEqual(runtime.State.project.results.summaryTable, acceptedSummary);
+            testCase.verifyEqual(runtime.State.session.cache.overlayExx, acceptedOverlay);
+            runtime.applyControlValue("colorMax", -.2);
+            testCase.verifyEmpty(runtime.State.project.results.summaryTable);
+            testCase.verifyEmpty(runtime.State.session.cache.overlayExx);
+            testCase.verifyEmpty(runtime.State.session.cache.overlayEyy);
+            runtime.applyControlValue("colorMax", .2);
+            testCase.verifyEqual(runtime.State.project.results.summaryTable, acceptedSummary);
+            testCase.verifyEqual(runtime.State.session.cache.overlayExx, acceptedOverlay);
             clear cleanup
         end
     end

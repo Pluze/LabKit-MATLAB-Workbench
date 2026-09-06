@@ -34,10 +34,13 @@ find the exact owner and contract; App authors never invent test paths.
   `+workbench/present.m` only for dynamic views; it composes feature-owned
   snapshot fragments without IO or heavy computation. Put each renderer in
   the capability package that owns the plotted meaning.
-- Treat complete runtime state as an adapter value, not a domain model. Only
-  `createSession`, `+workbench/present`, `OnStart`, and functions referenced
-  directly by layout signals may accept it. Name it `applicationState`,
-  destructure it immediately, and pass exact values into feature presenters,
+- Treat complete runtime state as an adapter value, not a domain model. Only App orchestration boundaries
+  (`RefreshState`, `+workbench/present`, `OnStart`, layout callbacks, and posted
+  event callbacks) and App-local workflow continuations that coordinate
+  project and session updates may accept it. `CreateState` creates that value;
+  App-local state builders receive the inputs they actually need. Name a
+  complete state input `applicationState`,
+  make its project/session ownership explicit, and pass exact values into feature presenters,
   calculations, renderers, and writers.
 - Direct callbacks expose `applicationState`, then the typed event value when
   present, then `callbackContext`. Keep short transactional mutation there;
@@ -105,8 +108,13 @@ find the exact owner and contract; App authors never invent test paths.
   work belongs at Run or Export. Every finite preview pixel budget is an
   explicit App-owned responsiveness decision; pixel-unit preview parameters
   scale with preview resolution.
-- Repeatable Run/Export workflows use immutable task snapshots and
-  deterministic fingerprints when stale or duplicated work is possible.
+- Run/Export operates on an explicit snapshot of the inputs and settings that
+  determine its result. Add reuse only when a measured need justifies it and
+  its identity covers every result-defining value. A previous attempt or an
+  unchanged path/shape is not proof that an export is current: reuse also
+  requires successful, present outputs. Explicit retry must recover failed or
+  removed artifacts. Do not add a fingerprint layer to ordinary exports by
+  default.
 
 ## Workbench and task continuation
 

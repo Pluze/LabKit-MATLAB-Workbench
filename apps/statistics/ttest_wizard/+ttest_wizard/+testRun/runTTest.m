@@ -135,24 +135,25 @@ function result = runTTest(vectorA, vectorB, options)
     end
 
     result.tStatistic = result.meanDifference / result.standardError;
-    cdfValue = studentTCdf(result.tStatistic, result.degreesOfFreedom);
+    [lowerTail, upperTail] = studentTTails( ...
+        result.tStatistic, result.degreesOfFreedom);
     switch alternativeToken
         case "greater"
-            result.pValue = 1 - cdfValue;
+            result.pValue = upperTail;
             critical = ttest_wizard.testRun.studentTQuantile(1 - alpha, ...
                 result.degreesOfFreedom);
             result.ciLower = result.meanDifference - ...
                 critical * result.standardError;
             result.ciUpper = Inf;
         case "less"
-            result.pValue = cdfValue;
+            result.pValue = lowerTail;
             critical = ttest_wizard.testRun.studentTQuantile(1 - alpha, ...
                 result.degreesOfFreedom);
             result.ciLower = -Inf;
             result.ciUpper = result.meanDifference + ...
                 critical * result.standardError;
         otherwise
-            result.pValue = 2 * min(cdfValue, 1 - cdfValue);
+            result.pValue = 2 * min(lowerTail, upperTail);
             critical = ttest_wizard.testRun.studentTQuantile(1 - alpha / 2, ...
                 result.degreesOfFreedom);
             result.ciLower = result.meanDifference - ...
@@ -208,14 +209,17 @@ function value = scalarLabel(value, fallback)
     end
 end
 
-function probability = studentTCdf(value, degreesOfFreedom)
+function [lowerTail, upperTail] = studentTTails(value, degreesOfFreedom)
     betaArgument = degreesOfFreedom / ...
         (degreesOfFreedom + value^2);
     tail = 0.5 * betainc(betaArgument, ...
         degreesOfFreedom / 2, 0.5);
+    % Retain the small tail directly; subtracting a near-one CDF loses it.
     if value >= 0
-        probability = 1 - tail;
+        lowerTail = 1 - tail;
+        upperTail = tail;
     else
-        probability = tail;
+        lowerTail = tail;
+        upperTail = 1 - tail;
     end
 end

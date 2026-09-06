@@ -142,7 +142,8 @@ function gray = luma(imageData)
 end
 
 function y = smoothstep(edge0, edge1, x)
-    t = (x - edge0) ./ max(edge1 - edge0, eps);
+    % Callers supply distinct fixed endpoints; preserve descending ramps.
+    t = (x - edge0) ./ (edge1 - edge0);
     t = min(max(t, 0), 1);
     y = t .* t .* (3 - 2 .* t);
 end

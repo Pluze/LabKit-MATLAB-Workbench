@@ -45,7 +45,8 @@ function cache = analyzeSignal(cache, parameters)
 %       than roiStart, samples at both endpoints are retained and the cropped
 %       time vectors restart at zero. Otherwise the full signal is analyzed.
 %   peakMethod - ECG Print method label: "QRS streaming", "Pan-Tompkins", or
-%       "Local peaks". Any other value currently falls back to QRS streaming.
+%       "Local peaks". Other values raise
+%       ecg_print:UnsupportedPeakMethodLabel.
 %   peakDistance - Minimum accepted peak spacing in seconds. Use a positive
 %       finite scalar.
 %   segmentWindow - Positive half-width in seconds for the symmetric interval

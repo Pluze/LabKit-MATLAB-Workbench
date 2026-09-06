@@ -22,7 +22,7 @@ function output = buildExportTable(summary, imageName)
 %       imageName is empty.
 %
 % Example:
-%   roi = roi_analyzer.roiLibrary.emptyRoi();
+%   roi = struct("shape", "Rectangle");
 %   roi.id = "roi-1"; roi.name = "ROI 1"; roi.position = [1 1 2 2];
 %   measured = roi_analyzer.analysisRun.measureImage(ones(3), roi);
 %   output = roi_analyzer.resultFiles.buildExportTable( ...

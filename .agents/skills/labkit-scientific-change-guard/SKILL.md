@@ -24,9 +24,9 @@ science.
 - Keep constants semantically named with nearby scientific rationale.
 - Preserve output shapes, units, saved data, and export meaning unless the
   user explicitly changes the contract.
-- When Toolbox behavior is replaced or temporarily referenced, follow the
-  repository debt ledger and prove idempotency plus parity on App-consumed
-  outputs within a justified tolerance.
+- When replacing Toolbox behavior, use `labkit-boundary-guard` and the root
+  dependency contract. Prove idempotency plus parity against preserved reference
+  evidence on App-consumed outputs within a justified tolerance.
 - Prefer synthetic edge cases around valid boundaries, malformed values,
   selector alternatives, and repeated identical inputs.
 - Test the calculation directly and every downstream result or presentation

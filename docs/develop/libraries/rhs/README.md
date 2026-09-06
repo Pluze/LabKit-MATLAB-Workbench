@@ -141,7 +141,9 @@ Successful parsing confirms that the supported RHS header and complete block lay
 
 ## Reference Contract
 
-The generated pages for `findFiles`, `inspectFile`, `indexFile`, `readWindow`, and `version` state complete inputs, outputs, options, defaults, legal values, status/error behavior, and related APIs. Contract tests discover the complete public package and execute each documented `Example:` block.
+The generated pages for `findFiles`, `inspectFile`, `indexFile`, `readWindow`, and `version` state complete inputs, outputs, options, defaults, legal values, status/error behavior, and related APIs. Documentation discovery covers the complete public package; `docsCheck` executes its self-contained `Example:` blocks.
+
+Self-contained public-help `Example:` blocks run in `docsCheck`. File- or device-dependent `Typical Call:` sketches require the indicated external input and are not executed by that check.
 
 ## Related Topics
 

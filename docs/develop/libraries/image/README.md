@@ -69,3 +69,5 @@ Use `labkit.image.readFiles` when an app needs generic source-image records. Its
 ## Reference Contract
 
 The generated Image API pages linked from the [public API index](../../../reference/README.md) document exact syntax, inputs, outputs, implemented options and defaults, legal values, failure behavior, examples, and related functions. In particular, [`resizeToFit`](../../../reference/api/labkit/image/resizeToFit.html) accepts only the documented `"bilinear"` and `"nearest"` methods and rejects any other method instead of silently selecting an interpolation policy.
+
+`resizeToFit` treats a singleton row or column as constant during bilinear interpolation and preserves the input class. Integer results are rounded; enlarging a single pixel cannot add spatial information.

@@ -55,7 +55,9 @@ The scale-bar length defaults to 100 selected units, at Bottom right, in Black. 
 
 ## Outputs
 
-Exports support PNG, TIFF, and JPEG. Each task produces one image at the planned output dimensions. The crop manifest records source, task order, center, rotation, padding, source/output scale, requested physical geometry, upsample threshold, format, and output filename. These fields form the restorable operation snapshot. The manifest is one final snapshot; it does not retain intermediate adjustments or merge multiple export batches.
+Physical resampling supports crops with a single row or column by keeping that axis constant while interpolating the other axis.
+
+Each explicit export writes the current crop tasks again with unique output filenames, including when earlier files were removed. Exports support PNG, TIFF, and JPEG. Each task produces one image at the planned output dimensions. The crop manifest records source, task order, center, rotation, padding, source/output scale, requested physical geometry, upsample threshold, format, and output filename. These fields form the restorable operation snapshot. The manifest is one final snapshot; it does not retain intermediate adjustments or merge multiple export batches.
 
 ## Use Without The GUI
 
