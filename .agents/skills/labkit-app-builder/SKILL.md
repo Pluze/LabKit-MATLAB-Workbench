@@ -51,16 +51,18 @@ the callback boundary.
 
 Build in this order:
 
-1. identity, requirements, layout, and required project/session capabilities;
+1. identity, requirements, layout, and only the in-memory state the App uses;
 2. GUI-free readers, calculations, results, and synthetic tests;
 3. feature-owned presentation, rendering, and managed interactions;
 4. lazy batch input, preview/full-resolution separation, and exports;
-5. portable persistence and only supported compatibility imports;
+5. App-owned persistence and compatibility imports only for an explicit
+   continuation workflow;
 6. direct calculation, state, renderer, export, then bounded GUI evidence;
 7. version, manual, and component history for the delivered contract.
 
-Synthetic input must be anonymous, validated headlessly, and launched through
-the ordinary native Developer Tools path; clean construction is insufficient.
+Validate anonymous synthetic input through the production reader and a bounded
+native-runtime workflow using `labkit-test-planner`. Keep native dialog, pointer,
+visual, and scientific checks explicit; clean construction is insufficient.
 
 Use `labkit-boundary-guard` before changing a public facade,
 `labkit-scientific-change-guard` when scientific meaning changes, and

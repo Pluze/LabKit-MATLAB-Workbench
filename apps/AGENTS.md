@@ -35,8 +35,10 @@ find the exact owner and contract; App authors never invent test paths.
   snapshot fragments without IO or heavy computation. Put each renderer in
   the capability package that owns the plotted meaning.
 - Treat complete runtime state as an adapter value, not a domain model. Only
-  `createSession`, `+workbench/present`, `OnStart`, and functions referenced
-  directly by layout signals may accept it. Name it `applicationState`,
+  `RefreshState`, `+workbench/present`, `OnStart`, and functions referenced
+  directly by layout signals may accept it. `CreateState` creates that value;
+  App-local state builders receive the inputs they actually need. Name a
+  complete state input `applicationState`,
   destructure it immediately, and pass exact values into feature presenters,
   calculations, renderers, and writers.
 - Direct callbacks expose `applicationState`, then the typed event value when

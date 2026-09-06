@@ -36,7 +36,13 @@ function results = runFocusedSpecs(specFiles)
         configureEnvironment(selectedPaths)];
     fprintf("LabKit focused specifications: %d identities from %d file(s).\n", ...
         numel(suite), numel(specFiles));
-    results = run(suite);
+    runFolder = fullfile(repoRoot, "artifacts", "test-results", "focused-specs");
+    if ~isfolder(runFolder)
+        mkdir(runFolder);
+    end
+    runner = matlab.unittest.TestRunner.withTextOutput;
+    runner.addPlugin(labkittest.ProgressPlugin(runFolder));
+    results = runner.run(suite);
     disp(table(results));
     assertSuccess(results);
     delete(cleanups);

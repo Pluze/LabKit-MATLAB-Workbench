@@ -68,7 +68,7 @@ jobs:
           fi
           mkdir -p artifacts/development-feedback artifacts/logs/development-feedback
           git diff --check "${base_sha}" "${HEAD_SHA}"
-          git diff --name-only --diff-filter=ACMRTUXB \
+          git diff --name-only --no-renames \
             "${base_sha}" "${HEAD_SHA}" \
             > artifacts/development-feedback/changed-paths.txt
           printf '%s\n' "${base_sha}" \

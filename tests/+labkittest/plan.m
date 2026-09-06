@@ -5,7 +5,9 @@ function result = plan(varargin)
 %   specification plus reset-path App isolation evidence;
 %   Profile="changed" derives the local pre-commit change set from Git and
 %   compiles its bounded owner/contract evidence closure. It includes tracked
-%   edits and untracked files; after a clean commit it reports that checkpoint.
+%   edits, deletions, and untracked files. With origin/main available, it uses
+%   the task branch merge base so earlier commits remain in the final gate.
+%   Without a task delta it uses local edits or the last clean checkpoint.
 %
 %   RESULT = labkittest.plan(File=PATH), Owner=OWNER, Contract=CONTRACT, or
 %   Environment=ENVIRONMENT compiles an exact plan without exposing folders,
@@ -328,8 +330,12 @@ function root = repositoryRoot()
 end
 
 function paths = gitChangedPaths(root)
-    tracked = gitOutput(root, ...
-        "diff --name-only --diff-filter=ACMRTUXB HEAD");
+    baseline = "HEAD";
+    if gitRefExists(root, "refs/remotes/origin/main")
+        baseline = strip(gitOutput(root, ...
+            "merge-base HEAD refs/remotes/origin/main"));
+    end
+    tracked = gitOutput(root, "diff --name-only --no-renames " + baseline);
     untracked = gitOutput(root, "ls-files --others --exclude-standard");
     paths = unique(normalizeRepositoryPath([splitlines(tracked); splitlines(untracked)]), ...
         "stable");
@@ -338,7 +344,7 @@ function paths = gitChangedPaths(root)
         return;
     end
     output = gitOutput(root, ...
-        "diff --name-only --diff-filter=ACMRTUXB HEAD~1 HEAD");
+        "diff --name-only --no-renames HEAD~1 HEAD");
     paths = normalizeRepositoryPath(splitlines(output));
     paths = paths(strlength(paths) > 0).';
 end

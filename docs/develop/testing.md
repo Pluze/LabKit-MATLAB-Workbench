@@ -106,13 +106,15 @@ buildtool docsCheck
 
 | Task | Purpose |
 | --- | --- |
-| `changedFast` | Default final local pre-PR review gate, also selected by bare `buildtool`. Runs `codecheck` and `docsCheck`, then reads tracked and untracked working-tree paths for focused tests; on a clean checkpoint it reads `HEAD^..HEAD`. |
+| `changedFast` | Default final local pre-PR review gate, also selected by bare `buildtool`. Runs `codecheck` and `docsCheck`, then selects the task delta from the merge base with fetched `origin/main`, including committed changes, staged and unstaged edits, deletions, and untracked files. Without a task delta it selects local edits or, on a clean checkpoint, `HEAD^..HEAD`. |
 | `headless` | Every headless catalog identity. |
 | `apps` | Every hidden-GUI identity followed by the reset-path isolation probe for every public App in the same MATLAB build. |
 | `codecheck` | Lightweight pre-commit gate over all public-repository MATLAB source. Prints one `CODECHECK_RESULT` line and fails unless analyzer issues, suppressions, compatibility recommendations, and unreviewed secondary-runtime calls are all zero. Accepted private workspaces retain their own runtime policy. |
 | `docs` / `docsCheck` | Render the ignored local site or verify deterministic source-derived output. |
 
 The default `buildtool` command runs `changedFast`; name a specialist task only for broad headless or App-boundary investigation, code analysis, or documentation generation. `changedFast` first requires clean code analysis and deterministic documentation, then prints whether its test plan is `focused-local` or `full-profile`, semantic reasons, exact identities, and any explicitly ignored paths. For ordinary App and facade source it runs only the required contract closure. Framework, Build, catalog, and repository-policy paths select explicit bounded system evidence. Documentation paths are explicitly ignored by the test planner because the same gate's `docsCheck` dependency owns deterministic generation; local `site/` output is ignored by Git. An unknown path is a planning error: declare its production role or an explicit no-test classification rather than widening the run.
+
+Fetch `origin/main` before the final task gate so its baseline is current. Renames contribute both their old and new paths; deleted paths still require classification and surviving owner evidence. If an entire owner is retired, a missing-contract result requires an explicit retirement and consumer review rather than silently treating deletion as passing evidence.
 
 Use `labkittest.explainChanged` to inspect that decision without executing tests. It prints each changed path's classification, selected evidence, and any manual boundary. A focused-local result is rapid author feedback, not merge safety evidence; CI runs the full platform profiles.
 
