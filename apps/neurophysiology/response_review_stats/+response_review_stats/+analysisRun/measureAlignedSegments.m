@@ -10,7 +10,7 @@ function metrics = measureAlignedSegments(aligned, opts)
 %   Baseline-corrects every aligned trace, measures its positive and negative
 %   extrema, and estimates baseline noise and peak-to-peak SNR. Each segment is
 %   measured independently and produces one output row. Peaks use only finite
-%   samples; NaN samples are omitted from baseline and noise means.
+%   samples; nonfinite samples are omitted from baseline and noise means.
 %
 % Inputs:
 %   aligned - Structure returned by
@@ -98,7 +98,7 @@ function metrics = measureAlignedSegments(aligned, opts)
     for k = 1:nSegments
         y = values(:, k);
         baselineMask = timeSec >= baselineWindowSec(1) & ...
-            timeSec <= baselineWindowSec(2);
+            timeSec <= baselineWindowSec(2) & isfinite(y);
         baseline = mean(y(baselineMask), "omitnan");
         y = y - baseline;
 
@@ -114,7 +114,7 @@ function metrics = measureAlignedSegments(aligned, opts)
         end
 
         noiseMask = timeSec >= noiseWindowSec(1) & timeSec <= noiseWindowSec(2);
-        noise = y(noiseMask);
+        noise = y(noiseMask & isfinite(y));
         if any(isfinite(noise))
             NoiseRMS(k) = sqrt(mean((noise - mean(noise, "omitnan")) .^ 2, ...
                 "omitnan"));

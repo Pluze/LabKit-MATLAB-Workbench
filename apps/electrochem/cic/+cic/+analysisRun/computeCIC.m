@@ -45,7 +45,7 @@ function A = computeCIC(item, opts)
 %       phase duration. Default: true.
 %
 % Calculations:
-%   Samples with NaN T, Vf, or Im are removed together. At least five remaining
+%   Samples with nonfinite T, Vf, or Im are removed together. At least five remaining
 %   samples are required. Emc is Vf at cath_end+delay_s and Ema is Vf at
 %   anod_end+delay_s. The cathodic baseline Eipp uses the first finite value in
 %   this order: pre-pulse median, interpulse median, post-pulse median, zero.
@@ -176,7 +176,7 @@ function A = computeCIC(item, opts)
         pt = (0:numel(t)-1).';
     end
 
-    valid = ~(isnan(t) | isnan(Vf) | isnan(Im));
+    valid = isfinite(t) & isfinite(Vf) & isfinite(Im);
     t = t(valid);
     Vf = Vf(valid);
     Im = Im(valid);

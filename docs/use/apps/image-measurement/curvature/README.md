@@ -61,11 +61,14 @@ The CSV records point count, fit settings, center, radius, curvature, traced len
 
 ## Use Without The GUI
 
+<!-- labkit-runnable-example -->
 ```matlab
 points = [100 80; 130 58; 165 52; 200 66; 225 95];
-fit = curvature.analysisRun.computeCurvatureFit(points, ...
-    struct("densify", true, "densePointCount", 300));
-lengthResult = curvature.analysisRun.computeCurveLength(points, struct());
+fit = curvature.analysisRun.computeCurvatureFit( ...
+    points(:, 1), points(:, 2), [], true, 300);
+lengthResult = curvature.analysisRun.computeCurveLength( ...
+    points(:, 1), points(:, 2));
+assert(fit.ok && lengthResult.ok)
 ```
 
 ## Errors And Limitations

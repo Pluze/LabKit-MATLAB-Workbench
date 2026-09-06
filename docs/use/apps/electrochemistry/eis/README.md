@@ -58,7 +58,7 @@ The custom plot never infers an equal aspect ratio from the selected quantities:
 
 ## Output
 
-**Export custom plot CSV** writes the selected X/Y values for each valid file on a shared row index. Each file retains its own X and Y pair, so unequal curve lengths do not imply interpolation. Impedance columns use the selected display unit and include an ASCII unit suffix such as `kohm` in the column name.
+**Export custom plot CSV** writes the selected X/Y values for each valid file on a shared row index. Each file retains its own X and Y pair, so unequal curve lengths do not imply interpolation. Impedance columns use the selected display unit and include an ASCII unit suffix such as `kohm` in the column name. Column names are sanitized and shortened to MATLAB's supported length; collisions receive numeric suffixes in source order so every curve retains its own columns.
 
 ## Use Without The GUI
 
@@ -76,7 +76,7 @@ axis equal
 
 ## Errors And Limitations
 
-- Nonpositive log coordinates and nonfinite values appear as gaps. The custom CSV retains the original selected values, including values that cannot appear on a logarithmic plot.
+- Nonpositive log coordinates and nonfinite values appear as plot gaps. The custom CSV omits an X/Y pair when either coordinate is nonfinite or nonpositive on its selected logarithmic axis. It then pads shorter curves with `NaN`; row indices do not preserve the original sample positions or align samples between files.
 - Overlaying files does not normalize electrode area or fixture geometry.
 - Changing the impedance display unit rescales impedance axes and exported impedance columns; it does not alter the DTA values stored in base ohms.
 - Axis labels describe parsed DTA columns; they do not validate the experiment configuration recorded by the instrument.

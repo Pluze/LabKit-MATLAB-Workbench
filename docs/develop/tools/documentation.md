@@ -7,7 +7,7 @@ audience: maintainer
 summary: Build, verify, and maintain LabKit documentation through its three public MATLAB documentation tools.
 ```
 
-LabKit uses three public MATLAB entry points for its documentation sources and generated site. `renderLabKitDocs` compiles and validates a complete temporary site before synchronizing it; `checkLabKitDocs` compares independently validated renders for determinism; `maintainLabKitDocLinks` checks or repairs standard relative Markdown links. Path-organized Markdown and MATLAB help blocks are the authored sources.
+LabKit uses three public MATLAB entry points for its documentation sources and generated site. `renderLabKitDocs` compiles and validates a complete temporary site before synchronizing it; `checkLabKitDocs` executes self-contained examples and compares independently validated renders for determinism; `maintainLabKitDocLinks` checks or repairs standard relative Markdown links. Path-organized Markdown and MATLAB help blocks are the authored sources.
 
 ## Maintain Links
 
@@ -50,7 +50,9 @@ result = checkLabKitDocs(sourceRoot)
 result = checkLabKitDocs(sourceRoot, existingSiteRoot)
 ```
 
-Without an existing site argument, the check renders two independently validated temporary folders and compares generated file paths and bytes. Supplying an existing site compares one independently validated render with that folder. Semantic failures use focused `LabKit:Docs:*` identifiers such as `DuplicateGeneratedId`, `BrokenGeneratedAnchor`, `UnreachableGeneratedPage`, `IncompleteApiCatalog`, and `InvalidSearchCoverage`; a byte or file-list difference raises `LabKit:Docs:StaleGeneratedSite`. The result otherwise includes `comparedFileCount` in addition to the renderer result fields.
+Before rendering, the check discovers `Example:` blocks from the same public API model as the site and MATLAB fences immediately preceded by `<!-- labkit-runnable-example -->` from narrative pages. It runs each in a fresh function workspace and temporary working folder, restoring the path, random-number state, and figure visibility and removing figures created by that example. Run `buildtool docsCheck` in a clean noninteractive MATLAB process; persistent state and external resources are not a security sandbox. Only trusted repository documentation should be executed. Device- and user-file-dependent sketches belong under `Typical Call:` and are not executed. Empty or malformed marked examples raise `LabKit:Docs:InvalidRunnableExample`; a runtime or assertion failure raises `LabKit:Docs:ExampleFailed` with its source and cause. Execution reports completed/total examples and a heartbeat for an active example.
+
+Without an existing site argument, the check renders two independently validated temporary folders and compares generated file paths and bytes. Supplying an existing site compares one independently validated render with that folder. Semantic failures use focused `LabKit:Docs:*` identifiers such as `DuplicateGeneratedId`, `BrokenGeneratedAnchor`, `UnreachableGeneratedPage`, `IncompleteApiCatalog`, and `InvalidSearchCoverage`; a byte or file-list difference raises `LabKit:Docs:StaleGeneratedSite`. The result otherwise includes `exampleCount` and `comparedFileCount` in addition to the renderer result fields.
 
 ## Build Tasks
 

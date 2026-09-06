@@ -50,7 +50,7 @@ If files use different sample times, export constructs a merged aligned-time axi
 
 ## Output
 
-**Export curves CSV** writes `TimeGapCenterAligned_s` followed by paired voltage and current columns for each source. Column names retain a sanitized source identity.
+**Export curves CSV** writes `TimeGapCenterAligned_s` followed by paired voltage and current columns for each source. Column names retain a sanitized source identity, shortened to MATLAB's supported length when necessary. Collisions receive numeric suffixes in source order so similarly named files retain separate columns.
 
 ## Use Without The GUI
 

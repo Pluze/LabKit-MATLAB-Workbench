@@ -39,7 +39,7 @@ function metrics = measureCapMetrics(timeSec, signal, eventTimesSec, opts)
 % Calculations:
 %   baselineMean is the finite-value mean in the baseline interval. noiseRms
 %   is the root mean square deviation from that mean. If the interval contains
-%   no samples, the recording-wide finite median becomes the baseline and
+%   no finite samples, the recording-wide finite median becomes the baseline and
 %   noiseRms remains NaN. The response search is
 %   [event+blankingAfterPulseSec, event+searchEndAfterPulseSec]. Peaks are
 %   measured after baseline subtraction. peakTimeSec belongs to whichever of
@@ -60,7 +60,7 @@ function metrics = measureCapMetrics(timeSec, signal, eventTimesSec, opts)
 %       latency.
 %   snrDb - Peak-to-peak SNR in decibels, or NaN when noise is unavailable or
 %       zero.
-%   status - "ok" when the search interval contains samples; "noSamples"
+%   status - "ok" when the search interval contains finite samples; "noSamples"
 %       otherwise. Rows without samples retain NaN response metrics.
 %
 % Errors:
@@ -111,19 +111,19 @@ function metrics = measureCapMetrics(timeSec, signal, eventTimesSec, opts)
     for k = 1:nEvents
         eventTime = eventTimesSec(k);
         baselineMask = timeSec >= eventTime - params.baselineWindowSec & ...
-            timeSec <= eventTime - params.blankingAfterPulseSec;
+            timeSec <= eventTime - params.blankingAfterPulseSec & isfinite(signal);
         if any(baselineMask)
             baselineValues = signal(baselineMask);
             baselineMean(k) = mean(baselineValues, "omitnan");
             noiseRms(k) = sqrt(mean((baselineValues - baselineMean(k)) .^ 2, ...
                 "omitnan"));
         else
-            baselineMean(k) = median(signal, "omitnan");
+            baselineMean(k) = median(signal(isfinite(signal)));
             noiseRms(k) = NaN;
         end
 
         searchMask = timeSec >= eventTime + params.blankingAfterPulseSec & ...
-            timeSec <= eventTime + params.searchEndAfterPulseSec;
+            timeSec <= eventTime + params.searchEndAfterPulseSec & isfinite(signal);
         if ~any(searchMask)
             status(k) = "noSamples";
             continue;

@@ -29,8 +29,8 @@ function req = requirements(varargin)
 %
 % Example:
 %   req = labkit.contract.requirements( ...
-%       "app", ">=1 <2", ...
-%       "image", ">=4.0 <5");
+%       "app", ">=3 <4", ...
+%       "image", ">=2 <3");
 %   report = labkit.contract.checkRequirements(req);
 %
 % See also labkit.contract.checkRequirements,

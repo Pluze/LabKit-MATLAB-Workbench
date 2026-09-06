@@ -2,6 +2,21 @@ classdef BatchCropGeometrySpec < matlab.unittest.TestCase
     %BATCHCROPGEOMETRYSPEC Specify crop geometry and calibrated output plans.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function resamplesPhysicalCropsWithSingletonDimensions(testCase)
+            item = physicalItem("source.png", 1);
+            dimensions = [1 1; 1 4; 4 1];
+            for index = 1:size(dimensions, 1)
+                shape = dimensions(index, :);
+                plan = batch_crop.cropGeometry.scalePlan(item, struct( ...
+                    "physicalWidth", shape(2), "physicalHeight", shape(1), ...
+                    "scaleUnit", "um", "targetPixelsPerUnit", 2));
+                result = batch_crop.cropGeometry.cropScaledImage( ...
+                    item.image, struct("centerXY", [60 60]), plan);
+                testCase.verifyEqual(result.image, ...
+                    uint8(80 * ones(2 * shape)));
+            end
+        end
+
         function cropsAtTheRequestedPixelSizeWithoutChangingImageClass(testCase)
             image = uint8(reshape(1:100, 10, 10));
 

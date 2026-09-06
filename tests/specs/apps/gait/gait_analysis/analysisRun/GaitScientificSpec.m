@@ -2,6 +2,43 @@ classdef GaitScientificSpec < matlab.unittest.TestCase
     %GAITSCIENTIFICSPEC Specify gait swing segmentation and source-derived options.
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
+        function singleFrameRetainsOneRowOfKinematics(testCase)
+            pose = testfixtures.gait.pose();
+            pose.coords = zeros(1, 5, 2);
+            pose.coords(1, :, 1) = 0:4;
+            pose.frameIndex = 1;
+            pose.time = 0;
+            result = gait_analysis.analysisRun.computeGait( ...
+                pose, GaitScientificSpec.options());
+            testCase.verifyEqual(height(result.frameTable), 1);
+            testCase.verifyEqual(height(result.coordinateTable), 1);
+            testCase.verifyEqual(result.frameTable.hip_angle_deg, 180);
+            testCase.verifyEqual(result.frameTable.iliac_hip_length, 1);
+            testCase.verifyEmpty(result.stepTable);
+        end
+
+        function preservesCoordinatesForNamesWithTheSameSanitizedForm(testCase)
+            pose = testfixtures.gait.pose();
+            baseline = gait_analysis.analysisRun.computeGait( ...
+                pose, GaitScientificSpec.options());
+            count = size(pose.coords, 1);
+            pose.pointNames = [pose.pointNames(:); "probe-a"; "probe/a"];
+            pose.coords(:, 6, 1) = 10;
+            pose.coords(:, 6, 2) = 20;
+            pose.coords(:, 7, 1) = 30;
+            pose.coords(:, 7, 2) = 40;
+            result = gait_analysis.analysisRun.computeGait( ...
+                pose, GaitScientificSpec.options());
+            testCase.assertEqual(width(result.frameTable), ...
+                width(baseline.frameTable) + 4);
+            testCase.assertEqual(width(result.coordinateTable), ...
+                width(baseline.coordinateTable) + 8);
+            testCase.verifyEqual(result.frameTable{:, end-3:end}, ...
+                repmat([10 20 30 40], count, 1));
+            testCase.verifyEqual(result.coordinateTable{:, end-7:end}, ...
+                repmat([10 20 10 20 30 40 30 40], count, 1));
+        end
+
         function segmentsSwingsAndReportsStepMetrics(testCase)
             pose = testfixtures.gait.pose();
             options = GaitScientificSpec.options();

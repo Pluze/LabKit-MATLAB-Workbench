@@ -153,7 +153,7 @@ function recordings = recordingsTable(session)
     recordings.filePath = string(recordings.filePath);
     if ismember("label", recordings.Properties.VariableNames)
         recordings.label = normalizeLabel(recordings.label);
-    else
+    elseif ~ismember("qcFlag", recordings.Properties.VariableNames)
         recordings.label = repmat("good", height(recordings), 1);
     end
     if ismember("comment", recordings.Properties.VariableNames)

@@ -66,7 +66,7 @@ Use **Import style** and **Export style** to reuse the document-, type-, and rol
 
 ## Publication Preflight
 
-Preflight reports **ready**, **review**, or **blocked** and supplies a suggested fix for each issue. It checks invalid canvas padding, panels outside the canvas, panel overlap, nonpositive log data, missing axis labels, ambiguous dual-Y assignment, visible objects outside limits, unusually small text or thin strokes, and import warnings. Blocking errors stop publication export. Warnings remain visible so the user can make an informed scientific-layout decision.
+Preflight reports **ready**, **review**, or **blocked** and supplies a suggested fix for each issue. It checks invalid canvas padding, panels outside the canvas, panel overlap, nonpositive log data, missing axis labels, ambiguous dual-Y assignment, visible objects outside limits, unusually small text or thin strokes, and import warnings. For dual-Y panels, each series is checked against its assigned Y axis, including that axis's logarithmic scale and displayed limits. Blocking errors stop publication export. Warnings remain visible so the user can make an informed scientific-layout decision.
 
 ## Exports And Editable Package
 

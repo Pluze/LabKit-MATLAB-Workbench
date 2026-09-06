@@ -25,7 +25,7 @@ function [kind, status] = detectType(filepath)
 %   Throws labkit:dta:InvalidFilepath when filepath is not a character vector
 %   or string scalar.
 %
-% Example:
+% Typical Call:
 %   [kind, status] = labkit.dta.detectType("experiment.DTA");
 %   if status.ok
 %       fprintf("Detected %s data.\n", kind)

@@ -5,8 +5,7 @@ description: "Use for measured LabKit startup, callback, file-loading, or launch
 
 # LabKit Performance Profiler
 
-Read `AGENTS.md`, the measured source path, nearby tests, and the profiling
-section of `docs/development/maintain-and-release/testing.md`. Use
+Read `AGENTS.md`, the measured source path, nearby tests, and `docs/develop/tools/profiling.md`. Use
 `labkit-boundary-guard` if ownership moves and `labkit-test-planner` for
 validation.
 

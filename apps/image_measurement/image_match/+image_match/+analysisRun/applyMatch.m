@@ -46,7 +46,8 @@ function outputImage = applyMatch(inputImage, referenceImage, step)
 %
 % Failure Behavior:
 %   Empty referenceImage returns normalized inputImage unchanged. Missing step
-%   fields use the App's match defaults; unsupported image classes/channel
+%   fields are invalid; use makeStep to construct defaults. Unsupported image
+%   classes/channel
 %   shapes or malformed numeric step values propagate the originating LabKit
 %   image or MATLAB calculation error.
 %
@@ -292,11 +293,20 @@ function matched = covarianceMatch(sourceLab, referenceLab)
     % Constant: this small diagonal term regularizes singular covariance
     % matrices from flat or nearly single-color images.
     covarianceRegularization = 1e-6;
-    sourceCov = cov(sourcePixels) + covarianceRegularization .* eye(sourceSize(3));
-    referenceCov = cov(referencePixels) + covarianceRegularization .* eye(sourceSize(3));
+    sourceCov = pixelCovariance(sourcePixels) + covarianceRegularization .* eye(sourceSize(3));
+    referenceCov = pixelCovariance(referencePixels) + covarianceRegularization .* eye(sourceSize(3));
     transform = real(sqrtm(referenceCov)) / real(sqrtm(sourceCov));
     matchedPixels = (sourcePixels - sourceMean) * transform.' + referenceMean;
     matched = reshape(matchedPixels, sourceSize);
+end
+
+function matrix = pixelCovariance(pixels)
+    % One pixel has no observed variation across samples; retain channel axes.
+    if size(pixels, 1) == 1
+        matrix = zeros(size(pixels, 2));
+    else
+        matrix = cov(pixels);
+    end
 end
 
 function matched = quantileMatch(sourceChannel, referenceChannel)
@@ -316,6 +326,10 @@ function values = percentileValues(data, pct)
     data = sort(double(data(:)));
     if isempty(data)
         values = zeros(size(pct));
+        return;
+    end
+    if isscalar(data)
+        values = repmat(data, size(pct));
         return;
     end
     positions = 1 + (numel(data) - 1) .* double(pct) ./ 100;

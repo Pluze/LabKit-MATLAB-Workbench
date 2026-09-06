@@ -14,7 +14,7 @@ A final local test plan must account for the complete task, including earlier co
 
 ## What changed
 
-Local changed-path planning uses the task's merge base with fetched `origin/main` and includes working-tree changes. Deleted paths and both sides of renames retain their ownership obligations in local and hosted focused feedback. Without a task delta, local edits or the last clean checkpoint remain the available fallback. Skill validation rejects missing entry points and unresolved backticked repository Skill routes. App construction guidance follows optional state and continuation needs, and state callback guidance matches the SDK signatures.
+Local changed-path planning uses the task's merge base with fetched `origin/main` and includes working-tree changes. Deleted paths and both sides of renames retain their ownership obligations in local and hosted focused feedback. Without a task delta, local edits or the last clean checkpoint remain the available fallback. Skill validation rejects missing entry points and unresolved backticked repository Skill routes, and missing literal documentation targets. App construction guidance follows optional state and continuation needs, and state callback guidance matches the SDK signatures and App-owned posted continuations while keeping calculation helpers narrow.
 
 ## Impact
 

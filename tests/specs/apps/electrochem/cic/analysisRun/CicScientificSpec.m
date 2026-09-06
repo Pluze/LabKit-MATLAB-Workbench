@@ -2,6 +2,19 @@ classdef CicScientificSpec < matlab.unittest.TestCase
     %CICSCIENTIFICSPEC Verify CIC calculations directly at their capability owner.
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
+        function removesNonfiniteSourceRowsBeforeCalculation(testCase)
+            for column = ["T", "Vf", "Im"]
+                item = testfixtures.dta.chronoItem();
+                index = find(string(item.tables(1).headers) == column, 1);
+                item.tables(1).data(1, index) = Inf;
+                analysis = cic.analysisRun.computeCIC(item, defaultOptions());
+                testCase.verifyTrue(analysis.ok, analysis.message);
+                testCase.verifyTrue(all(isfinite([analysis.t; analysis.Vf; analysis.Im])));
+                testCase.verifyEqual([analysis.Qc_C, analysis.Qa_C], [.01 .01], AbsTol=1e-15);
+                testCase.verifyEqual([analysis.Emc, analysis.Ema], [-.99996 .99996], AbsTol=1e-12);
+            end
+        end
+
         function calculatesChargeAndVoltageMetrics(testCase)
             item = testfixtures.dta.chronoItem();
             analysis = cic.analysisRun.computeCIC(item, defaultOptions());

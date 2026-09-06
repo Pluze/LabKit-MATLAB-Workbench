@@ -125,6 +125,8 @@ summary = measured.summary;
 - Image registration and spatial calibration are not performed. Align images before applying one layout when exact locations must correspond.
 - Automated hidden-GUI tests do not establish pointer feel, visual quality, or suitability for real fluorescence, blot, microscopy, or color-science data. Inspect representative images and scientific assumptions before publication.
 
+For standalone measurement, supply resolved ROI structures with `id`, `name`, `shape`, and `position`. The in-memory placement record returned by `emptyRoi` is not a resolved measurement geometry; see the executable [`measureImage` example](../../../../reference/api/roi_analyzer/analysisRun/measureImage.html).
+
 ## Related Topics
 
 - [Image Measurement family](../README.md)

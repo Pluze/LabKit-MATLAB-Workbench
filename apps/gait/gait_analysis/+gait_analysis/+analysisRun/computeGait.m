@@ -89,7 +89,9 @@ function result = computeGait(pose, opts)
 %       prominence, the foot-X detectionSignal, and footRelativeX diagnostic.
 %   frameTable - One row per frame. It contains frame/time/step membership,
 %       landing and lift-off flags, coordinate unit, three joint angles, four
-%       segment lengths, and scaled <point>_x/<point>_y columns.
+%       segment lengths, and scaled <point>_x/<point>_y columns. Coordinate
+%       column names are legal MATLAB identifiers with numeric suffixes for
+%       collisions in point order, in both exported coordinate tables.
 %   coordinateTable - One row per frame with frame/time and origin metadata,
 %       raw <point>__x_px/<point>__y_px columns, and scaled, optionally shifted
 %       <point>__x/<point>__y columns. The unshifted origin is [0 0] in pixel
@@ -302,8 +304,8 @@ function angles = computeJointAngles(coords, role)
 end
 
 function angle = jointAngle(a, b, c)
-    u = squeeze(a - b);
-    v = squeeze(c - b);
+    u = reshape(a - b, size(a, 1), 2);
+    v = reshape(c - b, size(c, 1), 2);
     dotValue = sum(u .* v, 2);
     nu = sqrt(sum(u .* u, 2));
     nv = sqrt(sum(v .* v, 2));
@@ -322,7 +324,7 @@ function segments = computeSegmentLengths(coords, role, scale)
 end
 
 function d = distance(a, b)
-    delta = squeeze(a - b);
+    delta = reshape(a - b, size(a, 1), 2);
     d = sqrt(sum(delta .* delta, 2));
 end
 
@@ -565,8 +567,11 @@ function T = buildFrameTable(frameIndex, time, coords, pointNames, angles, ...
     T.ankle_foot_length = segments.ankle_foot(:);
     for p = 1:numel(pointNames)
         base = matlab.lang.makeValidName(char(pointNames(p)));
-        T.([base '_x']) = coords(:, p, 1) .* scale;
-        T.([base '_y']) = coords(:, p, 2) .* scale;
+        names = matlab.lang.makeValidName({[base '_x'], [base '_y']});
+        names = matlab.lang.makeUniqueStrings(names, ...
+            T.Properties.VariableNames, namelengthmax);
+        T.(names{1}) = coords(:, p, 1) .* scale;
+        T.(names{2}) = coords(:, p, 2) .* scale;
     end
 end
 
@@ -585,12 +590,16 @@ function T = buildCoordinateExportTable(frameIndex, time, coords, pointNames, ..
     T.origin_y_px_value = repmat(origin.yPx, frameCount, 1);
     for p = 1:numel(pointNames)
         base = matlab.lang.makeValidName(char(pointNames(p)));
+        names = matlab.lang.makeValidName({[base '__x_px'], [base '__y_px'], ...
+            [base '__x'], [base '__y']});
+        names = matlab.lang.makeUniqueStrings(names, ...
+            T.Properties.VariableNames, namelengthmax);
         xPx = coords(:, p, 1);
         yPx = coords(:, p, 2);
-        T.([base '__x_px']) = xPx;
-        T.([base '__y_px']) = yPx;
-        T.([base '__x']) = (xPx - origin.xPx) .* scale;
-        T.([base '__y']) = (yPx - origin.yPx) .* scale;
+        T.(names{1}) = xPx;
+        T.(names{2}) = yPx;
+        T.(names{3}) = (xPx - origin.xPx) .* scale;
+        T.(names{4}) = (yPx - origin.yPx) .* scale;
     end
 end
 

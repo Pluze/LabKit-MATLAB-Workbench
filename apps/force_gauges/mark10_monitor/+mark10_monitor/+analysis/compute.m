@@ -245,8 +245,8 @@ kind = string(experimentType);
 if kind == "Tension" || kind == "Compression"
     label = kind + " " + phase;
 elseif kind == "Cyclic"
-    % Native Mark-10 polarity is normally compression-positive.
-    if median(force, "omitnan") >= 0, kind = "Compression"; else, kind = "Tension"; end
+    % The acquisition and recording boundary supplies tension-positive force.
+    if median(force, "omitnan") >= 0, kind = "Tension"; else, kind = "Compression"; end
     label = kind + " " + phase;
 else
     label = upper(extractBefore(phase, 2)) + extractAfter(phase, 1);

@@ -43,7 +43,7 @@ function [info, status] = inspectFile(filepath)
 %   or string scalar. File-open and header-format errors are returned in
 %   status instead of thrown.
 %
-% Example:
+% Typical Call:
 %   [info, status] = labkit.rhs.inspectFile("recording.rhs");
 %   if status.ok
 %       fprintf("%.1f s at %.0f Hz\n", info.durationSec, info.sampleRateHz)

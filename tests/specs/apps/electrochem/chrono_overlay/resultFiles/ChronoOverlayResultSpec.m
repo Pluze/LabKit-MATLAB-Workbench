@@ -2,6 +2,27 @@ classdef ChronoOverlayResultSpec < matlab.unittest.TestCase
     %CHRONOOVERLAYRESULTSPEC Specify merged aligned-overlay export values.
 
     methods (Test, TestTags = {'Contract:result', 'Env:headless'})
+        function preservesEveryTraceWhenExportNamesCollide(testCase)
+            names = ["trace-a.DTA", "trace/a.DTA", "trace-a.DTA", ...
+                string(repmat('x', 1, namelengthmax))];
+            items = repmat(ChronoOverlayResultSpec.item('', [], [], []), ...
+                1, numel(names));
+            for index = 1:numel(names)
+                items(index) = ChronoOverlayResultSpec.item( ...
+                    char(names(index)), [0; 1], [index; index + 1], ...
+                    [-index; -index - 1]);
+            end
+            actual = chrono_overlay.resultFiles.buildOverlayExportTable(items);
+            testCase.assertEqual(width(actual), 1 + 2 * numel(items));
+            testCase.verifyEqual(actual{:, 1}, [0; 1]);
+            for index = 1:numel(items)
+                testCase.verifyEqual(actual{:, 2 * index}, [index; index + 1]);
+                testCase.verifyEqual(actual{:, 2 * index + 1}, [-index; -index - 1]);
+            end
+            testCase.verifyEqual(actual, ...
+                chrono_overlay.resultFiles.buildOverlayExportTable(items));
+        end
+
         function interpolatesMultipleTracesOntoOneAlignedExportAxis(testCase)
             first = ChronoOverlayResultSpec.item('trace 1.DTA', [-1; 0; 1], ...
                 [10; 20; 30], [1; 2; 3]);

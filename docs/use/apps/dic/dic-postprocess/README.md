@@ -40,7 +40,7 @@ Changing an option updates the reproducible project parameters. Generate again b
 
 Loading a different DIC/reference/mask set or generating overlays on a different pixel canvas fits both overlay axes to that image domain. Optical-image styling and regenerated pixels on the same canvas preserve the region currently being inspected.
 
-An invalid color range or a failed bounded option refresh produces one actionable warning. Successful option edits do not add a separate INFO entry for every adjustment.
+An invalid color range or a failed bounded option refresh clears the prepared overlays and summary and produces one actionable warning. Correcting the settings recomputes them from the last successfully loaded strain. A failed Generate attempt retains the previous complete strain/output set. Successful option edits do not add a separate INFO entry for every adjustment.
 
 ## Processing And Scientific Semantics
 
@@ -63,7 +63,7 @@ Color limits affect rendering, not the stored numeric strain values used for the
 
 ## Optical Image Parameters
 
-Brightness defaults to `0`; contrast, gamma, saturation, and red/green/blue gain default to `1`. These controls prepare the visual background. They do not modify EXX/EYY values. Extreme settings can hide features or imply contrast that is not present in the strain field, so exported figures should retain the processing manifest.
+Brightness defaults to `0`; contrast, gamma, saturation, and red/green/blue gain default to `1`. These controls prepare the visual background. They do not modify EXX/EYY values. Extreme settings can hide features or imply contrast that is not present in the strain field, so record the processing settings alongside exported figures. The App exports overlays and a summary CSV; it does not produce a processing manifest.
 
 ## Outputs
 

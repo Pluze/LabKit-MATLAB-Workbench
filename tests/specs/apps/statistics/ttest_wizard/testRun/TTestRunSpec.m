@@ -2,6 +2,29 @@ classdef TTestRunSpec < matlab.unittest.TestCase
     %TTESTRUNSPEC Specify independent, pooled, paired, and grouped t tests.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function retainsSmallTailsAndTwoSidedSignSymmetry(testCase)
+            options = TTestRunSpec.options();
+            positive = [1e15 - 1, 1e15 + 1];
+            negative = -positive;
+            for alternative = ["two_sided", "greater", "less"]
+                options.alternative = alternative;
+                values = positive;
+                if alternative == "less", values = negative; end
+                result = ttest_wizard.testRun.runTTest(values, [0 0], options);
+                testCase.assertTrue(result.ok);
+                testCase.assertEqual(result.degreesOfFreedom, 1);
+                % With one degree of freedom, Student t is Cauchy. Its
+                % positive survival probability is atan(1/t)/pi.
+                expected = atan(1 / abs(result.tStatistic)) / pi;
+                if alternative == "two_sided", expected = 2 * expected; end
+                testCase.verifyEqual(result.pValue, expected, RelTol=1e-12);
+            end
+            options.alternative = "two_sided";
+            left = ttest_wizard.testRun.runTTest(negative, [0 0], options);
+            right = ttest_wizard.testRun.runTTest(positive, [0 0], options);
+            testCase.verifyEqual(left.pValue, right.pValue, RelTol=1e-12);
+        end
+
         function resolvesSelectionAndFreshnessWithoutChangingScientificDirection(testCase)
             % Oracle: reference B must remain vector A even when category C is first.
             groups = struct("label", {"C", "A", "B"}, ...

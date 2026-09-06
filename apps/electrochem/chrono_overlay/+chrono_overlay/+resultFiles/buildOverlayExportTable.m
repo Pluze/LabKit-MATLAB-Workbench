@@ -14,8 +14,9 @@ function T = buildOverlayExportTable(items)
     T = table(timeUnion, 'VariableNames', {'TimeGapCenterAligned_s'});
     for i = 1:numel(items)
         safeName = sanitizeFieldName(items(i).name);
-        vName = ['V_' safeName];
-        iName = ['I_' safeName];
+        names = matlab.lang.makeValidName({['V_' safeName], ['I_' safeName]});
+        names = matlab.lang.makeUniqueStrings(names, ...
+            T.Properties.VariableNames, namelengthmax);
 
         tAligned = chronoAlignedTime(items(i));
         Vf = chronoVoltage(items(i));
@@ -28,8 +29,8 @@ function T = buildOverlayExportTable(items)
             iData = NaN(size(timeUnion));
         end
 
-        T.(vName) = vData;
-        T.(iName) = iData;
+        T.(names{1}) = vData;
+        T.(names{2}) = iData;
     end
 end
 

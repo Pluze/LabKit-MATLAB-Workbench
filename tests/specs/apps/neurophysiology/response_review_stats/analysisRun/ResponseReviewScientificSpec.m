@@ -2,6 +2,35 @@ classdef ResponseReviewScientificSpec < matlab.unittest.TestCase
     %RESPONSEREVIEWSCIENTIFICSPEC Specify aligned response measurements.
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
+        function summarizesFiniteValuesWithoutDroppingRowCounts(testCase)
+            metrics = table(["pair"; "pair"; "pair"; "empty"], ...
+                [2; 6; Inf; NaN], [10; -Inf; 30; Inf], ...
+                VariableNames=["pairId", "peakToPeak", "snrDb"]);
+            summary = response_review_stats.analysisRun.summarizeMetrics(metrics);
+            testCase.verifyEqual(summary.Count, [3; 1]);
+            testCase.verifyEqual(summary.MeanPeakToPeak(1), 4);
+            testCase.verifyEqual(summary.MeanSnrDb(1), 20);
+            testCase.verifyTrue(isnan(summary.MeanPeakToPeak(2)));
+            testCase.verifyTrue(isnan(summary.MeanSnrDb(2)));
+        end
+
+        function measuresOnlyFiniteBaselineNoiseAndResponseSamples(testCase)
+            aligned = struct("timeSec", (0:5).', ...
+                "values", [[1; Inf; 3; 4; -2; NaN], NaN(6, 1)], ...
+                "segmentNames", ["finite support"; "missing"]);
+            options = struct("baselineWindowSec", [0 2], ...
+                "noiseWindowSec", [0 2], "measurementWindowSec", [3 5]);
+            metrics = response_review_stats.analysisRun.measureAlignedSegments( ...
+                aligned, options);
+            testCase.verifyEqual(metrics.PeakToPeak(1), 6);
+            testCase.verifyEqual(metrics.Peak1Value(1), 2);
+            testCase.verifyEqual(metrics.Peak2Value(1), -4);
+            testCase.verifyEqual(metrics.NoiseRMS(1), 1);
+            testCase.verifyEqual(metrics.SNR_dB(1), 20*log10(6), AbsTol=1e-12);
+            testCase.verifyTrue(isnan(metrics.PeakToPeak(2)));
+            testCase.verifyTrue(isnan(metrics.NoiseRMS(2)));
+        end
+
         function alignsSegmentCsvSignalsAndMeasuresTheirDistinctAmplitudes(testCase)
             source = syntheticSegments();
             segments = response_review_stats.sourceFiles.parseSegmentTable(source);

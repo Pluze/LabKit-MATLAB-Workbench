@@ -23,7 +23,6 @@ classdef (Sealed) CallbackContext < handle
     %   or nested service bag.
     %
     % Inputs:
-    %   state - Complete App-owned state value.
     %   message - Scalar reader-facing text.
     %   severity - Log severity from "trace" through "critical".
     %   eventName - Stable semantic event identifier.
@@ -41,7 +40,6 @@ classdef (Sealed) CallbackContext < handle
     %   updateState - Fixed callback
     %       state = callback(state,callbackContext). The callback receives the
     %       latest committed state when Runtime dispatches the event.
-    %   count - Nonnegative integer diagnostic count.
     %   title - Scalar reader-facing dialog title. inform presents non-error
     %       information with the native information icon; alert presents a
     %       blocking problem with the native error icon.
@@ -59,8 +57,6 @@ classdef (Sealed) CallbackContext < handle
     %   cleanup - Empty or fixed callback cleanup(value).
     %
     % Outputs:
-    %   state - Complete restored App state prepared for the current runtime
-    %       transaction.
     %   result - labkit.app.dialog.Choice for dialogs.
     %   value - Stored resource value.
     %

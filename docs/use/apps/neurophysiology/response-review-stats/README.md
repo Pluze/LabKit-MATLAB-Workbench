@@ -72,6 +72,8 @@ Each segment supplies `timeSec`, `values`, and `name`. An optional `alignTimeSec
 
 ## Measurements And Summary
 
+Baseline, noise, and peak calculations use finite samples only. Windows without usable samples keep their metrics as `NaN`.
+
 For each aligned segment, the calculation subtracts the baseline mean and reports positive and negative peaks, peak-to-peak amplitude, noise RMS, and SNR. The summary groups rows by `pairId` when available; otherwise it uses the segment name. Counts are included so exclusions and missing rows remain visible.
 
 ## Output Files

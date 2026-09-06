@@ -38,14 +38,6 @@ applicationState.session.cache.images = {items.image}.';
 applicationState.session.cache.canvas = ...
     batch_crop.cropGeometry.emptyCanvasCache();
 options = batch_crop.resultFiles.currentOptions(applicationState);
-plan = batch_crop.resultFiles.exportPlan(items, options);
-results = applicationState.project.results;
-if ~isempty(results.lastExport) && ...
-        results.lastExportFingerprint == plan.fingerprint
-    callbackContext.log("info", "batch_crop.resultfiles.exportcrops.skipped", ...
-        "Crop export is already up to date; skipped duplicate write.");
-    return
-end
 try
     if strlength(options.outputFolder) > 0 && ...
             exist(options.outputFolder, "dir") ~= 7
@@ -60,7 +52,6 @@ catch cause
 end
 payload.resultManifestPath = payload.manifestPath;
 applicationState.project.results.lastExport = payload;
-applicationState.project.results.lastExportFingerprint = plan.fingerprint;
 applicationState.project.results.resultManifestPath = payload.manifestPath;
 statuses = string({payload.results.status});
 savedCount = sum(statuses == "saved");

@@ -62,6 +62,7 @@ def validate(root: Path) -> int:
         if not description:
             raise SkillContractError(f"{folder}: description is required")
         validate_skill_routes(skill_path, text, skills)
+        validate_documentation_routes(root, skill_path, text)
         validate_links(folder, text)
         validate_portability(folder)
         validate_openai_metadata(folder, name)
@@ -77,6 +78,17 @@ def validate_skill_routes(path: Path, text: str, skills: set[str]) -> None:
     if unknown:
         raise SkillContractError(
             f"{path}: unknown Skill route {sorted(unknown)[0]}")
+
+
+def validate_documentation_routes(root: Path, path: Path, text: str) -> None:
+    # Literal current-manual routes are repo-relative even inside a Skill.
+    references = re.findall(r"`(docs/[^`\s]+\.md(?:#[^`\s]*)?)`", text)
+    for reference in references:
+        target = reference.split("#", 1)[0]
+        if any(character in target for character in "<>*"):
+            continue  # Parameterized documentation families are not literal routes.
+        if not (root / target).is_file():
+            raise SkillContractError(f"{path}: missing documentation route {target}")
 
 
 def validate_links(folder: Path, text: str) -> None:

@@ -43,6 +43,15 @@ classdef ImageMatchWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(numel(payload.results), 1);
             testCase.verifyTrue(isfile(payload.results(1).outputPath));
             testCase.verifyTrue(isfile(payload.resultManifestPath));
+            firstPixels = imread(payload.results(1).outputPath);
+            imwrite(zeros(32, 48, 3, "uint8"), reference);
+            runtime.invokeAction("exportImages");
+            secondExport = runtime.State.project.results.lastExport.results(1).outputPath;
+            testCase.verifyNotEqual(imread(secondExport), firstPixels);
+            delete(secondExport);
+            runtime.invokeAction("exportImages");
+            testCase.verifyTrue(isfile( ...
+                runtime.State.project.results.lastExport.results(1).outputPath));
             runtime.invokeAction("resetHistory");
             testCase.verifyEmpty(runtime.State.project.annotations.steps);
             clear cleanup

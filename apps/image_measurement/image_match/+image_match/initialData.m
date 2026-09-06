@@ -16,7 +16,7 @@ function project = createProject()
     project.annotations = struct("steps", repmat( ...
         image_match.analysisRun.emptyStep(), 0, 1));
     project.results = struct("lastExport", [], ...
-        "lastExportFingerprint", "", "resultManifestPath", "");
+        "resultManifestPath", "");
 end
 
 function sources = emptySources()

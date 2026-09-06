@@ -228,7 +228,7 @@ end
 function description = libraryDescription(key)
     switch key
         case "labkit.contract"
-            description = "Version and MathWorks-product requirement contracts.";
+            description = "Installed facade version requirement contracts.";
         case "labkit.image"
             description = "Generic image file IO, normalization, resizing, filtering, and enhancement primitives.";
         case "labkit.thermal"

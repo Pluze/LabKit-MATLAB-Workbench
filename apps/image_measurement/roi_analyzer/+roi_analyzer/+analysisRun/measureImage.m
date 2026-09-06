@@ -35,7 +35,7 @@ function result = measureImage(imageData, rois, ratioDenominatorRoiId)
 %   roi_analyzer:analysisRun:InvalidRoi - An ROI is malformed or unknown.
 %
 % Example:
-%   roi = roi_analyzer.roiLibrary.emptyRoi();
+%   roi = struct("shape", "Rectangle");
 %   roi.id = "sample"; roi.name = "Sample";
 %   roi.position = [1 1 2 2];
 %   result = roi_analyzer.analysisRun.measureImage([1 2; 3 4], roi);

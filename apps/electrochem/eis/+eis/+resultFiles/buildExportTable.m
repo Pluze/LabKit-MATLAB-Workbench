@@ -34,8 +34,10 @@ function T = buildExportTable( ...
             exportAxisName(xName, impedanceUnit), safeName));
         yVar = matlab.lang.makeValidName(sprintf('Y_%s_%s', ...
             exportAxisName(yName, impedanceUnit), safeName));
-        T.(xVar) = padWithNaN(xCell{i}, maxLen);
-        T.(yVar) = padWithNaN(yCell{i}, maxLen);
+        names = matlab.lang.makeUniqueStrings({xVar, yVar}, ...
+            T.Properties.VariableNames, namelengthmax);
+        T.(names{1}) = padWithNaN(xCell{i}, maxLen);
+        T.(names{2}) = padWithNaN(yCell{i}, maxLen);
     end
 end
 

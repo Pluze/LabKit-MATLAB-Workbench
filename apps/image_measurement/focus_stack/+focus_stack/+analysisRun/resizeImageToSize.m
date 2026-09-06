@@ -34,9 +34,17 @@ function imageOut = resizeLinear(imageIn, targetSize)
     [colGrid, rowGrid] = meshgrid(queryCols, queryRows);
     imageOut = zeros(targetRows, targetCols, size(imageIn, 3));
     for channel = 1:size(imageIn, 3)
+        samples = double(imageIn(:, :, channel));
+        % Pyramid reduction may leave one row or column; extend it constantly.
+        if size(samples, 1) == 1
+            samples = repmat(samples, 2, 1);
+        end
+        if size(samples, 2) == 1
+            samples = repmat(samples, 1, 2);
+        end
         imageOut(:, :, channel) = interp2( ...
-            1:size(imageIn, 2), 1:size(imageIn, 1), ...
-            double(imageIn(:, :, channel)), colGrid, rowGrid, ...
+            1:size(samples, 2), 1:size(samples, 1), ...
+            samples, colGrid, rowGrid, ...
             'linear', NaN);
     end
     imageOut(~isfinite(imageOut)) = 0;

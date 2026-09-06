@@ -2,6 +2,20 @@ classdef ImageFacadeSpec < matlab.unittest.TestCase
     %IMAGEFACADEPEC Specify public image file and conversion behavior.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function linearlyResizesSingletonAxesWithoutLosingClass(testCase)
+            [row, scale] = labkit.image.resizeToFit(uint8([0 100]), ...
+                MaxHeight=2, MaxWidth=4, AllowUpscale=true);
+            testCase.verifyEqual(row, uint8([0 33 67 100; 0 33 67 100]));
+            testCase.verifyEqual(scale, 2);
+            column = labkit.image.resizeToFit(single([0; 1]), ...
+                MaxHeight=4, MaxWidth=2, AllowUpscale=true);
+            testCase.verifyEqual(column, single([0 0; 1/3 1/3; 2/3 2/3; 1 1]), ...
+                AbsTol=single(1e-7));
+            pixel = labkit.image.resizeToFit(uint8(70), ...
+                MaxHeight=3, MaxWidth=3, AllowUpscale=true);
+            testCase.verifyEqual(pixel, repmat(uint8(70), 3, 3));
+        end
+
         function rejectsUnknownReadOptions(testCase)
             testCase.verifyError(@() labkit.image.readFiles( ...
                 strings(0, 1), struct("Normalise", true)), ...

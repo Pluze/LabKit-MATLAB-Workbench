@@ -2,6 +2,26 @@ classdef Mark10AnalysisSpec < matlab.unittest.TestCase
     %MARK10ANALYSISSPEC Specify branch segmentation and modulus calculations.
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
+        function cyclicLabelsFollowNormalizedForcePolarity(testCase)
+            travel = [linspace(0, 2, 101), linspace(2, 0, 101)].';
+            time = (0:numel(travel)-1).' / 50;
+            for polarity = [-1, 1]
+                result = mark10_monitor.analysis.compute( ...
+                    time, polarity * 3 * travel, travel, ...
+                    parameters("Automatic"), "Cyclic");
+                expected = "Tension";
+                if polarity < 0, expected = "Compression"; end
+                testCase.verifyTrue(all(startsWith( ...
+                    string(result.rows(:, 2)), expected)));
+                testCase.verifyTrue(any(endsWith( ...
+                    string(result.rows(:, 2)), "loading")));
+                testCase.verifyTrue(any(endsWith( ...
+                    string(result.rows(:, 2)), "recovery")));
+                testCase.verifyEqual(cell2mat(result.rows(:, 9)), ...
+                    15 * ones(result.segmentCount, 1), AbsTol=1e-10);
+            end
+        end
+
         function recoversKnownModulusForCyclicLoadingAndRecovery(testCase)
             travel = [linspace(0, 2, 101), linspace(2, 0, 101), ...
                 linspace(0, 1.5, 81)].';

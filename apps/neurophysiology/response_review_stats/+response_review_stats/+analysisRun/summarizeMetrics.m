@@ -61,15 +61,20 @@ function summary = summarizeMetrics(metrics)
         mask = groupValues == groups(k);
         Count(k) = sum(mask);
         if ismember("PeakToPeak", metrics.Properties.VariableNames)
-            MeanPeakToPeak(k) = mean(metrics.PeakToPeak(mask), "omitnan");
+            MeanPeakToPeak(k) = finiteMean(metrics.PeakToPeak(mask));
         elseif ismember("peakToPeak", metrics.Properties.VariableNames)
-            MeanPeakToPeak(k) = mean(metrics.peakToPeak(mask), "omitnan");
+            MeanPeakToPeak(k) = finiteMean(metrics.peakToPeak(mask));
         end
         if ismember("SNR_dB", metrics.Properties.VariableNames)
-            MeanSnrDb(k) = mean(metrics.SNR_dB(mask), "omitnan");
+            MeanSnrDb(k) = finiteMean(metrics.SNR_dB(mask));
         elseif ismember("snrDb", metrics.Properties.VariableNames)
-            MeanSnrDb(k) = mean(metrics.snrDb(mask), "omitnan");
+            MeanSnrDb(k) = finiteMean(metrics.snrDb(mask));
         end
     end
     summary = table(Group, Count, MeanPeakToPeak, MeanSnrDb);
+end
+
+function value = finiteMean(values)
+    % Grouped summaries retain row counts but average finite numeric support.
+    value = mean(values(isfinite(values)));
 end

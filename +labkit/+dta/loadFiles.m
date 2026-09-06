@@ -47,7 +47,7 @@ function [items, report] = loadFiles(filepaths, expectedKind, opts)
 %   for an unsupported expectedKind. Individual file read failures are stored
 %   in report instead of thrown.
 %
-% Example:
+% Typical Call:
 %   files = ["run-01.DTA", "run-02.DTA"];
 %   [items, report] = labkit.dta.loadFiles(files, "chrono");
 %   fprintf("Loaded %d of %d files.\n", report.nLoaded, report.nRequested)

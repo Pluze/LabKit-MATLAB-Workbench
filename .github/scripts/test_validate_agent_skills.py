@@ -95,6 +95,23 @@ class ValidateAgentSkillsTest(unittest.TestCase):
                                         "unknown Skill route labkit-missing"):
                 MODULE.validate(root)
 
+    def test_checks_literal_documentation_routes_from_repository_root(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            folder = self.make_skill(root)
+            manual = root / "docs" / "develop" / "tool.md"
+            manual.parent.mkdir(parents=True)
+            manual.write_text("# Tool\n", encoding="utf-8")
+            path = folder / "SKILL.md"
+            original = path.read_text(encoding="utf-8")
+            path.write_text(original + "Read `docs/develop/tool.md#usage`.\n",
+                            encoding="utf-8")
+            self.assertEqual(MODULE.validate(root), 1)
+            manual.unlink()
+            with self.assertRaisesRegex(MODULE.SkillContractError,
+                                        "missing documentation route"):
+                MODULE.validate(root)
+
     def test_rejects_name_drift(self):
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)

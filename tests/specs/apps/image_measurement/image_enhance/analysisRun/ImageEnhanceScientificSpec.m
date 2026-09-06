@@ -2,6 +2,17 @@ classdef ImageEnhanceScientificSpec < matlab.unittest.TestCase
     %IMAGEENHANCESCIENTIFICSPEC Specify reproducible enhancement transforms.
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
+        function neutralBackgroundAtTargetIsNotLiftedByASaturatedSubject(testCase)
+            source = .9 * ones(60, 60, 3);
+            source(31:60, :, :) = repmat(reshape([.8 .1 .1], 1, 1, 3), 30, 60);
+            step = image_enhance.analysisRun.makeStep( ...
+                "Subject-preserving enhance", 100, 90, 0);
+            output = image_enhance.analysisRun.applyStep(source, step, []);
+            % Neutral background already meets the target; allow only the
+            % small influence of mask smoothing at the subject boundary.
+            testCase.verifyLessThan(mean(output(1:10, :, :), "all"), .92);
+        end
+
         function appliesBrightnessContrastAndSharpeningWithinDisplayRange(testCase)
             image = syntheticImage();
             steps = [ ...

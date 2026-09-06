@@ -169,6 +169,8 @@ results = ttest_wizard.testRun.runGroupTTests(groups, options);
 
 [`runGroupTTests`](../../../../reference/api/ttest_wizard/testRun/runGroupTTests.html) returns one canonical [`runTTest`](../../../../reference/api/ttest_wizard/testRun/runTTest.html) result per later group.
 
+The calculation evaluates the selected Student-t tail directly, preserving small representable p-values for large finite statistics. Two-sided values are symmetric under swapping group order. Values below floating-point range can still underflow to zero.
+
 ## Assumptions And Limitations
 
 - Observations must share a meaningful measurement unit.

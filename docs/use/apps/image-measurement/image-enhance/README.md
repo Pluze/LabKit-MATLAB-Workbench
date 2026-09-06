@@ -4,10 +4,10 @@
 id: app-image-enhance
 type: landing
 audience: app-user
-summary: Image Enhance builds an ordered, reversible processing history for one image or a batch and exports the resulting images with the exact step sequence.
+summary: Image Enhance builds an ordered, reversible processing history for one image or a batch and exports the resulting images with a completion manifest.
 ```
 
-Image Enhance builds an ordered, reversible processing history for one image or a batch and exports the resulting images with the exact step sequence.
+Image Enhance builds an ordered, reversible processing history for one image or a batch and exports the resulting images with a completion manifest.
 
 Preview and export use the current processing history directly, keeping one authoritative sequence for both outcomes.
 
@@ -28,7 +28,7 @@ The batch accepts selected image files; directory actions can collect a flat or 
 1. Load images and select a representative source.
 2. Decide whether steps are shared across the batch.
 3. Choose a tool and set its controls; the two adjustment labels update to show that tool's parameter names and units.
-4. For White ROI calibration, draw the white-background ROI first.
+4. For White ROI calibration, turn off batch mode and draw the white-background ROI for the selected image.
 5. Apply the tool to history and inspect Enhanced, Original, or Before | After.
 6. Undo or reset history as needed.
 7. Choose output format/folder and export.
@@ -49,7 +49,7 @@ Each **Apply tool** action saves one processing step. Panner changes preview the
 
 Processing converts input to RGB double in `[0,1]`, applies steps in table order, and clamps the final image. Brightness, local contrast, sharpening, hue/saturation, and gray-world white balance call the linked `labkit.image` primitives.
 
-White ROI calibration requires a valid rectangle for every affected image. It builds a softened background mask from the rectangle and adjusts luminance toward the target while limiting subject changes. Subject-preserving enhance estimates a low-saturation bright background automatically and uses a whole image fallback only when no usable background support is found.
+White ROI calibration is available only with batch mode off and requires a valid rectangle for the selected image. It builds a softened background mask from the rectangle and adjusts luminance toward the target while limiting subject changes. Subject-preserving enhance estimates a low-saturation bright background automatically and uses a whole image fallback only when no usable background support is found.
 
 ## History And Reproducibility
 
@@ -57,7 +57,7 @@ The history table records step kind and settings in execution order. **Undo hist
 
 ## Outputs
 
-Export supports PNG, TIFF, and JPEG. Each output is rendered from the source plus its effective stored pipeline, not from a downsampled preview. The export manifest records source, ordered steps, ROI geometry, batch mode, format, and output filename. A LabKit result JSON records the complete output set and the project parameters used to create it.
+Export supports PNG, TIFF, and JPEG. Each output is rendered from the source plus its effective stored pipeline, not from a downsampled preview. The CSV manifest records source and output paths, status, output dimensions, step count, and a message. Each explicit export reads the source files again and writes a new output set with unique filenames. The manifest does not store step settings or ROI geometry, and the App does not write a result JSON or a restorable task. Record those settings separately when reproducibility is required.
 
 ## Use Without The GUI
 
@@ -81,8 +81,10 @@ An empty launch does not choose an output directory. Adding images establishes t
 - Unknown step labels are rejected.
 - An unreadable selected image reports the source problem.
 - White ROI calibration fails when a required image has no valid ROI.
-- Enhancement changes pixel values and can invalidate quantitative intensity analysis; retain the source and manifest.
+- Enhancement changes pixel values and can invalidate quantitative intensity analysis; retain the source, processing settings, and manifest.
 - JPEG export adds lossy compression after processing.
+
+Subject-preserving enhancement identifies bright, low-saturation backgrounds with a descending saturation mask. A saturated subject does not become the white-background reference merely because its saturation is higher.
 
 ## Related Topics
 

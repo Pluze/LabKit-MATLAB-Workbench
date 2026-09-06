@@ -81,7 +81,9 @@ function [events, trains] = detectEventTrains(timeSec, signal, opts)
 %
 % Failure Behavior:
 %   Empty input or a signal with no qualifying candidates returns empty tables
-%   with stable column names.
+%   with stable column names. Constant or wholly missing signals produce no
+%   events. A sole finite sample extends as a constant, without creating a
+%   transition. Every candidate must have a strictly positive score.
 %
 % Errors:
 %   nerve_response_analysis:EventSizeMismatch - timeSec and signal lengths
@@ -205,6 +207,8 @@ function y = fillMissing(y)
     good = find(~bad);
     if isempty(good)
         y(:) = 0;
+    elseif isscalar(good)
+        y(:) = y(good);
     else
         y(bad) = interp1(good, y(good), find(bad), "linear", "extrap");
     end
@@ -228,12 +232,12 @@ end
 
 function idx = localMaxima(score, threshold)
     if numel(score) < 3
-        idx = find(score >= threshold);
+        idx = find(score > 0 & score >= threshold);
         return;
     end
     left = [-Inf; score(1:end-1)];
     right = [score(2:end); -Inf];
-    idx = find(score >= threshold & score >= left & score > right);
+    idx = find(score > 0 & score >= threshold & score >= left & score > right);
 end
 
 function idx = enforceMinimumDistance(idx, timeSec, score, minDistanceSec)

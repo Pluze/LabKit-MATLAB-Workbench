@@ -104,6 +104,8 @@ Peak polarity is selected automatically. The default detector threshold is 2.8 s
 
 **Export waveform PNG** writes `ecg_waveform.png`.
 
+The standalone `analyzeSignal` API accepts the same three peak-method labels as the App and rejects unknown labels with `ecg_print:UnsupportedPeakMethodLabel`.
+
 ## Related Functions And Documentation
 
 - `ecg_print.analysisRun.analyzeSignal`

@@ -41,6 +41,8 @@ All-cycle plots use a distinct color for each cycle; cathodic and anodic current
 
 ## Calculation Semantics
 
+Rows with nonfinite time, voltage, or current are removed together before integration; at least two finite rows must remain. The retained adjacent samples define the integration intervals.
+
 Time-domain charge integrates current against time. CV-domain charge integrates current against potential and divides by positive scan rate. Each line segment is split at a current zero crossing so cathodic and anodic contributions are assigned without smearing a sign change across one trapezoid.
 
 ```text

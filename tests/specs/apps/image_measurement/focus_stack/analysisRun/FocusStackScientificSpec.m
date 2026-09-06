@@ -2,6 +2,17 @@ classdef FocusStackScientificSpec < matlab.unittest.TestCase
     %FOCUSSTACKSCIENTIFICSPEC Specify focus selection and registration behavior.
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
+        function preservesIdenticalSmallAndSingletonImages(testCase)
+            dimensions = [1 1; 1 5; 5 1; 2 2];
+            for index = 1:size(dimensions, 1)
+                input = 0.4 * ones(dimensions(index, :));
+                result = focus_stack.analysisRun.computeFocusStack({input, input});
+                testCase.verifyEqual(result.fused, input, AbsTol=1e-12);
+                testCase.verifySize(result.focusIndex, size(input));
+                testCase.verifyEqual(sum(result.focusCoverage), 1, AbsTol=1e-12);
+            end
+        end
+
         function selectsTheSharpSliceAcrossComplementaryRegions(testCase)
             [nearImage, farImage, midpoint] = syntheticFocusPair();
             result = focus_stack.analysisRun.computeFocusStack( ...

@@ -17,7 +17,7 @@ function values = ports()
 % Errors:
 %   MATLAB serialportlist errors are propagated.
 %
-% Example:
+% Typical Call:
 %   values = labkit.mark10.ports();
 %   assert(iscolumn(values))
 %

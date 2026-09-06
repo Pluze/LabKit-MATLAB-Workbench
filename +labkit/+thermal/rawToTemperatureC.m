@@ -36,7 +36,7 @@ function [temperatureC, diagnostics] = rawToTemperatureC(raw, calibration, opts)
 %       Defaults to ReflectedApparentTemperatureC.
 %   IRWindowTransmission - Infrared-window transmission in (0,1]. Default: 1.
 %   RelativeHumidity - Relative humidity as a fraction from 0 to 1 or as a
-%       percentage greater than 2. Default: 0.5.
+%       percentage greater than 1. Default: 0.5.
 %   AtmosphericTransAlpha1 - First atmospheric alpha coefficient. Default:
 %       0.006569.
 %   AtmosphericTransAlpha2 - Second atmospheric alpha coefficient. Default:

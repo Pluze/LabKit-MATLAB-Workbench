@@ -63,7 +63,7 @@ function A = computeCSC(curve, opts)
 %   charge-density differences visible without requiring the CSC GUI.
 %
 % Calculations:
-%   Rows containing NaN in T, Vf, or Im are removed together. Each adjacent
+%   Rows containing nonfinite T, Vf, or Im are removed together. Each adjacent
 %   sample interval is split where linearly interpolated current crosses zero.
 %   CT charge integrates current over measured time. CV charge uses
 %   dt=abs(dV)/scanRate for the same current endpoints. Cathodic contributions
@@ -114,7 +114,7 @@ function A = computeCSC(curve, opts)
     V = exactColumn(curve, 'Vf');
     I = exactColumn(curve, 'Im');
 
-    good = ~(isnan(t) | isnan(V) | isnan(I));
+    good = isfinite(t) & isfinite(V) & isfinite(I);
     t = t(good);
     V = V(good);
     I = I(good);

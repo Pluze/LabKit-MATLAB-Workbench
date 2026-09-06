@@ -2,6 +2,18 @@ classdef ImageMatchScientificSpec < matlab.unittest.TestCase
     %IMAGEMATCHSCIENTIFICSPEC Specify reference-guided color and tone matching.
 
     methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
+        function acceptsSinglePixelSourcesAndReferences(testCase)
+            source = reshape([.2 .4 .6], 1, 1, 3);
+            for method = ["Balanced", "White balance", "Tone only", ...
+                    "Protected tone", "Lab style", "Histogram"]
+                step = image_match.analysisRun.makeStep(method, 100, 100, 100);
+                output = image_match.analysisRun.applyMatch(source, source, step);
+                testCase.verifySize(output, [1 1 3]);
+                testCase.verifyTrue(all(isfinite(output), "all"));
+                testCase.verifyTrue(all(output >= 0 & output <= 1, "all"));
+            end
+        end
+
         function whiteBalanceMovesSourceChannelRatiosTowardTheReference(testCase)
             base = gradientImage();
             source = tint(base, [.62 .86 1.25]);

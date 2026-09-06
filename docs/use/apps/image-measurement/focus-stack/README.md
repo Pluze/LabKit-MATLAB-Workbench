@@ -23,7 +23,7 @@ labkit_FocusStack_app
 
 Choose focal planes directly, or discover them from a flat or nested image directory. Remove blurred, displaced, or otherwise invalid frames before running. The first image defines working geometry; differently sized inputs are resized and the result records how many images required resizing.
 
-Project restore validates the selected fusion preset, odd focus-window range, smoothing and blend ranges, logical registration flag, and durable result shape before rebuilding transient image data.
+Sources, fusion settings, and computed results remain in memory while the App is open. Reopen the source images to start another session; the App does not save or restore a stack project.
 
 ## Basic Workflow
 
@@ -77,10 +77,12 @@ assert(result.ok, result.message);
 imwrite(result.fused, "stacked.png");
 ```
 
+Pyramid resampling supports small images and singleton rows or columns by treating the singleton axis as constant. A one-pixel image supplies intensity only, not spatial focus information.
+
 ## Errors And Limitations
 
 - Fewer than two images is an error.
-- Reopening a saved stack is strict: an existing image that cannot be decoded aborts restore and leaves the current document unchanged.
+- An unreadable source reports a loading failure; correct or remove that source before fusion.
 - `minConfidence` must be finite and between 0 and 1.
 - Resizing changes sampling and should not substitute for consistent capture.
 - Auto-registration should be reviewed; a wrong registration can create a sharp-looking but geometrically false composite.

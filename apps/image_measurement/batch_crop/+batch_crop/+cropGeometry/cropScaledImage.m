@@ -95,6 +95,13 @@ function out = resizeImage(imageData, outputSize)
     out = zeros([outputSize, size(imageData, 3)], 'like', imageData);
     for c = 1:size(imageData, 3)
         channel = double(imageData(:, :, c));
+        % A singleton axis has constant intensity along its resampled extent.
+        if size(channel, 1) == 1
+            channel = repmat(channel, 2, 1);
+        end
+        if size(channel, 2) == 1
+            channel = repmat(channel, 1, 2);
+        end
         resized = interp2(channel, xq, yq, 'linear');
         out(:, :, c) = cast(resized, class(imageData));
     end

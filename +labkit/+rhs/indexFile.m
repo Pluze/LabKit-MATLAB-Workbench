@@ -37,7 +37,7 @@ function [index, status] = indexFile(filepath)
 %   Throws labkit:rhs:InvalidFilepath for an invalid filepath argument.
 %   File and header failures are returned in status.
 %
-% Example:
+% Typical Call:
 %   [index, status] = labkit.rhs.indexFile("recording.rhs");
 %   if status.ok && index.hasData
 %       fprintf("%d samples in %d blocks\n", ...

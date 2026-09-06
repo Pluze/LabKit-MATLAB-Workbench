@@ -61,7 +61,7 @@ function [window, status] = readWindow(filepath, opts)
 %   Missing files, malformed headers, absent channel families, files without
 %   complete data blocks, and waveform read failures return status.ok=false.
 %
-% Example:
+% Typical Call:
 %   opts = struct("family", "stim", ...
 %       "channels", ["C-001", "C-002"], ...
 %       "timeRangeSec", [0.1 0.2]);

@@ -151,7 +151,7 @@ runtime presentation
             -> renderer(axes, prepared model)
 ```
 
-The `RefreshState` and `OnStart` callbacks, `workbench.present`, and functions bound directly to layout signals may accept the complete envelope. `CreateState` creates that value; App-local state builders receive the inputs they actually need. State-consuming boundary functions name that input `applicationState` and unpack it immediately. Layout callbacks expose their typed event and `callbackContext` when their declared signature requires them; presenters receive state only. Feature presenters, renderers, calculations, writers, and local helpers receive named narrow inputs.
+Runtime callbacks, `workbench.present`, and App-local workflow continuations coordinate the complete state envelope when a transition needs both project and session updates. This includes callbacks posted through `CallbackContext.postEvent`. `CreateState` creates the envelope; lower-level state builders, feature presenters, renderers, calculations, and writers receive their named inputs. Complete state is named `applicationState` at an orchestration boundary so its role is explicit. Layout callbacks expose their typed event and `callbackContext` when their declared signature requires them; presenters receive state only.
 
 Do not introduce a second App object, service bag, callback registry, or feature-wide context type to hide these inputs. If a calculation needs five scientific values, list those five values. If several always travel together and form a stable app-owned concept, give that concept a semantic struct and validate it at its owner.
 
