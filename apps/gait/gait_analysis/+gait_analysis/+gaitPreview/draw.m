@@ -40,6 +40,7 @@ end
 
 function drawSkeletons(ax, model, showFullRecording)
     pose = model.pose;
+    [coordinates, unit] = spatialCoordinates(pose.coords, model.options);
     frames = 1:size(pose.coords, 1);
     titleText = "All overlaid skeleton trajectories";
     if ~showFullRecording && model.result.ok && ...
@@ -55,26 +56,40 @@ function drawSkeletons(ax, model, showFullRecording)
     for k = 1:size(edges, 1)
         first = edges(k, 1);
         second = edges(k, 2);
-        x = [pose.coords(frames, first, 1), ...
-            pose.coords(frames, second, 1), NaN(numel(frames), 1)].';
-        y = [pose.coords(frames, first, 2), ...
-            pose.coords(frames, second, 2), NaN(numel(frames), 1)].';
+        x = [coordinates(frames, first, 1), ...
+            coordinates(frames, second, 1), NaN(numel(frames), 1)].';
+        y = [coordinates(frames, first, 2), ...
+            coordinates(frames, second, 2), NaN(numel(frames), 1)].';
         plot(ax, x(:), y(:), "-", ...
             "Color", [0.55 0.55 0.55], ...
             "HandleVisibility", "off");
     end
     for k = 1:numel(pose.pointNames)
-        plot(ax, pose.coords(frames, k, 1), pose.coords(frames, k, 2), ...
+        plot(ax, coordinates(frames, k, 1), coordinates(frames, k, 2), ...
             ".-", ...
             "DisplayName", char(pose.pointNames(k)));
     end
     hold(ax, "off");
     title(ax, titleText);
-    xlabel(ax, "Pixel X");
-    ylabel(ax, "Pixel Y");
+    xlabel(ax, "X (" + unit + ")");
+    ylabel(ax, "Y (" + unit + ")");
     grid(ax, "on");
     legend(ax, "Location", "best");
     labkit.app.plot.fitAxesToGraphics(ax, EqualDataUnits=true);
+end
+
+function [coordinates, unit] = spatialCoordinates(coordinates, options)
+    % Gait source coordinates are pixels; the current calibration defines
+    % the physical display coordinate without changing the image origin.
+    pixelsPerUnit = double(options.pixelsPerUnit);
+    unit = string(options.unitName);
+    calibrated = isscalar(pixelsPerUnit) && isfinite(pixelsPerUnit) && ...
+        pixelsPerUnit > 0 && isscalar(unit) && strlength(unit) > 0;
+    if calibrated
+        coordinates = double(coordinates) ./ pixelsPerUnit;
+    else
+        unit = "px";
+    end
 end
 
 function drawAngles(ax, model)
