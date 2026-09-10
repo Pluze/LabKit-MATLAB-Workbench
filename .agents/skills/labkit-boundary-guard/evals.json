@@ -30,6 +30,11 @@
       "prompt": "The App needs a background device service with cancel and close behavior.",
       "should_activate": true,
       "rationale": "Background lifecycle is a boundary decision."
+    },
+    {
+      "prompt": "Let a public App call an NI vendor API directly when the driver happens to be installed.",
+      "should_activate": true,
+      "rationale": "A vendor runtime and App-to-facade dependency exception require an explicit guarded boundary decision."
     }
   ]
 }

@@ -35,6 +35,7 @@ See [Use LabKit](../README.md) for installation, updating, version selection, an
 | Compare cyclic and time-domain CSC | [CSC](electrochemistry/csc/README.md) | CV/CT DTA | Per-cycle CSC and CV data |
 | Inspect impedance curves | [EIS](electrochemistry/eis/README.md) | EIS DTA | Nyquist/Bode plots and CSV |
 | Estimate voltage-transient resistance | [VT Resistance](electrochemistry/vt-resistance/README.md) | Chrono DTA | Resistance table and CSV |
+| Record NI-DMM voltage, current, resistance, or diode measurements | [NI-DMM Recorder](electrical-measurement/ni-dmm-recorder/README.md) | NI-DMM instrument | UTC-aligned CSV and complete MAT recording |
 | Convert tracked points into gait metrics | [Gait Analysis](gait/gait-analysis/README.md) | Current Video Marker archive MAT | Frame, step, coordinate, and summary tables |
 | Monitor, record, replay, and fit Mark-10 force/travel data | [Mark-10 Monitor](force-gauges/mark10-monitor/README.md) | ESM303 + Series 5, CSV, LOG, or MAT | Live plots, recordings, branch stiffness, and modulus CSV |
 | Compare image intensity inside reusable regions | [ROI Analyzer](image-measurement/roi-analyzer/README.md) | Scalar or RGB images | ROI statistics, project MAT, parameter JSON, and CSV |
@@ -56,6 +57,7 @@ See [Use LabKit](../README.md) for installation, updating, version selection, an
 
 - [DIC](dic/README.md) - preparation and postprocessing around a DIC solver.
 - [Electrochemistry](electrochemistry/README.md) - DTA-based chrono, CV/CT, impedance, charge, and resistance workflows.
+- [Electrical Measurement](electrical-measurement/README.md) - direct electrical-instrument recording and synchronized exports.
 - [Gait](gait/README.md) - pose-coordinate analysis and gait metrics.
 - [Force Gauges](force-gauges/README.md) - force/travel monitoring, recording, safe gauge setup, replay, and specimen analysis.
 - [Image Measurement](image-measurement/README.md) - calibrated image, thermal, annotation, crop, fusion, and appearance workflows.

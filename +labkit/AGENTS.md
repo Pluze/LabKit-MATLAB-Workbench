@@ -28,7 +28,7 @@ Use `labkittest.explain` to find the exact owner and contract.
   exports, file queues, and workflow decisions in apps.
 - Do not add public helper-dump packages such as `analysis`, `data`, `io`, or
   `util`.
-- `labkit.image`, `thermal`, `dta`, `rhs`, `biosignal`, and `mark10` stay GUI-free and
+- `labkit.image`, `thermal`, `dta`, `rhs`, `biosignal`, `mark10`, and `nidmm` stay GUI-free and
   app-free. Each owns its documented file/data/scientific primitive contract,
   not an app's task orchestration.
 - `labkit.app` owns the App SDK. Registry mutation, queueing, concrete
@@ -41,7 +41,9 @@ Use `labkittest.explain` to find the exact owner and contract.
   SDK ownership and lifecycle contracts. Converting App struct state to classes
   or introducing a public inheritance/state model requires an explicit design
   decision from the user; existing task authorization can supply that decision.
-  Runtime dependencies follow the root Base MATLAB contract.
+  Runtime dependencies follow the root contract. Only `labkit.nidmm` may use
+  its exact codecheck-ledgered private NI-DMM adapter; that exception does not
+  extend to `labkit.app`, another facade, or any public API value.
 - The App SDK is a stable composition-only contract: no public inheritance
   hierarchy, mutable handle-state model, version-named namespace, or adapter
   back to retired author-facing transport structs.

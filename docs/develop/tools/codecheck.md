@@ -52,7 +52,7 @@ The returned struct contains:
 | `suppressedIssueCount` | Suppressed issue count reported by MATLAB. |
 | `compatibilityCheckCount` | Number of compatibility checks MATLAB performed. |
 | `compatibilityRecommendationCount` | Number of compatibility recommendations found in scanned source. |
-| `runtimeViolationCount` | Number of direct Java, Python, Conda, shell, MEX/native, .NET, or ActiveX entry points outside the exact public test-infrastructure allowance ledger. |
+| `runtimeViolationCount` | Number of direct Java, Python, Conda, shell, MEX/native, .NET, NI-DMM, or ActiveX entry points outside the exact allowance ledger. |
 | `runtimeViolations` | Compact file, line, category, and matched-entry descriptions for runtime-boundary findings. |
 | `summary` | One compact `CODECHECK_RESULT` line containing status and all gate counts. |
 
@@ -72,7 +72,7 @@ CODECHECK_RESULT status=PASS files=1701 issues=0 suppressed=0 compatibility=0 ru
 
 The file count varies with the checkout; the status/count fields are the machine-readable contract. Ordinary commits are blocked unless all counts are zero and the status is `PASS`.
 
-The runtime boundary scans every public-repository MATLAB source file, including tests. Five marked and counted `system` calls are retained only for isolated MATLAB processes, synthetic Git state, and filesystem-link fixtures; adding another call fails the gate. Accepted private workspaces may be included in MATLAB analyzer and compatibility results, but their independent repository owns its runtime exceptions and submission gate.
+The runtime boundary scans every public-repository MATLAB source file, including tests. Five marked and counted `system` calls are retained only for isolated MATLAB processes, synthetic Git state, and filesystem-link fixtures. The two named private `labkit.nidmm` adapter files are the only counted production exception for the end-user-installed NI-DMM .NET runtime; adding the API anywhere else fails the gate. Accepted private workspaces may be included in MATLAB analyzer and compatibility results, but their independent repository owns its runtime exceptions and submission gate.
 
 ## Behavior And Limitations
 

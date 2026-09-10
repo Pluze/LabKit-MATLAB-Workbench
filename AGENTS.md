@@ -96,18 +96,26 @@ reader needs them for the requested audit, science, safety, or compatibility.
 
 ## Dependencies and scientific replacements
 
-- Production Apps, facades, launchers, and shipped maintainer tools use only
-  Base MATLAB and repository code. They must not call or conditionally
-  accelerate with any optional MathWorks Toolbox, Python/Conda runtime,
-  downloaded weights, first-run installation, or third-party runtime. A need
-  that Base MATLAB cannot satisfy is an architecture blocker requiring an
-  explicit user decision; it is not temporary dependency debt.
-- MATLAB source also stays in the MATLAB language runtime: do not
-  call Java, Python, Conda, .NET, shell commands, MEX/native libraries, or
-  ActiveX/COM. Use public Base MATLAB functions or repository-owned MATLAB
-  implementations. Test infrastructure may use only the exact marked shell
-  boundaries owned by the codecheck allowance ledger for isolated MATLAB,
-  Git, or filesystem-link fixtures; every additional call is a violation.
+- Production Apps use Base MATLAB, their own App package, and public LabKit
+  facades declared in their Definition requirements. They must never call or
+  conditionally accelerate with an optional MathWorks Toolbox, Python/Conda,
+  Java, .NET, shell commands, MEX/native libraries, ActiveX/COM, or a vendor
+  SDK directly. Vendor types and handles never enter App state or callbacks.
+- Facades, launchers, and shipped maintainer tools otherwise use only Base
+  MATLAB and repository code. An explicitly approved hardware facade may use
+  a narrowly identified end-user-installed official vendor runtime only from
+  exact package-private adapter files recorded by the codecheck allowance
+  ledger. The facade exposes MATLAB-native values and opaque repository-owned
+  tokens, provides a non-opening availability diagnostic, revalidates on
+  connect, and turns missing, incompatible, busy, disconnected, and read
+  failures into documented outcomes. It never downloads, installs, bundles,
+  or redistributes the vendor runtime. A new facade or dependency remains an
+  architecture decision, not an implied precedent for other packages.
+- MATLAB source otherwise stays in the MATLAB language runtime. Test
+  infrastructure may use only the exact marked shell boundaries owned by the
+  codecheck allowance ledger for isolated MATLAB, Git, or filesystem-link
+  fixtures; the approved NI-DMM adapter is the only production secondary-
+  runtime allowance. Every additional call is a violation.
 - Product ownership follows the documented MATLAB function contract, not a
   namespace prefix. Base MATLAB `backgroundPool`, explicit
   `parfeval(backgroundPool,...)`, and `parallel.pool.PollableDataQueue` are

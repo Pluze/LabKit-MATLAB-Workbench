@@ -132,6 +132,25 @@
         "Editing guidance",
         "Launching an unrelated MATLAB suite"
       ]
+    },
+    {
+      "id": "hardware-facade-runtime",
+      "prompt": "Add NI hardware support to a public App. The operator may have the vendor driver installed, but a clean machine may not.",
+      "skills": [
+        "labkit-boundary-guard",
+        "labkit-app-builder",
+        "labkit-test-planner"
+      ],
+      "expected": [
+        "Keeps vendor calls in the exact approved private hardware facade adapter",
+        "Checks dependency availability before hardware access and returns stable diagnostics",
+        "Keeps App code limited to Base MATLAB, its package, and declared facades"
+      ],
+      "forbidden": [
+        "Direct vendor calls from the App",
+        "Downloading or bundling the driver",
+        "Leaking vendor runtime objects through the facade"
+      ]
     }
   ]
 }

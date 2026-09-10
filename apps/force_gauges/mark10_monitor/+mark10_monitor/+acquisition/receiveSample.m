@@ -19,6 +19,17 @@ else
     buffer("lastFailure") = sample.FailureStatus;
 end
 buffer("time_s") = [buffer("time_s"); elapsed];
+if isfield(sample, "TimestampUTC")
+    timestampUTC = sample.TimestampUTC;
+else
+    timestampUTC = datetime("now", "TimeZone", "UTC");
+end
+uncertainty_s = NaN;
+if isfield(sample, "TimeUncertainty_s")
+    uncertainty_s = sample.TimeUncertainty_s;
+end
+buffer("timestampUTC") = [buffer("timestampUTC"); timestampUTC];
+buffer("timeUncertainty_s") = [buffer("timeUncertainty_s"); uncertainty_s];
 buffer("force_N") = [buffer("force_N"); sample.Force_N];
 buffer("travel_mm") = [buffer("travel_mm"); sample.Travel_mm];
 buffer("forceRaw") = [buffer("forceRaw"); sample.ForceRawValue];

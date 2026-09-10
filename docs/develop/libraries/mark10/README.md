@@ -37,7 +37,7 @@ samplingCleanup = onCleanup(@() labkit.mark10.stopSampling(sampler));
 
 A lightweight 20 Hz client timer drains those batches and invokes the caller's sample consumer. GUI rendering cannot set the serial acquisition pace, and the App may present a much slower latest snapshot while retaining every completed sample. `setSamplingPeriod` updates the worker without replacing the serial connection. `stopSampling` flushes the final batch, stops the worker, deletes the delivery timer, and returns the updated connected token without closing the port. The explicit background APIs remain available with one worker in a Base MATLAB installation; no Parallel Computing Toolbox pool is opened.
 
-The ESM303 `n` response contains force and travel but no device timestamp. Each sample therefore includes `HostTime_s`, a monotonic timestamp taken when the complete response is accepted. It is not the later plot-refresh time.
+The ESM303 `n` response contains force and travel but no device timestamp. Each sample therefore includes `HostTime_s`, a monotonic timestamp taken when the complete response is accepted, plus `TimestampUTC`, `ReceivedAtUTC`, and `TimeUncertainty_s` derived from the host-observed request interval. These fields are independent of the later plot-refresh time and support bounded alignment with another LabKit recorder; they are not a shared hardware clock.
 
 Connection probes are independent: identity commands may be unavailable while force/travel acquisition remains usable. `readSample` first requests the synchronized ESM303 `n` response, quiesces and retries after contamination, then falls back to ESM303 `x` plus Series 5 `?C`. A failed sample is reported without discarding the connection or earlier caller-owned records.
 

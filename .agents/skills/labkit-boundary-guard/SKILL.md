@@ -23,9 +23,15 @@ A shared implementation alone does not require a new public callable API.
 ## Guard the Base MATLAB boundary
 
 For every new or changed production dependency, identify the direct callable
-symbol and its owning MathWorks product before accepting the design. Production
-Apps, facades, launchers, and shipped tools may use only Base MATLAB and
-repository code. Do not retain an optional Toolbox call behind `exist`,
+symbol and its owner before accepting the design. Production Apps, launchers,
+shipped tools, and ordinary facades may use only Base MATLAB and repository
+code. A hardware facade may depend on fixed end-user-installed vendor software
+only when `+labkit/AGENTS.md` names the exact private adapter as a current
+production allowance. The adapter must offer a no-hardware availability check,
+fail with stable facade diagnostics, never download or bundle the dependency,
+return only MATLAB-native values, and be protected by an exact-file/count
+source guard. Apps declare and call the facade rather than the vendor runtime.
+Do not retain an optional Toolbox call behind `exist`,
 `license`, `try/catch`, acceleration, or fallback logic; replace it or report an
 architecture blocker.
 

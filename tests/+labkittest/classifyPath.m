@@ -92,7 +92,7 @@ function classification = classifyPath(file)
     if startsWith(file, "+labkit/") && numel(parts) >= 2 && startsWith(parts(2), "+")
         area = erase(parts(2), "+");
         if ismember(area, ["app", "biosignal", "contract", "dta", "image", ...
-                "mark10", "rhs", "thermal"])
+                "mark10", "nidmm", "rhs", "thermal"])
             classification = mapped(file, "framework-facade", "labkit/" + area, ...
                 "direct public facade behavior");
             return;
