@@ -42,8 +42,10 @@ Use `labkittest.explain` to find the exact owner and contract.
   or introducing a public inheritance/state model requires an explicit design
   decision from the user; existing task authorization can supply that decision.
   Runtime dependencies follow the root contract. Only `labkit.nidmm` may use
-  its exact codecheck-ledgered private NI-DMM adapter; that exception does not
-  extend to `labkit.app`, another facade, or any public API value.
+  its exact codecheck-ledgered `niDmmAvailability.m`, `niDmmDiscovery.m`, and
+  `openNiDmmBackend.m` private adapters for the end-user-installed NI-DMM and
+  NI System Configuration .NET runtimes. That exception does not extend to
+  `labkit.app`, another facade, or any public API value.
 - The App SDK is a stable composition-only contract: no public inheritance
   hierarchy, mutable handle-state model, version-named namespace, or adapter
   back to retired author-facing transport structs.

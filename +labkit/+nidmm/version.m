@@ -16,10 +16,11 @@ function info = version()
 %
 % Example:
 %   info = labkit.nidmm.version();
-%   assert(info.current == "1.0.0")
+%   assert(info.current == "1.1.0")
 %
-% See also labkit.nidmm.availability, labkit.nidmm.connect
+% See also labkit.nidmm.availability, labkit.nidmm.discover,
+%   labkit.nidmm.connect
 info = labkit.contract.versionInfo( ...
-    "nidmm", "1.0.0", ">=1 <2", "stable", ...
+    "nidmm", "1.1.0", ">=1 <2", "stable", ...
     "NI-DMM voltage, current, resistance, diode, and buffered acquisition facade.");
 end

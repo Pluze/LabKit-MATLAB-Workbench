@@ -12,9 +12,15 @@ try
     [connection, applied] = labkit.nidmm.configure(connection, ...
         Mode=request.Mode, Range=request.Range, Digits=request.Digits);
     box("connection") = connection;
+    [targetPeriod_s, limited] = ...
+        ni_dmm_recorder.measurement.acquisitionPeriod( ...
+        request.Rate_Hz, applied.MeasurementPeriod_s);
+    applied.RequestedRate_Hz = request.Rate_Hz;
+    applied.TargetRate_Hz = 1 / targetPeriod_s;
+    applied.RateLimited = limited;
     buffer = context.getResource("nidmmBuffer");
     buffer = resetBuffer(buffer, applied);
-    sampler = labkit.nidmm.startSampling(connection, 1 / request.Rate_Hz, ...
+    sampler = labkit.nidmm.startSampling(connection, targetPeriod_s, ...
         @(updated, samples) ni_dmm_recorder.recording.receiveSamples( ...
             box, buffer, context, updated, samples));
     buffer("startedAtUTC") = sampler.StartedAtUTC;
@@ -28,7 +34,7 @@ try
     applicationState.session.acquisition.recording = true;
     applicationState.session.cache.plotRevision = ...
         applicationState.session.cache.plotRevision + 1;
-    applicationState.session.connection.status = "Connected and recording.";
+    applicationState.session.connection.status = recordingStatus(applied);
     applicationState.session.export.status = ...
         "Recording in progress; samples retained in memory.";
 catch cause
@@ -38,6 +44,17 @@ catch cause
         "NI-DMM recording failed to start", ...
         Category="acquisition", Exception=cause);
     context.alert(cause.message, "NI-DMM Recording");
+end
+
+function value = recordingStatus(configuration)
+if configuration.RateLimited
+    value = compose( ...
+        "Recording at device-limited target %.2f Hz (requested %.2f Hz).", ...
+        configuration.TargetRate_Hz, configuration.RequestedRate_Hz);
+else
+    value = compose("Connected and recording; target %.2f Hz.", ...
+        configuration.TargetRate_Hz);
+end
 end
 end
 

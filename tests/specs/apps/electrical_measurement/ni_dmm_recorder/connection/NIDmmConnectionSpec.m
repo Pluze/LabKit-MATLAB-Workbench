@@ -2,14 +2,31 @@ classdef NIDmmConnectionSpec < matlab.unittest.TestCase
     %NIDMMCONNECTIONSPEC Specify non-opening runtime checks and disconnected state.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
-        function reportsAvailabilityWithoutOpeningHardware(testCase)
+        function discoversResourcesWithoutOpeningHardware(testCase)
             state = initialState(testCase);
-            state = ni_dmm_recorder.connection.refreshAvailability(state, []);
+            context = labkittest.createCallbackContext(struct( ...
+                "log", @(varargin) [], "alert", @(varargin) []));
+            state = ni_dmm_recorder.connection.refreshDevices(state, context);
             status = labkit.nidmm.availability();
             testCase.verifyEqual(state.session.connection.available, ...
                 status.Available);
-            testCase.verifyEqual(state.session.connection.status, status.Message);
             testCase.verifyFalse(state.session.connection.connected);
+            if status.Available
+                try
+                    devices = labkit.nidmm.discover();
+                    testCase.verifyEqual(string( ...
+                        {state.session.connection.devices.Resource}), ...
+                        string({devices.Resource}));
+                catch cause
+                    testCase.verifyTrue(any(string(cause.identifier) == ...
+                        ["labkit:nidmm:DiscoveryUnavailable", ...
+                        "labkit:nidmm:DiscoveryFailed"]));
+                    testCase.verifyEmpty(state.session.connection.devices);
+                end
+            else
+                testCase.verifyEmpty(state.session.connection.devices);
+                testCase.verifyEqual(state.session.connection.resource, "");
+            end
 
             state.session.connection.connected = true;
             context = labkittest.createCallbackContext(struct( ...

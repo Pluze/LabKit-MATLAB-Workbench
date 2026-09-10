@@ -81,10 +81,12 @@ files = [ ...
     "tests/specs/tools/maintenance/CleanLabKitArtifactsSpec.m"
     "+labkit/+nidmm/private/niDmmAvailability.m"
     "+labkit/+nidmm/private/niDmmAvailability.m"
-    "+labkit/+nidmm/private/openNiDmmBackend.m"];
-counts = [2; 1; 1; 1; 1; 3; 12];
+    "+labkit/+nidmm/private/openNiDmmBackend.m"
+    "+labkit/+nidmm/private/niDmmDiscovery.m"
+    "+labkit/+nidmm/private/niDmmDiscovery.m"];
+counts = [2; 1; 1; 1; 1; 3; 14; 1; 3];
 categories = ["shell"; "shell"; "shell"; "shell"; ...
-    "dotnet"; "ni-dotnet"; "ni-dotnet"];
+    "dotnet"; "ni-dotnet"; "ni-dotnet"; "dotnet"; "ni-dotnet"];
 allowances = struct("File", cellstr(files), ...
     "Category", cellstr(categories), ...
     "Count", num2cell(counts));
@@ -101,7 +103,7 @@ end
 if category ~= "shell"
     leading = extractBefore(string(source), min(strlength(string(source)) + 1, 600));
     tf = contains(leading, ...
-        "Secondary-runtime facade boundary: user-installed NI-DMM .NET runtime.");
+        "Secondary-runtime facade boundary: user-installed NI .NET runtime.");
     return;
 end
 lineStart = find(source(1:startIndex - 1) == newline, 2, "last");

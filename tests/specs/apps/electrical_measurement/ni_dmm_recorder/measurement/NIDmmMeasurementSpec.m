@@ -17,6 +17,16 @@ classdef NIDmmMeasurementSpec < matlab.unittest.TestCase
             testCase.verifyEqual(automatic.Mode, "dc_voltage");
             testCase.verifyEqual(automatic.Range, "auto");
             testCase.verifyEqual(automatic.Rate_Hz, 10);
+
+            [period, limited] = ...
+                ni_dmm_recorder.measurement.acquisitionPeriod(30, 0.2);
+            testCase.verifyEqual(period, 0.2, "AbsTol", eps);
+            testCase.verifyTrue(limited, ...
+                "A slow device configuration must lower the target rate.");
+            [period, limited] = ...
+                ni_dmm_recorder.measurement.acquisitionPeriod(30, 0.01);
+            testCase.verifyEqual(period, 1 / 30, "AbsTol", eps);
+            testCase.verifyFalse(limited);
         end
     end
 end
