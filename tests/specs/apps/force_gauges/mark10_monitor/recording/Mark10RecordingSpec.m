@@ -41,6 +41,10 @@ classdef Mark10RecordingSpec < matlab.unittest.TestCase
             buffer("forceUnit") = ["N"; ""; "N"];
             buffer("travelUnit") = ["mm"; ""; "mm"];
             buffer("mode") = ["CUR"; ""; "CUR"];
+            timestampUTC = datetime(2026, 8, 27, 12, 0, ...
+                [0; 0.1; 0.2], "TimeZone", "UTC");
+            buffer("timestampUTC") = timestampUTC;
+            buffer("timeUncertainty_s") = [0.01; 0.02; 0.01];
             buffer("monitoringStartedAt") = datetime(2026, 8, 27, 12, 0, 0);
             context = labkittest.createCallbackContext(struct( ...
                 "getResource", @(~) buffer, ...
@@ -62,6 +66,9 @@ classdef Mark10RecordingSpec < matlab.unittest.TestCase
             exported = readtable(csvPath);
             testCase.verifyEqual(height(exported), 2);
             testCase.verifyEqual(exported.Force_N, [1; 3]);
+            testCase.verifyEqual(exported.TimeUncertainty_s, [0.01; 0.01]);
+            testCase.verifyTrue(ismember("TimestampUTC", ...
+                string(exported.Properties.VariableNames)));
             testCase.verifyEqual(state.session.export.status, ...
                 "Exported: " + string(csvPath));
         end

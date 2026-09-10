@@ -19,7 +19,8 @@ function [connection, sample] = readSample(connection)
 %       LastFailure.
 %   sample - Scalar struct with SampleIndex, Force_N, Travel_mm, raw
 %       value/unit fields, Valid, AcquisitionMode, ResponseTime_s, RawText,
-%       and FailureStatus.
+%       FailureStatus, TimestampUTC, ReceivedAtUTC, and TimeUncertainty_s.
+%       TimestampUTC is the midpoint of the complete host-observed request.
 %
 % Errors:
 %   labkit:mark10:InvalidConnection - connection is malformed.
@@ -35,6 +36,7 @@ function [connection, sample] = readSample(connection)
         sample = payload{1};
         return;
     end
+    requestedAtUTC = datetime("now", "TimeZone", "UTC");
     connection.SampleCount = connection.SampleCount + uint64(1);
     [raw, outcome, elapsed] = mark10StandRequest( ...
         connection, "n", 2, false);
@@ -63,6 +65,12 @@ function [connection, sample] = readSample(connection)
         connection.LastFailure = struct("Status", outcome, ...
             "Message", "No valid force/travel sample was received.");
     end
+    receivedAtUTC = datetime("now", "TimeZone", "UTC");
+    sample.TimestampUTC = requestedAtUTC + ...
+        (receivedAtUTC - requestedAtUTC) / 2;
+    sample.ReceivedAtUTC = receivedAtUTC;
+    sample.TimeUncertainty_s = seconds( ...
+        receivedAtUTC - requestedAtUTC) / 2;
 end
 
 function connection = resynchronize(connection)

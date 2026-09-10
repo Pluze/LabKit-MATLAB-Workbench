@@ -62,6 +62,8 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(sample.Force_N, 2);
             testCase.verifyEqual(sample.Travel_mm, 1);
             testCase.verifyEqual(connection.SampleCount, uint64(1));
+            testCase.verifyEqual(string(sample.TimestampUTC.TimeZone), "UTC");
+            testCase.verifyGreaterThanOrEqual(sample.TimeUncertainty_s, 0);
             testCase.verifyFalse(state("closed"));
         end
 
@@ -69,7 +71,7 @@ classdef Mark10FacadeSpec < matlab.unittest.TestCase
             info = labkit.mark10.version();
 
             testCase.verifyEqual(info.name, "labkit.mark10");
-            testCase.verifyEqual(info.current, "1.0.2");
+            testCase.verifyEqual(info.current, "1.1.0");
             testCase.verifyError(@() labkit.mark10.decodeSample({"bad"}), ...
                 "labkit:mark10:InvalidValue");
             testCase.verifyError(@() labkit.mark10.writeSetting( ...

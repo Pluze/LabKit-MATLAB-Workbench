@@ -91,13 +91,15 @@ find the exact owner and contract; App authors never invent test paths.
   contract or private runtime behavior. Request a new public API only for a
   stable need shared by multiple Apps or when the existing API would otherwise
   become an ambiguous bucket.
-- Use `labkit.dta`, `rhs`, `biosignal`, `image`, and `thermal` only for their
+- Use `labkit.dta`, `rhs`, `biosignal`, `image`, `thermal`, `mark10`, and
+  `nidmm` only for their
   documented reusable contracts. Do not duplicate a facade primitive in an
   app or push app policy into the facade.
-- Production code uses only Base MATLAB and repository code. Do not call or
-  conditionally accelerate with an optional MathWorks Toolbox. If Base MATLAB
-  cannot satisfy the App contract, stop at the architecture boundary defined
-  by the root rules.
+- Production App code uses only Base MATLAB, its own App package, and public
+  LabKit facades declared by its Definition. Do not call or conditionally
+  accelerate with an optional MathWorks Toolbox or directly name a vendor SDK,
+  secondary runtime, or native handle. Hardware dependencies remain inside an
+  explicitly approved facade under the root architecture boundary.
 - Numeric UI values are finite scalars before entering state. Scientific
   constants have semantic names and nearby rationale.
 - State enums and repeated user-visible choices have one app-local owner.
