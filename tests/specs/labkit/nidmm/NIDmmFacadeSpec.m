@@ -4,12 +4,29 @@ classdef NIDmmFacadeSpec < matlab.unittest.TestCase
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
         function provesNIDmmFacade(testCase)
             info = labkit.nidmm.version();
-            testCase.verifyEqual(info.current, "1.0.0");
+            testCase.verifyEqual(info.current, "1.1.0");
 
             status = labkit.nidmm.availability();
             testCase.verifyTrue(all(isfield(status, ["Available", "Status", ...
                 "Message", "DriverVersion", "RequiredComponent"])));
             testCase.verifyClass(status.Available, "logical");
+            if status.Available
+                try
+                    devices = labkit.nidmm.discover();
+                    testCase.verifyTrue(all(isfield(devices, ...
+                        ["Resource", "Model", "Bus"])));
+                    testCase.verifyTrue(all(strlength(string( ...
+                        {devices.Resource})) > 0));
+                catch cause
+                    testCase.verifyTrue(any(string(cause.identifier) == ...
+                        ["labkit:nidmm:DiscoveryUnavailable", ...
+                        "labkit:nidmm:DiscoveryFailed"]));
+                end
+            else
+                expectedError = availabilityError(status.Status);
+                testCase.verifyError(@() labkit.nidmm.discover(), ...
+                    expectedError);
+            end
 
             calls = containers.Map("KeyType", "char", "ValueType", "any");
             calls("mode") = "";
@@ -49,6 +66,17 @@ classdef NIDmmFacadeSpec < matlab.unittest.TestCase
                 Digits=7.5), "labkit:nidmm:InvalidDigits");
         end
     end
+end
+
+function value = availabilityError(status)
+switch status
+    case "unsupported_platform"
+        value = "labkit:nidmm:UnsupportedPlatform";
+    case "driver_incompatible"
+        value = "labkit:nidmm:DriverIncompatible";
+    otherwise
+        value = "labkit:nidmm:DriverMissing";
+end
 end
 
 function value = fakeConnection(backend)

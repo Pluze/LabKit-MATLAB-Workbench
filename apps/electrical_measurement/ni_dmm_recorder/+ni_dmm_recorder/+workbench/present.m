@@ -12,7 +12,15 @@ if isfinite(s.acquisition.value)
     valueText = compose("%.9g", s.acquisition.value);
 end
 view = labkit.app.view.Snapshot();
-view = view.value("resourceName", s.connection.resource);
+resources = string({s.connection.devices.Resource});
+if isempty(resources)
+    resources = "No devices found";
+    selectedResource = resources;
+else
+    selectedResource = s.connection.resource;
+end
+view = view.choices("resourceName", resources);
+view = view.value("resourceName", selectedResource);
 view = view.value("measurementMode", s.configuration.mode);
 view = view.value("rangeMode", s.configuration.rangeMode);
 view = view.value("fixedRange", s.configuration.fixedRange);
@@ -28,8 +36,9 @@ view = view.text("recordingStatus", compose( ...
     s.acquisition.validCount, s.acquisition.invalidCount, ...
     s.acquisition.actualRate_Hz));
 view = view.text("exportStatus", s.export.status);
-view = view.enabled("checkDriver", ~connected);
-view = view.enabled("connectDevice", s.connection.available && ~connected);
+view = view.enabled("refreshDevices", ~connected);
+view = view.enabled("connectDevice", s.connection.available && ...
+    ~isempty(s.connection.devices) && ~connected);
 view = view.enabled("disconnectDevice", connected);
 view = view.enabled("resourceName", ~connected);
 for id = ["measurementMode", "rangeMode", "resolutionDigits", "sampleRate"]
@@ -61,10 +70,15 @@ if recording || isempty(acquisition.plotTime_s)
 end
 count = numel(acquisition.plotTime_s);
 first = max(1, count - 199);
-elapsed = acquisition.plotTime_s(first:end);
-measurement = acquisition.plotValue(first:end);
-timestamp = acquisition.plotTimestampUTC(first:end);
-unit = repmat(acquisition.unit, numel(elapsed), 1);
+% Buffer implementations may retain vectors in either orientation. Tables
+% require every variable to agree on row count after recording stops.
+elapsed = acquisition.plotTime_s(first:end).';
+measurement = acquisition.plotValue(first:end).';
+timestamp = acquisition.plotTimestampUTC(first:end).';
+elapsed = elapsed(:);
+measurement = measurement(:);
+timestamp = timestamp(:);
+unit = repmat(string(acquisition.unit), numel(elapsed), 1);
 value = table(timestamp, elapsed, measurement, unit, 'VariableNames', ...
     {'TimestampUTC', 'Elapsed_s', 'Measurement', 'Unit'});
 end

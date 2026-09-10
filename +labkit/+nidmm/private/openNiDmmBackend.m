@@ -1,6 +1,6 @@
 function backend = openNiDmmBackend(resource)
 % Open one NI-DMM session and return repository-owned operation closures.
-% Secondary-runtime facade boundary: user-installed NI-DMM .NET runtime.
+% Secondary-runtime facade boundary: user-installed NI .NET runtime.
 status = niDmmAvailability();
 if ~status.Available
     throwAvailability(status);
@@ -9,8 +9,9 @@ try
     session = NationalInstruments.ModularInstruments.NIDmm.NIDmm( ...
         char(resource), true, false);
 catch cause
-    exception = MException("labkit:nidmm:ConnectionFailed", ...
-        "Could not open the NI-DMM resource. Confirm its NI MAX name and exclusive availability.");
+    exception = vendorFailure("labkit:nidmm:ConnectionFailed", ...
+        "Could not open the NI-DMM resource. Confirm its NI MAX name and exclusive availability.", ...
+        cause);
     throwAsCaller(addCause(exception, cause));
 end
 closed = false;
@@ -34,6 +35,7 @@ backend = struct( ...
         measurementFunction = measurementFunctionFor(mode);
         try
             if isstring(requestedRange) && requestedRange == "auto"
+                restoreImmediateTriggers();
                 session.ConfigureMeasurementDigits(measurementFunction, ...
                     NationalInstruments.ModularInstruments.NIDmm.DmmAuto.On, digits);
                 session.Measurement.Read();
@@ -52,8 +54,9 @@ backend = struct( ...
             if cause.identifier == "labkit:nidmm:ConfigurationFailed"
                 rethrow(cause);
             end
-            exception = MException("labkit:nidmm:ConfigurationFailed", ...
-                "NI-DMM rejected the requested measurement mode, range, or resolution.");
+            exception = vendorFailure("labkit:nidmm:ConfigurationFailed", ...
+                "NI-DMM rejected the requested measurement mode, range, or resolution.", ...
+                cause);
             throwAsCaller(addCause(exception, cause));
         end
     end
@@ -64,8 +67,8 @@ backend = struct( ...
         try
             value = double(session.Measurement.Read());
         catch cause
-            exception = MException("labkit:nidmm:ReadFailed", ...
-                "NI-DMM could not complete the measurement.");
+            exception = vendorFailure("labkit:nidmm:ReadFailed", ...
+                "NI-DMM could not complete the measurement.", cause);
             throwAsCaller(addCause(exception, cause));
         end
         receivedAt = datetime("now", "TimeZone", "UTC");
@@ -82,7 +85,11 @@ backend = struct( ...
                 "Configure the NI-DMM connection before starting acquisition.");
         end
         acquisitionPoints = int32(10000000);
+        % Keep enough driver-side headroom for timer jitter across slow and
+        % fast 4065 resolutions while MATLAB drains completed batches.
+        deliveryBufferSamples = int32(100000);
         try
+            session.Trigger.MultiPoint.BufferSize = deliveryBufferSamples;
             session.Trigger.MultiPoint.Configure(int32(1), ...
                 acquisitionPoints, ...
                 NationalInstruments.ModularInstruments.NIDmm.DmmSampleTrigger.Interval, ...
@@ -91,8 +98,8 @@ backend = struct( ...
             session.Measurement.Initiate();
             after = datetime("now", "TimeZone", "UTC");
         catch cause
-            exception = MException("labkit:nidmm:AcquisitionFailed", ...
-                "NI-DMM could not start buffered acquisition.");
+            exception = vendorFailure("labkit:nidmm:AcquisitionFailed", ...
+                "NI-DMM could not start buffered acquisition.", cause);
             throwAsCaller(addCause(exception, cause));
         end
         startedAtUTC = before + (after - before) / 2;
@@ -117,8 +124,8 @@ backend = struct( ...
                 values = values(:);
             end
         catch cause
-            exception = MException("labkit:nidmm:ReadFailed", ...
-                "NI-DMM buffered acquisition failed.");
+            exception = vendorFailure("labkit:nidmm:ReadFailed", ...
+                "NI-DMM buffered acquisition failed.", cause);
             throwAsCaller(addCause(exception, cause));
         end
         firstSequence = sequence + 1;
@@ -134,6 +141,10 @@ backend = struct( ...
         end
         try
             session.Measurement.Abort();
+        catch
+        end
+        try
+            restoreImmediateTriggers();
         catch
         end
     end
@@ -161,6 +172,23 @@ backend = struct( ...
                 "The NI-DMM connection is closed.");
         end
     end
+
+    function restoreImmediateTriggers()
+        session.Trigger.Source = ...
+            NationalInstruments.ModularInstruments.NIDmm.DmmTriggerSource.Immediate;
+        session.Trigger.MultiPoint.SampleTrigger = ...
+            NationalInstruments.ModularInstruments.NIDmm.DmmSampleTrigger.Immediate;
+    end
+end
+
+function exception = vendorFailure(id, message, cause)
+token = regexp(string(cause.message), "Error code:\s*(-?\d+)", ...
+    "tokens", "once");
+if ~isempty(token)
+    message = compose("%s NI error %s.", extractBefore(message, ...
+        strlength(message)), string(token{1}));
+end
+exception = MException(id, "%s", message);
 end
 
 function value = measurementFunctionFor(mode)

@@ -1,8 +1,8 @@
 classdef NIDmmRecordingSpec < matlab.unittest.TestCase
-    %NIDMMRECORDINGSPEC Specify native launch and supported connection failure.
+    %NIDMMRECORDINGSPEC Specify native discovery and unavailable-driver recovery.
 
     methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
-        function launchesChecksDriverAndHandlesInvalidResource(testCase)
+        function launchesDiscoversDevicesAndHandlesUnavailableDriver(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             alerts = containers.Map("KeyType", "char", "ValueType", "any");
@@ -15,18 +15,19 @@ classdef NIDmmRecordingSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
 
             testCase.verifyFalse(runtime.StartupFailed);
-            runtime.invokeAction("checkDriver");
+            runtime.invokeAction("refreshDevices");
             testCase.verifyNotEmpty(runtime.State.session.connection.status);
             runtime.applyControlValue("measurementMode", "2-Wire Resistance");
             runtime.applyControlValue("rangeMode", "Fixed");
             runtime.applyControlValue("fixedRange", 1000);
             runtime.applyControlValue("resolutionDigits", "5.5");
             runtime.applyControlValue("sampleRate", "30 Hz");
-            runtime.applyControlValue("resourceName", "");
-            runtime.invokeAction("connectDevice");
-            testCase.verifyFalse(runtime.State.session.connection.connected);
-            testCase.verifyEqual(alerts("title"), "NI-DMM Connection");
-            testCase.verifyNotEmpty(alerts("message"));
+            if ~labkit.nidmm.availability().Available
+                runtime.invokeAction("connectDevice");
+                testCase.verifyFalse(runtime.State.session.connection.connected);
+                testCase.verifyEqual(alerts("title"), "NI-DMM Connection");
+                testCase.verifyNotEmpty(alerts("message"));
+            end
             runtime.invokeAction("readOnce");
             runtime.invokeAction("startRecording");
             runtime.invokeAction("stopRecording");

@@ -114,8 +114,9 @@ reader needs them for the requested audit, science, safety, or compatibility.
 - MATLAB source otherwise stays in the MATLAB language runtime. Test
   infrastructure may use only the exact marked shell boundaries owned by the
   codecheck allowance ledger for isolated MATLAB, Git, or filesystem-link
-  fixtures; the approved NI-DMM adapter is the only production secondary-
-  runtime allowance. Every additional call is a violation.
+  fixtures; the exact codecheck-ledgered NI-DMM private adapters are the only
+  production secondary-runtime allowance. Every additional call is a
+  violation.
 - Product ownership follows the documented MATLAB function contract, not a
   namespace prefix. Base MATLAB `backgroundPool`, explicit
   `parfeval(backgroundPool,...)`, and `parallel.pool.PollableDataQueue` are
