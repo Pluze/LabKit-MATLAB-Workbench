@@ -209,6 +209,9 @@ buffer("travelRaw") = [0; 0.2; 0.4];
 buffer("forceUnit") = ["N"; "N"; "N"];
 buffer("travelUnit") = ["mm"; "mm"; "mm"];
 buffer("mode") = ["CUR"; "CUR"; "CUR"];
+buffer("timestampUTC") = datetime(2026, 8, 27, 12, 0, ...
+    [0; 0.1; 0.2], "TimeZone", "UTC");
+buffer("timeUncertainty_s") = [0.01; 0.01; 0.01];
 buffer("monitoringStartedAt") = datetime(2026, 8, 27, 12, 0, 0);
 buffer("plotTime_s") = buffer("time_s");
 buffer("plotForce_N") = buffer("force_N");
