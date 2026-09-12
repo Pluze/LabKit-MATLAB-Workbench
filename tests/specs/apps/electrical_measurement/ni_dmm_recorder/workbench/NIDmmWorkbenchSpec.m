@@ -25,5 +25,30 @@ classdef NIDmmWorkbenchSpec < matlab.unittest.TestCase
             view = ni_dmm_recorder.workbench.present(state);
             testCase.verifyClass(view, "labkit.app.view.Snapshot");
         end
+
+        function usesOneReadableUnitForAWindow(testCase)
+            display = ni_dmm_recorder.workbench.displayMeasurement( ...
+                [0, -2.3e-6, NaN], "A");
+            testCase.verifyEqual(display.divisor, 1e-6);
+            testCase.verifyEqual(display.unit, "uA");
+            testCase.verifyEqual(-2.3e-6 / display.divisor, -2.3, ...
+                "AbsTol", 1e-12);
+
+            display = ni_dmm_recorder.workbench.displayMeasurement( ...
+                [150, 2300], "ohm");
+            testCase.verifyEqual(display.divisor, 1e3);
+            testCase.verifyEqual(display.unit, "k" + ...
+                string(char(hex2dec("03A9"))));
+
+            display = ni_dmm_recorder.workbench.displayMeasurement( ...
+                [0, NaN], "V");
+            testCase.verifyEqual(display.divisor, 1);
+            testCase.verifyEqual(display.unit, "V");
+
+            display = ni_dmm_recorder.workbench.displayMeasurement( ...
+                2e-6, "counts");
+            testCase.verifyEqual(display.divisor, 1);
+            testCase.verifyEqual(display.unit, "counts");
+        end
     end
 end

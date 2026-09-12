@@ -7,9 +7,11 @@ unit = s.acquisition.unit;
 if strlength(unit) == 0
     unit = "—";
 end
+display = ni_dmm_recorder.workbench.displayMeasurement( ...
+    [s.acquisition.value, s.acquisition.plotValue], unit);
 valueText = "—";
 if isfinite(s.acquisition.value)
-    valueText = compose("%.9g", s.acquisition.value);
+    valueText = compose("%.9g", s.acquisition.value / display.divisor);
 end
 view = labkit.app.view.Snapshot();
 resources = string({s.connection.devices.Resource});
@@ -29,7 +31,7 @@ view = view.value("sampleRate", s.configuration.rate);
 view = view.text("connectionStatus", s.connection.status);
 view = view.text("deviceIdentity", s.connection.device);
 view = view.text("lastFailure", blankFallback(s.connection.lastFailure));
-view = view.text("liveReadout", "Value: " + valueText + " " + unit);
+view = view.text("liveReadout", "Value: " + valueText + " " + display.unit);
 view = view.text("recordingStatus", compose( ...
     "%s | samples %d (%d valid, %d invalid) | %.2f Hz", ...
     recordingLabel(recording), s.acquisition.sampleCount, ...
@@ -52,16 +54,17 @@ view = view.enabled("stopRecording", recording);
 view = view.enabled("refitPlot", ~isempty(s.acquisition.plotTime_s));
 view = view.enabled("exportRecording", ...
     ~recording && s.acquisition.validCount > 0);
-recent = recentTable(s.acquisition, recording);
+recent = recentTable(s.acquisition, recording, display);
 view = view.tableData("recentData", recent, ...
     Columns=["TimestampUTC", "Elapsed_s", "Measurement", "Unit"]);
 model = struct("Time_s", s.acquisition.plotTime_s, ...
-    "Value", s.acquisition.plotValue, "Unit", unit);
+    "Value", s.acquisition.plotValue / display.divisor, ...
+    "Unit", display.unit);
 view = view.renderPlot("measurementPlot", model, ...
-    ViewRevision=s.cache.plotRevision);
+    ViewRevision=string(s.cache.plotRevision) + ":" + display.unit);
 end
 
-function value = recentTable(acquisition, recording)
+function value = recentTable(acquisition, recording, display)
 if recording || isempty(acquisition.plotTime_s)
     value = table(NaT(0, 1, "TimeZone", "UTC"), zeros(0, 1), ...
         zeros(0, 1), strings(0, 1), 'VariableNames', ...
@@ -73,12 +76,12 @@ first = max(1, count - 199);
 % Buffer implementations may retain vectors in either orientation. Tables
 % require every variable to agree on row count after recording stops.
 elapsed = acquisition.plotTime_s(first:end).';
-measurement = acquisition.plotValue(first:end).';
+measurement = (acquisition.plotValue(first:end) / display.divisor).';
 timestamp = acquisition.plotTimestampUTC(first:end).';
 elapsed = elapsed(:);
 measurement = measurement(:);
 timestamp = timestamp(:);
-unit = repmat(string(acquisition.unit), numel(elapsed), 1);
+unit = repmat(display.unit, numel(elapsed), 1);
 value = table(timestamp, elapsed, measurement, unit, 'VariableNames', ...
     {'TimestampUTC', 'Elapsed_s', 'Measurement', 'Unit'});
 end
