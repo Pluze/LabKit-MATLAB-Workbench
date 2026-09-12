@@ -17,9 +17,13 @@ Select DC/AC voltage, DC/AC current, two-wire resistance, four-wire resistance, 
 
 Confirm leads and mode before **Read Once** or **Start Recording**. Starting replaces the preceding in-memory run. **Stop Recording** ends hardware acquisition, restores immediate trigger state, and keeps the DMM connected so another read or recording can start without reconnecting. The status shows actual retained rate rather than assuming the requested rate.
 
+The live reading, recent plot, and recent-data table choose one readable engineering unit from the current reading and displayed sample window. Supported voltage, current, and resistance readings may appear with n, u, m, k, M, or G prefixes; zero keeps the base unit. When that choice changes, the plot refits to the new scale. **Automatic** under Range selection controls the instrument's full-scale range independently of this display formatting.
+
 ## Export And Synchronize
 
 **Export CSV + MAT** writes valid readings to CSV and the complete attempt history plus applied configuration to MAT. CSV columns are `TimestampUTC`, `Elapsed_s`, `Measurement`, `Unit`, `Mode`, and `TimeUncertainty_s`. MAT also retains host receipt times, validity, requested rate, device-limited target rate, and recording start time.
+
+Exports retain the unscaled device readings and their base unit (`V`, `A`, or `ohm`) regardless of the unit shown in the App.
 
 Mark-10 Monitor exports the same host UTC concept. Start both recordings near the same time, retain their independent UTC columns, and align later by `TimestampUTC`; include `TimeUncertainty_s` when judging event correspondence. This is clock-based synchronization, not a common hardware trigger. A sharp physical event visible to both instruments can improve post-processing alignment.
 
