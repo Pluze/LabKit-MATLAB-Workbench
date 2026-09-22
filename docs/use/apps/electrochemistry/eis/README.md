@@ -24,7 +24,7 @@ The Files list retains `.DTA` sources containing a readable EIS `ZCURVE`. Other 
 ## Basic Workflow
 
 1. Add the EIS DTA files.
-2. Inspect the default **Nyquist + Bode** page: Nyquist above, magnitude and phase below. Open **Custom plot** for independently chosen X and Y quantities.
+2. Inspect the default **Nyquist + Bode** page: Nyquist above, magnitude and phase below. Use **Fit all X/Y limits** to restore their ranges after zooming. Open **Custom plot** for independently chosen X and Y quantities.
 3. Choose **mΩ**, **Ω**, **kΩ**, or **MΩ** for impedance axes. New projects default to **kΩ**.
 4. Enable logarithmic X or Y scaling only for strictly positive plotted data.
 5. Use **Fit X/Y limits** to re-estimate independent limits from the current data, or **Use equal X/Y scale** when equal data units are wanted.
@@ -33,7 +33,7 @@ The Files list retains `.DTA` sources containing a readable EIS `ZCURVE`. Other 
 
 ## Simultaneous Nyquist And Bode Views
 
-The overview shows `Zreal` versus `-Zimag` with equal data units, magnitude versus frequency with logarithmic X/Y axes, and phase versus frequency with logarithmic X and linear Y. All views retain each file's original sample order and frequency grid. Units, marker/line styling, grid, and legend are shared with the custom plot. Custom X/Y choices, log controls, and the two manual fit buttons apply only to **Custom plot**.
+The overview shows `Zreal` versus `-Zimag` with equal data units, magnitude versus frequency with logarithmic X and linear Y, and phase versus frequency with logarithmic X and linear Y. All views retain each file's original sample order and frequency grid. Units, marker/line styling, grid, and legend are shared with the custom plot. **Fit all X/Y limits** refits all three overview plots together and restores equal data units on Nyquist. Custom X/Y choices, log controls, and the two manual fit buttons apply only to **Custom plot**.
 
 Nonfinite values and nonpositive log coordinates break the corresponding plotted line; the App does not join across these missing points. Each Bode view validates its own coordinates, so an invalid magnitude does not hide an otherwise valid phase. No resampling, same-frequency pairing, equivalent-circuit fit, or area normalization is implied by the overlay. Source or unit changes fit a new overview; style changes preserve zoom.
 

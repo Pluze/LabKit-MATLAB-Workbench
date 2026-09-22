@@ -6,5 +6,5 @@ items = eis.sourceFiles.loadProjectItems(paths);
 selection = labkit.app.event.ListSelection(Indices=1:numel(paths));
 session = struct("selection", struct("files", selection), ...
     "cache", struct("items", items, "plotViewRevision", 0, ...
-    "plotViewAction", ""));
+    "plotViewAction", "", "overviewViewRevision", 0));
 end

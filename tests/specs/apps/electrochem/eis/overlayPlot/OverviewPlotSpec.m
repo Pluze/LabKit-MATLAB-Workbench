@@ -27,7 +27,7 @@ classdef OverviewPlotSpec < matlab.unittest.TestCase
             testCase.verifyEqual(lines(1).YData, [1 NaN 3]);
             testCase.verifyEqual(lines(2).XData, [80 NaN]);
             testCase.verifyEqual(axesById.magnitude.XScale, 'log');
-            testCase.verifyEqual(axesById.magnitude.YScale, 'log');
+            testCase.verifyEqual(axesById.magnitude.YScale, 'linear');
             phase = flipud(findall(axesById.phase, "Type", "line"));
             testCase.verifyEqual(phase(2).XData, [80 20]);
             testCase.verifyEqual(phase(2).YData, [-40 -50]);

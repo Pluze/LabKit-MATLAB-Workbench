@@ -43,6 +43,15 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             for tag = ["nyquistOverview.nyquist" "bodeOverview.magnitude" "bodeOverview.phase"]
                 overviewAxes = findall(figureValue, "Tag", tag);
                 testCase.verifyNotEmpty(findall(overviewAxes, "Type", "line"));
+                [overviewFitted, overviewInspected] = inspectViewport(overviewAxes);
+                verifyViewport(testCase, overviewAxes, overviewInspected);
+                overviewLimits.(extractAfter(tag, ".")) = overviewFitted;
+            end
+            runtime.invokeAction("fitOverviewAxes");
+            for tag = ["nyquistOverview.nyquist" "bodeOverview.magnitude" "bodeOverview.phase"]
+                overviewAxes = findall(figureValue, "Tag", tag);
+                verifyViewport(testCase, overviewAxes, ...
+                    overviewLimits.(extractAfter(tag, ".")));
             end
             capture = labkittest.nativeGraphicsCapability("interface-capture");
             evidencePath = labkittest.visualEvidencePath("eis-overview", ".png");
