@@ -13,7 +13,7 @@ for k = 1:numel(axesIds)
     options.xName = xNames(k);
     options.yName = yNames(k);
     options.logX = k > 1;
-    options.logY = k == 2;
+    options.logY = false;
     panel = model;
     panel.options = options;
     panel.viewAction = "";
