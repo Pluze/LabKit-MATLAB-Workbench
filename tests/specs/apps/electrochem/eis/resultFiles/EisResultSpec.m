@@ -2,6 +2,26 @@ classdef EisResultSpec < matlab.unittest.TestCase
     %EISRESULTSPEC Specify EIS axis/file-named export tables.
 
     methods (Test, TestTags = {'Contract:result', 'Env:headless'})
+        function exportsGroupStatisticsWithUnitsAndHiddenRows(testCase)
+            % Oracle: explicit two-scan arithmetic, including a log-hidden mean.
+            a = struct("freq_Hz", [100;10], "Zreal_ohm", [1000;-1000]);
+            b = struct("freq_Hz", [100;10], "Zreal_ohm", [3000;-3000]);
+            group = struct("name", "Sample A", "members", [a b]);
+            project = eis.initialData();
+            options = project.parameters;
+            options.xName = "Freq (Hz)";
+            options.yName = "Zreal";
+            options.logY = true;
+            result = eis.resultFiles.buildGroupExportTable(group, options);
+            testCase.verifyEqual(result.Group, ["Sample A";"Sample A"]);
+            testCase.verifyEqual(result.Frequency_Hz, [100;10]);
+            testCase.verifyEqual(result.YMean, [2;-2]);
+            testCase.verifyEqual(result.YSD, repmat(sqrt(2),2,1), AbsTol=1e-12);
+            testCase.verifyEqual(result.N, [2;2]);
+            testCase.verifyEqual(result.Visible, [true;false]);
+            testCase.verifyEqual(result.YQuantity, ["Zreal (kΩ)";"Zreal (kΩ)"]);
+        end
+
         function preservesEveryTraceWhenExportNamesCollide(testCase)
             item = EisResultSpec.canonicalItem(testCase);
             items = repmat(item, 1, 4);

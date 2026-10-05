@@ -20,14 +20,35 @@ function labels = plotOverlay(ax, items, opts)
     hold(ax, 'on');
     plottedLines = gobjects(1, numel(items));
     for k = 1:numel(items)
-        [x, y] = filteredXY(items(k), opts.xName, opts.yName, ...
-            opts.impedanceUnit, opts.logX, opts.logY);
-        plottedLines(k) = plot(ax, x, y, ...
-            'LineWidth', opts.lineWidth, ...
-            'Marker', marker, ...
-            'MarkerSize', opts.markerSize, ...
-            'Color', cmap(k, :));
+        if isfield(items, "members")
+            stats = eis.analysisRun.groupCoordinates(items(k).members, ...
+                opts.xName, opts.yName, opts.impedanceUnit);
+            [x, y] = validCoordinates(stats.x, stats.y, opts.logX, opts.logY);
+            xLower = stats.xSD;
+            yLower = stats.ySD;
+            if opts.logX, xLower(x - xLower <= 0) = NaN; end
+            if opts.logY, yLower(y - yLower <= 0) = NaN; end
+            plottedLines(k) = errorbar(ax, x, y, yLower, stats.ySD, ...
+                xLower, stats.xSD, 'LineWidth', opts.lineWidth, ...
+                'Marker', marker, 'MarkerSize', opts.markerSize, 'Color', cmap(k, :));
+            % The common fitter reads XData/YData, so retain error extents as
+            % non-rendering graphics to include uncertainty in every fit action.
+            plot(ax, [x; x-xLower; x+stats.xSD], ...
+                [y; y-yLower; y+stats.ySD], ...
+                'Visible', 'off', 'HandleVisibility', 'off', 'Tag', 'groupErrorExtents');
+        else
+            [x, y] = filteredXY(items(k), opts.xName, opts.yName, ...
+                opts.impedanceUnit, opts.logX, opts.logY);
+            plottedLines(k) = plot(ax, x, y, ...
+                'LineWidth', opts.lineWidth, ...
+                'Marker', marker, ...
+                'MarkerSize', opts.markerSize, ...
+                'Color', cmap(k, :));
+        end
         labels{k} = items(k).name;
+        if isfield(items, "members")
+            labels{k} = sprintf('%s (scans=%d)', items(k).name, numel(items(k).members));
+        end
     end
     hold(ax, 'off');
     % Set logarithmic scales only after positive-only data has established
@@ -35,14 +56,20 @@ function labels = plotOverlay(ax, items, opts)
     % are still negative makes MATLAB warn before the redraw can refit them.
     ax.XScale = ternary(opts.logX, 'log', 'linear');
     ax.YScale = ternary(opts.logY, 'log', 'linear');
-    labkit.app.plot.fitAxesToGraphics(ax, plottedLines(isgraphics(plottedLines)));
+    labkit.app.plot.fitAxesToGraphics(ax);
 
     xLabel = eis.overlayPlot.labelForAxis(opts.xName, opts.impedanceUnit);
     yLabel = eis.overlayPlot.labelForAxis(opts.yName, opts.impedanceUnit);
     xlabel(ax, xLabel);
     ylabel(ax, yLabel);
-    title(ax, sprintf('%s vs %s (%d file%s)', ...
-        yLabel, xLabel, numel(items), pluralS(numel(items))));
+    kind = "file";
+    detail = "";
+    if isfield(items, "members")
+        kind = "group";
+        detail = "; mean ± SD";
+    end
+    title(ax, sprintf('%s vs %s (%d %s%s%s)', ...
+        yLabel, xLabel, numel(items), kind, pluralS(numel(items)), detail));
 
     if opts.showGrid
         grid(ax, 'on');
@@ -51,7 +78,7 @@ function labels = plotOverlay(ax, items, opts)
     end
 
     if opts.showLegend
-        legend(ax, labels, 'Interpreter', 'none', 'Location', 'best');
+        legend(ax, plottedLines, labels, 'Interpreter', 'none', 'Location', 'best');
     else
         legend(ax, 'off');
     end
@@ -96,6 +123,10 @@ function [x, y] = filteredXY( ...
         item, xName, yName, impedanceUnit, useLogX, useLogY)
     x = eis.analysisRun.valuesForAxis(item, xName, impedanceUnit);
     y = eis.analysisRun.valuesForAxis(item, yName, impedanceUnit);
+    [x, y] = validCoordinates(x, y, useLogX, useLogY);
+end
+
+function [x, y] = validCoordinates(x, y, useLogX, useLogY)
     valid = isfinite(x) & isfinite(y);
     if useLogX, valid = valid & x > 0; end
     if useLogY, valid = valid & y > 0; end

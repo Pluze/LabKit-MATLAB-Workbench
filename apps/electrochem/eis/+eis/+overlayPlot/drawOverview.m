@@ -1,7 +1,7 @@
 function drawOverview(axesById, model)
-%DRAWOVERVIEW Show each source on its original Nyquist and Bode coordinates.
+%DRAWOVERVIEW Show source curves or explicitly grouped mean/SD coordinates.
 % Called by the EIS workspace with decoded items and display options. No
-% interpolation, frequency matching, fitting, or numerical export is performed.
+% interpolation, equivalent-circuit fitting, or numerical export is performed.
 axesIds = ["nyquist" "magnitude" "phase"];
 xNames = ["Zreal" "Freq (Hz)" "Freq (Hz)"];
 yNames = ["-Zimag" "Zmod" "Zphz (deg)"];

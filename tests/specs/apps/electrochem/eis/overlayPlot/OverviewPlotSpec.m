@@ -1,6 +1,33 @@
 classdef OverviewPlotSpec < matlab.unittest.TestCase
     %OVERVIEWPLOTSPEC Preserve source grids, units, and gaps in EIS plots.
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function drawsGroupErrorBarsAndFitsTheirExtents(testCase)
+            % Oracle: [1,3] kOhm has mean 2 and SD sqrt(2) in both directions.
+            fig = figure("Visible", "off");
+            cleanup = onCleanup(@() delete(fig));
+            ax = axes(fig);
+            a = struct("freq_Hz", [100;10], "Zreal_ohm", [1000;2000], ...
+                "negZimag_ohm", [1000;2000]);
+            b = struct("freq_Hz", [100;10], "Zreal_ohm", [3000;4000], ...
+                "negZimag_ohm", [3000;4000]);
+            group = struct("name", "Sample A", "members", [a b]);
+            project = eis.initialData();
+            eis.overlayPlot.plotOverlay(ax, group, project.parameters);
+            bars = findall(ax, "Type", "errorbar");
+            testCase.verifyEqual(bars.XData, [2 3]);
+            testCase.verifyEqual(bars.YPositiveDelta, [sqrt(2) sqrt(2)], AbsTol=1e-12);
+            testCase.verifyEqual(bars.XNegativeDelta, [sqrt(2) sqrt(2)], AbsTol=1e-12);
+            testCase.verifyLessThan(ax.XLim(1), 2-sqrt(2));
+            testCase.verifyGreaterThan(ax.YLim(2), 3+sqrt(2));
+            group.members(1).Zreal_ohm = [-3000;2000];
+            project.parameters.logX = true;
+            eis.overlayPlot.plotOverlay(ax, group, project.parameters);
+            bars = findall(ax, "Type", "errorbar");
+            testCase.verifyTrue(isnan(bars.XData(1)));
+            testCase.verifyEqual(ax.XScale, 'log');
+            clear cleanup
+        end
+
         function preservesIndependentGridsAndInvalidGaps(testCase)
             fig = figure("Visible", "off");
             cleanup = onCleanup(@() delete(fig));
