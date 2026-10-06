@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.curveEdit.toggle within the curvature product workflow.
 function applicationState = toggle(applicationState, callbackContext)
 %TOGGLE Enter or leave managed curve-anchor editing.
 if isempty(applicationState.session.cache.image)

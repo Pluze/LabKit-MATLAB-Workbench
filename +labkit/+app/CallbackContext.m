@@ -92,15 +92,10 @@ classdef (Sealed) CallbackContext < handle
                 error("labkit:app:runtime:InvariantFailure", ...
                     "CallbackContext backend is invalid.");
             end
-            names = string(fieldnames(backend));
             if ~all(structfun(@(value) ...
                     isa(value, "function_handle") && isscalar(value), backend))
                 error("labkit:app:runtime:InvariantFailure", ...
                     "CallbackContext backend operations must be function handles.");
-            end
-            if numel(unique(names)) ~= numel(names)
-                error("labkit:app:runtime:InvariantFailure", ...
-                    "CallbackContext backend operation names repeat.");
             end
             obj.Backend = backend;
         end

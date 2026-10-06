@@ -2,7 +2,7 @@ classdef FocusStackWorkflowSpec < matlab.unittest.TestCase
     %FOCUSSTACKWORKFLOWSPEC Specify focused image fusion and export workflow.
 
     methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
-        function loadsFusesExportsAndRestoresASyntheticStack(testCase)
+        function loadsFusesExportsAndInvalidatesASyntheticStack(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             first = fullfile(folder, "near.png");
@@ -65,6 +65,11 @@ classdef FocusStackWorkflowSpec < matlab.unittest.TestCase
                 testCase.verifyError(@() exportapp(figureValue, evidencePath), capture.ErrorIdentifier);
                 testCase.verifyFalse(isfile(evidencePath));
             end
+            % Oracle: an explicit rerun produces the same pixels and starts a
+            % new unexported result; a cached early return leaves lastOutputPath.
+            runtime.invokeAction("runFocusStack");
+            testCase.verifyEqual(runtime.State.session.cache.result.fused, result.fused);
+            testCase.verifyEqual(runtime.State.project.results.lastOutputPath, "");
             runtime.applyControlValue("focusWindow", 7);
             testCase.verifyEmpty(findall(quality, "Type", "image"));
             testCase.verifyFalse(runtime.State.session.cache.result.ok);

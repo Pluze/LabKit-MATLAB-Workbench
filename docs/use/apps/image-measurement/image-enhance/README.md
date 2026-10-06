@@ -70,6 +70,8 @@ output = image_enhance.analysisRun.applyPipeline(imread("source.png"), steps);
 imwrite(output{1}, "enhanced.png");
 ```
 
+The last-manifest indicator is cleared when source files are loaded again or the enhancement settings change. Selecting an existing source for preview preserves that indicator; completed output files remain on disk.
+
 ## Runtime State
 
 The current task keeps source paths, shared and per-image step histories, white-reference ROIs, export settings, and compact result metadata while the App is open. Full-size pixels and downsampled previews remain reconstructible from the selected source files.

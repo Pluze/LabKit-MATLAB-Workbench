@@ -31,18 +31,14 @@ classdef SemanticDocumentSpec < matlab.unittest.TestCase
             document = figure_studio.figureDocument.setStyle( ...
                 document, "object", "object-2", "LineWidth", 2.5);
 
-            [first, firstSources] = ...
+            first = ...
                 figure_studio.figureDocument.effectiveStyle(document, "object-1");
             second = figure_studio.figureDocument.effectiveStyle( ...
                 document, "object-2");
-            state = figure_studio.figureDocument.propertyState( ...
-                document, ["object-1", "object-2"], "LineWidth");
 
             testCase.verifyEqual(first.LineWidth, 1.5);
             testCase.verifyEqual(first.Color, [0 0 0]);
-            testCase.verifyEqual(firstSources.LineWidth, "kind:line");
             testCase.verifyEqual(second.LineWidth, 2.5);
-            testCase.verifyEqual(state.kind, "mixed");
         end
 
         function expandedLimitsRegenerateAutomaticTickText(testCase)

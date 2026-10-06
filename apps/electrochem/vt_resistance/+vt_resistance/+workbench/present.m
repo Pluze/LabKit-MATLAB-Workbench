@@ -1,4 +1,3 @@
-% App-owned implementation for vt_resistance.workbench.present within the vt_resistance product workflow.
 function view = present(applicationState)
 %PRESENT Adapt VT state into its table, summary, and named plot models.
 items = applicationState.session.cache.items;

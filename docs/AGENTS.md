@@ -44,7 +44,7 @@ These rules govern authored Markdown under `docs/`, public MATLAB help, and the 
 - Complete public MATLAB help immediately after the declaration is the sole authoring source for a public function page. Document every syntax, input, output, option, default, legal value, unit, shape, error, side effect, and related supported API that applies.
 - Generate App and library catalogs from launcher and package metadata. A public App, family, or app-facing package must not depend on a handwritten routing list for discoverability; coverage validation rejects omissions.
 - Generate structural map pages and Change component/year archives without authored Markdown mirrors. Search indexes detail pages; the map and browse indexes expose their structure without turning every record or API into global navigation.
-- Private helpers have no public reference page. Private helper comments state callers, shapes, side effects, and assumptions in source only.
+- Private helpers have no public reference page. Private helper comments explain non-obvious assumptions, data meaning, and side effects in source only; do not repeat the file path, package ownership, signature, or readily visible callers.
 - `Example:` help and marked runnable Markdown examples execute in a clean MATLAB session with synthetic data. Use `Typical Call:` for interactive, device-, or user-file-dependent sketches.
 
 ## Movement, deletion, and generated output

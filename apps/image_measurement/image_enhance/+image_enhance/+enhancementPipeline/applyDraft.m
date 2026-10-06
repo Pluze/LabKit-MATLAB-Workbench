@@ -1,4 +1,3 @@
-% App-owned implementation for image_enhance.enhancementPipeline.applyDraft within the image_enhance product workflow.
 function state=applyDraft(state,context)
 %APPLYDRAFT Commit the selected enhancement draft to the active history.
 availability = ...
@@ -18,7 +17,6 @@ state.session.workflow.pendingDirty=false;
 state.session.view.roiEditing = false;
 state = image_enhance.enhancementPipeline.invalidateResults(state);
 state.session.cache.previewResult = [];
-state.session.cache.previewResultKey = "";
 state = image_enhance.enhancementPipeline.rebuildPreview(state);
 context.log("info", "image_enhance.enhancementpipeline.applydraft.completed", ...
     "Applied the selected enhancement tool.");

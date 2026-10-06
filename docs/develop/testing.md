@@ -40,6 +40,8 @@ labkittest.run(Owner="apps/electrochem/cic/analysisRun", ...
 
 Use `labkittest.run(File=...)` only when the source maps to one complete, known evidence closure. It refuses missing evidence instead of silently running a partial test. A changed analysis source normally requires its scientific behavior, result schema, and presentation consumer together.
 
+CI workflow contract tests live beside their consumers in `.github/scripts/test_workflow_contracts.py`. They parse workflow YAML and execute the actual CI Gate shell condition against controlled job outcomes. MATLAB tests cover MATLAB behavior; workflow prose, step labels, and exact inventory counts are not test contracts.
+
 ## Test Model
 
 Runnable specifications are under `tests/specs/`. Their owner path mirrors a production capability, and every test declares exactly one contract and one execution environment.
@@ -75,13 +77,19 @@ Contracts describe evidence, not test cost:
 
 Environments are `headless`, `hidden-gui`, and `path-isolated`. Headless tests do not prove GUI behavior. Hidden-GUI product conformance proves that an App can build its declared layout; a hidden-GUI `workflow` additionally drives the native runtime through an App-owned user goal and verifies state, presentation, result, and failure semantics at the points the journey crosses. Neither proves operating-system dialogs, pointer feel, visual quality, real lab data, or scientific review. The path-isolated conformance probes every public App from a reset path boundary in the already running catalog executor. It retains the deployable path boundary and batches all App results without requiring a second concurrent MATLAB license.
 
+Runtime specifications use `labkittest.createHeadlessRuntime` or `labkittest.createMatlabRuntime` with an explicit journal created under caller-owned temporary storage. Both seams reject omitted or empty journals before constructing a runtime; production launch owns its normal installation journal.
+
 ## Evidence Design
 
 Each App owns one or more core journeys beginning at the same source boundary a user enters and ending at a useful result, saved continuation, or explicit failure. The journey uses the production decoder and native runtime; it must not inject a post-import state that bypasses the defect-prone boundary it claims to protect. Synthetic files are valid only when they obey the production format and are consumed by the production reader. A fixture and its consumer cannot define each other's expected answer: scientific or schema assertions come from an independent formula, preserved reference evidence, a hand-audited small case, an invariant, or a separately owned compatibility contract.
 
-GUI evidence has three distinct responsibilities. Framework conformance proves generic controls and signals are created and dispatched correctly. App interaction evidence proves every declared signal is driven through its exact native runtime operation. Core journeys prove meaningful action order, enablement, recovery, and user-visible outcomes. Merely locating a control, matching a callback name, invoking every callback from default state, or asserting that no exception occurred is not sufficient App evidence. Disabled or state-dependent actions are exercised only in a reachable state; equivalent combinations use risk-based partitions or pairwise cases, while every scientifically distinct branch remains explicit. A terminal action such as stop, finalize, or disconnect is exercised with representative populated data when it releases a resource and then presents retained results; the test asserts the state transition committed, the resource reached its supported terminal state, and the populated presentation completed. Empty default state and producer-only assertions do not cover that boundary.
+GUI evidence has three distinct responsibilities. Framework conformance proves generic controls and signals are created and dispatched correctly. App interaction evidence exercises custom signal behavior in reachable workflows and asserts its results; source-text invocation inventories cannot establish execution or behavior. Core journeys prove meaningful action order, enablement, recovery, and user-visible outcomes. Merely locating a control, matching a callback name, invoking every callback from default state, or asserting that no exception occurred is not sufficient App evidence. Disabled or state-dependent actions are exercised only in a reachable state; equivalent combinations use risk-based partitions or pairwise cases, while every scientifically distinct branch remains explicit. A terminal action such as stop, finalize, or disconnect is exercised with representative populated data when it releases a resource and then presents retained results; the test asserts the state transition committed, the resource reached its supported terminal state, and the populated presentation completed. Empty default state and producer-only assertions do not cover that boundary.
 
 Every new or materially changed test states its oracle and should survive a counterfactual review: identify a small plausible production mutation, such as a reversed condition, stale view revision, changed unit conversion, omitted result field, or disconnected callback, that makes the test fail for the intended reason. Use mutation tooling where it is reliable, but do not optimize a mutation score or keep low-value tests solely to raise it. Negative, cancellation, invalid-input, retry, and restore paths are included when they are supported user behavior, not generated as a mechanical Cartesian product.
+
+Maintain a test while it protects a supported outcome or detects a distinct costly regression. When reviewing deletion, name the behavior it protects, its independent oracle, and the surviving evidence for that behavior. Retire tests of removed behavior with their fixtures and documentation. Replace assertions tied to internal method inventories, constant bookkeeping fields, or incidental counts with observable outcomes; do not add a new absence check for each removed detail. Small synthetic catalogs can prove discovery and parameterization without duplicating the current application's entire test inventory. Keep boundary checks for supported compatibility, safety, and dependencies.
+
+These maintenance choices follow [Google's unit testing guidance](https://abseil.io/resources/swe-book/html/ch12.html): tests should tolerate internal refactoring, expose behavior through the owning interface, and remain clear about their expected result. [The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html) recommends focused behavioral evidence and avoiding duplicated coverage across layers. Neither a fixed test ratio nor test-count reduction is a LabKit success criterion.
 
 This model follows mature project guidance to test user-visible behavior and resilient interaction boundaries ([Playwright](https://playwright.dev/docs/best-practices), [Testing Library](https://testing-library.com/docs/guiding-principles)), separate unit, integration, and functional GUI evidence ([napari](https://napari.org/stable/developers/contributing/testing.html), [Qt Test](https://doc.qt.io/qt-6/qtest-overview.html)), and reserve deterministic image comparison for an actual visual contract ([Matplotlib](https://matplotlib.org/stable/devel/testing.html#image-comparison-tests)). LabKit adapts those ideas to deterministic scientific oracles and Base MATLAB runtime constraints rather than copying another project's suite structure.
 
@@ -136,7 +144,7 @@ Manual App validation remains required for native file dialogs, visual design, p
 
 ## Artifacts and Failures
 
-Each run writes one folder beneath `artifacts/test-results/<run-name>/`:
+`labkittest.run` writes one folder beneath `artifacts/runs/<RunName>/` by default. Build tasks set `ArtifactsRoot` to `artifacts/test-results`, with the profile as the run name. An explicit `ArtifactsRoot` overrides the location:
 
 ```text
 manifest.json       run identity
@@ -166,16 +174,6 @@ Do not run `changedFast`, `headless`, `apps`, or the complete local matrix after
 When a mapped layout change leaves a non-automatable boundary, its plan can name a manual check. It is printed and recorded in `plan.json`, but it never makes an automated run pass. Manual checks are limited to native dialogs, pointer behavior, visual design, real-data suitability, and scientific interpretation; they cannot replace an automated calculation, state, export, migration, structural-GUI, or workflow proof.
 
 For deterministic rendering regressions, use `labkittest.visualEvidencePath(name, extension)` and write the production image there. Keep an automated assertion over that same file; the retained image supports human or visual-model review but is not itself a passing test. CI includes each profile's `visual-evidence/` folder in the platform artifact.
-
-## Maintainer Rules
-
-- Keep specs beside the capability that owns their behavior; tests never own a parallel product API.
-- Keep cross-owner generated inputs in an owner-named package under `tests/+testfixtures/`; keep every other input builder beside the specification that consumes it. Delete manual-replay builders and tests whose only outcome is proving the fixture itself.
-- Prefer direct behavioral calls for narrow formulas and state transitions, and require at least one native core workflow for every App. Add more workflows only for a distinct user goal, state-dependent chain, or failure boundary.
-- Audit every declared App signal with `labkittest.appEvidence`. Every signal needs an exact native-runtime operation. This remains an omission check: the owning workflow must assert the domain or user-visible outcome, and the callback's internal decisions remain owned by its direct contract tests.
-- Do not add legacy suite folders, stage tags, selector registries, test wrappers, runner options, or Code Analyzer suppression pragmas.
-- Add a new public framework test API only when it is a stable product boundary. Test infrastructure stays private under `tests/+labkittest/`.
-- Follow `.agents/migration_guide.md` only while that active compatibility retirement exists; the file is absent when no migration is open.
 
 ## Native graphics capabilities
 

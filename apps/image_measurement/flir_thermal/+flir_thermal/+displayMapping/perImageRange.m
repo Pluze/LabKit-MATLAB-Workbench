@@ -1,4 +1,3 @@
-% App-owned implementation for flir_thermal.displayMapping.perImageRange within the flir_thermal product workflow.
 function applicationState = perImageRange( ...
         applicationState, callbackContext)
 %PERIMAGERANGE Apply an independent finite range to every registered image.
@@ -55,7 +54,7 @@ index = applicationState.session.selection.currentIndex;
 if index >= 1 && index <= numel(items)
     applicationState.session.cache.currentItem = items(index);
 end
-applicationState.project.results.lastExport = [];
+
 applicationState.project.results.resultManifestPath = "";
 callbackContext.log("info", ...
     "flir_thermal.displaymapping.perimagerange.completed", ...

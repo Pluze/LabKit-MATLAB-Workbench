@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.sessionControl.openProject within the video_marker product workflow.
 function applicationState = openProject(applicationState, callbackContext)
 %OPENPROJECT Restore a Video Marker MAT snapshot through the App contract.
 choice = callbackContext.chooseInputFile( ...

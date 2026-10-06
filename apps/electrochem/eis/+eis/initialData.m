@@ -1,9 +1,5 @@
 function project = initialData()
 %INITIALDATA Create the App-owned initial in-memory data.
-project = createProject();
-end
-
-function project = createProject()
     axes = eis.overlayPlot.axisItems();
     units = eis.impedanceDisplay.catalog();
     project = struct();
@@ -19,5 +15,4 @@ function project = createProject()
     project.groups = struct("name", {}, "sourceIds", {});
     choices = eis.workbench.groupChoices(project.groups);
     project.parameters.selectedGroup = choices(1);
-    project.results = struct("lastExport", []);
 end

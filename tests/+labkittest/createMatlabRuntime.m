@@ -1,5 +1,5 @@
 function runtime = createMatlabRuntime( ...
-        definition, initialProject, backend, journal, varargin)
+        definition, initialProject, backend, journal)
 %CREATEMATLABRUNTIME Construct a native App runtime for test assertions.
 %   RUNTIME = labkittest.createMatlabRuntime(DEFINITION, INITIALPROJECT,
 %   BACKEND, JOURNAL) is the stable test-only construction seam for App
@@ -10,8 +10,7 @@ function runtime = createMatlabRuntime( ...
 %
 %   DEFINITION must be one labkit.app.Definition. INITIALPROJECT is empty or a
 %   scalar project struct. BACKEND is a scalar struct of test dialog seams.
-%   JOURNAL is created with labkittest.temporarySessionJournal. Extra arguments
-%   are forwarded to the internal factory for framework-owned test seams.
+%   JOURNAL is created with labkittest.temporarySessionJournal.
 
 if ~isa(definition, "labkit.app.Definition") || ~isscalar(definition)
     error("LabKit:TestRuntime:InvalidDefinition", ...
@@ -22,6 +21,6 @@ if nargin < 4 || isempty(journal)
         "Native test runtime construction requires an explicit test journal.");
 end
 
-runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
-    definition, initialProject, backend, journal, varargin{:});
+runtime = labkit.app.internal.runtime.RuntimeFactory.create("matlab",  ...
+    definition, initialProject, backend, journal);
 end

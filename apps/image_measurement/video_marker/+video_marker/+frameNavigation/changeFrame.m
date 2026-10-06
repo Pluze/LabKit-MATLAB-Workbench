@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.frameNavigation.changeFrame within the video_marker product workflow.
 function state = changeFrame(state, value, context)
 %CHANGEFRAME Read one requested frame without prediction or annotation mutation.
 info = state.session.cache.videoInfo;

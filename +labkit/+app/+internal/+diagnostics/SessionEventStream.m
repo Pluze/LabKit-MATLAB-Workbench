@@ -13,7 +13,6 @@ classdef (Hidden, Sealed) SessionEventStream < handle
         OperationSequence (1, 1) double = 0
         Records
         RecordBytes (1, :) double = zeros(1, 0)
-        RetainedBytes (1, 1) double = 0
         OperationStack (1, :) cell = {}
         FinishedOperationIds (1, :) string = strings(1, 0)
         ProjectionHook = []
@@ -62,7 +61,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             obj.StartedAt = datetime("now", TimeZone="UTC", ...
                 Format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
             obj.StartedTimer = tic;
-            obj.Records = repmat(recordTemplate(), 0, 1);
+            obj.Records = repmat(labkit.app.internal.diagnostics.SessionEventValidator.recordTemplate(), 0, 1);
             obj.ProjectionHook = projectionHook;
             obj.ProjectionHealthHook = projectionHealthHook;
             obj.TraceEnabled = traceEnabled;
@@ -160,8 +159,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 obj.requireActiveOperation(operation);
             end
             obj.Sequence = obj.Sequence + 1;
-            record = recordTemplate();
-            record.schemaVersion = 1;
+            record = labkit.app.internal.diagnostics.SessionEventValidator.recordTemplate();
             record.sequence = obj.Sequence;
             record.timestampUtc = string(datetime("now", TimeZone="UTC", ...
                 Format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
@@ -315,16 +313,19 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             if nargin < 3
                 notifyProjection = true;
             end
-            obj.Records(end + 1, 1) = record;
-            recordBytes = utf8ByteCount(jsonencode(record));
-            obj.RecordBytes(end + 1) = recordBytes;
-            obj.RetainedBytes = obj.RetainedBytes + recordBytes;
-            while numel(obj.Records) > obj.ProvisionalInMemoryRecordLimit || ...
-                    obj.RetainedBytes > obj.InMemoryByteLimit
-                obj.RetainedBytes = obj.RetainedBytes - obj.RecordBytes(1);
-                obj.Records(1) = [];
-                obj.RecordBytes(1) = [];
+            records = [obj.Records; record];
+            bytes = [obj.RecordBytes, utf8ByteCount(jsonencode(record))];
+            retainedBytes = sum(bytes);
+            while numel(records) > obj.ProvisionalInMemoryRecordLimit || ...
+                    retainedBytes > obj.InMemoryByteLimit
+                retainedBytes = retainedBytes - bytes(1);
+                records(1) = [];
+                bytes(1) = [];
             end
+            % Publish only a bounded history; a viewer timer can read snapshots
+            % while MATLAB yields inside record serialization.
+            obj.RecordBytes = bytes;
+            obj.Records = records;
             if notifyProjection
                 obj.notifyProjectionHook(record);
             end
@@ -399,8 +400,7 @@ classdef (Hidden, Sealed) SessionEventStream < handle
                 rootActionId = string(contextRecord.rootActionId);
             end
             obj.Sequence = obj.Sequence + 1;
-            record = recordTemplate();
-            record.schemaVersion = 1;
+            record = labkit.app.internal.diagnostics.SessionEventValidator.recordTemplate();
             record.sequence = obj.Sequence;
             record.timestampUtc = string(datetime("now", TimeZone="UTC", ...
                 Format="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"));
@@ -435,17 +435,6 @@ classdef (Hidden, Sealed) SessionEventStream < handle
             obj.Consumers = obj.Consumers(keep);
         end
     end
-end
-
-function record = recordTemplate()
-record = struct( ...
-    "schemaVersion", 1, "sequence", 0, "timestampUtc", "", ...
-    "elapsedSeconds", 0, "severity", "", "audience", "", ...
-    "category", "", "eventName", "", "message", "", ...
-    "attributes", struct(), "sessionId", "", "appId", "", ...
-    "operationId", "", "parentOperationId", "", "rootActionId", "", ...
-    "operationResult", "", "stateDisposition", "", "durationSeconds", [], ...
-    "exception", emptyException());
 end
 
 function operation = emptyOperation()

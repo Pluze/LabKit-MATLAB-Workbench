@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.workbench.present within the curvature product workflow.
 function view = present(applicationState)
 %PRESENT Compose Curvature Measurement's complete semantic snapshot.
 project = applicationState.project;

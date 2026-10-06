@@ -5,7 +5,6 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
 
     properties (Access = private)
         Runtime
-        Projection
         SubscriptionToken (1, 1) string = ""
         Figure
         RootPanel
@@ -16,7 +15,7 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
         CopyButton
         EventTable
         DetailArea
-        VisibleSequences (1, :) double = zeros(1, 0)
+        VisibleEvents = struct("sequence", {})
         RefreshPump = []
         RefreshPending (1, 1) logical = false
         Closed (1, 1) logical = false
@@ -30,8 +29,6 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
                     "SessionLogViewer requires one RuntimeKernel.");
             end
             obj.Runtime = runtime;
-            obj.Projection = labkit.app.internal.diagnostics.SessionLogProjection( ...
-                runtime.diagnosticSnapshot());
             obj.createFigure();
             obj.RefreshPump = timer( ...
                 "ExecutionMode", "singleShot", ...
@@ -63,7 +60,6 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
             if obj.Closed
                 return;
             end
-            obj.Projection.update(obj.Runtime.diagnosticSnapshot());
             obj.RefreshPending = false;
             obj.refreshView();
         end
@@ -185,11 +181,10 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
             obj.resizeTableColumns();
         end
 
-        function acceptRecord(obj, record)
+        function acceptRecord(obj, ~)
             if obj.Closed
                 return;
             end
-            obj.Projection.append(record);
             obj.RefreshPending = true;
             if ~isempty(obj.RefreshPump) && isvalid(obj.RefreshPump) && ...
                     string(obj.RefreshPump.Running) == "off"
@@ -206,8 +201,6 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
         end
 
         function applyFilters(obj)
-            obj.Projection.setFilters( ...
-                Level=string(obj.LevelFilter.Value));
             obj.refreshView();
         end
 
@@ -224,7 +217,8 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
             if obj.Closed || isempty(obj.Figure) || ~isvalid(obj.Figure)
                 return;
             end
-            projection = obj.Projection.view();
+            projection = labkit.app.internal.diagnostics.projectSessionLog( ...
+                obj.Runtime.diagnosticSnapshot(), string(obj.LevelFilter.Value));
             if projection.traceEnabled
                 obj.TraceButton.Text = "Disable TRACE";
             else
@@ -232,12 +226,13 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
             end
             rows = projection.rows;
             sequences = rows.Sequence.';
-            previousCount = numel(obj.VisibleSequences);
+            previousSequences = double([obj.VisibleEvents.sequence]);
+            previousCount = numel(previousSequences);
             appended = incremental && ...
                 numel(sequences) > previousCount && ...
-                isequal(sequences(1:previousCount), obj.VisibleSequences);
+                isequal(sequences(1:previousCount), previousSequences);
             unchanged = incremental && ...
-                isequal(sequences, obj.VisibleSequences);
+                isequal(sequences, previousSequences);
             if appended
                 added = rows(previousCount + 1:end, :);
                 obj.EventTable.Data = [obj.EventTable.Data; added(:, 1:4)];
@@ -246,7 +241,7 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
                 obj.EventTable.Data = rows(:, 1:4);
                 obj.applySeverityStyles(rows.Level);
             end
-            obj.VisibleSequences = sequences;
+            obj.VisibleEvents = projection.events;
             counts = projection.severityCounts;
             obj.SummaryLabel.Text = char(sprintf( ...
                 "INFO %d   WARNING %d   ERROR %d   CRITICAL %d   Visible %d", ...
@@ -270,14 +265,10 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
                 return;
             end
             row = event.Indices(1, 1);
-            if row < 1 || row > numel(obj.VisibleSequences)
+            if row < 1 || row > numel(obj.VisibleEvents)
                 return;
             end
-            record = obj.Projection.detail( ...
-                obj.VisibleSequences(row));
-            if isempty(record)
-                return;
-            end
+            record = obj.VisibleEvents(row);
             obj.DetailArea.Value = cellstr(detailLines(record));
             obj.CopyButton.Enable = "on";
         end
@@ -294,7 +285,7 @@ classdef (Hidden, Sealed) SessionLogViewer < handle
         end
 
         function followLatest(obj)
-            if isempty(obj.VisibleSequences)
+            if isempty(obj.VisibleEvents)
                 return;
             end
             try

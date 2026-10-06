@@ -1,4 +1,3 @@
-% App-owned implementation for gait_analysis.sourceFiles.adoptPose within the gait_analysis product workflow.
 function applicationState = adoptPose( ...
         applicationState, selection, callbackContext)
 %ADOPTPOSE Apply source-owned timing, scale, and role facts after import.
@@ -10,8 +9,7 @@ end
 pose = applicationState.session.cache.pose;
 applicationState.project.results.analysis = ...
     gait_analysis.analysisRun.emptyResult();
-applicationState.project.results.lastExport = [];
-applicationState.session.cache.lastRunFingerprint = "";
+
 applicationState.session.selection.currentStepIndex = 1;
 applicationState.session.cache.plotViewRevision = ...
     applicationState.session.cache.plotViewRevision + 1;

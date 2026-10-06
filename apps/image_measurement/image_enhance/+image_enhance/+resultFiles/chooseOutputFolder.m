@@ -1,4 +1,3 @@
-% App-owned implementation for image_enhance.resultFiles.chooseOutputFolder within the image_enhance product workflow.
 function applicationState = chooseOutputFolder( ...
         applicationState, callbackContext)
 %CHOOSEOUTPUTFOLDER Select the batch export destination.

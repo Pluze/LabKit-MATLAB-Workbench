@@ -1,4 +1,3 @@
-% App-owned implementation for gait_analysis.stepPreview.layoutSections within the gait_analysis product workflow.
 function [summary, steps] = layoutSections()
 %LAYOUTSECTIONS Declare result summary and selected-step review controls.
 summary = labkit.app.layout.section("summarySection", "Summary", { ...

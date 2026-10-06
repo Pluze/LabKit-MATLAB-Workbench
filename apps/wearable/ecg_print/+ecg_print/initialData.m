@@ -1,9 +1,5 @@
 function project = initialData()
 %INITIALDATA Create the App-owned initial in-memory data.
-project = createProject();
-end
-
-function project = createProject()
     project = struct();
     project.inputs = struct("sources", ...
         struct([]));
@@ -19,8 +15,5 @@ function project = createProject()
         "segmentWindow", 0.7, "templateTopN", 30, ...
         "smoothBeats", 15);
     project.results = struct( ...
-        "lastAnalysis", struct(), ...
-        "lastRegionExport", [], ...
-        "lastSegmentExport", [], ...
-        "lastWaveformExport", []);
+        "lastAnalysis", struct());
 end

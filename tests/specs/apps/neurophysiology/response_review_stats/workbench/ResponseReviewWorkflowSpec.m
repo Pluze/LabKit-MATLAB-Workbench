@@ -31,9 +31,12 @@ classdef ResponseReviewWorkflowSpec < matlab.unittest.TestCase
                 runtime.State.session.cache.plotViewRevision, 0);
             testCase.verifyEqual(runtime.State.session.view.previewMode, "Aligned");
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview").Children);
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastExport.outputPath));
-            exportedPath = runtime.State.project.results.lastExport.outputPath;
-            testCase.verifyEqual(string(fileparts(exportedPath)), string(folder));
+            exportedPath = fullfile(folder, "response_review_metrics.csv");
+            testCase.verifyTrue(isfile(exportedPath));
+            exported = readtable(exportedPath);
+            testCase.verifyEqual(height(exported), height(runtime.State.session.cache.metrics));
+            testCase.verifyEqual(exported.Properties.VariableNames, ...
+                runtime.State.session.cache.metrics.Properties.VariableNames);
             runtime.invokeAction("clearOutputFolder");
             testCase.verifyEqual(runtime.State.session.workflow.outputFolder, "");
             runtime.invokeAction("resetWorkflow");

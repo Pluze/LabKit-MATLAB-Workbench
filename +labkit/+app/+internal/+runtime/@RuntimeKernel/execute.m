@@ -20,7 +20,7 @@ function execute(obj, binding, payload, prepareState, failureLabel)
             end
         end
         labkit.app.internal.runtime.RuntimeContractBoundary.validateState( ...
-            obj.Application, candidate);
+            candidate);
         view = obj.present(candidate);
         if hasCallback
             obj.Recorder.checkpoint( ...

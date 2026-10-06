@@ -1,4 +1,3 @@
-% App-owned implementation for batch_crop.sourceFiles.loadCurrent within the batch_crop product workflow.
 function [applicationState, loaded] = loadCurrent( ...
         applicationState, callbackContext)
 %LOADCURRENT Lazily decode the selected crop task through resolved paths.
@@ -29,7 +28,6 @@ try
             "No image was loaded for crop task %d.", index);
     end
     applicationState.session.cache.images{index} = loadedItems(1).image;
-    applicationState.session.cache.paths(index) = paths(1);
     loaded = true;
 catch cause
     callbackContext.log("error", "batch_crop.sourcefiles.loadcurrent.exception", "Could not load image", ...

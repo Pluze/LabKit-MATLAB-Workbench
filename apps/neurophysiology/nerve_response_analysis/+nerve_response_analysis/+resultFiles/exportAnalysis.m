@@ -1,4 +1,3 @@
-% App-owned implementation for nerve_response_analysis.resultFiles.exportAnalysis within the nerve_response_analysis product workflow.
 function state = exportAnalysis(state, context)
 analysis = state.session.cache.analysis;
 if ~isstruct(analysis) || isempty(fieldnames(analysis))
@@ -20,8 +19,7 @@ end
 name = "nerve_response_analysis.json";
 path = fullfile(folder, name);
 nerve_response_analysis.resultFiles.writeAnalysisJson(analysis, path);
-state.project.results.lastExport = struct("jsonPath", string(path), ...
-    "outputPath", string(path));
+
 state.session.workflow.statusMessage = ...
     "Exported nerve-response analysis.";
 state.session.workflow.lastAction = "Exported analysis";

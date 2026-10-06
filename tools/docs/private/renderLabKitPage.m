@@ -31,7 +31,7 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
         "<meta charset=""utf-8"">"
         "<meta name=""viewport"" content=""width=device-width,initial-scale=1"">"
         "<meta name=""generator"" content=""LabKit MATLAB documentation compiler"">"
-        "<title>" + htmlEscape(title) + " - " + htmlEscape(model.title) + "</title>"
+        "<title>" + escapeLabKitHtml(title) + " - " + escapeLabKitHtml(model.title) + "</title>"
         "<link rel=""stylesheet"" href=""" + styleUrl + """>"
         "</head>"
         "<body data-site-root=""" + rootPrefix + """>"
@@ -39,7 +39,7 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
         "<div class=""topbar-inner"">"
         navigationButton
         "<a class=""brand"" href=""" + homeUrl + """>" + ...
-            htmlEscape(model.title) + "</a>"
+            escapeLabKitHtml(model.title) + "</a>"
         "<div class=""search""><label class=""sr-only"" for=""doc-search-section"">Search section</label>" + ...
             "<select id=""doc-search-section""><option value=""all"">All documentation</option>" + ...
             "<option value=""use"">Use</option><option value=""develop"">Develop</option>" + ...
@@ -54,7 +54,7 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
             topNavigation + "</div></nav>"
         "<div class=""" + shellClass + """>"
         conditionalAside(localNavigation, "local-navigation", "sidebar")
-        "<main class=""content"" data-page-type=""" + htmlEscape(kind) + """>"
+        "<main class=""content"" data-page-type=""" + escapeLabKitHtml(kind) + """>"
         breadcrumbs
         mobileOutline
         body
@@ -94,7 +94,7 @@ function html = navigationLinks(outputPath, labels, targets, sections, current)
         end
         links(k) = "<a class=""" + className + """ href=""" + ...
             relativeWebPath(outputPath, targets(k)) + """>" + ...
-            htmlEscape(labels(k)) + "</a>";
+            escapeLabKitHtml(labels(k)) + "</a>";
     end
     html = strjoin(links, "");
 end
@@ -115,13 +115,13 @@ function html = renderLocalNavigation(model, outputPath, title)
         return;
     end
     chunks = "<nav aria-label=""Current documentation"">" + ...
-        "<p class=""sidebar-title"">" + htmlEscape(sectionTitle(section)) + "</p>";
+        "<p class=""sidebar-title"">" + escapeLabKitHtml(sectionTitle(section)) + "</p>";
 
     [landingTitle, landingTarget] = sectionLanding(section);
     if strlength(landingTarget) > 0 && outputPath ~= landingTarget
         chunks = chunks + "<a class=""context-parent"" href=""" + ...
             relativeWebPath(outputPath, landingTarget) + """>" + ...
-            htmlEscape(landingTitle) + "</a>";
+            escapeLabKitHtml(landingTitle) + "</a>";
     end
 
     [ownerTitle, ownerTarget, apiItem] = apiOwner(model, outputPath);
@@ -136,10 +136,10 @@ function html = renderLocalNavigation(model, outputPath, title)
     if strlength(ownerTarget) > 0 && ownerTarget ~= outputPath
         chunks = chunks + "<a class=""context-parent"" href=""" + ...
             relativeWebPath(outputPath, ownerTarget) + """>" + ...
-            htmlEscape(ownerTitle) + "</a>";
+            escapeLabKitHtml(ownerTitle) + "</a>";
     end
     chunks = chunks + "<p class=""current-page"">" + ...
-        htmlEscape(title) + "</p>";
+        escapeLabKitHtml(title) + "</p>";
 
     related = renderSectionLinks(model, outputPath, section, apiItem);
     if strlength(related) > 0
@@ -167,7 +167,7 @@ function html = renderContextAncestors(pages, outputPath, landingTarget)
         linkCount = linkCount + 1;
         links(linkCount, 1) = "<a class=""context-parent"" href=""" + ...
             relativeWebPath(outputPath, target) + """>" + ...
-            htmlEscape(pages(index).title) + "</a>";
+            escapeLabKitHtml(pages(index).title) + "</a>";
     end
     html = strjoin(links(1:linkCount), "");
 end
@@ -356,7 +356,7 @@ function html = localSubgroup(title, content, currentPath, titleTarget)
         html = "";
         return;
     end
-    heading = htmlEscape(title);
+    heading = escapeLabKitHtml(title);
     if nargin >= 4 && strlength(titleTarget) > 0
         heading = "<a href=""" + ...
             relativeWebPath(currentPath, titleTarget) + """>" + ...
@@ -377,7 +377,7 @@ function html = renderOnThisPage(body)
         label = regexprep(string(tokens{k}{2}), '<[^>]+>', '');
         label = decodeBasicEntities(label);
         links(k, 1) = "<a class=""toc-link"" href=""#" + ...
-            htmlEscape(anchor) + """>" + htmlEscape(label) + "</a>";
+            escapeLabKitHtml(anchor) + """>" + escapeLabKitHtml(label) + "</a>";
     end
     html = strjoin(links, "");
 end
@@ -482,7 +482,7 @@ function html = localLinkWithClass(current, target, label, className)
     end
     html = "<a class=""" + className + """ href=""" + ...
         relativeWebPath(current, target) + """" + currentAttribute + ">" + ...
-        htmlEscape(label) + "</a>";
+        escapeLabKitHtml(label) + "</a>";
 end
 
 function [title, target] = sectionLanding(section)
@@ -554,7 +554,7 @@ function html = renderBreadcrumbs(model, outputPath, title)
             ~any(seen == ownerTarget) && ownerTarget ~= outputPath
         links = links + breadcrumbLink(outputPath, ownerTarget, ownerTitle);
     end
-    links = links + "<li aria-current=""page"">" + htmlEscape(title) + "</li>";
+    links = links + "<li aria-current=""page"">" + escapeLabKitHtml(title) + "</li>";
     html = "<nav class=""breadcrumbs"" aria-label=""Breadcrumb""><ol>" + ...
         links + "</ol></nav>";
 end
@@ -577,7 +577,7 @@ end
 
 function html = breadcrumbLink(outputPath, target, label)
     html = "<li><a href=""" + relativeWebPath(outputPath, target) + ...
-        """>" + htmlEscape(label) + "</a></li>";
+        """>" + escapeLabKitHtml(label) + "</a></li>";
 end
 
 function html = renderFooter(model, outputPath)
@@ -585,8 +585,8 @@ function html = renderFooter(model, outputPath)
         "<a href=""" + relativeWebPath(outputPath, "map/index.html") + ...
         """>All documentation</a><a href=""" + ...
         relativeWebPath(outputPath, "changes/index.html") + ...
-        """>Changes</a><a href=""" + htmlEscape(model.repositoryUrl) + ...
-        """>GitHub</a><a href=""" + htmlEscape(model.repositoryUrl) + ...
+        """>Changes</a><a href=""" + escapeLabKitHtml(model.repositoryUrl) + ...
+        """>GitHub</a><a href=""" + escapeLabKitHtml(model.repositoryUrl) + ...
         "/blob/main/.github/SUPPORT.md"">Support</a></nav>" + ...
         "<p>Current guides are generated from tracked Markdown; API reference is generated from public MATLAB help.</p></footer>";
 end
@@ -606,11 +606,4 @@ function prefix = siteRootPrefix(outputPath)
     end
     prefix = repmat("../", 1, numel(split(folder, "/")));
     prefix = strjoin(prefix, "");
-end
-
-function text = htmlEscape(text)
-    text = replace(string(text), "&", "&amp;");
-    text = replace(text, "<", "&lt;");
-    text = replace(text, ">", "&gt;");
-    text = replace(text, """", "&quot;");
 end

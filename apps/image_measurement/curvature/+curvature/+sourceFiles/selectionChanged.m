@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.sourceFiles.selectionChanged within the curvature product workflow.
 function applicationState = selectionChanged( ...
         applicationState, selection, callbackContext)
 %SELECTIONCHANGED Reset image-owned annotations after source replacement.

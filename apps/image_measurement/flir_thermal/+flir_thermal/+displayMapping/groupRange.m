@@ -1,4 +1,3 @@
-% App-owned implementation for flir_thermal.displayMapping.groupRange within the flir_thermal product workflow.
 function applicationState = groupRange( ...
         applicationState, callbackContext)
 %GROUPRANGE Apply one finite range spanning every registered FLIR image.
@@ -101,6 +100,6 @@ end
 end
 
 function applicationState = invalidateResults(applicationState)
-applicationState.project.results.lastExport = [];
+
 applicationState.project.results.resultManifestPath = "";
 end

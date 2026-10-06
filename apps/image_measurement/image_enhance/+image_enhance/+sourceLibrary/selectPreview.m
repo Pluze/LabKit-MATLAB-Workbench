@@ -1,11 +1,9 @@
-% App-owned implementation for image_enhance.sourceLibrary.selectPreview within the image_enhance product workflow.
 function applicationState = selectPreview( ...
         applicationState, listSelection, callbackContext)
 %SELECTPREVIEW Lazily decode and present the selected source-list path.
 applicationState.project.annotations.items = reconcileAnnotations( ...
     applicationState.project.annotations.items, ...
     applicationState.project.inputs.sources);
-applicationState = invalidateChangedSourceExport(applicationState);
 if isempty(listSelection.Indices)
     applicationState.session.selection.currentIndex = 0;
     applicationState.session.cache = emptySelectedCache( ...
@@ -46,7 +44,6 @@ applicationState.session.cache.item = items(1);
 applicationState.session.cache.previewSource = preview;
 applicationState.session.cache.previewScale = scale;
 applicationState.session.cache.previewResult = [];
-applicationState.session.cache.previewResultKey = "";
 applicationState = ...
     image_enhance.enhancementPipeline.rebuildPreview(applicationState);
 end
@@ -61,17 +58,6 @@ for index = 1:numel(sources)
 end
 end
 
-function applicationState = invalidateChangedSourceExport(applicationState)
-lastExport = applicationState.project.results.lastExport;
-if isempty(lastExport) || ~isfield(lastExport, "sourceIds")
-    return;
-end
-currentIds = string({applicationState.project.inputs.sources.id});
-if ~isequal(currentIds(:), string(lastExport.sourceIds(:)))
-    applicationState = ...
-        image_enhance.enhancementPipeline.invalidateResults(applicationState);
-end
-end
 
 function cache = emptySelectedCache(cache)
 cache.sourceId = "";
@@ -79,5 +65,4 @@ cache.item = [];
 cache.previewSource = [];
 cache.previewScale = 1;
 cache.previewResult = [];
-cache.previewResultKey = "";
 end

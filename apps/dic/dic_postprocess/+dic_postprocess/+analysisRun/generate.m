@@ -1,4 +1,3 @@
-% App-owned implementation for dic_postprocess.analysisRun.generate within the dic_postprocess product workflow.
 function applicationState = generate(applicationState, callbackContext)
 %GENERATE Load strain data and prepare overlays plus the ROI summary.
 cache = applicationState.session.cache;

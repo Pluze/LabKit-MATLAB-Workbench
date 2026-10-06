@@ -1,10 +1,9 @@
-% App-owned implementation for batch_crop.sourceFiles.present within the batch_crop product workflow.
 function view = present(applicationState)
 %PRESENT Describe crop-task navigation and current source.
 items = batch_crop.sourceFiles.workingItems( ...
     applicationState.project.inputs.items, ...
     applicationState.session.cache.images, ...
-    applicationState.session.cache.paths);
+    applicationState.project.inputs.sources);
 index = batch_crop.sourceFiles.currentIndex(applicationState);
 hasImage = batch_crop.sourceFiles.hasCurrentImage(applicationState);
 source = "No images loaded";

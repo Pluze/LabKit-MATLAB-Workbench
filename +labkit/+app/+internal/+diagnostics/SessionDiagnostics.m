@@ -6,23 +6,16 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
 
     properties (Access = private)
         Stream
-        Projection
         Journal
         Closed (1, 1) logical = false
     end
 
     methods
-        function obj = SessionDiagnostics(stream, projection, journal)
+        function obj = SessionDiagnostics(stream, journal)
             if ~isa(stream, "labkit.app.internal.diagnostics.SessionEventStream") || ...
                     ~isscalar(stream)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "SessionDiagnostics requires one SessionEventStream.");
-            end
-            if ~isa(projection, ...
-                    "labkit.app.internal.diagnostics.SessionJournalProjection") || ...
-                    ~isscalar(projection)
-                error("labkit:app:runtime:InvariantFailure", ...
-                    "SessionDiagnostics requires one journal projection.");
             end
             if ~isa(journal, "labkit.app.internal.diagnostics.SessionJournal") || ...
                     ~isscalar(journal)
@@ -30,7 +23,6 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                     "SessionDiagnostics requires one SessionJournal.");
             end
             obj.Stream = stream;
-            obj.Projection = projection;
             obj.Journal = journal;
         end
 
@@ -62,9 +54,7 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
 
         function snapshot = captureSnapshot(obj)
             streamSnapshot = obj.Stream.captureSnapshot();
-            manifest = obj.Journal.manifest();
             health = obj.Journal.healthSnapshot();
-            degradation = manifest.degradation;
             snapshot = struct( ...
                 "events", streamSnapshot.events, ...
                 "traceEnabled", streamSnapshot.traceEnabled, ...
@@ -75,11 +65,11 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
                 "journalAvailable", health.available, ...
                 "journalState", string(health.state), ...
                 "droppedRecordCount", ...
-                    double(degradation.droppedRecordCount), ...
+                    health.droppedRecordCount, ...
                 "coalescedRecordCount", ...
-                    double(degradation.coalescedRecordCount), ...
+                    health.coalescedRecordCount, ...
                 "expiredSegmentCount", ...
-                    double(degradation.expiredSegmentCount), ...
+                    health.expiredSegmentCount, ...
                 "degradationReason", ...
                     string(health.degradationReason));
         end
@@ -103,10 +93,10 @@ classdef (Hidden, Sealed) SessionDiagnostics < handle
             try
                 obj.Stream.close();
             catch
-                % Stream teardown must not prevent projection cleanup.
+                % Stream teardown must not prevent journal cleanup.
             end
             try
-                obj.Projection.close();
+                obj.Journal.close();
             catch
                 % Journal teardown must not change Runtime close semantics.
             end

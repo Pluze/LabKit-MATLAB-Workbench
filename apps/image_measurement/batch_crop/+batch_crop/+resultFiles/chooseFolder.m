@@ -1,4 +1,3 @@
-% App-owned implementation for batch_crop.resultFiles.chooseFolder within the batch_crop product workflow.
 function applicationState = chooseFolder(applicationState, callbackContext)
 choice = callbackContext.chooseOutputFolder( ...
     applicationState.project.parameters.outputFolder);

@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.analysisRun.present within the curvature product workflow.
 function view = present(hasImage, points, fit, lengthResult, editMode)
 %PRESENT Describe measurement and export action availability.
 editing = editMode ~= "none";

@@ -9,8 +9,5 @@ function items = readItems(paths)
     for k = 1:numel(records)
         items(k).path = records(k).path;
         items(k).image = records(k).image;
-        items(k).angleDeg = 0;
-        items(k).centerXY = [NaN, NaN];
-        items(k).centerSet = false;
     end
 end

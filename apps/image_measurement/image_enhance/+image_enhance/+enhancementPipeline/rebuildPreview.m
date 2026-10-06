@@ -1,10 +1,8 @@
-% App-owned implementation for image_enhance.enhancementPipeline.rebuildPreview within the image_enhance product workflow.
 function applicationState = rebuildPreview(applicationState)
 %REBUILDPREVIEW Recompute the selected display-resolution enhancement.
 cache = applicationState.session.cache;
 if isempty(cache.previewSource)
     applicationState.session.cache.previewResult = [];
-    applicationState.session.cache.previewResultKey = "";
     return;
 end
 steps = image_enhance.analysisRun.activeSteps(applicationState);
@@ -21,26 +19,10 @@ if includePending
         applicationState.session.view.toolAmount, ...
         applicationState.session.view.toolSecondary, 0);
 end
-key = previewKey(previewSteps, includePending);
-if cache.previewResultKey == key && ~isempty(cache.previewResult)
-    return;
-end
 roi = currentWhiteRoi(applicationState);
 applicationState.session.cache.previewResult = ...
     image_enhance.analysisRun.previewResult( ...
         cache.previewSource, previewSteps, roi, cache.previewScale);
-applicationState.session.cache.previewResultKey = key;
-end
-
-function key = previewKey(steps, includePending)
-if isempty(steps)
-    key = "steps=0#pending=" + string(includePending);
-    return;
-end
-labels = string({steps.label});
-key = strjoin(labels, "|") + ...
-    "#steps=" + string(numel(steps)) + ...
-    "#pending=" + string(includePending);
 end
 
 function roi = currentWhiteRoi(applicationState)

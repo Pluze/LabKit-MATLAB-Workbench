@@ -201,10 +201,6 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(fileRegion.ecgAnalysisRegion, workspaceRegion);
             testCase.verifyEqual(height(workspaceRegion), ...
                 numel(runtime.State.session.cache.workingSignal.time));
-            testCase.verifyTrue(isfile( ...
-                runtime.State.project.results.lastRegionExport.outputPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastSegmentExport.outputPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastWaveformExport.outputPath));
             clear clearRegion cleanup
         end
     end

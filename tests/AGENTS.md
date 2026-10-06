@@ -57,6 +57,8 @@ Production Apps and downstream App specifications never call
 construction, callback contexts, and compiled definition inspection. Only
 SDK-owned white-box specifications under `tests/specs/labkit/app/` and the
 concentrated `tests/+labkittest/` adapters may name SDK internals directly.
+All specifications construct runtimes through the test seams, which require an
+explicit caller-owned temporary journal and reject missing or empty values.
 
 Start from production with `labkittest.explain`. Create a missing App-owned
 specification with `labkittest.createSpec`; never create test paths, suite
@@ -83,12 +85,11 @@ every operation the callback invokes.
 Every App owns at least one `Contract:workflow`, `Env:hidden-gui` core journey
 that enters through its production source boundary and reaches a useful
 result, continuation, or explicit supported failure. Framework conformance
-owns generic widget mechanics; App evidence owns the outcome of every custom
-declared signal. `labkittest.appEvidence` is an omission detector only: every
-declared GUI signal requires an exact native-runtime operation; source or
-callback name matching is never accepted as behavior evidence. Each matched
-operation still requires a meaningful assertion in
-the owning specification.
+owns generic widget mechanics. App tests exercise custom signal behavior in
+reachable workflows and assert domain state, presentation, artifacts, or
+supported failures. Source-text call inventories do not establish execution
+or behavior and must not gate coverage. Select additional cases by distinct
+outcomes and failure risks, not by control counts.
 
 `headless` and `apps` are the full catalog profiles. `apps` runs all hidden-GUI
 identities and the reset-path isolation group in one build while preserving
@@ -99,8 +100,8 @@ explicit system evidence. Documentation paths are explicitly ignored because
 `docsCheck` owns them; local generated `site/` output is ignored by Git. An
 unclassified path fails planning; add
 a production role or an explicit no-test classification rather than widening
-the run. Generated artifacts live under `artifacts/test-results/` and are never
-tracked. A plan may also name an explicit manual check; it is a handoff for
+the run. Run artifacts use `artifacts/runs/` by default; Build tasks use
+`artifacts/test-results/`. Neither is tracked. A plan may also name an explicit manual check; it is a handoff for
 native interaction or scientific review, never passing test evidence. A
 state-only geometry assertion does not prove pointer ownership or native
 control creation; add hidden-GUI structure evidence when either is the

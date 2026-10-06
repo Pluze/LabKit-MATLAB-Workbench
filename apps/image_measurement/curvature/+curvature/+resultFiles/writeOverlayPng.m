@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.resultFiles.writeOverlayPng within the curvature product workflow.
 function writeOverlayPng(model, outputPath)
 %WRITEOVERLAYPNG Render the live Curvature overlay model to one PNG.
 figureHandle = figure("Visible", "off", "Color", "white");

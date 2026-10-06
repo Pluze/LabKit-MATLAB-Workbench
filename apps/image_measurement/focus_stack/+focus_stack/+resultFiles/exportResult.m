@@ -1,4 +1,3 @@
-% App-owned implementation for focus_stack.resultFiles.exportResult within the focus_stack product workflow.
 function applicationState = exportResult( ...
         applicationState, kind, callbackContext)
 %EXPORTRESULT Write one App-owned Focus Stack output.
@@ -32,8 +31,7 @@ catch ME
     return;
 end
 applicationState.project.parameters.outputFolder = string(folder);
-applicationState.project.results.lastExport = struct( ...
-    "kind", kind, "outputPath", filepath);
+
 applicationState.project.results.lastOutputPath = filepath;
 callbackContext.log("info", ...
     "focus_stack.resultfiles.exportresult.completed", ...

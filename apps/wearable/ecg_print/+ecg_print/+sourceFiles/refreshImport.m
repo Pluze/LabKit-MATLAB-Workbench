@@ -1,4 +1,3 @@
-% App-owned implementation for ecg_print.sourceFiles.refreshImport within the ecg_print product workflow.
 function applicationState = refreshImport(applicationState, callbackContext)
 %REFRESHIMPORT Reparse the selected recording with current import settings.
 paths = labkit.app.source.paths( ...
@@ -29,8 +28,7 @@ catch cause
         cause.message;
     applicationState.project.parameters.channel = "(none)";
     applicationState.project.results.lastAnalysis = struct();
-    applicationState.project.results.lastSegmentExport = [];
-    applicationState.project.results.lastWaveformExport = [];
+
     callbackContext.log("error", "ecg_print.sourcefiles.refreshimport.failed", ...
         "Recording import failed.");
     callbackContext.alert(cause.message, "Could not parse recording");
@@ -51,8 +49,7 @@ end
 applicationState.project.parameters.roiStart = 0;
 applicationState.project.parameters.roiEnd = max(cache.signal.time);
 applicationState.project.results.lastAnalysis = struct();
-applicationState.project.results.lastSegmentExport = [];
-applicationState.project.results.lastWaveformExport = [];
+
 callbackContext.log("info", "ecg_print.sourcefiles.refreshimport.completed", sprintf( ...
     "Imported %d recording channel(s).", numel(cache.channelItems)));
 end

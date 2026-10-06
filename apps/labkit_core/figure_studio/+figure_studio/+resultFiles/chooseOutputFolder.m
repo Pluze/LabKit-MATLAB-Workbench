@@ -1,4 +1,3 @@
-% App-owned implementation for figure_studio.resultFiles.chooseOutputFolder within the figure_studio product workflow.
 function state = chooseOutputFolder(state, callbackContext)
 %CHOOSEOUTPUTFOLDER Store the package destination selected by the user.
 arguments

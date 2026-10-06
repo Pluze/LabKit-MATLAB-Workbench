@@ -1,4 +1,3 @@
-% App-owned implementation for response_review_stats.workbench.buildLayout within the response_review_stats product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Declare Response Review Stats by workflow ownership.
 

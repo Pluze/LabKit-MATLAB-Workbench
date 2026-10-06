@@ -1,4 +1,3 @@
-% App-owned implementation for figure_studio.styleLibrary.lineLayoutSection.
 % The controls separate semantically different strokes so publication styling
 % does not flatten data, reference, boundary, and coordinate-system graphics
 % into one global line width.

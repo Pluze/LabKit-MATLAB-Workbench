@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.skeletonSetup.connectInOrder within the video_marker product workflow.
 function state = connectInOrder(state, context)
 %CONNECTINORDER Add every adjacent ordered keypoint edge.
 if state.session.cache.videoInfo.frameCount > 0 || ...

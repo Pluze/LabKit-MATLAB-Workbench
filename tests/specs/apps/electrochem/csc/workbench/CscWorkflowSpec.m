@@ -52,14 +52,11 @@ classdef CscWorkflowSpec < matlab.unittest.TestCase
                 csc.analysisRun.analysisChoices().modes(2));
             testCase.verifyNotEmpty(string(findall(figureValue, "Tag", "qct").Value));
             testCase.verifyTrue(isfile(resultPath));
-            testCase.verifyEqual( ...
-                runtime.State.project.results.lastResultsExport.outputPath, ...
-                string(resultPath));
-            voltageCurrentPath = runtime.State.project.results. ...
-                lastVoltageCurrentExport.outputPath;
-            testCase.verifyTrue(isfile(voltageCurrentPath));
-            testCase.verifyTrue(startsWith(voltageCurrentPath, ...
-                string(erase(cvPath, ".csv")) + "_"));
+            exported = dir(fullfile(folder, "cv-data_*.csv"));
+            testCase.assertNotEmpty(exported);
+            for file = exported.'
+                testCase.verifyNotEmpty(readtable(fullfile(file.folder, file.name)));
+            end
             clear cleanup
         end
     end

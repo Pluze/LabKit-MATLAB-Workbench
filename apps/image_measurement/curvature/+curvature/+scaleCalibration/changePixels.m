@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.scaleCalibration.changePixels within the curvature product workflow.
 function applicationState = changePixels( ...
         applicationState, referencePixels, ~)
 %CHANGEPIXELS Replace the measured line with a typed pixel distance.

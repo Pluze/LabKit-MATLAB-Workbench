@@ -151,6 +151,42 @@
         "Downloading or bundling the driver",
         "Leaking vendor runtime objects through the facade"
       ]
+    },
+    {
+      "id": "cleanup-current-contract",
+      "prompt": "Simplify this test planner: a flag is always false but copied into artifacts, and tests duplicate the current application test-method inventory. Preserve discovery and supported validation behavior; align the manual and instructions.",
+      "skills": [
+        "labkit-simplification-auditor",
+        "labkit-test-planner",
+        "labkit-documentation-maintainer",
+        "labkit-agent-governance"
+      ],
+      "expected": [
+        "Traces the flag through producers and consumers before retiring its complete unused path",
+        "Replaces incidental method inventories with independent discovery or behavior evidence",
+        "Reconciles affected documentation and reports exact validation scope"
+      ],
+      "forbidden": [
+        "Adding absence assertions for the removed field",
+        "Removing supported missing-evidence or compatibility checks",
+        "Claiming repository-wide completeness from a bounded cleanup"
+      ]
+    },
+    {
+      "id": "meaningful-private-comments",
+      "prompt": "Clean private helper comments that repeat their file paths and signatures, while keeping a non-obvious unit convention and an error-recovery assumption.",
+      "skills": [
+        "labkit-simplification-auditor",
+        "labkit-documentation-maintainer"
+      ],
+      "expected": [
+        "Removes tautological ownership and signature prose",
+        "Preserves unit meaning and the recovery assumption without replacing removed prose with another template"
+      ],
+      "forbidden": [
+        "Deleting scientific rationale to reduce line count",
+        "Requiring every private helper to duplicate readily visible caller and signature information"
+      ]
     }
   ]
 }

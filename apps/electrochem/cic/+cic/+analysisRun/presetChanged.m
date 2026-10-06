@@ -1,4 +1,3 @@
-% App-owned implementation for cic.analysisRun.presetChanged within the cic product workflow.
 function applicationState = presetChanged( ...
         applicationState, ~, ~)
 %PRESETCHANGED Apply the selected literature window preset and recompute once.

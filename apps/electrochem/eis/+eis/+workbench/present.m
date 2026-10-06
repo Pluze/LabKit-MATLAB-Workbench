@@ -1,4 +1,3 @@
-% App-owned implementation for eis.workbench.present within the eis product workflow.
 function view = present(applicationState)
 project = applicationState.project;
 session = applicationState.session;

@@ -1,4 +1,3 @@
-% App-owned implementation for nerve_response_analysis.workbench.present within the nerve_response_analysis product workflow.
 function view = present(state)
 model = nerve_response_analysis.analysisRun.presentationModel(state);
 folder = state.session.workflow.outputFolder;

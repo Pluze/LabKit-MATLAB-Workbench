@@ -1,4 +1,3 @@
-% App-owned implementation for figure_studio.workbench.present within the figure_studio product workflow.
 function view = present(state)
 hasFigure = ~isempty(state.session.cache.plotData);
 panelChoices = state.session.cache.sourcePanelChoices;

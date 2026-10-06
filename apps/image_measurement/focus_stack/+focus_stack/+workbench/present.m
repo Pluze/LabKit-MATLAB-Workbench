@@ -1,4 +1,3 @@
-% App-owned implementation for focus_stack.workbench.present within the focus_stack product workflow.
 function view = present(state)
 %PRESENT Map Focus Stack state to a complete semantic workbench snapshot.
 cache = state.session.cache;

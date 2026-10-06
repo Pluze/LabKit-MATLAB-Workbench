@@ -16,9 +16,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         Processing (1, 1) logical = false
         Resources
         Adapter
-        Sources
         Recorder
-        Diagnostics
         PostedEvents
     end
 
@@ -38,14 +36,10 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 "runtime.lifecycle", "runtime.construct", ...
                 "Constructing application runtime.");
             obj.Resources = labkit.app.internal.resource.ResourceStore();
-            obj.Sources = labkit.app.internal.source.SourceListStore();
             obj.PostedEvents = ...
                 labkit.app.internal.runtime.PostedEventQueue( ...
                 @(eventId, updateState) ...
                 obj.dispatchPostedEvent(eventId, updateState));
-            if nargin < 4
-                platform = "headless";
-            end
             try
                 obj.Adapter = obj.recordOperation( ...
                     "runtime.lifecycle", "runtime.native_construct", ...
@@ -56,9 +50,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 backend = obj.completeBackend(backend);
                 obj.Context = ...
                     labkit.app.internal.runtime.CallbackContextFactory.create(backend);
-                obj.Diagnostics = ...
-                    labkit.app.internal.diagnostics.RuntimeDiagnostics( ...
-                    obj.Recorder, obj.Application.DisplayName);
                 obj.updateStartup("Creating app state...");
                 obj.State = obj.recordOperation( ...
                     "runtime.lifecycle", "runtime.initial_state", ...
@@ -66,8 +57,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     "notApplicable", @() ...
                     labkit.app.internal.runtime.RuntimeContractBoundary.initialState( ...
                     obj.Application, initialState, obj.Context));
-                labkit.app.internal.runtime.RuntimeContractBoundary.validateState( ...
-                    obj.Application, obj.State);
                 obj.updateStartup("Preparing first view...");
                 if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                     obj.Adapter.attachRuntime(obj);
@@ -142,7 +131,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function snapshot = diagnosticSnapshot(obj)
-            snapshot = obj.Diagnostics.snapshot();
+            snapshot = obj.Recorder.captureSnapshot();
         end
 
         function varargout = performPlotOperation(obj, eventName, operation)
@@ -158,19 +147,19 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         end
 
         function title = sessionLogTitle(obj)
-            title = obj.Diagnostics.title();
+            title = obj.Application.DisplayName + " — Session Log";
         end
 
         function token = subscribeDiagnostics(obj, callback)
-            token = obj.Diagnostics.subscribe(callback);
+            token = obj.Recorder.subscribe(callback);
         end
 
         function unsubscribeDiagnostics(obj, token)
-            obj.Diagnostics.unsubscribe(token);
+            obj.Recorder.unsubscribe(token);
         end
 
         function setTraceCapture(obj, enabled)
-            obj.Diagnostics.setTraceCapture(enabled);
+            obj.Recorder.setTraceEnabled(enabled);
         end
 
         function figure = figureHandle(obj)
@@ -205,8 +194,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                 end
             end
             binding = ...
-                labkit.app.internal.runtime.RuntimeContractBoundary.signalForTarget( ...
-                obj.Contract, target, "valueChanged", false);
+                obj.Contract.signalForTarget(target, "valueChanged", false);
             runtimeAlias = string(target);
             if ~isempty(binding)
                 runtimeAlias = binding.Id;
@@ -239,8 +227,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         function invokeAction(obj, target)
             obj.assertOpen();
             binding = ...
-                labkit.app.internal.runtime.RuntimeContractBoundary.signalForTarget( ...
-                obj.Contract, target, "pressed");
+                obj.Contract.signalForTarget(target, "pressed");
             obj.recordOperation( ...
                 "runtime.interaction", "interaction.action_invoked", ...
                 "Invoking application action.", ...
@@ -256,8 +243,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
                     "Table edit payload must be a TableEdit value.");
             end
             binding = ...
-                labkit.app.internal.runtime.RuntimeContractBoundary.signalForTarget( ...
-                obj.Contract, target, "cellEdited");
+                obj.Contract.signalForTarget(target, "cellEdited");
             obj.recordOperation( ...
                 "runtime.interaction", "interaction.table_edited", ...
                 "Applying table edit.", ...
@@ -270,8 +256,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             obj.assertOpen();
             selection = labkit.app.event.TableCellSelection(cells);
             binding = ...
-                labkit.app.internal.runtime.RuntimeContractBoundary.signalForTarget( ...
-                obj.Contract, target, "cellSelectionChanged");
+                obj.Contract.signalForTarget(target, "cellSelectionChanged");
             obj.recordOperation( ...
                 "runtime.interaction", "interaction.table_selected", ...
                 "Applying table selection.", ...
@@ -283,8 +268,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         function applyWorkspacePage(obj, target, pageId)
             obj.assertOpen();
             binding = ...
-                labkit.app.internal.runtime.RuntimeContractBoundary.signalForTarget( ...
-                obj.Contract, target, "pageChanged");
+                obj.Contract.signalForTarget(target, "pageChanged");
             obj.recordOperation( ...
                 "runtime.interaction", "interaction.page_changed", ...
                 "Applying workspace page selection.", ...
@@ -296,8 +280,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         function applyInteraction(obj, interactionId, signal, payload)
             obj.assertOpen();
             binding = ...
-                labkit.app.internal.runtime.RuntimeContractBoundary.interactionSignal( ...
-                obj.Contract, interactionId, signal);
+                obj.Contract.interactionSignal(interactionId, signal);
             obj.recordOperation( ...
                 "runtime.interaction", "interaction.managed_committed", ...
                 "Applying managed interaction.", ...
@@ -336,7 +319,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             [config, current] = ...
                 labkit.app.internal.runtime.RuntimeContractBoundary.fileListState( ...
                 obj.Contract, obj.State, target);
-            visible = obj.Sources.recordsForRole( ...
+            visible = labkit.app.internal.source.SourceList.recordsForRole( ...
                 current, config.SourceRole);
             if ~(isnumeric(indices) && isrow(indices) && ...
                     all(isfinite(indices)) && all(indices == fix(indices)) && ...
@@ -346,7 +329,7 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             end
             keep = true(1, numel(visible));
             keep(indices) = false;
-            sources = obj.Sources.replaceRole( ...
+            sources = labkit.app.internal.source.SourceList.replaceRole( ...
                 current, config.SourceRole, visible(keep));
             obj.commitFilePanel( ...
                 target, config, sources, zeros(1, 0), true);
@@ -427,11 +410,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
             failureLabel, busyMessage, failureHandler, showBusy)
 
         view = present(obj, state)
-
-        function paths = presentationSourcePaths(obj, records, role)
-            records = obj.Sources.recordsForRole(records, role);
-            paths = obj.Sources.sourcePaths(records);
-        end
 
         function log(obj, severity, eventName, message, category, audience, attributes, exception)
             obj.Recorder.log(severity, eventName, message, ...
@@ -527,21 +505,6 @@ classdef (Hidden, Sealed) RuntimeKernel < handle
         function updateStartup(obj, message)
             if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
                 obj.Adapter.startupUpdate(message);
-            end
-        end
-
-        function notifyUser(obj, message, title)
-            if isa(obj.Adapter, ...
-                    "labkit.app.internal.native.MatlabPlatformAdapter")
-                obj.Adapter.alert(message, title, "info");
-            else
-                obj.Context.inform(message, title);
-            end
-        end
-
-        function refreshWindowTitle(obj)
-            if isa(obj.Adapter, "labkit.app.internal.native.MatlabPlatformAdapter")
-                obj.Adapter.setWindowTitle(obj.formattedWindowTitle());
             end
         end
 

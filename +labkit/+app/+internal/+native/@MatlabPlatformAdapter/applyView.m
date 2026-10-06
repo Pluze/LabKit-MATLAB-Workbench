@@ -35,7 +35,7 @@ function applyView(obj, view, previous)
     if ~isempty(obj.InteractionController) && ...
             ~isempty(changedOperations(interactionOperations, previousInteractions))
         obj.InteractionController.reconcile( ...
-            obj.InteractionDeclarations, interactionOperations);
+            obj.Plan.Interactions, interactionOperations);
     end
 end
 

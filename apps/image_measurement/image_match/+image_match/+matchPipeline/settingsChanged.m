@@ -1,4 +1,3 @@
-% App-owned implementation for image_match.matchPipeline.settingsChanged within the image_match product workflow.
 function applicationState = settingsChanged( ...
         applicationState, ~, callbackContext)
 %SETTINGSCHANGED Preview one bounded draft without committing history.
@@ -14,7 +13,7 @@ end
 applicationState.project.parameters.matchMethod = method;
 for name = ["matchStrength" "toneStrength" "colorStrength"]
     applicationState.project.parameters.(name) = boundedPercent( ...
-        parameters.(name), 100);
+        parameters.(name));
 end
 applicationState.session.workflow.pendingDirty = true;
 applicationState = ...
@@ -23,11 +22,8 @@ applicationState = ...
     image_match.matchPipeline.rebuildPreview(applicationState);
 end
 
-function value = boundedPercent(value, fallback)
+function value = boundedPercent(value)
 value = double(value);
-if isempty(value) || ~isscalar(value) || ~isfinite(value)
-    value = double(fallback);
-end
 if isempty(value) || ~isscalar(value) || ~isfinite(value)
     value = 100;
 end

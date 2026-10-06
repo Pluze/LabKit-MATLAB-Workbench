@@ -1,4 +1,3 @@
-% App-owned implementation for gait_analysis.sourceFiles.layoutSection within the gait_analysis product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare the current Video Marker archive source.
 files = labkit.app.layout.fileList("poseFile", ...

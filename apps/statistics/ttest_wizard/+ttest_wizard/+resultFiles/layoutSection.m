@@ -1,4 +1,3 @@
-% App-owned implementation for ttest_wizard.resultFiles.layoutSection within the ttest_wizard product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Build portable group-data and comparison-result exports.
 %

@@ -1,4 +1,3 @@
-% App-owned implementation for flir_thermal.displayMapping.changePreset within the flir_thermal product workflow.
 function applicationState = changePreset( ...
         applicationState, preset, callbackContext)
 %CHANGEPRESET Apply one declared control-bound preset to the current image.
@@ -39,6 +38,6 @@ end
 end
 
 function applicationState = invalidateResults(applicationState)
-applicationState.project.results.lastExport = [];
+
 applicationState.project.results.resultManifestPath = "";
 end

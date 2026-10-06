@@ -1,4 +1,3 @@
-% App-owned implementation for figure_studio.resultFiles.exportCurrent within the figure_studio product workflow.
 function state = exportCurrent(state, callbackContext)
 %EXPORTCURRENT Write visible data and the reconstruction script.
 arguments

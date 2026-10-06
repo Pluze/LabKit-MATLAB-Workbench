@@ -1,4 +1,3 @@
-% App-owned implementation for batch_crop.cropGeometry.layoutSection within the batch_crop product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare crop size, rotation, padding, and center controls.
 fields = { ...

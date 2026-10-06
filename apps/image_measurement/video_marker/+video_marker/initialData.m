@@ -1,9 +1,5 @@
 function project = initialData()
 %INITIALDATA Create the App-owned initial in-memory data.
-project = createProject();
-video_marker.archive.validateProject(project);
-end
-function project = createProject()
     project = struct();
     project.inputs = struct( ...
         "sources", labkit.app.source.emptyRecords(), ...
@@ -25,4 +21,5 @@ function project = createProject()
     project.results = struct( ...
         "markerOutputPath", "", ...
         "coordinateOutputPath", "");
+    video_marker.archive.validateProject(project);
 end

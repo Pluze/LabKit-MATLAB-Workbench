@@ -1,4 +1,3 @@
-% App-owned implementation for csc.resultFiles.exportResults within the csc product workflow.
 function applicationState = exportResults( ...
         applicationState, callbackContext)
 %EXPORTRESULTS Write the all-cycle CSC table.
@@ -26,8 +25,6 @@ if ~ok
     return
 end
 
-applicationState.project.results.lastResultsExport = struct( ...
-    "csvPath", filepath, "outputPath", filepath);
 callbackContext.log("info", "csc.resultfiles.exportresults.status", ...
     "Exported CSC results.");
 end

@@ -1,4 +1,3 @@
-% App-owned implementation for vt_resistance.resultFiles.exportResults within the vt_resistance product workflow.
 function applicationState = exportResults( ...
         applicationState, callbackContext)
 %EXPORTRESULTS Write the VT batch CSV.
@@ -19,8 +18,7 @@ if ~ok
     callbackContext.alert(message, "Export");
     return
 end
-applicationState.project.results.lastExport = struct( ...
-    "csvPath", filepath, "outputPath", filepath);
+
 callbackContext.log("info", ...
     "vt_resistance.resultfiles.exportresults.status", ...
     "Exported VT results.");

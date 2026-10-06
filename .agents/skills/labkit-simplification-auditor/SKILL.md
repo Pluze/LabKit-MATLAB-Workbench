@@ -5,7 +5,7 @@ description: "Use to find, review, or implement evidence-backed LabKit simplific
 
 # LabKit Simplification Auditor
 
-Prefer a few proven reductions over a catalog of guesses. Read the applicable
+Cover the requested scope with evidence-backed reductions. Read the applicable
 rules, current owner, consumers, tests, public contracts, history, and active
 migration ledger.
 
@@ -35,7 +35,9 @@ formulas are not automatically generic duplication.
 
 For each candidate state its owner and contract, all consumers, removed
 surface, preserved and changed behavior, scientific/API/saved-data/GUI risks,
-and proof for the smaller result.
+and proof for the smaller result. Include serialized outputs and diagnostics
+in the consumer trace; their existence alone does not establish a supported
+compatibility promise.
 
 Use `labkit-boundary-guard` for ownership or public surfaces,
 `labkit-scientific-change-guard` for scientific meaning, and
@@ -50,5 +52,8 @@ For an audit, report ranked evidence without editing. For implementation,
 replace the flawed ownership boundary coherently, migrating consumers and
 updating tests/docs for the accepted outcome before deleting the old path.
 Preserve required scientific results, failure recovery, and supported user
-outcomes; do not treat every incidental baseline behavior as a requirement. Retire obsolete agent guidance
-with the product workflow it described.
+outcomes. Use the test planner's evidence-maintenance procedure to retire or
+replace implementation-coupled assertions. Reconcile the final source with its
+current help/manual and scoped instructions; retire obsolete guidance with the
+workflow it described. Report the proven scope and remaining uncertainty, not
+an unsupported claim that the repository contains no more dead code.

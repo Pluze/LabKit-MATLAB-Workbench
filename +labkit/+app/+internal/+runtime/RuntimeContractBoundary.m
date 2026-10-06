@@ -4,52 +4,6 @@
 % bindings, initial state values, adapters, or reader-facing busy text.
 classdef (Sealed, Hidden) RuntimeContractBoundary
     methods (Static)
-        function binding = interactionSignal(contract, interactionId, signal)
-            plan = contract.PlatformPlan;
-            binding = [];
-            for k = 1:numel(plan.Nodes)
-                config = plan.Nodes(k).Configuration;
-                if ~isfield(config, "Interactions")
-                    continue;
-                end
-                interactions = config.Interactions;
-                match = find(cellfun(@(value) ...
-                    value.Id == string(interactionId), interactions), 1);
-                if ~isempty(match)
-                    binding = interactions{match}.signal(string(signal));
-                    break;
-                end
-            end
-            if isempty(binding)
-                error("labkit:app:contract:UnknownReference", ...
-                    "Interaction %s has no %s callback.", ...
-                    interactionId, signal);
-            end
-        end
-
-        function binding = signalForTarget( ...
-                contract, target, signal, required)
-            if nargin < 4
-                required = true;
-            end
-            plan = contract.PlatformPlan;
-            index = find(string({plan.Nodes.Id}) == string(target), 1);
-            binding = [];
-            if ~isempty(index)
-                signals = plan.Nodes(index).Signals;
-                match = find(cellfun( ...
-                    @(value) value.Signal == signal, signals), 1);
-                if ~isempty(match)
-                    binding = signals{match};
-                end
-            end
-            if required && isempty(binding)
-                error("labkit:app:contract:UnknownReference", ...
-                    "Workbench target has no %s callback: %s.", ...
-                    signal, target);
-            end
-        end
-
         function [config, current] = fileListState( ...
                 contract, state, target)
             plan = contract.PlatformPlan;
@@ -157,7 +111,7 @@ classdef (Sealed, Hidden) RuntimeContractBoundary
             end
         end
 
-        function validateState(~, state)
+        function validateState(state)
             if ~isstruct(state) || ~isscalar(state)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "Command must return scalar application state.");
@@ -165,7 +119,7 @@ classdef (Sealed, Hidden) RuntimeContractBoundary
         end
 
         function message = busyMessage(contract, binding)
-            message = extractBefore(binding.Id, "__");
+            message = extractBefore(binding.Id, strlength(binding.Id) - strlength(binding.Signal) - 1);
             plan = contract.PlatformPlan;
             index = find(string({plan.Nodes.Id}) == message, 1);
             if isempty(index)

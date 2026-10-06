@@ -1,4 +1,3 @@
-% App-owned implementation for nerve_response_analysis.analysisRun.runSession within the nerve_response_analysis product workflow.
 function state = runSession(state, context)
 if isempty(state.session.cache.filterRecord)
     context.alert("Select a filter record first.", "Nerve response analysis");
@@ -26,7 +25,7 @@ catch ME
 end
 state.session.cache.plotViewRevision = ...
     state.session.cache.plotViewRevision + 1;
-state.project.results.lastExport = [];
+
 state.session.workflow.statusMessage = sprintf("Analyzed %d recording(s).", ...
     state.session.cache.analysis.analyzedCount);
 state.session.workflow.lastAction = "Analyzed filter record";

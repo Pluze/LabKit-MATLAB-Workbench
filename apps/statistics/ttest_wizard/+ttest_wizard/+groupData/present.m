@@ -1,4 +1,3 @@
-% App-owned implementation for ttest_wizard.groupData.present within the ttest_wizard product workflow.
 function view = present(groups, captureTarget, batchTarget, ...
         analysisCells, sourceReady, sourceCells)
 %PRESENT Describe editable groups and the actions available for selections.

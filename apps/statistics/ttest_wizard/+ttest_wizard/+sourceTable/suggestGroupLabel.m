@@ -1,4 +1,3 @@
-% App-owned implementation for ttest_wizard.sourceTable.suggestGroupLabel within the ttest_wizard product workflow.
 function label = suggestGroupLabel(cells, indices, existingLabels)
 %SUGGESTGROUPLABEL Infer a concise group label from layered table headers.
 %

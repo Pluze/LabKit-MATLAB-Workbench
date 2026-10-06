@@ -9,7 +9,8 @@ function session = createSession(project, ~)
     if index > 0
         cache.currentItem = loadItem(project.inputs.sources(1));
     end
-    cache = rebuildResult(project, cache);
+    cache = image_match.matchPipeline.refreshPreview( ...
+        cache, project.annotations.steps);
     session = struct( ...
         "selection", struct( ...
             "referenceImage", labkit.app.event.ListSelection(), ...
@@ -29,22 +30,8 @@ function item = loadItem(source)
     end
 end
 
-function cache = rebuildResult(project, cache)
-    if isempty(cache.currentItem) || isempty(cache.referenceItem)
-        return;
-    end
-    cache.previewSource = image_match.imagePreview.presentationData.previewImage( ...
-        cache.currentItem.image);
-    cache.previewReference = image_match.imagePreview.presentationData.previewImage( ...
-        cache.referenceItem.image);
-    processed = image_match.analysisRun.applyPipeline( ...
-        {cache.previewSource}, project.annotations.steps, ...
-        cache.previewReference);
-    cache.previewResult = processed{1};
-end
-
 function cache = emptyCache()
     cache = struct("currentItem", [], "referenceItem", [], ...
         "previewSource", [], "previewReference", [], ...
-        "previewResult", [], "previewResultKey", "");
+        "previewResult", []);
 end

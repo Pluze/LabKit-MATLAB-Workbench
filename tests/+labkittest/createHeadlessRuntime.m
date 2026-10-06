@@ -1,5 +1,5 @@
 function runtime = createHeadlessRuntime( ...
-        definition, initialProject, backend, journal, varargin)
+        definition, initialProject, backend, journal)
 %CREATEHEADLESSRUNTIME Construct a headless App runtime for test assertions.
 %   RUNTIME = labkittest.createHeadlessRuntime(DEFINITION, INITIALPROJECT,
 %   BACKEND, JOURNAL) is the stable test-only construction seam for App
@@ -7,8 +7,7 @@ function runtime = createHeadlessRuntime( ...
 %   must supply a caller-owned temporary SessionJournal.
 %
 %   Production Apps launch through DEFINITION.launch and must not call SDK
-%   runtime internals. Extra arguments are forwarded only for framework-owned
-%   test seams.
+%   runtime internals.
 
 if ~isa(definition, "labkit.app.Definition") || ~isscalar(definition)
     error("LabKit:TestRuntime:InvalidDefinition", ...
@@ -19,6 +18,6 @@ if nargin < 4 || isempty(journal)
         "Headless test runtime construction requires an explicit test journal.");
 end
 
-runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
-    definition, initialProject, backend, journal, varargin{:});
+runtime = labkit.app.internal.runtime.RuntimeFactory.create("headless",  ...
+    definition, initialProject, backend, journal);
 end

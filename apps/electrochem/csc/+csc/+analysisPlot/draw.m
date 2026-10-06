@@ -25,7 +25,7 @@ function renderCscAxis(ax, model)
 
     curve = model.curves(model.curveIndex);
     request = csc.analysisPlot.plotRequest(curve, ...
-        model.xSelection, model.ySelection, upperFirst(model.axisId));
+        model.xSelection, model.ySelection);
     opts = struct( ...
         "holdPlot", model.holdPlot, ...
         "showGrid", model.showGrid, ...
@@ -60,9 +60,4 @@ end
 function clearTrim(ax)
     delete(findobj(ax, 'Tag', 'trimCath'));
     delete(findobj(ax, 'Tag', 'trimAnod'));
-end
-
-function text = upperFirst(value)
-    text = char(value);
-    text(1) = upper(text(1));
 end

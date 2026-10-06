@@ -2,57 +2,29 @@ classdef (Hidden, Sealed) RuntimeFactory
     % Internal runtime construction boundary.
 
     methods (Static)
-        function runtime = createHeadless( ...
-                definition, initialState, backend, journal, varargin)
-            if nargin < 2
-                initialState = [];
-            end
-            if nargin < 3
-                backend = struct();
-            end
-            if nargin < 4
-                journal = [];
-            end
-            journalRoot = parseJournalRoot(journal, varargin{:});
-            runtime = labkit.app.internal.runtime.RuntimeFactory.create( ...
-                definition, initialState, backend, ...
-                "headless", journal, journalRoot);
-        end
-
-        function runtime = createMatlab( ...
-                definition, initialState, backend, journal, varargin)
-            if nargin < 2
-                initialState = [];
-            end
-            if nargin < 3
-                backend = struct();
-            end
-            if nargin < 4
-                journal = [];
-            end
-            journalRoot = parseJournalRoot(journal, varargin{:});
-            runtime = labkit.app.internal.runtime.RuntimeFactory.create( ...
-                definition, initialState, backend, ...
-                "matlab", journal, journalRoot);
-        end
-    end
-
-    methods (Static, Access = private)
         function runtime = create( ...
-                definition, initialState, backend, platform, journal, journalRoot)
+                platform, definition, initialState, backend, journal)
+            if nargin < 3
+                initialState = [];
+            end
+            if nargin < 4
+                backend = struct();
+            end
+            if nargin < 5
+                journal = [];
+            end
             if ~isa(definition, "labkit.app.Definition") || ...
                     ~isscalar(definition)
                 error("labkit:app:runtime:InvariantFailure", ...
                     "RuntimeFactory requires one Definition.");
             end
-            journal = prepareJournal(definition, journal, journalRoot);
+            journal = prepareJournal(definition, journal);
             try
-                projection = labkit.app.internal.diagnostics.SessionJournalProjection(journal);
                 stream = labkit.app.internal.diagnostics.SessionEventStream(definition, ...
-                    SessionId=journal.sessionId(), ProjectionHook=@projection.project, ...
-                    ProjectionHealthHook=@projection.drainHealth);
+                    SessionId=journal.sessionId(), ProjectionHook=@journal.append, ...
+                    ProjectionHealthHook=@journal.drainHealth);
                 recorder = labkit.app.internal.diagnostics.SessionDiagnostics( ...
-                    stream, projection, journal);
+                    stream, journal);
             catch cause
                 try
                     journal.close();
@@ -73,41 +45,13 @@ classdef (Hidden, Sealed) RuntimeFactory
     end
 end
 
-function journal = prepareJournal(definition, journal, journalRoot)
+function journal = prepareJournal(definition, journal)
 if isempty(journal)
-    if strlength(journalRoot) == 0
-        journal = labkit.app.internal.diagnostics.SessionJournal(definition);
-    else
-        journal = labkit.app.internal.diagnostics.SessionJournal(definition, ...
-            RootFolder=journalRoot);
-    end
+    journal = labkit.app.internal.diagnostics.SessionJournal(definition);
     return;
 end
 if ~isa(journal, "labkit.app.internal.diagnostics.SessionJournal") || ~isscalar(journal)
     error("labkit:app:runtime:InvariantFailure", ...
         "RuntimeFactory journal seam requires one SessionJournal.");
 end
-end
-
-function journalRoot = parseJournalRoot(journal, varargin)
-journalRoot = "";
-if isempty(varargin)
-    return;
-end
-options = labkit.app.internal.contract.OptionParser.parse( ...
-    "RuntimeFactory", "JournalRoot", varargin{:});
-if ~isfield(options, "JournalRoot")
-    return;
-end
-if ~isempty(journal)
-    error("labkit:app:runtime:InvariantFailure", ...
-        "RuntimeFactory cannot combine an explicit journal with JournalRoot.");
-end
-value = options.JournalRoot;
-if ~(ischar(value) || (isstring(value) && isscalar(value))) || ...
-        strlength(strip(string(value))) == 0
-    error("labkit:app:contract:InvalidValue", ...
-        "RuntimeFactory JournalRoot must be nonempty scalar text.");
-end
-journalRoot = string(value);
 end

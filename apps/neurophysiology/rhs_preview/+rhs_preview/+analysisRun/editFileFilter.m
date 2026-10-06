@@ -1,4 +1,3 @@
-% App-owned implementation for rhs_preview.analysisRun.editFileFilter within the rhs_preview product workflow.
 function applicationState = editFileFilter( ...
         applicationState, edit, ~)
 %EDITFILEFILTER Apply typed label/comment edits and persist their source order.

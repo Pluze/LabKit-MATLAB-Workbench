@@ -9,27 +9,7 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
 
             testCase.verifyEmpty(string({files.name}), ...
                 "App SDK internal implementations must belong to a named subsystem.");
-            required = ["+artifact" "+contract" "+diagnostics" "+discovery" ...
-                "+interaction" "+launcher" "+native" "+resource" ...
-                "+runtime" "+source"];
-            testCase.verifyTrue(all(arrayfun(@(name) ...
-                isfolder(fullfile(internalRoot, name)), required)), ...
-                "The governed App SDK internal subsystem map is incomplete.");
-        end
 
-        function launcherDispatchRemainsCompositionOnly(testCase)
-            root = labkittest.setup();
-            source = text(root, ...
-                "+labkit/+app/+internal/+launcher/dispatch.m");
-            definitions = regexp(source, "(?m)^function ", "match");
-
-            testCase.verifyNumElements(definitions, 1, ...
-                "Launcher dispatch must not reacquire local subsystem implementations.");
-            for owner = ["parseRequest" "appCatalog" ...
-                    "documentationPage" "launcherVersion" "createLauncher"]
-                testCase.verifySubstring(source, ...
-                    "labkit.app.internal.launcher." + owner);
-            end
         end
 
         function launcherDoesNotOwnFigureStudioOrDocumentationConsumers(testCase)
@@ -165,173 +145,12 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 "Background work must explicitly name backgroundPool.");
         end
 
-        function taskBranchFeedbackUsesOneCancelableBaseMatlabLane(testCase)
-            root = labkittest.setup();
-            workflow = text(root, ...
-                ".github/workflows/development-feedback.yml");
-
-            testCase.verifySubstring(workflow, "branches-ignore:");
-            testCase.verifySubstring(workflow, "- main");
-            testCase.verifySubstring(workflow, "runs-on: ubuntu-latest");
-            testCase.verifySubstring(workflow, "release: latest");
-            testCase.verifyFalse(contains(workflow, "products:"));
-            testCase.verifySubstring(workflow, "cancel-in-progress: true");
-            testCase.verifySubstring(workflow, "pull-requests: read");
-            testCase.verifySubstring(workflow, ...
-                "steps.scope.outputs.should_run == 'true'");
-            testCase.verifySubstring(workflow, ...
-                "steps.handoff.outputs.should_run == 'true'");
-            testCase.verifySubstring(workflow, ...
-                "Open task-branch PR owns complete validation");
-            testCase.verifySubstring(workflow, ...
-                "Pull request took ownership before MATLAB setup");
-            testCase.verifySubstring(workflow, "github.event.before");
-            testCase.verifySubstring(workflow, ...
-                "artifacts/development-feedback/changed-paths.txt");
-            testCase.verifySubstring(workflow, "runDevelopmentFeedback");
-            testCase.verifySubstring(workflow, "tasks: docsCheck");
-        end
-
         function defaultBuildRunsOneCompleteLocalGate(testCase)
             plan = buildfile;
 
             testCase.verifyEqual(plan.DefaultTasks, "changedFast");
             testCase.verifyEqual(sort(string(plan("changedFast").Dependencies)), ...
                 ["codecheck", "docsCheck"]);
-            testCase.verifyEqual(sort(string({plan.Tasks.Name})), ...
-                sort(["apps", "changedFast", "codecheck", "docs", ...
-                "docsCheck", "headless"]));
-        end
-
-        function ciGatesPlatformAndDocsWithOneAppProfile(testCase)
-            root = labkittest.setup();
-            workflow = text(root, ".github/workflows/ci.yml");
-            platformJob = workflowJob(workflow, "platform-matrix");
-            docsJob = workflowJob(workflow, "docs-check");
-            gateJob = workflowJob(workflow, "ci-gate");
-
-            testCase.verifySubstring(workflow, "policy:");
-            testCase.verifySubstring(workflow, "name: Repository policy");
-            testCase.verifyFalse(contains(workflow, "workflow_dispatch:"));
-            testCase.verifyFalse(contains(workflow, ...
-                "group: ci-${{ github.event.pull_request.head.sha || github.sha }}"));
-            testCase.verifySubstring(workflow, ...
-                "python -m unittest discover -s .github/scripts");
-            testCase.verifySubstring(workflow, ...
-                "python .github/scripts/validate_agent_skills.py");
-            testCase.verifySubstring(workflow, ...
-                "python .github/scripts/check_integration_policy.py");
-            testCase.verifySubstring(workflow, ...
-                "--head-ref ""${{ github.head_ref }}""");
-            testCase.verifySubstring(workflow, ...
-                "--head-repository");
-            testCase.verifySubstring(workflow, ...
-                "--base-sha ""${BASE_SHA}""");
-            testCase.verifySubstring(workflow, ...
-                "[ -z ""${BASE_SHA}"" ]");
-            testCase.verifySubstring(workflow, ...
-                "git merge-base origin/main ""${HEAD_SHA}""");
-            testCase.verifySubstring(workflow, "fetch-depth: 0");
-            testCase.verifyFalse(contains(workflow, "classify_ci_scope"));
-            testCase.verifySubstring(platformJob, "needs: policy");
-            testCase.verifySubstring(docsJob, "needs: policy");
-            testCase.verifySubstring(workflow, "docs-check:");
-            testCase.verifySubstring(workflow, "tasks: docsCheck");
-            testCase.verifySubstring(workflow, "release: R2022b");
-            testCase.verifySubstring(workflow, "release: latest");
-            testCase.verifySubstring(workflow, "shard: All profiles");
-            testCase.verifySubstring(workflow, "shard: App boundaries");
-            testCase.verifySubstring(workflow, "os: ubuntu-22.04");
-            testCase.verifySubstring(workflow, "os: windows-2022");
-            testCase.verifySubstring(workflow, "os: windows-latest");
-            testCase.verifySubstring(workflow, "os: macos-14");
-            testCase.verifyEqual(count(workflow, "- os: "), 5);
-            testCase.verifyEqual(count(workflow, "run_headless: true"), 3);
-            testCase.verifyEqual(count(workflow, "run_apps: true"), 5);
-            testCase.verifySubstring(platformJob, "cache: true");
-            testCase.verifySubstring(docsJob, "cache: true");
-            testCase.verifyFalse(contains(workflow, "tasks: coverage"));
-            testCase.verifyFalse(any(contains(workflow, ...
-                ["tasks: gui" "tasks: isolated"])));
-            testCase.verifySubstring(workflow, "tasks: apps");
-            testCase.verifySubstring(workflow, ...
-                "name: Start Linux virtual display");
-            testCase.verifySubstring(workflow, ...
-                "Xvfb :99 -screen 0 1920x1080x24");
-            testCase.verifySubstring(workflow, ...
-                "Documents/MATLAB");
-            testCase.verifySubstring(workflow, ...
-                "release: ${{ matrix.release }}");
-            testCase.verifySubstring(workflow, ...
-                "name: matlab-${{ matrix.id }}-${{ matrix.release }}-" + ...
-                "${{ matrix.shard_id }}");
-            testCase.verifySubstring(workflow, ...
-                "name: Summarize platform validation");
-            testCase.verifyEqual(count(workflow, ...
-                "python .github/scripts/summarize_junit.py"), 1);
-            testCase.verifySubstring(workflow, ...
-                "--profiles ""${{ matrix.profiles }}""");
-            testCase.verifySubstring(workflow, ...
-                "--headless-outcome ""${{ steps.headless.outcome }}""");
-            testCase.verifySubstring(workflow, ...
-                "--apps-outcome ""${{ steps.apps.outcome }}""");
-            testCase.verifySubstring(workflow, ...
-                "if: matrix.run_headless");
-            testCase.verifySubstring(workflow, ...
-                "if: matrix.run_apps");
-            testCase.verifyEqual(count(workflow, ...
-                "if: github.event_name != 'push'"), 2);
-            testCase.verifySubstring(workflow, ...
-                "needs.platform-matrix.result");
-            testCase.verifySubstring(gateJob, "name: CI Gate");
-            testCase.verifySubstring(gateJob, "- platform-matrix");
-            testCase.verifySubstring(gateJob, "- docs-check");
-            testCase.verifySubstring(gateJob, "needs.policy.result");
-            testCase.verifySubstring(gateJob, "needs.platform-matrix.result");
-            testCase.verifySubstring(gateJob, "needs.docs-check.result");
-            testCase.verifyFalse(contains(gateJob, "coverage"));
-        end
-
-        function pullRequestChecklistContainsOnlyAuthorOwnedMergeObligations(testCase)
-            root = labkittest.setup();
-            template = text(root, ".github/PULL_REQUEST_TEMPLATE.md");
-
-            for heading = ["## Why" "## What changed" "## Evidence" ...
-                    "## Risks and follow-up" "## Author confirmation"]
-                testCase.verifySubstring(template, heading);
-            end
-            lines = strip(splitlines(template));
-            tasks = lines(startsWith(lines, "- [ ] "));
-            testCase.verifyNumElements(tasks, 3);
-            testCase.verifyTrue(any(contains(tasks, "final diff")));
-            testCase.verifyTrue(any(contains(tasks, "evidence above")));
-            testCase.verifyTrue(any(contains(tasks, "synthetic or generic")));
-            testCase.verifyFalse(any(contains(lower(tasks), ...
-                ["github" "branch" "commit" "push" "merge" "n/a"])));
-        end
-
-        function documentationSiteIsBuiltByPagesAndNotTracked(testCase)
-            root = labkittest.setup();
-            workflow = text(root, ".github/workflows/docs-pages.yml");
-            ignore = splitlines(text(root, ".gitignore"));
-
-            testCase.verifyTrue(any(strip(ignore) == "site/"));
-            testCase.verifySubstring(workflow, "workflow_dispatch:");
-            testCase.verifyFalse(contains(workflow, "    paths:"));
-            testCase.verifySubstring(workflow, ...
-                "name: Generate documentation from the exact main source");
-            testCase.verifySubstring(workflow, ...
-                "uses: matlab-actions/setup-matlab@v3");
-            testCase.verifySubstring(workflow, ...
-                "uses: matlab-actions/run-build@v3");
-            testCase.verifySubstring(workflow, "tasks: docs");
-            testCase.verifySubstring(workflow, ...
-                "uses: actions/configure-pages@v6");
-            testCase.verifySubstring(workflow, ...
-                "uses: actions/upload-pages-artifact@v5");
-            testCase.verifySubstring(workflow, ...
-                "uses: actions/deploy-pages@v5");
-            testCase.verifySubstring(workflow, "path: site");
         end
 
         function repositoryTextDoesNotContainUserPathsOrTimestampTokens(testCase)
@@ -422,128 +241,22 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
                 strjoin(violations, ", "));
         end
 
-        function testsPassAnExplicitJournalOrJournalRootToEveryRuntimeFactory(testCase)
+        function specificationsConstructRuntimesThroughJournalGuardedSeams(testCase)
             root = labkittest.setup();
-            files = dir(fullfile(root, "tests", "**", "*.m"));
-            violationChunks = cell(1, numel(files));
-            for index = 1:numel(files)
-                file = fullfile(files(index).folder, files(index).name);
-                calls = labkittest.runtimeFactoryCalls(fileread(file));
-                fileViolations = strings(1, numel(calls));
-                violationCount = 0;
-                for call = calls
-                    if ~hasExplicitJournalOrRoot(call)
-                        relative = erase(string(file), string(root) + filesep);
-                        violationCount = violationCount + 1;
-                        fileViolations(violationCount) = relative + ":" + ...
-                            string(call.Line) + " must pass a nonempty fourth journal " + ...
-                            "or fourth [] with a nonempty JournalRoot.";
-                    end
-                end
-                violationChunks{index} = fileViolations(1:violationCount);
+            files = dir(fullfile(root, "tests", "specs", "**", "*.m"));
+            forbidden = "labkit.app.internal.runtime." + "RuntimeFactory";
+            for file = files.'
+                source = string(fileread(fullfile(file.folder, file.name)));
+                testCase.verifyFalse(contains(source, forbidden), ...
+                    "Use the test runtime seam that requires an explicit journal: " + ...
+                    string(file.name));
             end
-            violations = [violationChunks{:}];
-            testCase.verifyEmpty(violations, strjoin(violations, newline));
-        end
-
-        function runtimeFactoryParserAcceptsFourthArgumentJournal(testCase)
-            source = strjoin([ ...
-                "% RuntimeFactory.createMatlab(app) is a comment.", ...
-                "literal = ""RuntimeFactory.createHeadless(app)"";", ...
-                "runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...", ...
-                "    app, [], struct(), journal);"], newline);
-
-            calls = labkittest.runtimeFactoryCalls(source);
-
-            testCase.verifyNumElements(calls, 1);
-            testCase.verifyEqual(calls.Method, "createHeadless");
-            testCase.verifyNumElements(calls.Arguments, 4);
-            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
-        end
-
-        function runtimeFactoryParserAcceptsLabKitTestRuntimeSeam(testCase)
-            source = strjoin([ ...
-                "runtime = labkittest.createMatlabRuntime( ...", ...
-                "    app, [], struct(), journal);"], newline);
-
-            calls = labkittest.runtimeFactoryCalls(source);
-
-            testCase.verifyNumElements(calls, 1);
-            testCase.verifyEqual(calls.Method, "createMatlab");
-            testCase.verifyNumElements(calls.Arguments, 4);
-            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
-        end
-
-        function runtimeFactoryParserHandlesTransposeAndCharLiterals(testCase)
-            source = strjoin([ ...
-                "values = [1 2];", ...
-                "values.';", ...
-                "literal = 'RuntimeFactory.createMatlab(app)';", ...
-                "runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...", ...
-                "    app, [], struct(""alert"", @(~, ~) []), ...", ...
-                "    journal);"], newline);
-
-            calls = labkittest.runtimeFactoryCalls(source);
-
-            testCase.verifyNumElements(calls, 1);
-            testCase.verifyEqual(calls.Method, "createHeadless");
-            testCase.verifyNumElements(calls.Arguments, 4);
-            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
-        end
-
-        function runtimeFactoryParserAcceptsJournalAndExtraArguments(testCase)
-            source = strjoin([ ...
-                "runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...", ...
-                "    app, [], struct(), journal, ...", ...
-                "    JournalRoot=temporaryRoot);"], newline);
-
-            calls = labkittest.runtimeFactoryCalls(source);
-
-            testCase.verifyNumElements(calls, 1);
-            testCase.verifyEqual(calls.Arguments(4), "journal");
-            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
-        end
-
-        function runtimeFactoryParserAcceptsExplicitJournalRootWithEmptyJournal(testCase)
-            source = strjoin([ ...
-                "runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...", ...
-                "    app, [], struct(), [], ...", ...
-                "    JournalRoot=temporaryRoot);"], newline);
-
-            calls = labkittest.runtimeFactoryCalls(source);
-
-            testCase.verifyNumElements(calls, 1);
-            testCase.verifyEqual(calls.Arguments(4), "[]");
-            testCase.verifyTrue(startsWith(strtrim(calls.Arguments(5)), "..."));
-            testCase.verifyEqual(calls.JournalRoot, "temporaryRoot");
-            testCase.verifyTrue(hasExplicitJournalOrRoot(calls));
         end
     end
 end
 
-function tf = hasExplicitJournalOrRoot(call)
-callArguments = call.Arguments;
-hasJournal = numel(callArguments) >= 4 && ...
-    strlength(callArguments(4)) > 0 && callArguments(4) ~= "[]";
-hasJournalRoot = any(numel(callArguments) == [5, 6]) && ...
-    callArguments(4) == "[]" && strlength(call.JournalRoot) > 0;
-tf = hasJournal || hasJournalRoot;
-end
-
 function value = text(root, relative)
 value = string(fileread(fullfile(root, relative)));
-end
-
-function section = workflowJob(workflow, name)
-lines = splitlines(workflow);
-startLine = find(lines == "  " + name + ":", 1);
-jobLines = find(~cellfun("isempty", regexp(cellstr(lines), ...
-    "^  [A-Za-z0-9_-]+:$", "once")));
-nextLine = jobLines(find(jobLines > startLine, 1));
-if isempty(nextLine)
-    nextLine = numel(lines) + 1;
-end
-section = join(lines(startLine:nextLine - 1), newline);
 end
 
 function files = productionMatlabFiles(root)

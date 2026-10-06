@@ -20,8 +20,8 @@ function [html, plainText] = renderLabKitMarkdown(model, page)
                 if ~startsWith(codeLanguage, "labkit-")
                     outputCount = outputCount + 1;
                     output(outputCount, 1) = "<pre><code class=""language-" + ...
-                        htmlEscape(codeLanguage) + """>" + ...
-                        htmlEscape(strjoin(codeLines(1:codeLineCount), newline)) + "</code></pre>";
+                        escapeLabKitHtml(codeLanguage) + """>" + ...
+                        escapeLabKitHtml(strjoin(codeLines(1:codeLineCount), newline)) + "</code></pre>";
                     destination = plainCount + (1:codeLineCount);
                     plain(destination, 1) = codeLines(1:codeLineCount);
                     plainCount = plainCount + codeLineCount;
@@ -253,7 +253,7 @@ function html = renderInline(model, page, text)
     [text, replacements] = protectTokens(text, replacements, ...
         '\[([^\]]+)\]\(([^)]+)\)', "link", model, page);
     replacements = replacements(strlength(replacements) > 0);
-    html = htmlEscape(text);
+    html = escapeLabKitHtml(text);
     html = regexprep(html, '\*\*([^*]+)\*\*', '<strong>$1</strong>');
     html = regexprep(html, '(?<!\*)\*([^*]+)\*(?!\*)', '<em>$1</em>');
     % Later replacements can contain markers created by earlier passes, as
@@ -275,7 +275,7 @@ function [text, replacements] = protectTokens( ...
         end
         switch tokenType
             case "code"
-                replacement = "<code>" + htmlEscape(tokens{1}) + "</code>";
+                replacement = "<code>" + escapeLabKitHtml(tokens{1}) + "</code>";
             case "image"
                 replacement = renderImage(tokens);
             case "link"
@@ -296,15 +296,15 @@ function marker = tokenMarker(index)
 end
 
 function html = renderImage(token)
-    alt = htmlEscape(string(token{1}));
-    source = htmlEscape(string(token{2}));
+    alt = escapeLabKitHtml(string(token{1}));
+    source = escapeLabKitHtml(string(token{2}));
     html = "<img src=""" + source + """ alt=""" + alt + """>";
 end
 
 function html = renderLink(model, page, token)
-    label = htmlEscape(string(token{1}));
+    label = escapeLabKitHtml(string(token{1}));
     target = rewriteLink(model, page, string(token{2}));
-    html = "<a href=""" + htmlEscape(target) + """>" + label + "</a>";
+    html = "<a href=""" + escapeLabKitHtml(target) + """>" + label + "</a>";
 end
 
 function target = rewriteLink(model, page, target)
@@ -361,11 +361,4 @@ function anchor = headingAnchor(label)
     if strlength(anchor) == 0
         anchor = "section";
     end
-end
-
-function text = htmlEscape(text)
-    text = replace(string(text), "&", "&amp;");
-    text = replace(text, "<", "&lt;");
-    text = replace(text, ">", "&gt;");
-    text = replace(text, """", "&quot;");
 end

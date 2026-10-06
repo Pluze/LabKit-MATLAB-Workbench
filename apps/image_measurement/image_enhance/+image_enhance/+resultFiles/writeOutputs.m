@@ -17,10 +17,7 @@ function payload = writeOutputs(items, steps, opts)
         mkdir(outputFolder);
     end
 
-    images = cell(numel(items), 1);
-    for k = 1:numel(items)
-        images{k} = items(k).image;
-    end
+    images = reshape({items.image}, [], 1);
     itemSteps = optionValue(opts, 'itemSteps', {});
     if isempty(itemSteps)
         processed = image_enhance.analysisRun.applyPipeline(images, steps, num2cell(items));

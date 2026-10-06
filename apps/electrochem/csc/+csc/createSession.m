@@ -1,4 +1,3 @@
-% App-owned implementation for csc.createSession within the csc product workflow.
 function session = createSession(project, ~)
 %CREATESESSION Rebuild transient CSC curves from source-list paths.
 paths = labkit.app.source.paths(project.inputs.sources);

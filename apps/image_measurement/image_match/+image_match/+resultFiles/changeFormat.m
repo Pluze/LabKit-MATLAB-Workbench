@@ -1,4 +1,3 @@
-% App-owned implementation for image_match.resultFiles.changeFormat within the image_match product workflow.
 function applicationState = changeFormat( ...
         applicationState, format, callbackContext)
 %CHANGEFORMAT Select the matched-image batch format.

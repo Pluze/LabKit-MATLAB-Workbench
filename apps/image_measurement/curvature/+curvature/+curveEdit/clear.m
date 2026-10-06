@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.curveEdit.clear within the curvature product workflow.
 function applicationState = clear(applicationState, callbackContext)
 %CLEAR Remove every curve anchor and invalidate measurements.
 applicationState.project.annotations.curvePoints = zeros(0, 2);

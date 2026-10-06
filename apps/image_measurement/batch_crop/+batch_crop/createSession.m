@@ -2,9 +2,10 @@
 function session = createSession(project, ~)
     currentIndex = double(~isempty(project.inputs.items));
     images = cell(numel(project.inputs.items), 1);
-    paths = taskPaths(project.inputs.items, project.inputs.sources);
     if currentIndex > 0
-        path = paths(currentIndex);
+        item = batch_crop.sourceFiles.workingItems( ...
+            project.inputs.items(currentIndex), images(currentIndex), project.inputs.sources);
+        path = item.path;
         if strlength(path) > 0
             loaded = batch_crop.sourceFiles.readItems(path);
             if ~isempty(loaded)
@@ -20,21 +21,5 @@ function session = createSession(project, ~)
         "view", struct("scaleBar", []), ...
         "cache", struct( ...
             "images", {images}, ...
-            "paths", paths, ...
             "canvas", batch_crop.cropGeometry.emptyCanvasCache()));
-end
-
-function paths = taskPaths(tasks, sources)
-paths = strings(numel(tasks), 1);
-for k = 1:numel(tasks)
-    sourceId = string(tasks(k).sourceId);
-    match = find(string({sources.id}) == sourceId, 1);
-    if isempty(match)
-        continue
-    end
-    resolved = labkit.app.source.paths(sources(match));
-    if ~isempty(resolved)
-        paths(k) = resolved(1);
-    end
-end
 end

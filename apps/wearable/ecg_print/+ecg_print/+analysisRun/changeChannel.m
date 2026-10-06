@@ -1,4 +1,3 @@
-% App-owned implementation for ecg_print.analysisRun.changeChannel within the ecg_print product workflow.
 function applicationState = changeChannel( ...
         applicationState, channel, callbackContext)
 %CHANGECHANNEL Adopt one decoded channel and invalidate dependent products.
@@ -38,8 +37,7 @@ applicationState.session.cache.powerSpectra = [];
 applicationState.session.cache.plotViewRevision = ...
     applicationState.session.cache.plotViewRevision + 1;
 applicationState.project.results.lastAnalysis = struct();
-applicationState.project.results.lastSegmentExport = [];
-applicationState.project.results.lastWaveformExport = [];
+
 callbackContext.log("info", "ecg_print.analysisrun.changechannel.status", ...
     "Selected a recording channel.");
 end

@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.workbench.buildLayout within the video_marker product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Assemble skeleton, video marking, scale, and export capabilities.
 presets = video_marker.skeletonSetup.presets();

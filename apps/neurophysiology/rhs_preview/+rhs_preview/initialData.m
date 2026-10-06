@@ -1,9 +1,5 @@
 function project = initialData()
 %INITIALDATA Create the App-owned initial in-memory data.
-project = createProject();
-end
-
-function project = createProject()
     project = struct();
     project.inputs = struct( ...
         "sources", struct([]));
@@ -16,7 +12,4 @@ function project = createProject()
         "filterLabels", strings(0, 1), ...
         "filterComments", strings(0, 1), ...
         "filterSourceIds", strings(0, 1));
-    project.results = struct( ...
-        "lastProtocolExport", [], ...
-        "lastFilterExport", []);
 end

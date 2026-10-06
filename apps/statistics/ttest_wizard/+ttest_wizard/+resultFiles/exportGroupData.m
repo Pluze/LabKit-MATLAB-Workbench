@@ -1,4 +1,3 @@
-% App-owned implementation for ttest_wizard.resultFiles.exportGroupData within the ttest_wizard product workflow.
 function state = exportGroupData(state, context)
 %EXPORTGROUPDATA Choose and write a portable CSV of current group values.
 %

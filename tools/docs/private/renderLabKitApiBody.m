@@ -11,16 +11,16 @@ function html = renderLabKitApiBody(model, item, outputPath)
         item.helpText, item.summary, model.api, item, outputPath);
     relatedHtml = renderRelatedApis(model.api, item, outputPath);
     html = strjoin([ ...
-        "<h1><code>" + htmlEscape(item.symbol) + "</code></h1>"
-        "<p class=""lead"">" + htmlEscape(summary) + "</p>"
+        "<h1><code>" + escapeLabKitHtml(item.symbol) + "</code></h1>"
+        "<p class=""lead"">" + escapeLabKitHtml(summary) + "</p>"
         "<h2 id=""syntax"">Syntax</h2>"
         renderSyntax(syntax)
         contractHtml
         relatedHtml
         "<h2 id=""source"">Source</h2>"
         "<p>This page is generated from the MATLAB help text in " + ...
-            "<a href=""" + htmlEscape(sourceUrl) + """><code>" + ...
-            htmlEscape(item.source) + "</code></a>.</p>"], newline);
+            "<a href=""" + escapeLabKitHtml(sourceUrl) + """><code>" + ...
+            escapeLabKitHtml(item.source) + "</code></a>.</p>"], newline);
 end
 
 function html = renderSyntax(syntax)
@@ -52,7 +52,7 @@ end
 
 function html = syntaxGroup(lines)
     html = "<div class=""syntax-group""><code class=""language-matlab"">" + ...
-        htmlEscape(strjoin(lines, newline)) + "</code></div>";
+        escapeLabKitHtml(strjoin(lines, newline)) + "</code></div>";
 end
 
 function html = renderHelpSections(helpText, summaryLine, api, item, outputPath)
@@ -76,7 +76,7 @@ function html = renderHelpSections(helpText, summaryLine, api, item, outputPath)
         id = slug(title);
         blockCount = blockCount + 1;
         blocks(blockCount, 1) = "<section class=""api-section""><h2 id=""" + ...
-            id + """>" + htmlEscape(title) + "</h2>" + ...
+            id + """>" + escapeLabKitHtml(title) + "</h2>" + ...
             renderSectionContent( ...
                 title, content, api, item, outputPath) + "</section>";
     end
@@ -152,7 +152,7 @@ function html = renderSectionContent(title, lines, api, item, outputPath)
         "Typical Call", "Internal Usage"];
     if any(title == codeTitles)
         html = "<pre><code class=""language-matlab"">" + ...
-            htmlEscape(strjoin(strip(lines), newline)) + "</code></pre>";
+            escapeLabKitHtml(strjoin(strip(lines), newline)) + "</code></pre>";
         return;
     end
     definitionTitles = ["Inputs", "Input", "Outputs", "Output", ...
@@ -218,7 +218,7 @@ function html = renderDefinitions(lines, api, item, outputPath)
 end
 
 function html = breakableTerm(value)
-    html = htmlEscape(value);
+    html = escapeLabKitHtml(value);
     html = replace(html, ":", ":<wbr>");
     html = replace(html, ".", ".<wbr>");
 end
@@ -264,14 +264,14 @@ function html = renderApiText(text, api, item, outputPath)
             replacements(replacementCount, 1) = ...
                 "<a class=""api-inline-link"" href=""" + ...
                 relativeWebPath(outputPath, target) + """><code>" + ...
-                htmlEscape(symbol) + "</code></a>";
+                escapeLabKitHtml(symbol) + "</code></a>";
             marker = "@@LABKITAPILINK" + string(replacementCount) + "@@";
             protected = extractBefore(protected, first) + marker + ...
                 extractAfter(protected, last);
         end
     end
     replacements = replacements(1:replacementCount);
-    html = htmlEscape(protected);
+    html = escapeLabKitHtml(protected);
     for k = 1:numel(replacements)
         marker = "@@LABKITAPILINK" + string(k) + "@@";
         html = replace(html, marker, replacements(k));
@@ -288,8 +288,8 @@ function html = renderRelatedApis(api, item, outputPath)
     for k = 1:numel(related)
         target = "reference/api/" + replace(related(k).symbol, ".", "/") + ".html";
         rows(k) = "<li><a href=""" + relativeWebPath(outputPath, target) + ...
-            """><code>" + htmlEscape(related(k).symbol) + "</code></a> — " + ...
-            htmlEscape(cleanSummary(related(k).summary)) + "</li>";
+            """><code>" + escapeLabKitHtml(related(k).symbol) + "</code></a> — " + ...
+            escapeLabKitHtml(cleanSummary(related(k).summary)) + "</li>";
     end
     html = "<h2 id=""related-apis"">Related APIs</h2><ul>" + ...
         strjoin(rows, "") + "</ul>";
@@ -387,11 +387,4 @@ end
 function value = slug(value)
     value = lower(regexprep(string(value), '[^A-Za-z0-9]+', '-'));
     value = strip(value, "-");
-end
-
-function text = htmlEscape(text)
-    text = replace(string(text), "&", "&amp;");
-    text = replace(text, "<", "&lt;");
-    text = replace(text, ">", "&gt;");
-    text = replace(text, """", "&quot;");
 end

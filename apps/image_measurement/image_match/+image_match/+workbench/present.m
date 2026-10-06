@@ -1,4 +1,3 @@
-% App-owned implementation for image_match.workbench.present within the image_match product workflow.
 function view = present(applicationState)
 %PRESENT Build one complete Image Match workbench snapshot.
 project = applicationState.project;

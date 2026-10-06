@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.scaleCalibration.placeBar within the curvature product workflow.
 function applicationState = placeBar( ...
         applicationState, callbackContext)
 %PLACEBAR Compute the configured display scale-bar overlay.

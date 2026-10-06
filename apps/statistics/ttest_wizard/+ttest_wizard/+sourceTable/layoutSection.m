@@ -1,4 +1,3 @@
-% App-owned implementation for ttest_wizard.sourceTable.layoutSection within the ttest_wizard product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Build source-file, worksheet, and selection controls.
 %

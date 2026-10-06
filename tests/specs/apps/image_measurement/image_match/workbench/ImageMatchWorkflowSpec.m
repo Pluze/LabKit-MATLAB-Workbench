@@ -20,6 +20,19 @@ classdef ImageMatchWorkflowSpec < matlab.unittest.TestCase
 
             runtime.applyFileSelection("referenceImage", string(reference), 1);
             runtime.applyFileSelection("sourceImages", string(source), 1);
+            % Oracle: the documented scientific modes must survive the native
+            % selector and history commit; silently replacing them fails here.
+            methods = ["Balanced", "White balance", "Tone only", ...
+                "Protected tone", "Lab style", "Histogram"];
+            selector = findall(figureValue, "Tag", "matchMethod");
+            testCase.verifyEqual(string(selector.Items), methods);
+            for method = methods
+                runtime.applyControlValue("matchMethod", method);
+                runtime.invokeAction("applyMatch");
+                testCase.verifyEqual( ...
+                    runtime.State.project.annotations.steps(end).matchMethod, method);
+                runtime.invokeAction("undoHistory");
+            end
             runtime.applyControlValue("matchMethod", "Tone only");
             runtime.applyControlValue("matchStrength", 80);
             runtime.applyControlValue("toneStrength", 70);
@@ -39,19 +52,23 @@ classdef ImageMatchWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(runtime.State.project.parameters.exportFormat, ...
                 "JPEG");
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.image").Children);
-            payload = runtime.State.project.results.lastExport;
-            testCase.verifyEqual(numel(payload.results), 1);
-            testCase.verifyTrue(isfile(payload.results(1).outputPath));
-            testCase.verifyTrue(isfile(payload.resultManifestPath));
-            firstPixels = imread(payload.results(1).outputPath);
+            manifestPath = fullfile(folder, "image_match_manifest.csv");
+            manifest = readtable(manifestPath, TextType="string", Delimiter=",", ReadVariableNames=true);
+            testCase.verifyEqual(height(manifest), 1);
+            firstExport = manifest.OutputImage(1);
+            firstPixels = imread(firstExport);
+            runtime.applyFilePanelSelection("sourceImages", 1);
+            testCase.verifyEqual(runtime.State.project.results.resultManifestPath, string(manifestPath));
             imwrite(zeros(32, 48, 3, "uint8"), reference);
             runtime.invokeAction("exportImages");
-            secondExport = runtime.State.project.results.lastExport.results(1).outputPath;
+            manifest = readtable(fullfile(folder, "image_match_manifest_001.csv"), TextType="string", Delimiter=",", ReadVariableNames=true);
+            secondExport = manifest.OutputImage(1);
             testCase.verifyNotEqual(imread(secondExport), firstPixels);
             delete(secondExport);
             runtime.invokeAction("exportImages");
-            testCase.verifyTrue(isfile( ...
-                runtime.State.project.results.lastExport.results(1).outputPath));
+            testCase.verifyTrue(isfile(secondExport));
+            runtime.applyFileSelection("referenceImage", string(source), 1);
+            testCase.verifyEqual(runtime.State.project.results.resultManifestPath, "");
             runtime.invokeAction("resetHistory");
             testCase.verifyEmpty(runtime.State.project.annotations.steps);
             clear cleanup

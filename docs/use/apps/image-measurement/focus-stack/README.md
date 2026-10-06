@@ -35,7 +35,7 @@ Sources, fusion settings, and computed results remain in memory while the App is
 6. Run the stack and inspect the fused image, focus map, and confidence map side by side.
 7. Export fused PNG, focus-map PNG, and summary CSV.
 
-Selecting new focal-plane sources or completing a new fusion fits the result canvas. Status, table, and presentation-only redraws of the same result preserve the current zoom.
+Changing focal-plane sources or fusion parameters clears the previous result. Each explicit run computes a new fusion from the loaded images and current settings. Selecting new focal-plane sources or completing a new fusion fits the result canvas. Status, table, and presentation-only redraws of the same result preserve the current zoom.
 
 ## Algorithm
 

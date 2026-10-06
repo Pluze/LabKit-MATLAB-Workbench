@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.skeletonSetup.addConnection within the video_marker product workflow.
 function state = addConnection(state, context)
 %ADDCONNECTION Add the selected editable skeleton edge.
 if state.session.cache.videoInfo.frameCount > 0

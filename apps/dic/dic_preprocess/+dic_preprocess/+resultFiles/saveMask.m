@@ -1,4 +1,3 @@
-% App-owned implementation for dic_preprocess.resultFiles.saveMask within the dic_preprocess product workflow.
 function applicationState = saveMask(applicationState, callbackContext)
 %SAVEMASK Write the current ROI mask.
 mask = applicationState.project.annotations.maskImage;

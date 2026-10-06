@@ -1,4 +1,3 @@
-% App-owned implementation for image_match.imagePreview.present within the image_match product workflow.
 function view = present( ...
         steps, currentItem, previewSource, previewResult, previewMode, sourceId)
 %PRESENT Build the image-preview snapshot from explicit display inputs.
