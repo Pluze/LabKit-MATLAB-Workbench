@@ -19,6 +19,8 @@ Tension, Compression, and Cyclic share the closed-fixture gap reference. Compres
 
 All enabled strain windows and fits appear together. A synchronized two-step diagnostic view shows how baseline/loading fitting determines contact time and how its zero-load gap gives estimated length; it does not repeat the modulus plots. Export Stress-Strain CSV writes full-resolution selected-time curves independently of modulus fitting. Loaded filenames appear in the window and plot headings. The SDK adds `Snapshot.windowSubtitle` so the runtime owns title reconciliation, busy feedback, and rollback while the App owns the filename label; `Snapshot.renderPlot` adds a counter-driven `WindowRequest` with runtime-owned auxiliary window lifetimes.
 
+Standalone packaging resolves App commands from the requested source root and preserves command-name case on every operating system.
+
 The native plot runtime routes wheel events only to visible axes and offers explicit single- or dual-Y zoom targets. Data-domain changes refit axes while switching tabs, style refreshes, and ordinary wheel navigation preserve the current view.
 
 ## Impact

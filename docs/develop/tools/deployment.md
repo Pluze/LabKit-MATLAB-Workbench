@@ -39,7 +39,7 @@ several = packageLabKitApp( ...
 - an app folder containing exactly one entry point;
 - a launcher app metadata struct or struct array.
 
-Commands are resolved through the same public and configured private-app roots used by the launcher. Ambiguous commands, missing entry points, duplicate folder entries, or unavailable source files raise an error before packaging.
+Commands are resolved from `Root` through the public and configured private-app roots used by the launcher, even when another checkout is on the MATLAB path. Command names and generated standalone entry names preserve source spelling, including letter case on Windows. Ambiguous commands, missing entry points, duplicate folder entries, or unavailable source files raise an error before packaging.
 
 ## Options
 

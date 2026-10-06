@@ -214,7 +214,8 @@ function app = appFromEntry(root, entryFile, visibility, appRoot)
     if nargin < 4
         appRoot = "";
     end
-    entryFile = string(canonicalPath(entryFile));
+    % Keep command spelling; Windows path-identity folding must not rename it.
+    entryFile = labkit.app.internal.filesystem.absolutePath(entryFile);
     [folder, command, ext] = fileparts(entryFile);
     if string(ext) ~= ".m" || ...
             ~startsWith(string(command), "labkit_") || ~endsWith(string(command), "_app")
