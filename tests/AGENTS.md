@@ -6,7 +6,11 @@ production capability without logical aliases: `+labkit/+app/...` maps below
 `tests/specs/labkit/app/...`, `tools/<area>/...` maps below
 `tests/specs/tools/<area>/...`, and App capability packages map below the same
 `apps/<family>/<app>/<capability>/` path. Contract and environment metadata
-describe behavior but never change physical ownership.
+describe behavior but never change physical ownership. Shared capability glue
+may declare existing behavior consumers in `labkittest.locate`; do not create
+duplicate specification folders merely to mirror helper packages. Session
+construction selects the App-owned contracts that consume its initial state.
+Missing declared evidence remains an error, never an automatic wider fallback.
 `tests/+labkittest/` owns discovery, authoring,
 execution, artifacts, and conformance support. `tests/+testfixtures/` owns
 only input construction reused by more than one specification owner; a fixture

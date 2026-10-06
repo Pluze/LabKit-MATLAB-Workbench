@@ -1,12 +1,25 @@
 function result = fitWindows(curve, windows, kind)
-%FITWINDOWS Fit each selected strain window separately within every branch.
+%FITWINDOWS Fit one main loading segment, or every segment in Cyclic mode.
 % Report signed slopes and all computable fits regardless of R-squared.
 segments = unique(curve.segment);
+if kind ~= "Cyclic" && ~isempty(segments)
+    % Prefer the largest loading excursion; a deliberately isolated unloading
+    % interval remains analyzable. Ties retain the first recorded segment.
+    excursions=zeros(size(segments));
+    for k=1:numel(segments)
+        strain=curve.strain(curve.segment==segments(k));
+        excursions(k)=strain(end)-strain(1);
+    end
+    candidates=find(excursions>0);
+    if isempty(candidates),candidates=(1:numel(segments)).';end
+    [~,index]=max(abs(excursions(candidates)));
+    segments=segments(candidates(index));
+end
 capacity = numel(segments)*size(windows,1);
 rows = cell(capacity,12); rowCount=0; lineCount=0;
 % Descriptive review label only: never excludes or changes a computed slope.
 linearityReviewR2 = 0.95;
-lines = struct("strain_percent", [], "stress_MPa", [], "pointsX", [], "pointsY", [], "row", 0);
+lines = struct("strain_percent", [], "stress_MPa", [], "pointsX", [], "pointsY", [], "row", 0, "windowIndex", 0);
 lines = repmat(lines,1,capacity);
 for segment = segments.'
     branch = curve.segment == segment;
@@ -51,7 +64,7 @@ for segment = segments.'
             lineCount=lineCount+1;
             lines(lineCount)=struct("strain_percent",100*ends, ...
                 "stress_MPa",slope*ends+intercept,"pointsX",100*x(display), ...
-                "pointsY",y(display),"row",rowCount);
+                "pointsY",y(display),"row",rowCount,"windowIndex",w);
         end
         rows(rowCount,:)={segment,char(string(kind)+" / "+phase),windows{w,2},lo,hi, ...
             actual(1),actual(2),numel(x),slope,r2,coverage,char(note)};

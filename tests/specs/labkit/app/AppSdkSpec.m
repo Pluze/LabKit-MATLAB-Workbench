@@ -159,6 +159,40 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "labkit:app:runtime:InvariantFailure");
         end
 
+        function wheelTargetsOnlyTheExplicitDualYAxis(testCase)
+            % Oracle: one wheel tick changes one span by 1.2, leaving the other ruler untouched.
+            fig=uifigure(Visible="off");cleanup=onCleanup(@() delete(fig));ax=uiaxes(fig);
+            yyaxis(ax,'left');plot(ax,[0 10],[-2 8]);ylim(ax,[-2 8]);
+            yyaxis(ax,'right');plot(ax,[0 10],[10 30]);ylim(ax,[10 30]);xlim(ax,[0 10]);
+            labkit.app.internal.native.enableAxesPopout(ax);
+            labkit.app.internal.native.AxesNavigation.install(ax);
+            testCase.verifyEqual(string(getappdata(ax,'labkitWheelMode')),"x");
+            choice=findall(ax.ContextMenu,'Tag','labkitWheelMode_left');
+            choice.MenuSelectedFcn(choice,[]);
+            labkit.app.internal.native.AxesNavigation.wheel(ax,[5 20],1);
+            testCase.verifyEqual(ax.YAxis(1).Limits,[-3 9],AbsTol=1e-12);
+            testCase.verifyEqual(ax.YAxis(2).Limits,[10 30]);
+            testCase.verifyEqual(ax.XLim,[0 10]);
+            testCase.verifyEqual(string(ax.YAxisLocation),"right");
+            labkit.app.internal.native.AxesNavigation.select(ax,"right");
+            labkit.app.internal.native.AxesNavigation.wheel(ax,[5 20],-1);
+            testCase.verifyEqual(diff(ax.YAxis(2).Limits),20/1.2,AbsTol=1e-12);
+            testCase.verifyEqual(ax.YAxis(1).Limits,[-3 9]);
+            classes=arrayfun(@(v) string(class(v)),ax.Interactions);
+            testCase.verifyFalse(any(contains(lower(classes),"zoom")));
+            clear cleanup
+        end
+        function hiddenWorkspaceAxesCannotReceiveWheelRouting(testCase)
+            fig=uifigure(Visible="off");cleanup=onCleanup(@() delete(fig));group=uitabgroup(fig);
+            first=uitab(group);second=uitab(group);one=uiaxes(first);two=uiaxes(second);
+            group.SelectedTab=second;
+            testCase.verifyFalse(labkit.app.internal.native.AxesNavigation.isVisible(one));
+            testCase.verifyTrue(labkit.app.internal.native.AxesNavigation.isVisible(two));
+            group.SelectedTab=first;
+            testCase.verifyTrue(labkit.app.internal.native.AxesNavigation.isVisible(one));
+            testCase.verifyFalse(labkit.app.internal.native.AxesNavigation.isVisible(two));
+            clear cleanup
+        end
         function preservesBothDualYAxisViewports(testCase)
             figureHandle = figure("Visible", "off");
             cleanup = onCleanup(@() close(figureHandle));

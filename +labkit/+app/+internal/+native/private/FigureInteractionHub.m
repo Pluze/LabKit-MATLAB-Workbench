@@ -230,8 +230,7 @@ function hub = FigureInteractionHub( ...
             return;
         end
         point = wheelPoint(ax, event);
-        zoomAxesAtPoint(ax, point, count, ...
-            "ZoomAxes", scrollZoomAxes(ax));
+        labkit.app.internal.native.AxesNavigation.wheel(ax,point,count);
     end
 
     function dispatchSemanticEvent(id, ~, value, ~)
@@ -340,7 +339,8 @@ function hub = FigureInteractionHub( ...
             end
         end
         for k = 1:numel(state.targets)
-            if handleDescendsFrom(hit, state.targets(k).axes)
+            if labkit.app.internal.native.AxesNavigation.isVisible(state.targets(k).axes) && ...
+                    handleDescendsFrom(hit, state.targets(k).axes)
                 target = state.targets(k).id;
                 return;
             end
@@ -352,7 +352,7 @@ function hub = FigureInteractionHub( ...
         end
         for k = 1:numel(state.targets)
             ax = state.targets(k).axes;
-            if ~isValidHandle(ax)
+            if ~isValidHandle(ax) || ~labkit.app.internal.native.AxesNavigation.isVisible(ax)
                 continue;
             end
             position = getpixelposition(ax, true);
@@ -512,13 +512,6 @@ function point = wheelPoint(ax, event)
     end
     current = ax.CurrentPoint;
     point = current(1, 1:2);
-end
-
-function axesMode = scrollZoomAxes(ax)
-    axesMode = "xy";
-    if isappdata(ax, 'labkitPreviewScrollZoomAxes')
-        axesMode = string(getappdata(ax, 'labkitPreviewScrollZoomAxes'));
-    end
 end
 
 function invokeCallback(callback, src, event)

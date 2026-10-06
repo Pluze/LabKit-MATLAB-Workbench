@@ -7,6 +7,7 @@ connectionBox = context.getResource("mark10Connection");
 buffer = context.getResource("mark10Buffer");
 resetMonitor(buffer);
 state = mark10_monitor.acquisition.refreshState(state, context);
+state = mark10_monitor.livePlots.updateLimits(state,true);
 sampler = mark10_monitor.acquisition.createSampler( ...
     connectionBox, buffer, context, ...
     mark10_monitor.acquisition.ratePeriod(state.session.acquisition.rate));

@@ -57,7 +57,7 @@ tests/specs/
 └── repository/
 ```
 
-The owner path is a mechanical mirror of the production capability. Do not replace source paths with logical aliases such as `framework/<area>` or `system/<area>`; contract and environment tags describe behavior without changing physical ownership.
+The owner path normally mirrors the production capability. Shared capability glue maps explicitly to the existing behavior owners that exercise it; a source folder does not require a duplicate specification folder. Session construction selects the App-owned contracts that consume its initial state. Missing declared consumers still fail planning. Do not replace source paths with logical aliases such as `framework/<area>` or `system/<area>`; contract and environment tags describe behavior without changing physical ownership.
 
 `tests/+testfixtures/` contains only input construction reused by multiple specification owners, grouped by the App or data facade that owns the shape. Keep a single-owner fixture beside its specification; keep test-run machinery under `tests/+labkittest/`; do not create a generic `shared`, `support`, or `helpers` directory. Fixtures accept ordinary folders or values and return the production value under test rather than a test-only context, pack, artifact, scenario, or manifest model.
 
