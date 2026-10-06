@@ -1,4 +1,3 @@
-% App-owned implementation for cic.resultFiles.exportResults within the cic product workflow.
 function applicationState = exportResults( ...
         applicationState, callbackContext)
 %EXPORTRESULTS Write the loaded CIC batch CSV.
@@ -24,8 +23,6 @@ if ~ok
     return
 end
 
-applicationState.project.results.lastExport = struct( ...
-    "csvPath", filepath, "outputPath", filepath);
 callbackContext.log("info", "cic.resultfiles.exportresults.status", ...
     "Exported CIC results.");
 end

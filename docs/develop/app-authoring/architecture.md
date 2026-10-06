@@ -132,7 +132,7 @@ Image workflows may use `labkit.image` for generic image file filters, source im
 
 Thermal workflows may use `labkit.thermal` for radiometric source reads, embedded calibration metadata, raw thermal matrices, Celsius conversion, and linear thermal palette rendering. Apps still own file queues, display-range defaults, log/gamma display-mapping controls, export manifests, colorbar placement, overlay-removal workflow wording, measurements, and user-facing decisions. Generic image IO and filters stay in `labkit.image`; thermal file parsing and raw-to-temperature mechanics stay in `labkit.thermal`.
 
-`definition.m` returns the app runtime contract. Layout nodes own concrete callbacks and renderers, so Apps maintain no parallel registries. The framework compiles the static graph, builds the shell, owns the transactional event queue, resources, diagnostics, and private native adapter.
+`definition.m` returns the app runtime contract. Layout nodes own concrete callbacks and renderers, so Apps maintain no parallel registries. The compiled definition resolves declared callbacks and supplies one interaction declaration list to the native adapter. The framework builds the shell and owns the transactional event queue, resources, diagnostics, and private native adapter. The diagnostic event stream owns bounded live history; the viewer projects its snapshots, while the journal owns durable writing and degradation transitions.
 
 `+workbench/buildLayout.m` should read as the product's user workflow. Capability packages own their controls, state transitions, prepared view models, rendering, alerts, and wording. `+workbench/present.m` extracts exact state inputs and composes those feature fragments; it is not a second monolithic implementation of the App.
 

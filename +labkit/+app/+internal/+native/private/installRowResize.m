@@ -1,23 +1,14 @@
 % Private App SDK native-adapter implementation for installRowResize; called only by the internal runtime.
 function separator = installRowResize( ...
-        figureHandle, grid, contentRow, separatorRow, varargin)
+        figureHandle, grid, contentRow, separatorRow)
 % Private control-panel splitter. Expected caller: MatlabPlatformAdapter.
-% Inputs are runtime-owned native handles and bounded height options. The
+% Runtime-owned native handles use the SDK layout policy for height bounds. The
 % separator temporarily owns figure pointer callbacks only while dragging,
 % then restores interaction callbacks exactly.
 
 policy = nativeLayoutPolicy();
-options = struct("MinimumHeight", policy.MinimumResizableRowHeight, ...
-    "SeparatorHeight", policy.SplitterThickness);
-if ~isempty(varargin)
-    supplied = varargin{1};
-    names = string(fieldnames(supplied));
-    for name = names.'
-        options.(name) = supplied.(name);
-    end
-end
 heights = grid.RowHeight;
-heights{separatorRow} = options.SeparatorHeight;
+heights{separatorRow} = policy.SplitterThickness;
 grid.RowHeight = heights;
 separator = uipanel(grid, BorderType="none", ...
     BackgroundColor=[0.86 0.86 0.86], ...
@@ -62,13 +53,13 @@ drag = struct("Active", false, "StartY", NaN, "StartHeight", NaN, ...
         point = figureHandle.CurrentPoint;
         height = drag.StartHeight - (point(2) - drag.StartY);
         heights = grid.RowHeight;
-        heights{contentRow} = max(options.MinimumHeight, height);
-        heights{separatorRow} = options.SeparatorHeight;
+        heights{contentRow} = max(policy.MinimumResizableRowHeight, height);
+        heights{separatorRow} = policy.SplitterThickness;
         grid.RowHeight = heights;
     end
 
     function value = contentHeight()
-        value = options.MinimumHeight;
+        value = policy.MinimumResizableRowHeight;
         children = grid.Children;
         for k = 1:numel(children)
             layout = children(k).Layout;

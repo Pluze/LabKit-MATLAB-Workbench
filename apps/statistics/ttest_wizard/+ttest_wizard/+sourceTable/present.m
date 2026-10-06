@@ -1,4 +1,3 @@
-% App-owned implementation for ttest_wizard.sourceTable.present within the ttest_wizard product workflow.
 function view = present(source, selectedCells, selectionMessage)
 %PRESENT Describe the visible source worksheet and cell selection.
 %

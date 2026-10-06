@@ -6,8 +6,5 @@ classdef (Hidden, Sealed) CallbackContextFactory
             context = labkit.app.CallbackContext(backend);
         end
 
-        function context = disconnected()
-            context = labkit.app.CallbackContext(struct());
-        end
     end
 end

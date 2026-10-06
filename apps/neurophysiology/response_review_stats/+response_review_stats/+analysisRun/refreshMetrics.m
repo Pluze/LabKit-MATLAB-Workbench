@@ -1,4 +1,3 @@
-% App-owned implementation for response_review_stats.analysisRun.refreshMetrics within the response_review_stats product workflow.
 function state = refreshMetrics(state, context)
 if isempty(state.project.inputs.sources)
     state.session.workflow.statusMessage = "Select an analysis JSON or segment CSV first.";
@@ -26,7 +25,7 @@ catch ME
     state.session.workflow.lastAction = "Metric load failed";
     return;
 end
-state.project.results.lastExport = [];
+
 state.session.cache.filepath = paths(1);
 state.session.cache.metrics = metrics;
 state.session.cache.summary = summary;

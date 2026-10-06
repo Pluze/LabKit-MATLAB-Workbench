@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.scaleCalibration.changeLength within the video_marker product workflow.
 function state = changeLength(state, value, ~)
 %CHANGELENGTH Set the physical reference length.
 calibration = state.project.annotations.calibration;

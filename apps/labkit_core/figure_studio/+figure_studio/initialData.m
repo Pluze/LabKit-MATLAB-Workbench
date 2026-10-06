@@ -1,9 +1,5 @@
 function project = initialData()
 %INITIALDATA Create the App-owned initial in-memory data.
-project = createProject();
-end
-
-function project = createProject()
     preset = "LabKit figure";
     style = figure_studio.styleLibrary.styleForPreset(preset);
     project = struct();
@@ -20,7 +16,7 @@ function project = createProject()
     project.annotations = struct( ...
         "embeddedPlot", [], ...
         "sourceDefaultStyle", style, ...
-        "limitOverrides", emptyLimitOverrides(), ...
+        "limitOverrides", struct("xLim", [], "yLim", []), ...
         "panelIndex", 1);
     project.results = struct( ...
         "lastExport", [], ...
@@ -28,9 +24,6 @@ function project = createProject()
 end
 
 
-function limits = emptyLimitOverrides()
-limits = struct("xLim", [], "yLim", []);
-end
 
 function value = onOff(tf)
     if tf

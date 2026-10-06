@@ -1,4 +1,3 @@
-% App-owned implementation for dic_preprocess.workbench.buildLayout within the dic_preprocess product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Declare DIC preprocessing by product capability.
 controls = { ...

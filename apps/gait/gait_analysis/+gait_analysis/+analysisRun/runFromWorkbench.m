@@ -1,4 +1,3 @@
-% App-owned implementation for gait_analysis.analysisRun.runFromWorkbench within the gait_analysis product workflow.
 function state = runFromWorkbench(state, context)
 %RUNFROMWORKBENCH Compute gait results from the rebuilt pose session.
 arguments
@@ -12,14 +11,6 @@ if ~pose.ok
 end
 options = gait_analysis.analysisRun.sanitizeOptions( ...
     state.project.parameters);
-task = gait_analysis.analysisRun.runTask( ...
-    state.session.cache.filepath, pose, options);
-if state.project.results.analysis.ok && ...
-        state.session.cache.lastRunFingerprint == task.fingerprint
-    context.log("info", "gait_analysis.analysisrun.runfromworkbench.status",  ...
-        "Gait analysis is already up to date; skipped duplicate run.");
-    return
-end
 try
     result = gait_analysis.analysisRun.computeGait(pose, options);
 catch cause
@@ -33,8 +24,7 @@ catch cause
 end
 state.project.parameters = options;
 state.project.results.analysis = result;
-state.project.results.lastExport = [];
-state.session.cache.lastRunFingerprint = task.fingerprint;
+
 state.session.selection.currentStepIndex = 1;
 state.session.cache.plotViewRevision = ...
     state.session.cache.plotViewRevision + 1;

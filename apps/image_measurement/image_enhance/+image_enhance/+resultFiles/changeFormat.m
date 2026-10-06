@@ -1,4 +1,3 @@
-% App-owned implementation for image_enhance.resultFiles.changeFormat within the image_enhance product workflow.
 function applicationState = changeFormat( ...
         applicationState, format, callbackContext)
 %CHANGEFORMAT Select the batch image format and invalidate prior export.

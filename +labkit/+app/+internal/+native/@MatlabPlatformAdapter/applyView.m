@@ -3,6 +3,7 @@ function applyView(obj, view, previous)
     if nargin < 3
         previous = [];
     end
+    obj.BusyLifecycle.setWindowSubtitle(view.windowSubtitleForNative());
     operations = labkit.app.internal.native.NativeAdapterValues.orderedOperations(view.operationsForCompiler());
     interactionOperations = operations(cellfun(@(operation) ...
         labkit.app.internal.native.NativeAdapterValues.isInteractionKind(operation.Kind), operations));
@@ -35,7 +36,7 @@ function applyView(obj, view, previous)
     if ~isempty(obj.InteractionController) && ...
             ~isempty(changedOperations(interactionOperations, previousInteractions))
         obj.InteractionController.reconcile( ...
-            obj.InteractionDeclarations, interactionOperations);
+            obj.Plan.Interactions, interactionOperations);
     end
 end
 

@@ -1,4 +1,3 @@
-% App-owned implementation for image_enhance.enhancementPipeline.setWhiteRoi within the image_enhance product workflow.
 function applicationState = setWhiteRoi( ...
         applicationState, callbackContext)
 %SETWHITEROI Begin managed per-image white-reference ROI editing.
@@ -30,5 +29,4 @@ applicationState.session.workflow.pendingDirty = true;
 applicationState = ...
     image_enhance.enhancementPipeline.invalidateResults(applicationState);
 applicationState.session.cache.previewResult = [];
-applicationState.session.cache.previewResultKey = "";
 end

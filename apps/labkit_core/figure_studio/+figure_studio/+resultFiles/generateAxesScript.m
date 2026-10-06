@@ -1,4 +1,4 @@
-% Expected caller: figure_studio.resultFiles.writeAxesDataExport. Inputs are
+% Expected caller: figure_studio.resultFiles.exportAxesPackage. Inputs are
 % an export folder and plotData struct. Side effect: writes a standalone
 % MATLAB script that recreates supported visible graphics objects from
 % plot_data.mat.

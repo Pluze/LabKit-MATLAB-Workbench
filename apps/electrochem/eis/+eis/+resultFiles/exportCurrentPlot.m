@@ -1,4 +1,3 @@
-% App-owned implementation for eis.resultFiles.exportCurrentPlot within the eis product workflow.
 function state = exportCurrentPlot(state, context)
 %EXPORTCURRENTPLOT Write the selected EIS X/Y overlay data.
 arguments
@@ -30,7 +29,7 @@ else
         p.impedanceUnit, p.logX, p.logY);
 end
 writetable(tableValue, path);
-state.project.results.lastExport = struct("csvPath", path, "outputPath", path);
+
 context.log("info", "eis.resultfiles.exportcurrentplot.status", ...
     "Exported the current EIS plot data.");
 end

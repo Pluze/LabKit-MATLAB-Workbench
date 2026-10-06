@@ -1,4 +1,3 @@
-% App-owned implementation for figure_studio.sourceAxes.selectionChanged within the figure_studio product workflow.
 function state = selectionChanged(state, selection, callbackContext)
 %SELECTIONCHANGED Load the selected FIG and adopt its source presentation.
 arguments

@@ -1,9 +1,5 @@
 function project = initialData()
 %INITIALDATA Create the App-owned initial in-memory data.
-project = createProject();
-end
-
-function project = createProject()
     choices = csc.analysisRun.analysisChoices();
     project = struct();
     project.inputs = struct("sources", ...
@@ -22,7 +18,4 @@ function project = createProject()
         "bottomGrid", true, ...
         "bottomHold", false, ...
         "bottomTrim", true);
-    project.results = struct( ...
-        "lastResultsExport", [], ...
-        "lastVoltageCurrentExport", []);
 end

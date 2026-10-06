@@ -5,18 +5,20 @@ classdef Mark10WorkflowSpec < matlab.unittest.TestCase
         function loadsZerosAnalyzesAndExportsARecording(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
-            recordingPath = fullfile(folder, "recording.csv");
+            recordingPath = fullfile(folder, "recording_one.csv");
             monitoringPath = fullfile(folder, "monitoring.csv");
             exportPath = fullfile(folder, "modulus.csv");
             travel = [linspace(0, 2, 101), linspace(2, 0, 101)].';
             time = (0:numel(travel)-1).' ./ 50;
             force = 3 .* travel;
+            travel = travel + 10;
             writetable(table(time, force, travel, VariableNames= ...
                 ["Time_s", "Force_N", "Travel_mm"]), recordingPath);
             alerts = containers.Map("KeyType", "char", "ValueType", "any");
+            input = containers.Map("path", recordingPath);
             backend = struct( ...
                 "chooseInputFile", @(~, ~) ...
-                    labkit.app.dialog.Choice(recordingPath), ...
+                    labkit.app.dialog.Choice(input("path")), ...
                 "chooseOutputFile", @(~, defaultPath) ...
                     chooseOutput(defaultPath, monitoringPath, exportPath), ...
                 "alert", @(message, title) captureAlert( ...
@@ -26,6 +28,8 @@ classdef Mark10WorkflowSpec < matlab.unittest.TestCase
             runtime = labkittest.createMatlabRuntime( ...
                 definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
+            experiment = findall(runtime.figureHandle(), "Tag", "experimentType");
+            testCase.verifyEqual(string(experiment.Items), ["Tension", "Compression", "Cyclic"]);
 
             runtime.invokeAction("refreshPorts");
             ports = runtime.State.session.connection.ports;
@@ -80,52 +84,181 @@ classdef Mark10WorkflowSpec < matlab.unittest.TestCase
                 force, AbsTol=1e-12);
             liveAxes = findall(runtime.figureHandle(), "Tag", "livePlots.forceTravel");
             testCase.verifyNotEmpty(liveAxes.Children);
+            testCase.verifySubstring(string(runtime.figureHandle().Name), "recording_one.csv");
+            testCase.verifySubstring(string(liveAxes.Title.String), "recording_one.csv");
+            testCase.verifyEqual(string(liveAxes.Title.Interpreter), "none");
+            panel = findall(runtime.figureHandle(), "Tag", "modulusPlot");
+            testCase.verifySubstring(string(panel.Title), "recording_one.csv");
+            secondPath = fullfile(folder, "recording_two.csv");
+            copyfile(recordingPath, secondPath);
+            input("path") = secondPath;
+            runtime.invokeAction("openRecording");
+            testCase.verifySubstring(string(runtime.figureHandle().Name), "recording_two.csv");
+            testCase.verifySubstring(string(liveAxes.Title.String), "recording_two.csv");
+            testCase.verifySubstring(string(panel.Title), "recording_two.csv");
+            input("path") = recordingPath;
+            runtime.invokeAction("openRecording");
+            testCase.verifyEqual(runtime.State.session.playback.source, string(input("path")));
             runtime.invokeAction("playRecording");
             testCase.verifyTrue(runtime.State.session.playback.playing);
             runtime.invokeAction("pauseRecording");
             testCase.verifyFalse(runtime.State.session.playback.playing);
             runtime.invokeAction("refitReplayAxes");
 
-            runtime.applyControlValue("analysisForceZero", 0);
-            runtime.applyControlValue("analysisTravelZero", 0);
+            runtime.applyControlValue("analysisForceZero",0);
+            runtime.applyControlValue("analysisTravelZero",0);
             runtime.invokeAction("applyAnalysisZero");
-            runtime.applyControlValue("experimentType", "Tension");
-            runtime.applyControlValue("gaugeLength", 10);
-            runtime.applyControlValue("specimenWidth", 2);
-            runtime.applyControlValue("specimenThickness", 1);
-            runtime.applyControlValue("geometryConfirmed", true);
-            runtime.applyControlValue("fitMode", "Manual");
-            runtime.applyControlValue("manualFitStart", 0.2);
-            runtime.applyControlValue("manualFitEnd", 1.5);
-            testCase.verifyEmpty(runtime.State.session.analysis.resultRows);
+            runtime.applyControlValue("experimentType","Compression");
+            contactHelp=findall(runtime.figureHandle(),"Tag","contactHelp");
+            testCase.verifySubstring(string(contactHelp.Value),"Current test: Compression");
+            time=(0:600)'/50; travel=10.2-.1*time; force=-.2*max(10-travel,0); force(30)=9;
+            writetable(table(time,force,travel,VariableNames=["Time_s","Force_N","Travel_mm"]),recordingPath);
+            runtime.invokeAction("openRecording");
+            runtime.invokeAction("detectGlitches");
+            testCase.verifySubstring(runtime.State.session.analysis.glitchStatus,"1 candidates");
+            runtime.applyControlValue("excludeGlitches",true);
+            runtime.applyControlValue("contactAnchor",2);
+            runtime.invokeAction("estimateInitialLength");
+            testCase.verifyEqual(runtime.State.session.analysis.gaugeLength_mm,10,AbsTol=1e-6);
+            runtime.applyControlValue("gaugeLength",10);
+            runtime.applyControlValue("specimenWidth",2);
+            runtime.applyControlValue("specimenThickness",1);
+            runtime.applyControlValue("specimenRadius",sqrt(2/pi));
+            runtime.applyControlValue("specimenArea",2);
+            runtime.applyControlValue("crossSectionMode","Radius");
+            runtime.applyControlValue("crossSectionMode","Area");
+            runtime.applyControlValue("crossSectionMode","Length x width");
+            runtime.applyControlValue("geometryConfirmed",true);
+            runtime.applyControlValue("analysisStart",3);
+            runtime.applyControlValue("analysisEnd",10);
+            testCase.verifyTrue(runtime.State.session.analysis.geometryConfirmed);
+            testCase.verifyNotEmpty(runtime.State.session.analysis.estimate);
+            runtime.invokeAction("updateStressStrain");
+            testCase.verifyTrue(runtime.State.session.analysis.curveReady);
+            axesToRefit=findall(runtime.figureHandle(),"Tag","modulusPlot.stressStrain");
+            axesToRefit.XLim=[-200 -100];axesToRefit.YLim=[-10 -5];
+            runtime.applyControlValue("analysisEnd",9);
+            runtime.invokeAction("updateStressStrain");
+            drawnow;
+            testCase.verifyGreaterThan(axesToRefit.XLim(2),5);
+            testCase.verifyGreaterThan(axesToRefit.YLim(2),0);
+            runtime.applyControlValue("analysisEnd",10);
+            runtime.invokeAction("updateStressStrain");
+            runtime.invokeAction("exportStressStrain");
+            exported=readtable(exportPath);
+            testCase.verifyEqual(height(exported),351);
+            testCase.verifyEqual(exported.Time_s([1 end]),[3;10]);
+            testCase.verifyEqual(exported.Strain([1 end]),[.01;.08],AbsTol=1e-12);
+            runtime.applyTableEdit("strainWindows",labkit.app.event.TableCellEdit( ...
+                RowIndex=1,ColumnIndex=4,PreviousValue=10,NewValue=5));
+            testCase.verifyTrue(runtime.State.session.analysis.curveReady);
+            testCase.verifyError(@() runtime.applyTableEdit("strainWindows", ...
+                labkit.app.event.TableCellEdit(RowIndex=1,ColumnIndex=4,PreviousValue=5,NewValue=-1)), ...
+                "labkit:app:runtime:ActionFailed");
+            testCase.verifyEqual(runtime.State.session.analysis.windows{1,4},5);
+            nativeWindows=findall(runtime.figureHandle(),"Tag","strainWindows");
+            testCase.verifyEqual(nativeWindows.Data{1,4},5);
+            runtime.invokeAction("addStrainWindow");
+            runtime.applyTableSelection("strainWindows",[2 1]);
+            runtime.invokeAction("deleteStrainWindow");
+            testCase.verifySize(runtime.State.session.analysis.windows,[1 4]);
+            runtime.invokeAction("addStrainWindow");
             runtime.invokeAction("runModulusAnalysis");
-
-            rows = runtime.State.session.analysis.resultRows;
-            testCase.verifyGreaterThanOrEqual(size(rows, 1), 2);
-            testCase.verifyEqual(cell2mat(rows(:, 9)), ...
-                15 .* ones(size(rows, 1), 1), AbsTol=1e-10);
-            testCase.verifyEqual( ...
-                runtime.State.session.analysis.manualStart_mm, 0.2);
-            testCase.verifyEqual( ...
-                runtime.State.session.analysis.manualEnd_mm, 1.5);
-            runtime.invokeAction("exportModulusResults");
-            testCase.verifyTrue(isfile(exportPath));
-            exported = readtable(exportPath, TextType="string");
-            testCase.verifyEqual(height(exported), size(rows, 1));
-            testCase.verifyEqual(exported.GaugeLength_mm, ...
-                10 .* ones(size(rows, 1), 1));
+            a=runtime.State.session.analysis;
+            testCase.verifySize(a.resultRows,[2 12]);
+            testCase.verifyEqual(cell2mat(a.resultRows(:,9)),[1;1],AbsTol=1e-10);
+            testCase.verifySubstring(string(a.resultRows{2,12}),"partial window");
+            strainAxes=findall(runtime.figureHandle(),"Tag","modulusPlot.stressStrain");
+            testCase.verifyNumElements(findall(strainAxes,'-regexp','Tag','^mark10WindowFit'),2);
+            testCase.verifyNumElements(findall(strainAxes,'-regexp','Tag','^mark10Region'),2);
+            resultsTable=findall(runtime.figureHandle(),"Tag","modulusResults");
+            testCase.verifyFalse(any(string(resultsTable.ColumnName)=="Branch"));
+            runtime.applyControlValue("modulusUnit","kPa");
+            testCase.verifyEqual(string(resultsTable.ColumnName{2}),"E (kPa)");
+            testCase.verifyEqual(cell2mat(resultsTable.Data(:,2)),[1000;1000],AbsTol=1e-8);
+            runtime.applyControlValue("modulusUnit","GPa");
+            testCase.verifyEqual(string(resultsTable.ColumnName{2}),"E (GPa)");
+            testCase.verifyEqual(cell2mat(resultsTable.Data(:,2)),[.001;.001],AbsTol=1e-12);
+            runtime.applyControlValue("modulusUnit","MPa");
+            testCase.verifyEqual(cell2mat(resultsTable.Data(:,2)),[1;1],AbsTol=1e-10);
+            runtime.applyControlValue("modulusUnit","Auto");
+            testCase.verifyEqual(runtime.State.session.analysis.resultRows,a.resultRows);
+            testCase.verifyTrue(runtime.State.session.analysis.curveReady);
+            overviewAxes=findall(runtime.figureHandle(),"Tag","analysisOverview.forceTime");
+            testCase.verifyNumElements(findall(overviewAxes,"Type","constantline"),1);
+            runtime.applyTableSelection("modulusResults",[2 1]);
+            testCase.verifyEqual(runtime.State.session.analysis.selectedResult,2);
+            runtime.invokeAction("openAnalysisDiagnostics");
+            diagnostic=findall(groot,"Tag","labkitPlotWindow.diagnosticPlot");
+            testCase.verifyNumElements(diagnostic,1);
+            testCase.verifySubstring(string(diagnostic.Name),"recording_one.csv");
+            testCase.verifyNumElements(findall(diagnostic,"Type","axes"),2);
+            testCase.verifyEmpty(findall(runtime.figureHandle(),"Tag","referenceStart"));
+            testCase.verifyEmpty(findall(runtime.figureHandle(),"Tag","referenceEnd"));
+            for repeat=1:3
+                runtime.applyTableSelection("modulusResults",[1 1]);
+            end
+            testCase.verifyNumElements(findall(diagnostic,"Tag","mark10ContactFitBand"),1);
+            runtime.applyControlValue("contactAnchor",100);
+            runtime.invokeAction("estimateInitialLength");
+            testCase.verifySubstring(runtime.State.session.analysis.lengthFailure,"Adjust");
+            testCase.verifyEmpty(runtime.State.session.analysis.contactReview.time_s);
+            testCase.verifyEmpty(runtime.State.session.analysis.estimate);
+            failureAxis=findall(diagnostic,"Tag","diagnosticPlot.contactTime");
+            testCase.verifyNotEmpty(failureAxis.Title.String);
+            runtime.applyControlValue("contactAnchor",2);
+            runtime.invokeAction("estimateInitialLength");
+            runtime.applyControlValue("gaugeLength",9.9);
+            testCase.verifyFalse(runtime.State.session.analysis.curveReady);
+            testCase.verifyFalse(runtime.State.session.analysis.geometryConfirmed);
+            testCase.verifyNotEmpty(findall(diagnostic,"Tag","mark10ReviewedLength"));
+            runtime.applyControlValue("gaugeLength",10);
+            runtime.applyControlValue("geometryConfirmed",true);
+            runtime.invokeAction("updateStressStrain");
+            runtime.invokeAction("runModulusAnalysis");
+            delete(diagnostic);
+            runtime.applyTableSelection("modulusResults",[1 1]);
+            testCase.verifyEmpty(findall(groot,"Tag","labkitPlotWindow.diagnosticPlot"));
+            runtime.invokeAction("openAnalysisDiagnostics");
+            diagnostic=findall(groot,"Tag","labkitPlotWindow.diagnosticPlot");
+            testCase.verifyNumElements(diagnostic,1);
+            capture=labkittest.nativeGraphicsCapability("interface-capture");
+            if capture.Available
+                analysisTab=findall(runtime.figureHandle(),"Tag","replayTab");
+                analysisTab.Parent.SelectedTab=analysisTab;
+                analysisPage=findall(runtime.figureHandle(),"Tag","analysisPage");
+                analysisPage.Parent.SelectedTab=analysisPage;
+                drawnow;
+                exportapp(diagnostic,labkittest.visualEvidencePath("mark10-diagnostics",".png"));
+                exportapp(runtime.figureHandle(),labkittest.visualEvidencePath("mark10-multi-window",".png"));
+            end
+            strainAxes.XLim=[2 6];strainAxes.YLim=[.02 .06];
+            analysisPage=findall(runtime.figureHandle(),"Tag","analysisPage");
+            plotsPage=findall(runtime.figureHandle(),"Tag","plotsPage");
+            testCase.verifyEmpty(analysisPage.Parent.SelectionChangedFcn);
+            analysisPage.Parent.SelectedTab=plotsPage;drawnow;
+            analysisPage.Parent.SelectedTab=analysisPage;drawnow;
+            testCase.verifyEqual(strainAxes.XLim,[2 6]);
+            testCase.verifyEqual(strainAxes.YLim,[.02 .06]);
+            runtime.applyControlValue("experimentType","Cyclic");
+            testCase.verifyEqual(string(resultsTable.ColumnName{1}),"Branch");
+            runtime.applyControlValue("experimentType","Tension");
+            testCase.verifyFalse(any(string(resultsTable.ColumnName)=="Branch"));
+            runtime.invokeAction("resetTimeRange");
+            testCase.verifyEqual(runtime.State.session.analysis.timeStart_s,0);
+            testCase.verifyEqual(runtime.State.session.analysis.timeEnd_s,12);
             runtime.invokeAction("resetAnalysisZero");
+            testCase.verifyFalse(runtime.State.session.analysis.geometryConfirmed);
             runtime.invokeAction("resetRecording");
-            testCase.verifyEqual(runtime.State.session.playback.cursor, numel(time));
             runtime.invokeAction("disconnectDevice");
-            testCase.verifyFalse(runtime.State.session.connection.connected);
             clear cleanup
+            testCase.verifyFalse(isgraphics(diagnostic));
         end
     end
 end
 
 function choice = chooseOutput(defaultPath, monitoringPath, modulusPath)
-if contains(string(defaultPath), "recording", IgnoreCase=true)
+if ~contains(string(defaultPath), "stress_strain", IgnoreCase=true)
     choice = labkit.app.dialog.Choice(monitoringPath);
 else
     choice = labkit.app.dialog.Choice(modulusPath);

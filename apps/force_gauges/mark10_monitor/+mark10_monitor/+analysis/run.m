@@ -1,29 +1,28 @@
-function state = run(state, context)
-%RUN Calculate per-branch stiffness and Young's modulus estimates.
+function applicationState = run(applicationState, context)
+%RUN Compute every enabled window; low linearity never hides a result.
+if ~applicationState.session.analysis.curveReady
+    applicationState=mark10_monitor.analysis.updateCurve(applicationState,context);
+end
+if ~applicationState.session.analysis.curveReady, return; end
+a=applicationState.session.analysis;
 try
-    [time_s, force_N, travel_mm, source] = ...
-        mark10_monitor.analysis.sourceData(state, context);
-    result = mark10_monitor.analysis.compute(time_s, force_N, travel_mm, ...
-        state.session.analysis, state.session.experiment.type);
+    result=mark10_monitor.analysis.fitWindows(a.curve,a.windows,applicationState.session.experiment.type);
 catch cause
-    state.session.analysis.status = string(cause.message);
-    context.alert(cause.message, "Modulus Analysis");
+    context.log("error","analysis.fit_failed","Could not fit strain windows.",Exception=cause);
+    context.alert(cause.message,"Strain Windows");
     return;
 end
-state.session.analysis.resultRows = result.rows;
-state.session.analysis.plotStrain_percent = result.plotStrain_percent;
-state.session.analysis.plotStress_MPa = result.plotStress_MPa;
-state.session.analysis.fitLines = result.fitLines;
-state.session.analysis.summary = result.summary;
-state.session.analysis.status = compose( ...
-    "Analyzed %s: %d branch(es), %d accepted fit(s).", ...
-    source, result.segmentCount, result.acceptedCount);
-state.session.analysis.resultRevision = nextRevision(state.session.analysis);
+a.resultRows=result.rows; a.fitLines=result.fitLines;
+a.selectedResult=double(~isempty(result.rows));
+a.resultRevision=a.resultRevision+1;
+a.status=compose("%d branch-window results.",size(result.rows,1));
+if applicationState.session.experiment.type~="Cyclic"
+    a.status=compose("%d window results from one segment.",size(result.rows,1));
+    if ~isempty(result.rows)
+        times=a.curve.time_s(a.curve.segment==result.rows{1,1});
+        a.status=a.status+compose(" Used %.6g–%.6g s; adjust analysis time bounds to choose another segment.",times(1),times(end));
+    end
 end
-
-function value = nextRevision(analysis)
-value = 1;
-if isfield(analysis, "resultRevision")
-    value = analysis.resultRevision + 1;
-end
+a.status=a.status+" Low R2, partial coverage and negative slopes remain visible.";
+applicationState.session.analysis=a;
 end

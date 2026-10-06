@@ -11,27 +11,23 @@ user goals, reachable state-dependent chains, or failure/recovery boundaries.
 Hidden GUI does not prove native dialog, visual quality, pointer feel,
 real-data suitability, or scientific validity.
 
-Audit a changed App with `labkittest.appEvidence`. Every custom declared signal
-requires an exact native-runtime operation; callback-name matching cannot
-satisfy the GUI inventory. Require an owning
-assertion over domain state, presentation, artifact, or supported failure.
-Treat the report as an omission detector: a matched call or absence of an
-exception is not passing evidence. Do not generate a control
+Audit changed App workflows through their executable specifications. Require
+an owning assertion over domain state, presentation, artifacts, or supported
+failures. Textual invocation counts and absence of exceptions do not establish
+behavior. Do not generate a control
 Cartesian product; partition equivalent values and combinations by scientific
 meaning, reachable workflow state, failure risk, and platform sensitivity.
 
-For every new or materially changed test, identify the independent oracle and
-one plausible production counterfactual that should make it fail for the
-intended reason. Reject fixture/consumer tautologies, implementation-shaped
-counts, and assertions added only to increase coverage. Use mutation testing
-or a deliberate temporary mutation when proportionate, but evaluate assertion
-sensitivity rather than optimizing a mutation score.
+For test maintenance, apply the oracle, retirement, and assertion boundaries in
+`tests/AGENTS.md` and the Evidence Design section of `docs/develop/testing.md`.
+Compare the behavior protected before and after the edit. A removed assertion
+needs no replacement when its behavior is retired; otherwise identify the
+surviving proof or strengthen the owning test. Use a deliberate temporary
+mutation when proportionate to verify that the surviving assertion detects the
+intended defect. Keep that experiment in ignored artifacts, not production.
 
-Apply the output-assertion boundary in `tests/AGENTS.md`. During failure
-diagnosis, preserve the captured transcript, identify the producer-owned value
-or record, and rerun the smallest evidence after moving the assertion to that
-semantic boundary. Do not assign an extra line to a runtime, platform, or
-framework until the retained diagnostic supports that cause.
+During output-failure diagnosis, retain the transcript, identify the owned
+record, and rerun the smallest evidence after correcting the assertion boundary.
 
 For fixtures, apply `tests/AGENTS.md`: reuse ordinary values and owner-local
 builders; share only across real specification consumers. Do not add fixture

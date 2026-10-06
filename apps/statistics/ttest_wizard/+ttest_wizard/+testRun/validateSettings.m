@@ -1,4 +1,3 @@
-% App-owned implementation for ttest_wizard.testRun.validateSettings within the ttest_wizard product workflow.
 function state = validateSettings(state, ~, context)
 %VALIDATESETTINGS Keep the user-entered significance level in its legal range.
 %

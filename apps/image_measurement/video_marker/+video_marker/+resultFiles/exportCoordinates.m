@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.resultFiles.exportCoordinates within the video_marker product workflow.
 function state = exportCoordinates(state, context)
 %EXPORTCOORDINATES Write the App-owned coordinate CSV.
 if isempty(state.session.cache.currentImage)

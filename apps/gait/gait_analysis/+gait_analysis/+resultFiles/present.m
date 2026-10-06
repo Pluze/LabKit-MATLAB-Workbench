@@ -1,4 +1,3 @@
-% App-owned implementation for gait_analysis.resultFiles.present within the gait_analysis product workflow.
 function view = present(folder, resultAvailable)
 %PRESENT Describe the current export destination and availability.
 text = "No output folder chosen";

@@ -37,7 +37,6 @@ function cache = rebuildSelectedResult(project, index, cache)
     cache.previewResult = image_enhance.analysisRun.previewResult( ...
         cache.previewSource, steps, ...
         whiteRoi, cache.previewScale);
-    cache.previewResultKey = "restored";
 end
 
 function cache = loadSelectedCache(source, cache)
@@ -57,5 +56,5 @@ end
 function cache = emptyCache()
     cache = struct("sourceId", "", "item", [], ...
         "previewSource", [], "previewScale", 1, ...
-        "previewResult", [], "previewResultKey", "");
+        "previewResult", []);
 end

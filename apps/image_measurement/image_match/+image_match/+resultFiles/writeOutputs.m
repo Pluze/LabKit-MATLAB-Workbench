@@ -22,10 +22,7 @@ function payload = writeOutputs(items, referenceItem, steps, opts)
         mkdir(outputFolder);
     end
 
-    images = cell(numel(items), 1);
-    for k = 1:numel(items)
-        images{k} = items(k).image;
-    end
+    images = reshape({items.image}, [], 1);
     processed = image_match.analysisRun.applyPipeline(images, steps, referenceItem.image);
 
     resultTemplate = emptyResult();

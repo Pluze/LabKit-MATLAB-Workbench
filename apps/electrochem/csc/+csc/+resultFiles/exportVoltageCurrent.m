@@ -1,4 +1,3 @@
-% App-owned implementation for csc.resultFiles.exportVoltageCurrent within the csc product workflow.
 function applicationState = exportVoltageCurrent( ...
         applicationState, callbackContext)
 %EXPORTVOLTAGECURRENT Write column-oriented CV data.
@@ -24,9 +23,6 @@ if ~ok
     return
 end
 
-applicationState.project.results.lastVoltageCurrentExport = struct( ...
-    "csvPaths", string(info.files), ...
-    "outputPath", string(info.files(1)));
 callbackContext.log("info", "csc.resultfiles.exportvoltagecurrent.status", sprintf( ...
     "Exported %d CV data CSV file(s).", numel(info.files)));
 end

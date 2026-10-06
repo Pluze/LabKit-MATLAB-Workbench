@@ -12,7 +12,6 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
         end
 
         function createsAnIndependentDeferredTaskForEachDuplicateSource(testCase)
-            task = batch_crop.cropTasks.forSourceIds("image1");
             item = batch_crop.sourceFiles.emptyItem();
             item.path = "source.png";
             item.image = uint8(ones(5, 6));
@@ -22,8 +21,6 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
             item.paddingPercent = 25;
             duplicate = batch_crop.cropTasks.duplicateItem(item);
 
-            testCase.verifyEqual(task.sourceId, "image1");
-            testCase.verifyFalse(isfield(task, "image"));
             testCase.verifyEqual(duplicate.path, item.path);
             testCase.verifyEqual(duplicate.angleDeg, item.angleDeg);
             testCase.verifyFalse(duplicate.centerSet);
@@ -39,8 +36,8 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
             second = labkit.app.source.record( ...
                 "image2", "cropSource", "second.png");
             project.inputs.sources = [first, second];
-            project.inputs.items = batch_crop.cropTasks.forSourceIds( ...
-                ["image1", "image2"]).';
+            project.inputs.items = repmat(batch_crop.cropTasks.emptyTask(), 1, 2);
+            [project.inputs.items.sourceId] = deal("image1", "image2");
             project.inputs.items(1).centerXY = [2, 3];
             project.inputs.items(1).centerSet = true;
             imageOne = uint8(reshape(1:30, 5, 6));
@@ -51,7 +48,6 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
                     "selection", struct("currentIndex", 1), ...
                     "cache", struct( ...
                         "images", {{imageOne, imageTwo}}, ...
-                        "paths", ["first.png", "second.png"], ...
                         "canvas", batch_crop.cropGeometry.emptyCanvasCache())));
             callbackContext = struct("log", @(varargin) []);
 
@@ -61,12 +57,11 @@ classdef BatchCropSourceSpec < matlab.unittest.TestCase
             testCase.verifySize(actual.project.inputs.items, [3, 1]);
             testCase.verifySize(actual.project.inputs.sources, [3, 1]);
             testCase.verifySize(actual.session.cache.images, [3, 1]);
-            testCase.verifySize(actual.session.cache.paths, [3, 1]);
             testCase.verifyEqual(string({actual.project.inputs.items.sourceId}).', ...
                 string({actual.project.inputs.sources.id}).');
             testCase.verifyEqual(actual.session.selection.currentIndex, 2);
             testCase.verifyEqual(actual.session.cache.images{2}, imageOne);
-            testCase.verifyEqual(actual.session.cache.paths(2), "first.png");
+            testCase.verifyEqual(batch_crop.sourceFiles.currentItem(actual).path, "first.png");
             testCase.verifyFalse(actual.project.inputs.items(2).centerSet);
             testCase.verifyEqual(actual.project.inputs.items(3).sourceId, "image2");
         end

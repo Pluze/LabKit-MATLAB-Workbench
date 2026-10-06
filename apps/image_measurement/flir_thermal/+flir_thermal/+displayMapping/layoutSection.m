@@ -1,4 +1,3 @@
-% App-owned implementation for flir_thermal.displayMapping.layoutSection within the flir_thermal product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare palette, mapping, and temperature-range controls.
 labels = ...

@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.resultFiles.exportCsv within the curvature product workflow.
 function applicationState = exportCsv( ...
         applicationState, callbackContext)
 %EXPORTCSV Write curvature measurements.
@@ -29,8 +28,7 @@ catch ME
     callbackContext.alert(ME.message, "Could not export result CSV");
     return
 end
-applicationState.project.results.lastCsvExport = struct( ...
-    "csvPath", filepath, "outputPath", filepath);
+
 callbackContext.log("info", "curvature.resultfiles.exportcsv.completed", ...
     "Exported the result CSV.");
 end

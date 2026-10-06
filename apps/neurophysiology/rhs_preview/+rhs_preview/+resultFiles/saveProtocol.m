@@ -1,4 +1,3 @@
-% App-owned implementation for rhs_preview.resultFiles.saveProtocol within the rhs_preview product workflow.
 function applicationState = saveProtocol( ...
         applicationState, callbackContext)
 %SAVEPROTOCOL Write the channel-role draft.
@@ -22,9 +21,7 @@ rhs_preview.resultFiles.writeProtocolJson(model, outputPath);
 protocol = rhs_preview.resultFiles.protocolJsonStruct(model);
 applicationState.project.annotations.protocol = protocol;
 applicationState.session.cache.protocol = protocol;
-applicationState.project.results.lastProtocolExport = struct( ...
-    "jsonPath", string(outputPath), ...
-    "outputPath", string(outputPath));
+
 applicationState.session.workflow.statusMessage = ...
     "Saved protocol draft.";
 applicationState.session.workflow.lastAction = "Saved protocol";

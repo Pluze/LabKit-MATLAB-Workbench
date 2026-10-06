@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.skeletonSetup.presets within the video_marker product workflow.
 function values = presets()
 %PRESETS Provide named editable skeleton starting points.
 values = [ ...

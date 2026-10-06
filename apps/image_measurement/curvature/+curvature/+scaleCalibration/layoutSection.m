@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.scaleCalibration.layoutSection within the curvature product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare reference calibration and display scale-bar controls.
 % Constant: numeric limits and steps preserve the legacy calibration controls.

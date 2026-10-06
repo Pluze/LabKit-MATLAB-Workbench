@@ -1,10 +1,8 @@
-% App-owned implementation for ecg_print.sourceFiles.resetImport within the ecg_print product workflow.
 function applicationState = resetImport( ...
         applicationState, ~, ~)
 %RESETIMPORT Mark decoded analysis stale after an import option changes.
 applicationState.project.results.lastAnalysis = struct();
-applicationState.project.results.lastSegmentExport = [];
-applicationState.project.results.lastWaveformExport = [];
+
 applicationState.session.cache.filteredSignal = [];
 applicationState.session.cache.peakDetectionSignal = [];
 applicationState.session.cache.events = [];

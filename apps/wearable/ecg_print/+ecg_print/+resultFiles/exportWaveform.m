@@ -1,4 +1,3 @@
-% App-owned implementation for ecg_print.resultFiles.exportWaveform within the ecg_print product workflow.
 function applicationState = exportWaveform( ...
         applicationState, callbackContext)
 %EXPORTWAVEFORM Write the prepared ECG waveform.
@@ -21,8 +20,7 @@ if chosen.Cancelled
 end
 filepath = string(chosen.Value);
 ecg_print.resultFiles.writeWaveformPng(request, filepath);
-applicationState.project.results.lastWaveformExport = struct( ...
-    "pngPath", filepath, "outputPath", filepath);
+
 callbackContext.log("info", "ecg_print.resultfiles.exportwaveform.completed", ...
     "Exported the waveform PNG.");
 end

@@ -1,6 +1,11 @@
 function view = present(state)
 %PRESENT Compose the complete transient Mark-10 monitor view.
 s = state.session;
+filename = "";
+if s.playback.loaded && s.analysis.dataSource == "Loaded Recording"
+    [~, stem, extension] = fileparts(s.playback.source);
+    filename = string(stem) + string(extension);
+end
 connected = s.connection.connected;
 monitoring = acquisitionFlag(s.acquisition, "monitoring", connected);
 ports = s.connection.ports;
@@ -9,12 +14,9 @@ model = struct("time_s", s.acquisition.plotTime_s, ...
     "force_N", s.acquisition.plotForce_N, ...
     "travel_mm", s.acquisition.plotTravel_mm, ...
     "limits", s.cache.plotLimits, ...
-    "limitRevision", s.cache.plotViewRevision);
-analysisModel = struct( ...
-    "strain_percent", s.analysis.plotStrain_percent, ...
-    "stress_MPa", s.analysis.plotStress_MPa, ...
-    "fitLines", s.analysis.fitLines, "summary", s.analysis.summary);
-view = labkit.app.view.Snapshot();
+    "limitRevision", s.cache.plotViewRevision, "filename", filename);
+view = labkit.app.view.Snapshot().windowSubtitle(filename);
+view = view.include(mark10_monitor.analysis.present(s.analysis,s.experiment.type,filename));
 view = view.choices("serialPort", ports);
 view = view.value("serialPort", selectedPort(s.connection.selectedPort, ports));
 view = view.value("sampleRate", s.acquisition.rate);
@@ -29,19 +31,6 @@ view = view.value("outputFormat", ...
     displaySetting("outputFormat", s.settingsDraft.outputFormat));
 view = view.value("autoOutput", ...
     displaySetting("autoOutput", s.settingsDraft.autoOutput));
-view = view.value("analysisForceZero", ...
-    analysisValue(s.analysis, "forceZeroDraft_N", ...
-    analysisValue(s.analysis, "forceZero_N", 0)));
-view = view.value("analysisTravelZero", ...
-    analysisValue(s.analysis, "travelZeroDraft_mm", ...
-    analysisValue(s.analysis, "travelZero_mm", 0)));
-view = view.value("gaugeLength", s.analysis.gaugeLength_mm);
-view = view.value("specimenWidth", s.analysis.width_mm);
-view = view.value("specimenThickness", s.analysis.thickness_mm);
-view = view.value("geometryConfirmed", s.analysis.geometryConfirmed);
-view = view.value("fitMode", s.analysis.fitMode);
-view = view.value("manualFitStart", s.analysis.manualStart_mm);
-view = view.value("manualFitEnd", s.analysis.manualEnd_mm);
 view = view.text("connectionStatus", s.connection.status);
 readout = compose("Force: %s N\nTravel: %s mm", ...
     displayNumber(s.acquisition.force_N), ...
@@ -50,12 +39,6 @@ view = view.text("liveReadout", readout);
 view = view.text("acquisitionStatus", acquisitionText(s.acquisition));
 view = view.text("exportStatus", s.export.status);
 view = view.text("playbackStatus", s.playback.status);
-view = view.text("appliedZeroStatus", compose( ...
-    "Force %.6g N | Travel %.6g mm", ...
-    analysisValue(s.analysis, "forceZero_N", 0), ...
-    analysisValue(s.analysis, "travelZero_mm", 0)));
-view = view.text("analysisStatus", s.analysis.status);
-view = view.text("analysisExportStatus", s.analysis.exportStatus);
 view = view.text("settingsStatus", settingsText(s.settings));
 view = view.text("deviceIdentity", s.connection.identity);
 view = view.text("deviceCapabilities", s.connection.capabilities);
@@ -87,32 +70,15 @@ view = view.enabled("pauseRecording", ...
 view = view.enabled("refitReplayAxes", ...
     ~isempty(s.acquisition.plotTime_s));
 view = view.enabled("runModulusAnalysis", analysisDataAvailable(s));
-view = view.enabled("exportModulusResults", ...
-    ~isempty(s.analysis.resultRows));
+view = view.enabled("exportStressStrain", s.analysis.curveReady);
+view = view.enabled("updateStressStrain",analysisDataAvailable(s));
+view = view.enabled("estimateInitialLength",analysisDataAvailable(s));
+view = view.enabled("detectGlitches",analysisDataAvailable(s));
 view = view.tableData("recentData", recentTable(s.acquisition, monitoring), ...
     Columns=["Time_s", "Force_N", "Travel_mm"]);
-view = view.tableData("modulusResults", s.analysis.resultRows, ...
-    Columns=["Seg.", "Phase", "Start s", "End s", ...
-    "Fit from mm", "Fit to mm", "n", "k N/mm", ...
-    "E MPa", "R²", "Status"]);
 view = view.renderPlot("livePlots", model, ...
     ViewRevision=s.cache.plotViewRevision);
-view = view.renderPlot("modulusPlot", analysisModel, ...
-    ViewRevision=analysisRevision(s.analysis));
-end
 
-function value = analysisRevision(analysis)
-value = 0;
-if isfield(analysis, "resultRevision")
-    value = analysis.resultRevision;
-end
-end
-
-function value = analysisValue(analysis, name, fallback)
-value = fallback;
-if isfield(analysis, name)
-    value = analysis.(name);
-end
 end
 
 function tf = analysisDataAvailable(s)
@@ -125,7 +91,7 @@ end
 tf = (source == "Loaded Recording" && s.playback.loaded) || ...
     (source == "Live Monitoring" && ...
     ~acquisitionFlag(s.acquisition, "monitoring", false) && ...
-    s.acquisition.retainedValidCount >= 16);
+    s.acquisition.retainedValidCount >= 2);
 end
 
 function value = recentTable(acquisition, monitoring)

@@ -16,7 +16,6 @@ classdef (Hidden, Sealed) ResourceStore < handle
                 obj.dispose(obj.Entries(key));
             end
             obj.Entries(key) = struct( ...
-                "Id", string(id), ...
                 "Value", value, "Cleanup", cleanup);
         end
 

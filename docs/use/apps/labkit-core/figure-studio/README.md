@@ -122,7 +122,7 @@ plotData = figure_studio.resultFiles.extractAxesData(ax(1));
 ## Related Functions And Documentation
 
 - `figure_studio.resultFiles.extractAxesData`
-- `figure_studio.resultFiles.exportAxesPackage`
+- `figure_studio.resultFiles.exportAxesPackage(ax, folder)` writes one axes package containing `plot_data.mat`, `recreate_plot.m`, a README, and CSV when the visible objects support it.
 - `figure_studio.resultFiles.createStyledFigure`
 - [LabKit Core apps](../README.md)
 - [Plotting framework](../../../../develop/framework/README.md)

@@ -26,7 +26,7 @@ classdef FigureStudioResultSpec < matlab.unittest.TestCase
             style.colorOrder = [0 0 0; 1 0 0];
             [styled, target] = figure_studio.resultFiles.createStyledFigure(plotData, style, [], document);
             testCase.addTeardown(@() delete(styled));
-            manifest = figure_studio.resultFiles.writeAxesDataExport(target, folder);
+            manifest = figure_studio.resultFiles.exportAxesPackage(target, folder);
             exported = load(manifest.mat, 'plotData');
             testCase.verifyEqual(exported.plotData.axes.legend.objectIndices, [2 1]);
             run(manifest.script);

@@ -1,0 +1,6 @@
+function curve = emptyCurve()
+%EMPTYCURVE Uncomputed stress-strain values; shared by state and invalidation.
+curve = struct("time_s", [], "strain", [], "stress_MPa", [], ...
+    "gap_mm", [], "force_N", [], "segment", [], "sourceIndex", [], ...
+    "excludedCount", 0);
+end

@@ -74,8 +74,6 @@ classdef RhsPreviewWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview").Children);
             testCase.verifyTrue(isfile(protocolPath));
             testCase.verifyTrue(isfile(filterPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastProtocolExport.outputPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastFilterExport.outputPath));
             runtime.invokeAction("resetWorkflow");
             testCase.verifyEmpty(runtime.State.session.cache.preview);
             clear cleanup

@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.workbench.buildLayout within the curvature product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Assemble the Curvature Measurement product workflow.
 controls = { ...

@@ -1,4 +1,3 @@
-% App-owned implementation for flir_thermal.thermalPreview.present within the flir_thermal product workflow.
 function view = present(item, parameters, range, viewRevision)
 %PRESENT Prepare the paired thermal image/scale model and reading gesture.
 model = flir_thermal.thermalPreview.model(item, parameters, range);

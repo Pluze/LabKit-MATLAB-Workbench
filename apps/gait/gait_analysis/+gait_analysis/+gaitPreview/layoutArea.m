@@ -1,4 +1,3 @@
-% App-owned implementation for gait_analysis.gaitPreview.layoutArea within the gait_analysis product workflow.
 function areas = layoutArea()
 %LAYOUTAREA Declare two paired rows forming the 2-by-2 Gait Preview.
 areas = { ...

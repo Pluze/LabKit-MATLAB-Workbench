@@ -16,7 +16,8 @@ context.setResource("mark10Playback", playback, []);
 state.session.playback.loaded = true;
 state.session.playback.playing = false;
 state.session.playback.source = filepath;
-state = mark10_monitor.analysis.invalidate(state, context, []);
+state = mark10_monitor.analysis.setSource(state,recording.Time_s,recording.Force_N,recording.Travel_mm);
+state.session.analysis.geometryConfirmed = false;
 state.session.analysis.dataSource = "Loaded Recording";
 state = mark10_monitor.playback.applyCursor( ...
     state, playback, playback("index"));

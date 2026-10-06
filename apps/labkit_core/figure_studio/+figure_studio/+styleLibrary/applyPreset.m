@@ -1,4 +1,3 @@
-% App-owned implementation for figure_studio.styleLibrary.applyPreset within the figure_studio product workflow.
 function state = applyPreset(state, preset, callbackContext)
 %APPLYPRESET Apply a named style while preserving canvas/export geometry.
 arguments

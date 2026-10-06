@@ -8,22 +8,8 @@ classdef (Sealed, Hidden) NativeAdapterValues
             policy = nativeLayoutPolicy();
         end
 
-        function fitText(component, options)
-            arguments
-                component
-                options.CharsPerStep = []
-                options.MaxShrinkSteps = []
-            end
-            supplied = {};
-            if ~isempty(options.CharsPerStep)
-                supplied(end + 1:end + 2) = { ...
-                    "CharsPerStep", options.CharsPerStep};
-            end
-            if ~isempty(options.MaxShrinkSteps)
-                supplied(end + 1:end + 2) = { ...
-                    "MaxShrinkSteps", options.MaxShrinkSteps};
-            end
-            applyTextFit(component, supplied{:});
+        function fitText(component, varargin)
+            applyTextFit(component, varargin{:});
         end
 
         function installColumnDivider(figureHandle, grid, left, right)
@@ -491,10 +477,6 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
         end
 
-        function path = safeStartPath(value)
-        path = labkit.app.internal.native.NativeAdapterValues.dialogStartFolder( ...
-            "input", value);
-        end
 
         function path = dialogStartFolder(kind, proposed)
         % Private adapter policy for persistent native-dialog locations.
@@ -639,16 +621,6 @@ classdef (Sealed, Hidden) NativeAdapterValues
         height = max(minimum, 20 * lineCount + 6);
         end
 
-        function folder = userDialogFolder()
-        folder = string(getenv("USERPROFILE"));
-        if strlength(folder) == 0 || ~isfolder(folder)
-            folder = string(getenv("HOME"));
-        end
-        if strlength(folder) == 0 || ~isfolder(folder)
-            folder = string(tempdir);
-        end
-        folder = char(folder);
-        end
 
         function mode = startupGuiMode()
         mode = lower(strip(string(getenv("LABKIT_GUI_TEST_MODE"))));

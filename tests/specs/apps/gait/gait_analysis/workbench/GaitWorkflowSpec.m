@@ -1,8 +1,8 @@
 classdef GaitWorkflowSpec < matlab.unittest.TestCase
-    %GAITWORKFLOWSPEC Specify Video Marker input, analysis, export, restore.
+    %GAITWORKFLOWSPEC Specify Video Marker input, analysis, navigation, and export.
 
     methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
-        function analyzesNavigatesExportsAndRestoresSyntheticPose(testCase)
+        function analyzesNavigatesAndExportsSyntheticPose(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             project = gaitWorkflowProject(string(folder));
@@ -101,6 +101,9 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyFalse(any(startsWith(labels, "data")));
             [~, stem] = fileparts(posePath);
             testCase.verifyTrue(isfile(fullfile(folder, stem + "_summary.csv")));
+            % Repeating the analysis preserves numerical results.
+            runtime.invokeAction("runAnalysis");
+            testCase.verifyEqual(runtime.State.project.results.analysis.stepTable, result.stepTable);
             clear cleanup
         end
     end

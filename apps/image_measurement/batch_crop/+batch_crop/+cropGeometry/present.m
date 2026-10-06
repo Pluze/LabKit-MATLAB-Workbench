@@ -1,4 +1,3 @@
-% App-owned implementation for batch_crop.cropGeometry.present within the batch_crop product workflow.
 function view = present(applicationState)
 %PRESENT Describe crop geometry controls for the current task.
 hasImage = batch_crop.sourceFiles.hasCurrentImage(applicationState);

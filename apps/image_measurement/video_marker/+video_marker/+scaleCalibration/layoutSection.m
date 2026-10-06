@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.scaleCalibration.layoutSection within the video_marker product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare calibration and display scale-bar controls.
 % Constant: covers practical scale values across the supported SI unit choices.

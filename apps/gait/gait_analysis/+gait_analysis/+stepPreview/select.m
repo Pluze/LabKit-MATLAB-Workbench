@@ -1,4 +1,3 @@
-% App-owned implementation for gait_analysis.stepPreview.select within the gait_analysis product workflow.
 function applicationState = select( ...
         applicationState, selection, ~)
 %SELECT Use the selected result-table row as the active gait step.

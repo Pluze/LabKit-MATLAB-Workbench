@@ -15,11 +15,10 @@ Definition / CallbackContext
     `-- runtime  -> transaction ordering and callback capabilities
                      |-- diagnostics
                      |-- source / resource
-                     |-- artifact
                      `-- native -> interaction + MATLAB handles
 ```
 
-Contract, artifact, source, resource, and journal owners do
+Contract, source, resource, and journal owners do
 not look up or invoke `RuntimeKernel`. The native adapter and Session Log
 viewer are the two explicit UI callback edges: they may receive the Runtime at
 construction and call its named boundary methods, but must not expose it,
@@ -41,7 +40,6 @@ receives one callback from its caller rather than acquiring the caller.
   and fixed maintainer-tool adapters under `+launcher`. Plot-to-App handoffs
   must not acquire a Launcher window, global Launcher callback, or app-specific
   Launcher dependency.
-- Put artifact naming and scratch-destination policy under `+artifact`.
 - Keep `+filesystem` and `+identity` as leaf private primitives. They use
   MATLAB language and Base MATLAB only, expose no App-facing API, and own
   lexical path identity and opaque identifiers respectively.
@@ -54,29 +52,14 @@ receives one callback from its caller rather than acquiring the caller.
   multiple new types, create one semantically named internal subpackage
   instead of adding another root-level bucket.
 - `RuntimeKernel` owns transaction order and cross-subsystem commit/rollback.
-  It delegates independent storage, export, diagnostics, naming, and native
-  lifecycle mechanics rather than implementing them inline.
-- Keep `RuntimeKernel` as a class-folder coordinator. Complete callback,
-  presentation, bound-control, file-selection, backend-composition, dialog,
-  workflows stay in their named class methods rather than
-  accumulating again in the class definition file.
-- `MatlabPlatformAdapter` owns translation between semantic Snapshot
-  operations and native components. It delegates independent busy, startup,
-  close, acquisition, and utility workflows once they have state or lifecycle
-  of their own.
-- Split a class-folder method when it is still part of the adapter's semantic
-  reconciliation. Extract a separate owner when a workflow has its own state,
-  timing, fallback, cleanup, or transaction. File length alone does not decide
-  ownership, but a growing file is a signal to make this check before adding
-  another inline workflow.
-- Do not introduce `misc`, `common`, `utils`, `helpers`, `manager`, or
-  `service` buckets. A new internal type names the state or lifecycle it owns,
-  has one production caller direction, and is directly testable through that
-  owner.
-- Do not add MATLAB files directly to this package root. Extend the narrowest
-  existing subsystem, or update the architecture guardrail together with a
-  justified new cohesive subsystem.
+  Storage, export, diagnostics, naming, and native lifecycles stay with their
+  owners. Keep workflow order readable; file length alone is not a reason to
+  split methods or add an owner.
+- `MatlabPlatformAdapter` translates semantic Snapshot operations to native
+  components. A separate lifecycle owner needs independent state, timing,
+  cleanup, or transaction behavior; a forwarding method alone does not.
 
-Moving code is not itself an ownership improvement. Preserve transaction,
-rollback, appearance, input, status, diagnostics, and close semantics while
-extracting one complete responsibility.
+Internal class names and file decomposition are implementation choices, not
+compatibility contracts. Changes must preserve transaction, rollback,
+appearance, input, status, diagnostics, and close behavior. Moving code without
+removing duplication or clarifying responsibility is not a simplification.

@@ -1,4 +1,3 @@
-% App-owned implementation for flir_thermal.temperatureReadings.selectColdMode within the flir_thermal product workflow.
 function applicationState = selectColdMode( ...
         applicationState, callbackContext)
 %SELECTCOLDMODE Configure dragged regions to report their coldest pixel.

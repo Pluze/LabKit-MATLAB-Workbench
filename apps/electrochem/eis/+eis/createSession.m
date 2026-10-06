@@ -1,4 +1,3 @@
-% App-owned implementation for eis.createSession within the eis product workflow.
 function session = createSession(project, ~)
 %CREATESESSION Rebuild EIS overlay curves from source-list paths.
 paths = labkit.app.source.paths(project.inputs.sources);

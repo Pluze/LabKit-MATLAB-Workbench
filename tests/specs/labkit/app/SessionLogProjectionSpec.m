@@ -7,10 +7,9 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
             runtime.invokeAction("run");
             before = runtime.diagnosticSnapshot().events;
-            projection = labkit.app.internal.diagnostics.SessionLogProjection( ...
-                runtime.diagnosticSnapshot());
+            snapshot = runtime.diagnosticSnapshot();
 
-            defaultView = projection.view();
+            defaultView = labkit.app.internal.diagnostics.projectSessionLog(snapshot, "trace");
             testCase.verifyTrue(any( ...
                 defaultView.rows.Level == "DEBUG"));
             testCase.verifyTrue(any( ...
@@ -19,11 +18,10 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
             testCase.verifyTrue(any( ...
                 defaultView.rows.Message == ...
                 "Synthetic fallback remained usable."));
-            projection.setFilters(Level="warning");
-            filtered = projection.view();
+            filtered = labkit.app.internal.diagnostics.projectSessionLog(snapshot, "warning");
             testCase.verifyEqual(string(filtered.rows.Level), ...
                 ["WARNING"; "ERROR"]);
-            detail = projection.detail(filtered.rows.Sequence(end));
+            detail = filtered.events(end);
             testCase.verifyEqual( ...
                 detail.eventName, "analysis.failed");
             testCase.verifyEqual(runtime.diagnosticSnapshot().events, before);
@@ -73,10 +71,8 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
             snapshot.coalescedRecordCount = 3;
             snapshot.expiredSegmentCount = 1;
             snapshot.degradationReason = "write-failure";
-            projection = ...
-                labkit.app.internal.diagnostics.SessionLogProjection(snapshot);
-
-            notices = projection.view().notices;
+            view = labkit.app.internal.diagnostics.projectSessionLog(snapshot, "trace");
+            notices = view.notices;
             testCase.verifyTrue(any(contains(notices, "TRACE")));
             testCase.verifyFalse(any(contains(notices, "first ERROR")));
             testCase.verifyTrue(any(contains(notices, "in-memory")));
@@ -92,22 +88,27 @@ classdef SessionLogProjectionSpec < matlab.unittest.TestCase
             stream = labkit.app.internal.diagnostics.SessionEventStream( ...
                 definition, ProjectionHealthHook=@oneHealthNotice);
             cleanup = onCleanup(@() stream.close());
-            projection = labkit.app.internal.diagnostics.SessionLogProjection( ...
-                completeSnapshot(stream.captureSnapshot()));
-            token = stream.subscribe(@projection.append);
+            initialCount = numel(stream.records());
+            received = {};
+            token = stream.subscribe(@collect);
 
             stream.log( ...
                 "info", "analysis.completed", ...
                 "Synthetic analysis completed.", ...
                 Category="app.probe.log-projection.analysis", ...
                 Audience="user");
-            projection.setFilters(Level="trace");
-            events = projection.view().events;
+            events = [received{:}];
+            canonical = stream.captureSnapshot().events;
+            testCase.verifyEqual(events, canonical(initialCount + 1:end).');
 
             testCase.verifyGreaterThan( ...
                 min(diff(double([events.sequence]))), 0);
             stream.unsubscribe(token);
             clear cleanup
+
+            function collect(record)
+                received{end + 1} = record;
+            end
         end
     end
 end
@@ -116,9 +117,8 @@ function runtime = projectionRuntime(testCase)
 journalRoot = testCase.applyFixture( ...
     matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
 definition = projectionDefinition();
-runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
-    definition, [], struct(), [], ...
-    JournalRoot=journalRoot);
+runtime = labkittest.createHeadlessRuntime( ...
+    definition, [], struct(), labkittest.temporarySessionJournal(definition, journalRoot));
 end
 
 function definition = projectionDefinition()
@@ -168,13 +168,4 @@ function notifications = oneHealthNotice()
 notifications = struct( ...
     "eventName", "journal.degraded", ...
     "reason", "write-failure", "count", 0);
-end
-
-function snapshot = completeSnapshot(snapshot)
-snapshot.journalAvailable = true;
-snapshot.journalState = "healthy";
-snapshot.droppedRecordCount = 0;
-snapshot.coalescedRecordCount = 0;
-snapshot.expiredSegmentCount = 0;
-snapshot.degradationReason = "";
 end

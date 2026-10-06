@@ -1,9 +1,5 @@
 function project = initialData()
 %INITIALDATA Create the App-owned initial in-memory data.
-project = createProject();
-end
-
-function project = createProject()
     choices = cic.analysisRun.analysisChoices();
     project = struct();
     project.inputs = struct("sources", ...
@@ -27,5 +23,4 @@ function project = createProject()
         "bottomX", choices.xAxes(1), ...
         "bottomY", choices.yAxes(2), ...
         "bottomGrid", true);
-    project.results = struct("lastExport", []);
 end

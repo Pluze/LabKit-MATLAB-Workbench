@@ -18,96 +18,51 @@ function results = runFocusedSpecs(specFiles)
     specFiles = specFiles(:);
     repoRoot = repositoryRoot();
     specsRoot = string(fullfile(repoRoot, "tests", "specs"));
+    previousPath = path;
+    pathCleanup = onCleanup(@() path(previousPath));
     addpath(char(repoRoot), "-begin");
     addpath(char(fullfile(repoRoot, "tests")), "-begin");
+    labkittest.setup();
 
     selected = cell(numel(specFiles), 1);
-    selectedPaths = strings(numel(specFiles), 1);
     for index = 1:numel(specFiles)
         filepath = validatedSpecPath( ...
             repoRoot, specsRoot, specFiles(index));
-        selectedPaths(index) = filepath;
         selected{index} = ...
             matlab.unittest.TestSuite.fromFile(char(filepath));
     end
     suite = [selected{:}];
-    cleanups = [ ...
-        configureSourcePaths(repoRoot, specsRoot, selectedPaths), ...
-        configureEnvironment(selectedPaths)];
+    environmentCleanup = configureEnvironment(suite);
     fprintf("LabKit focused specifications: %d identities from %d file(s).\n", ...
         numel(suite), numel(specFiles));
     runFolder = fullfile(repoRoot, "artifacts", "test-results", "focused-specs");
     if ~isfolder(runFolder)
         mkdir(runFolder);
     end
-    runner = matlab.unittest.TestRunner.withTextOutput;
-    runner.addPlugin(labkittest.ProgressPlugin(runFolder));
-    results = runner.run(suite);
-    disp(table(results));
-    assertSuccess(results);
-    delete(cleanups);
+    results = executeSuite(suite, runFolder);
+    delete(environmentCleanup);
+    delete(pathCleanup);
 end
 
-function cleanup = configureSourcePaths(repoRoot, specsRoot, paths)
-% App specifications need their independently launchable App roots on path.
-% Add every represented App rather than assuming all selected specs share the
-% first App owner.
-appSpecsRoot = string(fullfile(specsRoot, "apps")) + filesep;
-sourceRoots = strings(numel(paths), 1);
-sourceRootCount = 0;
-for filepath = paths.'
-    if ~startsWith(filepath, appSpecsRoot)
-        continue;
-    end
-    relative = extractAfter(filepath, strlength(appSpecsRoot));
-    parts = split(relative, filesep);
-    if numel(parts) < 3 || parts(1) == "conformance"
-        continue;
-    end
-    sourceRoot = string(fullfile(repoRoot, "apps", parts(1), parts(2)));
-    if isfolder(sourceRoot)
-        sourceRootCount = sourceRootCount + 1;
-        sourceRoots(sourceRootCount) = sourceRoot;
-    end
-end
-sourceRoots = sourceRoots(1:sourceRootCount);
-sourceRoots = unique(sourceRoots, "stable");
-sourceRoots = sourceRoots(:);
-existing = string(strsplit(path, pathsep));
-added = strings(numel(sourceRoots), 1);
-addedCount = 0;
-for sourceRootIndex = 1:numel(sourceRoots)
-    sourceRoot = sourceRoots(sourceRootIndex);
-    if ~any(existing == sourceRoot)
-        addpath(char(sourceRoot), "-begin");
-        addedCount = addedCount + 1;
-        added(addedCount) = sourceRoot;
-    end
-end
-added = added(1:addedCount);
-cleanup = onCleanup(@() removeSourcePaths(added));
+function results = executeSuite(suite, runFolder)
+% Release plugins before the caller restores paths, including failed tests.
+runner = matlab.unittest.TestRunner.withTextOutput;
+progress = labkittest.ProgressPlugin(runFolder);
+cleanup = onCleanup(@() delete(progress));
+runner.addPlugin(progress);
+results = runner.run(suite);
+disp(table(results));
+assertSuccess(results);
+clear runner
+delete(cleanup);
 end
 
-function removeSourcePaths(paths)
-paths = string(paths(:));
-for sourceRootIndex = 1:numel(paths)
-    sourceRoot = paths(sourceRootIndex);
-    if any(string(strsplit(path, pathsep)) == sourceRoot)
-        rmpath(char(sourceRoot));
-    end
+function cleanup = configureEnvironment(suite)
+if any(arrayfun(@(test) any(string(test.Tags) == "Env:path-isolated"), suite))
+    error("labkit:test:InvalidFocusedSpecs", ...
+        "Path-isolated specifications must run through labkittest.run.");
 end
-end
-
-function cleanup = configureEnvironment(paths)
-hasHiddenGui = false;
-for path = paths.'
-    source = string(fileread(path));
-    if contains(source, "Env:path-isolated")
-        error("labkit:test:InvalidFocusedSpecs", ...
-            "Path-isolated specifications must run through labkittest.run.");
-    end
-    hasHiddenGui = hasHiddenGui || contains(source, "Env:hidden-gui");
-end
+hasHiddenGui = any(arrayfun(@(test) any(string(test.Tags) == "Env:hidden-gui"), suite));
 previous = getenv("LABKIT_GUI_TEST_MODE");
 cleanup = onCleanup(@() setenv("LABKIT_GUI_TEST_MODE", previous));
 if hasHiddenGui

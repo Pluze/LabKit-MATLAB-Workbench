@@ -1,4 +1,3 @@
-% App-owned implementation for batch_crop.sourceFiles.selectionChanged within the batch_crop product workflow.
 function applicationState = selectionChanged( ...
         applicationState, selection, callbackContext)
 %SELECTIONCHANGED Reconcile durable crop tasks after source-list changes.

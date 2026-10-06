@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.resultFiles.importMarkers within the video_marker product workflow.
 function state = importMarkers(state, context)
 %IMPORTMARKERS Replace annotations from a validated round-trip marker CSV.
 choice = context.chooseInputFile( ...

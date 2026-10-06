@@ -19,8 +19,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         WorkbenchWorkspace
         Runtime
         InteractionController
-        InteractionDeclarations (1, :) cell = {}
         BusyLifecycle
+        PlotWindows
         PriorPointer (1, 1) string = "arrow"
         ClosePrompt
         DialogFolders
@@ -74,6 +74,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 Name=char(string(title)), ...
                 Tag="labkitApp", ...
                 Position=policy.InitialFigurePosition);
+            obj.PlotWindows = labkit.app.internal.native.PlotWindows();
             obj.BusyLifecycle = ...
                 labkit.app.internal.native.BusyLifecycle( ...
                     obj.Figure, title, ...
@@ -102,7 +103,6 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             obj.Figure.WindowKeyPressFcn = @(~, event) obj.onKeyPress(event);
             obj.installCallbacks();
             obj.installUtilityMenus();
-            obj.InteractionDeclarations = obj.collectInteractionDeclarations();
             targets = obj.interactionTargetAxes();
             if ~isempty(targets)
                 obj.InteractionController = labkit.app.internal.native.NativeAdapterValues.interactionController( ...
@@ -138,6 +138,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function close(obj)
+            obj.PlotWindows.close();
             obj.cancelAllPannerCommits();
             if ~isempty(obj.LogViewer) && isvalid(obj.LogViewer)
                 obj.LogViewer.close();
@@ -391,7 +392,6 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         renderPlot(obj, operation)
 
-        declarations = collectInteractionDeclarations(obj)
 
         targets = interactionTargetAxes(obj)
 

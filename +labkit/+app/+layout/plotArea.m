@@ -52,6 +52,10 @@ function node = plotArea(id, renderer, varargin)
 %   workspace = workspace.page("plots", "Plots", {top, bottom});
 %   workspace = workspace.initialPage("plots");
 %
+% Dynamic heading:
+%   view.text(id, text) replaces the plot panel title. Omitting the override
+%   restores Title, or the enclosing section heading when Title is empty.
+%
 % See also labkit.app.view.Snapshot, labkit.app.layout.workspace,
 %   labkit.app.interaction.anchorPath
 node = labkit.app.internal.contract.LayoutNode.plotArea(id, renderer, varargin{:});

@@ -1,4 +1,3 @@
-% App-owned implementation for focus_stack.sourceFiles.chooseFolder within the focus_stack product workflow.
 function applicationState = chooseFolder(applicationState, callbackContext)
 %CHOOSEFOLDER Replace the current stack with supported images from a folder.
 startPath = applicationState.project.parameters.outputFolder;
@@ -43,7 +42,6 @@ applicationState = focus_stack.analysisRun.invalidate( ...
     applicationState, [], callbackContext);
 applicationState.project.parameters.outputFolder = folder;
 applicationState.session.cache.images = images;
-applicationState.session.cache.alignedImages = {};
 applicationState.session.cache.result = ...
     focus_stack.analysisRun.emptyResult();
 applicationState.session.cache.sourcePaths = paths;

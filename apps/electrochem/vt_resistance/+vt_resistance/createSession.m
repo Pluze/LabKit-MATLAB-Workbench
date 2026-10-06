@@ -1,4 +1,3 @@
-% App-owned implementation for vt_resistance.createSession within the vt_resistance product workflow.
 function session = createSession(project, ~)
 %CREATESESSION Rebuild VT Resistance's lazy selected preview.
 paths = strings(0, 1);

@@ -8,6 +8,7 @@ classdef (Sealed) Snapshot
     %   view = view.limits(target, limits)
     %   view = view.enabled(target, enabled)
     %   view = view.text(target, text)
+    %   view = view.windowSubtitle(text)
     %   view = view.fileItemStatuses(target, statuses)
     %   view = view.listSelection(target, selection)
     %   view = view.tableCellSelection(target, selection)
@@ -36,8 +37,12 @@ classdef (Sealed) Snapshot
     %   limits - Increasing finite two-element numeric row.
     %   enabled - Logical scalar availability.
     %   text - Scalar text. For a slider target, this replaces the visible
-    %       slider label; for other text-capable targets, it replaces the
+    %       slider label; for a plotArea it replaces the panel title;
+    %       for other text-capable targets, it replaces the
     %       target's displayed text.
+    %   windowSubtitle text - Single-line scalar text appended to the App
+    %       identity/version title. Empty or omitted clears the subtitle.
+    %       The runtime preserves it through busy feedback and rollback.
     %   statuses - Empty or one reader-facing status per file-list row.
     %   selection - Selection value accepted by the target.
     %   data - App-owned table, numeric array, or cell array.
@@ -49,6 +54,13 @@ classdef (Sealed) Snapshot
     %       token is unchanged and accepts renderer limits once when it changes.
     %       Use App-owned semantic IDs and plot choices, never source paths.
     %       Text tokens are limited to 4096 characters. Default: 0.
+    %
+    %   WindowRequest - Nonnegative integer request counter for an auxiliary
+    %       plot window. Default 0 (closed). Changing a positive value opens
+    %       or raises the target's window; its renderer follows subsequent
+    %       model commits. Closing it manually keeps it closed until the next
+    %       request. Main App close disposes its windows. ViewRevision controls
+    %       viewport preservation in both surfaces. No native handles are exposed.
     %
     % Outputs:
     %   view - New immutable labkit.app.view.Snapshot snapshot.
@@ -70,11 +82,29 @@ classdef (Sealed) Snapshot
 
     properties (SetAccess = private, GetAccess = private)
         Operations (1, :) cell
+        WindowSubtitle (1, 1) string = ""
+        HasWindowSubtitle (1, 1) logical = false
     end
 
     methods
         function obj = Snapshot()
             obj.Operations = {};
+        end
+
+        function obj = windowSubtitle(obj, text)
+            if ~((ischar(text) && (isrow(text) || isempty(text))) || ...
+                    (isstring(text) && isscalar(text))) || ...
+                    ismissing(string(text)) || ...
+                    contains(string(text), newline) || contains(string(text), char(13))
+                error("labkit:app:contract:InvalidValue", ...
+                    "Window subtitle must be single-line scalar text.");
+            end
+            if obj.HasWindowSubtitle
+                error("labkit:app:contract:DuplicateId", ...
+                    "View snapshot repeats its window subtitle.");
+            end
+            obj.WindowSubtitle = string(text);
+            obj.HasWindowSubtitle = true;
         end
 
         function obj = value(obj, target, value)
@@ -180,7 +210,7 @@ classdef (Sealed) Snapshot
         function obj = renderPlot(obj, target, model, varargin)
             options = labkit.app.internal.contract.OptionParser.parse( ...
                 "labkit.app.view.Snapshot.renderPlot", ...
-                "ViewRevision", varargin{:});
+                ["ViewRevision", "WindowRequest"], varargin{:});
             revision = optionValue(options, "ViewRevision", 0);
             if isnumeric(revision) && isscalar(revision) && ...
                     isfinite(revision) && revision >= 0 && ...
@@ -196,9 +226,15 @@ classdef (Sealed) Snapshot
                     "View snapshot ViewRevision must be a nonnegative " + ...
                     "integer or scalar text token of at most 4096 characters.");
             end
+            request = optionValue(options, "WindowRequest", 0);
+            if ~(isnumeric(request) && isscalar(request) && isreal(request) && ...
+                    isfinite(request) && request>=0 && request==fix(request))
+                error("labkit:app:contract:InvalidValue", ...
+                    "WindowRequest must be a nonnegative integer.");
+            end
             value = struct( ...
                 "Model", {model}, ...
-                "ViewRevision", revision);
+                "ViewRevision", revision, "WindowRequest", double(request));
             obj = append(obj, "renderPlot", target, value);
         end
 
@@ -243,6 +279,9 @@ classdef (Sealed) Snapshot
                 error("labkit:app:contract:InvalidValue", ...
                     "View snapshot include requires another Snapshot.");
             end
+            if fragment.HasWindowSubtitle
+                obj = obj.windowSubtitle(fragment.WindowSubtitle);
+            end
             for k = 1:numel(fragment.Operations)
                 operation = fragment.Operations{k};
                 obj = append(obj, operation.Kind, ...
@@ -272,6 +311,10 @@ classdef (Sealed) Snapshot
     methods (Access = { ...
             ?labkit.app.internal.contract.CompiledDefinition, ...
             ?labkit.app.internal.native.MatlabPlatformAdapter})
+        function text = windowSubtitleForNative(obj)
+            text = obj.WindowSubtitle;
+        end
+
         function operations = operationsForCompiler(obj)
             operations = obj.Operations;
         end
@@ -306,6 +349,11 @@ classdef (Sealed) Snapshot
             operations = operations(1:operationCount);
             result = labkit.app.view.Snapshot();
             result.Operations = operations;
+            if custom.HasWindowSubtitle
+                result = result.windowSubtitle(custom.WindowSubtitle);
+            elseif base.HasWindowSubtitle
+                result = result.windowSubtitle(base.WindowSubtitle);
+            end
         end
     end
 end

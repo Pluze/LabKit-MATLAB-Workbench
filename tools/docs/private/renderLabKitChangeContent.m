@@ -66,7 +66,7 @@ end
 function html = browseCard(outputPath, target, title, description)
     html = "<a class=""index-card"" href=""" + ...
         relativeWebPath(outputPath, target) + """><strong>" + ...
-        escape(title) + "</strong><span>" + escape(description) + "</span></a>";
+        escapeLabKitHtml(title) + "</strong><span>" + escapeLabKitHtml(description) + "</span></a>";
 end
 
 function html = changeList(model, records, outputPath, limit)
@@ -88,7 +88,7 @@ function html = changeList(model, records, outputPath, limit)
             displayCompatibility(records(k).compatibility) + ...
             "</span></div><a href=""" + ...
             relativeWebPath(outputPath, string(page(1).output)) + """>" + ...
-            escape(records(k).title) + "</a><code>" + records(k).id + ...
+            escapeLabKitHtml(records(k).title) + "</a><code>" + records(k).id + ...
             "</code></li>";
     end
     html = "<ol class=""change-list"">" + strjoin(rows, "") + "</ol>";
@@ -97,14 +97,14 @@ end
 function html = recordFacts(record, currentOutput)
     rows = strings(0, 1);
     rows(end + 1) = fact("Change ID", ...
-        "<code>" + escape(record.id) + "</code>");
+        "<code>" + escapeLabKitHtml(record.id) + "</code>");
     rows(end + 1) = fact("Accepted", ...
-        "<time datetime=""" + escape(record.date) + """>" + ...
-        escape(record.date) + "</time>");
-    rows(end + 1) = fact("Type", escape(record.changeType));
+        "<time datetime=""" + escapeLabKitHtml(record.date) + """>" + ...
+        escapeLabKitHtml(record.date) + "</time>");
+    rows(end + 1) = fact("Type", escapeLabKitHtml(record.changeType));
     rows(end + 1) = fact("Compatibility", ...
-        "<span class=""compatibility " + escape(record.compatibility) + ...
-        """>" + escape(replace(record.compatibility, "-", " ")) + "</span>");
+        "<span class=""compatibility " + escapeLabKitHtml(record.compatibility) + ...
+        """>" + escapeLabKitHtml(replace(record.compatibility, "-", " ")) + "</span>");
     values = strings(numel(record.components), 1);
     for k = 1:numel(record.components)
         id = labKitChangeComponentId(record.components(k));
@@ -116,11 +116,11 @@ function html = recordFacts(record, currentOutput)
         end
         values(k) = "<span class=""component-fact""><a href=""" + ...
             relativeWebPath(currentOutput, archive) + """><code>" + ...
-            escape(id) + "</code></a>";
+            escapeLabKitHtml(id) + "</code></a>";
         if strlength(transition) > 0
             values(k) = values(k) + ...
                 " <span class=""component-transition"">" + ...
-                escape(transition) + "</span>";
+                escapeLabKitHtml(transition) + "</span>";
         end
         values(k) = values(k) + "</span>";
     end
@@ -131,7 +131,7 @@ function html = recordFacts(record, currentOutput)
 end
 
 function html = fact(label, value)
-    html = "<div><dt>" + escape(label) + ...
+    html = "<div><dt>" + escapeLabKitHtml(label) + ...
         "</dt><dd>" + value + "</dd></div>";
 end
 
@@ -173,8 +173,8 @@ function links = currentDocumentationLinks(model, record, currentOutput)
     links = strings(min(8, numel(pages)), 1);
     for k = 1:numel(links)
         links(k) = "<li><a href=""" + relativeWebPath(currentOutput, ...
-            pages(k).output) + """>" + escape(pages(k).title) + ...
-            "</a><span>Current " + escape(pages(k).type) + "</span></li>";
+            pages(k).output) + """>" + escapeLabKitHtml(pages(k).title) + ...
+            "</a><span>Current " + escapeLabKitHtml(pages(k).type) + "</span></li>";
     end
 end
 
@@ -230,7 +230,7 @@ function links = componentArchiveLinks(model, components, currentOutput)
             labKitChangeComponentSlug(components(k)) + "/index.html";
         links(k) = "<li><a href=""" + ...
             relativeWebPath(currentOutput, target) + ...
-            """>All changes for <code>" + escape(components(k)) + ...
+            """>All changes for <code>" + escapeLabKitHtml(components(k)) + ...
             "</code></a></li>";
     end
 end
@@ -253,19 +253,12 @@ function html = changeTarget(model, id, currentOutput, label)
     pages = model.pages;
     pageIndex = find(string({pages.source}) == records(recordIndex).source, 1);
     target = relativeWebPath(currentOutput, string(pages(pageIndex).output));
-    html = "<li><span>" + escape(label) + ":</span> <a href=""" + ...
-        escape(target) + """><code>" + escape(id) + "</code> " + ...
-        escape(records(recordIndex).title) + "</a></li>";
+    html = "<li><span>" + escapeLabKitHtml(label) + ":</span> <a href=""" + ...
+        escapeLabKitHtml(target) + """><code>" + escapeLabKitHtml(id) + "</code> " + ...
+        escapeLabKitHtml(records(recordIndex).title) + "</a></li>";
 end
 
 function label = displayCompatibility(value)
     label = replace(string(value), "-", " ");
     label = upper(extractBefore(label, 2)) + extractAfter(label, 1);
-end
-
-function value = escape(value)
-    value = replace(string(value), "&", "&amp;");
-    value = replace(value, "<", "&lt;");
-    value = replace(value, ">", "&gt;");
-    value = replace(value, """", "&quot;");
 end

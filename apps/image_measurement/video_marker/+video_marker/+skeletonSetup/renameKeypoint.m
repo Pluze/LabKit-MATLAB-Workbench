@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.skeletonSetup.renameKeypoint within the video_marker product workflow.
 function state=renameKeypoint(state,edit,context)
 if state.session.cache.videoInfo.frameCount>0,return,end
 if edit.ColumnIndex~=2,return,end

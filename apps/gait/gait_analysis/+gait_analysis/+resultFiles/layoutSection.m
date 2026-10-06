@@ -1,4 +1,3 @@
-% App-owned implementation for gait_analysis.resultFiles.layoutSection within the gait_analysis product workflow.
 function section = layoutSection()
 %LAYOUTSECTION Declare gait result-folder selection and export.
 section = labkit.app.layout.section("exportSection", "Export", { ...

@@ -1,4 +1,3 @@
-% App-owned implementation for nerve_response_analysis.analysisRun.optionsSection within the nerve_response_analysis product workflow.
 function section = optionsSection()
 %OPTIONSSECTION Declare analysis limits and current workflow status.
 section = labkit.app.layout.section( ...

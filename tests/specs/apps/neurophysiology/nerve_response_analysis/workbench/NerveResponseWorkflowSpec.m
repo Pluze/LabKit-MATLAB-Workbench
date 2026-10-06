@@ -27,7 +27,6 @@ classdef NerveResponseWorkflowSpec < matlab.unittest.TestCase
             runtime.applyControlValue("preview", "Issues");
             runtime.invokeAction("exportAnalysis");
 
-            outputFolder = runtime.State.session.workflow.outputFolder;
             analysis = runtime.State.session.cache.analysis;
             testCase.verifyEqual(analysis.recordingCount, 2);
             testCase.verifyGreaterThan(analysis.analyzedCount, 0);
@@ -35,9 +34,11 @@ classdef NerveResponseWorkflowSpec < matlab.unittest.TestCase
                 runtime.State.session.cache.plotViewRevision, 1);
             testCase.verifyEqual(runtime.State.session.view.previewMode, "Issues");
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview").Children);
-            testCase.verifyTrue(isfile(fullfile(outputFolder, "nerve_response_analysis.json")));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastExport.outputPath));
-            exportedPath = runtime.State.project.results.lastExport.outputPath;
+            exportedPath = fullfile(folder, "nerve_response_analysis.json");
+            testCase.assertTrue(isfile(exportedPath));
+            exported = jsondecode(fileread(exportedPath));
+            testCase.verifyEqual(exported.recordingCount, analysis.recordingCount);
+            testCase.verifyEqual(exported.analyzedCount, analysis.analyzedCount);
             runtime.invokeAction("clearOutputFolder");
             testCase.verifyEqual(runtime.State.session.workflow.outputFolder, "");
             runtime.invokeAction("resetWorkflow");

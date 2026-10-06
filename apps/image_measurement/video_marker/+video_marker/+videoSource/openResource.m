@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.videoSource.openResource within the video_marker product workflow.
 function resource = openResource(videoPath)
 %OPENRESOURCE Open one video and create its bounded decoded-frame cache.
 [reader, info] = video_marker.videoSource.openVideo(videoPath);

@@ -95,7 +95,7 @@ Foot displacement is exported as `step_length` because each row describes one ac
 | Minimum step length | 1 output unit | Minimum two-dimensional foot endpoint displacement. |
 | Maximum hip translation | 1,000,000 output units | Upper endpoint-displacement QC rule; the default normally leaves it inactive. |
 
-Changing any parameter makes the previous result out of date. Running analysis again with unchanged source and parameters reuses the completed result.
+Changing any parameter makes the previous result out of date. **Run analysis** computes from the loaded pose and current parameters each time; unchanged inputs produce the same numerical results.
 
 ## Outputs
 

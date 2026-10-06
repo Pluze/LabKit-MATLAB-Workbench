@@ -11,6 +11,7 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
         Figure
         RestoreView
         InputHandles
+        WindowSubtitle (1, 1) string = ""
         BaseWindowTitle (1, 1) string
         Visible (1, 1) logical = false
         Message (1, 1) string = ""
@@ -40,9 +41,12 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
 
         function setWindowTitle(obj, title)
             obj.BaseWindowTitle = string(title);
-            if ~obj.Active && obj.hasFigure()
-                obj.Figure.Name = char(obj.BaseWindowTitle);
-            end
+            obj.refreshTitle();
+        end
+
+        function setWindowSubtitle(obj, text)
+            obj.WindowSubtitle = text;
+            obj.refreshTitle();
         end
 
         function begin(obj, message)
@@ -105,8 +109,8 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
             end
             if wasVisible
                 obj.Figure.Pointer = char(obj.PriorPointer);
-                obj.Figure.Name = char(obj.BaseWindowTitle);
             end
+            obj.refreshTitle();
             if isappdata(obj.Figure, "labkitAppBusy")
                 rmappdata(obj.Figure, "labkitAppBusy");
             end
@@ -141,8 +145,24 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
             drawnow limitrate nocallbacks
         end
 
+        function refreshTitle(obj)
+            if ~obj.hasFigure(), return; end
+            if obj.Visible
+                obj.Figure.Name = char(obj.busyWindowTitle());
+            else
+                obj.Figure.Name = char(obj.windowTitle());
+            end
+        end
+
+        function title = windowTitle(obj)
+            title = obj.BaseWindowTitle;
+            if strlength(obj.WindowSubtitle) > 0
+                title = title + " — " + obj.WindowSubtitle;
+            end
+        end
+
         function title = busyWindowTitle(obj)
-            title = obj.BaseWindowTitle + ...
+            title = obj.windowTitle() + ...
                 " [Working: " + obj.Message + "]";
         end
 

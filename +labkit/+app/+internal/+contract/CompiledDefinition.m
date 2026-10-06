@@ -40,7 +40,9 @@ classdef (Hidden, Sealed) CompiledDefinition
             obj.OnStartBinding = onStart;
             obj.SignalBindings = collectSignalBindings( ...
                 [nodes interactions], onStart);
-            obj.PlatformPlan = compilePlatformPlan(nodes);
+            plan = compilePlatformPlan(nodes);
+            plan.Interactions = interactions;
+            obj.PlatformPlan = plan;
         end
     end
 
@@ -93,6 +95,29 @@ classdef (Hidden, Sealed) CompiledDefinition
         function ids = signalIds(obj)
             ids = string(cellfun(@(binding) binding.Id, ...
                 obj.SignalBindings, "UniformOutput", false));
+        end
+
+        function binding = signalForTarget(obj, target, signal, required)
+            if nargin < 4
+                required = true;
+            end
+            index = find(obj.signalIds() == string(target) + "__" + signal, 1);
+            binding = [];
+            if ~isempty(index)
+                binding = obj.SignalBindings{index};
+            elseif required
+                error("labkit:app:contract:UnknownReference", ...
+                    "Workbench target has no %s callback: %s.", signal, target);
+            end
+        end
+
+        function binding = interactionSignal(obj, target, signal)
+            if ~any(cellfun(@(value) value.Id == string(target), ...
+                    obj.PlatformPlan.Interactions))
+                error("labkit:app:contract:UnknownReference", ...
+                    "Unknown interaction: %s.", target);
+            end
+            binding = obj.signalForTarget(target, signal);
         end
 
         function binding = onStartBinding(obj)
@@ -175,22 +200,12 @@ plan = struct("Nodes", compiled);
 end
 
 function bindings = collectSignalBindings(nodes, start)
-capacity = sum(cellfun(@(node) numel(node.Signals), nodes)) + ~isempty(start);
-bindings = cell(1, capacity);
-bindingCount = 0;
-for k = 1:numel(nodes)
-    signals = nodes{k}.Signals;
-    for s = 1:numel(signals)
-        bindingCount = bindingCount + 1;
-        bindings{bindingCount} = signals{s};
-    end
-end
+chunks = cellfun(@(node) node.Signals, nodes, "UniformOutput", false);
+bindings = [chunks{:}];
 if ~isempty(start)
-    bindingCount = bindingCount + 1;
-    bindings{bindingCount} = start;
+    bindings{end + 1} = start;
 end
-bindings = bindings(1:bindingCount);
-bindings = uniqueBindings(bindings);
+% Target IDs are globally unique; closed node constructors bind each signal once.
 end
 
 function interactions = collectInteractions(nodes)
@@ -217,22 +232,4 @@ if numel(unique(values)) ~= numel(values)
     error("labkit:app:contract:DuplicateId", ...
         "%s IDs must be globally unique.", label);
 end
-end
-
-function values = uniqueBindings(values)
-uniqueValues = cell(size(values));
-uniqueCount = 0;
-for k = 1:numel(values)
-    value = values{k};
-    sameId = find(cellfun(@(candidate) candidate.Id == value.Id, ...
-        uniqueValues(1:uniqueCount)), 1);
-    if isempty(sameId)
-        uniqueCount = uniqueCount + 1;
-        uniqueValues{uniqueCount} = value;
-    elseif ~isequaln(uniqueValues{sameId}, value)
-        error("labkit:app:contract:DuplicateId", ...
-            "Layout signal ID %s has conflicting callbacks.", value.Id);
-    end
-end
-values = uniqueValues(1:uniqueCount);
 end

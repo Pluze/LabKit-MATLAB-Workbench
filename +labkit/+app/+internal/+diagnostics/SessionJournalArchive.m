@@ -5,7 +5,8 @@ classdef (Hidden, Sealed) SessionJournalArchive
 
     methods (Static)
         function snapshot = snapshot(rootFolder, sessionId)
-            sessionId = semanticSessionId(sessionId, "SessionId");
+            sessionId = labkit.app.internal.diagnostics.SessionEventValidator.semanticIdentifier( ...
+                sessionId, "SessionId");
             rootFolder = string(rootFolder);
             folder = fullfile(rootFolder, "sessions", sessionId);
             manifest = readJson(fullfile(folder, "manifest.json"));
@@ -27,7 +28,7 @@ segmentEvents = cell(numel(segments), 1);
 for segmentIndex = 1:numel(segments)
     lines = splitlines(string(fileread(fullfile(segments(segmentIndex).folder, ...
         segments(segmentIndex).name))));
-    events = repmat(canonicalTemplate(), numel(lines), 1);
+    events = repmat(labkit.app.internal.diagnostics.SessionEventValidator.recordTemplate(), numel(lines), 1);
     eventCount = 0;
     for lineIndex = 1:numel(lines)
         line = strtrim(lines(lineIndex));
@@ -36,7 +37,7 @@ for segmentIndex = 1:numel(segments)
         end
         try
             record = jsondecode(line);
-            if ~isCanonicalRecord(record)
+            if ~labkit.app.internal.diagnostics.SessionEventValidator.isCanonicalRecord(record)
                 error("labkit:app:runtime:JournalCorruptRecord", ...
                     "A retained journal record is not canonical.");
             end
@@ -48,20 +49,11 @@ for segmentIndex = 1:numel(segments)
     end
     segmentEvents{segmentIndex} = events(1:eventCount);
 end
-events = repmat(canonicalTemplate(), 0, 1);
+events = repmat(labkit.app.internal.diagnostics.SessionEventValidator.recordTemplate(), 0, 1);
 segmentEvents = segmentEvents(~cellfun(@isempty, segmentEvents));
 if ~isempty(segmentEvents)
     events = vertcat(segmentEvents{:});
 end
-end
-
-function template = canonicalTemplate()
-template = struct("schemaVersion", [], "sequence", [], "timestampUtc", "", ...
-    "elapsedSeconds", [], "severity", "", "audience", "", "category", "", ...
-    "eventName", "", "message", "", "attributes", struct(), "sessionId", "", ...
-    "appId", "", "operationId", "", "parentOperationId", "", ...
-    "rootActionId", "", "operationResult", "", "stateDisposition", "", ...
-    "durationSeconds", [], "exception", struct());
 end
 
 function value = degradation(manifest, corruptRecordCount)
@@ -79,23 +71,6 @@ if ~isempty(segments)
     [~, order] = sort(string({segments.name}));
     segments = segments(order);
 end
-end
-
-function tf = isCanonicalRecord(record)
-fields = ["schemaVersion", "sequence", "timestampUtc", "elapsedSeconds", ...
-    "severity", "audience", "category", "eventName", "message", ...
-    "attributes", "sessionId", "appId", "operationId", ...
-    "parentOperationId", "rootActionId", "operationResult", ...
-    "stateDisposition", "durationSeconds", "exception"];
-tf = isstruct(record) && isscalar(record) && ...
-    isequal(string(fieldnames(record)), fields.') && ...
-    labkit.app.internal.diagnostics.SessionEventValidator.canonicalTerminalPair( ...
-    record.operationResult, record.stateDisposition);
-end
-
-function value = semanticSessionId(value, label)
-value = labkit.app.internal.diagnostics.SessionEventValidator.semanticIdentifier( ...
-    value, label);
 end
 
 function payload = readJson(filepath)

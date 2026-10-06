@@ -21,6 +21,7 @@ try
     state.session.connection.acquisitionMode = connection.AcquisitionMode;
     state = mark10_monitor.settings.copyReadback( ...
         state, connection.Settings);
+    state=mark10_monitor.livePlots.updateLimits(state,true);
 catch cause
     if connectionInstalled
         context.removeResource("mark10Connection");

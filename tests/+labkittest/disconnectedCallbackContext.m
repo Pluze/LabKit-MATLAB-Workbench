@@ -4,5 +4,5 @@ function context = disconnectedCallbackContext()
 %   seam for App specifications whose callback does
 %   not require runtime services.
 
-context = labkit.app.internal.runtime.CallbackContextFactory.disconnected();
+context = labkit.app.internal.runtime.CallbackContextFactory.create(struct());
 end

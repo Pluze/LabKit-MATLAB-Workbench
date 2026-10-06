@@ -1,4 +1,3 @@
-% App-owned implementation for batch_crop.cropPreview.present within the batch_crop product workflow.
 function view = present(applicationState)
 %PRESENT Describe preview pixels and both managed interactions.
 [model, geometry, item, sourceId] = previewModel(applicationState);

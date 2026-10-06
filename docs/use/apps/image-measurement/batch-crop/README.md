@@ -19,7 +19,7 @@ labkit_BatchImageCrop_app
 
 ## Inputs
 
-Use **Add images** for selected files, **Add folder** for one directory, or **Add folder tree** for nested sources. Each list row stores its own crop center, rotation, padding, and optional scale calibration. **Duplicate image** creates another task for the same source so multiple ROIs can be exported without loading duplicate files. Duplicate tasks stay linked to the same source while each keeps its own crop and calibration settings.
+Use **Add images** for selected files, **Add folder** for one directory, or **Add folder tree** for nested sources. Each list row stores its own crop center, rotation, padding, and optional scale calibration. **Duplicate image** creates another task for the same source so multiple ROIs can be exported without loading duplicate files. Duplicate tasks retain the source, rotation, padding, and calibration settings, and require a new crop-center confirmation.
 
 Use **Restore manifest** to reopen the source images and task state recorded by a Batch Crop CSV manifest. Current manifests restore crop centers, rotation, padding, pixel or physical geometry, per-image scale, target scale, upsample warning threshold, output format, and an output folder beside the selected manifest. Only successfully saved rows from the current manifest format are restored. Restoration stops without replacing the current task if a source is missing, its pixel dimensions changed, or shared manifest settings conflict.
 

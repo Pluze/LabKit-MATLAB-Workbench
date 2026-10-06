@@ -2,7 +2,7 @@ classdef CurvatureWorkflowSpec < matlab.unittest.TestCase
     %CURVATUREWORKFLOWSPEC Specify traced-fit export through the workbench.
 
     methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
-        function tracesFitsExportsAndRestoresASyntheticCurve(testCase)
+        function tracesFitsAndExportsASyntheticCurve(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             imagePath = fullfile(folder, "curve.png");
@@ -57,8 +57,6 @@ classdef CurvatureWorkflowSpec < matlab.unittest.TestCase
             measureButton = findall(figureValue, "Tag", "fitCurvature");
             testCase.verifyEqual(string(measureButton.Text), ...
                 "Measure length + curvature");
-            testCase.verifyEmpty(findall(figureValue, ...
-                "Tag", "measureCurveLength"));
             testCase.verifyGreaterThan(runtime.State.project.results.fit.R_show, 0);
             testCase.verifyEqual( ...
                 runtime.State.project.parameters.densePointCount, 120);
@@ -66,8 +64,9 @@ classdef CurvatureWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.image").Children);
             testCase.verifyTrue(isfile(csvPath));
             testCase.verifyTrue(isfile(overlayPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastCsvExport.outputPath));
-            testCase.verifyTrue(isfile(runtime.State.project.results.lastOverlayExport.outputPath));
+            fit = runtime.State.project.results.fit;
+            runtime.invokeAction("fitCurvature");
+            testCase.verifyEqual(runtime.State.project.results.fit, fit);
             clear cleanup
         end
     end

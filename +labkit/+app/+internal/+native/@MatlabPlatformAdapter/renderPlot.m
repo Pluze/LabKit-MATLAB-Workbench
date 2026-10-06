@@ -14,13 +14,17 @@ function renderPlot(obj, operation)
     preserveViewport = all(arrayfun(@(ax) ...
         isappdata(ax, revisionKey) && ...
         isequal(getappdata(ax, revisionKey), value.ViewRevision), axes));
+    if ~preserveViewport,labkit.app.internal.native.AxesNavigation.refit(axes);end
     renderer(axesById, value.Model);
     for k = 1:numel(axes)
         labkit.app.internal.native.enableAxesPopout(axes(k), ...
             @(name, work) obj.Runtime.performPlotOperation(name, work), ...
             @() obj.runUtility(@() obj.copySelectedPlots()));
+        labkit.app.internal.native.AxesNavigation.install(axes(k));
         setappdata(axes(k), revisionKey, value.ViewRevision);
     end
+    component = obj.Components(char(node.Id));
+    obj.PlotWindows.update(node, value, string(component.Title), obj.Figure.Visible);
     if preserveViewport
         labkit.app.internal.native.NativeAdapterValues.restoreViewport(axes, viewport);
     end

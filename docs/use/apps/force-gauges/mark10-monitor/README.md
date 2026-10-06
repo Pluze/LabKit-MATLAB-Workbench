@@ -4,12 +4,12 @@
 id: app-mark10-monitor
 type: landing
 audience: app-user
-summary: Monitor and replay ESM303 force and travel data, then estimate branch stiffness and engineering Young's modulus without controlling stand motion.
+summary: Monitor and replay ESM303 force and travel data, then calculate engineering stress–strain curves and strain-window moduli without controlling stand motion.
 ```
 
-Mark-10 Monitor connects to an ESM303 with an attached Series 5 gauge, displays and retains live force and travel without controlling stand motion, replays previously exported data, and estimates branch stiffness and engineering Young's modulus.
+Mark-10 Monitor connects to an ESM303 with an attached Series 5 gauge, displays and retains live force and travel without controlling stand motion, replays previously exported data, and calculates engineering stress–strain curves and strain-window moduli.
 
-The central workspace follows the official monitoring workflow with separate **Live Plots**, **Recent Data**, and **Modulus Analysis** pages. The upper live plot combines travel and force against time on two Y axes; the lower plot is the standard force-versus- travel curve. The table shows the latest 200 valid visible samples while the full monitoring run remains in the managed buffer.
+The central workspace follows the official monitoring workflow with separate **Live Plots**, **Recent Data**, **Modulus Analysis**, and **Diagnostics** pages. The upper live plot combines travel and force against time on two Y axes; the lower plot is the standard force-versus- travel curve. The table shows the latest 200 valid visible samples while the full monitoring run remains in the managed buffer.
 
 Connection, settings, read-once, playback, and monitoring controls call their owned workflow directly, while retained samples remain the single source for plots and export.
 
@@ -41,28 +41,82 @@ The LOG uses N and mm consistently. Invalid attempts remain in MAT but are omitt
 
 ## Load, Replay, And Analyze
 
-Disconnect hardware, choose **Load**, and select an App CSV, MESUR gauge LOG, or complete MAT export. Load immediately displays the complete curves. **Reset** stops replay and restores that complete view. **Play from Start** always begins at the first sample; **Pause / Resume** retains and resumes the current cursor. Replay uses a fixed 10-frame-per-second visual progression of approximately ten seconds rather than recorded timestamps. Live acquisition and replay derive limits from the same currently displayed sample prefix. Empty plots begin with 10 mm travel and 1 N force headroom; populated plots use recent sample changes, observed span, signal level, and acquisition rate. The result does not depend on earlier refreshes. **Refit Plot Limits** reapplies that deterministic range after manual pan or zoom, including the independent travel and force Y limits in the upper plot; it is available during both live monitoring and replay. Select MATLAB's Pan tool in an axes toolbar when drag panning is needed. Hardware connection is disabled during replay and replay controls are disabled while connected.
+Disconnect hardware, choose **Load Recording**, and select an App CSV, MESUR gauge LOG, or complete MAT export. Load immediately displays the complete curves. **Reset Playback** stops replay and restores that complete view. **Play from Start** always begins at the first sample; **Pause / Resume** retains and resumes the current cursor. Replay uses a fixed 10-frame-per-second visual progression of approximately ten seconds rather than recorded timestamps. Live acquisition and replay derive limits from the same currently displayed sample prefix. Empty plots begin with 10 mm travel and 1 N force headroom; populated plots use recent sample changes, observed span, signal level, and acquisition rate. The result does not depend on earlier refreshes. **Refit Plot Limits** reapplies that deterministic range after manual pan or zoom, including the independent travel and force Y limits in the upper plot; it is available during both live monitoring and replay. Right-click a plot to choose its mouse-wheel zoom target. The dual-axis time plot defaults to X only; choose Left Y for travel, Right Y for force, or X + both Y axes. Select MATLAB's Pan tool in an axes toolbar when drag panning is needed. Loading a different file, changing analysis time bounds, connecting hardware, or starting a monitoring run refits the applicable axes; ordinary wheel zoom, switching tabs, and window resizing do not reset the view. Hardware connection is disabled during replay and replay controls are disabled while connected.
 
-The **Analysis** tab also calculates one fit for each sufficiently long monotonic travel branch. This shared path accepts either a complete loaded CSV/LOG/MAT recording or the complete valid sample buffer from a stopped monitoring run. It does not fit only the currently visible replay prefix. For a manual travel window, a branch needs at least four distinct travel coordinates; accepted results must still meet the displayed R-squared quality threshold.
+The **Analysis** tab uses the complete loaded recording or valid samples of a stopped monitoring run, independently of the visible replay prefix. Loaded filenames appear in the App window, raw plot headings, and analysis headings. A new recording clears geometry confirmation and previous results.
 
-**Plot Zero** accepts the raw force level in N and raw travel level in mm that should be treated as zero. Editing only changes the pending values; **Apply Zero** commits both values together, immediately translates force and travel in the upper time-series plot and both coordinates in the lower force-versus-travel plot, then refits their limits. Replay advancement and live refresh continue using those applied levels. Modulus analysis uses the same applied coordinates, so there is no second zero-point interpretation. A constant zero shift changes coordinates and fitted intercepts but not the stress/strain slope or Young's modulus. **Reset Zero** restores both applied and pending levels to 0, immediately restores the two plots, and clears the previous modulus result. Neither action modifies the source recording or the standard CSV/LOG/MAT export.
+## Analysis Workflow
 
-Enter rectangular-specimen gauge length, width, and thickness in mm, then select **Geometry reviewed**. Width and thickness are both required because Young's modulus needs cross-sectional area; thickness alone is not silently treated as area. The calculation uses:
+Follow the numbered sections in the **Analysis** tab:
+
+1. Load data, choose **Tension**, **Compression**, or **Cyclic**, and set the analysis start/end times in seconds. Times are original recording times. **Use Full Time Range** restores the source bounds. The overview marks the selected interval.
+2. Review force zero and the closed-fixture travel reference. Optionally detect and exclude isolated glitches.
+3. Enter one approximate contact time; estimate initial length automatically or enter a measured value, review the cross-section, and confirm dimensions. Choose **Update Stress-Strain** to prepare the curve.
+4. Add and edit one or more strain windows in percent, then choose **Calculate Window Moduli**. Inspect all enabled windows and their colored fits together; selecting a result emphasizes that fit. Choose **Open Analysis Diagnostics** for a synchronized separate window.
+5. Use **Export Stress-Strain CSV** at the bottom of the Analysis tab to save the prepared curve. Window fitting is not required for this export.
+
+Changing a strain window clears only fitted results. Changing the analysis time interval clears the curve and fits while retaining the reviewed initial length and contact estimate. Changing the test type, applied zero, glitch exclusion, or approximate contact time clears the estimate and geometry confirmation. Editing specimen dimensions clears confirmation and the curve. These changes require the relevant update/confirmation before another export; an open diagnostic window reflects the same state.
+
+## Zero Reference And Initial Length
+
+In every mode, corrected travel is the fixture gap: **0 mm means fully closed**. Set the travel offset to the recorded reading at full closure; leave it at 0 if the instrument already uses that reference. Set force zero from unloaded data, then choose **Apply Zero**. These offsets translate live/replay plots without changing raw recordings or their exports. Editing offsets changes draft values until applied. **Reset Zero** restores offsets to 0 and invalidates geometry and derived results.
+
+The zero-strain position is the initial effective specimen length or height, not the closed fixture and not the recording's first point. Enter measured initial length/height, or enter one **Approximate contact time (s)** and choose **Estimate Initial Length Automatically**. The hint selects the nearest sustained loading approach in the full recording; it does not bound the inferred contact time or act as its target. The estimation uses the recording independently of the modulus analysis start/end times. The estimator displays the current test type beside its controls. Tension expects increasing gap and Compression expects decreasing gap; a mismatch error directs you back to Test type in section 1 without changing the mode automatically. For repeated approaches, move the hint to the intended event. The record must include unloaded data before that event.
+
+A five-sample median of travel identifies motion direction changes; it is used only for episode selection, while fitting uses measured samples. The selected approach must contain at least 16 ordered samples. The first half-second (at least eight samples) supplies an unloaded baseline and noise estimate. A persistent departure above six noise scales for at least four samples and 0.15 s locates initial loading. The unloaded baseline is then robustly refitted using preceding data and fixed before fitting the loading response. It cannot tilt to accommodate later high-force measurements. This baseline helps estimate contact and does not replace the separately applied force zero used for stress calculation.
+
+The estimator compares linear and quadratic initial-loading responses in local travel windows spanning 4%, 8%, and 12% of the gap at detected loading. These are automatic contact-model sensitivity probes, not the user-defined modulus windows. Each usable window needs at least four distinct loaded gaps; fitting uses at most 600 representative samples per window. The proposed height comes from the candidate nearest the median of the valid local-window estimates. Later large loads beyond these local windows do not enter the contact fit. The diagnostic reports the minimum/maximum candidate height and relative spread, which is a sensitivity range, not a statistical confidence interval. Spread above 2%, a contact near a search boundary, or only one usable window produces a review message; even a small spread does not establish physical accuracy. R² describes the selected local fit only.
+
+If estimation fails, review the indicated time and the recording: the event may lack an unloaded approach, sufficient initial loading, or continuous acquisition. A failed estimate retains available episode data for inspection, and measured length remains supported. Changing the hint cannot recover missing baseline measurements. A monotonic ramp that starts already loaded may be indistinguishable from drift; the operator must establish that the baseline is actually unloaded.
+
+Review the fit in the diagnostics, correct the proposed length if needed, and explicitly confirm geometry. Estimation can be biased by slack, fixture compliance, contact nonlinearity, baseline drift outside the fitted model, or fixture-zero error. Neither high R² nor an inferred contact independently measures true specimen dimensions. A manual reviewed length is supported when estimation is unsuitable. Establish full closure independently of a specimen.
+
+Let `gap = travel - travelOffset`, `F = force - forceZero`, and `L0` be the reviewed initial length or height:
+
+| Test type | Engineering strain | Engineering stress (MPa) |
+| --- | --- | --- |
+| Tension | `(gap - L0) / L0` | `F / A0` |
+| Compression | `(L0 - gap) / L0` | `-F / A0` |
+| Cyclic | `(gap - L0) / L0` | `F / A0` |
+
+Compression is positive in Compression mode. Cyclic mode retains tension-positive and compression-negative coordinates. Pre-contact/slack data remain in the chosen time interval; they are not automatically material fit regions. Plots and window inputs use percent strain; exported strain is a dimensionless fraction.
+
+## Cross-Section And Strain Windows
+
+**Cross-section input** defaults to **Length x width**. Only selected inputs are used. Axial initial length/height is independent of these section dimensions.
+
+| Cross-section input | Required values | Area in mm² |
+| --- | --- | --- |
+| Length x width (default) | Section length and section width, mm | `length * width` |
+| Radius | Radius, mm, not diameter | `pi * radius^2` |
+| Area | Area, mm² | Entered value |
+
+The window table contains **Use**, **Name**, **From %**, and **To %**. The initial manual window is 0–10%; this is an editable starting range, not a validated material linear region. Add/delete rows, enable only desired rows, or specify overlapping intervals such as 5–15%, 10–20%, and 20–30%. Negative bounds select compression in Cyclic mode. No automatic search substitutes a different strain range.
+
+Tension and Compression fit each enabled window on one segment of the selected time interval: the segment with the largest increase in strain, with the earliest used for ties. If the interval contains only unloading, the largest unloading excursion is used. The status reports the actual fitted time bounds; adjust the analysis interval to choose another segment. Cyclic fits every monotonic travel branch separately. Motion reversals and long acquisition gaps separate branches; an isolated excluded glitch does not itself create a new branch. Loading and recovery are not pooled. Only Cyclic displays branch/direction in the result table and branch labels in plot legends. The result table gives window name, requested and actual strain bounds, sample count, signed slope with its displayed unit, R², coverage, and notes. All enabled windows appear as colored strain bands; every computed fit and its samples are shown together with a matching legend containing the window bounds and modulus. Selecting a result row thickens that fit without hiding the other windows.
+
+**Modulus display unit** defaults to **Auto**, with manual **kPa**, **MPa**, and **GPa** choices. Auto selects one common unit for the result table using the largest finite absolute modulus: below 1 MPa uses kPa, from 1 to below 1000 MPa uses MPa, and 1000 MPa or above uses GPa. Empty/all-zero results use kPa. The column heading identifies the selected unit. Changing display units preserves signed slopes, R², curve validity, and fitting choices; calculations and the stress–strain CSV retain MPa.
 
 ```text
-engineering strain = (travel - travel zero) / gauge length
-engineering stress (MPa) = (force - force zero) / (width * thickness)
-Young's modulus (MPa) = absolute fitted stress/strain slope
-stiffness (N/mm) = Young's modulus * area / gauge length
+stress (MPa) = mode-specific signed force (N) / initial area (mm^2)
+window modulus (MPa) = fitted stress/strain slope, with a free intercept
 ```
 
-Each branch retains the same corrected absolute stress-strain coordinates, while region selection measures displacement from that branch's own start. Taking the absolute fitted slope lets loading and recovery moduli be compared even when their traversal directions differ. The selected experiment type supplies tension/compression wording. In Cyclic mode, the median corrected force labels a branch as tension when nonnegative and compression when negative, following the same tension-positive convention as acquisition and recording exports. Raw measurements and recording exports are never smoothed or rewritten.
+Every computable slope is displayed, including low R², negative slopes, partial-window coverage, two-point fits, and zero slopes. R² below 0.95 is a descriptive review note only; it never suppresses a result or excludes it from an average. The App does not average branches. Constant stress has an undefined R² but a valid zero slope. Fewer than two distinct strain values produces NaN with an explanation. Partial coverage is identified rather than extending the fit beyond measured data. For nonlinear or viscoelastic materials, interpret the result as an apparent modulus over the stated interval and loading history, not proof of a globally linear elastic material.
 
-**Automatic** fitting considers multiple contiguous regions from 5--35% to 45--85% of each branch's travel span, selects the best combination of linearity and usable span, and marks fits with R² below 0.95 for review. This avoids the initial toe region and the late peak/fracture region in common tension, compression, and cyclic records. **Manual** fitting uses one explicit window in the applied-zero travel coordinate. For example, an applied travel zero of 30 mm and a manual 0--10 mm window fits the original 30--40 mm portion of every loading or recovery branch that crosses it. The recording needs at least 16 finite samples and each monotonic branch needs at least eight points before fitting. A manual window with fewer than four selected points reports **Need at least 4 fit points**; fewer than four distinct travel coordinates reports **Insufficient travel span**. Neither case produces a fitted line. Results always retain the exact corrected-travel fit range, point count, stiffness, modulus, R², and review status. Automatic mode still selects a branch-local linear candidate but reports its endpoints in that same corrected coordinate.
+## Optional Glitch Exclusion
 
-The **Modulus Analysis** workspace shows stress-strain curves and fitted lines beside summary statistics, with the full per-branch table below. Green solid fits meet the R² criterion; orange dashed fits require review. Summary statistics prefer accepted fits and fall back to all finite estimates when none meet the threshold. **Export Modulus CSV** writes every row, including review flags and the applied force/travel zero levels, rather than hiding rejected or unusual cycles. The analysis renderer rebuilds from the current result on every presentation, so prior fits cannot accumulate. Fit endpoints and legend identities are ordinary plot objects and remain present when the axes is popped into a MATLAB figure.
+**Detect Glitches** reports candidate counts and marks candidates on the raw overview. **Exclude isolated glitches** defaults to off. When enabled, whole synchronized samples flagged in either force or travel are omitted from length estimation, stress–strain conversion, and fitting. Raw recordings and live/replay curves remain intact. No replacement/interpolated values are fabricated.
 
-Connections, samples, playback, and visible state are transient. Closing the App does not prompt to save every live refresh. Export is the explicit durable-data action.
+Detection uses five neighbours on each side, a local median, and an eight-robust-standard-deviation threshold with minimum jumps of 0.02 N for force and 0.02 mm for travel. Before/after medians must agree within that threshold, retaining persistent steps. The first and last five points remain unassessed. Genuine narrow peaks can be flagged, while longer corruption or permanent offsets can remain. Review candidates before exclusion, particularly near fracture.
+
+## Diagnostic Window And Export
+
+**Analysis Diagnostics** shows two length-estimation plots side by side. **1. Find when loading begins** zooms to the automatically selected local fit: gray points are recorded force, blue points/line identify baseline data and its fit, the orange band/curve mark the actual contact-fit interval and fitted response, and a purple line identifies inferred contact. Force is oriented positive in the loading direction. **2. Read specimen length at zero load** subtracts that fitted baseline and plots force against fixture gap. The purple circle marks the inferred unloaded length, and the dashed line marks the user's current length. The heading reports height and local-window spread; the Analysis status gives the candidate-height range and review guidance. Original recording and modulus plots remain on Modulus Analysis. Failed estimates retain available episode data and an explanation. The separate diagnostic window updates with settings, stays closed after manual closure until requested again, and closes with the App.
+
+**Export Stress-Strain CSV** writes three columns: `Time_s`, `Strain`, and `Stress_MPa`. It includes every retained sample within the chosen analysis time range, in acquisition order, with applied zero, reviewed geometry, and optional glitch exclusion. It does not export display downsampling, extend to unmeasured strains, or depend on successful window fitting. The old modulus-summary CSV action is removed. Raw CSV/LOG/MAT export remains available from Monitor and is unchanged.
+
+Connections, samples, playback, and analysis settings are transient. Closing does not save an analysis session. Record geometry, contact hint and automatically selected fit interval, window choices, and test conditions with any reported material results; the three-column curve export is not a complete processing archive.
 
 ## Gauge Settings
 
@@ -78,5 +132,7 @@ Use `labkit.mark10.connect`, `readSample`, `readSettings`, `writeSetting`, `zero
 
 - Real serial-port exclusivity, cabling, fixture safety, and zero load must be checked by the operator.
 - Identity and stand-status commands can be mode-dependent; readable force or travel remains the primary connection evidence.
-- Reported modulus is an engineering estimate for a rectangular section. It does not correct grip compliance, machine compliance, changing area, extensometer offset, viscoelastic rate effects, or specimen slip. Review branch segmentation and the fitted region before reporting material data.
+- Reported modulus is an engineering estimate based on the selected initial cross-sectional area. It does not correct grip compliance, machine compliance, changing area, extensometer offset, viscoelastic rate effects, or specimen slip. Review branch segmentation and the fitted region before reporting material data.
 - Hidden-GUI tests do not validate physical hardware behavior or subjective plot quality.
+
+Loaded recordings show their filename, including extension, in the App window, raw plot headings, and Modulus Analysis heading. Loading another recording updates those labels; live monitoring clears the recording label.

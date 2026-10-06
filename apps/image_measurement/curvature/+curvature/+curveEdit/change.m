@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.curveEdit.change within the curvature product workflow.
 function applicationState = change( ...
         applicationState, points, callbackContext)
 %CHANGE Commit one managed curve-anchor edit.

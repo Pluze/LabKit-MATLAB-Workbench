@@ -39,6 +39,8 @@ Pending and applied matching updates preserve the current zoom while the selecte
 
 ## Matching Methods
 
+The Method selector offers the same six modes as the calculation API below. Each applied mode is retained in matching history.
+
 | Method | Behavior |
 | --- | --- |
 | Balanced | robust white-point match followed by Lab-style tone/color transfer |
@@ -55,6 +57,8 @@ Robust statistics and covariance regularization handle single-pixel, flat, or ne
 ## History And Outputs
 
 Each source is recomputed from its original plus the ordered match history. Undo removes the latest step and reset removes all steps. Export supports PNG, TIFF, and JPEG and writes a CSV manifest containing source and output paths, status, dimensions, step count, and a message. Each explicit export rereads source and reference pixels and writes a new output set with unique filenames. Source and reference files are never overwritten.
+
+The last-manifest indicator is cleared when source or reference files are loaded again or the match history changes. Selecting an existing source for preview preserves that indicator; completed output files remain on disk.
 
 ## Runtime State
 

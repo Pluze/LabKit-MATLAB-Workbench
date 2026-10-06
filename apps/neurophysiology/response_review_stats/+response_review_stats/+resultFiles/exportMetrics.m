@@ -1,4 +1,3 @@
-% App-owned implementation for response_review_stats.resultFiles.exportMetrics within the response_review_stats product workflow.
 function state = exportMetrics(state, context)
 %EXPORTMETRICS Write the rebuilt metrics table.
 metrics = state.session.cache.metrics;
@@ -21,8 +20,7 @@ end
 name = "response_review_metrics.csv";
 path = fullfile(folder, name);
 response_review_stats.resultFiles.writeMetricsCsv(metrics, path);
-state.project.results.lastExport = struct("csvPath", string(path), ...
-    "outputPath", string(path));
+
 state.session.workflow.statusMessage = "Exported response-review metrics.";
 state.session.workflow.lastAction = "Exported metrics";
 context.log("info", "response_review_stats.resultfiles.exportmetrics.completed", ...

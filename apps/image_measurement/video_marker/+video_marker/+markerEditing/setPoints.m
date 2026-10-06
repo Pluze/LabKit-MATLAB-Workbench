@@ -1,4 +1,3 @@
-% App-owned implementation for video_marker.markerEditing.setPoints within the video_marker product workflow.
 function applicationState = setPoints(applicationState, points, ~)
 %SETPOINTS Store one frame's ordered points in the current App state.
 total = numel(applicationState.project.annotations.skeleton.pointIds);

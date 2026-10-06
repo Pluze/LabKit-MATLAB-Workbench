@@ -34,23 +34,16 @@ classdef CurvatureScientificSpec < matlab.unittest.TestCase
             testCase.verifyEqual(physical.unitLen, 'mm');
         end
 
-        function usesTheVisibleCurvePathForDensificationAndTaskIdentity(testCase)
+        function usesTheVisibleCurvePathForDensification(testCase)
             anchors = [0 0; 10 0; 20 0];
             path = [0 0; 10 10; 20 0];
             fit = curvature.analysisRun.computeCurvatureFit( ...
                 anchors(:, 1), anchors(:, 2), [], true, 5, ...
                 path(:, 1), path(:, 2));
-            calibration = curvature.analysisRun.normalizeScaleCalibration( ...
-                10, 2, 'mm', struct("referenceLine", [0 0; 10 0]));
-            initial = curvature.analysisRun.fitTask(anchors, path, calibration, ...
-                struct("doDensify", true, "denseN", 25));
-            changed = curvature.analysisRun.fitTask(anchors, path, calibration, ...
-                struct("doDensify", false, "denseN", 25));
 
             testCase.verifyEqual(numel(fit.xFit), 5);
             testCase.verifyGreaterThan(max(fit.yFit), 0);
             testCase.verifyEqual(fit.curveLength_px, 2 .* hypot(10, 10), AbsTol=1e-9);
-            testCase.verifyNotEqual(initial.fingerprint, changed.fingerprint);
         end
 
         function rejectsDegenerateFitsAndSinglePointLengths(testCase)

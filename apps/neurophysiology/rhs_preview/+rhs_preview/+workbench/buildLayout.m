@@ -1,4 +1,3 @@
-% App-owned implementation for rhs_preview.workbench.buildLayout within the rhs_preview product workflow.
 function layout = buildLayout()
 %BUILDLAYOUT Assemble the complete five-page RHS Preview product surface.
 controls = { ...

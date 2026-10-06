@@ -2,6 +2,20 @@ classdef AppSdkSpec < matlab.unittest.TestCase
     %APPSDKSPEC Specify the low-boilerplate public App SDK contract.
 
     methods (Test, TestTags = {'Contract:source', 'Env:headless'})
+        function testRuntimeSeamsRejectMissingOrEmptyJournals(testCase)
+            app = AppSdkSpec.definition(labkit.app.layout.workbench({}));
+            emptyJournal = [];
+            constructors = {@labkittest.createHeadlessRuntime, ...
+                @labkittest.createMatlabRuntime};
+            for constructor = constructors
+                create = constructor{1};
+                testCase.verifyError(@() create(app, [], struct()), ...
+                    "LabKit:TestRuntime:MissingJournal");
+                testCase.verifyError(@() create(app, [], struct(), emptyJournal), ...
+                    "LabKit:TestRuntime:MissingJournal");
+            end
+        end
+
         function compilesDirectSemanticLayoutCallbacks(testCase)
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.button("run", "Run", @runProbe, ...
@@ -13,7 +27,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+            runtime = labkittest.createHeadlessRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
 
@@ -78,9 +92,24 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyClass(view, "labkit.app.view.Snapshot");
         end
 
+        function validatesWindowSubtitleComposition(testCase)
+            fragment = labkit.app.view.Snapshot().windowSubtitle("sample.csv");
+            view = labkit.app.view.Snapshot().include(fragment);
+            testCase.verifyClass(view, "labkit.app.view.Snapshot");
+            testCase.verifyError(@() view.include(fragment), ...
+                "labkit:app:contract:DuplicateId");
+            for invalid = {42, ["one", "two"], string(missing), "one" + newline + "two"}
+                testCase.verifyError(@() labkit.app.view.Snapshot().windowSubtitle(invalid{1}), ...
+                    "labkit:app:contract:InvalidValue");
+            end
+        end
+
         function acceptsBoundedSemanticPlotRevisionTokens(testCase)
             view = labkit.app.view.Snapshot().renderPlot( ...
-                "plot", struct(), ViewRevision="source:trace-a|x:time");
+                "plot", struct(), ViewRevision="source:trace-a|x:time", WindowRequest=1);
+            testCase.verifyError(@() labkit.app.view.Snapshot().renderPlot( ...
+                "plot", struct(), WindowRequest=-1), ...
+                "labkit:app:contract:InvalidValue");
 
             testCase.verifyClass(view, "labkit.app.view.Snapshot");
             testCase.verifyError(@() labkit.app.view.Snapshot().renderPlot( ...
@@ -119,7 +148,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
         end
 
         function callbackContextHasOnlyNamedRuntimeCapabilities(testCase)
-            context = labkit.app.internal.runtime.CallbackContextFactory.disconnected();
+            context = labkittest.disconnectedCallbackContext();
 
             testCase.verifyTrue(meta.class.fromName( ...
                 "labkit.app.CallbackContext").Sealed);
@@ -130,6 +159,40 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "labkit:app:runtime:InvariantFailure");
         end
 
+        function wheelTargetsOnlyTheExplicitDualYAxis(testCase)
+            % Oracle: one wheel tick changes one span by 1.2, leaving the other ruler untouched.
+            fig=uifigure(Visible="off");cleanup=onCleanup(@() delete(fig));ax=uiaxes(fig);
+            yyaxis(ax,'left');plot(ax,[0 10],[-2 8]);ylim(ax,[-2 8]);
+            yyaxis(ax,'right');plot(ax,[0 10],[10 30]);ylim(ax,[10 30]);xlim(ax,[0 10]);
+            labkit.app.internal.native.enableAxesPopout(ax);
+            labkit.app.internal.native.AxesNavigation.install(ax);
+            testCase.verifyEqual(string(getappdata(ax,'labkitWheelMode')),"x");
+            choice=findall(ax.ContextMenu,'Tag','labkitWheelMode_left');
+            choice.MenuSelectedFcn(choice,[]);
+            labkit.app.internal.native.AxesNavigation.wheel(ax,[5 20],1);
+            testCase.verifyEqual(ax.YAxis(1).Limits,[-3 9],AbsTol=1e-12);
+            testCase.verifyEqual(ax.YAxis(2).Limits,[10 30]);
+            testCase.verifyEqual(ax.XLim,[0 10]);
+            testCase.verifyEqual(string(ax.YAxisLocation),"right");
+            labkit.app.internal.native.AxesNavigation.select(ax,"right");
+            labkit.app.internal.native.AxesNavigation.wheel(ax,[5 20],-1);
+            testCase.verifyEqual(diff(ax.YAxis(2).Limits),20/1.2,AbsTol=1e-12);
+            testCase.verifyEqual(ax.YAxis(1).Limits,[-3 9]);
+            classes=arrayfun(@(v) string(class(v)),ax.Interactions);
+            testCase.verifyFalse(any(contains(lower(classes),"zoom")));
+            clear cleanup
+        end
+        function hiddenWorkspaceAxesCannotReceiveWheelRouting(testCase)
+            fig=uifigure(Visible="off");cleanup=onCleanup(@() delete(fig));group=uitabgroup(fig);
+            first=uitab(group);second=uitab(group);one=uiaxes(first);two=uiaxes(second);
+            group.SelectedTab=second;
+            testCase.verifyFalse(labkit.app.internal.native.AxesNavigation.isVisible(one));
+            testCase.verifyTrue(labkit.app.internal.native.AxesNavigation.isVisible(two));
+            group.SelectedTab=first;
+            testCase.verifyTrue(labkit.app.internal.native.AxesNavigation.isVisible(one));
+            testCase.verifyFalse(labkit.app.internal.native.AxesNavigation.isVisible(two));
+            clear cleanup
+        end
         function preservesBothDualYAxisViewports(testCase)
             figureHandle = figure("Visible", "off");
             cleanup = onCleanup(@() close(figureHandle));
@@ -190,7 +253,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+            runtime = labkittest.createHeadlessRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() closePostedEventRuntime(runtime));
 
@@ -219,7 +282,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+            runtime = labkittest.createHeadlessRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() closePostedEventRuntime(runtime));
 
@@ -326,13 +389,15 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             layout = labkit.app.layout.workbench({ ...
                 labkit.app.layout.fileList("files", ...
                     Bind="project.inputs.sources", ...
-                    AllowDuplicatePaths=true)});
+                    AllowDuplicatePaths=true), ...
+                labkit.app.layout.fileList("reference", ...
+                    Bind="project.inputs.sources")});
             app = AppSdkSpec.definition(layout, ...
                 "CreateState", @createSourceState);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+            runtime = labkittest.createHeadlessRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             unicodePath = fullfile(root, 'α-image.png');
@@ -370,7 +435,19 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                     source.path, sources)), ...
                 repmat(string(unicodePath), 2, 1));
 
+            % Oracle: replacing one role preserves the other role and the IDs
+            % of both repeated paths. Rebuilding all records would lose them.
+            ids = string({sources.id});
+            testCase.verifyNumElements(unique(ids), 2);
+            runtime.applyFileSelection("reference", "reference.png", 1);
+            reference = runtime.State.project.inputs.sources(end);
+            runtime.applyFileSelection("files", {unicodePath, unicodePath}, [1 2]);
+            sources = runtime.State.project.inputs.sources;
+            testCase.verifyEqual(string({sources(1:2).id}), ids);
+            testCase.verifyEqual(sources(end), reference);
             runtime.applyFileSelection("files", '', zeros(1, 0));
+            testCase.verifyEqual(runtime.State.project.inputs.sources, reference);
+            runtime.applyFileSelection("reference", '', zeros(1, 0));
             testCase.verifyEmpty(runtime.State.project.inputs.sources);
             clear cleanup
         end
@@ -389,7 +466,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             backend = struct("alert", @(message, title) ...
                 captureAlert(notices, message, title));
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+            runtime = labkittest.createHeadlessRuntime( ...
                 app, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
 
@@ -454,7 +531,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             journal = labkittest.temporarySessionJournal(app, root);
 
             testCase.verifyError(@() ...
-                labkit.app.internal.runtime.RuntimeFactory.createHeadless( ...
+                labkittest.createHeadlessRuntime( ...
                 app, [], struct(), journal), ...
                 "labkit:app:contract:InvalidValue");
         end
@@ -497,24 +574,35 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
             field = oneTagged(figureValue, "gain");
             ax = oneTagged(figureValue, "result.main");
+            auxiliary = oneTagged(groot, "labkitPlotWindow.result");
+            auxiliaryAxes = oneTagged(auxiliary, "result.main");
 
             testCase.verifyError(@() runtime.applyControlValue("gain", 2), ...
                 "labkit:app:runtime:ActionFailed");
             testCase.verifyEqual(runtime.State.project.parameters.gain, 1);
             testCase.verifyEqual(field.Value, 1);
+            testCase.verifyTrue(endsWith(string(figureValue.Name), "result-1"));
+            testCase.verifyEqual(string(oneTagged(figureValue, "result").Title), "result-1");
             testCase.verifyEqual(oneTagged(ax, "rollbackProbe").YData, [1, 1]);
+            testCase.verifyEqual(oneTagged(auxiliaryAxes, "rollbackProbe").YData, [1, 1]);
+            testCase.verifyEqual(string(auxiliary.Name), "result-1");
 
             runtime.applyControlValue("gain", 3);
             testCase.verifyEqual(runtime.State.project.parameters.gain, 3);
             testCase.verifyEqual(field.Value, 3);
             testCase.verifyEqual(oneTagged(ax, "rollbackProbe").YData, [3, 3]);
+            testCase.verifyTrue(endsWith(string(figureValue.Name), "result-3"));
+            testCase.verifyEqual(string(oneTagged(figureValue, "result").Title), "result-3");
+            testCase.verifyEqual(oneTagged(auxiliaryAxes, "rollbackProbe").YData, [3, 3]);
+            testCase.verifyEqual(string(auxiliary.Name), "result-3");
             clear cleanup visibilityCleanup
+            testCase.verifyFalse(isgraphics(auxiliary));
         end
 
         function nativeReconciliationSkipsUnchangedPlotModels(testCase)
@@ -532,7 +620,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             initialCount = getappdata(groot, "labkitAppSdkRenderCount");
@@ -559,7 +647,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             ax = oneTagged(runtime.figureHandle(), "revisionPlot.main");
@@ -763,7 +851,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -818,7 +906,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -846,7 +934,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -969,7 +1057,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -994,7 +1082,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -1021,7 +1109,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -1045,7 +1133,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -1070,7 +1158,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
@@ -1099,7 +1187,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 labkit.app.layout.button("quick", "Quick", ...
                     @AppSdkSpec.quickBusyProbe, ...
                     Tooltip="Run a short busy-state probe."), ...
-                labkit.app.layout.button("slow", "Slow", ...
+                labkit.app.layout.button("slow__action", "Slow", ...
                     @AppSdkSpec.slowBusyProbe, ...
                     BusyMessage="Initial stage", ...
                     Tooltip="Run a delayed busy-state probe."), ...
@@ -1107,17 +1195,18 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                     @AppSdkSpec.secondaryBusyProbe, ...
                     Tooltip="Record a secondary action invocation.")});
             app = AppSdkSpec.definition(layout, ...
-                "CreateState", @createRuntimeState);
+                "CreateState", @createRuntimeState, ...
+                "PresentWorkbench", @presentWindowSubtitle);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
             observed("figure") = figureValue;
             quick = oneTagged(figureValue, "quick");
-            slow = oneTagged(figureValue, "slow");
+            slow = oneTagged(figureValue, "slow__action");
             gain = oneTagged(figureValue, "gain");
 
             quick.ButtonPushedFcn(quick, []);
@@ -1129,6 +1218,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(observed("secondaryCount"), 0);
             testCase.verifyEqual(runtime.State.project.parameters.gain, 1);
             testCase.verifyEqual(gain.Value, 1);
+
+            testCase.verifyTrue(endsWith(string(figureValue.Name), "sample_one.csv"));
 
             slow.ButtonPushedFcn(slow, []);
 
@@ -1146,6 +1237,10 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyFalse(contains( ...
                 string(figureValue.Name), "[Working:"));
             testCase.verifyFalse(isappdata(figureValue, "labkitAppBusy"));
+            testCase.verifySubstring(observed("slowTitle"), "sample_one.csv");
+            testCase.verifyTrue(endsWith(string(figureValue.Name), "sample_two.csv"));
+            runtime.postEvent("test.clear-title", @clearWindowSubtitle);
+            testCase.verifyFalse(contains(string(figureValue.Name), "sample_"));
             clear probeCleanup cleanup
         end
 
@@ -1167,7 +1262,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
-            runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
+            runtime = labkittest.createMatlabRuntime( ...
                 app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             observed("figure") = runtime.figureHandle();
@@ -1210,6 +1305,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             secondary.ButtonPushedFcn(secondary, []);
             gain.Value = 7;
             gain.ValueChangedFcn(gain, []);
+            state.project.windowLabel = "sample_one.csv";
         end
 
         function state = slowBusyProbe(state, callbackContext)
@@ -1228,6 +1324,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             callbackContext.log("info", ...
                 "probe.busy.stage", "Stage two");
             storeMapValue(observed, "progressTitle", string(figureValue.Name));
+            state.project.windowLabel = "sample_two.csv";
         end
 
         function state = slowDirectManipulationProbe(state, ~, ~)
@@ -1668,7 +1765,9 @@ end
 
 function view = presentRollbackProbe(state)
 view = labkit.app.view.Snapshot().renderPlot( ...
-    "result", struct("gain", state.project.parameters.gain));
+    "result", struct("gain", state.project.parameters.gain), WindowRequest=1);
+label = "result-" + string(state.project.parameters.gain);
+view = view.windowSubtitle(label).text("result", label);
 end
 
 function drawRollbackProbe(axesById, model)
@@ -1676,4 +1775,15 @@ plot(axesById.main, [0, 1], [model.gain, model.gain], Tag="rollbackProbe");
 if model.gain == 2
     error("probe:RenderFailed", "Synthetic failure after native plot mutation.");
 end
+end
+
+function view = presentWindowSubtitle(state)
+view = labkit.app.view.Snapshot();
+if isfield(state.project, "windowLabel")
+    view = view.include(labkit.app.view.Snapshot().windowSubtitle(state.project.windowLabel));
+end
+end
+
+function state = clearWindowSubtitle(state, ~)
+state.project = rmfield(state.project, "windowLabel");
 end

@@ -1,4 +1,3 @@
-% App-owned implementation for image_match.matchPipeline.rebuildPreview within the image_match product workflow.
 function applicationState = rebuildPreview(applicationState)
 %REBUILDPREVIEW Replay committed history plus the current pending draft.
 steps = applicationState.project.annotations.steps;

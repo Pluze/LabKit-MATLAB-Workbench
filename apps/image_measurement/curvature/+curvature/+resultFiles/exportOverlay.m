@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.resultFiles.exportOverlay within the curvature product workflow.
 function applicationState = exportOverlay( ...
         applicationState, callbackContext)
 %EXPORTOVERLAY Write the shared preview model.
@@ -31,8 +30,7 @@ catch ME
     callbackContext.alert(ME.message, "Could not export overlay PNG");
     return
 end
-applicationState.project.results.lastOverlayExport = struct( ...
-    "pngPath", filepath, "outputPath", filepath);
+
 callbackContext.log("info", ...
     "curvature.resultfiles.exportoverlay.completed", ...
     "Exported the overlay PNG.");

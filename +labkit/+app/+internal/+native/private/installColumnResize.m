@@ -1,26 +1,15 @@
 % Private App SDK native-adapter implementation for installColumnResize; called only by the internal runtime.
 function separator = installColumnResize( ...
-        figureHandle, grid, leftColumn, separatorColumn, varargin)
+        figureHandle, grid, leftColumn, separatorColumn)
 % Private workbench splitter. Expected caller: MatlabPlatformAdapter.
-% Inputs are runtime-owned native handles and bounded width options. The
+% Runtime-owned native handles use the SDK layout policy for width bounds. The
 % separator temporarily owns figure pointer callbacks only while dragging,
 % then restores the interaction hub callbacks exactly.
 
 policy = nativeLayoutPolicy();
-options = struct("InitialWidth", policy.ControlPaneWidth, ...
-    "MinimumWidth", policy.MinimumControlPaneWidth, ...
-    "WorkspaceReserve", policy.MinimumWorkspaceWidth, ...
-    "SeparatorWidth", policy.SplitterThickness);
-if ~isempty(varargin)
-    supplied = varargin{1};
-    names = string(fieldnames(supplied));
-    for name = names.'
-        options.(name) = supplied.(name);
-    end
-end
 widths = grid.ColumnWidth;
-widths{leftColumn} = options.InitialWidth;
-widths{separatorColumn} = options.SeparatorWidth;
+widths{leftColumn} = policy.ControlPaneWidth;
+widths{separatorColumn} = policy.SplitterThickness;
 grid.ColumnWidth = widths;
 separator = uipanel(grid, BorderType="none", ...
     BackgroundColor=[0.72 0.72 0.72], ...
@@ -60,12 +49,12 @@ drag = struct("Active", false, "Motion", [], "Up", [], "Down", [], ...
 
     function resize(~, ~)
         point = figureHandle.CurrentPoint;
-        width = max(options.MinimumWidth, point(1) - grid.Position(1));
-        maximum = max(options.MinimumWidth, ...
-            figureHandle.Position(3) - options.WorkspaceReserve);
+        width = max(policy.MinimumControlPaneWidth, point(1) - grid.Position(1));
+        maximum = max(policy.MinimumControlPaneWidth, ...
+            figureHandle.Position(3) - policy.MinimumWorkspaceWidth);
         widths = grid.ColumnWidth;
         widths{leftColumn} = min(width, maximum);
-        widths{separatorColumn} = options.SeparatorWidth;
+        widths{separatorColumn} = policy.SplitterThickness;
         grid.ColumnWidth = widths;
     end
 

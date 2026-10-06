@@ -1,4 +1,3 @@
-% App-owned implementation for csc.sourceFiles.reloadSelected within the csc product workflow.
 function applicationState = reloadSelected( ...
         applicationState, callbackContext)
 %RELOADSELECTED Decode the currently selected portable DTA source again.
@@ -20,8 +19,7 @@ end
 applicationState.session.cache.items(index) = item;
 applicationState.session.selection.currentCurve = ...
     csc.analysisRun.analysisChoices().allCycles;
-applicationState.project.results.lastResultsExport = [];
-applicationState.project.results.lastVoltageCurrentExport = [];
+
     callbackContext.log("info", "csc.sourcefiles.reloadselected.status", ...
         "Reloaded the selected source.");
 end

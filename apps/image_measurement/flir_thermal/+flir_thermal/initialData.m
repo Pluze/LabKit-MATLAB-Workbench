@@ -1,9 +1,5 @@
 function project = initialData()
 %INITIALDATA Create the App-owned initial in-memory data.
-project = createProject();
-end
-
-function project = createProject()
     project = struct();
     project.inputs = struct("sources", ...
         labkit.app.source.emptyRecords());
@@ -16,5 +12,5 @@ function project = createProject()
         "outputFolder", "");
     project.annotations = struct("items", repmat( ...
         flir_thermal.thermalAnnotations.empty(), 0, 1));
-    project.results = struct("lastExport", [], "resultManifestPath", "");
+    project.results = struct("resultManifestPath", "");
 end

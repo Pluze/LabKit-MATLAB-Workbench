@@ -1,11 +1,7 @@
 function project = initialData()
 %INITIALDATA Create the App-owned initial in-memory data.
-project = createProject();
-end
-
-function project = createProject()
     project = struct();
-    project.inputs = struct("reference", emptySources(), "sources", emptySources());
+    project.inputs = struct("reference", labkit.app.source.emptyRecords(), "sources", labkit.app.source.emptyRecords());
     project.parameters = struct( ...
         "matchMethod", "Balanced", ...
         "matchStrength", 100, ...
@@ -15,10 +11,5 @@ function project = createProject()
         "outputFolder", "");
     project.annotations = struct("steps", repmat( ...
         image_match.analysisRun.emptyStep(), 0, 1));
-    project.results = struct("lastExport", [], ...
-        "resultManifestPath", "");
-end
-
-function sources = emptySources()
-sources = labkit.app.source.emptyRecords();
+    project.results = struct("resultManifestPath", "");
 end

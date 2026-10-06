@@ -142,7 +142,9 @@ function app = resolvePackageApp(root, selector)
         return;
     end
 
-    if exist(selectorText, "file") == 2
+    % exist also finds extensionless commands on the MATLAB search path.
+    % Only an actual filesystem file is a path selector; discover commands in Root.
+    if isfile(selectorText)
         app = appFromEntry(root, selectorText, "custom");
         return;
     end
@@ -212,7 +214,8 @@ function app = appFromEntry(root, entryFile, visibility, appRoot)
     if nargin < 4
         appRoot = "";
     end
-    entryFile = string(canonicalPath(entryFile));
+    % Keep command spelling; Windows path-identity folding must not rename it.
+    entryFile = labkit.app.internal.filesystem.absolutePath(entryFile);
     [folder, command, ext] = fileparts(entryFile);
     if string(ext) ~= ".m" || ...
             ~startsWith(string(command), "labkit_") || ~endsWith(string(command), "_app")

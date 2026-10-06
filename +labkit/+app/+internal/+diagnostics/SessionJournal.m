@@ -32,6 +32,8 @@ classdef (Hidden, Sealed) SessionJournal < handle
         WriteFailureCount (1, 1) double = 0
         InvalidRecordDropCount (1, 1) double = 0
         WriteFailureDropCount (1, 1) double = 0
+        HealthWasAvailable (1, 1) logical = true
+        LastHealthDropCount (1, 1) double = 0
         LastFailureReason (1, 1) string = ""
         DegradationReason (1, 1) string = ""
         LastCoalescingKey (1, 1) string = ""
@@ -88,7 +90,7 @@ classdef (Hidden, Sealed) SessionJournal < handle
                 obj.recordUnavailableDrop();
                 return;
             end
-            if ~isCanonicalRecord(record)
+            if ~labkit.app.internal.diagnostics.SessionEventValidator.isCanonicalRecord(record)
                 obj.DroppedRecordCount = obj.DroppedRecordCount + 1;
                 obj.InvalidRecordDropCount = obj.InvalidRecordDropCount + 1;
                 return;
@@ -215,27 +217,44 @@ classdef (Hidden, Sealed) SessionJournal < handle
 
         function snapshot = healthSnapshot(obj)
             % Return fixed in-memory health only; this method performs no I/O.
-            try
-                state = "healthy";
-                if obj.Closed
-                    state = "closed";
-                elseif ~obj.Available
-                    state = "unavailable";
-                end
-                snapshot = struct("state", state, "available", obj.Available, ...
-                    "droppedRecordCount", obj.DroppedRecordCount, ...
-                    "invalidCanonicalRecordDropCount", obj.InvalidRecordDropCount, ...
-                    "writeFailureDropCount", obj.WriteFailureDropCount, ...
-                    "writeFailureCount", obj.WriteFailureCount, ...
-                    "lastFailureReason", obj.LastFailureReason, ...
-                    "degradationReason", obj.DegradationReason);
-            catch
-                snapshot = struct("state", "unavailable", "available", false, ...
-                    "droppedRecordCount", 0, "invalidCanonicalRecordDropCount", 0, ...
-                    "writeFailureDropCount", 0, "writeFailureCount", 0, ...
-                    "lastFailureReason", "health-unavailable", ...
-                    "degradationReason", "health-unavailable");
+            state = "healthy";
+            if obj.Closed
+                state = "closed";
+            elseif ~obj.Available
+                state = "unavailable";
             end
+            snapshot = struct("state", state, "available", obj.Available, ...
+                "droppedRecordCount", obj.DroppedRecordCount, ...
+                "invalidCanonicalRecordDropCount", obj.InvalidRecordDropCount, ...
+                "writeFailureDropCount", obj.WriteFailureDropCount, ...
+                "writeFailureCount", obj.WriteFailureCount, ...
+                "coalescedRecordCount", obj.CoalescedRecordCount, ...
+                "expiredSegmentCount", obj.ExpiredSegmentCount, ...
+                "lastFailureReason", obj.LastFailureReason, ...
+                "degradationReason", obj.DegradationReason);
+        end
+
+        function notifications = drainHealth(obj)
+            % Report transitions once; the stream retains these without writing
+            % them back to the failed journal, preventing recursive failures.
+            notifications = repmat(struct( ...
+                "eventName", "", "reason", "", "count", 0), 0, 1);
+            if obj.HealthWasAvailable && ~obj.Available
+                reason = obj.DegradationReason;
+                if strlength(reason) == 0
+                    reason = "journal-unavailable";
+                end
+                notifications(end + 1, 1) = struct( ...
+                    "eventName", "journal.degraded", "reason", reason, "count", 0);
+                dropped = obj.DroppedRecordCount - obj.LastHealthDropCount;
+                if dropped > 0
+                    notifications(end + 1, 1) = struct( ...
+                        "eventName", "journal.records_dropped", ...
+                        "reason", reason, "count", dropped);
+                end
+            end
+            obj.HealthWasAvailable = obj.Available;
+            obj.LastHealthDropCount = obj.DroppedRecordCount;
         end
 
         function delete(obj)
@@ -245,8 +264,9 @@ classdef (Hidden, Sealed) SessionJournal < handle
 
     methods (Static)
         function folder = defaultRootFolder()
-            % RuntimeFactory uses the installation-owned artifact boundary.
-            folder = labkit.app.internal.artifact.Store.folder("logs");
+            versionPath = string(which("labkit.app.version"));
+            root = fileparts(fileparts(fileparts(versionPath)));
+            folder = fullfile(root, "artifacts", "logs");
         end
     end
 
@@ -531,18 +551,6 @@ value = defaultValue;
 if isfield(options, name)
     value = options.(name);
 end
-end
-
-function tf = isCanonicalRecord(record)
-fields = ["schemaVersion", "sequence", "timestampUtc", "elapsedSeconds", ...
-    "severity", "audience", "category", "eventName", "message", ...
-    "attributes", "sessionId", "appId", "operationId", ...
-    "parentOperationId", "rootActionId", "operationResult", "stateDisposition", "durationSeconds", ...
-    "exception"];
-tf = isstruct(record) && isscalar(record) && ...
-    isequal(string(fieldnames(record)), fields.') && ...
-    labkit.app.internal.diagnostics.SessionEventValidator.canonicalTerminalPair( ...
-    record.operationResult, record.stateDisposition);
 end
 
 function tf = isFlushSeverity(severity)

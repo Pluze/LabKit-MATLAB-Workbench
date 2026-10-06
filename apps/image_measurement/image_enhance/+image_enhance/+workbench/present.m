@@ -1,4 +1,3 @@
-% App-owned implementation for image_enhance.workbench.present within the image_enhance product workflow.
 function view = present(applicationState)
 %PRESENT Build one complete Image Enhance workbench snapshot.
 project = applicationState.project;

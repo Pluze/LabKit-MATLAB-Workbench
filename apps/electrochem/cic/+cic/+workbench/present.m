@@ -1,4 +1,3 @@
-% App-owned implementation for cic.workbench.present within the cic product workflow.
 function view = present(applicationState)
 %PRESENT Adapt CIC runtime state into summary, table, and named plot models.
 items = applicationState.session.cache.items;

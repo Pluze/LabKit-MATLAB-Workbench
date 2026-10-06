@@ -1,4 +1,3 @@
-% App-owned implementation for ttest_wizard.sourceTable.selectCells within the ttest_wizard product workflow.
 function state = selectCells(state, selection, ~)
 %SELECTCELLS Remember source-table cells and summarize numeric usability.
 %

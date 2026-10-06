@@ -1,4 +1,3 @@
-% App-owned implementation for image_match.resultFiles.exportImages within the image_match product workflow.
 function applicationState = exportImages( ...
         applicationState, callbackContext)
 %EXPORTIMAGES Apply committed matches and write the App-owned CSV manifest.
@@ -43,10 +42,6 @@ catch ME
         "Image-match export failed.");
     return;
 end
-payload.sourceIds = string({sources.id});
-payload.referenceId = string(referenceSource(1).id);
-payload.resultManifestPath = payload.manifestPath;
-applicationState.project.results.lastExport = payload;
 applicationState.project.results.resultManifestPath = payload.manifestPath;
 statuses = string({payload.results.status});
 failedCount = sum(statuses == "failed");

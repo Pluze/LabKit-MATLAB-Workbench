@@ -15,6 +15,7 @@ tests, and the one owning manual:
 - RHS: `docs/develop/libraries/rhs/README.md`
 - biosignal: `docs/develop/libraries/biosignal/README.md`
 - Mark-10: `docs/develop/libraries/mark10/README.md`
+- NI-DMM: `docs/develop/libraries/nidmm/README.md`
 
 Library behavior specifications mirror the package below
 `tests/specs/labkit/<area>/`.
@@ -133,7 +134,8 @@ Use `labkittest.explain` to find the exact owner and contract.
   defaults, legal values, errors, and related APIs immediately after its
   declaration. `Example:` blocks are executable; file-dependent sketches use
   `Typical Call:`.
-- Private helpers document caller, shapes, side effects, and assumptions.
+- Private helper comments follow `docs/AGENTS.md`: explain non-obvious
+  assumptions, data meaning, or side effects without repeating the signature.
 - An app-facing facade change updates its `version.m`, current owning manual,
   and one lightweight structured change record before its task-branch PR is
   merge-ready.

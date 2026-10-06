@@ -1,5 +1,5 @@
 %EFFECTIVESTYLE Resolve source, document, kind, role, group, and object styles.
-function [style, sources] = effectiveStyle(document, nodeId)
+function style = effectiveStyle(document, nodeId)
 index = find(string({document.nodes.id}) == string(nodeId), 1);
 if isempty(index)
     error("figure_studio:figureDocument:UnknownNode", ...
@@ -7,7 +7,6 @@ if isempty(index)
 end
 node = document.nodes(index);
 style = node.sourceStyle;
-sources = sourceMap(style, "source");
 scopes = ["document", "kind", "role", "group", "object"];
 targets = ["*", node.kind, node.role, node.groupId, node.id];
 for level = 1:numel(scopes)
@@ -18,28 +17,17 @@ for level = 1:numel(scopes)
         string({document.styleRules.target}) == targets(level);
     ruleIndices = find(matches);
     for ruleIndex = reshape(ruleIndices, 1, [])
-        [style, sources] = mergeProperties(style, sources, ...
-            document.styleRules(ruleIndex).properties, ...
-            scopes(level) + ":" + targets(level));
+        style = mergeProperties(style, document.styleRules(ruleIndex).properties);
     end
 end
-[style, sources] = mergeProperties(style, sources, node.overrides, ...
-    "override:" + node.id);
+style = mergeProperties(style, node.overrides);
 end
 
-function sources = sourceMap(style, source)
-sources = struct();
-for name = string(fieldnames(style)).'
-    sources.(char(name)) = source;
-end
-end
-
-function [style, sources] = mergeProperties(style, sources, properties, source)
+function style = mergeProperties(style, properties)
 if ~isstruct(properties) || ~isscalar(properties)
     return;
 end
 for name = string(fieldnames(properties)).'
     style.(char(name)) = properties.(char(name));
-    sources.(char(name)) = source;
 end
 end

@@ -120,7 +120,8 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
 
             runtime.setTraceCapture(true);
             runtime.invokeAction("burst");
-            waitForRows(tableHandle, 300);
+            snapshot = runtime.diagnosticSnapshot();
+            waitForSnapshot(tableHandle, snapshot);
 
             testCase.verifyTrue(isvalid(tableHandle));
             testCase.verifyEqual( ...
@@ -130,6 +131,13 @@ classdef SessionLogViewerSpec < matlab.unittest.TestCase
                 height(tableHandle.Data), 300);
             testCase.verifyLessThanOrEqual( ...
                 height(tableHandle.Data), 512);
+            testCase.verifyTrue(snapshot.inMemoryTruncated);
+            testCase.verifyEqual(tableHandle.Data.Time, ...
+                string({snapshot.events.timestampUtc}).');
+            testCase.verifyEqual(tableHandle.Data.Message, ...
+                string({snapshot.events.message}).');
+            notices = oneHandle(viewerFigure, "labkitSessionLogNotices");
+            testCase.verifySubstring(string(notices.Text), "in-memory");
             clear cleanup
         end
 
@@ -155,14 +163,13 @@ definition = labkit.app.Definition( ...
     Title="Log viewer probe", Family="Tests", ...
     AppVersion="1.0.0", Updated="2026-07-26", ...
     Requirements=[], Workbench=layout);
-runtime = labkit.app.internal.runtime.RuntimeFactory.createMatlab( ...
-    definition, [], backend, [], ...
-    JournalRoot=journalRoot);
+runtime = labkittest.createMatlabRuntime( ...
+    definition, [], backend, labkittest.temporarySessionJournal(definition, journalRoot));
 end
 
 function applicationState = emitBurst( ...
         applicationState, callbackContext)
-for index = 1:300
+for index = 1:620
     callbackContext.log( ...
         "trace", "analysis.progress", ...
         "Synthetic progress update.", ...
@@ -171,9 +178,15 @@ for index = 1:300
 end
 end
 
-function waitForRows(tableHandle, count)
+function waitForSnapshot(tableHandle, snapshot)
+expectedTimes = string({snapshot.events.timestampUtc}).';
+expectedMessages = string({snapshot.events.message}).';
 started = tic;
-while height(tableHandle.Data) < count && toc(started) < 3
+while toc(started) < 3
+    if isequal(tableHandle.Data.Time, expectedTimes) && ...
+            isequal(tableHandle.Data.Message, expectedMessages)
+        return;
+    end
     drawnow;
     pause(0.01);
 end

@@ -1,4 +1,3 @@
-% App-owned implementation for cic.createSession within the cic product workflow.
 function session = createSession(project, ~)
 %CREATESESSION Rebuild CIC's lazy selected preview from source-list paths.
 paths = labkit.app.source.paths(project.inputs.sources);

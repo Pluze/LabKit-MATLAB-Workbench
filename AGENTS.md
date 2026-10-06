@@ -72,9 +72,8 @@ reader needs them for the requested audit, science, safety, or compatibility.
   need the stable contract or extending an existing API would turn it into an
   ambiguous bucket.
 - `apps/AGENTS.md` owns App shape, callbacks, persistence, and diagnostics;
-  `+labkit/AGENTS.md` owns library and SDK contracts. Keep app-facing packages
-  to `app`, `image`, `thermal`, `dta`, `rhs`, `biosignal`, and `mark10`.
-  Do not create public `analysis`, `data`, `io`, `util`, or App-specific helpers.
+  `+labkit/AGENTS.md` owns library and SDK contracts, including public package
+  boundaries.
 - Converting App struct state to classes, merging all Apps into one entrypoint,
   or changing implementation language requires an explicit user decision.
 - Call fixed production symbols directly so static analysis, dependency

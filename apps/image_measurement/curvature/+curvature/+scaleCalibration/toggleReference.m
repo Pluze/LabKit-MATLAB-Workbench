@@ -1,4 +1,3 @@
-% App-owned implementation for curvature.scaleCalibration.toggleReference within the curvature product workflow.
 function applicationState = toggleReference( ...
         applicationState, callbackContext)
 %TOGGLEREFERENCE Enter or leave managed two-point reference editing.

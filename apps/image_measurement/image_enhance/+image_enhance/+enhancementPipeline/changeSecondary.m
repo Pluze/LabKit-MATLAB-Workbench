@@ -1,4 +1,3 @@
-% App-owned implementation for image_enhance.enhancementPipeline.changeSecondary within the image_enhance product workflow.
 function applicationState = changeSecondary( ...
         applicationState, value, ~)
 %CHANGESECONDARY Update and preview the secondary tool parameter.
@@ -10,7 +9,6 @@ applicationState.session.workflow.pendingDirty = true;
 applicationState = ...
     image_enhance.enhancementPipeline.invalidateResults(applicationState);
 applicationState.session.cache.previewResult = [];
-applicationState.session.cache.previewResultKey = "";
 applicationState = ...
     image_enhance.enhancementPipeline.rebuildPreview(applicationState);
 end
