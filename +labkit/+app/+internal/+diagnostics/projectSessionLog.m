@@ -73,4 +73,3 @@ for index = 1:numel(legal)
     value(values == legal(index)) = index;
 end
 end
-

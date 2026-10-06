@@ -2,6 +2,12 @@ function draw(axesById, model)
 %DRAW Update time-series and force-versus-travel plots without rebuilding axes.
 updateTimeSeries(axesById.timeSeries, model);
 updateForceTravel(axesById.forceTravel, model);
+filename = "";
+if isfield(model, "filename"), filename = model.filename; end
+title(axesById.timeSeries, mark10_monitor.plotTitle( ...
+    "Travel and Force vs Time", filename), Interpreter="none");
+title(axesById.forceTravel, mark10_monitor.plotTitle( ...
+    "Force vs Travel", filename), Interpreter="none");
 end
 
 function updateTimeSeries(ax, model)
@@ -26,7 +32,6 @@ if isempty(travelLine) || isempty(forceLine)
         "HitTest", "off", "PickableParts", "none", "Clipping", "on");
     ylabel(ax, "Force (N)");
     xlabel(ax, "Time (s)");
-    title(ax, "Travel and Force vs Time");
     grid(ax, "on");
     legend(ax, [travelLine, forceLine], ["Travel", "Force"], ...
         "Location", "northeast", "AutoUpdate", "off");
@@ -66,7 +71,6 @@ if isempty(curve) || isempty(stationaryPoints)
     hold(ax, "off");
     xlabel(ax, "Travel (mm)");
     ylabel(ax, "Force (N)");
-    title(ax, "Force vs Travel");
     grid(ax, "on");
     configureNavigation(ax);
 else

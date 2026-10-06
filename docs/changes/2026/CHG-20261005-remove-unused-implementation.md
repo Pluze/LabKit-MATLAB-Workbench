@@ -5,7 +5,7 @@ id: CHG-20261005-remove-unused-implementation
 date: 2026-10-05
 type: refactor
 compatibility: compatible
-component: labkit.app | 3.4.1 -> 3.4.2
+component: labkit.app
 component: labkit_DICPostprocess_app | 1.7.3 -> 1.7.4
 component: labkit_DICPreprocess_app | 1.8.2 -> 1.8.3
 component: labkit_ChronoOverlay_app | 1.7.2 -> 1.7.3

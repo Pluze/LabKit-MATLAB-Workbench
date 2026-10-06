@@ -1,287 +1,144 @@
 classdef Mark10AnalysisSpec < matlab.unittest.TestCase
-    %MARK10ANALYSISSPEC Specify branch segmentation and modulus calculations.
-
-    methods (Test, TestTags = {'Contract:scientific', 'Env:headless'})
-        function cyclicLabelsFollowNormalizedForcePolarity(testCase)
-            travel = [linspace(0, 2, 101), linspace(2, 0, 101)].';
-            time = (0:numel(travel)-1).' / 50;
-            for polarity = [-1, 1]
-                result = mark10_monitor.analysis.compute( ...
-                    time, polarity * 3 * travel, travel, ...
-                    parameters("Automatic"), "Cyclic");
-                expected = "Tension";
-                if polarity < 0, expected = "Compression"; end
-                testCase.verifyTrue(all(startsWith( ...
-                    string(result.rows(:, 2)), expected)));
-                testCase.verifyTrue(any(endsWith( ...
-                    string(result.rows(:, 2)), "loading")));
-                testCase.verifyTrue(any(endsWith( ...
-                    string(result.rows(:, 2)), "recovery")));
-                testCase.verifyEqual(cell2mat(result.rows(:, 9)), ...
-                    15 * ones(result.segmentCount, 1), AbsTol=1e-10);
+    % Analytic ramps, hysteresis, weak linearity and full-resolution export.
+    methods (Test, TestTags={'Contract:scientific','Env:headless'})
+        function extrapolatesBothDirections(tc)
+            p=parameters(); t=(0:600)'/50;
+            for kind=["Compression","Tension"]
+                d=1; if kind=="Compression", d=-1; end
+                x=10+d*(t-2)*.1; f=d*max((t-2)*.1,0)*.2;
+                e=mark10_monitor.analysis.estimateInitialLength(t,f,x,p,kind);
+                tc.verifyEqual(e.length_mm,10,AbsTol=1e-10);
+                tc.verifyEqual(e.rSquared,1,AbsTol=1e-12);
+                tc.verifyGreaterThan(d*(e.thresholdLength_mm-10),0);
             end
         end
-
-        function recoversKnownModulusForCyclicLoadingAndRecovery(testCase)
-            travel = [linspace(0, 2, 101), linspace(2, 0, 101), ...
-                linspace(0, 1.5, 81)].';
-            time = (0:numel(travel)-1).' / 50;
-            force = 3 * travel;
-
-            result = mark10_monitor.analysis.compute( ...
-                time, force, travel, parameters("Automatic"), "Tension");
-
-            moduli = cell2mat(result.rows(:, 9));
-            testCase.verifyGreaterThanOrEqual(result.segmentCount, 3);
-            testCase.verifyEqual(moduli, 15 * ones(size(moduli)), ...
-                "AbsTol", 1e-10);
-            testCase.verifyEqual(result.acceptedCount, result.segmentCount);
-            testCase.verifyTrue(all(contains(string(result.rows(:, 2)), ...
-                "Tension")));
+        function referenceIsIndependentAndFailureHasNoSilentFallback(tc)
+            p=parameters(); p.timeStart_s=6;p.timeEnd_s=10;
+            t=(0:600)'/50;x=10.2-.1*t;f=-.2*max(10-x,0);
+            e=mark10_monitor.analysis.estimateInitialLength(t,f,x,p,"Compression");
+            tc.verifyEqual(e.length_mm,10,AbsTol=1e-10);
+            c=mark10_monitor.analysis.prepareCurve(t,f,x,p,"Compression");
+            tc.verifyEqual(c.time_s([1 end]),[6;10]);
+            p.contactMin_N=.0001;p.contactMax_N=.0002;
+            tc.verifyError(@() mark10_monitor.analysis.estimateInitialLength(t,f,x,p,"Compression"), ...
+                "mark10_monitor:analysis:InsufficientContactFit");
         end
-
-        function manualRegionUsesOneCorrectedTravelWindowAcrossBranches(testCase)
-            travel = [linspace(0, 3, 151), linspace(3, 0, 151)].';
-            time = (0:numel(travel)-1).' / 50;
-            force = 2 * travel;
-            p = parameters("Manual");
-            p.manualStart_mm = 0.5;
-            p.manualEnd_mm = 1.5;
-
-            result = mark10_monitor.analysis.compute( ...
-                time, force, travel, p, "Compression");
-
-            testCase.verifyGreaterThanOrEqual(result.segmentCount, 2);
-            testCase.verifyEqual(cell2mat(result.rows(:, 5)), ...
-                0.5 * ones(result.segmentCount, 1), ...
-                "AbsTol", 1e-12);
-            testCase.verifyEqual(cell2mat(result.rows(:, 6)), ...
-                1.5 * ones(result.segmentCount, 1), ...
-                "AbsTol", 1e-12);
-            testCase.verifyEqual(cell2mat(result.rows(:, 9)), ...
-                10 * ones(result.segmentCount, 1), ...
-                "AbsTol", 1e-10);
+        function detectsIsolatedSpikeButRetainsStep(tc)
+            f=zeros(100,1);x=linspace(12,8,100)';f(30)=9;f(60:end)=2;
+            mask=mark10_monitor.analysis.detectGlitches(f,x);
+            tc.verifyTrue(mask(30));tc.verifyFalse(any(mask(60:end)));
+            p=parameters();p.excludeGlitches=true;
+            c=mark10_monitor.analysis.prepareCurve((0:99)'/10,f,x,p,"Compression");
+            tc.verifyFalse(any(c.sourceIndex==30));tc.verifyEqual(c.excludedCount,1);
+            tc.verifyNumElements(unique(c.segment),1);
         end
-
-        function manualRegionOmitsBranchesThatDoNotCrossTheWindow(testCase)
-            travel = [linspace(0, 1, 51), linspace(1, 0, 51)].';
-            p = parameters("Manual");
-            p.manualStart_mm = 2;
-            p.manualEnd_mm = 3;
-
-            result = mark10_monitor.analysis.compute( ...
-                (0:numel(travel)-1).' / 50, 2 * travel, travel, ...
-                p, "Tension");
-
-            testCase.verifyEmpty(result.fitLines);
-            testCase.verifyTrue(all(string(result.rows(:, 11)) == ...
-                "Need at least 4 fit points"));
+        function preservesSignsAreaModesAndEngineeringSlope(tc)
+            p=parameters();t=(0:100)'/10;e=linspace(0,.2,101)';
+            for kind=["Compression","Tension","Cyclic"]
+                d=1;if kind=="Compression",d=-1;end
+                for mode=["Length x width","Radius","Area"]
+                    p.crossSectionMode=mode;p.radius_mm=sqrt(2/pi);p.area_mm2=2;
+                    r=mark10_monitor.analysis.compute(t,d*30*e,10+d*10*e,p,kind);
+                    tc.verifyEqual(r.curve.strain,e,AbsTol=1e-12);
+                    tc.verifyEqual(r.rows{1,9},15,AbsTol=1e-10);
+                end
+            end
         end
-
-        function manualRegionFitsSparseResolvedBranches(testCase)
-            travel = [linspace(0, 20, 10), linspace(20, 0, 10), ...
-                linspace(0, 20, 10)].';
-            p = parameters("Manual");
-            p.manualStart_mm = 5;
-            p.manualEnd_mm = 15;
-
-            result = mark10_monitor.analysis.compute( ...
-                (0:numel(travel)-1).' / 5, 2 * travel, travel, ...
-                p, "Tension");
-
-            testCase.verifyGreaterThanOrEqual(result.segmentCount, 3);
-            testCase.verifyTrue(all(cell2mat(result.rows(:, 7)) >= 4));
-            testCase.verifyEqual(cell2mat(result.rows(:, 9)), ...
-                10 * ones(result.segmentCount, 1), "AbsTol", 1e-10);
-            testCase.verifyTrue(all(string(result.rows(:, 11)) == "Accepted"));
+        function offsetsPreservePhysicalCoordinates(tc)
+            p=parameters();t=(0:100)'/10;x=10-t/10;f=-3*(10-x);
+            a=mark10_monitor.analysis.prepareCurve(t,f,x,p,"Compression");
+            p.forceZero_N=2;p.travelZero_mm=4;
+            b=mark10_monitor.analysis.prepareCurve(t,f+2,x+4,p,"Compression");
+            tc.verifyEqual(b.strain,a.strain,AbsTol=1e-12);
+            tc.verifyEqual(b.stress_MPa,a.stress_MPa,AbsTol=1e-12);
         end
-
-        function rejectsUnconfirmedGeometry(testCase)
-            p = parameters("Automatic");
-            p.geometryConfirmed = false;
-            testCase.verifyError(@() mark10_monitor.analysis.compute( ...
-                (0:20).', (0:20).', (0:20).', p, "Tension"), ...
+        function separatesBranchesAndRestrictsTime(tc)
+            p=parameters();p.windows={true,'early',2,8;true,'late',10,18};
+            x=[linspace(10,8,101),linspace(8,10,101)]';t=(0:201)'/10;
+            f=[-3*(10-x(1:101));-1.5*(10-x(102:end))];p.timeEnd_s=max(t);
+            r=mark10_monitor.analysis.compute(t,f,x,p,"Compression");
+            tc.verifySize(r.rows,[4 12]);
+            tc.verifyEqual(cell2mat(r.rows(:,9)),[15;15;7.5;7.5],AbsTol=1e-10);
+            p.timeStart_s=10.2;r=mark10_monitor.analysis.compute(t,f,x,p,"Compression");
+            tc.verifyEqual(cell2mat(r.rows(:,9)),[7.5;7.5],AbsTol=1e-10);
+        end
+        function keepsNonlinearNegativeAndPartialFits(tc)
+            p=parameters();p.windows={true,'all',0,20;true,'partial',10,30;true,'empty',40,50};
+            t=(0:100)'/10;e=linspace(0,.2,101)';y=-3*e+.6*sin(50*e);
+            r=mark10_monitor.analysis.compute(t,2*y,10+10*e,p,"Tension");
+            tc.verifyTrue(isfinite(r.rows{1,9}));tc.verifyLessThan(r.rows{1,10},.95);
+            tc.verifySubstring(string(r.rows{1,12}),"low R2");
+            tc.verifyTrue(isfinite(r.rows{2,9}));tc.verifySubstring(string(r.rows{2,12}),"partial");
+            tc.verifyTrue(isnan(r.rows{3,9}));
+            r=mark10_monitor.analysis.compute(t,-6*e,10+10*e,p,"Tension");
+            tc.verifyEqual(r.rows{1,9},-3,AbsTol=1e-12);
+            tc.verifySubstring(string(r.rows{1,12}),"negative slope");
+        end
+        function keepsTwoPointAndConstantStressFits(tc)
+            p=parameters();r=mark10_monitor.analysis.compute([0;1],[0;2],[10;12],p,"Tension");
+            tc.verifyEqual(r.rows{1,9},5,AbsTol=1e-12);
+            tc.verifySubstring(string(r.rows{1,12}),"two points");
+            r=mark10_monitor.analysis.compute([0;1],[2;2],[10;12],p,"Tension");
+            tc.verifyEqual(r.rows{1,9},0);tc.verifyTrue(isnan(r.rows{1,10}));
+        end
+        function scalesModulusDisplayWithoutChangingScientificResults(tc)
+            % Oracle: SI prefix ratios and exact 1 MPa / 1 GPa boundaries.
+            % A reversed conversion or signed rather than absolute Auto rule fails.
+            rows=cell(3,12);rows(:,9)={.00246;-.01409;NaN};
+            [shown,unit]=mark10_monitor.analysis.resultTable(rows,"Auto");
+            tc.verifyEqual(unit,"kPa");
+            tc.verifyEqual(cell2mat(shown(1:2,9)),[2.46;-14.09],AbsTol=1e-12);
+            tc.verifyTrue(isnan(shown{3,9}));tc.verifyEqual(rows{1,9},.00246);
+            for magnitude=[1,999.9,1000,-2000]
+                rows{1,9}=magnitude;
+                [~,unit]=mark10_monitor.analysis.resultTable(rows,"Auto");
+                expected="MPa";if abs(magnitude)>=1000,expected="GPa";end
+                tc.verifyEqual(unit,expected);
+            end
+            rows{1,9}=2;
+            for choice=["kPa","MPa","GPa"]
+                [shown,unit]=mark10_monitor.analysis.resultTable(rows,choice);
+                tc.verifyEqual(unit,choice);
+                expected=2;if choice=="kPa",expected=2000;elseif choice=="GPa",expected=.002;end
+                tc.verifyEqual(shown{1,9},expected);
+            end
+            rows(:,9)={0;NaN;0};
+            [shown,unit]=mark10_monitor.analysis.resultTable(rows,"Auto");
+            tc.verifyEqual(unit,"kPa");tc.verifyEqual(shown{1,9},0);
+        end
+        function exportsWholeSelectedCurve(tc)
+            p=parameters();p.timeStart_s=2;p.timeEnd_s=8;t=(0:1000)'/100;x=10-t/10;
+            c=mark10_monitor.analysis.prepareCurve(t,-3*(10-x),x,p,"Compression");
+            out=mark10_monitor.analysis.exportTable(c);
+            tc.verifyEqual(string(out.Properties.VariableNames),["Time_s","Strain","Stress_MPa"]);
+            tc.verifyEqual(height(out),601);tc.verifyEqual(out.Time_s([1 end]),[2;8]);
+            tc.verifyEqual(out.Strain,(10-x(201:801))/10,AbsTol=1e-12);
+        end
+        function rejectsInvalidGeometryAndTime(tc)
+            p=parameters();p.geometryConfirmed=false;
+            tc.verifyError(@() mark10_monitor.analysis.compute([0;1],[0;1],[10;11],p,"Tension"), ...
                 "mark10_monitor:analysis:GeometryNotConfirmed");
+            p.geometryConfirmed=true;p.timeStart_s=2;p.timeEnd_s=1;
+            tc.verifyError(@() mark10_monitor.analysis.compute([0;1],[0;1],[10;11],p,"Tension"), ...
+                "mark10_monitor:analysis:InvalidTimeRange");
         end
-
-        function automaticRegionAvoidsALateFractureDrop(testCase)
-            travel = linspace(0, 4, 201).';
-            force = 2 * travel;
-            fracture = travel > 3;
-            force(fracture) = 6 - 5.5 * (travel(fracture) - 3);
-            force(31) = NaN;
-
-            result = mark10_monitor.analysis.compute( ...
-                (0:200).' / 50, force, travel, ...
-                parameters("Automatic"), "Tension");
-
-            testCase.verifyEqual(cell2mat(result.rows(1, 9)), 10, ...
-                "AbsTol", 1e-9);
-            testCase.verifyEqual(string(result.rows(1, 11)), "Accepted");
-        end
-
-        function zeroLevelsShiftCoordinatesWithoutChangingModulus(testCase)
-            travel = 5 + linspace(0, 3, 151).';
-            force = 4 + 2 * (travel - 5);
-            time = (0:numel(travel)-1).' / 50;
-            unshifted = mark10_monitor.analysis.compute( ...
-                time, force, travel, parameters("Automatic"), "Tension");
-            shiftedParameters = parameters("Automatic");
-            shiftedParameters.forceZero_N = 4;
-            shiftedParameters.travelZero_mm = 5;
-
-            shifted = mark10_monitor.analysis.compute( ...
-                time, force, travel, shiftedParameters, "Tension");
-
-            testCase.verifyEqual(shifted.plotStrain_percent(1), 0, ...
-                "AbsTol", 1e-12);
-            testCase.verifyEqual(shifted.plotStress_MPa(1), 0, ...
-                "AbsTol", 1e-12);
-            testCase.verifyNotEqual(unshifted.plotStrain_percent(1), ...
-                shifted.plotStrain_percent(1));
-            testCase.verifyEqual(cell2mat(shifted.rows(:, 9)), ...
-                cell2mat(unshifted.rows(:, 9)), "AbsTol", 1e-10);
-        end
-
-        function rejectsNonfiniteZeroLevels(testCase)
-            p = parameters("Automatic");
-            p.forceZero_N = NaN;
-            testCase.verifyError(@() mark10_monitor.analysis.compute( ...
-                (0:20).', (0:20).', (0:20).', p, "Tension"), ...
-                "mark10_monitor:analysis:InvalidZeroLevel");
-        end
-
-        function exportsNamedScientificColumns(testCase)
-            rows = {1, 'Tension loading', 0, 1, 0.1, 0.8, 20, ...
-                2, 10, 0.99, 'Accepted'};
-            value = mark10_monitor.analysis.resultTable(rows);
-            testCase.verifyEqual(string(value.Properties.VariableNames), ...
-                ["Segment", "Phase", "Start_s", "End_s", ...
-                "FitStart_mm", "FitEnd_mm", "Points", ...
-                "Stiffness_N_per_mm", "YoungsModulus_MPa", ...
-                "R_squared", "Status"]);
-            exported = mark10_monitor.analysis.exportTable( ...
-                rows, parameters("Automatic"));
-            testCase.verifyEqual(exported.GaugeLength_mm, 10);
-            testCase.verifyEqual(exported.Width_mm, 2);
-            testCase.verifyEqual(exported.Thickness_mm, 1);
-            testCase.verifyEqual(exported.ForceZero_N, 0);
-            testCase.verifyEqual(exported.TravelZero_mm, 0);
-            testCase.verifyEqual(exported.FitMode, "Automatic");
-        end
-
-        function applyAndResetShiftBothReplayPlots(testCase)
-            resources = containers.Map("KeyType", "char", "ValueType", "any");
-            backend = struct( ...
-                "setResource", @(id, value, cleanup) ...
-                    storeResource(resources, id, value, cleanup), ...
-                "getResource", @(id) getResource(resources, id));
-            context = labkittest.createCallbackContext(backend);
-            session = mark10_monitor.createSession(struct(), context);
-            playback = containers.Map( ...
-                "KeyType", "char", "ValueType", "any");
-            playback("time_s") = [0; 1];
-            playback("force_N") = [2; 3];
-            playback("travel_mm") = [30; 31];
-            playback("index") = 2;
-            storeResource(resources, "mark10Playback", playback, []);
-            session.playback.loaded = true;
-            session.playback.cursor = 2;
-            session.playback.count = 2;
-            session.analysis.dataSource = "Loaded Recording";
-            session.analysis.forceZeroDraft_N = 2;
-            session.analysis.travelZeroDraft_mm = 30;
-            session.analysis.resultRows = cell(1, 11);
-
-            state = mark10_monitor.analysis.applyZero( ...
-                struct("session", session), context);
-
-            testCase.verifyEqual( ...
-                state.session.acquisition.plotForce_N, [0; 1]);
-            testCase.verifyEqual( ...
-                state.session.acquisition.plotTravel_mm, [0; 1]);
-            testCase.verifyEqual(playback("force_N"), [2; 3]);
-            testCase.verifyEqual(playback("travel_mm"), [30; 31]);
-            testCase.verifyEqual(state.session.analysis.forceZero_N, 2);
-            testCase.verifyEqual(state.session.analysis.travelZero_mm, 30);
-            testCase.verifyEmpty(state.session.analysis.resultRows);
-
-            state = mark10_monitor.analysis.resetZero(state, context);
-
-            testCase.verifyEqual(state.session.analysis.forceZero_N, 0);
-            testCase.verifyEqual(state.session.analysis.travelZero_mm, 0);
-            testCase.verifyEqual( ...
-                state.session.acquisition.plotForce_N, [2; 3]);
-            testCase.verifyEqual( ...
-                state.session.acquisition.plotTravel_mm, [30; 31]);
-            testCase.verifyEqual(state.session.analysis.status, ...
-                "Plot force and travel zero levels reset to 0.");
-        end
-
-        function sharedPlotShiftAppliesAnalysisZero(testCase)
-            analysis = parameters("Automatic");
-            analysis.forceZero_N = 2;
-            analysis.travelZero_mm = 30;
-
-            [force, travel] = mark10_monitor.analysis.shiftPlotData( ...
-                [2; 3], [35; 36], analysis);
-
-            testCase.verifyEqual(force, [0; 1]);
-            testCase.verifyEqual(travel, [5; 6]);
-        end
-    end
-
-    methods (Test, TestTags = {'Contract:presentation', 'Env:headless'})
-        function redrawIsStatelessAndFitMarkersAreCopyable(testCase)
-            figureHandle = figure("Visible", "off");
-            cleanup = onCleanup(@() close(figureHandle));
-            axesById = struct("stressStrain", axes(figureHandle), ...
-                "modulusSummary", axes(figureHandle));
-            travel = [linspace(0, 2, 101), linspace(2, 0, 101)].';
-            result = mark10_monitor.analysis.compute( ...
-                (0:numel(travel)-1).' / 50, 3 * travel, travel, ...
-                parameters("Automatic"), "Tension");
-            model = struct("strain_percent", result.plotStrain_percent, ...
-                "stress_MPa", result.plotStress_MPa, ...
-                "fitLines", result.fitLines, "summary", result.summary);
-
-            mark10_monitor.analysis.draw(axesById, model);
-            accepted = findobj(axesById.stressStrain, ...
-                "DisplayName", "Accepted linear fit");
-            testCase.verifyNumElements(accepted, 1);
-            testCase.verifyEqual(string(accepted.Marker), "o");
-            testCase.verifyEqual(string(accepted.HandleVisibility), "on");
-            fitHandles = findobj(axesById.stressStrain, ...
-                "Type", "line", "LineWidth", 2);
-            testCase.verifyNumElements(fitHandles, numel(result.fitLines));
-            testCase.verifyTrue(all(string({fitHandles.HandleVisibility}) == "on"));
-
-            emptyModel = struct("strain_percent", zeros(0, 1), ...
-                "stress_MPa", zeros(0, 1), ...
-                "fitLines", struct("strain_percent", {}, ...
-                    "stress_MPa", {}, "accepted", {}), ...
-                "summary", "No current analysis.");
-            mark10_monitor.analysis.draw(axesById, emptyModel);
-            testCase.verifyEmpty(findobj(axesById.stressStrain, ...
-                "DisplayName", "Accepted linear fit"));
-            clear cleanup
+        function invalidationFollowsDependencies(tc)
+            a=parameters();a.resultRevision=0;a.curve=mark10_monitor.analysis.emptyCurve();
+            a.curveReady=true;a.estimate=struct('length_mm',10);a.geometryConfirmed=true;
+            s=struct('session',struct('analysis',a));
+            s=mark10_monitor.analysis.invalidateWindows(s,[],[]);tc.verifyTrue(s.session.analysis.curveReady);
+            s=mark10_monitor.analysis.invalidate(s,[],[]);tc.verifyFalse(s.session.analysis.curveReady);
+            tc.verifyTrue(s.session.analysis.geometryConfirmed);tc.verifyNotEmpty(s.session.analysis.estimate);
+            s=mark10_monitor.analysis.invalidateReference(s,[],[]);
+            tc.verifyFalse(s.session.analysis.geometryConfirmed);tc.verifyEmpty(s.session.analysis.estimate);
         end
     end
 end
-
-function resources = storeResource(resources, id, value, cleanup)
-key = char(string(id));
-resources(key) = struct("Value", value, "Cleanup", cleanup);
-end
-
-function value = getResource(resources, id)
-key = char(string(id));
-value = resources(key).Value;
-end
-
-function value = parameters(mode)
-value = struct("gaugeLength_mm", 10, "width_mm", 2, ...
-    "thickness_mm", 1, "geometryConfirmed", true, ...
-    "forceZero_N", 0, "travelZero_mm", 0, ...
-    "fitMode", mode, "manualStart_mm", 0, "manualEnd_mm", 1);
+function p=parameters()
+p=struct('gaugeLength_mm',10,'width_mm',2,'thickness_mm',1, ...
+    'crossSectionMode',"Length x width",'radius_mm',1,'area_mm2',2, ...
+    'geometryConfirmed',true,'forceZero_N',0,'travelZero_mm',0, ...
+    'timeStart_s',0,'timeEnd_s',12,'referenceStart_s',0,'referenceEnd_s',12, ...
+    'onsetThreshold_N',.02,'contactMin_N',.002,'contactMax_N',.04, ...
+    'excludeGlitches',false,'windows',{{true,'Region 1',0,20}});
 end

@@ -1,21 +1,18 @@
-function state = export(state, context)
-%EXPORT Write the current per-branch modulus estimates as standard CSV.
-rows = state.session.analysis.resultRows;
-if isempty(rows)
-    context.alert("Run modulus analysis before exporting.", ...
-        "Export Modulus Results");
-    return;
+function applicationState = export(applicationState, context)
+%EXPORT Write the current full-resolution selected curve in acquisition order.
+a=applicationState.session.analysis;
+if ~a.curveReady
+    context.alert("Update the stress-strain curve before exporting.","Export Stress-Strain"); return;
 end
-choice = context.chooseOutputFile( ...
-    ["*.csv", "CSV files"], "mark10_modulus_results.csv");
+name="stress_strain.csv";
+if applicationState.session.playback.loaded && a.dataSource=="Loaded Recording"
+    [~,stem]=fileparts(applicationState.session.playback.source);
+    name=string(stem)+"_stress_strain.csv";
+end
+choice=context.chooseOutputFile(["*.csv","CSV files"],name);
 if choice.Cancelled, return; end
-filepath = string(choice.Value);
-[folder, stem, extension] = fileparts(filepath);
-if lower(string(extension)) ~= ".csv"
-    filepath = string(fullfile(folder, string(stem) + ".csv"));
-end
-resultTable = mark10_monitor.analysis.exportTable( ...
-    rows, state.session.analysis);
-writetable(resultTable, filepath);
-state.session.analysis.exportStatus = "Exported: " + filepath;
+path=string(choice.Value); [folder,stem,extension]=fileparts(path);
+if lower(string(extension))~=".csv", path=string(fullfile(folder,string(stem)+".csv")); end
+writetable(mark10_monitor.analysis.exportTable(a.curve),path);
+applicationState.session.analysis.exportStatus="Exported stress-strain: "+path;
 end

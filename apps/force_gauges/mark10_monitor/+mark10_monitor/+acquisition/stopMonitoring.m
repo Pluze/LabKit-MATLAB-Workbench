@@ -8,6 +8,7 @@ context.removeResource("mark10Sampler");
 state = mark10_monitor.acquisition.refreshState(state, context);
 state.session.acquisition.monitoring = false;
 state.session.acquisition.retainedValidCount = sum(buffer("valid"));
+state = mark10_monitor.analysis.setSource(state,buffer("time_s"),buffer("force_N"),buffer("travel_mm"));
 state.session.connection.status = "Connected; monitoring stopped.";
 state.session.export.status = compose( ...
     "Monitoring stopped: %d valid samples retained.", ...

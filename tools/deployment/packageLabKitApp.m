@@ -142,7 +142,9 @@ function app = resolvePackageApp(root, selector)
         return;
     end
 
-    if exist(selectorText, "file") == 2
+    % exist also finds extensionless commands on the MATLAB search path.
+    % Only an actual filesystem file is a path selector; discover commands in Root.
+    if isfile(selectorText)
         app = appFromEntry(root, selectorText, "custom");
         return;
     end

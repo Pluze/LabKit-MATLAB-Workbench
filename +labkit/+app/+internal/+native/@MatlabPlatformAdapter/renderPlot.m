@@ -21,6 +21,8 @@ function renderPlot(obj, operation)
             @() obj.runUtility(@() obj.copySelectedPlots()));
         setappdata(axes(k), revisionKey, value.ViewRevision);
     end
+    component = obj.Components(char(node.Id));
+    obj.PlotWindows.update(node, value, string(component.Title), obj.Figure.Visible);
     if preserveViewport
         labkit.app.internal.native.NativeAdapterValues.restoreViewport(axes, viewport);
     end

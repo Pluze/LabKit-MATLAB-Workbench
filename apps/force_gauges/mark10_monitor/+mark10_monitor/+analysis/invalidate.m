@@ -1,19 +1,11 @@
-function state = invalidate(state, ~, ~)
-%INVALIDATE Clear results after data interpretation parameters change.
-state.session.analysis.resultRows = cell(0, 11);
-state.session.analysis.plotStrain_percent = zeros(0, 1);
-state.session.analysis.plotStress_MPa = zeros(0, 1);
-state.session.analysis.fitLines = struct( ...
-    "strain_percent", {}, "stress_MPa", {}, "accepted", {});
-state.session.analysis.summary = "No current modulus analysis.";
-state.session.analysis.status = ...
-    "Analysis settings changed; calculate modulus again.";
-state.session.analysis.resultRevision = nextRevision(state.session.analysis);
-end
-
-function value = nextRevision(analysis)
-value = 1;
-if isfield(analysis, "resultRevision")
-    value = analysis.resultRevision + 1;
-end
+function applicationState = invalidate(applicationState, context, ~)
+%INVALIDATE Retire derived curve/fits without redefining initial length.
+applicationState = mark10_monitor.analysis.invalidateWindows(applicationState, context, []);
+a = applicationState.session.analysis;
+a.curve = mark10_monitor.analysis.emptyCurve();
+a.curveReady = false;
+a.curveRevision = a.resultRevision;
+a.status = "Curve needs updating. Review dimensions, then Update Stress-Strain.";
+a.exportStatus = "No current stress-strain export.";
+applicationState.session.analysis = a;
 end

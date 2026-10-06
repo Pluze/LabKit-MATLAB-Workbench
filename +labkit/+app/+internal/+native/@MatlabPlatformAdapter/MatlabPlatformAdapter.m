@@ -20,6 +20,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         Runtime
         InteractionController
         BusyLifecycle
+        PlotWindows
         PriorPointer (1, 1) string = "arrow"
         ClosePrompt
         DialogFolders
@@ -73,6 +74,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 Name=char(string(title)), ...
                 Tag="labkitApp", ...
                 Position=policy.InitialFigurePosition);
+            obj.PlotWindows = labkit.app.internal.native.PlotWindows();
             obj.BusyLifecycle = ...
                 labkit.app.internal.native.BusyLifecycle( ...
                     obj.Figure, title, ...
@@ -136,6 +138,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function close(obj)
+            obj.PlotWindows.close();
             obj.cancelAllPannerCommits();
             if ~isempty(obj.LogViewer) && isvalid(obj.LogViewer)
                 obj.LogViewer.close();

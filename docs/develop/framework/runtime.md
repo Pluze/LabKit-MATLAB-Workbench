@@ -75,6 +75,8 @@ Layout controls own direct callbacks. Plot areas own direct renderers. There is 
 
 Complex Apps keep the top-level workbench readable by composing capability-owned `layoutSection`, `workspaceTable`, or `workspacePlot` functions in user order.
 
+A presenter may append a document label with `view.windowSubtitle(text)`. The App owns the label; the runtime retains the Definition identity/version prefix and composes busy feedback around the current subtitle. Empty or omitted text clears it. Subtitle updates participate in view commits and rollback, and `include` rejects duplicate subtitle declarations. `view.text(plotId, text)` updates a plot panel heading; omission restores its layout heading. Use single-line scalar text for window subtitles; do not acquire the native figure from an App callback to change its title.
+
 ## Validation
 
 Use focused contract tests for Definition, layout, callbacks, snapshots, state invariants, and runtime transactions. Add downstream App tests for changed behavior and a bounded hidden-GUI test for native wiring. Automated hidden GUI tests do not prove dialog quality, pointer feel, scientific validity, or a complete interactive workflow.
@@ -214,6 +216,8 @@ cla(ax);
 plot(ax, model.x, model.y);
 end
 ```
+
+`renderPlot(..., WindowRequest=n)` additionally requests an auxiliary window for that declared plot. Use a nonnegative integer counter in App state: 0 closes it; incrementing a positive counter opens or focuses it. Subsequent model commits update an existing window without reopening one the user closed. The window uses the plot area's current title, shares the renderer/model, preserves its viewport while `ViewRevision` is unchanged, and closes with the runtime. The native adapter owns figures and axes; App state retains only the request counter. This provides an additional view in the same MATLAB process, not fault isolation or background execution.
 
 Renderers own drawing and viewport policy, not workflow decisions or project mutation. Display-only graphics disable hit testing. Managed interaction specs own editable gestures and their private native resources.
 

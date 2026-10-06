@@ -1,53 +1,28 @@
 function draw(axesById, model)
-%DRAW Render branch-local stress-strain curves, fits, and summary.
-ax = axesById.stressStrain;
-delete(allchild(ax));
-cla(ax, "reset");
-hold(ax, "on");
-plot(ax, model.strain_percent, model.stress_MPa, ...
-    Color=[0 0.4470 0.7410], LineWidth=1.0, ...
-    DisplayName="Branch data", HitTest="off", PickableParts="none");
-acceptedNamed = false;
-reviewNamed = false;
-for k = 1:numel(model.fitLines)
-    fit = model.fitLines(k);
-    color = [0.2 0.65 0.25];
-    style = "-";
-    if ~fit.accepted
-        color = [0.85 0.325 0.098];
-        style = "--";
+%DRAW Show current engineering curve and the selected branch-window fit.
+ax=axesById.stressStrain;
+cla(ax); hold(ax,"on");
+if model.curveReady
+    curve=model.curve;
+    for segment=unique(curve.segment).'
+        indices=find(curve.segment==segment);
+        indices=indices(unique(round(linspace(1,numel(indices),min(2000,numel(indices))))));
+        plot(ax,100*curve.strain(indices),curve.stress_MPa(indices),Color=[0.2 0.45 0.7], ...
+            DisplayName="Engineering curve",HandleVisibility="off");
     end
-    name = "";
-    showInLegend = false;
-    if fit.accepted && ~acceptedNamed
-        name = "Accepted linear fit";
-        showInLegend = true;
-        acceptedNamed = true;
-    elseif ~fit.accepted && ~reviewNamed
-        name = "Fit requiring review";
-        showInLegend = true;
-        reviewNamed = true;
+    for k=1:numel(model.fitLines)
+        line=model.fitLines(k);
+        if line.row~=model.selectedResult, continue; end
+        plot(ax,line.pointsX,line.pointsY,'.',Color=[0.85 0.4 0.1],DisplayName="Selected window samples");
+        plot(ax,line.strain_percent,line.stress_MPa,'-',LineWidth=2,Color=[0.2 0.6 0.3],DisplayName="Window least-squares fit");
     end
-    fitHandle = plot(ax, fit.strain_percent, fit.stress_MPa, ...
-        LineWidth=2, LineStyle=style, Color=color, ...
-        Marker="o", MarkerSize=5, DisplayName=name, ...
-        HandleVisibility="on", HitTest="off", PickableParts="none");
-    if ~showInLegend
-        fitHandle.Annotation.LegendInformation.IconDisplayStyle = "off";
-    end
+    if ~isempty(model.fitLines), legend(ax,"show",Location="best"); end
+else
+    text(ax,0.5,0.5,"Curve needs updating",Units="normalized",HorizontalAlignment="center");
 end
-hold(ax, "off");
-xlabel(ax, "Engineering strain (%)");
-ylabel(ax, "Engineering stress (MPa)");
-title(ax, "Per-branch stress-strain fits");
-grid(ax, "on");
-if ~isempty(model.fitLines), legend(ax, "show", Location="best"); end
-
-summaryAxes = axesById.modulusSummary;
-delete(allchild(summaryAxes));
-cla(summaryAxes, "reset");
-summaryAxes.Visible = "off";
-text(summaryAxes, 0.02, 0.98, model.summary, Units="normalized", ...
-    VerticalAlignment="top", Interpreter="none", FontName="monospaced", ...
-    FontSize=12, HitTest="off");
+hold(ax,"off"); grid(ax,"on");
+convention="tension + / compression -";
+if model.experimentType=="Compression", convention="compression +"; end
+xlabel(ax,"Engineering strain (%), "+convention); ylabel(ax,"Engineering stress (MPa)");
+title(ax,mark10_monitor.plotTitle("Stress-Strain",model.filename),Interpreter="none");
 end

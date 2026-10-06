@@ -24,7 +24,7 @@ classdef Mark10SessionSpec < matlab.unittest.TestCase
             testCase.verifyEqual(session.analysis.travelZeroDraft_mm, 0);
             testCase.verifyEqual(session.analysis.forceZero_N, 0);
             testCase.verifyEqual(session.analysis.travelZero_mm, 0);
-            testCase.verifySize(session.analysis.resultRows, [0, 11]);
+            testCase.verifySize(session.analysis.resultRows, [0, 12]);
             testCase.verifyEqual(observed("id"), "mark10Buffer");
             testCase.verifyClass(observed("value"), "containers.Map");
         end

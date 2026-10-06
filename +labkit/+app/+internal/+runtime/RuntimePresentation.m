@@ -77,6 +77,16 @@ classdef (Sealed, Hidden) RuntimePresentation
                             view = view.listSelection(node.Id, selection);
                         end
                     case "plotArea"
+                        title = config.Title;
+                        if strlength(title) == 0
+                            for parent = plan.Nodes
+                                if parent.Kind == "section" && any(parent.ChildIds == node.Id)
+                                    title = parent.Configuration.Title;
+                                    break;
+                                end
+                            end
+                        end
+                        view = view.text(node.Id, title);
                     case "dataTable"
                         view = view.tableData(node.Id, cell(0, 0), ...
                             Columns=config.Columns, ...

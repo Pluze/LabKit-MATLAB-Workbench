@@ -16,7 +16,7 @@ state.session.acquisition.monitoring = true;
 state.session.acquisition.retainedValidCount = 0;
 state.session.connection.status = "Connected and monitoring.";
 state.session.export.status = "Monitoring in progress; data retained in memory.";
-state = mark10_monitor.analysis.invalidate(state, context, []);
+state = mark10_monitor.analysis.setSource(state, [], [], []);
 state.session.analysis.dataSource = "Live Monitoring";
 end
 

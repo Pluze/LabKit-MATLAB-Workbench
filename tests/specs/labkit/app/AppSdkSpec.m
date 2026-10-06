@@ -92,9 +92,24 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyClass(view, "labkit.app.view.Snapshot");
         end
 
+        function validatesWindowSubtitleComposition(testCase)
+            fragment = labkit.app.view.Snapshot().windowSubtitle("sample.csv");
+            view = labkit.app.view.Snapshot().include(fragment);
+            testCase.verifyClass(view, "labkit.app.view.Snapshot");
+            testCase.verifyError(@() view.include(fragment), ...
+                "labkit:app:contract:DuplicateId");
+            for invalid = {42, ["one", "two"], string(missing), "one" + newline + "two"}
+                testCase.verifyError(@() labkit.app.view.Snapshot().windowSubtitle(invalid{1}), ...
+                    "labkit:app:contract:InvalidValue");
+            end
+        end
+
         function acceptsBoundedSemanticPlotRevisionTokens(testCase)
             view = labkit.app.view.Snapshot().renderPlot( ...
-                "plot", struct(), ViewRevision="source:trace-a|x:time");
+                "plot", struct(), ViewRevision="source:trace-a|x:time", WindowRequest=1);
+            testCase.verifyError(@() labkit.app.view.Snapshot().renderPlot( ...
+                "plot", struct(), WindowRequest=-1), ...
+                "labkit:app:contract:InvalidValue");
 
             testCase.verifyClass(view, "labkit.app.view.Snapshot");
             testCase.verifyError(@() labkit.app.view.Snapshot().renderPlot( ...
@@ -531,18 +546,29 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             figureValue = runtime.figureHandle();
             field = oneTagged(figureValue, "gain");
             ax = oneTagged(figureValue, "result.main");
+            auxiliary = oneTagged(groot, "labkitPlotWindow.result");
+            auxiliaryAxes = oneTagged(auxiliary, "result.main");
 
             testCase.verifyError(@() runtime.applyControlValue("gain", 2), ...
                 "labkit:app:runtime:ActionFailed");
             testCase.verifyEqual(runtime.State.project.parameters.gain, 1);
             testCase.verifyEqual(field.Value, 1);
+            testCase.verifyTrue(endsWith(string(figureValue.Name), "result-1"));
+            testCase.verifyEqual(string(oneTagged(figureValue, "result").Title), "result-1");
             testCase.verifyEqual(oneTagged(ax, "rollbackProbe").YData, [1, 1]);
+            testCase.verifyEqual(oneTagged(auxiliaryAxes, "rollbackProbe").YData, [1, 1]);
+            testCase.verifyEqual(string(auxiliary.Name), "result-1");
 
             runtime.applyControlValue("gain", 3);
             testCase.verifyEqual(runtime.State.project.parameters.gain, 3);
             testCase.verifyEqual(field.Value, 3);
             testCase.verifyEqual(oneTagged(ax, "rollbackProbe").YData, [3, 3]);
+            testCase.verifyTrue(endsWith(string(figureValue.Name), "result-3"));
+            testCase.verifyEqual(string(oneTagged(figureValue, "result").Title), "result-3");
+            testCase.verifyEqual(oneTagged(auxiliaryAxes, "rollbackProbe").YData, [3, 3]);
+            testCase.verifyEqual(string(auxiliary.Name), "result-3");
             clear cleanup visibilityCleanup
+            testCase.verifyFalse(isgraphics(auxiliary));
         end
 
         function nativeReconciliationSkipsUnchangedPlotModels(testCase)
@@ -1135,7 +1161,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                     @AppSdkSpec.secondaryBusyProbe, ...
                     Tooltip="Record a secondary action invocation.")});
             app = AppSdkSpec.definition(layout, ...
-                "CreateState", @createRuntimeState);
+                "CreateState", @createRuntimeState, ...
+                "PresentWorkbench", @presentWindowSubtitle);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
@@ -1158,6 +1185,8 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(runtime.State.project.parameters.gain, 1);
             testCase.verifyEqual(gain.Value, 1);
 
+            testCase.verifyTrue(endsWith(string(figureValue.Name), "sample_one.csv"));
+
             slow.ButtonPushedFcn(slow, []);
 
             testCase.verifyEqual(observed("slowPointer"), "watch");
@@ -1174,6 +1203,10 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyFalse(contains( ...
                 string(figureValue.Name), "[Working:"));
             testCase.verifyFalse(isappdata(figureValue, "labkitAppBusy"));
+            testCase.verifySubstring(observed("slowTitle"), "sample_one.csv");
+            testCase.verifyTrue(endsWith(string(figureValue.Name), "sample_two.csv"));
+            runtime.postEvent("test.clear-title", @clearWindowSubtitle);
+            testCase.verifyFalse(contains(string(figureValue.Name), "sample_"));
             clear probeCleanup cleanup
         end
 
@@ -1238,6 +1271,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             secondary.ButtonPushedFcn(secondary, []);
             gain.Value = 7;
             gain.ValueChangedFcn(gain, []);
+            state.project.windowLabel = "sample_one.csv";
         end
 
         function state = slowBusyProbe(state, callbackContext)
@@ -1256,6 +1290,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             callbackContext.log("info", ...
                 "probe.busy.stage", "Stage two");
             storeMapValue(observed, "progressTitle", string(figureValue.Name));
+            state.project.windowLabel = "sample_two.csv";
         end
 
         function state = slowDirectManipulationProbe(state, ~, ~)
@@ -1696,7 +1731,9 @@ end
 
 function view = presentRollbackProbe(state)
 view = labkit.app.view.Snapshot().renderPlot( ...
-    "result", struct("gain", state.project.parameters.gain));
+    "result", struct("gain", state.project.parameters.gain), WindowRequest=1);
+label = "result-" + string(state.project.parameters.gain);
+view = view.windowSubtitle(label).text("result", label);
 end
 
 function drawRollbackProbe(axesById, model)
@@ -1704,4 +1741,15 @@ plot(axesById.main, [0, 1], [model.gain, model.gain], Tag="rollbackProbe");
 if model.gain == 2
     error("probe:RenderFailed", "Synthetic failure after native plot mutation.");
 end
+end
+
+function view = presentWindowSubtitle(state)
+view = labkit.app.view.Snapshot();
+if isfield(state.project, "windowLabel")
+    view = view.include(labkit.app.view.Snapshot().windowSubtitle(state.project.windowLabel));
+end
+end
+
+function state = clearWindowSubtitle(state, ~)
+state.project = rmfield(state.project, "windowLabel");
 end
