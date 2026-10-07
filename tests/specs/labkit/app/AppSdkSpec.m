@@ -557,6 +557,44 @@ classdef AppSdkSpec < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = {'Contract:source', 'Env:hidden-gui'})
+        function restoreViewRefitsCurrentDataAndBothYRulers(testCase)
+            % Oracle: both data ranges reappear, while a neighboring plot stays zoomed.
+            % A native restore callback without registered history leaves the limits unchanged.
+            fig = uifigure(Visible="off");
+            cleanup = onCleanup(@() delete(fig));
+            ax = uiaxes(fig);
+            yyaxis(ax, 'left'); plot(ax, [0 10], [-2 8]);
+            yyaxis(ax, 'right'); plot(ax, [0 10], [100 300]);
+            other = uiaxes(fig); plot(other, 0:10);
+            other.XLim = [2 4]; other.YLim = [3 5];
+            priorScroll = @(~, ~) [];
+            fig.WindowScrollWheelFcn = priorScroll;
+            labkit.app.internal.native.AxesNavigation.install(ax);
+            button = findall(ax.Toolbar, 'Icon', 'restoreview');
+            testCase.assertNumElements(button, 1);
+            for repeat = 1:2
+                ax.XLim = [2 4];
+                ax.YAxis(1).Limits = [1 3];
+                ax.YAxis(2).Limits = [150 200];
+                button.ButtonPushedFcn(button, struct('Axes', ax));
+                testCase.verifyEqual(string(ax.XLimMode), "auto");
+                testCase.verifyEqual(string(ax.YAxis(1).LimitsMode), "auto");
+                testCase.verifyEqual(string(ax.YAxis(2).LimitsMode), "auto");
+                testCase.verifyLessThanOrEqual(ax.XLim(1), 0);
+                testCase.verifyGreaterThanOrEqual(ax.XLim(2), 10);
+                testCase.verifyLessThanOrEqual(ax.YAxis(1).Limits(1), -2);
+                testCase.verifyGreaterThanOrEqual(ax.YAxis(1).Limits(2), 8);
+                testCase.verifyLessThanOrEqual(ax.YAxis(2).Limits(1), 100);
+                testCase.verifyGreaterThanOrEqual(ax.YAxis(2).Limits(2), 300);
+                labkit.app.internal.native.AxesNavigation.install(ax);
+            end
+            testCase.verifyEqual(other.XLim, [2 4]);
+            testCase.verifyEqual(other.YLim, [3 5]);
+            testCase.verifyEqual(fig.WindowScrollWheelFcn, priorScroll);
+            testCase.verifyEqual(string(ax.YAxisLocation), "right");
+            clear cleanup
+        end
+
         function restoresNativeViewAfterPartialRenderFailure(testCase)
             % Oracle: the last committed gain remains in state, control, and plot.
             % Removing native rollback must leave the failed gain visible.
@@ -658,9 +696,23 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(ax.XLim, [0.2 0.8], AbsTol=1e-12);
             testCase.verifyEqual(ax.YLim, [0.2 0.8], AbsTol=1e-12);
 
+            button = findall(ax.Toolbar, 'Icon', 'restoreview');
+            button.ButtonPushedFcn(button, struct('Axes', ax));
+            testCase.verifyEqual(ax.XLim, [0 1], AbsTol=1e-12);
+            testCase.verifyEqual(ax.YLim, [0 1], AbsTol=1e-12);
+
             runtime.invokeAction("changeDomain");
             testCase.verifyEqual(ax.XLim, [0 2], AbsTol=1e-12);
             testCase.verifyEqual(ax.YLim, [0 2], AbsTol=1e-12);
+            auxiliary = findall(groot, 'Tag', 'labkitPlotWindow.revisionPlot');
+            auxiliaryAxes = findall(auxiliary, 'Tag', 'revisionPlot.main');
+            testCase.assertNumElements(auxiliaryAxes, 1);
+            auxiliaryAxes.XLim = [0.4 0.6];
+            auxiliaryAxes.YLim = [0.4 0.6];
+            button = findall(auxiliaryAxes.Toolbar, 'Icon', 'restoreview');
+            button.ButtonPushedFcn(button, struct('Axes', auxiliaryAxes));
+            testCase.verifyEqual(auxiliaryAxes.XLim, [0 2], AbsTol=1e-12);
+            testCase.verifyEqual(auxiliaryAxes.YLim, [0 2], AbsTol=1e-12);
             % A compact workbench without a workspace container still has a
             % main plot; the clipboard action must not report an empty page.
             fig = runtime.figureHandle();
@@ -827,6 +879,15 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(findall(poppedAxes, "Type", "line"), 2);
             testCase.verifyNumElements(findall(popped, ...
                 "Tag", "labkitAxesPopoutStudioTool"), 1);
+            poppedAxes.XLim = [1.5 2];
+            poppedAxes.YLim = [2 2.5];
+            button = findall(poppedAxes.Toolbar, 'Icon', 'restoreview');
+            testCase.assertNumElements(button, 1);
+            button.ButtonPushedFcn(button, struct('Axes', poppedAxes));
+            testCase.verifyLessThanOrEqual(poppedAxes.XLim(1), 1);
+            testCase.verifyGreaterThanOrEqual(poppedAxes.XLim(2), 3);
+            testCase.verifyLessThanOrEqual(poppedAxes.YLim(1), 1);
+            testCase.verifyGreaterThanOrEqual(poppedAxes.YLim(2), 4);
             clear cleanup
         end
 
@@ -1408,7 +1469,7 @@ model = struct("domain", state.session.domain, ...
     "warmColor", state.session.warmColor);
 view = labkit.app.view.Snapshot().renderPlot( ...
     "revisionPlot", model, ...
-    ViewRevision="domain:" + string(state.session.domain));
+    ViewRevision="domain:" + string(state.session.domain), WindowRequest=1);
 end
 
 function drawRevisionPlot(axesById, model)
