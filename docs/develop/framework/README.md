@@ -92,6 +92,8 @@ Normal App launches show the completed native window. Official GUI validation us
 
 ## Built-in App Tools
 
+The axes toolbar's **Restore View** fits the current plotted data by returning X and every Y axis to automatic limits, including both rulers of a dual-Y plot. This works after custom wheel zoom in App plots, auxiliary plot windows, and editable plot popouts. It fits current data rather than restoring an earlier App-specified range; other plots keep their viewports.
+
 The native runtime installs one top-level **Tools** menu so framework-owned utilities do not compete with the App's workflow controls:
 
 - **Copy Main Plots** copies the active workspace page as one image, retaining its plot arrangement, current viewports, legends, colorbars, and both Y axes. Nested tabs contribute only their selected page. An empty workspace reports that no plots are available.

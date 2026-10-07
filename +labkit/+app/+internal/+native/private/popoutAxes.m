@@ -57,6 +57,7 @@ function newFig = popoutAxes(srcAx, varargin)
         end
     end
     applyAxesState(srcAx, dstAx);
+    labkit.app.internal.native.AxesNavigation.installRestore(dstAx);
     if opts.Toolbar
         createPopoutToolbar(newFig, dstAx, opts.Execute);
     end

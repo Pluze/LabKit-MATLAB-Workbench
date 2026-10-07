@@ -2,6 +2,7 @@ classdef (Hidden, Sealed) AxesNavigation
     % Native wheel ownership, visible-target routing and explicit dual-Y choice.
     methods (Static)
         function install(ax)
+            labkit.app.internal.native.AxesNavigation.installRestore(ax);
             interactions=ax.Interactions;
             keep=arrayfun(@(v) ~contains(lower(string(class(v))),"zoom"),interactions);
             if isempty(interactions)
@@ -69,6 +70,19 @@ classdef (Hidden, Sealed) AxesNavigation
                 parent=node.Parent;
                 if isa(node,'matlab.ui.container.Tab') && parent.SelectedTab~=node,visible=false;return;end
                 node=parent;
+            end
+        end
+        function installRestore(ax)
+            toolbar = ax.Toolbar;
+            if isempty(toolbar), return; end
+            % Default toolbar buttons are created lazily by MATLAB.
+            if isempty(toolbar.Children)
+                toolbar = axtoolbar(ax, 'default');
+            end
+            buttons = findall(toolbar, 'Icon', 'restoreview');
+            for button = reshape(buttons, 1, [])
+                button.ButtonPushedFcn = @(~, ~) ...
+                    labkit.app.internal.native.AxesNavigation.refit(ax);
             end
         end
         function refit(axes,freeze)
