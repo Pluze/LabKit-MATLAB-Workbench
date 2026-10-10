@@ -23,11 +23,12 @@ catch cause
     cache.filepath = filepath;
     cache.filePreview = preview;
     applicationState.session.cache = cache;
+    applicationState = ecg_print.analysisRun.resetRange(applicationState);
     applicationState.session.workflow.importStatus = ...
         "Parse failed. Inspect header/settings, then refresh: " + ...
         cause.message;
     applicationState.project.parameters.channel = "(none)";
-    applicationState.project.results.lastAnalysis = struct();
+    applicationState.project.results = struct();
 
     callbackContext.log("error", "ecg_print.sourcefiles.refreshimport.failed", ...
         "Recording import failed.");
@@ -36,19 +37,14 @@ catch cause
 end
 cache.filePreview = preview;
 cache.plotViewRevision = plotViewRevision;
+applicationState.session.analysisStatus = "Ready to analyze.";
+applicationState.session.importDirty = false;
 applicationState.session.cache = cache;
 applicationState.session.workflow.importStatus = status;
 applicationState.project.parameters.channel = string( ...
     cache.signal.displayName);
-if isfield(applicationState.project.parameters, ...
-        "analysisBandAutomatic") && ...
-        applicationState.project.parameters.analysisBandAutomatic
-    applicationState.project.parameters.lowCut = 0;
-    applicationState.project.parameters.highCut = 0.5 * cache.signal.fs;
-end
-applicationState.project.parameters.roiStart = 0;
-applicationState.project.parameters.roiEnd = max(cache.signal.time);
-applicationState.project.results.lastAnalysis = struct();
+applicationState = ecg_print.analysisRun.resetRange(applicationState);
+applicationState.project.results = struct();
 
 callbackContext.log("info", "ecg_print.sourcefiles.refreshimport.completed", sprintf( ...
     "Imported %d recording channel(s).", numel(cache.channelItems)));

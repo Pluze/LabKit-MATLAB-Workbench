@@ -1,19 +1,20 @@
-function project = ecgWorkflowProject(rootFolder)
+function project = ecgWorkflowProject(rootFolder, durationSec)
 %ECGWORKFLOWPROJECT Create the recording consumed by this workflow spec.
     arguments
         rootFolder (1, 1) string
+        durationSec (1, 1) double = 3
     end
 
     csvPath = string(fullfile(rootFolder, "recording.csv"));
 
     fs = 500;
-    durationSec = 3;
     time = (0:(1 / fs):durationSec).';
     ecg = syntheticEcg(time, 1.15);
     motion = 0.10 .* sin(2 .* pi .* 0.7 .* time) + 0.035 .* sin(2 .* pi .* 3.3 .* time);
     contact = 1.0 + 0.06 .* sin(2 .* pi .* 0.05 .* time) + 0.02 .* syntheticNoise(time, 0.37);
-    T = table(time, ecg, motion, contact, ...
-        'VariableNames', {'time_s', 'ECG', 'Motion', 'ContactQuality'});
+    sampleNum=(0:numel(time)-1)';
+    T = table(time, ecg, motion, contact, sampleNum, ...
+        'VariableNames', {'time_s', 'ECG', 'Motion', 'ContactQuality', 'sampleNum'});
     writetable(T, char(csvPath));
 
     project = ecg_print.initialData();
