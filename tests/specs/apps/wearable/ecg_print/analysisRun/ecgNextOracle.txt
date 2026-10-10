@@ -1,0 +1,17 @@
+Synthetic numerical oracle; no participant, device, or laboratory data.
+Generated with unmodified dbp-osel/ECGNExT NoiseExtractClass.ecgNoiseExtractor
+at commit 972c66cb274319acf705776d723b8e52372e22f0.
+40001 samples, 1000 Hz. R indices: 1001 + cumulative repetitions of
+[870 940 910 880], retained below 39000. At each R, relative time u:
+P = .14 exp(-((u+.18)/.035)^2)
+Q = -.18 exp(-((u+.025)/.012)^2)
+R = exp(-(u/.012)^2)
+S = -.25 exp(-((u-.025)/.014)^2)
+T = .3 exp(-((u-.27)/.065)^2)
+Raw = sum(PQRST) + .08 sin(2 pi 60 t) + .015 sin(2 pi 17.173 t)
+      + .12 sin(2 pi .16 t).
+Bandpassed: MATLAB R2026a butter(5,[.5 40]/500), zp2sos, filtfilt(sos,g,raw).
+Noise and plotTime: official code on raw, bandpassed, rPeaks, fs.
+Tests consume frozen vectors, not a duplicate implementation or Toolbox.
+Tolerances: extraction 1e-12; Base MATLAB SOS 2e-10; prepared extraction 2e-9
+allows filter roundoff propagated through alignment, median and subtraction.

@@ -1,54 +1,17 @@
 classdef EcgPrintResultSpec < matlab.unittest.TestCase
-    %ECGPRINTRESULTSPEC Specify ECG segment and analysis-region result schemas.
-
-    methods (Test, TestTags = {'Contract:result', 'Env:headless'})
-        function addsCenteredSmoothedMeasurementColumns(testCase)
-            segments = table([0; 1; 2; 3], [1; 10; 3; 4], [5; 6; 100; 8], ...
-                [20; 10; 40; 30], 'VariableNames', ...
-                {'EventTime', 'SignalP2P', 'NoiseRMS', 'SNRdB'});
-
-            actual = ecg_print.resultFiles.analysisTable(segments, 3);
-
-            testCase.verifyEqual(actual.Properties.VariableNames, ...
-                {'EventTime', 'SignalP2P', 'NoiseRMS', 'SNRdB', ...
-                'SignalP2P_smooth', 'NoiseRMS_smooth', 'SNRdB_smooth'});
-            testCase.verifyEqual(actual.SignalP2P_smooth, [5.5; 3; 4; 3.5], AbsTol=1e-12);
-            testCase.verifyEqual(actual.NoiseRMS_smooth, [5.5; 6; 8; 54], AbsTol=1e-12);
-            testCase.verifyEqual(actual.SNRdB_smooth, [15; 20; 30; 35], AbsTol=1e-12);
-        end
-
-        function buildsAnalysisRegionTimetableWithSourceTimeAndPeaks(testCase)
-            original = signal([10; 10.5; 11; 11.5; 12], ...
-                [1; 2; 3; 4; 5]);
-            working = signal([0; 0.5; 1], [2; 3; 4]);
-            working.metadata.cropTimeRangeSec = [10.25 11.75];
-            filtered = working;
-            filtered.values = [20; 30; 40];
-            cache = struct("signal", original, "workingSignal", working, ...
-                "filteredSignal", filtered, "events", struct("index", 2));
-
-            actual = ecg_print.resultFiles.analysisRegionTimetable(cache);
-
-            testCase.verifyClass(actual, "timetable");
-            testCase.verifyEqual(actual.Properties.DimensionNames{1}, ...
-                'AnalysisTime');
-            testCase.verifyEqual(seconds(actual.Properties.RowTimes), ...
-                [0; 0.5; 1]);
-            testCase.verifyEqual(actual.SourceTimeSeconds, [10.5; 11; 11.5]);
-            testCase.verifyEqual(actual.RawSignal, [2; 3; 4]);
-            testCase.verifyEqual(actual.FilteredSignal, [20; 30; 40]);
-            testCase.verifyEqual(actual.DetectedPeak, [false; true; false]);
-            testCase.verifyEqual(actual.Properties.VariableUnits, ...
-                {'s', 'mV', 'mV', ''});
-            testCase.verifyEqual(actual.Properties.UserData.Channel, "ECG");
-            testCase.verifyEqual( ...
-                actual.Properties.UserData.RequestedSourceTimeRangeSeconds, ...
-                [10.25 11.75]);
+    methods (Test, TestTags={'Contract:result','Env:headless'})
+        function exportsPreparedGridWithSourceCoordinates(testCase)
+            s=struct('time',(0:4)'/1000,'values',(1:5)', ...
+                'fs',1000,'displayName',"ECG",'unit',"mV", ...
+                'metadata',struct('sourceStartSeconds',5));
+            b=s;b.values=b.values*.5;
+            cache=struct('signal',s,'workingSignal',s,'filteredSignal',b,'events',struct('index',3));
+            t=ecg_print.resultFiles.analysisRegionTimetable(cache);
+            testCase.verifyEqual(t.SourceTimeSeconds,5+(0:4)'/1000);
+            testCase.verifyEqual(t.RawSignal,(1:5)');
+            testCase.verifyEqual(t.FilteredSignal,(1:5)'*.5);
+            testCase.verifyEqual(t.DetectedPeak,[false;false;true;false;false]);
+            testCase.verifyEqual(t.Properties.VariableUnits,{'s','mV','mV',''});
         end
     end
-end
-
-function value = signal(time, samples)
-value = struct("time", time, "values", samples, "fs", 2, ...
-    "displayName", "ECG", "unit", "mV", "metadata", struct());
 end

@@ -5,9 +5,9 @@ function writeWaveformPng(request, outputPath)
     figureHandle = figure("Visible", "off", "Color", "white");
     cleanup = onCleanup(@() close(figureHandle));
     ax = axes(figureHandle);
-    ecg_print.analysisRun.drawPreview( ...
-        ax, struct("axisId", "wave", "kind", "wave", ...
-        "request", request, "analysis", table(), ...
-        "smoothBeats", 1, "unit", ""));
+    plot(ax,request.x,request.y,'Color',request.lineColor);
+    hold(ax,'on');scatter(ax,request.peakX,request.peakY,12,request.peakColor,'filled');
+    title(ax,request.title,'Interpreter','none');xlabel(ax,request.xLabel);
+    ylabel(ax,request.yLabel);grid(ax,'on');
     exportgraphics(ax, outputPath, "Resolution", 300);
 end

@@ -1,26 +1,12 @@
-function applicationState = exportSegments( ...
-        applicationState, callbackContext)
-%EXPORTSEGMENTS Write per-segment ECG measurements.
-measurements = applicationState.session.cache.measurements;
-if isempty(measurements) || isempty(measurements.perSegment)
-    callbackContext.alert( ...
-        "Analyze a signal before exporting segment SNR.", ...
-        "No segment SNR");
-    return;
+function applicationState = exportSegments(applicationState,callbackContext)
+%EXPORTSEGMENTS Export the exact per-beat table displayed by the App.
+result=applicationState.session.cache.ecgNext;
+if isempty(result)||~result.ok
+    callbackContext.alert("Analyze ECG before exporting.","No analysis result");return;
 end
-chosen = callbackContext.chooseOutputFile( ...
-    ["*.csv", "CSV files (*.csv)"], "ecg_segment_snr.csv");
-if chosen.Cancelled
-    callbackContext.log("info", "ecg_print.resultfiles.exportsegments.cancelled", ...
-        "Segment SNR export cancelled.");
-    return;
-end
-filepath = string(chosen.Value);
-analysis = ecg_print.resultFiles.analysisTable( ...
-    measurements.perSegment, ...
-    applicationState.project.parameters.smoothBeats);
-writetable(analysis, filepath);
-
-callbackContext.log("info", "ecg_print.resultfiles.exportsegments.completed", ...
-    "Exported the segment SNR CSV.");
+chosen=callbackContext.chooseOutputFile(["*.csv","CSV files (*.csv)"],"ecg_beats.csv");
+if chosen.Cancelled,return;end
+writetable(result.perBeat,string(chosen.Value));
+callbackContext.log("info","ecg_print.resultfiles.beats.completed", ...
+    "Exported the ECGNExT per-beat table.",Attributes=struct('beatCount',height(result.perBeat)));
 end

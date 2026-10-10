@@ -84,18 +84,8 @@ end
 
 function sourceTime = sourceTimes(cache, analysisTime)
     sourceTime = analysisTime;
-    working = cache.workingSignal;
-    if ~isfield(working, "metadata") || ...
-            ~isfield(working.metadata, "cropTimeRangeSec") || ...
-            ~isfield(cache, "signal") || isempty(cache.signal)
-        return;
-    end
-    range = double(working.metadata.cropTimeRangeSec(:).');
-    originalTime = double(cache.signal.time(:));
-    keep = originalTime >= range(1) & originalTime <= range(2);
-    selected = originalTime(keep);
-    if numel(selected) == numel(analysisTime)
-        sourceTime = selected;
+    if isfield(cache.workingSignal.metadata,'sourceStartSeconds')
+        sourceTime = analysisTime + cache.workingSignal.metadata.sourceStartSeconds;
     end
 end
 
