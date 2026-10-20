@@ -3,12 +3,12 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
 
     methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
         function importsRecommendedWindowAndRestoresItAfterFullRange(testCase)
-            % Oracle: a synthetic arc has a 10 Hz valley and dominant tail;
+            % Oracle: an elevated-boundary arc has a 10 Hz valley and dominant tail;
             % import must crop automatically and both range actions must work.
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             f = logspace(5,-1,19).';
-            y = [1 2 4 8 12 16 18 16 12 8 5 3 2 3 6 20 60 80 100].';
+            y = [10 10 11 12 13 15 16 15 12 10 8 6 5 6 9 25 60 80 100].';
             path = fullfile(folder, "spectrum.DTA");
             lines = strings(numel(f)+4, 1);
             lines(1:4) = ["EXPLAIN"; "ZCURVE" + char(9) + "TABLE"; ...
@@ -34,28 +34,50 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             fitButton = findall(runtime.figureHandle(), "Tag", "fitOverviewAxes");
             testCase.verifyEqual(ancestor(fitButton, "uipanel"), frequency);
             testCase.verifyEqual(frequency.Parent, plotPanel.Parent);
-            testCase.verifyEqual(frequency.Layout.Row, plotPanel.Layout.Row);
-            testCase.verifyLessThan(frequency.Layout.Column, plotPanel.Layout.Column);
+            testCase.verifyLessThan(frequency.Layout.Row, plotPanel.Layout.Row);
+            testCase.verifyEqual(frequency.Layout.Column, plotPanel.Layout.Column);
             testCase.verifyEqual(string(ancestor(frequency, "uitab").Title), "Nyquist + Bode");
             curve = findall(ax, "Type", "line");
             testCase.verifyEqual(sum(isfinite(curve.XData)), 13);
-            testCase.verifyEqual(string(plotPanel.Title), "Nyquist (10 – 1e+05 Hz)");
-            testCase.verifyEmpty(ax.Title.String);
+            testCase.verifyEqual(string(ax.Title.String), "Nyquist (10 Hz – 100 kHz)");
+            testCase.verifyEmpty(plotPanel.Title);
+            testCase.verifyEqual(string(plotPanel.BorderType), "none");
+            maximumLabel = findall(runtime.figureHandle(), "Tag", "nyquistMaximum.label");
+            testCase.verifyEqual(string(maximumLabel.Text), "Max · 100 kHz");
             runtime.invokeAction("resetFrequency");
             curve = findall(ax, "Type", "line");
             testCase.verifyEqual(sum(isfinite(curve.XData)), 19);
-            testCase.verifyEqual(string(plotPanel.Title), "Nyquist (0.1 – 1e+05 Hz)");
+            testCase.verifyEqual(string(ax.Title.String), "Nyquist (0.1 Hz – 100 kHz)");
             runtime.invokeAction("recommendFrequency");
             curve = findall(ax, "Type", "line");
             testCase.verifyEqual(sum(isfinite(curve.XData)), 13);
-            testCase.verifyEqual(string(plotPanel.Title), "Nyquist (10 – 1e+05 Hz)");
+            testCase.verifyEqual(string(ax.Title.String), "Nyquist (10 Hz – 100 kHz)");
             testCase.verifyEqual(runtime.State.session.cache.items.negZimag_ohm(:), y);
+            capture = labkittest.nativeGraphicsCapability("interface-capture");
+            if capture.Available
+                fig = runtime.figureHandle();
+                path = fullfile(folder, "overview.png");
+                exportapp(fig, path);
+                % Hidden capture settles web-grid geometry without delivering
+                % native resize events; exercise the installed panel callback.
+                plotPanel.SizeChangedFcn(plotPanel, []);
+                verifyFilledViewport(testCase, ax);
+                center = [mean(ax.XLim), mean(ax.YLim)];
+                fig.Position(3:4) = fig.Position(3:4) + [160 -80];
+                drawnow;
+                exportapp(fig, path);
+                % Hidden capture settles web-grid geometry without delivering
+                % native resize events; exercise the installed panel callback.
+                plotPanel.SizeChangedFcn(plotPanel, []);
+                verifyFilledViewport(testCase, ax);
+                testCase.verifyEqual([mean(ax.XLim), mean(ax.YLim)], center, AbsTol=1e-9);
+            end
             clear cleanup
         end
 
-        function adjustsNyquistFrequencyWithoutChangingBodeOrSource(testCase)
+        function linksOverviewFrequencyWithoutChangingCustomOrSource(testCase)
             % Oracle: plotted coordinates match the exact selected source
-            % frequencies; Bode/custom data and inspected viewports stay fixed.
+            % frequencies in all overview axes; custom data/view and source stay fixed.
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             definition = eis.definition();
@@ -69,10 +91,7 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             nyquist = findall(figureValue, "Tag", "nyquistOverview.nyquist");
             bode = findall(figureValue, "Tag", "bodeOverview.magnitude");
             custom = findall(figureValue, "Tag", "plot.main");
-            [~, bodeViewport] = inspectViewport(bode);
             [~, customViewport] = inspectViewport(custom);
-            bodeLine = findall(bode, "Type", "line");
-            bodeData = bodeLine.XData;
             limits = runtime.State.session.nyquist.limits;
             cutoff = mean(limits);
             runtime.applyControlValue("nyquistMinimum", cutoff);
@@ -80,17 +99,22 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             expected = original.Zreal_ohm(:).' / 1000;
             expected(log10(original.freq_Hz) < cutoff) = NaN;
             testCase.verifyEqual(curve.XData, expected);
-            verifyViewport(testCase, bode, bodeViewport);
             verifyViewport(testCase, custom, customViewport);
             bodeLine = findall(bode, "Type", "line");
-            testCase.verifyEqual(bodeLine.XData, bodeData);
+            expectedFrequency = original.freq_Hz(:).';
+            expectedFrequency(log10(expectedFrequency) < cutoff) = NaN;
+            testCase.verifyEqual(bodeLine.XData, expectedFrequency);
+            testCase.verifyEqual(bode.XLim, 10.^[cutoff limits(2)], RelTol=1e-12);
+            phase = findall(figureValue, "Tag", "bodeOverview.phase");
+            phaseLine = findall(phase, "Type", "line");
+            testCase.verifyEqual(phaseLine.XData, expectedFrequency);
+            testCase.verifyEqual(phase.XLim, bode.XLim, RelTol=1e-12);
             testCase.verifyEqual(runtime.State.session.cache.items, original);
             % Custom coordinates do not invalidate either overview renderer.
             runtime.applyControlValue("xAxis", "Freq (Hz)");
             runtime.applyControlValue("logX", true);
             testCase.verifyTrue(isgraphics(curve) && isgraphics(bodeLine));
             testCase.verifyEqual(curve.XData, expected);
-            verifyViewport(testCase, bode, bodeViewport);
             [~, inspected] = inspectViewport(nyquist);
             runtime.applyControlValue("showMarkers", false);
             verifyViewport(testCase, nyquist, inspected);
@@ -296,4 +320,14 @@ function verifyViewport(testCase, ax, expected)
 actual = [ax.XLim, ax.YLim];
 tolerance = max(1, max(abs(expected))) * 1e-9;
 testCase.verifyEqual(actual, expected, AbsTol=tolerance);
+end
+
+function verifyFilledViewport(testCase, ax)
+% A fixed equal-unit plot fills its inner box only when these ratios agree.
+position = getpixelposition(ax);
+allocation = ax.Position;
+inner = ax.InnerPosition;
+pixels = inner(3:4) .* position(3:4) ./ allocation(3:4);
+testCase.verifyEqual(diff(ax.XLim)/diff(ax.YLim), pixels(1)/pixels(2), RelTol=.02);
+testCase.verifyEqual(ax.DataAspectRatio(1), ax.DataAspectRatio(2), AbsTol=1e-12);
 end
