@@ -100,11 +100,24 @@ classdef Mark10WorkflowSpec < matlab.unittest.TestCase
             runtime.invokeAction("openRecording");
             testCase.verifyEqual(runtime.State.session.playback.source, string(input("path")));
             runtime.invokeAction("playRecording");
-            testCase.verifyTrue(runtime.State.session.playback.playing);
-            runtime.invokeAction("pauseRecording");
+            % Hidden rendering can outlast the short replay. Completion is
+            % valid only at the final sample; otherwise exercise Pause.
+            if runtime.State.session.playback.playing
+                runtime.invokeAction("pauseRecording");
+            else
+                testCase.verifyEqual(runtime.State.session.playback.cursor, ...
+                    runtime.State.session.playback.count);
+            end
             testCase.verifyFalse(runtime.State.session.playback.playing);
             runtime.invokeAction("refitReplayAxes");
 
+            overviewAxes=findall(runtime.figureHandle(),"Tag","analysisOverview.forceTime");
+            recordingLines=findall(overviewAxes,"Type","line");
+            testCase.assertNotEmpty(recordingLines);
+            runtime.applyControlValue("analysisForceZero",1);
+            testCase.verifyTrue(all(isgraphics(recordingLines)), ...
+                "A pending zero draft must not redraw the recording.");
+            testCase.verifyEqual(runtime.State.session.analysis.forceZero_N,0);
             runtime.applyControlValue("analysisForceZero",0);
             runtime.applyControlValue("analysisTravelZero",0);
             runtime.invokeAction("applyAnalysisZero");
@@ -232,6 +245,26 @@ classdef Mark10WorkflowSpec < matlab.unittest.TestCase
                 exportapp(diagnostic,labkittest.visualEvidencePath("mark10-diagnostics",".png"));
                 exportapp(runtime.figureHandle(),labkittest.visualEvidencePath("mark10-multi-window",".png"));
             end
+            % The full-width curve sits above results; fitting controls stay
+            % in the original sidebar. Reset must preserve fitted values.
+            fitPanel=findall(runtime.figureHandle(),"Tag","fitSection");
+            curvePanel=findall(runtime.figureHandle(),"Tag","modulusPlot");
+            testCase.verifyEqual(string(ancestor(fitPanel,"uitab").Title),"Analysis");
+            resultPanel=findall(runtime.figureHandle(),"Tag","modulusResults.panel");
+            testCase.verifyEqual(curvePanel.Parent,resultPanel.Parent);
+            testCase.verifyEqual(curvePanel.Layout.Column,resultPanel.Layout.Column);
+            testCase.verifyLessThan(curvePanel.Layout.Row,resultPanel.Layout.Row);
+            timeControl=findall(runtime.figureHandle(),"Tag","analysisStart");
+            testCase.verifyEqual(string(ancestor(timeControl,"uitab").Title),"Recording Review");
+            fitResults=runtime.State.session.analysis.resultRows;
+            recordingLines=findall(overviewAxes,"Type","line");
+            strainAxes.XLim=[-200 -100];strainAxes.YLim=[-10 -5];
+            runtime.invokeAction("refitAnalysisAxes");
+            testCase.verifyTrue(all(isgraphics(recordingLines)), ...
+                "Resetting modulus coordinates must not redraw the recording.");
+            testCase.verifyGreaterThan(strainAxes.XLim(2),5);
+            testCase.verifyGreaterThan(strainAxes.YLim(2),0);
+            testCase.verifyEqual(runtime.State.session.analysis.resultRows,fitResults);
             strainAxes.XLim=[2 6];strainAxes.YLim=[.02 .06];
             analysisPage=findall(runtime.figureHandle(),"Tag","analysisPage");
             plotsPage=findall(runtime.figureHandle(),"Tag","plotsPage");

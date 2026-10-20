@@ -125,8 +125,8 @@ classdef (Hidden, Sealed) CompiledDefinition
         end
 
         function tf = hasSignal(obj, binding)
-            tf = any(cellfun(@(candidate) ...
-                isequaln(candidate, binding), obj.SignalBindings));
+            index = find(obj.signalIds() == binding.Id, 1);
+            tf = ~isempty(index) && isequaln(obj.SignalBindings{index}, binding);
         end
     end
 end

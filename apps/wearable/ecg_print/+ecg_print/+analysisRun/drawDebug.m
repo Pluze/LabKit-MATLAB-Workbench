@@ -2,7 +2,8 @@ function drawDebug(axesById,model)
 %DRAWDEBUG Processing stages and per-beat results on a shared time axis.
 ids=["raw","template","residual","noise","metricNoise","beatNoise","beatPeak","beatSnr"];
 axes=arrayfun(@(id)axesById.(id),ids);
-linkaxes(axes,'off');
+hasSignal = ~isempty(model.raw.time);
+if ~hasSignal, ecg_print.analysisRun.linkTimeAxes(axes, false); end
 for j=1:8
     ax=axes(j);xlim(ax,model.limits);legend(ax,'off');delete(allchild(ax));cla(ax);hold(ax,'on');
     ax.Layout.Row=j;ax.Visible='on';ax.YLimMode='auto';ax.Toolbar.Visible='on';
@@ -63,5 +64,6 @@ else
     end
 
 end
-linkaxes(axes,'x');xlim(axes(1),model.limits);
+ecg_print.analysisRun.linkTimeAxes(axes, hasSignal);
+xlim(axes(1),model.limits);
 end

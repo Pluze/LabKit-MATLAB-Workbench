@@ -66,6 +66,23 @@ class WorkflowContracts(unittest.TestCase):
                 for step in action_steps(job, "matlab-actions/setup-matlab"):
                     self.assertNotIn("products", step.get("with", {}))
 
+    def test_mac_app_partitions_are_complete_and_dispatch_their_indices(self):
+        platform = workflow("ci")["jobs"]["platform-matrix"]
+        rows = [r for r in platform["strategy"]["matrix"]["include"] if r["id"] == "macos"]
+        counts = {r.get("apps_shard_count", 1) for r in rows}
+        self.assertEqual(len(counts), 1)
+        count = counts.pop()
+        self.assertGreater(count, 1)
+        self.assertEqual(sorted(r["apps_shard_index"] for r in rows), list(range(1, count + 1)))
+        self.assertEqual(len({r["shard_id"] for r in rows}), count)
+        for row in rows:
+            self.assertEqual(row["profiles"], "apps")
+            self.assertFalse(row["run_headless"])
+            self.assertTrue(row["run_apps"])
+        apps = next(s for s in platform["steps"] if s.get("id") == "apps")
+        self.assertEqual(apps["env"]["LABKIT_TEST_SHARD_INDEX"], "${{ matrix.apps_shard_index || 1 }}")
+        self.assertEqual(apps["env"]["LABKIT_TEST_SHARD_COUNT"], "${{ matrix.apps_shard_count || 1 }}")
+
     def test_feedback_can_cancel_and_hands_off_before_matlab(self):
         spec = workflow("development-feedback")
         # PyYAML's YAML 1.1 resolver reads the GitHub key `on` as True.

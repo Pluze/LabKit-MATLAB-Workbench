@@ -20,7 +20,12 @@ function node = slider(id, varargin)
 %   id - Unique MATLAB identifier for the layout target.
 %
 % Options:
-%   Label - Display text. Default: id.
+%   Label - Display text. Default: id. Empty text removes the label column;
+%       use a titled parent group to label a compact slider.
+%   LabelPosition - "left" (default) or "top" for a narrow vertical strip.
+%   ShowValue - Show the paired numeric spinner. Default: true. Set false
+%       when an App supplies a meaningful value in its dynamic label. Slider
+%       keyboard input and commit semantics are unchanged.
 %   Value - Finite numeric scalar. Default: lower Limits value.
 %   Limits - Increasing finite numeric 1-by-2 row. Default: [0 1].
 %   Step - Positive numeric scalar. Default: [].

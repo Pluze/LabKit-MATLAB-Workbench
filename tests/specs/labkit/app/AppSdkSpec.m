@@ -37,7 +37,30 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(labkit.app.internal.contract.DefinitionInspector.signalIds(app), ...
                 "run__pressed");
             testCase.verifyFalse(isprop(app, "TargetIds"));
+            % The identifier narrows lookup, but cannot authorize a different
+            % callback with the same target and signal.
+            foreign = labkit.app.internal.contract.SignalBinding( ...
+                "run", "pressed", @refreshStatusOnly);
+            testCase.verifyError(@() runtime.dispatch(foreign, []), ...
+                "labkit:app:contract:UnknownReference");
             clear cleanup
+        end
+
+        function snapshotFragmentsRejectDuplicateTargetsPerOperation(testCase)
+            % Oracle: two values for one control are ambiguous, while text
+            % and enabled state for that same control are distinct contracts.
+            base = labkit.app.view.Snapshot().value("gain", 3);
+            fragment = labkit.app.view.Snapshot().text("gain", "Gain").enabled("gain", true);
+            combined = base.include(fragment);
+            testCase.verifyError(@() combined.value("gain", 4), ...
+                "labkit:app:contract:DuplicateId");
+            testCase.verifyError(@() combined.include(fragment), ...
+                "labkit:app:contract:DuplicateId");
+            testCase.verifyError(@() base.include( ...
+                labkit.app.view.Snapshot().value("gain", 4)), ...
+                "labkit:app:contract:DuplicateId");
+            % Failed composition does not mutate either immutable input.
+            testCase.verifyEqual(base.include(fragment), combined);
         end
 
         function validatesDefinitionMetadataAndCallbackRoles(testCase)
@@ -82,6 +105,23 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 Ids=["a", "b"], Indices=1), "labkit:app:contract:InvalidValue");
             testCase.verifyError(@() labkit.app.event.TableCellSelection([1, 1; 1, 1]), ...
                 "labkit:app:contract:InvalidValue");
+        end
+
+        function validatesMixedGroupColumnWidths(testCase)
+            % Oracle: a width applies to each child only in horizontal layout.
+            children = {labkit.app.layout.button("action", "Run", @runProbe), ...
+                labkit.app.layout.plotArea("result", @drawNothing)};
+            group = labkit.app.layout.group("row", children, ...
+                Layout="horizontal", ColumnWidths={240, '1x'});
+            app = AppSdkSpec.definition(labkit.app.layout.workbench({}, ...
+                Workspace=labkit.app.layout.workspace(group)));
+            testCase.verifyClass(app, "labkit.app.Definition");
+            testCase.verifyError(@() labkit.app.layout.group("row", children, ...
+                ColumnWidths={240, '1x'}), "labkit:app:contract:InvalidValue");
+            testCase.verifyError(@() labkit.app.layout.group("row", children, ...
+                Layout="horizontal", ColumnWidths={240}), "labkit:app:contract:InvalidValue");
+            testCase.verifyError(@() labkit.app.layout.group("row", children, ...
+                Layout="horizontal", ColumnWidths={0, '1x'}), "labkit:app:contract:InvalidValue");
         end
 
         function rejectsLimitsThatOlderNativeControlsCannotRepresent(testCase)
@@ -557,6 +597,49 @@ classdef AppSdkSpec < matlab.unittest.TestCase
     end
 
     methods (Test, TestTags = {'Contract:source', 'Env:hidden-gui'})
+        function placesCompactControlsBesideGrowingWorkspacePlot(testCase)
+            % Oracle: controls stay in the fixed left column; plot and table
+            % occupy the same growing row above a second workspace plot.
+            controls = labkit.app.layout.section("settings", "Settings", { ...
+                labkit.app.layout.slider("amount", Label="Minimum · 100 Hz", ...
+                    LabelPosition="top", ShowValue=false, ...
+                    Bind="project.parameters.gain", Limits=[0 10])});
+            row = labkit.app.layout.group("comparison", {controls, ...
+                labkit.app.layout.plotArea("result", @drawNothing), ...
+                labkit.app.layout.dataTable("values")}, ...
+                Layout="horizontal", ColumnWidths={240, '1x', '1x'});
+            workspace = labkit.app.layout.workspace().page("overview", "Overview", { ...
+                row, labkit.app.layout.plotArea("context", @drawNothing)});
+            app = AppSdkSpec.definition(labkit.app.layout.workbench({}, Workspace=workspace), ...
+                "CreateState", @createRuntimeState);
+            root = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            journal = labkittest.temporarySessionJournal(app, root);
+            runtime = labkittest.createMatlabRuntime(app, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            fig = runtime.figureHandle();
+            panel = oneTagged(fig, "settings");
+            result = oneTagged(fig, "result");
+            rowGrid = oneTagged(fig, "comparison.layout");
+            pageGrid = oneTagged(fig, "overview.layout");
+            testCase.verifyEqual(panel.Parent, result.Parent);
+            testCase.verifyEqual(panel.Layout.Column, 1);
+            testCase.verifyEqual(result.Layout.Column, 2);
+            testCase.verifyEqual(rowGrid.ColumnWidth, {240, '1x', '1x'});
+            testCase.verifyEqual(string(pageGrid.RowHeight), ["1x", "1x"]);
+            spinner = oneTagged(fig, "amount");
+            label = oneTagged(fig, "amount.label");
+            testCase.verifyEqual(label.Parent.ColumnWidth, {'1x'});
+            testCase.verifyEqual(label.Layout.Row, 1);
+            testCase.verifyEqual(spinner.UserData.LayoutContainer.RowHeight, {22, 30});
+            testCase.verifyEqual(string(spinner.Visible), "off");
+            testCase.verifyEqual(spinner.UserData.Slider.Parent.Layout.Row, 2);
+            testCase.verifyGreaterThan(spinner.UserData.Slider.Position(3), 80);
+            runtime.applyControlValue("amount", 4);
+            testCase.verifyEqual(runtime.State.project.parameters.gain, 4);
+            clear cleanup
+        end
+
         function restoreViewRefitsCurrentDataAndBothYRulers(testCase)
             % Oracle: both data ranges reappear, while a neighboring plot stays zoomed.
             % A native restore callback without registered history leaves the limits unchanged.
@@ -1182,6 +1265,10 @@ classdef AppSdkSpec < matlab.unittest.TestCase
 
             testCase.verifyEqual(spinner.Value, 1);
             testCase.verifyEqual(string(label.Text), "Radius (px)");
+            runtime.applyControlValue("dynamicSlider", 2);
+            testCase.verifyEqual(label.Parent.ColumnWidth{1}, 0);
+            runtime.applyControlValue("dynamicSlider", 0);
+            testCase.verifyGreaterThan(label.Parent.ColumnWidth{1}, 0);
             clear cleanup
         end
 
@@ -1682,7 +1769,9 @@ end
 
 function view = presentDynamicSlider(state)
 label = "Strength (%)";
-if state.session.sliderValue > 0
+if state.session.sliderValue == 2
+    label = "";
+elseif state.session.sliderValue > 0
     label = "Radius (px)";
 end
 view = labkit.app.view.Snapshot() ...

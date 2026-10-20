@@ -51,7 +51,19 @@ end
 function runTests(profile)
 root = fileparts(mfilename("fullpath"));
 addpath(fullfile(root, "tests"));
-labkittest.run(Profile=profile, RunName=profile, ...
+selectors = {"Profile", profile};
+if profile == "apps"
+    index = string(getenv("LABKIT_TEST_SHARD_INDEX"));
+    count = string(getenv("LABKIT_TEST_SHARD_COUNT"));
+    if (strlength(index) == 0) ~= (strlength(count) == 0)
+        error("LabKit:TestPlan:InvalidShard", "Set both App partition variables or neither.");
+    end
+    if strlength(index) > 0
+        selectors = [selectors, {"ShardIndex", str2double(index), ...
+            "ShardCount", str2double(count)}];
+    end
+end
+labkittest.run(selectors{:}, RunName=profile, ...
     ArtifactsRoot=fullfile(root, "artifacts", "test-results"));
 end
 

@@ -1,7 +1,8 @@
 function drawResults(axesById,model)
 %DRAWRESULTS ECG and time-indexed per-beat NST-centered noise, QRS amplitude and SNR.
 ids=["wave","noise","peak","ratio"];
-axes=arrayfun(@(id)axesById.(id),ids);linkaxes(axes,'off');
+axes=arrayfun(@(id)axesById.(id),ids);
+if model.showRecording, ecg_print.analysisRun.linkTimeAxes(axes, false); end
 for id=ids,labkit.app.plot.clearAxes(axesById.(id),ResetScale=true);end
 if model.showRecording
     ecg_print.analysisRun.drawRecording(struct('main',axesById.wave),model.recording);
@@ -32,7 +33,7 @@ for id=ids
     end
 end
 if ~model.showRecording
-    linkaxes(axes,'x');
+    ecg_print.analysisRun.linkTimeAxes(axes, ~isempty(model.time));
     if ~isempty(model.time)&&model.time(end)>model.time(1)
         xlim(axesById.wave,[model.time(1) model.time(end)]);
     end

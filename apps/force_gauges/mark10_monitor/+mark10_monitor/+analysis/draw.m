@@ -40,8 +40,8 @@ hold(ax,"off");grid(ax,"on");
 if model.curveReady,xlim(ax,paddedLimits(xBounds));ylim(ax,bounds);end
 convention="tension + / compression -";
 if model.experimentType=="Compression",convention="compression +";end
-xlabel(ax,"Engineering strain (%), "+convention);ylabel(ax,"Engineering stress (MPa)");
-title(ax,mark10_monitor.plotTitle("All Strain Windows",model.filename),Interpreter="none");
+xlabel(ax,["Engineering strain (%)"; convention]);ylabel(ax,"Engineering stress (MPa)");
+title(ax,"All Strain Windows",Interpreter="none");
 end
 
 function bounds=paddedLimits(values)

@@ -270,6 +270,15 @@ classdef FigureStudioWorkflowSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
             runtime.applyFileSelection("figFiles", sourcePath, 1);
 
+            % Selection updates the editor overlay without replacing the
+            % loaded native plot and its graphics state.
+            preview=findall(runtime.figureHandle(),"Tag","preview.main");
+            sourceLines=findall(preview,"Type","line");
+            testCase.assertNotEmpty(sourceLines);
+            runtime.applyTableSelection("objectTable",[1 1]);
+            testCase.verifyTrue(all(isgraphics(sourceLines)));
+            testCase.verifyNotEmpty(runtime.State.session.editor.document.selection);
+
             runtime.applyControlValue("annotationKind", "Text");
             runtime.applyControlValue("annotationText", "Peak A");
             runtime.applyControlValue("annotationX1", 1.5);

@@ -90,6 +90,8 @@ The package records displayed graphics in layer order. It supports audit, handof
 
 The editable document contains an exact pixel canvas, one or more normalized panels, axes and color metadata, visible graphic nodes, semantic groups, style rules, selection, warnings, and command history. Source plot coordinates are locked: presentation edits cannot silently mutate measured values. Annotations created in Studio are unlocked and can be moved, resized, duplicated, grouped, ordered, or deleted.
 
+Selecting objects updates the selection controls and bounds overlay without replacing the plotted objects or reapplying figure styling. Style and document edits update the affected preview when applied.
+
 Style resolution follows this order:
 
 1. source appearance;

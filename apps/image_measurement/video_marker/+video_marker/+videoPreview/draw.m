@@ -1,7 +1,6 @@
 function draw(axesById, model)
 %DRAW Render one frame with display-only skeleton and scale overlays.
 ax = axesById.video;
-view = captureView(ax, model.image);
 labkit.app.plot.clearAxes(ax);
 if isempty(model.image)
     title(ax, model.title);
@@ -47,26 +46,4 @@ title(ax, model.title);
 xlabel(ax, "");
 ylabel(ax, "");
 box(ax, "on");
-restoreView(ax, view);
-end
-
-function view = captureView(ax, imageData)
-view = struct("preserve", false, "x", [], "y", []);
-images = findobj(ax, Type="image");
-if isempty(images) || isempty(imageData)
-    return
-end
-oldSize = size(images(1).CData);
-newSize = size(imageData);
-if numel(oldSize) >= 2 && numel(newSize) >= 2 && ...
-        isequal(oldSize(1:2), newSize(1:2))
-    view = struct("preserve", true, "x", ax.XLim, "y", ax.YLim);
-end
-end
-
-function restoreView(ax, view)
-if view.preserve
-    ax.XLim = view.x;
-    ax.YLim = view.y;
-end
 end

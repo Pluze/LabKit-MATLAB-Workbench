@@ -175,6 +175,11 @@ the first attempt. Sandboxed `gh` cannot access the macOS Keychain; do not
 request reauthentication from that output. Diagnose launcher access when MATLAB
 exits before its build banner. Never open MATLAB IDE/Desktop; use bounded
 noninteractive processes. Do not run interactive workflows in `-batch`.
+Agent-driven execution and validation must never display, raise, or focus
+windows, figures, dialogs, or browser surfaces. Create MATLAB App test windows
+hidden from the outset (`LABKIT_GUI_TEST_MODE=hidden` and
+`DefaultFigureVisible=off`); do not show a window and hide it afterward.
+Use hidden rendering and exported artifacts for visual inspection.
 
 Before an App edit that risks unintended visual differences, capture the
 baseline unless the task deliberately changes the design. All App screenshots

@@ -32,7 +32,15 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
             runtime.applyControlValue("frameRate", 60);
             runtime.applyControlValue("pixelsPerUnit", 2);
             runtime.applyControlValue("unitName", "mm");
+            % Detection drafts cannot change an already-invalidated pose
+            % preview or discard the user's inspection zoom.
+            poseLines=findall(skeletonAxes,"Type","line");
+            testCase.assertNotEmpty(poseLines);
+            skeletonAxes.XLim=[1 3]; skeletonAxes.YLim=[2 4];
             runtime.applyControlValue("smoothWindow", 3);
+            testCase.verifyTrue(all(isgraphics(poseLines)));
+            testCase.verifyEqual(skeletonAxes.XLim,[1 3]);
+            testCase.verifyEqual(skeletonAxes.YLim,[2 4]);
             runtime.applyControlValue("detectionProminence", 1);
             runtime.applyControlValue("detectionMinHeightSigma", .5);
             runtime.applyControlValue("minLiftOffIntervalSeconds", .1);

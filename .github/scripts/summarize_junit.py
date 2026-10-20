@@ -91,7 +91,7 @@ def main() -> int:
     verdict = overall_verdict(profiles)
 
     lines = summary_header(args, profiles, verdict)
-    lines += profile_table(profiles)
+    lines += profile_table(profiles, args)
     lines += interpretation(args, profiles, verdict)
     if verdict != "passed":
         lines += failure_sections(profiles, args)
@@ -117,6 +117,8 @@ def parse_args() -> argparse.Namespace:
         default="headless,apps",
         help="Comma-separated profiles scheduled in this job",
     )
+    parser.add_argument("--partition-index", type=int, default=1)
+    parser.add_argument("--partition-count", type=int, default=1)
     parser.add_argument("--claim", required=True)
     parser.add_argument("--artifact-name", required=True)
     parser.add_argument("--artifacts-root", default="artifacts")
@@ -206,7 +208,7 @@ def summary_header(
     ]
 
 
-def profile_table(profiles: list[ProfileResult]) -> list[str]:
+def profile_table(profiles: list[ProfileResult], args: argparse.Namespace) -> list[str]:
     lines = [
         "## Validation evidence",
         "",
@@ -215,6 +217,9 @@ def profile_table(profiles: list[ProfileResult]) -> list[str]:
     ]
     for profile in profiles:
         label, purpose = PROFILE_METADATA[profile.key]
+        if profile.key == "apps" and args.partition_count > 1:
+            purpose = (f"Disjoint partition {args.partition_index}/{args.partition_count}; "
+                       "all partitions jointly retain the complete App profile")
         failed = profile.failures + profile.errors
         lines.append(
             f"| **{label}** | {profile.status} | {purpose} | "
@@ -480,6 +485,12 @@ def evidence_lines(args: argparse.Namespace) -> list[str]:
         "",
         f"- Artifact: `{args.artifact_name}` (retained for 14 days)",
     ]
+    if args.partition_count > 1:
+        lines.append(
+            f"- Reproduce this partition by setting `LABKIT_TEST_SHARD_INDEX={args.partition_index}` "
+            f"and `LABKIT_TEST_SHARD_COUNT={args.partition_count}` before `buildtool apps`. "
+            "Without these variables, the local App task remains complete."
+        )
     url = github_artifacts_url()
     if url:
         lines.append(f"- [Open this run's artifacts]({url})")

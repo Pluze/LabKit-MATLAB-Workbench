@@ -2,6 +2,110 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
     %EISWORKFLOWSPEC Specify EIS file loading, plot materialization, and export.
 
     methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
+        function importsRecommendedWindowAndRestoresItAfterFullRange(testCase)
+            % Oracle: a synthetic arc has a 10 Hz valley and dominant tail;
+            % import must crop automatically and both range actions must work.
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            f = logspace(5,-1,19).';
+            y = [1 2 4 8 12 16 18 16 12 8 5 3 2 3 6 20 60 80 100].';
+            path = fullfile(folder, "spectrum.DTA");
+            lines = strings(numel(f)+4, 1);
+            lines(1:4) = ["EXPLAIN"; "ZCURVE" + char(9) + "TABLE"; ...
+                join(["Pt","Time","Freq","Zreal","Zimag","Zmod","Zphz"], char(9)); ...
+                join(["#","s","Hz","ohm","ohm","ohm","deg"], char(9))];
+            for k = 1:numel(f)
+                lines(k+4) = string(sprintf('%d\t%d\t%.15g\t%g\t%g\t%g\t%g', ...
+                    k-1,k,f(k),k,-y(k),hypot(k,y(k)),-atand(y(k)/k)));
+            end
+            writelines(lines, path);
+            definition = eis.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
+            runtime = labkittest.createMatlabRuntime(definition, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            runtime.applyFileSelection("files", string(path), 1);
+            testCase.verifyEqual(runtime.State.session.nyquist.lower, 1, AbsTol=1e-12);
+            ax = findall(runtime.figureHandle(), "Tag", "nyquistOverview.nyquist");
+            frequency = findall(runtime.figureHandle(), "Tag", "frequencySection");
+            label = findall(runtime.figureHandle(), "Tag", "nyquistMinimum.label");
+            testCase.verifyEqual(string(label.Text), "Min · 10 Hz");
+            testCase.verifyEqual(string(frequency.BorderType), "none");
+            plotPanel = findall(runtime.figureHandle(), "Tag", "nyquistOverview");
+            fitButton = findall(runtime.figureHandle(), "Tag", "fitOverviewAxes");
+            testCase.verifyEqual(ancestor(fitButton, "uipanel"), frequency);
+            testCase.verifyEqual(frequency.Parent, plotPanel.Parent);
+            testCase.verifyEqual(frequency.Layout.Row, plotPanel.Layout.Row);
+            testCase.verifyLessThan(frequency.Layout.Column, plotPanel.Layout.Column);
+            testCase.verifyEqual(string(ancestor(frequency, "uitab").Title), "Nyquist + Bode");
+            curve = findall(ax, "Type", "line");
+            testCase.verifyEqual(sum(isfinite(curve.XData)), 13);
+            testCase.verifyEqual(string(plotPanel.Title), "Nyquist (10 – 1e+05 Hz)");
+            testCase.verifyEmpty(ax.Title.String);
+            runtime.invokeAction("resetFrequency");
+            curve = findall(ax, "Type", "line");
+            testCase.verifyEqual(sum(isfinite(curve.XData)), 19);
+            testCase.verifyEqual(string(plotPanel.Title), "Nyquist (0.1 – 1e+05 Hz)");
+            runtime.invokeAction("recommendFrequency");
+            curve = findall(ax, "Type", "line");
+            testCase.verifyEqual(sum(isfinite(curve.XData)), 13);
+            testCase.verifyEqual(string(plotPanel.Title), "Nyquist (10 – 1e+05 Hz)");
+            testCase.verifyEqual(runtime.State.session.cache.items.negZimag_ohm(:), y);
+            clear cleanup
+        end
+
+        function adjustsNyquistFrequencyWithoutChangingBodeOrSource(testCase)
+            % Oracle: plotted coordinates match the exact selected source
+            % frequencies; Bode/custom data and inspected viewports stay fixed.
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = eis.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
+            runtime = labkittest.createMatlabRuntime(definition, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            runtime.applyFileSelection("files", ...
+                testfixtures.dta.file("eis_potentiostatic_zcurve.DTA"), 1);
+            original = runtime.State.session.cache.items;
+            figureValue = runtime.figureHandle();
+            nyquist = findall(figureValue, "Tag", "nyquistOverview.nyquist");
+            bode = findall(figureValue, "Tag", "bodeOverview.magnitude");
+            custom = findall(figureValue, "Tag", "plot.main");
+            [~, bodeViewport] = inspectViewport(bode);
+            [~, customViewport] = inspectViewport(custom);
+            bodeLine = findall(bode, "Type", "line");
+            bodeData = bodeLine.XData;
+            limits = runtime.State.session.nyquist.limits;
+            cutoff = mean(limits);
+            runtime.applyControlValue("nyquistMinimum", cutoff);
+            curve = findall(nyquist, "Type", "line");
+            expected = original.Zreal_ohm(:).' / 1000;
+            expected(log10(original.freq_Hz) < cutoff) = NaN;
+            testCase.verifyEqual(curve.XData, expected);
+            verifyViewport(testCase, bode, bodeViewport);
+            verifyViewport(testCase, custom, customViewport);
+            bodeLine = findall(bode, "Type", "line");
+            testCase.verifyEqual(bodeLine.XData, bodeData);
+            testCase.verifyEqual(runtime.State.session.cache.items, original);
+            % Custom coordinates do not invalidate either overview renderer.
+            runtime.applyControlValue("xAxis", "Freq (Hz)");
+            runtime.applyControlValue("logX", true);
+            testCase.verifyTrue(isgraphics(curve) && isgraphics(bodeLine));
+            testCase.verifyEqual(curve.XData, expected);
+            verifyViewport(testCase, bode, bodeViewport);
+            [~, inspected] = inspectViewport(nyquist);
+            runtime.applyControlValue("showMarkers", false);
+            verifyViewport(testCase, nyquist, inspected);
+            runtime.applyControlValue("nyquistMaximum", limits(1));
+            testCase.verifyEqual(runtime.State.session.nyquist.lower, limits(1));
+            runtime.applyControlValue("nyquistMinimum", limits(2));
+            testCase.verifyEqual(runtime.State.session.nyquist.upper, limits(2));
+            runtime.invokeAction("resetFrequency");
+            testCase.verifyEqual(runtime.State.session.nyquist.lower, limits(1));
+            testCase.verifyEqual(runtime.State.session.nyquist.upper, limits(2));
+            runtime.applyFileSelection("files", strings(1,0), zeros(1,0));
+            testCase.verifyFalse(runtime.State.session.nyquist.available);
+            clear cleanup
+        end
+
         function recognizesThreeSamplesAndKeepsManualAssignments(testCase)
             % Oracle: exact suffix prefixes produce three groups of three;
             % a manual reassignment survives subsequent auto-recognition.
@@ -73,6 +177,11 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             ax = findall(runtime.figureHandle(), "Tag", "plot.main");
             bars = findall(ax, "Type", "errorbar");
             testCase.assertNumElements(bars, 1);
+            testCase.verifyEqual(bars.YPositiveDelta, zeros(size(bars.YData)));
+            % Draft names have no plotted meaning; replacing the errorbar
+            % would discard native graphics state for an unrelated text edit.
+            runtime.applyControlValue("groupName", "Draft name");
+            testCase.verifyTrue(isgraphics(bars));
             testCase.verifyEqual(bars.YPositiveDelta, zeros(size(bars.YData)));
             capture = labkittest.nativeGraphicsCapability("interface-capture");
             if capture.Available

@@ -149,6 +149,56 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
             clear serviceCleanup
         end
     end
+
+    methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
+        function everyNewRunResetsBothPlotsOnce(testCase)
+            % Oracle: a new empty 50 Hz run restores 0–5 s, ±10 mm and
+            % ±1 N even after manual zoom. In-range refreshes retain zoom.
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = mark10_monitor.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
+            runtime = labkittest.createMatlabRuntime(definition, [], struct(), journal);
+            runtimeCleanup = onCleanup(@() runtime.close());
+            box = containers.Map("KeyType", "char", "ValueType", "any");
+            box("connection") = samplingConnection();
+            serviceCleanup = onCleanup(@() cancelSamplingService(box("connection")));
+            runtime.setResource("mark10Connection", box, []);
+            runtime.postEvent("test.connected", @connectForViewportTest);
+            timeAxes = findall(runtime.figureHandle(), "Tag", "livePlots.timeSeries");
+            forceAxes = findall(runtime.figureHandle(), "Tag", "livePlots.forceTravel");
+            for run = 1:2
+                timeAxes.XLim = [100 200];
+                timeAxes.YAxis(1).Limits = [20 30];
+                timeAxes.YAxis(2).Limits = [40 50];
+                forceAxes.XLim = [20 30]; forceAxes.YLim = [40 50];
+                before = runtime.State.session.cache.plotViewRevision;
+                runtime.invokeAction("startMonitoring");
+                testCase.verifyEqual(runtime.State.session.cache.plotViewRevision, before + 1);
+                testCase.verifyEqual(timeAxes.XLim, [0 5]);
+                testCase.verifyEqual(timeAxes.YAxis(1).Limits, [-10 10]);
+                testCase.verifyEqual(timeAxes.YAxis(2).Limits, [-1 1]);
+                testCase.verifyEqual(forceAxes.XLim, [-10 10]);
+                testCase.verifyEqual(forceAxes.YLim, [-1 1]);
+                timeAxes.XLim = [1 2]; forceAxes.XLim = [-.5 .5];
+                buffer = runtime.getResource("mark10Buffer");
+                buffer("plotTime_s") = [.1; .2];
+                buffer("plotForce_N") = [0; .01];
+                buffer("plotTravel_mm") = [0; .01];
+                runtime.postEvent("test.sample-refresh", @mark10_monitor.acquisition.refreshState);
+                testCase.verifyEqual(runtime.State.session.acquisition.plotTravel_mm, buffer("plotTravel_mm"));
+                testCase.verifyEqual(runtime.State.session.cache.plotViewRevision, before + 1);
+                testCase.verifyEqual(timeAxes.XLim, [1 2]);
+                testCase.verifyEqual(forceAxes.XLim, [-.5 .5]);
+                runtime.invokeAction("stopMonitoring");
+            end
+            clear runtimeCleanup serviceCleanup
+        end
+    end
+end
+
+function state = connectForViewportTest(state, ~)
+state.session.connection.connected = true;
 end
 
 function value = emptyAnalysis()

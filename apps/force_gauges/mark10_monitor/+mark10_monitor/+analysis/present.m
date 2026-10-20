@@ -32,11 +32,24 @@ columns=["Branch","Window","E ("+modulusUnit+")","R²","n","From %","To %", ...
 order=[1 3 9 10 8 4 5 11 12 6 7 2];
 if kind~="Cyclic",order=order(2:end-1);columns=columns(2:end-1);end
 view=view.tableData("modulusResults",displayRows(:,order),Columns=columns);
-model=a; model.filename=filename; model.experimentType=kind;
+modulus=plotFields(a,["curveReady","curve","windows","resultRows", ...
+    "modulusUnit","fitLines","selectedResult"]);
+modulus.experimentType=kind;
+overview=plotFields(a,["overview","forceZero_N","travelZero_mm", ...
+    "timeStart_s","timeEnd_s","estimate","contactTime_s","excludedPreview"]);
+overview.filename=filename;
+diagnostics=plotFields(a,["estimate","contactTime_s","geometryConfirmed", ...
+    "gaugeLength_mm","contactReview","lengthFailure"]);
 view=view.text("modulusPlot",mark10_monitor.plotTitle("Stress-Strain and Window Fits",filename));
 view=view.text("analysisOverview",mark10_monitor.plotTitle("Recording and Analysis Time Range",filename));
 view=view.text("diagnosticPlot",mark10_monitor.plotTitle("Analysis Diagnostics",filename));
-view=view.renderPlot("modulusPlot",model,ViewRevision=a.curveRevision);
-view=view.renderPlot("analysisOverview",model,ViewRevision=join(string([a.sourceRevision a.forceZero_N a.travelZero_mm a.timeStart_s a.timeEnd_s a.contactTime_s a.curveRevision]),"|"));
-view=view.renderPlot("diagnosticPlot",model,ViewRevision=a.curveRevision,WindowRequest=a.diagnosticRequest);
+view=view.renderPlot("modulusPlot",modulus,ViewRevision=join(string([a.curveRevision a.viewRevision]),"|"));
+view=view.renderPlot("analysisOverview",overview,ViewRevision=join(string([a.sourceRevision a.forceZero_N a.travelZero_mm a.timeStart_s a.timeEnd_s a.contactTime_s a.curveRevision]),"|"));
+view=view.renderPlot("diagnosticPlot",diagnostics,ViewRevision=a.curveRevision,WindowRequest=a.diagnosticRequest);
+end
+
+function model=plotFields(analysis,names)
+% A pending edit or status message must not invalidate unrelated plots.
+model=struct();
+for name=names,model.(name)=analysis.(name);end
 end

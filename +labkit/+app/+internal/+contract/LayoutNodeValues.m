@@ -52,11 +52,6 @@ classdef (Sealed, Hidden) LayoutNodeValues
                 "plotArea", "dataTable", "statusPanel", "group"];
         end
 
-        function kinds = controlGroupKinds()
-            kinds = ["button", "field", "rangeField", "slider", ...
-                "fileList", "group"];
-        end
-
         function kinds = workspaceContentKinds()
             kinds = [labkit.app.internal.contract.LayoutNodeValues.leafAndGroupKinds(), "section"];
         end
@@ -193,7 +188,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
                 values = labkit.app.internal.contract.LayoutNodeValues.textRow(options.(name), name);
                 if numel(values) ~= axisCount
                     error("labkit:app:contract:InvalidValue", ...
-                        "Layout %s must contain one value per axis.", name);
+                        "Layout %s must contain one value per child or axis.", name);
                 end
             end
         end
@@ -206,7 +201,7 @@ classdef (Sealed, Hidden) LayoutNodeValues
             values = options.(name);
             if ~iscell(values) || ~isrow(values) || numel(values) ~= axisCount
                 error("labkit:app:contract:InvalidValue", ...
-                    "Layout %s must be a row cell array with one value per axis.", ...
+                    "Layout %s must be a row cell array with one value per child or axis.", ...
                     name);
             end
             for k = 1:numel(values)

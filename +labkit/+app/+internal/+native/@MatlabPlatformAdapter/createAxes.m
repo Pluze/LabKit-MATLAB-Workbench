@@ -41,6 +41,8 @@ function createAxes(obj, node, parent)
         axisId = node.AxisIds(k);
         key = labkit.app.internal.native.NativeAdapterValues.axisKey(node.Id, axisId);
         ax = uiaxes(layout, Tag=char(key));
+        % Create once before renderers inspect MATLAB's lazy Toolbar property.
+        axtoolbar(ax, 'default');
         if config.Layout == "stack"
             ax.Layout.Row = k;
             ax.Layout.Column = 1;

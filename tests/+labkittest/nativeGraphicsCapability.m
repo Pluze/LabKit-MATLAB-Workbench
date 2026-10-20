@@ -8,6 +8,16 @@ function result = nativeGraphicsCapability(kind)
 arguments
     kind (1, 1) string {mustBeMember(kind, ["clipboard", "interface-capture"])}
 end
+persistent clipboardResult captureResult
+if kind == "clipboard"
+    cached = clipboardResult;
+else
+    cached = captureResult;
+end
+if ~isempty(cached)
+    result = cached;
+    return
+end
 result = struct("Available", true, "ErrorIdentifier", "");
 filename = string(tempname) + ".png";
 if kind == "interface-capture"
@@ -36,6 +46,14 @@ catch cause
 end
 fprintf("NATIVE_GRAPHICS capability=%s available=%d error=%s\n", ...
     kind, result.Available, result.ErrorIdentifier);
+% Native batch/display capabilities are process properties. Product output
+% operations still run and assert their result in every owning specification.
+% Unrecognized errors propagate above and are never cached.
+if kind == "clipboard"
+    clipboardResult = result;
+else
+    captureResult = result;
+end
 end
 
 function cleanupProbe(fig, filename)

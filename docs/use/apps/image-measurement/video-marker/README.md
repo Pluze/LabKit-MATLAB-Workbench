@@ -43,7 +43,7 @@ Choose **Unreviewed**, **Unmarked**, **Predicted**, or **Low/unknown confidence*
 
 The review summary reports confirmed frames out of total frames and the count matching the selected filter. Browsing or filtering never confirms, excludes, or rewrites annotations. Filter and prediction-end choices are transient controls; reopening a snapshot restores annotations and current frame with default review controls. Use manual corrections to establish trusted anchors before extending a prediction range. Long range prediction is synchronous and records stage, completed/total counts, and bounded progress between frames in Diagnostics.
 
-Same-size frame navigation and marker refresh preserve the current zoom. Opening a new video or project, or encountering a different frame canvas, starts at that canvas's home view.
+Same-size frame navigation and marker refresh preserve a manually chosen zoom. Opening a new video or project, or encountering a different frame canvas, starts with the full pixel canvas; automatic fitting remains active until a manual view is chosen.
 
 ## Snapshot And Portability
 

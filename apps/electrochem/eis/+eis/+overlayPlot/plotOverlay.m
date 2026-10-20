@@ -24,6 +24,7 @@ function labels = plotOverlay(ax, items, opts)
             stats = eis.analysisRun.groupCoordinates(items(k).members, ...
                 opts.xName, opts.yName, opts.impedanceUnit);
             [x, y] = validCoordinates(stats.x, stats.y, opts.logX, opts.logY);
+            [x, y] = frequencyMask(x, y, stats.frequency, opts);
             xLower = stats.xSD;
             yLower = stats.ySD;
             if opts.logX, xLower(x - xLower <= 0) = NaN; end
@@ -39,6 +40,7 @@ function labels = plotOverlay(ax, items, opts)
         else
             [x, y] = filteredXY(items(k), opts.xName, opts.yName, ...
                 opts.impedanceUnit, opts.logX, opts.logY);
+            [x, y] = frequencyMask(x, y, items(k).freq_Hz, opts);
             plottedLines(k) = plot(ax, x, y, ...
                 'LineWidth', opts.lineWidth, ...
                 'Marker', marker, ...
@@ -150,4 +152,16 @@ function txt = ternary(cond, a, b)
     else
         txt = b;
     end
+end
+
+function [x, y] = frequencyMask(x, y, frequency, opts)
+    if ~isfield(opts, "frequencyLogRange"), return; end
+    positive = isfinite(frequency(:)) & frequency(:) > 0;
+    logFrequency = NaN(size(frequency(:)));
+    logFrequency(positive) = log10(frequency(positive));
+    keep = positive & ...
+        logFrequency >= opts.frequencyLogRange(1) & ...
+        logFrequency <= opts.frequencyLogRange(2);
+    x(~keep) = NaN;
+    y(~keep) = NaN;
 end

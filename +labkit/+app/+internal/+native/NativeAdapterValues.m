@@ -42,6 +42,31 @@ classdef (Sealed, Hidden) NativeAdapterValues
         parent = grid;
         end
 
+        function setControlLabel(labelHandle, text)
+        labelHandle.Text = char(string(text));
+        if isfield(labelHandle.Parent.UserData, "LabelPosition") && ...
+                labelHandle.Parent.UserData.LabelPosition == "top"
+            labelHandle.Parent.ColumnWidth = {'1x'};
+            labelHandle.Parent.RowHeight = {22, 30};
+            labelHandle.Parent.RowSpacing = 2;
+            labelHandle.Layout.Row = 1;
+            labelHandle.Layout.Column = 1;
+            labelHandle.HorizontalAlignment = "left";
+            applyTextFit(labelHandle);
+            return
+        end
+        policy = nativeLayoutPolicy();
+        width = policy.FormLabelWidth;
+        spacing = 8;
+        if strlength(string(text)) == 0
+            width = 0;
+            spacing = 0;
+        end
+        labelHandle.Parent.ColumnWidth = {width, '1x'};
+        labelHandle.Parent.ColumnSpacing = spacing;
+        applyTextFit(labelHandle);
+        end
+
         function operations = orderedOperations(operations)
         if isempty(operations)
             return;

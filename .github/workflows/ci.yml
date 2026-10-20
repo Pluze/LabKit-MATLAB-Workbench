@@ -110,13 +110,28 @@ jobs:
             id: macos
             label: macOS
             release: latest
-            shard: App boundaries
-            shard_id: apps
+            shard: App boundaries 1/2
+            shard_id: apps-1
+            apps_shard_index: 1
+            apps_shard_count: 2
             profiles: apps
             run_headless: false
             run_apps: true
             cache: false
-            claim: Current Apple Silicon native App, graphics, export, and path-isolation evidence
+            claim: Current Apple Silicon native App, graphics, export, and path-isolation evidence across both disjoint partitions
+          - os: macos-14
+            id: macos
+            label: macOS
+            release: latest
+            shard: App boundaries 2/2
+            shard_id: apps-2
+            apps_shard_index: 2
+            apps_shard_count: 2
+            profiles: apps
+            run_headless: false
+            run_apps: true
+            cache: false
+            claim: Current Apple Silicon native App, graphics, export, and path-isolation evidence across both disjoint partitions
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -164,6 +179,9 @@ jobs:
       - name: Run App boundary validation
         if: matrix.run_apps
         id: apps
+        env:
+          LABKIT_TEST_SHARD_INDEX: ${{ matrix.apps_shard_index || 1 }}
+          LABKIT_TEST_SHARD_COUNT: ${{ matrix.apps_shard_count || 1 }}
         continue-on-error: true
         timeout-minutes: 30
         uses: matlab-actions/run-build@v3
@@ -181,6 +199,8 @@ jobs:
             --runner "${{ matrix.os }}" \
             --shard "${{ matrix.shard }}" \
             --profiles "${{ matrix.profiles }}" \
+            --partition-index "${{ matrix.apps_shard_index || 1 }}" \
+            --partition-count "${{ matrix.apps_shard_count || 1 }}" \
             --claim "${{ matrix.claim }}" \
             --artifact-name "matlab-${{ matrix.id }}-${{ matrix.release }}-${{ matrix.shard_id }}" \
             --headless-outcome "${{ steps.headless.outcome }}" \

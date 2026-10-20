@@ -30,6 +30,7 @@ classdef (Hidden, Sealed) PlotWindows < handle
                 entry.axes=gobjects(1,count);
                 for k=1:count
                     entry.axes(k)=uiaxes(grid,Tag=node.Id+"."+node.AxisIds(k));
+                    axtoolbar(entry.axes(k),'default');
                 end
             end
             if ~alive

@@ -33,6 +33,9 @@ function installContentGrid(obj, node, component)
             grid.RowHeight = {policy.ButtonHeight};
         end
         grid.ColumnWidth = repmat({'1x'}, 1, numel(node.ChildIds));
+        if ~isempty(node.Configuration.ColumnWidths)
+            grid.ColumnWidth = node.Configuration.ColumnWidths;
+        end
     else
         rowCount = numel(node.ChildIds);
         if node.Kind == "tab"
