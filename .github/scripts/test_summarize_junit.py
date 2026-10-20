@@ -139,6 +139,7 @@ class SummarizeJunitTest(unittest.TestCase):
             self.assertIn("all partitions jointly retain", content)
             self.assertIn("LABKIT_TEST_SHARD_INDEX=2", content)
             self.assertIn("LABKIT_TEST_SHARD_COUNT=2", content)
+            self.assertIn("LABKIT_TEST_SHARD_TIMINGS=.github/app-test-costs.json", content)
             self.assertNotIn("reset-path startup for every public App", content)
 
     def run_summary(
@@ -174,6 +175,8 @@ class SummarizeJunitTest(unittest.TestCase):
             outcomes[1],
         ]
         arguments += ["--partition-index", str(partition[0]), "--partition-count", str(partition[1])]
+        if partition[1] > 1:
+            arguments += ["--partition-timings", ".github/app-test-costs.json"]
         with mock.patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary)}):
             with mock.patch.object(MODULE.sys, "argv", arguments):
                 with contextlib.redirect_stdout(io.StringIO()):

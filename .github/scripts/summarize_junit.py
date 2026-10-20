@@ -119,6 +119,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--partition-index", type=int, default=1)
     parser.add_argument("--partition-count", type=int, default=1)
+    parser.add_argument("--partition-timings", default="")
     parser.add_argument("--claim", required=True)
     parser.add_argument("--artifact-name", required=True)
     parser.add_argument("--artifacts-root", default="artifacts")
@@ -486,9 +487,11 @@ def evidence_lines(args: argparse.Namespace) -> list[str]:
         f"- Artifact: `{args.artifact_name}` (retained for 14 days)",
     ]
     if args.partition_count > 1:
+        timing_hint = (f" and `LABKIT_TEST_SHARD_TIMINGS={args.partition_timings}`"
+                       if args.partition_timings else "")
         lines.append(
             f"- Reproduce this partition by setting `LABKIT_TEST_SHARD_INDEX={args.partition_index}` "
-            f"and `LABKIT_TEST_SHARD_COUNT={args.partition_count}` before `buildtool apps`. "
+            f"and `LABKIT_TEST_SHARD_COUNT={args.partition_count}`{timing_hint} before `buildtool apps`. "
             "Without these variables, the local App task remains complete."
         )
     url = github_artifacts_url()

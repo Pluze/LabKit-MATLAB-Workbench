@@ -82,6 +82,8 @@ class WorkflowContracts(unittest.TestCase):
         apps = next(s for s in platform["steps"] if s.get("id") == "apps")
         self.assertEqual(apps["env"]["LABKIT_TEST_SHARD_INDEX"], "${{ matrix.apps_shard_index || 1 }}")
         self.assertEqual(apps["env"]["LABKIT_TEST_SHARD_COUNT"], "${{ matrix.apps_shard_count || 1 }}")
+        self.assertEqual(apps["env"]["LABKIT_TEST_SHARD_TIMINGS"],
+                         "${{ matrix.id == 'macos' && '.github/app-test-costs.json' || '' }}")
 
     def test_feedback_can_cancel_and_hands_off_before_matlab(self):
         spec = workflow("development-feedback")

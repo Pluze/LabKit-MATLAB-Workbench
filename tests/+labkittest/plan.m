@@ -17,6 +17,9 @@ function result = plan(varargin)
 %   Profile="apps", ShardIndex=K, ShardCount=N selects deterministic partition
 %   K of N. Every identity belongs to exactly one partition; all partitions
 %   together retain the complete App profile. Defaults are 1 and 1.
+%   ShardTimings=PATH optionally supplies a JSON array of id/seconds cost hints
+%   for greedy duration balancing. Unknown identities use the median hint;
+%   hints never select or exclude evidence. Without hints, partition by ID.
 %
 %   RESULT has Descriptors, Groups, Reasons, Scope, Classifications, and
 %   ManualChecks. Scope is focused-local, full-profile, or profile-shard; it describes the
@@ -41,8 +44,7 @@ function result = plan(varargin)
         if opts.ShardCount > numel(descriptors)
             error("LabKit:TestPlan:InvalidShard", "Partitions must not be empty.");
         end
-        [~, order] = sort(string({descriptors.Id}));
-        descriptors = descriptors(order(opts.ShardIndex:opts.ShardCount:end));
+        descriptors = partitionDescriptors(descriptors, opts);
         scope = "profile-shard";
         reasons(end + 1) = "App profile partition " + opts.ShardIndex + ...
             "/" + opts.ShardCount + "; all partitions are required for full coverage";
@@ -70,6 +72,7 @@ function opts = parseOptions(varargin)
     p.addParameter("ChangedPaths", strings(1, 0), @isTextList);
     p.addParameter("ShardIndex", 1, @isPositiveInteger);
     p.addParameter("ShardCount", 1, @isPositiveInteger);
+    p.addParameter("ShardTimings", "", @isTextScalar);
     p.parse(varargin{:});
     opts = p.Results;
     opts.Profile = lower(strip(string(opts.Profile)));
@@ -80,8 +83,10 @@ function opts = parseOptions(varargin)
     opts.SpecsRoot = string(opts.SpecsRoot);
     opts.RepositoryRoot = string(opts.RepositoryRoot);
     opts.ChangedPaths = normalizeRepositoryPath(opts.ChangedPaths);
+    opts.ShardTimings = string(opts.ShardTimings);
     if opts.ShardIndex > opts.ShardCount || ...
-            (opts.ShardCount > 1 && opts.Profile ~= "apps")
+            (opts.ShardCount > 1 && opts.Profile ~= "apps") || ...
+            (strlength(opts.ShardTimings) > 0 && opts.ShardCount == 1)
         error("LabKit:TestPlan:InvalidShard", ...
             "App partitions require 1 <= ShardIndex <= ShardCount and Profile=apps.");
     end
@@ -105,6 +110,41 @@ function opts = parseOptions(varargin)
         error("LabKit:TestPlan:UnknownProfile", ...
             "Profile must be changed, headless, or apps.");
     end
+end
+
+function selected = partitionDescriptors(descriptors, opts)
+[ids, order] = sort(string({descriptors.Id}));
+descriptors = descriptors(order);
+if strlength(opts.ShardTimings) == 0
+    selected = descriptors(opts.ShardIndex:opts.ShardCount:end);
+    return
+end
+hints = jsondecode(fileread(opts.ShardTimings));
+if ~isstruct(hints) || isempty(hints) || ...
+        ~all(isfield(hints, {'id', 'seconds'}))
+    error("LabKit:TestPlan:InvalidShard", "Timing hints require id and seconds records.");
+end
+hintIds = string({hints.id});
+costs = [hints.seconds];
+if numel(costs) ~= numel(hints) || ~isnumeric(costs) || ~isreal(costs) || ...
+        any(~isfinite(costs) | costs <= 0) || ...
+        numel(unique(hintIds)) ~= numel(hints) || ...
+        any(ismissing(hintIds) | strlength(hintIds) == 0)
+    error("LabKit:TestPlan:InvalidShard", "Timing hints require unique IDs and positive seconds.");
+end
+estimates = repmat(median(costs), size(ids));
+[known, indices] = ismember(ids, hintIds);
+estimates(known) = costs(indices(known));
+% Longest first; ID breaks equal-cost ties and shard index breaks load ties.
+[~, priority] = sortrows(table(-estimates(:), ids(:)), [1 2]);
+loads = zeros(1, opts.ShardCount);
+assignment = zeros(size(ids));
+for index = reshape(priority, 1, [])
+    [~, shard] = min(loads);
+    assignment(index) = shard;
+    loads(shard) = loads(shard) + estimates(index);
+end
+selected = descriptors(assignment == opts.ShardIndex);
 end
 
 function tf = isPositiveInteger(value)
