@@ -223,6 +223,8 @@ Native plots use one figure-level wheel handler; built-in zoom interactions are 
 
 Renderers own drawing and viewport policy, not workflow decisions or project mutation. Display-only graphics disable hit testing. Managed interaction specs own editable gestures and their private native resources.
 
+Use `layout.group(..., Layout="horizontal", ColumnWidths={240, '1x'})` to put a compact control section beside a plot within one workspace page. Groups accept controls, sections, plots, and tables; a group containing a plot or table shares the available page height. Horizontal groups default to equal flexible widths; explicit widths allow a fixed control strip and a flexible plot. A slider with `Label=""` omits its label column, so a titled parent group can supply its caption in a narrow strip. Dynamic slider label changes restore or remove that column as needed. Use `LabelPosition="top"` for a caption above the track in a narrow strip. `ShowValue=false` hides the paired numeric spinner when the App presents the value through a dynamic label; slider keyboard input and final-value commits remain available.
+
 For a multi-row plot dashboard, place multiple plot areas in one workspace page. Page content is arranged vertically, while each plot area independently chooses `single`, horizontal `pair`, or vertical `stack`. Two paired plot areas therefore form a 2-by-2 dashboard without App-owned native containers. `ColumnWidths={'1x', 90}` gives a pair a flexible main plot and a fixed-width scale or histogram. Stacked axes share the available height equally.
 
 ```matlab

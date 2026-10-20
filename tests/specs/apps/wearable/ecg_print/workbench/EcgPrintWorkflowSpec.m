@@ -89,6 +89,9 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             runtime.applyControlValue('debugOverlay',false);
             testCase.verifyEqual(top.Layout.Row,1);testCase.verifyEqual(string(bottom.Visible),"on");
             testCase.verifyEqual(top.XLim,bottom.XLim);
+            % Repeated redraws retain live linkage, not merely equal limits.
+            xlim(top,[14 16]);testCase.verifyEqual(bottom.XLim,[14 16]);
+            testCase.verifyEqual(metricAxis.XLim,[14 16]);
             e=result.windows(1).extraction;
             testCase.verifyEqual(e.bandResidualNoise+e.restoredResidualNoise,e.noise,AbsTol=1e-12);
             testCase.verifyEqual(e.compressedRaw-e.noise,e.compressedSignal,AbsTol=1e-12);
@@ -106,6 +109,10 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             runtime.applyControlValue('channel',"Motion");
             testCase.verifyEmpty(runtime.State.session.cache.ecgNext);
             testCase.verifyEmpty(runtime.State.session.cache.events);
+            % Raw-recording inspection must no longer move per-beat axes.
+            rawAxis=findall(runtime.figureHandle(),'Tag','resultsAxes.wave');
+            independentLimits=noiseAxis.XLim;
+            xlim(rawAxis,[2 4]);testCase.verifyEqual(noiseAxis.XLim,independentLimits);
             runtime.applyControlValue('timeColumn',"missing_clock");
             runtime.invokeAction('refreshImport');
             testCase.verifyEmpty(runtime.State.session.cache.signal);

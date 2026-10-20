@@ -32,6 +32,11 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyLessThan(runtime.State.session.cache.frameIndex, 4);
             runtime.applyControlValue("reviewMode", "Unreviewed");
             testCase.verifyEqual(runtime.State.project.annotations.frames, original);
+            % An automatic canvas view must not freeze an unpainted 0–1
+            % range when a second frame/overlay arrives before first paint.
+            ax = findall(runtime.figureHandle(), "Tag", "videoPreview.video");
+            testCase.verifyEqual(string(ax.XLimMode), "auto");
+            testCase.verifyEqual(string(ax.YLimMode), "auto");
             tab = findall(runtime.figureHandle(), "Type", "uitab", "Title", "Video");
             tab.Parent.SelectedTab = tab;
             capture = labkittest.nativeGraphicsCapability("interface-capture");
@@ -39,10 +44,16 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
             if capture.Available
                 exportapp(runtime.figureHandle(), evidencePath);
                 testCase.verifyTrue(isfile(evidencePath));
+                testCase.verifyEqual(ax.XLim, [.5 96.5], AbsTol=1e-8);
+                testCase.verifyEqual(ax.YLim, [.5 72.5], AbsTol=1e-8);
             else
                 testCase.verifyError(@() exportapp(runtime.figureHandle(), evidencePath), capture.ErrorIdentifier);
                 testCase.verifyFalse(isfile(evidencePath));
             end
+            ax.XLim = [10 60]; ax.YLim = [10 50];
+            runtime.applyControlValue("currentFrame", 5);
+            testCase.verifyEqual(ax.XLim, [10 60]);
+            testCase.verifyEqual(ax.YLim, [10 50]);
             clear cleanup
         end
 

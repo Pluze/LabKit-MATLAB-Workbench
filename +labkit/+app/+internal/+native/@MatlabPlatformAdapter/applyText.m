@@ -26,8 +26,7 @@ function applyText(obj, component, value)
             error("labkit:app:runtime:InvariantFailure", ...
                 "A slider text operation requires its cached label.");
         end
-        label.Text = char(string(value));
-        labkit.app.internal.native.NativeAdapterValues.fitText(label);
+        labkit.app.internal.native.NativeAdapterValues.setControlLabel(label, value);
         return
     elseif isprop(component, "Text")
         component.Text = value;

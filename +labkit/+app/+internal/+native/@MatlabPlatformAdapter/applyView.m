@@ -41,12 +41,18 @@ function applyView(obj, view, previous)
 end
 
 function changed = changedOperations(current, previous)
+if isempty(current) || isempty(previous)
+    changed = current;
+    return
+end
+currentKeys = string(cellfun(@operationKey, current, UniformOutput=false));
+previousKeys = string(cellfun(@operationKey, previous, UniformOutput=false));
+[found, indices] = ismember(currentKeys, previousKeys);
 changed = cell(1, numel(current));
 changedCount = 0;
 for index = 1:numel(current)
     operation = current{index};
-    prior = findOperation(previous, operation.Kind, operation.Target);
-    if isempty(prior) || ~isequaln(prior.Value, operation.Value)
+    if ~found(index) || ~isequaln(previous{indices(index)}.Value, operation.Value)
         changedCount = changedCount + 1;
         changed{changedCount} = operation;
     end
@@ -54,13 +60,6 @@ end
 changed = changed(1:changedCount);
 end
 
-function operation = findOperation(operations, kind, target)
-operation = [];
-for index = 1:numel(operations)
-    candidate = operations{index};
-    if candidate.Kind == kind && candidate.Target == target
-        operation = candidate;
-        return;
-    end
-end
+function key = operationKey(operation)
+key = operation.Kind + ":" + operation.Target;
 end

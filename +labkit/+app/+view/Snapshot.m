@@ -81,14 +81,14 @@ classdef (Sealed) Snapshot
     % See also labkit.app.Definition, labkit.app.layout.workbench
 
     properties (SetAccess = private, GetAccess = private)
-        Operations (1, :) cell
+        Operations (1, :) struct
         WindowSubtitle (1, 1) string = ""
         HasWindowSubtitle (1, 1) logical = false
     end
 
     methods
         function obj = Snapshot()
-            obj.Operations = {};
+            obj.Operations = struct("Kind", {}, "Target", {}, "Value", {});
         end
 
         function obj = windowSubtitle(obj, text)
@@ -282,26 +282,27 @@ classdef (Sealed) Snapshot
             if fragment.HasWindowSubtitle
                 obj = obj.windowSubtitle(fragment.WindowSubtitle);
             end
-            for k = 1:numel(fragment.Operations)
-                operation = fragment.Operations{k};
-                obj = append(obj, operation.Kind, ...
-                    operation.Target, operation.Value);
+            duplicate = ismember(operationKeys(fragment.Operations), ...
+                operationKeys(obj.Operations));
+            if any(duplicate)
+                operation = fragment.Operations(find(duplicate, 1));
+                error("labkit:app:contract:DuplicateId", ...
+                    "View snapshot repeats %s for target %s.", ...
+                    operation.Kind, operation.Target);
             end
+            obj.Operations = [obj.Operations fragment.Operations];
         end
     end
 
     methods (Access = private)
         function obj = append(obj, kind, target, value)
             target = scalarId(target, "target");
-            for k = 1:numel(obj.Operations)
-                operation = obj.Operations{k};
-                if operation.Kind == kind && operation.Target == target
-                    error("labkit:app:contract:DuplicateId", ...
-                        "View snapshot repeats %s for target %s.", ...
-                        kind, target);
-                end
+            if any(string({obj.Operations.Kind}) == kind & ...
+                    string({obj.Operations.Target}) == target)
+                error("labkit:app:contract:DuplicateId", ...
+                    "View snapshot repeats %s for target %s.", kind, target);
             end
-            obj.Operations{end + 1} = struct( ...
+            obj.Operations(end + 1) = struct( ...
                 "Kind", kind, ...
                 "Target", target, ...
                 "Value", value);
@@ -316,7 +317,7 @@ classdef (Sealed) Snapshot
         end
 
         function operations = operationsForCompiler(obj)
-            operations = obj.Operations;
+            operations = num2cell(obj.Operations);
         end
     end
 
@@ -326,27 +327,11 @@ classdef (Sealed) Snapshot
                 error("labkit:app:contract:InvalidValue", ...
                     "View snapshot overlay requires a View snapshot value.");
             end
-            operationCount = numel(base.Operations);
-            operations = cell(1, operationCount + numel(custom.Operations));
-            operations(1:operationCount) = base.Operations;
-            for k = 1:numel(custom.Operations)
-                incoming = custom.Operations{k};
-                replaced = false;
-                for n = 1:operationCount
-                    current = operations{n};
-                    if current.Kind == incoming.Kind && ...
-                            current.Target == incoming.Target
-                        operations{n} = incoming;
-                        replaced = true;
-                        break;
-                    end
-                end
-                if ~replaced
-                    operationCount = operationCount + 1;
-                    operations{operationCount} = incoming;
-                end
-            end
-            operations = operations(1:operationCount);
+            [replaced, indices] = ismember(operationKeys(custom.Operations), ...
+                operationKeys(base.Operations));
+            operations = base.Operations;
+            operations(indices(replaced)) = custom.Operations(replaced);
+            operations = [operations custom.Operations(~replaced)];
             result = labkit.app.view.Snapshot();
             result.Operations = operations;
             if custom.HasWindowSubtitle
@@ -356,6 +341,10 @@ classdef (Sealed) Snapshot
             end
         end
     end
+end
+
+function keys = operationKeys(operations)
+keys = string({operations.Kind}) + ":" + string({operations.Target});
 end
 
 function obj = appendInteraction(obj, kind, interaction, value, varargin)

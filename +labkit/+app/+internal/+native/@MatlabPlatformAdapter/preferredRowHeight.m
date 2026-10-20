@@ -26,6 +26,9 @@ function height = preferredRowHeight(obj, node)
             height = policy.ButtonHeight;
         case "slider"
             height = policy.SliderHeight;
+            if node.Configuration.LabelPosition == "top"
+                height = height + 24;
+            end
         case "field"
             if node.Configuration.Kind == "readonly"
                 key = char(node.Id);
@@ -48,6 +51,10 @@ function height = preferredRowHeight(obj, node)
         case {"rangeField", "panner"}
             height = policy.FieldHeight;
         case {"section", "group"}
+            if node.Kind == "group" && obj.isGrowableTabChild(node)
+                height = "1x";
+                return
+            end
             children = obj.nodes(node.ChildIds);
             childHeights = zeros(1, numel(children));
             for k = 1:numel(children)
