@@ -39,15 +39,16 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(ancestor(frequency, "uitab").Title), "Nyquist + Bode");
             curve = findall(ax, "Type", "line");
             testCase.verifyEqual(sum(isfinite(curve.XData)), 13);
-            testCase.verifyEqual(string(ax.Title.String), "Nyquist (10 – 1e+05 Hz)");
+            testCase.verifyEqual(string(plotPanel.Title), "Nyquist (10 – 1e+05 Hz)");
+            testCase.verifyEmpty(ax.Title.String);
             runtime.invokeAction("resetFrequency");
             curve = findall(ax, "Type", "line");
             testCase.verifyEqual(sum(isfinite(curve.XData)), 19);
-            testCase.verifyEqual(string(ax.Title.String), "Nyquist (0.1 – 1e+05 Hz)");
+            testCase.verifyEqual(string(plotPanel.Title), "Nyquist (0.1 – 1e+05 Hz)");
             runtime.invokeAction("recommendFrequency");
             curve = findall(ax, "Type", "line");
             testCase.verifyEqual(sum(isfinite(curve.XData)), 13);
-            testCase.verifyEqual(string(ax.Title.String), "Nyquist (10 – 1e+05 Hz)");
+            testCase.verifyEqual(string(plotPanel.Title), "Nyquist (10 – 1e+05 Hz)");
             testCase.verifyEqual(runtime.State.session.cache.items.negZimag_ohm(:), y);
             clear cleanup
         end

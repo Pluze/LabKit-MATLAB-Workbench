@@ -20,7 +20,7 @@ Low-frequency EIS tails can obscure the Nyquist semicircle, while stacked Mark-1
 
 ## What changed
 
-- Added logarithmic frequency controls directly left of EIS Nyquist, a current-range title, recommended and full-range actions, and coordinate reset. The display recommendation requires a resolved arc descent followed by a dominant low-frequency tail, with full-spectrum fallback when evidence is insufficient.
+- Added logarithmic frequency controls directly left of EIS Nyquist, a current-range panel title that remains readable for narrow equal-unit plots, recommended and full-range actions, and coordinate reset. The display recommendation requires a resolved arc descent followed by a dominant low-frequency tail, with full-spectrum fallback when evidence is insufficient.
 - Kept EIS overview legends compact and excluded hidden group uncertainty extents from fitting. Plot models contain their relevant display options, so group-name drafts and custom coordinate choices do not redraw unrelated overview plots.
 - Gave Mark-10 modulus analysis the full workspace width with results below, retained analysis controls in the sidebar, and moved recording plots and time controls to Recording Review. Reset X/Y preserves fitted values.
 - Extended SDK groups to combine controls, plots and tables with horizontal column widths, and added compact slider captions above the track. Standard axes toolbars are initialized once; snapshot composition and callback validation avoid repeated full scans and comparisons.

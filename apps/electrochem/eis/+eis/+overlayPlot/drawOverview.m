@@ -6,7 +6,7 @@ model.items = compactOverviewNames(model.items);
 axesIds = ["nyquist" "magnitude" "phase"];
 xNames = ["Zreal" "Freq (Hz)" "Freq (Hz)"];
 yNames = ["-Zimag" "Zmod" "Zphz (deg)"];
-titles = ["Nyquist" "Impedance magnitude" "Phase"];
+titles = ["" "Impedance magnitude" "Phase"];
 for k = 1:numel(axesIds)
     if ~isfield(axesById, axesIds(k)), continue; end
     ax = axesById.(axesIds(k));
@@ -20,12 +20,8 @@ for k = 1:numel(axesIds)
     panel.options = options;
     panel.viewAction = "";
     eis.overlayPlot.draw(struct("main", ax), panel);
-    plotTitle = titles(k);
-    if k == 1 && isfield(options, "frequencyLogRange") && model.hasItems
-        bounds = 10.^options.frequencyLogRange;
-        plotTitle = string(sprintf('Nyquist (%.4g – %.4g Hz)', bounds(1), bounds(2)));
-    end
-    title(ax, plotTitle);
+    % Nyquist's panel owns its title so equal data units cannot clip it.
+    title(ax, titles(k));
 end
 if model.hasItems && isfield(axesById, "nyquist")
     if model.options.showLegend
