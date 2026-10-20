@@ -4,10 +4,9 @@ function [lower, supported] = recommendFrequency(items, fullLower)
 % circuit parameters or a claim that a detected feature is an electrochemical arc.
 minimumSamples = 12; % Enough samples to resolve ascent, descent, and tail.
 smoothingSamples = 3; % Median suppresses isolated spikes without fitting data.
-minimumDropFraction = .30; % Require a substantial peak-to-valley descent.
+minimumProminenceFraction = .30; % Both sides must fall 30% below the peak.
 tailToPeakRatio = 3; % Recommend cropping only when the tail dominates the arc.
 minimumDescentDecades = .30; % Descent must span about a factor of two in frequency.
-minimumRiseRatio = 2; % Reject peaks already present at the high-frequency boundary.
 candidates = NaN(1, numel(items));
 for k = 1:numel(items)
     f = items(k).freq_Hz(:);
@@ -27,8 +26,8 @@ for k = 1:numel(items)
         end
         [peak, peakIndex] = max(y(1:valley-3));
         resolvedArc = peak > 0 && peakIndex >= 3 && ...
-            peak >= minimumRiseRatio * max(y(1), 0) && ...
-            y(valley) <= (1-minimumDropFraction) * peak && ...
+            max(y(1), 0) <= (1-minimumProminenceFraction) * peak && ...
+            y(valley) <= (1-minimumProminenceFraction) * peak && ...
             log10(f(peakIndex)/f(valley)) >= minimumDescentDecades;
         dominantTail = median(y(end-2:end)) >= tailToPeakRatio * peak;
         if resolvedArc && dominantTail && peak > bestPeak

@@ -57,6 +57,68 @@ classdef OverviewPlotSpec < matlab.unittest.TestCase
             testCase.verifyEqual(eis.overlayPlot.recommendFrequency(struct([]), 0), 0);
         end
 
+        function recommendsAnArcWithAnElevatedHighFrequencyBoundary(testCase)
+            % Oracle: a 16-ohm peak is prominent above a 10-ohm boundary and
+            % descends to a recorded 10 Hz valley before a dominant tail.
+            % Requiring a twofold rise would incorrectly keep the full tail.
+            f = logspace(5,-1,19).';
+            y = [10 10 11 12 13 15 16 15 12 10 8 6 5 6 9 25 60 80 100].';
+            item = struct("freq_Hz", f, "negZimag_ohm", y, ...
+                "Zreal_ohm", (1:19).');
+            [lower, supported] = eis.overlayPlot.recommendFrequency(item, -1);
+            testCase.verifyEqual(lower, 1, AbsTol=1e-12);
+            testCase.verifyEqual(supported, 1);
+            shallow = item;
+            shallow.negZimag_ohm(1:4) = 12;
+            testCase.verifyEqual(eis.overlayPlot.recommendFrequency(shallow, -1), -1);
+            noTail = item;
+            noTail.negZimag_ohm(14:end) = 5;
+            testCase.verifyEqual(eis.overlayPlot.recommendFrequency(noTail, -1), -1);
+            sparse = item;
+            sparse.freq_Hz = f(1:11);
+            sparse.Zreal_ohm = item.Zreal_ohm(1:11);
+            sparse.negZimag_ohm = y(1:11);
+            testCase.verifyEqual(eis.overlayPlot.recommendFrequency(sparse, -1), -1);
+            duplicate = item;
+            duplicate.freq_Hz(2) = f(1);
+            testCase.verifyEqual(eis.overlayPlot.recommendFrequency(duplicate, -1), -1);
+        end
+
+        function formatsFrequencyWithUnitsAndNoExponent(testCase)
+            % Oracle: decimal SI conversion, four-digit rounding, and carry
+            % across a unit boundary must remain readable in narrow captions.
+            values = [0.12345 2500 1234567 999999.9 1e9 1e-6];
+            expected = ["0.1235 Hz" "2.5 kHz" "1.235 MHz" "1 MHz" "1 GHz" "0.000001 Hz"];
+            for k = 1:numel(values)
+                testCase.verifyEqual(eis.overlayPlot.formatFrequency(values(k)), expected(k));
+            end
+        end
+
+        function fillsNyquistCoordinateSpaceWithoutStretchingData(testCase)
+            % Oracle: equal units require the limit-span ratio to match the
+            % available pixel ratio, including a tall trace and a wide trace.
+            fig = figure("Visible", "off", "Position", [0 0 900 450]);
+            cleanup = onCleanup(@() delete(fig));
+            ax = axes(fig);
+            for xy = {[1 2 3; 0 500 1000], [0 500 1000; 1 2 3]}
+                values = xy{1};
+                plot(ax, values(1,:), values(2,:));
+                eis.overlayPlot.fitNyquistViewport(ax);
+                position = getpixelposition(ax);
+                allocation = ax.Position;
+                inner = ax.InnerPosition;
+                position(3:4) = inner(3:4) .* position(3:4) ./ allocation(3:4);
+                testCase.verifyEqual(diff(ax.XLim)/diff(ax.YLim), ...
+                    position(3)/position(4), RelTol=.02);
+                testCase.verifyEqual(ax.DataAspectRatio(1), ax.DataAspectRatio(2), AbsTol=1e-12);
+                testCase.verifyLessThanOrEqual(ax.XLim(1), min(values(1,:)));
+                testCase.verifyGreaterThanOrEqual(ax.XLim(2), max(values(1,:)));
+                testCase.verifyLessThanOrEqual(ax.YLim(1), min(values(2,:)));
+                testCase.verifyGreaterThanOrEqual(ax.YLim(2), max(values(2,:)));
+            end
+            clear cleanup
+        end
+
         function frequencyWindowMasksRawAndGroupedTails(testCase)
             % Oracle: only 10 Hz remains in [1,2] log10 Hz; the 1 Hz tail
             % must not contribute coordinates or SD extents to fitted limits.
