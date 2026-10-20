@@ -62,6 +62,10 @@ if profile == "apps"
         selectors = [selectors, {"ShardIndex", str2double(index), ...
             "ShardCount", str2double(count)}];
     end
+    timings = string(getenv("LABKIT_TEST_SHARD_TIMINGS"));
+    if strlength(timings) > 0
+        selectors = [selectors, {"ShardTimings", timings}];
+    end
 end
 labkittest.run(selectors{:}, RunName=profile, ...
     ArtifactsRoot=fullfile(root, "artifacts", "test-results"));

@@ -41,6 +41,37 @@ classdef TestCatalogSpec < matlab.unittest.TestCase
             results = [firstRun.Results{:} secondRun.Results{:}];
             testCase.verifyEqual(sort(string({results.Name})), sort(expected));
             testCase.verifyTrue(all([results.Passed]));
+            % Independent cost oracle: 20+1 and 18+2+1 are both 21.
+            hints = struct("id", cellstr(expected), "seconds", {20, 18, 2, 1, 1});
+            timingPath = fullfile(artifacts, "costs.json");
+            fid = fopen(timingPath, "w");
+            fprintf(fid, "%s", jsonencode(hints));
+            fclose(fid);
+            balancedFirst = labkittest.plan(Profile="apps", SpecsRoot=specsRoot, ...
+                ShardIndex=1, ShardCount=2, ShardTimings=timingPath);
+            balancedSecond = labkittest.plan(Profile="apps", SpecsRoot=specsRoot, ...
+                ShardIndex=2, ShardCount=2, ShardTimings=timingPath);
+            testCase.verifyEqual(string({balancedFirst.Descriptors.Id}), ...
+                "ProbeSpec/" + ["alpha", "delta"]);
+            testCase.verifyEqual(string({balancedSecond.Descriptors.Id}), ...
+                "ProbeSpec/" + ["beta", "gamma", "isolated"]);
+            % A new identity without a hint must still execute exactly once.
+            fid = fopen(timingPath, "w");
+            fprintf(fid, "%s", jsonencode(hints(1:4)));
+            fclose(fid);
+            unknownFirst = labkittest.plan(Profile="apps", SpecsRoot=specsRoot, ...
+                ShardIndex=1, ShardCount=2, ShardTimings=timingPath);
+            unknownSecond = labkittest.plan(Profile="apps", SpecsRoot=specsRoot, ...
+                ShardIndex=2, ShardCount=2, ShardTimings=timingPath);
+            testCase.verifyEqual(sort(string({unknownFirst.Descriptors.Id, ...
+                unknownSecond.Descriptors.Id})), sort(expected));
+            hints(1).seconds = 0;
+            fid = fopen(timingPath, "w");
+            fprintf(fid, "%s", jsonencode(hints));
+            fclose(fid);
+            testCase.verifyError(@() labkittest.plan(Profile="apps", ...
+                SpecsRoot=specsRoot, ShardIndex=1, ShardCount=2, ...
+                ShardTimings=timingPath), "LabKit:TestPlan:InvalidShard");
             testCase.verifyError(@() labkittest.plan(Profile="apps", ...
                 SpecsRoot=specsRoot, ShardIndex=3, ShardCount=2), ...
                 "LabKit:TestPlan:InvalidShard");

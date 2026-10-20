@@ -182,6 +182,7 @@ jobs:
         env:
           LABKIT_TEST_SHARD_INDEX: ${{ matrix.apps_shard_index || 1 }}
           LABKIT_TEST_SHARD_COUNT: ${{ matrix.apps_shard_count || 1 }}
+          LABKIT_TEST_SHARD_TIMINGS: ${{ matrix.id == 'macos' && '.github/app-test-costs.json' || '' }}
         continue-on-error: true
         timeout-minutes: 30
         uses: matlab-actions/run-build@v3
@@ -201,6 +202,7 @@ jobs:
             --profiles "${{ matrix.profiles }}" \
             --partition-index "${{ matrix.apps_shard_index || 1 }}" \
             --partition-count "${{ matrix.apps_shard_count || 1 }}" \
+            --partition-timings "${{ matrix.id == 'macos' && '.github/app-test-costs.json' || '' }}" \
             --claim "${{ matrix.claim }}" \
             --artifact-name "matlab-${{ matrix.id }}-${{ matrix.release }}-${{ matrix.shard_id }}" \
             --headless-outcome "${{ steps.headless.outcome }}" \

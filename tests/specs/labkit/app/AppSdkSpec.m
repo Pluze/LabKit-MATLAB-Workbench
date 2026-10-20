@@ -61,6 +61,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 "labkit:app:contract:DuplicateId");
             % Failed composition does not mutate either immutable input.
             testCase.verifyEqual(base.include(fragment), combined);
+            testCase.verifyEqual(combined.include(labkit.app.view.Snapshot()), combined);
         end
 
         function validatesDefinitionMetadataAndCallbackRoles(testCase)
@@ -605,13 +606,13 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                     LabelPosition="top", ShowValue=false, ...
                     Bind="project.parameters.gain", Limits=[0 10])});
             row = labkit.app.layout.group("comparison", {controls, ...
-                labkit.app.layout.plotArea("result", @drawNothing), ...
+                labkit.app.layout.plotArea("result", @recordMixedPayload), ...
                 labkit.app.layout.dataTable("values")}, ...
                 Layout="horizontal", ColumnWidths={240, '1x', '1x'});
             workspace = labkit.app.layout.workspace().page("overview", "Overview", { ...
                 row, labkit.app.layout.plotArea("context", @drawNothing)});
             app = AppSdkSpec.definition(labkit.app.layout.workbench({}, Workspace=workspace), ...
-                "CreateState", @createRuntimeState);
+                "CreateState", @createRuntimeState, "PresentWorkbench", @presentMixedPayload);
             root = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
             journal = labkittest.temporarySessionJournal(app, root);
@@ -637,6 +638,12 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyGreaterThan(spinner.UserData.Slider.Position(3), 80);
             runtime.applyControlValue("amount", 4);
             testCase.verifyEqual(runtime.State.project.parameters.gain, 4);
+            % Fragment composition and default overlay preserve heterogeneous
+            % renderer values, empty shapes, and the independent table data.
+            testCase.verifyEqual(getappdata(fig, "mixedPayload"), ...
+                {[4 5], struct("label", "trace"); strings(1, 0), cell(0, 2)});
+            tableValue = oneTagged(fig, "values");
+            testCase.verifyEqual(tableValue.Data, {'gain', 4; 'empty', ''});
             clear cleanup
         end
 
@@ -1726,6 +1733,18 @@ end
 
 function view = presentProbe(~)
 view = labkit.app.view.Snapshot();
+end
+
+function view = presentMixedPayload(state)
+gain = state.project.parameters.gain;
+payload = {[gain gain+1], struct("label", "trace"); strings(1, 0), cell(0, 2)};
+fragment = labkit.app.view.Snapshot().renderPlot("result", payload);
+view = labkit.app.view.Snapshot().tableData("values", ...
+    {"gain", gain; "empty", []}, Columns=["Name", "Value"]).include(fragment);
+end
+
+function recordMixedPayload(axesById, model)
+setappdata(ancestor(axesById.main, "figure"), "mixedPayload", model);
 end
 
 function view = presentEditableTable(~)
