@@ -79,7 +79,7 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
             end
             if obj.Visible && obj.hasFigure()
                 obj.Figure.Name = char(obj.busyWindowTitle());
-                drawnow limitrate nocallbacks
+                obj.flushVisibleWindow();
             end
         end
 
@@ -115,7 +115,7 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
                 rmappdata(obj.Figure, "labkitAppBusy");
             end
             if wasVisible
-                drawnow limitrate nocallbacks
+                obj.flushVisibleWindow();
             end
         end
 
@@ -142,7 +142,15 @@ classdef (Hidden, Sealed) BusyLifecycle < handle
             obj.Figure.Pointer = "watch";
             obj.Figure.Name = char(obj.busyWindowTitle());
             obj.disableControls();
-            drawnow limitrate nocallbacks
+            obj.flushVisibleWindow();
+        end
+
+        function flushVisibleWindow(obj)
+            % Hidden windows retain busy input gating and native properties;
+            % rendering them here cannot present progress to the user.
+            if string(obj.Figure.Visible) == "on"
+                drawnow limitrate nocallbacks
+            end
         end
 
         function refreshTitle(obj)

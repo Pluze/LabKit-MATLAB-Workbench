@@ -51,6 +51,10 @@ if compiledPlan.Scope == "full-profile"
     fprintf("LabKit full profile validation\n");
     fprintf("Selected evidence: %d identities\n", numel(compiledPlan.Descriptors));
     fprintf("Purpose: complete catalog coverage for the selected environment/profile\n");
+elseif compiledPlan.Scope == "profile-shard"
+    fprintf("LabKit partitioned App profile validation\n");
+    fprintf("Selected evidence: %d identities\n", numel(compiledPlan.Descriptors));
+    fprintf("%s\n", compiledPlan.Reasons(end));
 else
     fprintf("LabKit focused local validation\n");
     fprintf("Selected evidence: %d identities\n", numel(compiledPlan.Descriptors));

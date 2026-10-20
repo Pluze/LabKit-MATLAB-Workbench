@@ -14,9 +14,12 @@ function result = plan(varargin)
 %   substring name matching, tags, or executor switches. File is a repository
 %   relative source path. Owner, Contract, and Environment use the same
 %   semantics as labkittest.catalog.
+%   Profile="apps", ShardIndex=K, ShardCount=N selects deterministic partition
+%   K of N. Every identity belongs to exactly one partition; all partitions
+%   together retain the complete App profile. Defaults are 1 and 1.
 %
 %   RESULT has Descriptors, Groups, Reasons, Scope, Classifications, and
-%   ManualChecks. Scope is focused-local or full-profile; it describes the
+%   ManualChecks. Scope is focused-local, full-profile, or profile-shard; it describes the
 %   selected evidence shape and never upgrades local evidence into merge proof. A
 %   manual check is an explicit non-automatable responsibility, never passing
 %   automated evidence. The executor consumes this result directly and runs
@@ -34,6 +37,16 @@ function result = plan(varargin)
             "The requested plan has no validated automated evidence.");
     end
     descriptors = uniqueDescriptors(descriptors);
+    if opts.ShardCount > 1
+        if opts.ShardCount > numel(descriptors)
+            error("LabKit:TestPlan:InvalidShard", "Partitions must not be empty.");
+        end
+        [~, order] = sort(string({descriptors.Id}));
+        descriptors = descriptors(order(opts.ShardIndex:opts.ShardCount:end));
+        scope = "profile-shard";
+        reasons(end + 1) = "App profile partition " + opts.ShardIndex + ...
+            "/" + opts.ShardCount + "; all partitions are required for full coverage";
+    end
     reportChangedPlan(opts, queries, descriptors, classifications);
     result = struct( ...
         "Descriptors", descriptors, ...
@@ -55,6 +68,8 @@ function opts = parseOptions(varargin)
     p.addParameter("SpecsRoot", defaultSpecsRoot(), @isFolderPath);
     p.addParameter("RepositoryRoot", repositoryRoot(), @isFolderPath);
     p.addParameter("ChangedPaths", strings(1, 0), @isTextList);
+    p.addParameter("ShardIndex", 1, @isPositiveInteger);
+    p.addParameter("ShardCount", 1, @isPositiveInteger);
     p.parse(varargin{:});
     opts = p.Results;
     opts.Profile = lower(strip(string(opts.Profile)));
@@ -65,6 +80,11 @@ function opts = parseOptions(varargin)
     opts.SpecsRoot = string(opts.SpecsRoot);
     opts.RepositoryRoot = string(opts.RepositoryRoot);
     opts.ChangedPaths = normalizeRepositoryPath(opts.ChangedPaths);
+    if opts.ShardIndex > opts.ShardCount || ...
+            (opts.ShardCount > 1 && opts.Profile ~= "apps")
+        error("LabKit:TestPlan:InvalidShard", ...
+            "App partitions require 1 <= ShardIndex <= ShardCount and Profile=apps.");
+    end
     selectorCount = sum([strlength(opts.Profile) > 0, strlength(opts.File) > 0, ...
         strlength(opts.Owner) > 0, strlength(opts.Contract) > 0, ...
         strlength(opts.Environment) > 0]);
@@ -85,6 +105,11 @@ function opts = parseOptions(varargin)
         error("LabKit:TestPlan:UnknownProfile", ...
             "Profile must be changed, headless, or apps.");
     end
+end
+
+function tf = isPositiveInteger(value)
+tf = isnumeric(value) && isscalar(value) && isfinite(value) && ...
+    value >= 1 && value == fix(value);
 end
 
 function [queries, reasons, manualChecks, classifications] = planQueries(opts)

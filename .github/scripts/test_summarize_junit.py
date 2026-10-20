@@ -127,6 +127,20 @@ class SummarizeJunitTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must be unique"):
             MODULE.parse_profiles("apps,apps")
 
+    def test_partition_summary_does_not_claim_complete_coverage(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = pathlib.Path(folder)
+            self.write_report(root, "apps", failed=False)
+            summary = root / "summary.md"
+            self.run_summary(root, summary, ["skipped", "success"],
+                             shard="App boundaries 2/2", profiles="apps", partition=(2, 2))
+            content = summary.read_text(encoding="utf-8")
+            self.assertIn("Disjoint partition 2/2", content)
+            self.assertIn("all partitions jointly retain", content)
+            self.assertIn("LABKIT_TEST_SHARD_INDEX=2", content)
+            self.assertIn("LABKIT_TEST_SHARD_COUNT=2", content)
+            self.assertNotIn("reset-path startup for every public App", content)
+
     def run_summary(
         self,
         root,
@@ -134,6 +148,7 @@ class SummarizeJunitTest(unittest.TestCase):
         outcomes,
         shard="All profiles",
         profiles="headless,apps",
+        partition=(1, 1),
     ):
         arguments = [
             "summarize_junit.py",
@@ -158,6 +173,7 @@ class SummarizeJunitTest(unittest.TestCase):
             "--apps-outcome",
             outcomes[1],
         ]
+        arguments += ["--partition-index", str(partition[0]), "--partition-count", str(partition[1])]
         with mock.patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary)}):
             with mock.patch.object(MODULE.sys, "argv", arguments):
                 with contextlib.redirect_stdout(io.StringIO()):

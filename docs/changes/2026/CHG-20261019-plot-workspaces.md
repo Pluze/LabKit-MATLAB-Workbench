@@ -16,7 +16,7 @@ component: labkit_FigureStudio_app | 0.10.2 -> 0.10.3
 
 ## Why
 
-Low-frequency EIS tails can obscure the Nyquist semicircle, while stacked Mark-10 recording and analysis content leaves little room for fitted regions. Plot inspection also suffered from repeated SDK bookkeeping, plot models containing unrelated editing state, repeated ECG axis linking, and Video Marker preserving an unfinished automatic viewport.
+Low-frequency EIS tails can obscure the Nyquist semicircle, while stacked Mark-10 recording and analysis content leaves little room for fitted regions. Plot inspection also suffered from repeated SDK bookkeeping, plot models containing unrelated editing state, repeated ECG axis linking, and Video Marker preserving an unfinished automatic viewport. Hidden validation also paid for forced busy-progress repaints and repeated process-level graphics probes, adding native work without increasing its evidence.
 
 ## What changed
 
@@ -24,6 +24,7 @@ Low-frequency EIS tails can obscure the Nyquist semicircle, while stacked Mark-1
 - Kept EIS overview legends compact and excluded hidden group uncertainty extents from fitting. Plot models contain their relevant display options, so group-name drafts and custom coordinate choices do not redraw unrelated overview plots.
 - Gave Mark-10 modulus analysis the full workspace width with results below, retained analysis controls in the sidebar, and moved recording plots and time controls to Recording Review. Reset X/Y preserves fitted values.
 - Extended SDK groups to combine controls, plots and tables with horizontal column widths, and added compact slider captions above the track. Standard axes toolbars are initialized once; snapshot composition and callback validation avoid repeated full scans and comparisons.
+- Kept busy input gating for hidden windows while avoiding forced progress repaints, and reused independent native-graphics capability probes within each test process. Complete CI platform and test coverage is retained; macOS executes two disjoint catalog partitions to bound the slow native-rendering tail.
 - Retained ECG time-axis linkage across redraws and restored independent raw-recording inspection when analysis is cleared. Video Marker uses the SDK viewport policy instead of freezing an unfinished automatic view.
 - Kept Mark-10 pending zero inputs out of analysis plot models, isolated Gait Analysis detection drafts from display calibration, and kept Figure Studio object selection out of the rendered document. Editing controls no longer redraw unrelated plots.
 
