@@ -42,7 +42,7 @@
       "rationale": "A product launcher is an App and framework ownership decision, not test planning."
     },
     {
-      "prompt": "只运行这个现有失败测试，不新增测试。",
+      "prompt": "Run only this existing failing test without adding new tests.",
       "should_activate": true,
       "rationale": "Existing test execution is in scope without authoring."
     },

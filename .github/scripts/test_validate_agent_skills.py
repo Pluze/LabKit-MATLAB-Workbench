@@ -254,7 +254,7 @@ class ValidateAgentSkillsTest(unittest.TestCase):
             nested = root / "library" / "internal"
             nested.mkdir(parents=True)
             (nested.parent / "AGENTS.md").write_text("b" * 8000)
-            (nested / "AGENTS.md").write_text("界" * 3000)
+            (nested / "AGENTS.md").write_text(chr(0x754C) * 3000)
             chains = dict(MODULE.instruction_chains(root))
             self.assertEqual(chains[pathlib.Path("library/internal")], 33004)
             with self.assertRaisesRegex(MODULE.SkillContractError, "instruction chain"):

@@ -20,7 +20,8 @@ function report = runCodecheckReport(root, varargin)
 %   WriteArtifacts - Logical scalar controlling JSON and HTML output. Default
 %       is true. Set false for the lightweight agent/checkpoint gate.
 %   RequireClean - Logical scalar. When true, any issue, suppression, or
-%       compatibility recommendation throws after printing CODECHECK_RESULT.
+%       compatibility recommendation or hygiene finding throws after printing
+%       CODECHECK_RESULT.
 %       Default is false.
 %
 % Outputs:
@@ -29,7 +30,8 @@ function report = runCodecheckReport(root, varargin)
 %       and CodeCompatibilityAnalysis data. htmlFile combines both analyses.
 %       fileCount, issueCount, suppressedIssueCount, runtimeViolationCount,
 %       compatibilityCheckCount, and compatibilityRecommendationCount report
-%       the corresponding result sizes.
+%       the corresponding result sizes. textFileCount, hygieneViolationCount,
+%       and hygieneViolations describe text/source hygiene findings.
 %
 % Errors:
 %   Analyzer, file-access, and report-write failures propagate to the caller.
@@ -54,7 +56,7 @@ function report = runCodecheckReport(root, varargin)
         progressFcn = @writeConsoleProgress;
     end
     excludedFolders = [".git", ".github", ".vscode", ".codes", ...
-        "artifacts", "node_modules", "photos", "private_apps"];
+        "artifacts", "node_modules", "photos", "private_apps", "site"];
     notifyProgress(progressFcn, "Finding MATLAB files...", 0.02);
     files = collectFiles(root, "*.m", excludedFolders);
     notifyProgress(progressFcn, ...
@@ -70,6 +72,17 @@ function report = runCodecheckReport(root, varargin)
         numel(files)), 0.88);
     runtimeViolations = findSecondaryRuntimeCalls(root, files);
 
+    notifyProgress(progressFcn, "Checking repository text hygiene...", 0.90);
+    textExcludedFolders = [".git" "artifacts" "node_modules" "photos" ...
+        "private_apps" "site"];
+    textFiles = collectFiles(root, "*", textExcludedFolders);
+    extensions = [".m" ".md" ".txt" ".json" ".yml" ".yaml" ...
+        ".csv" ".tsv" ".xml" ".html" ".css" ".js" ".sh" ".ps1" ".py"];
+    [~, names, suffixes] = arrayfun(@fileparts, textFiles);
+    textFiles = textFiles(endsWith(lower(textFiles), extensions) | ...
+        ismember(names + suffixes, ["LICENSE" "NOTICE" "AGENTS" ".gitignore" ".gitattributes"]));
+    hygieneViolations = findRepositoryHygiene(root, textFiles);
+
     report = struct();
     report.jsonFile = "";
     report.compatibilityJsonFile = "";
@@ -82,6 +95,9 @@ function report = runCodecheckReport(root, varargin)
         height(compatibility.Recommendations);
     report.runtimeViolationCount = numel(runtimeViolations);
     report.runtimeViolations = runtimeViolations;
+    report.textFileCount = numel(textFiles);
+    report.hygieneViolations = hygieneViolations;
+    report.hygieneViolationCount = numel(hygieneViolations);
     if p.Results.WriteArtifacts
         outputRoot = fullfile(root, "artifacts", "code-check");
         reportBase = uniqueReportBase(outputRoot);
@@ -112,25 +128,28 @@ function report = runCodecheckReport(root, varargin)
     isClean = report.issueCount == 0 && ...
         report.suppressedIssueCount == 0 && ...
         report.compatibilityRecommendationCount == 0 && ...
-        report.runtimeViolationCount == 0;
+        report.runtimeViolationCount == 0 && report.hygieneViolationCount == 0;
     status = "FAIL";
     if isClean
         status = "PASS";
     end
     report.summary = compose( ...
-        "CODECHECK_RESULT status=%s files=%d issues=%d suppressed=%d compatibility=%d runtime=%d", ...
+        "CODECHECK_RESULT status=%s files=%d issues=%d suppressed=%d compatibility=%d runtime=%d hygiene=%d", ...
         status, report.fileCount, report.issueCount, ...
         report.suppressedIssueCount, ...
         report.compatibilityRecommendationCount, ...
-        report.runtimeViolationCount);
+        report.runtimeViolationCount, report.hygieneViolationCount);
     notifyProgress(progressFcn, "Code analysis report complete.", 1.00);
     for violation = report.runtimeViolations.'
         fprintf("CODECHECK_RUNTIME %s\n", violation);
     end
+    for violation = report.hygieneViolations.'
+        fprintf("CODECHECK_HYGIENE %s\n", violation);
+    end
     fprintf("%s\n", report.summary);
     if p.Results.RequireClean && ~isClean
         error("LabKit:Codecheck:Findings", ...
-            "Code analysis must have zero issues, suppressions, compatibility recommendations, and secondary-runtime calls.");
+            "Code analysis must have zero issues, suppressions, compatibility recommendations, secondary-runtime calls, and repository hygiene findings.");
     end
 end
 
