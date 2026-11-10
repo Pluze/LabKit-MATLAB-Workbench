@@ -33,8 +33,9 @@ function events = detectEcgPeaks(signal, opts)
 % Options:
 %   method - "qrs-streaming" (default), "pan-tompkins", or "local".
 %   polarity - "auto" (default), "positive", "negative", or "absolute".
-%              auto chooses the stronger direction; absolute scores either
-%              direction by magnitude.
+%              auto uses the median signed amplitude of preliminary absolute
+%              beat candidates to select one direction for the recording.
+%              absolute scores either direction independently by magnitude.
 %   minDistanceSec - Minimum accepted peak spacing in seconds. Defaults are
 %                    method-specific; see defaultEcgPeakOptions.
 %   threshold - Local method only. Explicit score threshold. The default []
@@ -74,7 +75,9 @@ function events = detectEcgPeaks(signal, opts)
 %   label - "qrs" for pan-tompkins and qrs-streaming, or "peak" for local.
 %   threshold - Final score threshold used by the detector.
 %   metadata - Selected method, polarity, minimum spacing, and other
-%              method-specific settings used during detection.
+%              method-specific settings used during detection. Auto mode adds
+%              resolvedPolarity ("positive" or "negative"). Input values and
+%              returned amplitudes retain their original sign.
 %
 % Errors:
 %   labkit:biosignal:InvalidOptions - opts is not a scalar struct or contains

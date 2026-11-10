@@ -9,5 +9,6 @@ if ~isempty(paths)
     cache.filePreview = ecg_print.sourceFiles.previewFileHeader(paths(1),18);
 end
 session = struct('workflow',struct('importStatus',status), ...
-    'cache',cache,'importDirty',false,'debugOverlay',false,'analysisStatus',"Ready to analyze.");
+    'cache',cache,'importDirty',false,'debugOverlay',false,'templateWindow',1, ...
+    'analysisStatus',"Ready to analyze.");
 end

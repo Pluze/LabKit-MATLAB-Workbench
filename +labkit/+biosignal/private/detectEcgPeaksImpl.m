@@ -38,6 +38,27 @@ function events = detectEcgPeaksImpl(signal, opts)
     end
 
     method = normalizeMethod(optionValue(opts, 'method', 'qrs_streaming'));
+    requestedPolarity = normalizePolarity(optionValue(opts, 'polarity', 'auto'));
+    if requestedPolarity == "auto"
+        % Let repeated beat candidates vote, rather than allowing one extreme
+        % artifact or an individual QRS lobe to choose each anchor's direction.
+        preliminary = opts;
+        preliminary.polarity = "absolute";
+        candidates = dispatchDetector(signal, x, fs, preliminary, method);
+        centered = x-median(x,'omitnan');
+        direction = median(centered(candidates.index),'omitnan');
+        resolved = "positive";
+        if direction < 0, resolved = "negative"; end
+        opts.polarity = resolved;
+        events = dispatchDetector(signal, x, fs, opts, method);
+        events.metadata.polarity = "auto";
+        events.metadata.resolvedPolarity = resolved;
+    else
+        events = dispatchDetector(signal, x, fs, opts, method);
+    end
+end
+
+function events = dispatchDetector(signal, x, fs, opts, method)
     switch method
         case "local"
             events = detectLocal(signal, x, fs, opts);

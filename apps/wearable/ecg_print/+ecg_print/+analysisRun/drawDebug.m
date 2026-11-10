@@ -13,7 +13,7 @@ for j=1:8
 end
 if model.overlay,axes(1).Layout.Row=[1 5];end
 % MATLAB default palette: blue ECG, orange-red template, cyan residual,
-% green extracted noise, purple centered noise.
+% green extracted noise, purple detrended noise.
 colors=[0 .447 .741;.850 .325 .098;.301 .745 .933;.466 .674 .188; ...
     .494 .184 .556;.494 .184 .556;0 .447 .741;.466 .674 .188];
 for j=1:8
@@ -33,6 +33,7 @@ for j=1:8
     title(ax,s.title,'FontWeight','normal','FontSize',11,'HorizontalAlignment','left');
     ax.Title.Units='normalized';ax.Title.Position=[0 1.02 0];
     xlabel(ax,'');ylabel(ax,s.unit);grid(ax,'on');ax.GridAlpha=.12;
+    if j==6,ax.YAxis.Exponent=0;end
     if j==8
         xlabel(ax,'ROI time (s)');ax.XTickLabelMode='auto';
     else

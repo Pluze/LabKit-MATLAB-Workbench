@@ -11,10 +11,11 @@ function result = ecgNextAnalysis(raw, bandpassed, events, progress)
 %   reference QRS removal/crossfade. For each beat, the complete candidate
 %   closest to a window center is selected. A boundary candidate may remain
 %   for display but has NaN RMS/ratio. No sample is reused across beat rows.
-%   NoiseRMS uses each beat's samples after NST one-second chunk centering.
+%   NoiseRMS uses each complete beat's samples after per-beat linear detrending.
 %   QRSNoiseDb=20*log10(QRSPeakToPeak/(sqrt(8)*NoiseRMS)).
-%   QRSPeakToPeak uses filtered R +/-50 ms. An incomplete final noise
-%   chunk is unavailable. nstNoise retains centering and chunk provenance.
+%   QRSPeakToPeak uses filtered R +/-50 ms. statisticsNoise retains detrended
+%   samples, removed trends and per-beat fit coefficients. Incomplete beats
+%   have no RMS; there is no fixed-second chunk or trailing chunk exclusion.
 %   These statistics and beat attribution are App additions, not FDA outputs.
 %   result.noise/time retain exact selected reference samples and coordinates.
 %   windows retains each complete extraction and its input interval.
@@ -40,7 +41,7 @@ result = struct('ok', false, 'statusCode', "short-record", ...
     'perBeat', table(), 'noise', [], 'time', [], 'beatIndex', [], ...
     'synthetic', NaN(n,1), 'windows', struct([]), ...
     'raw', raw.values, 'bandpassed', bandpassed.values, 'rPeaks', r, ...
-    'fs', 1000, 'noiseRMS', NaN, 'qrsP2P', NaN, 'nstNoise', struct([]), ...
+    'fs', 1000, 'noiseRMS', NaN, 'qrsP2P', NaN, 'statisticsNoise', struct([]), ...
     'referenceCommit', "972c66cb274319acf705776d723b8e52372e22f0", ...
     'blankSeconds', .040, 'blendSeconds', .060);
 qrs = ecg_print.analysisRun.qrsAmplitude(bandpassed.values, r, 1000);
@@ -114,10 +115,12 @@ end
 result.noise = vertcat(noise{:}); result.time = vertcat(time{:});
 result.beatIndex = vertcat(identities{:});
 result.windows = windows;
-% Preserve FDA output; only the separate statistics branch removes chunk DC.
-result.nstNoise = ecg_print.analysisRun.nstNoise(result.noise,1000);
+% Preserve FDA output. The statistics branch removes an independent fitted
+% line on exactly the samples used to compute each complete beat's RMS.
+result.statisticsNoise = ecg_print.analysisRun.beatNoiseStatistics( ...
+    result.noise,result.time,result.beatIndex,result.perBeat.Status=="complete");
 for b=find(result.perBeat.Status=="complete")'
-    values=result.nstNoise.centered(result.beatIndex==b);
+    values=result.statisticsNoise.detrended(result.beatIndex==b);
     if isempty(values)||any(~isfinite(values))
         result.perBeat.Status(b)="boundary";
         continue;
@@ -130,7 +133,7 @@ valid = result.perBeat.Status == "complete";
 result.ok = any(valid);
 if result.ok
     samples = ismember(result.beatIndex, find(valid));
-    result.noiseRMS = sqrt(mean(result.nstNoise.centered(samples).^2));
+    result.noiseRMS = sqrt(mean(result.statisticsNoise.detrended(samples).^2));
     amplitudes = sort(qrsValues(valid)); trim = floor(.05*numel(amplitudes));
     result.qrsP2P = mean(amplitudes(trim+1:end-trim));
     result.statusCode = "complete";

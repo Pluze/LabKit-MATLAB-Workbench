@@ -229,6 +229,46 @@ classdef BiosignalFacadeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(events.metadata.method, "local");
         end
 
+        function autoPolarityPreservesInvertedRecordingsAndRejectsOneExtremeVote(testCase)
+            % Independent oracle: prescribed pulse times and sign reversal.
+            % Per-candidate absolute snapping or positive-only correction
+            % would produce mixed signs or shift the inverted anchors.
+            signal = BiosignalFacadeSpec.syntheticEcgSignal();
+            signal.values = signal.values-0.35;
+            signal.values(round(5.45*signal.fs)+1) = -4;
+            for method=["local","pan-tompkins","qrs-streaming"]
+                options=struct('method',method,'minDistanceSec',0.5);
+                upright=labkit.biosignal.detectEcgPeaks(signal,options);
+                inverted=signal; inverted.values=-signal.values;
+                reverse=labkit.biosignal.detectEcgPeaks(inverted,options);
+                testCase.verifyEqual(upright.metadata.resolvedPolarity,"positive");
+                testCase.verifyEqual(reverse.metadata.resolvedPolarity,"negative");
+                testCase.verifyEqual(reverse.index,upright.index);
+                testCase.verifyEqual(reverse.amplitude,-upright.amplitude);
+                testCase.verifyGreaterThanOrEqual(numel(upright.index),7);
+                % The isolated artifact can suppress nearby refractory candidates.
+                for t=[2:4 7:8]
+                    testCase.verifyLessThanOrEqual(min(abs(upright.time-t)),.04);
+                end
+                testCase.verifyGreaterThan(upright.amplitude,median(signal.values));
+            end
+        end
+
+        function explicitPositiveRDoesNotFollowLargerNegativeLobes(testCase)
+            signal=BiosignalFacadeSpec.syntheticEcgSignal();
+            for t=1:9
+                signal.values=signal.values-1.6*exp(-((signal.time-t-.04)/.016).^2);
+            end
+            for method=["local","pan-tompkins","qrs-streaming"]
+                peaks=labkit.biosignal.detectEcgPeaks(signal,struct( ...
+                    'method',method,'polarity',"positive",'minDistanceSec',.5));
+                testCase.verifyGreaterThan(peaks.amplitude,.5);
+                for t=2:8
+                    testCase.verifyLessThanOrEqual(min(abs(peaks.time-t)),.02);
+                end
+            end
+        end
+
         function buildsBeatMeasurements(testCase)
             signal = labkit.biosignal.filterSignal(BiosignalFacadeSpec.syntheticEcgSignal(), ...
                 struct("type", "bandpass", "cutoffHz", [0.5, 40]));
