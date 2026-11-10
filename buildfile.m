@@ -3,7 +3,7 @@ function plan = buildfile
 %   buildtool changedFast  final local pre-PR review evidence
 %   buildtool headless     every headless specification
 %   buildtool apps         hidden-GUI and path-isolated App evidence
-%   buildtool codecheck    require zero analysis and runtime-boundary findings
+%   buildtool codecheck    require zero analysis, runtime, and repository hygiene findings
 %   buildtool docs         render documentation
 %   buildtool docsCheck    verify generated documentation
 
@@ -13,7 +13,7 @@ plan("changedFast").Dependencies = ["codecheck", "docsCheck"];
 plan("changedFast").Description = "Run the complete local pre-PR gate with focused tests, codecheck, and docsCheck";
 plan("headless").Description = "Run all non-GUI product, SDK, persistence, and export specifications";
 plan("apps").Description = "Run hidden native-App workflows and reset-path App isolation evidence";
-plan("codecheck").Description = "Require zero code, compatibility, suppression, and runtime findings";
+plan("codecheck").Description = "Require zero code, compatibility, suppression, runtime, and hygiene findings";
 plan("docs").Description = "Regenerate the path-owned documentation site";
 plan("docsCheck").Description = "Verify generated documentation matches its source contracts";
 end

@@ -106,7 +106,7 @@ jobs:
             run_apps: true
             cache: false
             claim: Current MATLAB and Windows native App, graphics, export, and path-isolation evidence
-          - os: macos-14
+          - os: macos-15
             id: macos
             label: macOS
             release: latest
@@ -119,7 +119,7 @@ jobs:
             run_apps: true
             cache: false
             claim: Current Apple Silicon native App, graphics, export, and path-isolation evidence across both disjoint partitions
-          - os: macos-14
+          - os: macos-15
             id: macos
             label: macOS
             release: latest

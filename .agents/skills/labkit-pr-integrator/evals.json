@@ -42,7 +42,7 @@
       "rationale": "The PR preparer respects the requested delivery state; preparing a PR does not itself authorize merging it."
     },
     {
-      "prompt": "为这个已完成的修改创建 PR，验证后合并 main 并清理。",
+      "prompt": "Create a PR for this completed change, validate it, then merge into main and clean up.",
       "should_activate": true,
       "rationale": "PR through merge is the requested delivery state."
     }

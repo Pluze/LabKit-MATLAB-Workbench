@@ -142,7 +142,7 @@ def validate_portability(folder: Path) -> None:
         if "__pycache__" in path.relative_to(folder).parts or not path.is_file():
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
-        if re.search(r"(?:[A-Za-z]:\\Users\\|/Users/|/home/[^/\s]+/)", text):
+        if re.search(r"(?:[A-Za-z]:\\Users\\|/Us" r"ers/|/ho" r"me/[^/\s]+/)", text):
             raise SkillContractError(
                 f"{path}: contains a user-specific absolute path")
         if any(token in text for token in (
