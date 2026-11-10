@@ -144,7 +144,6 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             runtime.applyControlValue('templateWindow',string(selector.Items{1}));
             firstModel=ecg_print.analysisRun.morphologyModel(runtime.State.session.cache,1);
             testCase.verifyEqual(numel(findall(windowNoise,'Type','line')),numel(firstModel.noiseBeats));
-            exportapp(runtime.figureHandle(),fullfile(folder,'ecg-templates.png'));
             e=result.windows(1).extraction;
             testCase.verifyEqual(e.bandResidualNoise+e.restoredResidualNoise,e.noise,AbsTol=1e-12);
             testCase.verifyEqual(e.compressedRaw-e.noise,e.compressedSignal,AbsTol=1e-12);
