@@ -1,5 +1,5 @@
 function drawResults(axesById,model)
-%DRAWRESULTS ECG and time-indexed per-beat NST-centered noise, QRS amplitude and SNR.
+%DRAWRESULTS ECG and time-indexed per-beat detrended noise, QRS amplitude and SNR.
 ids=["wave","noise","peak","ratio"];
 axes=arrayfun(@(id)axesById.(id),ids);
 if model.showRecording, ecg_print.analysisRun.linkTimeAxes(axes, false); end
@@ -17,9 +17,9 @@ if ~isempty(model.beats) && ~model.showRecording
     plot(axesById.ratio,t.RTime,t.QRSNoiseDb,'.-','LineWidth',1.15,'Color',[.466 .674 .188]);
     plot(axesById.peak,t.RTime,t.QRSPeakToPeak,'.-','LineWidth',1.15,'Color',[0 .447 .741]);
 end
-title(axesById.noise,'Noise RMS per beat (NST 1 s centering)');ylabel(axesById.noise,model.unit);
+title(axesById.noise,'Detrended noise RMS per beat');ylabel(axesById.noise,model.unit);
 title(axesById.peak,'Signal peak-to-peak per beat');ylabel(axesById.peak,model.unit);
-title(axesById.ratio,'SNR per beat (same-beat QRS p-p / noise RMS)');
+title(axesById.ratio,'SNR per beat');
 ylabel(axesById.ratio,'dB');
 ylabel(axesById.wave,model.unit);
 for id=ids

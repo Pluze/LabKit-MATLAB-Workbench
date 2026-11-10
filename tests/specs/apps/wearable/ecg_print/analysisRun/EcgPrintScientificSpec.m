@@ -18,7 +18,7 @@ classdef EcgPrintScientificSpec < matlab.unittest.TestCase
             testCase.verifyEqual(result.time,d.plotTime(:),AbsTol=1e-12);
             testCase.verifyEqual(sum(result.perBeat.NoiseSamples),numel(d.noise));
             for k=find(result.perBeat.Status=="complete")'
-                expected=result.nstNoise.centered(nearest==k);
+                expected=result.statisticsNoise.detrended(nearest==k);
                 rms=sqrt(mean(expected.^2));
                 testCase.verifyEqual(result.perBeat.NoiseRMS(k),rms,AbsTol=1e-12);
                 qrs=d.bandpassed(d.rPeaks(k)-50:d.rPeaks(k)+50);
@@ -107,58 +107,69 @@ classdef EcgPrintScientificSpec < matlab.unittest.TestCase
             one=ecg_print.analysisRun.beatStatistics(t(1,:),"mV");
             testCase.verifyTrue(all(isnan(one.Variance)));
         end
-        function centersOneSecondNoiseChunksBeforeBeatAttribution(testCase)
-            % Hand-built +/-3 and +/-4 chunks with different DC offsets:
-            % whole-window or per-beat demeaning cannot reproduce these samples.
-            noise=[10+repmat([-3;3],500,1);100+repmat([-4;4],500,1);999];
-            n=ecg_print.analysisRun.nstNoise(noise,1000);
-            testCase.verifyEqual(n.centered(1:2000), ...
-                [repmat([-3;3],500,1);repmat([-4;4],500,1)]);
-            testCase.verifyTrue(isnan(n.centered(end)));
-            testCase.verifyEqual(n.blocks.NoiseRMS,[3;4]);
-            testCase.verifyEqual(n.blocks.RemovedMean,[10;100]);
-            shifted=ecg_print.analysisRun.nstNoise(noise+5000,1000);
-            testCase.verifyEqual(shifted.centered,n.centered);
-            % A beat crossing two chunks must weight its actual samples,
-            % not copy a chunk RMS or remove another per-beat mean.
+        function removesDriftWithinBeatOwnershipInsteadOfSecondBlocks(testCase)
+            % Repeated [1 -2 1] is orthogonal to constants and time. Known
+            % unequal beat lengths cross second boundaries; a fixed-second
+            % or mean-only implementation leaves a ramp and fails this oracle.
+            t=(0:2004)'/1000;
+            residual=[repmat([1;-2;1],367,1);3*repmat([1;-2;1],301,1);0];
+            identities=[ones(1101,1);2*ones(903,1);3];
+            noise=[100+50*t(1:1101);-200-30*t(1102:2004);999]+residual;
+            n=ecg_print.analysisRun.beatNoiseStatistics(noise,t,identities,[true;true;false]);
+            testCase.verifyEqual(n.detrended(1:2004),residual(1:2004),AbsTol=1e-11);
+            testCase.verifyTrue(isnan(n.detrended(end)));
+            testCase.verifyEqual(n.fits.RemovedSlope(1:2),[50;-30],AbsTol=1e-10);
+            testCase.verifyEqual(n.fits.NoiseSamples,[1101;903;1]);
+            testCase.verifyEqual(n.trend(1:2004)+n.detrended(1:2004),noise(1:2004),AbsTol=1e-11);
+            changed=noise+5000+70*t;
+            other=ecg_print.analysisRun.beatNoiseStatistics(changed,t,identities,[true;true;false]);
+            testCase.verifyEqual(other.detrended,n.detrended,AbsTol=1e-10);
+            % This prescribed nonuniform coordinate makes index-based
+            % detrending incorrect even when the beat mean is removed.
+            times=[0;.2;.5;1;1.1;1.5;1.8];
+            expected=[3;-5;2;4;-5;1;0];
+            values=10+4*times+expected;
+            irregular=ecg_print.analysisRun.beatNoiseStatistics(values,times,[1;1;1;2;2;2;2],[true;true]);
+            testCase.verifyEqual(irregular.detrended,expected,AbsTol=1e-12);
+            testCase.verifyEqual(irregular.fits.RemovedSlope,[4;4],AbsTol=1e-12);
+            tiny=ecg_print.analysisRun.beatNoiseStatistics([1;2],[0;1],[1;1],true);
+            testCase.verifyTrue(all(isnan(tiny.detrended)));
+            flatTime=ecg_print.analysisRun.beatNoiseStatistics([1;2;3],[0;0;0],[1;1;1],true);
+            testCase.verifyTrue(all(isnan(flatTime.detrended)));
+            testCase.verifyError(@()ecg_print.analysisRun.beatNoiseStatistics([1;NaN],[0;1],[1;1],true), ...
+                'ecg_print:InvalidBeatNoiseInput');
             d=load(fullfile(fileparts(mfilename('fullpath')),'ecgNextOracle.mat'));
             result=ecg_print.analysisRun.ecgNextAnalysis(signal(d.raw,1000), ...
                 signal(d.bandpassed,1000),struct('index',d.rPeaks));
-            expected=NaN(numel(d.noise),1);
-            for first=1:1000:numel(d.noise)-999
-                ids=first:first+999;v=d.noise(ids);
-                expected(ids)=v-sum(v)/1000;
-            end
-            testCase.verifyEqual(result.nstNoise.centered,expected,AbsTol=1e-12);
+            expected=NaN(size(result.noise));
             for beat=find(result.perBeat.Status=="complete")'
-                samples=expected(result.beatIndex==beat);
+                ids=result.beatIndex==beat;times=result.time(ids);values=result.noise(ids);
+                coefficients=polyfit(times,values,1);
+                expected(ids)=values-polyval(coefficients,times);
                 testCase.verifyEqual(result.perBeat.NoiseRMS(beat), ...
-                    sqrt(sum(samples.^2)/numel(samples)),AbsTol=1e-12);
+                    sqrt(mean(expected(ids).^2)),AbsTol=1e-12);
+                testCase.verifyLessThan(abs(mean(result.statisticsNoise.detrended(ids))),1e-12);
             end
-            long=ecg_print.analysisRun.nstNoise(ones(301000,1),1000);
-            testCase.verifyEqual(height(long.blocks),301);
-            testCase.verifyEqual(long.centered,zeros(301000,1));
-            testCase.verifyError(@()ecg_print.analysisRun.nstNoise([1 NaN],1000), ...
-                'ecg_print:InvalidNSTInput');
+            testCase.verifyEqual(result.statisticsNoise.detrended,expected,AbsTol=1e-12);
+            testCase.verifyEqual(result.noise,d.noise(:),AbsTol=1e-12);
         end
         function localizesRawPeaksWithoutFollowingDistantWaves(testCase)
             % Known extrema differ from detector anchors; distant larger
             % waves must not pull an anchor outside the local QRS search.
-            raw=signal(1000*ones(1000,1),1000);detector=signal(zeros(1000,1),1000);
-            raw.values([110 310 510])=[1010 990 1012];
+            raw=signal(1000*ones(1000,1),1000);
+            raw.values([110 310 510])=[1010 1011 1012];
             raw.values([140 340 540])=[1100 900 1100];
-            detector.values([100 300 500])=[1 -1 1];
+            raw.values([95 295 495])=900; % Larger negative lobes cannot become R.
             events=struct('index',[100;300;500],'metadata',struct());
-            actual=ecg_print.analysisRun.refineRPeaks(events,raw,detector,.15);
+            actual=ecg_print.analysisRun.refineRPeaks(events,raw,.15);
             testCase.verifyEqual(actual.index,[110;310;510]);
-            testCase.verifyEqual(actual.amplitude,[1010;990;1012]);
+            testCase.verifyEqual(actual.amplitude,[1010;1011;1012]);
             testCase.verifyEqual(actual.time,[.109;.309;.509],AbsTol=1e-12);
             testCase.verifyEqual(actual.metadata.rawLocalization.shiftSamples,[10;10;10]);
             % A conflicting move must retain the original beat identities.
             raw.values(:)=0;raw.values([120 390])=[5 5];
-            detector.values(:)=0;detector.values([100 400])=1;
             events.index=[100;400];
-            actual=ecg_print.analysisRun.refineRPeaks(events,raw,detector,.3);
+            actual=ecg_print.analysisRun.refineRPeaks(events,raw,.3);
             testCase.verifyEqual(actual.index,[100;400]);
         end
         function analyzesFullSourceThroughSinglePipeline(testCase)

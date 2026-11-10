@@ -94,7 +94,7 @@ The public functions cover:
 - template building and template-residual SNR-style segment measurements
 - generic group summaries and pairwise Welch-style comparisons
 
-`detectEcgPeaks` supports `qrs-streaming`, `pan-tompkins`, and `local` methods. Select the method through its options; no detector-specific helper call is required.
+`detectEcgPeaks` supports `qrs-streaming`, `pan-tompkins`, and `local` methods. Select the method through its options; no detector-specific helper call is required. In `auto` polarity mode, a preliminary absolute-polarity detection supplies beat candidates; their median signed amplitude relative to the signal median selects one direction for a second detection. `metadata.resolvedPolarity` records that direction. This treats inverted recordings symmetrically and prevents individual anchors from switching direction. It does not invert the signal or establish that the selected lobe is the physiological R wave; mixed morphology and artifact-dominated recordings still require review. Use explicit `positive` or `negative` polarity when known; `absolute` continues to select either direction per candidate.
 
 ### `detectEcgPeaks` Options
 

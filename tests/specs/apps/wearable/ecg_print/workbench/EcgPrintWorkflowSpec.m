@@ -50,8 +50,10 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(m.residual.values,result.raw-result.synthetic);
             testCase.verifyEqual(m.noise.time,result.time);
             testCase.verifyEqual(m.noise.values,result.noise);
-            testCase.verifyEqual(m.metricNoise.values,result.nstNoise.centered);
-            testCase.verifyEqual(m.metricNoise.time,result.time);
+            metricSamples=~isnan(m.metricNoise.time);
+            testCase.verifyEqual(m.metricNoise.values(metricSamples),result.statisticsNoise.detrended);
+            testCase.verifyEqual(m.metricNoise.time(metricSamples),result.time);
+            testCase.verifyEqual(nnz(~metricSamples),nnz(diff(result.beatIndex)));
             noiseAxis=findall(runtime.figureHandle(),'Tag','resultsAxes.noise');
             ratioAxis=findall(runtime.figureHandle(),'Tag','resultsAxes.ratio');
             noiseLine=findall(noiseAxis,'Type','line');ratioLine=findall(ratioAxis,'Type','line');
@@ -73,7 +75,7 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEmpty(template.Legend);
             finalNoise=findall(runtime.figureHandle(),'Tag','debugAxes.metricNoise');
             plotted=findall(finalNoise,'Type','line');
-            testCase.verifyEqual(plotted.YData(:),result.nstNoise.centered);
+            testCase.verifyEqual(plotted.YData(:),m.metricNoise.values);
             for pair=["beatNoise","NoiseRMS";"beatPeak","QRSPeakToPeak";"beatSnr","QRSNoiseDb"]'
                 metricAxis=findall(runtime.figureHandle(),'Tag',"debugAxes."+pair(1));
                 metricLine=findall(metricAxis,'Type','line');
@@ -92,6 +94,56 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             % Repeated redraws retain live linkage, not merely equal limits.
             xlim(top,[14 16]);testCase.verifyEqual(bottom.XLim,[14 16]);
             testCase.verifyEqual(metricAxis.XLim,[14 16]);
+            templatePage=findall(runtime.figureHandle(),'Tag','templatesPage');
+            testCase.assertNotEmpty(templatePage);
+            testCase.verifyEqual(string(templatePage.Title),"Templates");
+            templatePage.Parent.SelectedTab=templatePage;drawnow;
+            selector=findall(runtime.figureHandle(),'Tag','templateWindow');
+            testCase.verifyClass(selector,'matlab.ui.control.DropDown');
+            testCase.verifyNumElements(selector.Items,numel(result.windows));
+            testCase.verifySubstring(string(selector.Items{2}),'Window 2 | File ');
+            runtime.applyControlValue('templateWindow',string(selector.Items{2}));
+            testCase.verifyEqual(runtime.State.session.templateWindow,2);
+            morphology=ecg_print.analysisRun.morphologyModel(runtime.State.session.cache,2);
+            testCase.verifyEqual(morphology.window,2);
+            selectedAxis=findall(runtime.figureHandle(),'Tag','morphologyAxes.selected');
+            testCase.verifyEqual(ancestor(selectedAxis,'uitab'),templatePage);
+            templateLine=findall(selectedAxis,'Type','line','DisplayName','Final median');
+            testCase.verifyEqual(templateLine.YData(:),result.windows(2).template(:));
+            testCase.verifyEqual(numel(findall(selectedAxis,'Type','line')),numel(morphology.beatNumbers)+1);
+            windowNoise=findall(runtime.figureHandle(),'Tag','morphologyAxes.noise');
+            allAxis=findall(runtime.figureHandle(),'Tag','morphologyAxes.all');
+            testCase.verifyEqual(selectedAxis.Layout.Row,1);
+            testCase.verifyEqual(windowNoise.Layout.Row,2);
+            testCase.verifyEqual(allAxis.Layout.Row,3);
+            testCase.verifyEqual(selectedAxis.XLim,windowNoise.XLim);
+            xlim(selectedAxis,[-.15 .25]);
+            testCase.verifyEqual(windowNoise.XLim,[-.15 .25]);
+            e=result.windows(2).extraction;
+            for k=1:numel(morphology.noiseBeats)
+                beat=morphology.noiseBeats(k);
+                curve=findall(windowNoise,'Type','line','DisplayName',sprintf('Beat %d',beat.beat));
+                testCase.verifyEqual(curve.YData(:),beat.values);
+                testCase.verifyEqual(curve.XData(:),beat.time);
+                first=result.windows(2).startIndex;last=result.windows(2).endIndex;
+                globalBeats=find(result.rPeaks>=first & result.rPeaks<=last);
+                local=find(globalBeats==beat.beat);
+                mask=result.beatIndex==beat.beat;
+                expected=result.time(mask)-(result.rPeaks(beat.beat)-1)/result.fs ...
+                    +e.alignment.timeShiftSamples(local)/result.fs;
+                testCase.verifyEqual(curve.XData(:),expected(:));
+                testCase.verifyEqual(curve.YData(:),result.statisticsNoise.detrended(mask));
+                testCase.verifyEqual(sqrt(mean(curve.YData.^2)),result.perBeat.NoiseRMS(beat.beat),AbsTol=1e-12);
+                testCase.verifyEqual(beat.sourceWindow,result.perBeat.Window(beat.beat));
+            end
+            allAxis=findall(runtime.figureHandle(),'Tag','morphologyAxes.all');
+            for k=1:numel(result.windows)
+                curve=findall(allAxis,'Type','line','DisplayName',sprintf('Window %d',k));
+                testCase.verifyEqual(curve.YData(:),result.windows(k).template(:));
+            end
+            runtime.applyControlValue('templateWindow',string(selector.Items{1}));
+            firstModel=ecg_print.analysisRun.morphologyModel(runtime.State.session.cache,1);
+            testCase.verifyEqual(numel(findall(windowNoise,'Type','line')),numel(firstModel.noiseBeats));
             e=result.windows(1).extraction;
             testCase.verifyEqual(e.bandResidualNoise+e.restoredResidualNoise,e.noise,AbsTol=1e-12);
             testCase.verifyEqual(e.compressedRaw-e.noise,e.compressedSignal,AbsTol=1e-12);
@@ -125,6 +177,37 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             testCase.verifySubstring(content,'ecg_print.analysisrun.ecgnext.completed');
             testCase.verifySubstring(content,'ecg_print.analysisrun.ecgnext.unavailable');
             testCase.verifySubstring(content,'measuredBeatCount');
+        end
+        function switchingRecordingsRefitsPreviewAndClearsAppliedResult(testCase)
+            % Independent oracle: two source durations and native plotted data.
+            folder=testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            mkdir(fullfile(folder,'first'));mkdir(fullfile(folder,'second'));
+            first=ecgWorkflowProject(string(fullfile(folder,'first')),40);
+            second=ecgWorkflowProject(string(fullfile(folder,'second')),6);
+            definition=ecg_print.definition();
+            journal=labkittest.temporarySessionJournal(definition,folder);
+            runtime=labkittest.createMatlabRuntime(definition,first,struct(),journal);
+            cleanup=onCleanup(@()runtime.close());
+            runtime.applyControlValue('channel',"ECG");runtime.invokeAction('analyze');
+            ax=findall(runtime.figureHandle(),'Tag','resultsAxes.wave');
+            xlim(ax,[30 35]);
+            revision=runtime.State.session.cache.plotViewRevision;
+            runtime.applyFileSelection('recording',second.inputs.sources.path,1);
+            testCase.verifyEmpty(runtime.State.session.cache.ecgNext);
+            testCase.verifyGreaterThan(runtime.State.session.cache.plotViewRevision,revision);
+            testCase.verifyEqual(runtime.State.project.parameters.roiEnd,6,AbsTol=1e-10);
+            testCase.verifyEqual(ax.XLim,[0 6],AbsTol=1e-10);
+            lines=findall(ax,'Type','line');
+            testCase.verifyEqual(max([lines.XData]),6,AbsTol=1e-10);
+            xlim(ax,[2 4]);
+            runtime.applyFileSelection('recording',second.inputs.sources.path,1);
+            testCase.verifyEqual(ax.XLim,[0 6],AbsTol=1e-10);
+            revision=runtime.State.session.cache.plotViewRevision;
+            runtime.applyFileSelection('recording',first.inputs.sources.path,1);
+            testCase.verifyGreaterThan(runtime.State.session.cache.plotViewRevision,revision);
+            testCase.verifyEqual(ax.XLim,[0 40],AbsTol=1e-10);
+            testCase.verifyGreaterThanOrEqual(runtime.State.project.parameters.roiEnd,39.9);
+            testCase.verifyLessThanOrEqual(runtime.State.project.parameters.roiEnd,40);
         end
     end
 end

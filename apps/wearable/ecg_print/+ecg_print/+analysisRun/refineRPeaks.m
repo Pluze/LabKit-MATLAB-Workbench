@@ -1,21 +1,17 @@
-function events = refineRPeaks(events, raw, detector, minimumRR)
-%REFINERPEAKS Move detector anchors to same-polarity extrema in prepared raw ECG.
+function events = refineRPeaks(events, raw, minimumRR)
+%REFINERPEAKS Move positive R anchors to maxima in prepared raw ECG.
 % Search only +/-20 ms, matching the facade's final localization radius but
 % using the actual prepared raw trace rather than the 5-20 Hz detector input.
 % Keep beat identity, ordering and minimum spacing; do not add/remove beats.
 original=events.index(:);refined=original;
-searchSeconds=.020;baselineSeconds=.100;
+searchSeconds=.020;
 radius=max(1,round(searchSeconds*raw.fs));
-baselineRadius=max(radius,round(baselineSeconds*raw.fs));
 for k=1:numel(original)
     center=original(k);
-    context=max(1,center-baselineRadius):min(numel(detector.values),center+baselineRadius);
-    direction=sign(detector.values(center)-median(detector.values(context)));
-    if direction==0,continue;end
     first=max(1,center-radius);last=min(numel(raw.values),center+radius);
     if k>1,first=max(first,floor((original(k-1)+center)/2)+1);end
     if k<numel(original),last=min(last,ceil((center+original(k+1))/2)-1);end
-    indices=first:last;scores=direction*raw.values(indices);
+    indices=first:last;scores=raw.values(indices);
     candidates=indices(scores==max(scores));
     [~,nearest]=min(abs(candidates-center));refined(k)=candidates(nearest);
 end

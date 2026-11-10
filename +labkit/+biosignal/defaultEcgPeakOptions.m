@@ -23,7 +23,8 @@ function opts = defaultEcgPeakOptions(method)
 % Common Options:
 %   method - Canonical detector name.
 %   polarity - Peak direction: "auto", "positive", "negative", or
-%              "absolute". The default is "auto".
+%              "absolute". The default is "auto", which chooses one
+%              direction from the median signed preliminary beat amplitude.
 %   minDistanceSec - Minimum interval between accepted peaks. The default is
 %                    0.25 seconds for qrs-streaming and pan-tompkins, and
 %                    0.05 seconds for local.
