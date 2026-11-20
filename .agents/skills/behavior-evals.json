@@ -187,6 +187,40 @@
         "Deleting scientific rationale to reduce line count",
         "Requiring every private helper to duplicate readily visible caller and signature information"
       ]
+    },
+    {
+      "id": "scientific-figure-repeated-readings",
+      "prompt": "Turn these readings from paired specimens into a single-column figure. A few readings were above the instrument range. Include a vector figure and the code that reproduces it.",
+      "skills": [
+        "labkit-scientific-plotting"
+      ],
+      "expected": [
+        "Preserves specimen pairing and identifies the independent sample count",
+        "Marks over-range values as bounds with a defined analysis treatment",
+        "Delivers and inspects an exported figure at the specified placement size"
+      ],
+      "forbidden": [
+        "Substituting the measurement limit as an exact observation",
+        "Claiming an independent sample for each repeated reading",
+        "Editing product code"
+      ]
+    },
+    {
+      "id": "scientific-figure-signal-comparison",
+      "prompt": "Compare activity and baseline in these recordings and show the interference frequencies in a figure for my slides.",
+      "skills": [
+        "labkit-scientific-plotting"
+      ],
+      "expected": [
+        "Documents paired windows, channel, units and preprocessing",
+        "Uses an explicit spectral normalization and comparable axes",
+        "Separates measured spectral features from possible causes"
+      ],
+      "forbidden": [
+        "Treating diagnostic windows as confirmed activity",
+        "Calling RMS contrast noise-subtracted SNR",
+        "Selecting windows solely to maximize apparent separation"
+      ]
     }
   ]
 }

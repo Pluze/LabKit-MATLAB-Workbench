@@ -1,0 +1,6 @@
+interface:
+  display_name: "LabKit Scientific Plotting"
+  short_description: "Design and verify publication-ready scientific plots"
+  default_prompt: "Use $labkit-scientific-plotting to analyze these data and deliver a reproducible publication-ready figure."
+policy:
+  allow_implicit_invocation: true

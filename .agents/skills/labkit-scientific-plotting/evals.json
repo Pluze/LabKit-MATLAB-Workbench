@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "prompt": "Here are repeated thickness readings at several process settings. Make a figure for my paper and show whether the proposed trend fits.",
+      "should_activate": true,
+      "rationale": "Standalone publication plotting requires choosing the evidence display and fit."
+    },
+    {
+      "prompt": "Plot these recordings, choose comparable sections, and show where background interference sits in the spectrum.",
+      "should_activate": true,
+      "rationale": "The agent must select documented windows and a comparable spectral representation."
+    },
+    {
+      "prompt": "Make this existing FIG legible at one-column width. Keep the plotted values.",
+      "should_activate": true,
+      "rationale": "Standalone figure restyling with fixed data needs destination-size export checks."
+    },
+    {
+      "prompt": "Update Figure Studio source so every newly imported App plot uses different default axes widths.",
+      "should_activate": false,
+      "rationale": "A product default change belongs to its scoped source owner."
+    },
+    {
+      "prompt": "Explain what sample standard deviation means without making a figure.",
+      "should_activate": false,
+      "rationale": "A conceptual answer has no standalone plotting deliverable."
+    }
+  ]
+}

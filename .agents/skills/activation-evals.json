@@ -146,6 +146,28 @@
         "labkit-agent-governance"
       ],
       "rationale": "Execution reuses evidence rather than authoring new contracts."
+    },
+    {
+      "prompt": "Use the LabKit look to make a paper-ready comparison from my experimental data. Keep the codebase untouched.",
+      "activate": [
+        "labkit-scientific-plotting"
+      ],
+      "do_not_activate": [
+        "labkit-app-builder",
+        "labkit-scientific-change-guard",
+        "labkit-pr-integrator"
+      ],
+      "rationale": "A style reference and standalone data figure do not change LabKit behavior or authorize delivery."
+    },
+    {
+      "prompt": "Fix the shipped slope calculation and its units in an App plot.",
+      "activate": [
+        "labkit-scientific-change-guard"
+      ],
+      "do_not_activate": [
+        "labkit-scientific-plotting"
+      ],
+      "rationale": "The request changes a shipped scientific contract."
     }
   ]
 }
