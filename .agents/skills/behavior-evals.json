@@ -19,17 +19,18 @@
     },
     {
       "id": "existing-test",
-      "prompt": "Run the existing failed specification for this known identity; no new tests.",
+      "prompt": "Rerun the failed AppSmokeConformanceSpec/materializesDefinitionAndLaunchesDefaultState(App=ecg_print) test from CI.",
       "skills": [
         "labkit-test-planner"
       ],
       "expected": [
-        "Runs the identified existing evidence",
+        "Runs that exact parameterized identity through the catalog runner in its declared environment",
         "Reports its result and relevant limits"
       ],
       "forbidden": [
         "Creating specifications",
-        "Running unrelated profiles"
+        "Running unrelated profiles",
+        "Running other parameters or using a separate runner"
       ]
     },
     {
@@ -45,6 +46,34 @@
       "forbidden": [
         "Keeping an alias only to minimize the diff",
         "Rejecting the change solely because current callers exist"
+      ]
+    },
+    {
+      "id": "general-pr",
+      "prompt": "Use the PR Skill to help me with this change.",
+      "skills": [
+        "labkit-pr-integrator"
+      ],
+      "expected": [
+        "Inspects and prepares the change locally with relevant evidence"
+      ],
+      "forbidden": [
+        "Pushing or changing a hosted PR",
+        "Merging or cleaning up branches"
+      ]
+    },
+    {
+      "id": "open-pr",
+      "prompt": "Open a PR for this finished change so I can review it.",
+      "skills": [
+        "labkit-pr-integrator"
+      ],
+      "expected": [
+        "Opens the requested PR and reports its validation and review status"
+      ],
+      "forbidden": [
+        "Merging or cleaning up branches",
+        "Publishing a Release"
       ]
     },
     {

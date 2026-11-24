@@ -7,9 +7,9 @@ description: "Prepare, open, update, and merge LabKit PRs, including validation,
 
 Deliver the requested PR state. Infer it from the user's request and existing
 session authorization: prepare locally, open/update a PR, or merge and clean up.
-The default invocation requests PR creation and merge; an explicit draft-only,
-review-only, or no-merge instruction takes precedence. PR preparation alone
-never authorizes merging. Release publication is a separate operation.
+A general PR request starts with local preparation and inspection of any
+existing PR. Open or update a PR when requested. Merge and accepted-task
+cleanup require merge authorization. Release publication is a separate operation.
 
 Read applicable rules, the complete task delta and existing validation, the
 PR template, and `docs/develop/release.md` for component version decisions.

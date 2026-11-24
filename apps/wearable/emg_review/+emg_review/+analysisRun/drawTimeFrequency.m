@@ -19,7 +19,12 @@ function drawTimeFrequency(axesById, model)
     hold(ax, 'on');
     imagesc(ax, times([1 end]), data.frequency([1 end]), powerDb);
     ax.YDir = 'normal';
-    ylim(ax, data.frequency([1 end]));
+    ylim(ax, model.frequencyLimits);
+    shown = data.frequency >= model.frequencyLimits(1) & ...
+        data.frequency <= model.frequencyLimits(2);
+    if any(shown)
+        powerDb = powerDb(shown, :);
+    end
     peak = max(powerDb, [], 'all');
     % Limit the displayed dynamic range while retaining absolute PSD color units.
     colorRangeDb = 60;

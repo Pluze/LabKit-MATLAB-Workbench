@@ -10,15 +10,15 @@ component: labkit_EMGReview_app | new -> 1.0.0
 
 ## Why
 
-A defensible EMG noise comparison needs traceable baseline and activity windows, a stated SNR model, and a way to see whether energy is distributed across the band or concentrated near line frequency.
+A defensible EMG noise comparison needs traceable baseline and activity windows, a stated SNR model, and views of spectral power across frequency and over time.
 
 ## What changed
 
-EMG Review supports manually placed or automatically suggested pairs, mean-removed RMS, noise-corrected SNR, paired spectra, a 60 Hz detail view, a recording spectrogram and per-pair CSV export.
+EMG Review supports manually placed or automatically suggested pairs, mean-removed RMS, noise-corrected SNR, paired spectra, a recording spectrogram and per-pair CSV export.
 
 ## Impact
 
-Users can inspect numbered pairs against the waveform and compare recordings using an explicit measurement band and a common ROI duration.
+Users can inspect numbered pairs against the waveform and compare recordings using a common ROI duration. The 5–500 Hz spectral view is available alongside optional waveform filtering, which defaults off.
 
 ## Compatibility and limits
 

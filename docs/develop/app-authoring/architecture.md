@@ -175,7 +175,7 @@ Line budgets are maintainability backstops, not architecture goals. A smaller fi
 
 Extracted helpers should own a coherent behavior contract: a stable data shape, an explicit side effect, a GUI-free calculation, an export boundary, a display model, or a reusable app-facing framework mechanism. Trivial label formatters, single boolean checks, constant lists, and one-call facade wrappers can remain local, nested, or inline when that makes the workflow easier to follow.
 
-There is no minimum useful helper length. Small public facades, factories, filters, defaults, and test-facing helpers are valid when the name protects a real contract. Conversely, a long extracted helper is not reusable merely because it moved out of `run.m`; it must improve ownership, testability, or the app-facing API. When reviewing helper organization, prefer evidence from the helper's boundary role, call sites, tests, side effects, and ownership over raw line count. Repository line budgets count effective MATLAB code lines: blank lines and comment-only documentation do not consume the budget. Physical line counts remain useful diagnostic context, but they must not discourage complete function help.
+There is no minimum useful helper length. Small public facades, factories, filters, defaults, and test-facing helpers are valid when the name protects a real contract. Conversely, a long extracted helper is not reusable merely because it moved out of `run.m`; it must improve ownership, testability, or the app-facing API. When reviewing helper organization, prefer evidence from the helper's boundary role, call sites, tests, side effects, and ownership over raw line count.
 
 ## Validation Boundary
 

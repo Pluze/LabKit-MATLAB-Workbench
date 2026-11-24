@@ -5,9 +5,10 @@ framework owns common lifecycle and interaction mechanics.
 
 ## Read before editing
 
-Read the app source and nearby tests, `docs/use/apps/README.md`, and
-`docs/develop/app-authoring/app-development.md`. Read only the relevant
-framework or library manual for APIs the app actually uses. App tests live under
+Read the affected App source and nearby tests. Read the App's manual when
+changing its workflow or reader contract, and the App development guide
+when adding or reshaping a capability. Consult framework or library manuals
+for contracts the change touches. App tests live under
 `tests/specs/apps/<family>/<app>/<capability>/`. Use `labkittest.explain` to
 find the exact owner and contract; App authors never invent test paths.
 

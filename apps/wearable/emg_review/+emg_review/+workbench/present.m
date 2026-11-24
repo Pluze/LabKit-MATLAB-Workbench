@@ -3,9 +3,13 @@ function view = present(applicationState)
     hasSignal = ~isempty(session.signal) && isfinite(session.signal.fs) && ...
         session.signal.fs > 0 && numel(session.signal.values) > 1;
     hasResult = ~isempty(session.result);
+    [bandChoices, passband] = emg_review.analysisRun.bands();
+    if ~hasSignal || session.signal.fs <= 2 * passband(2)
+        bandChoices = bandChoices(1);
+    end
     pairChoices = string(1:size(session.pairs, 1));
     starts = session.pairs(session.pairIndex, :);
-    [wave, spectra, metrics] = models(session, hasSignal);
+    [wave, spectra, metrics] = models(session, hasSignal, passband);
     revision = string(session.revision);
     analysisRevision = revision + ":" + string(hasResult);
     sourceStatus = session.sourceStatus;
@@ -23,7 +27,7 @@ function view = present(applicationState)
         .enabled("pair", hasSignal) ...
         .enabled("addPair", hasSignal) ...
         .enabled("removePair", hasSignal && numel(pairChoices) > 1) ...
-        .enabled("band", hasSignal) ...
+        .choices("band", bandChoices).enabled("band", numel(bandChoices) > 1) ...
         .enabled("baselineStart", hasSignal).enabled("activityStart", hasSignal) ...
         .enabled("windowSeconds", hasSignal).enabled("autoMark", hasSignal) ...
         .enabled("analyze", hasSignal).enabled("exportMetrics", hasResult) ...
@@ -33,12 +37,12 @@ function view = present(applicationState)
         .tableData("metrics", metrics);
 end
 
-function [wave, spectra, metrics] = models(session, hasSignal)
+function [wave, spectra, metrics] = models(session, hasSignal, passband)
     wave = struct('preview', session.preview, 'unit', "", 'channel', session.channel, ...
         'duration', 0, 'pairs', zeros(0, 2), 'width', 0, 'snr', [], 'band', "As recorded", ...
         'selected', session.pairIndex);
-    spectra = struct('result', session.result, 'unit', "");
-    metrics = zeros(0, 11);
+    spectra = struct('result', session.result, 'unit', "", 'frequencyLimits', []);
+    metrics = zeros(0, 9);
     if hasSignal
         fs = session.signal.fs;
         wave.unit = session.signal.unit;
@@ -49,6 +53,11 @@ function [wave, spectra, metrics] = models(session, hasSignal)
         wave.pairs = round(session.pairs * fs) / fs;
         wave.width = round(session.windowSeconds * fs) / fs;
         spectra.unit = wave.unit;
+        nyquist = fs / 2;
+        spectra.frequencyLimits = [passband(1) min(passband(2), nyquist)];
+        if nyquist <= passband(1)
+            spectra.frequencyLimits = [0 nyquist];
+        end
     end
     if ~isempty(session.result)
         wave.preview = session.result.preview;

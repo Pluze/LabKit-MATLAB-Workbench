@@ -1,0 +1,1 @@
+^(?:(?:[^/]+/)*AGENTS(?:\.override)?\.md|\.agents/migration_guide\.md|\.agents/skills/(?!([^/]+/)*scripts/).+\.(?:md|json|ya?ml))$

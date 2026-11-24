@@ -315,7 +315,17 @@ def main() -> int:
         "--root", type=Path,
         default=Path(__file__).resolve().parents[2],
     )
+    parser.add_argument(
+        "--governance-text-only", type=Path, metavar="CHANGED_PATHS",
+        help="Print whether a changed-path list contains only agent guidance and metadata.",
+    )
     args = parser.parse_args()
+    if args.governance_text_only is not None:
+        pattern_path = args.root / ".github/scripts/agent_governance_text.pattern"
+        pattern = re.compile(pattern_path.read_text(encoding="utf-8").strip())
+        paths = args.governance_text_only.read_text(encoding="utf-8").splitlines()
+        print("true" if paths and all(pattern.fullmatch(path) for path in paths) else "false")
+        return 0
     try:
         count = validate(args.root.resolve())
     except SkillContractError as cause:

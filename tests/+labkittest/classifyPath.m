@@ -30,8 +30,12 @@ function classification = classifyPath(file)
             "Skill-owned MATLAB automation executes repository behavior");
         return;
     end
-    if startsWith(file, ".agents/") || file == "AGENTS.md" || ...
-            endsWith(file, "/AGENTS.md") || file == ".gitignore"
+    if isAgentGovernanceText(file)
+        classification = ignored(file, "agent-governance", ...
+            "agent guidance or metadata; Python governance validation owns this evidence");
+        return;
+    end
+    if startsWith(file, ".agents/") || file == ".gitignore"
         classification = mapped(file, "repository-policy", "repository", ...
             "repository policy behavior");
         return;
@@ -139,6 +143,19 @@ function classification = classifyPath(file)
             "App capability role with explicit evidence policy");
         return;
     end
+end
+
+function tf = isAgentGovernanceText(file)
+    % Share the allowlist with Development Feedback so mixed changes keep
+    % MATLAB evidence and text-only changes have the same validation owner.
+    tf = false;
+    if ~(startsWith(file, ".agents/") || endsWith(file, ["AGENTS.md", "AGENTS.override.md"]))
+        return;
+    end
+    root = fileparts(fileparts(fileparts(mfilename("fullpath"))));
+    pattern = strip(fileread(fullfile(root, ".github", "scripts", ...
+        "agent_governance_text.pattern")));
+    tf = ~isempty(regexp(char(file), pattern, 'once'));
 end
 
 function value = mapped(file, role, owner, reason)

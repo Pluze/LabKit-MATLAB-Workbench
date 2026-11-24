@@ -16,9 +16,7 @@ function result = measure(signal, band, pairs, windowSeconds)
 
     pairCount = size(pairs, 1);
     levels = zeros(pairCount, 2);
-    linePercent = nan(pairCount, 2);
     spectralSum = [];
-    [~, passband, lineBand] = emg_review.analysisRun.bands();
     for k = 1:pairCount
         samples = values((0:width - 1).' + first(k, :));
         centered = samples - mean(samples, 1);
@@ -28,14 +26,6 @@ function result = measure(signal, band, pairs, windowSeconds)
             spectralSum = zeros(size(density));
         end
         spectralSum = spectralSum + density;
-        signalBins = frequency >= passband(1) & frequency <= passband(2);
-        lineBins = frequency >= lineBand(1) & frequency <= lineBand(2);
-        if any(lineBins)
-            denominator = sum(density(signalBins, :), 1);
-            powerFraction = 100 * sum(density(lineBins, :), 1) ./ denominator;
-            powerFraction(denominator == 0) = NaN;
-            linePercent(k, :) = powerFraction;
-        end
     end
     % The activity window includes baseline noise. Correct in linear power.
     baseline = levels(:, 1);
@@ -51,10 +41,8 @@ function result = measure(signal, band, pairs, windowSeconds)
     ends = last / fs;
     metrics = table((1:pairCount).', starts(:, 1), ends(:, 1), ...
         starts(:, 2), ends(:, 2), baseline, activity, snr, contrast, ...
-        linePercent(:, 1), linePercent(:, 2), ...
         'VariableNames', {'Pair','BaselineStart_s','BaselineEnd_s','ActivityStart_s', ...
-        'ActivityEnd_s','BaselineRMS','ActivityRMS','SNR_dB','Contrast_dB', ...
-        'BaselineLinePower_pct','ActivityLinePower_pct'});
+        'ActivityEnd_s','BaselineRMS','ActivityRMS','SNR_dB','Contrast_dB'});
     result = struct('metrics', metrics, 'frequency', frequency, ...
         'density', spectralSum / pairCount, ...
         'spectrogram', timeFrequency(values, fs, edge), ...

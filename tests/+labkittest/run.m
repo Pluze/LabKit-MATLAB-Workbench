@@ -4,6 +4,8 @@ function result = run(varargin)
 %   labkittest.plan, compiles a plan, and runs each exact test identity once.
 %   It never accepts suite folders, substring test names, arbitrary tags, or
 %   runner options.
+%   RESULT = labkittest.run(Id=IDENTITY) reruns one exact catalog identity
+%   from CI output with its declared environment and standard artifacts.
 %
 %   RESULT = labkittest.run(Plan=PLAN) executes an already compiled plan.
 %   PLAN must be the value returned by labkittest.plan. RunName and

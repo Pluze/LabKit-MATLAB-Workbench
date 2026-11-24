@@ -1,6 +1,9 @@
 """Protect executable CI obligations without copying workflow prose or layout."""
 from pathlib import Path
+import os
 import subprocess
+import sys
+import tempfile
 import unittest
 
 import yaml
@@ -94,6 +97,46 @@ class WorkflowContracts(unittest.TestCase):
             for step in job["steps"]:
                 if step.get("uses", "").startswith("matlab-actions/"):
                     self.assertEqual(step["if"], "steps.handoff.outputs.should_run == 'true'")
+
+    def test_feedback_skips_matlab_only_for_governance_text(self):
+        steps = workflow("development-feedback")["jobs"]["focused-feedback"]["steps"]
+        handoff = next(step["run"] for step in steps if step.get("id") == "handoff")
+        guidance = ("AGENTS.md\n"
+                    "+labkit/AGENTS.override.md\n"
+                    ".agents/skills/labkit-pr-integrator/agents/openai.yaml\n"
+                    ".agents/skills/behavior-evals.json\n")
+        cases = [
+            ("push", guidance, "false"),
+            ("push", guidance + "+labkit/+biosignal/readRecording.m\n", "true"),
+            ("push", ".agents/skills/example/scripts/test_example.py\n", "true"),
+            ("push", ".agents/skills/example/scripts/fixture.json\n", "true"),
+            ("push", "", "true"),
+            ("workflow_dispatch", guidance, "true"),
+        ]
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / ".github").mkdir()
+            (root / ".github/scripts").symlink_to(ROOT / ".github/scripts")
+            paths = root / "artifacts/development-feedback/changed-paths.txt"
+            paths.parent.mkdir(parents=True)
+            mock_gh = root / "gh"
+            mock_gh.write_text("#!/bin/bash\necho 0\n", encoding="utf-8")
+            mock_gh.chmod(0o755)
+            output = root / "github-output"
+            env = dict(os.environ, GITHUB_OUTPUT=str(output),
+                       GITHUB_REPOSITORY="owner/repo", GITHUB_REPOSITORY_OWNER="owner",
+                       HEAD_BRANCH="task",
+                       PATH=os.pathsep.join([folder, str(Path(sys.executable).parent),
+                                            os.environ["PATH"]]))
+            for event, changed_paths, should_run in cases:
+                with self.subTest(event=event, changed_paths=changed_paths):
+                    paths.write_text(changed_paths, encoding="utf-8")
+                    output.write_text("", encoding="utf-8")
+                    subprocess.run(["bash", "-e", "-c", handoff], cwd=root,
+                                   env=dict(env, EVENT_NAME=event), check=True,
+                                   capture_output=True, text=True)
+                    self.assertEqual(output.read_text(encoding="utf-8"),
+                                     f"should_run={should_run}\n")
 
     def test_pages_deploys_generated_site(self):
         spec = workflow("docs-pages")

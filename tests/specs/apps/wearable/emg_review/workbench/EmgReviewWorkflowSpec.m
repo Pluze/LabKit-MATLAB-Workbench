@@ -19,7 +19,7 @@ classdef EmgReviewWorkflowSpec < matlab.unittest.TestCase
 
             runtime.applyFileSelection("recording", source, 1);
             testCase.verifyEqual(runtime.State.session.signal.fs, fs);
-            runtime.applyControlValue("band", "As recorded");
+            testCase.verifyEqual(runtime.State.session.band, "As recorded");
             runtime.invokeAction("autoMark");
             testCase.verifyEqual(runtime.State.session.pairs, [0 1]);
             runtime.invokeAction("addPair");
@@ -34,10 +34,12 @@ classdef EmgReviewWorkflowSpec < matlab.unittest.TestCase
             labels = string({findall(overview, 'Type', 'text').String});
             testCase.verifyTrue(any(labels == "Baseline 2"));
             testCase.verifyTrue(any(startsWith(labels, "Activity 2 · 1.0 dB")));
-            plotSpectrum = findall(figureValue, 'Tag', 'spectrum.broadband');
+            plotSpectrum = findall(figureValue, 'Tag', 'spectrum.main');
             testCase.verifyEqual(numel(findall(plotSpectrum, 'Type', 'line')), 2);
             spectrogram = findall(figureValue, 'Tag', 'timeFrequency.main');
             testCase.verifyNotEmpty(findall(spectrogram, 'Type', 'image'));
+            testCase.verifyEqual(plotSpectrum.XLim, [5 500]);
+            testCase.verifyEqual(spectrogram.YLim, [5 500]);
 
             runtime.applyControlValue("pair", "1");
             testCase.verifyEqual(runtime.State.session.pairIndex, 1);

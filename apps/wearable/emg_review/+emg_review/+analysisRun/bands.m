@@ -1,6 +1,5 @@
-function [choices, passband, lineBand] = bands()
-% The comparison protocol uses a 20–450 Hz passband and a 58–62 Hz line band.
-    passband = [20 450];
-    lineBand = [58 62];
-    choices = ["As recorded", "20–450 Hz"];
+function [choices, passband] = bands()
+% EMG review focuses on 5–500 Hz. Applying this band to the waveform is optional.
+    passband = [5 500];
+    choices = ["As recorded", "5–500 Hz"];
 end
