@@ -2,6 +2,7 @@ function draw(axesById, model)
 %DRAW Update time-series and force-versus-travel plots without rebuilding axes.
 if ~isfield(model,"reconstructed_mm"), model.reconstructed_mm=nan(size(model.time_s)); end
 if ~isfield(model,"travelLabel"), model.travelLabel="Travel (mm)"; end
+if ~isfield(model,"linearLegend"), model.linearLegend="Linear travel"; end
 updateTimeSeries(axesById.timeSeries, model);
 updateForceTravel(axesById.forceTravel, model);
 filename = "";
@@ -39,13 +40,14 @@ if isempty(travelLine) || isempty(forceLine) || isempty(reconstructedLine)
     ylabel(ax, "Force (N)");
     xlabel(ax, "Time (s)");
     grid(ax, "on");
-    legend(ax, [travelLine, reconstructedLine, forceLine], ["Measured travel", "Linear travel", "Force"], ...
+    legend(ax, [travelLine, reconstructedLine, forceLine], ["Measured travel", model.linearLegend, "Force"], ...
         "Location", "northeast", "AutoUpdate", "off");
     configureNavigation(ax);
 else
     set(travelLine, "XData", model.time_s, "YData", model.travel_mm);
     set(forceLine, "XData", model.time_s, "YData", model.force_N);
     set(reconstructedLine,"XData",model.time_s,"YData",model.reconstructed_mm);
+    updateLinearLegend(ax,model.linearLegend);
 end
 if requestsFit(ax, model)
     xlim(ax, model.limits.time_s);
@@ -85,7 +87,7 @@ if isempty(curve) || isempty(stationaryPoints) || isempty(reconstructedCurve)
         "LineWidth",1.6,"Color",[.10 .55 .32],"Tag","mark10ForceReconstructed", ...
         "HitTest","off","PickableParts","none","Clipping","on");
     hold(ax, "off");
-    legend(ax,[curve reconstructedCurve],["Measured travel","Linear travel"], ...
+    legend(ax,[curve reconstructedCurve],["Measured travel",model.linearLegend], ...
         "Location","northeast","AutoUpdate","off");
     ylabel(ax, "Force (N)");
     grid(ax, "on");
@@ -93,6 +95,7 @@ if isempty(curve) || isempty(stationaryPoints) || isempty(reconstructedCurve)
 else
     set(curve, "XData", travel, "YData", force);
     set(reconstructedCurve,"XData",model.reconstructed_mm,"YData",model.force_N);
+    updateLinearLegend(ax,model.linearLegend);
     [displayTravel, displayForce] = visiblePointData(pointTravel, pointForce);
     set(stationaryPoints, "XData", displayTravel, "YData", displayForce);
 end
@@ -102,6 +105,14 @@ if requestsFit(ax, model)
     recordFit(ax, model);
 end
 xlabel(ax,model.travelLabel);
+end
+
+function updateLinearLegend(ax,label)
+labels = string(ax.Legend.String);
+if labels(2)~=label
+    labels(2) = label;
+    ax.Legend.String = labels;
+end
 end
 
 function configureNavigation(ax)

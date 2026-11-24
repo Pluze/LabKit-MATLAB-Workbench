@@ -130,6 +130,11 @@ classdef Mark10WorkflowSpec < matlab.unittest.TestCase
             a=runtime.State.session.acquisition;
             testCase.verifyEqual(a.plotTravel_mm,travel,AbsTol=1e-12);
             testCase.verifyEqual(a.plotReconstructed_mm,travel,AbsTol=1e-10);
+            timeAxes=findall(runtime.figureHandle(),"Tag","livePlots.timeSeries");
+            forceAxes=findall(runtime.figureHandle(),"Tag","livePlots.forceTravel");
+            expectedLegend="Linear travel (est. -6 mm/min)";
+            testCase.verifyEqual(string(timeAxes.Legend.String{2}),expectedLegend);
+            testCase.verifyEqual(string(forceAxes.Legend.String{2}),expectedLegend);
             testCase.verifyTrue(isnan(runtime.State.session.analysis.travelProfile.contact_s));
             runtime.invokeAction("suggestTravelContact");
             testCase.verifyGreaterThanOrEqual(runtime.State.session.analysis.travelDraft.contact_s,2);

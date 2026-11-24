@@ -14,7 +14,7 @@ The stand reports coarse travel steps during constant-speed compression. Differe
 
 ## What changed
 
-Live and replay plots show synchronized force against both measured and modeled travel. The App detects direction and reversals from measured travel and estimates a signed speed for each supported stroke or takes a speed magnitude from the user. Holds and unresolved strokes use measured travel in analysis. Contact time is applied explicitly to set the surface reference. Stopped and loaded data can suggest a candidate for review. Stress–strain analysis uses the selected coordinate model. The glitch detector scales its threshold to observed increments and local noise.
+Live and replay plots show synchronized force against both measured and modeled travel. The App detects direction and reversals from measured travel and estimates a signed speed for each supported stroke or takes a speed magnitude from the user. Both plot legends report the latest visible speed in each direction. Holds and unresolved strokes use measured travel in analysis. Contact time is applied explicitly to set the surface reference. Stopped and loaded data can suggest a candidate for review. Stress–strain analysis uses the selected coordinate model. The glitch detector scales its threshold to observed increments and local noise.
 
 ## Impact
 

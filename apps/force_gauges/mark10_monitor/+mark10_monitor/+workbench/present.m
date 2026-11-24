@@ -16,6 +16,8 @@ model = struct("time_s", s.acquisition.plotTime_s, ...
     "reconstructed_mm", s.acquisition.plotReconstructed_mm, ...
     "limits", s.cache.plotLimits, ...
     "limitRevision", s.cache.plotViewRevision, "filename", filename);
+model.linearLegend = linearTravelLegend(model.time_s,model.reconstructed_mm, ...
+    s.analysis.travelProfile.strokes,s.analysis.travel.mode);
 model.travelLabel = "Travel (mm)";
 hasSurface = isfinite(s.analysis.travelProfile.contact_s);
 if hasSurface, model.travelLabel = "Surface displacement (mm)"; end
@@ -96,6 +98,22 @@ view = view.tableData("recentData", recentTable(s.acquisition, monitoring), Colu
 view = view.renderPlot("livePlots", model, ...
     ViewRevision=s.cache.plotViewRevision);
 
+end
+
+function label = linearTravelLegend(time, reconstructed, strokes, mode)
+label = "Linear travel";
+visibleTimes = time(isfinite(reconstructed));
+if isempty(visibleTimes), return; end
+intervals = vertcat(strokes.interval_s);
+visible = intervals(:,1)<=visibleTimes(end) & intervals(:,2)>=visibleTimes(1);
+speeds = [strokes(visible).speed_mm_min];
+% Cyclic plots share one line. Report the latest visible speed per direction.
+latestClosing = find(speeds<0,1,"last");
+latestOpening = find(speeds>0,1,"last");
+values = join(compose("%+.4g",speeds([latestClosing latestOpening]))," / ");
+origin = "est.";
+if mode=="Entered speed", origin="set"; end
+label = "Linear travel ("+origin+" "+values+" mm/min)";
 end
 
 function tf = analysisDataAvailable(s)
