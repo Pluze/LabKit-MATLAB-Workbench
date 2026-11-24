@@ -63,8 +63,17 @@ classdef (Hidden, Sealed) AxesNavigation
             end
         end
         function visible=isVisible(ax)
-            visible=true;node=ax;
-            % A hidden figure cannot receive input; skip it for bounded GUI tests.
+            visible = false;
+            if ~isgraphics(ax)
+                return;
+            end
+            % axis off hides decorations. Visible plotted children remain
+            % on the canvas, including images in a borderless preview.
+            if ax.Visible == "off" && ~any(arrayfun(@visibleChild, ax.Children))
+                return;
+            end
+            visible = true;
+            node = ax.Parent;
             while isgraphics(node) && ~isa(node,'matlab.ui.Figure')
                 if isprop(node,'Visible') && string(node.Visible)=="off",visible=false;return;end
                 parent=node.Parent;
@@ -97,4 +106,8 @@ classdef (Hidden, Sealed) AxesNavigation
             end
         end
     end
+end
+
+function tf = visibleChild(child)
+    tf = isprop(child, 'Visible') && string(child.Visible) == "on";
 end

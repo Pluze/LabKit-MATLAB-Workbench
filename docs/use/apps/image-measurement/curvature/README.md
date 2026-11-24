@@ -11,6 +11,8 @@ Curvature Measurement fits a circle to an ordered image curve, reports radius an
 
 Each use of **Measure length + curvature** computes traced length and circle-fit results from the current curve and scale options, keeping the displayed summary and exported row aligned.
 
+While tracing, the image remains a target for the plot context menu. Use it to open the current fit view in a separate figure.
+
 ## Requirements And Launch
 
 ```matlab

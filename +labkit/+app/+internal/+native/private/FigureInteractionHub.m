@@ -147,6 +147,10 @@ function hub = FigureInteractionHub( ...
     end
 
     function onPointerDown(src, event)
+        if string(fig.SelectionType) == "alt"
+            invokeCallback(state.prior.down, src, event);
+            return;
+        end
         hit = pointerHitObject(src, event);
         target = targetUnderPointer(hit);
         entry = activeSessionForTarget(target);
@@ -201,7 +205,7 @@ function hub = FigureInteractionHub( ...
     end
 
     function onScroll(src, event)
-        target = targetUnderPointer();
+        target = targetUnderPointer(pointerHitObject(src, event));
         if strlength(target) == 0
             invokeCallback(state.prior.scroll, src, event);
             return;

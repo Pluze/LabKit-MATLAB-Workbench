@@ -15,7 +15,7 @@ end
 rgb = flir_thermal.thermalPreview.presentationData.renderThermalImage( ...
     model.values, model.range, model.palette, ...
     model.colorMapping, model.gammaValue);
-image(ax, rgb, HitTest="off", PickableParts="none");
+image(ax, rgb);
 axis(ax, "image");
 ax.YDir = "reverse";
 title(ax, char(model.title));

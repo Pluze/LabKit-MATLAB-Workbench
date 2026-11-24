@@ -226,12 +226,17 @@ classdef AppSdkSpec < matlab.unittest.TestCase
         function hiddenWorkspaceAxesCannotReceiveWheelRouting(testCase)
             fig=uifigure(Visible="off");cleanup=onCleanup(@() delete(fig));group=uitabgroup(fig);
             first=uitab(group);second=uitab(group);one=uiaxes(first);two=uiaxes(second);
+            % An image remains visible with axes decorations switched off.
+            picture = image(one, zeros(15, 20, 3));
+            axis(one, "off");
             group.SelectedTab=second;
             testCase.verifyFalse(labkit.app.internal.native.AxesNavigation.isVisible(one));
             testCase.verifyTrue(labkit.app.internal.native.AxesNavigation.isVisible(two));
             group.SelectedTab=first;
             testCase.verifyTrue(labkit.app.internal.native.AxesNavigation.isVisible(one));
             testCase.verifyFalse(labkit.app.internal.native.AxesNavigation.isVisible(two));
+            picture.Visible = "off";
+            testCase.verifyFalse(labkit.app.internal.native.AxesNavigation.isVisible(one));
             clear cleanup
         end
         function preservesBothDualYAxisViewports(testCase)

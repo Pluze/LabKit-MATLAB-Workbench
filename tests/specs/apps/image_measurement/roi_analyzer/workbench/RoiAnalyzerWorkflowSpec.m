@@ -28,7 +28,25 @@ classdef RoiAnalyzerWorkflowSpec < matlab.unittest.TestCase
 
             runtime.applyFileSelection("sourceImages", ...
                 [string(firstPath); string(secondPath)], 1);
+            figureValue = runtime.figureHandle();
+            canvas = findall(figureValue, "Tag", "preview.main");
+            picture = findall(canvas, "Type", "image");
+            testCase.assertNumElements(picture, 1);
+            testCase.verifyEqual(string(canvas.Visible), "off");
+            testCase.verifyEqual(string(picture.HitTest), "on");
+            testCase.verifyEqual(string(picture.PickableParts), "visible");
+            testCase.verifyEqual(picture.ContextMenu, canvas.ContextMenu);
+            testCase.verifyNotEmpty(findall(picture.ContextMenu, "Tag", "labkitWheelMenu"));
+            testCase.verifyNotEmpty(findall(picture.ContextMenu, "Tag", "labkitAxesPopoutMenu"));
+            oldSpan = [diff(canvas.XLim), diff(canvas.YLim)];
+            scroll = struct("HitObject", picture, "VerticalScrollCount", -1, ...
+                "Point", [mean(canvas.XLim), mean(canvas.YLim)]);
+            figureValue.WindowScrollWheelFcn(figureValue, scroll);
+            testCase.verifyEqual([diff(canvas.XLim), diff(canvas.YLim)], oldSpan / 1.2, ...
+                AbsTol=1e-10);
+            zoomLimits = [canvas.XLim, canvas.YLim];
             runtime.invokeAction("addRoi");
+            testCase.verifyEqual([canvas.XLim, canvas.YLim], zoomLimits);
             runtime.applyControlValue("roiName", "Sample");
             runtime.applyControlValue("roiShape", "Circle");
             runtime.applyControlValue("roiWidth", 2);
