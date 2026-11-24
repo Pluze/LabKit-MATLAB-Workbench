@@ -19,12 +19,13 @@ function drawTimeFrequency(axesById, model)
     hold(ax, 'on');
     imagesc(ax, times([1 end]), data.frequency([1 end]), powerDb);
     ax.YDir = 'normal';
+    ylim(ax, data.frequency([1 end]));
     peak = max(powerDb, [], 'all');
     % Limit the displayed dynamic range while retaining absolute PSD color units.
     colorRangeDb = 60;
     clim(ax, [peak - colorRangeDb peak]);
-    colorScale = colorbar(ax);
-    colorScale.Label.String = "PSD (dB re 1 " + model.unit + "²/Hz)";
-    title(ax, sprintf("EMG spectrogram · %.3g s Hann window", data.windowSeconds));
+    colorbar(ax);
+    title(ax, [sprintf("EMG spectrogram · %.3g s Hann window", data.windowSeconds), ...
+        "Color shows PSD (dB re 1 " + model.unit + "²/Hz)"]);
     hold(ax, 'off');
 end
