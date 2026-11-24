@@ -10,7 +10,7 @@ applicationState.session.analysis.forceZero_N = forceZero_N;
 applicationState.session.analysis.travelZero_mm = travelZero_mm;
 applicationState = mark10_monitor.analysis.invalidateReference( ...
     applicationState, callbackContext, []);
-applicationState = reprojectVisiblePlots(applicationState, callbackContext);
+applicationState = mark10_monitor.analysis.reprojectPlots(applicationState, callbackContext);
 applicationState.session.analysis.status = compose( ...
     "Applied plot zero: force %.6g N, travel %.6g mm.", ...
     forceZero_N, travelZero_mm);
@@ -29,24 +29,4 @@ if ~isscalar(value) || ~isfinite(value)
     error("mark10_monitor:analysis:InvalidZeroLevel", ...
         "%s must be a finite scalar.", draftName);
 end
-end
-
-function applicationState = reprojectVisiblePlots( ...
-        applicationState, callbackContext)
-if applicationState.session.playback.loaded
-    playback = callbackContext.getResource("mark10Playback");
-    applicationState = mark10_monitor.playback.applyCursor( ...
-        applicationState, playback, applicationState.session.playback.cursor);
-else
-    buffer = callbackContext.getResource("mark10Buffer");
-    acquisition = applicationState.session.acquisition;
-    acquisition.plotTime_s = buffer("plotTime_s");
-    [acquisition.plotForce_N, acquisition.plotTravel_mm] = ...
-        mark10_monitor.analysis.shiftPlotData( ...
-        buffer("plotForce_N"), buffer("plotTravel_mm"), ...
-        applicationState.session.analysis);
-    applicationState.session.acquisition = acquisition;
-end
-applicationState = mark10_monitor.livePlots.updateLimits( ...
-    applicationState, true);
 end

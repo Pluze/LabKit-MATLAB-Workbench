@@ -81,6 +81,44 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
                 "An unhandled refresh must coalesce later refresh requests.");
         end
 
+        function estimatesLiveSlopeWithoutSettingSurfaceZero(testCase)
+            % A quantized 0.1 mm/s closing stroke has a known linear slope.
+            resources = containers.Map("KeyType","char","ValueType","any");
+            box = containers.Map("KeyType","char","ValueType","any");
+            box("connection") = struct("AcquisitionMode","Synchronized n");
+            resources("mark10Connection") = box;
+            context = labkittest.createCallbackContext(struct( ...
+                "getResource", @(id) resources(char(id)), ...
+                "setResource", @(id,value,~) putResource(resources,id,value)));
+            state = struct("session",mark10_monitor.createSession(struct(),context));
+            state.session.connection.connected = true;
+            state.session.experiment.type = "Compression";
+            state.session.acquisition.monitoring = true;
+            buffer = resources("mark10Buffer");
+            time = (0:200)'/50;
+            travel = 2-0.02*round(time*0.1/0.02);
+            force = -max(time-1,0);
+            buffer("time_s") = time;
+            buffer("plotTime_s") = time;
+            buffer("lastTime_s") = time(end);
+            buffer("force_N") = force;
+            buffer("plotForce_N") = force;
+            buffer("travel_mm") = travel;
+            buffer("plotTravel_mm") = travel;
+            buffer("valid") = true(size(time));
+
+            state = mark10_monitor.acquisition.refreshState(state,context);
+
+            a = state.session.acquisition;
+            testCase.verifyEqual(a.plotTravel_mm,travel);
+            testCase.verifyEqual(buffer("travel_mm"),travel);
+            testCase.verifyEqual(a.plotForce_N,force);
+            modeled = isfinite(a.plotReconstructed_mm);
+            testCase.verifyGreaterThan(nnz(modeled),100);
+            testCase.verifyEqual(a.plotReconstructed_mm(modeled),2-0.1*time(modeled),AbsTol=0.005);
+            testCase.verifyTrue(isnan(state.session.analysis.travelProfile.contact_s));
+        end
+
         function monitoringIsExplicitAndIndependentFromConnection(testCase)
             resources = containers.Map("KeyType", "char", "ValueType", "any");
             cleanups = containers.Map("KeyType", "char", "ValueType", "any");
@@ -100,15 +138,8 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
                     removeResource(resources, cleanups, id), ...
                 "postEvent", @(~, ~) []);
             context = labkittest.createCallbackContext(backend);
-            state = struct("session", struct( ...
-                "connection", struct("connected", true, "status", "Connected."), ...
-                "acquisition", struct("rate", "50 Hz", ...
-                    "monitoring", false, "retainedValidCount", 0, ...
-                    "actualRate_Hz", 0), ...
-                "cache", struct("plotViewRevision", 0, ...
-                    "plotLimits", mark10_monitor.livePlots.defaultLimits(50)), ...
-                "analysis", emptyAnalysis(), ...
-                "export", struct("status", "No monitoring data exported.")));
+            state = struct("session", mark10_monitor.createSession(struct(),context));
+            state.session.connection.connected = true;
 
             state = mark10_monitor.acquisition.startMonitoring(state, context);
 
@@ -132,6 +163,9 @@ classdef Mark10AcquisitionSpec < matlab.unittest.TestCase
             testCase.verifyEqual(sampler.State("period"), 0.05);
             buffer = resources("mark10Buffer");
             buffer("valid") = [true; false; true];
+            buffer("time_s") = (0:2)'/50;
+            buffer("force_N") = [1; NaN; 1];
+            buffer("travel_mm") = [2; NaN; 2];
 
             state = mark10_monitor.acquisition.stopMonitoring(state, context);
 
@@ -199,16 +233,6 @@ end
 
 function state = connectForViewportTest(state, ~)
 state.session.connection.connected = true;
-end
-
-function value = emptyAnalysis()
-value = struct("resultRows", {cell(0, 11)}, ...
-    "plotStrain_percent", zeros(0, 1), ...
-    "plotStress_MPa", zeros(0, 1), ...
-    "fitLines", struct("strain_percent", {}, ...
-        "stress_MPa", {}, "accepted", {}), ...
-    "summary", "", "status", "", "resultRevision", 0, ...
-    "dataSource", "None");
 end
 
 function value = manualReadConnection(command)
@@ -332,4 +356,8 @@ end
 if isKey(cleanups, id)
     remove(cleanups, id);
 end
+end
+
+function resources = putResource(resources,id,value)
+resources(char(id)) = value;
 end

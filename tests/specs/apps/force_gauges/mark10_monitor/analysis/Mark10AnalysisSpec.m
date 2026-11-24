@@ -77,10 +77,61 @@ classdef Mark10AnalysisSpec < matlab.unittest.TestCase
             tc.verifyError(@() mark10_monitor.analysis.contactEpisode(t,-x,3,"Compression"), ...
                 "mark10_monitor:analysis:TestDirectionMismatch");
         end
+        function reconstructsQuantizedCompressionAndKeepsContactManual(tc)
+            % The exact speed and surface location come from the generated
+            % continuous travel, independently of the quantized gauge.
+            t = (0:700)'/50;
+            x = 3-0.02*round(min(t,10)*0.1/0.02);
+            f = -0.3*max(t-2,0);
+            p = parameters();
+            p.gaugeLength_mm = 2;
+            p.travel = struct("mode","Estimate speed","speed_mm_min",0,"contact_s",-1);
+            q = mark10_monitor.analysis.travelProfile(t,f,x,p.travel);
+            tc.verifyEqual(q.strokes.speed_mm_min,-6,AbsTol=0.03);
+            tc.verifyTrue(isnan(q.contact_s));
+            stroke = q.strokes;
+            tc.verifyLessThan(abs(stroke.anchorGap_mm-(stroke.speed_mm_min/60)*stroke.anchor_s-3),0.01);
+            tc.verifyLessThan(stroke.interval_s(2),10.2);
+
+            p.travel.contact_s = 2;
+            p.travel.mode = "Entered speed";
+            p.travel.speed_mm_min = 6;
+            c = mark10_monitor.analysis.prepareCurve(t,f,x,p,"Compression");
+            tc.verifyEqual(c.time_s(1),2);
+            moving = c.time_s>=2 & c.time_s<10;
+            tc.verifyEqual(c.strain(moving),(c.time_s(moving)-2)*0.05,AbsTol=1e-12);
+            tc.verifyEqual(c.strain(c.time_s>11),0.4*ones(nnz(c.time_s>11),1),AbsTol=1e-12);
+            tc.verifyEqual(c.stress_MPa,-f(c.sourceIndex)/2,AbsTol=1e-12);
+        end
+
+        function infersBothDirectionsAndFallsBackToMeasuredTravel(tc)
+            % Independently defined signed speeds exercise two reversals.
+            t = (0:800)'/50;
+            x = 3-0.1*min(t,5)+0.2*min(max(t-5,0),5)-0.1*min(max(t-10,0),4);
+            measured = 0.02*round(x/0.02);
+            force = x-3;
+            p = parameters();
+            p.travel = struct("mode","Estimate speed","speed_mm_min",0,"contact_s",-1);
+            p.timeEnd_s = t(end);
+            q = mark10_monitor.analysis.travelProfile(t,force,measured,p.travel,false,"Cyclic");
+            tc.verifyEqual([q.strokes.speed_mm_min],[-6 12 -6],AbsTol=0.15);
+            c = mark10_monitor.analysis.prepareCurve(t,force,measured,p,"Cyclic");
+            tc.verifyNumElements(unique(c.segment),3);
+            moving = (t>1 & t<4) | (t>6 & t<9) | (t>11 & t<13);
+            tc.verifyEqual(c.gap_mm(moving),x(moving),AbsTol=0.005);
+            tc.verifyEqual(c.gap_mm(t>15),measured(t>15));
+            short = t<0.4;
+            p.timeEnd_s = max(t(short));
+            c = mark10_monitor.analysis.prepareCurve(t(short),force(short),measured(short),p,"Tension");
+            tc.verifyEqual(c.gap_mm,measured(short));
+        end
+
         function detectsIsolatedSpikeButRetainsStep(tc)
             f=zeros(100,1);x=linspace(12,8,100)';f(30)=9;f(60:end)=2;
             mask=mark10_monitor.analysis.detectGlitches(f,x);
             tc.verifyTrue(mask(30));tc.verifyFalse(any(mask(60:end)));
+            tc.verifyEqual(mark10_monitor.analysis.detectGlitches(f/1000,x),mask);
+            tc.verifyEqual(mark10_monitor.analysis.detectGlitches(10*f,x),mask);
             p=parameters();p.excludeGlitches=true;
             c=mark10_monitor.analysis.prepareCurve((0:99)'/10,f,x,p,"Compression");
             tc.verifyFalse(any(c.sourceIndex==30));tc.verifyEqual(c.excludedCount,1);

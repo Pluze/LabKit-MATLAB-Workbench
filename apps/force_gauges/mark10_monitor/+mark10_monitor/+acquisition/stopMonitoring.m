@@ -5,8 +5,9 @@ if ~state.session.acquisition.monitoring
 end
 buffer = context.getResource("mark10Buffer");
 context.removeResource("mark10Sampler");
-state = mark10_monitor.acquisition.refreshState(state, context);
 state.session.acquisition.monitoring = false;
+state.session.analysis.travelUpdated_s = -Inf;
+state = mark10_monitor.acquisition.refreshState(state, context);
 state.session.acquisition.retainedValidCount = sum(buffer("valid"));
 state = mark10_monitor.analysis.setSource(state,buffer("time_s"),buffer("force_N"),buffer("travel_mm"));
 state.session.connection.status = "Connected; monitoring stopped.";

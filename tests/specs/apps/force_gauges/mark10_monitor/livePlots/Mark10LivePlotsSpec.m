@@ -8,7 +8,8 @@ classdef Mark10LivePlotsSpec < matlab.unittest.TestCase
             axesById = struct("timeSeries", axes(figureHandle), ...
                 "forceTravel", axes(figureHandle));
             model = struct("time_s", [0; 1], "force_N", [1; 2], ...
-                "travel_mm", [3; 4], "fitViewport", true, ...
+                "travel_mm", [3; 4], "reconstructed_mm", [3.2; 3.8], ...
+                "linearLegend", "Linear travel (est. +36 mm/min)", "fitViewport", true, ...
                 "limits", testLimits());
 
             mark10_monitor.livePlots.draw(axesById, model);
@@ -18,13 +19,20 @@ classdef Mark10LivePlotsSpec < matlab.unittest.TestCase
             stationaryPoints = findobj(axesById.forceTravel, ...
                 "Type", "line", "Tag", "mark10ForceTravelStationaryPoints");
 
-            testCase.verifyNumElements(timeLines, 2);
+            linearTime = findobj(axesById.timeSeries,"Tag","mark10TimeReconstructed");
+            linearForce = findobj(axesById.forceTravel,"Tag","mark10ForceReconstructed");
+            testCase.verifyEqual(linearTime.YData,[3.2 3.8]);
+            testCase.verifyEqual(linearForce.XData,linearTime.YData);
+            testCase.verifyEqual(linearForce.YData,[1 2]);
+            testCase.verifyEqual(string(axesById.timeSeries.Legend.String{2}),model.linearLegend);
+            testCase.verifyEqual(string(axesById.forceTravel.Legend.String{2}),model.linearLegend);
+            testCase.verifyNumElements(timeLines, 3);
             testCase.verifyNumElements(forceTravelLine, 1);
             testCase.verifyNumElements(stationaryPoints, 1);
             testCase.verifyEqual(forceTravelLine.XData, [3, 4]);
             testCase.verifyEqual(forceTravelLine.YData, [1, 2]);
             testCase.verifyEqual(string({timeLines.HitTest}), ...
-                ["off", "off"]);
+                ["off", "off", "off"]);
             testCase.verifyEqual(string(forceTravelLine.HitTest), "off");
             testCase.verifyEqual(string(forceTravelLine.PickableParts), "none");
             testCase.verifyEqual(string(axesById.timeSeries.ClippingStyle), ...
@@ -44,9 +52,9 @@ classdef Mark10LivePlotsSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(axesById.forceTravel.XLimMode), ...
                 "manual");
 
-            originalLines = sort([timeLines; forceTravelLine; stationaryPoints]);
+            originalLines = sort([timeLines; forceTravelLine; stationaryPoints; linearForce]);
             changed = struct("time_s", [0; 2], "force_N", [2; 4], ...
-                "travel_mm", [6; 8], "fitViewport", false, ...
+                "travel_mm", [6; 8], "linearLegend", "Linear travel", "fitViewport", false, ...
                 "limits", testLimits());
             axesById.timeSeries.XLim = [-1, 1];
             axesById.forceTravel.XLim = [2, 5];
@@ -56,6 +64,8 @@ classdef Mark10LivePlotsSpec < matlab.unittest.TestCase
                 findobj(axesById.forceTravel, "Type", "line")]);
             testCase.verifyEqual(currentLines, originalLines);
             testCase.verifyEqual(forceTravelLine.XData, [6, 8]);
+            testCase.verifyEqual(string(axesById.timeSeries.Legend.String{2}),changed.linearLegend);
+            testCase.verifyEqual(string(axesById.forceTravel.Legend.String{2}),changed.linearLegend);
             testCase.verifyEqual(forceTravelLine.YData, [2, 4]);
             testCase.verifyEqual(axesById.timeSeries.XLim, [-1, 1]);
             testCase.verifyEqual(axesById.forceTravel.XLim, [2, 5]);
