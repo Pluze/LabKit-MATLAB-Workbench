@@ -19,8 +19,12 @@ else
         a.plotTime_s, true, reset);
     proposed.force_N = refitIfNeeded(current.force_N, ...
         a.plotForce_N, false, reset);
+    travel = a.plotTravel_mm(:);
+    if isfield(a,"plotReconstructed_mm")
+        travel = [travel; a.plotReconstructed_mm(:)];
+    end
     proposed.travel_mm = refitIfNeeded(current.travel_mm, ...
-        a.plotTravel_mm, false, reset);
+        travel, false, reset);
 end
 changed = reset || ~isequaln(current, proposed);
 state.session.cache.plotLimits = proposed;

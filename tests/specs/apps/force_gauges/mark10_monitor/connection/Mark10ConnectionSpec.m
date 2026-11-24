@@ -35,26 +35,29 @@ classdef Mark10ConnectionSpec < matlab.unittest.TestCase
 
         function disconnectRetainsValidSamplesAndReleasesResources(testCase)
             resources = containers.Map("KeyType", "char", "ValueType", "any");
-            buffer = containers.Map("KeyType", "char", "ValueType", "any");
-            buffer("valid") = [true; false; true];
-            resources("mark10Buffer") = buffer;
-            resources("mark10Sampler") = "sampler";
-            resources("mark10Connection") = "connection";
             context = labkittest.createCallbackContext(struct( ...
                 "getResource", @(id) resources(char(id)), ...
+                "setResource", @(id,value,~) putResource(resources,id,value), ...
                 "removeResource", @(id) removeResource(resources, id)));
-            state = struct("session", struct( ...
-                "connection", struct("connected", true, "status", ""), ...
-                "acquisition", struct("monitoring", true, ...
-                    "retainedValidCount", 0), ...
-                "export", struct("status", "")));
+            state = struct("session",mark10_monitor.createSession(struct(),context));
+            state.session.connection.connected = true;
+            state.session.acquisition.monitoring = true;
+            buffer = resources("mark10Buffer");
+            buffer("valid") = [true; false; true];
+            buffer("time_s") = (0:2)'/50;
+            buffer("force_N") = [1; NaN; 1];
+            buffer("travel_mm") = [2; NaN; 2];
+            resources("mark10Sampler") = "sampler";
+            box = containers.Map("KeyType","char","ValueType","any");
+            box("connection") = struct("AcquisitionMode","Synchronized n");
+            resources("mark10Connection") = box;
 
             state = mark10_monitor.connection.disconnectDevice(state, context);
 
             testCase.verifyFalse(state.session.connection.connected);
             testCase.verifyFalse(state.session.acquisition.monitoring);
             testCase.verifyEqual( ...
-                state.session.acquisition.retainedValidCount, 2);
+                state.session.acquisition.retainedValidCount, sum(buffer("valid")));
             testCase.verifySubstring(state.session.export.status, ...
                 "2 valid monitoring samples retained");
             testCase.verifyFalse(isKey(resources, "mark10Sampler"));
@@ -72,4 +75,8 @@ key = char(id);
 if isKey(resources, key)
     remove(resources, key);
 end
+end
+
+function resources = putResource(resources,id,value)
+resources(char(id)) = value;
 end

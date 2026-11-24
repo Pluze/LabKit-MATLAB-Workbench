@@ -1,5 +1,6 @@
-function state = applyCursor(state, playback, index)
+function state = applyCursor(state, playback, index, refreshProfile)
 %APPLYCURSOR Copy the complete replay prefix into visible session state.
+if nargin<4, refreshProfile=false; end
 count = numel(playback("time_s"));
 index = min(max(0, round(index)), count);
 indices = 1:index;
@@ -9,9 +10,14 @@ time = playback("time_s");
 force = playback("force_N");
 travel = playback("travel_mm");
 a.plotTime_s = time(indices);
-[a.plotForce_N, a.plotTravel_mm] = ...
-    mark10_monitor.analysis.shiftPlotData( ...
-    force(indices), travel(indices), state.session.analysis);
+analysis = state.session.analysis;
+if refreshProfile
+    analysis.travelProfile = mark10_monitor.analysis.travelProfile( ...
+        time,force,travel,analysis.travel,false,state.session.experiment.type);
+    state.session.analysis = analysis;
+end
+[a.plotForce_N, a.plotTravel_mm, a.plotReconstructed_mm] = mark10_monitor.analysis.plotCoordinates( ...
+    a.plotTime_s,force(indices),travel(indices),analysis);
 a.sampleCount = index;
 a.validCount = index;
 a.invalidCount = 0;

@@ -6,6 +6,12 @@ end
 connectionBox = context.getResource("mark10Connection");
 buffer = context.getResource("mark10Buffer");
 resetMonitor(buffer);
+state.session.analysis.travel.contact_s = -1;
+state.session.analysis.travelDraft.contact_s = -1;
+state.session.analysis.contactSuggestion = "";
+state.session.analysis.travelUpdated_s = -Inf;
+state.session.analysis.travelProfile = mark10_monitor.analysis.travelProfile( ...
+    [],[],[],state.session.analysis.travel);
 state = mark10_monitor.acquisition.refreshState(state, context);
 state = mark10_monitor.livePlots.updateLimits(state,true);
 sampler = mark10_monitor.acquisition.createSampler( ...

@@ -13,14 +13,30 @@ if isempty(ports), ports = "No ports"; end
 model = struct("time_s", s.acquisition.plotTime_s, ...
     "force_N", s.acquisition.plotForce_N, ...
     "travel_mm", s.acquisition.plotTravel_mm, ...
+    "reconstructed_mm", s.acquisition.plotReconstructed_mm, ...
     "limits", s.cache.plotLimits, ...
     "limitRevision", s.cache.plotViewRevision, "filename", filename);
+model.travelLabel = "Travel (mm)";
+hasSurface = isfinite(s.analysis.travelProfile.contact_s);
+if hasSurface, model.travelLabel = "Surface displacement (mm)"; end
 view = labkit.app.view.Snapshot().windowSubtitle(filename);
 view = view.include(mark10_monitor.analysis.present(s.analysis,s.experiment.type,filename));
 view = view.choices("serialPort", ports);
 view = view.value("serialPort", selectedPort(s.connection.selectedPort, ports));
 view = view.value("sampleRate", s.acquisition.rate);
 view = view.value("experimentType", s.experiment.type);
+view = view.value("monitorExperimentType", s.experiment.type);
+for prefix = ["monitor","analysis"]
+    draft = s.analysis.travelDraft;
+    view = view.value(prefix+"DisplacementMode",draft.mode);
+    view = view.value(prefix+"TravelSpeed",draft.speed_mm_min);
+    view = view.enabled(prefix+"TravelSpeed",draft.mode=="Entered speed");
+    view = view.text(prefix+"TravelStatus",s.analysis.travelProfile.status);
+end
+view = view.value("analysisSurfaceTime",s.analysis.travelDraft.contact_s);
+view = view.enabled("analysisSurfaceTime",~monitoring && s.experiment.type=="Compression");
+view = view.text("travelContactSuggestion",s.analysis.contactSuggestion);
+view = view.enabled("suggestTravelContact",analysisDataAvailable(s) && s.experiment.type=="Compression");
 view = view.value("gaugeUnit", displaySetting("unit", s.settingsDraft.unit));
 view = view.value("gaugeMode", displaySetting("mode", s.settingsDraft.mode));
 view = view.value("currentFilter", ...
@@ -74,8 +90,9 @@ view = view.enabled("exportStressStrain", s.analysis.curveReady);
 view = view.enabled("updateStressStrain",analysisDataAvailable(s));
 view = view.enabled("estimateInitialLength",analysisDataAvailable(s));
 view = view.enabled("detectGlitches",analysisDataAvailable(s));
-view = view.tableData("recentData", recentTable(s.acquisition, monitoring), ...
-    Columns=["Time_s", "Force_N", "Travel_mm"]);
+columns = ["Time_s","Force_N","Travel_mm"];
+if hasSurface, columns(3)="Displacement_mm"; end
+view = view.tableData("recentData", recentTable(s.acquisition, monitoring), Columns=columns);
 view = view.renderPlot("livePlots", model, ...
     ViewRevision=s.cache.plotViewRevision);
 

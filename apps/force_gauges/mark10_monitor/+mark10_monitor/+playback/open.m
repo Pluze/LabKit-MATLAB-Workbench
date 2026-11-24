@@ -14,13 +14,18 @@ playback("travel_mm") = recording.Travel_mm;
 playback("index") = numel(recording.Time_s);
 context.setResource("mark10Playback", playback, []);
 state.session.playback.loaded = true;
+state.session.analysis.travel.contact_s = -1;
+state.session.analysis.travelDraft.contact_s = -1;
+state.session.analysis.contactSuggestion = "";
+state.session.analysis.travelProfile = mark10_monitor.analysis.travelProfile( ...
+    [],[],[],state.session.analysis.travel);
 state.session.playback.playing = false;
 state.session.playback.source = filepath;
 state = mark10_monitor.analysis.setSource(state,recording.Time_s,recording.Force_N,recording.Travel_mm);
 state.session.analysis.geometryConfirmed = false;
 state.session.analysis.dataSource = "Loaded Recording";
 state = mark10_monitor.playback.applyCursor( ...
-    state, playback, playback("index"));
+    state, playback, playback("index"),true);
 state = mark10_monitor.livePlots.updateLimits(state, true);
 state.session.playback.status = compose( ...
     "Loaded %d samples from %s; complete curve displayed.", ...

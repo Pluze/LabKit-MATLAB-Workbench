@@ -27,12 +27,25 @@ if p.excludeGlitches
     excluded(finite) = mark10_monitor.analysis.detectGlitches(force(finite), gap(finite));
 end
 selected = finite & time >= range(1) & time <= range(2);
-sourceIndex = find(selected & ~excluded);
+[f0,x0] = mark10_monitor.analysis.appliedZeroLevels(p);
+x = gap-x0;
+if isfield(p,"travel")
+    profile = mark10_monitor.analysis.travelProfile(time,force,gap,p.travel,false,kind);
+    modeled = mark10_monitor.analysis.reconstructTravel(time,profile);
+    useModel = isfinite(modeled);
+    x(useModel) = modeled(useModel)-x0;
+    if isfinite(profile.contact_s)
+        % Convert shortening to engineering gap for the existing strain formula.
+        x = p.gaugeLength_mm-(profile.contactGap_mm-gap);
+        x(useModel) = p.gaugeLength_mm-(profile.modeledContactGap_mm-modeled(useModel));
+        selected = selected & time>=profile.contact_s;
+    end
+end
+sourceIndex = find(selected & ~excluded & isfinite(x));
 if numel(sourceIndex) < 2
     error("mark10_monitor:analysis:InsufficientData", "Select at least two valid samples.");
 end
-[f0,x0] = mark10_monitor.analysis.appliedZeroLevels(p);
-f = force(sourceIndex)-f0; x = gap(sourceIndex)-x0;
+f = force(sourceIndex)-f0; x = x(sourceIndex);
 polarity = 1;
 if kind == "Compression", polarity = -1; end
 curve = struct("time_s", time(sourceIndex), ...
@@ -47,7 +60,9 @@ cut = [true; diff(curve.time_s)>max(minimumGapBreak_s,cadenceGapFactor*median(di
 block = cumsum(cut); next = 0;
 for b = unique(block).'
     indices = find(block == b);
-    dx = diff(x(indices)); direction = sign(dx);
+    % Retain observed branch boundaries where reconstructed and measured
+    % coordinates meet, so a model seam cannot become a new loading branch.
+    dx = diff(gap(sourceIndex(indices))); direction = sign(dx);
     for k=2:numel(direction)
         if direction(k)==0, direction(k)=direction(k-1); end
     end
