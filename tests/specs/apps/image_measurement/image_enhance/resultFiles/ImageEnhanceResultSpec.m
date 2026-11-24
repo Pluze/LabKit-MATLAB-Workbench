@@ -34,14 +34,18 @@ classdef ImageEnhanceResultSpec < matlab.unittest.TestCase
             payload = image_enhance.resultFiles.writeOutputs(items, ...
                 repmat(image_enhance.analysisRun.emptyStep(), 0, 1), struct( ...
                 "outputFolder", folder, "format", "PNG", "itemSteps", {steps}));
-            manifest = image_enhance.resultFiles.buildManifest(payload.results);
+            manifest = readtable(payload.manifestPath, Delimiter=",", ...
+                ReadVariableNames=true, TextType="string");
             firstWritten = labkit.image.im2double(imread(payload.results(1).outputPath));
             secondWritten = labkit.image.im2double(imread(payload.results(2).outputPath));
 
-            testCase.verifyEqual(string(manifest.Properties.VariableNames), ...
+            testCase.assertEqual(string(manifest.Properties.VariableNames), ...
                 ["SourceImage", "OutputImage", "Status", "Width_px", ...
                  "Height_px", "StepCount", "Message"]);
             testCase.verifyEqual(manifest.StepCount, [1; 1]);
+            testCase.verifyEqual(manifest.SourceImage, [string(first); string(second)]);
+            testCase.verifyEqual(manifest.OutputImage, string({payload.results.outputPath}).');
+            testCase.verifyEqual(manifest.Status, ["saved"; "saved"]);
             testCase.verifyGreaterThan(mean(firstWritten, "all"), mean(items(1).image, "all"));
             testCase.verifyLessThan(mean(secondWritten, "all"), mean(items(2).image, "all"));
         end

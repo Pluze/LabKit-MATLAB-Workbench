@@ -13,7 +13,7 @@ ECG Print follows one file-analysis workflow: import an ECG channel, prepare its
 
 Launch **ECG Print** from LabKit or run `labkit_ECGPrint_app` from a configured source checkout.
 
-1. Choose **Open recording**, then select the ECG channel. Supported inputs are MAT, CSV, TXT, and TSV recordings handled by the biosignal reader, including supported BIOPAC exports, timetables, ordinary tables, and unambiguous numeric arrays.
+1. Choose **Open recording**, then select the ECG channel. Supported inputs are BIOPAC ACQ, MAT, CSV, TXT, and TSV recordings handled by the biosignal reader, including supported BIOPAC exports, timetables, ordinary tables, and unambiguous numeric arrays.
 2. In **Results**, inspect the raw waveform and adjust **Start** and **End**. Both sliders use the actual file duration and their numeric arrows step by 0.1 seconds; the blue interval is the pending selection. Opening a file or switching channels selects from zero to the nearest tenth of a second within the file extent; the control maximum retains the exact endpoint. Excluded samples do not enter filtering or noise analysis. Use at least 30 seconds of stable-morphology ECG. Long records are analyzed with overlapping ECGNExT windows automatically.
 3. Choose the R-peak detector and minimum RR interval, then select **Analyze ECG**. The default detector is QRS streaming with a 0.28-second minimum interval. Pan-Tompkins and local peaks are also available.
 4. **Results** shows four time-linked plots: input ECG with detected R peaks, per-beat detrended noise RMS per beat, signal QRS peak-to-peak amplitude per beat, and SNR per beat. The summary and per-beat table are in the Results controls.
@@ -26,6 +26,8 @@ A successful analysis reports the number of measured beats, detected beats, and 
 ## Import Settings
 
 The separate **Import Settings** tab contains header line, header presence, time-column name, time unit, signal-column names, and fallback sample rate. Use **Preview file header** to inspect a text preamble. Choose **Parse / refresh file** after editing import options; analysis is disabled until the new options have been applied. A failed parse retains header access so the settings can be corrected.
+
+BIOPAC ACQ uses its embedded channel labels, units, calibration and sample rate. The text import settings are disabled for this format. Direct import supports uncompressed big-endian revision 133 with equal-length channels and sample divider 1. For other ACQ layouts, export a supported MAT or delimited-text recording from AcqKnowledge.
 
 For recordings with a reliable sample-counter column, select that column, set **Time unit** to **samples**, and enter the acquisition rate under **Sample rate / fallback (Hz)**. The App scales sample-index time to seconds while preserving the channel values. This provides an explicit acquisition clock for mixed or unsuitable timestamp columns.
 

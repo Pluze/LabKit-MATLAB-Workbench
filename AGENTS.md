@@ -85,9 +85,7 @@ reader needs them for the requested audit, science, safety, or compatibility.
   literal `base` workspace and a literal MATLAB variable name, with a
   data-shaped value and contract tests; never use it to inject runtime
   objects, handles, callbacks, or dynamically named state.
-- File budgets count nonblank, non-comment MATLAB code. They are review
-  backstops, not extraction targets. Keep callback-local glue local when that
-  makes workflow order clearer.
+- Keep callback-local glue local when that makes workflow order clearer.
 - Path collections use string or cell arrays. A scalar folder becomes
   `string(folder)`; never reshape an unknown char path with `(:)`.
 - Scientific constants have semantic names and nearby rationale. Structural

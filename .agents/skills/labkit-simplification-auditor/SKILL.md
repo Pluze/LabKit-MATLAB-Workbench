@@ -5,9 +5,10 @@ description: "Use to find, review, or implement evidence-backed LabKit simplific
 
 # LabKit Simplification Auditor
 
-Cover the requested scope with evidence-backed reductions. Read the applicable
-rules, current owner, consumers, tests, public contracts, history, and active
-migration ledger.
+Cover the requested scope with evidence-backed reductions. Start with the
+applicable rules, current owner, consumers, tests, and supported contracts.
+Read history or the active migration ledger when it can resolve a live
+compatibility or ownership question.
 
 ## Find and prove candidates
 

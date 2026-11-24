@@ -15,15 +15,14 @@ without creating tests, and a run request executes existing selected tests.
 
 For changed source, use `labkittest.explain(SOURCE_FILE)` to resolve ownership
 and the bounded evidence closure. When the failed identity is already known,
-run that identity rather than rediscovering its selector. Reuse existing specs;
+pass it unchanged to `labkittest.run(Id=IDENTITY)`, including any parameter
+suffix. Reuse existing specs;
 add or extend tests only for a relevant gap in the requested contract. Use
 `labkittest.createSpec` only when a new specification is needed, with a
 Regression, Invariant, or Compatibility reason.
 
-Run by owner/contract or the known file closure. A missing contract or zero
-selection is not passing evidence. When a broad framework owner defeats narrow
-iteration, report the selected count and run identified specification files
-through `scripts/runFocusedSpecs.m`; this cannot bypass missing ownership.
+Run by exact identity, owner/contract, or the known source-file closure. A
+missing contract, unknown identity, or zero selection requires diagnosis.
 Require persistence evidence only for an affected App-owned continuation
 contract, not from a filename alone.
 

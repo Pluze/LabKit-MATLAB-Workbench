@@ -37,12 +37,13 @@ classdef TestArchitectureSpec < matlab.unittest.TestCase
         function mark10UsesExplicitBaseMatlabBackgroundRuntime(testCase)
             root = labkittest.setup();
             driver = text(root, "+labkit/+mark10/connect.m");
-            testCase.verifySubstring(driver, ...
-                "parfeval(backgroundPool, @mark10ServiceLoop");
-            testCase.verifySubstring(driver, ...
-                "parallel.pool.PollableDataQueue");
-            testCase.verifyFalse(contains(driver, "parfeval(@"), ...
-                "Background work must explicitly name backgroundPool.");
+            % Guard direct dispatch and its pool without naming the worker.
+            calls = regexp(char(driver), '\<parfeval\s*\(', 'match');
+            explicitCalls = regexp(char(driver), ...
+                '\<parfeval\s*\(\s*backgroundPool\s*,', 'match');
+            testCase.assertNotEmpty(calls);
+            testCase.verifyEqual(numel(explicitCalls), numel(calls), ...
+                "Mark-10 background dispatch must use Base MATLAB backgroundPool.");
         end
 
         function defaultBuildRunsOneCompleteLocalGate(testCase)

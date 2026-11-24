@@ -11,6 +11,12 @@ function [recording, status] = readRecording(filepath, opts)
 %   vector stored in a timetable or table, the channels in a BIOPAC
 %   AcqKnowledge export containing data, isi, isi_units, labels, and units
 %   variables, or one unambiguous nonscalar numeric array.
+%   BIOPAC ACQ files contribute interleaved, calibrated waveform channels
+%   on the embedded sample clock. This supports uncompressed, big-endian
+%   revision 133 with positive equal channel lengths and sample divider 1.
+%   Integer channels use their stored gain and offset. Double channels
+%   already contain physical values. Labels and units use UTF-8.
+%   ACQ waveform import skips event markers and trailing configuration.
 %   CSV, TSV, and TXT files contribute each selected numeric column other
 %   than the time column.
 %
@@ -27,6 +33,8 @@ function [recording, status] = readRecording(filepath, opts)
 %   duplicate times retain their first sample. Linear interpolation is limited
 %   to contiguous sections; gaps larger than gapFactor are compressed between
 %   sections rather than bridged.
+%   ACQ timing and channel order come from the file. Text-column settings,
+%   fallbackFs, and sampling normalization do not change the ACQ clock.
 %
 %   Import and format errors are reported in status instead of being thrown.
 %   The returned recording is then an empty recording carrying the requested
@@ -39,8 +47,8 @@ function [recording, status] = readRecording(filepath, opts)
 %   facts, and attempts are returned as import metadata.
 %
 % Inputs:
-%   filepath - Character vector or scalar string naming a MAT, CSV, TSV, or
-%              TXT file.
+%   filepath - Character vector or scalar string naming an ACQ, MAT, CSV,
+%              TSV, or TXT file.
 %   opts - Optional scalar struct containing the fields listed below.
 %
 % Options:
@@ -93,17 +101,18 @@ function [recording, status] = readRecording(filepath, opts)
 %   metadata - Import information. Text imports report sourceKind,
 %              timeColumn, timeUnit, timeSource, timeRepair,
 %              importHeaderLine, and importHasHeader. BIOPAC signal metadata
-%              records its source format and sample-interval provenance. All
+%              records its source format and sample-interval provenance. ACQ
+%              recording metadata also reports revision. All
 %              successful imports add detectedFormat, importFallbackUsed,
 %              importAttempts, fileInfo, and samplingNormalization.
 %
 % Status Fields:
 %   ok - Logical true when import completed.
 %   message - Empty string on success; otherwise the import error message.
-%   kind - "mat" or "table" on success. Failed requests report "unknown"
+%   kind - "acq", "mat", or "table" on success. Failed requests report "unknown"
 %          or the attempted file extension.
 %   filepath - Normalized source path.
-%   format - Selected content format, such as "biopac_mat",
+%   format - Selected content format, such as "biopac_acq", "biopac_mat",
 %            "timetable_mat", "table_mat", "numeric_mat",
 %            "biopac_text", or "delimited_text".
 %   fallbackUsed - Logical true when an earlier compatible parser failed.

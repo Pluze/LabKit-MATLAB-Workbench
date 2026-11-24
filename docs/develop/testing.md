@@ -120,7 +120,7 @@ buildtool docsCheck
 | `codecheck` | Lightweight pre-commit gate over all public-repository MATLAB source. Prints one `CODECHECK_RESULT` line and fails unless analyzer issues, suppressions, compatibility recommendations, and unreviewed secondary-runtime calls are all zero. Accepted private workspaces retain their own runtime policy. |
 | `docs` / `docsCheck` | Render the ignored local site or verify deterministic source-derived output. |
 
-The default `buildtool` command runs `changedFast`; name a specialist task only for broad headless or App-boundary investigation, code analysis, or documentation generation. `changedFast` first requires clean code analysis and deterministic documentation, then prints whether its test plan is `focused-local` or `full-profile`, semantic reasons, exact identities, and any explicitly ignored paths. For ordinary App and facade source it runs only the required contract closure. Framework, Build, catalog, and repository-policy paths select explicit bounded system evidence. Documentation paths are explicitly ignored by the test planner because the same gate's `docsCheck` dependency owns deterministic generation; local `site/` output is ignored by Git. An unknown path is a planning error: declare its production role or an explicit no-test classification rather than widening the run.
+The default `buildtool` command runs `changedFast`; name a specialist task only for broad headless or App-boundary investigation, code analysis, or documentation generation. `changedFast` first requires clean code analysis and deterministic documentation, then prints whether its test plan is `focused-local` or `full-profile`, semantic reasons, exact identities, and any explicitly ignored paths. For ordinary App and facade source it runs only the required contract closure. Framework, Build, catalog, and repository-policy paths select explicit bounded system evidence. The test planner delegates documentation paths to `docsCheck` and agent guidance and metadata to the Python governance validator. Executable changes still select their own evidence. Local `site/` output is ignored by Git. An unknown path is a planning error: declare its production role or an explicit no-test classification rather than widening the run.
 
 Fetch `origin/main` before the final task gate so its baseline is current. Renames contribute both their old and new paths; deleted paths still require classification and surviving owner evidence. If an entire owner is retired, a missing-contract result requires an explicit retirement and consumer review rather than silently treating deletion as passing evidence.
 
@@ -165,7 +165,13 @@ junit.xml           CI result exchange
 summary.json        pass/fail summary
 ```
 
-After a failure, copy its exact class/method identity from the output and run the smallest method, specification file, owner/contract, or exact source that proves the repair. Do not invoke the planner again when the failing identity is already known. A zero selection or missing-contract error is a test-authoring defect, never passing evidence.
+Copy the exact failing identity from CI output, including any parameter suffix, and pass it to the standard runner:
+
+```matlab
+labkittest.run(Id="AppSmokeConformanceSpec/materializesDefinitionAndLaunchesDefaultState(App=ecg_print)")
+```
+
+The runner selects one case-sensitive identity, uses its declared environment, and writes the normal evidence artifacts. Use an owner or source selector when the failure boundary is still unknown. An unknown identity or missing contract fails planning.
 
 ### CI Repair Loop
 

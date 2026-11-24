@@ -1,5 +1,32 @@
 classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
     methods (Test, TestTags={'Contract:workflow','Env:hidden-gui'})
+        function opensAcqAndKeepsItsClockAfterRefreshAndChannelChange(testCase)
+            testCase.assertEqual(string(getenv('LABKIT_GUI_TEST_MODE')), "hidden");
+            folder = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            source = testfixtures.biosignal.writeAcq(folder);
+            project = ecg_print.initialData();
+            project.parameters.timeUnit = "samples";
+            project.parameters.fallbackFs = 111;
+            definition = ecg_print.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
+            runtime = labkittest.createMatlabRuntime(definition, project, struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            testCase.assertFalse(runtime.StartupFailed);
+
+            runtime.applyFileSelection("recording", source, 1);
+            testCase.verifySubstring(runtime.State.session.workflow.importStatus, "biopac_acq");
+            testCase.verifyEqual(runtime.State.session.cache.signal.values, [1.75; -0.75; 0.25]);
+            testCase.verifyEqual(runtime.State.session.cache.signal.fs, 2000);
+            timeUnit = findall(runtime.figureHandle(), 'Tag', 'timeUnit');
+            testCase.verifyEqual(string(timeUnit.Enable), "off");
+
+            runtime.invokeAction("refreshImport");
+            runtime.applyControlValue("channel", "Reference");
+            testCase.verifyEqual(runtime.State.session.cache.signal.time, [0; 0.0005; 0.001]);
+            testCase.verifyEqual(runtime.State.session.cache.signal.fs, 2000);
+            testCase.verifyEqual(runtime.State.session.cache.signal.values, [0.25; 0.5; 0.75]);
+        end
+
         function importsAnalyzesReviewsAndExportsOneResult(testCase)
             % Hidden mode must be active before native construction. Exact
             % per-beat exports and diagnostics are the independent outcomes.

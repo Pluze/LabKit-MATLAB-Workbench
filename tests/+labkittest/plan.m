@@ -14,6 +14,8 @@ function result = plan(varargin)
 %   substring name matching, tags, or executor switches. File is a repository
 %   relative source path. Owner, Contract, and Environment use the same
 %   semantics as labkittest.catalog.
+%   RESULT = labkittest.plan(Id=IDENTITY) selects one exact, case-sensitive
+%   catalog identity, including its parameter suffix. Id is standalone.
 %   Profile="apps", ShardIndex=K, ShardCount=N selects deterministic partition
 %   K of N. Every identity belongs to exactly one partition; all partitions
 %   together retain the complete App profile. Defaults are 1 and 1.
@@ -64,6 +66,7 @@ function opts = parseOptions(varargin)
     p.FunctionName = "labkittest.plan";
     p.addParameter("Profile", "", @isTextScalar);
     p.addParameter("File", "", @isTextScalar);
+    p.addParameter("Id", "", @isTextScalar);
     p.addParameter("Owner", "", @isTextScalar);
     p.addParameter("Contract", "", @isTextScalar);
     p.addParameter("Environment", "", @isTextScalar);
@@ -77,6 +80,10 @@ function opts = parseOptions(varargin)
     opts = p.Results;
     opts.Profile = lower(strip(string(opts.Profile)));
     opts.File = normalizeRepositoryPath(opts.File);
+    opts.Id = strip(string(opts.Id));
+    if ismissing(opts.Id)
+        error("LabKit:TestPlan:InvalidIdentity", "Id must be a catalog identity.");
+    end
     opts.Owner = string(opts.Owner);
     opts.Contract = string(opts.Contract);
     opts.Environment = string(opts.Environment);
@@ -91,19 +98,17 @@ function opts = parseOptions(varargin)
             "App partitions require 1 <= ShardIndex <= ShardCount and Profile=apps.");
     end
     selectorCount = sum([strlength(opts.Profile) > 0, strlength(opts.File) > 0, ...
+        strlength(opts.Id) > 0, ...
         strlength(opts.Owner) > 0, strlength(opts.Contract) > 0, ...
         strlength(opts.Environment) > 0]);
     if selectorCount == 0
         error("LabKit:TestPlan:MissingSelector", ...
-            "Specify Profile, File, Owner, Contract, or Environment.");
+            "Specify Profile, File, Id, Owner, Contract, or Environment.");
     end
-    if strlength(opts.Profile) > 0 && selectorCount > 1
+    standalone = [opts.Profile, opts.File, opts.Id];
+    if any(strlength(standalone) > 0) && selectorCount > 1
         error("LabKit:TestPlan:AmbiguousSelector", ...
-            "Profile cannot be combined with File, Owner, Contract, or Environment.");
-    end
-    if strlength(opts.File) > 0 && selectorCount > 1
-        error("LabKit:TestPlan:AmbiguousSelector", ...
-            "File cannot be combined with Owner, Contract, or Environment.");
+            "Profile, File, and Id must each be used without other selectors.");
     end
     if strlength(opts.Profile) > 0 && ~ismember(opts.Profile, ...
             ["changed", "headless", "apps"])
@@ -180,6 +185,11 @@ function [queries, reasons, manualChecks, classifications] = planQueries(opts)
     end
     if strlength(opts.File) > 0
         [queries, reasons, manualChecks, classifications] = queriesForChangedPath(opts.File);
+        return;
+    end
+    if strlength(opts.Id) > 0
+        queries = query("", "", "", "", opts.Id);
+        reasons = "exact catalog identity";
         return;
     end
     queries = query(opts.Owner, opts.Contract, opts.Environment);
@@ -262,6 +272,13 @@ function descriptors = descriptorsForQueries(opts, queries)
             end
         end
         selected = ownerCatalogs(ownerKey);
+        if strlength(current.Id) > 0
+            selected = selected(string({selected.Id}) == current.Id);
+            if isempty(selected)
+                error("LabKit:TestPlan:UnknownIdentity", ...
+                    "No catalog identity exactly matches: %s.", current.Id);
+            end
+        end
         if ~isempty(selected) && strlength(current.Contract) > 0
             selected = selected([selected.Contracts] == lower(current.Contract));
         end
@@ -321,12 +338,15 @@ function groups = executionGroups(descriptors)
     end
 end
 
-function value = query(owner, contract, environment, app)
+function value = query(owner, contract, environment, app, id)
     if nargin < 4
         app = "";
     end
+    if nargin < 5
+        id = "";
+    end
     value = struct("Owner", string(owner), "Contract", string(contract), ...
-        "Environment", string(environment), "App", string(app));
+        "Environment", string(environment), "App", string(app), "Id", string(id));
 end
 
 function value = emptyQuery()
@@ -366,9 +386,9 @@ function validateFocusedQueries(scope, queries)
     for k = 1:numel(queries)
         current = queries(k);
         if strlength(current.Owner) == 0 && strlength(current.Contract) == 0 && ...
-                strlength(current.App) == 0
+                strlength(current.App) == 0 && strlength(current.Id) == 0
             error("LabKit:TestPlan:UnboundedFocusedPlan", ...
-                "Focused validation must select bounded owner, contract, or App evidence.");
+                "Focused validation must select bounded owner, contract, App, or identity evidence.");
         end
     end
 end
