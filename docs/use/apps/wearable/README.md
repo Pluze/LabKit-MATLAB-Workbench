@@ -14,6 +14,7 @@ Wearable apps read physiological recordings, preserve their time and channel inf
 | What you want to do | App |
 | --- | --- |
 | Filter ECG, detect beats, inspect segment quality, and export a printable waveform | [ECG Print](ecg-print/README.md) |
+| Compare paired EMG baseline and activity windows, SNR, PSD and spectrograms | [EMG Review](emg-review/README.md) |
 
 ## Use Biosignal Functions Directly
 

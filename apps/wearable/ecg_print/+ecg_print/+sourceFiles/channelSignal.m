@@ -4,10 +4,10 @@ function signal = channelSignal(recording,channel,parameters)
 %   uses labkit.biosignal.getChannel. When parameters.timeUnit is "samples",
 %   numeric reader time represents sample indices: divide it by the positive
 %   parameters.fallbackFs and multiply the inferred index rate by that value.
-%   Other time units are already seconds. Amplitude values are unchanged.
+%   BIOPAC ACQ uses its embedded clock. Amplitude values are unchanged.
 %   Invalid sample-clock rate raises ecg_print:InvalidSampleRate. No IO or GUI.
 signal = labkit.biosignal.getChannel(recording,channel);
-if string(parameters.timeUnit)=="samples"
+if recording.metadata.sourceKind ~= "biopac_acq" && string(parameters.timeUnit)=="samples"
     fs=parameters.fallbackFs;
     if ~isnumeric(fs)||~isscalar(fs)||~isfinite(fs)||fs<=0
         error('ecg_print:InvalidSampleRate','Set the acquisition sample rate in Hz.');

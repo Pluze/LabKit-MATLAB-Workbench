@@ -16,14 +16,23 @@ function recording = normalizeRecordingSampling(recording, opts)
             'gapFactor must be a finite positive scalar.');
     end
 
+    % The ACQ acquisition grid already has the exact header interval.
+    hasAcqClock = recording.metadata.sourceKind == "biopac_acq";
     for k = 1:numel(recording.signals)
-        recording.signals(k) = normalizeSignal(recording.signals(k), enabled, gapFactor);
+        if hasAcqClock
+            signal = recording.signals(k);
+            info = emptyInfo(enabled, numel(signal.values));
+            info.nominalIntervalSeconds = signal.metadata.sampleIntervalSeconds;
+            recording.signals(k).metadata.samplingNormalization = info;
+        else
+            recording.signals(k) = normalizeSignal(recording.signals(k), enabled, gapFactor);
+        end
     end
     infos = {recording.signals.metadata};
     normalization = cellfun(@(metadata) metadata.samplingNormalization, infos);
     recording.metadata.samplingNormalization = struct( ...
         'enabled', logical(enabled), ...
-        'uniform', all(arrayfun(@(signal) isUniform(signal.time), recording.signals)), ...
+        'uniform', hasAcqClock || all(arrayfun(@(signal) isUniform(signal.time), recording.signals)), ...
         'channelCount', numel(recording.signals), ...
         'resampledChannelCount', nnz([normalization.resampled]), ...
         'compressedGapCount', sum([normalization.compressedGapCount]), ...

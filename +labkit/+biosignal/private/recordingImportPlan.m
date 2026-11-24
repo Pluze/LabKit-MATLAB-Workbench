@@ -15,6 +15,9 @@ function [plan, fileInfo] = recordingImportPlan(filepath)
         'resolvedFormat', "unknown");
 
     switch extension
+        case ".acq"
+            fileInfo.detectedFormat = "biopac_acq";
+            plan = candidate("biopac_acq", "acq", @readBiopacAcqRecording);
         case ".mat"
             variables = whos('-file', filepath);
             names = string({variables.name});

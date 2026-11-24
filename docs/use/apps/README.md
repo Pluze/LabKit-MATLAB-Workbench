@@ -51,7 +51,8 @@ See [Use LabKit](../README.md) for installation, updating, version selection, an
 | Detect trains and measure neural responses | [Nerve Response Analysis](neurophysiology/nerve-response-analysis/README.md) | Filter record and protocol JSON | Analysis JSON and CAP metrics |
 | Review aligned responses and statistics | [Response Review and Stats](neurophysiology/response-review-stats/README.md) | Analysis JSON or segment CSV | Metrics CSV and summary |
 | Compare multiple groups with the first using t-tests and one mean/SD plot | [T-Test Wizard](statistics/ttest-wizard/README.md) | CSV, TSV, workbook, or entered values | Result family, CSVs, and comparison plot |
-| Inspect ECG and measure segment SNR | [ECG Print](wearable/ecg-print/README.md) | MAT or delimited table | ROI timetable, segment SNR CSV, and waveform image |
+| Inspect ECG and measure segment SNR | [ECG Print](wearable/ecg-print/README.md) | BIOPAC ACQ, MAT, or delimited table | Per-beat measurements, ROI timetable, and waveform image |
+| Mark EMG baseline and activity and inspect SNR and spectral content | [EMG Review](wearable/emg-review/README.md) | BIOPAC ACQ, MAT, or delimited table | Paired RMS and SNR, PSD, spectrogram, and metrics CSV |
 
 ## Browse By Family
 

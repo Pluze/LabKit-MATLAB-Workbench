@@ -115,6 +115,67 @@ classdef BiosignalFacadeSpec < matlab.unittest.TestCase
             testCase.verifyEqual(textRecording.signals(1).values, [1; 2; 3]);
         end
 
+        function importsAcqHeaderClockAndInterleavedPhysicalValues(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            source = testfixtures.biosignal.writeAcq(folder);
+            [recording, status] = labkit.biosignal.readRecording(source, ...
+                struct("fallbackFs", 71, "timeUnit", "samples", "signalColumns", 1));
+
+            testCase.assertTrue(status.ok, status.message);
+            testCase.verifyEqual(status.kind, "acq");
+            testCase.verifyEqual(status.format, "biopac_acq");
+            testCase.verifyEqual(recording.metadata.revision, 133);
+            testCase.verifyEqual(string(labkit.biosignal.listChannels(recording)), ...
+                ["Wave" "Reference" "Derived"]);
+            testCase.verifyEqual([recording.signals.unit], ["mV" "V" ""]);
+            testCase.verifyEqual([recording.signals.values], ...
+                [1.75 0.25 -1; -0.75 0.50 -2; 0.25 0.75 -3]);
+            testCase.verifyEqual(recording.signals(1).time, [0; 0.0005; 0.001]);
+            testCase.verifyEqual([recording.signals.fs], [2000 2000 2000]);
+            testCase.verifyFalse(recording.metadata.samplingNormalization.resampledChannelCount > 0);
+        end
+
+        function rejectsUnsupportedAndTruncatedAcqWithoutTextFallback(testCase)
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            % Rewrite one field in each independently regenerated file.
+            offsets = [2 972 2454 2454+152 2454+88 2946 2454+92 16];
+            values = [128 1 12 2 9000 12 NaN 0];
+            types = ["uint32" "int32" "int32" "int16" "int32" "int16" "double" "double"];
+            messages = ["revision 133" "Compressed" "header length" ...
+                "sample divider" "equal channel lengths" "sample type" ...
+                "integer calibration" "sample interval"];
+            for k = 1:numel(offsets)
+                source = testfixtures.biosignal.writeAcq(folder);
+                file = fopen(source, 'r+', 'ieee-be');
+                closer = onCleanup(@() fclose(file));
+                testCase.assertEqual(fseek(file, offsets(k), 'bof'), 0);
+                fwrite(file, values(k), types(k));
+                clear closer
+                [recording, status] = labkit.biosignal.readRecording(source);
+                testCase.verifyFalse(status.ok);
+                testCase.verifyEmpty(recording.signals);
+                testCase.verifyEqual(status.format, "biopac_acq");
+                testCase.verifyEqual(numel(status.attempts), 1);
+                testCase.verifySubstring(status.message, messages(k));
+            end
+
+            source = testfixtures.biosignal.writeAcq(folder);
+            file = fopen(source, 'rb');
+            closer = onCleanup(@() fclose(file));
+            bytes = fread(file, 3009, '*uint8');
+            clear closer
+            file = fopen(source, 'wb');
+            closer = onCleanup(@() fclose(file));
+            fwrite(file, bytes, 'uint8');
+            clear closer
+            [recording, status] = labkit.biosignal.readRecording(source);
+            testCase.verifyFalse(status.ok);
+            testCase.verifyEmpty(recording.signals);
+            testCase.verifySubstring(status.message, "waveform is truncated");
+        end
+
         function fallsBackToTheNextCompatibleMatParser(testCase)
             folder = testCase.applyFixture( ...
                 matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
