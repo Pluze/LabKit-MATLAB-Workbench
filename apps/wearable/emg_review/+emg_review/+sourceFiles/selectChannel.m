@@ -5,7 +5,7 @@ function session = selectChannel(session, channel)
     session.band = choices(1);
     % The reference ROI uses one-second baseline and activity windows.
     session.windowSeconds = 1;
-    session.pairs = [0 1];
+    session.pairs = [0 0];
     session.pairIndex = 1;
     session.result = [];
     session.analysisStatus = "Mark windows and select Analyze EMG.";

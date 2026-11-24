@@ -3,6 +3,10 @@ function result = measure(signal, band, pairs, windowSeconds)
     [values, edge] = emg_review.analysisRun.prepare(signal, band);
     fs = signal.fs;
     width = emg_review.regions.sampleCount(windowSeconds, fs);
+    if any(all(pairs == 0, 2))
+        error("emg_review:UnmarkedPair", ...
+            "Enter start times, use Auto-mark selected pair, or remove the unmarked pair.");
+    end
     first = round(pairs * fs) + 1;
     last = first + width - 1;
     if any(~isfinite(first), 'all') || any(first <= edge, 'all') || ...

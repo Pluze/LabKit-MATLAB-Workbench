@@ -14,7 +14,7 @@ classdef EmgReviewSourceSpec < matlab.unittest.TestCase
             session = emg_review.sourceFiles.selectChannel(session, "Reference");
             testCase.verifyEqual(session.signal.values, Reference);
             testCase.verifyEqual(session.signal.fs, 100, AbsTol=1e-10);
-            testCase.verifyEqual(session.pairs, [0 1]);
+            testCase.verifyEqual(session.pairs, [0 0]);
         end
     end
 end

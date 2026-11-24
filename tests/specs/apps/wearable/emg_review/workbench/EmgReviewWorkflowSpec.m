@@ -20,6 +20,11 @@ classdef EmgReviewWorkflowSpec < matlab.unittest.TestCase
             runtime.applyFileSelection("recording", source, 1);
             testCase.verifyEqual(runtime.State.session.signal.fs, fs);
             testCase.verifyEqual(runtime.State.session.band, "As recorded");
+            overview = findall(figureValue, 'Tag', 'waveform.main');
+            testCase.verifyEmpty(findall(overview, 'Type', 'patch'));
+            runtime.invokeAction("analyze");
+            testCase.verifyEmpty(runtime.State.session.result);
+            testCase.verifySubstring(runtime.State.session.analysisStatus, "unmarked pair");
             runtime.invokeAction("autoMark");
             testCase.verifyEqual(runtime.State.session.pairs, [0 1]);
             runtime.invokeAction("addPair");
