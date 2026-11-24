@@ -16,13 +16,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    name: Deploy generated documentation
+  build:
+    name: Build and upload documentation
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -45,6 +41,14 @@ jobs:
         with:
           path: site
 
+  deploy:
+    name: Deploy generated documentation
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
