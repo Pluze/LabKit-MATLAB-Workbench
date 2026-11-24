@@ -11,10 +11,10 @@ if isempty(model.imageData)
     return
 end
 if ismatrix(model.imageData)
-    imagesc(ax, model.imageData, HitTest="off", PickableParts="none");
+    imagesc(ax, model.imageData);
     colormap(ax, gray(256));
 else
-    image(ax, displayRgb(model.imageData), HitTest="off", PickableParts="none");
+    image(ax, displayRgb(model.imageData));
 end
 axis(ax, "image");
 ax.YDir = "reverse";

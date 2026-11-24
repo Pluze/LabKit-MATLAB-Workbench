@@ -21,6 +21,11 @@ classdef CurvatureWorkflowSpec < matlab.unittest.TestCase
             figureValue = runtime.figureHandle();
 
             runtime.applyFileSelection("imageFile", string(imagePath), 1);
+            canvas = findall(figureValue, "Tag", "preview.image");
+            picture = findall(canvas, "Type", "image");
+            testCase.assertNumElements(picture, 1);
+            testCase.verifyEqual(string(picture.PickableParts), "visible");
+            testCase.verifyEqual(picture.ContextMenu, canvas.ContextMenu);
             runtime.invokeAction("startCurveEdit");
             runtime.applyInteraction("curve", "interactionChanged", arcPoints());
             runtime.invokeAction("undoCurvePoint");

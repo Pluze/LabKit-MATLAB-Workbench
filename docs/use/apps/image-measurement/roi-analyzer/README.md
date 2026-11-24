@@ -9,6 +9,8 @@ summary: ROI Analyzer places reusable rectangular, square, or circular regions o
 
 ROI Analyzer measures and compares original pixel values inside reusable regions of interest. It supports scalar-intensity and RGB images, multiple named ROIs per image, shared geometry, repeatable layouts across images, explicit project continuation, and separate parameter and result exports.
 
+Scroll over the image to inspect ROI boundaries at higher magnification. Right-click the image for plot actions, including opening the current view in a separate figure.
+
 ## Requirements And Launch
 
 ROI Analyzer uses Base MATLAB and the LabKit image reader. It does not require Image Processing Toolbox.

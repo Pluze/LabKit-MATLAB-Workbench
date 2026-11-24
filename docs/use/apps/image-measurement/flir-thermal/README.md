@@ -11,6 +11,8 @@ FLIR Thermal decodes radiometric FLIR JPEG/RJPEG files, displays calibrated temp
 
 Palette, range, ROI, and point labels are derived from the current thermal frame whenever the presentation refreshes, so no separate display-state cache must be maintained.
 
+The thermal image remains a target for plot actions while the point or ROI reading tool is active. Right-click the image to open the plot menu.
+
 ## Requirements And Launch
 
 A `.jpg`, `.jpeg`, or `.rjpg` extension alone is insufficient; the file must contain a readable FLIR raw thermal record and calibration metadata.

@@ -52,7 +52,11 @@ classdef FlirThermalWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyTrue(isfinite(item.roiColdSpot.temperatureC));
             testCase.verifyEqual(runtime.State.project.parameters.exportFormat, ...
                 "TIFF");
-            testCase.verifyNotEmpty(findall(figureValue, "Tag", "preview.thermalImage").Children);
+            canvas = findall(figureValue, "Tag", "preview.thermalImage");
+            picture = findall(canvas, "Type", "image");
+            testCase.assertNumElements(picture, 1);
+            testCase.verifyEqual(string(picture.PickableParts), "visible");
+            testCase.verifyEqual(picture.ContextMenu, canvas.ContextMenu);
             testCase.verifyTrue(isfile(fullfile(folder, "flir_thermal_manifest.csv")));
             testCase.verifyTrue(isfile(runtime.State.project.results.resultManifestPath));
             clear cleanup
