@@ -18,7 +18,7 @@ function drawWaveform(axesById, model)
     end
     colors = [0 0.40 0.65; 0.70 0.29 0.04];
     roles = ["Baseline", "Activity"];
-    for k = 1:size(model.pairs, 1)
+    for k = find(any(model.pairs ~= 0, 2)).'
         for role = 1:2
             left = model.pairs(k, role);
             right = min(model.duration, left + model.width);
