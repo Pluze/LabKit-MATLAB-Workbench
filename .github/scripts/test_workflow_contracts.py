@@ -142,10 +142,16 @@ class WorkflowContracts(unittest.TestCase):
         spec = workflow("docs-pages")
         self.assertEqual(spec[True]["push"]["branches"], ["main"])
         self.assertIn("site/", (ROOT / ".gitignore").read_text().splitlines())
-        steps = spec["jobs"]["deploy"]
-        self.assertEqual(action_steps(steps, "matlab-actions/run-build")[0]["with"]["tasks"], "docs")
-        self.assertEqual(action_steps(steps, "actions/upload-pages-artifact")[0]["with"]["path"], "site")
-        self.assertTrue(action_steps(steps, "actions/deploy-pages"))
+        deploy = spec["jobs"]["deploy"]
+        build = spec["jobs"][deploy["needs"]]
+        self.assertIsNot(build, deploy)
+        self.assertEqual(action_steps(build, "matlab-actions/run-build")[0]["with"]["tasks"], "docs")
+        self.assertEqual(action_steps(build, "actions/upload-pages-artifact")[0]["with"]["path"], "site")
+        self.assertFalse(action_steps(build, "actions/deploy-pages"))
+        self.assertTrue(action_steps(deploy, "actions/deploy-pages"))
+        for action in ("matlab-actions/setup-matlab", "matlab-actions/run-build",
+                       "actions/upload-pages-artifact"):
+            self.assertFalse(action_steps(deploy, action))
 
 
 if __name__ == "__main__":
