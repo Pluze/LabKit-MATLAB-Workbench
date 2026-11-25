@@ -1,18 +1,16 @@
-function installContentGrid(obj, node, component)
+function grid = installContentGrid(obj, node, component)
 % Class-folder implementation of MatlabPlatformAdapter.installContentGrid.
     if isempty(node.ChildIds)
+        grid = [];
         return;
     end
     policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
     padding = policy.ContentPadding;
-    if node.Kind == "group"
+    if node.Kind == "group" || (node.Kind == "tab" && ~isa(component,"matlab.ui.container.Tab"))
         padding = [0 0 0 0];
     end
-    horizontal = node.Kind == "group" && ...
-        isfield(node.Configuration, "Layout") && ...
-        node.Configuration.Layout == "horizontal";
-    actionGrid = obj.usesAdaptiveActionGrid(node);
-    if actionGrid
+    layout = obj.groupLayout(node);
+    if layout == "actions"
         [rows, columns] = obj.actionGridSize(node);
         grid = uigridlayout(component, [rows columns], ...
             Padding=padding, ...
@@ -20,7 +18,7 @@ function installContentGrid(obj, node, component)
             ColumnSpacing=policy.ContentSpacing);
         grid.RowHeight = repmat({policy.ButtonHeight}, 1, rows);
         grid.ColumnWidth = repmat({'1x'}, 1, columns);
-    elseif horizontal
+    elseif layout == "horizontal"
         grid = uigridlayout(component, [1 numel(node.ChildIds)], ...
             Padding=padding, ...
             RowSpacing=policy.ContentSpacing, ...
@@ -52,6 +50,10 @@ function installContentGrid(obj, node, component)
             for k = 1:numel(node.ChildIds)
                 if obj.isGrowableTabChild(obj.node(node.ChildIds(k)))
                     heights{k} = "1x";
+                    child = obj.node(node.ChildIds(k));
+                    if node.Configuration.Heading ~= "" && child.Kind == "plotArea" && child.Configuration.Layout == "single" && numel(node.ChildIds) > 1
+                        heights{k} = "1.28x";
+                    end
                 end
             end
         elseif singleGrowable

@@ -41,5 +41,5 @@ function spinner = createPanner(~, node, parent)
     slider.MinorTicks = [];
     spinner.UserData = struct( ...
         "LayoutContainer", outer, "Slider", slider, ...
-        "CommittedValue", value);
+        "LiveUpdate", config.LiveUpdate, "LastDragUpdate", [], "CommittedValue", value);
 end

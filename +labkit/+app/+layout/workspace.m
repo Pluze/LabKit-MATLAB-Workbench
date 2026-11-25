@@ -17,6 +17,10 @@ function node = workspace(varargin)
 %       workspace nodes.
 %
 % Options:
+%   Heading, Subtitle, Note - Optional page title, subtitle and explanatory footer, passed
+%       to node.page after content. All default to empty text.
+%   For a page with a Heading, Snapshot.text(pageId,value) displays current
+%   context alongside the heading.
 %   Title - Reader-facing workspace title. Default: "Workspace".
 %
 % Outputs:

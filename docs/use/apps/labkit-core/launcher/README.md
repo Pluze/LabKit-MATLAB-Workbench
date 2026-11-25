@@ -15,23 +15,29 @@ The LabKit Launcher is the main place to find and open Apps, check their require
 labkit_launcher
 ```
 
-The window paints before app discovery completes. Its status area first reports that the app list is loading, then shows the selected app, integrity problems, tool availability, or the active maintenance operation.
+The window paints before app discovery completes. The session log shows discovery progress and the number of apps and families found. Refreshing again lists apps added or removed and installed versions that changed since the previous refresh.
 
 ## Launcher Window
 
+Type a name, description or command into the search field to narrow the catalog as you type. Use the family and public/private filters to refine the list. Checked apps remain in the package selection across filters.
+
+Select an application in the catalog on the right to read its purpose above the launch controls. The read-only session log groups progress, results and errors under timestamped operation names. Scroll through the log or select and copy its text. Documentation generation, code analysis and startup profiling offer **Open report** while the generated HTML file exists. Use **Open Selected App** to launch it. Open **Workbench tools** below the launch controls for profiling, maintenance and version management. Checking apps in the catalog reveals **Package Checked** at the right of the Applications heading.
+
+The Launcher and App workbenches use a light interface with a blue primary action. In each App, the header identifies the product family and App, and the workspace groups related views into pages.
+
 | Group | Action | Behavior |
 | --- | --- | --- |
-| Run Apps | **Open Selected App** | Checks the selected App's requirements and opens it. |
-| Run Apps | **Refresh App List** | Repeats public and configured private-app discovery without restarting the launcher. |
-| Run Apps | **Open App Guide** | Opens the current online guide for the selected App. |
-| Run Apps | **View Launch Log** | Opens the current Launcher's timed discovery and App-startup events. |
-| Versions and Install | **Latest** | Installs the latest published stable GitHub Release. |
-| Versions and Install | **Versions** | Lists published stable GitHub Releases with their publication date and release information for deliberate upgrade or rollback. |
-| Development and Maintenance | **Doc Generation** | Rebuilds the complete ignored `site/` folder from the current Markdown and public MATLAB help. It does not open a page or choose between online and local help. |
-| Development and Maintenance | **Run Code Analyzer** | Scans the checkout and writes JSON and HTML Code Analyzer reports. |
-| Development and Maintenance | **Profile Selected App** | Starts the selected app under the MATLAB profiler and saves its report when the app closes. |
-| Development and Maintenance | **Clean Artifacts** | Removes ignored generated content under `artifacts/` while preserving task worktrees. See [cleanup boundaries](../../../../develop/tools/README.md#launcher-and-command-line-use) before retaining reports there. |
-| Package and Publish | **Package Checked** | Creates one source ZIP containing all checked apps and their runtime support. |
+| Launcher controls | **Open Selected App** | Checks the selected App's requirements and opens it. |
+| Launcher controls | **Refresh App List** | Repeats public and configured private-app discovery without restarting the launcher. |
+| Launcher controls | **Open App Guide** | Checks the selected App’s online guide on each click. If it is unreachable, opens its local copy or offers to generate documentation when the generator is installed. |
+| Workbench tools | **View Launch Log** | Opens the current Launcher's timed discovery and App-startup events. |
+| Workbench tools | **Update to latest release…** | Installs the latest published stable GitHub Release. |
+| Workbench tools | **Update to a specific version…** | Shows the latest ten stable releases. Select a version to read its complete notes, or choose **Load older releases** to append up to ten more while keeping your selection. |
+| Workbench tools | **Doc Generation** | Rebuilds the complete ignored `site/` folder from the current Markdown and public MATLAB help. It does not open a page or choose between online and local help. |
+| Workbench tools | **Run Code Analyzer** | Scans the checkout and writes JSON and HTML Code Analyzer reports. |
+| Selected app | **Profile Selected App** | Starts the selected app under the MATLAB profiler and saves its report when the app closes. |
+| Workbench tools | **Clean Artifacts** | Removes ignored generated content under `artifacts/` while preserving task worktrees. See [cleanup boundaries](../../../../develop/tools/README.md#launcher-and-command-line-use) before retaining reports there. |
+| Workbench tools | **Package Checked** | Creates one source ZIP containing all checked apps and their runtime support. |
 
 Double-clicking an app row is equivalent to selecting it and opening it normally. The checkbox column controls package membership; ordinary launch selection does not change the checked set. Click any column heading to sort it and click again to reverse the order. Selection and double-click actions continue to address the underlying App after sorting. The application table places **Family** immediately before **App** so related tools remain visually grouped while their individual names stay easy to scan.
 
@@ -39,7 +45,7 @@ When startup begins, the launcher disables its App table and actions, changes th
 
 The full Launcher writes one bounded JSON Lines log per Launcher session under `artifacts/logs/launcher/` and retains the 20 most recent logs. Events time Launcher view construction, catalog discovery, tool probing, App-path preparation, and App invocation. **View Launch Log** renders the current file in a readable window. Durable records contain controlled event names, App commands, durations, outcomes, and error identifiers; they do not retain source paths, data filenames, exception messages, or scientific values. App runtime construction and presentation remain in that App's separate session log.
 
-Every launch uses the same clean App path. Use the App's **Tools > Diagnostics** menu to inspect its live session log. The Session Log window owns manual TRACE capture when additional detail is needed; the structured journal remains under `artifacts/logs/sessions/` after the App closes.
+Every launch uses the same clean App path. Use the App's **LabKit ▾ > Diagnostics** menu to inspect its live session log. The Session Log window owns manual TRACE capture when additional detail is needed; the structured journal remains under `artifacts/logs/sessions/` after the App closes.
 
 ## App Discovery
 
@@ -99,7 +105,7 @@ The downloaded `labkit_launcher.m` can begin by itself. When no installed Launch
 
 The target is checked before any network request. A new install may use a nonexistent folder whose parent exists, an empty folder, or a folder containing only the standalone launcher and ordinary OS metadata. Repair accepts an existing LabKit installation. Filesystem roots, Git checkouts, files, missing parents, and non-LabKit folders containing unrelated content are rejected.
 
-After LabKit is installed, **Latest** and **Versions** in the full Launcher use the same published-Release boundary. Every downloaded archive is validated before replacement. Existing repairs preserve a recovery copy transactionally and retain known local workspace folders when required. Close every running LabKit App before replacing an installation. Standalone repair and the full Launcher's version update workflows refuse to replace LabKit while an App is open, preventing a partial update from disrupting a running session. Keep experimental data and exports outside the runtime folder because installed code is replaceable.
+After LabKit is installed, **Update to latest release…** and **Update to a specific version…** in the full Launcher use the same published-Release boundary. Every downloaded archive is validated before replacement. Existing repairs preserve a recovery copy transactionally and retain known local workspace folders when required. Close every running LabKit App before replacing an installation. Standalone repair and the full Launcher's version update workflows refuse to replace LabKit while an App is open, preventing a partial update from disrupting a running session. Keep experimental data and exports outside the runtime folder because installed code is replaceable.
 
 Installed apps run offline unless their own inputs use a network location. Version discovery and update actions require network access. Deployment packages contain MATLAB source; see [App Deployment Packages](../../../../develop/tools/deployment.md).
 

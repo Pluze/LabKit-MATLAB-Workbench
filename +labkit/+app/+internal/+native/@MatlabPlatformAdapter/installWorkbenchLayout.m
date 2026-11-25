@@ -1,57 +1,94 @@
-function installWorkbenchLayout(obj, node, component)
-% Class-folder implementation of MatlabPlatformAdapter.installWorkbenchLayout.
+function root = installWorkbenchLayout(obj, node, parent)
+% Build the native product header, data sidebar and scientific workspace.
+    style = obj.Appearance;
     policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
     nodes = obj.nodes(node.ChildIds);
-    hasWorkspace = any(string({nodes.Kind}) == "workspace");
-    columns = 1 + hasWorkspace;
-    gridColumns = columns + hasWorkspace;
-    grid = uigridlayout(component, [1 gridColumns], ...
-        Padding=policy.OuterPadding, ...
-        RowSpacing=0, ...
-        ColumnSpacing=policy.SplitterSpacing);
-    grid.Tag = "labkitAppWorkbenchGrid";
-    if hasWorkspace
-        grid.ColumnWidth = {policy.ControlPaneWidth, ...
-            policy.SplitterThickness, '1x'};
-    else
-        grid.ColumnWidth = {'1x'};
+    kinds = string({nodes.Kind});
+    hasWorkspace = any(kinds == "workspace");
+    headerHeight = policy.HeaderTopInset + policy.HeaderContentHeight + policy.HeaderBottomGap;
+    splitHeader = hasWorkspace && node.Configuration.HeaderAction ~= "";
+    sideColor = style.Surface;
+    if splitHeader
+        sideColor = style.Background;
     end
-    controls = nodes(string({nodes.Kind}) ~= "workspace");
-    if ~isempty(controls) && ...
-            all(string({controls.Kind}) == "tab")
-        controlPanel = uipanel(grid, Title="Controls");
-        controlPanel.Tag = "labkitAppControlsPanel";
-        controlGrid = uigridlayout(controlPanel, [1 1], ...
-            Padding=[10 8 10 8]);
-        controlParent = uitabgroup(controlGrid);
-        controlContainer = controlPanel;
+    root = uigridlayout(parent,[3 1+2*hasWorkspace], RowHeight={headerHeight,'1x',22}, ...
+        Padding=[0 0 0 0], RowSpacing=0, ColumnSpacing=0, BackgroundColor=style.Surface, ...
+        Tag="labkitAppWorkbenchGrid");
+    if hasWorkspace
+        root.ColumnWidth = {policy.ControlPaneWidth,policy.SplitterThickness,'1x'};
+    end
+    if splitHeader
+        brand = uigridlayout(root,[2 4],ColumnWidth={28,68,'fit','1x'}, ...
+            RowHeight={policy.HeaderContentHeight,1},RowSpacing=policy.HeaderBottomGap-1, ...
+            Padding=[14 0 14 policy.HeaderTopInset],ColumnSpacing=8,BackgroundColor=sideColor);
+        brand.Layout.Row = 1;
+        brand.Layout.Column = 1;
+        obj.Header = uigridlayout(root,[1 3],ColumnWidth={'fit','1x',138}, ...
+            Padding=[18 policy.HeaderBottomGap 15 policy.HeaderTopInset],ColumnSpacing=8, ...
+            BackgroundColor=style.Surface);
+        obj.Header.Layout.Row = 1;
+        obj.Header.Layout.Column = 3;
     else
-        controlPanel = uipanel(grid, BorderType="none");
-        controlGrid = uigridlayout(controlPanel, ...
-            [max(1, numel(controls)) 1], ...
-            Padding=[0 0 0 0], RowSpacing=5, ColumnSpacing=0);
-        if ~isempty(controls)
-            controlGrid.RowHeight = ...
-                obj.childRowHeights(string({controls.Id}));
+        widths = {28,68,'fit','fit','1x'};
+        if node.Configuration.HeaderAction ~= ""
+            widths{end+1} = 138;
         end
-        controlParent = controlGrid;
-        controlContainer = controlPanel;
+        obj.Header = uigridlayout(root,[1 numel(widths)],ColumnWidth=widths, ...
+            Padding=[15 policy.HeaderBottomGap 15 policy.HeaderTopInset],ColumnSpacing=8, ...
+            BackgroundColor=style.Surface);
+        obj.Header.Layout.Row = 1;
+        obj.Header.Layout.Column = [1 numel(root.ColumnWidth)];
+        brand = obj.Header;
     end
-    controlContainer.Layout.Row = 1;
-    controlContainer.Layout.Column = 1;
-    obj.WorkbenchControls = controlParent;
-    if hasWorkspace
-        labkit.app.internal.native.NativeAdapterValues.installColumnDivider(obj.Figure, grid, 1, 2);
-        workspaceNode = nodes(string({nodes.Kind}) == "workspace");
-        workspace = uipanel(grid, ...
-            Title=char(workspaceNode.Configuration.Title), ...
-            Tag="labkitAppWorkspacePanel");
-        workspace.Layout.Row = 1;
-        workspace.Layout.Column = 3;
-        workspaceGrid = uigridlayout(workspace, [1 1], ...
-            Padding=[0 0 0 0], RowSpacing=0, ColumnSpacing=0);
-        obj.WorkbenchWorkspace = workspaceGrid;
+    uilabel(brand, Text="L", HorizontalAlignment="center", FontWeight="bold", ...
+        FontSize=20, BackgroundColor=style.Primary, FontColor=style.OnPrimary);
+    obj.BrandButton = uibutton(brand, Text="LabKit  ▾", FontSize=14, FontWeight="bold", ...
+        BackgroundColor=sideColor, FontColor=style.Text, Tooltip="Open LabKit tools", ...
+        Tag="labkitAppToolsButton");
+    uilabel(brand, Text=obj.Family, FontSize=12, FontColor=style.Muted);
+    uilabel(obj.Header, Text=obj.DisplayName, FontSize=15, FontWeight="bold", FontColor=style.Text);
+
+    if splitHeader
+        rule = uilabel(brand,Text="",BackgroundColor=style.Line);
+        rule.Layout.Row = 2;
+        rule.Layout.Column = [1 4];
+    end
+    controls = nodes(kinds ~= "workspace" & string({nodes.Id}) ~= node.Configuration.HeaderAction);
+    side = uigridlayout(root,[2 1], RowHeight={18,'1x'}, Padding=[14 14 14 12], ...
+        RowSpacing=7, BackgroundColor=sideColor);
+    side.Layout.Row = 2;
+    side.Layout.Column = 1;
+    uilabel(side, Text="DATA WORKSPACE", FontSize=11, FontWeight="bold", FontColor=style.Muted);
+    if numel(controls) > 1 && all(string({controls.Kind}) == "tab")
+        obj.WorkbenchControls = uitabgroup(side);
     else
-        obj.WorkbenchWorkspace = component;
+        obj.WorkbenchControls = uigridlayout(side,[max(1,numel(controls)) 1], ...
+            Padding=[0 0 0 0], RowSpacing=7, BackgroundColor=sideColor);
+        if ~isempty(controls)
+            obj.WorkbenchControls.RowHeight = obj.childRowHeights(string({controls.Id}));
+        end
     end
+    if hasWorkspace
+        labkit.app.internal.native.NativeAdapterValues.installColumnDivider(obj.Figure, root, 1, 2);
+        divider = findobj(root.Children, "Tag", "labkitAppColumnResize");
+        divider.Layout.Row = 2;
+        if splitHeader
+            divider.Layout.Row = [1 3];
+        end
+        divider.BackgroundColor = style.Line;
+        obj.WorkbenchWorkspace = uigridlayout(root,[1 1], Padding=[0 0 0 0], ...
+            BackgroundColor=style.Background, Tag="labkitAppWorkspacePanel");
+        obj.WorkbenchWorkspace.Layout.Row = 2;
+        obj.WorkbenchWorkspace.Layout.Column = 3;
+    else
+        obj.WorkbenchWorkspace = root;
+    end
+    footer = uigridlayout(root,[1 1], Padding=[18 2 18 2], BackgroundColor=sideColor);
+    footer.Layout.Row = 3;
+    if splitHeader
+        footer.Layout.Column = 1;
+    else
+        footer.Layout.Column = [1 numel(root.ColumnWidth)];
+    end
+    uilabel(footer, Text=obj.Figure.Name, FontSize=11, FontColor=style.Muted);
 end

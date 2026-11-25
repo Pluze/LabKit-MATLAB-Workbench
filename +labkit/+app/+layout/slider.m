@@ -6,7 +6,7 @@ function node = slider(id, varargin)
 %
 % Description:
 %   Declares one bounded scalar slider with a paired numeric spinner. Dragging
-%   updates only the native value display. Runtime commits the final slider
+%   updates only the native value display. By default Runtime commits the final slider
 %   value once when the pointer is released. Rapid spinner changes are
 %   latest-wins coalesced and commit after a short quiet interval. A value
 %   equal to the committed value is a no-op. Direct-manipulation commits do
@@ -23,6 +23,8 @@ function node = slider(id, varargin)
 %   Label - Display text. Default: id. Empty text removes the label column;
 %       use a titled parent group to label a compact slider.
 %   LabelPosition - "left" (default) or "top" for a narrow vertical strip.
+%   LiveUpdate - When true, drag updates also commit at bounded intervals.
+%       The release always applies the final value. Default: false.
 %   ShowValue - Show the paired numeric spinner. Default: true. Set false
 %       when an App supplies a meaningful value in its dynamic label. Slider
 %       keyboard input and commit semantics are unchanged.

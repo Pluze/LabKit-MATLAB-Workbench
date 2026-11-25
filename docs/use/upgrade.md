@@ -18,7 +18,7 @@ Use the Launcher to install a published LabKit version without moving project fi
 
 ## Upgrade
 
-Open `labkit_launcher`, choose **Versions**, select a published Release, and read its summary before installation. Choose **Latest** only when you want the newest published stable Release. Update a source checkout with Git rather than replacing it through the Launcher.
+Open `labkit_launcher`, choose **Workbench tools → Update to a specific version…**, select a published Release, and read its full release notes before installation. Choose **Update to latest release…** only when you want the newest published stable Release. Update a source checkout with Git rather than replacing it through the Launcher.
 
 ## Verify
 
@@ -26,7 +26,7 @@ Reopen the Launcher and confirm its displayed version. For every App you depend 
 
 ## Roll Back
 
-Open **Versions**, select the earlier published Release, review its compatibility note, and install it. A rollback does not rewrite external laboratory files or exports. If an App-owned saved format requires migration, follow that App's current guide and the selected Release note.
+Open **Workbench tools → Update to a specific version…**, select the earlier published Release, review its compatibility note, and install it. A rollback does not rewrite external laboratory files or exports. If an App-owned saved format requires migration, follow that App's current guide and the selected Release note.
 
 ## Recover An Incomplete Installation
 

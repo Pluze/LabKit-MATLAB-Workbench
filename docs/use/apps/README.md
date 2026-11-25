@@ -11,7 +11,7 @@ LabKit apps are independent MATLAB tools for complete laboratory workflows. Choo
 
 ## Start An App
 
-Open `labkit_launcher`, select one App, and choose **Open Selected App**. Choose **Open App Guide** when you want the selected App's current online manual.
+Open `labkit_launcher`, select one App, and choose **Open Selected App**. Choose **Open App Guide** when you want the selected App's manual online or from a generated local copy.
 
 Source-checkout users can also call an app command after adding LabKit to the MATLAB path:
 
@@ -87,7 +87,7 @@ Shared framework contracts are documented once in the [App Framework](../../deve
 
 The App Framework owns lifecycle, callback transactions and queueing, validated in-memory state, file selection, logging, screenshot actions, plot tools, and managed interactions. Apps own scientific choices, workflow-specific defaults, result schemas, archives, continuation meaning, and exports. See the [App Framework](../../develop/framework/README.md) for behavior shared across Apps.
 
-Every App opens as a clean project. Use **Tools > Diagnostics** to inspect the current session log. Manual TRACE capture is controlled inside that window; retained session folders under `artifacts/logs/sessions/` provide the durable history after a problem. The [runtime guide](../../develop/framework/runtime.md) defines these shared contracts.
+Every App opens as a clean project. Use **LabKit ▾ > Diagnostics** to inspect the current session log. Manual TRACE capture is controlled inside that window; retained session folders under `artifacts/logs/sessions/` provide the durable history after a problem. The [runtime guide](../../develop/framework/runtime.md) defines these shared contracts.
 
 Action and input-selection buttons provide concise hover help. The shared **Tools** menu contains framework-owned plot, screenshot, and diagnostic actions when the corresponding capability is available. Task save/open actions belong in an App's own controls only when that product supports continuation.
 

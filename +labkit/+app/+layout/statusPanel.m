@@ -11,6 +11,7 @@ function node = statusPanel(id, varargin)
 %   id - Unique MATLAB identifier for the layout target.
 %
 % Options:
+%   Presentation - "text" (scrollable text) or "label" (short summary), or "note" (inline explanatory text).
 %   Title - Visible panel title. Default: "Status".
 %   Text - Static text lines. When omitted, the runtime's latest status is
 %       displayed. Default: strings(1,0).

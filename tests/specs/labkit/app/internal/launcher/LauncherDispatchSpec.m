@@ -107,14 +107,40 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 "marker", "README.md"), "# Marker");
             cleanup = launcherGuiFixture(strings(0, 1));
 
-            fig = labkit.app.internal.launcher.dispatch(root);
+            fig = labkit.app.internal.launcher.createLauncher(root,@(~) true);
             button = findall(fig, "Type", "uibutton", ...
                 "Text", "Open App Guide");
             button.ButtonPushedFcn(button, []);
 
             testCase.verifyTrue(any(contains(launcherText(fig), ...
-                "Opened online documentation for labkit_Marker_app.")));
+                "Online guide for Marker")));
             testCase.verifyFalse(isfolder(fullfile(root, "site")));
+            delete(fig); delete(cleanup)
+        end
+
+        function offlineGuideBuildsOnceAndReturnsOnline(testCase)
+            root = testCase.applyFixture(matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            writeEntry(root,fullfile("apps","image_tools","marker"),"labkit_Marker_app");
+            writeText(fullfile(root,"docs","use","apps","image_tools","marker","README.md"),"# Marker");
+            writeToolStub(root,"docs","renderLabKitDocs");
+            cleanup = launcherGuiFixture("renderLabKitDocs");
+            choices = containers.Map({'online','build'},{false,false});
+            fig = labkit.app.internal.launcher.createLauncher(root,@(~) choices('online'),@(~) choices('build'));
+            view = getappdata(fig,"labkitLauncherView");
+            open = view.appDocsButton.ButtonPushedFcn;
+            open([],[]);
+            testCase.verifyTrue(any(contains(launcherText(fig),"generation canceled")));
+            choices('build') = true;
+            open([],[]);
+            testCase.verifyTrue(any(contains(launcherText(fig),"Local guide for Marker")));
+            choices('build') = false;
+            open([],[]);
+            testCase.verifyEqual(sum(contains(launcherText(fig),"Local guide for Marker")),2);
+            choices('online') = true;
+            testCase.assertTrue(choices('online'));
+            open([],[]);
+            testCase.verifyTrue(any(contains(launcherText(fig),"Online guide for Marker")));
+            testCase.verifyNumElements(getappdata(groot,"fixtureToolCalls"),1);
             delete(fig); delete(cleanup)
         end
 
@@ -130,16 +156,25 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             cleanup = launcherGuiFixture("renderLabKitDocs");
 
             fig = labkit.app.internal.launcher.dispatch(root);
-            button = findall(fig, "Type", "uibutton", ...
-                "Text", "Doc Generation");
-            button.ButtonPushedFcn(button, []);
+            button = findall(fig, "Type", "uimenu", "Text", "Doc Generation");
+            button.MenuSelectedFcn(button, []);
 
             call = getappdata(groot, "fixtureToolCall");
             testCase.verifyEqual(string(call.name), "renderLabKitDocs");
             testCase.verifyEqual(string(call.args), string({ ...
                 fullfile(root, "docs"), fullfile(root, "site")}));
             testCase.verifyTrue(any(contains(launcherText(fig), ...
-                "Local documentation generated from current sources.")));
+                "Built 3 guide pages and 2 API pages.")));
+            view = getappdata(fig,"labkitLauncherView");
+            testCase.verifyEqual(string(view.reportButton.Visible),"on");
+            testCase.verifyEqual(string(view.reportButton.Tooltip),string(fullfile(root,"site","index.html")));
+            view.reportButton.ButtonPushedFcn(view.reportButton,[]);
+            delete(fullfile(root,"site","index.html"));
+            view.reportButton.ButtonPushedFcn(view.reportButton,[]);
+            testCase.verifyTrue(any(contains(launcherText(fig),"Report file is unavailable")));
+            testCase.verifyEqual(string(view.reportButton.Enable),"on");
+            testCase.verifyEqual(string(view.reportButton.Text),"Open report");
+            testCase.verifyEqual(string(fig.Pointer),"arrow");
             testCase.verifyEqual(string(button.Enable), "on");
             testCase.verifyEqual(string(fig.Pointer), "arrow");
             delete(fig); delete(cleanup)
@@ -160,8 +195,9 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
 
             fig = labkit.app.internal.launcher.dispatch(root);
             appTable = findall(fig, "Type", "uitable");
-            buttons = string({findall(fig, "Type", "uibutton").Text});
-            panels = string({findall(fig, "Type", "uipanel").Title});
+            buttons = [string({findall(fig,"Type","uibutton").Text}), ...
+                string({findall(fig,"Type","uimenu").Text})];
+            headings = string({findall(fig, "Type", "uilabel").Text});
 
             screen = double(get(groot, "ScreenSize"));
             testCase.verifyLessThanOrEqual(fig.Position(3), screen(3));
@@ -178,11 +214,11 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 testCase.verifyGreaterThanOrEqual( ...
                     fig.Position(4), max(1, screen(4) - 140));
             end
-            testCase.verifyEqual(fig.Color, [0.97 0.98 0.99]);
-            testCase.verifyTrue(all(ismember([ ...
-                "Launcher", "Applications", "Run Apps", ...
-                "Versions and Install", "Development and Maintenance", ...
-                "Package and Publish"], panels)));
+            testCase.verifyTrue(all(ismember( ...
+                ["Applications", "Alpha", "Selected app", "Session log"], headings)));
+            if isprop(fig, "Theme")
+                testCase.verifyEqual(string(fig.Theme.BaseColorStyle), "light");
+            end
             testCase.verifyEqual(string(appTable.ColumnName), [ ...
                 "Package"; "Family"; "App"; "Version"; "Access"; "Updated"]);
             testCase.verifyEqual(string(appTable.Data{1, 2}), "Fixture");
@@ -191,42 +227,37 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 [true false false false false false]);
             testCase.verifyTrue(all(appTable.ColumnSortable));
             testCase.verifyEqual(appTable.FontSize, 12);
-            testCase.verifyTrue(all(cellfun( ...
-                @(value) isnumeric(value) && isscalar(value), ...
-                appTable.ColumnWidth)));
-            initialWidths = cell2mat(appTable.ColumnWidth);
-            testCase.verifyGreaterThan(initialWidths(3), initialWidths(1));
+            view = getappdata(fig,"labkitLauncherView");
+            sidebar = view.openButton.Parent.Parent;
+            catalog = appTable.Parent;
+            testCase.verifyEqual(sidebar.Layout.Row,catalog.Layout.Row);
+            testCase.verifyLessThan(sidebar.Layout.Column,catalog.Layout.Column);
             fig.Position(3) = max(800, fig.Position(3) - 160);
             fig.SizeChangedFcn(fig, []);
             drawnow;
-            resizedWidths = cell2mat(appTable.ColumnWidth);
-            testCase.verifyLessThanOrEqual( ...
-                sum(resizedWidths), sum(initialWidths));
-            testCase.verifyGreaterThanOrEqual(resizedWidths, ...
-                [62 120 180 70 72 90]);
+            testCase.verifyEqual(string(appTable.ColumnWidth(2:3)), ["2x","3x"]);
             testCase.verifyTrue(all(ismember([ ...
                 "Open Selected App", "Refresh App List", ...
-                "Open App Guide", "View Launch Log", "Latest", "Versions", ...
+                "Open App Guide", "View Launch Log", "Update to latest release…", "Update to a specific version…", ...
                 "Doc Generation", "Run Code Analyzer", ...
                 "Profile Selected App", "Clean Artifacts", ...
                 "Package Checked"], buttons)));
             testCase.verifyFalse(any(buttons == "Open Debug"));
 
             invokeTableSelection(appTable, 2);
-            testCase.verifyTrue(any(contains(launcherText(fig), commands(2))));
+            testCase.verifyEqual(string(view.selectionTitle.Text),"Beta");
             invokeTableDoubleClick(appTable, 2);
             testCase.verifyEqual(string(getappdata( ...
                 groot, "fixtureLaunchedCommand")), commands(2));
             launchSnapshot = getappdata(groot, "fixtureLaunchSnapshot");
             testCase.verifyTrue(any(contains(string(launchSnapshot.status), ...
-                "Starting Beta (2/2): initializing app window via " + ...
-                commands(2))));
+                "Starting Beta (2/2): initializing app window")));
             testCase.verifyEqual(string(launchSnapshot.tableEnable), "off");
             testCase.verifyEqual(string(launchSnapshot.pointer), "watch");
             testCase.verifyEqual(string(launchSnapshot.openButtonText), ...
                 "Starting App...");
             testCase.verifyTrue(any(contains(launcherText(fig), ...
-                "Opened " + commands(2))));
+                "Opened Beta")));
             launchLog = getappdata(fig, "labkitLauncherLog");
             testCase.verifyTrue(isfile(launchLog.file));
             events = readLauncherEvents(launchLog.file);
@@ -252,15 +283,33 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(openButton, 1);
             view = getappdata(fig, "labkitLauncherView");
             testCase.verifyEqual(view.controls.appTable.table, appTable);
-            logButton = findall(fig, "Type", "uibutton", ...
-                "Text", "View Launch Log");
-            logButton.ButtonPushedFcn(logButton, []);
+            logButton = view.logButton;
+            logButton.MenuSelectedFcn(logButton, []);
             logFigure = findall(groot, "Type", "figure", ...
                 "Tag", "labkitLauncherLog");
             testCase.verifyNumElements(logFigure, 1);
             testCase.verifyTrue(any(contains( ...
                 launcherText(logFigure), "launcher.app.completed")));
+            testCase.verifyTrue(any(contains(launcherText(fig),"Opened Beta")));
+            testCase.verifyFalse(any(contains(launcherText(fig),"Path:")));
+            writeEntry(root, fullfile("apps","fixture","gamma"),"labkit_Gamma_app");
+            view.refreshButton.ButtonPushedFcn(view.refreshButton,[]);
+            testCase.verifyTrue(any(launcherText(fig) == "Added · Gamma"));
+            view.refreshButton.ButtonPushedFcn(view.refreshButton,[]);
+            testCase.verifyTrue(any(contains(launcherText(fig),"installed versions are unchanged")));
+            for click = 1:10
+                logButton.MenuSelectedFcn(logButton, []);
+            end
+            testCase.assertEqual(findall(groot,"Tag","labkitLauncherLog"),logFigure, ...
+                "Repeated clicks must reuse the displayed log window.");
+            entries = launcherText(logFigure);
+            testCase.verifyEqual(nnz(contains(entries,"launcher.catalog.refresh.completed")),3);
             delete(logFigure);
+            logButton.MenuSelectedFcn(logButton, []);
+            reopened = findall(groot,"Tag","labkitLauncherLog");
+            testCase.assertNumElements(reopened,1);
+            testCase.verifyEqual(launcherText(reopened),entries);
+            delete(reopened);
             delete(fig); delete(cleanup)
         end
 
@@ -273,9 +322,9 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             cleanup = launcherGuiFixture("manageLabKitVersions");
 
             fig = labkit.app.internal.launcher.dispatch(root);
-            for buttonText = ["Latest", "Versions"]
-                button = findall(fig, "Type", "uibutton", "Text", buttonText);
-                button.ButtonPushedFcn(button, []);
+            for buttonText = ["Update to latest release…", "Update to a specific version…"]
+                button = findall(fig, "Type", "uimenu", "Text", buttonText);
+                button.MenuSelectedFcn(button, []);
             end
 
             calls = getappdata(groot, "fixtureVersionCalls");
@@ -290,6 +339,11 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             end
             testCase.verifyTrue(any(contains(launcherText(fig), ...
                 "Opened LabKit Version Manager.")));
+            view = getappdata(fig,"labkitLauncherView");
+            view.refreshButton.ButtonPushedFcn(view.refreshButton,[]);
+            callback = calls{2}{4};
+            callback("Read release notes",0.75);
+            testCase.verifyTrue(any(contains(launcherText(fig),"75%  Read release notes")));
             delete(fig); delete(cleanup)
         end
 
@@ -306,7 +360,9 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             appTable = findall(fig, "Type", "uitable");
             invokePackageEdit(appTable, 1, true);
             invokePackageEdit(appTable, 2, true);
-            button = findall(fig, "Type", "uibutton", "Text", "Package Checked");
+            view = getappdata(fig,"labkitLauncherView");
+            button = view.packageButton;
+            testCase.verifyEqual(string(button.Text),"Package Checked (2)");
             button.ButtonPushedFcn(button, []);
 
             calls = getappdata(groot, "fixtureToolCalls");
@@ -328,8 +384,7 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 fig = labkit.app.internal.launcher.dispatch(root);
                 button = findall(fig, "Type", "uibutton", "Text", "Open Selected App");
                 button.ButtonPushedFcn(button, []);
-                status = findall(fig, "Type", "uitextarea");
-                text = string(status.Value);
+                text = launcherText(fig);
                 testCase.verifyTrue(any(contains(text, cases{index, 1})));
                 testCase.verifyEqual(any(contains(text, ...
                     "labkit_launcher(""repair"")")), cases{index, 2});
@@ -368,8 +423,8 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
                 if isappdata(groot, "fixtureToolCall")
                     rmappdata(groot, "fixtureToolCall");
                 end
-                button = findall(fig, "Type", "uibutton", "Text", buttons(index));
-                button.ButtonPushedFcn(button, []);
+                button = findall(fig, "Type", "uimenu", "Text", buttons(index));
+                button.MenuSelectedFcn(button, []);
                 call = getappdata(groot, "fixtureToolCall");
                 testCase.verifyEqual(string(call.name), expected(index));
                 actual = call.args;
@@ -445,14 +500,23 @@ contents = [
     "calls{end + 1} = call;"
     "setappdata(groot, ""fixtureToolCalls"", calls);"
     "if string(mfilename) == ""renderLabKitDocs"""
-    "    page = fullfile(varargin{2}, ""apps"", ""tools"", ""probe.html"");"
+    "    page = fullfile(varargin{2}, ""use"", ""apps"", ""image_tools"", ""marker"", ""index.html"");"
+    "    if ~isfolder(fileparts(page)), mkdir(fileparts(page)); end"
+    "    file = fopen(page, ""w""); fclose(file);"
+    "    page = fullfile(varargin{2}, ""index.html"");"
     "    if exist(fileparts(page), ""dir"") ~= 7, mkdir(fileparts(page)); end"
     "    file = fopen(page, ""w""); fprintf(file, ""<html></html>""); fclose(file);"
     "end"
     "if nargout > 0"
     "    switch string(mfilename)"
     "        case ""cleanLabKitArtifacts"""
-    "            result = struct(""removedCount"", 0);"
+    "            result = struct(""removedCount"", 0, ""errors"", strings(0,1), ""removedTargets"", strings(0,1));"
+    "        case ""renderLabKitDocs"""
+    "            result = struct(""pageCount"",3,""apiCount"",2,""outputRoot"",varargin{2});"
+    "        case ""runCodecheckReport"""
+    "            result = struct(""fileCount"",12,""issueCount"",2,""runtimeViolationCount"",0,""compatibilityRecommendationCount"",1,""hygieneViolationCount"",0,""suppressedIssueCount"",0,""htmlFile"",""report.html"");"
+    "        case ""profileLabKitTarget"""
+    "            varargout = {""profile.html"",struct(""functionCount"",42)}; return"
     "        case ""packageLabKitApp"""
     "            result = struct(""zipFile"", ""synthetic-package.zip"");"
     "        otherwise"
@@ -496,7 +560,7 @@ source = [
     "view = getappdata(fig, 'labkitLauncherView');"
     "button = findall(fig, 'Type', 'uibutton', 'Text', 'Starting App...');"
     "snapshot = struct(" + ...
-        "'status', string(view.controls.statusLine.textArea.Value), " + ...
+        "'status', string(view.status.Value), " + ...
         "'tableEnable', view.controls.appTable.table.Enable, " + ...
         "'pointer', fig.Pointer, 'openButtonText', button.Text);"
     "setappdata(groot, 'fixtureLaunchSnapshot', snapshot);"
@@ -551,6 +615,11 @@ end
 end
 
 function values = launcherText(fig)
+if isappdata(fig,"labkitLauncherView")
+    view = getappdata(fig,"labkitLauncherView");
+    values = string(view.status.Value(:));
+    return
+end
 textAreas = findall(fig, "Type", "uitextarea");
 chunks = cell(numel(textAreas), 1);
 for index = 1:numel(textAreas)

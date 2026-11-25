@@ -8,7 +8,7 @@ function table = createDataTable(obj, node, parent)
             isfield(owner.Configuration, "Title")
         title = owner.Configuration.Title;
     end
-    panel = uipanel(parent, Title=char(title));
+    panel = uipanel(parent, Title=char(title), BorderType="none");
     grid = uigridlayout(panel, [1 1], Padding=[8 8 8 8]);
     table = uitable(grid, ...
         ColumnName=cellstr(config.Columns), ...

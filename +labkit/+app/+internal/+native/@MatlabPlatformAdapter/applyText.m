@@ -13,7 +13,13 @@ function applyText(obj, component, value)
                 status.Tooltip = char(string(value));
             end
         else
-            component.UserData.Status.Value = cellstr(string(value));
+            status = component.UserData.Status;
+            lines = string(value);
+            status.Value = cellstr(lines);
+            show = any(strlength(lines) > 0, "all");
+            status.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(show);
+            grid = status.Parent;
+            grid.RowHeight{status.Layout.Row} = 64 * show;
         end
         labkit.app.internal.native.NativeAdapterValues.fitText(component.UserData.Status);
         return
@@ -27,6 +33,9 @@ function applyText(obj, component, value)
                 "A slider text operation requires its cached label.");
         end
         labkit.app.internal.native.NativeAdapterValues.setControlLabel(label, value);
+        return
+    elseif isstruct(component.UserData) && isfield(component.UserData,"HeadingContext")
+        component.UserData.HeadingContext.Text = value;
         return
     elseif isprop(component, "Text")
         component.Text = value;
@@ -45,11 +54,4 @@ function applyText(obj, component, value)
         return
     end
     labkit.app.internal.native.NativeAdapterValues.fitText(component);
-    if isappdata(component, "labkitAppLogFollowLatest") && ...
-            getappdata(component, "labkitAppLogFollowLatest")
-        try
-            scroll(component, "bottom");
-        catch
-        end
-    end
 end

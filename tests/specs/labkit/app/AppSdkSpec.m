@@ -1048,6 +1048,16 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             stringHeight = labkit.app.internal.native.NativeAdapterValues.readonlyHeight( ...
                 "Ready", 210, 12);
             testCase.verifyEqual(charHeight, stringHeight);
+            capture = labkittest.nativeGraphicsCapability("interface-capture");
+            if capture.Available
+                workbench = oneTagged(figureValue, "labkitAppWorkbenchGrid");
+                exportapp(figureValue, fullfile(root, "initial.png"));
+                figureValue.Position(3:4) = [980 700];
+                drawnow
+                exportapp(figureValue, fullfile(root, "compact.png"));
+                testCase.verifyEqual(workbench.Position(3:4), ...
+                    figureValue.Position(3:4), AbsTol=2);
+            end
             clear cleanup
         end
 

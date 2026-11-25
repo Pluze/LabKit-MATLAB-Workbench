@@ -16,7 +16,11 @@ function height = preferredRowHeight(obj, node)
         case "dataTable"
             height = policy.TableHeight;
         case "statusPanel"
-            if node.Id == "applicationUsage"
+            if node.Configuration.Presentation == "note"
+                height = 18 * node.Configuration.Lines + 4;
+            elseif node.Configuration.Presentation == "label"
+                height = 25 + 19 * node.Configuration.Lines;
+            elseif node.Id == "applicationUsage"
                 height = policy.UsageHeight;
             else
                 height = policy.StatusChromeHeight + ...
@@ -64,27 +68,36 @@ function height = preferredRowHeight(obj, node)
                 end
                 childHeights(k) = candidate;
             end
-            horizontal = node.Kind == "group" && ...
-                isfield(node.Configuration, "Layout") && ...
-                node.Configuration.Layout == "horizontal";
+            layout = obj.groupLayout(node);
             if node.Kind == "section" && ...
                     ~obj.sectionDrawsOwnTitle(node) && ...
                     isscalar(children)
                 height = childHeights(1) + ...
                     policy.UntitledSectionChromeHeight;
-            elseif obj.usesAdaptiveActionGrid(node)
+            elseif layout == "actions"
                 [rows, ~] = obj.actionGridSize(node);
                 height = rows * policy.ButtonHeight + ...
                     max(0, rows - 1) * policy.ContentSpacing + ...
                     policy.GroupChromeHeight;
-            elseif horizontal
+                owner = obj.owningNode(node.Id);
+                if ~isempty(owner) && owner.Kind == "workspacePage" && owner.Configuration.Heading ~= ""
+                    height = height + 8;
+                end
+            elseif layout == "horizontal"
                 height = max(childHeights, [], "omitnan") + ...
                     policy.GroupChromeHeight;
+                owner = obj.owningNode(node.Id);
+                if ~isempty(owner) && owner.Kind == "workspacePage" && owner.Configuration.Heading ~= ""
+                    height = height + 8;
+                end
             else
+                chrome = policy.SectionChromeHeight;
+                if node.Kind == "group" && strlength(node.Configuration.Title) == 0
+                    chrome = policy.GroupChromeHeight;
+                end
                 height = sum(childHeights) + ...
                     max(0, numel(children) - 1) * ...
-                    policy.ContentSpacing + ...
-                    policy.SectionChromeHeight;
+                    policy.ContentSpacing + chrome;
             end
         otherwise
             height = "fit";

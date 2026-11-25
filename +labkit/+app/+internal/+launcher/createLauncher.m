@@ -1,9 +1,11 @@
-function fig = createLauncher(root)
+function fig = createLauncher(root,guideReachable,confirmBuild)
 %CREATELAUNCHER Coordinate state and actions for the native Launcher view.
 % ROOT is the checkout or installed package root. The figure owns callback
 % state; focused package functions own view construction, discovery, dynamic
 % App invocation, and source-checkout tool adaptation.
 
+if nargin < 2, guideReachable = @onlineGuideReachable; end
+if nargin < 3, confirmBuild = @confirmLocalBuild; end
 launchLog = labkit.app.internal.launcher.createLaunchLog(root);
 labkit.app.internal.launcher.appendLaunchLog(launchLog, ...
     "launcher.session.started", [], "", "started", "");
@@ -14,10 +16,13 @@ labkit.app.internal.launcher.appendLaunchLog(launchLog, ...
     "launcher.view.created", toc(stageClock), "", "completed", "");
 setappdata(fig, "labkitLauncherLog", launchLog);
 state = struct( ...
+    "catalog", labkit.app.internal.discovery.emptyApps(), ...
     "apps", labkit.app.internal.discovery.emptyApps(), ...
     "selected", 1, ...
+    "catalogLoaded", false, ...
     "checkedCommands", strings(0, 1), ...
-    "status", "Loading app list...", ...
+    "logLines", strings(0,1), ...
+    "reportPath", "", ...
     "busy", false, ...
     "tools", emptyToolAvailability());
 
@@ -26,32 +31,64 @@ view.appTable.CellEditCallback = @changePackageSelection;
 view.openButton.ButtonPushedFcn = @(~, ~) launchSelected();
 view.refreshButton.ButtonPushedFcn = @(~, ~) refreshApps();
 view.appDocsButton.ButtonPushedFcn = @(~, ~) openDocumentation();
-view.logButton.ButtonPushedFcn = @(~, ~) ...
-    labkit.app.internal.launcher.showLaunchLog(launchLog);
-view.latestButton.ButtonPushedFcn = @(~, ~) manageVersion("latest");
-view.versionsButton.ButtonPushedFcn = @(~, ~) manageVersion("browse");
-view.cleanButton.ButtonPushedFcn = @(~, ~) runMaintenance("clean");
-view.docsToolButton.ButtonPushedFcn = @(~, ~) runMaintenance("docs");
-view.codeButton.ButtonPushedFcn = @(~, ~) runMaintenance("codecheck");
-view.profileButton.ButtonPushedFcn = @(~, ~) runMaintenance("profile");
+view.brandButton.ButtonPushedFcn = @(src,~) openViewer(src,@() openInBrowser( ...
+    "https://github.com/Pluze/LabKit-MATLAB-Workbench"));
+view.logButton.MenuSelectedFcn = @(src,~) openViewer(src,@() labkit.app.internal.launcher.showLaunchLog(launchLog));
+view.reportButton.ButtonPushedFcn = @(src,~) openViewer(src,@openReport);
+view.latestButton.MenuSelectedFcn = @(~, ~) manageVersion("latest");
+view.versionsButton.MenuSelectedFcn = @(~, ~) manageVersion("browse");
+view.cleanButton.MenuSelectedFcn = @(~, ~) runMaintenance("clean");
+view.docsToolButton.MenuSelectedFcn = @(~, ~) runMaintenance("docs");
+view.codeButton.MenuSelectedFcn = @(~, ~) runMaintenance("codecheck");
+view.profileButton.MenuSelectedFcn = @(~, ~) runMaintenance("profile");
 view.packageButton.ButtonPushedFcn = @(~, ~) packageChecked();
 
+view.search.ValueChangingFcn = @(~,event) filterCatalog(event.Value,currentSelectedCommand());
+view.search.ValueChangedFcn = @(src,~) filterCatalog(src.Value,currentSelectedCommand());
+view.family.ValueChangedFcn = @(~,~) filterCatalog(view.search.Value,currentSelectedCommand());
+view.scope.ValueChangedFcn = view.family.ValueChangedFcn;
 refreshApps();
+
+    function filterCatalog(query,command)
+        apps = state.catalog;
+        mask = true(size(apps));
+        for k = 1:numel(apps)
+            app = apps(k);
+            mask(k) = (view.family.Value == "All families" || view.family.Value == string(app.family)) && ...
+                (view.scope.Value == "All apps" || strcmpi(view.scope.Value,app.visibility)) && ...
+                (strlength(strip(string(query))) == 0 || contains(join([string(app.name),string(app.family),string(app.description),string(app.command)]), ...
+                    strip(string(query)),IgnoreCase=true));
+        end
+        state.apps = apps(mask);
+        state.selected = appRowByCommand(state.apps,command);
+        view.appTable.Data = launcherRows(state.apps,state.checkedCommands);
+        if ~isempty(state.apps) && isprop(view.appTable,"Selection")
+            view.appTable.Selection = state.selected;
+        end
+        view.count.Text = string(numel(apps));
+        if numel(state.apps) ~= numel(apps)
+            view.count.Text = compose("%d/%d",numel(state.apps),numel(apps));
+        end
+        view.count.Tooltip = compose("%d of %d applications",numel(state.apps),numel(apps));
+        setControlsEnabled(~state.busy);
+        updateInfo();
+    end
 
     function refreshApps()
         if state.busy, return; end
         selectedCommand = currentSelectedCommand();
+        previousApps = state.catalog;
         refreshClock = tic;
         labkit.app.internal.launcher.appendLaunchLog(launchLog, ...
             "launcher.catalog.refresh.started", [], "", "started", "");
         statusClock = tic;
-        beginAction("Refreshing app list...");
+        beginAction("Refresh catalog","Discovering installed apps...");
         labkit.app.internal.launcher.appendLaunchLog(launchLog, ...
             "launcher.catalog.status_presented", toc(statusClock), ...
             "", "completed", "");
         try
             discoveryClock = tic;
-            state.apps = labkit.app.internal.discovery.discoverApps(root);
+            state.catalog = labkit.app.internal.discovery.discoverApps(root);
             labkit.app.internal.launcher.appendLaunchLog(launchLog, ...
                 "launcher.catalog.discovered", toc(discoveryClock), ...
                 "", "completed", "");
@@ -62,11 +99,14 @@ refreshApps();
                 "launcher.tools.probed", toc(toolsClock), ...
                 "", "completed", "");
             state.checkedCommands = retainedCommands( ...
-                state.apps, state.checkedCommands);
-            state.selected = appRowByCommand(state.apps, selectedCommand);
-            view.appTable.Data = launcherRows( ...
-                state.apps, state.checkedCommands);
-            setStatus(appAvailabilityStatus(state.apps));
+                state.catalog, state.checkedCommands);
+            previousFamily = string(view.family.Value);
+            families = ["All families",sort(unique(string({state.catalog.family})))];
+            view.family.Items = families;
+            if any(families == previousFamily), view.family.Value = previousFamily; end
+            filterCatalog(view.search.Value,selectedCommand);
+            setStatus(catalogSummary(state.catalog,previousApps,state.catalogLoaded));
+            state.catalogLoaded = true;
             labkit.app.internal.launcher.appendLaunchLog(launchLog, ...
                 "launcher.catalog.refresh.completed", toc(refreshClock), ...
                 "", "completed", "");
@@ -113,7 +153,7 @@ refreshApps();
             "launcher.app.started", [], app.command, "started", "");
         view.openButton.Text = "Starting App...";
         statusClock = tic;
-        beginAction("Starting " + app.name + ...
+        beginAction("Open " + app.name, "Starting " + app.name + ...
             " (1/2): preparing app path...");
         labkit.app.internal.launcher.appendLaunchLog(launchLog, ...
             "launcher.app.status_presented", toc(statusClock), ...
@@ -125,7 +165,7 @@ refreshApps();
                 "launcher.app.path_prepared", toc(pathClock), ...
                 app.command, "completed", "");
             reportLaunchStage(app, 2, ...
-                "initializing app window via " + app.command);
+                "initializing app window");
             invocationClock = tic;
             labkit.app.internal.discovery.invokeDiscoveredApp(app);
             invocationDuration = toc(invocationClock);
@@ -134,7 +174,7 @@ refreshApps();
                 app.command, "completed", "");
             totalDuration = toc(launchClock);
             setStatus(compose("Opened %s in %.2f s.", ...
-                app.command, totalDuration));
+                app.name, totalDuration));
             labkit.app.internal.launcher.appendLaunchLog(launchLog, ...
                 "launcher.app.completed", totalDuration, ...
                 app.command, "completed", "");
@@ -167,17 +207,42 @@ refreshApps();
     function openDocumentation()
         if state.busy || isempty(state.apps), return; end
         app = selectedApp();
-        beginAction("Opening online documentation for " + app.command + "...");
+        beginAction(app.name + " guide","Checking the online guide…");
         try
             page = labkit.app.internal.launcher.documentationPage( ...
                 root, app.command, "online");
+            source = "Online";
+            if ~guideReachable(page)
+                source = "Local";
+                try
+                    page = labkit.app.internal.launcher.documentationPage(root,app.command,"local");
+                catch missing
+                    if string(missing.identifier) ~= "labkit:app:internal:launcher:LocalDocumentationMissing"
+                        rethrow(missing)
+                    end
+                    if ~state.tools.docs
+                        error("labkit:app:internal:launcher:GuideBuildUnavailable", ...
+                            "The online guide is unreachable. This installation has no local guide or documentation generator.")
+                    end
+                    if ~confirmBuild(fig)
+                        setStatus("Local guide generation canceled.");
+                        endAction();
+                        return
+                    end
+                    setStatus("Generating local documentation…");
+                    drawnow;
+                    invokeTool(fullfile("tools","docs"),"renderLabKitDocs", ...
+                        fullfile(root,"docs"),fullfile(root,"site"));
+                    page = labkit.app.internal.launcher.documentationPage(root,app.command,"local");
+                end
+            end
             if labkit.app.internal.launcher.launcherGuiTestMode() ~= "hidden"
                 if web(char(page), "-browser") ~= 0
                     error("labkit:app:internal:launcher:BrowserUnavailable", ...
                         "The system browser could not open the documentation.");
                 end
             end
-            setStatus("Opened online documentation for " + app.command + ".");
+            setStatus([source + " guide for " + app.name; string(page)]);
         catch cause
             setStatus("Documentation unavailable: " + failureText(cause));
         end
@@ -186,13 +251,18 @@ refreshApps();
 
     function manageVersion(mode)
         if state.busy, return; end
-        beginAction("Preparing LabKit version tools...");
+        if mode == "browse"
+            label = "Browse releases";
+        else
+            label = "Install latest release";
+        end
+        beginAction(label,"Preparing version tools...");
         try
             if mode == "browse"
                 invokeTool(fullfile("tools", "deployment"), ...
                     "manageLabKitVersions", root, mode, ...
-                    "ProgressFcn", @reportProgress);
-                setStatus("Opened LabKit Version Manager.");
+                    "ProgressFcn", @reportVersionProgress);
+                setStatus(["Opened LabKit Version Manager."; "Choose a release there to read its changes and installation options."]);
             else
                 result = invokeTool(fullfile("tools", "deployment"), ...
                     "manageLabKitVersions", root, mode, ...
@@ -207,33 +277,41 @@ refreshApps();
 
     function runMaintenance(kind)
         if state.busy, return; end
-        beginAction("Running " + kind + "...");
+        switch kind
+            case "clean", label = "Clean artifacts";
+            case "docs", label = "Generate documentation";
+            case "codecheck", label = "Analyze source code";
+            case "profile", label = "Profile " + selectedApp().name;
+        end
+        beginAction(label,label + "…");
         try
             switch kind
                 case "clean"
                     result = invokeTool(fullfile("tools", "maintenance"), ...
                         "cleanLabKitArtifacts", root, ...
                         "ProgressFcn", @reportProgress);
-                    setStatus("Clean Artifacts complete: " + ...
-                        string(result.removedCount) + " target(s) removed.");
+                    setStatus([compose("%d removed · %d errors",result.removedCount,numel(result.errors)); ...
+                        string(result.removedTargets(:)); string(result.errors(:))]);
                 case "docs"
-                    invokeTool(fullfile("tools", "docs"), ...
+                    result = invokeTool(fullfile("tools", "docs"), ...
                         "renderLabKitDocs", fullfile(root, "docs"), ...
                         fullfile(root, "site"));
-                    setStatus( ...
-                        "Local documentation generated from current sources.");
+                    setStatus(compose("Built %d guide pages and %d API pages.",result.pageCount,result.apiCount), ...
+                        fullfile(result.outputRoot,"index.html"));
                 case "codecheck"
-                    invokeTool(fullfile("tools", "codecheck"), ...
+                    result = invokeTool(fullfile("tools", "codecheck"), ...
                         "runCodecheckReport", root, ...
                         "ProgressFcn", @reportProgress);
-                    setStatus("Code Analyzer report completed.");
+                    setStatus([compose("%d files analyzed · %d analyzer issues",result.fileCount,result.issueCount); ...
+                        compose("%d runtime violations · %d compatibility recommendations", ...
+                        result.runtimeViolationCount,result.compatibilityRecommendationCount); ...
+                        compose("%d hygiene findings · %d suppressed issues",result.hygieneViolationCount,result.suppressedIssueCount)],result.htmlFile);
                 case "profile"
                     app = selectedApp();
-                    invokeTool(fullfile("tools", "profiling"), ...
+                    [report, artifacts] = invokeTool(fullfile("tools", "profiling"), ...
                         "profileLabKitTarget", app.command, [], ...
                         "OpenReport", false, "WaitForGuiClose", false);
-                    setStatus("Performance profile completed for " + ...
-                        app.command + ".");
+                    setStatus(compose("%s startup · %d functions profiled",app.name,artifacts.functionCount),report);
             end
         catch cause
             setStatus("Tool failed: " + failureText(cause));
@@ -243,19 +321,18 @@ refreshApps();
 
     function packageChecked()
         if state.busy, return; end
-        apps = checkedApps(state.apps, state.checkedCommands);
+        apps = checkedApps(state.catalog, state.checkedCommands);
         if isempty(apps)
             setStatus("Check one or more apps in the Package column first.");
             return;
         end
         commands = string({apps.command});
-        beginAction("Packaging " + packageSummary(commands) + "...");
+        beginAction("Package " + numel(commands) + " app(s)",["Creating source archive…"; string({apps.name}).']);
         try
             result = invokeTool(fullfile("tools", "deployment"), ...
                 "packageLabKitApp", commands, [], "Root", root, ...
                 "ProgressFcn", @reportProgress);
-            setStatus("Packaged " + packageSummary(commands) + ...
-                " at " + string(result.zipFile) + ".");
+            setStatus(["Created source archive"; string(result.zipFile); ""; string({apps.name}).']);
         catch cause
             setStatus("Package failed: " + failureText(cause));
         end
@@ -273,8 +350,15 @@ refreshApps();
         end
     end
 
-    function reportProgress(message, ~)
-        setStatus(message);
+    function reportVersionProgress(message,fraction)
+        if isvalid(fig)
+            setStatus(compose("Updates · %.0f%%  %s",100*fraction,string(message)));
+            drawnow limitrate;
+        end
+    end
+
+    function reportProgress(message, fraction)
+        setStatus(compose("%.0f%%  %s",100*fraction,string(message)));
         drawnow limitrate;
     end
 
@@ -291,7 +375,48 @@ refreshApps();
         if ~isempty(state.apps), command = string(selectedApp().command); end
     end
 
-    function beginAction(message)
+    function openViewer(button,open)
+        if state.busy, return; end
+        state.busy = true;
+        label = button.Text;
+        cleanup = onCleanup(@() restoreViewerButton(button,label));
+        try
+            button.Text = "Opening…";
+            fig.Pointer = "watch";
+            setControlsEnabled(false);
+            drawnow nocallbacks;
+            open();
+        catch cause
+            setStatus(string(label) + " failed: " + failureText(cause));
+        end
+        clear cleanup
+    end
+
+    function restoreViewerButton(button,label)
+        if ~isvalid(fig), return; end
+        button.Text = label;
+        endAction();
+    end
+
+    function openReport()
+        if ~isfile(state.reportPath)
+            error("labkit:app:internal:launcher:ReportUnavailable", ...
+                "Report file is unavailable: %s",state.reportPath);
+        end
+        openInBrowser(state.reportPath);
+    end
+
+    function openInBrowser(target)
+        if labkit.app.internal.launcher.launcherGuiTestMode() ~= "hidden" && web(char(target),"-browser") ~= 0
+            error("labkit:app:internal:launcher:BrowserUnavailable","The system browser could not open %s.",target);
+        end
+    end
+
+    function beginAction(label,message)
+        if ~isempty(state.logLines), state.logLines(end+1,1) = ""; end
+        state.logLines(end+1,1) = string(datetime("now","Format","HH:mm:ss")) + "   ›   " + label;
+        view.reportButton.Visible = "off";
+        state.reportPath = "";
         state.busy = true;
         fig.Pointer = "watch";
         setControlsEnabled(false);
@@ -309,6 +434,13 @@ refreshApps();
     function setControlsEnabled(enabled)
         value = matlab.lang.OnOffSwitchState(enabled);
         view.refreshButton.Enable = value;
+        view.search.Enable = value;
+        view.family.Enable = value;
+        view.scope.Enable = value;
+        view.logButton.Enable = value;
+        view.brandButton.Enable = value;
+        view.reportButton.Enable = value;
+        view.toolsButton.Enable = value;
         view.latestButton.Enable = switchState(enabled && state.tools.version);
         view.versionsButton.Enable = view.latestButton.Enable;
         view.cleanButton.Enable = switchState(enabled && state.tools.clean);
@@ -324,16 +456,49 @@ refreshApps();
         view.appTable.Enable = char(value);
     end
 
-    function setStatus(message)
-        state.status = string(message);
-        updateInfo();
+    function setStatus(message,report)
+        message = string(message);
+        state.logLines = [state.logLines; message(:)];
+        if nargin > 1
+            state.logLines(end+1,1) = string(report);
+            if isfile(report)
+                state.reportPath = string(report);
+                view.reportButton.Tooltip = report;
+                view.reportButton.Visible = "on";
+            end
+        end
+        state.logLines = state.logLines(max(1,end-999):end);
+        view.status.Value = state.logLines;
+        scroll(view.status,"bottom");
     end
 
     function updateInfo()
-        details = selectedAppDetails(state.apps, state.selected);
-        details(end + 1, 1) = "Checked for package: " + ...
-            numel(state.checkedCommands) + " app(s)";
-        view.status.Value = ["Status: " + state.status; ""; details];
+        if isempty(state.apps)
+            view.selectionTitle.Text = "No applications";
+            view.selectionTitle.Tooltip = "";
+            view.description.Tooltip = "";
+            if isempty(state.catalog)
+                view.description.Text = "No apps found in this installation.";
+            else
+                view.description.Text = "Try another search or filter.";
+            end
+        else
+            app = selectedApp();
+            view.selectionTitle.Text = app.name;
+            view.selectionTitle.Tooltip = app.name;
+            view.description.Text = app.description;
+            view.description.Tooltip = app.description;
+        end
+        apps = checkedApps(state.catalog,state.checkedCommands);
+        view.packageButton.Visible = switchState(~isempty(apps));
+        view.packageButton.Enable = switchState(~state.busy && state.tools.package && ~isempty(apps));
+        if isempty(apps)
+            view.packageButton.Text = "Package Checked";
+            view.packageButton.Tooltip = "Check apps in the Package column to create a source archive.";
+        else
+            view.packageButton.Text = "Package Checked (" + numel(apps) + ")";
+            view.packageButton.Tooltip = join(string({apps.name}),newline);
+        end
     end
 end
 
@@ -402,33 +567,31 @@ if ~isempty(apps)
 end
 end
 
-function summary = packageSummary(commands)
-if isscalar(commands)
-    summary = string(commands);
-else
-    summary = string(numel(commands)) + " checked apps";
-end
-end
+function message = catalogSummary(apps, previous, hasPrevious)
+families = string({apps.family});
+message = compose("%d apps across %d families.",numel(apps),numel(unique(families)));
+if hasPrevious
+    commands = string({apps.command});
+    oldCommands = string({previous.command});
+    [present, oldIndex] = ismember(commands,oldCommands);
+    changes = strings(numel(apps),1);
+    for k = 1:numel(apps)
+        if ~present(k)
+            changes(k) = "Added · " + apps(k).name;
+        elseif string(apps(k).version) ~= string(previous(oldIndex(k)).version)
+            changes(k) = apps(k).name + " · " + previous(oldIndex(k)).version + " → " + apps(k).version;
+        end
+    end
+    removed = previous(~ismember(oldCommands,commands));
+    changes = [changes(changes ~= ""); reshape("Removed · " + string({removed.name}),[],1)];
+    if isempty(changes)
+        changes = "App list and installed versions are unchanged.";
+    end
+    message = [message; ""; changes];
 
-function details = selectedAppDetails(apps, selected)
-if isempty(apps)
-    details = ["No app entry points found."; ...
-        "Run labkit_launcher(""repair"") if the installation is incomplete."];
-    return;
 end
-app = apps(min(max(selected, 1), numel(apps)));
-details = [string(app.name); "Family: " + string(app.family); ...
-    "Visibility: " + string(app.visibility); ...
-    "Version: " + string(app.version); "Updated: " + string(app.updated); ...
-    "Command: " + string(app.command); "Path: " + string(app.folder)];
-end
-
-function message = appAvailabilityStatus(apps)
 if isempty(apps)
-    message = "No app entry points found. Run labkit_launcher(""repair"") " + ...
-        "if the installation is incomplete.";
-else
-    message = string(numel(apps)) + " app entry point(s) available.";
+    message(end+1,1) = "No app entry points found. If the installation is incomplete, run labkit_launcher(""repair"").";
 end
 end
 
@@ -443,4 +606,19 @@ function tf = isStructuralStartupFailure(cause)
 id = string(cause.identifier);
 tf = startsWith(id, "MATLAB:UndefinedFunction") || ...
     startsWith(id, "MATLAB:parse") || startsWith(id, "MATLAB:dispatcher");
+end
+
+function available = onlineGuideReachable(page)
+try
+    webread(page,weboptions(Timeout=3,ContentType="text"));
+    available = true;
+catch
+    available = false;
+end
+end
+
+function generate = confirmLocalBuild(fig)
+choice = uiconfirm(fig,"The online App guide is unreachable. Generate the local documentation and open this guide?", ...
+    "Open offline guide",Options=["Generate and open","Cancel"],DefaultOption=1,CancelOption=2);
+generate = string(choice) == "Generate and open";
 end

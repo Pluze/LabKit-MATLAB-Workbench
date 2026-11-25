@@ -9,8 +9,5 @@ function applyFileItemStatuses(~, component, statuses)
     data.ItemStatuses = statuses;
     component.UserData = data;
     labels = labkit.app.internal.native.NativeAdapterValues.formatFileLabels(data.Paths, statuses);
-    if isempty(labels) && ~data.Compact
-        labels = data.EmptyText;
-    end
     labkit.app.internal.native.NativeAdapterValues.setIfProperty(component, "Items", labels);
 end
