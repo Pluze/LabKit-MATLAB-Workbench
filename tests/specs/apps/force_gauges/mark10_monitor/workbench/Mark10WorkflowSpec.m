@@ -256,10 +256,8 @@ classdef Mark10WorkflowSpec < matlab.unittest.TestCase
             testCase.verifyNumElements(diagnostic,1);
             capture=labkittest.nativeGraphicsCapability("interface-capture");
             if capture.Available
-                analysisTab=findall(runtime.figureHandle(),"Tag","replayTab");
-                analysisTab.Parent.SelectedTab=analysisTab;
-                analysisPage=findall(runtime.figureHandle(),"Tag","analysisPage");
-                analysisPage.Parent.SelectedTab=analysisPage;
+                labkittest.pressPage(runtime.figureHandle(),"replayTab");
+                labkittest.pressPage(runtime.figureHandle(),"analysisPage");
                 drawnow;
                 exportapp(diagnostic,labkittest.visualEvidencePath("mark10-diagnostics",".png"));
                 exportapp(runtime.figureHandle(),labkittest.visualEvidencePath("mark10-multi-window",".png"));
@@ -268,13 +266,15 @@ classdef Mark10WorkflowSpec < matlab.unittest.TestCase
             % in the original sidebar. Reset must preserve fitted values.
             fitPanel=findall(runtime.figureHandle(),"Tag","fitSection");
             curvePanel=findall(runtime.figureHandle(),"Tag","modulusPlot");
-            testCase.verifyEqual(string(ancestor(fitPanel,"uitab").Title),"Analysis");
+            analysisTab = findall(runtime.figureHandle(),"Tag","replayTab");
+            testCase.verifyEqual(findall(analysisTab,"Tag","fitSection"),fitPanel);
             resultPanel=findall(runtime.figureHandle(),"Tag","modulusResults.panel");
             testCase.verifyEqual(curvePanel.Parent,resultPanel.Parent);
             testCase.verifyEqual(curvePanel.Layout.Column,resultPanel.Layout.Column);
             testCase.verifyLessThan(curvePanel.Layout.Row,resultPanel.Layout.Row);
             timeControl=findall(runtime.figureHandle(),"Tag","analysisStart");
-            testCase.verifyEqual(string(ancestor(timeControl,"uitab").Title),"Recording Review");
+            reviewPage = findall(runtime.figureHandle(),"Tag","recordingPage");
+            testCase.verifyEqual(findall(reviewPage,"Tag","analysisStart"),timeControl);
             fitResults=runtime.State.session.analysis.resultRows;
             recordingLines=findall(overviewAxes,"Type","line");
             strainAxes.XLim=[-200 -100];strainAxes.YLim=[-10 -5];
@@ -285,11 +285,8 @@ classdef Mark10WorkflowSpec < matlab.unittest.TestCase
             testCase.verifyGreaterThan(strainAxes.YLim(2),0);
             testCase.verifyEqual(runtime.State.session.analysis.resultRows,fitResults);
             strainAxes.XLim=[2 6];strainAxes.YLim=[.02 .06];
-            analysisPage=findall(runtime.figureHandle(),"Tag","analysisPage");
-            plotsPage=findall(runtime.figureHandle(),"Tag","plotsPage");
-            testCase.verifyEmpty(analysisPage.Parent.SelectionChangedFcn);
-            analysisPage.Parent.SelectedTab=plotsPage;drawnow;
-            analysisPage.Parent.SelectedTab=analysisPage;drawnow;
+            labkittest.pressPage(runtime.figureHandle(),"plotsPage");
+            labkittest.pressPage(runtime.figureHandle(),"analysisPage");
             testCase.verifyEqual(strainAxes.XLim,[2 6]);
             testCase.verifyEqual(strainAxes.YLim,[.02 .06]);
             runtime.applyControlValue("experimentType","Cyclic");

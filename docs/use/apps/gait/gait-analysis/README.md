@@ -43,7 +43,7 @@ The source summary reports frame count, point count, embedded frame rate, source
 
 ### 2. Analyze And Review One Step
 
-Choose **Run analysis**. In **Source + Step Review**, select a row in the step table or use **Previous step** and **Next step**. The 2-by-2 workspace shows:
+Choose **Run analysis**. In **Review steps**, select a row in the step table or use **Previous step** and **Next step**. The 2-by-2 workspace shows:
 
 1. all skeleton poses from lift-off through landing, with point trajectories;
 2. hip, knee, and ankle angle traces;

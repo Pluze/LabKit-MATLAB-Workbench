@@ -9,6 +9,8 @@ summary: Choose a LabKit app by the laboratory result you need, then use its man
 
 LabKit apps are independent MATLAB tools for complete laboratory workflows. Choose an app by the result you need, then use its app page for supported inputs, controls, interaction behavior, calculations, outputs, recovery, and programmatic APIs.
 
+Use the buttons in the left pane to switch workflow steps. Apps with multiple result views provide separate view buttons beside the App title. The **LabKit ▾** button opens plot-copy and session diagnostics tools.
+
 ## Start An App
 
 Open `labkit_launcher`, select one App, and choose **Open Selected App**. Choose **Open App Guide** when you want the selected App's manual online or from a generated local copy.

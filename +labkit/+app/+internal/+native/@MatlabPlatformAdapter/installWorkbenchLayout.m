@@ -6,7 +6,7 @@ function root = installWorkbenchLayout(obj, node, parent)
     kinds = string({nodes.Kind});
     hasWorkspace = any(kinds == "workspace");
     headerHeight = policy.HeaderTopInset + policy.HeaderContentHeight + policy.HeaderBottomGap;
-    splitHeader = hasWorkspace && node.Configuration.HeaderAction ~= "";
+    splitHeader = hasWorkspace;
     sideColor = style.Surface;
     if splitHeader
         sideColor = style.Background;
@@ -23,7 +23,11 @@ function root = installWorkbenchLayout(obj, node, parent)
             Padding=[14 0 14 policy.HeaderTopInset],ColumnSpacing=8,BackgroundColor=sideColor);
         brand.Layout.Row = 1;
         brand.Layout.Column = 1;
-        obj.Header = uigridlayout(root,[1 3],ColumnWidth={'fit','1x',138}, ...
+        widths = {'fit','1x'};
+        if node.Configuration.HeaderAction ~= ""
+            widths{end+1} = 138;
+        end
+        obj.Header = uigridlayout(root,[1 numel(widths)],ColumnWidth=widths, ...
             Padding=[18 policy.HeaderBottomGap 15 policy.HeaderTopInset],ColumnSpacing=8, ...
             BackgroundColor=style.Surface);
         obj.Header.Layout.Row = 1;
@@ -40,8 +44,7 @@ function root = installWorkbenchLayout(obj, node, parent)
         obj.Header.Layout.Column = [1 numel(root.ColumnWidth)];
         brand = obj.Header;
     end
-    uilabel(brand, Text="L", HorizontalAlignment="center", FontWeight="bold", ...
-        FontSize=20, BackgroundColor=style.Primary, FontColor=style.OnPrimary);
+    labkit.app.internal.native.installBrandMark(brand);
     obj.BrandButton = uibutton(brand, Text="LabKit  ▾", FontSize=14, FontWeight="bold", ...
         BackgroundColor=sideColor, FontColor=style.Text, Tooltip="Open LabKit tools", ...
         Tag="labkitAppToolsButton");
@@ -58,10 +61,10 @@ function root = installWorkbenchLayout(obj, node, parent)
         RowSpacing=7, BackgroundColor=sideColor);
     side.Layout.Row = 2;
     side.Layout.Column = 1;
-    uilabel(side, Text="DATA WORKSPACE", FontSize=11, FontWeight="bold", FontColor=style.Muted);
     if numel(controls) > 1 && all(string({controls.Kind}) == "tab")
-        obj.WorkbenchControls = uitabgroup(side);
+        obj.WorkbenchControls = obj.installPageNavigation(node,side,controls);
     else
+        uilabel(side, Text="DATA WORKSPACE", FontSize=11, FontWeight="bold", FontColor=style.Muted);
         obj.WorkbenchControls = uigridlayout(side,[max(1,numel(controls)) 1], ...
             Padding=[0 0 0 0], RowSpacing=7, BackgroundColor=sideColor);
         if ~isempty(controls)

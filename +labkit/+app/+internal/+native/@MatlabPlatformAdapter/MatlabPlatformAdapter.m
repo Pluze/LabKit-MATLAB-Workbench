@@ -357,7 +357,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 Tag="labkitAppStartupStatusLabel");
         end
 
-        component = installPageNavigation(obj, node, parent)
+        component = installPageNavigation(obj, node, parent, pages)
 
         buildTree(obj)
 

@@ -1230,11 +1230,11 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             group = oneTagged(figureValue, "workspace");
             secondPage = oneTagged(figureValue, "secondPage");
 
-            testCase.verifyEmpty(group.SelectionChangedFcn);
-            group.SelectedTab = secondPage;
+            labkittest.pressPage(figureValue,"secondPage");
             drawnow;
 
-            testCase.verifyEqual(string(group.SelectedTab.Tag), "secondPage");
+            testCase.verifyEqual(group.UserData,"secondPage");
+            testCase.verifyEqual(string(secondPage.Visible),"on");
             clear cleanup
         end
 

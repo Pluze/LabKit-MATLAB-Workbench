@@ -37,8 +37,7 @@ classdef VideoMarkerWorkflowSpec < matlab.unittest.TestCase
             ax = findall(runtime.figureHandle(), "Tag", "videoPreview.video");
             testCase.verifyEqual(string(ax.XLimMode), "auto");
             testCase.verifyEqual(string(ax.YLimMode), "auto");
-            tab = findall(runtime.figureHandle(), "Type", "uitab", "Title", "Video");
-            tab.Parent.SelectedTab = tab;
+            labkittest.pressPage(runtime.figureHandle(),"video");
             capture = labkittest.nativeGraphicsCapability("interface-capture");
             evidencePath = labkittest.visualEvidencePath("video-review", ".png");
             if capture.Available

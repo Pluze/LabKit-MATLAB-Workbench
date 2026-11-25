@@ -42,10 +42,11 @@ function component = createComponent(obj, node, parent, inControls)
                 BorderType=border);
             obj.installContentGrid(node, component);
         case "tab"
-            if isa(parent, "matlab.ui.container.TabGroup")
-                component = uitab(parent, Title=config.Title);
-            else
-                component = uipanel(parent, BorderType="none", BackgroundColor=obj.Appearance.Surface);
+            component = uipanel(parent, BorderType="none", BackgroundColor=obj.Appearance.Surface);
+            if isstring(parent.UserData)
+                component.Layout.Row = 1;
+                component.Layout.Column = 1;
+                component.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(parent.UserData == node.Id);
             end
             obj.installContentGrid(node, component);
         case "button"
@@ -88,12 +89,7 @@ function component = createComponent(obj, node, parent, inControls)
                 component = uipanel(parent, BorderType="none");
                 obj.installContentGrid(node, component);
             else
-                pages = obj.nodes(node.PageIds);
-                if any(arrayfun(@(page) strlength(page.Configuration.Heading) > 0, pages))
-                    component = obj.installPageNavigation(node, parent);
-                else
-                    component = uitabgroup(parent);
-                end
+                component = obj.installPageNavigation(node, parent);
             end
         case "workspacePage"
             if isa(parent,"matlab.ui.container.TabGroup")
