@@ -63,7 +63,7 @@ for i = 1:numel(ids)
     buttons(i).Layout.Row = ceil(i/columns);
     buttons(i).Layout.Column = mod(i-1,columns)+1;
 end
-paint(active);
+paint(active,1:numel(ids));
 if ~sidebar
     fitNavigation(availableWidth());
 end
@@ -80,11 +80,11 @@ end
         selector.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(compact);
         bar.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(~compact);
     end
-    function paint(id)
+    function paint(id,indices)
         if ~isempty(selector)
             selector.Value = id;
         end
-        for j = 1:numel(ids)
+        for j = indices
             if ids(j) == id
                 buttons(j).FontColor = style.Primary;
                 if sidebar
@@ -103,8 +103,16 @@ end
         if canvas.UserData == id
             return
         end
-        previous = obj.component(canvas.UserData);
+        previousId = canvas.UserData;
+        previous = obj.component(previousId);
         selected = obj.component(id);
+        if isstruct(selected.UserData) && isfield(selected.UserData,"PendingDividerRows")
+            grid = obj.contentParent(id);
+            for row = selected.UserData.PendingDividerRows
+                labkit.app.internal.native.NativeAdapterValues.installRowDivider(obj.Figure, grid, row-1, row);
+            end
+            selected.UserData = rmfield(selected.UserData,"PendingDividerRows");
+        end
         if isstruct(selected.UserData) && isfield(selected.UserData,"Reflow")
             selected.UserData.Reflow();
         end
@@ -117,7 +125,7 @@ end
         selected.Position = [0 0 1 1];
         selected.Visible = "on";
         canvas.UserData = id;
-        paint(id);
+        paint(id,find(ids == previousId | ids == id));
         readouts = findall(selected, 'Type', 'uitextarea');
         for readout = reshape(readouts, 1, [])
             obj.updateReadonlyHeight(readout, readout.Value);

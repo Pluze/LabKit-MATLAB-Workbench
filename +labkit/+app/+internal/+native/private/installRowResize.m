@@ -7,9 +7,6 @@ function separator = installRowResize( ...
 % then restores interaction callbacks exactly.
 
 policy = nativeLayoutPolicy();
-heights = grid.RowHeight;
-heights{separatorRow} = policy.SplitterThickness;
-grid.RowHeight = heights;
 separator = uipanel(grid, BorderType="none", ...
     BackgroundColor=[0.86 0.86 0.86], ...
     Tag="labkitAppRowResize");

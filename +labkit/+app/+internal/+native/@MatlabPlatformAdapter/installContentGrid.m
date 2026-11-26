@@ -76,9 +76,15 @@ function grid = installContentGrid(obj, node, component)
     end
     grid.Tag = char(node.Id + ".layout");
     obj.Layouts.(char(node.Id)) = grid;
-    if node.Kind == "tab"
-        for k = 1:max(0, numel(node.ChildIds) - 1)
-            labkit.app.internal.native.NativeAdapterValues.installRowDivider(obj.Figure, grid, 2 * k - 1, 2 * k);
+    if node.Kind == "tab" && numel(node.ChildIds) > 1
+        if isa(component,"matlab.ui.container.Panel") && component.Visible == "off"
+            % The page already has its content and correctly sized rows.
+            % Attach its drag handles the first time it is selected.
+            component.UserData.PendingDividerRows = 2:2:numel(grid.RowHeight);
+        else
+            for row = 2:2:numel(grid.RowHeight)
+                labkit.app.internal.native.NativeAdapterValues.installRowDivider(obj.Figure, grid, row-1, row);
+            end
         end
     end
 end

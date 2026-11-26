@@ -20,7 +20,7 @@ Row and column dividers now have a 24-pixel drag surface with a one-pixel rule a
 
 Lower and upper range fields have visible labels. Response Review Stats shows that both metric windows use seconds.
 
-Dragging an EIS frequency bound updates raw overview curves in place. Group means and uncertainty bars still rebuild from their source observations.
+Dragging an EIS frequency bound updates raw overview curves in place. Between redraws the slider can accept more movement. Releasing it applies the final value. Group means and uncertainty bars still rebuild from their source observations.
 
 ## Impact
 

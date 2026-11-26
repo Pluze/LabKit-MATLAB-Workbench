@@ -7,10 +7,6 @@ function separator = installColumnResize( ...
 % then restores the interaction hub callbacks exactly.
 
 policy = nativeLayoutPolicy();
-widths = grid.ColumnWidth;
-widths{leftColumn} = policy.ControlPaneWidth;
-widths{separatorColumn} = policy.SplitterThickness;
-grid.ColumnWidth = widths;
 separator = uipanel(grid, BorderType="none", ...
     BackgroundColor=[0.72 0.72 0.72], ...
     Tag="labkitAppColumnResize");
