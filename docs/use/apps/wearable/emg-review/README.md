@@ -9,7 +9,7 @@ summary: Mark paired EMG baseline and activity windows, measure noise and SNR, a
 
 EMG Review measures one channel of a recording at a time. Use it to compare electrical activity with a baseline from the same acquisition, compare spectral power and changes over time, and retain one CSV row per measured pair. It requires Base MATLAB and the LabKit biosignal facade.
 
-The left pane groups the workflow under **Recording & regions**, **Analyze pairs**. Choose **Waveform**, **Pair metrics**, **Spectrum**, **Time–frequency** beside the App title to switch views.
+The left pane groups the workflow under **Recording & regions**, **Analyze pairs**. Choose **Waveform**, **Pair metrics**, **Spectrum**, **Time–frequency** in the view selector beside the App title.
 
 ## Open And Mark A Recording
 

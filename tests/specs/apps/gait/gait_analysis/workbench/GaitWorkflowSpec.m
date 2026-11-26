@@ -60,11 +60,13 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
                 options.maxHipTranslation], ...
                 [60, 2, 3, 1, .5, .1, 2, 200, .5, 1e6]);
             testCase.verifyEqual(options.unitName, "mm");
-            sourceTab = oneHandle(figureValue, "source");
+            reviewTab = oneHandle(figureValue, "results");
             stepDetails = oneHandle(figureValue, "stepDetails");
-            sourceButton = oneHandle(figureValue,"source.navigate");
-            testCase.verifyEqual(string(sourceButton.Text),"Review steps");
-            testCase.verifyTrue(isDescendantOf(stepDetails, sourceTab));
+            reviewButton = oneHandle(figureValue, "results.navigate");
+            testCase.verifyEqual(string(reviewButton.Text), "Review & export");
+            reviewButton.ButtonPushedFcn(reviewButton, []);
+            testCase.verifyEqual(string(reviewTab.Visible), "on");
+            testCase.verifyTrue(isDescendantOf(stepDetails, reviewTab));
             detailsText = join(string(stepDetails.Value), newline);
             testCase.verifyTrue(contains(detailsText, "Swing"));
             testCase.verifyTrue(contains(detailsText, "ROM"));

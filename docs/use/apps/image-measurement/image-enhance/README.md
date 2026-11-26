@@ -11,7 +11,7 @@ Image Enhance builds an ordered, reversible processing history for one image or 
 
 Preview and export use the current processing history directly, keeping one authoritative sequence for both outcomes.
 
-The left pane groups the workflow under **Image library**, **Edit & history**. Use **Export enhanced images** in the header when ready.
+The left pane groups the workflow under **Image library**, **Edit & history**, **Batch export**. Use **Export enhanced images** in the header when ready.
 
 ## Requirements And Launch
 

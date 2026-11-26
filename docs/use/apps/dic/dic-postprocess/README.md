@@ -11,6 +11,8 @@ DIC Postprocess converts Ncorr strain fields into EXX and EYY overlays on an opt
 
 Load the strain, reference and mask files under **Source files**. Adjust **Strain overlay** or **Optical image**, then inspect the summary and save outputs under **Results & export**. Use **Generate overlays + summary** in the header when ready.
 
+The left pane groups the workflow under **Source files**, **Strain overlay**, **Optical image**, **Results & export**.
+
 ## Requirements And Launch
 
 Input MAT files must contain the Ncorr result structure recognized by the app loader.

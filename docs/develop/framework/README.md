@@ -91,6 +91,8 @@ Put this declaration in the App's `definition` function and return `app`; the en
 
 Runtime validates candidate state and the complete view snapshot before publishing either. The private MATLAB adapter maps semantic IDs to native components, skips unchanged native property writes, reuses direct associations between controls and their labels, preserves plot viewports, normalizes native event differences, and never exposes component registries to Apps. If a native property rejects an otherwise validated operation, the causal diagnostic identifies both the semantic target and operation kind before preserving the original MATLAB error.
 
+Use a text status panel for selectable instructions and operation feedback. The native body wraps at the shared readout font size and reserves space for its current content. Give a heading to messages that need context, such as an applied calibration or the last export.
+
 Normal App launches show the completed native window. Official GUI validation uses the same launch path with a framework-owned visibility policy: `hidden` keeps the final window off screen and `minimized` minimizes it after startup. Tests therefore exercise real controls without individual Apps or test methods having to hide the window after launch.
 
 ## Built-in App Tools

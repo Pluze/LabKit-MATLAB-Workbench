@@ -9,7 +9,7 @@ summary: Convert a Video Marker project into segmented treadmill swing steps, ki
 
 Gait Analysis converts a current Video Marker project into independently segmented treadmill swing steps, per-frame kinematics, per-step gait parameters, visual step reports, and reproducible CSV outputs. Loading and analysis are deliberately separate: loading first shows the complete tracked skeleton trajectory; analysis then enables one-step-at-a-time review.
 
-The left pane groups the workflow under **Review steps**, **Detection**, **Results & export**.
+The left pane groups the workflow under **Load & analyze**, **Detection**, **Review & export**.
 
 ## Open Gait Analysis
 
@@ -45,7 +45,7 @@ The source summary reports frame count, point count, embedded frame rate, source
 
 ### 2. Analyze And Review One Step
 
-Choose **Run analysis**. In **Review steps**, select a row in the step table or use **Previous step** and **Next step**. The 2-by-2 workspace shows:
+Choose **Run analysis**. In **Review & export**, select a row in the step table or use **Previous step** and **Next step**. The 2-by-2 workspace shows:
 
 1. all skeleton poses from lift-off through landing, with point trajectories;
 2. hip, knee, and ankle angle traces;

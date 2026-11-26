@@ -13,6 +13,8 @@ Source summaries are derived from the currently parsed EIS recording, so file se
 
 Choose **Nyquist + Bode**, **Custom plot**, **Groups** beside the App title to switch views. Use **Export custom CSV** in the header when ready.
 
+The left pane groups the workflow under **Source scans**, **Plot appearance**.
+
 ## Requirements And Launch
 
 ```matlab

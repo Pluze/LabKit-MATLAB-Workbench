@@ -9,7 +9,7 @@ summary: Analyze a recording with ECGNExT, review per-beat detrended noise, QRS 
 
 ECG Print follows one file-analysis workflow: import an ECG channel, prepare its time base, detect R peaks, extract noise with ECGNExT, and report measurements for each beat. The plots, beat table, summary, and exports use the same applied analysis result. It requires Base MATLAB and the LabKit biosignal facade.
 
-The left pane groups the workflow under **Analyze ECG**, **Import settings**. Choose **Results**, **Templates**, **Signal chain** beside the App title to switch views.
+The left pane groups the workflow under **Analyze ECG**, **Import settings**, **Quality & export**. Choose **Results**, **Templates**, **Signal chain** beside the App title to switch views.
 
 ## Open And Analyze A Recording
 

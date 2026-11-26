@@ -9,7 +9,7 @@ summary: Compare two or more numeric groups against a designated reference group
 
 T-Test Wizard captures numeric categories, compares selected categories against a chosen reference, and draws a mean-and-standard-deviation or box plot. It initially uses the first category as reference and includes every other category.
 
-The left pane groups the workflow under **Data & groups**, **Test & plot**, **Export**. Choose **Data**, **Plot**, **Categories** beside the App title to switch views.
+The left pane groups the workflow under **Data & groups**, **Run tests**, **Plot appearance**, **Export**. Choose **Data**, **Plot**, **Categories** beside the App title to switch views.
 
 ## Open T-Test Wizard
 

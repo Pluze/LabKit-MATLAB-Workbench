@@ -13,7 +13,7 @@ Each use of **Measure length + curvature** computes traced length and circle-fit
 
 While tracing, the image remains a target for the plot context menu. Use it to open the current fit view in a separate figure.
 
-The left pane groups the workflow under **Trace & calibrate**, **Fit results**.
+The left pane groups the workflow under **Trace curve**, **Calibrate & fit**, **Fit results**.
 
 ## Requirements And Launch
 
@@ -23,7 +23,7 @@ labkit_CurvatureMeasurement_app
 
 ## Basic Workflow
 
-The **Trace & calibrate** page contains the complete workflow:
+Use **Trace curve** to mark the image and **Calibrate & fit** to calculate the result.
 
 1. Choose an image in the **Image** section.
 2. Use **Measure reference pixels**, or enter **Reference pixels** directly, then enter the known reference length and unit.

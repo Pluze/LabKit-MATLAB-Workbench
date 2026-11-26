@@ -10,10 +10,6 @@ for k = 1:2:numel(varargin)
         options.(name) = varargin{k + 1};
     end
 end
-if isappdata(handle, "labkitAppTextFitMinFontSize")
-    options.MinFontSize = max(options.MinFontSize, ...
-        getappdata(handle, "labkitAppTextFitMinFontSize"));
-end
 text = componentText(handle);
 if strlength(text) == 0
     return
@@ -24,7 +20,7 @@ end
 if isprop(handle, "Tooltip") && strlength(string(handle.Tooltip)) == 0
     handle.Tooltip = char(text);
 end
-if ~isprop(handle, "FontSize")
+if ~isprop(handle, "FontSize") || isa(handle, "matlab.ui.control.TextArea")
     return
 end
 key = "labkitAppTextFitBaseFontSize";

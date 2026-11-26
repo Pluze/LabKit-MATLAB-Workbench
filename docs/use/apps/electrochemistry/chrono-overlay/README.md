@@ -11,6 +11,8 @@ Chrono Overlay compares voltage and current transients from multiple Gamry DTA f
 
 Use **Export curves CSV** in the header when ready.
 
+The left pane groups the workflow under **Overlay recordings**.
+
 ## Requirements And Launch
 
 Each source must contain a readable chrono curve with time, voltage, and current data.
