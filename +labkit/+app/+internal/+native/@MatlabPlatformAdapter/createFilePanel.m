@@ -32,11 +32,11 @@ function list = createFilePanel(~, node, parent)
     panel.Title = "";
     panel.BorderType = "none";
     grid = uigridlayout(panel, [5 1], Padding=[0 4 0 4], ...
-        RowHeight={24, 2 * policy.ButtonHeight + 4, '1x', 0, 0}, RowSpacing=5);
+        RowHeight={24, 2 * policy.ButtonHeight + policy.ButtonGap, '1x', 0, 0}, RowSpacing=5);
     grid.Tag = char(node.Id + ".layout");
     uilabel(grid, Text=config.Label, FontSize=16, FontWeight="bold");
     addButtons = uigridlayout(grid, [2 2], Padding=[0 0 0 0], ...
-        RowSpacing=4, ColumnSpacing=6);
+        RowSpacing=policy.ButtonGap, ColumnSpacing=policy.ButtonGap);
     addButtons.Layout.Row = 2;
     choose = uibutton(addButtons, Text=config.ChooseLabel, Tag= ...
         char(node.Id + ".choose"), Tooltip=char(config.ChooseTooltip));

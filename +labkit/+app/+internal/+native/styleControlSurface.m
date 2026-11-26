@@ -7,7 +7,8 @@ end
 switch control.Type
     case 'uipanel'
         if strcmp(control.Tag, "labkitAppRowResize")
-            control.BackgroundColor = style.Line;
+            control.BackgroundColor = containerColor;
+            control.UserData.BackgroundColor = containerColor;
             return
         end
         control.BorderType = "none";

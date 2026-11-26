@@ -21,19 +21,14 @@ for k = 1:numel(axesIds)
     options.logX = k > 1;
     options.logY = false;
     options.showLegend = options.showLegend && k == 1;
+    options.overviewTitle = titles(k);
     panel = model;
     panel.options = options;
     panel.viewAction = "";
     eis.overlayPlot.draw(struct("main", ax), panel);
-    title(ax, titles(k));
+    if ~model.hasItems, title(ax, titles(k)); end
 end
 if model.hasItems && isfield(axesById, "nyquist")
-    if model.options.showLegend
-        columns = 1;
-        key = legend(axesById.nyquist, Location="eastoutside", ...
-            NumColumns=columns, Box="off");
-        key.String = wrapLegendLabels(string(key.String));
-    end
     ax = axesById.nyquist;
     eis.overlayPlot.fitNyquistViewport(ax);
 end
@@ -65,23 +60,5 @@ end
 if cut == 0 || any(strlength(names) <= cut), return; end
 for k = 1:numel(items)
     items(k).name = extractAfter(names(k), cut);
-end
-end
-
-function labels = wrapLegendLabels(labels)
-% Bound a side legend's width without shortening the displayed source names.
-maximumLineLength = 22;
-for k = 1:numel(labels)
-    remaining = char(labels(k));
-    lines = strings(numel(remaining)+1, 1);
-    lineCount = 0;
-    while numel(remaining) > maximumLineLength
-        cut = find(ismember(remaining(1:maximumLineLength), '-_ '), 1, 'last');
-        if isempty(cut), cut = maximumLineLength; end
-        lineCount = lineCount + 1;
-        lines(lineCount) = string(remaining(1:cut));
-        remaining = remaining(cut+1:end);
-    end
-    labels(k) = join([lines(1:lineCount); string(remaining)], newline);
 end
 end

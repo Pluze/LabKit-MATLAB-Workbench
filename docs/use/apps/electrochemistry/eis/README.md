@@ -11,6 +11,8 @@ EIS overlays impedance data from one or more Gamry `ZCURVE` tables, supports Nyq
 
 Add DTA files in **Source scans**. Start with **Nyquist + Bode** to inspect impedance across frequencies. Use **Groups** to compare repeated scans or **Custom plot** to choose the quantities for **Export custom CSV**. Change units and styling in **Plot appearance**.
 
+Use the frequency controls to inspect part of each raw scan in the overview. The custom plot and CSV export keep the full frequency range.
+
 ## Requirements And Launch
 
 ```matlab

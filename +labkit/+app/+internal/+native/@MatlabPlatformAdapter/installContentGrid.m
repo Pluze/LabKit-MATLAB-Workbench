@@ -60,6 +60,8 @@ function grid = installContentGrid(obj, node, component)
             heights{1} = "1x";
         end
         if node.Kind == "tab"
+            % The divider fills the entire gap between sections.
+            grid.RowSpacing = 0;
             expanded = cell(1, max(1, 2 * numel(heights) - 1));
             expanded(1:2:end) = heights;
             if numel(heights) > 1

@@ -2,6 +2,28 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
     %EISWORKFLOWSPEC Specify EIS file loading, plot materialization, and export.
 
     methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
+        function alignsSidebarAndOverviewActions(testCase)
+            import matlab.unittest.constraints.Eventually
+            import matlab.unittest.constraints.IsEqualTo
+            import matlab.unittest.constraints.AbsoluteTolerance
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = eis.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
+            runtime = labkittest.createMatlabRuntime(definition, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            fig = runtime.figureHandle();
+            box = @(tag) getpixelposition(findall(fig, "Tag", tag), true);
+            for width = [900 1280]
+                fig.Position(3:4) = [width 720];
+                drawnow;
+                expected = [24 24 24 24 24 0 0];
+                testCase.verifyThat(@() measureEdges(width, box), ...
+                    Eventually(IsEqualTo(expected, Within=AbsoluteTolerance(1))));
+            end
+            clear cleanup
+        end
+
         function importsRecommendedWindowAndRestoresItAfterFullRange(testCase)
             % Oracle: an elevated-boundary arc has a 10 Hz valley and dominant tail;
             % import must crop automatically and both range actions must work.
@@ -96,9 +118,11 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             custom = findall(figureValue, "Tag", "plot.main");
             [~, customViewport] = inspectViewport(custom);
             limits = runtime.State.session.nyquist.limits;
+            originalCurve = findall(nyquist, "Type", "line");
             cutoff = mean(limits);
             runtime.applyControlValue("nyquistMinimum", cutoff);
             curve = findall(nyquist, "Type", "line");
+            testCase.verifyEqual(curve, originalCurve);
             expected = original.Zreal_ohm(:).' / 1000;
             expected(log10(original.freq_Hz) < cutoff) = NaN;
             testCase.verifyEqual(curve.XData, expected);
@@ -351,4 +375,20 @@ inner = ax.InnerPosition;
 pixels = inner(3:4) .* position(3:4) ./ allocation(3:4);
 testCase.verifyEqual(diff(ax.XLim)/diff(ax.YLim), pixels(1)/pixels(2), RelTol=.02);
 testCase.verifyEqual(ax.DataAspectRatio(1), ax.DataAspectRatio(2), AbsTol=1e-12);
+end
+
+function distances = measureEdges(width, box)
+    drawnow;
+    seam = box("labkitAppColumnResize");
+    choose = box("files.choose");
+    first = box("recommendFrequency");
+    last = box("fitOverviewAxes");
+    header = box("exportPlot");
+    boundary = seam(1) + seam(3);
+    margins = [choose(1)-1, boundary-choose(1)-choose(3), ...
+        first(1)-boundary, width+1-last(1)-last(3), ...
+        width+1-header(1)-header(3)];
+    nav = box("filesAnalysis.navigate");
+    folderButton = box("files.folder");
+    distances = [margins, nav([1 3])-folderButton([1 3])];
 end

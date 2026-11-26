@@ -624,6 +624,15 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             runtime = labkittest.createMatlabRuntime(app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
+            splitter = oneTagged(fig, "labkitAppColumnResize");
+            widths = splitter.Parent.ColumnWidth;
+            testCase.verifyGreaterThanOrEqual(widths{splitter.Layout.Column}, 24);
+            rule = oneTagged(splitter, "labkitDividerRule");
+            testCase.verifyEqual(rule.Parent.ColumnWidth{rule.Layout.Column}, 1);
+            rule.ButtonDownFcn(rule, []);
+            fig.WindowButtonMotionFcn(fig, []);
+            fig.WindowButtonUpFcn(fig, []);
+            testCase.verifyEqual(splitter.Parent.ColumnWidth, widths);
             panel = oneTagged(fig, "settings");
             result = oneTagged(fig, "result");
             rowGrid = oneTagged(fig, "comparison.layout");
@@ -1027,8 +1036,9 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             if isprop(long, "WordWrap")
                 testCase.verifyEqual(string(long.WordWrap), "off");
             end
-            testCase.verifyNumElements(findall( ...
-                figureValue, "Tag", "labkitAppRowResize"), 1);
+            divider = oneTagged(figureValue, "labkitAppRowResize");
+            testCase.verifyGreaterThanOrEqual( ...
+                divider.Parent.RowHeight{divider.Layout.Row}, 24);
             summary = oneTagged(figureValue, "summary");
             compact = oneTagged(figureValue, "compactSummary");
             applied = oneTagged(figureValue, "appliedReference");
@@ -1128,6 +1138,10 @@ classdef AppSdkSpec < matlab.unittest.TestCase
 
             rangeStart = oneTagged(figureValue, "nativeRange");
             rangeEnd = oneTagged(figureValue, "nativeRange.end");
+            upperLabel = findobj(rangeEnd.Parent.Children, "Text", "Upper");
+            testCase.verifyNumElements(upperLabel, 1);
+            testCase.verifyEqual(upperLabel.Layout.Column, rangeEnd.Layout.Column);
+            testCase.verifyLessThan(upperLabel.Layout.Row, rangeEnd.Layout.Row);
             rangeStart.Value = 0.2;
             rangeEnd.Value = 0.8;
             invokeNativeCallback( ...
