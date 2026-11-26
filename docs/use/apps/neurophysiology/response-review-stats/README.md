@@ -21,9 +21,9 @@ labkit_ResponseReviewStats_app
 
 ## Review An Analysis
 
-1. On **Setup**, choose an analysis JSON or segment CSV.
+1. On **Load & compare**, choose an analysis JSON or segment CSV.
 2. The app loads the measurement rows immediately.
-3. If the input contains waveform segments, set the **Baseline** and **Noise** windows. Both ranges are expressed in seconds relative to alignment time.
+3. If the input contains waveform segments, enter the lower and upper bounds for **Baseline (s)** and **Noise (s)**. Both are relative to alignment time.
 4. Choose **Refresh Metrics** when you want to reload the source explicitly.
 5. On **Review & export**, inspect the summary and details. Switch the plot between **Summary** and **Aligned**.
 6. On the same page, choose a folder and select **Export Metrics**.

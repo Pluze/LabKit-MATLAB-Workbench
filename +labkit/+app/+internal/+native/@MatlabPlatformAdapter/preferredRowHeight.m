@@ -2,8 +2,8 @@ function height = preferredRowHeight(obj, node)
 % Class-folder implementation of MatlabPlatformAdapter.preferredRowHeight.
     policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
     key = char(node.Id);
-    if isKey(obj.ContentHeights, key)
-        height = obj.ContentHeights(key);
+    if isfield(obj.ContentHeights, key)
+        height = obj.ContentHeights.(key);
         return
     end
     switch node.Kind

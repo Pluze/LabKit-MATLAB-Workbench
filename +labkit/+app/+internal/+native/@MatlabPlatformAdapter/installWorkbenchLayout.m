@@ -6,9 +6,13 @@ function root = installWorkbenchLayout(obj, node, parent)
     kinds = string({nodes.Kind});
     hasWorkspace = any(kinds == "workspace");
     headerHeight = policy.HeaderTopInset + policy.HeaderContentHeight + policy.HeaderBottomGap;
+    inset = policy.OuterInset;
+    railEnd = inset;
     sideColor = style.Surface;
     if hasWorkspace
         sideColor = style.Background;
+        % The drag target already supplies the trailing inset of the sidebar.
+        railEnd = max(0, inset - policy.SplitterThickness);
     end
     root = uigridlayout(parent,[3 1+2*hasWorkspace], RowHeight={headerHeight,'1x',22}, ...
         Padding=[0 0 0 0], RowSpacing=0, ColumnSpacing=0, BackgroundColor=style.Surface, ...
@@ -17,7 +21,7 @@ function root = installWorkbenchLayout(obj, node, parent)
         root.ColumnWidth = {policy.ControlPaneWidth,policy.SplitterThickness,'1x'};
         brand = uigridlayout(root,[2 4],ColumnWidth={28,68,'fit','1x'}, ...
             RowHeight={policy.HeaderContentHeight,1},RowSpacing=policy.HeaderBottomGap-1, ...
-            Padding=[14 0 14 policy.HeaderTopInset],ColumnSpacing=8,BackgroundColor=sideColor);
+            Padding=[inset 0 railEnd policy.HeaderTopInset],ColumnSpacing=8,BackgroundColor=sideColor);
         brand.Layout.Row = 1;
         brand.Layout.Column = 1;
         widths = {'fit','1x'};
@@ -25,7 +29,7 @@ function root = installWorkbenchLayout(obj, node, parent)
             widths{end+1} = 'fit';
         end
         obj.Header = uigridlayout(root,[1 numel(widths)],ColumnWidth=widths, ...
-            Padding=[18 policy.HeaderBottomGap 15 policy.HeaderTopInset],ColumnSpacing=8, ...
+            Padding=[inset policy.HeaderBottomGap inset policy.HeaderTopInset],ColumnSpacing=8, ...
             BackgroundColor=style.Surface);
         obj.Header.Layout.Row = 1;
         obj.Header.Layout.Column = 3;
@@ -35,7 +39,7 @@ function root = installWorkbenchLayout(obj, node, parent)
             widths{end+1} = 'fit';
         end
         obj.Header = uigridlayout(root,[1 numel(widths)],ColumnWidth=widths, ...
-            Padding=[15 policy.HeaderBottomGap 15 policy.HeaderTopInset],ColumnSpacing=8, ...
+            Padding=[inset policy.HeaderBottomGap inset policy.HeaderTopInset],ColumnSpacing=8, ...
             BackgroundColor=style.Surface);
         obj.Header.Layout.Row = 1;
         obj.Header.Layout.Column = 1;
@@ -54,7 +58,7 @@ function root = installWorkbenchLayout(obj, node, parent)
         rule.Layout.Column = [1 4];
     end
     controls = nodes(kinds ~= "workspace" & string({nodes.Id}) ~= node.Configuration.HeaderAction);
-    side = uigridlayout(root,[2 1], RowHeight={18,'1x'}, Padding=[14 14 14 12], ...
+    side = uigridlayout(root,[2 1], RowHeight={18,'1x'}, Padding=[inset 16 railEnd 12], ...
         RowSpacing=7, BackgroundColor=sideColor);
     side.Layout.Row = 2;
     side.Layout.Column = 1;
@@ -72,7 +76,7 @@ function root = installWorkbenchLayout(obj, node, parent)
         labkit.app.internal.native.NativeAdapterValues.installColumnDivider(obj.Figure, root, 1, 2);
         divider = findobj(root.Children, "Tag", "labkitAppColumnResize");
         divider.Layout.Row = [1 3];
-        divider.BackgroundColor = style.Line;
+        divider.BackgroundColor = sideColor;
         obj.WorkbenchWorkspace = uigridlayout(root,[1 1], Padding=[0 0 0 0], ...
             BackgroundColor=style.Background, Tag="labkitAppWorkspacePanel");
         obj.WorkbenchWorkspace.Layout.Row = 2;
@@ -80,7 +84,7 @@ function root = installWorkbenchLayout(obj, node, parent)
     else
         obj.WorkbenchWorkspace = root;
     end
-    footer = uigridlayout(root,[1 1], Padding=[18 2 18 2], BackgroundColor=sideColor);
+    footer = uigridlayout(root,[1 1], Padding=[inset 2 railEnd 2], BackgroundColor=sideColor);
     footer.Layout.Row = 3;
     footer.Layout.Column = 1;
     uilabel(footer, Text=obj.Figure.Name, FontSize=11, FontColor=style.Muted);

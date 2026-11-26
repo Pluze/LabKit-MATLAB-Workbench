@@ -7,10 +7,6 @@ function separator = installColumnResize( ...
 % then restores the interaction hub callbacks exactly.
 
 policy = nativeLayoutPolicy();
-widths = grid.ColumnWidth;
-widths{leftColumn} = policy.ControlPaneWidth;
-widths{separatorColumn} = policy.SplitterThickness;
-grid.ColumnWidth = widths;
 separator = uipanel(grid, BorderType="none", ...
     BackgroundColor=[0.72 0.72 0.72], ...
     Tag="labkitAppColumnResize");
@@ -26,15 +22,18 @@ if isprop(separator, "PickableParts")
     separator.PickableParts = "all";
 end
 separator.ButtonDownFcn = @beginDrag;
+installDividerGrip(separator, "column", @beginDrag);
 
 drag = struct("Active", false, "Motion", [], "Up", [], "Down", [], ...
-    "Key", [], "Pointer", "arrow");
+    "Key", [], "Pointer", "arrow", "StartX", NaN, "StartWidth", NaN);
 
     function beginDrag(~, ~)
         if drag.Active || ~isvalid(figureHandle)
             return
         end
         drag.Active = true;
+        drag.StartX = figureHandle.CurrentPoint(1);
+        drag.StartWidth = grid.ColumnWidth{leftColumn};
         drag.Motion = figureHandle.WindowButtonMotionFcn;
         drag.Up = figureHandle.WindowButtonUpFcn;
         drag.Down = figureHandle.WindowButtonDownFcn;
@@ -49,12 +48,18 @@ drag = struct("Active", false, "Motion", [], "Up", [], "Down", [], ...
 
     function resize(~, ~)
         point = figureHandle.CurrentPoint;
-        width = max(policy.MinimumControlPaneWidth, point(1) - grid.Position(1));
+        if point(1) == drag.StartX && grid.ColumnWidth{leftColumn} == drag.StartWidth
+            return
+        end
+        width = drag.StartWidth + point(1) - drag.StartX;
         maximum = max(policy.MinimumControlPaneWidth, ...
-            figureHandle.Position(3) - policy.MinimumWorkspaceWidth);
+            grid.Position(3) - policy.MinimumWorkspaceWidth - policy.SplitterThickness);
         widths = grid.ColumnWidth;
-        widths{leftColumn} = min(width, maximum);
-        widths{separatorColumn} = policy.SplitterThickness;
+        width = round(max(policy.MinimumControlPaneWidth, min(width, maximum)));
+        if widths{leftColumn} == width
+            return
+        end
+        widths{leftColumn} = width;
         grid.ColumnWidth = widths;
     end
 

@@ -3,10 +3,10 @@ function installCallbacks(obj)
     nodes = obj.Plan.Nodes;
     for k = 1:numel(nodes)
         node = nodes(k);
-        if ~isKey(obj.Components, char(node.Id))
+        if ~isfield(obj.Components, char(node.Id))
             continue;
         end
-        component = obj.Components(char(node.Id));
+        component = obj.Components.(char(node.Id));
         switch node.Kind
             case "button"
                 component.ButtonPushedFcn = @(~, ~) ...

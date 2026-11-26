@@ -20,11 +20,13 @@ function component = createComponent(obj, node, parent, inControls)
             end
             if inControls && strlength(title) == 0 && ~isempty(node.ChildIds)
                 component = obj.installContentGrid(node, parent);
+                component.Padding([1 3]) = 0;
                 return
             end
             if (inControls || ~obj.isGrowableTabChild(node)) && strlength(title) > 0 && ~isempty(node.ChildIds)
                 component = uigridlayout(parent, [2 1], Padding=[8 0 8 0], ...
                     RowHeight={24, '1x'}, RowSpacing=0);
+                if inControls, component.Padding = [0 0 0 0]; end
                 heading = uilabel(component, Text=title, FontWeight="bold", FontSize=16);
                 if title == upper(title)
                     heading.FontSize = 11;
@@ -42,11 +44,10 @@ function component = createComponent(obj, node, parent, inControls)
                 BorderType=border);
             obj.installContentGrid(node, component);
         case "tab"
-            component = uipanel(parent, BorderType="none", BackgroundColor=obj.Appearance.Surface);
-            if isstring(parent.UserData)
-                component.Layout.Row = 1;
-                component.Layout.Column = 1;
-                component.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(parent.UserData == node.Id);
+            if isa(parent,"matlab.ui.container.Panel") && isstring(parent.UserData)
+                component = createPage(parent, node.Id, obj.Appearance);
+            else
+                component = uipanel(parent, BorderType="none", BackgroundColor=obj.Appearance.Surface);
             end
             obj.installContentGrid(node, component);
         case "button"
@@ -95,15 +96,13 @@ function component = createComponent(obj, node, parent, inControls)
             if isa(parent,"matlab.ui.container.TabGroup")
                 component = uitab(parent, Title=config.Title);
             else
-                component = uipanel(parent, BorderType="none", BackgroundColor=obj.Appearance.Surface);
-                component.Layout.Row = 1;
-                component.Layout.Column = 1;
-                component.Visible = labkit.app.internal.native.NativeAdapterValues.onOff( ...
-                    string(parent.UserData) == node.Id);
+                component = createPage(parent, node.Id, obj.Appearance);
             end
             host = component;
             if config.Heading ~= "" || config.Subtitle ~= "" || config.Note ~= ""
-                frame = uigridlayout(component, [3 1], Padding=[18 12 18 12], ...
+                policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
+                inset = policy.OuterInset;
+                frame = uigridlayout(component, [3 1], Padding=[inset 12 inset 12], ...
                     RowHeight={28 * (config.Heading ~= "") + 18 * (config.Subtitle ~= ""), '1x', 22 * (config.Note ~= "")}, ...
                     RowSpacing=12, BackgroundColor=obj.Appearance.Surface);
                 heading = uigridlayout(frame,[2 2],ColumnWidth={'1x','fit'},RowHeight={28,18 * (config.Subtitle ~= "")}, ...
@@ -116,8 +115,11 @@ function component = createComponent(obj, node, parent, inControls)
                 subtitle = uilabel(heading,Text=config.Subtitle,FontSize=12,FontColor=obj.Appearance.Muted);
                 subtitle.Layout.Row = 2;
                 subtitle.Layout.Column = [1 2];
-                host = uigridlayout(frame,[1 1], Padding=[0 0 0 0], BackgroundColor=obj.Appearance.Surface);
-                uilabel(frame, Text=config.Note, FontSize=11, FontColor=obj.Appearance.Muted);
+                host = frame;
+                if config.Note ~= ""
+                    note = uilabel(frame, Text=config.Note, FontSize=11, FontColor=obj.Appearance.Muted);
+                    note.Layout.Row = 3;
+                end
             end
             content = obj.installContentGrid(node, host);
             if isa(parent,"matlab.ui.container.TabGroup")
@@ -126,11 +128,23 @@ function component = createComponent(obj, node, parent, inControls)
                 content.BackgroundColor = obj.Appearance.Surface;
             end
             if host ~= component
+                content.Layout.Row = 2;
                 content.Padding = [0 0 0 0];
                 content.RowSpacing = 12;
             end
         otherwise
             error("labkit:app:runtime:InvariantFailure", ...
                 "MATLAB adapter cannot create Layout kind %s.", node.Kind);
+    end
+end
+
+function page = createPage(parent, id, style)
+    % Only the selected page needs to follow window resizes.
+    if parent.UserData == id
+        page = uipanel(parent, BorderType="none", BackgroundColor=style.Surface, ...
+            Units="normalized", Position=[0 0 1 1]);
+    else
+        page = uipanel(parent, BorderType="none", BackgroundColor=style.Surface, ...
+            Visible="off", Units="pixels", Position=[0 0 max(1, parent.InnerPosition(3:4))]);
     end
 end

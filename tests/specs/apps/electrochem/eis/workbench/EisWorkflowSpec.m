@@ -2,6 +2,50 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
     %EISWORKFLOWSPEC Specify EIS file loading, plot materialization, and export.
 
     methods (Test, TestTags = {'Contract:workflow', 'Env:hidden-gui'})
+        function alignsSidebarAndOverviewActions(testCase)
+            import matlab.unittest.constraints.Eventually
+            import matlab.unittest.constraints.IsEqualTo
+            import matlab.unittest.constraints.AbsoluteTolerance
+            folder = testCase.applyFixture( ...
+                matlab.unittest.fixtures.TemporaryFolderFixture).Folder;
+            definition = eis.definition();
+            journal = labkittest.temporarySessionJournal(definition, folder);
+            runtime = labkittest.createMatlabRuntime(definition, [], struct(), journal);
+            cleanup = onCleanup(@() runtime.close());
+            fig = runtime.figureHandle();
+            tagged = @(tag) findall(fig,"Tag",tag);
+            nav = tagged("filesAnalysis.navigate");
+            folderButton = tagged("files.folder");
+            divider = tagged("labkitAppColumnResize");
+            exportButton = tagged("exportPlot");
+            sidePadding = nav.Parent.Parent.Padding;
+            testCase.verifyEqual(sidePadding(1),24);
+            testCase.verifyEqual(sidePadding(3) + divider.Parent.ColumnWidth{2},24);
+            testCase.verifyEqual(exportButton.Parent.Padding([1 3]),[24 24]);
+            testCase.verifyEqual(nav.Parent.ColumnWidth,folderButton.Parent.ColumnWidth);
+            testCase.verifyEqual([nav.Parent.ColumnSpacing folderButton.Parent.ColumnSpacing],[8 8]);
+
+            % Older batch graphics engines expose placeholder positions even
+            % after drawnow. The native grid contract above still applies.
+            capture = labkittest.nativeGraphicsCapability("interface-capture");
+            if ~capture.Available
+                return
+            end
+            box = @(tag) getpixelposition(tagged(tag), true);
+            screen = get(groot,"ScreenSize");
+            wide = min(1280, screen(3)-80);
+            for width = [min(900,wide-100) wide]
+                fig.Position = [20 20 width 720];
+                drawnow;
+                expected = [width 24 24 24 24 24 0 0];
+                testCase.verifyThat(@() measureEdges(box), ...
+                    Eventually(IsEqualTo(expected, Within=AbsoluteTolerance(1))));
+                frame = box("labkitAppWorkbenchGrid");
+                fprintf("EIS layout: requested %d px, rendered %g px.\n", width, frame(3));
+            end
+            clear cleanup
+        end
+
         function importsRecommendedWindowAndRestoresItAfterFullRange(testCase)
             % Oracle: an elevated-boundary arc has a 10 Hz valley and dominant tail;
             % import must crop automatically and both range actions must work.
@@ -96,9 +140,11 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             custom = findall(figureValue, "Tag", "plot.main");
             [~, customViewport] = inspectViewport(custom);
             limits = runtime.State.session.nyquist.limits;
+            originalCurve = findall(nyquist, "Type", "line");
             cutoff = mean(limits);
             runtime.applyControlValue("nyquistMinimum", cutoff);
             curve = findall(nyquist, "Type", "line");
+            testCase.verifyEqual(curve, originalCurve);
             expected = original.Zreal_ohm(:).' / 1000;
             expected(log10(original.freq_Hz) < cutoff) = NaN;
             testCase.verifyEqual(curve.XData, expected);
@@ -351,4 +397,22 @@ inner = ax.InnerPosition;
 pixels = inner(3:4) .* position(3:4) ./ allocation(3:4);
 testCase.verifyEqual(diff(ax.XLim)/diff(ax.YLim), pixels(1)/pixels(2), RelTol=.02);
 testCase.verifyEqual(ax.DataAspectRatio(1), ax.DataAspectRatio(2), AbsTol=1e-12);
+end
+
+function distances = measureEdges(box)
+    drawnow;
+    frame = box("labkitAppWorkbenchGrid");
+    rightEdge = frame(1) + frame(3);
+    seam = box("labkitAppColumnResize");
+    choose = box("files.choose");
+    first = box("recommendFrequency");
+    last = box("fitOverviewAxes");
+    header = box("exportPlot");
+    boundary = seam(1) + seam(3);
+    margins = [choose(1)-frame(1), boundary-choose(1)-choose(3), ...
+        first(1)-boundary, rightEdge-last(1)-last(3), ...
+        rightEdge-header(1)-header(3)];
+    nav = box("filesAnalysis.navigate");
+    folderButton = box("files.folder");
+    distances = [frame(3), margins, nav([1 3])-folderButton([1 3])];
 end

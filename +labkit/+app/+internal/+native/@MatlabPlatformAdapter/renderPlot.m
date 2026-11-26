@@ -8,13 +8,16 @@ function renderPlot(obj, operation)
         axes(k) = obj.Axes(char(labkit.app.internal.native.NativeAdapterValues.axisKey(node.Id, node.AxisIds(k))));
         axesById.(char(node.AxisIds(k))) = axes(k);
     end
-    viewport = labkit.app.internal.native.NativeAdapterValues.captureViewport(axes);
     value = operation.Value;
     revisionKey = "labkitAppPlotViewRevision";
     preserveViewport = all(arrayfun(@(ax) ...
         isappdata(ax, revisionKey) && ...
         isequal(getappdata(ax, revisionKey), value.ViewRevision), axes));
-    if ~preserveViewport,labkit.app.internal.native.AxesNavigation.refit(axes);end
+    if preserveViewport
+        viewport = labkit.app.internal.native.NativeAdapterValues.captureViewport(axes);
+    else
+        labkit.app.internal.native.AxesNavigation.refit(axes);
+    end
     renderer(axesById, value.Model);
     for k = 1:numel(axes)
         labkit.app.internal.native.enableAxesPopout(axes(k), ...
@@ -23,7 +26,7 @@ function renderPlot(obj, operation)
         labkit.app.internal.native.AxesNavigation.install(axes(k));
         setappdata(axes(k), revisionKey, value.ViewRevision);
     end
-    component = obj.Components(char(node.Id));
+    component = obj.Components.(char(node.Id));
     obj.PlotWindows.update(node, value, string(component.Title), obj.Figure.Visible);
     if preserveViewport
         labkit.app.internal.native.NativeAdapterValues.restoreViewport(axes, viewport);

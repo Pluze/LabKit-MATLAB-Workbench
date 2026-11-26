@@ -2,6 +2,7 @@ function buildTree(obj)
 % Class-folder implementation of MatlabPlatformAdapter.buildTree.
     nodes = obj.Plan.Nodes;
     style = obj.Appearance;
+    policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
     controlSubtree = false(1, numel(nodes));
     for k = 1:numel(nodes)
         node = nodes(k);
@@ -20,7 +21,7 @@ function buildTree(obj)
                 "field", "slider", "rangeField", "fileList", "statusPanel"])
             surface = labkit.app.internal.native.NativeAdapterValues.layoutHandle(component);
             containerColor = style.Surface;
-            if controlSubtree(k) && isa(obj.WorkbenchControls,"matlab.ui.container.GridLayout")
+            if controlSubtree(k) && ~isempty(obj.WorkbenchControls)
                 containerColor = obj.WorkbenchControls.BackgroundColor;
             end
             labkit.app.internal.native.styleControlSurface(surface, style, containerColor);
@@ -33,8 +34,8 @@ function buildTree(obj)
             if node.Kind == "group" && ~controlSubtree(k) && ...
                     obj.groupLayout(node) == "horizontal" && ~obj.isGrowableTabChild(node)
                 content = obj.contentParent(node.Id);
-                content.Padding = [12 4 12 4];
-                content.ColumnSpacing = 10;
+                content.Padding = [0 4 0 4];
+                content.ColumnSpacing = policy.ButtonGap;
             end
             if node.Kind == "statusPanel" && node.Configuration.Presentation == "label"
                 surface.BackgroundColor = style.Background;
@@ -46,7 +47,7 @@ function buildTree(obj)
             end
         end
         obj.placeInParent(node, component);
-        obj.Components(char(node.Id)) = component;
+        obj.Components.(char(node.Id)) = component;
     end
     for node = reshape(nodes,1,[])
         if node.Kind ~= "group" || obj.groupLayout(node) ~= "horizontal" || numel(node.ChildIds) ~= 2
@@ -58,13 +59,12 @@ function buildTree(obj)
                 isequal(string({children.Kind}),["plotArea","section"])
             panel = obj.component(node.Id);
             grid = obj.contentParent(node.Id);
-            plotPanel = obj.component(children(1).Id);
             options = obj.component(children(2).Id);
             widths = grid.ColumnWidth;
             panel.AutoResizeChildren = "off";
             page = obj.component(owner.Id);
             split = obj.WorkbenchWorkspace.Parent;
-            reflow = @() fitPlotControls(obj.Figure,split,grid,plotPanel,options,widths);
+            reflow = @() fitPlotControls(obj.Figure,split,grid,options,widths);
             panel.SizeChangedFcn = @(~,~) reflow();
             page.UserData.Reflow = reflow;
             reflow();
@@ -79,21 +79,29 @@ function buildTree(obj)
     end
 end
 
-function fitPlotControls(figureHandle,split,grid,plotPanel,options,widths)
-    width = figureHandle.Position(3) - split.ColumnWidth{1} - split.ColumnWidth{2} - 36;
+function fitPlotControls(figureHandle,split,grid,options,widths)
+    policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
+    width = figureHandle.Position(3) - split.ColumnWidth{1} - split.ColumnWidth{2} - 2 * policy.OuterInset;
+    stacked = isscalar(grid.ColumnWidth);
     if width < 760
+        heights = {max(340,figureHandle.Position(4)-420),250};
+        if stacked
+            if ~isequal(grid.RowHeight, heights)
+                grid.RowHeight = heights;
+            end
+            return
+        end
         grid.Scrollable = "on";
-        grid.RowHeight = {max(340,figureHandle.Position(4)-420),250};
+        grid.RowHeight = heights;
         options.Layout.Row = 2;
         options.Layout.Column = 1;
         grid.ColumnWidth = {'1x'};
-    else
+    elseif stacked
         grid.ColumnWidth = widths;
         options.Layout.Column = 2;
         options.Layout.Row = 1;
         grid.RowHeight = {'1x'};
         grid.Scrollable = "off";
     end
-    plotPanel.Layout.Row = 1;
-    plotPanel.Layout.Column = 1;
+
 end

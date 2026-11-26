@@ -8,7 +8,18 @@ function labels = plotOverlay(ax, items, opts)
     end
     opts = fillPlotOptions(opts);
 
-    labkit.app.plot.clearAxes(ax, ResetScale=true);
+    % During frequency adjustment the same scans stay on the same axes.
+    % Update their coordinates in place; grouped error bars retain a full redraw.
+    previous = flipud(ax.Children(:));
+    reuse = isfield(opts, "frequencyLogRange") && ~isfield(items, "members") && ...
+        ~isempty(previous) && numel(previous) == numel(items) && ...
+        all(isgraphics(previous, "line")) && ...
+        all(arrayfun(@(h) strcmp(h.Tag, "eisRawScan"), previous)) && ...
+        strcmp(ax.XScale, ternary(opts.logX, 'log', 'linear')) && ...
+        strcmp(ax.YScale, ternary(opts.logY, 'log', 'linear'));
+    if ~reuse
+        labkit.app.plot.clearAxes(ax, ResetScale=true);
+    end
 
     cmap = lines(numel(items));
     labels = cell(1, numel(items));
@@ -17,7 +28,7 @@ function labels = plotOverlay(ax, items, opts)
         marker = 'o';
     end
 
-    hold(ax, 'on');
+    if ~reuse, hold(ax, 'on'); end
     plottedLines = gobjects(1, numel(items));
     for k = 1:numel(items)
         if isfield(items, "members")
@@ -41,37 +52,50 @@ function labels = plotOverlay(ax, items, opts)
             [x, y] = filteredXY(items(k), opts.xName, opts.yName, ...
                 opts.impedanceUnit, opts.logX, opts.logY);
             [x, y] = frequencyMask(x, y, items(k).freq_Hz, opts);
-            plottedLines(k) = plot(ax, x, y, ...
-                'LineWidth', opts.lineWidth, ...
-                'Marker', marker, ...
-                'MarkerSize', opts.markerSize, ...
-                'Color', cmap(k, :));
+            if reuse
+                plottedLines(k) = previous(k);
+                set(previous(k), XData=x, YData=y, LineWidth=opts.lineWidth, ...
+                    Marker=marker, MarkerSize=opts.markerSize, Color=cmap(k,:));
+            else
+                plottedLines(k) = plot(ax, x, y, ...
+                    'LineWidth', opts.lineWidth, 'Marker', marker, ...
+                    'MarkerSize', opts.markerSize, 'Color', cmap(k,:), 'Tag', 'eisRawScan');
+            end
         end
         labels{k} = items(k).name;
         if isfield(items, "members")
             labels{k} = sprintf('%s (scans=%d)', items(k).name, numel(items(k).members));
         end
     end
-    hold(ax, 'off');
+    if ~reuse, hold(ax, 'off'); end
     % Set logarithmic scales only after positive-only data has established
     % valid automatic limits. Applying a log scale while stale manual limits
     % are still negative makes MATLAB warn before the redraw can refit them.
     ax.XScale = ternary(opts.logX, 'log', 'linear');
     ax.YScale = ternary(opts.logY, 'log', 'linear');
-    labkit.app.plot.fitAxesToGraphics(ax);
+    overview = isfield(opts, "overviewTitle");
+    nyquist = overview && ~opts.logX;
+    if ~nyquist
+        labkit.app.plot.fitAxesToGraphics(ax);
+    end
 
     xLabel = eis.overlayPlot.labelForAxis(opts.xName, opts.impedanceUnit);
     yLabel = eis.overlayPlot.labelForAxis(opts.yName, opts.impedanceUnit);
-    xlabel(ax, xLabel);
-    ylabel(ax, yLabel);
-    kind = "file";
-    detail = "";
-    if isfield(items, "members")
-        kind = "group";
-        detail = "; mean ± SD";
+    if ~strcmp(ax.XLabel.String, xLabel), xlabel(ax, xLabel); end
+    if ~strcmp(ax.YLabel.String, yLabel), ylabel(ax, yLabel); end
+    if overview
+        caption = opts.overviewTitle;
+    else
+        kind = "file";
+        detail = "";
+        if isfield(items, "members")
+            kind = "group";
+            detail = "; mean ± SD";
+        end
+        caption = sprintf('%s vs %s (%d %s%s%s)', ...
+            yLabel, xLabel, numel(items), kind, pluralS(numel(items)), detail);
     end
-    title(ax, sprintf('%s vs %s (%d %s%s%s)', ...
-        yLabel, xLabel, numel(items), kind, pluralS(numel(items)), detail));
+    if ~strcmp(ax.Title.String, caption), title(ax, caption); end
 
     if opts.showGrid
         grid(ax, 'on');
@@ -80,8 +104,15 @@ function labels = plotOverlay(ax, items, opts)
     end
 
     if opts.showLegend
-        legend(ax, plottedLines, labels, 'Interpreter', 'none', 'Location', 'best');
-    else
+        if nyquist
+            names = wrapLegendLabels(string(labels));
+            if ~reuse || isempty(ax.Legend) || ~isequal(string(ax.Legend.String(:)), names(:))
+                legend(ax, plottedLines, names, Interpreter="none", Location="eastoutside", Box="off");
+            end
+        else
+            legend(ax, plottedLines, labels, Interpreter="none", Location="best");
+        end
+    elseif ~isempty(ax.Legend)
         legend(ax, 'off');
     end
 end
@@ -164,4 +195,22 @@ function [x, y] = frequencyMask(x, y, frequency, opts)
         logFrequency <= opts.frequencyLogRange(2);
     x(~keep) = NaN;
     y(~keep) = NaN;
+end
+
+function labels = wrapLegendLabels(labels)
+% Bound a side legend's width without shortening the displayed source names.
+maximumLineLength = 22;
+for k = 1:numel(labels)
+    remaining = char(labels(k));
+    lines = strings(numel(remaining)+1, 1);
+    lineCount = 0;
+    while numel(remaining) > maximumLineLength
+        cut = find(ismember(remaining(1:maximumLineLength), '-_ '), 1, 'last');
+        if isempty(cut), cut = maximumLineLength; end
+        lineCount = lineCount + 1;
+        lines(lineCount) = string(remaining(1:cut));
+        remaining = remaining(cut+1:end);
+    end
+    labels(k) = join([lines(1:lineCount); string(remaining)], newline);
+end
 end

@@ -7,9 +7,6 @@ function separator = installRowResize( ...
 % then restores interaction callbacks exactly.
 
 policy = nativeLayoutPolicy();
-heights = grid.RowHeight;
-heights{separatorRow} = policy.SplitterThickness;
-grid.RowHeight = heights;
 separator = uipanel(grid, BorderType="none", ...
     BackgroundColor=[0.86 0.86 0.86], ...
     Tag="labkitAppRowResize");
@@ -25,6 +22,7 @@ if isprop(separator, "PickableParts")
     separator.PickableParts = "all";
 end
 separator.ButtonDownFcn = @beginDrag;
+installDividerGrip(separator, "row", @beginDrag);
 
 drag = struct("Active", false, "StartY", NaN, "StartHeight", NaN, ...
     "Motion", [], "Up", [], "Down", [], "Key", [], ...
@@ -53,8 +51,11 @@ drag = struct("Active", false, "StartY", NaN, "StartHeight", NaN, ...
         point = figureHandle.CurrentPoint;
         height = drag.StartHeight - (point(2) - drag.StartY);
         heights = grid.RowHeight;
-        heights{contentRow} = max(policy.MinimumResizableRowHeight, height);
-        heights{separatorRow} = policy.SplitterThickness;
+        height = round(max(policy.MinimumResizableRowHeight, height));
+        if isequal(heights{contentRow}, height)
+            return
+        end
+        heights{contentRow} = height;
         grid.RowHeight = heights;
     end
 

@@ -62,16 +62,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             obj.ParentIndices = parentIndices;
             obj.DisplayName = displayName;
             obj.Family = family;
-            obj.Components = containers.Map("KeyType", "char", ...
-                "ValueType", "any");
+            obj.Components = struct();
             obj.Axes = containers.Map("KeyType", "char", ...
                 "ValueType", "any");
-            obj.Layouts = containers.Map("KeyType", "char", ...
-                "ValueType", "any");
+            obj.Layouts = struct();
             obj.DialogFolders = containers.Map("KeyType", "char", ...
                 "ValueType", "char");
-            obj.ContentHeights = containers.Map("KeyType", "char", ...
-                "ValueType", "double");
+            obj.ContentHeights = struct();
             obj.PannerCommitTimers = containers.Map("KeyType", "char", ...
                 "ValueType", "any");
             policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
@@ -571,12 +568,16 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             elseif ~isempty(linked) && source == linked
                 component.Value = value;
                 data = component.UserData;
-                if data.LiveUpdate && (isempty(data.LastDragUpdate) || toc(data.LastDragUpdate) >= 0.08)
-                    data.LastDragUpdate = tic;
-                    component.UserData = data;
+                if data.LiveUpdate && isempty(obj.ActiveDragSlider) && ...
+                        (isempty(data.LastDragUpdate) || toc(data.LastDragUpdate) >= 0.08)
                     obj.ActiveDragSlider = linked;
                     cleanup = onCleanup(@() obj.endDragPreview());
                     obj.runUserInput(@() obj.pannerChanged(target,value));
+                    % Leave time for pointer movement after a slow redraw.
+                    % Mouse-up still commits the final position immediately.
+                    if isvalid(component)
+                        component.UserData.LastDragUpdate = tic;
+                    end
                     clear cleanup
                 end
             end
@@ -696,10 +697,10 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             count = 0;
             for index = 1:numel(nodes)
                 node = nodes(index);
-                if ~isKey(obj.Components, char(node.Id))
+                if ~isfield(obj.Components, char(node.Id))
                     continue
                 end
-                component = obj.Components(char(node.Id));
+                component = obj.Components.(char(node.Id));
                 switch node.Kind
                     case {"button", "field", "dataTable"}
                         count = count + 1;
@@ -839,11 +840,11 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         function component = component(obj, id)
             key = char(id);
-            if ~isKey(obj.Components, key)
+            if ~isfield(obj.Components, key)
                 error("labkit:app:contract:UnknownReference", ...
                     "MATLAB adapter target is undeclared: %s.", id);
             end
-            component = obj.Components(key);
+            component = obj.Components.(key);
         end
 
         function node = node(obj, id)

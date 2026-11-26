@@ -210,6 +210,9 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(getappdata(ax,'labkitWheelMode')),"x");
             choice=findall(ax.ContextMenu,'Tag','labkitWheelMode_left');
             choice.MenuSelectedFcn(choice,[]);
+            labkit.app.internal.native.AxesNavigation.install(ax);
+            testCase.verifyTrue(isvalid(choice));
+            testCase.verifyEqual(string(choice.Checked),"on");
             labkit.app.internal.native.AxesNavigation.wheel(ax,[5 20],1);
             testCase.verifyEqual(ax.YAxis(1).Limits,[-3 9],AbsTol=1e-12);
             testCase.verifyEqual(ax.YAxis(2).Limits,[10 30]);
@@ -624,6 +627,15 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             runtime = labkittest.createMatlabRuntime(app, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
+            splitter = oneTagged(fig, "labkitAppColumnResize");
+            widths = splitter.Parent.ColumnWidth;
+            testCase.verifyGreaterThanOrEqual(widths{splitter.Layout.Column}, 24);
+            rule = oneTagged(splitter, "labkitDividerRule");
+            testCase.verifyEqual(rule.Parent.ColumnWidth{rule.Layout.Column}, 1);
+            rule.ButtonDownFcn(rule, []);
+            fig.WindowButtonMotionFcn(fig, []);
+            fig.WindowButtonUpFcn(fig, []);
+            testCase.verifyEqual(splitter.Parent.ColumnWidth, widths);
             panel = oneTagged(fig, "settings");
             result = oneTagged(fig, "result");
             rowGrid = oneTagged(fig, "comparison.layout");
@@ -1004,7 +1016,10 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                             Title="Applied reference", Text="Offset applied", Lines=1), ...
                         labkit.app.layout.statusPanel("readyMessage", Text="Ready"), ...
                         labkit.app.layout.field("compactSummary", ...
-                            Kind="readonly", Value="Ready")})})};
+                            Kind="readonly", Value="Ready")})}), ...
+                labkit.app.layout.tab("moreControls", "More controls", { ...
+                    labkit.app.layout.button("preview", "Preview", @runProbe), ...
+                    labkit.app.layout.button("accept", "Accept", @runProbe)})};
             app = AppSdkSpec.definition( ...
                 labkit.app.layout.workbench(controls));
             root = testCase.applyFixture( ...
@@ -1027,8 +1042,16 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             if isprop(long, "WordWrap")
                 testCase.verifyEqual(string(long.WordWrap), "off");
             end
-            testCase.verifyNumElements(findall( ...
-                figureValue, "Tag", "labkitAppRowResize"), 1);
+            divider = oneTagged(figureValue, "labkitAppRowResize");
+            testCase.verifyGreaterThanOrEqual( ...
+                divider.Parent.RowHeight{divider.Layout.Row}, 24);
+            labkittest.pressPage(figureValue,"moreControls");
+            page = oneTagged(figureValue,"moreControls");
+            firstGrip = oneTagged(page,"labkitAppRowResize");
+            labkittest.pressPage(figureValue,"controls");
+            labkittest.pressPage(figureValue,"moreControls");
+            testCase.verifyEqual(oneTagged(page,"labkitAppRowResize"), firstGrip);
+            labkittest.pressPage(figureValue,"controls");
             summary = oneTagged(figureValue, "summary");
             compact = oneTagged(figureValue, "compactSummary");
             applied = oneTagged(figureValue, "appliedReference");
@@ -1128,6 +1151,10 @@ classdef AppSdkSpec < matlab.unittest.TestCase
 
             rangeStart = oneTagged(figureValue, "nativeRange");
             rangeEnd = oneTagged(figureValue, "nativeRange.end");
+            upperLabel = findobj(rangeEnd.Parent.Children, "Text", "Upper");
+            testCase.verifyNumElements(upperLabel, 1);
+            testCase.verifyEqual(upperLabel.Layout.Column, rangeEnd.Layout.Column);
+            testCase.verifyLessThan(upperLabel.Layout.Row, rangeEnd.Layout.Row);
             rangeStart.Value = 0.2;
             rangeEnd.Value = 0.8;
             invokeNativeCallback( ...

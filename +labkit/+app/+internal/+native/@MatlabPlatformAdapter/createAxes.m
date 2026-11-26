@@ -2,68 +2,60 @@ function createAxes(obj, node, parent)
 % Class-folder implementation of MatlabPlatformAdapter.createAxes.
     config = node.Configuration;
     hasModes = ~isempty(config.ViewModes);
-    root = uigridlayout(parent, [1 + double(hasModes) 1], ...
-        Padding=[2 2 2 2], RowSpacing=4, ColumnSpacing=2);
+    axisCount = numel(node.AxisIds);
+    isPair = config.Layout == "pair";
+    isStack = config.Layout == "stack";
+    rows = 1;
+    columns = 1;
+    if isStack
+        rows = axisCount;
+    elseif isPair
+        columns = axisCount;
+    end
     parent.BackgroundColor = obj.Appearance.Surface;
-    root.BackgroundColor = obj.Appearance.Surface;
-    root.RowHeight = {'1x'};
-    axesRow = 1;
+    layout = uigridlayout(parent, [rows + hasModes, columns], ...
+        Padding=[2 2 2 2], RowSpacing=2, ColumnSpacing=2, ...
+        BackgroundColor=obj.Appearance.Surface);
+    layout.RowHeight = repmat({'1x'}, 1, rows);
+    if isPair
+        layout.ColumnWidth = labkit.app.internal.native.NativeAdapterValues.repeatedOrConfigured( ...
+            config.ColumnWidths, axisCount);
+        layout.BackgroundColor = obj.Appearance.Background;
+        layout.ColumnSpacing = 12;
+    end
     mode = [];
     if hasModes
         policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
-        root.RowHeight = {policy.FieldHeight, '1x'};
-        mode = uidropdown(root, Items=config.ViewModes, ...
-            Value=config.ViewModes(1), ...
+        layout.RowHeight = [{policy.FieldHeight}, layout.RowHeight];
+        mode = uidropdown(layout, Items=config.ViewModes, Value=config.ViewModes(1), ...
             Tag=char(node.Id + ".viewMode"), Tooltip="Choose a plot view");
         mode.Layout.Row = 1;
-        mode.Layout.Column = 1;
-        axesRow = 2;
-    end
-    axisCount = numel(node.AxisIds);
-    switch config.Layout
-        case "pair"
-            layout = uigridlayout(root, [1 axisCount]);
-            layout.RowHeight = {'1x'};
-            layout.ColumnWidth = labkit.app.internal.native.NativeAdapterValues.repeatedOrConfigured( ...
-                config.ColumnWidths, axisCount);
-        case "stack"
-            layout = uigridlayout(root, [axisCount 1]);
-            layout.RowHeight = repmat({'1x'}, 1, axisCount);
-            layout.ColumnWidth = {'1x'};
-        otherwise
-            layout = uigridlayout(root, [1 1]);
-            layout.RowHeight = {'1x'};
-            layout.ColumnWidth = {'1x'};
-    end
-    layout.BackgroundColor = obj.Appearance.Surface;
-    layout.Layout.Row = axesRow;
-    layout.Layout.Column = 1;
-    layout.Padding = [0 0 0 0];
-    layout.RowSpacing = 2;
-    layout.ColumnSpacing = 2;
-    if config.Layout == "pair"
-        layout.BackgroundColor = obj.Appearance.Background;
-        layout.ColumnSpacing = 12;
+        if columns > 1
+            mode.Layout.Column = [1 columns];
+        else
+            mode.Layout.Column = 1;
+        end
     end
     for k = 1:numel(node.AxisIds)
         axisId = node.AxisIds(k);
         key = labkit.app.internal.native.NativeAdapterValues.axisKey(node.Id, axisId);
         host = layout;
-        if config.Layout == "pair"
+        if isPair
             host = uigridlayout(layout,[1 1], Padding=[0 0 0 0], BackgroundColor=obj.Appearance.Surface);
+            host.Layout.Row = 1 + hasModes;
             host.Layout.Column = k;
         end
         ax = uiaxes(host, Tag=char(key));
         % Create once before renderers inspect MATLAB's lazy Toolbar property.
         axtoolbar(ax, 'default');
-        if config.Layout == "stack"
-            ax.Layout.Row = k;
-            ax.Layout.Column = 1;
-
-        else
+        if isStack
+            ax.Layout.Row = k + hasModes;
+        elseif isPair
             ax.Layout.Row = 1;
-            ax.Layout.Column = 1;
+        else
+            ax.Layout.Row = 1 + hasModes;
         end
+        ax.Layout.Column = 1;
         title(ax, labkit.app.internal.native.NativeAdapterValues.axisText(config.AxisTitles, node.AxisIds, k));
         xlabel(ax, labkit.app.internal.native.NativeAdapterValues.axisText(config.XLabels, strings(1, axisCount), k));
         ylabel(ax, labkit.app.internal.native.NativeAdapterValues.axisText(config.YLabels, strings(1, axisCount), k));

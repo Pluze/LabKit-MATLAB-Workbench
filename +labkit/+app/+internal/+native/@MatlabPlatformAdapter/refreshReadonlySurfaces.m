@@ -3,7 +3,7 @@ function refreshReadonlySurfaces(obj)
     if isempty(obj.Components)
         return
     end
-    components = values(obj.Components);
+    components = struct2cell(obj.Components);
     for index = 1:numel(components)
         component = components{index};
         if isempty(component) || ~isvalid(component) || ...
