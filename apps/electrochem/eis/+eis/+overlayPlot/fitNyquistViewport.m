@@ -22,7 +22,7 @@ baseSpan = [diff(x), diff(y)];
 previousRatio = NaN;
 % Tick-label and side-legend margins can change as limits expand. Resolve
 % their small layout feedback with bounded, damped updates from one viewport.
-for iteration = 1:12
+for iteration = 1:16
     drawnow limitrate nocallbacks;
     position = getpixelposition(ax);
     allocation = ax.Position;
@@ -31,6 +31,12 @@ for iteration = 1:12
     pixels = inner(3:4) .* position(3:4) ./ allocation(3:4);
     ratio = pixels(1)/pixels(2);
     if abs(log((diff(ax.XLim)/diff(ax.YLim))/ratio)) < .002, break; end
+    if iteration == 9
+        % Auto ticks can alternate between two label widths. Give both
+        % dimensions a little room to settle on one tick interval.
+        baseSpan = baseSpan * 1.05;
+        previousRatio = NaN;
+    end
     if isfinite(previousRatio), ratio = sqrt(ratio * previousRatio); end
     ySpan = max(baseSpan(2), baseSpan(1)/ratio);
     xlim(ax, center(1) + [-.5 .5] * ySpan * ratio);

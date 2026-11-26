@@ -17,7 +17,7 @@ switch control.Type
     case {'uigridlayout','uitab'}
         control.BackgroundColor = containerColor;
     case 'uibutton'
-        control.FontSize = 11;
+        control.FontSize = 12;
         control.BackgroundColor = style.Paper;
         control.FontColor = style.Text;
     case 'uilabel'

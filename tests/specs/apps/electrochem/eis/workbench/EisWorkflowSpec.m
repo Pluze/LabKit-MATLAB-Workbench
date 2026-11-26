@@ -32,7 +32,10 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(frequency.BorderType), "none");
             plotPanel = findall(runtime.figureHandle(), "Tag", "nyquistOverview");
             fitButton = findall(runtime.figureHandle(), "Tag", "fitOverviewAxes");
-            testCase.verifyEqual(ancestor(fitButton, "uipanel"), frequency);
+            actions = ancestor(fitButton, "uipanel");
+            testCase.verifyEqual(actions.Parent, frequency.Parent);
+            testCase.verifyGreaterThan(actions.Layout.Row, frequency.Layout.Row);
+            testCase.verifyLessThan(actions.Layout.Row, plotPanel.Layout.Row);
             testCase.verifyEqual(frequency.Parent, plotPanel.Parent);
             testCase.verifyLessThan(frequency.Layout.Row, plotPanel.Layout.Row);
             testCase.verifyEqual(frequency.Layout.Column, plotPanel.Layout.Column);

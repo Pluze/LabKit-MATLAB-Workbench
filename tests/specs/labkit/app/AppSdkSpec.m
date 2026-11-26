@@ -1020,7 +1020,7 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(short.Position(4), export.Position(4), ...
                 AbsTol=0.5);
             testCase.verifyGreaterThanOrEqual(short.Position(4), 22);
-            testCase.verifyLessThanOrEqual(short.Position(4), 32);
+            testCase.verifyLessThanOrEqual(short.Position(4), 40);
             if isprop(long, "WordWrap")
                 testCase.verifyEqual(string(long.WordWrap), "off");
             end
@@ -1093,7 +1093,9 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(status.Value), ...
                 "descriptive-source-recording.mat");
             testCase.verifyEqual(string(status.Tooltip), string(filepath));
-            testCase.verifyGreaterThan(status.Position(4), choose.Position(4));
+            testCase.verifyEqual(choose.Layout.Row, 2);
+            testCase.verifyEqual(status.Layout.Row, 3);
+            testCase.verifyEqual(status.Parent, choose.Parent);
             clear cleanup
         end
 
@@ -1298,9 +1300,12 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(spinner.Value, 1);
             testCase.verifyEqual(string(label.Text), "Radius (px)");
             runtime.applyControlValue("dynamicSlider", 2);
-            testCase.verifyEqual(label.Parent.ColumnWidth{1}, 0);
+            testCase.verifyEqual(string(label.Text), "");
+            testCase.verifyEqual(spinner.Layout.Row, 1);
+            testCase.verifyEqual(spinner.UserData.Slider.Layout.Row, 2);
+            testCase.verifyEqual(spinner.UserData.Slider.Layout.Column, [1 2]);
             runtime.applyControlValue("dynamicSlider", 0);
-            testCase.verifyGreaterThan(label.Parent.ColumnWidth{1}, 0);
+            testCase.verifyNotEmpty(char(label.Text));
             clear cleanup
         end
 

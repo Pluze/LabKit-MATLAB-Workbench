@@ -22,7 +22,8 @@ function node = slider(id, varargin)
 % Options:
 %   Label - Display text. Default: id. Empty text removes the label column;
 %       use a titled parent group to label a compact slider.
-%   LabelPosition - "left" (default) or "top" for a narrow vertical strip.
+%   LabelPosition - "left" (default) or "top" for a slider without a value field.
+%       With ShowValue enabled, the label and spinner sit above the full-width track.
 %   LiveUpdate - When true, drag updates also commit at bounded intervals.
 %       The release always applies the final value. Default: false.
 %   ShowValue - Show the paired numeric spinner. Default: true. Set false

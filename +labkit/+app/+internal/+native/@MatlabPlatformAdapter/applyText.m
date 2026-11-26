@@ -20,6 +20,12 @@ function applyText(obj, component, value)
             status.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(show);
             grid = status.Parent;
             grid.RowHeight{status.Layout.Row} = 64 * show;
+            policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
+            height = policy.EmptyFileListHeight;
+            if ~isempty(component.UserData.Paths)
+                height = policy.FileListNoStatusHeight;
+            end
+            obj.updateContentHeight(component.UserData.Target, height + 64 * show);
         end
         labkit.app.internal.native.NativeAdapterValues.fitText(component.UserData.Status);
         return
@@ -32,7 +38,11 @@ function applyText(obj, component, value)
             error("labkit:app:runtime:InvariantFailure", ...
                 "A slider text operation requires its cached label.");
         end
-        labkit.app.internal.native.NativeAdapterValues.setControlLabel(label, value);
+        if component.Visible == "on"
+            label.Text = char(string(value));
+        else
+            labkit.app.internal.native.NativeAdapterValues.setControlLabel(label, value);
+        end
         return
     elseif isstruct(component.UserData) && isfield(component.UserData,"HeadingContext")
         component.UserData.HeadingContext.Text = value;

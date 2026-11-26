@@ -6,7 +6,7 @@ function [rows, columns] = actionGridSize(obj, node)
     for k = 1:numel(children)
         labels(k) = children(k).Configuration.Label;
     end
-    if any(strlength(labels) > 28)
+    if any(strlength(labels) > 17)
         columns = 1;
     end
     rows = max(1, ceil(numel(children) / columns));
