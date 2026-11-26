@@ -210,6 +210,9 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             testCase.verifyEqual(string(getappdata(ax,'labkitWheelMode')),"x");
             choice=findall(ax.ContextMenu,'Tag','labkitWheelMode_left');
             choice.MenuSelectedFcn(choice,[]);
+            labkit.app.internal.native.AxesNavigation.install(ax);
+            testCase.verifyTrue(isvalid(choice));
+            testCase.verifyEqual(string(choice.Checked),"on");
             labkit.app.internal.native.AxesNavigation.wheel(ax,[5 20],1);
             testCase.verifyEqual(ax.YAxis(1).Limits,[-3 9],AbsTol=1e-12);
             testCase.verifyEqual(ax.YAxis(2).Limits,[10 30]);

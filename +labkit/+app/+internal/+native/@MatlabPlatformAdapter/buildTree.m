@@ -47,7 +47,7 @@ function buildTree(obj)
             end
         end
         obj.placeInParent(node, component);
-        obj.Components(char(node.Id)) = component;
+        obj.Components.(char(node.Id)) = component;
     end
     for node = reshape(nodes,1,[])
         if node.Kind ~= "group" || obj.groupLayout(node) ~= "horizontal" || numel(node.ChildIds) ~= 2

@@ -50,7 +50,7 @@ else
     reservedWidth = 48 + 9*strlength(obj.DisplayName) + actionWidth;
     split = obj.WorkbenchWorkspace.Parent;
     host.SizeChangedFcn = @(source,~) fitNavigation(min(source.InnerPosition(3), availableWidth()));
-    obj.Layouts(char(node.Id)) = frame;
+    obj.Layouts.(char(node.Id)) = frame;
 end
 canvas = frame;
 canvas.UserData = active;

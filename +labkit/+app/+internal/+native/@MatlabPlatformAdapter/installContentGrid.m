@@ -75,7 +75,7 @@ function grid = installContentGrid(obj, node, component)
         end
     end
     grid.Tag = char(node.Id + ".layout");
-    obj.Layouts(char(node.Id)) = grid;
+    obj.Layouts.(char(node.Id)) = grid;
     if node.Kind == "tab"
         for k = 1:max(0, numel(node.ChildIds) - 1)
             labkit.app.internal.native.NativeAdapterValues.installRowDivider(obj.Figure, grid, 2 * k - 1, 2 * k);

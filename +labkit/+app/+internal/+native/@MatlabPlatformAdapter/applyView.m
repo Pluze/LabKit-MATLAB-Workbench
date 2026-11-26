@@ -5,19 +5,19 @@ function applyView(obj, view, previous)
     end
     obj.BusyLifecycle.setWindowSubtitle(view.windowSubtitleForNative());
     operations = labkit.app.internal.native.NativeAdapterValues.orderedOperations(view.operationsForCompiler());
-    interactionOperations = operations(cellfun(@(operation) ...
-        labkit.app.internal.native.NativeAdapterValues.isInteractionKind(operation.Kind), operations));
-    operations = operations(~cellfun(@(operation) ...
-        labkit.app.internal.native.NativeAdapterValues.isInteractionKind(operation.Kind), operations));
+    interactive = cellfun(@(operation) ...
+        labkit.app.internal.native.NativeAdapterValues.isInteractionKind(operation.Kind), operations);
+    interactionOperations = operations(interactive);
+    operations = operations(~interactive);
     previousOperations = cell(1, 0);
     previousInteractions = cell(1, 0);
     if isa(previous, "labkit.app.view.Snapshot")
         prior = labkit.app.internal.native.NativeAdapterValues.orderedOperations( ...
             previous.operationsForCompiler());
-        previousInteractions = prior(cellfun(@(operation) ...
-            labkit.app.internal.native.NativeAdapterValues.isInteractionKind(operation.Kind), prior));
-        previousOperations = prior(~cellfun(@(operation) ...
-            labkit.app.internal.native.NativeAdapterValues.isInteractionKind(operation.Kind), prior));
+        interactive = cellfun(@(operation) ...
+            labkit.app.internal.native.NativeAdapterValues.isInteractionKind(operation.Kind), prior);
+        previousInteractions = prior(interactive);
+        previousOperations = prior(~interactive);
     end
     changed = changedOperations(operations, previousOperations);
     for k = 1:numel(changed)

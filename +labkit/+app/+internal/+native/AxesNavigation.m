@@ -25,6 +25,17 @@ classdef (Hidden, Sealed) AxesNavigation
             end
             modes=["xy","x","y"];labels=["X + Y","X only","Y only"];
             if dual,modes=["x","left","right","both"];labels=["X only","Left Y only","Right Y only","X + both Y axes"];end
+            mode = string(getappdata(ax,'labkitWheelMode'));
+            if ~any(mode == modes)
+                mode = modes(1);
+                setappdata(ax,'labkitWheelMode',mode);
+            end
+            % Renderers can change from one Y ruler to two. Keep the menu
+            % and its callbacks while the available choices stay identical.
+            if isequal(existing.UserData, modes) && numel(existing.Children) == numel(modes)
+                return
+            end
+            existing.UserData = modes;
             delete(existing.Children);
             for k=1:numel(modes)
                 uimenu(existing,Text=labels(k),Tag="labkitWheelMode_"+modes(k), ...

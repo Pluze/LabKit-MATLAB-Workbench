@@ -1,8 +1,8 @@
 function updateContentHeight(obj, id, height)
 % Propagate a changed preferred height through fixed rows, preserving user resize offsets.
     key = char(id);
-    if isKey(obj.ContentHeights, key) && ...
-            abs(obj.ContentHeights(key) - height) < 0.5
+    if isfield(obj.ContentHeights, key) && ...
+            abs(obj.ContentHeights.(key) - height) < 0.5
         return
     end
     node = obj.node(id);
@@ -11,7 +11,7 @@ function updateContentHeight(obj, id, height)
     for index = 1:numel(chain)
         before{index} = obj.preferredRowHeight(chain(index));
     end
-    obj.ContentHeights(key) = height;
+    obj.ContentHeights.(key) = height;
     for index = 1:numel(chain)
         after = obj.preferredRowHeight(chain(index));
         if ~(isnumeric(before{index}) && isnumeric(after))

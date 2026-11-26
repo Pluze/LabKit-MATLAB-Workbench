@@ -62,16 +62,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             obj.ParentIndices = parentIndices;
             obj.DisplayName = displayName;
             obj.Family = family;
-            obj.Components = containers.Map("KeyType", "char", ...
-                "ValueType", "any");
+            obj.Components = struct();
             obj.Axes = containers.Map("KeyType", "char", ...
                 "ValueType", "any");
-            obj.Layouts = containers.Map("KeyType", "char", ...
-                "ValueType", "any");
+            obj.Layouts = struct();
             obj.DialogFolders = containers.Map("KeyType", "char", ...
                 "ValueType", "char");
-            obj.ContentHeights = containers.Map("KeyType", "char", ...
-                "ValueType", "double");
+            obj.ContentHeights = struct();
             obj.PannerCommitTimers = containers.Map("KeyType", "char", ...
                 "ValueType", "any");
             policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
@@ -696,10 +693,10 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             count = 0;
             for index = 1:numel(nodes)
                 node = nodes(index);
-                if ~isKey(obj.Components, char(node.Id))
+                if ~isfield(obj.Components, char(node.Id))
                     continue
                 end
-                component = obj.Components(char(node.Id));
+                component = obj.Components.(char(node.Id));
                 switch node.Kind
                     case {"button", "field", "dataTable"}
                         count = count + 1;
@@ -839,11 +836,11 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         function component = component(obj, id)
             key = char(id);
-            if ~isKey(obj.Components, key)
+            if ~isfield(obj.Components, key)
                 error("labkit:app:contract:UnknownReference", ...
                     "MATLAB adapter target is undeclared: %s.", id);
             end
-            component = obj.Components(key);
+            component = obj.Components.(key);
         end
 
         function node = node(obj, id)
