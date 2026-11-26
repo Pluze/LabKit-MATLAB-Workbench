@@ -115,7 +115,7 @@ if labkit.app.internal.launcher.launcherGuiTestMode() ~= "hidden"
 end
 
     function applyPalette(style)
-        if isprop(fig, "Theme")
+        if ~isMATLABReleaseOlderThan("R2025a")
             fig.Theme = "light";
         end
         body.BackgroundColor = style.Line;

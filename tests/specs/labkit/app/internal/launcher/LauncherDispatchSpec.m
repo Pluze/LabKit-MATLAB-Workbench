@@ -216,7 +216,7 @@ classdef LauncherDispatchSpec < matlab.unittest.TestCase
             end
             testCase.verifyTrue(all(ismember( ...
                 ["Applications", "Alpha", "Selected app", "Session log"], headings)));
-            if isprop(fig, "Theme")
+            if ~isMATLABReleaseOlderThan("R2025a")
                 testCase.verifyEqual(string(fig.Theme.BaseColorStyle), "light");
             end
             testCase.verifyEqual(string(appTable.ColumnName), [ ...

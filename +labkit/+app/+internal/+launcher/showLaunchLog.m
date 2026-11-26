@@ -14,7 +14,7 @@ if isempty(fig)
     values = readableLog(log);
     fig = uifigure(Name="LabKit Launcher Log",Tag="labkitLauncherLog", ...
         Position=centeredPosition(),Visible="off");
-    if isprop(fig,"Theme"), fig.Theme = "light"; end
+    if ~isMATLABReleaseOlderThan("R2025a"), fig.Theme = "light"; end
     style = labkit.app.internal.native.lightAppearance();
     grid = uigridlayout(fig,[3 1],RowHeight={34,'1x',22}, ...
         Padding=[18 14 18 14],RowSpacing=8,BackgroundColor=style.Background);

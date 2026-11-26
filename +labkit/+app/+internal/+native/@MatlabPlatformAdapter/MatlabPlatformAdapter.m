@@ -80,7 +80,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 Tag="labkitApp", ...
                 Position=policy.InitialFigurePosition);
             obj.Appearance = labkit.app.internal.native.lightAppearance();
-            if isprop(obj.Figure, "Theme")
+            if ~isMATLABReleaseOlderThan("R2025a")
                 obj.Figure.Theme = "light";
             end
             obj.PlotWindows = labkit.app.internal.native.PlotWindows();

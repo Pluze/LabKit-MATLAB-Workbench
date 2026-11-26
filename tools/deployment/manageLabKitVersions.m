@@ -111,7 +111,7 @@ function fig = openManager(root, opts)
         figArgs = [figArgs, {"Visible", "off"}];
     end
     fig = uifigure(figArgs{:});
-    if isprop(fig,"Theme"), fig.Theme = "light"; end
+    if ~isMATLABReleaseOlderThan("R2025a"), fig.Theme = "light"; end
     paper = [1 1 1];
     ink = [.09 .17 .25];
     muted = [.39 .45 .55];
