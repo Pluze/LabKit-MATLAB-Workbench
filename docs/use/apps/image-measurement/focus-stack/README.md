@@ -11,6 +11,8 @@ Focus Stack fuses at least two focal planes into one all-in-focus image using mu
 
 The preview is derived directly from the selected focal plane and current stack result; changing selection does not retain an independent preview copy.
 
+The left pane groups the workflow under **Stack & fusion**, **Results**. Use **Run focus stack** in the header when ready.
+
 ## Requirements And Launch
 
 Inputs should show the same field of view at different focus positions.

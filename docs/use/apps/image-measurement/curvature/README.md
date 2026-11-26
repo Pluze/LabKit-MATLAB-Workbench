@@ -13,6 +13,8 @@ Each use of **Measure length + curvature** computes traced length and circle-fit
 
 While tracing, the image remains a target for the plot context menu. Use it to open the current fit view in a separate figure.
 
+The left pane groups the workflow under **Trace & calibrate**, **Fit results**.
+
 ## Requirements And Launch
 
 ```matlab

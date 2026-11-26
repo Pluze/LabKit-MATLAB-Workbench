@@ -11,6 +11,7 @@ if ~sidebar && node.InitialPage ~= ""
     active = node.InitialPage;
 end
 frame = uigridlayout(parent,[1 1],Padding=[0 0 0 0],BackgroundColor=style.Surface);
+selector = [];
 if sidebar
     columns = min(2,numel(ids));
     rows = ceil(numel(ids)/columns);
@@ -22,11 +23,31 @@ if sidebar
     frame.BackgroundColor = parent.BackgroundColor;
 else
     columns = numel(ids);
-    bar = uigridlayout(obj.Header,[2 columns+1],RowHeight={'1x',2}, ...
+    host = uipanel(obj.Header,BorderType="none",BackgroundColor=style.Surface,AutoResizeChildren="off");
+    host.Layout.Row = 1;
+    host.Layout.Column = find(strcmp(obj.Header.ColumnWidth,'1x'),1);
+    layers = uigridlayout(host,[1 1],Padding=[0 0 0 0],BackgroundColor=style.Surface);
+    bar = uigridlayout(layers,[2 columns+1],RowHeight={'1x',2}, ...
         ColumnWidth=[repmat({'fit'},1,columns),{'1x'}],Padding=[8 0 0 0], ...
-        RowSpacing=0,ColumnSpacing=6,Scrollable="on",BackgroundColor=style.Surface);
+        RowSpacing=0,ColumnSpacing=6,BackgroundColor=style.Surface);
     bar.Layout.Row = 1;
-    bar.Layout.Column = numel(obj.Header.ColumnWidth) - double(isnumeric(obj.Header.ColumnWidth{end}));
+    bar.Layout.Column = 1;
+    titles = arrayfun(@(page) string(page.Configuration.Title),pages);
+    selector = uidropdown(layers,Items=titles,ItemsData=ids,Value=active, ...
+        Tag=node.Id+".choosePage",Tooltip="Choose a workspace view", ...
+        ValueChangedFcn=@(source,~) obj.runUserInput(@() selectPage(source.Value)));
+    selector.Layout.Row = 1;
+    selector.Layout.Column = 1;
+    requiredWidth = sum(8*strlength(titles)+24) + 6*(columns-1) + 8;
+    actionWidth = 0;
+    root = obj.owningNode(node.Id);
+    if root.Configuration.HeaderAction ~= ""
+        action = obj.node(root.Configuration.HeaderAction);
+        actionWidth = 8*strlength(action.Configuration.Label)+28;
+    end
+    reservedWidth = 48 + 9*strlength(obj.DisplayName) + actionWidth;
+    split = obj.WorkbenchWorkspace.Parent;
+    host.SizeChangedFcn = @(source,~) fitNavigation(source.InnerPosition(3));
     obj.Layouts(char(node.Id)) = frame;
 end
 canvas = frame;
@@ -47,7 +68,19 @@ for i = 1:numel(ids)
     end
 end
 paint(active);
+if ~sidebar
+    width = obj.Figure.Position(3) - split.ColumnWidth{1} - split.ColumnWidth{2};
+    fitNavigation(width-reservedWidth);
+end
+    function fitNavigation(width)
+        compact = width < requiredWidth;
+        selector.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(compact);
+        bar.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(~compact);
+    end
     function paint(id)
+        if ~isempty(selector)
+            selector.Value = id;
+        end
         for j = 1:numel(ids)
             if ids(j) == id
                 buttons(j).FontColor = style.Primary;

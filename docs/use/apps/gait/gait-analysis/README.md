@@ -9,6 +9,8 @@ summary: Convert a Video Marker project into segmented treadmill swing steps, ki
 
 Gait Analysis converts a current Video Marker project into independently segmented treadmill swing steps, per-frame kinematics, per-step gait parameters, visual step reports, and reproducible CSV outputs. Loading and analysis are deliberately separate: loading first shows the complete tracked skeleton trajectory; analysis then enables one-step-at-a-time review.
 
+The left pane groups the workflow under **Review steps**, **Detection**, **Results & export**.
+
 ## Open Gait Analysis
 
 From the LabKit launcher, select **Gait Analysis** and choose **Open**. From a source checkout, run:

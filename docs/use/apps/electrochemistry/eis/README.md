@@ -11,6 +11,8 @@ EIS overlays impedance data from one or more Gamry `ZCURVE` tables, supports Nyq
 
 Source summaries are derived from the currently parsed EIS recording, so file selection, plots, and exported values refer to the same loaded result.
 
+Choose **Nyquist + Bode**, **Custom plot**, **Groups** beside the App title to switch views. Use **Export custom CSV** in the header when ready.
+
 ## Requirements And Launch
 
 ```matlab

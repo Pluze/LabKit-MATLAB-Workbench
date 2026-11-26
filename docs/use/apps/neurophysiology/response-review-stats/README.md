@@ -11,6 +11,8 @@ Response Review and Stats opens a Nerve Response Analysis result or a segment ta
 
 Loading or recalculating a source produces the presentation data consumed by the review pages directly, without a second source-file presenter state.
 
+The left pane groups the workflow under **Load & compare**, **Review**, **Export**.
+
 ## Open Response Review And Stats
 
 From the launcher, select **Response Review Stats** and choose **Open**. From a source checkout, run:

@@ -11,6 +11,8 @@ DIC Preprocess registers a moving optical image to a reference image, applies re
 
 Mask editing, source replacement, and result-folder selection update the current project directly; no additional compatibility file or helper setup is required.
 
+The left pane groups the workflow under **Register & crop**, **Summary**.
+
 ## Requirements And Launch
 
 Image IO and registration use MATLAB and repository-owned code; no external registration package is installed.

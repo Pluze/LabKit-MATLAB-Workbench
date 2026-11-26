@@ -9,6 +9,8 @@ summary: Turn visible MATLAB graphics into an editable scientific figure while p
 
 Figure Studio turns visible MATLAB graphics into an editable scientific-figure document. It preserves the plotted values while letting the user revise layout, axes, tick text, semantic graphic categories, individual objects, annotations, and publication output from one shared document model. It does not rerun or change the calculation that produced the source plot.
 
+The left pane groups the workflow under **Source figure**, **Axes & color**, **Annotations**, **Style & legend**, **Layout**, **Check & export**. Choose **Preview**, **Legend** beside the App title to switch views.
+
 ## Open Figure Studio
 
 From the launcher, select **Figure Studio** and choose **Open**. From a source checkout, run:

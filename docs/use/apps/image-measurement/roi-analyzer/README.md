@@ -11,6 +11,8 @@ ROI Analyzer measures and compares original pixel values inside reusable regions
 
 Scroll over the image to inspect ROI boundaries at higher magnification. Right-click the image for plot actions, including opening the current view in a separate figure.
 
+The left pane groups the workflow under **Images & ROIs**, **Layout tools**, **Measurements**, **Project**. Use **Measure all images** in the header when ready.
+
 ## Requirements And Launch
 
 ROI Analyzer uses Base MATLAB and the LabKit image reader. It does not require Image Processing Toolbox.

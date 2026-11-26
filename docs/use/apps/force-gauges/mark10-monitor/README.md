@@ -15,6 +15,8 @@ Connection, settings, read-once, playback, and monitoring controls call their ow
 
 The control side is split into task-focused **Monitor**, **Analysis**, and **Settings** tabs. Connection, live monitoring/export, file playback, and device configuration therefore remain independent instead of sharing one long scrolling panel.
 
+The left pane groups the workflow under **Monitor**, **Analysis**, **Settings**. Choose **Live Plots**, **Recent Data**, **Recording Review**, **Modulus Analysis**, **Diagnostics** beside the App title to switch views. Use **Export CSV + LOG + MAT** in the header when ready.
+
 ## Connect, Monitor, And Export
 
 Run `labkit_Mark10Monitor_app`, choose **Refresh Ports**, select the serial port, and choose **Connect**. Connection only opens and probes the device; choose **Start Monitoring** to begin live reads. **Stop Monitoring** stops reads while keeping the serial connection open. Starting each monitoring run clears the preceding in-memory run and resets both live plots once, including the independent travel and force Y axes. It then retains every sample attempt while updating the plots; ordinary in-range refreshes preserve the current view. Choose **Export CSV + LOG + MAT** to save that retained run; no separate recording mode is required.

@@ -1055,8 +1055,12 @@ classdef AppSdkSpec < matlab.unittest.TestCase
                 figureValue.Position(3:4) = [980 700];
                 drawnow
                 exportapp(figureValue, fullfile(root, "compact.png"));
-                testCase.verifyEqual(workbench.Position(3:4), ...
-                    figureValue.Position(3:4), AbsTol=2);
+                % Geometry is reported asynchronously by the native renderer.
+                testCase.verifyThat(@() workbench.Position(3:4), ...
+                    matlab.unittest.constraints.Eventually( ...
+                    matlab.unittest.constraints.IsEqualTo(figureValue.Position(3:4), ...
+                    Within=matlab.unittest.constraints.AbsoluteTolerance(2)), ...
+                    WithTimeoutOf=5));
             end
             clear cleanup
         end
@@ -1235,6 +1239,12 @@ classdef AppSdkSpec < matlab.unittest.TestCase
 
             testCase.verifyEqual(group.UserData,"secondPage");
             testCase.verifyEqual(string(secondPage.Visible),"on");
+            selector = oneTagged(figureValue,"workspace.choosePage");
+            testCase.verifyEqual(string(selector.Value),"secondPage");
+            selector.Value = "firstPage";
+            selector.ValueChangedFcn(selector,[]);
+            testCase.verifyEqual(group.UserData,"firstPage");
+            testCase.verifyEqual(string(secondPage.Visible),"off");
             clear cleanup
         end
 

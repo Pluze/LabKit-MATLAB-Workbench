@@ -6,9 +6,8 @@ function root = installWorkbenchLayout(obj, node, parent)
     kinds = string({nodes.Kind});
     hasWorkspace = any(kinds == "workspace");
     headerHeight = policy.HeaderTopInset + policy.HeaderContentHeight + policy.HeaderBottomGap;
-    splitHeader = hasWorkspace;
     sideColor = style.Surface;
-    if splitHeader
+    if hasWorkspace
         sideColor = style.Background;
     end
     root = uigridlayout(parent,[3 1+2*hasWorkspace], RowHeight={headerHeight,'1x',22}, ...
@@ -16,8 +15,6 @@ function root = installWorkbenchLayout(obj, node, parent)
         Tag="labkitAppWorkbenchGrid");
     if hasWorkspace
         root.ColumnWidth = {policy.ControlPaneWidth,policy.SplitterThickness,'1x'};
-    end
-    if splitHeader
         brand = uigridlayout(root,[2 4],ColumnWidth={28,68,'fit','1x'}, ...
             RowHeight={policy.HeaderContentHeight,1},RowSpacing=policy.HeaderBottomGap-1, ...
             Padding=[14 0 14 policy.HeaderTopInset],ColumnSpacing=8,BackgroundColor=sideColor);
@@ -25,7 +22,7 @@ function root = installWorkbenchLayout(obj, node, parent)
         brand.Layout.Column = 1;
         widths = {'fit','1x'};
         if node.Configuration.HeaderAction ~= ""
-            widths{end+1} = 138;
+            widths{end+1} = 'fit';
         end
         obj.Header = uigridlayout(root,[1 numel(widths)],ColumnWidth=widths, ...
             Padding=[18 policy.HeaderBottomGap 15 policy.HeaderTopInset],ColumnSpacing=8, ...
@@ -35,13 +32,13 @@ function root = installWorkbenchLayout(obj, node, parent)
     else
         widths = {28,68,'fit','fit','1x'};
         if node.Configuration.HeaderAction ~= ""
-            widths{end+1} = 138;
+            widths{end+1} = 'fit';
         end
         obj.Header = uigridlayout(root,[1 numel(widths)],ColumnWidth=widths, ...
             Padding=[15 policy.HeaderBottomGap 15 policy.HeaderTopInset],ColumnSpacing=8, ...
             BackgroundColor=style.Surface);
         obj.Header.Layout.Row = 1;
-        obj.Header.Layout.Column = [1 numel(root.ColumnWidth)];
+        obj.Header.Layout.Column = 1;
         brand = obj.Header;
     end
     labkit.app.internal.native.installBrandMark(brand);
@@ -51,7 +48,7 @@ function root = installWorkbenchLayout(obj, node, parent)
     uilabel(brand, Text=obj.Family, FontSize=12, FontColor=style.Muted);
     uilabel(obj.Header, Text=obj.DisplayName, FontSize=15, FontWeight="bold", FontColor=style.Text);
 
-    if splitHeader
+    if hasWorkspace
         rule = uilabel(brand,Text="",BackgroundColor=style.Line);
         rule.Layout.Row = 2;
         rule.Layout.Column = [1 4];
@@ -74,10 +71,7 @@ function root = installWorkbenchLayout(obj, node, parent)
     if hasWorkspace
         labkit.app.internal.native.NativeAdapterValues.installColumnDivider(obj.Figure, root, 1, 2);
         divider = findobj(root.Children, "Tag", "labkitAppColumnResize");
-        divider.Layout.Row = 2;
-        if splitHeader
-            divider.Layout.Row = [1 3];
-        end
+        divider.Layout.Row = [1 3];
         divider.BackgroundColor = style.Line;
         obj.WorkbenchWorkspace = uigridlayout(root,[1 1], Padding=[0 0 0 0], ...
             BackgroundColor=style.Background, Tag="labkitAppWorkspacePanel");
@@ -88,10 +82,6 @@ function root = installWorkbenchLayout(obj, node, parent)
     end
     footer = uigridlayout(root,[1 1], Padding=[18 2 18 2], BackgroundColor=sideColor);
     footer.Layout.Row = 3;
-    if splitHeader
-        footer.Layout.Column = 1;
-    else
-        footer.Layout.Column = [1 numel(root.ColumnWidth)];
-    end
+    footer.Layout.Column = 1;
     uilabel(footer, Text=obj.Figure.Name, FontSize=11, FontColor=style.Muted);
 end

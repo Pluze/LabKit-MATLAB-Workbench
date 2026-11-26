@@ -11,6 +11,8 @@ The CIC app measures charge delivered by a biphasic current pulse, normalizes ch
 
 Each selected DTA source is loaded into the current analysis state, and charge-density text is formatted from that same result so display and export cannot diverge through a second cached representation.
 
+The left pane groups the workflow under **Pulse analysis**, **Charge results**. Use **Export results CSV** in the header when ready.
+
 ## Requirements And Launch
 
 The app requires a chrono DTA curve with valid `T`, `Vf`, and `Im` columns.

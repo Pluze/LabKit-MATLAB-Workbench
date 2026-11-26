@@ -11,6 +11,8 @@ Batch Image Crop defines one crop task per image, previews rotation and edge-con
 
 Crop edits preserve the active preview viewport through the managed image interaction; the App does not keep a second private viewport snapshot.
 
+The left pane groups the workflow under **Images & crop**, **Calibration**, **Results & export**.
+
 ## Requirements And Launch
 
 ```matlab

@@ -11,6 +11,8 @@ RHS Preview lets you inspect an Intan RHS recording without loading the entire w
 
 The displayed file is decoded and presented by the source workflow that owns the current window, preventing a separate display-file path from drifting from the selected recording.
 
+The left pane groups the workflow under **Preview setup**, **Protocol**, **Filter**, **Review**.
+
 ## Open RHS Preview
 
 From the LabKit launcher, select **RHS Preview** and choose **Open**. From a source checkout, run:
