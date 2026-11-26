@@ -9,6 +9,8 @@ summary: Define an ordered landmark skeleton, record or predict coordinates acro
 
 Video Marker defines an ordered landmark skeleton, records coordinates across video frames, predicts forward positions between manual anchors, and saves an explicit App-owned MAT snapshot when requested.
 
+The left pane groups the workflow under **Skeleton & scale**, **Track frames**, **Import & export**. Use **Save MAT** in the header when ready.
+
 ## Requirements And Launch
 
 The app uses the current LabKit App SDK and declares compatibility with `labkit.image` 2.x. Video decoding uses Base MATLAB's available video support. Range prediction is implemented in repository-owned MATLAB code; no optional Toolbox, model weight, or third-party runtime package is required.
@@ -113,7 +115,7 @@ Use the generated [`buildTable`](../../../../reference/api/video_marker/coordina
 
 ## Diagnostics
 
-Use **Tools > Diagnostics** to inspect the live session log and enable trace capture; retained session journals remain available after a problem occurs. Rapid frame navigation records the committed navigation action instead of an INFO message for every predicted or visited frame. Long annotated-video exports expose bounded developer progress while preserving user-facing completion and failure milestones.
+Use **LabKit ▾ > Diagnostics** to inspect the live session log and enable trace capture; retained session journals remain available after a problem occurs. Rapid frame navigation records the committed navigation action instead of an INFO message for every predicted or visited frame. Long annotated-video exports expose bounded developer progress while preserving user-facing completion and failure milestones.
 
 ## Errors And Limitations
 

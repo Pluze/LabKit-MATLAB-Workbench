@@ -62,8 +62,8 @@ classdef GaitWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(options.unitName, "mm");
             sourceTab = oneHandle(figureValue, "source");
             stepDetails = oneHandle(figureValue, "stepDetails");
-            testCase.verifyEqual(string(sourceTab.Title), ...
-                "Source + Step Review");
+            sourceButton = oneHandle(figureValue,"source.navigate");
+            testCase.verifyEqual(string(sourceButton.Text),"Review steps");
             testCase.verifyTrue(isDescendantOf(stepDetails, sourceTab));
             detailsText = join(string(stepDetails.Value), newline);
             testCase.verifyTrue(contains(detailsText, "Swing"));

@@ -123,8 +123,7 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(metricAxis.XLim,[14 16]);
             templatePage=findall(runtime.figureHandle(),'Tag','templatesPage');
             testCase.assertNotEmpty(templatePage);
-            testCase.verifyEqual(string(templatePage.Title),"Templates");
-            templatePage.Parent.SelectedTab=templatePage;drawnow;
+            labkittest.pressPage(runtime.figureHandle(),"templatesPage");
             selector=findall(runtime.figureHandle(),'Tag','templateWindow');
             testCase.verifyClass(selector,'matlab.ui.control.DropDown');
             testCase.verifyNumElements(selector.Items,numel(result.windows));
@@ -134,7 +133,7 @@ classdef EcgPrintWorkflowSpec < matlab.unittest.TestCase
             morphology=ecg_print.analysisRun.morphologyModel(runtime.State.session.cache,2);
             testCase.verifyEqual(morphology.window,2);
             selectedAxis=findall(runtime.figureHandle(),'Tag','morphologyAxes.selected');
-            testCase.verifyEqual(ancestor(selectedAxis,'uitab'),templatePage);
+            testCase.verifyEqual(findall(templatePage,'Tag','morphologyAxes.selected'),selectedAxis);
             templateLine=findall(selectedAxis,'Type','line','DisplayName','Final median');
             testCase.verifyEqual(templateLine.YData(:),result.windows(2).template(:));
             testCase.verifyEqual(numel(findall(selectedAxis,'Type','line')),numel(morphology.beatNumbers)+1);

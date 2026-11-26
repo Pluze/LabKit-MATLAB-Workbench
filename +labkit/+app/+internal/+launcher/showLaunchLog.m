@@ -3,22 +3,52 @@ function fig = showLaunchLog(log)
 % Expected caller: the Launcher's View Launch Log action. The source JSONL
 % remains the durable record; this window performs no mutation.
 
-close(findall(groot, "Type", "figure", "Tag", "labkitLauncherLog"));
-args = {"Name", "LabKit Launcher Log", "Tag", "labkitLauncherLog", ...
-    "Position", centeredPosition(), "Color", [0.97 0.98 0.99]};
-if labkit.app.internal.launcher.launcherGuiTestMode() == "hidden"
-    args = [args, {"Visible", "off"}];
+fig = findall(groot,"-depth",1,"Type","figure","Tag","labkitLauncherLog");
+file = string(log.file);
+bytes = -1;
+if file ~= ""
+    info = dir(file);
+    if ~isempty(info), bytes = info(1).bytes; end
 end
-fig = uifigure(args{:});
-grid = uigridlayout(fig, [2 1]);
-grid.RowHeight = {34, "1x"};
-grid.Padding = [8 8 8 8];
-pathLabel = uilabel(grid, "Text", logPathText(log));
-pathLabel.Tooltip = string(log.file);
-textArea = uitextarea(grid, "Editable", "off", ...
-    "Value", readableLog(log), "FontName", "Monospaced");
-setappdata(fig, "labkitLauncherLogView", struct( ...
-    "pathLabel", pathLabel, "textArea", textArea));
+if isempty(fig)
+    values = readableLog(log);
+    fig = uifigure(Name="LabKit Launcher Log",Tag="labkitLauncherLog", ...
+        Position=centeredPosition(),Visible="off");
+    if ~isMATLABReleaseOlderThan("R2025a"), fig.Theme = "light"; end
+    style = labkit.app.internal.native.lightAppearance();
+    grid = uigridlayout(fig,[3 1],RowHeight={34,'1x',22}, ...
+        Padding=[18 14 18 14],RowSpacing=8,BackgroundColor=style.Background);
+    header = uigridlayout(grid,[1 2],ColumnWidth={'1x','fit'},Padding=[0 0 0 0], ...
+        BackgroundColor=style.Background);
+    uilabel(header,Text="Launcher diagnostics",FontSize=19,FontWeight="bold",FontColor=style.Text);
+    count = uilabel(header,Text=eventCount(values),FontSize=12,FontColor=style.Muted);
+    font = get(groot,"FixedWidthFontName");
+    if ismac, font = "Menlo"; end
+    textArea = uitextarea(grid,Editable="off",Value=values,FontName=font, ...
+        FontSize=12,WordWrap="off",FontColor=style.Text,BackgroundColor=style.Surface);
+    pathLabel = uilabel(grid,Text=logPathText(log),Tooltip=file,FontSize=11,FontColor=style.Muted);
+    view = struct("pathLabel",pathLabel,"textArea",textArea,"count",count,"file",file,"bytes",bytes);
+    setappdata(fig,"labkitLauncherLogView",view);
+else
+    view = getappdata(fig,"labkitLauncherLogView");
+    % Launcher session files are append-only. Leave the text and scroll
+    % position alone when a click only brings the viewer to the front.
+    if ~isfield(view,"file") || view.file ~= file || view.bytes ~= bytes
+        values = readableLog(log);
+        view.textArea.Value = values;
+        if isfield(view,"count"), view.count.Text = eventCount(values); end
+        view.pathLabel.Text = logPathText(log);
+        view.pathLabel.Tooltip = file;
+        view.file = file;
+        view.bytes = bytes;
+        setappdata(fig,"labkitLauncherLogView",view);
+    end
+end
+if labkit.app.internal.launcher.launcherGuiTestMode() ~= "hidden"
+    if fig.WindowState == "minimized", fig.WindowState = "normal"; end
+    fig.Visible = "on";
+    figure(fig);
+end
 end
 
 function text = logPathText(log)
@@ -30,9 +60,9 @@ end
 end
 
 function values = readableLog(log)
-header = "UTC time | elapsed | event | app | outcome | duration | error";
+header = compose("%-24s  %9s  %-11s  %-37s  %9s  %s","UTC","Elapsed","Outcome","Event","Duration","App / error");
 if strlength(string(log.file)) == 0 || ~isfile(log.file)
-    values = [header; "No Launcher log is available."];
+    values = "No Launcher log is available.";
     return;
 end
 lines = readlines(log.file);
@@ -54,11 +84,15 @@ duration = "";
 if ~isempty(event.durationSeconds)
     duration = compose("%.3f s", event.durationSeconds);
 end
-value = string(event.timestampUtc) + " | " + ...
-    compose("%.3f s", event.elapsedSeconds) + " | " + ...
-    string(event.eventName) + " | " + string(event.appCommand) + ...
-    " | " + string(event.outcome) + " | " + duration + " | " + ...
-    string(event.errorIdentifier);
+fields = [string(event.appCommand),string(event.errorIdentifier)];
+detail = strjoin(fields(fields ~= ""),"  ");
+value = compose("%-24s  %9s  %-11s  %-37s  %9s  %s",string(event.timestampUtc), ...
+    compose("%.3f s",event.elapsedSeconds),string(event.outcome), ...
+    string(event.eventName),duration,detail);
+end
+
+function text = eventCount(values)
+text = compose("%d events",numel(values)-1);
 end
 
 function position = centeredPosition()

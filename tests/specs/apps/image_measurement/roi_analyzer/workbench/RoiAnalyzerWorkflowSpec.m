@@ -197,8 +197,7 @@ classdef RoiAnalyzerWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyTrue(isnan(failedBatch.Mean(end)));
             imwrite(second, secondPath);
             runtime.invokeAction("measureAll");
-            tab = findall(runtime.figureHandle(), "Type", "uitab", "Title", "Results + Export");
-            tab.Parent.SelectedTab = tab;
+            labkittest.pressPage(runtime.figureHandle(),"resultsExport");
             capture = labkittest.nativeGraphicsCapability("interface-capture");
             evidencePath = labkittest.visualEvidencePath("roi-batch", ".png");
             if capture.Available

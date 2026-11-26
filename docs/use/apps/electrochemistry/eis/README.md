@@ -11,6 +11,8 @@ EIS overlays impedance data from one or more Gamry `ZCURVE` tables, supports Nyq
 
 Source summaries are derived from the currently parsed EIS recording, so file selection, plots, and exported values refer to the same loaded result.
 
+Choose **Nyquist + Bode**, **Custom plot**, **Groups** beside the App title to switch views. Use **Export custom CSV** in the header when ready.
+
 ## Requirements And Launch
 
 ```matlab
@@ -23,13 +25,13 @@ The Files list retains `.DTA` sources containing a readable EIS `ZCURVE`. Other 
 
 ## Basic Workflow
 
-1. Add the EIS DTA files.
-2. Inspect the default **Nyquist + Bode** page: Nyquist above, magnitude and phase below. Use **Reset X/Y** to restore their ranges after zooming. Open **Custom plot** for independently chosen X and Y quantities.
+1. In **Source files**, add the EIS DTA files. Select the scans to include in a raw CSV.
+2. Inspect the default **Nyquist + Bode** page: Nyquist above, magnitude and phase below. Use **Reset X/Y** to restore their ranges after zooming. Choose **Custom plot** to set the X and Y quantities in the **Coordinates** panel beside the preview.
 3. Choose **mΩ**, **Ω**, **kΩ**, or **MΩ** for impedance axes. New projects default to **kΩ**.
 4. Enable logarithmic X or Y scaling only for strictly positive plotted data.
 5. Use **Fit X/Y limits** to re-estimate independent limits from the current data, or **Use equal X/Y scale** when equal data units are wanted.
 6. Adjust marker, line, grid, and legend presentation.
-7. Use **Export custom plot CSV** to export the chosen custom X/Y data.
+7. Check the selected count below **Source files** and the plot mode under **Session summary**, then choose **Export custom CSV** in the header. Raw export uses the selected scans. Grouped export uses all nonempty groups.
 
 ## Simultaneous Nyquist And Bode Views
 
@@ -41,7 +43,7 @@ Nonfinite values and nonpositive log coordinates break the corresponding plotted
 
 Use the compact frequency toolbar above the plots in **Nyquist + Bode** to choose one frequency window for Nyquist, magnitude, and phase. The minimum and maximum sliders use a logarithmic frequency scale; captions and the Nyquist title show decimal Hz, kHz, MHz, or larger units instead of scientific notation. **Reset X/Y** refits all three plots without changing the selected window. Nyquist occupies the upper plot row, with magnitude and phase sharing the lower row. Its coordinate limits expand to fill the available plot area while keeping equal X/Y data units; this can show coordinate space outside the measured values. Its legend sits to the right of Nyquist, wrapping long names to avoid consuming the plot width or adding a gap between rows. Shared filename prefixes are omitted from overview legend labels; distinct suffixes remain, full names stay in the Files list and custom plot, and group names are unchanged.
 
-On import or source removal, EIS recommends a display window when a resolved arc descent is followed by a dominant low-frequency tail. **Recommended** reapplies it after manual adjustment; **Full range** restores all measured frequencies in all three overview plots. Slider limits follow the measured frequency extent (a single frequency gets half a decade of padding on either side). Bounds are inclusive. Releasing a slider filters all three views and refits their axes, including group means and SD extents. Both Bode plots use the selected frequency bounds on their logarithmic X axes; a single-frequency selection gets a small surrounding display interval. If a bound crosses the other, the other moves with it; a window containing no recorded samples shows empty curves. Custom plots, original data, group statistics, and CSV exports retain their complete frequency coverage. No plotted points are interpolated and no circuit is fitted.
+On import or source removal, EIS recommends a display window when a resolved arc descent is followed by a dominant low-frequency tail. **Recommended** reapplies it after manual adjustment; **Full range** restores all measured frequencies in all three overview plots. Slider limits follow the measured frequency extent (a single frequency gets half a decade of padding on either side). Bounds are inclusive. Dragging a slider previews the range and releasing it applies the final bound. The frequency window filters all three views and refits their axes, including group means and SD extents. Both Bode plots use the selected frequency bounds on their logarithmic X axes; a single-frequency selection gets a small surrounding display interval. If a bound crosses the other, the other moves with it; a window containing no recorded samples shows empty curves. Custom plots, original data, group statistics, and CSV exports retain their complete frequency coverage. No plotted points are interpolated and no circuit is fitted.
 
 The recommendation is a display heuristic, not an electrochemical identification. For each scan with at least 12 finite paired samples and unique positive frequencies, it sorts high to low frequency and uses a three-sample median to suppress isolated reversals. A candidate positive peak must have both the high-frequency boundary and its following nonnegative valley at least 30% below its height, descend over at least 0.3 decades with three intervening sample steps, and be followed by a terminal tail whose median last three values is at least three times the peak. The strongest qualifying peak supplies its following valley's recorded frequency. Across scans, the lowest suggested cutoff preserves every supporting arc descent in the shared window. Ambiguous, sparse, monotonic, or tail-free spectra retain the full range when no scan supports a recommendation. These thresholds are visualization choices; inspect the full spectrum and adjust the range when another feature matters.
 

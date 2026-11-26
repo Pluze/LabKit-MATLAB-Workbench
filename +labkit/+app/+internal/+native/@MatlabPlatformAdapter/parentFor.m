@@ -9,7 +9,9 @@ function parent = parentFor(obj, node)
         return;
     end
     if owner.Kind == "workbench"
-        if node.Kind == "workspace"
+        if node.Id == owner.Configuration.HeaderAction
+            parent = obj.Header;
+        elseif node.Kind == "workspace"
             parent = obj.WorkbenchWorkspace;
         else
             parent = obj.WorkbenchControls;

@@ -11,6 +11,8 @@ Nerve Response Analysis reads the recording list prepared in RHS Preview, finds 
 
 Differential metrics are produced by the analysis run that owns the selected recording and protocol, so later review and export consume one result schema.
 
+The left pane groups the workflow under **Load & analyze**, **Protocol**, **Review**, **Export**.
+
 ## Open Nerve Response Analysis
 
 From the launcher, select **Nerve Response Analysis** and choose **Open**. From a source checkout, run:

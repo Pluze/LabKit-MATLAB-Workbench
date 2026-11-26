@@ -8,6 +8,11 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
     % handles stay inside this adapter and never become an App API.
 
     properties (Access = private)
+        Header
+        BrandButton
+        Family (1, 1) string
+        DisplayName (1, 1) string
+        Appearance (1, 1) struct
         Plan (1, 1) struct
         NodeIndices (1, 1) struct
         ParentIndices (1, 1) struct
@@ -31,6 +36,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         StartupLabel
         LogViewer
         PannerCommitTimers
+        ActiveDragSlider = []
     end
 
     properties (Constant, Access = private)
@@ -41,7 +47,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
     methods (Access = { ...
             ?labkit.app.internal.runtime.RuntimeKernel, ...
             ?labkit.app.internal.runtime.RuntimeContractBoundary})
-        function obj = MatlabPlatformAdapter(plan, title)
+        function obj = MatlabPlatformAdapter(plan, title, displayName, family)
             obj.Plan = labkit.app.internal.native.NativeAdapterValues.validatePlan(plan);
             nodeIndices = struct();
             parentIndices = struct();
@@ -54,9 +60,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             end
             obj.NodeIndices = nodeIndices;
             obj.ParentIndices = parentIndices;
-            if nargin < 2
-                title = "LabKit application";
-            end
+            obj.DisplayName = displayName;
+            obj.Family = family;
             obj.Components = containers.Map("KeyType", "char", ...
                 "ValueType", "any");
             obj.Axes = containers.Map("KeyType", "char", ...
@@ -74,6 +79,10 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 Name=char(string(title)), ...
                 Tag="labkitApp", ...
                 Position=policy.InitialFigurePosition);
+            obj.Appearance = labkit.app.internal.native.lightAppearance();
+            if ~isMATLABReleaseOlderThan("R2025a")
+                obj.Figure.Theme = "light";
+            end
             obj.PlotWindows = labkit.app.internal.native.PlotWindows();
             obj.BusyLifecycle = ...
                 labkit.app.internal.native.BusyLifecycle( ...
@@ -348,11 +357,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 Tag="labkitAppStartupStatusLabel");
         end
 
+        component = installPageNavigation(obj, node, parent, pages)
+
         buildTree(obj)
 
         parent = parentFor(obj, node)
 
-        component = createComponent(obj, node, parent)
+        component = createComponent(obj, node, parent, inControls)
 
         component = createField(~, parent, config, id)
 
@@ -395,13 +406,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         targets = interactionTargetAxes(obj)
 
-        installContentGrid(obj, node, component)
+        grid = installContentGrid(obj, node, component)
 
         placeInParent(obj, node, component)
 
         owner = owningNode(obj, id)
 
-        installWorkbenchLayout(obj, node, component)
+        grid = installWorkbenchLayout(obj, node, parent)
 
         heights = childRowHeights(obj, ids)
 
@@ -411,7 +422,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         tf = sectionDrawsOwnTitle(obj, node)
 
-        tf = usesAdaptiveActionGrid(obj, node)
+        layout = groupLayout(obj, node)
 
         [rows, columns] = actionGridSize(obj, node)
 
@@ -421,28 +432,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         list = createFilePanel(obj, node, parent)
 
-        textArea = createTextPanel(obj, node, parent, config, isLog)
-
-        function toggleLogFollowLatest(~, textArea, button)
-            following = ~logical(getappdata( ...
-                textArea, "labkitAppLogFollowLatest"));
-            setappdata(textArea, "labkitAppLogFollowLatest", following);
-            menuItem = getappdata(textArea, "labkitAppLogFollowMenu");
-            if following
-                label = "Pause auto-scroll";
-                checked = "on";
-                try
-                    scroll(textArea, "bottom");
-                catch
-                end
-            else
-                label = "Follow latest";
-                checked = "off";
-            end
-            button.Text = label;
-            menuItem.Text = label;
-            menuItem.Checked = checked;
-        end
+        textArea = createTextPanel(obj, node, parent, config)
 
         installUtilityMenus(obj)
 
@@ -506,6 +496,10 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function onKeyPress(obj, event)
+            if strcmp(event.Key, "escape") && ~isempty(obj.ClosePrompt) && isvalid(obj.ClosePrompt)
+                obj.clearClosePrompt();
+                return
+            end
             modifiers = strings(1, 0);
             if isprop(event, "Modifier")
                 modifiers = string(event.Modifier);
@@ -524,30 +518,33 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 obj.Runtime.close();
                 return
             end
-            message = "Close this LabKit app?";
+            style = obj.Appearance;
+            message = "Choose Cancel to keep this session open.";
             if obj.BusyLifecycle.Active
-                message = "LabKit is still working. Close anyway?";
+                message = "An operation is in progress. Closing will end this session.";
             end
-            obj.ClosePrompt = uipanel(obj.Figure, ...
-                Title="Close LabKit app?", ...
+            obj.ClosePrompt = uipanel(obj.Figure, BorderType="line", ...
+                HighlightColor=style.Line, BackgroundColor=style.Surface, ...
                 Tag="labkitAppClosePrompt", ...
                 Position=labkit.app.internal.native.NativeAdapterValues.closePromptPosition(obj.Figure));
-            grid = uigridlayout(obj.ClosePrompt, [2 3], ...
-                RowHeight={'1x', 34}, ColumnWidth={'1x', 86, 86}, ...
-                Padding=[10 8 10 8], RowSpacing=6, ColumnSpacing=8);
-            label = uilabel(grid, Text=char(message + ...
-                " Close again to confirm."), ...
-                WordWrap="on", FontWeight="bold");
-            label.Layout.Row = 1;
-            label.Layout.Column = [1 3];
-            closeButton = uibutton(grid, Text="Close", ...
-                ButtonPushedFcn=@(~, ~) obj.Runtime.close());
-            closeButton.Layout.Row = 2;
-            closeButton.Layout.Column = 2;
-            cancelButton = uibutton(grid, Text="Cancel", ...
-                ButtonPushedFcn=@(~, ~) obj.clearClosePrompt());
-            cancelButton.Layout.Row = 2;
-            cancelButton.Layout.Column = 3;
+            grid = uigridlayout(obj.ClosePrompt, [3 3], ...
+                RowHeight={30,'1x',34}, ColumnWidth={'1x',84,96}, ...
+                Padding=[20 16 20 16], RowSpacing=6, ColumnSpacing=8, ...
+                BackgroundColor=style.Surface);
+            heading = uilabel(grid, Text="Close " + obj.DisplayName + "?", FontSize=18, ...
+                FontWeight="bold", FontColor=style.Text, WordWrap="on");
+            heading.Layout.Column = [1 3];
+            detail = uilabel(grid, Text=message, WordWrap="on", FontColor=style.Muted);
+            detail.Layout.Row = 2;
+            detail.Layout.Column = [1 3];
+            cancelButton = uibutton(grid, Text="Cancel", BackgroundColor=style.Surface, ...
+                FontColor=style.Text, ButtonPushedFcn=@(~, ~) obj.clearClosePrompt());
+            cancelButton.Layout.Row = 3;
+            cancelButton.Layout.Column = 2;
+            closeButton = uibutton(grid, Text="Close app", BackgroundColor=style.Primary, ...
+                FontColor=style.OnPrimary, ButtonPushedFcn=@(~, ~) obj.Runtime.close());
+            closeButton.Layout.Row = 3;
+            closeButton.Layout.Column = 3;
             drawnow nocallbacks
         end
 
@@ -571,7 +568,20 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 linked.Value = value;
             elseif ~isempty(linked) && source == linked
                 component.Value = value;
+                data = component.UserData;
+                if data.LiveUpdate && (isempty(data.LastDragUpdate) || toc(data.LastDragUpdate) >= 0.08)
+                    data.LastDragUpdate = tic;
+                    component.UserData = data;
+                    obj.ActiveDragSlider = linked;
+                    cleanup = onCleanup(@() obj.endDragPreview());
+                    obj.runUserInput(@() obj.pannerChanged(target,value));
+                    clear cleanup
+                end
             end
+        end
+
+        function endDragPreview(obj)
+            obj.ActiveDragSlider = [];
         end
 
         function queuePannerCommit(obj, target, value)
@@ -609,14 +619,14 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
             if isequaln(value, committed)
                 component.Value = committed;
                 linked = labkit.app.internal.native.NativeAdapterValues.linkedPannerSlider(component);
-                if ~isempty(linked)
+                if ~isempty(linked) && ~isequal(linked,obj.ActiveDragSlider)
                     linked.Value = committed;
                 end
                 return;
             end
             component.Value = value;
             linked = labkit.app.internal.native.NativeAdapterValues.linkedPannerSlider(component);
-            if ~isempty(linked)
+            if ~isempty(linked) && ~isequal(linked,obj.ActiveDragSlider)
                 linked.Value = value;
             end
             try
@@ -627,13 +637,13 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                     component.UserData = data;
                 else
                     component.Value = committed;
-                    if ~isempty(linked)
+                    if ~isempty(linked) && ~isequal(linked,obj.ActiveDragSlider)
                         linked.Value = committed;
                     end
                 end
             catch cause
                 component.Value = committed;
-                if ~isempty(linked)
+                if ~isempty(linked) && ~isequal(linked,obj.ActiveDragSlider)
                     linked.Value = committed;
                 end
                 rethrow(cause);
@@ -680,7 +690,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         function handles = busyInputHandles(obj)
             % Return mutable leaf inputs without disabling visual containers.
             nodes = obj.Plan.Nodes;
-            handles = cell(1, max(1, 6 * numel(nodes)));
+            handles = cell(1, max(1, 7 * numel(nodes)));
             count = 0;
             for index = 1:numel(nodes)
                 node = nodes(index);
@@ -853,13 +863,13 @@ delete(value);
 end
 
 function handles = filePanelInputs(list)
-handles = cell(1, 6);
+handles = cell(1, 7);
 handles{1} = list;
 count = 1;
 if ~isprop(list, "UserData") || ~isstruct(list.UserData)
     return
 end
-names = ["Choose", "Folder", "RecursiveFolder", "Remove", "Clear"];
+names = ["Choose", "Folder", "RecursiveFolder", "Remove", "Clear", "SelectAll"];
 for name = names
     field = char(name);
     if isfield(list.UserData, field) && ~isempty(list.UserData.(field))

@@ -9,6 +9,8 @@ summary: Understand the labkit.app lifecycle, layout, transactions, execution, s
 
 `labkit.app` is the MATLAB App SDK above LabKit's GUI-free domain libraries. Apps own scientific workflow, calculations, units, wording, plots, and exports. The SDK owns semantic layout, transactions, execution queues, lifecycle, runtime source lists, diagnostics, dialogs, resources, and native components.
 
+The native workbench uses a single light appearance, a product header, a data sidebar and workspace view buttons that collapse into a selector when space is limited. An optional `HeaderAction` on `layout.workbench` places an existing semantic button in the header and routes it through the usual App transaction. Workspace pages can declare `Heading` and `Note` for a page heading and a short footer. A `statusPanel` can use `Presentation="label"` for a short summary or `Presentation="note"` for explanatory text. Multi-file lists provide Select all, removal and clearing alongside the standard source import actions.
+
 ## Start Here
 
 | Goal | Documentation |
@@ -95,7 +97,7 @@ Normal App launches show the completed native window. Official GUI validation us
 
 The axes toolbar's **Restore View** fits the current plotted data by returning X and every Y axis to automatic limits, including both rulers of a dual-Y plot. This works after custom wheel zoom in App plots, auxiliary plot windows, and editable plot popouts. It fits current data rather than restoring an earlier App-specified range; other plots keep their viewports.
 
-The native runtime installs one top-level **Tools** menu so framework-owned utilities do not compete with the App's workflow controls:
+Click **LabKit ▾** in the upper-left corner of the App to open its tools menu.
 
 - **Copy Main Plots** copies the active workspace page as one image, retaining its plot arrangement, current viewports, legends, colorbars, and both Y axes. Nested tabs contribute only their selected page. An empty workspace reports that no plots are available.
 - **Copy Current Interface** copies the current App window, including controls and the selected tabs, as one image. It captures the interface through MATLAB `exportapp`; it does not attempt to treat UI containers as plotting axes.

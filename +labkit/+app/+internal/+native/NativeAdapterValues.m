@@ -30,6 +30,10 @@ classdef (Sealed, Hidden) NativeAdapterValues
         policy = nativeLayoutPolicy();
         grid = uigridlayout(parent, [1 2], Padding=[0 0 0 0], ...
             ColumnSpacing=8, ColumnWidth={policy.FormLabelWidth, '1x'});
+        if strlength(string(label)) == 0
+            grid.ColumnWidth{1} = 0;
+            grid.ColumnSpacing = 0;
+        end
         tag = "";
         if strlength(string(id)) > 0
             tag = string(id) + ".label";
@@ -57,6 +61,9 @@ classdef (Sealed, Hidden) NativeAdapterValues
         end
         policy = nativeLayoutPolicy();
         width = policy.FormLabelWidth;
+        if isfield(labelHandle.Parent.UserData, "FormLabelWidth")
+            width = labelHandle.Parent.UserData.FormLabelWidth;
+        end
         spacing = 8;
         if strlength(string(text)) == 0
             width = 0;
@@ -582,11 +589,11 @@ classdef (Sealed, Hidden) NativeAdapterValues
 
         function position = closePromptPosition(fig)
         width = 430;
-        height = 118;
+        height = 156;
         figurePosition = fig.Position;
         promptWidth = min(width, max(160, figurePosition(3) - 24));
         x = max(12, (figurePosition(3) - promptWidth) / 2);
-        y = max(12, figurePosition(4) - height - 44);
+        y = max(12, (figurePosition(4) - height) / 2);
         position = [x y promptWidth height];
         end
 

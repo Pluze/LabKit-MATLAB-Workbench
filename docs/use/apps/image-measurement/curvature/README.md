@@ -13,6 +13,8 @@ Each use of **Measure length + curvature** computes traced length and circle-fit
 
 While tracing, the image remains a target for the plot context menu. Use it to open the current fit view in a separate figure.
 
+The left pane groups the workflow under **Trace & calibrate**, **Fit results**.
+
 ## Requirements And Launch
 
 ```matlab
@@ -21,7 +23,7 @@ labkit_CurvatureMeasurement_app
 
 ## Basic Workflow
 
-The **Files + Analysis** tab contains the complete workflow:
+The **Trace & calibrate** page contains the complete workflow:
 
 1. Choose an image in the **Image** section.
 2. Use **Measure reference pixels**, or enter **Reference pixels** directly, then enter the known reference length and unit.
@@ -33,7 +35,7 @@ The **Files + Analysis** tab contains the complete workflow:
 
 The edit buttons change to **Finish curve edit** or **Finish reference edit** while their managed interaction is active. Curve and reference edits are mutually exclusive. Anchor edits, scale-bar changes, and result overlays preserve the current axes zoom. Loading a different image or a canvas with different pixel dimensions fits that image once.
 
-The **Summary + Results** tab reports curve length, radius, curvature, RMSE, fit center, and pixels per selected unit. **Details** explains the next valid step before a result exists and reports the current measurement afterward. **Tools > Diagnostics > Open Session Log...** records file, edit, fit, calibration, export, and runtime actions without consuming a workflow tab. Numeric fit-density and scale-bar adjustments do not add a routine INFO record for every committed value.
+The **Fit results** page reports curve length, radius, curvature, RMSE, fit center, and pixels per selected unit. **Details** explains the next valid step before a result exists and reports the current measurement afterward. **LabKit ▾ > Diagnostics > Open Session Log...** records file, edit, fit, calibration, export, and runtime actions without consuming a workflow tab. Numeric fit-density and scale-bar adjustments do not add a routine INFO record for every committed value.
 
 The chosen image remains a live source while the App is open.
 

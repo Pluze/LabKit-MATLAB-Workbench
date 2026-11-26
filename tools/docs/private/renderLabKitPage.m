@@ -2,6 +2,7 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
 %RENDERLABKITPAGE Wrap rendered content in contextual site navigation.
 
     rootPrefix = siteRootPrefix(outputPath);
+    logoUrl = rootPrefix + "assets/labkit-perspective.svg";
     styleUrl = rootPrefix + "assets/style.css";
     scriptUrl = rootPrefix + "assets/app.js";
     searchScriptUrl = rootPrefix + "assets/search-index.js";
@@ -32,6 +33,7 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
         "<meta name=""viewport"" content=""width=device-width,initial-scale=1"">"
         "<meta name=""generator"" content=""LabKit MATLAB documentation compiler"">"
         "<title>" + escapeLabKitHtml(title) + " - " + escapeLabKitHtml(model.title) + "</title>"
+        "<link rel=""icon"" type=""image/svg+xml"" href=""" + logoUrl + """>"
         "<link rel=""stylesheet"" href=""" + styleUrl + """>"
         "</head>"
         "<body data-site-root=""" + rootPrefix + """>"
@@ -39,7 +41,7 @@ function html = renderLabKitPage(model, title, outputPath, kind, body)
         "<div class=""topbar-inner"">"
         navigationButton
         "<a class=""brand"" href=""" + homeUrl + """>" + ...
-            escapeLabKitHtml(model.title) + "</a>"
+            "<img src=""" + logoUrl + """ alt="""" width=""30"" height=""30"">" + escapeLabKitHtml(model.title) + "</a>"
         "<div class=""search""><label class=""sr-only"" for=""doc-search-section"">Search section</label>" + ...
             "<select id=""doc-search-section""><option value=""all"">All documentation</option>" + ...
             "<option value=""use"">Use</option><option value=""develop"">Develop</option>" + ...

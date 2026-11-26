@@ -11,8 +11,8 @@ keep = true(size(handles));
 for k = 1:numel(handles)
     parent = handles(k).Parent;
     while ~isempty(parent) && ~isequal(parent, workspace)
-        if isa(parent, "matlab.ui.container.Tab") && ...
-                ~isequal(parent.Parent.SelectedTab, parent)
+        if (isprop(parent,"Visible") && string(parent.Visible) == "off") || ...
+                (isa(parent, "matlab.ui.container.Tab") && parent.Parent.SelectedTab ~= parent)
             keep(k) = false;
             break;
         end

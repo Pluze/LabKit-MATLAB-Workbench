@@ -9,6 +9,8 @@ summary: Compare two or more numeric groups against a designated reference group
 
 T-Test Wizard captures numeric categories, compares selected categories against a chosen reference, and draws a mean-and-standard-deviation or box plot. It initially uses the first category as reference and includes every other category.
 
+The left pane groups the workflow under **Data & groups**, **Test & plot**, **Export**. Choose **Data**, **Plot**, **Categories** beside the App title to switch views.
+
 ## Open T-Test Wizard
 
 From the LabKit launcher, select **T-Test Wizard** and choose **Open**. From a source checkout, run:
@@ -104,7 +106,7 @@ The first four colors are soft green, orange, blue, and yellow; the palette cycl
 
 Initial limits include bars or boxes, visible individual values, error bars, and significance brackets. Each completed **Run / refresh comparisons** fits the new result family. Moving a category to a new position updates plot order and fits that categorical layout without rerunning statistics. Renaming categories or changing comparison membership keeps the previous result snapshot visible but marks it out of date. **Reset plot view** recomputes that fitted viewport without rerunning the tests or changing project data. Switching between bar and box coordinate grammars also accepts the new style's fitted limits; point, summary, p-value, title, label, and other presentation redraws preserve the user's current zoom.
 
-Right-click a plot and choose **Open axes in new figure** for a standalone MATLAB figure, or use **Tools > Copy Main Plots** to copy the current plot page. The popout can be passed to [Figure Studio](../../labkit-core/figure-studio/README.md) for further visual styling without recalculating the tests.
+Right-click a plot and choose **Open axes in new figure** for a standalone MATLAB figure, or use **LabKit ▾ > Copy Main Plots** to copy the current plot page. The popout can be passed to [Figure Studio](../../labkit-core/figure-studio/README.md) for further visual styling without recalculating the tests.
 
 ## Results
 

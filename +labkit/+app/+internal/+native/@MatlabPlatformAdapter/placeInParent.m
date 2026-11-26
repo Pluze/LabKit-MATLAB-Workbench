@@ -1,6 +1,6 @@
 function placeInParent(obj, node, component)
 % Class-folder implementation of MatlabPlatformAdapter.placeInParent.
-    if node.Kind == "workbench" || isempty(component)
+    if any(node.Kind == ["workbench","workspacePage"]) || isempty(component)
         return
     end
     parentNode = obj.owningNode(node.Id);
@@ -15,10 +15,8 @@ function placeInParent(obj, node, component)
     if isempty(handle) || ~isprop(handle, "Layout")
         return
     end
-    horizontal = parentNode.Kind == "group" && ...
-        isfield(parentNode.Configuration, "Layout") && ...
-        parentNode.Configuration.Layout == "horizontal";
-    if obj.usesAdaptiveActionGrid(parentNode)
+    layout = obj.groupLayout(parentNode);
+    if layout == "actions"
         [~, columns] = obj.actionGridSize(parentNode);
         row = ceil(index / columns);
         column = mod(index - 1, columns) + 1;
@@ -28,7 +26,7 @@ function placeInParent(obj, node, component)
         end
         handle.Layout.Row = row;
         handle.Layout.Column = column;
-    elseif horizontal
+    elseif layout == "horizontal"
         handle.Layout.Row = 1;
         handle.Layout.Column = index;
     else

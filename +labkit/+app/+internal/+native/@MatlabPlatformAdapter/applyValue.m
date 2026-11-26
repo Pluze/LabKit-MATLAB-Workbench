@@ -21,7 +21,9 @@ function applyValue(obj, component, value)
     linked = labkit.app.internal.native.NativeAdapterValues.linkedPannerSlider(component);
     if ~isempty(linked)
         value = min(linked.Limits(2), max(linked.Limits(1), double(value)));
-        linked.Value = value;
+        if ~isequal(linked,obj.ActiveDragSlider)
+            linked.Value = value;
+        end
         data = component.UserData;
         data.CommittedValue = value;
         component.UserData = data;

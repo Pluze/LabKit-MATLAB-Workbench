@@ -4,6 +4,8 @@ function createAxes(obj, node, parent)
     hasModes = ~isempty(config.ViewModes);
     root = uigridlayout(parent, [1 + double(hasModes) 1], ...
         Padding=[2 2 2 2], RowSpacing=4, ColumnSpacing=2);
+    parent.BackgroundColor = obj.Appearance.Surface;
+    root.BackgroundColor = obj.Appearance.Surface;
     root.RowHeight = {'1x'};
     axesRow = 1;
     mode = [];
@@ -32,23 +34,31 @@ function createAxes(obj, node, parent)
             layout.RowHeight = {'1x'};
             layout.ColumnWidth = {'1x'};
     end
+    layout.BackgroundColor = obj.Appearance.Surface;
     layout.Layout.Row = axesRow;
     layout.Layout.Column = 1;
     layout.Padding = [0 0 0 0];
     layout.RowSpacing = 2;
     layout.ColumnSpacing = 2;
+    if config.Layout == "pair"
+        layout.BackgroundColor = obj.Appearance.Background;
+        layout.ColumnSpacing = 12;
+    end
     for k = 1:numel(node.AxisIds)
         axisId = node.AxisIds(k);
         key = labkit.app.internal.native.NativeAdapterValues.axisKey(node.Id, axisId);
-        ax = uiaxes(layout, Tag=char(key));
+        host = layout;
+        if config.Layout == "pair"
+            host = uigridlayout(layout,[1 1], Padding=[0 0 0 0], BackgroundColor=obj.Appearance.Surface);
+            host.Layout.Column = k;
+        end
+        ax = uiaxes(host, Tag=char(key));
         % Create once before renderers inspect MATLAB's lazy Toolbar property.
         axtoolbar(ax, 'default');
         if config.Layout == "stack"
             ax.Layout.Row = k;
             ax.Layout.Column = 1;
-        elseif config.Layout == "pair"
-            ax.Layout.Row = 1;
-            ax.Layout.Column = k;
+
         else
             ax.Layout.Row = 1;
             ax.Layout.Column = 1;

@@ -1,4 +1,4 @@
-# LabKit MATLAB Workbench
+# <img src="tools/docs/assets/labkit-perspective.svg" width="44" height="44" alt=""> LabKit MATLAB Workbench
 
 [![Release](https://img.shields.io/github/v/release/Pluze/LabKit-MATLAB-Workbench?label=release)](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases)
 [![Continuous Integration](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/ci.yml)

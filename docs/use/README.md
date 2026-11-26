@@ -29,8 +29,8 @@ The launcher can install or update the runtime, discover available Apps, and sta
 
 ## Choose A Version
 
-- **Latest** installs the latest published stable GitHub Release.
-- **Versions** shows published stable Releases and their release information, and installs the selected Release for a deliberate upgrade or rollback.
+- **Update to latest release…** installs the latest published stable GitHub Release.
+- **Update to a specific version…** shows published stable Releases and their release information, and installs the selected Release for a deliberate upgrade or rollback.
 
 Before replacing an installed runtime, the launcher moves its current contents to a dated `LabKit-previous-*` folder. This provides a local recovery point but is not a substitute for backing up lab data.
 
@@ -44,12 +44,11 @@ Use the [App catalog](apps/README.md) to choose a workflow and confirm its input
 
 ## Common App Commands
 
-Every current LabKit app exposes one top-level **Tools** menu:
+Click **LabKit ▾** at the upper left of the App window to open the tools menu.
 
-- **Tools > Plots** contains plot-specific actions such as opening larger editable views, copying plots, and saving plots.
-- **Tools > Screenshot > Copy to Clipboard** copies the complete active App surface as an image.
-- **Tools > Screenshot > Save to File...** saves the complete App surface.
-- **Tools > Diagnostics > Open Session Log...** opens the current App's named live log. Its minimum-severity selector ranges from TRACE through CRITICAL; TRACE capture is enabled manually when extra detail is needed.
+- **Copy Main Plots** copies the current workspace plots.
+- **Copy Current Interface** copies the complete App window as an image.
+- **LabKit ▾ > Diagnostics > Open Session Log...** opens the current App's named live log. Its minimum-severity selector ranges from TRACE through CRITICAL; TRACE capture is enabled manually when extra detail is needed.
 
 Task save/open controls appear only in Apps whose workflow genuinely supports continuation. The framework has no Project State menu or archive. Each qualifying App owns its snapshot file and restores one current/final task state.
 

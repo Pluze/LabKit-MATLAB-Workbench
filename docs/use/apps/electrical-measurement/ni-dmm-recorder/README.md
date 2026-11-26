@@ -9,6 +9,8 @@ summary: Record NI-DMM voltage, current, two-wire or four-wire resistance, and d
 
 NI-DMM Recorder is a public LabKit App for NI digital multimeters including the USB-4065. It records the complete in-memory run, plots a bounded recent view, and exports data suitable for host-clock alignment with Mark-10 Monitor.
 
+Choose **Live Plot**, **Recent Data** beside the App title to switch views. Use **Export CSV + MAT** in the header when ready.
+
 ## Prepare And Connect
 
 Install the 64-bit NI-DMM driver with .NET and NI System Configuration support, then confirm the device appears in NI MAX. LabKit never downloads or installs these dependencies. Run `labkit_NIDMMRecorder_app`; it automatically discovers local NI-DMM devices and selects the first result. Choose another device from **NI-DMM device** when several are present, or use **Refresh Devices** after changing the USB connection. Operators do not need to enter or know a NI MAX resource name. Missing software and empty discovery results are reported without crashing the App.

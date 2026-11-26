@@ -6,7 +6,8 @@ function varargout = manageLabKitVersions(root, mode, varargin)
 %
 %   MANAGELABKITVERSIONS(ROOT) opens the Version Manager for ROOT. The window
 %   lists recent published, non-prerelease GitHub Releases with their date and
-%   release information. Refresh obtains the current list. Double-click or
+%   release information. Load older releases adds up to ten at a time.
+%   Refresh returns to the newest ten published releases. Double-click or
 %   Install Selected asks for confirmation before replacement.
 %
 %   RESULT = MANAGELABKITVERSIONS(ROOT, "latest") installs the latest stable
@@ -110,73 +111,110 @@ function fig = openManager(root, opts)
         figArgs = [figArgs, {"Visible", "off"}];
     end
     fig = uifigure(figArgs{:});
-    layout = uigridlayout(fig, [4 1]);
-    layout.RowHeight = {86, "1x", 36, 76};
-    layout.Padding = [8 8 8 8];
-    layout.RowSpacing = 8;
-    current = uitextarea(layout, "Editable", "off", ...
-        "Value", currentInstallLines(root));
-    current.Layout.Row = 1;
-    sourceTable = uitable(layout, ...
-        "ColumnName", {"Type", "Release", "Published", "Release information"}, ...
-        "RowName", {}, "FontSize", 14);
-    sourceTable.ColumnWidth = {100, 170, 170, "auto"};
-    sourceTable.Layout.Row = 2;
-    buttons = uigridlayout(layout, [1 4]);
-    buttons.Layout.Row = 3;
-    buttons.ColumnWidth = {"1x", "1x", "1x", "1x"};
-    buttons.Padding = [0 0 0 0];
-    buttons.ColumnSpacing = 8;
-    refresh = uibutton(buttons, "Text", "Refresh");
-    refresh.Layout.Column = 1;
-    install = uibutton(buttons, "Text", "Install Selected", "Enable", "off");
-    install.Layout.Column = 2;
-    closeButton = uibutton(buttons, "Text", "Close", ...
-        "ButtonPushedFcn", @(~, ~) close(fig));
-    closeButton.Layout.Column = 4;
-    if isprop(refresh, "Tooltip")
-        refresh.Tooltip = "Fetch recent published GitHub Releases.";
-        install.Tooltip = "Download and apply the selected LabKit version.";
-        closeButton.Tooltip = "Close version manager.";
-    end
-    status = uitextarea(layout, "Editable", "off", ...
-        "Value", "Choose a published GitHub Release.");
-    status.Layout.Row = 4;
-    state = struct("sources", emptySources(), "selectedRow", 1, "busy", false);
-    refresh.ButtonPushedFcn = @onRefresh;
+    if ~isMATLABReleaseOlderThan("R2025a"), fig.Theme = "light"; end
+    paper = [1 1 1];
+    ink = [.09 .17 .25];
+    muted = [.39 .45 .55];
+    layout = uigridlayout(fig,[4 2],RowHeight={30,'1x',68,34}, ...
+        ColumnWidth={'1x','2x'},Padding=[18 16 18 16],RowSpacing=10,ColumnSpacing=14, ...
+        BackgroundColor=paper);
+    uilabel(layout,Text="Published releases",FontSize=16,FontWeight="bold",FontColor=ink);
+    heading = uilabel(layout,Text="Release notes",FontSize=18,FontWeight="bold",FontColor=ink);
+    list = uigridlayout(layout,[2 1],RowHeight={'1x',30},Padding=[0 0 0 0], ...
+        RowSpacing=6,BackgroundColor=paper);
+    sourceTable = uitable(list,ColumnName={"Version","Published"},RowName={}, ...
+        ColumnWidth={'1x','1x'},FontSize=13,Multiselect="off");
+    more = uibutton(list,Text="Load older releases",Enable="off");
+    selectedStyle = uistyle(BackgroundColor=[.90 .94 .99],FontColor=[.10 .31 .56],FontWeight="bold");
+    notes = uitextarea(layout,Editable="off",WordWrap="on",FontSize=14, ...
+        FontColor=ink,BackgroundColor=paper,Tag="releaseNotes");
+    current = uitextarea(layout,Editable="off",Value=currentInstallLines(root),FontSize=11,FontColor=muted);
+    current.Layout.Column = [1 2];
+    buttons = uigridlayout(layout,[1 4],ColumnWidth={'1x',76,120,68}, ...
+        Padding=[0 0 0 0],ColumnSpacing=6,BackgroundColor=paper);
+    buttons.Layout.Column = [1 2];
+    status = uilabel(buttons,Text="",FontColor=muted);
+    refresh = uibutton(buttons,Text="Refresh");
+    install = uibutton(buttons,Text="Install Selected",Enable="off", ...
+        BackgroundColor=[.09 .36 .66],FontColor=paper,FontWeight="bold");
+    closeButton = uibutton(buttons,Text="Close",ButtonPushedFcn=@(~,~) close(fig));
+    pageSize = 10;
+    state = struct("sources", emptySources(), "selectedRow", 1, "busy", false, ...
+        "nextPage",1,"shown",0);
+    set([refresh more install closeButton],BusyAction="cancel",Interruptible="off");
+    refresh.ButtonPushedFcn = @(~,~) loadPage(true);
+    more.ButtonPushedFcn = @(~,~) loadPage(false);
     install.ButtonPushedFcn = @onInstall;
     configureTable(sourceTable, @onSelect, @onInstall);
-    onRefresh();
-    function onRefresh(~, ~)
-        if state.busy
-            return;
+    loadPage(true);
+
+    function loadPage(restart)
+        if state.busy || (~restart && state.shown == numel(state.sources) && state.nextPage == 0)
+            return
         end
-        setBusy(true, "Fetching recent LabKit versions from GitHub...");
-        notify(opts.ProgressFcn, "Fetching recent LabKit versions from GitHub...", 0.05);
+        if restart
+            sources = emptySources();
+            nextPage = 1;
+            target = pageSize;
+            message = "Loading latest releases…";
+        else
+            sources = state.sources;
+            nextPage = state.nextPage;
+            target = state.shown + pageSize;
+            message = "Loading older releases…";
+            more.Text = "Loading…";
+        end
+        setBusy(true,message);
+        notify(opts.ProgressFcn,message,0.05);
         try
-            state.sources = discoverSources();
-            state.selectedRow = 1;
-            sourceTable.Data = sourceRows(state.sources);
-            if isempty(state.sources)
-                status.Value = ...
-                    "No published Releases were returned by GitHub.";
+            % A GitHub page can include prereleases. Keep any surplus stable
+            % releases for the next click and commit the cursor only on success.
+            while numel(sources) < target && nextPage > 0
+                [batch,nextPage] = releasePage(nextPage,pageSize);
+                fresh = batch(~ismember(string({batch.Name}),string({sources.Name})));
+                sources(end+1:end+numel(fresh)) = fresh;
+            end
+            state.sources = sources;
+            state.nextPage = nextPage;
+            state.shown = min(target,numel(sources));
+            sourceTable.Data = sourceRows(sources(1:state.shown));
+            if restart
+                state.selectedRow = 1;
+                removeStyle(sourceTable);
+                if state.shown > 0
+                    showNotes();
+                else
+                    heading.Text = "Release notes";
+                    notes.Value = "No release selected.";
+                end
+            end
+            if state.shown > 0
+                sourceTable.Selection = state.selectedRow;
+                message = compose("%d published releases",state.shown);
             else
-                status.Value = "Loaded " + numel(state.sources) + ...
-                    " version option(s).";
+                message = "No published releases were returned by GitHub.";
             end
         catch cause
-            state.sources = emptySources();
-            sourceTable.Data = cell(0, 4);
-            status.Value = "Version lookup failed: " + failureText(cause);
+            message = "Version lookup failed: " + failureText(cause);
         end
-        notify(opts.ProgressFcn, status.Value, 1.00);
-        setBusy(false, status.Value);
+        more.Text = "Load older releases";
+        notify(opts.ProgressFcn,message,1);
+        setBusy(false,message);
     end
     function onSelect(~, event)
         row = eventRow(event);
         if ~isnan(row)
             state.selectedRow = row;
+            showNotes();
         end
+    end
+    function showNotes()
+        selected = state.sources(state.selectedRow);
+        removeStyle(sourceTable);
+        addStyle(sourceTable,selectedStyle,"row",state.selectedRow);
+        heading.Text = selected.Name + " · Release notes";
+        notes.Value = splitlines(selected.Summary);
+        scroll(notes,"top");
     end
     function onInstall(~, ~)
         if state.busy || isempty(state.sources)
@@ -186,21 +224,25 @@ function fig = openManager(root, opts)
         selected = state.sources(min(max(state.selectedRow, 1), numel(state.sources)));
         try
             result = installSource(root, selected, opts);
-            status.Value = result.message;
+            status.Text = result.message;
             current.Value = currentInstallLines(root);
         catch cause
-            status.Value = "Version install failed: " + failureText(cause);
+            status.Text = "Version install failed: " + failureText(cause);
         end
-        setBusy(false, status.Value);
+        setBusy(false, status.Text);
     end
     function setBusy(value, message)
         state.busy = value;
+        sourceTable.Enable = char(matlab.lang.OnOffSwitchState(~value));
         refresh.Enable = matlab.lang.OnOffSwitchState(~value);
+        more.Enable = matlab.lang.OnOffSwitchState(~value && state.shown > 0 && ...
+            (state.nextPage > 0 || state.shown < numel(state.sources)));
         closeButton.Enable = matlab.lang.OnOffSwitchState(~value);
         install.Enable = matlab.lang.OnOffSwitchState( ...
             ~value && ~isempty(state.sources));
-        status.Value = string(message);
-        drawnow limitrate;
+        status.Text = string(message);
+        status.Tooltip = status.Text;
+        drawnow nocallbacks;
     end
 end
 
@@ -235,12 +277,10 @@ function row = eventRow(event)
     end
 end
 
-function sources = discoverSources()
-    sources = recentReleases(20);
-end
-
-function sources = recentReleases(limit)
-    raw = githubRead("releases?per_page=" + limit);
+function [sources,nextPage] = releasePage(page,limit)
+    raw = githubRead("releases?per_page=" + limit + "&page=" + page);
+    nextPage = page + 1;
+    if numel(raw) < limit, nextPage = 0; end
     template = makeSource("", "", "", "", "", "");
     sources = repmat(template, 1, limit);
     count = 0;
@@ -261,22 +301,15 @@ function sources = recentReleases(limit)
         sources(count) = releaseSource(tag, ...
             releaseInformation(name, textField(raw(index), "body")), ...
             textField(raw(index), "published_at"));
-        if count == limit
-            break;
-        end
     end
     sources = sources(1:count);
 end
 
 function information = releaseInformation(name, body)
-    body = strip(replace(string(body), newline, " "));
-    body = regexprep(body, '\s+', ' ');
-    if strlength(body) > 240
-        body = extractBefore(body, 238) + "...";
-    end
     information = string(name);
-    if strlength(body) > 0
-        information = information + " — " + body;
+    body = strip(replace(string(body),sprintf('\r\n'),newline));
+    if body ~= ""
+        information = information + newline + newline + body;
     end
 end
 
@@ -553,14 +586,10 @@ function value = validateSource(value)
         textField(value, "Date"), textField(value, "Summary"));
 end
 function rows = sourceRows(sources)
-    rows = cell(numel(sources), 4);
+    rows = cell(numel(sources),2);
     for index = 1:numel(sources)
-        rows(index, :) = cellstr([ ...
-            sources(index).Kind
-            sources(index).Name
-            sources(index).Date
-            sources(index).Summary
-            ]');
+        date = extractBefore(sources(index).Date + "T","T");
+        rows(index,:) = {char(sources(index).Name),char(date)};
     end
 end
 function lines = currentInstallLines(root)
@@ -577,7 +606,9 @@ function info = currentLauncherInfo(root)
         "displayName", "LabKit App Launcher", ...
         "version", "unavailable", ...
         "updated", "unavailable");
-    filepath = fullfile(root, "+labkit", "+app", "+internal", "+launcher", "dispatch.m");
+    folder = fullfile(root, "+labkit", "+app", "+internal", "+launcher");
+    filepath = fullfile(folder,"launcherVersion.m");
+    if ~isfile(filepath), filepath = fullfile(folder,"dispatch.m"); end
     if exist(filepath, "file") ~= 2
         return;
     end

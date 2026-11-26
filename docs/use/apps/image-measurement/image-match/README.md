@@ -11,6 +11,8 @@ Image Match transfers tone and color statistics from one reference image to one 
 
 Preview details are derived from the selected source and its current matching history, rather than retained in a parallel presentation model.
 
+The left pane groups the workflow under **Image library**, **Match & history**. Use **Export matched images** in the header when ready.
+
 ## Requirements And Launch
 
 The app performs appearance matching only; it does not geometrically register images.

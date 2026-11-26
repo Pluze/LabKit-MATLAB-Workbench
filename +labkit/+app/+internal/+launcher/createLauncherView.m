@@ -1,139 +1,95 @@
 function view = createLauncherView()
-%CREATELAUNCHERVIEW Build the native Launcher window without product state.
-% The returned handle struct owns concrete controls and responsive layout.
-% Callers own discovery, selections, busy state, and action behavior.
-
-panelFontSize = 15;
-tableFontSize = 12;
+% Build one native workspace around the catalog and its selected application.
 version = labkit.app.internal.launcher.launcherVersion();
 position = defaultLauncherPosition();
-figArgs = { ...
-    "Name", version.displayName + " v" + version.version + ...
-        " (" + version.updated + ")", ...
-    "Tag", "labkitLauncher", ...
-    "Position", position, ...
-    "AutoResizeChildren", "off", ...
-    "Color", [0.97 0.98 0.99]};
-if labkit.app.internal.launcher.launcherGuiTestMode() == "hidden"
-    figArgs = [figArgs, {"Visible", "off"}];
-end
 close(findall(groot, "Type", "figure", "Tag", "labkitLauncher"));
-fig = uifigure(figArgs{:});
-rootPanel = uipanel(fig, ...
-    "BorderType", "none", ...
-    "BackgroundColor", fig.Color, ...
-    "Units", "pixels", ...
-    "Position", [1 1 position(3:4)]);
-main = uigridlayout(rootPanel, [1 3]);
-leftWidth = launcherControlWidth(position(3));
-main.ColumnWidth = {leftWidth, 5, "1x"};
-main.RowHeight = {"1x"};
-main.Padding = [6 6 6 6];
-main.ColumnSpacing = 0;
-
-left = uipanel(main, "Title", "Launcher", "FontSize", panelFontSize);
-left.Layout.Column = 1;
-divider = uipanel(main, "BorderType", "none", ...
-    "BackgroundColor", [0.78 0.80 0.82]);
-divider.Layout.Column = 2;
-right = uipanel(main, "Title", "Applications", "FontSize", panelFontSize);
-right.Layout.Column = 3;
-
-controls = uigridlayout(left, [5 1]);
-controls.RowHeight = {142, 72, 108, 72, "1x"};
-controls.Padding = [6 6 6 6];
-controls.RowSpacing = 6;
-
-runPanel = uipanel(controls, "Title", "Run Apps");
-runPanel.Layout.Row = 1;
-runGrid = uigridlayout(runPanel, [3 2]);
-runGrid.RowHeight = {"1x", "1x", "1x"};
-runGrid.ColumnWidth = {"1x", "1x"};
-runGrid.Padding = [5 5 5 5];
-runGrid.RowSpacing = 5;
-runGrid.ColumnSpacing = 6;
-openButton = uibutton(runGrid, "Text", "Open Selected App");
-openButton.Layout.Row = 1;
-openButton.Layout.Column = [1 2];
-refreshButton = uibutton(runGrid, "Text", "Refresh App List");
-refreshButton.Layout.Row = 2;
-refreshButton.Layout.Column = 1;
-appDocsButton = uibutton(runGrid, ...
-    "Text", "Open App Guide");
-appDocsButton.Layout.Row = 2;
-appDocsButton.Layout.Column = 2;
-appDocsButton.Tooltip = ...
-    "Open the current online guide for the selected App.";
-logButton = uibutton(runGrid, "Text", "View Launch Log");
-logButton.Layout.Row = 3;
-logButton.Layout.Column = [1 2];
-logButton.Tooltip = ...
-    "Inspect timed Launcher discovery and App-startup stages.";
-
-versionPanel = uipanel(controls, "Title", "Versions and Install");
-versionPanel.Layout.Row = 2;
-versionGrid = uigridlayout(versionPanel, [1 2]);
-versionGrid.ColumnWidth = {"1x", "1x"};
-versionGrid.Padding = [5 5 5 5];
-versionGrid.ColumnSpacing = 6;
-latestButton = uibutton(versionGrid, "Text", "Latest");
-versionsButton = uibutton(versionGrid, "Text", "Versions");
-latestButton.Tooltip = "Download and apply the latest published release.";
-versionsButton.Tooltip = ...
-    "Choose a recent published release.";
-
-maintenancePanel = uipanel(controls, ...
-    "Title", "Development and Maintenance");
-maintenancePanel.Layout.Row = 3;
-maintenanceGrid = uigridlayout(maintenancePanel, [2 2]);
-maintenanceGrid.ColumnWidth = {"1x", "1x"};
-maintenanceGrid.RowHeight = {"1x", "1x"};
-maintenanceGrid.Padding = [5 5 5 5];
-maintenanceGrid.RowSpacing = 5;
-maintenanceGrid.ColumnSpacing = 6;
-docsToolButton = uibutton(maintenanceGrid, "Text", "Doc Generation");
-codeButton = uibutton(maintenanceGrid, "Text", "Run Code Analyzer");
-profileButton = uibutton(maintenanceGrid, "Text", "Profile Selected App");
-cleanButton = uibutton(maintenanceGrid, "Text", "Clean Artifacts");
-docsToolButton.Tooltip = ...
-    "Rebuild the ignored local site from current documentation sources.";
-codeButton.Tooltip = ...
-    "Run MATLAB Code Analyzer and write the repository report.";
-profileButton.Tooltip = ...
-    "Profile the selected app and save its report without opening a browser.";
-cleanButton.Tooltip = ...
-    "Remove generated artifacts through the maintenance tool.";
-
-packagePanel = uipanel(controls, "Title", "Package and Publish");
-packagePanel.Layout.Row = 4;
-packageGrid = uigridlayout(packagePanel, [1 1]);
-packageGrid.ColumnWidth = {"1x"};
-packageGrid.Padding = [5 5 5 5];
-packageGrid.ColumnSpacing = 6;
-packageButton = uibutton(packageGrid, "Text", "Package Checked");
-packageButton.Tooltip = ...
-    "Create one standalone source package containing every checked app.";
-
-status = uitextarea(controls, "Editable", "off", "Value", "Ready.");
-status.Layout.Row = 5;
-tableGrid = uigridlayout(right, [1 1]);
-tableGrid.Padding = [4 4 4 4];
-appTable = uitable(tableGrid, ...
+fig = uifigure(Name=version.displayName + " v" + version.version + ...
+    " (" + version.updated + ")", Tag="labkitLauncher", ...
+    Position=position, Visible="off", AutoResizeChildren="off");
+body = uigridlayout(fig, [1 2], Padding=[0 0 0 0], ColumnSpacing=1);
+policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
+topInset = policy.HeaderTopInset;
+outerInset = 20;
+headingHeight = policy.HeaderContentHeight;
+catalog = uigridlayout(body, [3 1], RowHeight={headingHeight,32,'1x'}, ...
+    Padding=[16 outerInset outerInset topInset], RowSpacing=8);
+catalog.Layout.Row = 1;
+catalog.Layout.Column = 2;
+titleGroup = uigridlayout(catalog,[1 4],ColumnWidth={'fit','fit','1x','fit'}, ...
+    Padding=[0 0 0 0],ColumnSpacing=6);
+count = uilabel(titleGroup,Text="",FontSize=12);
+count.Layout.Column = 2;
+catalogTitle = uilabel(titleGroup,Text="Applications",FontSize=18,FontWeight="bold");
+catalogTitle.Layout.Row = 1;
+catalogTitle.Layout.Column = 1;
+packageButton = uibutton(titleGroup,Text="Package Checked",Visible="off");
+packageButton.Layout.Column = 4;
+catalogBar = uigridlayout(catalog,[1 4],ColumnWidth={'1x',132,82,106}, ...
+    Padding=[0 0 0 0],ColumnSpacing=6);
+search = uieditfield(catalogBar,"text",Placeholder="Search applications…");
+family = uidropdown(catalogBar,Items="All families");
+scope = uidropdown(catalogBar,Items=["All apps","Public","Private"]);
+refreshButton = uibutton(catalogBar,Text="Refresh App List");
+appTable = uitable(catalog, ...
     "ColumnName", { ...
         "Package", "Family", "App", "Version", "Access", "Updated"}, ...
     "ColumnEditable", [true false false false false false], ...
     "RowName", {}, ...
-    "FontSize", tableFontSize);
+    "ColumnWidth", {88,'2x','3x',80,78,90}, ...
+    "FontSize", 12);
 appTable.ColumnSortable = true(1, 6);
 if isprop(appTable, "ColumnFormat")
     appTable.ColumnFormat = { ...
         'logical', 'char', 'char', 'char', 'char', 'char'};
 end
-appTable.ColumnWidth = launcherTableWidths(position(3), leftWidth);
+
+style = labkit.app.internal.native.lightAppearance();
+side = uigridlayout(body,[6 1],RowHeight={headingHeight,1,131,32,1,'1x'}, ...
+    Padding=[outerInset outerInset 20 topInset],RowSpacing=policy.HeaderBottomGap,BackgroundColor=style.Background);
+side.Layout.Row = 1;
+side.Layout.Column = 1;
+brand = uigridlayout(side,[1 2],ColumnWidth={28,'1x'},Padding=[0 0 0 0], ...
+    ColumnSpacing=8,BackgroundColor=style.Background);
+labkit.app.internal.native.installBrandMark(brand);
+brandButton = uibutton(brand,Text="LabKit MATLAB Workbench",FontSize=14, ...
+    FontWeight="bold",FontColor=style.Text,BackgroundColor=style.Background, ...
+    Tooltip="Open the LabKit MATLAB Workbench repository on GitHub");
+uilabel(side,Text="",BackgroundColor=style.Line);
+selection = uigridlayout(side,[4 2],RowHeight={14,26,48,34}, ...
+    ColumnWidth={'1x',106},Padding=[0 0 0 0],RowSpacing=3,ColumnSpacing=8, ...
+    BackgroundColor=style.Background);
+eyebrow = uilabel(selection,Text="Selected app",FontSize=11,FontColor=style.Muted);
+eyebrow.Layout.Column = [1 2];
+selectionTitle = uilabel(selection,Text="Loading…",FontSize=18,FontWeight="bold",WordWrap="off");
+selectionTitle.Layout.Column = [1 2];
+description = uilabel(selection,Text="",WordWrap="on",VerticalAlignment="top",FontSize=12);
+description.Layout.Column = [1 2];
+openButton = uibutton(selection, Text="Open Selected App", FontWeight="bold");
+appDocsButton = uibutton(selection, Text="Open App Guide");
+toolsButton = uibutton(side,Text="Workbench tools  ▾");
+uilabel(side,Text="",BackgroundColor=style.Line);
+
+activity = uigridlayout(side,[2 2],RowHeight={26,'1x'}, ...
+    ColumnWidth={'1x','fit'},Padding=[0 0 0 0],RowSpacing=6,BackgroundColor=style.Background);
+activityTitle = uilabel(activity,Text="Session log",FontSize=14,FontWeight="bold");
+reportButton = uibutton(activity,Text="Open report",Visible="off");
+status = uitextarea(activity,Editable="off",WordWrap="on",FontName=get(groot,"DefaultUicontrolFontName"), ...
+    FontSize=13,FontColor=style.Text,BackgroundColor=style.Surface);
+status.Layout.Column = [1 2];
+menu = uicontextmenu(fig);
+toolsButton.ContextMenu = menu;
+toolsButton.ButtonPushedFcn = @(source,~) openTools(source,menu);
+profileButton = uimenu(menu,Text="Profile Selected App");
+docsToolButton = uimenu(menu,Text="Doc Generation",Separator="on");
+codeButton = uimenu(menu,Text="Run Code Analyzer");
+cleanButton = uimenu(menu,Text="Clean Artifacts");
+logButton = uimenu(menu,Text="View Launch Log",Separator="on");
+versionsButton = uimenu(menu,Text="Update to a specific version…",Separator="on");
+latestButton = uimenu(menu,Text="Update to latest release…");
 
 view = struct( ...
-    "figure", fig, ...
-    "openButton", openButton, ...
+    "figure", fig, "search", search, "family", family, "scope", scope, "count", count, ...
+    "brandButton", brandButton, "openButton", openButton, ...
     "refreshButton", refreshButton, ...
     "appDocsButton", appDocsButton, ...
     "logButton", logButton, ...
@@ -144,27 +100,51 @@ view = struct( ...
     "profileButton", profileButton, ...
     "cleanButton", cleanButton, ...
     "packageButton", packageButton, ...
-    "status", status, ...
+    "status", status, "toolsButton", toolsButton, "reportButton", reportButton, "selectionTitle", selectionTitle, ...
+    "description", description, ...
     "appTable", appTable, ...
     "controls", struct( ...
-        "selectedDetails", struct("textArea", status), ...
-        "statusLine", struct("textArea", status), ...
         "appTable", struct("table", appTable)));
+
+applyPalette(style);
 setappdata(fig, "labkitLauncherView", view);
-fig.SizeChangedFcn = @(~, ~) resizeLauncher();
+fig.SizeChangedFcn = @(~,~) resizeLauncher();
 resizeLauncher();
+if labkit.app.internal.launcher.launcherGuiTestMode() ~= "hidden"
+    fig.Visible = "on";
+end
+
+    function applyPalette(style)
+        if ~isMATLABReleaseOlderThan("R2025a")
+            fig.Theme = "light";
+        end
+        body.BackgroundColor = style.Line;
+        count.FontColor = style.Muted;
+        set([catalog catalogBar titleGroup], 'BackgroundColor', style.Surface);
+        set([catalogTitle selectionTitle activityTitle], 'FontColor', style.Text);
+        description.FontColor = style.Muted;
+        set(openButton, 'BackgroundColor', style.Primary, 'FontColor', style.OnPrimary);
+        buttons = [refreshButton appDocsButton toolsButton packageButton reportButton];
+        set(buttons, 'BackgroundColor', style.Paper, 'FontColor', style.Text);
+        set([buttons openButton brandButton], 'Interruptible','off','BusyAction','cancel');
+        set(menu.Children,'Interruptible','off','BusyAction','cancel');
+        set(appTable,'Interruptible','off','BusyAction','cancel');
+        set(appTable, 'BackgroundColor', style.Surface, 'ForegroundColor', style.Text);
+        addStyle(appTable,uistyle(FontWeight="bold"),"column",3);
+        addStyle(appTable,uistyle(FontColor=style.Muted),"column",[2 4 5 6]);
+    end
 
     function resizeLauncher()
-        if ~isvalid(fig) || ~isvalid(appTable)
-            return;
-        end
-        figureWidth = fig.Position(3);
-        rootPanel.Position = [1 1 fig.Position(3:4)];
-        resizedControlWidth = launcherControlWidth(figureWidth);
-        main.ColumnWidth = {resizedControlWidth, 5, "1x"};
-        appTable.ColumnWidth = launcherTableWidths( ...
-            figureWidth, resizedControlWidth);
+        width = fig.Position(3);
+        sideWidth = min(340, max(268, round(width * .27)));
+        body.ColumnWidth = {sideWidth, '1x'};
+
     end
+end
+
+function openTools(button,menu)
+bounds = getpixelposition(button,true);
+open(menu,bounds(1),bounds(2)+bounds(4));
 end
 
 function position = defaultLauncherPosition()
@@ -176,25 +156,4 @@ height = min(screenHeight, max(560, min(720, screenHeight - 120)));
 x = screen(1) + max(0, (screenWidth - width) / 2);
 y = screen(2) + max(0, (screenHeight - height) / 2);
 position = round([x y width height]);
-end
-
-function width = launcherControlWidth(figureWidth)
-width = min(390, max(350, round(double(figureWidth) * 0.29)));
-end
-
-function widths = launcherTableWidths(figureWidth, controlWidth)
-tableWidth = max(640, double(figureWidth) - double(controlWidth) - 36);
-minimum = [62 120 180 70 72 90];
-preferred = [72 150 240 78 80 100];
-if tableWidth <= sum(minimum)
-    values = minimum;
-elseif tableWidth < sum(preferred)
-    fraction = (tableWidth - sum(minimum)) / ...
-        (sum(preferred) - sum(minimum));
-    values = minimum + fraction .* (preferred - minimum);
-else
-    extra = tableWidth - sum(preferred);
-    values = preferred + extra .* [0 0.25 0.60 0 0 0.15];
-end
-widths = num2cell(round(values));
 end

@@ -216,7 +216,7 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             responseCleanup = setAppdata("versionToolWebreadResponses", { ...
                 struct("tag_name", {"v1.0.0", "v1.1.0"}, "name", {"First", "Second"}, ...
                     "published_at", {"2026-01-01", "2026-02-01"}, ...
-                    "body", {"First notes", "Second notes"}, ...
+                    "body", {"First notes", "Second notes" + newline + string(repmat('x',1,300)) + newline + "Final paragraph"}, ...
                     "draft", {false, false}, "prerelease", {false, false})});
             modeCleanup = setAppdata("labkitVersionManagerGuiTestMode", "hidden");
             hookCleanup = setHook(struct("CandidateRoot", candidate, "Confirm", true));
@@ -224,6 +224,8 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             fig = manageLabKitVersions(root);
             sourceTable = findall(fig, "Type", "uitable");
             invokeTableSelection(sourceTable, 2);
+            notes = findall(fig,"Tag","releaseNotes");
+            testCase.verifyEqual(string(notes.Value(end)), "Final paragraph");
             invokeTableDoubleClick(sourceTable);
 
             testCase.verifyEqual(readMarker(root), "new");
@@ -231,7 +233,7 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             values = textareaValues(fig);
             diagnostic = "row2=" + strjoin(string(sourceTable.Data(2, :)), " | ") + ...
                 newline + "text=" + strjoin(values, newline);
-            testCase.verifyTrue(any(contains(values, "v1.1.0")), diagnostic);
+            testCase.verifyTrue(any(contains(string({findall(fig,"Type","uilabel").Text}), "v1.1.0")), diagnostic);
             expectedRoot = string(root);
             if ispc
                 expectedRoot = lower(expectedRoot);
@@ -280,13 +282,44 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             sourceTable = findall(fig, "Type", "uitable");
             rows = string(sourceTable.Data);
 
-            testCase.verifyEqual(rows(:, 1), "Release");
-            testCase.verifyEqual(rows(1, 2), "v2.0.0");
-            testCase.verifySubstring(rows(1, 4), "Release details");
-            testCase.verifyFalse(any(contains(rows(:, 2), "rc1")));
-            testCase.verifyFalse(any(contains(rows(:, 2), "v1.9.0")));
+            testCase.verifySize(rows,[1 2]);
+            testCase.verifyEqual(rows(1, 1), "v2.0.0");
+            testCase.verifyTrue(any(contains(textareaValues(fig),"Release details")));
+            testCase.verifyFalse(any(contains(rows(:, 1), "rc1")));
+            testCase.verifyFalse(any(contains(rows(:, 1), "v1.9.0")));
             testCase.verifyEqual(getappdata(groot, ...
                 "versionToolWebreadCount"), 1);
+            delete(fig); delete(modeCleanup); delete(responseCleanup); delete(toolCleanup); delete(networkCleanup)
+        end
+
+        function olderReleasesAppendAndRetryWithoutLosingSelection(testCase)
+            root = fixtureCandidate(testCase,"new");
+            [networkFolder,networkCleanup] = networkStubs(testCase);
+            toolCleanup = isolatedTool(networkFolder);
+            tags = cellstr("v"+(31:-1:1));
+            raw = struct("tag_name",tags,"name",tags,"body",tags,"prerelease",false);
+            raw(3).prerelease = true;
+            responseCleanup = setAppdata("versionToolWebreadResponses", ...
+                {raw(1:10),raw(11:20),struct("Error","offline"),raw(21:30),raw(31)});
+            modeCleanup = setAppdata("labkitVersionManagerGuiTestMode","hidden");
+            fig = manageLabKitVersions(root);
+            table = findall(fig,"Type","uitable");
+            more = findall(fig,"Text","Load older releases");
+            notes = findall(fig,"Tag","releaseNotes");
+            testCase.verifySize(table.Data,[10 2]);
+            invokeTableSelection(table,4);
+            selectedNotes = notes.Value;
+            more.ButtonPushedFcn(more,[]);
+            testCase.verifySize(table.Data,[10 2]);
+            testCase.verifyEqual(string(more.Enable),"on");
+            more.ButtonPushedFcn(more,[]);
+            testCase.verifySize(table.Data,[20 2]);
+            testCase.verifyEqual(table.Selection,4);
+            testCase.verifyEqual(notes.Value,selectedNotes);
+            more.ButtonPushedFcn(more,[]);
+            testCase.verifyEqual(string(table.Data(:,1)),string(tags([1:2 4:end])).');
+            testCase.verifyEqual(string(more.Enable),"off");
+            testCase.verifyEqual(getappdata(groot,"versionToolWebreadCount"),5);
             delete(fig); delete(modeCleanup); delete(responseCleanup); delete(toolCleanup); delete(networkCleanup)
         end
 
@@ -302,7 +335,7 @@ classdef VersionManagementSpec < matlab.unittest.TestCase
             sourceTable = findall(fig, "Type", "uitable");
             testCase.verifyEmpty(sourceTable.Data);
             testCase.verifyTrue(any(contains( ...
-                textareaValues(fig), "Version lookup failed")));
+                string({findall(fig,"Type","uilabel").Text}), "Version lookup failed")));
             delete(fig); delete(modeCleanup); delete(responseCleanup); delete(toolCleanup); delete(networkCleanup)
         end
 

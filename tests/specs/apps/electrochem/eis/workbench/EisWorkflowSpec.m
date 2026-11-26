@@ -36,7 +36,7 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             testCase.verifyEqual(frequency.Parent, plotPanel.Parent);
             testCase.verifyLessThan(frequency.Layout.Row, plotPanel.Layout.Row);
             testCase.verifyEqual(frequency.Layout.Column, plotPanel.Layout.Column);
-            testCase.verifyEqual(string(ancestor(frequency, "uitab").Title), "Nyquist + Bode");
+            testCase.verifyEqual(findall(findall(runtime.figureHandle(), "Tag", "overviewPage"), "Tag", "frequencySection"), frequency);
             curve = findall(ax, "Type", "line");
             testCase.verifyEqual(sum(isfinite(curve.XData)), 13);
             testCase.verifyEqual(string(ax.Title.String), "Nyquist (10 Hz – 100 kHz)");
@@ -148,8 +148,10 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             runtime = labkittest.createMatlabRuntime(definition, [], backend, journal);
             cleanup = onCleanup(@() runtime.close());
             runtime.applyFileSelection("files", paths, 1:10);
-            groupTab = findall(runtime.figureHandle(), "Type", "uitab", "Title", "Groups");
-            groupTab.Parent.SelectedTab = groupTab;
+            page = findall(runtime.figureHandle(), "Tag", "groupsPage");
+            button = findall(runtime.figureHandle(), "Tag", "groupsPage.navigate");
+            button.ButtonPushedFcn(button,[]);
+            testCase.verifyEqual(string(page.Visible),"on");
             drawnow;
             runtime.applyControlValue("groupingEnabled", true);
             groups = runtime.State.project.groups;
@@ -198,6 +200,8 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             runtime.invokeAction("assignGroup");
             testCase.verifyNumElements(runtime.State.project.groups, 1);
             testCase.verifyNumElements(runtime.State.project.groups(1).sourceIds, 2);
+            scope = findall(runtime.figureHandle(), "Tag", "summary");
+            testCase.verifySubstring(join(string(scope.Text), newline), "Group mean ± SD");
             ax = findall(runtime.figureHandle(), "Tag", "plot.main");
             bars = findall(ax, "Type", "errorbar");
             testCase.assertNumElements(bars, 1);
@@ -256,8 +260,22 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
             figureValue = runtime.figureHandle();
 
+            exportButton = findall(figureValue, "Tag", "exportPlot");
+            testCase.verifyEqual(string(exportButton.Enable), "off");
             runtime.applyFileSelection("files", [source, unsupported], 1:2);
+            testCase.verifyEqual(string(exportButton.Enable), "on");
+            scope = findall(figureValue, "Tag", "selectionNote");
+            testCase.verifySubstring(join(string(scope.Text), newline), "1 selected");
             axesValue = findall(figureValue, "Tag", "plot.main");
+            slider = findall(figureValue,"Tag","lineWidth.slider");
+            trace = findobj(axesValue,"Type","line");
+            slider.ValueChangingFcn(slider, struct("Value",2.2));
+            testCase.verifyEqual(runtime.State.project.parameters.lineWidth,2.2);
+            testCase.assertTrue(all(isgraphics(trace)));
+            testCase.verifyEqual([trace.LineWidth],2.2);
+            slider.Value = 1.4;
+            slider.ValueChangedFcn(slider,[]);
+            testCase.verifyEqual([trace.LineWidth],1.4);
             units = eis.impedanceDisplay.catalog();
             [fitted, inspected] = inspectViewport(axesValue);
             runtime.applyControlValue("showMarkers", false);
