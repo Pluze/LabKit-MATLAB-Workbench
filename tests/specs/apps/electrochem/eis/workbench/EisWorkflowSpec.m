@@ -13,7 +13,25 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             runtime = labkittest.createMatlabRuntime(definition, [], struct(), journal);
             cleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
-            box = @(tag) getpixelposition(findall(fig, "Tag", tag), true);
+            tagged = @(tag) findall(fig,"Tag",tag);
+            nav = tagged("filesAnalysis.navigate");
+            folderButton = tagged("files.folder");
+            divider = tagged("labkitAppColumnResize");
+            exportButton = tagged("exportPlot");
+            sidePadding = nav.Parent.Parent.Padding;
+            testCase.verifyEqual(sidePadding(1),24);
+            testCase.verifyEqual(sidePadding(3) + divider.Parent.ColumnWidth{2},24);
+            testCase.verifyEqual(exportButton.Parent.Padding([1 3]),[24 24]);
+            testCase.verifyEqual(nav.Parent.ColumnWidth,folderButton.Parent.ColumnWidth);
+            testCase.verifyEqual([nav.Parent.ColumnSpacing folderButton.Parent.ColumnSpacing],[8 8]);
+
+            % Older batch graphics engines expose placeholder positions even
+            % after drawnow. The native grid contract above still applies.
+            capture = labkittest.nativeGraphicsCapability("interface-capture");
+            if ~capture.Available
+                return
+            end
+            box = @(tag) getpixelposition(tagged(tag), true);
             screen = get(groot,"ScreenSize");
             wide = min(1280, screen(3)-80);
             for width = [min(900,wide-100) wide]
