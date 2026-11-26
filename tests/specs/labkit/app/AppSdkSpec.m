@@ -1042,15 +1042,26 @@ classdef AppSdkSpec < matlab.unittest.TestCase
             if isprop(long, "WordWrap")
                 testCase.verifyEqual(string(long.WordWrap), "off");
             end
-            divider = oneTagged(figureValue, "labkitAppRowResize");
-            testCase.verifyGreaterThanOrEqual( ...
-                divider.Parent.RowHeight{divider.Layout.Row}, 24);
-            labkittest.pressPage(figureValue,"moreControls");
+            controlsPage = oneTagged(figureValue,"controls");
+            divider = oneTagged(controlsPage, "labkitAppRowResize");
             page = oneTagged(figureValue,"moreControls");
             firstGrip = oneTagged(page,"labkitAppRowResize");
+            testCase.verifyGreaterThanOrEqual( ...
+                sum([divider.Parent.RowHeight{divider.Layout.Row(1):divider.Layout.Row(2)}]), 24);
+            labkittest.pressPage(figureValue,"moreControls");
+            testCase.verifyEqual(oneTagged(page,"labkitAppRowResize"), firstGrip);
             labkittest.pressPage(figureValue,"controls");
             labkittest.pressPage(figureValue,"moreControls");
             testCase.verifyEqual(oneTagged(page,"labkitAppRowResize"), firstGrip);
+            grip = oneTagged(page,"labkitDividerGrip");
+            heights = firstGrip.Parent.RowHeight;
+            previousMotion = figureValue.WindowButtonMotionFcn;
+            grip.ButtonDownFcn(grip,[]);
+            figureValue.WindowButtonMotionFcn(figureValue,[]);
+            figureValue.WindowButtonUpFcn(figureValue,[]);
+            testCase.verifyEqual(figureValue.WindowButtonMotionFcn,previousMotion);
+            testCase.verifyGreaterThanOrEqual(firstGrip.Parent.RowHeight{1},80);
+            testCase.verifyEqual(firstGrip.Parent.RowHeight(2:end),heights(2:end));
             labkittest.pressPage(figureValue,"controls");
             summary = oneTagged(figureValue, "summary");
             compact = oneTagged(figureValue, "compactSummary");

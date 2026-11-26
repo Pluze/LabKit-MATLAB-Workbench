@@ -106,13 +106,6 @@ end
         previousId = canvas.UserData;
         previous = obj.component(previousId);
         selected = obj.component(id);
-        if isstruct(selected.UserData) && isfield(selected.UserData,"PendingDividerRows")
-            grid = obj.contentParent(id);
-            for row = selected.UserData.PendingDividerRows
-                labkit.app.internal.native.NativeAdapterValues.installRowDivider(obj.Figure, grid, row-1, row);
-            end
-            selected.UserData = rmfield(selected.UserData,"PendingDividerRows");
-        end
         if isstruct(selected.UserData) && isfield(selected.UserData,"Reflow")
             selected.UserData.Reflow();
         end
@@ -126,9 +119,10 @@ end
         selected.Visible = "on";
         canvas.UserData = id;
         paint(id,find(ids == previousId | ids == id));
-        readouts = findall(selected, 'Type', 'uitextarea');
-        for readout = reshape(readouts, 1, [])
-            obj.updateReadonlyHeight(readout, readout.Value);
+        if isstruct(selected.UserData) && isfield(selected.UserData,"Readouts")
+            for readout = reshape(selected.UserData.Readouts, 1, [])
+                obj.updateReadonlyHeight(readout, readout.Value);
+            end
         end
     end
 end

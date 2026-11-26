@@ -2,7 +2,7 @@ function updateContentHeight(obj, id, height)
 % Propagate a changed preferred height through fixed rows, preserving user resize offsets.
     key = char(id);
     if isfield(obj.ContentHeights, key) && ...
-            abs(obj.ContentHeights.(key) - height) < 0.5
+            isequal(obj.ContentHeights.(key),height)
         return
     end
     node = obj.node(id);
@@ -10,6 +10,10 @@ function updateContentHeight(obj, id, height)
     before = cell(1, numel(chain));
     for index = 1:numel(chain)
         before{index} = obj.preferredRowHeight(chain(index));
+    end
+    % Container preferences depend on their children; unrelated branches keep their measurements.
+    if numel(chain) > 1
+        obj.ContentHeights = rmfield(obj.ContentHeights,cellstr(string({chain(2:end).Id})));
     end
     obj.ContentHeights.(key) = height;
     for index = 1:numel(chain)
