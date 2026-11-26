@@ -18,8 +18,10 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
                 fig.Position(3:4) = [width 720];
                 drawnow;
                 expected = [24 24 24 24 24 0 0];
-                testCase.verifyThat(@() measureEdges(width, box), ...
+                testCase.verifyThat(@() measureEdges(box), ...
                     Eventually(IsEqualTo(expected, Within=AbsoluteTolerance(1))));
+                frame = box("labkitAppWorkbenchGrid");
+                fprintf("EIS layout: requested %d px, rendered %g px.\n", width, frame(3));
             end
             clear cleanup
         end
@@ -377,17 +379,19 @@ testCase.verifyEqual(diff(ax.XLim)/diff(ax.YLim), pixels(1)/pixels(2), RelTol=.0
 testCase.verifyEqual(ax.DataAspectRatio(1), ax.DataAspectRatio(2), AbsTol=1e-12);
 end
 
-function distances = measureEdges(width, box)
+function distances = measureEdges(box)
     drawnow;
+    frame = box("labkitAppWorkbenchGrid");
+    rightEdge = frame(1) + frame(3);
     seam = box("labkitAppColumnResize");
     choose = box("files.choose");
     first = box("recommendFrequency");
     last = box("fitOverviewAxes");
     header = box("exportPlot");
     boundary = seam(1) + seam(3);
-    margins = [choose(1)-1, boundary-choose(1)-choose(3), ...
-        first(1)-boundary, width+1-last(1)-last(3), ...
-        width+1-header(1)-header(3)];
+    margins = [choose(1)-frame(1), boundary-choose(1)-choose(3), ...
+        first(1)-boundary, rightEdge-last(1)-last(3), ...
+        rightEdge-header(1)-header(3)];
     nav = box("filesAnalysis.navigate");
     folderButton = box("files.folder");
     distances = [margins, nav([1 3])-folderButton([1 3])];
