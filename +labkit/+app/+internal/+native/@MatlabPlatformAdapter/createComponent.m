@@ -20,6 +20,7 @@ function component = createComponent(obj, node, parent, inControls)
             end
             if inControls && strlength(title) == 0 && ~isempty(node.ChildIds)
                 component = obj.installContentGrid(node, parent);
+                component.Padding([1 3]) = 0;
                 return
             end
             if (inControls || ~obj.isGrowableTabChild(node)) && strlength(title) > 0 && ~isempty(node.ChildIds)
