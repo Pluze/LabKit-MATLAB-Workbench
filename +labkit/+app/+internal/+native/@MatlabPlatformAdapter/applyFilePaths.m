@@ -1,4 +1,4 @@
-function applyFilePaths(~, component, paths)
+function applyFilePaths(obj, component, paths)
 % Class-folder implementation of MatlabPlatformAdapter.applyFilePaths.
     data = component.UserData;
     data.Paths = reshape(string(paths), 1, []);
@@ -18,27 +18,21 @@ function applyFilePaths(~, component, paths)
         return
     end
     hasFiles = ~isempty(paths);
-    panel = data.Panel;
-    parent = panel.Parent;
-    if isa(parent,"matlab.ui.container.GridLayout") && isscalar(parent.ColumnWidth) && ...
-            numel(parent.RowHeight) > 1 && isempty(data.Status)
-        row = panel.Layout.Row;
-        height = parent.RowHeight{row};
-        if ~hasFiles && isnumeric(height) && ~isfield(data,"LoadedHeight")
-            data.LoadedHeight = height;
-            parent.RowHeight{row} = min(height,116);
-            component.UserData = data;
-        elseif hasFiles && isfield(data,"LoadedHeight")
-            parent.RowHeight{row} = data.LoadedHeight;
-            component.UserData = rmfield(data,"LoadedHeight");
-        end
-    end
     component.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(hasFiles);
     data.EmptyLabel.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(~hasFiles);
     footer = data.Remove.Parent;
     footer.Visible = component.Visible;
     grid = component.Parent;
-    grid.RowHeight{footer.Layout.Row} = 28 * hasFiles;
+    policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
+    grid.RowHeight{footer.Layout.Row} = policy.ButtonHeight * hasFiles;
+    height = policy.EmptyFileListHeight;
+    if hasFiles
+        height = policy.FileListNoStatusHeight;
+    end
+    if ~isempty(data.Status) && data.Status.Visible == "on"
+        height = height + 64;
+    end
+    obj.updateContentHeight(data.Target, height);
     if isempty(data.CountLabel)
         return
     end

@@ -9,7 +9,7 @@ summary: Convert Ncorr strain fields into EXX and EYY overlays and calculate des
 
 DIC Postprocess converts Ncorr strain fields into EXX and EYY overlays on an optical reference image and calculates descriptive strain statistics over a validated ROI. It is a rendering and summary tool; it does not rerun DIC.
 
-The left pane groups the workflow under **Overlay settings**, **Strain results**. Use **Generate overlays + summary** in the header when ready.
+Load the strain, reference and mask files under **Source files**. Adjust **Strain overlay** or **Optical image**, then inspect the summary and save outputs under **Results & export**. Use **Generate overlays + summary** in the header when ready.
 
 ## Requirements And Launch
 

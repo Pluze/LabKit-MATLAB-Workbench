@@ -1,6 +1,11 @@
 function height = preferredRowHeight(obj, node)
 % Class-folder implementation of MatlabPlatformAdapter.preferredRowHeight.
     policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
+    key = char(node.Id);
+    if isKey(obj.ContentHeights, key)
+        height = obj.ContentHeights(key);
+        return
+    end
     switch node.Kind
         case {"tab", "workspace", "workspacePage", "plotArea"}
             height = "1x";
@@ -8,10 +13,8 @@ function height = preferredRowHeight(obj, node)
             if node.Configuration.SelectionMode == "single" && ...
                     node.Configuration.MaxFiles == 1
                 height = policy.CompactFileHeight;
-            elseif ~node.Configuration.ShowStatus
-                height = policy.FileListNoStatusHeight;
             else
-                height = policy.FileListHeight;
+                height = policy.EmptyFileListHeight;
             end
         case "dataTable"
             height = policy.TableHeight;
@@ -30,29 +33,28 @@ function height = preferredRowHeight(obj, node)
             height = policy.ButtonHeight;
         case "slider"
             height = policy.SliderHeight;
-            if node.Configuration.LabelPosition == "top"
+            if node.Configuration.ShowValue
+                height = height + policy.FieldHeight + 4;
+            elseif node.Configuration.LabelPosition == "top"
                 height = height + 24;
             end
         case "field"
             if node.Configuration.Kind == "readonly"
-                key = char(node.Id);
-                if isKey(obj.ReadonlyHeights, key)
-                    height = obj.ReadonlyHeights(key);
-                else
-                    height = labkit.app.internal.native.NativeAdapterValues.readonlyHeight( ...
-                        node.Configuration.Value, policy.ReadonlyDefaultWidth, ...
-                        policy.ReadonlyFontSize);
-                end
+                height = labkit.app.internal.native.NativeAdapterValues.readonlyHeight( ...
+                    node.Configuration.Value, policy.ReadonlyDefaultWidth, ...
+                    policy.ReadonlyFontSize);
             elseif node.Configuration.Kind == "logical"
                 height = labkit.app.internal.native.NativeAdapterValues.estimatedControlHeight( ...
-                    node.Configuration.Label, 42, 2, ...
+                    node.Configuration.Label, 32, 3, ...
                     policy.FieldHeight);
             else
                 height = labkit.app.internal.native.NativeAdapterValues.estimatedControlHeight( ...
                     node.Configuration.Label, 30, 2, ...
                     policy.FieldHeight);
             end
-        case {"rangeField", "panner"}
+        case "rangeField"
+            height = policy.FieldHeight + 26;
+        case "panner"
             height = policy.FieldHeight;
         case {"section", "group"}
             if node.Kind == "group" && obj.isGrowableTabChild(node)
@@ -64,7 +66,7 @@ function height = preferredRowHeight(obj, node)
             for k = 1:numel(children)
                 candidate = obj.preferredRowHeight(children(k));
                 if ischar(candidate) || isstring(candidate)
-                    candidate = policy.FileListHeight;
+                    candidate = policy.FileListNoStatusHeight;
                 end
                 childHeights(k) = candidate;
             end

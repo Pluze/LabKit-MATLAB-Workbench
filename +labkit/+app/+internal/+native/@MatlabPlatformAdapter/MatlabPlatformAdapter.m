@@ -29,7 +29,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         PriorPointer (1, 1) string = "arrow"
         ClosePrompt
         DialogFolders
-        ReadonlyHeights
+        ContentHeights
         Starting (1, 1) logical = false
         StartupStarted
         StartupPanel
@@ -70,7 +70,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
                 "ValueType", "any");
             obj.DialogFolders = containers.Map("KeyType", "char", ...
                 "ValueType", "char");
-            obj.ReadonlyHeights = containers.Map("KeyType", "char", ...
+            obj.ContentHeights = containers.Map("KeyType", "char", ...
                 "ValueType", "double");
             obj.PannerCommitTimers = containers.Map("KeyType", "char", ...
                 "ValueType", "any");
@@ -381,7 +381,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
 
         applyListSelection(~, component, selection)
 
-        applyFilePaths(~, component, paths)
+        applyFilePaths(obj, component, paths)
 
         applyFileItemStatuses(~, component, statuses)
 
@@ -394,6 +394,8 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         applyValue(obj, component, value)
 
         updateReadonlyHeight(obj, component, value)
+
+        updateContentHeight(obj, id, height)
 
         refreshReadonlySurfaces(obj)
 

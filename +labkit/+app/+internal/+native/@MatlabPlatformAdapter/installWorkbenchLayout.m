@@ -63,7 +63,7 @@ function root = installWorkbenchLayout(obj, node, parent)
     else
         uilabel(side, Text="DATA WORKSPACE", FontSize=11, FontWeight="bold", FontColor=style.Muted);
         obj.WorkbenchControls = uigridlayout(side,[max(1,numel(controls)) 1], ...
-            Padding=[0 0 0 0], RowSpacing=7, BackgroundColor=sideColor);
+            Padding=[0 0 0 0], RowSpacing=7, Scrollable="on", BackgroundColor=sideColor);
         if ~isempty(controls)
             obj.WorkbenchControls.RowHeight = obj.childRowHeights(string({controls.Id}));
         end

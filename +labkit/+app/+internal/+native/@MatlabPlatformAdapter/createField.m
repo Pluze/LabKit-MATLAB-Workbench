@@ -4,6 +4,9 @@ function component = createField(~, parent, config, id)
     if config.Kind == "logical"
         component = uicheckbox(parent, Text=config.Label, ...
             Value=logical(value), Enable=labkit.app.internal.native.NativeAdapterValues.onOff(config.Enabled));
+        if isprop(component, "WordWrap")
+            component.WordWrap = "on";
+        end
         return;
     end
     parent = labkit.app.internal.native.NativeAdapterValues.labeledParent(parent, config.Label, id);
