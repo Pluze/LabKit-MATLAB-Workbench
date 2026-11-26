@@ -44,6 +44,8 @@ function [title, repositoryUrl] = repositoryIdentity(repoRoot)
             "Repository README.md must contain a level-one title.");
     end
     title = strip(extractAfter(heading(1), "# "));
+    % README headings can include a decorative logo beside the project name.
+    title = strip(regexprep(title, "(?i)<img\b[^>]*>", ""));
     token = regexp(char(text), ...
         'https://github[.]com/[^/\s)]+/[^/\s)#]+', "match", "once");
     if isempty(token)
