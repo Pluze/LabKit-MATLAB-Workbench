@@ -9,9 +9,7 @@ summary: Measure biphasic-pulse charge density and voltage-transient polarizatio
 
 The CIC app measures charge delivered by a biphasic current pulse, normalizes charge by electrode area, and reports voltage-transient polarization metrics at a controlled delay after each pulse phase.
 
-Each selected DTA source is loaded into the current analysis state, and charge-density text is formatted from that same result so display and export cannot diverge through a second cached representation.
-
-The left pane groups the workflow under **Pulse analysis**, **Plot settings**, **Charge results**. Use **Export results CSV** in the header when ready.
+Set the pulse analysis parameters in **Pulse analysis**. Use **Plot settings** to inspect the transient and **Charge results** to review the measurements before choosing **Export results CSV**.
 
 ## Requirements And Launch
 

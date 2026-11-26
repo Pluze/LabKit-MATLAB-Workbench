@@ -4,27 +4,12 @@
 id: reference
 type: landing
 audience: app-developer
-summary: Find exact contracts for LabKit domain libraries and GUI-free App APIs, including biosignal, DTA, image, Mark-10, RHS, and thermal functions.
+summary: Find exact contracts for LabKit domain libraries and GUI-free App APIs, including biosignal, DTA, image, Mark-10, NI-DMM, RHS, and thermal functions.
 ```
 
 This index covers domain libraries and GUI-free App APIs. The App SDK itself is documented under [Framework: App SDK API](../develop/framework/app-sdk-api.md), so its contracts stay with the lifecycle and architecture guidance they support.
 
-Use this reference to look up supported MATLAB functions. Every function name in the generated module tables is a direct link to an individual page with syntax, arguments, outputs, behavior, source, and related APIs.
-
-## Find The Right Layer
-
-| Need | Module guide |
-| --- | --- |
-| App lifecycle, layout, plotting, interaction, state, debugging, and compatibility requirements | [App Framework](../develop/framework/README.md) |
-| Image IO and generic image operations | [Image](../develop/libraries/image/README.md) |
-| Radiometric image decoding and temperature conversion | [Thermal](../develop/libraries/thermal/README.md) |
-| Gamry DTA discovery, parsing, curves, and pulses | [DTA](../develop/libraries/dta/README.md) |
-| Intan RHS inspection and waveform windows | [RHS](../develop/libraries/rhs/README.md) |
-| Generic biosignal import and processing | [Biosignal](../develop/libraries/biosignal/README.md) |
-| Mark-10 device communication, settings, samples, and units | [Mark-10](../develop/libraries/mark10/README.md) |
-| Scientific operations owned by one App | [App guides](../use/apps/README.md) |
-
-Module guides explain scope, data models, normal call sequences, algorithms, and representative examples. Function pages are the source for exact callable contracts. Files in `private/` directories and App helpers without a complete public help contract are not supported entry points.
+Each module below links to its guide and function pages. Use the guide for a workflow and the function page for syntax, defaults, outputs, and errors. Examples marked `Example:` run in `docsCheck`. A `Typical Call:` may need your own file or device.
 
 ## Compatibility
 

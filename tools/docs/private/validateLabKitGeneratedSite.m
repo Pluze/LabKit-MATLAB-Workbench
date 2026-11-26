@@ -295,7 +295,7 @@ end
 
 function outputs = apiOutputs(api)
     symbols = string({api.symbol}).';
-    outputs = "reference/api/" + replace(symbols, ".", "/") + ".html";
+    outputs = apiOutputPath(symbols);
 end
 
 function values = firstTokens(tokens)

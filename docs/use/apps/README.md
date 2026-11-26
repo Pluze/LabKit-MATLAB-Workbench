@@ -9,7 +9,7 @@ summary: Choose a LabKit app by the laboratory result you need, then use its man
 
 LabKit apps are independent MATLAB tools for complete laboratory workflows. Choose an app by the result you need, then use its app page for supported inputs, controls, interaction behavior, calculations, outputs, recovery, and programmatic APIs.
 
-Use the buttons in the left pane to switch workflow steps. Apps with multiple result views provide separate view buttons beside the App title. The **LabKit ▾** button opens plot-copy and session diagnostics tools.
+Use the buttons in the left pane to switch workflow steps. Choose a result view beside the App title. A dropdown replaces the buttons when there are more than three views or when the header is too narrow. The **LabKit ▾** button opens plot-copy and session diagnostics tools.
 
 ## Start An App
 
@@ -69,31 +69,11 @@ See [Use LabKit](../README.md) for installation, updating, version selection, an
 - [Statistics](statistics/README.md) - explicit first-versus-each t-tests and result-based group plotting.
 - [Wearable](wearable/README.md) - wearable biosignal workflows.
 
-## How To Read An App Page
-
-Concrete app pages use a common MATLAB-style order:
-
-1. purpose, requirements, and launch command;
-2. supported inputs and the shortest successful workflow;
-3. controls and interaction behavior;
-4. calculation or algorithm semantics, units, and assumptions;
-5. outputs and any App-owned task snapshot behavior;
-6. GUI-free MATLAB examples and public app-owned APIs;
-7. errors, limitations, troubleshooting, related topics, and history.
-
-The app page documents stable user-visible behavior. Exact callable syntax and data shapes live on the linked API reference pages. Internal callbacks and private implementation helpers are intentionally omitted.
-
-Shared framework contracts are documented once in the [App Framework](../../develop/framework/README.md), not repeated in every App page. An App page mentions shared behavior only when that App changes it or when the behavior is necessary to complete the App's workflow.
-
 ## Common App Behavior
 
-The App Framework owns lifecycle, callback transactions and queueing, validated in-memory state, file selection, logging, screenshot actions, plot tools, and managed interactions. Apps own scientific choices, workflow-specific defaults, result schemas, archives, continuation meaning, and exports. See the [App Framework](../../develop/framework/README.md) for behavior shared across Apps.
+Open **LabKit ▾ > Diagnostics** for the session log and optional TRACE capture. Session logs are retained under `artifacts/logs/sessions/`. Apps that support saving work provide their own save and open controls.
 
-Every App opens as a clean project. Use **LabKit ▾ > Diagnostics** to inspect the current session log. Manual TRACE capture is controlled inside that window; retained session folders under `artifacts/logs/sessions/` provide the durable history after a problem. The [runtime guide](../../develop/framework/runtime.md) defines these shared contracts.
-
-Action and input-selection buttons provide concise hover help. The shared **Tools** menu contains framework-owned plot, screenshot, and diagnostic actions when the corresponding capability is available. Task save/open actions belong in an App's own controls only when that product supports continuation.
-
-Input data and exported results should remain outside the replaceable LabKit runtime folder. Apps do not overwrite source files unless an app page states an explicit in-place operation.
+Keep inputs and exported results outside the replaceable LabKit runtime folder. Inputs are preserved unless the App guide explicitly describes an in-place operation.
 
 ## Programmatic Use
 
@@ -110,12 +90,3 @@ help cic.analysisRun.computeCIC
 ```
 
 For another app, replace the final app path with the directory that directly contains its `+package` folder. Do not add every repository subfolder with `genpath`; app roots are independent and may contain same-named private or development files that should not become global MATLAB commands.
-
-## Related Documentation
-
-- [Use LabKit](../README.md)
-- [LabKit Launcher](labkit-core/launcher/README.md)
-- [App Framework](../../develop/framework/README.md)
-- [API Reference](../../reference/README.md)
-- [App Development](../../develop/app-authoring/app-development.md)
-- [Changes](../../changes/README.md)

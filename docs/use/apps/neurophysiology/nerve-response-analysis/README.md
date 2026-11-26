@@ -9,13 +9,11 @@ summary: Detect stimulation trains and measure compound action potential respons
 
 Nerve Response Analysis reads the recording list prepared in RHS Preview, finds stimulation events, groups them into trains, and measures compound action potential responses in the assigned channels.
 
-Differential metrics are produced by the analysis run that owns the selected recording and protocol, so later review and export consume one result schema.
-
-The left pane groups the workflow under **Load & analyze**, **Protocol**, **Review**, **Export**.
+Load the recording list from RHS Preview in **Load & analyze** and check the channel assignments in **Protocol**. After running the analysis, inspect the responses and save the measurements in **Review & export**.
 
 ## Open Nerve Response Analysis
 
-From the launcher, select **Nerve Response Analysis** and choose **Open**. From a source checkout, run:
+From the launcher, select **Nerve Response Analysis** and choose **Open Selected App**. From a source checkout, run:
 
 ```matlab
 labkit_NerveResponseAnalysis_app
@@ -27,8 +25,8 @@ labkit_NerveResponseAnalysis_app
 2. On **Protocol**, choose the protocol JSON that assigns channel roles. A protocol is optional, but strongly recommended.
 3. Set **Max recordings** or **Max duration** only when you want a shorter test run. A value of zero means no limit.
 4. Choose **Analyze Filtered Files**.
-5. On **Review**, inspect the counts and switch the plot between **Counts** and **Issues**.
-6. On **Export**, choose an output folder and then **Export Analysis**.
+5. On **Review & export**, inspect the counts and switch the plot between **Counts** and **Issues**.
+6. On the same page, choose an output folder and then **Export Analysis**.
 
 Recording inclusion uses `keep` when present, otherwise `label`, otherwise `qcFlag`. A QC-only filter therefore excludes rejected rows even without a label column.
 

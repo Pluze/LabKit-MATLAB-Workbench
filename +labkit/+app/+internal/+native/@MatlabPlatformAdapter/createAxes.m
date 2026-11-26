@@ -10,10 +10,11 @@ function createAxes(obj, node, parent)
     axesRow = 1;
     mode = [];
     if hasModes
-        root.RowHeight = {'fit', '1x'};
+        policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
+        root.RowHeight = {policy.FieldHeight, '1x'};
         mode = uidropdown(root, Items=config.ViewModes, ...
             Value=config.ViewModes(1), ...
-            Tag=char(node.Id + ".viewMode"));
+            Tag=char(node.Id + ".viewMode"), Tooltip="Choose a plot view");
         mode.Layout.Row = 1;
         mode.Layout.Column = 1;
         axesRow = 2;

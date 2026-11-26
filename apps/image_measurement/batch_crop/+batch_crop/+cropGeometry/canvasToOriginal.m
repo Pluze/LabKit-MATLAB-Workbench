@@ -26,14 +26,6 @@ function originalXY = canvasToOriginal(geometry, canvasXY)
 end
 
 function point = previewSourceToOriginal(geometry, point)
-    scale = geometryScale(geometry);
+    scale = batch_crop.cropGeometry.geometryScale(geometry);
     point = (point - 0.5) ./ scale + 0.5;
-end
-
-function scale = geometryScale(geometry)
-    scale = 1;
-    if isfield(geometry, 'coordinateScale') && isfinite(double(geometry.coordinateScale)) && ...
-            double(geometry.coordinateScale) > 0
-        scale = double(geometry.coordinateScale);
-    end
 end

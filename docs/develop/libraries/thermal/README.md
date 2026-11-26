@@ -109,12 +109,6 @@ The current reader supports FLIR radiometric JPEG and RJPEG files with an embedd
 
 Do not infer measurement accuracy from successful parsing alone. Quantitative temperature accuracy still depends on the camera calibration and on correct environmental inputs for the photographed material and scene.
 
-## Reference Contract
-
-Each generated Thermal API page distinguishes returned status from thrown errors and documents every implemented option, default, legal value, output field, and related function. Executable examples and package-wide public-help discovery prevent the manual and callable surface from silently diverging.
-
-Self-contained public-help `Example:` blocks run in `docsCheck`. File- or device-dependent `Typical Call:` sketches require the indicated external input and are not executed by that check.
-
 ## Related Topics
 
 - [Image functions](../image/README.md) cover ordinary image IO and image processing that does not use radiometric calibration.

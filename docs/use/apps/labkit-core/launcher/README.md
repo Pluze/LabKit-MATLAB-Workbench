@@ -19,11 +19,11 @@ The window paints before app discovery completes. The session log shows discover
 
 ## Launcher Window
 
-Type a name, description or command into the search field to narrow the catalog as you type. Use the family and public/private filters to refine the list. Checked apps remain in the package selection across filters.
+Type a name, family, description or command into the search field to narrow the catalog as you type. Use the family and public/private filters to refine the list. Checked apps remain in the package selection across filters.
 
-Select an application in the catalog on the right to read its purpose above the launch controls. The read-only session log groups progress, results and errors under timestamped operation names. Scroll through the log or select and copy its text. Documentation generation, code analysis and startup profiling offer **Open report** while the generated HTML file exists. Use **Open Selected App** to launch it. Open **Workbench tools** below the launch controls for profiling, maintenance and version management. Checking apps in the catalog reveals **Package Checked** at the right of the Applications heading.
+Select an application in the catalog on the right to read its purpose above the launch controls. The read-only session log groups progress, results and errors under timestamped operation names. Scroll through the log or select and copy its text. Documentation generation, code analysis and startup profiling offer **Open report** while the generated HTML file exists. Use **Open Selected App** to launch the selected application. Open **Workbench tools** below the launch controls for profiling, maintenance and version management. Checking apps in the catalog reveals **Package Checked** at the right of the Applications heading.
 
-The Launcher and App workbenches use a light interface with a blue primary action. In each App, the header identifies the product family and App, and the workspace groups related views into pages.
+Choose **LabKit MATLAB Workbench** in the upper left to open the GitHub repository. In each App, the header identifies the product family and App, and the workspace groups related views into pages.
 
 | Group | Action | Behavior |
 | --- | --- | --- |
@@ -35,9 +35,9 @@ The Launcher and App workbenches use a light interface with a blue primary actio
 | Workbench tools | **Update to a specific version…** | Shows the latest ten stable releases. Select a version to read its complete notes, or choose **Load older releases** to append up to ten more while keeping your selection. |
 | Workbench tools | **Doc Generation** | Rebuilds the complete ignored `site/` folder from the current Markdown and public MATLAB help. It does not open a page or choose between online and local help. |
 | Workbench tools | **Run Code Analyzer** | Scans the checkout and writes JSON and HTML Code Analyzer reports. |
-| Selected app | **Profile Selected App** | Starts the selected app under the MATLAB profiler and saves its report when the app closes. |
+| Workbench tools | **Profile Selected App** | Starts the selected app under the MATLAB profiler and saves its report when the app closes. |
 | Workbench tools | **Clean Artifacts** | Removes ignored generated content under `artifacts/` while preserving task worktrees. See [cleanup boundaries](../../../../develop/tools/README.md#launcher-and-command-line-use) before retaining reports there. |
-| Workbench tools | **Package Checked** | Creates one source ZIP containing all checked apps and their runtime support. |
+| Applications heading | **Package Checked** | Creates one source ZIP containing all checked apps and their runtime support. |
 
 Double-clicking an app row is equivalent to selecting it and opening it normally. The checkbox column controls package membership; ordinary launch selection does not change the checked set. Click any column heading to sort it and click again to reverse the order. Selection and double-click actions continue to address the underlying App after sorting. The application table places **Family** immediately before **App** so related tools remain visually grouped while their individual names stay easy to scan.
 
@@ -45,7 +45,7 @@ When startup begins, the launcher disables its App table and actions, changes th
 
 The full Launcher writes one bounded JSON Lines log per Launcher session under `artifacts/logs/launcher/` and retains the 20 most recent logs. Events time Launcher view construction, catalog discovery, tool probing, App-path preparation, and App invocation. **View Launch Log** renders the current file in a readable window. Durable records contain controlled event names, App commands, durations, outcomes, and error identifiers; they do not retain source paths, data filenames, exception messages, or scientific values. App runtime construction and presentation remain in that App's separate session log.
 
-Every launch uses the same clean App path. Use the App's **LabKit ▾ > Diagnostics** menu to inspect its live session log. The Session Log window owns manual TRACE capture when additional detail is needed; the structured journal remains under `artifacts/logs/sessions/` after the App closes.
+For an error inside an App, open **LabKit ▾ > Diagnostics** in that App. Turn on TRACE capture there if you need more detail. After closing the App, you can still read its log under `artifacts/logs/sessions/`.
 
 ## App Discovery
 
@@ -53,7 +53,7 @@ Public apps are discovered from `apps/**/labkit_*_app.m`. Each entry point deleg
 
 The launcher adds only the paths needed for the selected app. It does not use `genpath` to expose every app helper globally. Refresh the app list after adding, removing, or updating an app while the launcher remains open.
 
-The App catalog is GUI-free and shared with documentation generation. Opening the Launcher is not required to query the catalog or use an App capability. In particular, a popout plot's **Send to Studio** action discovers and starts Figure Studio from the plot boundary; the Launcher does not register a global callback or depend directly on Figure Studio.
+To list installed Apps from the MATLAB command window, run `labkit_launcher("list")`. You can also open Figure Studio directly from a popout plot with **Send to Studio**.
 
 ## Maintenance Tools
 
@@ -68,7 +68,7 @@ These tools produce ignored artifacts. They are not app runtime APIs and do not 
 
 ## Programmatic Calls
 
-The launcher exposes a small non-GUI surface:
+Use the default call for the Launcher window. Use the named query modes below from MATLAB scripts:
 
 ```matlab
 fig = labkit_launcher;
@@ -82,12 +82,13 @@ localPage = labkit_launcher( ...
 | Call | Result |
 | --- | --- |
 | `labkit_launcher` | Opens the window; optionally returns its figure handle. |
+| `labkit_launcher("repair")` | Opens the standalone install/repair window and takes no output. |
 | `labkit_launcher("list")` | Returns the discovered app catalog as a table without opening the launcher window. |
 | `labkit_launcher("version")` | Returns launcher name, display name, semantic version, and update date. |
 | `labkit_launcher("documentation", appCommand)` | Returns the online GitHub Pages URL for one discovered public app command. |
 | `labkit_launcher("documentation", appCommand, "local")` | Returns the generated local HTML page. The page must already exist; the programmatic call does not display a prompt or generate files. |
 
-Unsupported modes, empty documentation commands, invalid documentation sources, extra inputs, and more than one requested GUI output raise `labkit_launcher:InvalidInput` or `labkit_launcher:TooManyOutputs` errors.
+With the installed Launcher available, unsupported modes, empty documentation commands, invalid documentation sources, and extra inputs raise `labkit:app:internal:launcher:InvalidInput`. An undiscovered or private App has no public guide and raises `labkit:app:internal:launcher:DocumentationUnavailable`. A missing local build raises `labkit:app:internal:launcher:LocalDocumentationMissing`. Requesting multiple outputs raises `labkit_launcher:TooManyOutputs`; requesting an output from repair raises `labkit_launcher:RepairHasNoOutput`.
 
 Documentation lookup uses the discovered public App folder and the unique path-conventional manual at `docs/use/apps/<family>/<app>/README.md`. It does not require a separately maintained App catalog. The visible launcher opens online documentation by default. Local generation is an explicit source-checkout convenience: **Doc Generation** always rebuilds the ignored `site/` folder and reports completion without opening a browser. The deployed site is generated independently from `main` by GitHub Actions.
 

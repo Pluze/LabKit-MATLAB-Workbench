@@ -168,10 +168,3 @@ function params = metricOptions(opts)
             "searchEndAfterPulseSec", fieldOrDefault(opts, ...
             "searchEndAfterPulseSec", 0.008))));
 end
-
-function value = fieldOrDefault(S, fieldName, defaultValue)
-    value = defaultValue;
-    if isstruct(S) && isfield(S, fieldName)
-        value = S.(fieldName);
-    end
-end

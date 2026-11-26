@@ -76,14 +76,6 @@ function drawIssuePreview(ax, issues)
     styleAxes(ax);
 end
 
-function n = tableHeight(value)
-    if istable(value)
-        n = height(value);
-    else
-        n = 0;
-    end
-end
-
 function resetAxes(ax)
     delete(allchild(ax));
     cla(ax);
@@ -100,11 +92,4 @@ function styleAxes(ax)
     ax.YGrid = "on";
     ax.XGrid = "off";
     ax.GridAlpha = 0.18;
-end
-
-function value = fieldOrDefault(S, fieldName, defaultValue)
-    value = defaultValue;
-    if isstruct(S) && isfield(S, fieldName)
-        value = S.(fieldName);
-    end
 end

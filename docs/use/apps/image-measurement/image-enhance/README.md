@@ -9,9 +9,9 @@ summary: Image Enhance builds an ordered, reversible processing history for one 
 
 Image Enhance builds an ordered, reversible processing history for one image or a batch and exports the resulting images with a completion manifest.
 
-Preview and export use the current processing history directly, keeping one authoritative sequence for both outcomes.
+The exported image uses the same edits you see in the preview.
 
-The left pane groups the workflow under **Image library**, **Edit & history**. Use **Export enhanced images** in the header when ready.
+Load the images in **Image library** and try your adjustments in **Edit & history**. Choose the output settings in **Batch export**, then select **Export enhanced images**.
 
 ## Requirements And Launch
 

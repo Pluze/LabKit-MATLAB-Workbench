@@ -47,7 +47,7 @@ else
     end
     reservedWidth = 48 + 9*strlength(obj.DisplayName) + actionWidth;
     split = obj.WorkbenchWorkspace.Parent;
-    host.SizeChangedFcn = @(source,~) fitNavigation(source.InnerPosition(3));
+    host.SizeChangedFcn = @(source,~) fitNavigation(min(source.InnerPosition(3), availableWidth()));
     obj.Layouts(char(node.Id)) = frame;
 end
 canvas = frame;
@@ -69,11 +69,14 @@ for i = 1:numel(ids)
 end
 paint(active);
 if ~sidebar
-    width = obj.Figure.Position(3) - split.ColumnWidth{1} - split.ColumnWidth{2};
-    fitNavigation(width-reservedWidth);
+    fitNavigation(availableWidth());
 end
+    function width = availableWidth()
+        width = obj.Figure.Position(3) - split.ColumnWidth{1} - split.ColumnWidth{2} - reservedWidth;
+    end
     function fitNavigation(width)
-        compact = width < requiredWidth;
+        % Keep long view lists accessible beside the header action at every width.
+        compact = numel(ids) > 3 || width < requiredWidth;
         selector.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(compact);
         bar.Visible = labkit.app.internal.native.NativeAdapterValues.onOff(~compact);
     end
@@ -116,5 +119,9 @@ end
         end
         canvas.UserData = id;
         paint(id);
+        readouts = findall(selected, 'Type', 'uitextarea');
+        for readout = reshape(readouts, 1, [])
+            obj.updateReadonlyHeight(readout, readout.Value);
+        end
     end
 end

@@ -22,6 +22,7 @@ from typing import Iterable
 
 
 PROFILE_METADATA = {
+    "affected-apps": ("Affected App tests", "Catalog tests selected from App paths changed by this PR"),
     "headless": (
         "Non-GUI",
         "Product, SDK, persistence, calculation, policy, and export specifications",
@@ -81,6 +82,7 @@ def main() -> int:
     outcomes = {
         "headless": args.headless_outcome,
         "apps": args.apps_outcome,
+        "affected-apps": args.affected_outcome,
     }
     profiles = [
         load_profile(key, outcomes[key], args.artifacts_root)
@@ -123,8 +125,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--claim", required=True)
     parser.add_argument("--artifact-name", required=True)
     parser.add_argument("--artifacts-root", default="artifacts")
-    parser.add_argument("--headless-outcome", required=True)
-    parser.add_argument("--apps-outcome", required=True)
+    parser.add_argument("--headless-outcome", default="skipped")
+    parser.add_argument("--apps-outcome", default="skipped")
+    parser.add_argument("--affected-outcome", default="skipped")
     parser.add_argument("--max-failures", type=int, default=20)
     parser.add_argument("--max-annotations", type=int, default=20)
     parser.add_argument("--max-failure-details", type=int, default=5)
@@ -182,7 +185,7 @@ def summary_header(
         "failed": "failed",
         "incomplete": "incomplete",
     }[verdict]
-    full_platform = {profile.key for profile in profiles} == set(PROFILE_METADATA)
+    full_platform = {profile.key for profile in profiles} == {"headless", "apps"}
     subject = (
         "LabKit MATLAB compatibility"
         if full_platform
@@ -322,12 +325,12 @@ def profile_problem_sections(
             ]
         if profile.failed_cases:
             lines += [
-                "| Class | Test | Diagnostic |",
-                "|---|---|---|",
+                "| Test identity | Diagnostic |",
+                "|---|---|",
             ]
             for case in profile.failed_cases[: args.max_failures]:
                 lines.append(
-                    f"| `{case['classname']}` | `{case['name']}` | "
+                    f"| `{markdown_escape(test_identity(case))}` | "
                     f"{markdown_escape(case['message'])} |"
                 )
             if len(profile.failed_cases) > args.max_failures:
@@ -395,12 +398,16 @@ def parse_test_cases(suites: list[ET.Element]) -> list[dict[str, str | float]]:
     return cases
 
 
+def test_identity(case: dict) -> str:
+    return f"{case['classname']}/{case['name']}"
+
+
 def failure_detail_lines(
     failed_cases: list[dict[str, str]], max_details: int
 ) -> list[str]:
     lines: list[str] = []
     for case in failed_cases[:max_details]:
-        identity = f"{case['classname']}.{case['name']}"
+        identity = test_identity(case)
         lines += [
             "<details>",
             f"<summary>Diagnostic for <code>{markdown_escape(identity)}</code></summary>",
@@ -469,7 +476,7 @@ def slow_test_lines(
         "|---|---|---:|",
     ]
     for case in slow:
-        identity = f"{case['classname']}.{case['name']}"
+        identity = test_identity(case)
         lines.append(
             f"| {case['profile']} | `{markdown_escape(identity)}` | "
             f"{float(case['time']):.2f}s |"
@@ -480,7 +487,12 @@ def slow_test_lines(
 
 def evidence_lines(args: argparse.Namespace) -> list[str]:
     profiles = parse_profiles(args.profiles)
-    commands = ", ".join(f"`buildtool {profile}`" for profile in profiles)
+    if profiles == ["affected-apps"]:
+        reproduction = ('Use the uploaded app-paths.txt: '
+                        '`addpath(".github/scripts"); runDevelopmentFeedback("app-paths.txt","affected-apps")`')
+    else:
+        commands = ", ".join(f"`buildtool {profile}`" for profile in profiles)
+        reproduction = f"{commands} in separate MATLAB sessions"
     lines = [
         "## Evidence and reproduction",
         "",
@@ -503,7 +515,7 @@ def evidence_lines(args: argparse.Namespace) -> list[str]:
         "- Reviewable images: "
         "`artifacts/test-results/<profile>/visual-evidence/` (when produced)",
         "- MATLAB log: `artifacts/logs/<profile>/matlab.log`",
-        f"- Local equivalent: {commands} in separate MATLAB sessions",
+        f"- Local equivalent: {reproduction}",
         "",
     ]
     return lines
@@ -525,7 +537,7 @@ def publish_annotations(profiles: list[ProfileResult], max_annotations: int) -> 
                 return
             print_annotation(
                 case["kind"],
-                f"{label}: {case['classname']}.{case['name']}",
+                f"{label}: {test_identity(case)}",
                 case["message"],
             )
             count += 1

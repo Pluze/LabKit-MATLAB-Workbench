@@ -1,10 +1,11 @@
-function result = runDevelopmentFeedback(changedPathsFile)
-%RUNDEVELOPMENTFEEDBACK Run focused evidence for one complete pushed range.
+function result = runDevelopmentFeedback(changedPathsFile, runName)
+%RUNDEVELOPMENTFEEDBACK Run focused evidence for a branch push or pull request.
 % The workflow owns range discovery. This adapter passes its exact path list
 % to the existing semantic planner so a clean checkout never falls back to
 % inspecting only HEAD^..HEAD.
 arguments
     changedPathsFile (1, 1) string
+    runName (1, 1) string = "development-feedback"
 end
 if exist(changedPathsFile, "file") ~= 2
     error("LabKit:DevelopmentFeedback:MissingChangedPaths", ...
@@ -22,7 +23,7 @@ addpath(fullfile(repositoryRoot, "tests"));
 cleanup = onCleanup(@() rmpath(fullfile(repositoryRoot, "tests")));
 result = labkittest.run( ...
     Profile="changed", ChangedPaths=paths, ...
-    RunName="development-feedback", ...
+    RunName=runName, ...
     ArtifactsRoot=fullfile(repositoryRoot, "artifacts", "test-results"));
 clear cleanup
 end

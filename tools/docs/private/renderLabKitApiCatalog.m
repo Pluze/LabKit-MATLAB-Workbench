@@ -131,7 +131,7 @@ function [html, words] = apiTable(items, outputPath)
     rows = strings(numel(items), 1);
     words = strings(numel(items), 1);
     for k = 1:numel(items)
-        target = apiOutput(items(k));
+        target = apiOutputPath(items(k).symbol);
         summary = regexprep(string(items(k).summary), ...
             '^[A-Z][A-Z0-9_]*\s+', '');
         rows(k) = "<tr><td><a href=""" + ...
@@ -143,11 +143,6 @@ function [html, words] = apiTable(items, outputPath)
     html = "<div class=""table-wrap""><table class=""api-table"">" + ...
         "<thead><tr><th>Function</th><th>Purpose</th></tr></thead><tbody>" + ...
         strjoin(rows, "") + "</tbody></table></div>";
-end
-
-function output = apiOutput(item)
-    output = "reference/api/" + ...
-        replace(string(item.symbol), ".", "/") + ".html";
 end
 
 function [target, label] = categoryTarget(model, items, group)

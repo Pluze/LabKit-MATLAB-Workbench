@@ -139,12 +139,6 @@ Missing files, malformed headers, unsupported magic numbers, absent channel fami
 
 Successful parsing confirms that the supported RHS header and complete block layout were readable. It does not validate an experiment protocol, decide which channels form a differential signal, or assess recording quality.
 
-## Reference Contract
-
-The generated pages for `findFiles`, `inspectFile`, `indexFile`, `readWindow`, and `version` state complete inputs, outputs, options, defaults, legal values, status/error behavior, and related APIs. Documentation discovery covers the complete public package; `docsCheck` executes its self-contained `Example:` blocks.
-
-Self-contained public-help `Example:` blocks run in `docsCheck`. File- or device-dependent `Typical Call:` sketches require the indicated external input and are not executed by that check.
-
 ## Related Topics
 
 - [RHS Preview](../../../use/apps/neurophysiology/rhs-preview/README.md) provides interactive waveform review and channel-role drafting.

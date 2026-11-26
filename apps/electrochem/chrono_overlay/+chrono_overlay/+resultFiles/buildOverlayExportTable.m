@@ -13,7 +13,7 @@ function T = buildOverlayExportTable(items)
 
     T = table(timeUnion, 'VariableNames', {'TimeGapCenterAligned_s'});
     for i = 1:numel(items)
-        safeName = sanitizeFieldName(items(i).name);
+        safeName = matlab.lang.makeValidName(items(i).name);
         names = matlab.lang.makeValidName({['V_' safeName], ['I_' safeName]});
         names = matlab.lang.makeUniqueStrings(names, ...
             T.Properties.VariableNames, namelengthmax);
@@ -56,8 +56,4 @@ function i = chronoCurrent(item)
     else
         i = item.Im_A(:);
     end
-end
-
-function out = sanitizeFieldName(txt)
-    out = matlab.lang.makeValidName(txt);
 end

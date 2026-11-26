@@ -20,17 +20,23 @@ function textArea = createTextPanel(obj, node, parent, config)
         obj.sectionDrawsOwnTitle(owner) && ...
         isfield(owner.Configuration, "Title") && ...
         string(owner.Configuration.Title) == title;
-    if redundantTitle
-        textArea = uitextarea(parent, Editable="off");
-    else
-        panel = uipanel(parent, Title=char(title), BorderType="none", Tag=node.Id + ".panel");
-        grid = uigridlayout(panel, [1 1], Padding=[7 7 7 7]);
-        textArea = uitextarea(grid, Editable="off");
-        textArea.UserData = struct("Panel", panel);
+    policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
+    if title == "Status" && ~isempty(owner) && owner.Kind == "section" && ...
+            ~obj.sectionDrawsOwnTitle(owner)
+        title = string(owner.Configuration.Title);
     end
-    if config.Lines <= 2
-        policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
-        textArea.FontSize = policy.SummaryFontSize;
-        setappdata(textArea, "labkitAppTextFitMinFontSize", policy.SummaryFontSize);
+    showHeading = ~redundantTitle && title ~= "" && title ~= "Status";
+    grid = uigridlayout(parent, [1 1], Padding=policy.ReadonlyInset, ...
+        RowSpacing=4, ColumnSpacing=0, Tag=node.Id + ".panel");
+    headingHeight = 0;
+    if showHeading
+        grid.RowHeight = {18, '1x'};
+        uilabel(grid, Text=title, FontWeight="bold", FontSize=policy.ReadonlyFontSize);
+        headingHeight = 18 + grid.RowSpacing;
     end
+    textArea = uitextarea(grid, Editable="off", WordWrap="on", ...
+        FontSize=policy.ReadonlyFontSize);
+    textArea.UserData = struct("LayoutContainer", grid, "NodeId", node.Id, ...
+        "Readonly", true, "HeadingHeight", headingHeight, ...
+        "MaximumLines", max(6, config.Lines));
 end

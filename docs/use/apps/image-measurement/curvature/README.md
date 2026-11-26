@@ -9,11 +9,11 @@ summary: Curvature Measurement fits a circle to an ordered image curve, reports 
 
 Curvature Measurement fits a circle to an ordered image curve, reports radius and curvature, measures traced arc length, and supports pixel-to-physical scale calibration.
 
-Each use of **Measure length + curvature** computes traced length and circle-fit results from the current curve and scale options, keeping the displayed summary and exported row aligned.
+After changing the curve or scale, choose **Measure length + curvature** to update the displayed and exported measurements.
 
-While tracing, the image remains a target for the plot context menu. Use it to open the current fit view in a separate figure.
+Right-click the image to open the current fit in a separate figure, even while tracing.
 
-The left pane groups the workflow under **Trace & calibrate**, **Fit results**.
+Mark the curve in **Trace curve**, set its scale and fit it in **Calibrate & fit**, then read the radius and curvature in **Fit results**.
 
 ## Requirements And Launch
 
@@ -23,7 +23,7 @@ labkit_CurvatureMeasurement_app
 
 ## Basic Workflow
 
-The **Trace & calibrate** page contains the complete workflow:
+Use **Trace curve** to mark the image and **Calibrate & fit** to calculate the result.
 
 1. Choose an image in the **Image** section.
 2. Use **Measure reference pixels**, or enter **Reference pixels** directly, then enter the known reference length and unit.

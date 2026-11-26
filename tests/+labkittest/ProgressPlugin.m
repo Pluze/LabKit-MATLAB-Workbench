@@ -7,6 +7,7 @@ classdef ProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
 
     properties (Access = private)
         RunFolder
+        RunTotal
         Total = 0
         Started = 0
         Completed = 0
@@ -21,7 +22,9 @@ classdef ProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
         function plugin = ProgressPlugin(runFolder, varargin)
             p = inputParser;
             p.addParameter("HeartbeatSeconds", 30, @isPositiveScalar);
+            p.addParameter("RunTotal", [], @(n) isnumeric(n) && isscalar(n) && isfinite(n) && n >= 0 && fix(n) == n);
             p.parse(varargin{:});
+            plugin.RunTotal = p.Results.RunTotal;
             plugin.RunFolder = string(runFolder);
             plugin.HeartbeatSeconds = double(p.Results.HeartbeatSeconds);
         end
@@ -33,16 +36,28 @@ classdef ProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
 
     methods (Access = protected)
         function runTestSuite(plugin, pluginData)
-            plugin.Total = numel(pluginData.TestSuite);
-            plugin.SuiteTimer = tic;
+            if isempty(plugin.RunTotal)
+                plugin.Total = numel(pluginData.TestSuite);
+                plugin.Started = 0;
+                plugin.Completed = 0;
+                plugin.SuiteTimer = tic;
+            else
+                plugin.Total = plugin.RunTotal;
+                if isempty(plugin.SuiteTimer)
+                    plugin.SuiteTimer = tic;
+                end
+            end
             plugin.record("suite_start", "", 0);
             plugin.writeActive("starting", "", 0);
-            fprintf("LabKit test progress: 0/%d eta=unknown\n", plugin.Total);
+            fprintf("LabKit test progress: %d/%d eta=%s\n", ...
+                plugin.Completed, plugin.Total, plugin.etaText());
             plugin.startHeartbeat();
             cleanup = onCleanup(@() plugin.stopHeartbeat());
             runTestSuite@matlab.unittest.plugins.TestRunnerPlugin(plugin, pluginData);
             plugin.record("suite_done", "", 0);
-            plugin.writeActive("finished", "", 0);
+            if plugin.Completed == plugin.Total
+                plugin.writeActive("finished", "", 0);
+            end
             clear cleanup
         end
 

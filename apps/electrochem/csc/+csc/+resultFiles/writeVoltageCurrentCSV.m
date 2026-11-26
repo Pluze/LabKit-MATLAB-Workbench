@@ -179,21 +179,6 @@ function opts = fillOptions(opts)
     end
 end
 
-function indices = selectedCurveIndices(count, opts)
-    indices = 1:count;
-    if logicalScalar(opts.ignoreEdgeCycles) && count > 0
-        indices = indices(indices ~= 1 & indices ~= count);
-    end
-end
-
-function tf = logicalScalar(value)
-    if islogical(value) || isnumeric(value)
-        tf = isscalar(value) && logical(value);
-    else
-        tf = any(strcmpi(string(value), ["true", "on", "1", "yes"]));
-    end
-end
-
 function text = currentColumnName(record)
     text = sprintf('%s_Cycle%d_Current_A', ...
         safeStem(record.itemName), record.curveIndex);
@@ -209,26 +194,5 @@ function stem = safeStem(value)
     stem = regexprep(stem, '^_+|_+$', '');
     if isempty(stem)
         stem = 'item';
-    end
-end
-
-function value = itemScanRate(item)
-    if isfield(item, 'scanRate')
-        value = item.scanRate;
-    elseif isfield(item, 'scanRate_V_per_s')
-        value = item.scanRate_V_per_s;
-    else
-        value = NaN;
-    end
-end
-
-function name = itemName(item)
-    if isfield(item, 'name')
-        name = item.name;
-    elseif isfield(item, 'filepath')
-        [~, name, ext] = fileparts(item.filepath);
-        name = [name ext];
-    else
-        name = "";
     end
 end

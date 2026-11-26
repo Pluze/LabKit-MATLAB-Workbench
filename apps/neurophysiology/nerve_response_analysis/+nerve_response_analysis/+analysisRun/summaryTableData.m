@@ -21,21 +21,6 @@ function data = summaryTableData(S)
         'Last action', char(string(fieldOrDefault(S, "lastAction", "Ready")))};
 end
 
-function value = fieldOrDefault(S, fieldName, defaultValue)
-    value = defaultValue;
-    if isstruct(S) && isfield(S, fieldName)
-        value = S.(fieldName);
-    end
-end
-
-function n = tableHeight(value)
-    if istable(value)
-        n = height(value);
-    else
-        n = 0;
-    end
-end
-
 function text = displayNumber(value)
     text = char(string(double(value)));
 end

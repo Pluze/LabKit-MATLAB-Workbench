@@ -9,11 +9,11 @@ summary: Compare two or more numeric groups against a designated reference group
 
 T-Test Wizard captures numeric categories, compares selected categories against a chosen reference, and draws a mean-and-standard-deviation or box plot. It initially uses the first category as reference and includes every other category.
 
-The left pane groups the workflow under **Data & groups**, **Test & plot**, **Export**. Choose **Data**, **Plot**, **Categories** beside the App title to switch views.
+Use **Data & groups** to prepare observations and **Run tests** to compare groups. The workspace shows the source values in **Data**, group definitions in **Categories**, and results in **Plot**. Adjust **Plot appearance** or use **Export** to save the tables.
 
 ## Open T-Test Wizard
 
-From the LabKit launcher, select **T-Test Wizard** and choose **Open**. From a source checkout, run:
+From the LabKit launcher, select **T-Test Wizard** and choose **Open Selected App**. From a source checkout, run:
 
 ```matlab
 labkit_TTestWizard_app
@@ -23,17 +23,18 @@ The App requires Base MATLAB and the LabKit App Framework. It does not require S
 
 ## Workflow
 
-The left controls use three short pages:
+Use the four pages on the left to prepare, run, and export a comparison:
 
-1. **Data** — open a table, choose where selected values go, or clear data.
-2. **Test & Plot** — choose one t-test, run all comparisons, review result rows, and adjust plot presentation.
-3. **Export** — save all group observations and result rows as separate CSVs.
+1. **Data & groups** — open a table, choose where selected values go, or clear data.
+2. **Run tests** — choose the reference and comparison categories, run the t-test, and review result rows.
+3. **Plot appearance** — adjust the presentation of the completed comparison plot.
+4. **Export** — save all group observations and result rows as separate CSVs.
 
 The right workspace has three user-selectable pages:
 
 - **Data** keeps the opened source table above the editable analysis table, each using half of the workspace.
 - **Plot** gives the completed statistical figure the full workspace.
-- **Categories** provides the full-width name, order, sample count, and comparison editor; choose its reference and batch actions under **Test & Plot**.
+- **Categories** provides the full-width name, order, sample count, and comparison editor; choose its reference and batch actions under **Run tests**.
 
 Changing data or test settings does not silently recalculate the plot. A compact status beside the plot controls reports **OUT OF DATE** until **Run / refresh comparisons** is used again. The short **What will run** and **Result family** summaries stay compact so the result table and plot controls receive most of the vertical space.
 
@@ -91,7 +92,7 @@ Every selected group needs at least two finite observations. Paired testing addi
 
 The plot uses the copied completed-result observations, not live editor values. Choose **Mean bars with SD** or **Box plot** without recalculating the tests. Both styles use numeric y-axis ticks, ordinary horizontal x-axis tick labels, and the same annotation geometry. Comparison brackets are legend-excluded annotation lines, allowing Figure Studio to apply its standard reference-line weight independently from data, uncertainty, boundary, and axes strokes. Figure Studio can adjust typography and label presentation after the plot is popped out.
 
-The bar visual contract is:
+Read the bars as follows:
 
 - one pastel bar per group;
 - bar height equal to the group mean;

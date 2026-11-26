@@ -9,13 +9,9 @@ summary: Monitor and replay ESM303 force and travel data, then calculate enginee
 
 Mark-10 Monitor connects to an ESM303 with an attached Series 5 gauge, displays and retains live force and travel without controlling stand motion, replays previously exported data, and calculates engineering stress–strain curves and strain-window moduli.
 
-The central workspace follows the official monitoring workflow with separate **Live Plots**, **Recent Data**, **Recording Review**, **Modulus Analysis**, and **Diagnostics** pages. The upper plot shows measured travel and, when available, linear reconstructed travel on its left axis and force on the right. The lower plot shows the same force samples against each travel series. The table shows the latest 200 valid visible samples while the full monitoring run remains in the managed buffer.
+On **Live Plots**, the upper plot shows travel on the left axis and force on the right. The lower plot shows force against measured travel and, when available, reconstructed travel. **Recent Data** shows the latest 200 valid visible samples. The recording keeps the full run. Choose **Recording Review** to set the analysis interval, **Modulus Analysis** to inspect the fits, or **Diagnostics** to review the initial-length estimate.
 
-Connection, settings, read-once, playback, and monitoring controls call their owned workflow directly, while retained samples remain the single source for plots and export.
-
-The control side is split into task-focused **Monitor**, **Analysis**, and **Settings** tabs. Connection, live monitoring/export, file playback, and device configuration therefore remain independent instead of sharing one long scrolling panel.
-
-The left pane groups the workflow under **Monitor**, **Analysis**, **Settings**. Choose **Live Plots**, **Recent Data**, **Recording Review**, **Modulus Analysis**, **Diagnostics** beside the App title to switch views. Use **Export CSV + LOG + MAT** in the header when ready.
+Use **Monitor** for live readings and **Settings** for gauge settings. To analyze a recording, start in **Review recording**, apply the zero offsets in **Set reference**, then open **Fit & export**. Choose **Export CSV + LOG + MAT** to save the recording.
 
 ## Connect, Monitor, And Export
 
@@ -59,17 +55,17 @@ In **Recording Review**, the start and end time fields share a row with **Use Fu
 
 Disconnect hardware, choose **Load Recording**, and select an App CSV, MESUR gauge LOG, or complete MAT export. Load immediately displays the complete curves. **Reset Playback** stops replay and restores that complete view. **Play from Start** always begins at the first sample; **Pause / Resume** retains and resumes the current cursor. Replay uses a fixed 10-frame-per-second visual progression of approximately ten seconds rather than recorded timestamps. Live acquisition and replay derive limits from the same currently displayed sample prefix. Empty plots begin with 10 mm travel and 1 N force headroom; populated plots use recent sample changes, observed span, signal level, and acquisition rate. The result does not depend on earlier refreshes. **Refit Plot Limits** reapplies that deterministic range after manual pan or zoom, including the independent travel and force Y limits in the upper plot; it is available during both live monitoring and replay. Right-click a plot to choose its mouse-wheel zoom target. The dual-axis time plot defaults to X only; choose Left Y for travel, Right Y for force, or X + both Y axes. Select MATLAB's Pan tool in an axes toolbar when drag panning is needed. Loading a different file, changing analysis time bounds, connecting hardware, or starting a monitoring run refits the applicable axes; ordinary wheel zoom, switching tabs, and window resizing do not reset the view. Hardware connection is disabled during replay and replay controls are disabled while connected.
 
-The **Analysis** tab uses the complete loaded recording or valid samples of a stopped monitoring run, independently of the visible replay prefix. Loaded filenames appear in the App window, raw plot headings, and analysis headings. A new recording clears geometry confirmation and previous results.
+**Review recording** uses the complete loaded recording or valid samples of a stopped monitoring run, independently of the visible replay prefix. Loaded filenames appear in the App window, raw plot headings, and analysis headings. A new recording clears geometry confirmation and previous results.
 
 ## Analysis Workflow
 
-Follow the numbered sections in the **Analysis** tab:
+Start in **Review recording**, apply offsets in **Set reference**, then continue in **Fit & export**.
 
 1. Load data, choose **Tension**, **Compression**, or **Cyclic**, and set the analysis start/end times in seconds. Times are original recording times. **Use Full Time Range** restores the source bounds. The **Recording Review** page puts start/end time controls above the force/time and gap/time plots, which mark the selected interval.
 2. Review force zero and the closed-fixture travel reference. Optionally detect and exclude isolated glitches.
 3. Enter one approximate contact time; estimate initial length automatically or enter a measured value, review the cross-section, and confirm dimensions. Choose **Update Stress-Strain** to prepare the curve.
-4. Add and edit strain windows in the Analysis sidebar, then choose **Calculate Window Moduli**. The **Modulus Analysis** workspace keeps the stress–strain plot at full width, with its result table underneath. Inspect all enabled windows and their colored fits together. Selecting a result emphasizes that fit. **Reset X/Y** restores the stress–strain view without recalculating or invalidating fitted results. Choose **Open Analysis Diagnostics** for a synchronized separate window.
-5. Use **Export Stress-Strain CSV** at the bottom of the Analysis tab to save the prepared curve. Window fitting is not required for this export.
+4. Add and edit strain windows under **Fit & export**, then choose **Calculate Window Moduli**. The **Modulus Analysis** workspace keeps the stress–strain plot at full width, with its result table underneath. Inspect all enabled windows and their colored fits together. Selecting a result emphasizes that fit. **Reset X/Y** restores the stress–strain view without recalculating or invalidating fitted results. Choose **Open Analysis Diagnostics** for a synchronized separate window.
+5. Use **Export Stress-Strain CSV** under **Fit & export** to save the prepared curve. Window fitting is not required for this export.
 
 Changing a strain window clears only fitted results. Changing the analysis time interval clears the curve and fits while retaining the reviewed initial length and contact estimate. Changing the test type, applied zero, glitch exclusion, or approximate contact time clears the estimate and geometry confirmation. Editing specimen dimensions clears confirmation and the curve. These changes require the relevant update/confirmation before another export; an open diagnostic window reflects the same state.
 

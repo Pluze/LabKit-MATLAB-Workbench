@@ -27,20 +27,76 @@ class WorkflowContracts(unittest.TestCase):
         gate = jobs["ci-gate"]
         self.assertEqual(gate["name"], "CI Gate")
         self.assertEqual(gate["if"], "always()")
-        self.assertEqual(set(gate["needs"]), {"policy", "platform-matrix", "docs-check"})
-        for event in ("push", "pull_request"):
-            required = ["policy"] if event == "push" else gate["needs"]
+        self.assertEqual(set(gate["needs"]), {"policy", "platform-matrix", "docs-check", "affected-apps"})
+        for event, scope, required in (
+            ("push", "", []),
+            ("pull_request", "policy", []),
+            ("pull_request", "docs", ["docs-check"]),
+            ("pull_request", "apps", ["docs-check", "affected-apps"]),
+            ("pull_request", "full", ["docs-check", "platform-matrix"]),
+            ("pull_request", "", []),
+        ):
+            required = {"policy", *required}
             cases = [(None, "success")] + [(job, outcome) for job in required
-                                                       for outcome in ("failure", "skipped")]
+                                           for outcome in ("failure", "skipped", "cancelled")]
             for failed_job, outcome in cases:
-                with self.subTest(event=event, job=failed_job, outcome=outcome):
-                    script = "\n".join(s.get("run", "") for s in gate["steps"])
-                    script = script.replace("${{ github.event_name }}", event)
+                with self.subTest(event=event, scope=scope, job=failed_job, outcome=outcome):
+                    script = gate["steps"][0]["run"].replace("${{ github.event_name }}", event)
+                    script = script.replace("${{ needs.policy.outputs.scope }}", scope)
                     for job in gate["needs"]:
-                        value = outcome if job == failed_job else "success"
+                        value = "success" if job in required else "skipped"
+                        if job == failed_job:
+                            value = outcome
                         script = script.replace("${{ needs." + job + ".result }}", value)
                     result = subprocess.run(["bash", "-e", "-c", script], capture_output=True)
-                    self.assertEqual(result.returncode == 0, failed_job is None)
+                    valid_scope = event == "push" or bool(scope)
+                    self.assertEqual(result.returncode == 0, failed_job is None and valid_scope)
+
+    def test_pr_scope_combines_all_changed_paths(self):
+        from pr_scope import validation_scope
+
+        source = "apps/electrochem/csc/+csc/definition.m"
+        guide = "docs/use/apps/electrochemistry/csc/README.md"
+        for paths, expected in (
+            ([], "full"), (["AGENTS.md"], "policy"), ([guide, "AGENTS.md"], "docs"),
+            (["README.md"], "docs"), (["docs/AGENTS.md"], "docs"),
+            ([guide, source], "apps"), ([source, guide], "apps"),
+            ([source, "+labkit/shared.m"], "full"),
+            (["apps/electrochem/csc/deleted.m", source], "full"),
+            ([".github/workflows/ci.yml"], "full"),
+        ):
+            with self.subTest(paths=paths):
+                self.assertEqual(validation_scope(paths), expected)
+
+    def test_scope_includes_earlier_pr_commits_and_excludes_base_only_changes(self):
+        selector = ROOT / ".github/scripts/pr_scope.py"
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+
+            def git(*args):
+                subprocess.run(["git", *args], cwd=root, check=True, capture_output=True)
+
+            def commit(path):
+                file = root / path
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.write_text("fixture", encoding="utf-8")
+                git("add", path)
+                git("commit", "-m", "fixture")
+
+            git("init", "-b", "main")
+            git("config", "user.name", "Fixture")
+            git("config", "user.email", "fixture@example.invalid")
+            commit("README.md")
+            git("switch", "-c", "topic")
+            app = "apps/example/sample/+sample/definition.m"
+            commit(app)
+            commit("docs/guide.md")
+            git("switch", "main")
+            commit("+labkit/shared.m")
+            git("merge", "--no-ff", "topic", "-m", "merge fixture")
+            for options, expected in (([], "apps"), (["--app-paths"], app)):
+                actual = subprocess.check_output([sys.executable, selector, *options], cwd=root, text=True)
+                self.assertEqual(actual.strip(), expected)
 
     def test_platform_coverage_and_profile_dispatch_agree(self):
         jobs = workflow("ci")["jobs"]

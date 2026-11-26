@@ -30,21 +30,6 @@ function lines = detailLines(S)
     lines = cellstr(string(lines));
 end
 
-function value = fieldOrDefault(S, fieldName, defaultValue)
-    value = defaultValue;
-    if isstruct(S) && isfield(S, fieldName)
-        value = S.(fieldName);
-    end
-end
-
-function n = tableHeight(value)
-    if istable(value)
-        n = height(value);
-    else
-        n = 0;
-    end
-end
-
 function text = maxText(value)
     value = double(value);
     if value <= 0 || ~isfinite(value)

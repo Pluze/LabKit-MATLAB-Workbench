@@ -120,10 +120,3 @@ function styleBarAxes(ax)
     ax.XGrid = "off";
     ax.GridAlpha = 0.18;
 end
-
-function value = fieldOrDefault(S, fieldName, defaultValue)
-    value = defaultValue;
-    if isstruct(S) && isfield(S, fieldName)
-        value = S.(fieldName);
-    end
-end

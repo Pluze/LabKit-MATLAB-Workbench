@@ -58,7 +58,7 @@ class SummarizeJunitTest(unittest.TestCase):
             self.assertEqual(result, 0)
             content = summary.read_text(encoding="utf-8")
             self.assertIn("# ❌ LabKit MATLAB compatibility failed", content)
-            self.assertIn("FigureStudioResultSpec", content)
+            self.assertIn("`FigureStudioResultSpec/exportedAxisLabelsRetainOuterWhitespace(Mode=left)`", content)
             self.assertIn("axis label reached export boundary", content)
             self.assertIn("Still proven by this run", content)
             self.assertIn("App boundaries passed", content)
@@ -199,7 +199,7 @@ class SummarizeJunitTest(unittest.TestCase):
             f'<testsuite name="FigureStudioResultSpec" tests="1" '
             f'failures="{failures}" errors="0" skipped="0" time="1.25">'
             '<testcase classname="FigureStudioResultSpec" '
-            'name="exportedAxisLabelsRetainOuterWhitespace" time="1.25">'
+            'name="exportedAxisLabelsRetainOuterWhitespace(Mode=left)" time="1.25">'
             f"{failure}</testcase></testsuite></testsuites>",
             encoding="utf-8",
         )

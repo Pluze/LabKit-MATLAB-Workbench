@@ -9,9 +9,7 @@ summary: Register and crop an optical image pair and create a binary analysis ma
 
 DIC Preprocess registers a moving optical image to a reference image, applies repeatable crop operations to the pair, and creates a binary analysis mask. Use it when camera motion or framing differences must be removed before an external DIC solver is run.
 
-Mask editing, source replacement, and result-folder selection update the current project directly; no additional compatibility file or helper setup is required.
-
-The left pane groups the workflow under **Register & crop**, **Summary**.
+Align and crop the image pair in **Register & crop**, outline the region to keep in **Mask ROI**, then check the outputs in **Summary**.
 
 ## Requirements And Launch
 

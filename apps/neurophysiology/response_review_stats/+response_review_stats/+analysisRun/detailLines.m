@@ -23,13 +23,6 @@ function lines = detailLines(S)
     lines = cellstr(string(lines));
 end
 
-function value = fieldOrDefault(S, fieldName, defaultValue)
-    value = defaultValue;
-    if isstruct(S) && isfield(S, fieldName)
-        value = S.(fieldName);
-    end
-end
-
 function text = rangeText(value)
     value = double(value);
     text = sprintf("%.4g to %.4g s", value(1), value(2));

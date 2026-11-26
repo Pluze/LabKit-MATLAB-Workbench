@@ -9,9 +9,7 @@ summary: Image Match transfers tone and color statistics from one reference imag
 
 Image Match transfers tone and color statistics from one reference image to one or more source images while preserving each source image's geometry.
 
-Preview details are derived from the selected source and its current matching history, rather than retained in a parallel presentation model.
-
-The left pane groups the workflow under **Image library**, **Match & history**. Use **Export matched images** in the header when ready.
+Choose the source and reference images in **Image library**. Review the match in **Match & history**. Set the output options in **Batch export**, then choose **Export matched images**.
 
 ## Requirements And Launch
 

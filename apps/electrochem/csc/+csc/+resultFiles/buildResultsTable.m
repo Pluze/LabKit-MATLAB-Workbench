@@ -71,12 +71,12 @@ function row = resultRow(item, curveIndex, curve, opts, result)
     row.RelativeDiffAnod_pct = relativePct(row.DiffAnod_C, result.QctAnod, result.QcvAnod);
     row.RelativeDiffFull_pct = relativePct(row.DiffFull_C, result.QctFull, result.QcvFull);
     row.DtError_s = result.dtErr;
-    row.CSCctCath_mCcm2 = normalizeCharge(result.QctCath, result.area_cm2);
-    row.CSCctAnod_mCcm2 = normalizeCharge(result.QctAnod, result.area_cm2);
-    row.CSCctFull_mCcm2 = normalizeCharge(result.QctFull, result.area_cm2);
-    row.CSCcvCath_mCcm2 = normalizeCharge(result.QcvCath, result.area_cm2);
-    row.CSCcvAnod_mCcm2 = normalizeCharge(result.QcvAnod, result.area_cm2);
-    row.CSCcvFull_mCcm2 = normalizeCharge(result.QcvFull, result.area_cm2);
+    row.CSCctCath_mCcm2 = csc.analysisRun.chargeDensity(result.QctCath, result.area_cm2);
+    row.CSCctAnod_mCcm2 = csc.analysisRun.chargeDensity(result.QctAnod, result.area_cm2);
+    row.CSCctFull_mCcm2 = csc.analysisRun.chargeDensity(result.QctFull, result.area_cm2);
+    row.CSCcvCath_mCcm2 = csc.analysisRun.chargeDensity(result.QcvCath, result.area_cm2);
+    row.CSCcvAnod_mCcm2 = csc.analysisRun.chargeDensity(result.QcvAnod, result.area_cm2);
+    row.CSCcvFull_mCcm2 = csc.analysisRun.chargeDensity(result.QcvFull, result.area_cm2);
     row.Status = string(result.message);
 end
 
@@ -123,48 +123,12 @@ function opts = fillOptions(opts)
     end
 end
 
-function indices = selectedCurveIndices(count, opts)
-    indices = 1:count;
-    if logicalScalar(opts.ignoreEdgeCycles) && count > 0
-        indices = indices(indices ~= 1 & indices ~= count);
-    end
-end
-
-function tf = logicalScalar(value)
-    if islogical(value) || isnumeric(value)
-        tf = isscalar(value) && logical(value);
-    else
-        tf = any(strcmpi(string(value), ["true", "on", "1", "yes"]));
-    end
-end
-
 function curves = itemCurves(item)
     if isfield(item, 'curves')
         curves = item.curves;
     else
         curves = struct('name', {}, 'headers', {}, 'units', {}, ...
             'data', {}, 'numericMask', {});
-    end
-end
-
-function value = itemScanRate(item)
-    if isfield(item, 'scanRate')
-        value = item.scanRate;
-    elseif isfield(item, 'scanRate_V_per_s')
-        value = item.scanRate_V_per_s;
-    else
-        value = NaN;
-    end
-end
-
-function name = itemName(item)
-    if isfield(item, 'name')
-        name = item.name;
-    elseif isfield(item, 'filepath')
-        [~, name, ext] = fileparts(item.filepath);
-        name = [name ext];
-    else
-        name = "";
     end
 end
 
@@ -185,10 +149,6 @@ function area = parsedArea(value)
     if ~isscalar(area) || ~isfinite(area) || area <= 0
         area = NaN;
     end
-end
-
-function value = normalizeCharge(charge_C, area_cm2)
-    value = csc.analysisRun.chargeDensity(charge_C, area_cm2);
 end
 
 function value = relativePct(diff_C, qct_C, qcv_C)

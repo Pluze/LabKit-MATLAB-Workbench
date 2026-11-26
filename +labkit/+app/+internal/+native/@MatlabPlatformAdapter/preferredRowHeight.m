@@ -23,11 +23,8 @@ function height = preferredRowHeight(obj, node)
                 height = 18 * node.Configuration.Lines + 4;
             elseif node.Configuration.Presentation == "label"
                 height = 25 + 19 * node.Configuration.Lines;
-            elseif node.Id == "applicationUsage"
-                height = policy.UsageHeight;
             else
-                height = policy.StatusChromeHeight + ...
-                    node.Configuration.Lines * policy.StatusLineHeight;
+                height = policy.ReadonlyMinimumHeight + 22;
             end
         case "button"
             height = policy.ButtonHeight;

@@ -15,10 +15,11 @@ Include:
 - the app command or affected file
 - how you got LabKit: release, latest launcher update, or git checkout
 - MATLAB version and operating system
-- short reproduction steps
-- the expected and actual behavior
-- redacted logs or generated artifact folder names, if available
-- for GUI hangs or callback errors, the generated debug log plus any `*_crash_report.txt` or `*_active_operation.txt` file. These reports include the exact MATLAB error id/message/stack and a recent-operation trace that helps reconstruct the repro path.
+- the steps someone else can follow to see the same problem
+- what you expected and what happened instead
+- if clicking a control produces an error, copy the relevant redacted events from **LabKit ▾ → Diagnostics → Open Session Log...**
+- if the App is unresponsive, inspect its saved session under `artifacts/logs/sessions/` and share the relevant redacted entries from `events-*.jsonl`
+- for a Launcher startup problem, include the relevant redacted events from **Workbench tools → View Launch Log** when available
 
 Do not upload raw lab files, identifying file names, subject names, device serials, local absolute paths, timestamps, or private experiment labels. Use synthetic or redacted examples.
 
@@ -28,4 +29,4 @@ Open an app workflow request when you need a new import path, export, table, plo
 
 ## Contributing
 
-For source changes, start with [Testing](../docs/develop/testing.md) and use the pull request template. Keep app-specific behavior in the owning App unless the shared `+labkit` foundation clearly owns a domain-neutral contract.
+For source changes, start with [Testing](../docs/develop/testing.md) and use the pull request template. Keep code for one App in that App. Put code in `+labkit` when several Apps need the same behavior.

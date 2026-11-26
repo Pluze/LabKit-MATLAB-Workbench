@@ -38,6 +38,8 @@ switch control.Type
         control.FontColor = style.Text;
     case {'uitextarea','uieditfield','uinumericeditfield','uispinner', ...
             'uidropdown','uilistbox'}
+        policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
+        control.FontSize = policy.ReadonlyFontSize;
         control.BackgroundColor = style.Surface;
         control.FontColor = style.Text;
     otherwise

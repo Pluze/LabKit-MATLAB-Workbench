@@ -7,13 +7,13 @@ audience: app-developer
 summary: Find accepted LabKit changes by recency, component, year, compatibility, or Change ID, then follow their rationale and current documentation.
 ```
 
-Use Changes when you need to know why LabKit moved from an earlier baseline to its accepted result. Start with a current App guide or API when you only need to complete a task or learn what is supported now.
+If a button moved, a calculation changed, or an old file opens differently, look here for the reason. For instructions on using the current version, open the App guide.
 
 ## What A Change Explains
 
-Each record preserves the problem and constraints, the accepted choice, relevant rejected alternatives, net user and developer impact, compatibility, and remaining limits. It is not a commit diary, test report, unreleased changelog, or duplicate Release note.
+Each record explains what changed, why, who it affects, and whether older code or saved files still work.
 
-When a later choice replaces an earlier one, the newer record names what it supersedes and the site shows both directions of that decision chain. Component links connect records to the current guides they affected; [GitHub Releases](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases) remain the source for version-level summaries and upgrade action.
+Follow the links in a record to find the current guide or an earlier decision. For a summary of one published version and any upgrade instructions, see [GitHub Releases](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases).
 
 ## Find A Specific Change
 

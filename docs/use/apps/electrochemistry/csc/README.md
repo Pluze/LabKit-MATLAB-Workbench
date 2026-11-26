@@ -9,7 +9,7 @@ summary: Compare time-domain and cyclic-voltammetry charge calculations across r
 
 The CSC app compares charge obtained from time-domain current integration with charge obtained from cyclic-voltammetry integration for every readable CV/CT cycle in one or more Gamry DTA files.
 
-The left pane groups the workflow under **Scan analysis**, **Plot settings**, **Charge results**. Use **Export all cycles CSV** in the header when ready.
+Open your CV/CT files in **Scan analysis**. Review individual curves in **Plot settings**, then check **Charge results** before choosing **Export all cycles CSV**.
 
 ## Requirements And Launch
 

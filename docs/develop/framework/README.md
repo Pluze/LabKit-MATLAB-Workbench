@@ -9,7 +9,7 @@ summary: Understand the labkit.app lifecycle, layout, transactions, execution, s
 
 `labkit.app` is the MATLAB App SDK above LabKit's GUI-free domain libraries. Apps own scientific workflow, calculations, units, wording, plots, and exports. The SDK owns semantic layout, transactions, execution queues, lifecycle, runtime source lists, diagnostics, dialogs, resources, and native components.
 
-The native workbench uses a single light appearance, a product header, a data sidebar and workspace view buttons that collapse into a selector when space is limited. An optional `HeaderAction` on `layout.workbench` places an existing semantic button in the header and routes it through the usual App transaction. Workspace pages can declare `Heading` and `Note` for a page heading and a short footer. A `statusPanel` can use `Presentation="label"` for a short summary or `Presentation="note"` for explanatory text. Multi-file lists provide Select all, removal and clearing alongside the standard source import actions.
+The native workbench uses a single light appearance, a product header, a data sidebar and workspace view buttons that collapse into a selector for more than three views or when space is limited. An optional `HeaderAction` on `layout.workbench` places an existing semantic button in the header and routes it through the usual App transaction. Workspace pages can declare `Heading` and `Note` for a page heading and a short footer. A `statusPanel` can use `Presentation="label"` for a short summary or `Presentation="note"` for explanatory text. Multi-file lists provide Select all, removal and clearing alongside the standard source import actions.
 
 ## Start Here
 
@@ -90,6 +90,8 @@ Put this declaration in the App's `definition` function and return `app`; the en
 - Write App result files directly through the App-owned export capability. Any manifest or task archive is an App contract, not an SDK object.
 
 Runtime validates candidate state and the complete view snapshot before publishing either. The private MATLAB adapter maps semantic IDs to native components, skips unchanged native property writes, reuses direct associations between controls and their labels, preserves plot viewports, normalizes native event differences, and never exposes component registries to Apps. If a native property rejects an otherwise validated operation, the causal diagnostic identifies both the semantic target and operation kind before preserving the original MATLAB error.
+
+Use a text status panel for selectable instructions and operation feedback. The native body wraps at the shared readout font size and reserves space for its current content. Give a heading to messages that need context, such as an applied calibration or the last export.
 
 Normal App launches show the completed native window. Official GUI validation uses the same launch path with a framework-owned visibility policy: `hidden` keeps the final window off screen and `minimized` minimizes it after startup. Tests therefore exercise real controls without individual Apps or test methods having to hide the window after launch.
 

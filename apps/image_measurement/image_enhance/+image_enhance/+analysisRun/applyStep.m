@@ -80,7 +80,7 @@ function mask = backgroundMaskFromContext(inputImage, context, requireRoi)
     end
 
     hsvImage = rgb2hsv(inputImage);
-    value = luma(inputImage);
+    value = labkit.image.rgb2gray(inputImage);
     sat = hsvImage(:, :, 2);
     mask = smoothstep(0.22, 0.03, sat) .* smoothstep(0.30, 0.78, value);
     if nnz(mask > 0.45) < 100
@@ -93,7 +93,7 @@ function mask = backgroundMaskFromContext(inputImage, context, requireRoi)
 end
 
 function outputImage = protectedRgbFallback(inputImage, strength, targetWhite, backgroundMask)
-    lumaImage = luma(inputImage);
+    lumaImage = labkit.image.rgb2gray(inputImage);
     stats = luminanceStats(lumaImage);
     contrastScale = min(1.12, max(0.92, 0.28 ./ max(stats.contrast, 0.08)));
     toned = (lumaImage - stats.mid) .* contrastScale + stats.mid;
@@ -135,10 +135,6 @@ function out = weightedMean(values, weights)
         return;
     end
     out = sum(values(valid) .* weights(valid)) ./ sum(weights(valid));
-end
-
-function gray = luma(imageData)
-    gray = labkit.image.rgb2gray(imageData);
 end
 
 function y = smoothstep(edge0, edge1, x)
