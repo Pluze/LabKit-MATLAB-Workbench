@@ -4,11 +4,13 @@ function buildTree(obj)
     style = obj.Appearance;
     policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
     controlSubtree = false(1, numel(nodes));
+    pageIndex = zeros(1,numel(nodes));
     for k = 1:numel(nodes)
         node = nodes(k);
         parent = obj.parentFor(node);
         if isfield(obj.ParentIndices, node.Id)
             parentIndex = obj.ParentIndices.(node.Id);
+            pageIndex(k) = pageIndex(parentIndex);
             controlSubtree(k) = (controlSubtree(parentIndex) || ...
                 nodes(parentIndex).Kind == "workbench") && ...
                 ~any(node.Kind == ["workspace", "plotArea"]);
@@ -48,6 +50,20 @@ function buildTree(obj)
         end
         obj.placeInParent(node, component);
         obj.Components.(char(node.Id)) = component;
+        if node.Kind == "tab" || node.Kind == "workspacePage"
+            pageIndex(k) = k;
+        elseif isa(component,"matlab.ui.control.TextArea") && ...
+                isstruct(component.UserData) && isfield(component.UserData,"Readonly")
+            obj.Readouts(end+1) = component;
+            if pageIndex(k) > 0
+                page = obj.component(nodes(pageIndex(k)).Id);
+                if ~isfield(page.UserData,"Readouts")
+                    page.UserData.Readouts = component;
+                else
+                    page.UserData.Readouts(end+1) = component;
+                end
+            end
+        end
     end
     for node = reshape(nodes,1,[])
         if node.Kind ~= "group" || obj.groupLayout(node) ~= "horizontal" || numel(node.ChildIds) ~= 2

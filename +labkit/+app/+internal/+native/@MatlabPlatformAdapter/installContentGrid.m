@@ -37,7 +37,7 @@ function grid = installContentGrid(obj, node, component)
     else
         rowCount = numel(node.ChildIds);
         if node.Kind == "tab"
-            rowCount = max(1, 2 * rowCount - 1);
+            rowCount = 1 + 5 * (rowCount - 1);
         end
         grid = uigridlayout(component, [rowCount 1], ...
             Padding=padding, ...
@@ -62,10 +62,17 @@ function grid = installContentGrid(obj, node, component)
         if node.Kind == "tab"
             % The divider fills the entire gap between sections.
             grid.RowSpacing = 0;
-            expanded = cell(1, max(1, 2 * numel(heights) - 1));
-            expanded(1:2:end) = heights;
+            % Four fixed tracks share the hit target, hairline and centered grip.
+            expanded = cell(1, rowCount);
+            expanded(1:5:end) = heights;
             if numel(heights) > 1
-                expanded(2:2:end) = {policy.SplitterThickness};
+                halfGap = floor((policy.SplitterThickness - 2) / 2);
+                expanded(2:5:end) = {halfGap};
+                expanded(3:5:end) = {1};
+                expanded(4:5:end) = {1};
+                expanded(5:5:end) = {policy.SplitterThickness - 2 - halfGap};
+                grid.ColumnWidth = {'1x',28,'1x'};
+                grid.ColumnSpacing = 0;
             end
             heights = expanded;
         end
@@ -77,14 +84,8 @@ function grid = installContentGrid(obj, node, component)
     grid.Tag = char(node.Id + ".layout");
     obj.Layouts.(char(node.Id)) = grid;
     if node.Kind == "tab" && numel(node.ChildIds) > 1
-        if isa(component,"matlab.ui.container.Panel") && component.Visible == "off"
-            % The page already has its content and correctly sized rows.
-            % Attach its drag handles the first time it is selected.
-            component.UserData.PendingDividerRows = 2:2:numel(grid.RowHeight);
-        else
-            for row = 2:2:numel(grid.RowHeight)
-                labkit.app.internal.native.NativeAdapterValues.installRowDivider(obj.Figure, grid, row-1, row);
-            end
+        for row = 2:5:numel(grid.RowHeight)
+            labkit.app.internal.native.NativeAdapterValues.installRowDivider(obj.Figure, grid, row-1, row);
         end
     end
 end

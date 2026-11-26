@@ -6,9 +6,11 @@ if nargin < 3
 end
 switch control.Type
     case 'uipanel'
+        if any(string(control.Tag) == ["labkitDividerRule","labkitDividerGrip"])
+            return
+        end
         if strcmp(control.Tag, "labkitAppRowResize")
             control.BackgroundColor = containerColor;
-            control.UserData.BackgroundColor = containerColor;
             return
         end
         control.BorderType = "none";

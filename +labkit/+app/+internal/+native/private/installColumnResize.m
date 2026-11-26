@@ -22,7 +22,7 @@ if isprop(separator, "PickableParts")
     separator.PickableParts = "all";
 end
 separator.ButtonDownFcn = @beginDrag;
-installDividerGrip(separator, "column", @beginDrag);
+installDividerGrip(separator, @beginDrag);
 
 drag = struct("Active", false, "Motion", [], "Up", [], "Down", [], ...
     "Key", [], "Pointer", "arrow", "StartX", NaN, "StartWidth", NaN);

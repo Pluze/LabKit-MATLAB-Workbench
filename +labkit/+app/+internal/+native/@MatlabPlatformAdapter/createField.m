@@ -9,8 +9,11 @@ function component = createField(~, parent, config, id)
         end
         return;
     end
-    parent = labkit.app.internal.native.NativeAdapterValues.labeledParent(parent, config.Label, id);
-    layoutContainer = parent;
+    layoutContainer = [];
+    if strlength(config.Label) > 0
+        parent = labkit.app.internal.native.NativeAdapterValues.labeledParent(parent, config.Label, id);
+        layoutContainer = parent;
+    end
     switch config.Kind
         case "numeric"
             component = uieditfield(parent, "numeric", ...
@@ -27,6 +30,9 @@ function component = createField(~, parent, config, id)
             valueGrid = uigridlayout(parent, [1 1], ...
                 Padding=policy.ReadonlyInset, ...
                 RowHeight={'1x'}, ColumnWidth={'1x'});
+            if isempty(layoutContainer)
+                layoutContainer = valueGrid;
+            end
             lines = labkit.app.internal.native.NativeAdapterValues.readonlyLines(value);
             component = uitextarea(valueGrid, Editable="off", ...
                 Value=cellstr(lines), ...
@@ -40,9 +46,11 @@ function component = createField(~, parent, config, id)
                 Value=string(value), Enable=labkit.app.internal.native.NativeAdapterValues.onOff(config.Enabled));
     end
     component.UserData = struct( ...
-        "LayoutContainer", layoutContainer, ...
         "Readonly", config.Kind == "readonly", ...
         "NodeId", string(id));
+    if ~isempty(layoutContainer)
+        component.UserData.LayoutContainer = layoutContainer;
+    end
     if config.Kind == "readonly" && isprop(component, "Tooltip")
         component.Tooltip = char(join( ...
             labkit.app.internal.native.NativeAdapterValues.readonlyLines(value), ...

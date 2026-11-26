@@ -24,9 +24,16 @@ function component = createComponent(obj, node, parent, inControls)
                 return
             end
             if (inControls || ~obj.isGrowableTabChild(node)) && strlength(title) > 0 && ~isempty(node.ChildIds)
-                component = uigridlayout(parent, [2 1], Padding=[8 0 8 0], ...
-                    RowHeight={24, '1x'}, RowSpacing=0);
-                if inControls, component.Padding = [0 0 0 0]; end
+                inset = 8 * ~inControls;
+                if obj.groupLayout(node) == "vertical"
+                    component = obj.installContentGrid(node, parent);
+                    component.RowHeight = [{24}, component.RowHeight];
+                    component.Padding = [inset 8 inset 0];
+                    component.UserData.HeadingRow = true;
+                else
+                    component = uigridlayout(parent, [2 1], ...
+                        Padding=[inset 0 inset 0], RowHeight={24, '1x'}, RowSpacing=0);
+                end
                 heading = uilabel(component, Text=title, FontWeight="bold", FontSize=16);
                 if title == upper(title)
                     heading.FontSize = 11;
@@ -36,8 +43,10 @@ function component = createComponent(obj, node, parent, inControls)
                     heading.FontWeight = "normal";
                 end
                 heading.Tag = char(node.Id + ".heading");
-                content = obj.installContentGrid(node, component);
-                content.Padding = [0 8 0 6];
+                if ~isfield(component.UserData,"HeadingRow")
+                    content = obj.installContentGrid(node, component);
+                    content.Padding = [0 8 0 6];
+                end
                 return
             end
             component = uipanel(parent, Title=title, ...

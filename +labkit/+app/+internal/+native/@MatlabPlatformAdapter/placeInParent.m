@@ -31,10 +31,16 @@ function placeInParent(obj, node, component)
         handle.Layout.Column = index;
     else
         row = index;
+        column = 1;
         if parentNode.Kind == "tab"
-            row = 2 * index - 1;
+            row = 1 + 5 * (index - 1);
+            if numel(parentNode.ChildIds) > 1
+                column = [1 3];
+            end
+        elseif isstruct(handle.Parent.UserData) && isfield(handle.Parent.UserData,"HeadingRow")
+            row = index + 1;
         end
         handle.Layout.Row = row;
-        handle.Layout.Column = 1;
+        handle.Layout.Column = column;
     end
 end

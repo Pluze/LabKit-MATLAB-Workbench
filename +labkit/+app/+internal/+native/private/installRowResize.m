@@ -10,8 +10,8 @@ policy = nativeLayoutPolicy();
 separator = uipanel(grid, BorderType="none", ...
     BackgroundColor=[0.86 0.86 0.86], ...
     Tag="labkitAppRowResize");
-separator.Layout.Row = separatorRow;
-separator.Layout.Column = 1;
+separator.Layout.Row = [separatorRow separatorRow+3];
+separator.Layout.Column = [1 3];
 if isprop(separator, "Tooltip")
     separator.Tooltip = "Drag to resize this control group";
 end
@@ -22,7 +22,15 @@ if isprop(separator, "PickableParts")
     separator.PickableParts = "all";
 end
 separator.ButtonDownFcn = @beginDrag;
-installDividerGrip(separator, "row", @beginDrag);
+style = labkit.app.internal.native.lightAppearance();
+rule = uipanel(grid, BorderType="none", BackgroundColor=style.Line, ...
+    Tag="labkitDividerRule", ButtonDownFcn=@beginDrag);
+grip = uipanel(grid, BorderType="none", BackgroundColor=style.Muted, ...
+    Tag="labkitDividerGrip", ButtonDownFcn=@beginDrag);
+rule.Layout.Row = separatorRow+1;
+rule.Layout.Column = [1 3];
+grip.Layout.Row = [separatorRow+1 separatorRow+2];
+grip.Layout.Column = 2;
 
 drag = struct("Active", false, "StartY", NaN, "StartHeight", NaN, ...
     "Motion", [], "Up", [], "Down", [], "Key", [], ...

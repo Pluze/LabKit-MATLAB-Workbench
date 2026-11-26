@@ -1,11 +1,11 @@
 function height = preferredRowHeight(obj, node)
 % Class-folder implementation of MatlabPlatformAdapter.preferredRowHeight.
-    policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
     key = char(node.Id);
     if isfield(obj.ContentHeights, key)
         height = obj.ContentHeights.(key);
         return
     end
+    policy = labkit.app.internal.native.NativeAdapterValues.layoutPolicy();
     switch node.Kind
         case {"tab", "workspace", "workspacePage", "plotArea"}
             height = "1x";
@@ -56,6 +56,7 @@ function height = preferredRowHeight(obj, node)
         case {"section", "group"}
             if node.Kind == "group" && obj.isGrowableTabChild(node)
                 height = "1x";
+                obj.ContentHeights.(key) = height;
                 return
             end
             children = obj.nodes(node.ChildIds);
@@ -101,4 +102,5 @@ function height = preferredRowHeight(obj, node)
         otherwise
             height = "fit";
     end
+    obj.ContentHeights.(key) = height;
 end

@@ -22,6 +22,8 @@ The native workbench uses a single light appearance, a product header, a data si
 | Browse the App SDK API by capability | [App SDK API](app-sdk-api.md) |
 | Validate framework or GUI changes | [Testing](../testing.md) |
 
+Sidebar sections can be resized as soon as a task page opens. Drag anywhere in the strip between two sections, including its short center grip. Each page keeps its own section sizes when you switch tasks.
+
 ## SDK Map
 
 The required path has three concepts:

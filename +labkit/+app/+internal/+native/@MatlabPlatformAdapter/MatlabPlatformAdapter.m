@@ -30,6 +30,7 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         ClosePrompt
         DialogFolders
         ContentHeights
+        Readouts = gobjects(1,0)
         Starting (1, 1) logical = false
         StartupStarted
         StartupPanel
@@ -848,8 +849,11 @@ classdef (Hidden, Sealed) MatlabPlatformAdapter < handle
         end
 
         function node = node(obj, id)
-            index = find(string({obj.Plan.Nodes.Id}) == string(id), 1);
-            node = obj.Plan.Nodes(index);
+            if isfield(obj.NodeIndices,id)
+                node = obj.Plan.Nodes(obj.NodeIndices.(id));
+            else
+                node = obj.Plan.Nodes([]);
+            end
         end
     end
 end
