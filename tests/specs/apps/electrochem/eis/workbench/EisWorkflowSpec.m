@@ -14,10 +14,12 @@ classdef EisWorkflowSpec < matlab.unittest.TestCase
             cleanup = onCleanup(@() runtime.close());
             fig = runtime.figureHandle();
             box = @(tag) getpixelposition(findall(fig, "Tag", tag), true);
-            for width = [900 1280]
-                fig.Position(3:4) = [width 720];
+            screen = get(groot,"ScreenSize");
+            wide = min(1280, screen(3)-80);
+            for width = [min(900,wide-100) wide]
+                fig.Position = [20 20 width 720];
                 drawnow;
-                expected = [24 24 24 24 24 0 0];
+                expected = [width 24 24 24 24 24 0 0];
                 testCase.verifyThat(@() measureEdges(box), ...
                     Eventually(IsEqualTo(expected, Within=AbsoluteTolerance(1))));
                 frame = box("labkitAppWorkbenchGrid");
@@ -394,5 +396,5 @@ function distances = measureEdges(box)
         rightEdge-header(1)-header(3)];
     nav = box("filesAnalysis.navigate");
     folderButton = box("files.folder");
-    distances = [margins, nav([1 3])-folderButton([1 3])];
+    distances = [frame(3), margins, nav([1 3])-folderButton([1 3])];
 end
